@@ -2,7 +2,7 @@
 
 <p>questa e-mail è stata generata automaticamente dal team della Wikimedia Foundation Donor Relations.</p>
 
-<p>Nel mese di {now.MMMM} non abbiamo potuto elaborare la tua donazione mensile di {contributionRecur.amount__format_money} a favore di Wikipedia.</p>
+<p>Nel mese di {now.MMMM} non abbiamo potuto elaborare la tua donazione mensile di {contribution_recur.amount} a favore di Wikipedia.</p>
 
 <p>Grazie per aver contribuito così generosamente alla crescita della conoscenza libera online. Il tuo supporto aiuta Wikipedia a rimanere attiva, indipendente e senza pubblicità.</p>
 

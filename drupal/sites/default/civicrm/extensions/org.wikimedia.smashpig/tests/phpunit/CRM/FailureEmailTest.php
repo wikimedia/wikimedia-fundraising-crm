@@ -31,7 +31,7 @@ class CRM_FailureEmailTest extends SmashPigBaseTestClass {
     $contributionRecur = $this->setupRecurring();
     $email = FailureEmail::render()->setCheckPermissions(FALSE)->setContributionRecurID($contributionRecur['id'])->execute()->first();
     $this->assertEquals('Dear Harry,
-      We cancelled your recur of USD 12.34
+      We cancelled your recur of USD $12.34
       and we are sending you this at harry@hendersons.net
       this month of ' . (new DateTime())->format('F') . '
       $12.34', $email['msg_text']);
@@ -54,7 +54,7 @@ class CRM_FailureEmailTest extends SmashPigBaseTestClass {
     $this->assertEquals('Hey Harry', $email['msg_subject']);
     $this->assertEquals('Recur fail message : Hey Harry', $activity['subject']);
     $this->assertEquals('Dear Harry,
-      We cancelled your recur of USD 12.34
+      We cancelled your recur of USD $12.34
       and we are sending you this at harry@hendersons.net
       this month of ' . (new DateTime())->format('F') . '
       $12.34', $activity['details']);

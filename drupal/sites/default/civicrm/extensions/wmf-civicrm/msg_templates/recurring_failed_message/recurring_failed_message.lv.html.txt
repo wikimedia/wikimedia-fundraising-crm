@@ -2,7 +2,7 @@
 
 <p>Šis ir automātiski ģenerēts e-pasta ziņojums no Wikimedia Foundation ziedojumu vākšanas komandas.</p>
 
-<p>{now.MMMM} mēs nevarējām apstrādāt Tavu ikmēneša ziedojumu {contributionRecur.amount__format_money} Vikipēdijai.</p>
+<p>{now.MMMM} mēs nevarējām apstrādāt Tavu ikmēneša ziedojumu {contribution_recur.amount} Vikipēdijai.</p>
 
 <p>Paldies, ka dāsni dalījies ar savām zināšanām, lai veicinātu bezmaksas zināšanu uzturēšanu tiešsaistē! Tavs atbalsts palīdz Vikipēdijai saglabāt neatkarību, būt brīvai no reklāmām un dinamiskai.</p>
 

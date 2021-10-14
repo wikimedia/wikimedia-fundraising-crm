@@ -2,7 +2,7 @@ Olá {contact.first_name},
 
 Este é um e-mail criado automaticamente, pela equipa de Relações com Doadores da Wikimedia Foundation.
 
-Em {now.MMMM}, não conseguimos processar o seu donativo mensal de {contributionRecur.amount__format_money} à Wikipédia.
+Em {now.MMMM}, não conseguimos processar o seu donativo mensal de {contribution_recur.amount} à Wikipédia.
 
 Agradecemos a sua generosa contribuição para manter o conhecimento gratuito a crescer online. O seu apoio ajuda a Wikipédia a permanecer independente, livre de publicidade e vibrante.
 

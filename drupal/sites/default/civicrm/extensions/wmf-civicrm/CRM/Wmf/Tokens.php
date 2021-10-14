@@ -19,12 +19,12 @@ class CRM_Wmf_Tokens {
     foreach ($e->getRows() as $row) {
       $tokens = $e->getTokenProcessor()->getMessageTokens();
       foreach (($tokens['wmf_url'] ?? []) as $token) {
-        $row->tokens('wmf_url', $token, self::getUrl($token, $row->context['contact']['email'], $row->context['language']));
+        $row->tokens('wmf_url', $token, self::getUrl($token, $row->context['contact']['email'], $row->context['locale']));
       }
       if (isset($tokens['now'])) {
         // CiviCRM doesn't do full locale date handling. It relies on .pot files
         // and just translates the words. We add our own 'now.MMMM' token for the now-date.
-        $dateFormatter = new \IntlDateFormatter($row->context['language'], NULL, NULL);
+        $dateFormatter = new \IntlDateFormatter($row->context['locale'], NULL, NULL);
         foreach ($tokens['now'] as $token) {
           $dateFormatter->setPattern($token);
           $row->tokens('now', $token, $dateFormatter->format(new \DateTime()));

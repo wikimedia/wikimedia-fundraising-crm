@@ -2,7 +2,7 @@ Dobrý deň, {contact.first_name}!
 
 Toto je automaticky generovaný e-mail od tímu Wikimedia Foundation Donor Relations.
 
-V mesiaci {now.MMMM} sa nám nepodarilo spracovať tvoj mesačný príspevok Wikipédii vo výške {contributionRecur.amount__format_money}.
+V mesiaci {now.MMMM} sa nám nepodarilo spracovať tvoj mesačný príspevok Wikipédii vo výške {contribution_recur.amount}.
 
 Ďakujeme, že si štedro prispel/-a k udržaniu bezplatných vedomostí online. Vďaka tvojej podpore je Wikipédia nezávislá, bez reklám a živá.
 

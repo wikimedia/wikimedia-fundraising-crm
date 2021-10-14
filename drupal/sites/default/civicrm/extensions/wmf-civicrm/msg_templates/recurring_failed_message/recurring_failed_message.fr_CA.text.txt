@@ -2,7 +2,7 @@ Bonjour {contact.first_name},
 
 Ce courriel a été généré automatiquement par l’équipe Relations Donateurs de la Wikimedia Foundation.
 
-En {now.MMMM}, nous n’avons pas été en mesure de traiter votre don mensuel de {contributionRecur.amount__format_money} à Wikipédia.
+En {now.MMMM}, nous n’avons pas été en mesure de traiter votre don mensuel de {contribution_recur.amount} à Wikipédia.
 
 Nous vous remercions de contribuer si généreusement à l’essor de la connaissance libre en ligne. Votre soutien permet à Wikipédia de rester indépendante, dynamique et exempte de toute publicité.
 
