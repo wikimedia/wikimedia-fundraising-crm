@@ -6,6 +6,7 @@ namespace Civi\Api4\Action\Message;
 use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\MessageTemplate;
 use Civi\Token\TokenProcessor;
 
 /**
@@ -241,21 +242,48 @@ class Render extends AbstractAction {
 
   /**
    * Load the relevant message template.
+   *
+   * @throws \API_Exception
    */
   protected function loadMessageTemplate() {
     if ($this->getWorkflowName()) {
-      $messageTemplate = \Civi\Api4\MessageTemplate::get()
-        ->setLanguage($this->getLanguage())
+      $strings = MessageTemplate::get(FALSE)
         ->addWhere('workflow_name', '=', $this->getWorkflowName())
-        ->addWhere('is_active', '=', TRUE)
-        ->addWhere('is_default', '=', TRUE)
-        ->setSelect(['*'])
-        // I think we want to check permissions - but only render permissioned.
-        ->setCheckPermissions(FALSE)
-        ->execute()->first();
-      $this->setMessageHtml($messageTemplate['msg_html']);
-      $this->setMessageText($messageTemplate['msg_text']);
-      $this->setMessageSubject($messageTemplate['msg_subject']);
+        ->addWhere('is_default', '=', 1)
+        ->addSelect('translation.*')
+        ->addWhere('translation.status_id:name', '=', 'active')
+        ->addWhere('translation.language', '=', $this->getLanguage())
+        ->addJoin('Translation AS translation', 'INNER',
+          ['id', '=', 'translation.entity_id'],
+          ['translation.entity_table', '=', '"civicrm_msg_template"']
+        )
+        ->execute();
+      if (!count($strings)) {
+        // For English, or unknown language, we can fall back on the 'main' version of the template.
+        if (!$this->getLanguage() || strpos($this->getLanguage(), 'en_') === 0) {
+          $strings = MessageTemplate::get(FALSE)
+            ->addWhere('workflow_name', '=', $this->getWorkflowName())
+            ->addWhere('is_default', '=', 1)
+            ->setSelect(['msg_html', 'msg_text', 'msg_subject'])
+            ->execute()->first();
+          $this->setMessageHtml($strings['msg_html']);
+          $this->setMessageText($strings['msg_text']);
+          $this->setMessageSubject($strings['msg_subject']);
+          return;
+        }
+        throw new \API_Exception('No translation found');
+      }
+      foreach ($strings as $string) {
+        if ($string['translation.entity_field'] === 'msg_html') {
+          $this->setMessageHtml($string['translation.string']);
+        }
+        if ($string['translation.entity_field'] === 'msg_text') {
+          $this->setMessageText($string['translation.string']);
+        }
+        if ($string['translation.entity_field'] === 'msg_subject') {
+          $this->setMessageSubject($string['translation.string']);
+        }
+      }
     }
   }
 

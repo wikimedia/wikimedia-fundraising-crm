@@ -41,7 +41,7 @@ class RenderQA extends Render {
       return FALSE;
     }
 
-    $message = Message::renderfromfile()
+    $message = Message::renderfromdraft()
       ->setCheckPermissions(FALSE)
       ->setEntity('ContributionRecur')
       ->setEntityIDs([$this->getContributionRecurID()])
