@@ -30,7 +30,7 @@
     <ext>au.org.greens.extendedmailingstats</ext>
     <ext>org.wikimedia.contacteditor</ext>
     <ext>org.civicrm.afform</ext>
-    <ext>deduper</ext>
+    <ext>org.civicrm.afform_admin</ext>
     <ext>org.wikimedia.geocoder</ext>
     <ext>nz.co.fuzion.civitoken</ext>
     <ext>nz.co.fuzion.extendedreport</ext>
