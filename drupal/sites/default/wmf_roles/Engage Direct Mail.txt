@@ -1,2 +1,15 @@
 role 'Engage Direct Mail'
 add engage role
+add access all custom data
+add access CiviContribute
+add access CiviCRM
+add access Contact Dashboard
+add add contacts
+add edit all contacts
+add edit contributions
+add engage role
+add profile listings and forms
+add profile view
+add view all activities
+add view all contacts
+add view own manual batches
