@@ -106,6 +106,9 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
       'Anonymous',
       // Ducks are mice too.
       'Daisy Duck',
+      // As are paranormal investigators
+      'Fox Mulder',
+      'Satoshi Nakamoto'
     ];
     CRM_Core_DAO::executeQuery(
       'DELETE FROM civicrm_contact WHERE display_name IN ("'
