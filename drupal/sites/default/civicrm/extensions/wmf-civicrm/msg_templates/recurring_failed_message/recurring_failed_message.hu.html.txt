@@ -1,7 +1,7 @@
 <p>Szia {contact.first_name}!</p>
 
 <p>Ez egy, a Wikimedia Foundation Donor Relations csapata által küldött automatikus üzenet.
-{now.MMMM} hónap során nem tudtuk feldolgozni a Wikipédia számára adott, {contributionRecur.amount__format_money} összegű adományod.</p>
+{now.MMMM} hónap során nem tudtuk feldolgozni a Wikipédia számára adott, {contribution_recur.amount} összegű adományod.</p>
 
 <p>Köszönjük, hogy nagylelkűen hozzájárulsz az online ismeretek szabad áramlásának a fenntartásához. Támogatásod segítségével maradhat továbbra is független, hirdetésmentes és lendületes a Wikipedia oldal.</p>
 

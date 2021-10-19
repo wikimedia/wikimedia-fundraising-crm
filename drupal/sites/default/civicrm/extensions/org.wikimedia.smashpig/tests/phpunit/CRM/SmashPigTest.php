@@ -971,7 +971,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $activity = $this->getLatestFailureMailActivity((int) $contributionRecurRecord['id']);
     $month = date('F');
     $expectedMessage = "Dear Harry,
-      We cancelled your recur of USD 12.34
+      We cancelled your recur of USD $12.34
       and we are sending you this at harry@hendersons.net
       this month of $month
       $12.34";
@@ -1067,7 +1067,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $activity = $this->getLatestFailureMailActivity((int) $contributionRecur['id']);
     $month = date('F');
     $expectedMessage = "Dear Harry,
-      We cancelled your recur of USD 12.34
+      We cancelled your recur of USD $12.34
       and we are sending you this at harry@hendersons.net
       this month of $month
       $12.34";

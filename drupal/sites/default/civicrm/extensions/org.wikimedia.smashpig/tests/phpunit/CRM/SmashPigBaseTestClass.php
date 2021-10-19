@@ -268,10 +268,10 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    */
   protected function setupFailureTemplate() {
     $msgHtml = 'Dear {contact.first_name},
-      We cancelled your recur of {contributionRecur.currency} {contributionRecur.amount}
+      We cancelled your recur of {contribution_recur.currency} {contribution_recur.amount}
       and we are sending you this at {contact.email}
       this month of {now.MMMM}
-      {contributionRecur.amount__format_money}';
+      {contribution_recur.amount}';
     $subject = 'Hey {contact.first_name}';
 
     if ($this->originalFailureMessageTemplate) {

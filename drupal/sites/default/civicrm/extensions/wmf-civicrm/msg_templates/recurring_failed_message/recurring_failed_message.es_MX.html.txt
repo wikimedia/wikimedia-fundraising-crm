@@ -2,7 +2,7 @@
 
 <p>Este es un correo electrónico del equipo de Relaciones con los Donantes de Wikimedia Foundation generado automáticamente.</p>
 
-<p>En {now.MMMM} no pudimos procesar su donación mensual de {contributionRecur.amount__format_money} a Wikipedia.</p>
+<p>En {now.MMMM} no pudimos procesar su donación mensual de {contribution_recur.amount} a Wikipedia.</p>
 
 <p>Gracias por contribuir tan generosamente a mantener el conocimiento libre en línea. Su aportación ayuda a Wikipedia a mantenerse independiente, sin avisos y pujante.</p>
 

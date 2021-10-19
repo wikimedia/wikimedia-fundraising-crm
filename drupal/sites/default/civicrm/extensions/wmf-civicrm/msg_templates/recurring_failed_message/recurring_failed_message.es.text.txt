@@ -2,7 +2,7 @@ Hola {contact.first_name},
 
 Este mensaje de correo electrónico se ha generado automáticamente desde el equipo de Relaciones con los donantes de la Wikimedia Foundation.
 
-En {now.MMMM} no pudimos procesar su donación mensual de {contributionRecur.amount__format_money} a Wikipedia.
+En {now.MMMM} no pudimos procesar su donación mensual de {contribution_recur.amount} a Wikipedia.
 
 Gracias por contribuir tan generosamente a promover el conocimiento libre en Internet. Su apoyo ayuda a Wikipedia a mantenerse independiente, dinámica y sin publicidad.
 

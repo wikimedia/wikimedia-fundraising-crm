@@ -120,7 +120,7 @@ class CRM_Wrapper_Test extends \PHPUnit\Framework\TestCase implements HeadlessIn
   public function testRenderCustomTemplate() {
     MessageTemplate::create()->setCheckPermissions(FALSE)->setValues([
       'workflow_name' => 'my_custom_tpl',
-      'msg_text' => 'Hi {contact.first_name}. Your email is {contact.email} and your recurring amount is {contributionRecur.amount}',
+      'msg_text' => 'Hi {contact.first_name}. Your email is {contact.email} and your recurring amount is {contribution_recur.amount}',
       'is_default' => TRUE,
     ])->setLanguage('en_NZ')->execute();
     $contributionRecur = $this->setupRecurringContribution();

@@ -2,7 +2,7 @@
 
 <p>To jest automatycznie wygenerowana wiadomość e-mail od zespołu Wikimedia Foundation ds. relacji z darczyńcami.</p>
 
-<p>W {now.MMMM} nie byliśmy w stanie przetworzyć Twojej miesięcznej darowizny dla Wikipedii w wysokości {contributionRecur.amount__format_money}.</p>
+<p>W {now.MMMM} nie byliśmy w stanie przetworzyć Twojej miesięcznej darowizny dla Wikipedii w wysokości {contribution_recur.amount}.</p>
 
 <p>Dziękujemy za tak hojny wkład w podtrzymywanie rozwoju bezpłatnej wiedzy w Internecie. Dzięki Twojemu wsparciu Wikipedia może pozostawać niezależna, dynamiczna, a także nie wyświetlać reklam.</p>
 
