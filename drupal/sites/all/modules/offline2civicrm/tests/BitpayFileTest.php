@@ -3,6 +3,7 @@
 /**
  * @group Import
  * @group Offline2Civicrm
+ * @group BitPay
  */
 class BitpayFileTest extends BaseChecksFileTest {
 
@@ -21,7 +22,6 @@ class BitpayFileTest extends BaseChecksFileTest {
       'email' => 'fox.mulder@pm.me',
       'sequential' => 1,
     ));
-    $this->ids['Contact'][$contact['id']] = $contact['id'];
     $this->assertEquals('90210', $contact['values'][0]['postal_code']);
     $this->assertEquals('fox.mulder@pm.me', $contact['values'][0]['email']);
     $this->assertEquals('Fox', $contact['values'][0]['first_name']);

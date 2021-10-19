@@ -108,7 +108,8 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
       'Daisy Duck',
       // As are paranormal investigators
       'Fox Mulder',
-      'Satoshi Nakamoto'
+      'Satoshi Nakamoto',
+      'fox.mulder.doppelganger@pm.me'
     ];
     CRM_Core_DAO::executeQuery(
       'DELETE FROM civicrm_contact WHERE display_name IN ("'

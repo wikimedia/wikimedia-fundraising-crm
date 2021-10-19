@@ -96,7 +96,14 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     parent::tearDown();
     // Check we cleaned up properly. This check exists to ensure we don't add tests that
     // leave test contacts behind as over time they cause problems in our dev dbs.
-    $this->assertEquals($this->maxContactID, $this->getHighestContactID(), 'Test data left behind');
+    if (!$this->maxContactID == $this->getHighestContactID()) {
+      $junkContactDisplayName = $this->callAPISuccessGetValue('Contact', [
+        'return' => 'display_name',
+        'is_deleted' => '',
+        'options' => ['limit' => 1, 'sort' => 'id DESC'],
+      ]);
+      $this->fail("Test contact left behind with display name $junkContactDisplayName");
+    }
   }
 
   /**
