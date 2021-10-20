@@ -2787,9 +2787,9 @@ function wmf_civicrm_is_endowment_gift($msg) {
  * @throws \API_Exception
  */
 function wmf_civicrm_insert_failure_message_translation($language) {
-  $msgHtml = file_get_contents(__DIR__ . '/templates/recurring_failed_message.' . $language . '.html.txt');
-  $subject = file_get_contents(__DIR__ . '/templates/recurring_failed_message.' . $language . '.subject.txt');
-  $msgText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.' . $language . '.text.txt');
+  $msgHtml = file_get_contents(__DIR__ . '/templates/recurring_failed_message.en.' . $language . '.html.txt');
+  $subject = file_get_contents(__DIR__ . '/templates/recurring_failed_message.en.' . $language . '.subject.txt');
+  $msgText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.en.' . $language . '.text.txt');
   // It actually stores what we pass it - but we want it to store the same value as on the contact.
   $languageName = \Civi\Api4\OptionValue::get()
     ->setCheckPermissions(FALSE)

@@ -43,7 +43,7 @@ For example - for saving
 ```
     MessageTemplate::create()->setValues([
       'workflow_name' => 'my_custom_tpl',
-      'msg_text' => 'Hi {contact.first_name}. Your email is {contact.email} and your recurring amount is {contributionRecur.amount}',
+      'msg_text' => 'Hi {contact.first_name}. Your email is {contact.email} and your recurring amount is {contribution_recur.amount}',
       'is_default' => TRUE,
     ])->setLanguage('en_NZ')->execute();
 ```
@@ -55,7 +55,7 @@ a later update like
 ```
 MessageTemplate::update()
   ->addWhere('id', '=', $template['id'])
-  ->setValues(['msg_html' => 'Hi {contact.first_name}. Your email is {contact.email} and your recurring amount is {contributionRecur.amount}'])
+  ->setValues(['msg_html' => 'Hi {contact.first_name}. Your email is {contact.email} and your recurring amount is {contribution_recur.amount}'])
   ->setLanguage('fr_FR')->execute()->first();
 ```
 
@@ -96,7 +96,7 @@ skipped.
 2) The retrieved values and the retrieved template are passed through the tokenProcessor. The token
 processor is able to swap out tokens like {contact.first_name} and {contact.email_greeting} along with
 any tokens specific to the entity which has been retrieved. For example when sending an email
-for a recurring contribution {contributionRecur.amount} {contributionRecur.installments} etc are all
+for a recurring contribution {contribution_recur.amount} {contributionRecur.installments} etc are all
 swapped out.
 
 Note that the focus at this stage has been on limited tokens for contributionRecur and contact
@@ -120,7 +120,7 @@ through a templating language (Smarty / twig/ Dr Seuss verse etc), possibly with
 
 Also I think all money fields should probably support formatting varietals. e.g
  ```
-  {contributionRecur.amount}
+  {contribution_recur.amount}
   {contributionRecur.amount:formatted}
 ```
 With the formatting being derived from a library using the currency and

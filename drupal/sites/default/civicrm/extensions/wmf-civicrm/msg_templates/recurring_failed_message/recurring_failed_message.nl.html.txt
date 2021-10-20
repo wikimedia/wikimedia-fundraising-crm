@@ -2,7 +2,7 @@
 
 <p>Dit is een automatisch gegenereerde e-mail van het team van Wikimedia Foundation Donor Relations.</p>
 
-<p>In {now.MMMM}, konden we je maandelijkse donatie van {contributionRecur.amount__format_money} aan Wikipedia niet verwerken.</p>
+<p>In {now.MMMM}, konden we je maandelijkse donatie van {contribution_recur.amount} aan Wikipedia niet verwerken.</p>
 
 <p>Hartelijk dank voor je gulle bijdrage zodat gratis kennis online kan blijven bestaan. Je steun zorgt ervoor dat Wikipedia onafhankelijk, reclamevrij en energiek kan blijven.</p>
 

@@ -1,8 +1,8 @@
 <?php
 $directory = __DIR__ . '/../msg_templates/recurring_failed_message/';
-$htmlText = file_get_contents($directory . 'recurring_failed_message.html.txt');
-$msgText = file_get_contents($directory . 'recurring_failed_message.text.txt');
-$subject = file_get_contents($directory . 'recurring_failed_message.subject.txt');
+$htmlText = file_get_contents($directory . 'recurring_failed_message.en.html.txt');
+$msgText = file_get_contents($directory . 'recurring_failed_message.en.text.txt');
+$subject = file_get_contents($directory . 'recurring_failed_message.en.subject.txt');
 
 /**
  * Add recurring_failed_message template.

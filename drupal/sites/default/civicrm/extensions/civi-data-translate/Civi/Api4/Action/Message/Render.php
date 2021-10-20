@@ -147,8 +147,7 @@ class Render extends AbstractAction {
       // Permissions implications in not-false. Also a preference to simply do smarty parsing after
       // in a wrapper function when we go there.
       'smarty' => FALSE,
-      'schema' => [$this->getEntity() => $this->getEntityKey()],
-      'language' => $this->getLanguage(),
+      'schema' => [$this->getSchemaEntityName(), 'contactId'],
     ]);
 
     // Use wrapper as we don't know which entity.
@@ -162,15 +161,12 @@ class Render extends AbstractAction {
         if (empty($textField['string'])) {
           continue;
         }
-        if (!empty($entity['contact_id'])) {
-          // @todo - we have checked permissions on the entity values we pass in to our processor but the
-          // contact token processor also does swapsies. Managing risk for now by limiting to workflow templates.
-          $tokenProcessor->addRow()->context(array_merge(['contactId' => $entity['contact_id'], 'entity' => $this->getEntity()], $entity));
-        }
-        else {
-          $tokenProcessor->addRow()->context();
-        }
+        $rowContext = ['locale' => $this->getLanguage(), $this->getSchemaEntityName() => $entity['id']];
 
+        if (!empty($entity['contact_id'])) {
+          $rowContext['contactId'] = $entity['contact_id'];
+        }
+        $tokenProcessor->addRow()->context($rowContext);
         $tokenProcessor->addMessage($fieldKey, $textField['string'], $textField['format']);
         $tokenProcessor->evaluate();
         foreach ($tokenProcessor->getRows() as $row) {
@@ -261,6 +257,14 @@ class Render extends AbstractAction {
       $this->setMessageText($messageTemplate['msg_text']);
       $this->setMessageSubject($messageTemplate['msg_subject']);
     }
+  }
+
+  /**
+   * @return string
+   */
+  protected function getSchemaEntityName(): string {
+    $schemaEntityName = \CRM_Core_DAO_AllCoreTables::convertEntityNameToLower($this->getEntity()) . 'Id';
+    return $schemaEntityName;
   }
 
 }

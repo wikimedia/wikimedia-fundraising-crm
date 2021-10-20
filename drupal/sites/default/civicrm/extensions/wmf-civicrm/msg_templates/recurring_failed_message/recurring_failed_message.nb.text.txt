@@ -2,7 +2,7 @@ Hei, {contact.first_name}
 
 Dette er en automatisk generert e-post fra Wikimedia Foundation Donor Relations-teamet
 
-I {now.MMMM} kunne vi ikke behandle din månedlige donasjon på {contributionRecur.amount__format_money} til Wikipedia.
+I {now.MMMM} kunne vi ikke behandle din månedlige donasjon på {contribution_recur.amount} til Wikipedia.
 
 Takk for at du så sjenerøst bidrar til å la gratis kunnskap blomstre på nett. Din støtte hjelper Wikipedia å forbli uavhengig, annonsefri og levende.
 

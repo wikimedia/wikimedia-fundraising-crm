@@ -13,9 +13,6 @@ use CRM_CiviDataTranslate_ExtensionUtil as E;
  */
 function civi_data_translate_civicrm_config(&$config) {
   _civi_data_translate_civix_civicrm_config($config);
-  $dispatcher = Civi::dispatcher();
-  $dispatcher->addListener('civi.token.list', ['CRM_CiviDataTranslate_Tokens', 'onListTokens']);
-  $dispatcher->addListener('civi.token.eval', ['CRM_CiviDataTranslate_Tokens', 'onEvalTokens']);
 }
 
 /**

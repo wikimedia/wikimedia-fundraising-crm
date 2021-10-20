@@ -2,7 +2,7 @@
 
 <p>Dette er en automatisk genereret e-mail fra Wikimedia Foundation Donor Relations-teamet.</p>
 
-<p>I {now.MMMM}, vi kunne ikke behandle din månedlige donation på {contributionRecur.amount__format_money} til Wikipedia.</p>
+<p>I {now.MMMM}, vi kunne ikke behandle din månedlige donation på {contribution_recur.amount} til Wikipedia.</p>
 
 <p>Tak, fordi du så generøst bidrager til at holde den gratis viden kan blomstre på nettet. Din støtte hjælper Wikipedia med at forblive uafhængig, annoncefri og dynamisk.</p>
 

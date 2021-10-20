@@ -2,7 +2,7 @@ Hallo, {contact.first_name},
 
 Dies ist eine automatisch erstellte E-Mail des Teams der Wikimedia Foundation Donor Relations.
 
-Im {now.MMMM} konnten wir Ihre monatliche Spende von {contributionRecur.amount__format_money} an Wikipedia nicht abwickeln.
+Im {now.MMMM} konnten wir Ihre monatliche Spende von {contribution_recur.amount} an Wikipedia nicht abwickeln.
 
 Vielen Dank, dass Sie mit Ihrer großzügigen Spende dazu beitragen, Wissen weiterhin kostenlos online zugänglich zu machen. Dank Ihrer Unterstützung kann Wikipedia unabhängig, werbefrei und aktiv bleiben.
 

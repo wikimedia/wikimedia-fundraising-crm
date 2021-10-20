@@ -2,7 +2,7 @@ Hej {contact.first_name}!
 
 Det här är ett automatgenererat mejl från Wikimedia Foundations team för givarkommunikation.
 
-Under {now.MMMM} månad kunde vi inte behandla ditt månatliga bidrag på {contributionRecur.amount__format_money} till Wikipedia.
+Under {now.MMMM} månad kunde vi inte behandla ditt månatliga bidrag på {contribution_recur.amount} till Wikipedia.
 
 Tack för att du medverkat till den fortsatta spridningen av kostnadsfri kunskap på nätet. Ditt stöd är viktigt för att Wikipedia ska finnas kvar som en oberoende, reklamfri och dynamisk informationskälla.
 
