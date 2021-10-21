@@ -33,21 +33,21 @@ class Message extends Generic\AbstractEntity {
   }
 
   /**
-   * @return \Civi\Api4\Action\Message\UpdateFromFile
+   * @return \Civi\Api4\Action\Message\UpdateFromDraft
    *
    * @throws \API_Exception
    */
-  public static function updatefromfile() {
-    return new Action\Message\UpdateFromFile(__CLASS__, __FUNCTION__);
+  public static function updatefromdraft() {
+    return new Action\Message\UpdateFromDraft(__CLASS__, __FUNCTION__);
   }
 
   /**
-   * @return \Civi\Api4\Action\Message\RenderFromFile
+   * @return \Civi\Api4\Action\Message\RenderFromDraft
    *
    * @throws \API_Exception
    */
-  public static function renderfromfile() {
-    return new Action\Message\RenderFromFile(__CLASS__, __FUNCTION__);
+  public static function renderfromdraft() {
+    return new Action\Message\RenderFromDraft(__CLASS__, __FUNCTION__);
   }
 
   /**

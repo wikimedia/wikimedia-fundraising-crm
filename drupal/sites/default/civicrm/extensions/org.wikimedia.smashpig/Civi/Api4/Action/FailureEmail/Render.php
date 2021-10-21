@@ -107,11 +107,11 @@ class Render extends AbstractAction {
   protected function getSupportedLanguages(): array {
     if (!isset(Civi::$statics[__CLASS__]['languages'])) {
       $templateID = Civi\Api4\MessageTemplate::get(FALSE)->addWhere('workflow_name', '=', 'recurring_failed_message')->addSelect('id')->execute()->first()['id'];
-      $supportedLanguages = (array) Civi\Api4\Strings::get(FALSE)
+      $supportedLanguages = (array) Civi\Api4\Translation::get(FALSE)
         ->setWhere([
           ['entity_id', '=', $templateID],
           ['entity_table', '=', 'civicrm_msg_template'],
-          ['is_active', '=', TRUE],
+          ['status_id:name', '=', 'active'],
         ])->addSelect('language')->execute()->indexBy('language');
       Civi::$statics[__CLASS__]['languages'] = array_keys($supportedLanguages);
     }

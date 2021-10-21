@@ -115,9 +115,9 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
         CRM_Core_Session::setStatus(ts('Mail sent'));
       }
       if ($this->controller->getActionName()[1] === 'upload') {
-        Message::updatefromfile()
+        Message::updatefromdraft()
           ->setWorkflowName('recurring_failed_message')
-          ->setLanguage(substr($this->qaNotification['language'], 0, 2))
+          ->setLanguage($this->qaNotification['language'])
           ->execute();
       }
     }

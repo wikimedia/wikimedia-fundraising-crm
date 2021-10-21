@@ -21,14 +21,14 @@
       <td class="label">{ts}Name{/ts}</td><td class="view-value">{$notification.display_name}</td>
     </tr>
   {/if}
+    {if $notification.language}
+      <tr>
+        <td class="label">{ts}language{/ts}</td><td class="view-value">{$notification.language}</td>
+      </tr>
+    {/if}
   {if $notification.msg_subject}
     <tr>
       <td class="label">{ts}Subject{/ts}</td><td class="view-value">{$notification.msg_subject}</td>
-    </tr>
-  {/if}
-  {if $notification.msg_text}
-    <tr>
-      <td class="label">{ts}Text{/ts}</td><td class="view-value">{$notification.msg_text|nl2br}</td>
     </tr>
   {/if}
   {if $notification.msg_html}
@@ -36,11 +36,11 @@
       <td class="label">{ts}Html message{/ts}</td><td class="view-value">{$notification.msg_html}</td>
     </tr>
   {/if}
-  {if $notification.language}
-    <tr>
-      <td class="label">{ts}language{/ts}</td><td class="view-value">{$notification.language}</td>
-    </tr>
-  {/if}
+    {if $notification.msg_text}
+      <tr>
+        <td class="label">{ts}Text{/ts}</td><td class="view-value">{$notification.msg_text|nl2br}</td>
+      </tr>
+    {/if}
 </table>
 
 {if $qanotification}
