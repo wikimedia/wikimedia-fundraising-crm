@@ -24,10 +24,8 @@ class EoySummaryTest extends BaseWmfDrupalPhpUnitTestCase {
   public function tearDown(): void {
     if ($this->jobIds) {
       $idList = implode(',', $this->jobIds);
-      db_query("DELETE from wmf_eoy_receipt_donor WHERE job_id in ($idList)")
-        ->execute();
-      db_query("DELETE from wmf_eoy_receipt_job WHERE job_id in ($idList)")
-        ->execute();
+      CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_donor WHERE job_id in ($idList)");
+      CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_job WHERE job_id in ($idList)");
     }
     parent::tearDown();
   }
@@ -622,9 +620,10 @@ FROM wmf_eoy_receipt_donor
 WHERE
   status = 'queued'
   AND job_id = $jobId
-  AND email = :email
+  AND email = %1
 EOS;
-    return db_query($sql, [':email' => $email])->fetchAssoc();
+    $result = \CRM_Core_DAO::executeQuery($sql, [1 => [$email, 'String']]);
+    return $result->fetchAll()[0] ?? NULL;
   }
 
 }

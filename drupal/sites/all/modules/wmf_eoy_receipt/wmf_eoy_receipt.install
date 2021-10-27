@@ -1,66 +1,8 @@
 <?php
 
 function wmf_eoy_receipt_install() {
-  wmf_eoy_receipt_update_7000();
-  wmf_eoy_receipt_update_7001();
-  wmf_eoy_receipt_update_7002();
   wmf_eoy_receipt_update_7003();
-}
-
-function wmf_eoy_receipt_update_7000() {
-  $result = [];
-
-  $sql = <<<EOS
-CREATE TABLE {wmf_eoy_receipt_job} (
-    job_id INT UNSIGNED AUTO_INCREMENT,
-    start_time VARCHAR(255),
-    year INT,
-
-    PRIMARY KEY (job_id)
-);
-EOS;
-  db_query($sql);
-
-  $sql = <<<EOS
-CREATE TABLE {wmf_eoy_receipt_donor} (
-    job_id INT UNSIGNED,
-    email VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-    preferred_language VARCHAR(16),
-    name VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-    status VARCHAR(255),
-    contributions_rollup TEXT,
-
-    KEY (job_id),
-    KEY (email),
-    KEY (status)
-)
-EOS;
-  db_query($sql);
-
-  return $result;
-}
-
-function wmf_eoy_receipt_update_7001() {
-  $sql = <<<EOS
-ALTER TABLE wmf_eoy_receipt_donor
-MODIFY email VARCHAR(254) COLLATE utf8_unicode_ci,
-ADD CONSTRAINT wmf_eoy_receipt_donor_job_id_email UNIQUE (job_id, email)
-EOS;
-  db_query($sql);
-}
-
-/**
- * Add "Sent end of year reciept" activity type
- */
-function wmf_eoy_receipt_update_7002() {
-  civicrm_initialize();
-  CRM_Core_BAO_OptionValue::ensureOptionValueExists([
-    'label' => 'Sent year-end summary receipt',
-    'name' => 'wmf_eoy_receipt_sent',
-    'weight' => '1',
-    'description' => 'Sent an email receipt summarizing all donations in a given year',
-    'option_group_id' => 'activity_type',
-  ]);
+  wmf_eoy_receipt_update_7010();
 }
 
 /**
@@ -72,55 +14,41 @@ function wmf_eoy_receipt_update_7003() {
 }
 
 /**
- * Update name field to be utf8 (roll on utf8mb4).
- */
-function wmf_eoy_receipt_update_7004() {
-  $sql = <<<EOS
-ALTER TABLE wmf_eoy_receipt_donor
-MODIFY name VARCHAR(255) COLLATE utf8_unicode_ci
-EOS;
-  db_query($sql);
-}
-
-/**
- * Update existing (unsent) mails with the name in bad characters.
+ * Create new eoy receipt tables in the CiviCRM database.
  *
- * Note I tested this on staging by truncating the table, re-populating it from
- * live & checking a specific email updated.
- *
- * Bug:T271185
+ * Note that
+ * 1) we don't actually need the data in these tables as they operate more like
+ * a temporary table for calculations and
+ * 2) the table create script is based on SHOW CREATE on the live table.
+ * 3) this module is in the process of being eliminated.
  */
-function wmf_eoy_receipt_update_7005() {
-  db_query("UPDATE
-  wmf_eoy_receipt_donor donor INNER JOIN (
-select DISTINCT name, status, eoy.preferred_language, eoy.email, names.first_name
-FROM wmf_eoy_receipt_donor eoy
-  LEFT JOIN (SELECT first_name, e.email
-             FROM wmf_eoy_receipt_donor dd LEFT
-             JOIN civicrm.civicrm_email e ON e.email = dd.email
-             LEFT JOIN civicrm.civicrm_contact c ON c.id = e.contact_id
-            AND first_name = name
-) as mails ON mails.email = eoy.email AND first_name = name
-  LEFT JOIN (
-    SELECT first_name, e.email
-             FROM wmf_eoy_receipt_donor dd LEFT
-             JOIN civicrm.civicrm_email e ON e.email = dd.email
-             LEFT JOIN civicrm.civicrm_contact c ON c.id = e.contact_id
+function wmf_eoy_receipt_update_7010() {
+  civicrm_initialize();
+  \CRM_Core_DAO::executeQuery('CREATE TABLE IF NOT EXISTS `wmf_eoy_receipt_job`
+(
+  `job_id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `start_time` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `year` INT(11) DEFAULT NULL,
+  PRIMARY KEY (`job_id`)
+) ENGINE = InnoDB
+AUTO_INCREMENT = 246
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;');
 
-) as names ON names.email = eoy.email
-WHERE mails.first_name IS NULL
-  AND status = 'queued'  or status = 'deferred_ja')
-    as utffail ON utffail.email = donor.email
-SET donor.name = utffail.first_name");
-}
+  \CRM_Core_DAO::executeQuery('CREATE TABLE IF NOT EXISTS `wmf_eoy_receipt_donor`
+(
+  `job_id` INT(10) UNSIGNED DEFAULT NULL,
+  `email` VARCHAR(254) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `preferred_language` VARCHAR(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `contributions_rollup` MEDIUMTEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  UNIQUE KEY `wmf_eoy_receipt_donor_job_id_email` (`job_id`, `email`),
+  KEY `job_id` (`job_id`),
+  KEY `email` (`email`),
+  KEY `status` (`status`)
+) ENGINE = InnoDB
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci');
 
-/**
- * Update deferred Japanese emails to queued status so they can go out.
- *
- * Bug:T271189
- */
-function wmf_eoy_receipt_update_7006() {
-  db_query("UPDATE
-  wmf_eoy_receipt_donor SET status = 'queued' WHERE status = 'deferred_ja'
-  ");
 }
