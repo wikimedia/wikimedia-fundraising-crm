@@ -161,17 +161,10 @@ class EoySummaryTest extends BaseWmfDrupalPhpUnitTestCase {
     $summaryObject = new EoySummary(['year' => 2018]);
     $jobId = $summaryObject->calculate_year_totals();
     $this->jobIds[] = $jobId;
-    $sql = <<<EOS
-SELECT *
-FROM {wmf_eoy_receipt_donor}
-WHERE
-    status = 'queued'
-    AND job_id = $jobId
-    AND email = :email
-EOS;
-    $result = db_query($sql, [':email' => 'onetime@walrus.org'])->fetchAssoc();
+
+    $result = $this->getWMFReceiptDonorRows($jobId, 'onetime@walrus.org');
     $this->assertEmpty($result);
-    $result = db_query($sql, [':email' => 'recurring@rabbit.org'])->fetchAssoc();
+    $result = $this->getWMFReceiptDonorRows($jobId, 'recurring@rabbit.org');
     $rollup = explode(',', $result['contributions_rollup']);
     sort($rollup);
     unset($result['contributions_rollup']);
@@ -197,15 +190,7 @@ EOS;
     $summaryObject = new EoySummary(['year' => 2018]);
     $jobId = $summaryObject->calculate_year_totals();
     $this->jobIds[] = $jobId;
-    $sql = <<<EOS
-SELECT *
-FROM {wmf_eoy_receipt_donor}
-WHERE
-  status = 'queued'
-  AND job_id = $jobId
-  AND email = :email
-EOS;
-    $result = db_query($sql, [':email' => 'goat@wbaboxing.com'])->fetchAssoc();
+    $result = $this->getWMFReceiptDonorRows($jobId, 'goat@wbaboxing.com');
     $rollup = explode(',', $result['contributions_rollup']);
     sort($rollup);
     unset($result['contributions_rollup']);
@@ -234,15 +219,7 @@ EOS;
     ]);
     $jobId = $summaryObject->calculate_year_totals();
     $this->jobIds[] = $jobId;
-    $sql = <<<EOS
-SELECT *
-FROM {wmf_eoy_receipt_donor}
-WHERE
-    status = 'queued'
-    AND job_id = $jobId
-    AND email = :email
-EOS;
-    $result = db_query($sql, [':email' => 'jimmysingle@example.com'])->fetchAssoc();
+    $result = $this->getWMFReceiptDonorRows($jobId, 'jimmysingle@example.com');
     $this->assertEquals([
       'name' => 'Jimmy',
       'job_id' => $jobId,
@@ -631,4 +608,23 @@ If for whatever reason you wish to cancel your monthly donation, follow these <a
     $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
     return $contribution;
   }
+
+  /**
+   * @param int $jobId
+   * @param string $email
+   *
+   * @return mixed
+   */
+  protected function getWMFReceiptDonorRows(int $jobId, string $email) {
+    $sql = <<<EOS
+SELECT *
+FROM wmf_eoy_receipt_donor
+WHERE
+  status = 'queued'
+  AND job_id = $jobId
+  AND email = :email
+EOS;
+    return db_query($sql, [':email' => $email])->fetchAssoc();
+  }
+
 }
