@@ -37,11 +37,17 @@ class MailFactory {
   /**
    * Set the active mailer.
    *
-   * @param string $name
+   * @param string|null $name
+   * @public null|IMailer
+   *  Optionally pass in the mailer as an object.
    *
    * @throws \CRM_Core_Exception
    */
-  public function setActiveMailer(string $name): void {
+  public function setActiveMailer(?string $name, $mailer = NULL): void {
+    if ($mailer) {
+      $this->activeMailer = $mailer;
+      return;
+    }
     switch ($name) {
       case 'phpmailer':
         $this->activeMailer = new MailerPHPMailer();
