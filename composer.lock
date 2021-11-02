@@ -4695,11 +4695,17 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.7.3.2",
+            "version": "v0.7.6.1",
             "source": {
                 "type": "git",
-                "url": "https://gerrit.wikimedia.org/r/wikimedia/fundraising/SmashPig.git",
-                "reference": "8c262c85a5a8138c2de1bbf1cb434ce2007d4d6e"
+                "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
+                "reference": "f87cbe2581abd464f6934fb90aa26a2fa7a78126"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/f87cbe2581abd464f6934fb90aa26a2fa7a78126",
+                "reference": "f87cbe2581abd464f6934fb90aa26a2fa7a78126",
+                "shasum": ""
             },
             "require": {
                 "amzn/login-and-pay-with-amazon-sdk-php": "^2.5",
@@ -4773,7 +4779,10 @@
                 "donations",
                 "payments"
             ],
-            "time": "2021-10-05T02:54:49+00:00"
+            "support": {
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.7.6.1"
+            },
+            "time": "2021-11-01T19:52:19+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -6486,5 +6495,5 @@
     "platform-overrides": {
         "php": "7.3.19"
     },
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.1.0"
 }
