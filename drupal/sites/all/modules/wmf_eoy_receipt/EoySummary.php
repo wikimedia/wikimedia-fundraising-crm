@@ -86,15 +86,9 @@ class EoySummary {
 
     // if no email addresses exist for the period lets jump out here
     if($num_emails === 0 ) {
-      watchdog('wmf_eoy_receipt',
-        t('Calculated summaries for !num donors giving during !year',
-          [
-            '!num' => 0,
-            '!year' => $this->year,
-          ]
-        )
-      );
-
+      \Civi::log('wmf')->info('eoy_receipt - No summaries calculated for giving during {year}', [
+        'year' => $this->year,
+      ]);
       return false;
     }
 
@@ -107,14 +101,10 @@ class EoySummary {
 
     $this->populate_donor_recipients_table();
 
-    watchdog('wmf_eoy_receipt',
-      t('Calculated summaries for !num donors giving during !year',
-        [
-          '!num' => $num_emails,
-          '!year' => $this->year,
-        ]
-      )
-    );
+    \Civi::log('wmf')->info('eoy_receipt - {count} summaries calculated for giving during {year}', [
+      'year' => $this->year,
+      'count' => $num_emails,
+    ]);
 
     return $this->job_id;
   }
@@ -142,7 +132,7 @@ LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
       // Should be just phpMailer exception but weird normalizeConten throws WMFException
       catch (\Exception $e) {
         // Invalid email address or something
-        watchdog('wmf_eoy_receipt', $e->getMessage(), [], WATCHDOG_INFO);
+        \Civi::log('wmf')->info('wmf_eoy_receipt send error ' . $e->getMessage());
         $success = FALSE;
       }
 
@@ -162,14 +152,10 @@ LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
       ]);
     }
 
-    watchdog('wmf_eoy_receipt',
-      t('Successfully sent !succeeded messages, failed to send !failed messages.',
-        [
-          '!succeeded' => $succeeded,
-          '!failed' => $failed,
-        ]
-      )
-    );
+    \Civi::log('wmf')->info('wmf_eoy_receipt Successfully sent {succeeded} messages, failed to send {failed} messages.', [
+      'succeeded' => $succeeded,
+      'failed' => $failed,
+    ]);
   }
 
   public function render_letter($row, $activeRecurring) {
@@ -304,13 +290,11 @@ EOS;
     \CRM_Core_DAO::executeQuery($email_insert_sql);
     $num_emails = \CRM_Core_DAO::singleValueQuery("SELECT count(*) FROM $emailTableName");
 
-    watchdog('wmf_eoy_receipt',
-      t('Found !num distinct emails with donations during !year',
-        [
-          '!num' => $num_emails,
-          '!year' => $this->year,
-        ]
-      )
+    \Civi::log('wmf')->info('wmf_eoy_receipt Found {count} distinct emails with donations during {year}',
+      [
+        'count' => $num_emails,
+        'year' => $this->year,
+      ]
     );
 
     return (int) $num_emails;
@@ -370,14 +354,10 @@ EOS;
     \CRM_Core_DAO::executeQuery($contact_insert_sql);
     $num_contacts = \CRM_Core_DAO::singleValueQuery("SELECT count(*) FROM $contactSummaryTable");
 
-    watchdog('wmf_eoy_receipt',
-      t('Found !num contact records for emails with donations during !year',
-        [
-          '!num' => $num_contacts,
-          '!year' => $this->year,
-        ]
-      )
-    );
+    \Civi::log('wmf')->info('wmf_eoy_receipt - Found {count} contact records for emails with donations during {year}', [
+      'count' => $num_contacts,
+      'year' => $this->year,
+    ]);
   }
 
   /**
