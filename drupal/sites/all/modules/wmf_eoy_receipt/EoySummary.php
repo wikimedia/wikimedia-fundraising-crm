@@ -2,6 +2,7 @@
 
 namespace wmf_eoy_receipt;
 
+use Civi\Api4\EOYEmail;
 use CRM_Contribute_PseudoConstant;
 use CRM_Core_PseudoConstant;
 use wmf_communication\Mailer;
@@ -68,44 +69,18 @@ class EoySummary {
   }
 
   /**
-   * FIXME rename
+   * FIXME remove in favour of calling makeJob directly.
    *
    * @return int|false the job ID for use in scheduling email sends
    * @throws \Exception
    */
   public function calculate_year_totals() {
-    // Do the date calculations in Hawaii time, so that people trying to
-    // get in under the wire are credited on the earlier date, following
-    // similar logic in our standard thank you mailer.
-    $next_year = $this->year + 1;
-    $year_start = "{$this->year}-01-01 10:00:00";
-    $year_end = "{$next_year}-01-01 09:59:59";
-
-    $this->create_tmp_email_recipients_table();
-    $num_emails = $this->populate_tmp_email_recipients_table($year_start, $year_end);
-
-    // if no email addresses exist for the period lets jump out here
-    if($num_emails === 0 ) {
-      \Civi::log('wmf')->info('eoy_receipt - No summaries calculated for giving during {year}', [
-        'year' => $this->year,
-      ]);
-      return false;
+    $job = EOYEmail::makeJob(FALSE)
+      ->setYear($this->year);
+    if ($this->contact_id) {
+      $job->setContactID($this->contact_id);
     }
-
-    $this->create_tmp_contact_contributions_table();
-    $this->populate_tmp_contact_contributions_table($year_start, $year_end);
-
-
-    $job_timestamp = date("YmdHis");
-    $this->create_send_letters_job($job_timestamp);
-
-    $this->populate_donor_recipients_table();
-
-    \Civi::log('wmf')->info('eoy_receipt - {count} summaries calculated for giving during {year}', [
-      'year' => $this->year,
-      'count' => $num_emails,
-    ]);
-
+    $this->job_id = $job->execute()->first()['job_id'];
     return $this->job_id;
   }
 
@@ -210,183 +185,6 @@ LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
     return $email;
   }
 
-  protected function create_send_letters_job($timestamp) {
-    \CRM_Core_DAO::executeQuery('
-      INSERT INTO wmf_eoy_receipt_job (start_time, year) VALUES (%1, %2)', [
-      1 => [$timestamp, 'String'], 2 => [$this->year, 'Integer']
-    ]);
-
-    $this->job_id  = \CRM_Core_DAO::singleValueQuery('
-      SELECT job_id FROM wmf_eoy_receipt_job
-      WHERE start_time = %1',  [1 => [$timestamp, 'String']]);
-  }
-
-  /**
-   * Create the table to store the emails of contacts to receive summaries.
-   */
-  protected function create_tmp_email_recipients_table() {
-    $this->temporaryTables['email_recipients'] = \CRM_Utils_SQL_TempTable::build()->setAutodrop()->createWithColumns(
-      'email VARCHAR(254) PRIMARY KEY'
-    );
-  }
-
-  /**
-   * Create a temporary details for more detailed contact information.
-   */
-  protected function create_tmp_contact_contributions_table() {
-    $this->temporaryTables['contact_details'] = \CRM_Utils_SQL_TempTable::build()->setAutodrop()->createWithColumns(
-      '    contact_id INT(10) unsigned PRIMARY KEY,
-      email VARCHAR(254),
-      preferred_language VARCHAR(16),
-      name VARCHAR(255),
-      contact_contributions TEXT'
-    );
-  }
-
-  /**
-   * Identify the list of emails we want to send a receipt out to.
-   * If a contact id is set we will use the email for that contact only
-   * @param $year_start
-   * @param $year_end
-   *
-   * @return int
-   */
-  protected function populate_tmp_email_recipients_table($year_start, $year_end) {
-    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
-    );
-    $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
-    );
-
-    $contact_filter_sql = '';
-    $recur_filter_sql = '';
-    if ($this->contact_id != NULL) {
-      // add filter for single contact_id if passed and remove recurring-only filter
-      $contact_filter_sql = "AND contribution.contact_id =  $this->contact_id";
-    }
-    else {
-      // we want to pull in _ALL_ recurring donors for the period
-      $recur_filter_sql = "AND contribution_recur_id IS NOT NULL";
-    }
-
-    $emailTableName = $this->getTemporaryTableNameForEmailRecipients();
-
-    $email_insert_sql = <<<EOS
-INSERT INTO $emailTableName
-SELECT email
-FROM civicrm_contribution contribution
-JOIN civicrm_email email
-  ON email.contact_id = contribution.contact_id
-  AND email.is_primary
-WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
-  AND financial_type_id <> $endowmentFinancialType
-  AND contribution_status_id = $completedStatusId
-  AND email <> 'nobody@wikimedia.org'
-  $recur_filter_sql
-  $contact_filter_sql
-ON DUPLICATE KEY UPDATE email = email.email
-EOS;
-    \CRM_Core_DAO::executeQuery($email_insert_sql);
-    $num_emails = \CRM_Core_DAO::singleValueQuery("SELECT count(*) FROM $emailTableName");
-
-    \Civi::log('wmf')->info('wmf_eoy_receipt Found {count} distinct emails with donations during {year}',
-      [
-        'count' => $num_emails,
-        'year' => $this->year,
-      ]
-    );
-
-    return (int) $num_emails;
-  }
-
-  /**
-   * Populate data into the temporary table to prepare for mailings.
-   *
-   * @param string $year_start
-   * @param string $year_end
-   */
-  protected function populate_tmp_contact_contributions_table($year_start, $year_end) {
-    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
-    );
-    $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
-    );
-
-    $contactSummaryTable = $this->getTemporaryTableNameForContactSummary();
-    $emailTableName = $this->getTemporaryTableNameForEmailRecipients();
-
-    \CRM_Core_DAO::executeQuery('SET session group_concat_max_len = 5000');
-    // Build a table of contribution and contact data, grouped by contact
-    $contact_insert_sql = <<<EOS
-INSERT INTO $contactSummaryTable
-SELECT
-    contact.id,
-    email.email,
-    contact.preferred_language,
-    contact.first_name,
-    GROUP_CONCAT(CONCAT(
-        -- Calculate dates in Hawaii timezone (UTC-10) as per standard TY email logic
-        DATE_FORMAT(DATE_SUB(contribution.receive_date, INTERVAL 10 HOUR), '%Y-%m-%d'),
-        ' ',
-        COALESCE(original_amount, total_amount),
-        ' ',
-        COALESCE(original_currency, currency)
-    ) ORDER BY receive_date)
-FROM $emailTableName eoy_email
-JOIN civicrm_email email
-
-    ON email.email = eoy_email.email AND email.is_primary
-JOIN civicrm_contact contact
-    ON email.contact_id = contact.id
-JOIN civicrm_contribution contribution
-    ON email.contact_id = contribution.contact_id AND email.is_primary
-LEFT JOIN wmf_contribution_extra extra
-    ON extra.entity_id = contribution.id
-WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
-    AND financial_type_id <> $endowmentFinancialType
-    AND contribution_status_id = $completedStatusId
-    AND contact.is_deleted = 0
-GROUP BY email.email, contact.id, contact.preferred_language, contact.first_name
-EOS;
-
-    \CRM_Core_DAO::executeQuery($contact_insert_sql);
-    $num_contacts = \CRM_Core_DAO::singleValueQuery("SELECT count(*) FROM $contactSummaryTable");
-
-    \Civi::log('wmf')->info('wmf_eoy_receipt - Found {count} contact records for emails with donations during {year}', [
-      'count' => $num_contacts,
-      'year' => $this->year,
-    ]);
-  }
-
-  /**
-   * Insert data into the persistent table.
-   *
-   * We start inserting from the most recent contact ID so in case of two records sharing an email address, we
-   * use the more recent name and preferred language.
-   */
-  protected function populate_donor_recipients_table() {
-    $contactSummaryTable = $this->getTemporaryTableNameForContactSummary();
-    $donor_recipients_insert_sql = <<<EOS
-INSERT INTO wmf_eoy_receipt_donor
-  (job_id, email, preferred_language, name, status, contributions_rollup)
-SELECT
-    {$this->job_id} AS job_id,
-    email,
-    preferred_language,
-    name,
-    'queued',
-    contact_contributions
-FROM $contactSummaryTable
-ORDER BY contact_id DESC
-ON DUPLICATE KEY UPDATE contributions_rollup = CONCAT(
-    contributions_rollup, ',', contact_contributions
-)
-EOS;
-    \CRM_Core_DAO::executeQuery($donor_recipients_insert_sql);
-  }
-
   protected function get_template($language, $template_params) {
     return new Templating(
       self::$templates_dir,
@@ -407,32 +205,6 @@ EOS;
         'details' => $email['html'],
       ]);
     }
-  }
-
-  /**
-   * Get the string for the temporary table with summarised information ready to insert in the mails.
-   *
-   * The intention is to swap this over to use the CiviCRM query class to take advantage of the temp table helper
-   * and in recognition of our intention to end usage of db_switcher & migrate this Civi integration (over time)
-   * to the next extension.
-   *
-   * @return string
-   */
-  protected function getTemporaryTableNameForContactSummary(): string {
-    return $this->temporaryTables['contact_details']->getName();
-  }
-
-  /**
-   * Get the string for the temporary table with a list of emails to send to.
-   *
-   * The intention is to swap this over to use the CiviCRM query class to take advantage of the temp table helper
-   * and in recognition of our intention to end usage of db_switcher & migrate this Civi integration (over time)
-   * to the next extension.
-   *
-   * @return string
-   */
-  protected function getTemporaryTableNameForEmailRecipients(): string {
-    return $this->temporaryTables['email_recipients']->getName();
   }
 
   /**

@@ -10,13 +10,6 @@ function wmf_eoy_receipt_drush_command() {
         'batch' => 'Batch size',
       ],
     ],
-    'wmf-eoy-calculate-summaries' => [
-      'description' => 'Sum contributions for the given year.',
-      'options' => [
-        'contact_id' => 'ID of donor to receive receipt',
-        'year' => 'Report year',
-      ],
-    ],
     'wmf-eoy-send-letters' => [
       'description' => 'Check job queue and send letters',
       'options' => [
@@ -44,14 +37,6 @@ function drush_wmf_eoy_receipt_wmf_eoy_receipts() {
   module_invoke('wmf_eoy_receipt', 'run', $options);
 }
 
-function drush_wmf_eoy_receipt_wmf_eoy_calculate_summaries() {
-  $options = drush_get_merged_options();
-  $job_id = module_invoke('wmf_eoy_receipt', 'calculate_summaries', $options);
-  drush_print(
-    'Calculation successful - now you can send the letters with ' .
-    "'drush wmf-eoy-send-letters --job_id=$job_id'"
-  );
-}
 
 function drush_wmf_eoy_receipt_wmf_eoy_send_letters() {
   $options = drush_get_merged_options();
