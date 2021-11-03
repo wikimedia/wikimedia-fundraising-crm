@@ -1,16 +1,10 @@
 <?php
+namespace Civi\Api4;
+require_once __DIR__ . '/../../../../../../../../all/modules/wmf_eoy_receipt/EoySummary.php';
 
-namespace Civi\Api;
-
-require_once __DIR__ . '/../../../../../../../../sites/all/modules/wmf_eoy_receipt/EoySummary.php';
-
-use Civi\Api4\Contact;
-use Civi\Api4\Contribution;
-use Civi\Api4\Email;
 use PHPUnit\Framework\TestCase;
-use Civi\Api4\EOYEmail;
 
-class EoySummaryTest extends TestCase {
+class EOYEmailTest extends TestCase {
 
   /**
    * Test that Japanese characters in a name are rendered correctly.
@@ -32,15 +26,15 @@ class EoySummaryTest extends TestCase {
           ])
           ->addValue('contact_id', '$id'))
       ->addChain('add_a_donation',
-          Contribution::create()
-            ->setValues([
-              'total_amount' => 5,
-              'currency' => 'JPY',
-              'receive_date' => '2020-08-06',
-              'financial_type_id:name' => 'Donation',
-            ])
-            ->addValue('contact_id', '$id')
-       )->execute()->first()['id'];
+        Contribution::create()
+          ->setValues([
+            'total_amount' => 5,
+            'currency' => 'JPY',
+            'receive_date' => '2020-08-06',
+            'financial_type_id:name' => 'Donation',
+          ])
+          ->addValue('contact_id', '$id')
+      )->execute()->first()['id'];
 
     $message = EOYEmail::render()->setCheckPermissions(FALSE)
       ->setYear(2020)->setContactID($contactID)->execute()->first();
