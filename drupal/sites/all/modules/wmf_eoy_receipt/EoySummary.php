@@ -41,13 +41,6 @@ class EoySummary {
    */
   protected $temporaryTables = [];
 
-  /**
-   * The name of the CMS database.
-   *
-   * @var string
-   */
-  protected $cms_prefix = '';
-
   protected $job_id;
 
   /**
@@ -70,25 +63,8 @@ class EoySummary {
     $this->from_address = variable_get('wmf_eoy_from_address', NULL);
     $this->from_name = variable_get('wmf_eoy_from_name', NULL);
 
-    $this->cms_prefix = $this->getCMSDatabaseName();
-
     self::$templates_dir = __DIR__ . '/templates';
     self::$template_name = 'eoy_thank_you';
-  }
-
-  /**
-   * Get the name of the CMS Database.
-   *
-   * @return string
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function getCMSDatabaseName(): string {
-    $url = str_replace(['?new_link=true', '%%CMSdbSSL%%'], '', CIVICRM_UF_DSN);
-    if (!preg_match('/^([a-z]+):\/\/([^:]+):([^@]+)@([^\/:]+)(:([0-9]+))?\/(.+)$/', $url, $matches)) {
-      throw new \CRM_Core_Exception("Failed to parse dbi url: $url");
-    }
-    return $matches[7];
   }
 
   /**
@@ -145,20 +121,17 @@ class EoySummary {
 
   public function send_letters() {
     $mailer = MailFactory::singleton();
-
-    $sql = <<<EOS
-SELECT *
-FROM {wmf_eoy_receipt_donor}
-WHERE
-    status = 'queued'
-    AND job_id = :id
-LIMIT {$this->batch}
-EOS;
-    $result = db_query($sql, [':id' => $this->job_id]);
+    $row = \CRM_Core_DAO::executeQuery("
+      SELECT *
+      FROM wmf_eoy_receipt_donor
+      WHERE
+      status = 'queued'
+      AND job_id = %1
+LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
     $succeeded = 0;
     $failed = 0;
 
-    foreach ($result as $row) {
+    while($row->fetch()) {
       $contactIds = $this->getContactIdsForEmail($row->email);
       $hasActiveRecurring = $this->doContactsHaveActiveRecurring($contactIds);
       $email = $this->render_letter($row, $hasActiveRecurring);
@@ -183,9 +156,10 @@ EOS;
         $failed += 1;
       }
 
-      db_update('wmf_eoy_receipt_donor')->fields([
-        'status' => $status,
-      ])->condition('email', $row->email)->execute();
+      \CRM_Core_DAO::executeQuery('UPDATE wmf_eoy_receipt_donor SET status = %1 WHERE email = %2', [
+        1 => [$status, 'String'],
+        2 => [$row->email, 'String'],
+      ]);
     }
 
     watchdog('wmf_eoy_receipt',
@@ -251,18 +225,14 @@ EOS;
   }
 
   protected function create_send_letters_job($timestamp) {
-    db_insert('wmf_eoy_receipt_job')->fields([
-      'start_time' => $timestamp,
-      'year' => $this->year,
-    ])->execute();
+    \CRM_Core_DAO::executeQuery('
+      INSERT INTO wmf_eoy_receipt_job (start_time, year) VALUES (%1, %2)', [
+      1 => [$timestamp, 'String'], 2 => [$this->year, 'Integer']
+    ]);
 
-    $sql = <<<EOS
-SELECT job_id FROM {wmf_eoy_receipt_job}
-    WHERE start_time = :start
-EOS;
-    $result = db_query($sql, [':start' => $timestamp]);
-    $row = $result->fetch();
-    $this->job_id = $row->job_id;
+    $this->job_id  = \CRM_Core_DAO::singleValueQuery('
+      SELECT job_id FROM wmf_eoy_receipt_job
+      WHERE start_time = %1',  [1 => [$timestamp, 'String']]);
   }
 
   /**
@@ -419,7 +389,7 @@ EOS;
   protected function populate_donor_recipients_table() {
     $contactSummaryTable = $this->getTemporaryTableNameForContactSummary();
     $donor_recipients_insert_sql = <<<EOS
-INSERT INTO {$this->cms_prefix}.wmf_eoy_receipt_donor
+INSERT INTO wmf_eoy_receipt_donor
   (job_id, email, preferred_language, name, status, contributions_rollup)
 SELECT
     {$this->job_id} AS job_id,

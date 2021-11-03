@@ -69,16 +69,15 @@ class Render extends AbstractAction {
       'contact_id' => $this->getContactID(),
     ]);
     $job_id = $donors->calculate_year_totals();
-    $sql = <<<EOS
-SELECT *
-FROM {wmf_eoy_receipt_donor}
-WHERE
-    status = 'queued'
-    AND job_id = :id
-LIMIT 1
-EOS;
-    $queryResult = db_query($sql, [':id' => $job_id]);
-    foreach ($queryResult as $row) {
+
+    $row = \CRM_Core_DAO::executeQuery("
+      SELECT *
+      FROM wmf_eoy_receipt_donor
+      WHERE
+      status = 'queued'
+      AND job_id = %1
+      LIMIT 1", [1 => [$job_id, 'Integer']]);
+    while ($row->fetch()) {
       $result[$this->getContactID()] = $donors->render_letter($row, FALSE);
     }
   }
