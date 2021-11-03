@@ -337,15 +337,62 @@ class EOYEmailTest extends TestCase {
    * @throws \Exception
    */
   public function testRender(): void {
-    $eoyClass = new EoySummary(['year' => 2018]);
-    $email = $eoyClass->render_letter((object) [
-      'job_id' => '132',
+    $contactID = $this->addTestContact([
+      'first_name' => 'Bob',
+      'preferred_language' => 'en_US',
       'email' => 'bob@example.com',
-      'preferred_language' => 'en',
-      'name' => 'Bob',
-      'status' => 'queued',
-      'contributions_rollup' => '2018-02-01 50.00 USD,2018-03-02 800.00 USD,2018-05-03 50.00 USD,2018-10-20 50.00 USD,2018-07-12 50.00 USD,2018-01-26 50.00 USD,2018-10-11 100.00 USD,2018-05-11 800.00 USD,2018-10-12 800.00 USD,2018-10-14 50.00 USD,2018-09-02 800.00 USD,2018-12-09 1200.00 USD,2018-12-22 800.00 USD,2018-11-22 800.00 USD,2018-05-05 800.00 USD,2018-06-06 50.00 USD,2018-07-07 50.00 USD,2018-08-08 50.00 USD,2018-06-08 50.00 USD,2018-08-08 50.00 USD,2018-03-03 800.00 USD,2018-06-04 50.00 USD,2018-10-22 50.00 USD,2018-10-03 100.00 USD,2018-10-09 1200.00 USD,2018-10-12 100.00 USD,2018-10-15 50.00 USD',
-    ], TRUE);
+    ])['id'];
+    $this->ids['ContributionRecur'][0] = ContributionRecur::create(FALSE)->setValues([
+      'contact_id' => $contactID,
+      'amount' => 50,
+      'financial_type_id:name' => 'Donation',
+    ])->execute()->first()['id'];
+    $contributions = [
+      ['receive_date' => '2018-02-02', 'total_amount' => 50],
+      ['receive_date' => '2018-03-04', 'total_amount' => 800],
+      ['receive_date' => '2018-05-04', 'total_amount' => 50],
+      ['receive_date' => '2018-07-13', 'total_amount' => 50],
+      ['receive_date' => '2018-01-27', 'total_amount' => 50],
+      ['receive_date' => '2018-05-12', 'total_amount' => 800],
+      ['receive_date' => '2018-09-03', 'total_amount' => 800],
+      ['receive_date' => '2018-12-10', 'total_amount' => 1200],
+      ['receive_date' => '2018-12-23', 'total_amount' => 800],
+      ['receive_date' => '2018-11-23', 'total_amount' => 800],
+      ['receive_date' => '2018-05-06', 'total_amount' => 800],
+      ['receive_date' => '2018-06-07', 'total_amount' => 50],
+      ['receive_date' => '2018-07-08', 'total_amount' => 50],
+      ['receive_date' => '2018-08-09', 'total_amount' => 50],
+      ['receive_date' => '2018-06-09', 'total_amount' => 50],
+      ['receive_date' => '2018-08-09', 'total_amount' => 50],
+      ['receive_date' => '2018-03-03', 'total_amount' => 800],
+      ['receive_date' => '2018-06-05', 'total_amount' => 50],
+      ['receive_date' => '2018-10-04', 'total_amount' => 100],
+      ['receive_date' => '2018-10-10', 'total_amount' => 1200],
+      ['receive_date' => '2018-10-12', 'total_amount' => 100],
+      ['receive_date' => '2018-10-13', 'total_amount' => 100],
+      // Make sure they sort in order with some time.
+      ['receive_date' => '2018-10-13 01:01:01', 'total_amount' => 800],
+      ['receive_date' => '2018-10-15', 'total_amount' => 50],
+      ['receive_date' => '2018-10-16', 'total_amount' => 50],
+      ['receive_date' => '2018-10-21', 'total_amount' => 50],
+      ['receive_date' => '2018-10-23', 'total_amount' => 50],
+    ];
+    foreach ($contributions as $contribution) {
+      $this->ids['Contribution'][] = Contribution::create(FALSE)
+        ->setValues(array_merge([
+          'contact_id' => $contactID,
+          'financial_type_id:name' => 'Donation',
+          'currency' => 'USD',
+          'contribution_recur_id' => $this->ids['ContributionRecur'][0],
+        ], $contribution))
+        ->execute()
+        ->first()['id'];
+    }
+
+    $eoyClass = new EoySummary(['year' => 2018]);
+    $eoyClass->calculate_year_totals();
+    $eoyClass->send_letters();
+    $email = MailFactory::singleton()->getMailer()->getMailings()[0];
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',
@@ -683,11 +730,12 @@ EOS;
    * @param int $contactId
    */
   public function cleanUpContact(int $contactId): void {
-    $contributions = $this->callAPISuccess('Contribution', 'get', array(
+    $contributions = $this->callAPISuccess('Contribution', 'get', [
       'contact_id' => $contactId,
-    ));
-    if (!empty($contributions['values'])) {
-      foreach ($contributions['values'] as $id => $details) {
+      'options' => ['limit' => 0],
+    ])['values'];
+    if (!empty($contributions)) {
+      foreach ($contributions as $id => $details) {
         $this->callAPISuccess('Contribution', 'delete', [
           'id' => $id,
         ]);

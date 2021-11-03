@@ -54,6 +54,8 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
   public function tearDown(): void {
     db_delete('large_donation_notification')
       ->execute();
+    drupal_static_reset('large_donation_get_minimum_threshold');
+    drupal_static_reset('large_donation_get_notification_thresholds');
     parent::tearDown();
   }
 
