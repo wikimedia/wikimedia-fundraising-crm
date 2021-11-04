@@ -2,6 +2,12 @@
   "logging_no_trigger_permission" : 0,
   "debug_enabled" : 1,
   "backtrace" : 1,
-  "environment" : "Development"
+  "environment" : "Development",
+  "mailing_backend" : {
+    "smtpServer" : "mailcatcher",
+    "smtpPort" : "1025",
+    "outBound_option" : 0,
+    "smtpAuth" : ""
+  }
 
 }
