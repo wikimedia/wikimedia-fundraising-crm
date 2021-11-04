@@ -16,8 +16,8 @@ class EoySummaryTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function setUp(): void {
     parent::setUp();
-    variable_set('wmf_eoy_from_address', 'bobita@example.org');
-    variable_set('wmf_eoy_from_name', 'Bobita');
+    variable_set('thank_you_from_address', 'bobita@example.org');
+    variable_set('thank_you_from_name', 'Bobita');
     TestMailer::setup();
   }
 
