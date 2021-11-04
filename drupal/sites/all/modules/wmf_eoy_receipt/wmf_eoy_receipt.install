@@ -2,7 +2,6 @@
 
 function wmf_eoy_receipt_install() {
   wmf_eoy_receipt_update_7003();
-  wmf_eoy_receipt_update_7010();
 }
 
 /**
@@ -11,44 +10,4 @@ function wmf_eoy_receipt_install() {
 function wmf_eoy_receipt_update_7003() {
   variable_set('wmf_eoy_from_name', 'Katherine Maher, Wikimedia Foundation');
   variable_set('wmf_eoy_from_address', 'donate@wikimedia.org');
-}
-
-/**
- * Create new eoy receipt tables in the CiviCRM database.
- *
- * Note that
- * 1) we don't actually need the data in these tables as they operate more like
- * a temporary table for calculations and
- * 2) the table create script is based on SHOW CREATE on the live table.
- * 3) this module is in the process of being eliminated.
- */
-function wmf_eoy_receipt_update_7010() {
-  civicrm_initialize();
-  \CRM_Core_DAO::executeQuery('CREATE TABLE IF NOT EXISTS `wmf_eoy_receipt_job`
-(
-  `job_id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `start_time` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `year` INT(11) DEFAULT NULL,
-  PRIMARY KEY (`job_id`)
-) ENGINE = InnoDB
-AUTO_INCREMENT = 246
-DEFAULT CHARSET = utf8mb4
-COLLATE = utf8mb4_unicode_ci;');
-
-  \CRM_Core_DAO::executeQuery('CREATE TABLE IF NOT EXISTS `wmf_eoy_receipt_donor`
-(
-  `job_id` INT(10) UNSIGNED DEFAULT NULL,
-  `email` VARCHAR(254) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `preferred_language` VARCHAR(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `contributions_rollup` MEDIUMTEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  UNIQUE KEY `wmf_eoy_receipt_donor_job_id_email` (`job_id`, `email`),
-  KEY `job_id` (`job_id`),
-  KEY `email` (`email`),
-  KEY `status` (`status`)
-) ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4
-COLLATE = utf8mb4_unicode_ci');
-
 }
