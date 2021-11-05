@@ -104,6 +104,8 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
       ]);
       $this->fail("Test contact left behind with display name $junkContactDisplayName");
     }
+    drupal_static_reset('large_donation_get_minimum_threshold');
+    drupal_static_reset('large_donation_get_notification_thresholds');
   }
 
   /**
