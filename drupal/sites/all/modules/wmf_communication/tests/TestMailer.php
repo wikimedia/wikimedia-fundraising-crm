@@ -1,6 +1,7 @@
 <?php
 namespace wmf_communication;
 use Civi\Omnimail\IMailer;
+use Civi\Omnimail\MailFactory;
 
 class TestMailer implements IMailer {
     static protected $mailings;
@@ -8,7 +9,7 @@ class TestMailer implements IMailer {
 
     static public function setup() {
         Mailer::$defaultSystem = 'test';
-
+        MailFactory::singleton()->setActiveMailer('test');
         self::$mailings = array();
         self::$success = true;
     }
