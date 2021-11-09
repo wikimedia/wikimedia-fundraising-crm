@@ -11,6 +11,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Omnimail\Omnimail;
 use Omnimail\Silverpop\Credentials;
+use Omnimail\Silverpop\Connector\SilverpopGuzzleConnector;
 
 /**
  * FIXME - Add test description.
@@ -68,6 +69,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     }
     $this->cleanupMailingData();
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_omnimail_job_progress');
+    SilverpopGuzzleConnector::getInstance()->logout();
     parent::tearDown();
   }
 
@@ -119,6 +121,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     $responses = [
       file_get_contents(__DIR__ . '/Responses/RawRecipientDataExportResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
     //Raw Recipient Data Export Jul 02 2017 21-46-49 PM 758.zip
     copy(__DIR__ . '/Responses/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv', sys_get_temp_dir() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv');
@@ -269,6 +272,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
       );
       $i++;
     }
+    $files[] = '/Responses/LogoutResponse.txt';
 
     $this->createMockHandlerForFiles($files);
     $this->setUpClientWithHistoryContainer();

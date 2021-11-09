@@ -55,6 +55,7 @@ class OmnihellGetTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
       '',
       file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
+      file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
     return $this->getMockRequest($responses, FALSE);
   }

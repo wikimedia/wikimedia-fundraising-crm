@@ -155,6 +155,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     for ($i = 0; $i < 15; $i++) {
       $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
     }
+    $responses[] = file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt');
     $this->callAPISuccess('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers2', 'title' => 'Omni2']);
 
@@ -199,6 +200,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     for ($i = 0; $i < 15; $i++) {
       $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
     }
+    $responses[] = file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt');
     $this->callAPISuccess('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers2', 'title' => 'Omni2']);
 
@@ -278,6 +280,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $responses = [
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
     copy(__DIR__ . '/Responses/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv', sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
     fopen(sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv.complete', 'c');

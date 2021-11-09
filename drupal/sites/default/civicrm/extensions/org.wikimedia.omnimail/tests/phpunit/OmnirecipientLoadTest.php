@@ -186,6 +186,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
     for ($i = 0; $i < 15; $i++) {
       $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
     }
+    $responses[] = file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt');
     $this->callAPISuccess('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
     $this->callAPISuccess('Omnirecipient', 'load', ['mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'client' => $this->getMockRequest($responses)]);
     $this->assertEquals(0, CRM_Core_DAO::singleValueQuery('SELECT  count(*) FROM civicrm_mailing_provider_data'));
@@ -287,11 +288,12 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
     ]);
     try {
       civicrm_api3('Omnirecipient', 'load', [
+        // note we don't pass client in this test as
+        // the exception is thrown before silverpop is instantiated.
         'mail_provider' => 'Silverpop',
         'start_date' => 'last week',
         'username' => 'Donald',
         'password' => 'Duck',
-        'client' => $this->getMockRequest([]),
       ]);
     }
     catch (Exception $e) {
