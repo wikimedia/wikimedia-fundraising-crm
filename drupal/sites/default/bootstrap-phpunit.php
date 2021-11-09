@@ -33,7 +33,7 @@ require_once(__DIR__ . '/../../../vendor/wikimedia/donation-interface/tests/phpu
 require_once(__DIR__ . '/../../../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/TestingPaypalExpressAdapter.php');
 
 putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
-require_once __DIR__. '/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit/bootstrap.php';
+require_once __DIR__. '/civicrm/extensions/wmf-civicrm/tests/phpunit/bootstrap.php';
 civicrm_initialize();
 // This causes errors to be thrown rather than the user-oriented html being presented on a fatal error.
 // Note that the CRM_Core_TemporaryErrorScope reverts the scope on _deconstruct so

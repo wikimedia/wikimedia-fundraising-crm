@@ -24,12 +24,23 @@ use Civi\Api4\Generic\BasicGetFieldsAction;
 class EOYEmail extends Generic\AbstractEntity {
 
   /**
-   * @return \Civi\Api4\Action\EOYEmail\Render
+   * @param bool $checkPermissions
    *
-   * @throws \API_Exception
+   * @return \Civi\Api4\Action\EOYEmail\Render
    */
-  public static function render(): Action\EOYEmail\Render {
-    return new \Civi\Api4\Action\EOYEmail\Render(__CLASS__, __FUNCTION__);
+  public static function render(bool $checkPermissions = TRUE): Action\EOYEmail\Render {
+    return (new \Civi\Api4\Action\EOYEmail\Render(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\EOYEmail\MakeJob
+   */
+  public static function makeJob(bool $checkPermissions = TRUE): Action\EOYEmail\MakeJob{
+    return (new \Civi\Api4\Action\EOYEmail\MakeJob(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
   }
 
   /**

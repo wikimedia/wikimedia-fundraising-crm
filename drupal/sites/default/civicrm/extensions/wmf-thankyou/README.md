@@ -2,14 +2,19 @@
 
 ![Screenshot](/images/screenshot.png)
 
-(*FIXME: In one or two paragraphs, describe what the extension does and why one would download it. *)
+WMF thank you communication in the form of
+- thank you email for one off donations or
+- end of year summary email for recurring donors
+
+The latter one can also be generated for individual donors from the UI
+in which case non-recurring emails will be included.
 
 The extension is licensed under [AGPL-3.0](LICENSE.txt).
 
 ## Requirements
 
-* PHP v7.0+
-* CiviCRM (*FIXME: Version number*)
+* PHP v7.3+
+* CiviCRM 5.43
 
 ## Installation (Web UI)
 
@@ -37,7 +42,17 @@ cv en wmf_thankyou
 
 ## Usage
 
-(* FIXME: Where would a new user navigate to get started? What changes would they see? *)
+In the case of the End of year thank you email normally there would be
+1) a one-off api call to generate a list of all the contacts to email:
+2) a scheduled job to send out emails to them in small batches.
+
+The first of these commands has been migrated over as
+`drush @wmff cvapi EOYEmail.MakeJob version=4 year=2021`
+This command will put a job for the job into wmf_eoy_donor_job
+and a row per relevant email into wmf_eoy_donor_receipt.
+
+The year should be the year for which donations are to be receipted
+and will default to 'last year'.
 
 ## Known Issues
 

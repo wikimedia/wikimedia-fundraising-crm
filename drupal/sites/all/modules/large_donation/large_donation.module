@@ -217,7 +217,7 @@ function large_donation_get_notification_thresholds() {
  */
 function large_donation_get_minimum_threshold() {
   $minThreshold = &drupal_static(__FUNCTION__);
-  if (!isset($minimum)) {
+  if (!isset($minThreshold)) {
     $minThreshold = 100000000000000;
     $notifications = large_donation_get_notification_thresholds();
     foreach ($notifications as $threshold) {
