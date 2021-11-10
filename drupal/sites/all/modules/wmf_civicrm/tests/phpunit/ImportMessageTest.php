@@ -2,6 +2,8 @@
 
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Contribution;
+use Civi\Api4\Email;
+use Civi\Api4\Relationship;
 use Civi\WMFException\WMFException;
 use wmf_civicrm\ImportStatsCollector;
 
@@ -1209,6 +1211,90 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     );
 
     $this->assertEquals("94121", $address['postal_code']);
+  }
+
+  /**
+   * @dataProvider employerRelationDataProvider
+   * @param string $sourceType
+   * @param bool $isUpdate
+   * @param ?bool $expected
+   * @throws API_Exception
+   * @throws CiviCRM_API3_Exception
+   * @throws WMFException
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function testIndicatesEmployerProvidedByDonor(string $sourceType, bool $isUpdate, ?bool $expected) {
+    $orgContact = $this->callAPISuccess('Contact', 'create', array(
+      'organization_name' => 'Puritan Foods',
+      'contact_type' => 'Organization',
+    ));
+    $this->ids['Contact'][] = $orgContact['id'];
+
+    $contactParams = [
+      'first_name' => 'Philip',
+      'last_name' => 'Mason',
+    ];
+    if ($isUpdate) {
+      $existingContact = $this->callAPISuccess(
+        'Contact', 'Create', array_merge($contactParams, [
+          'contact_type' => 'Individual',
+          'employer_id' => $orgContact['id'],
+        ])
+      );
+      Email::create(FALSE)
+        ->setValues([
+          'contact_id' => $existingContact['id'],
+          'email' => 'pmason@puritanfoods.com',
+        ])
+        ->execute();
+    }
+
+    $msg = array_merge(
+      $contactParams, $this->getMinimalImportData(mt_rand())
+    );
+    $msg['email'] = 'pmason@puritanfoods.com';
+    $msg['source_type'] = $sourceType;
+    $msg['employer_id'] = $orgContact['id'];
+
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->ids['Contact'][] = $contribution['contact_id'];
+
+    $relationship = Relationship::get(FALSE)
+      ->addWhere('contact_id_a', '=', $contribution['contact_id'])
+      ->addWhere('contact_id_b', '=', $orgContact['id'])
+      ->addWhere('relationship_type_id:name', '=', 'Employee of')
+      ->addWhere('is_active', '=', 1)
+      ->addSelect('custom.*')
+      ->execute();
+
+    $this->assertCount(1, $relationship);
+    $this->assertEquals(
+      $expected, $relationship->first()['Relationship_Metadata.provided_by_donor']
+    );
+
+    $contactOrgName = $this->callAPISuccessGetValue('Contact', [
+      'return' => 'current_employer',
+      'id' => $contribution['contact_id'],
+    ]);
+    $this->assertEquals('Puritan Foods', $contactOrgName);
+    // TODO: test with active relationship to other employer
+  }
+
+  /**
+   * Data provider for employer metadata tests
+   * @return array[]
+   */
+  public function employerRelationDataProvider(): array {
+    return [
+      // Should create new donor with employer, provided_by_donor = TRUE
+      ['payments', FALSE, TRUE],
+      // Should update donor with employer relationship, provided_by_donor = TRUE
+      ['payments', TRUE, TRUE],
+      // Should create new donor with employer, provided_by_donor not set
+      ['direct', FALSE, NULL],
+      // Should update donor with employer relationship, provided_by_donor not set
+      ['direct', TRUE, NULL],
+    ];
   }
 
   /**

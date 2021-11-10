@@ -14,7 +14,6 @@ use Civi\Api4\Contribution;
 class BenevityTest extends BaseChecksFileTest {
 
   public function setUp(): void {
-    civicrm_initialize();
     $this->ensureAnonymousContactExists();
     parent::setUp();
 
@@ -872,7 +871,7 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \League\Csv\Exception
    * @throws \Civi\WMFException\WMFException
    */
-  public function testImportSucceedAll() {
+  public function testImportSucceedAll(): void {
     [$mouseOrg] = $this->createAllOrgs();
 
     $this->callAPISuccess('Contact', 'create', array(
