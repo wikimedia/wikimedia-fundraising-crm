@@ -2,10 +2,8 @@
 
 namespace wmf_eoy_receipt;
 
+use Civi\Api4\Action\EOYEmail\Render;
 use Civi\Api4\EOYEmail;
-use CRM_Contribute_PseudoConstant;
-use CRM_Core_PseudoConstant;
-use wmf_communication\Mailer;
 use wmf_communication\Templating;
 use wmf_communication\Translation;
 use Civi\Omnimail\MailFactory;
@@ -16,17 +14,20 @@ class EoySummary {
 
   static protected $template_name;
 
-  static protected $option_keys = [
-    'year',
-    'contact_id',
-    'batch',
-    'job_id',
-  ];
-
   protected $batch = 100;
 
+  /**
+   * Year to send receipts for, defaults to last year.
+   *
+   * @var int
+   */
   protected $year;
 
+  /**
+   * Optional contact id - used for limited test sends.
+   *
+   * @var int|null
+   */
   protected $contact_id;
 
   protected $from_address;
@@ -52,14 +53,10 @@ class EoySummary {
    * @throws \CRM_Core_Exception
    */
   public function __construct($options = []) {
-    $this->year = variable_get('wmf_eoy_target_year', NULL);
-    $this->batch = variable_get('wmf_eoy_batch', 100);
-
-    foreach (self::$option_keys as $key) {
-      if (array_key_exists($key, $options)) {
-        $this->$key = $options[$key];
-      }
-    }
+    $this->year = $options['year'] ?? (date('Y') - 1);
+    $this->batch = $options['batch'] ?? 100;
+    $this->contact_id = $options['contact_id'] ?? NULL;
+    $this->job_id = $options['job_id'] ?? NULL;
 
     $this->from_address = variable_get('thank_you_from_address', NULL);
     $this->from_name = variable_get('thank_you_from_name', NULL);
@@ -89,20 +86,19 @@ class EoySummary {
       throw new \Exception('Must configure a valid return address in the Thank-you module');
     }
     $mailer = MailFactory::singleton();
-    $row = \CRM_Core_DAO::executeQuery("
-      SELECT *
-      FROM wmf_eoy_receipt_donor
-      WHERE
-      status = 'queued'
-      AND job_id = %1
-LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
     $succeeded = 0;
     $failed = 0;
 
-    while($row->fetch()) {
-      $email = $this->render_letter($row);
+    $emails = EOYEmail::render(FALSE)
+      ->setLimit($this->batch)
+      ->setJobID($this->job_id)
+      ->setYear($this->year)
+      ->execute();
 
+    foreach ($emails as $email) {
       try {
+        $email['from_name'] = $this->from_name;
+        $email['from_address'] = $this->from_address;
         $success = $mailer->send($email, []);
       }
       // Should be just phpMailer exception but weird normalizeConten throws WMFException
@@ -115,7 +111,7 @@ LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
       if ($success) {
         // This second call to getContactIds is a little repetitive - but
         // makes sense for now as we separate the parts out.
-        $this->record_activities($email, $this->getContactIdsForEmail($row->email));
+        $this->record_activities($email);
         $status = 'sent';
         $succeeded += 1;
       }
@@ -126,7 +122,7 @@ LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
 
       \CRM_Core_DAO::executeQuery('UPDATE wmf_eoy_receipt_donor SET status = %1 WHERE email = %2', [
         1 => [$status, 'String'],
-        2 => [$row->email, 'String'],
+        2 => [$email['to_address'], 'String'],
       ]);
     }
 
@@ -136,122 +132,23 @@ LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
     ]);
   }
 
-  public function render_letter($row) {
-    $contactIds = $this->getContactIdsForEmail($row->email);
-    $activeRecurring = $this->doContactsHaveActiveRecurring($contactIds);
-    $language = Translation::normalize_language_code($row->preferred_language);
-    $totals = [];
-    $contributions = [];
-    foreach (explode(',', $row->contributions_rollup) as $contribution_string) {
-      $terms = explode(' ', $contribution_string);
-      $contribution = [
-        'date' => $terms[0],
-        // FIXME not every currency uses 2 sig digs
-        'amount' => round($terms[1], 2),
-        'currency' => $terms[2],
-      ];
-      $contributions[] = $contribution;
-      if (!isset($totals[$contribution['currency']])) {
-        $totals[$contribution['currency']] = [
-          'amount' => 0.0,
-          'currency' => $contribution['currency'],
-        ];
-      }
-      $totals[$contribution['currency']]['amount'] += $contribution['amount'];
-    }
-    // Sort contributions by date
-    usort($contributions, function ($c1, $c2) {
-      return $c1['date'] <=> $c2['date'];
-    });
-    foreach ($contributions as $index => $contribution) {
-      $contributions[$index]['index'] = $index + 1;
-    }
-
-    $template_params = [
-      'name' => $row->name,
-      'contributions' => $contributions,
-      'totals' => $totals,
-      'year' => $this->year,
-      'active_recurring' => $activeRecurring
-    ];
-    $template = $this->get_template($language, $template_params);
-    $email = [
-      'from_name' => $this->from_name,
-      'from_address' => $this->from_address,
-      'to_name' => $row->name,
-      'to_address' => $row->email,
-      'subject' => trim($template->render('subject')),
-      'html' => str_replace('<p></p>', '', $template->render('html')),
-    ];
-
-    return $email;
-  }
-
-  protected function get_template($language, $template_params) {
-    return new Templating(
-      self::$templates_dir,
-      self::$template_name,
-      $language,
-      $template_params + ['language' => $language]
-    );
-  }
-
-  protected function record_activities(array $email, array $contactIds) {
-    foreach ($contactIds as $contactId) {
+  protected function record_activities(array $email) {
+    $emailRecords = civicrm_api3('Email', 'get', [
+      'email' => $email['to_address'],
+      'is_primary' => TRUE,
+      'contact_id.is_deleted' => FALSE,
+      'return' => 'contact_id',
+    ])['values'];
+    foreach ($emailRecords as $emailRecord) {
       civicrm_api3('Activity', 'create', [
         'activity_type_id' => 'wmf_eoy_receipt_sent',
-        'source_contact_id' => $contactId,
-        'target_contact_id' => $contactId,
-        'assignee_contact_id' => $contactId,
+        'source_contact_id' => $emailRecord['contact_id'],
+        'target_contact_id' => $emailRecord['contact_id'],
+        'assignee_contact_id' => $emailRecord['contact_id'],
         'subject' => "Sent contribution summary receipt for year $this->year to {$email['to_address']}",
         'details' => $email['html'],
       ]);
     }
   }
 
-  /**
-   * Get contact IDs associated with an email address
-   *
-   * @param string $email
-   *
-   * @return int[] IDs of non-deleted contacts with that email
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected function getContactIdsForEmail($email): array {
-    $contactIds = [];
-    $emailRecords = civicrm_api3('Email', 'get', [
-      'email' => $email,
-      'is_primary' => TRUE,
-      'contact_id.is_deleted' => FALSE,
-      'return' => 'contact_id',
-    ]);
-    foreach ($emailRecords['values'] as $emailRecord) {
-      $contactIds[] = $emailRecord['contact_id'];
-    }
-    return $contactIds;
-  }
-
-  /**
-   * Determine whether any of an array of contact IDs have an active recurring
-   * donation associated.
-   *
-   * @param array $contactIds
-   *
-   * @return bool
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected function doContactsHaveActiveRecurring(array $contactIds) {
-    if (empty($contactIds)) {
-      return FALSE;
-    }
-    $recurringCount = civicrm_api3('ContributionRecur', 'getCount', [
-      'contact_id' => [
-        'IN' => $contactIds
-      ],
-      'contribution_status_id' => [
-        'IN' => ['Completed', 'Pending', 'In Progress']
-      ],
-    ]);
-    return $recurringCount > 0;
-  }
 }
