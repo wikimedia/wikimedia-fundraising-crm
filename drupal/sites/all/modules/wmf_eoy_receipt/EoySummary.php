@@ -85,6 +85,9 @@ class EoySummary {
   }
 
   public function send_letters() {
+    if (!$this->from_address || !$this->from_name) {
+      throw new \Exception('Must configure a valid return address in the Thank-you module');
+    }
     $mailer = MailFactory::singleton();
     $row = \CRM_Core_DAO::executeQuery("
       SELECT *
@@ -134,9 +137,6 @@ LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
   }
 
   public function render_letter($row) {
-    if (!$this->from_address || !$this->from_name) {
-      throw new \Exception('Must configure a valid return address in the Thank-you module');
-    }
     $contactIds = $this->getContactIdsForEmail($row->email);
     $activeRecurring = $this->doContactsHaveActiveRecurring($contactIds);
     $language = Translation::normalize_language_code($row->preferred_language);
