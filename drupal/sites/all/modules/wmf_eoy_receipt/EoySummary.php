@@ -97,9 +97,7 @@ LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
     $failed = 0;
 
     while($row->fetch()) {
-      $contactIds = $this->getContactIdsForEmail($row->email);
-      $hasActiveRecurring = $this->doContactsHaveActiveRecurring($contactIds);
-      $email = $this->render_letter($row, $hasActiveRecurring);
+      $email = $this->render_letter($row);
 
       try {
         $success = $mailer->send($email, []);
@@ -112,7 +110,9 @@ LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
       }
 
       if ($success) {
-        $this->record_activities($email, $contactIds);
+        // This second call to getContactIds is a little repetitive - but
+        // makes sense for now as we separate the parts out.
+        $this->record_activities($email, $this->getContactIdsForEmail($row->email));
         $status = 'sent';
         $succeeded += 1;
       }
@@ -133,10 +133,12 @@ LIMIT " . (int) $this->batch, [1 => [$this->job_id, 'Integer']]);
     ]);
   }
 
-  public function render_letter($row, $activeRecurring) {
+  public function render_letter($row) {
     if (!$this->from_address || !$this->from_name) {
       throw new \Exception('Must configure a valid return address in the Thank-you module');
     }
+    $contactIds = $this->getContactIdsForEmail($row->email);
+    $activeRecurring = $this->doContactsHaveActiveRecurring($contactIds);
     $language = Translation::normalize_language_code($row->preferred_language);
     $totals = [];
     $contributions = [];
