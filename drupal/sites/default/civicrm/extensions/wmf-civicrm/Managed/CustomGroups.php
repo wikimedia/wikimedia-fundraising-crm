@@ -4,9 +4,11 @@
 // ie no mgd in the file prefix
 // as we want to use the bulkSave action for efficiency.
 // however we are keeping the declaration similar as it is conceptually similar.
+// ** To sync the database with fields defined in this file use `drush update-custom-fields` **
 use Civi\WMFHooks\CalculatedData;
 
 $calculatedData = new CalculatedData();
+
 return [
   'wmf_donor' => [
     'group' => [
@@ -106,6 +108,17 @@ return [
     ],
     'fields' => _wmf_civicrm_get_organization_contact_fields(),
   ],
+  'Relationship_Metadata' => [
+    'group' => [
+      'name' => 'Relationship_Metadata',
+      'title' => 'Relationship Metadata',
+      'extends' => 'Relationship',
+      'style' => 'Inline',
+      'is_active' => 1,
+      'table_name' => 'civicrm_value_relationship_metadata',
+    ],
+    'fields' => _wmf_civicrm_get_relationship_metadata_fields(),
+  ]
 ];
 
 
@@ -1193,6 +1206,21 @@ function _wmf_civicrm_get_benefactor_fields(): array {
       'html_type' => 'Select Date',
       'text_length' => 255,
       'date_format' => 'mm/dd/yy',
+    ],
+  ];
+}
+
+function _wmf_civicrm_get_relationship_metadata_fields(): array {
+  return [
+    'Provided_By_Donor' => [
+      'name' => 'provided_by_donor',
+      'column_name' => 'provided_by_donor',
+      'label' => 'Provided by donor',
+      'help_pre' => '"Yes" means the donor provided this information to us (usually on the donation form)',
+      'help_post' => 'For employer relationships, "Yes" will trigger automatic matching gifts emails',
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
+      'default_value' => 0,
     ],
   ];
 }

@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Omnimail\MailFactory;
 use wmf_communication\Mailer;
 use wmf_communication\Templating;
 
@@ -217,7 +218,7 @@ function large_donation_get_notification_thresholds() {
  */
 function large_donation_get_minimum_threshold() {
   $minThreshold = &drupal_static(__FUNCTION__);
-  if (!isset($minimum)) {
+  if (!isset($minThreshold)) {
     $minThreshold = 100000000000000;
     $notifications = large_donation_get_notification_thresholds();
     foreach ($notifications as $threshold) {
@@ -276,7 +277,7 @@ function large_donation_notification_send($contribution, $notification) {
     return;
   }
 
-  $mailer = Mailer::getDefault();
+  $mailer = MailFactory::singleton()->getMailer();
 
   $template = new Templating(__DIR__ . '/templates', 'notification', 'en', $params, 'html');
   $message = $template->render();
