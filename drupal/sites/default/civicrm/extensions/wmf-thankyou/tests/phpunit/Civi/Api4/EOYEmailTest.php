@@ -342,11 +342,6 @@ class EOYEmailTest extends TestCase {
       'preferred_language' => 'en_US',
       'email' => 'bob@example.com',
     ])['id'];
-    $this->ids['ContributionRecur'][0] = ContributionRecur::create(FALSE)->setValues([
-      'contact_id' => $contactID,
-      'amount' => 50,
-      'financial_type_id:name' => 'Donation',
-    ])->execute()->first()['id'];
     $contributions = [
       ['receive_date' => '2018-02-02', 'total_amount' => 50],
       ['receive_date' => '2018-03-04', 'total_amount' => 800],
@@ -377,17 +372,7 @@ class EOYEmailTest extends TestCase {
       ['receive_date' => '2018-10-21', 'total_amount' => 50],
       ['receive_date' => '2018-10-23', 'total_amount' => 50],
     ];
-    foreach ($contributions as $contribution) {
-      $this->ids['Contribution'][] = Contribution::create(FALSE)
-        ->setValues(array_merge([
-          'contact_id' => $contactID,
-          'financial_type_id:name' => 'Donation',
-          'currency' => 'USD',
-          'contribution_recur_id' => $this->ids['ContributionRecur'][0],
-        ], $contribution))
-        ->execute()
-        ->first()['id'];
-    }
+    $this->createRecurringContributions($contactID, $contributions);
 
     $eoyClass = new EoySummary(['year' => 2018]);
     $eoyClass->calculate_year_totals();
@@ -524,15 +509,22 @@ If for whatever reason you wish to cancel your monthly donation, follow these <a
    * @throws \Exception
    */
   public function testRenderMultiCurrency(): void {
-    $eoyClass = new EoySummary(['year' => 2018]);
-    $email = $eoyClass->render_letter((object) [
-      'job_id' => '132',
+    $contactID = $this->addTestContact([
+      'first_name' => 'Bob',
+      'preferred_language' => 'en_US',
       'email' => 'bob@example.com',
-      'preferred_language' => 'en',
-      'name' => 'Bob',
-      'status' => 'queued',
-      'contributions_rollup' => '2018-02-01 50.00 USD,2018-03-02 800.00 CAD,2018-05-03 20.00 USD,2018-10-20 50.00 CAD',
-    ], TRUE);
+    ])['id'];
+    $contributions = [
+      ['receive_date' => '2018-02-02', 'total_amount' => 50],
+      ['receive_date' => '2018-03-03', 'total_amount' => 800.00, 'currency' => 'CAD'],
+      ['receive_date' => '2018-05-04', 'total_amount' => 20.00],
+      ['receive_date' => '2018-10-21', 'total_amount' => 50.00, 'currency' => 'CAD'],
+    ];
+    $eoyClass = new EoySummary(['year' => 2018]);
+    $this->createRecurringContributions($contactID, $contributions);
+    $eoyClass->calculate_year_totals();
+    $eoyClass->send_letters();
+    $email = MailFactory::singleton()->getMailer()->getMailings()[0];
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',
@@ -745,6 +737,36 @@ EOS;
       'id' => $contactId,
       'skip_undelete' => TRUE,
     ]);
+  }
+
+  /**
+   * @param $contactID
+   * @param array $contributions
+   *
+   * @throws \API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function createRecurringContributions($contactID, array $contributions): void {
+    $this->ids['ContributionRecur'][0] = ContributionRecur::create(FALSE)
+      ->setValues([
+        'contact_id' => $contactID,
+        'amount' => 50,
+        'financial_type_id:name' => 'Donation',
+      ])
+      ->execute()
+      ->first()['id'];
+
+    foreach ($contributions as $contribution) {
+      $this->ids['Contribution'][] = Contribution::create(FALSE)
+        ->setValues(array_merge([
+          'contact_id' => $contactID,
+          'financial_type_id:name' => 'Donation',
+          'currency' => 'USD',
+          'contribution_recur_id' => $this->ids['ContributionRecur'][0],
+        ], $contribution))
+        ->execute()
+        ->first()['id'];
+    }
   }
 
 }
