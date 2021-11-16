@@ -6,6 +6,8 @@ use Civi\WMFHooks\CalculatedData;
 use Civi\WMFHooks\Permissions;
 use Civi\WMFHooks\QuickForm;
 use Civi\WMFHooks\Data;
+use Civi\Api4\MessageTemplate;
+use Civi\WMFHelpers\Language;
 use CRM_WmfCivicrm_ExtensionUtil as E;
 // phpcs:enable
 
@@ -454,4 +456,65 @@ function wmf_civicrm_civicrm_permission(array &$permissions) {
  */
 function wmf_civicrm_civicrm_customPre(string $op, int $groupID, int $entityID, array &$params): void {
   Data::customPre($op, $groupID, $entityID, $params);
+}
+
+/**
+ * @param string $workflowName
+ *
+ * @return array
+ * @throws \API_Exception
+ * @throws \Civi\API\Exception\UnauthorizedException
+ */
+function  _wmf_civicrm_managed_get_translations(string $workflowName): array {
+  $template = MessageTemplate::get(FALSE)
+    ->addWhere('workflow_name', '=', $workflowName)
+    ->addWhere('is_reserved', '=', 0)
+    ->setSelect(['id'])->execute()->first();
+  if (empty($template['id'])) {
+    return [];
+  }
+  $translations = [];
+  $directory = __DIR__ . '/msg_templates/' . $workflowName . '/';
+  // The folder may contain in-migration-directories 'html' and 'subject' as
+  // well as pseudo-directories '.' and '..' and the files we actually want.
+  $files = array_diff(scandir($directory), ['.', '..', 'html', 'subject']);
+
+  foreach ($files as $file) {
+    $content = file_get_contents($directory . $file);
+    $parts = explode('.', $file);
+    $language = $parts[1];
+    $field = 'msg_' . $parts[2];
+    if ($workflowName === 'recurring_failed_message') {
+      // We added these translations to live first
+      // and then realised the namespacing was inadequate. But, it's a pain
+      // to change the name of the existing installed entities - since
+      // adding a new better name-spaced name would create duplicate translation
+      // entities.
+      $managedEntityName = 'translation_' . $language . '_' . $field;
+    }
+    else {
+      $managedEntityName = 'translation_' . $workflowName . '_' . $language . '_' . $field;
+    }
+
+    $translations[] = [
+      'name' => $managedEntityName,
+      'entity' => 'Translation',
+      'cleanup' => 'never',
+      'update' => 'never',
+      'params' => [
+        'version' => 4,
+        'checkPermissions' => FALSE,
+        'values' => [
+          'entity_table' => 'civicrm_msg_template',
+          'entity_field' => $field,
+          'entity_id' => $template['id'],
+          'language' => Language::getLanguageCode($language),
+          'string' => $content,
+          'status_id:name' => 'draft',
+        ],
+      ],
+    ];
+
+  }
+  return $translations;
 }

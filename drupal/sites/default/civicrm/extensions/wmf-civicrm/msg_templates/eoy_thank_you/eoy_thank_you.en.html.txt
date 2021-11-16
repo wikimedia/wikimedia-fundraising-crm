@@ -1,0 +1,49 @@
+<p>
+  Dear {$name},
+</p>
+
+<p>
+  This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
+</p>
+<p>
+  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in {$year}
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+  Your {$year} total was {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+<p><b>Total donations to Wikimedia Foundation:</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+  Donation {$index}: {$contribution.total_amount} {$contribution.currency} on {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+<p><b>Total donations to Wikimedia Endowment:</b></p>
+
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type == 'Endowment'}
+<p>
+  Donation {$index}: {$contribution.total_amount} {$contribution.currency} on {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+  If you’d like to cancel your monthly donation, follow these easy <a href="{wmf_url.cancel}">easy cancellation instructions</a>.
+</p>
+{/if}
+
+<p>With gratitude,</p>
+<p>
+  The Wikimedia Foundation
+</p>
+
+<p>The Wikimedia Endowment ensures Wikimedia Foundation's free knowledge resources remain accessible and valuable for generations to come.</p>
+<p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href="mailto:legacy@wikimedia.org">Contact us to learn how to make a legacy gift.</a></p>
+<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
