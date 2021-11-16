@@ -1,0 +1,46 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+{contact.last_name}様,
+{else}
+寄付者の皆様、
+{/if}
+</p>
+
+<p>
+この1年間、私たちは、皆様がウィキペディアに寄せてくださった寛大なご寄付を綿密に記録してきました。それは私たちの深い感謝の気持ちの表れであり、また皆様に喜んでもらえるだろうと思ったからです。
+</p>
+
+<p>
+「世界中の誰もが、信頼できる情報に無償でアクセスできるようにする」という私たちのミッションを支えてくださり、本当にありがとうございます。以下は、{$year}年にあなたがお寄せくださったご寄付の概要です。
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+ {$year}年 ご寄付の総額： {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Wikimedia Foundation へのご寄付の総額：</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+ご寄付 {$index}: {$contribution.receive_date} {$contribution.amount} {$contribution.currency}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+毎月の定期寄付のキャンセルを希望される場合は、<a href="{wmf_url.cancel}">以下の簡単な手順に従ってください。</a>.
+</p>
+{/if}
+
+<p>感謝の気持ちを込めて</p>
+<p>
+  The Wikimedia Foundation
+</p>
+
+<p>本メールは、ご寄付の領収書代わりです。ご寄付の全部また一部に対して、物品やサービスは一切提供されていません。
+<br>
+郵送先住所：Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA.
+米国非課税番号：20-0049703</p>

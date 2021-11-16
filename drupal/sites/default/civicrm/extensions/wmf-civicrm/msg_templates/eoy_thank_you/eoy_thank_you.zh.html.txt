@@ -1,0 +1,46 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+亲爱的 {contact.first_name},
+{else}
+亲爱的赞助者,
+{/if}
+</p>
+
+<p>
+感谢过去一年里，您对维基百科(Wikipedia) 的支持以及慷慨解囊。对于您的捐赠纪录我们都有一笔一笔详细追踪记录，对于您的慷慨我们心怀感激，且我们知道您收到这份纪录时会非常开心。
+</p>
+
+<p>
+感谢您的鼎力支持，让世界上所有人都能够获取免费且可靠的资讯，且帮助我们完成我们的使命。
+
+以下为您 {$year} 年的捐款结报:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+您 {$year} 年的捐款总金额为 {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b> 对 Wikimedia Foundation 的捐款总额为</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+第一笔捐款 {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+如果您想要取消每月定期捐款，可以按照这份<a href="{wmf_url.cancel}">取消定期捐款说明</a>来进行操作.
+</p>
+{/if}
+
+<p>十分感激，</p>
+<p>
+  The Wikimedia Foundation
+</p>
+
+<p>本信件可作为您的捐款纪录。本次捐款并未取得任何物品或服务。邮寄地址：Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. 美国免税号码：20-0049703
+</p>

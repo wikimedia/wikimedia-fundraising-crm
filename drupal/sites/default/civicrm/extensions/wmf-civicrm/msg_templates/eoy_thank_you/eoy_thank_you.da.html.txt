@@ -1,0 +1,43 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Kære {contact.first_name},
+{else}
+Kære donor,
+{/if}
+</p>
+
+<p>
+I det forgangne år har vi omhyggeligt holdt styr på de generøse bidrag, du har ydet som støtte til Wikipedia, ikke kun fordi vi er ekstremt taknemmelige, men også fordi vi formoder, at du vil sætte pris på at have en kopi af denne optegnelse.
+</p>
+
+<p>
+Tak, fordi du viser din støtte til vores mission om at gøre gratis og pålidelig information tilgængelig for alle i verden. Her er en oversigt over de donationer, du har foretaget i {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Dit samlede beløb for {$year} var {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Samlet antal donationer til Wikimedia Foundation:</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+Donation {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+Hvis du gerne vil annullere din månedlige donation, skal du følge denne <a href="{wmf_url.cancel}">enkle annulleringsvejledning</a>.
+</p>
+{/if}
+
+<p>Tusind tak</p>
+<p>
+The Wikimedia Foundation
+</p>
+
+<p>Dette brev kan bruges som dokumentation for din donation. Der blev ikke leveret nogen varer, helt eller delvist, for dette bidrag. Vores postadresse er: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Amerikansk momsfritagelsesnummer: 20-0049703</p>

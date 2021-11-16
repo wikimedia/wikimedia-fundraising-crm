@@ -1,0 +1,43 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+שלום {contact.first_name}!
+{else}
+תורם יקר, תורמת יקרה
+{/if}
+</p>
+בשנה החולפת עקבנו באופן קפדני אחר התרומות הנדיבות שהענקת לתמיכה בוויקיפדיה, לא רק משום שאנו אסירי תודה, אלא גם משום שידענו שעותק של תיעוד התרומות יהיה שימושי לך.
+<p>
+</p>
+
+<p>
+אנו מודים לך על כך שהפגנת את תמיכתך במשימתנו להפוך מידע חופשי ואמין’ לזמין עבור כולם ברחבי העולם. להלן סיכום של התרומות שלך בשנת {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+הסכום הכולל של התרומות שלך בשנת {year$} היה {total.currency$}{total.amount$}.
+
+</b></p>
+{/foreach}
+
+<p><b>סך כל התרומות עבור קרן ויקימדיה:</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+ תרומה 1: ‎{$contribution.amount} {$contribution.currency} {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+<a href="{wmf_url.cancel}">להנחיות הביטול הפשוטות האלו</a> אם מסיבה כלשהי ברצונך לבטל את התרומה החודשית שלך, באפשרותך לפעול בהתאם
+</p>
+{/if}
+
+<p>בהכרת תודה,</p>
+<p>
+קרן ויקימדיה
+</p>
+
+<p>המכתב הזה יכול לשמש כעדות לתרומתך. לא סופקו כל טובין או שירותים, בין אם במלואם או בחלקם, בתמורה לתרומה זו. כתובת הדואר שלנו: ‎Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. מספר פטור ממס בארה"ב: 20-0049703</p>

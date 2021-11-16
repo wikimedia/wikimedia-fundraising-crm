@@ -1,0 +1,45 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Hallo {contact.first_name}!
+{else}
+Liebe/r Spender/in,
+{/if}
+</p>
+
+<p>
+wir haben Ihre großzügigen Spenden zur Unterstützung von Wikipedia im Verlauf des vergangenen Jahres sorgfältig aufgezeichnet – nicht nur, weil wir außerordentlich dankbar dafür sind, sondern auch, weil wir vermuten, dass Sie einen Spendenbeleg wünschen.
+</p>
+
+<p>
+Vielen Dank, dass Sie unsere Mission, allen Menschen auf der Welt kostenlose und zuverlässige Informationen zugänglich zu machen, unterstützen. Hier finden Sie eine Zusammenfassung Ihrer Spenden im Jahr {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Ihre Spendensummeim Jahr {$year} betrug {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Übersicht Ihrer Spenden an Wikimedia Foundation:</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+{$index}. Spende: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+Wenn Sie Ihre monatliche Spende stornieren möchten, befolgen Sie diese <a href="{wmf_url.cancel}">einfachen Stornierungsanweisungen</a>.
+</p>
+{/if}
+
+<p>Herzlichen Dank!</p>
+<p>
+The Wikimedia Foundation
+</p>
+
+<p>Dieses Schreiben gilt als Spendenbeleg. Für diese Unterstützung wurden keine Waren oder Dienstleistungen in irgendeiner Form erbracht. Unsere Postanschrift lautet: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA.
+US-Steuerbefreiungsnr.: 20-0049703
+</p>

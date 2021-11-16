@@ -1,0 +1,44 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Bonjour {contact.first_name},
+
+{else}
+Cher donateur, chère donatrice,
+{/if}
+</p>
+
+<p>
+Au cours de l’année passée, nous avons soigneusement comptabilisé vos généreuses contributions à Wikipédia, non seulement par gratitude, mais aussi parce que nous avons pensé que vous apprécieriez de disposer d’une copie de ce registre.
+</p>
+
+<p>
+Merci d’avoir montré votre soutien à notre mission, qui est de rendre accessible au monde entier des informations libres et fiables. Voici un récapitulatif des dons que vous avez faits en {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Le total de vos dons {$year} s’élève à {$total.amount} {$total.currency}.
+</b></p>
+{/foreach}
+
+<p><b>Total de vos dons à la Wikimedia Foundation :</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+Don {$index}: {$contribution.currency} {$contribution.amount} le {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+Si vous souhaitez annuler votre don mensuel, suivez ces <a href="{wmf_url.cancel}">instructions simples</a>.
+</p>
+{/if}
+
+<p>Avec toute notre reconnaissance,</p>
+<p>
+La Wikimedia Foundation
+</p>
+
+<p>Ce courrier fait office de reçu de vos dons. Aucun produit ou service n’a été fourni, en totalité ou partiellement, en échange de cette contribution. Notre adresse postale est la suivante : Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Numéro d’exemption fiscale états-unien : 20-0049703</p>

@@ -1,0 +1,43 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Beste {contact.first_name},
+{else}
+Beste donateur,
+{/if}
+</p>
+
+<p>
+Het afgelopen jaar hebben we nauwkeurig bijgehouden welke gulle bijdragen je hebt geleverd ter ondersteuning van Wikipedia, niet alleen omdat we je zeer dankbaar zijn, maar ook omdat we wisten dat je het op prijs zou stellen een overzicht van deze gegevens te hebben.
+</p>
+
+<p>
+Wij danken je hartelijk voor je steun aan onze missie om gratis en betrouwbare informatie toegankelijk te maken voor iedereen in de wereld. Hier vind je een overzicht van de donaties die je hebt gedaan in {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Je {$year} totaal was {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Totaal van donaties aan Wikimedia Foundation:</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+Donatie {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+Als je je maandelijkse donatie wilt annuleren, volg dan deze <a href="{wmf_url.cancel}">eenvoudige annuleringsinstructies</a>.
+</p>
+{/if}
+
+<p>Met veel dank,</p>
+<p>
+The Wikimedia Foundation
+</p>
+
+<p>Deze brief kan dienen als bewijs van je donatie. Er werden geen gehele of gedeeltelijke goederen of diensten geboden voor deze bijdrage. Ons postadres is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Nummer voor vrijstelling van belasting in de Verenigde Staten: 20-0049703</p>

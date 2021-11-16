@@ -1,0 +1,43 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Hei {contact.first_name},
+{else}
+Kjære giver,
+{/if}
+</p>
+
+<p>
+I løpet av det siste året har vi holdt nøye øye med de sjenerøse bidragene du har gitt til støtte for Wikipedia, ikke bare fordi vi er ekstremt takknemlige, men også fordi vi visste at du ville sette pris på å ha en kopi av denne oversikten.
+</p>
+
+<p>
+Takk for at du viser din støtte til vår oppgave med å gjøre fri og pålitelig informasjon tilgjengelig for alle i verden. Her er en oppsummering av donasjonene du har gitt i {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Din {$year} totalsum var {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Samtlige donasjoner til Wikimedia Foundation:</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+Donasjon {$index}: {$contribution.amount} {$contribution.currency} - {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+Hvis du ønsker å avslutte det månedlige bidraget ditt, følg disse <a href="{wmf_url.cancel}">enkle kanselleringsinstruksene</a>.
+</p>
+{/if}
+
+<p>Mange takk,</p>
+<p>
+The Wikimedia Foundation
+</p>
+
+<p>Dette brevet kan tjene som offisiell opptegnelse av din donasjon. Det ble ikke levert noen varer eller tjenester, helt eller delvis, for dette bidraget. Postadressen vår er: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Amerikansk skattefritaksnummer: 20-0049703</p>

@@ -1,0 +1,43 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Dragă, {contact.first_name}!
+{else}
+Stimate donator,
+{/if}
+</p>
+
+<p>
+Anul trecut am ținut o evidență clară a contribuțiilor generoase pe care le-ai făcut pentru a susține Wikipedia, nu doar pentru că suntem extrem de recunoscători, dar și pentru că știm că ai aprecia să deții o copie a acestui document.
+</p>
+
+<p>
+Îți mulţumim pentru sprijinul acordat misiunii noastre de a pune la dispoziţia întregii lumi informații gratuite și fiabile. Iată un rezumat al donațiilor pe care le-ai făcut în {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Totalul {$year} tău a fost {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Total donaţii către Wikimedia Foundation</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+Donaţia {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+Dacă din orice motiv dorești să anulezi donația lunară, urmează aceste <a href="{wmf_url.cancel}">instrucțiuni de anulare ușoare</a>.
+</p>
+{/if}
+
+<p>Cu recunoștință,</p>
+<p>
+The Wikimedia Foundation
+</p>
+
+<p>Această scrisoare reprezintă o dovadă a donației tale. Nu au fost furnizate bunuri sau servicii, integral sau parțial, pentru această contribuție. Adresa noastră poștală este: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Număr scutire de taxe SUA: 20-0049703</p>
