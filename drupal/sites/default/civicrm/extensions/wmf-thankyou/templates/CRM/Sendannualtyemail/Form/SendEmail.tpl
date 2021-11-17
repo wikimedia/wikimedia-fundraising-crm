@@ -13,6 +13,7 @@ CRM.$(function($) {
                 });
     });
 });
+
 {/literal}
 </script>
 
@@ -36,6 +37,12 @@ CRM.$(function($) {
     {ts}All contributions associated with contacts with this primary email address will be included.{/ts}
     {ts}The name & language from the contact with the highest contact ID will be used.{/ts}
 </div>
+<hr>
+{if $subject}
+  <h2>Message preview</h2>
+  <div id="eoy_message_subject">{$subject}</div>
+  <div id="eoy_message_message">{$message}</div>
+{/if}
 
 {* FOOTER *}
 <div class="crm-submit-buttons">
