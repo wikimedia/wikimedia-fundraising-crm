@@ -26,7 +26,7 @@ Durant el {$year} has aportat un total el {$total.currency} {$total.amount}.
 {foreach from=$contributions key=index item=contribution}
 {if $contribution.financial_type != 'Endowment'}
 <p>
-  Donació  {$index}: {$contribution.total_amount} {$contribution.currency} on {$contribution.receive_date}
+  Donació  {$index}: {$contribution.amount} {$contribution.currency} on {$contribution.receive_date}
 </p>
 {/if}
 {/foreach}

@@ -18,7 +18,7 @@
 {foreach from=$contributions key=index item=contribution}
 {if $contribution.financial_type != 'Endowment'}
 <p>
-  Donation {$index}: {$contribution.total_amount} {$contribution.currency} on {$contribution.receive_date}
+  Donation {$index}: {$contribution.amount} {$contribution.currency} on {$contribution.receive_date}
 </p>
 {/if}
 {/foreach}
@@ -28,7 +28,7 @@
 {foreach from=$contributions key=index item=contribution}
 {if $contribution.financial_type == 'Endowment'}
 <p>
-  Donation {$index}: {$contribution.total_amount} {$contribution.currency} on {$contribution.receive_date}
+  Donation {$index}: {$contribution.amount} {$contribution.currency} on {$contribution.receive_date}
 </p>
 {/if}
 {/foreach}
