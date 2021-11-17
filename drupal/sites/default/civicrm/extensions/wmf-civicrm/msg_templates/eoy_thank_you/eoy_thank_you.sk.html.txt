@@ -1,0 +1,44 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Ahoj, {contact.first_name}!
+
+{else}
+Vážený darca,
+{/if}
+</p>
+
+<p>
+Počas minulého roka sme starostlivo archivovali štedré príspevky, ktorými ste prispeli na podporu Wikipédie, a to nielen preto, že sme Vám za to nesmierne vďační, ale tiež preto, lebo sme vedeli, že by ste ocenili, keby ste mali túto kópiu k dispozícii.
+</p>
+
+<p>
+Ďakujeme vám za prejavenú podporu nášmu poslaniu, ktorým je sprístupniť bezplatné a spoľahlivé informácie všetkým ľuďom na svete. Tu je zhrnutie darov, ktoré ste poskytli v roku: {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Za rok {$year} ste prispeli celkovou sumou {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Celkový počet darov pre Wikimedia Foundation :</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+Dar č. {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+Ak byste chceli zrušiť svoje každomesačné dary, postupujte podľa týchto <a href="{wmf_url.cancel}">jednoduchých pokynov na zrušenie</a>.
+</p>
+{/if}
+
+<p>S vďačnosťou,</p>
+<p>
+  The Wikimedia Foundation
+</p>
+
+<p>Tento list môže slúžiť ako doklad o poskytnutí Vášho daru. Za tento príspevok nebol poskytnutý žiadny tovar ani služby, úplné ani čiastočné. Naša poštová adresa je: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Číslo daňového oslobodenia v USA: 20-0049703</p>

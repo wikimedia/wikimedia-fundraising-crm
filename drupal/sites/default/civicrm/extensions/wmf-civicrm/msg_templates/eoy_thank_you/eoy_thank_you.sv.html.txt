@@ -1,0 +1,44 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Hej {contact.first_name}!
+
+{else}
+Bästa bidragsgivare,
+{/if}
+</p>
+
+<p>
+Under året som gått har vi hållit noggrann koll på de generösa bidrag du lämnat till stöd för Wikipedia, inte bara för att vi är extremt tacksamma, utan även för att vi visste att du skulle uppskatta att ha en kopia av detta dokument.
+</p>
+
+<p>
+Tack för att du stödjer vårt uppdrag att göra tillförlitlig information tillgänglig för alla i världen. Här är en sammanfattning av dina bidrag från {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Din totalsumma för {$year} var {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Dina gåvor till Wikimedia Foundation:</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+Gåva {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+Om du vill avbryta ditt månatliga bidrag  kan du följa dessa <a href="{wmf_url.cancel}">enkla instruktioner</a>.
+</p>
+{/if}
+
+<p>Varmt tack!</p>
+<p>
+  The Wikimedia Foundation
+</p>
+
+<p>Detta brev är ett kvitto på ditt bidrag. Inga varor eller tjänster tillhandahålls, vare sig delvis eller i sin helhet, i samband med detta bidrag. Vår postadress är: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Amerikanskt skatteavdragsnummer: 20-0049703</p>

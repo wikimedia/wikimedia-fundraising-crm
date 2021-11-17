@@ -1,0 +1,43 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Почитуван(а) {contact.first_name},
+{else}
+Драг дарителу,
+{/if}
+</p>
+
+<p>
+Изминатата година, внимателно ги следевме дарежливите придонеси што ги дадовте за поддршка на Википедија, не само затоа што сме исклучително благодарни, туку и затоа што знаевме дека ќе сакате да имате копија од овој запис.
+</p>
+
+<p>
+Ви благодариме што ја покажавте поддршката за нашата мисија да ги направиме бесплатните и веродостојни информации достапни за сите во светот. Еве го краткиот преглед на донациите што ги направивте во {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Вашиот вкупен износ во {$year} беше {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Вкупни донации за Wikimedia Foundation:</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+Донација {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+Ако сакате да ја откажете вашата месечна донација, следете ги овие <a href="{wmf_url.cancel}">упатства за лесно откажување</a>.
+</p>
+{/if}
+
+<p>Со благодарност,</p>
+<p>
+The Wikimedia Foundation
+</p>
+
+<p>Ова писмо може да послужи како запис за вашата донација. Не беа обезбедени добра или услуги, целосно или делумно, за овој придонес. Нашата поштенска адреса е: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, САД. Број за ослободување од данок во САД: 20-0049703</p>

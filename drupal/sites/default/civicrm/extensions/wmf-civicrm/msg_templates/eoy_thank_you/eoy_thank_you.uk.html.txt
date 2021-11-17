@@ -1,0 +1,45 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Вітаємо {contact.first_name}!
+
+{else}
+Шановний благодійнику!
+{/if}
+</p>
+
+<p>
+Протягом минулого року ми ретельно відстежували Ваші щедрі внески на підтримку Вікіпедії, проте не лише тому, що ми надзвичайно вдячні Вам, але й тому, що ми знали, що Ви хотіли б отримати копію цього запису.
+</p>
+
+<p>
+Дякуємо за Вашу підтримку нашої місії, щоб зробити вільну та достовірну інформацію доступною для будь-кого будь-де. Нижче Ви знайдете стислий огляд Ваших пожертв у {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Загальна сума у {$year} склала {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Загальна сума пожертвувань на користь Wikimedia Foundation:</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+Пожертвування № {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+Якщо Ви бажаєте скасувати щомісячні пожертвування, дотримуйтесь цих
+<a href="{wmf_url.cancel}">простих інструкцій про скасування</a>.
+</p>
+{/if}
+
+<p>З вдячністю,</p>
+<p>
+  The Wikimedia Foundation
+</p>
+
+<p>Цей лист може слугувати підтвердженням Вашої пожертви. За цей внесок вкладникові не було надано жодних товарів або послуг ані повністю, ані частково. Наша поштова адреса: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA (США). Код податкового звільнення у США: 20-0049703</p>
