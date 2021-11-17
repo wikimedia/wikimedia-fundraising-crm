@@ -179,7 +179,6 @@ JOIN civicrm_email email
   ON email.contact_id = contribution.contact_id
   AND email.is_primary
 WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
-  AND financial_type_id <> $endowmentFinancialType
   AND contribution_status_id = $completedStatusId
   AND email <> 'nobody@wikimedia.org'
   $recur_filter_sql
@@ -206,9 +205,6 @@ EOS;
    * @param string $year_end
    */
   protected function populate_tmp_contact_contributions_table(string $year_start, $year_end): void {
-    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
-    );
     $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
       'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
     );
@@ -244,7 +240,6 @@ JOIN civicrm_contribution contribution
 LEFT JOIN wmf_contribution_extra extra
     ON extra.entity_id = contribution.id
 WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
-    AND financial_type_id <> $endowmentFinancialType
     AND contribution_status_id = $completedStatusId
     AND contact.is_deleted = 0
 GROUP BY email.email, contact.id, contact.preferred_language, contact.first_name

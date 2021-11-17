@@ -220,6 +220,7 @@ class EOYEmailTest extends TestCase {
     ], $result);
     $this->assertEquals([
       '2018-02-01 20.00 USD',
+      '2018-04-03 400.00 PLN',
       '2018-08-08 30.00 PLN',
     ], $rollup);
   }
