@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Translation;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
 use Civi\Test\Api3TestTrait;
@@ -28,6 +29,13 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @var array
    */
   protected $originalFailureMessageTemplate;
+
+  /**
+   * Stored version of failure template to restore.
+   *
+   * @var array
+   */
+  protected $originalFailureTranslation;
 
   /**
    * New version, if created, of failure message template.
@@ -83,11 +91,16 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     }
     // Ensure site is set to put mail into civicrm_mailing_spool table.
     Civi::settings()->set('mailing_backend', ['outBound_option' => CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB]);
-    $this->originalFailureMessageTemplate = MessageTemplate::get()
-      ->setCheckPermissions(FALSE)
+    $this->originalFailureMessageTemplate = MessageTemplate::get(FALSE)
       ->setSelect(['*'])
       ->addWhere('workflow_name', '=', 'recurring_failed_message')
       ->execute()->first();
+    $this->originalFailureTranslation = Translation::get(FALSE)
+      ->setSelect(['*'])
+      ->addWhere('entity_id', '=', $this->originalFailureMessageTemplate['id'])
+      ->addWhere('language', '=', 'en_US')
+      ->addWhere('status_id:name', '=', 'active')
+      ->execute();
     parent::setUp();
   }
 
@@ -101,7 +114,10 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
   public function tearDown(): void {
     if ($this->originalFailureMessageTemplate) {
       unset($this->originalFailureMessageTemplate['workflow_id']);
-      MessageTemplate::update()->setValues($this->originalFailureMessageTemplate)->setCheckPermissions(FALSE)->execute();
+      MessageTemplate::update(FALSE)->setValues($this->originalFailureMessageTemplate)->execute();
+    }
+    foreach ($this->originalFailureTranslation as $translation) {
+      Translation::update(FALSE)->setValues($translation)->execute();
     }
     if ($this->createdMessageTemplate) {
       $this->deleteThings['MessageTemplate'][] = $this->createdMessageTemplate['id'];
@@ -266,7 +282,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @throws \API_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  protected function setupFailureTemplate() {
+  protected function setupFailureTemplate(): void {
     $msgHtml = 'Dear {contact.first_name},
       We cancelled your recur of {contribution_recur.currency} {contribution_recur.amount}
       and we are sending you this at {contact.email}
@@ -275,10 +291,20 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     $subject = 'Hey {contact.first_name}';
 
     if ($this->originalFailureMessageTemplate) {
-      MessageTemplate::update()
+      MessageTemplate::update(FALSE)
         ->setCheckPermissions(FALSE)
         ->setValues(['id' => $this->originalFailureMessageTemplate['id'], 'msg_text' => $msgHtml, 'msg_subject' => $subject])
         ->execute();
+      foreach ($this->originalFailureTranslation as $translatedValue) {
+        if ($translatedValue['entity_field'] === 'msg_html' || $translatedValue['entity_field'] === 'msg_text') {
+          Translation::update(FALSE)
+            ->setValues(['id' => $translatedValue['id'], 'string' => $msgHtml])->execute();
+        }
+        if ($translatedValue['entity_field'] === 'msg_subject') {
+          Translation::update(FALSE)
+            ->setValues(['id' => $translatedValue['id'], 'string' => $subject])->execute();
+        }
+      }
     }
     else {
       $this->createdMessageTemplate = MessageTemplate::create()

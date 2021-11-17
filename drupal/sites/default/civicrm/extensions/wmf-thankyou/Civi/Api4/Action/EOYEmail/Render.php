@@ -8,7 +8,6 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use wmf_communication\Translation;
 use Civi\EoySummary;
-use wmf_communication\Templating;
 
 /**
  * Class Render.
@@ -94,62 +93,45 @@ class Render extends AbstractAction {
     }
   }
 
+  /**
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
   protected function render_letter($row) {
     $contactIds = $this->getContactIdsForEmail($row->email);
     $activeRecurring = $this->doContactsHaveActiveRecurring($contactIds);
-    $language = Translation::normalize_language_code($row->preferred_language);
-    $totals = [];
-    $contributions = [];
-    foreach (explode(',', $row->contributions_rollup) as $contribution_string) {
-      $terms = explode(' ', $contribution_string);
-      $contribution = [
-        'date' => $terms[0],
-        // FIXME not every currency uses 2 sig digs
-        'amount' => round($terms[1], 2),
-        'currency' => $terms[2],
-      ];
-      $contributions[] = $contribution;
-      if (!isset($totals[$contribution['currency']])) {
-        $totals[$contribution['currency']] = [
-          'amount' => 0.0,
-          'currency' => $contribution['currency'],
-        ];
-      }
-      $totals[$contribution['currency']]['amount'] += $contribution['amount'];
-    }
-    // Sort contributions by date
-    usort($contributions, function ($c1, $c2) {
-      return $c1['date'] <=> $c2['date'];
-    });
-    foreach ($contributions as $index => $contribution) {
-      $contributions[$index]['index'] = $index + 1;
-    }
 
     $template_params = [
-      'name' => $row->name,
-      'contributions' => $contributions,
-      'totals' => $totals,
       'year' => $this->year,
-      'active_recurring' => $activeRecurring
+      'active_recurring' => $activeRecurring,
+      'contactIDs' => $contactIds,
+      'contactId' => $contactIds[0],
+      'locale' => $row->preferred_language,
     ];
-    $template = $this->get_template($language, $template_params);
+    $templateStrings = Civi\Api4\Message::load(FALSE)
+      ->setLanguage($row->preferred_language)
+      ->setFallbackLanguage('en_US')
+      ->setWorkflow('eoy_thank_you')->execute()->first();
+    $template = ['workflow' => 'eoy_thank_you'];
+    foreach ($templateStrings as $key => $string) {
+      $template[$key] = $string['string'];
+    }
+    $swapLocale = \CRM_Utils_AutoClean::swapLocale($row->preferred_language);
+    $rendered = Civi\Api4\WorkflowMessage::render(FALSE)
+      ->setMessageTemplate($template)
+      ->setValues($template_params)
+      ->setWorkflow('eoy_thank_you')
+      ->execute()->first();
+
     $email = [
       'to_name' => $row->name,
       'to_address' => $row->email,
-      'subject' => trim($template->render('subject')),
-      'html' => str_replace('<p></p>', '', $template->render('html')),
+      'subject' => trim($rendered['subject']),
+      'html' => str_replace('<p></p>', '', $rendered['html']),
     ];
 
     return $email;
-  }
-
-  protected function get_template($language, $template_params) {
-    return new Templating(
-      __DIR__ . '/../../../../../../../../all/modules/wmf_eoy_receipt/templates',
-      'eoy_thank_you',
-      $language,
-      $template_params + ['language' => $language]
-    );
   }
 
   /**

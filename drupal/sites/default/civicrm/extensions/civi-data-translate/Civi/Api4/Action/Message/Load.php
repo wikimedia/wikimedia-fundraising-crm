@@ -16,6 +16,8 @@ use Civi\Api4\MessageTemplate;
  * @method string getWorkflow() Get workflow Name.
  * @method $this setLanguage(string $language) Set language (e.g en_NZ).
  * @method string getLanguage() Get language (e.g en_NZ)
+ * @method $this setFallbackLanguage(string $language) Set language fallback (e.g en_US).
+ * @method string getFallbackLanguage() Get language  fallback (e.g en_US)
  * @method $this setMessageSubject(string $messageSubject) Set Message Subject
  * @method string getMessageSubject() Get Message Subject
  * @method $this setMessageHtml(string $messageHtml) Set Message Html
@@ -65,6 +67,15 @@ class Load extends AbstractAction {
   protected $language;
 
   /**
+   * Language to use if preferred language not found.
+   *
+   * If this is not provided and there is no translation
+   * for the preferred language an exception will be thrown.
+   *
+   * @var string
+   */
+  protected $fallbackLanguage;
+  /**
    * @inheritDoc
    *
    * @param \Civi\Api4\Generic\Result $result
@@ -73,7 +84,6 @@ class Load extends AbstractAction {
    * @throws \Civi\API\Exception\NotImplementedException
    */
   public function _run(Result $result) {
-    $this->getTemplate();
     if ($this->getWorkflow()) {
       $strings = MessageTemplate::get(FALSE)
         ->addWhere('workflow_name', '=', $this->getWorkflow())
@@ -88,7 +98,9 @@ class Load extends AbstractAction {
         ->execute();
       if (!count($strings)) {
         // For English, or unknown language, we can fall back on the 'main' version of the template.
-        if (!$this->getLanguage() || strpos($this->getLanguage(), 'en_') === 0) {
+        if (!$this->getLanguage()
+          || strpos($this->getLanguage(), 'en_') === 0
+          || strpos($this->getFallbackLanguage(), 'en_') === 0) {
           $strings = MessageTemplate::get(FALSE)
             ->addWhere('workflow_name', '=', $this->getWorkflow())
             ->addWhere('is_default', '=', 1)

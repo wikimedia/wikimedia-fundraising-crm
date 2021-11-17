@@ -510,7 +510,7 @@ function  _wmf_civicrm_managed_get_translations(string $workflowName): array {
           'entity_id' => $template['id'],
           'language' => Language::getLanguageCode($language),
           'string' => $content,
-          'status_id:name' => 'draft',
+          'status_id:name' => 'active',
         ],
       ],
     ];

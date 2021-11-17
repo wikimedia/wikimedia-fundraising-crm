@@ -80,7 +80,7 @@ class EOYEmailTest extends TestCase {
 
     $message = EOYEmail::render()->setCheckPermissions(FALSE)
       ->setYear(2020)->setContactID($contactID)->execute()->first();
-    $this->assertContains('Hola 鈴木', $message['html']);
+    $this->assertContains('Benvolgut/Benvolguda 鈴木', $message['html']);
   }
 
   /**
@@ -383,122 +383,119 @@ class EOYEmailTest extends TestCase {
       'from_address' => 'bobita@example.org',
       'to_name' => 'Bob',
       'to_address' => 'bob@example.com',
-      'subject' => 'This is a receipt, but it\'s also so much more',
+      'subject' => 'A record of your support for Wikipedia',
       'html' => '<p>
 Dear Bob,
 </p>
 
 <p>
-I am thrilled that this email to you is one of the first things on my to-do list in 2019. Granted, that to-do list is long--Wikipedia has so many amazing projects on the horizon--but thanking you is at the very top.
+This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
+<p>
+Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2018:
+</p>
+
+<p><b>
+  Your 2018 total was USD 9,800.00.
+</b></p>
+<p><b>Total donations to Wikimedia Foundation:</b></p>
+<p>
+  Donation 1: 50.00 USD on 2018-01-26
+</p>
+<p>
+  Donation 2: 50.00 USD on 2018-02-01
+</p>
+<p>
+  Donation 3: 800.00 USD on 2018-03-02
+</p>
+<p>
+  Donation 4: 800.00 USD on 2018-03-03
+</p>
+<p>
+  Donation 5: 50.00 USD on 2018-05-03
+</p>
+<p>
+  Donation 6: 800.00 USD on 2018-05-05
+</p>
+<p>
+  Donation 7: 800.00 USD on 2018-05-11
+</p>
+<p>
+  Donation 8: 50.00 USD on 2018-06-04
+</p>
+<p>
+  Donation 9: 50.00 USD on 2018-06-06
+</p>
+<p>
+  Donation 10: 50.00 USD on 2018-06-08
+</p>
+<p>
+  Donation 11: 50.00 USD on 2018-07-07
+</p>
+<p>
+  Donation 12: 50.00 USD on 2018-07-12
+</p>
+<p>
+  Donation 13: 50.00 USD on 2018-08-08
+</p>
+<p>
+  Donation 14: 50.00 USD on 2018-08-08
+</p>
+<p>
+  Donation 15: 800.00 USD on 2018-09-02
+</p>
+<p>
+  Donation 16: 100.00 USD on 2018-10-03
+</p>
+<p>
+  Donation 17: 1,200.00 USD on 2018-10-09
+</p>
+<p>
+  Donation 18: 100.00 USD on 2018-10-11
+</p>
+<p>
+  Donation 19: 100.00 USD on 2018-10-12
+</p>
+<p>
+  Donation 20: 800.00 USD on 2018-10-12
+</p>
+<p>
+  Donation 21: 50.00 USD on 2018-10-14
+</p>
+<p>
+  Donation 22: 50.00 USD on 2018-10-15
+</p>
+<p>
+  Donation 23: 50.00 USD on 2018-10-20
+</p>
+<p>
+  Donation 24: 50.00 USD on 2018-10-22
+</p>
+<p>
+  Donation 25: 800.00 USD on 2018-11-22
+</p>
+<p>
+  Donation 26: 1,200.00 USD on 2018-12-09
+</p>
+<p>
+  Donation 27: 800.00 USD on 2018-12-22
+</p>
+
+<p><b>Total donations to Wikimedia Endowment:</b></p>
+
 
 <p>
-Your donations show us that our work matters, and is worth supporting. Thank you.
+  If you’d like to cancel your monthly donation, follow these easy <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&amp;basic=true&amp;language=en">easy cancellation instructions</a>.
 </p>
 
+<p>With gratitude,</p>
 <p>
-Here’s a summary of all the donations you made to the Wikimedia Foundation in 2018:
+The Wikimedia Foundation
 </p>
 
-<p><b>
-Your 2018 total was USD 9800.
-</b></p>
-
-<p><b>
-Donation 1: 50 USD 2018-01-26
-</b></p>
-<p><b>
-Donation 2: 50 USD 2018-02-01
-</b></p>
-<p><b>
-Donation 3: 800 USD 2018-03-02
-</b></p>
-<p><b>
-Donation 4: 800 USD 2018-03-03
-</b></p>
-<p><b>
-Donation 5: 50 USD 2018-05-03
-</b></p>
-<p><b>
-Donation 6: 800 USD 2018-05-05
-</b></p>
-<p><b>
-Donation 7: 800 USD 2018-05-11
-</b></p>
-<p><b>
-Donation 8: 50 USD 2018-06-04
-</b></p>
-<p><b>
-Donation 9: 50 USD 2018-06-06
-</b></p>
-<p><b>
-Donation 10: 50 USD 2018-06-08
-</b></p>
-<p><b>
-Donation 11: 50 USD 2018-07-07
-</b></p>
-<p><b>
-Donation 12: 50 USD 2018-07-12
-</b></p>
-<p><b>
-Donation 13: 50 USD 2018-08-08
-</b></p>
-<p><b>
-Donation 14: 50 USD 2018-08-08
-</b></p>
-<p><b>
-Donation 15: 800 USD 2018-09-02
-</b></p>
-<p><b>
-Donation 16: 100 USD 2018-10-03
-</b></p>
-<p><b>
-Donation 17: 1200 USD 2018-10-09
-</b></p>
-<p><b>
-Donation 18: 100 USD 2018-10-11
-</b></p>
-<p><b>
-Donation 19: 100 USD 2018-10-12
-</b></p>
-<p><b>
-Donation 20: 800 USD 2018-10-12
-</b></p>
-<p><b>
-Donation 21: 50 USD 2018-10-14
-</b></p>
-<p><b>
-Donation 22: 50 USD 2018-10-15
-</b></p>
-<p><b>
-Donation 23: 50 USD 2018-10-20
-</b></p>
-<p><b>
-Donation 24: 50 USD 2018-10-22
-</b></p>
-<p><b>
-Donation 25: 800 USD 2018-11-22
-</b></p>
-<p><b>
-Donation 26: 1200 USD 2018-12-09
-</b></p>
-<p><b>
-Donation 27: 800 USD 2018-12-22
-</b></p>
-
-<p>
-If for whatever reason you wish to cancel your monthly donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en">easy cancellation instructions</a>.
-</p>
-
-<p>With immense gratitude,</p>
-<p>
-  Katherine<br><br>
-  Katherine Maher, Executive Director<br>
-  Wikimedia Foundation
-</p>
-
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
-</p>
+<p>The Wikimedia Endowment ensures Wikimedia Foundation\'s free knowledge resources remain accessible and valuable for generations to come.</p>
+<p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href="mailto:legacy@wikimedia.org">Contact us to learn how to make a legacy gift.</a></p>
+<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
 ',
     ], $email);
   }
@@ -530,56 +527,53 @@ If for whatever reason you wish to cancel your monthly donation, follow these <a
       'from_address' => 'bobita@example.org',
       'to_name' => 'Bob',
       'to_address' => 'bob@example.com',
-      'subject' => 'This is a receipt, but it\'s also so much more',
+      'subject' => 'A record of your support for Wikipedia',
       'html' => '<p>
 Dear Bob,
 </p>
 
 <p>
-I am thrilled that this email to you is one of the first things on my to-do list in 2019. Granted, that to-do list is long--Wikipedia has so many amazing projects on the horizon--but thanking you is at the very top.
+This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
+<p>
+Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2018:
+</p>
+
+<p><b>
+  Your 2018 total was USD 70.00.
+</b></p>
+<p><b>
+  Your 2018 total was CAD 850.00.
+</b></p>
+<p><b>Total donations to Wikimedia Foundation:</b></p>
+<p>
+  Donation 1: 50.00 USD on 2018-02-01
+</p>
+<p>
+  Donation 2: 800.00 CAD on 2018-03-02
+</p>
+<p>
+  Donation 3: 20.00 USD on 2018-05-03
+</p>
+<p>
+  Donation 4: 50.00 CAD on 2018-10-20
+</p>
+
+<p><b>Total donations to Wikimedia Endowment:</b></p>
+
 
 <p>
-Your donations show us that our work matters, and is worth supporting. Thank you.
+  If you’d like to cancel your monthly donation, follow these easy <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&amp;basic=true&amp;language=en">easy cancellation instructions</a>.
 </p>
 
+<p>With gratitude,</p>
 <p>
-Here’s a summary of all the donations you made to the Wikimedia Foundation in 2018:
+The Wikimedia Foundation
 </p>
 
-<p><b>
-Your 2018 total was USD 70.
-</b></p>
-<p><b>
-Your 2018 total was CAD 850.
-</b></p>
-
-<p><b>
-Donation 1: 50 USD 2018-02-01
-</b></p>
-<p><b>
-Donation 2: 800 CAD 2018-03-02
-</b></p>
-<p><b>
-Donation 3: 20 USD 2018-05-03
-</b></p>
-<p><b>
-Donation 4: 50 CAD 2018-10-20
-</b></p>
-
-<p>
-If for whatever reason you wish to cancel your monthly donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language=en">easy cancellation instructions</a>.
-</p>
-
-<p>With immense gratitude,</p>
-<p>
-  Katherine<br><br>
-  Katherine Maher, Executive Director<br>
-  Wikimedia Foundation
-</p>
-
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
-</p>
+<p>The Wikimedia Endowment ensures Wikimedia Foundation\'s free knowledge resources remain accessible and valuable for generations to come.</p>
+<p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href="mailto:legacy@wikimedia.org">Contact us to learn how to make a legacy gift.</a></p>
+<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
 ',
     ], $email);
   }
