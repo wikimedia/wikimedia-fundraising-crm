@@ -7,7 +7,7 @@ use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use wmf_communication\Translation;
-use wmf_eoy_receipt\EoySummary;
+use Civi\EoySummary;
 use wmf_communication\Templating;
 
 /**

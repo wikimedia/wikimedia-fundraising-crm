@@ -1,11 +1,8 @@
 <?php
 
-namespace wmf_eoy_receipt;
+namespace Civi;
 
-use Civi\Api4\Action\EOYEmail\Render;
 use Civi\Api4\EOYEmail;
-use wmf_communication\Templating;
-use wmf_communication\Translation;
 use Civi\Omnimail\MailFactory;
 
 class EoySummary {
@@ -78,6 +75,9 @@ class EoySummary {
       $job->setContactID($this->contact_id);
     }
     $this->job_id = $job->execute()->first()['job_id'];
+    if (!$this->job_id) {
+      throw new \API_Exception('No contributions found for year ' . $this->year . ($this->contact_id ? ' For contact id ' . $this->contact_id : ''));
+    }
     return $this->job_id;
   }
 
