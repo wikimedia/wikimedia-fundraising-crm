@@ -7,26 +7,23 @@
  */
 
 function wmf_eoy_receipt_run($options = []) {
-  require_once 'EoySummary.php';
   civicrm_initialize();
-  $donors = new wmf_eoy_receipt\EoySummary($options);
+  $donors = new Civi\EoySummary($options);
 
   $donors->calculate_year_totals();
   $donors->send_letters();
 }
 
 function wmf_eoy_receipt_calculate_summaries($options = []) {
-  require_once 'EoySummary.php';
   civicrm_initialize();
-  $donors = new wmf_eoy_receipt\EoySummary($options);
+  $donors = new Civi\EoySummary($options);
 
   return $donors->calculate_year_totals();
 }
 
 function wmf_eoy_receipt_send_letters($options = []) {
-  require_once 'EoySummary.php';
   civicrm_initialize();
-  $donors = new wmf_eoy_receipt\EoySummary($options);
+  $donors = new Civi\EoySummary($options);
 
   $donors->send_letters();
 }

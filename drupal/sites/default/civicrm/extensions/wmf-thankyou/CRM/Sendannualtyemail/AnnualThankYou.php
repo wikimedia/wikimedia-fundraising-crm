@@ -9,7 +9,7 @@ class CRM_Sendannualtyemail_AnnualThankYou {
    *
    * @param $contact_id
    * @param $year
-   * @see \wmf_eoy_receipt\EoySummary
+   * @see \Civi\EoySummary
    *
    * @return bool
    */

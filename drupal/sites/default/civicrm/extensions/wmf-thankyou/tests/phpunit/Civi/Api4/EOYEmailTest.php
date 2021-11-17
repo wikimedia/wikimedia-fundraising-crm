@@ -1,13 +1,12 @@
 <?php
 namespace Civi\Api4;
-require_once __DIR__ . '/../../../../../../../../all/modules/wmf_eoy_receipt/EoySummary.php';
 
 use Civi\Omnimail\MailFactory;
 use Civi\Test\Api3TestTrait;
 use CRM_Core_DAO;
 use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
-use wmf_eoy_receipt\EoySummary;
+use Civi\EoySummary;
 use Civi\Test\Mailer;
 
 class EOYEmailTest extends TestCase {
