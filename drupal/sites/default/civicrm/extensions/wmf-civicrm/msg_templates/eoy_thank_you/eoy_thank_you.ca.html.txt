@@ -1,0 +1,45 @@
+<p>
+{if '{contact.first_name}' && '{contact.last_name}'}
+Benvolgut/Benvolguda {contact.first_name},
+
+{else}
+Estimat/da donant,
+
+{/if}
+</p>
+
+<p>
+Aquest any passat, hem mantingut un seguiment meticulós de les teves generoses contribucions realitzades en suport de Wikipedia, no només perquè n’estem molt agraïts, sinó també perquè sabíem que agrairies poder tenir una còpia d'aquest registre.
+</p>
+
+<p>
+Moltes gràcies per donar suport a la nostra missió de proporcionar informació gratuïta i fiable a l’abast de tothom. Heus aquí un resum de les donacions que has fet durant el {$year}:
+</p>
+
+{foreach from=$totals item=total}
+<p><b>
+Durant el {$year} has aportat un total el {$total.currency} {$total.amount}.
+</b></p>
+{/foreach}
+
+<p><b>Total de donacions a Wikimedia Foundation:</b></p>
+{foreach from=$contributions key=index item=contribution}
+{if $contribution.financial_type != 'Endowment'}
+<p>
+  Donació  {$index}: {$contribution.amount} {$contribution.currency} on {$contribution.receive_date}
+</p>
+{/if}
+{/foreach}
+
+{if $active_recurring}
+<p>
+  Si per qualsevol motiu vols cancel·lar la teva donació mensual, segueix aquestes <a href="{wmf_url.cancel}">senzilles instruccions de cancel·lació</a>.
+</p>
+{/if}
+
+<p>Amb gratitud,</p>
+<p>
+  The Wikimedia Foundation
+</p>
+
+<p>Aquesta carta pot servir com a comprovant de la teva donació. No s'han proporcionat productes ni serveis, ni en la seva totalitat ni en part, a canvi d’aquesta contribució. La nostra adreça postal és: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204 (EUA). Número d’exempció d’impostos dels EUA: 20-0049703</p>

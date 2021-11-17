@@ -53,6 +53,10 @@ class CRM_Wmf_Tokens {
       case 'unsubscribe' :
         return build_unsub_link(-1, $email, substr($language, 0, 2));
 
+      case 'cancel' :
+        return 'https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language='
+          . substr($language, 0, 2);
+
     }
     return '';
   }
@@ -66,6 +70,7 @@ class CRM_Wmf_Tokens {
     $e->entity('wmf_url')
       ->register('unsubscribe', ts('Unsubscribe url'))
       ->register('new_recur', ts('New recurring url'))
+      ->register('cancel', ts('Cancel recurring url'))
       ->register('new_recur_brief', ts('New recurring url with less creepy stuff'))
     ;
     $e->entity('now')
