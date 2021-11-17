@@ -1,8 +1,12 @@
 <?php
 
+use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
+use Civi\Api4\Email;
 use Civi\Api4\PendingTransaction;
 use SmashPig\Core\DataStores\PaymentsFraudDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
+use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\PaymentDetailResponse;
 use SmashPig\Tests\TestingContext;
@@ -19,6 +23,8 @@ use SmashPig\PaymentProviders\CancelPaymentResponse;
 class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework\TestCase {
 
   protected $hostedCheckoutProvider;
+
+  protected $contactId;
 
   /**
    * The setup() method is executed before the test is executed (optional).
@@ -52,6 +58,11 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
    */
   public function tearDown(): void {
     TestingDatabase::clearStatics();
+    if ($this->contactId) {
+      Contact::delete(FALSE)
+        ->addWhere('id', '=', $this->contactId)
+        ->execute();
+    }
   }
 
   public function testAntiFraudQueueMessageCreatedAfterHostedStatusCallWithNewScores() {
@@ -436,6 +447,136 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     // any keys that exist in $arr1 that don't exist in $arr2. In this case we want
     // the result to be empty to confirm $expectedArrayKeys matches the queue message keys.
     $this->assertEmpty(array_diff_key(array_flip($expectedArrayKeys), $paymentsInitQueueMessage));
+  }
+
+  public function testReviewActionMatchesUnrefundedDonor() {
+    // generate a pending message to test
+    $pending_message = $this->createTestPendingRecord('ingenico');
+
+    // getHostedPaymentStatus response set up
+    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+      ->setStatus(FinalStatus::PENDING_POKE)
+      // Default review threshold is 75
+      ->setRiskScores([
+        'cvv' => 50,
+        'avs' => 50,
+      ]);
+
+    // set configured response to mock getHostedPaymentStatus call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('getHostedPaymentStatus')
+      ->willReturn($hostedPaymentStatusResponse);
+
+    // approvePayment response set up
+    $approvePaymentResponse = new ApprovePaymentResponse();
+    $approvePaymentResponse->setStatus(FinalStatus::COMPLETE);
+
+    // set configured response to mock approvePayment call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->with([
+        'amount' => 10,
+        'currency' => 'GBP',
+        'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId()
+      ])
+      ->willReturn($approvePaymentResponse);
+
+    $contact = Contact::create(FALSE)
+      ->setValues([
+        'first_name' => $pending_message['first_name'],
+        'last_name' => $pending_message['last_name']
+      ])->execute()->first();
+    $this->contactId = $contact['id'];
+    Email::create(FALSE)
+      ->setValues([
+        'contact_id' => $contact['id'],
+        'email' => $pending_message['email']
+      ])
+      ->execute();
+    Contribution::create(FALSE)
+      ->setValues([
+        'contact_id' => $contact['id'],
+        'total_amount' => '2.34',
+        'currency' => 'USD',
+        'receive_date' => '2018-06-20',
+        'financial_type_id' => 1,
+        'contribution_status_id:name' => 'Completed',
+      ])
+      ->execute();
+
+    // run the pending message through PendingTransaction::resolve()
+    PendingTransaction::resolve()->setMessage($pending_message)->execute();
+
+    $donationMessage = QueueWrapper::getQueue('donations')->pop();
+    SourceFields::removeFromMessage($donationMessage);
+    $this->assertEquals(array_merge($pending_message, [
+      'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId()
+    ]), $donationMessage);
+  }
+
+  public function testReviewActionMatchesRefundedDonor() {
+    // generate a pending message to test
+    $pending_message = $this->createTestPendingRecord('ingenico');
+
+    // getHostedPaymentStatus response set up
+    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+      ->setStatus(FinalStatus::PENDING_POKE)
+      // Default review threshold is 75
+      ->setRiskScores([
+        'cvv' => 50,
+        'avs' => 50,
+      ]);
+
+    // set configured response to mock getHostedPaymentStatus call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('getHostedPaymentStatus')
+      ->willReturn($hostedPaymentStatusResponse);
+
+    // should not approvePayment
+    $this->hostedCheckoutProvider->expects($this->never())
+      ->method('approvePayment');
+
+    $contact = Contact::create(FALSE)
+      ->setValues([
+        'first_name' => $pending_message['first_name'],
+        'last_name' => $pending_message['last_name']
+      ])->execute()->first();
+    $this->contactId = $contact['id'];
+    Email::create(FALSE)
+      ->setValues([
+        'contact_id' => $contact['id'],
+        'email' => $pending_message['email']
+      ])
+      ->execute();
+    Contribution::create(FALSE)
+      ->setValues([
+        'contact_id' => $contact['id'],
+        'total_amount' => '2.34',
+        'currency' => 'USD',
+        'receive_date' => '2018-06-20',
+        'financial_type_id' => 1,
+        'contribution_status_id:name' => 'Completed',
+      ])
+      ->execute();
+    Contribution::create(FALSE)
+      ->setValues([
+        'contact_id' => $contact['id'],
+        'total_amount' => '2.34',
+        'currency' => 'GBP',
+        'receive_date' => '2019-02-28',
+        'financial_type_id' => 1,
+        'contribution_status_id:name' => 'Refunded',
+      ])
+      ->execute();
+
+    // run the pending message through PendingTransaction::resolve()
+    PendingTransaction::resolve()->setMessage($pending_message)->execute();
+
+    // Should not have a donation queue message
+    $donationMessage = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNull($donationMessage);
   }
 
   /**
