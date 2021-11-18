@@ -28,8 +28,20 @@ class Message extends Generic\AbstractEntity {
    *
    * @throws \API_Exception
    */
-  public static function render() {
-    return new Action\Message\Render(__CLASS__, __FUNCTION__);
+  public static function render($checkPermissions = TRUE) {
+    return (new Action\Message\Render(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * @return \Civi\Api4\Action\Message\Load
+   *
+   * @throws \API_Exception
+   */
+  public static function load($checkPermissions = TRUE) {
+    return (new Action\Message\Load(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+
   }
 
   /**
@@ -59,7 +71,7 @@ class Message extends Generic\AbstractEntity {
    * @return array
    */
   public static function permissions():array {
-    return ['render' => 'access CiviCRM'];
+    return ['render' => 'access CiviCRM', 'load' => 'access CiviCRM'];
   }
 
   /**
