@@ -968,7 +968,7 @@ function build_unsub_link($contributionId, $emailAddr, $language) {
     'p' => 'thankyou',
     'c' => $contributionId,
     'e' => $emailAddr,
-    'h' => sha1($contributionId . $emailAddr . WMF_UNSUB_SALT),
+    'h' => sha1($contributionId . $emailAddr . CRM_Utils_Constant::value('WMF_UNSUB_SALT')),
     'uselang' => $language,
   ];
 

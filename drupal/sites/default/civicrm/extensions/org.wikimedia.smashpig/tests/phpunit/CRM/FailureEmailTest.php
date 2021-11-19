@@ -26,7 +26,9 @@ class CRM_FailureEmailTest extends SmashPigBaseTestClass {
    * @throws \CRM_Core_Exception
    * @throws \API_Exception
    */
-  public function testRender() {
+  public function testRender(): void {
+    // Make sure the define is available (not this won't override any existing define).
+    putenv('WMF_UNSUB_SALT=abc123');
     $this->setupFailureTemplate();
     $contributionRecur = $this->setupRecurring();
     $email = FailureEmail::render()->setCheckPermissions(FALSE)->setContributionRecurID($contributionRecur['id'])->execute()->first();
