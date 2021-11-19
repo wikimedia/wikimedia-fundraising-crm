@@ -25,4 +25,4 @@ Washington, DC 20090-8204
 Estados Unidos de América
 
 
-Ref CiviRec{contact.preferred_language} {contributionRecur.id}
+Ref CiviRec{contact.preferred_language} {contribution_recur.id}
