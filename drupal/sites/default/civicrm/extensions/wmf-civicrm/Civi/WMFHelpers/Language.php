@@ -68,7 +68,7 @@ class Language {
       'es' => 'es_ES',
       'nl' => 'nl_NL',
       'pt' => 'pt_PT',
-      'zh' => 'zn_CN',
+      'zh' => 'zh_TW',
     ];
   }
 
