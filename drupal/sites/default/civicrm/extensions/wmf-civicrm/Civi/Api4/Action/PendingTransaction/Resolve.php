@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\PendingTransaction;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use SmashPig\Core\Context;
+use SmashPig\Core\DataStores\PaymentsFraudDatabase;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\FinalStatus;
@@ -131,7 +132,6 @@ class Resolve extends AbstractAction {
       default:
         throw new \UnexpectedValueException("Should not get action $validationAction");
     }
-    // TODO Send an antifraud message
 
     // Drop a message off on the payments-init queue. This is usually done at the end
     // of a donation attempt at payments-wiki, but for orphan messages we often haven't
@@ -170,22 +170,107 @@ class Resolve extends AbstractAction {
     return TRUE;
   }
 
-  protected function getValidationAction($riskScores) : string {
+  /**
+   * Determine what action to take based on risk scores from the hosted checkout
+   * status call combined with risk scores from the payments_fraud table.
+   *
+   * @param array $riskScoresFromStatus 'cvv' and 'avs' keys are examined
+   * @return string one of the ValidationAction constants
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  protected function getValidationAction(array $riskScoresFromStatus): string {
+    $totalRiskScore = 0;
+    $fredgeHadCvvScore = false;
+    $fredgeHadAvsScore = false;
+    $statusHasNewFraudScores = false;
+
+    $paymentsFraudRowWithBreakdown = PaymentsFraudDatabase::get()->fetchMessageByGatewayOrderId(
+      $this->message['gateway'], $this->message['order_id'], TRUE
+    );
+    $scoreBreakdownFromFredge = $paymentsFraudRowWithBreakdown['score_breakdown'] ?? [];
+    // $scoreBreakdownFromFredge looks like [
+    //    'getCVVResult' => 80,
+    //    'minfraud_filter' => 0.25,
+    // ]
+    foreach($scoreBreakdownFromFredge as $filterName => $score) {
+      if ($filterName === 'getCVVResult') {
+        $fredgeHadCvvScore = true;
+      } elseif ($filterName === 'getAVSResult') {
+        $fredgeHadAvsScore = true;
+      }
+      $totalRiskScore += $score;
+    }
+    // At this point $totalRiskScore should be equal to $paymentsFraudRowWithBreakdown['risk_score']
+    // but we can spare the cycles to do the math again ourselves.
+
+    // If we have new info about CVV and AVS risk scores, add that to
+    // the message and note that we have new scores to send to the queue.
+    // We can re-use the array retrieved from PaymentsFraudDatabase as a
+    // basis for the antifraud message, as it is in the exact same format.
+    $antifraudMessage = $paymentsFraudRowWithBreakdown;
+
+    if (isset($riskScoresFromStatus['cvv'])) {
+      if ($fredgeHadCvvScore) {
+        // Log a warning if we already had a different score recorded. This
+        // probably indicates that we are assigning the same raw result two
+        // different scores on front-end and back end settings.
+        if ($scoreBreakdownFromFredge['getCVVResult'] != $riskScoresFromStatus['cvv']) {
+          \Civi::Log('wmf')->warning(
+            "CVV score mismatch for order_id {$this->message['order_id']}. " .
+            "Front end score {$scoreBreakdownFromFredge['getCVVResult']}, " .
+            "pending resolver score {$riskScoresFromStatus['cvv']}. " .
+            "Please check that cvv_map settings are consistent."
+          );
+        }
+      } else {
+        $antifraudMessage['score_breakdown']['getCVVResult'] = $riskScoresFromStatus['cvv'];
+        $totalRiskScore += $riskScoresFromStatus['cvv'];
+        $statusHasNewFraudScores = TRUE;
+      }
+    }
+    if (isset($riskScoresFromStatus['avs'])) {
+      if ($fredgeHadAvsScore) {
+        // Log a warning if we already had a different score recorded. This
+        // probably indicates that we are assigning the same raw result two
+        // different scores on front-end and back end settings.
+        if ($scoreBreakdownFromFredge['getAVSResult'] != $riskScoresFromStatus['avs']) {
+          \Civi::Log('wmf')->warning(
+            "AVS score mismatch for order_id {$this->message['order_id']}. " .
+            "Front end score {$scoreBreakdownFromFredge['getAVSResult']}, " .
+            "pending resolver score {$riskScoresFromStatus['avs']}. " .
+            "Please check that avs_map settings are consistent."
+          );
+        }
+      } else {
+        $antifraudMessage['score_breakdown']['getAVSResult'] = $riskScoresFromStatus['avs'];
+        $totalRiskScore += $riskScoresFromStatus['avs'];
+        $statusHasNewFraudScores = TRUE;
+      }
+    }
+    $antifraudMessage['risk_score'] = $totalRiskScore;
+
+    if ($statusHasNewFraudScores) {
+      QueueWrapper::push( 'payments-antifraud', $antifraudMessage );
+    }
+
     $config = Context::get()->getProviderConfiguration();
-    $totalRiskScore = ($riskScores['cvv'] ?? 0) + ($riskScores['avs'] ?? 0);
     if ($totalRiskScore > $config->val('fraud-filters/reject-threshold')) {
       return ValidationAction::REJECT;
-    }
-    // If no CVV results for a credit card, discard message
-    if (
-      $this->message['payment_method'] === 'cc' &&
-      !isset($riskScores['cvv'])
-    ) {
-      return ValidationAction::REVIEW;
     }
     if ($totalRiskScore > $config->val('fraud-filters/review-threshold')) {
       return ValidationAction::REVIEW;
     }
+
+    // If no CVV results for a credit card, leave in review
+    if (
+      $this->message['payment_method'] === 'cc' &&
+      !$fredgeHadCvvScore &&
+      empty($riskScoresFromStatus['cvv'])
+    ) {
+      return ValidationAction::REVIEW;
+    }
+
     return ValidationAction::PROCESS;
   }
 
