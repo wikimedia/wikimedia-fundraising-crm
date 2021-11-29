@@ -34,6 +34,7 @@
       <th class='crm-contact-event_type'>{ts}Action{/ts}</th>
       <th class='crm-contact-mailing_identifier'>{ts}Mailing{/ts}</th>
       <th class='crm-contact-email'>{ts}Email{/ts}</th>
+      <th class='crm-contact-contact-reference'>{ts}Acoustic ID{/ts}</th>
     </tr>
     </thead>
 
@@ -51,7 +52,11 @@
            _:   "mailing_identifier.display",
           sort: "mailing_identifier.name"
         } },
-        { data: 'email' }
+        { data: 'email' },
+        { data: {
+           _:   "contact_identifier.display",
+          sort: "contact_identifier.name"
+        } },
       ]
     });
 

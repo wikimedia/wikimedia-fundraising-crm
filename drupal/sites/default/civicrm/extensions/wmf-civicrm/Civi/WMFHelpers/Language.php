@@ -4,11 +4,14 @@
 namespace Civi\WMFHelpers;
 
 use Civi\Api4\Contact;
+use Civi\Api4\OptionValue;
 
 class Language {
 
   /**
    * Get the best language to use, based on the language information we have.
+   *
+   * @throws \API_Exception
    */
   public static function getLanguageCode(string $suppliedLanguage): string {
     $validLanguages = self::getValidLanguages();
@@ -33,7 +36,22 @@ class Language {
         return $validLanguage;
       }
     }
-    return 'en_US';
+    // If the language is present but inactive then enable it - this 
+    // really just affects dev sites. Everything under the sun, including around 2000
+    // made-up languages are enabled on live but dev sites might be missing Latvian.
+    $optionValue = OptionValue::get(FALSE)
+      ->addWhere('option_group_id:name', '=', 'languages')
+      ->addWhere('value', '=', $suppliedLanguage)
+      ->addWhere('is_active', '=', FALSE)->addSelect('id')->execute()->first();
+    if (!empty($optionValue)) {
+      OptionValue::update(FALSE)
+        ->addWhere('id', '=', $optionValue['id'])
+        ->setValues(['is_active' => TRUE])
+        ->execute();
+      \Civi::cache('metadata')->clear();
+      return $suppliedLanguage;
+    }
+    throw new \CRM_Core_Exception($suppliedLanguage . ' not enabled');
   }
 
   /**
@@ -68,7 +86,7 @@ class Language {
       'es' => 'es_ES',
       'nl' => 'nl_NL',
       'pt' => 'pt_PT',
-      'zh' => 'zn_CN',
+      'zh' => 'zh_TW',
     ];
   }
 

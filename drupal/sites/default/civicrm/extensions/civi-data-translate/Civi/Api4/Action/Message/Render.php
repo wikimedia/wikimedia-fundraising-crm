@@ -6,7 +6,6 @@ namespace Civi\Api4\Action\Message;
 use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\Api4\MessageTemplate;
 use Civi\Token\TokenProcessor;
 
 /**
@@ -29,7 +28,7 @@ use Civi\Token\TokenProcessor;
  * @method $this setEntityIDs(array $entityIDs) Set entity IDs
  * @method array getEntityIDs() Get entity IDs
  * @method $this setWhere(array $whereClauses) Set where clauses.
- * @method $this setLanguage(string $entityIDs) Set language (e.g en_NZ).
+ * @method $this setLanguage(string $language) Set language (e.g en_NZ).
  * @method string getLanguage() Get language (e.g en_NZ)
  * @method $this setLimit(int $limit) Set Limit
  * @method int getLimit() Get Limit
@@ -79,7 +78,7 @@ class Render extends AbstractAction {
   protected $messageText;
 
   /**
-   * String to be returned as the subject.
+   * String to be returned as the html.
    *
    * @var string
    */
@@ -134,6 +133,22 @@ class Render extends AbstractAction {
   protected $limit;
 
   /**
+   * Set the workflow.
+   *
+   * This is an alias for setWorkFlowName - since the api we will eventually call
+   * uses setWorkflow rather than setWorkflowName it is good to starting using that
+   * now.
+   *
+   * @param $string
+   *
+   * @return $this
+   */
+  public function setWorkflow($string): Render {
+    $this->setWorkflowName($string);
+    return $this;
+  }
+
+  /**
    * @inheritDoc
    *
    * @param \Civi\Api4\Generic\Result $result
@@ -142,7 +157,6 @@ class Render extends AbstractAction {
    * @throws \Civi\API\Exception\NotImplementedException
    */
   public function _run(Result $result) {
-    $this->loadMessageTemplate();
     $tokenProcessor = new TokenProcessor(Civi::dispatcher(), [
       'controller' => __CLASS__,
       // Permissions implications in not-false. Also a preference to simply do smarty parsing after
@@ -209,13 +223,10 @@ class Render extends AbstractAction {
    * Get the strings to render civicrm tokens for.
    *
    * @return array
+   *
+   * @throws \API_Exception
    */
   protected function getStringsToParse(): array {
-    $textFields = [
-      'msg_html' => ['string' => $this->getMessageHtml(), 'format' => 'text/html', 'key' => 'msg_html'],
-      'msg_subject' => ['string' => trim($this->getMessageSubject()), 'format' => 'text/plain', 'key' => 'msg_subject'],
-      'msg_text' => ['string' => $this->getMessageText(), 'format' => 'text/plain', 'key' => 'msg_text'],
-    ];
     /*
      The intention was to also allow ad hoc strings. However, some security need to be thought through.
      Although we do a security check on the ability to access the main entity it is not clear that
@@ -228,7 +239,9 @@ class Render extends AbstractAction {
       $textFields[$message['key']] = $message;
     }
     */
-    return $textFields;
+    return Civi\Api4\Message::load($this->getCheckPermissions())
+    ->setWorkflow($this->getWorkflowName())->setLanguage($this->getLanguage())
+    ->execute()->first();
   }
 
   /**
@@ -238,53 +251,6 @@ class Render extends AbstractAction {
    */
   protected function getEntityKey(): string {
     return strtolower($this->getEntity()) . 'Id';
-  }
-
-  /**
-   * Load the relevant message template.
-   *
-   * @throws \API_Exception
-   */
-  protected function loadMessageTemplate() {
-    if ($this->getWorkflowName()) {
-      $strings = MessageTemplate::get(FALSE)
-        ->addWhere('workflow_name', '=', $this->getWorkflowName())
-        ->addWhere('is_default', '=', 1)
-        ->addSelect('translation.*')
-        ->addWhere('translation.status_id:name', '=', 'active')
-        ->addWhere('translation.language', '=', $this->getLanguage())
-        ->addJoin('Translation AS translation', 'INNER',
-          ['id', '=', 'translation.entity_id'],
-          ['translation.entity_table', '=', '"civicrm_msg_template"']
-        )
-        ->execute();
-      if (!count($strings)) {
-        // For English, or unknown language, we can fall back on the 'main' version of the template.
-        if (!$this->getLanguage() || strpos($this->getLanguage(), 'en_') === 0) {
-          $strings = MessageTemplate::get(FALSE)
-            ->addWhere('workflow_name', '=', $this->getWorkflowName())
-            ->addWhere('is_default', '=', 1)
-            ->setSelect(['msg_html', 'msg_text', 'msg_subject'])
-            ->execute()->first();
-          $this->setMessageHtml($strings['msg_html']);
-          $this->setMessageText($strings['msg_text']);
-          $this->setMessageSubject($strings['msg_subject']);
-          return;
-        }
-        throw new \API_Exception('No translation found');
-      }
-      foreach ($strings as $string) {
-        if ($string['translation.entity_field'] === 'msg_html') {
-          $this->setMessageHtml($string['translation.string']);
-        }
-        if ($string['translation.entity_field'] === 'msg_text') {
-          $this->setMessageText($string['translation.string']);
-        }
-        if ($string['translation.entity_field'] === 'msg_subject') {
-          $this->setMessageSubject($string['translation.string']);
-        }
-      }
-    }
   }
 
   /**

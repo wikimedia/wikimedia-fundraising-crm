@@ -19,7 +19,7 @@ class CRM_Wmf_Tokens {
     foreach ($e->getRows() as $row) {
       $tokens = $e->getTokenProcessor()->getMessageTokens();
       foreach (($tokens['wmf_url'] ?? []) as $token) {
-        $row->tokens('wmf_url', $token, self::getUrl($token, $row->context['contact']['email'], $row->context['locale']));
+        $row->tokens('wmf_url', $token, self::getUrl($token, $row->context['contact']['email'] ?? '', $row->context['locale']));
       }
       if (isset($tokens['now'])) {
         // CiviCRM doesn't do full locale date handling. It relies on .pot files

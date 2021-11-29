@@ -1,1 +1,2 @@
 role 'authenticated user'
+add view public CiviMail content

@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\EOYEmail;
 use CRM_WmfThankyou_ExtensionUtil as E;
 use CRM_Sendannualtyemail_AnnualThankYou as AnnualThankYou;
 
@@ -10,14 +11,19 @@ use CRM_Sendannualtyemail_AnnualThankYou as AnnualThankYou;
  */
 class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
 
-  public function preProcess() {
-    parent::preProcess();
+  /**
+   * Rendered message.
+   *
+   * @var array
+   */
+  protected $message;
 
-    //check to see if
-  }
-
-
-  public function buildQuickForm() {
+  /**
+   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function buildQuickForm(): void {
 
     // add form elements
     $this->add(
@@ -38,20 +44,37 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
 
     // export form elements
     $this->assign('elementNames', $this->getRenderableElementNames());
+    $this->setMessage();
     parent::buildQuickForm();
   }
 
-  public function postProcess() {
-    $values = $this->exportValues();
-    if ($cid = CRM_Utils_Request::retrieveValue('cid', 'Integer')) {
+  /**
+   * Set the rendered message property, if possible.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function setMessage() {
+    try {
+      $this->message = EOYEmail::render()
+        ->setContactID($this->getContactID())
+        ->setYear(date('Y') - 1)
+        ->execute()->first();
+      $this->assign('subject', $this->message['subject']);
+      $this->assign('message', $this->message['html']);
+    }
+    catch (API_Exception $e) {
+      // No contributions for the contact last year - don't set the default
+      // or do any pre-rendering.
+    }
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function postProcess(): void {
       // send_email
-      AnnualThankYou::send($cid, $values['year']);
-      CRM_Core_Session::setStatus("An email with all contributions from {$values['year']} will be sent to this contact if they contributed that year.");
-    }
-    else {
-      // FIXME: better message
-      CRM_Core_Form::errorMessage('Email not sent. Contact ID missing?!?!');
-    }
+    AnnualThankYou::send($this->getContactID(), $this->getSubmittedValue('year'));
+    CRM_Core_Session::setStatus('An email with all contributions from ' . $this->getSubmittedValue('year') . '  will be sent to this contact if they contributed that year.');
     parent::postProcess();
   }
 
@@ -65,6 +88,19 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
         $options[$year] = $year;
     }
     return $options;
+  }
+
+  /**
+   * Set form defaults.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function setDefaultValues(): array {
+    if (!empty($this->message)) {
+      return ['year' => date('Y') - 1];
+    }
+    return [];
   }
 
   /**
@@ -86,6 +122,14 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
       }
     }
     return $elementNames;
+  }
+
+  /**
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public function getContactID(): int {
+    return CRM_Utils_Request::retrieveValue('cid', 'Integer', NULL, TRUE);
   }
 
 }

@@ -23,4 +23,4 @@ Givarkommunikation, Wikimedia</p>
 P.O. Box 98204<br>
 Washington, DC 20090-8204<br>
 USA</p>
-<p>Ref CiviRec{contact.preferred_language} {contributionRecur.id}</p>
+<p>Ref CiviRec{contact.preferred_language} {contribution_recur.id}</p>

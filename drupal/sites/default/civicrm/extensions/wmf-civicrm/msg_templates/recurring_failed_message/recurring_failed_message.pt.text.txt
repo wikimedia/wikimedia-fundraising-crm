@@ -25,4 +25,4 @@ P.O. Box 98204
 Washington, DC 20090-8204
 Estados Unidos da América
 
-Ref CiviRec{contact.preferred_language} {contributionRecur.id}
+Ref CiviRec{contact.preferred_language} {contribution_recur.id}
