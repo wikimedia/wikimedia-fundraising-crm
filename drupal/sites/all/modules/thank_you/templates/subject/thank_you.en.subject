@@ -1,4 +1,4 @@
-{% if first_name %}
+{% if first_name and last_name %}
    {{ first_name }}, your
 {% else %}
   Your
