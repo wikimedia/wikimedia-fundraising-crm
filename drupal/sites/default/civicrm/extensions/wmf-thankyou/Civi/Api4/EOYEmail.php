@@ -34,6 +34,18 @@ class EOYEmail extends Generic\AbstractEntity {
   }
 
   /**
+   * Send EOY emails.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\EOYEmail\send
+   */
+  public static function send(bool $checkPermissions = TRUE): Action\EOYEmail\Send {
+    return (new \Civi\Api4\Action\EOYEmail\Send(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
    * @param bool $checkPermissions
    *
    * @return \Civi\Api4\Action\EOYEmail\MakeJob

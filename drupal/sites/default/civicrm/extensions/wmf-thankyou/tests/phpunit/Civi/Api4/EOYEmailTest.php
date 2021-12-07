@@ -15,6 +15,11 @@ class EOYEmailTest extends TestCase {
   protected $jobIds = [];
 
   /**
+   * @var int
+   */
+  protected $maxJobID;
+
+  /**
    * Created IDs.
    *
    * @var array
@@ -30,14 +35,12 @@ class EOYEmailTest extends TestCase {
     variable_set('thank_you_from_name', 'Bobita');
     $mailfactory = MailFactory::singleton();
     $mailfactory->setActiveMailer(NULL, new Mailer());
+    $this->maxJobID = (int) CRM_Core_DAO::singleValueQuery('SELECT MAX(job_id) FROM wmf_eoy_receipt_donor');
   }
 
   public function tearDown(): void {
-    if ($this->jobIds) {
-      $idList = implode(',', $this->jobIds);
-      CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_donor WHERE job_id in ($idList)");
-      CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_job WHERE job_id in ($idList)");
-    }
+    CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_donor WHERE job_id > $this->maxJobID");
+    CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_job WHERE job_id > $this->maxJobID");
     foreach ($this->ids as $entity => $entityIDs) {
       foreach ($entityIDs as $entityID) {
         if ($entity === 'Contact') {
@@ -282,14 +285,14 @@ class EOYEmailTest extends TestCase {
   /**
    * Test that we create activity records for each contact with a
    * shared email.
+   *
+   * @throws \API_Exception
    */
   public function testCreateActivityRecords(): void {
     $contactIds = $this->setUpContactsSharingEmail();
-    $summaryObject = new EoySummary(['year' => 2018]);
-    $this->jobIds[] = $summaryObject->calculate_year_totals();
-    $summaryObject->send_letters();
+    EOYEmail::send(FALSE)->setYear(2018)->execute();
     $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
-    $mailing = MailFactory::singleton()->getMailer()->getMailings()[0];
+    $mailing = $this->getFirstEmail();
     $this->assertRegExp('/Cancel_or_change_recurring_giving/', $mailing['html']);
     foreach ($contactIds as $contactId) {
       $activity = $this->callAPISuccessGetSingle('Activity', [
@@ -311,8 +314,8 @@ class EOYEmailTest extends TestCase {
    * Test that we don't include cancellation instructions for
    * donors whose donation is already cancelled.
    *
+   * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
-   * @throws \API_Exception
    */
   public function testSendWithRecurringDonationsCancelled(): void {
     $this->setUpContactsSharingEmail();
@@ -327,7 +330,7 @@ class EOYEmailTest extends TestCase {
     $this->jobIds[] = $summaryObject->calculate_year_totals();
     $summaryObject->send_letters();
     $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
-    $mailing = MailFactory::singleton()->getMailer()->getMailings()[0];
+    $mailing = $this->getFirstEmail();
     $this->assertNotRegExp('/Cancel_or_change_recurring_giving/', $mailing['html']);
   }
 
@@ -377,7 +380,7 @@ class EOYEmailTest extends TestCase {
     $eoyClass = new EoySummary(['year' => 2018]);
     $eoyClass->calculate_year_totals();
     $eoyClass->send_letters();
-    $email = MailFactory::singleton()->getMailer()->getMailings()[0];
+    $email = $this->getFirstEmail();
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',
@@ -517,11 +520,9 @@ The Wikimedia Foundation
       ['receive_date' => '2018-05-04', 'total_amount' => 20.00],
       ['receive_date' => '2018-10-21', 'total_amount' => 50.00, 'currency' => 'CAD'],
     ];
-    $eoyClass = new EoySummary(['year' => 2018]);
     $this->createRecurringContributions($contactID, $contributions);
-    $eoyClass->calculate_year_totals();
-    $eoyClass->send_letters();
-    $email = MailFactory::singleton()->getMailer()->getMailings()[0];
+    EOYEmail::send(FALSE)->setYear(2018)->execute();
+    $email = $this->getFirstEmail();
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',
@@ -761,6 +762,15 @@ EOS;
         ->execute()
         ->first()['id'];
     }
+  }
+
+  /**
+   * Get the first sent email.
+   *
+   * @return array
+   */
+  protected function getFirstEmail(): array {
+    return MailFactory::singleton()->getMailer()->getMailings()[0];
   }
 
 }
