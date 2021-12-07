@@ -815,9 +815,6 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
 
   watchdog('thank_you', "Attempting to send $batch thank you mails for contributions from the last $days days.", [], WATCHDOG_INFO);
 
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
-
   $earliest = UtcDate::getUtcDatabaseString("-$days days");
   $ty_query = <<<EOT
 		SELECT civicrm_contribution.id, trxn_id
@@ -825,7 +822,7 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
 		JOIN wmf_contribution_extra
 			ON wmf_contribution_extra.entity_id = civicrm_contribution.id
 		WHERE
-			receive_date > :earliest AND
+			receive_date > %1 AND
 			thankyou_date IS NULL AND
 			(
 			  no_thank_you IS NULL OR
@@ -834,13 +831,15 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
 		ORDER BY receive_date ASC LIMIT {$batch};
 EOT;
 
-  $result = db_query($ty_query, [':earliest' => $earliest]);
+  $contribution = CRM_Core_DAO::executeQuery($ty_query, [
+    1 => [$earliest, 'String'],
+  ]);
 
   $consecutiveFailures = 0;
   $failureThreshold = variable_get('thank_you_failure_threshold', 5);
   $abort = FALSE;
   $endTime = $startTime + $timeLimit;
-  foreach ($result as $contribution) {
+  while ($contribution->fetch()) {
     if (time() >= $endTime) {
       watchdog("thank_you", "Batch time limit ($timeLimit s) elapsed", [], WATCHDOG_INFO);
       break;
