@@ -203,7 +203,6 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * Also check the anonymous contribution is matched to the existing anonymous
    * user.
    *
-   * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
    * @throws \Civi\WMFException\WMFException
    */
@@ -503,8 +502,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
   /**
    * Basic import of individual contact.
-   */
-  /**
+   *
    * @throws \API_Exception
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
@@ -513,7 +511,8 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   public function testImportIndividual(): void {
     $fileUri = $this->setupFile('engage_individual.csv');
     $importer = new EngageChecksFile($fileUri);
-    $importer->import();
+    $messages = $importer->import();
+    $this->assertEquals('All rows were imported', $messages['Result']);
     $contact = Contact::get()
       ->setCheckPermissions(FALSE)
       ->addWhere('first_name', '=', 'Rambo')
