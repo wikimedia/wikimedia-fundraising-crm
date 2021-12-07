@@ -51,7 +51,7 @@ class Language {
       \Civi::cache('metadata')->clear();
       return $suppliedLanguage;
     }
-    throw new \CRM_Core_Exception($suppliedLanguage . ' not enabled');
+    throw new \CRM_Core_Exception($suppliedLanguage . ' not available');
   }
 
   /**
