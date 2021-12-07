@@ -85,46 +85,13 @@ class Load extends AbstractAction {
    */
   public function _run(Result $result) {
     if ($this->getWorkflow()) {
-      $strings = MessageTemplate::get(FALSE)
-        ->addWhere('workflow_name', '=', $this->getWorkflow())
-        ->addWhere('is_default', '=', 1)
-        ->addSelect('translation.*')
-        ->addWhere('translation.status_id:name', '=', 'active')
-        ->addWhere('translation.language', '=', $this->getLanguage())
-        ->addJoin('Translation AS translation', 'INNER',
-          ['id', '=', 'translation.entity_id'],
-          ['translation.entity_table', '=', '"civicrm_msg_template"']
-        )
-        ->execute();
-      if (!count($strings)) {
-        // For English, or unknown language, we can fall back on the 'main' version of the template.
-        if (!$this->getLanguage()
-          || strpos($this->getLanguage(), 'en_') === 0
-          || strpos($this->getFallbackLanguage(), 'en_') === 0) {
-          $strings = MessageTemplate::get(FALSE)
-            ->addWhere('workflow_name', '=', $this->getWorkflow())
-            ->addWhere('is_default', '=', 1)
-            ->setSelect(['msg_html', 'msg_text', 'msg_subject'])
-            ->execute()->first();
-          $this->setMessageHtml($strings['msg_html']);
-          $this->setMessageText($strings['msg_text']);
-          $this->setMessageSubject($strings['msg_subject']);
-          $result[] = $this->getTemplate();
-          return;
-        }
-        throw new \API_Exception('No translation found');
+      $strings = $this->getMessageStrings();
+      $this->setMessageHtml($strings['msg_html']);
+      $this->setMessageSubject($strings['msg_subject']);
+      if (!empty($strings['msg_text'])) {
+        $this->setMessageText($strings['msg_text']);
       }
-      foreach ($strings as $string) {
-        if ($string['translation.entity_field'] === 'msg_html') {
-          $this->setMessageHtml($string['translation.string']);
-        }
-        if ($string['translation.entity_field'] === 'msg_text') {
-          $this->setMessageText($string['translation.string']);
-        }
-        if ($string['translation.entity_field'] === 'msg_subject') {
-          $this->setMessageSubject($string['translation.string']);
-        }
-      }
+
     }
     $result[] = $this->getTemplate();
   }
@@ -140,6 +107,97 @@ class Load extends AbstractAction {
       'msg_subject' => ['string' => trim($this->getMessageSubject()), 'format' => 'text/plain', 'key' => 'msg_subject'],
       'msg_text' => ['string' => $this->getMessageText(), 'format' => 'text/plain', 'key' => 'msg_text'],
     ];
+  }
+
+  /**
+   * Get the strings for the relevant workflow message for the given language.
+   *
+   * @return array
+   * @throws \API_Exception
+   */
+  protected function getMessageStrings(): array {
+    $cacheKey = 'cividata-translate-message' . $this->getWorkflow() . $this->getLanguage();
+    if (Civi::cache('metadata')->has($cacheKey)) {
+      return Civi::cache('metadata')->get($cacheKey);
+    }
+    $strings = MessageTemplate::get(FALSE)
+      ->addWhere('workflow_name', '=', $this->getWorkflow())
+      ->addWhere('is_default', '=', 1)
+      ->addSelect('translation.*')
+      ->addWhere('translation.status_id:name', '=', 'active')
+      ->addWhere('translation.language', 'LIKE', substr($this->getLanguage(), 0, 2) . '%')
+      ->addJoin('Translation AS translation', 'INNER',
+        ['id', '=', 'translation.entity_id'],
+        ['translation.entity_table', '=', '"civicrm_msg_template"']
+      )
+      ->execute();
+    $filteredStrings = [];
+    foreach ($strings as $string) {
+      $filteredStrings[$string['translation.language']][$string['translation.entity_field']] = $string['translation.string'];
+    }
+    $messageStrings = $filteredStrings[$this->pickBestLanguage(array_keys($filteredStrings))] ?? [];
+
+    if (empty($messageStrings['msg_html'])) {
+      // For English, or unknown language, we can fall back on the 'main' version of the template.
+      if (!$this->getLanguage()
+        || strpos($this->getFallbackLanguage(), 'en_') === 0) {
+        $messageStrings = $this->getUntranslatedStrings();
+      }
+      else {
+        throw new \API_Exception('No translation found');
+      }
+    }
+    Civi::cache('metadata')->set($cacheKey, $messageStrings);
+    return $messageStrings;
+  }
+
+  /**
+   * Pick the best language to use.
+   *
+   * If we don't have a translation for the specified language get
+   * the best option for the 'main' part of the language string.
+   *
+   * @param array $choices
+   *
+   * @return string
+   */
+  protected function pickBestLanguage(array $choices): string {
+    $language = $this->getLanguage();
+    if (in_array($language, $choices, TRUE)) {
+      return $language;
+    }
+    $defaultVariant = $this->getDefaultVariantForLanguage()[substr($language, 0, 2)] ?? NULL;
+    if ($defaultVariant && in_array($defaultVariant, $choices, TRUE)) {
+      return $defaultVariant;
+    }
+    // OK, whatever....
+    return $choices[0] ?? '';
+  }
+
+  public function getDefaultVariantForLanguage(): array {
+    return [
+      'de' => 'de_DE',
+      'en' => 'en_US',
+      'fr' => 'fr_FR',
+      'es' => 'es_ES',
+      'nl' => 'nl_NL',
+      'pt' => 'pt_PT',
+      'zh' => 'zh_TW',
+    ];
+  }
+
+  /**
+   * @return array|null
+   * @throws \API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function getUntranslatedStrings(): ?array {
+    $strings = MessageTemplate::get(FALSE)
+      ->addWhere('workflow_name', '=', $this->getWorkflow())
+      ->addWhere('is_default', '=', 1)
+      ->setSelect(['msg_html', 'msg_text', 'msg_subject'])
+      ->execute()->first();
+    return $strings;
   }
 
 }

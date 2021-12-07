@@ -46,6 +46,14 @@ class EOYEmailTest extends TestCase {
         if ($entity === 'Contact') {
           $this->cleanUpContact($entityID);
         }
+        else {
+          try {
+            civicrm_api3($entity, 'delete', ['id' => $entityID]);
+          }
+          catch (\CiviCRM_API3_Exception $e) {
+            // best effort, move along.
+          }
+        }
       }
     }
     parent::tearDown();
@@ -577,6 +585,33 @@ The Wikimedia Foundation
 <p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
 ',
     ], $email);
+  }
+
+  /**
+   * Test the render function falls back to the best language choice.
+   *
+   * We should fall back to Spanish for oddballs like 'es_NO' which
+   * our database delights in having.
+   *
+   * @throws \API_Exception
+   */
+  public function testRenderHalfBakedLanguage(): void {
+    $this->ids['OptionValue'][] = OptionValue::create(FALSE)->setValues([
+      'option_group_id.name' => 'languages',
+      'name' => 'es_NO',
+      'value' => 'es',
+      'label' => 'Norwegian Spanish (of course)',
+    ])->execute()->first()['id'];
+    $contactID = $this->addTestContact([
+      'first_name' => 'Bob',
+      'preferred_language' => 'es_NO',
+      'email' => 'bob@example.com',
+    ])['id'];
+    $this->createRecurringContributions($contactID, [['receive_date' => '2018-02-02', 'total_amount' => 50]]);
+    EOYEmail::send(FALSE)->setYear(2018)->execute();
+    $email = $this->getFirstEmail();
+    $this->assertEquals('Un resumen de su apoyo a Wikipedia', $email['subject']);
+    $this->assertStringContainsString('¡Hola, Bob!', $email['html']);
   }
 
   public function setUpContactsSharingEmail(): array {
