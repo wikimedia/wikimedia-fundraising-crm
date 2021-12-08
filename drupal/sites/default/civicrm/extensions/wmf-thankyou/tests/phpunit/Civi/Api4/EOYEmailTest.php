@@ -121,18 +121,7 @@ class EOYEmailTest extends TestCase {
       'payment_processor_id' => $processor['id'],
     ]);
     $this->ids['ContributionRecur'][$recurring['id']] = $recurring['id'];
-    $financialTypeCash = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'
-    );
-    $financialTypeEndowment = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift'
-    );
-    $completedStatusId = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
-    );
-    $refundedStatusId = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Refunded'
-    );
+
     $originalCurrencyField = wmf_civicrm_get_custom_field_name('original_currency');
     $originalAmountField = wmf_civicrm_get_custom_field_name('original_amount');
     $this->callAPISuccess('Contribution', 'create', [
@@ -142,8 +131,8 @@ class EOYEmailTest extends TestCase {
       'currency' => 'USD',
       $originalCurrencyField => 'PLN',
       $originalAmountField => '100',
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
+      'contribution_status_id' => 'Completed',
+      'financial_type_id' => 'Cash',
     ]);
     $this->callAPISuccess('Contribution', 'create', [
       'receive_date' => '2018-01-01', // FIXME: edge case found?
@@ -152,8 +141,8 @@ class EOYEmailTest extends TestCase {
       'currency' => 'USD',
       $originalCurrencyField => 'PLN',
       $originalAmountField => '200',
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
+      'contribution_status_id' => 'Completed',
+      'financial_type_id' => 'Cash',
     ]);
     $this->callAPISuccess('Contribution', 'create', [
       'receive_date' => '2018-08-08 22:00:00',
@@ -163,8 +152,8 @@ class EOYEmailTest extends TestCase {
       $originalCurrencyField => 'PLN',
       $originalAmountField => '30',
       'contribution_recur_id' => $recurring['id'],
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
+      'contribution_status_id' => 'Completed',
+      'financial_type_id' => 'Cash',
     ]);
     $this->callAPISuccess('Contribution', 'create', [
       'receive_date' => '2018-01-01',
@@ -173,8 +162,8 @@ class EOYEmailTest extends TestCase {
       'currency' => 'USD',
       $originalCurrencyField => 'PLN',
       $originalAmountField => '200',
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
+      'contribution_status_id' => 'Completed',
+      'financial_type_id' => 'Cash',
     ]);
     $this->callAPISuccess('Contribution', 'create', [
       'receive_date' => '2018-02-02 08:10:00',
@@ -183,8 +172,8 @@ class EOYEmailTest extends TestCase {
       'currency' => 'USD',
       $originalCurrencyField => 'USD',
       $originalAmountField => '20',
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
+      'contribution_status_id' => 'Completed',
+      'financial_type_id' => 'Cash',
     ]);
     $this->callAPISuccess('Contribution', 'create', [
       'receive_date' => '2018-03-03',
@@ -193,8 +182,8 @@ class EOYEmailTest extends TestCase {
       'currency' => 'USD',
       $originalCurrencyField => 'PLN',
       $originalAmountField => '210',
-      'contribution_status_id' => $refundedStatusId,
-      'financial_type_id' => $financialTypeCash,
+      'contribution_status_id' => 'Refunded',
+      'financial_type_id' => 'Cash',
     ]);
     $this->callAPISuccess('Contribution', 'create', [
       'receive_date' => '2018-04-04',
@@ -203,8 +192,8 @@ class EOYEmailTest extends TestCase {
       'currency' => 'USD',
       $originalCurrencyField => 'PLN',
       $originalAmountField => '400',
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeEndowment,
+      'contribution_status_id' => 'Completed',
+      'financial_type_id' => 'Endowment Gift',
     ]);
     $summaryObject = new EoySummary(['year' => 2018]);
     $jobId = $summaryObject->calculate_year_totals();
