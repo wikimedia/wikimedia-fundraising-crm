@@ -252,7 +252,7 @@ class EOYEmailTest extends TestCase {
    * @throws \API_Exception
    */
   public function testCalculateSingleContactId(): void {
-    $contact = $this->addTestContact(['email' => 'jimmysingle@example.com',]);
+    $contact = $this->addTestContact(['email' => 'jimmysingle@example.com']);
     $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-27 22:59:00']);
     $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-28 22:59:00']);
 
@@ -305,7 +305,7 @@ class EOYEmailTest extends TestCase {
    * Test that we don't include cancellation instructions for
    * donors whose donation is already cancelled.
    *
-   * @throws \CRM_Core_Exception
+   * @throws \API_Exception
    * @throws \CiviCRM_API3_Exception
    */
   public function testSendWithRecurringDonationsCancelled(): void {
@@ -317,12 +317,23 @@ class EOYEmailTest extends TestCase {
         'contribution_status_id' => 'Cancelled',
       ]);
     }
-    $summaryObject = new EoySummary(['year' => 2018]);
-    $this->jobIds[] = $summaryObject->calculate_year_totals();
-    $summaryObject->send_letters();
+    EOYEmail::send(FALSE)->setYear(2018)->execute();
     $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
     $mailing = $this->getFirstEmail();
     $this->assertNotRegExp('/Cancel_or_change_recurring_giving/', $mailing['html']);
+  }
+
+  /**
+   * @throws \API_Exception
+   */
+  public function testSendSpecifiedContactOnly(): void {
+    // Set up some contacts that should NOT be mailed.
+    $this->setUpContactsSharingEmail();
+    // Set up the contact to email.
+    $contact = $this->addTestContact(['email' => 'jimmysingle@example.com']);
+    $this->addTestContactContribution($contact['id'], ['receive_date' => '2018-11-27 22:59:00']);
+    EOYEmail::send(FALSE)->setYear(2018)->setContactID($contact['id'])->execute();
+    $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
   }
 
   /**
@@ -368,9 +379,7 @@ class EOYEmailTest extends TestCase {
     ];
     $this->createRecurringContributions($contactID, $contributions);
 
-    $eoyClass = new EoySummary(['year' => 2018]);
-    $eoyClass->calculate_year_totals();
-    $eoyClass->send_letters();
+    EOYEmail::send(FALSE)->setYear(2018)->execute();
     $email = $this->getFirstEmail();
     $this->assertEquals([
       'from_name' => 'Bobita',
