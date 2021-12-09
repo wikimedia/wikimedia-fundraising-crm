@@ -77,6 +77,8 @@ class EOYEmailTest extends TestCase {
             'currency' => 'JPY',
             'receive_date' => '2020-08-06',
             'financial_type_id:name' => 'Donation',
+            'contribution_extra.original_currency' => 'JPY',
+            'contribution_extra.original_amount' => 5,
           ])
           ->addValue('contact_id', '$id')
       )->execute()->first()['id'];
@@ -752,6 +754,8 @@ EOS;
       ->first()['id'];
 
     foreach ($contributions as $contribution) {
+      $contribution['contribution_extra.amount'] = $contribution['total_amount'];
+      $contribution['contribution_extra.currency'] = $contribution['currency'] ?? 'USD';
       $this->ids['Contribution'][] = Contribution::create(FALSE)
         ->setValues(array_merge([
           'contact_id' => $contactID,
