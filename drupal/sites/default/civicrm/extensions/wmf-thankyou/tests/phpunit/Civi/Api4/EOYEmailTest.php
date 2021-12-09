@@ -375,7 +375,7 @@ class EOYEmailTest extends TestCase {
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',
-      'to_name' => 'Bob',
+      'to_name' => 'Bob Walrus',
       'to_address' => 'bob@example.com',
       'subject' => 'A record of your support for Wikipedia',
       'html' => '<p>
@@ -517,7 +517,7 @@ The Wikimedia Foundation
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',
-      'to_name' => 'Bob',
+      'to_name' => 'Bob Walrus',
       'to_address' => 'bob@example.com',
       'subject' => 'A record of your support for Wikipedia',
       'html' => '<p>
