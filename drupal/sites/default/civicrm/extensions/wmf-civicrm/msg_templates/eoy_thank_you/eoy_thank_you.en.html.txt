@@ -1,6 +1,6 @@
 <p>
-Dear {$name},
-</p>
+{if '{contact.first_name}' && '{contact.last_name}'}Dear {contact.first_name},
+{else}{/if}</p>
 
 <p>
 This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
