@@ -743,8 +743,8 @@ EOS;
       ->first()['id'];
 
     foreach ($contributions as $contribution) {
-      $contribution['contribution_extra.amount'] = $contribution['total_amount'];
-      $contribution['contribution_extra.currency'] = $contribution['currency'] ?? 'USD';
+      $contribution['contribution_extra.original_amount'] = $contribution['total_amount'];
+      $contribution['contribution_extra.original_currency'] = $contribution['currency'] ?? 'USD';
       $this->ids['Contribution'][] = Contribution::create(FALSE)
         ->setValues(array_merge([
           'contact_id' => $contactID,
