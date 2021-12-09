@@ -57,7 +57,7 @@ class Send extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
-    $eoyClass = new EoySummary(['year' => $this->getYear(), 'contact_id' => $this->getContactID()]);
+    $eoyClass = new EoySummary(['year' => $this->getYear(), 'contact_id' => $this->getContactID(), 'batch' => $this->getLimit()]);
     $eoyClass->calculate_year_totals();
     $eoyClass->send_letters();
   }
