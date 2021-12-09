@@ -110,7 +110,7 @@ class Render extends AbstractAction {
       'year' => $this->year,
       'active_recurring' => $activeRecurring,
       'contactIDs' => $contactDetails['ids'],
-      'contactId' => $contactDetails['ids'][0],
+      'contactId' => end($contactDetails['ids']),
       'locale' => $contactDetails['language'],
     ];
     $templateStrings = Civi\Api4\Message::load(FALSE)
