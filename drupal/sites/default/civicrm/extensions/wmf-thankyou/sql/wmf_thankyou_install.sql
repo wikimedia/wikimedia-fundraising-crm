@@ -12,6 +12,7 @@ COLLATE = utf8mb4_unicode_ci;
 CREATE TABLE `wmf_eoy_receipt_donor`
 (
   `job_id` INT(10) UNSIGNED DEFAULT NULL,
+  `year` INT(10) UNSIGNED DEFAULT NULL,
   `email` VARCHAR(254) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `preferred_language` VARCHAR(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -19,7 +20,7 @@ CREATE TABLE `wmf_eoy_receipt_donor`
   `contributions_rollup` MEDIUMTEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   UNIQUE KEY `wmf_eoy_receipt_donor_job_id_email` (`job_id`, `email`),
   KEY `job_id` (`job_id`),
-  KEY `email` (`email`),
+  KEY `email_year` (`email`, `year`),
   KEY `status` (`status`)
 ) ENGINE = InnoDB
 DEFAULT CHARSET = utf8mb4
