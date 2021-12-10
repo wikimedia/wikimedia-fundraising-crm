@@ -11,16 +11,21 @@ class CRM_Sendannualtyemail_AnnualThankYou {
    * @param $year
    * @see \Civi\EoySummary
    *
+   * @throws \API_Exception
+   *
    * @return bool
    */
-  public static function send($contact_id, $year) {
+  public static function send($contact_id, $year): bool {
     // if no contact_id passed jump out here otherwise his would trigger a
     // receipt email for every donor!
     if(empty($contact_id)) {
       return false;
     }
 
-    wmf_eoy_receipt_run(['contact_id' => $contact_id, 'year' => $year]);
+    Civi\Api4\EOYEmail::send(FALSE)
+      ->setYear($year)
+      ->setContactID($contact_id)
+      ->execute();
     return true;
   }
 }

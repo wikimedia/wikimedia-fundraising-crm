@@ -36,7 +36,7 @@ class Language {
         return $validLanguage;
       }
     }
-    // If the language is present but inactive then enable it - this 
+    // If the language is present but inactive then enable it - this
     // really just affects dev sites. Everything under the sun, including around 2000
     // made-up languages are enabled on live but dev sites might be missing Latvian.
     $optionValue = OptionValue::get(FALSE)
@@ -80,7 +80,11 @@ class Language {
    * | zh | 2 | zh\_CN,zh\_TW | Chinese \(China\),Chinese \(Taiwan\) |
    */
   protected static function getDefaultVariantForLanguage(): array {
+    // This is actually duplicated in Message.Load api.
+    // It's so trivial + the comment block makes sense here but not there,
+    // that I think the duplication is OK....
     return [
+      'de' => 'de_DE',
       'en' => 'en_US',
       'fr' => 'fr_FR',
       'es' => 'es_ES',

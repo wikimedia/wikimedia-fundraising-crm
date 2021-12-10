@@ -89,49 +89,51 @@ class Render extends AbstractAction {
       AND job_id = %1
       LIMIT %2", [1 => [$this->getJobID(), 'Integer'], 2 => [$this->getLimit(), 'Integer']]);
     while ($row->fetch()) {
-      $result[$this->getContactID()] = $this->render_letter($row);
+      $result[$this->getContactID()] = $this->renderLetter($row->email);
     }
   }
 
   /**
+   * Render the letter to be sent.
+   *
+   * @param string $email
+   *
+   * @return array
    * @throws \API_Exception
    * @throws \CiviCRM_API3_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  protected function render_letter($row) {
-    $contactIds = $this->getContactIdsForEmail($row->email);
-    $activeRecurring = $this->doContactsHaveActiveRecurring($contactIds);
+  protected function renderLetter(string $email): array {
+    $contactDetails = $this->getContactDetailsForEmail($email);
+    $activeRecurring = $this->doContactsHaveActiveRecurring($contactDetails['ids']);
 
     $template_params = [
       'year' => $this->year,
       'active_recurring' => $activeRecurring,
-      'contactIDs' => $contactIds,
-      'contactId' => $contactIds[0],
-      'locale' => $row->preferred_language,
+      'contactIDs' => $contactDetails['ids'],
+      'contactId' => end($contactDetails['ids']),
+      'locale' => $contactDetails['language'],
     ];
     $templateStrings = Civi\Api4\Message::load(FALSE)
-      ->setLanguage($row->preferred_language)
+      ->setLanguage($contactDetails['language'])
       ->setFallbackLanguage('en_US')
       ->setWorkflow('eoy_thank_you')->execute()->first();
     $template = ['workflow' => 'eoy_thank_you'];
     foreach ($templateStrings as $key => $string) {
       $template[$key] = $string['string'];
     }
-    $swapLocale = \CRM_Utils_AutoClean::swapLocale($row->preferred_language);
+    $swapLocale = \CRM_Utils_AutoClean::swapLocale($contactDetails['language']);
     $rendered = Civi\Api4\WorkflowMessage::render(FALSE)
       ->setMessageTemplate($template)
       ->setValues($template_params)
       ->setWorkflow('eoy_thank_you')
       ->execute()->first();
 
-    $email = [
-      'to_name' => $row->name,
-      'to_address' => $row->email,
+    return [
+      'to_name' => $contactDetails['display_name'],
+      'to_address' => $email,
       'subject' => trim($rendered['subject']),
       'html' => str_replace('<p></p>', '', $rendered['html']),
     ];
-
-    return $email;
   }
 
   /**
@@ -139,21 +141,25 @@ class Render extends AbstractAction {
    *
    * @param string $email
    *
-   * @return int[] IDs of non-deleted contacts with that email
-   * @throws \CiviCRM_API3_Exception
+   * @return array IDs and language of non-deleted contacts with that email
+   * @throws \API_Exception
    */
-  protected function getContactIdsForEmail($email): array {
-    $contactIds = [];
-    $emailRecords = civicrm_api3('Email', 'get', [
-      'email' => $email,
-      'is_primary' => TRUE,
-      'contact_id.is_deleted' => FALSE,
-      'return' => 'contact_id',
-    ]);
-    foreach ($emailRecords['values'] as $emailRecord) {
-      $contactIds[] = $emailRecord['contact_id'];
+  protected function getContactDetailsForEmail(string $email): array {
+    $emailRecords = Civi\Api4\Email::get(FALSE)
+      ->addWhere('email', '=', $email)
+      ->addWhere('is_primary', '=', TRUE)
+      ->addWhere('contact_id.is_deleted', '=', FALSE)
+      ->addSelect('contact_id', 'contact_id.preferred_language', 'contact_id.display_name')
+      ->addJoin('Contact AS contact', 'LEFT')
+      ->addOrderBy('contact.wmf_donor.all_funds_last_donation_date')
+      ->execute();
+    $contactDetails = [];
+    foreach ($emailRecords as $emailRecord) {
+      $contactDetails['ids'][] = $emailRecord['contact_id'];
+      $contactDetails['language'] = $emailRecord['contact_id.preferred_language'];
+      $contactDetails['display_name'] = $emailRecord['contact_id.display_name'];
     }
-    return $contactIds;
+    return $contactDetails;
   }
 
   /**
@@ -165,7 +171,7 @@ class Render extends AbstractAction {
    * @return bool
    * @throws \CiviCRM_API3_Exception
    */
-  protected function doContactsHaveActiveRecurring(array $contactIds) {
+  protected function doContactsHaveActiveRecurring(array $contactIds): bool {
     if (empty($contactIds)) {
       return FALSE;
     }

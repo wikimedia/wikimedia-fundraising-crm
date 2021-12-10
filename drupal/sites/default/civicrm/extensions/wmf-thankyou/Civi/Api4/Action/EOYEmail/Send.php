@@ -43,14 +43,21 @@ class Send extends AbstractAction {
   protected $limit = 100;
 
   /**
+   * If provided then only this contact ID will be emailed.
+   *
+   * @var int
+   */
+  protected $contactID;
+
+  /**
    * @inheritDoc
    *
    * @param \Civi\Api4\Generic\Result $result
    *
    * @throws \CRM_Core_Exception
    */
-  public function _run(Result $result) {
-    $eoyClass = new EoySummary(['year' => $this->getYear()]);
+  public function _run(Result $result): void {
+    $eoyClass = new EoySummary(['year' => $this->getYear(), 'contact_id' => $this->getContactID(), 'batch' => $this->getLimit()]);
     $eoyClass->calculate_year_totals();
     $eoyClass->send_letters();
   }

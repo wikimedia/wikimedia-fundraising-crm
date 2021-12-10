@@ -12,6 +12,9 @@
 
 namespace Civi\Api4;
 
+use Civi\Api4\Action\EOYEmail\MakeJob;
+use Civi\Api4\Action\EOYEmail\Render;
+use Civi\Api4\Action\EOYEmail\Send;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
@@ -29,7 +32,7 @@ class EOYEmail extends Generic\AbstractEntity {
    * @return \Civi\Api4\Action\EOYEmail\Render
    */
   public static function render(bool $checkPermissions = TRUE): Action\EOYEmail\Render {
-    return (new \Civi\Api4\Action\EOYEmail\Render(__CLASS__, __FUNCTION__))
+    return (new Render(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
@@ -41,7 +44,7 @@ class EOYEmail extends Generic\AbstractEntity {
    * @return \Civi\Api4\Action\EOYEmail\send
    */
   public static function send(bool $checkPermissions = TRUE): Action\EOYEmail\Send {
-    return (new \Civi\Api4\Action\EOYEmail\Send(__CLASS__, __FUNCTION__))
+    return (new Send(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
@@ -51,7 +54,7 @@ class EOYEmail extends Generic\AbstractEntity {
    * @return \Civi\Api4\Action\EOYEmail\MakeJob
    */
   public static function makeJob(bool $checkPermissions = TRUE): Action\EOYEmail\MakeJob{
-    return (new \Civi\Api4\Action\EOYEmail\MakeJob(__CLASS__, __FUNCTION__))
+    return (new MakeJob(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 

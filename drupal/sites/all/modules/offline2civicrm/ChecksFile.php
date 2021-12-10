@@ -481,7 +481,10 @@ abstract class ChecksFile {
       }
     }
 
-    if (isset($msg['organization_name'])) {
+    if (isset($msg['organization_name'])
+      // Assume individual if they have an individual-only relationship.
+      && empty($msg['relationship.Holds a Donor Advised Fund of'])
+    ) {
       $msg['contact_type'] = "Organization";
     }
     else {

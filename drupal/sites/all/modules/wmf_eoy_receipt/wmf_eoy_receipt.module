@@ -1,18 +1,5 @@
 <?php
 
-/*
- * TODO:
- * - undo STUPID boilerplate
- * - stream data (unbuffered query using a new db connection)
- */
-
-function wmf_eoy_receipt_run($options = []) {
-  civicrm_initialize();
-  $donors = new Civi\EoySummary($options);
-
-  $donors->calculate_year_totals();
-  $donors->send_letters();
-}
 
 function wmf_eoy_receipt_calculate_summaries($options = []) {
   civicrm_initialize();
