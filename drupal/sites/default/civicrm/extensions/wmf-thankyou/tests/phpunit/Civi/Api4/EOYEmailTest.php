@@ -3,6 +3,7 @@ namespace Civi\Api4;
 
 use Civi\Omnimail\MailFactory;
 use Civi\Test\Api3TestTrait;
+use CRM_Contribute_WorkflowMessage_EOYThankYou;
 use CRM_Core_DAO;
 use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
@@ -35,12 +36,11 @@ class EOYEmailTest extends TestCase {
     variable_set('thank_you_from_name', 'Bobita');
     $mailfactory = MailFactory::singleton();
     $mailfactory->setActiveMailer(NULL, new Mailer());
-    $this->maxJobID = (int) CRM_Core_DAO::singleValueQuery('SELECT MAX(job_id) FROM wmf_eoy_receipt_donor');
   }
 
   public function tearDown(): void {
-    CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_donor WHERE job_id > $this->maxJobID");
-    CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_job WHERE job_id > $this->maxJobID");
+    CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_donor WHERE year = 2018");
+    CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_job WHERE year = 2018");
     foreach ($this->ids as $entity => $entityIDs) {
       foreach ($entityIDs as $entityID) {
         if ($entity === 'Contact') {
@@ -81,8 +81,8 @@ class EOYEmailTest extends TestCase {
       ->addChain('add_a_donation',
         Contribution::create()
           ->setValues([
-            'total_amount' => 5,
-            'currency' => 'JPY',
+            'total_amount' => 50,
+            'currency' => 'USD',
             'receive_date' => '2020-08-06',
             'financial_type_id:name' => 'Donation',
             'contribution_extra.original_currency' => 'JPY',
@@ -203,24 +203,65 @@ class EOYEmailTest extends TestCase {
       'contribution_status_id' => 'Completed',
       'financial_type_id' => 'Endowment Gift',
     ]);
-    $summaryObject = new EoySummary(['year' => 2018]);
-    $jobId = $summaryObject->calculate_year_totals();
-    $this->jobIds[] = $jobId;
 
-    $result = $this->getWMFReceiptDonorRows($jobId, 'onetime@walrus.org');
+    EOYEmail::makeJob(FALSE)->setYear(2018)->execute();
+
+    $result = $this->getWMFReceiptDonorRows(2018, 'onetime@walrus.org');
     $this->assertEmpty($result);
-    $result = $this->getWMFReceiptDonorRows($jobId, 'recurring@rabbit.org');
-    $rollup = explode(',', $result['contributions_rollup']);
-    sort($rollup);
-    unset($result['contributions_rollup']);
+    $result = $this->getWMFReceiptDonorRows(2018, 'recurring@rabbit.org');
+
     $this->assertEquals('recurring@rabbit.org', $result['email']);
     $this->assertEquals('queued', $result['status']);
     $this->assertEquals(2018, $result['year']);
-    $this->assertEquals([
-      '2018-02-01 20.00 USD',
-      '2018-04-03 400.00 PLN',
-      '2018-08-08 30.00 PLN',
-    ], $rollup);
+    $contactIDs = [$contactRecur['id']];
+    $totals = [
+      'USD' => [
+        'amount' => '20,00',
+        'currency' => 'USD',
+      ],
+      'PLN' => [
+        'amount' => '430,00',
+        'currency' => 'PLN',
+      ],
+    ];
+    $this->assertTemplateCalculations($contactIDs, $totals, [
+      1 => [
+        'contribution_extra.original_currency' => 'USD',
+        'financial_type_id:name' => 'Cash',
+        'contribution_extra.original_amount' => 20.0,
+        'contribution_recur_id' => NULL,
+        'receive_date' => '2018-02-01',
+        'total_amount' => 20.0,
+        'currency' => 'USD',
+        'financial_type' => 'Cash',
+        'amount' => '20.00',
+        'date' => '2018-02-01',
+      ],
+      2 => [
+        'contribution_extra.original_currency' => 'PLN',
+        'financial_type_id:name' => 'Endowment Gift',
+        'contribution_extra.original_amount' => 400.0,
+        'contribution_recur_id' => NULL,
+        'receive_date' => '2018-04-03',
+        'total_amount' => 400.0,
+        'currency' => 'PLN',
+        'financial_type' => 'Endowment Gift',
+        'amount' => '400.00',
+        'date' => '2018-04-03',
+      ],
+      3 => [
+        'contribution_extra.original_currency' => 'PLN',
+        'financial_type_id:name' => 'Cash',
+        'contribution_extra.original_amount' => 30.0,
+        'contribution_recur_id' => $recurring['id'],
+        'receive_date' => '2018-08-08',
+        'total_amount' => 30.0,
+        'currency' => 'PLN',
+        'financial_type' => 'Cash',
+        'amount' => '30.00',
+        'date' => '2018-08-08',
+      ],
+    ]);
   }
 
   /**
@@ -231,20 +272,55 @@ class EOYEmailTest extends TestCase {
    */
   public function testCalculateDedupe(): void {
     $this->setUpContactsSharingEmail();
-    $summaryObject = new EoySummary(['year' => 2018]);
-    $jobId = $summaryObject->calculate_year_totals();
-    $this->jobIds[] = $jobId;
-    $result = $this->getWMFReceiptDonorRows($jobId, 'goat@wbaboxing.com');
-    $rollup = explode(',', $result['contributions_rollup']);
-    sort($rollup);
+    EOYEmail::makeJob(FALSE)->setYear(2018)->execute();
+    $result = $this->getWMFReceiptDonorRows(2018, 'goat@wbaboxing.com');
+
     $this->assertEquals('goat@wbaboxing.com', $result['email']);
     $this->assertEquals(2018, $result['year']);
     $this->assertEquals('queued', $result['status']);
-    $this->assertEquals([
-      '2018-02-01 400.00 PLN',
-      '2018-03-02 30.00 PLN',
-      '2018-04-03 200.00 PLN',
-    ], $rollup);
+    $this->assertTemplateCalculations($this->ids['Contact'], [
+      'PLN' => [
+        'amount' => '630,00',
+        'currency' => 'PLN',
+      ],
+    ], [
+      1 => [
+          'contribution_extra.original_currency' => 'PLN',
+          'financial_type_id:name' => 'Cash',
+          'contribution_extra.original_amount' => 400.0,
+          'contribution_recur_id' => null,
+          'receive_date' => '2018-02-01',
+          'total_amount' => 400.0,
+          'currency' => 'PLN',
+          'financial_type' => 'Cash',
+          'amount' => '400.00',
+          'date' => '2018-02-01',
+      ],
+      2 => [
+          'contribution_extra.original_currency' => 'PLN',
+        'financial_type_id:name' => 'Cash',
+        'contribution_extra.original_amount' => 30.0,
+        'contribution_recur_id' => reset($this->ids['ContributionRecur']),
+        'receive_date' => '2018-03-02',
+        'total_amount' => 30.0,
+        'currency' => 'PLN',
+        'financial_type' => 'Cash',
+        'amount' => '30.00',
+        'date' => '2018-03-02',
+      ],
+      3 => [
+        'contribution_extra.original_currency' => 'PLN',
+        'financial_type_id:name' => 'Cash',
+        'contribution_extra.original_amount' => 200.0,
+        'contribution_recur_id' => NULL,
+        'receive_date' => '2018-04-03',
+        'total_amount' => 200.0,
+        'currency' => 'PLN',
+        'financial_type' => 'Cash',
+        'amount' => '200.00',
+        'date' => '2018-04-03',
+      ],
+    ]);
   }
 
   /**
@@ -255,16 +331,48 @@ class EOYEmailTest extends TestCase {
     $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-27 22:59:00']);
     $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-28 22:59:00']);
 
-    $summaryObject = new EoySummary([
-      'year' => 2019,
-      'contact_id' => $contact['id'],
-    ]);
-    $jobId = $summaryObject->calculate_year_totals();
-    $this->jobIds[] = $jobId;
-    $result = $this->getWMFReceiptDonorRows($jobId, 'jimmysingle@example.com');
-    $this->assertEquals('jimmysingle@example.com', $result['email']);
-    $this->assertEquals('queued', $result['status']);
-    $this->assertEquals('2019-11-27 10.00 USD,2019-11-28 10.00 USD', $result['contributions_rollup']);
+    $email = EOYEmail::render(FALSE)->setYear(2019)->setContactID($contact['id'])->execute();
+    $this->assertCount(1, $email);
+    $this->assertEquals([
+      'to_name' => 'Jimmy Walrus',
+      'to_address' => 'jimmysingle@example.com',
+      'subject' => 'A record of your support for Wikipedia',
+      'html' => "<p>
+Dear Jimmy,
+</p>
+
+<p>
+This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
+</p>
+<p>
+Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2019:
+</p>
+
+<p><b>
+  Your 2019 total was USD 20.00.
+</b></p>
+<p><b>Total donations to Wikimedia Foundation:</b></p>
+<p>
+  Donation 1: 10.00 USD on 2019-11-27
+</p>
+<p>
+  Donation 2: 10.00 USD on 2019-11-28
+</p>
+
+<p><b>Total donations to Wikimedia Endowment:</b></p>
+
+
+
+<p>With gratitude,</p>
+<p>
+The Wikimedia Foundation
+</p>
+
+<p>The Wikimedia Endowment ensures Wikimedia Foundation's free knowledge resources remain accessible and valuable for generations to come.</p>
+<p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href=\"mailto:legacy@wikimedia.org\">Contact us to learn how to make a legacy gift.</a></p>
+<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+",
+    ], $email->first());
   }
 
   /**
@@ -714,21 +822,18 @@ The Wikimedia Foundation
   }
 
   /**
-   * @param int $jobId
+   * @param int $year
    * @param string $email
    *
    * @return mixed
    */
-  protected function getWMFReceiptDonorRows(int $jobId, string $email) {
-    $sql = <<<EOS
-SELECT *
+  protected function getWMFReceiptDonorRows(int $year, string $email) {
+    $result = CRM_Core_DAO::executeQuery("SELECT *
 FROM wmf_eoy_receipt_donor
 WHERE
   status = 'queued'
-  AND job_id = $jobId
-  AND email = %1
-EOS;
-    $result = CRM_Core_DAO::executeQuery($sql, [1 => [$email, 'String']]);
+  AND year = $year
+  AND email = %1", [1 => [$email, 'String']]);
     return $result->fetchAll()[0] ?? NULL;
   }
 
@@ -775,11 +880,11 @@ EOS;
     foreach ($contributions as $contribution) {
       $contribution['contribution_extra.original_amount'] = $contribution['total_amount'];
       $contribution['contribution_extra.original_currency'] = $contribution['currency'] ?? 'USD';
+      $contribution['currency'] = 'USD';
       $this->ids['Contribution'][] = Contribution::create(FALSE)
         ->setValues(array_merge([
           'contact_id' => $contactID,
           'financial_type_id:name' => 'Donation',
-          'currency' => 'USD',
           'contribution_recur_id' => $this->ids['ContributionRecur'][0],
         ], $contribution))
         ->execute()
@@ -794,6 +899,27 @@ EOS;
    */
   protected function getFirstEmail(): array {
     return MailFactory::singleton()->getMailer()->getMailings()[0];
+  }
+
+  /**
+   * @param array $contactIDs
+   * @param array $totals
+   * @param array $contributions
+   *
+   * @throws \API_Exception
+   */
+  protected function assertTemplateCalculations(array $contactIDs, array $totals, array $contributions): void {
+    $template = new CRM_Contribute_WorkflowMessage_EOYThankYou();
+    $template->setContactIDs($contactIDs);
+    $template->setLocale('pt_BR');
+    $template->setYear(2018);
+    $this->assertEquals($totals, $template->getTotals());
+    $calculatedContributions = $template->getContributions();
+    foreach ($calculatedContributions as &$contribution) {
+      unset($contribution['id']);
+    }
+    unset($contribution);
+    $this->assertEquals($contributions, $calculatedContributions);
   }
 
 }
