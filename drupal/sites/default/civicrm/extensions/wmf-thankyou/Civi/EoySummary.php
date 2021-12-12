@@ -86,6 +86,7 @@ class EoySummary {
       ->setLimit($this->batch)
       ->setJobID($this->job_id)
       ->setYear($this->year)
+      ->setContactID($this->contact_id)
       ->execute();
 
     foreach ($emails as $email) {

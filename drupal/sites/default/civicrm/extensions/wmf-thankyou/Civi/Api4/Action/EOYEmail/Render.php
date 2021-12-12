@@ -65,20 +65,21 @@ class Render extends AbstractAction {
    *
    * @param \Civi\Api4\Generic\Result $result
    *
-   * @throws \CRM_Core_Exception
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
    */
-  public function _run(Result $result) {
+  public function _run(Result $result): void {
     if ($this->getContactID()) {
-      $donors = new EoySummary([
-        'year' => $this->getYear(),
-        'batch' => $this->getLimit(),
-        'contact_id' => $this->getContactID(),
-      ]);
-      $this->setLimit(1);
-      $this->setJobID($donors->calculate_year_totals());
-    }
-    if (!$this->jobID) {
-      throw new \API_Exception('Job ID is required if contact ID not present');
+      $email = Civi\Api4\Email::get(FALSE)
+        ->addWhere('contact_id', '=', $this->getContactID())
+        ->addWhere('is_primary', '=', TRUE)
+        ->addWhere('on_hold', '=', 0)
+        ->execute()->first()['email'];
+      if (!$email) {
+        throw new \API_Exception('no valid email for contact_id ' . $this->getContactID());
+      }
+      $result[$this->getContactID()] = $this->renderLetter($email);
+      return;
     }
 
     $row = \CRM_Core_DAO::executeQuery("
