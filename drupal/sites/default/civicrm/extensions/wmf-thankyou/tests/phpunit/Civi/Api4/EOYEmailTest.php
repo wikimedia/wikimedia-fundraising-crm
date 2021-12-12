@@ -13,12 +13,6 @@ use Civi\Test\Mailer;
 class EOYEmailTest extends TestCase {
 
   use Api3TestTrait;
-  protected $jobIds = [];
-
-  /**
-   * @var int
-   */
-  protected $maxJobID;
 
   /**
    * Created IDs.
@@ -40,7 +34,6 @@ class EOYEmailTest extends TestCase {
 
   public function tearDown(): void {
     CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_donor WHERE year = 2018");
-    CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_job WHERE year = 2018");
     foreach ($this->ids as $entity => $entityIDs) {
       foreach ($entityIDs as $entityID) {
         if ($entity === 'Contact') {
@@ -68,7 +61,7 @@ class EOYEmailTest extends TestCase {
    * @throws \API_Exception
    */
   public function testRenderEmailInJapanese(): void {
-    $contactID = Contact::create()
+    $this->ids['Contact']['suzuki'] = Contact::create()
       ->setCheckPermissions(FALSE)
       // Suzuki is a common Japanese name - the last name here is Suzuki in kanji.
       ->setValues(['last_name' => 'Suzuki', 'first_name' => '鈴木', 'preferred_language' => 'ca_ES', 'contact_type' => 'Individual'])
@@ -92,7 +85,7 @@ class EOYEmailTest extends TestCase {
       )->execute()->first()['id'];
 
     $message = EOYEmail::render()->setCheckPermissions(FALSE)
-      ->setYear(2020)->setContactID($contactID)->execute()->first();
+      ->setYear(2020)->setContactID($this->ids['Contact']['suzuki'])->execute()->first();
     $this->assertContains('Benvolgut/Benvolguda 鈴木', $message['html']);
   }
 

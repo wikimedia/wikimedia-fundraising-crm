@@ -20,8 +20,6 @@ use Civi\EoySummary;
  * @method $this setYear(int $year) Set the year
  * @method int getLimit() Get the limit
  * @method $this setLimit(int $limit) Set the limit
- * @method int getJobID() Get the job ID.
- * @method $this setJobID(int $limit) Set job ID.
  */
 class Render extends AbstractAction {
 
@@ -54,13 +52,6 @@ class Render extends AbstractAction {
   protected $limit = 100;
 
   /**
-   * Required if contact ID is not present.
-   *
-   * @var int
-   */
-  protected $jobID;
-
-  /**
    * @inheritDoc
    *
    * @param \Civi\Api4\Generic\Result $result
@@ -87,10 +78,10 @@ class Render extends AbstractAction {
       FROM wmf_eoy_receipt_donor
       WHERE
       status = 'queued'
-      AND job_id = %1
-      LIMIT %2", [1 => [$this->getJobID(), 'Integer'], 2 => [$this->getLimit(), 'Integer']]);
+      AND year = %1
+      LIMIT %2", [1 => [$this->getYear(), 'Integer'], 2 => [$this->getLimit(), 'Integer']]);
     while ($row->fetch()) {
-      $result[$this->getContactID()] = $this->renderLetter($row->email);
+      $result[$row->email] = $this->renderLetter($row->email);
     }
   }
 

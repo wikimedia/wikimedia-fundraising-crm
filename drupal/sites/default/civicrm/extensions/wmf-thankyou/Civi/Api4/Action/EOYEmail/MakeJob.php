@@ -95,10 +95,6 @@ class MakeJob extends AbstractAction {
     $this->create_tmp_contact_contributions_table();
     $this->populate_tmp_contact_contributions_table($year_start, $year_end);
 
-
-    $job_timestamp = date("YmdHis");
-    $this->create_send_letters_job($job_timestamp);
-
     $this->populate_donor_recipients_table();
 
     Civi::log('wmf')->info('eoy_receipt - {count} summaries calculated for giving during {year}', [
@@ -107,17 +103,6 @@ class MakeJob extends AbstractAction {
     ]);
 
     $result[] = ['job_id' => $this->jobID];
-  }
-
-  protected function create_send_letters_job(string $timestamp): void {
-    CRM_Core_DAO::executeQuery('
-      INSERT INTO wmf_eoy_receipt_job (start_time, year) VALUES (%1, %2)', [
-      1 => [$timestamp, 'String'], 2 => [$this->year, 'Integer']
-    ]);
-
-    $this->jobID  = CRM_Core_DAO::singleValueQuery('
-      SELECT job_id FROM wmf_eoy_receipt_job
-      WHERE start_time = %1',  [1 => [$timestamp, 'String']]);
   }
 
   /**
@@ -264,20 +249,13 @@ EOS;
     $contactSummaryTable = $this->getTemporaryTableNameForContactSummary();
     $donor_recipients_insert_sql = "
 INSERT INTO wmf_eoy_receipt_donor
-  (job_id, year, email, preferred_language, name, status, contributions_rollup)
-SELECT
-    {$this->jobID} AS job_id,
+  (year, email, status)
+SELECT DISTINCT
     " . $this->getYear() . " as year,
     email,
-    preferred_language,
-    name,
-    'queued',
-    contact_contributions
+    'queued'
 FROM $contactSummaryTable
 ORDER BY contact_id DESC
-ON DUPLICATE KEY UPDATE contributions_rollup = CONCAT(
-    contributions_rollup, ',', contact_contributions
-)
 ";
     CRM_Core_DAO::executeQuery($donor_recipients_insert_sql);
   }
