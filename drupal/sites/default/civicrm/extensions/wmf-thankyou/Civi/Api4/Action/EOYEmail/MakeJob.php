@@ -114,32 +114,34 @@ class MakeJob extends AbstractAction {
       'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
     );
 
-    $contact_filter_sql = '';
-    $recur_filter_sql = '';
-    if ($this->getContactID()) {
-      // add filter for single contact_id if passed and remove recurring-only filter
-      $contact_filter_sql = "AND contribution.contact_id = " . $this->getContactID();
-    }
-    else {
-      // we want to pull in _ALL_ recurring donors for the period
-      $recur_filter_sql = "AND contribution_recur_id IS NOT NULL";
-    }
-
     $email_insert_sql = "
 INSERT INTO wmf_eoy_receipt_donor (year, email, status)
-SELECT DISTINCT " . $this->getYear() . ", email, 'queued'
-FROM civicrm_contribution contribution
+SELECT DISTINCT " . $this->getYear() . ", email.email, 'queued'";
+    if ($this->getContactID()) {
+      // If contact is specified then we don't restrict to only contacts with recurrings.
+      $email_insert_sql .= ' FROM civicrm_contribution contribution ';
+    }
+    else {
+      $email_insert_sql .= ' FROM civicrm_contribution_recur contribution_recur
+   INNER JOIN civicrm_contribution contribution
+     ON contribution.contribution_recur_id = contribution_recur.id ';
+    }
+
+    $email_insert_sql .= "
 INNER JOIN civicrm_email email
   ON email.contact_id = contribution.contact_id
   AND email.is_primary
 INNER JOIN civicrm_contact contact ON contact.id = email.contact_id
   AND contact.is_deleted = 0
+LEFT JOIN wmf_eoy_receipt_donor eoy ON email.email = eoy.email AND eoy.year = " . $this->getYear() ."
 WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
-  AND contribution_status_id = $completedStatusId
-  AND email <> 'nobody@wikimedia.org'
-  $recur_filter_sql
-  $contact_filter_sql
-";
+  AND contribution.contribution_status_id = $completedStatusId
+  AND email.email <> 'nobody@wikimedia.org'
+  AND eoy.email IS NULL
+"
+      // add filter for single contact_id if passed
+    . ($this->getContactID() ? " AND contribution.contact_id = " . $this->getContactID() : '');
+
     CRM_Core_DAO::executeQuery($email_insert_sql);
     $num_emails = (int) CRM_Core_DAO::singleValueQuery('SELECT count(*) FROM wmf_eoy_receipt_donor WHERE year = ' . $this->getYear()) - $initialEmailCount;
 
