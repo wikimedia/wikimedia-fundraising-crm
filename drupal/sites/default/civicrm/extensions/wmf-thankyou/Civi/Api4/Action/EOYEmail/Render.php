@@ -16,7 +16,6 @@ use Civi\EoySummary;
  *
  * @method int getContactID() Get the contact id.
  * @method $this setContactID(int $contactID) Set contact ID.
- * @method int getYear() Get the year
  * @method $this setYear(int $year) Set the year
  * @method int getLimit() Get the limit
  * @method $this setLimit(int $limit) Set the limit
@@ -50,6 +49,15 @@ class Render extends AbstractAction {
    * @var int
    */
   protected $limit = 100;
+
+  /**
+   * Get the year, defaulting to last year.
+   *
+   * @return int
+   */
+  protected function getYear(): int {
+    return $this->year ?? (date('Y') - 1);
+  }
 
   /**
    * @inheritDoc
@@ -99,7 +107,7 @@ class Render extends AbstractAction {
     $activeRecurring = $this->doContactsHaveActiveRecurring($contactDetails['ids']);
 
     $template_params = [
-      'year' => $this->year,
+      'year' => $this->getYear(),
       'active_recurring' => $activeRecurring,
       'contactIDs' => $contactDetails['ids'],
       'contactId' => end($contactDetails['ids']),
