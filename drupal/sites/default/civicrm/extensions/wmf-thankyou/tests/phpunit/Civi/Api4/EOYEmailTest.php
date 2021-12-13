@@ -376,9 +376,7 @@ The Wikimedia Foundation
    */
   public function testCreateActivityRecords(): void {
     $contactIds = $this->setUpContactsSharingEmail();
-    EOYEmail::send(FALSE)->setYear(2018)->execute();
-    $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
-    $mailing = $this->getFirstEmail();
+    $mailing = $this->send();
     $this->assertRegExp('/Cancel_or_change_recurring_giving/', $mailing['html']);
     foreach ($contactIds as $contactId) {
       $activity = $this->callAPISuccessGetSingle('Activity', [
@@ -412,9 +410,7 @@ The Wikimedia Foundation
         'contribution_status_id' => 'Cancelled',
       ]);
     }
-    EOYEmail::send(FALSE)->setYear(2018)->execute();
-    $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
-    $mailing = $this->getFirstEmail();
+    $mailing = $this->send();
     $this->assertNotRegExp('/Cancel_or_change_recurring_giving/', $mailing['html']);
   }
 
@@ -427,7 +423,7 @@ The Wikimedia Foundation
     // Set up the contact to email.
     $contact = $this->addTestContact(['email' => 'jimmysingle@example.com']);
     $this->addTestContactContribution($contact['id'], ['receive_date' => '2018-11-27 22:59:00']);
-    EOYEmail::send(FALSE)->setYear(2018)->setContactID($contact['id'])->execute();
+    $this->send(2018, $contact['id']);
     $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
   }
 
@@ -474,8 +470,7 @@ The Wikimedia Foundation
     ];
     $this->createRecurringContributions($contactID, $contributions);
 
-    EOYEmail::send(FALSE)->setYear(2018)->execute();
-    $email = $this->getFirstEmail();
+    $email = $this->send();
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',
@@ -616,8 +611,7 @@ The Wikimedia Foundation
       ['receive_date' => '2018-10-21', 'total_amount' => 50.00, 'currency' => 'CAD'],
     ];
     $this->createRecurringContributions($contactID, $contributions);
-    EOYEmail::send(FALSE)->setYear(2018)->execute();
-    $email = $this->getFirstEmail();
+    $email = $this->send();
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',
@@ -695,8 +689,7 @@ The Wikimedia Foundation
       'email' => 'bob@example.com',
     ])['id'];
     $this->createRecurringContributions($contactID, [['receive_date' => '2018-02-02', 'total_amount' => 50]]);
-    EOYEmail::send(FALSE)->setYear(2018)->execute();
-    $email = $this->getFirstEmail();
+    $email = $this->send();
     $this->assertEquals('Un resumen de su apoyo a Wikipedia', $email['subject']);
     $this->assertStringContainsString('¡Hola, Bob!', $email['html']);
   }
@@ -913,6 +906,23 @@ WHERE
     }
     unset($contribution);
     $this->assertEquals($contributions, $calculatedContributions);
+  }
+
+  /**
+   * Send the email/s.
+   *
+   * @param int $year
+   * @param int|null $contactID
+   *
+   * @return array
+   * @throws \API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function send(int $year = 2018, ?int $contactID = NULL): array {
+    EOYEmail::makeJob(FALSE)->setYear($year)->setContactID($contactID)->execute();
+    EOYEmail::send(FALSE)->setYear($year)->setContactID($contactID)->execute();
+    $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
+    return $this->getFirstEmail();
   }
 
 }

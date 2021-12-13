@@ -51,20 +51,6 @@ class EoySummary {
     $this->from_name = variable_get('thank_you_from_name', NULL);
   }
 
-  /**
-   * FIXME remove in favour of calling makeJob directly.
-   *
-   * @throws \Exception
-   */
-  public function calculate_year_totals() {
-    $job = EOYEmail::makeJob(FALSE)
-      ->setYear($this->year);
-    if ($this->contact_id) {
-      $job->setContactID($this->contact_id);
-    }
-    $job->execute();
-  }
-
   public function send_letters() {
     if (!$this->from_address || !$this->from_name) {
       throw new \Exception('Must configure a valid return address in the Thank-you module');

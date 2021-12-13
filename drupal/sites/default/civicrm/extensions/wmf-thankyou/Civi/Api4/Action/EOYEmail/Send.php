@@ -4,6 +4,7 @@
 namespace Civi\Api4\Action\EOYEmail;
 
 use Civi;
+use Civi\Api4\EOYEmail;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use wmf_communication\Translation;
@@ -62,12 +63,25 @@ class Send extends AbstractAction {
    *
    * @param \Civi\Api4\Generic\Result $result
    *
-   * @throws \CRM_Core_Exception
+   * @throws \API_Exception
    */
   public function _run(Result $result): void {
+    if (!$this->getContactID() && $this->isJobEmpty()) {
+      throw new \API_Exception('All emails for year ' . $this->getYear() . ' have been sent');
+    }
     $eoyClass = new EoySummary(['year' => $this->getYear(), 'contact_id' => $this->getContactID(), 'batch' => $this->getLimit()]);
-    $eoyClass->calculate_year_totals();
     $eoyClass->send_letters();
+  }
+
+  /**
+   * Is the planned job empty of emails to send to.
+   *
+   * @return bool
+   */
+  protected function isJobEmpty(): bool {
+    return !\CRM_Core_DAO::singleValueQuery(
+      'SELECT count(*) FROM wmf_eoy_receipt_donor WHERE year = ' . $this->getYear()
+    );
   }
 
 }
