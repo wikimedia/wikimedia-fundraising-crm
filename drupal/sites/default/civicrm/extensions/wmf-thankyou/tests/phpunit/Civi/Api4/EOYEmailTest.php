@@ -213,13 +213,9 @@ class EOYEmailTest extends TestCase {
     $rollup = explode(',', $result['contributions_rollup']);
     sort($rollup);
     unset($result['contributions_rollup']);
-    $this->assertEquals([
-      'name' => 'Recurring',
-      'job_id' => $jobId,
-      'email' => 'recurring@rabbit.org',
-      'preferred_language' => 'pt_BR',
-      'status' => 'queued',
-    ], $result);
+    $this->assertEquals('recurring@rabbit.org', $result['email']);
+    $this->assertEquals('queued', $result['status']);
+    $this->assertEquals(2018, $result['year']);
     $this->assertEquals([
       '2018-02-01 20.00 USD',
       '2018-04-03 400.00 PLN',
@@ -241,14 +237,9 @@ class EOYEmailTest extends TestCase {
     $result = $this->getWMFReceiptDonorRows($jobId, 'goat@wbaboxing.com');
     $rollup = explode(',', $result['contributions_rollup']);
     sort($rollup);
-    unset($result['contributions_rollup']);
-    $this->assertEquals([
-      'name' => 'Muhammad',
-      'job_id' => $jobId,
-      'email' => 'goat@wbaboxing.com',
-      'preferred_language' => 'ar_EG',
-      'status' => 'queued',
-    ], $result);
+    $this->assertEquals('goat@wbaboxing.com', $result['email']);
+    $this->assertEquals(2018, $result['year']);
+    $this->assertEquals('queued', $result['status']);
     $this->assertEquals([
       '2018-02-01 400.00 PLN',
       '2018-03-02 30.00 PLN',
@@ -271,14 +262,9 @@ class EOYEmailTest extends TestCase {
     $jobId = $summaryObject->calculate_year_totals();
     $this->jobIds[] = $jobId;
     $result = $this->getWMFReceiptDonorRows($jobId, 'jimmysingle@example.com');
-    $this->assertEquals([
-      'name' => 'Jimmy',
-      'job_id' => $jobId,
-      'email' => 'jimmysingle@example.com',
-      'preferred_language' => 'en_US',
-      'status' => 'queued',
-      'contributions_rollup' => '2019-11-27 10.00 USD,2019-11-28 10.00 USD',
-    ], $result);
+    $this->assertEquals('jimmysingle@example.com', $result['email']);
+    $this->assertEquals('queued', $result['status']);
+    $this->assertEquals('2019-11-27 10.00 USD,2019-11-28 10.00 USD', $result['contributions_rollup']);
   }
 
   /**

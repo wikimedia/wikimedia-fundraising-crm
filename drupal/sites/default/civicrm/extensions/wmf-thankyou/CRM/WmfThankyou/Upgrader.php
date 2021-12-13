@@ -19,4 +19,21 @@ class CRM_WmfThankyou_Upgrader extends CRM_WmfThankyou_Upgrader_Base {
     ]);
   }
 
+  /**
+   * Add year field.
+   *
+   * @return bool
+   */
+  public function upgrade_0001(): bool {
+    $this->ctx->log->info('Applying update 0001 - add year field');
+    CRM_Core_DAO::executeQuery('
+      ALTER TABLE wmf_eoy_receipt_donor
+      ADD COLUMN `year` INT(10) UNSIGNED DEFAULT NULL,
+      ADD INDEX `email_year` (email, year),
+      DROP INDEX `email`,
+      DROP INDEX wmf_eoy_receipt_donor_job_id_email
+    ');
+    return TRUE;
+  }
+
 }
