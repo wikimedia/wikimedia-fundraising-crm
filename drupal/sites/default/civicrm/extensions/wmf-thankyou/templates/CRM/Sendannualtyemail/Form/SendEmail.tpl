@@ -35,7 +35,7 @@ CRM.$(function($) {
 <div>
     {ts}Submitting this form will send an end of year summary email to the email of the contact you are viewing.{/ts}
     {ts}All contributions associated with contacts with this primary email address will be included.{/ts}
-    {ts}The name & language from the contact with the highest contact ID will be used.{/ts}
+    {ts}The name & language from the contact with the most recent donation will be used.{/ts}
 </div>
 <hr>
 {if $subject}

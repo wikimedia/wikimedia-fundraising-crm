@@ -262,11 +262,12 @@ EOS;
    */
   protected function populate_donor_recipients_table(): void {
     $contactSummaryTable = $this->getTemporaryTableNameForContactSummary();
-    $donor_recipients_insert_sql = <<<EOS
+    $donor_recipients_insert_sql = "
 INSERT INTO wmf_eoy_receipt_donor
-  (job_id, email, preferred_language, name, status, contributions_rollup)
+  (job_id, year, email, preferred_language, name, status, contributions_rollup)
 SELECT
     {$this->jobID} AS job_id,
+    " . $this->getYear() . " as year,
     email,
     preferred_language,
     name,
@@ -277,7 +278,7 @@ ORDER BY contact_id DESC
 ON DUPLICATE KEY UPDATE contributions_rollup = CONCAT(
     contributions_rollup, ',', contact_contributions
 )
-EOS;
+";
     CRM_Core_DAO::executeQuery($donor_recipients_insert_sql);
   }
 
