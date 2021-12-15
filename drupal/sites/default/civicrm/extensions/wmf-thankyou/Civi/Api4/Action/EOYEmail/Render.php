@@ -4,6 +4,7 @@
 namespace Civi\Api4\Action\EOYEmail;
 
 use Civi;
+use Civi\Api4\Exception\EOYEmail\NoEmailException;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 
@@ -73,7 +74,7 @@ class Render extends AbstractAction {
         ->addWhere('on_hold', '=', 0)
         ->execute()->first()['email'];
       if (!$email) {
-        throw new \API_Exception('no valid email for contact_id ' . $this->getContactID());
+        throw new NoEmailException('no valid email for contact_id ' . $this->getContactID());
       }
       $result[$this->getContactID()] = $this->renderLetter($email);
       return;

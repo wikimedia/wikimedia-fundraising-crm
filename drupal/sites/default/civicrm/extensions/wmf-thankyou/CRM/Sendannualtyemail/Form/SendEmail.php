@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\EOYEmail;
+use Civi\Api4\Exception\EOYEmail\NoEmailException;
 use CRM_WmfThankyou_ExtensionUtil as E;
 use CRM_Sendannualtyemail_AnnualThankYou as AnnualThankYou;
 
@@ -54,6 +55,7 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
    * @throws \CRM_Core_Exception
    */
   protected function setMessage() {
+    $this->assign('isEmailable', TRUE);
     try {
       $this->message = EOYEmail::render()
         ->setContactID($this->getContactID())
@@ -61,6 +63,9 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
         ->execute()->first();
       $this->assign('subject', $this->message['subject']);
       $this->assign('message', $this->message['html']);
+    }
+    catch (NoEmailException $e) {
+      $this->assign('isEmailable', FALSE);
     }
     catch (API_Exception $e) {
       // No contributions for the contact last year - don't set the default
