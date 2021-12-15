@@ -7,7 +7,6 @@ use CRM_Contribute_WorkflowMessage_EOYThankYou;
 use CRM_Core_DAO;
 use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
-use Civi\EoySummary;
 use Civi\Test\Mailer;
 
 class EOYEmailTest extends TestCase {

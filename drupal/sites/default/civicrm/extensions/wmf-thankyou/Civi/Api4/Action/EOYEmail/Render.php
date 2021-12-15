@@ -6,8 +6,6 @@ namespace Civi\Api4\Action\EOYEmail;
 use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use wmf_communication\Translation;
-use Civi\EoySummary;
 
 /**
  * Class Render.
