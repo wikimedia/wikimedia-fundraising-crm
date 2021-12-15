@@ -51,9 +51,15 @@ class EoySummary {
     $this->from_name = variable_get('thank_you_from_name', NULL);
   }
 
-  public function send_letters() {
+  /**
+   * Send em out!
+   *
+   * @return array
+   * @throws \API_Exception
+   */
+  public function sendLetters(): array {
     if (!$this->from_address || !$this->from_name) {
-      throw new \Exception('Must configure a valid return address in the Thank-you module');
+      throw new \API_Exception('Must configure a valid return address in the Thank-you module');
     }
     $mailer = MailFactory::singleton();
     $succeeded = 0;
@@ -83,11 +89,11 @@ class EoySummary {
         // makes sense for now as we separate the parts out.
         $this->record_activities($email);
         $status = 'sent';
-        $succeeded += 1;
+        ++$succeeded;
       }
       else {
         $status = 'failed';
-        $failed += 1;
+        ++$failed;
       }
 
       \CRM_Core_DAO::executeQuery('UPDATE wmf_eoy_receipt_donor SET status = %1 WHERE email = %2', [
@@ -100,6 +106,13 @@ class EoySummary {
       'succeeded' => $succeeded,
       'failed' => $failed,
     ]);
+    return [
+      'sent' => $succeeded,
+      'failed' => $failed,
+      'total_attempted' => $succeeded + $failed,
+      'remaining' => \CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM wmf_eoy_receipt_donor WHERE status = "queued" AND year = ' . $this->year),
+      'year' => $this->year,
+    ];
   }
 
   protected function record_activities(array $email) {

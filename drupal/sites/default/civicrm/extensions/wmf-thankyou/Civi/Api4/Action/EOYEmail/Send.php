@@ -70,7 +70,7 @@ class Send extends AbstractAction {
       throw new \API_Exception('All emails for year ' . $this->getYear() . ' have been sent');
     }
     $eoyClass = new EoySummary(['year' => $this->getYear(), 'contact_id' => $this->getContactID(), 'batch' => $this->getLimit()]);
-    $eoyClass->send_letters();
+    $result[] = $eoyClass->sendLetters();
   }
 
   /**
