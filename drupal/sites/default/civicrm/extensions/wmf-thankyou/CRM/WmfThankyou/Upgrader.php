@@ -37,12 +37,12 @@ class CRM_WmfThankyou_Upgrader extends CRM_WmfThankyou_Upgrader_Base {
   }
 
   /**
-   * Add year field.
+   * Drop old table/fields.
    *
    * @return bool
    */
   public function upgrade_0002(): bool {
-    $this->ctx->log->info('Applying update 0001 - add year field');
+    $this->ctx->log->info('Applying update 0002 - drop old table & fields');
     CRM_Core_DAO::executeQuery('
       ALTER TABLE wmf_eoy_receipt_donor
       DROP COLUMN contributions_rollup,
