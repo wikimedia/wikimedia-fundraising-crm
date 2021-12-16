@@ -2,6 +2,7 @@
 
 use Civi\Api4\EOYEmail;
 use Civi\Api4\Exception\EOYEmail\NoEmailException;
+use Civi\Api4\Exception\EOYEmail\ParseException;
 use CRM_WmfThankyou_ExtensionUtil as E;
 use CRM_Sendannualtyemail_AnnualThankYou as AnnualThankYou;
 
@@ -64,8 +65,14 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
       $this->assign('subject', $this->message['subject']);
       $this->assign('message', $this->message['html']);
     }
+    catch (ParseException $e) {
+      $this->assign('isEmailable', FALSE);
+      $this->assign('errorText', ts('The letter text could not be rendered for this contact')
+        . ts('Take note of any special characters in the contact\'s name and log a phab task'));
+    }
     catch (NoEmailException $e) {
       $this->assign('isEmailable', FALSE);
+      $this->assign('errorText', ts('This contact does not have a usable email - no end of year letter can be sent.'));
     }
     // In theory the api layer should throw an API_Exception.
     // However, for some reason, a CRM_Core_Exception is bubbling up

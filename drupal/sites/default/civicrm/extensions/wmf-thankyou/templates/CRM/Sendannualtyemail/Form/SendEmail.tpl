@@ -47,5 +47,5 @@ CRM.$(function($) {
   {include file="CRM/common/formButtons.tpl" location="bottom"}
   </div>
 {else}
-  <p>{ts}This contact does not have a usable email - no end of year letter can be sent.{/ts}</p>
+  <p>{$errorText}</p>
 {/if}

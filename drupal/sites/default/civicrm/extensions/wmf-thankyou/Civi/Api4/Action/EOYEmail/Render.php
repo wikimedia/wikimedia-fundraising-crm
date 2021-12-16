@@ -121,11 +121,16 @@ class Render extends AbstractAction {
       $template[$key] = $string['string'];
     }
     $swapLocale = \CRM_Utils_AutoClean::swapLocale($contactDetails['language']);
-    $rendered = Civi\Api4\WorkflowMessage::render(FALSE)
-      ->setMessageTemplate($template)
-      ->setValues($template_params)
-      ->setWorkflow('eoy_thank_you')
-      ->execute()->first();
+    try {
+      $rendered = Civi\Api4\WorkflowMessage::render(FALSE)
+        ->setMessageTemplate($template)
+        ->setValues($template_params)
+        ->setWorkflow('eoy_thank_you')
+        ->execute()->first();
+    }
+    catch (\ParseError $e) {
+      throw new Civi\Api4\Exception\EOYEmail\ParseException('Failed to parse template', 'parse_error');
+    }
 
     return [
       'to_name' => $contactDetails['display_name'],
