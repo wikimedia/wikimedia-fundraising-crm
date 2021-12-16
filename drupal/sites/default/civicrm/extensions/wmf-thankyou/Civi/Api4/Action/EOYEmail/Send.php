@@ -192,7 +192,7 @@ class Send extends AbstractAction {
    */
   protected function isJobEmpty(): bool {
     return !CRM_Core_DAO::singleValueQuery(
-      'SELECT count(*) FROM wmf_eoy_receipt_donor WHERE year = ' . $this->getYear()
+      "SELECT count(*) FROM wmf_eoy_receipt_donor WHERE status = 'queued' AND year = " . $this->getYear()
     );
   }
 
