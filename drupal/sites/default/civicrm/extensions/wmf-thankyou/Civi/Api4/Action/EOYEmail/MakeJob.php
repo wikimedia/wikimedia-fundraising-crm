@@ -84,14 +84,6 @@ class MakeJob extends AbstractAction {
 
     $num_emails = $this->populateDonorEmailsTable($year_start, $year_end);
 
-    // if no email addresses exist for the period lets jump out here
-    if($num_emails === 0 ) {
-      Civi::log('wmf')->info('eoy_receipt - No summaries calculated for giving during {year}', [
-        'year' => $this->year,
-      ]);
-      return;
-    }
-
     Civi::log('wmf')->info('eoy_receipt - {count} summaries calculated for giving during {year}', [
       'year' => $this->year,
       'count' => $num_emails,
