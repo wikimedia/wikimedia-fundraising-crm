@@ -918,7 +918,7 @@ WHERE
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function send(int $year = 2018, ?int $contactID = NULL): array {
-    EOYEmail::makeJob(FALSE)->setYear($year)->setContactID($contactID)->execute();
+    EOYEmail::makeJob(FALSE)->setYear($year)->execute();
     EOYEmail::send(FALSE)->setYear($year)->setContactID($contactID)->execute();
     $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
     return $this->getFirstEmail();
