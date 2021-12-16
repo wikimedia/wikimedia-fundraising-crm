@@ -67,7 +67,11 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
     catch (NoEmailException $e) {
       $this->assign('isEmailable', FALSE);
     }
-    catch (API_Exception $e) {
+    // In theory the api layer should throw an API_Exception.
+    // However, for some reason, a CRM_Core_Exception is bubbling up
+    // when there are no contributions. I feel like the api should
+    // convert this but ??? easy to catch here.
+    catch (API_Exception|CRM_Core_Exception $e) {
       // No contributions for the contact last year - don't set the default
       // or do any pre-rendering.
     }
