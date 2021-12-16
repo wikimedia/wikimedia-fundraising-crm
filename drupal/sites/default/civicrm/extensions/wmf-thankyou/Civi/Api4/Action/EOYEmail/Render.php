@@ -88,7 +88,12 @@ class Render extends AbstractAction {
       AND year = %1
       LIMIT %2", [1 => [$this->getYear(), 'Integer'], 2 => [$this->getLimit(), 'Integer']]);
     while ($row->fetch()) {
-      $result[$row->email] = $this->renderLetter($row->email);
+      try {
+        $result[$row->email] = $this->renderLetter($row->email);
+      }
+      catch (Civi\Api4\Exception\EOYEmail\ParseException $e) {
+        $result['parse_failures'][] = $row->email;
+      }
     }
   }
 

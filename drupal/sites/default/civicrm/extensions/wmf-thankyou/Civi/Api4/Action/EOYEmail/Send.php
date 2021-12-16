@@ -35,6 +35,11 @@ class Send extends AbstractAction {
   protected $year;
 
   /**
+   * @var array
+   */
+  protected $failed = [];
+
+  /**
    * Limit.
    *
    * Currently 1 is the only possible number as contact
@@ -92,15 +97,25 @@ class Send extends AbstractAction {
     }
     $mailer = MailFactory::singleton();
     $succeeded = 0;
-    $failed = 0;
     $initialTime = time();
 
-    $emails = EOYEmail::render(FALSE)
+    $emails = (array) EOYEmail::render(FALSE)
       ->setLimit($this->getLimit())
       ->setYear($this->getYear())
       ->setContactID($this->getContactID())
       ->execute();
 
+    if (isset($emails['parse_failures'])) {
+      $this->failed = $emails['parse_failures'];
+      unset($emails['parse_failures']);
+      CRM_Core_DAO::executeQuery(
+        "UPDATE wmf_eoy_receipt_donor SET status = 'failed'
+        WHERE email IN (%1)",
+        [1 => [implode("', '", $this->failed), 'String']]
+      );
+    }
+
+    $failed = count($this->failed);
     foreach ($emails as $email) {
       try {
         $email['from_name'] = $fromName;
