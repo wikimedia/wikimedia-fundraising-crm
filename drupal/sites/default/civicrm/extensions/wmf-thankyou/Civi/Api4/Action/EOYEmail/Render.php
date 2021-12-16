@@ -16,12 +16,9 @@ use Civi\EoySummary;
  *
  * @method int getContactID() Get the contact id.
  * @method $this setContactID(int $contactID) Set contact ID.
- * @method int getYear() Get the year
  * @method $this setYear(int $year) Set the year
  * @method int getLimit() Get the limit
  * @method $this setLimit(int $limit) Set the limit
- * @method int getJobID() Get the job ID.
- * @method $this setJobID(int $limit) Set job ID.
  */
 class Render extends AbstractAction {
 
@@ -54,31 +51,34 @@ class Render extends AbstractAction {
   protected $limit = 100;
 
   /**
-   * Required if contact ID is not present.
+   * Get the year, defaulting to last year.
    *
-   * @var int
+   * @return int
    */
-  protected $jobID;
+  protected function getYear(): int {
+    return $this->year ?? (date('Y') - 1);
+  }
 
   /**
    * @inheritDoc
    *
    * @param \Civi\Api4\Generic\Result $result
    *
-   * @throws \CRM_Core_Exception
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
    */
-  public function _run(Result $result) {
+  public function _run(Result $result): void {
     if ($this->getContactID()) {
-      $donors = new EoySummary([
-        'year' => $this->getYear(),
-        'batch' => $this->getLimit(),
-        'contact_id' => $this->getContactID(),
-      ]);
-      $this->setLimit(1);
-      $this->setJobID($donors->calculate_year_totals());
-    }
-    if (!$this->jobID) {
-      throw new \API_Exception('Job ID is required if contact ID not present');
+      $email = Civi\Api4\Email::get(FALSE)
+        ->addWhere('contact_id', '=', $this->getContactID())
+        ->addWhere('is_primary', '=', TRUE)
+        ->addWhere('on_hold', '=', 0)
+        ->execute()->first()['email'];
+      if (!$email) {
+        throw new \API_Exception('no valid email for contact_id ' . $this->getContactID());
+      }
+      $result[$this->getContactID()] = $this->renderLetter($email);
+      return;
     }
 
     $row = \CRM_Core_DAO::executeQuery("
@@ -86,10 +86,10 @@ class Render extends AbstractAction {
       FROM wmf_eoy_receipt_donor
       WHERE
       status = 'queued'
-      AND job_id = %1
-      LIMIT %2", [1 => [$this->getJobID(), 'Integer'], 2 => [$this->getLimit(), 'Integer']]);
+      AND year = %1
+      LIMIT %2", [1 => [$this->getYear(), 'Integer'], 2 => [$this->getLimit(), 'Integer']]);
     while ($row->fetch()) {
-      $result[$this->getContactID()] = $this->renderLetter($row->email);
+      $result[$row->email] = $this->renderLetter($row->email);
     }
   }
 
@@ -107,7 +107,7 @@ class Render extends AbstractAction {
     $activeRecurring = $this->doContactsHaveActiveRecurring($contactDetails['ids']);
 
     $template_params = [
-      'year' => $this->year,
+      'year' => $this->getYear(),
       'active_recurring' => $activeRecurring,
       'contactIDs' => $contactDetails['ids'],
       'contactId' => end($contactDetails['ids']),

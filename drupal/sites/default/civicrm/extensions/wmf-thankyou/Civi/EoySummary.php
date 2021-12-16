@@ -36,42 +36,19 @@ class EoySummary {
    */
   protected $temporaryTables = [];
 
-  protected $job_id;
-
   /**
    * EoySummary constructor.
    *
    * @param array $options
    *
-   * @throws \CRM_Core_Exception
    */
   public function __construct($options = []) {
     $this->year = $options['year'] ?? (date('Y') - 1);
     $this->batch = $options['batch'] ?? 100;
     $this->contact_id = $options['contact_id'] ?? NULL;
-    $this->job_id = $options['job_id'] ?? NULL;
 
     $this->from_address = variable_get('thank_you_from_address', NULL);
     $this->from_name = variable_get('thank_you_from_name', NULL);
-  }
-
-  /**
-   * FIXME remove in favour of calling makeJob directly.
-   *
-   * @return int|false the job ID for use in scheduling email sends
-   * @throws \Exception
-   */
-  public function calculate_year_totals() {
-    $job = EOYEmail::makeJob(FALSE)
-      ->setYear($this->year);
-    if ($this->contact_id) {
-      $job->setContactID($this->contact_id);
-    }
-    $this->job_id = $job->execute()->first()['job_id'];
-    if (!$this->job_id) {
-      throw new \API_Exception('No contributions found for year ' . $this->year . ($this->contact_id ? ' For contact id ' . $this->contact_id : ''));
-    }
-    return $this->job_id;
   }
 
   public function send_letters() {
@@ -84,8 +61,8 @@ class EoySummary {
 
     $emails = EOYEmail::render(FALSE)
       ->setLimit($this->batch)
-      ->setJobID($this->job_id)
       ->setYear($this->year)
+      ->setContactID($this->contact_id)
       ->execute();
 
     foreach ($emails as $email) {

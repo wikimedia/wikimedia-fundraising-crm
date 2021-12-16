@@ -1146,6 +1146,8 @@ abstract class BaseAuditProcessor {
         return 'h';
       case 'amazon':
         return 'a';
+      case 'apple':
+        return 'l';
       case 'paypal':
         return 'p';
       case 'dd':

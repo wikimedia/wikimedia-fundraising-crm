@@ -36,4 +36,25 @@ class CRM_WmfThankyou_Upgrader extends CRM_WmfThankyou_Upgrader_Base {
     return TRUE;
   }
 
+  /**
+   * Add year field.
+   *
+   * @return bool
+   */
+  public function upgrade_0002(): bool {
+    $this->ctx->log->info('Applying update 0001 - add year field');
+    CRM_Core_DAO::executeQuery('
+      ALTER TABLE wmf_eoy_receipt_donor
+      DROP COLUMN contributions_rollup,
+      DROP COLUMN preferred_language,
+      DROP COLUMN name,
+      DROP COLUMN job_id
+    ');
+
+    CRM_Core_DAO::executeQuery('
+      DROP TABLE wmf_eoy_receipt_job
+    ');
+    return TRUE;
+  }
+
 }
