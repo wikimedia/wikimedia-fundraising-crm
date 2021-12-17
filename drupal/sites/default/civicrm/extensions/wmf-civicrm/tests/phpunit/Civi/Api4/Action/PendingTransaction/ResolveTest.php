@@ -62,7 +62,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
     // getHostedPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setRiskScores([
         'cvv' => 50,
@@ -103,7 +103,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
     // getHostedPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setRiskScores([
         'cvv' => 50,
@@ -145,8 +145,12 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
     // confirm donation queue message data matches original pending message data
     $this->assertEquals(
-      $donation_queue_message['order_id'],
-      $pending_message['order_id']
+      $pending_message['order_id'],
+      $donation_queue_message['order_id']
+    );
+    $this->assertEquals(
+      $hostedPaymentStatusResponse->getGatewayTxnId(),
+      $donation_queue_message['gateway_txn_id']
     );
   }
 
@@ -160,7 +164,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $pending_message = $this->createTestPendingRecord('ingenico');
 
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::FAILED)
       ->setRiskScores([
         'cvv' => 50,
@@ -193,7 +197,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
       ['contribution_id' => mt_rand()]
     );
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setRiskScores([
         'cvv' => 50,
@@ -206,12 +210,12 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
     // set configured response to mock cancelPayment call
     $cancelledPaymentStatusResponse = new CancelPaymentResponse();
-    $cancelledPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+    $cancelledPaymentStatusResponse->setGatewayTxnId($hostedPaymentStatusResponse->getGatewayTxnId())
       ->setStatus(FinalStatus::CANCELLED);
 
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('cancelPayment')
-      ->with($pending_message['gateway_txn_id'])
+      ->with($hostedPaymentStatusResponse->getGatewayTxnId())
       ->willReturn($cancelledPaymentStatusResponse);
 
     // resolve pending trxn
@@ -238,7 +242,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
       ['contribution_id' => mt_rand()]
     );
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::FAILED)
       ->setRiskScores([
         'cvv' => 50,
@@ -273,7 +277,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
       ['contribution_id' => mt_rand()]
     );
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::COMPLETE)
       ->setRiskScores([
         'cvv' => 50,
@@ -308,7 +312,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     // getHostedPaymentStatus response set up
     // cvv 100 & avs 100 codes represent a 'no_match' result
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setRiskScores([
         'cvv' => 100,
@@ -323,7 +327,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     // cancelPayment should be called when reject status determined.
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('cancelPayment')
-      ->with($pending_message['gateway_txn_id'])
+      ->with($hostedPaymentStatusResponse->getGatewayTxnId())
       ->willReturn(
         (new CancelPaymentResponse())->setStatus(
           FinalStatus::CANCELLED
@@ -371,7 +375,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
     // getHostedPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setRiskScores([
         'cvv' => 50,
@@ -390,6 +394,11 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     // set configured response to mock approvePayment call
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('approvePayment')
+      ->with([
+        'amount' => 10,
+        'currency' => 'GBP',
+        'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId()
+      ])
       ->willReturn($approvePaymentResponse);
 
     // run the pending message through PendingTransaction::resolve()
@@ -498,8 +507,8 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
    */
   protected function createTestPendingRecord($gateway = 'test'): array {
     $id = mt_rand();
-    $payment_method = ($gateway == 'paypal_ec') ? 'paypal_ec' : 'cc';
-    $payment_submethod = ($gateway == 'paypal_ec') ? 'paypal_ec' : 'visa';
+    $payment_method = ($gateway == 'paypal_ec') ? 'paypal' : 'cc';
+    $payment_submethod = ($gateway == 'paypal_ec') ? '' : 'visa';
 
     $message = [
       'contribution_tracking_id' => $id,
@@ -508,7 +517,6 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
       'last_name' => 'McTester',
       'email' => 'test@example.org',
       'gateway' => $gateway,
-      'gateway_txn_id' => "txn-$id",
       'gateway_session_id' => $gateway . "-" . mt_rand(),
       'order_id' => "order-$id",
       'gateway_account' => 'default',
