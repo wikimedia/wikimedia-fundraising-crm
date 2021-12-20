@@ -696,6 +696,33 @@ The Wikimedia Foundation
     $this->assertStringContainsString('¡Hola, Bob!', $email['html']);
   }
 
+  /**
+   * Test that bad characters in names don't break our templates (notably quotes).
+   *
+   * @dataProvider getBadNames
+   */
+  public function testBadNames($contactParams, $salutation): void {
+    $contact = $this->addTestContact($contactParams);
+    $this->addTestContactContribution($contact['id']);
+    $email = $this->send(date('Y'), $contact['id']);
+    $this->assertEquals('A record of your support for Wikipedia', $email['subject']);
+    if ($salutation) {
+      $this->assertStringContainsString($salutation, $email['html']);
+    }
+    else {
+      $this->assertStringNotContainsString('Dear', $email['html']);
+    }
+  }
+
+  public function getBadNames(): array {
+    return [
+      [['first_name' => 'Bob', 'last_name' => "O'Riley"], 'Dear Bob'],
+      [['first_name' => 'Bob', 'last_name' => ''], NULL],
+      [['first_name' => "D'Artagnan", 'last_name' => ''], NULL],
+      [['first_name' => "D'Artagnan", 'last_name' => 'Smith'], "Dear D&#039;Artagnan"],
+    ];
+  }
+
   public function setUpContactsSharingEmail(): array {
     $olderContact = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Cassius',
@@ -788,21 +815,22 @@ The Wikimedia Foundation
     return $contact;
   }
 
-  protected function addTestContactContribution($contact_id, $params = []) {
-    $financialTypeCash = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'
-    );
-    $completedStatusId = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
-    );
-
+  /**
+   * At a contribution for the contact.
+   *
+   * @param int $contact_id
+   * @param array $params
+   *
+   * @return array
+   */
+  protected function addTestContactContribution(int $contact_id, array $params = []): array {
     $contribution = $this->callAPISuccess('Contribution', 'create', array_merge([
       'receive_date' => date("Y-m-d H:i:s"),
       'contact_id' => $contact_id,
       'total_amount' => '10',
       'currency' => 'USD',
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
+      'contribution_status_id' => 'Completed',
+      'financial_type_id' => 'Cash',
     ], $params));
 
     $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
@@ -917,14 +945,20 @@ WHERE
    * @param int|null $contactID
    *
    * @return array
-   * @throws \API_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function send(int $year = 2018, ?int $contactID = NULL): array {
-    EOYEmail::makeJob(FALSE)->setYear($year)->execute();
-    EOYEmail::send(FALSE)->setYear($year)->setContactID($contactID)->execute();
-    $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
-    return $this->getFirstEmail();
+    try {
+      EOYEmail::makeJob(FALSE)->setYear($year)->execute();
+      EOYEmail::send(FALSE)
+        ->setYear($year)
+        ->setContactID($contactID)
+        ->execute();
+      $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
+      return $this->getFirstEmail();
+    }
+    catch (\API_Exception $e) {
+      $this->fail('failed to send ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+    }
   }
 
 }
