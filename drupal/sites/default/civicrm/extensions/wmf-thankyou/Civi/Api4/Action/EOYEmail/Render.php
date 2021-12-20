@@ -76,7 +76,7 @@ class Render extends AbstractAction {
       if (!$email) {
         throw new NoEmailException('no valid email for contact_id ' . $this->getContactID());
       }
-      $result[$this->getContactID()] = $this->renderLetter($email);
+      $result[$email] = $this->renderLetter($email);
       return;
     }
 
@@ -142,6 +142,7 @@ class Render extends AbstractAction {
       'to_address' => $email,
       'subject' => trim($rendered['subject']),
       'html' => str_replace('<p></p>', '', $rendered['html']),
+      'contactIDs' => $contactDetails['ids'],
     ];
   }
 

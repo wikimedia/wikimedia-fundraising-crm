@@ -329,6 +329,7 @@ class EOYEmailTest extends TestCase {
       'to_name' => 'Jimmy Walrus',
       'to_address' => 'jimmysingle@example.com',
       'subject' => 'A record of your support for Wikipedia',
+      'contactIDs' => [$contact['id']],
       'html' => "<p>
 Dear Jimmy,
 </p>
@@ -476,6 +477,7 @@ The Wikimedia Foundation
       'to_name' => 'Bob Walrus',
       'to_address' => 'bob@example.com',
       'subject' => 'A record of your support for Wikipedia',
+      'contactIDs' => [$contactID],
       'html' => '<p>
 Dear Bob,
 </p>
@@ -616,6 +618,7 @@ The Wikimedia Foundation
       'from_address' => 'bobita@example.org',
       'to_name' => 'Bob Walrus',
       'to_address' => 'bob@example.com',
+      'contactIDs' => [$contactID],
       'subject' => 'A record of your support for Wikipedia',
       'html' => '<p>
 Dear Bob,
