@@ -4,10 +4,9 @@
 namespace Civi\Api4\Action\EOYEmail;
 
 use Civi;
+use Civi\Api4\Exception\EOYEmail\NoEmailException;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use wmf_communication\Translation;
-use Civi\EoySummary;
 
 /**
  * Class Render.
@@ -75,9 +74,9 @@ class Render extends AbstractAction {
         ->addWhere('on_hold', '=', 0)
         ->execute()->first()['email'];
       if (!$email) {
-        throw new \API_Exception('no valid email for contact_id ' . $this->getContactID());
+        throw new NoEmailException('no valid email for contact_id ' . $this->getContactID());
       }
-      $result[$this->getContactID()] = $this->renderLetter($email);
+      $result[$email] = $this->renderLetter($email);
       return;
     }
 
@@ -89,7 +88,12 @@ class Render extends AbstractAction {
       AND year = %1
       LIMIT %2", [1 => [$this->getYear(), 'Integer'], 2 => [$this->getLimit(), 'Integer']]);
     while ($row->fetch()) {
-      $result[$row->email] = $this->renderLetter($row->email);
+      try {
+        $result[$row->email] = $this->renderLetter($row->email);
+      }
+      catch (Civi\Api4\Exception\EOYEmail\ParseException $e) {
+        $result['parse_failures'][] = $row->email;
+      }
     }
   }
 
@@ -122,17 +126,23 @@ class Render extends AbstractAction {
       $template[$key] = $string['string'];
     }
     $swapLocale = \CRM_Utils_AutoClean::swapLocale($contactDetails['language']);
-    $rendered = Civi\Api4\WorkflowMessage::render(FALSE)
-      ->setMessageTemplate($template)
-      ->setValues($template_params)
-      ->setWorkflow('eoy_thank_you')
-      ->execute()->first();
+    try {
+      $rendered = Civi\Api4\WorkflowMessage::render(FALSE)
+        ->setMessageTemplate($template)
+        ->setValues($template_params)
+        ->setWorkflow('eoy_thank_you')
+        ->execute()->first();
+    }
+    catch (\ParseError $e) {
+      throw new Civi\Api4\Exception\EOYEmail\ParseException('Failed to parse template', 'parse_error');
+    }
 
     return [
       'to_name' => $contactDetails['display_name'],
       'to_address' => $email,
       'subject' => trim($rendered['subject']),
       'html' => str_replace('<p></p>', '', $rendered['html']),
+      'contactIDs' => $contactDetails['ids'],
     ];
   }
 

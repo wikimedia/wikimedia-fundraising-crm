@@ -120,17 +120,22 @@ class Load extends AbstractAction {
     if (Civi::cache('metadata')->has($cacheKey)) {
       return Civi::cache('metadata')->get($cacheKey);
     }
-    $strings = MessageTemplate::get(FALSE)
-      ->addWhere('workflow_name', '=', $this->getWorkflow())
-      ->addWhere('is_default', '=', 1)
-      ->addSelect('translation.*')
-      ->addWhere('translation.status_id:name', '=', 'active')
-      ->addWhere('translation.language', 'LIKE', substr($this->getLanguage(), 0, 2) . '%')
-      ->addJoin('Translation AS translation', 'INNER',
-        ['id', '=', 'translation.entity_id'],
-        ['translation.entity_table', '=', '"civicrm_msg_template"']
-      )
-      ->execute();
+    if ($this->getLanguage()) {
+      $strings = MessageTemplate::get(FALSE)
+        ->addWhere('workflow_name', '=', $this->getWorkflow())
+        ->addWhere('is_default', '=', 1)
+        ->addSelect('translation.*')
+        ->addWhere('translation.status_id:name', '=', 'active')
+        ->addWhere('translation.language', 'LIKE', substr($this->getLanguage(), 0, 2) . '%')
+        ->addJoin('Translation AS translation', 'INNER',
+          ['id', '=', 'translation.entity_id'],
+          ['translation.entity_table', '=', '"civicrm_msg_template"']
+        )
+        ->execute();
+    }
+    else {
+      $strings = [];
+    }
     $filteredStrings = [];
     foreach ($strings as $string) {
       $filteredStrings[$string['translation.language']][$string['translation.entity_field']] = $string['translation.string'];
