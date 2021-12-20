@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\PendingTransaction;
+use SmashPig\Core\DataStores\PaymentsFraudDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\PaymentDetailResponse;
@@ -13,7 +14,7 @@ use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\CancelPaymentResponse;
 
 /**
- * This is a generic test class for the extension (implemented with PHPUnit).
+ * @group PendingTransactionResolver
  */
 class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework\TestCase {
 
@@ -51,6 +52,45 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
    */
   public function tearDown(): void {
     TestingDatabase::clearStatics();
+  }
+
+  public function testAntiFraudQueueMessageCreatedAfterHostedStatusCallWithNewScores() {
+    $gateway = 'ingenico';
+    // generate a pending message to test
+    $pending_message = $this->createTestPendingRecord($gateway);
+    $this->createTestPaymentFraudRecord($pending_message['contribution_tracking_id'], $pending_message['order_id'], $gateway);
+
+    // getHostedPaymentStatus response set up
+    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+      ->setStatus(FinalStatus::PENDING_POKE)
+      ->setRiskScores([
+        'cvv' => 50,
+        'avs' => 0,
+      ]);
+
+    // set configured response to mock getHostedPaymentStatus call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('getHostedPaymentStatus')
+      ->willReturn($hostedPaymentStatusResponse);
+
+    // run the pending message through PendingTransaction::resolve()
+    $result = PendingTransaction::resolve()
+      ->setMessage($pending_message)
+      ->execute();
+
+    // confirm payments antifraud queue message added
+    $payments_antifraud_queue_message = QueueWrapper::getQueue('payments-antifraud')->pop();
+    $this->assertNotNull($payments_antifraud_queue_message);
+
+    // confirm payments antifraud queue message data matches original pending message data
+    $this->assertEquals(
+      $payments_antifraud_queue_message['order_id'],
+      $pending_message['order_id']
+    );
+
+    //clean up
+    PendingDatabase::get()->deleteMessage($pending_message);
   }
 
   /**
@@ -398,6 +438,31 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     db_delete('contribution_tracking')
       ->condition('id', $contributionId)
       ->execute();
+  }
+
+  /**
+   * @param $contributionTrackingId
+   * @param $order_id
+   * @param $gateway
+   *
+   * @return void
+   * @throws \Exception
+   */
+  protected function createTestPaymentFraudRecord($contributionTrackingId, $order_id, $gateway) {
+    $message = [
+      'order_id' => $order_id,
+      'contribution_tracking_id' => $contributionTrackingId,
+      'gateway' => $gateway,
+      'payment_method' => 'cc',
+      'user_ip' => '127.0.0.1',
+      'risk_score' => 80.25,
+      'score_breakdown' => array(
+            'getCVVResult' => 80,
+            'minfraud_filter' => 0.25,
+        )
+    ];
+
+    PaymentsFraudDatabase::get()->storeMessage($message);
   }
 
   /**
