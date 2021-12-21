@@ -151,23 +151,6 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $payments_init_queue_message = QueueWrapper::getQueue('payments-init')
       ->pop();
     $this->assertNotNull($payments_init_queue_message);
-    SourceFields::removeFromMessage($payments_init_queue_message);
-    $this->assertEquals([
-        'contribution_tracking_id',
-        'country',
-        'gateway',
-        'order_id',
-        'payment_method',
-        'payment_submethod',
-        'currency',
-        'validation_action',
-        'payments_final_status',
-        'amount',
-        'date',
-        'gateway_txn_id',
-        'server',
-      ], array_keys($payments_init_queue_message)
-    );
 
     // confirm donation queue message added
     $donation_queue_message = QueueWrapper::getQueue('donations')->pop();
@@ -472,6 +455,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
       'gateway_txn_id',
       'contribution_tracking_id',
       'order_id',
+      'server', // same value as 'source_host' but it's needed by payments-init qc
       // we're not too concerned about the source_* keys in this test but they'll
       // be there anyhow so we should expect them.
       'source_name',
@@ -486,7 +470,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     // array_diff_key($arr1, $arr2) will compare keys across two arrays and return
     // any keys that exist in $arr1 that don't exist in $arr2. In this case we want
     // the result to be empty to confirm $expectedArrayKeys matches the queue message keys.
-    $this->assertEmpty(array_diff_key(array_flip($expectedArrayKeys), $paymentsInitQueueMessage));
+    $this->assertEmpty(array_diff_key($paymentsInitQueueMessage, array_flip($expectedArrayKeys)));
   }
 
   public function testReviewActionMatchesUnrefundedDonor() {
