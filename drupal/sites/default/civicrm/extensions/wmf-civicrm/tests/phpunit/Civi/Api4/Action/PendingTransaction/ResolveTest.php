@@ -91,7 +91,8 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
       ->execute();
 
     // confirm payments antifraud queue message added
-    $payments_antifraud_queue_message = QueueWrapper::getQueue('payments-antifraud')->pop();
+    $payments_antifraud_queue_message = QueueWrapper::getQueue('payments-antifraud')
+      ->pop();
     $this->assertNotNull($payments_antifraud_queue_message);
 
     // confirm payments antifraud queue message data matches original pending message data
@@ -147,12 +148,48 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     );
 
     // confirm payments-init queue message added
-    $payments_init_queue_message = QueueWrapper::getQueue('payments-init')->pop();
+    $payments_init_queue_message = QueueWrapper::getQueue('payments-init')
+      ->pop();
     $this->assertNotNull($payments_init_queue_message);
+    SourceFields::removeFromMessage($payments_init_queue_message);
+    $this->assertEquals([
+        'contribution_tracking_id',
+        'country',
+        'gateway',
+        'order_id',
+        'payment_method',
+        'payment_submethod',
+        'currency',
+        'validation_action',
+        'payments_final_status',
+        'amount',
+        'date',
+        'gateway_txn_id',
+        'server',
+      ], array_keys($payments_init_queue_message)
+    );
 
     // confirm donation queue message added
     $donation_queue_message = QueueWrapper::getQueue('donations')->pop();
     $this->assertNotNull($donation_queue_message);
+    SourceFields::removeFromMessage($donation_queue_message);
+    $this->assertEquals([
+        'contribution_tracking_id',
+        'country',
+        'first_name',
+        'last_name',
+        'email',
+        'gateway',
+        'order_id',
+        'gateway_account',
+        'payment_method',
+        'payment_submethod',
+        'date',
+        'gross',
+        'currency',
+        'gateway_txn_id',
+      ], array_keys($donation_queue_message)
+    );
 
     // confirm donation queue message data matches original pending message data
     $this->assertEquals(
@@ -197,8 +234,9 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
   }
 
   /**
-   * Test scenario where contribution ID is set and duplicate in Pending Database is in PENDING_POKE status.
-   * Expectation is that the transaction would be cancelled when resolved is called on the transaction.
+   * Test scenario where contribution ID is set and duplicate in Pending
+   * Database is in PENDING_POKE status. Expectation is that the transaction
+   * would be cancelled when resolved is called on the transaction.
    *
    */
   public function testContributionIdSetAndPendingPokeDuplicateInPendingDatabase(): void {
@@ -242,8 +280,9 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
   }
 
   /**
-   * Test scenario where contribution ID is set and duplicate in Pending Database is in FAILED status
-   * expectation is that the resolver would do nothing to the transaction and the row is deleted afterwards.
+   * Test scenario where contribution ID is set and duplicate in Pending
+   * Database is in FAILED status expectation is that the resolver would do
+   * nothing to the transaction and the row is deleted afterwards.
    *
    */
   public function testContributionIdSetAndFailedDuplicateInPendingDatabase(): void {
@@ -277,8 +316,9 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
   }
 
   /**
-   * Test scenario where contribution ID is set and duplicate in Pending Database is in Completed status
-   * expectation is that the resolver would do nothing to the transaction and the row is deleted afterwards.
+   * Test scenario where contribution ID is set and duplicate in Pending
+   * Database is in Completed status expectation is that the resolver would do
+   * nothing to the transaction and the row is deleted afterwards.
    *
    */
   public function testContributionIdSetAndCompletedDuplicateInPendingDatabase(): void {
@@ -408,7 +448,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
       ->with([
         'amount' => 10,
         'currency' => 'GBP',
-        'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId()
+        'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
       ])
       ->willReturn($approvePaymentResponse);
 
@@ -478,20 +518,20 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
       ->with([
         'amount' => 10,
         'currency' => 'GBP',
-        'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId()
+        'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
       ])
       ->willReturn($approvePaymentResponse);
 
     $contact = Contact::create(FALSE)
       ->setValues([
         'first_name' => $pending_message['first_name'],
-        'last_name' => $pending_message['last_name']
+        'last_name' => $pending_message['last_name'],
       ])->execute()->first();
     $this->contactId = $contact['id'];
     Email::create(FALSE)
       ->setValues([
         'contact_id' => $contact['id'],
-        'email' => $pending_message['email']
+        'email' => $pending_message['email'],
       ])
       ->execute();
     Contribution::create(FALSE)
@@ -510,8 +550,9 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
     SourceFields::removeFromMessage($donationMessage);
+    unset($pending_message['gateway_session_id']);
     $this->assertEquals(array_merge($pending_message, [
-      'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId()
+      'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
     ]), $donationMessage);
   }
 
@@ -541,13 +582,13 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $contact = Contact::create(FALSE)
       ->setValues([
         'first_name' => $pending_message['first_name'],
-        'last_name' => $pending_message['last_name']
+        'last_name' => $pending_message['last_name'],
       ])->execute()->first();
     $this->contactId = $contact['id'];
     Email::create(FALSE)
       ->setValues([
         'contact_id' => $contact['id'],
-        'email' => $pending_message['email']
+        'email' => $pending_message['email'],
       ])
       ->execute();
     Contribution::create(FALSE)
@@ -606,10 +647,10 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
       'payment_method' => 'cc',
       'user_ip' => '127.0.0.1',
       'risk_score' => 80.25,
-      'score_breakdown' => array(
-            'getCVVResult' => 80,
-            'minfraud_filter' => 0.25,
-        )
+      'score_breakdown' => [
+        'getCVVResult' => 80,
+        'minfraud_filter' => 0.25,
+      ],
     ];
 
     PaymentsFraudDatabase::get()->storeMessage($message);

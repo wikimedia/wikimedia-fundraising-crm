@@ -288,33 +288,29 @@ class Resolve extends AbstractAction {
     string $finalStatus,
     string $gatewayTxnId
   ) : array {
-    $combinedParams = array_merge(
-      $pendingMessage,
+    $filteredPendingMessage = array_filter($pendingMessage, function ($key) {
+      return in_array($key, [
+        'payment_method',
+        'payment_submethod',
+        'country',
+        'currency',
+        'gateway',
+        'contribution_tracking_id',
+        'order_id',
+      ]);
+    }, ARRAY_FILTER_USE_KEY);
+
+    $paymentsInitMessage = array_merge(
+      $filteredPendingMessage,
       [
         'validation_action' => $validationAction,
         'payments_final_status' => $finalStatus,
         'amount' => $pendingMessage['gross'],
         'date' => UtcDate::getUtcTimestamp(),
-        'gateway_txn_id' => $gatewayTxnId
+        'gateway_txn_id' => $gatewayTxnId,
+        'server' => gethostname(), // FIXME: payments-init qc should be able to get this from source_host
       ]
     );
-
-    $paymentsInitMessage = array_filter($combinedParams, function ($key) {
-      return in_array($key, [
-        'validation_action',
-        'payments_final_status',
-        'payment_method',
-        'payment_submethod',
-        'country',
-        'currency',
-        'amount',
-        'date',
-        'gateway',
-        'gateway_txn_id',
-        'contribution_tracking_id',
-        'order_id',
-      ]);
-    }, ARRAY_FILTER_USE_KEY);
 
     return $paymentsInitMessage;
   }
@@ -383,8 +379,10 @@ class Resolve extends AbstractAction {
     ]);
     if ($approveResult->isSuccessful()) {
       $newStatus = FinalStatus::COMPLETE;
-      $this->message['gateway_txn_id'] = $gatewayTxnId;
-      QueueWrapper::push('donations', $this->message);
+      $donationsMessage = $this->message;
+      $donationsMessage['gateway_txn_id'] = $gatewayTxnId;
+      unset($donationsMessage['gateway_session_id']);
+      QueueWrapper::push('donations', $donationsMessage);
     }
     else {
       $newStatus = FinalStatus::FAILED;
