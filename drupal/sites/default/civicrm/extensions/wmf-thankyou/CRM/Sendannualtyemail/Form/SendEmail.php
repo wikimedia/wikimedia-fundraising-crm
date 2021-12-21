@@ -67,8 +67,8 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
     }
     catch (ParseException $e) {
       $this->assign('isEmailable', FALSE);
-      $this->assign('errorText', ts('The letter text could not be rendered for this contact')
-        . ts('Take note of any special characters in the contact\'s name and log a phab task'));
+      $this->assign('errorText', ts('The letter text could not be rendered for this contact.')
+        . ' ' . ts('Take note of any special characters in the contact\'s name and log a phab task'));
     }
     catch (NoEmailException $e) {
       $this->assign('isEmailable', FALSE);
