@@ -158,21 +158,31 @@ class Send extends AbstractAction {
   }
 
   /**
+   * Record activities.
+   *
+   * We record a single activity linked to all the contacts that were covered
+   * in the email.
+   *
+   * If merged these activity contact records will be merged (rather than the
+   * contact misleadingly winding up with more than one activity).
+   *
+   * Note the source contact & assigned contact are 'pick any one' - arguably we
+   * should leave assigned empty. The target really is the one that matters.
+   *
    * @param array $email
    *
    * @throws \CiviCRM_API3_Exception
    */
   protected function recordActivities(array $email): void {
-    foreach ($email['contactIDs'] as $contactID) {
-      civicrm_api3('Activity', 'create', [
-        'activity_type_id' => 'wmf_eoy_receipt_sent',
-        'source_contact_id' => $contactID,
-        'target_contact_id' => $contactID,
-        'assignee_contact_id' => $contactID,
-        'subject' => "Sent contribution summary receipt for year " . $this->getYear() . " to {$email['to_address']}",
-        'details' => $email['html'],
-      ]);
-    }
+    $firstContactID = reset($email['contactIDs']);
+    civicrm_api3('Activity', 'create', [
+      'activity_type_id' => 'wmf_eoy_receipt_sent',
+      'source_contact_id' => $firstContactID,
+      'target_contact_id' => $email['contactIDs'],
+      'assignee_contact_id' => $firstContactID,
+      'subject' => "Sent contribution summary receipt for year " . $this->getYear() . " to {$email['to_address']}",
+      'details' => $email['html'],
+    ]);
   }
 
   /**

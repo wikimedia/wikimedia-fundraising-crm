@@ -372,26 +372,24 @@ The Wikimedia Foundation
    * Test that we create activity records for each contact with a
    * shared email.
    *
-   * @throws \API_Exception
    */
   public function testCreateActivityRecords(): void {
     $contactIds = $this->setUpContactsSharingEmail();
     $mailing = $this->send();
     $this->assertRegExp('/Cancel_or_change_recurring_giving/', $mailing['html']);
-    foreach ($contactIds as $contactId) {
-      $activity = $this->callAPISuccessGetSingle('Activity', [
-        'activity_type_id' => 'wmf_eoy_receipt_sent',
-        'target_contact_id' => $contactId,
-      ]);
-      $this->assertEquals(
-        'Sent contribution summary receipt for year 2018 to goat@wbaboxing.com',
-        $activity['subject']
-      );
-      $this->assertEquals(
-        $mailing['html'],
-        $activity['details']
-      );
-    }
+    $firstContactID = reset($contactIds);
+    $activity = $this->callAPISuccessGetSingle('Activity', [
+      'activity_type_id' => 'wmf_eoy_receipt_sent',
+      'target_contact_id' => $firstContactID,
+      'return' => ['target_contact_id', 'subject', 'details'],
+    ]);
+
+    $this->assertEquals(
+      'Sent contribution summary receipt for year 2018 to goat@wbaboxing.com',
+      $activity['subject']
+    );
+    $this->assertEquals($mailing['html'], $activity['details']);
+    $this->assertEquals($contactIds, $activity['target_contact_id']);
   }
 
   /**
