@@ -90,6 +90,10 @@ class OrphanSlayerTest extends PHPUnit\Framework\TestCase {
             'gateway_account' => 'default',
             'payment_method' => 'paypal',
             'payment_submethod' => 'mc',
+             // required fields
+            'utm_source' => 'test',
+            'user_ip' => '0.0.0.0',
+            'language' => 'en',
             // Defaults to a magic 25 minutes ago, within the process window.
             'date' => time() - 25 * 60,
             'gross' => 123,
