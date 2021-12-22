@@ -20,7 +20,9 @@ function orphan_slayer_drush_command() {
       'gateway' => 'gateway',
     ],
     'options' => [
-      'time' => 'time',
+      'age' => 'Minimum age in minutes for a donation to be considered orphaned (defaults to 30)',
+      'batch' => 'Number of contributions to process. If set to zero, it will be treated as unlimited',
+      'time_limit' => 'Time limit in seconds for job',
     ],
   ];
 
@@ -58,8 +60,10 @@ function drush_orphan_slayer() {
   // level and integrated with app config
   $args = drush_get_arguments();
   $gateway = $args[1];
-  $time = drush_get_option('time', '30');
+  $age = intval(drush_get_option('age', 30));
+  $batch = intval(drush_get_option('batch', 0));
+  $timeLimit = intval(drush_get_option('time_limit', 0));
 
   wmf_common_create_smashpig_context("gateway_orphan_slayer", "$gateway");
-  orphan_slayer_process_orphans($gateway, $time);
+  orphan_slayer_process_orphans($gateway, $age, $batch, $timeLimit);
 }
