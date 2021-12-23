@@ -2,17 +2,33 @@
 
 use \SmashPig\Core\UtcDate;
 
-function orphan_slayer_process_orphans($gateway, $time = 30)
-{
-    $slayer = new OrphanSlayer($gateway);
-    $orphan = $slayer->get_oldest();
-    while ($orphan && ($orphan['date'] < UtcDate::getUtcTimestamp("-$time minutes"))) {
-        if ($orphan['contribution_tracking_id']) {
-            $result = $slayer->rectify($orphan);
-            watchdog('orphan slayer', 'orphan ' .$orphan['contribution_tracking_id'] . ': was rectified and the result is ' . print_r($result, true));
-        } else {
-            $slayer->cancel($orphan);
-        }
-        $orphan = $slayer->get_oldest();
+function orphan_slayer_process_orphans($gateway, $age, $batch, $timeLimit) {
+  $startTime = time();
+  $slain = 0;
+  $secondsElapsed = 0;
+  $slayer = new OrphanSlayer($gateway);
+  $orphan = $slayer->get_oldest();
+  while (
+    $orphan && ($orphan['date'] < UtcDate::getUtcTimestamp("-$age minutes")) &&
+    ($batch === 0 || $slain < $batch) &&
+    ($timeLimit === 0 || $secondsElapsed < $timeLimit)
+  ) {
+    if ($orphan['contribution_tracking_id']) {
+      $result = $slayer->rectify($orphan);
+      watchdog('orphan slayer', 'orphan ' . $orphan['contribution_tracking_id'] . ': was rectified and the result is ' . print_r($result, TRUE));
     }
+    else {
+      $slayer->cancel($orphan);
+    }
+    $slain++;
+    $secondsElapsed = time() - $startTime;
+    $orphan = $slayer->get_oldest();
+  }
+  if ($slain >= $batch) {
+    watchdog('orphan slayer', "Reached batch limit of $batch orphans");
+  }
+  if ($secondsElapsed >= $timeLimit) {
+    watchdog('orphan slayer', "Reached time limit of $timeLimit seconds");
+  }
+  watchdog('orphan slayer', "Slayed $slain orphans in $secondsElapsed seconds");
 }
