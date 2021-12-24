@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2d5f60a74a09b89783a93f53e2a9d7fe",
+    "content-hash": "ead0fa0f0e5ebd09a25bd0e909c74b17",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -4402,11 +4402,11 @@
         },
         {
             "name": "wikimedia/donation-interface",
-            "version": "v2.5.7",
+            "version": "v2.5.7.1",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "a6bcb3aa717f1362226746a28ee5a36af870b6b5"
+                "reference": "b37f4732d810d1bd46a529603afef7fa65127b30"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -4460,7 +4460,7 @@
             "support": {
                 "irc": "irc://irc.libera.chat/wikimedia-fundraising"
             },
-            "time": "2021-11-04T19:52:33+00:00"
+            "time": "2021-12-24T00:14:26+00:00"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
