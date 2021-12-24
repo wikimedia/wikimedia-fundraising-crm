@@ -29,7 +29,6 @@ require_once(__DIR__ . '/../../../vendor/autoload.php');
 require_once(__DIR__ . '/../../../vendor/wikimedia/donation-interface/tests/phpunit/TestConfiguration.php');
 require_once(__DIR__ . '/../../../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/test.adapter.php');
 require_once(__DIR__ . '/../../../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/TestingGlobalCollectAdapter.php');
-require_once(__DIR__ . '/../../../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/TestingGlobalCollectOrphanAdapter.php');
 require_once(__DIR__ . '/../../../vendor/wikimedia/donation-interface/tests/phpunit/includes/test_gateway/TestingPaypalExpressAdapter.php');
 
 putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
