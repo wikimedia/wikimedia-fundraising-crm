@@ -13,13 +13,15 @@ use CRM_Core_DAO;
 use Exception;
 
 /**
- * Class Render.
+ * Class Send.
  *
- * Get the content of the failure email for the specified contributionRecur ID.
+ * Send EOY receipt emails, either as a batch or for one contact ID
  *
  * @method int getContactID() Get the contact id.
  * @method $this setContactID(int $contactID) Set contact ID.
  * @method $this setYear(int $year) Set the year
+ * @method int getTimeLimit() Get the time limit in seconds
+ * @method $this setTimeLimit(int $timeLimit) Set the time limit in seconds
  * @method int getLimit() Get the limit
  * @method $this setLimit(int $limit) Set the limit
  */
@@ -40,14 +42,18 @@ class Send extends AbstractAction {
   protected $failed = [];
 
   /**
-   * Limit.
-   *
-   * Currently 1 is the only possible number as contact
-   * id is required.
+   * Email Limit.
    *
    * @var int
    */
   protected $limit = 100;
+
+  /**
+   * Time limit in seconds.
+   *
+   * @var int
+   */
+  protected $timeLimit = 0;
 
   /**
    * If provided then only this contact ID will be emailed.
@@ -99,7 +105,10 @@ class Send extends AbstractAction {
     if ($this->getContactID()) {
       $this->setLimit(1);
     }
-    while ($attempted < $this->getLimit()) {
+    while (
+      $attempted < $this->getLimit() &&
+      ($this->getTimeLimit() === 0 || time() < $initialTime + $this->getTimeLimit())
+    ) {
       $emails = (array) EOYEmail::render(FALSE)
         ->setLimit(1)
         ->setYear($this->getYear())
