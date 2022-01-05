@@ -169,6 +169,9 @@ class Render extends AbstractAction {
       $contactDetails['language'] = $emailRecord['contact_id.preferred_language'];
       $contactDetails['display_name'] = $emailRecord['contact_id.display_name'];
     }
+    if (empty($contactDetails['ids'])) {
+      throw new NoEmailException('email is not attached (anymore?) to a valid contact: ' . $email);
+    }
     return $contactDetails;
   }
 
