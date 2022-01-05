@@ -72,6 +72,7 @@ class Render extends AbstractAction {
         ->addWhere('contact_id', '=', $this->getContactID())
         ->addWhere('is_primary', '=', TRUE)
         ->addWhere('on_hold', '=', 0)
+        ->addWhere('contact_id.is_deleted', '=', FALSE)
         ->execute()->first()['email'];
       if (!$email) {
         throw new NoEmailException('no valid email for contact_id ' . $this->getContactID());
@@ -168,6 +169,9 @@ class Render extends AbstractAction {
       $contactDetails['ids'][] = $emailRecord['contact_id'];
       $contactDetails['language'] = $emailRecord['contact_id.preferred_language'];
       $contactDetails['display_name'] = $emailRecord['contact_id.display_name'];
+    }
+    if (empty($contactDetails['ids'])) {
+      throw new NoEmailException('email is not attached (anymore?) to a valid contact: ' . $email);
     }
     return $contactDetails;
   }
