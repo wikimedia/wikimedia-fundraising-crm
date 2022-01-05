@@ -72,6 +72,7 @@ class Render extends AbstractAction {
         ->addWhere('contact_id', '=', $this->getContactID())
         ->addWhere('is_primary', '=', TRUE)
         ->addWhere('on_hold', '=', 0)
+        ->addWhere('contact_id.is_deleted', '=', FALSE)
         ->execute()->first()['email'];
       if (!$email) {
         throw new NoEmailException('no valid email for contact_id ' . $this->getContactID());
