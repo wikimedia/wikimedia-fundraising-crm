@@ -171,7 +171,7 @@ class Render extends AbstractAction {
       $contactDetails['display_name'] = $emailRecord['contact_id.display_name'];
     }
     if (empty($contactDetails['ids'])) {
-      throw new NoEmailException('email is not attached (anymore?) to a valid contact: ' . $email);
+      throw new NoEmailException('email is not attached (anymore?) to a valid contact: ' . $email, 'eoy_fail', ['email' => $email]);
     }
     return $contactDetails;
   }

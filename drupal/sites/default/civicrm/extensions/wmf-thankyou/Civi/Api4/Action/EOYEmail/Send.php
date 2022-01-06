@@ -6,6 +6,7 @@ namespace Civi\Api4\Action\EOYEmail;
 use API_Exception;
 use Civi;
 use Civi\Api4\EOYEmail;
+use Civi\Api4\Exception\EOYEmail\NoEmailException;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Omnimail\MailFactory;
@@ -109,11 +110,20 @@ class Send extends AbstractAction {
       $attempted < $this->getLimit() &&
       ($this->getTimeLimit() === 0 || time() < $initialTime + $this->getTimeLimit())
     ) {
-      $emails = (array) EOYEmail::render(FALSE)
-        ->setLimit(1)
-        ->setYear($this->getYear())
-        ->setContactID($this->getContactID())
-        ->execute();
+      try {
+        $emails = (array) EOYEmail::render(FALSE)
+          ->setLimit(1)
+          ->setYear($this->getYear())
+          ->setContactID($this->getContactID())
+          ->execute();
+      }
+      catch (NoEmailException $e) {
+        // Invalid email address or something
+        $this->markFailed($e->getExtraParams()['email'], 'wmf_eoy_receipt send error', $e->getMessage());
+        $failed++;
+        $attempted++;
+        continue;
+      }
 
       if (empty($emails)) {
         // We have probably reached the end....
@@ -125,7 +135,7 @@ class Send extends AbstractAction {
         $this->markFailed(reset($emails['parse_failures']), 'failed to parse');
         unset($emails['parse_failures']);
       }
-
+      // @todo - use reset($emails) as only 1
       foreach ($emails as $email) {
         try {
           $email['from_name'] = $fromName;
