@@ -1,7 +1,17 @@
 <?php
 $directory = __DIR__ . '/../msg_templates/eoy_thank_you/';
 $htmlText = file_get_contents($directory . 'eoy_thank_you.en.html.txt');
-$msgText = CRM_Utils_String::htmlToText($htmlText);
+// We populate the text version with a copy of the html version with html stripped.
+// It is only seen by email clients which are configured not to display html
+// It is a bit arguable now if we should include a text version or whether those
+// clients (such as still are used) would kinda 'figure it out'
+// However, it turns out that the code we are currently using converts anything
+// in <b></b> tags to upper case - this <b>BREAKS</b> tokens.
+// Currently emails are going out with this being wrong on prod - I'm inclined to
+// think it is so edge it is safer to do nothing for now.. However this fixes
+// for dev and prevents an e-notice which is unhushed next civi update
+$msgText = str_replace(['<b>', '</b>'], ['', ''], $htmlText);
+$msgText = CRM_Utils_String::htmlToText($msgText);
 $subject = file_get_contents($directory . 'eoy_thank_you.en.subject.txt');
 
 /**
