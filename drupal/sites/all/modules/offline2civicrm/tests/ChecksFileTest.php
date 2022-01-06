@@ -20,6 +20,7 @@ class ChecksFileTest extends BaseChecksFileTest {
   public function tearDown(): void {
     Contact::delete(FALSE)
       ->addWhere('first_name', '=', 'Test_first_name')
+      ->setUseTrash(FALSE)
       ->execute();
     parent::tearDown();
   }
