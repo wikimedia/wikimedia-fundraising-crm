@@ -157,7 +157,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         // recurring record.
         $msg['subscr_id'] = $recur_record->id;
         $msg['gateway'] = 'paypal';
-      } else {
+      }
+      else {
         // PayPal has just not been sending subscr_signup messages for a lot of
         // messages lately. Insert a whole new contribution_recur record.
         $startMessage = [
@@ -177,13 +178,15 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           'frequency_interval' => '1',
           'frequency_unit' => 'month',
           'installments' => 0,
+          'original_gross' => $msg['original_gross'] ?? NULL,
+          'original_currency' => $msg['original_currency'] ?? NULL,
           'gross' => $msg['gross'],
           'currency' => $msg['currency'],
           'create_date' => $msg['date'],
           'start_date' => $msg['date'],
           'date' => $msg['date'],
           'gateway' => $msg['gateway'],
-          'recurring' => true
+          'recurring' => TRUE,
         ];
         $startMessage = $this->normalizeMessage($startMessage);
         $this->importSubscriptionSignup($startMessage);
@@ -308,10 +311,11 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       $contact = wmf_civicrm_message_contact_insert($msg);
 
       $contactId = $contact['id'];
-    } else {
+    }
+    else {
       $contactId = civicrm_api3('Contribution', 'getvalue', [
         'id' => $ctRecord['contribution_id'],
-        'return' => 'contact_id'
+        'return' => 'contact_id',
       ]);
     }
 
@@ -328,10 +332,12 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
         'trxn_id' => $msg['subscr_id'],
       ];
-      $processors = \Civi::cache()->get('queue2civicrm_civicrm_payment_processors');
+      $processors = \Civi::cache()
+        ->get('queue2civicrm_civicrm_payment_processors');
       if (!$processors) {
         $processors = array_flip(civicrm_api3('ContributionRecur', 'getoptions', ['field' => 'payment_processor_id'])['values']);
-        \Civi::cache()->set('queue2civicrm_civicrm_payment_processors', $processors);
+        \Civi::cache()
+          ->set('queue2civicrm_civicrm_payment_processors', $processors);
       }
       if (isset($processors[$msg['gateway']])) {
         // We could pass the gateway name to the api for resolution but it would reject
@@ -342,8 +348,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       // Create a new recurring donation with a token
       if (isset($msg['recurring_payment_token'])) {
         // Check that the original contribution has processed first
-        if(empty($ctRecord['contribution_id'])) {
-         throw new WMFException(WMFException::MISSING_PREDECESSOR, 'Recurring queue processed before donations queue');
+        if (empty($ctRecord['contribution_id'])) {
+          throw new WMFException(WMFException::MISSING_PREDECESSOR, 'Recurring queue processed before donations queue');
         }
 
         // Create a token
@@ -353,7 +359,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         // Set up the params to have the token
         $params['payment_token_id'] = $payment_token_result['id'];
         // Create a non paypal style trxn_id
-        $params['trxn_id'] = \WmfTransaction::from_message($msg)->get_unique_id();
+        $params['trxn_id'] = \WmfTransaction::from_message($msg)
+          ->get_unique_id();
         $params['processor_id'] = $msg['gateway_txn_id'];
         $params['invoice_id'] = $msg['order_id'];
         $params['next_sched_contribution_date'] = wmf_common_date_unix_to_civicrm($msg['start_date']);
@@ -366,8 +373,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       if (isset($msg['recurring_payment_token']) && isset($newContributionRecur['id'])) {
         // Get the contact information if not already there
         if (empty($contact)) {
-          $contact = civicrm_api3('Contact', 'getsingle', array('id' => $contactId));
-        } else {
+          $contact = civicrm_api3('Contact', 'getsingle', ['id' => $contactId]);
+        }
+        else {
           $contact = $contact['values'][$contactId];
           $contact['email'] = $msg['email'];
         }
@@ -385,14 +393,15 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         $start_date = $newContributionRecur['values'][$newContributionRecur['id']]['start_date'];
 
         // Get the day of the month
-        $day_of_month = \DateTime::createFromFormat('YmdHis', $start_date, new \DateTimeZone('UTC'))->format('j');
+        $day_of_month = \DateTime::createFromFormat('YmdHis', $start_date, new \DateTimeZone('UTC'))
+          ->format('j');
 
         // Format the day of month
         // TODO: This should probably be in the TwigLocalization logic
         $ordinal = new \NumberFormatter($locale, \NumberFormatter::ORDINAL);
         $day_of_month = $ordinal->format($day_of_month);
 
-        $params = array(
+        $params = [
           'template' => $template,
           'amount' => $msg['original_gross'],
           'contact_id' => $contactId,
@@ -413,18 +422,17 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           // used for the bounce header
           'unsubscribe_link' => build_unsub_link($ctRecord['contribution_id'], $contact['email'], $locale),
           'contribution_tags' => '',
-        );
+        ];
 
         $success = thank_you_send_mail($params);
         if ($success) {
-          watchdog('recurring_notification', "Recurring notification sent successfully for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], array(), WATCHDOG_INFO);
+          watchdog('recurring_notification', "Recurring notification sent successfully for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], [], WATCHDOG_INFO);
         }
         else {
-          watchdog('recurring_notification', "Recurring notification mail failed for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], array(), WATCHDOG_ERROR);
+          watchdog('recurring_notification', "Recurring notification mail failed for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], [], WATCHDOG_ERROR);
         }
       }
-    }
-    catch (\CiviCRM_API3_Exception $e) {
+    } catch (\CiviCRM_API3_Exception $e) {
       throw new WMFException(WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
     }
     watchdog('recurring', 'Succesfully inserted subscription signup for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
@@ -477,10 +485,11 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    *
    * Based on the reviewing the resulting records we can see that no
    * recurrings have the status (auto) Expiration notification without having a
-   * cancel_date. In each case the cancel_date precedes the end date - it seems that we
-   * receive this notification from paypal after some other type of cancellation has already been
-   * received. I WAS going to suggest we ALSO set cancel_date in this call but that seems
-   * unnecessary given the 100% overlap seemingly with already cancelled recurrings.
+   * cancel_date. In each case the cancel_date precedes the end date - it seems
+   * that we receive this notification from paypal after some other type of
+   * cancellation has already been received. I WAS going to suggest we ALSO set
+   * cancel_date in this call but that seems unnecessary given the 100% overlap
+   * seemingly with already cancelled recurrings.
    *
    * @param array $msg
    *
@@ -505,8 +514,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'next_sched_contribution_date' => 'null',
         'failure_retry_date' => 'null',
       ]);
-    }
-    catch (\CiviCRM_API3_Exception $e) {
+    } catch (\CiviCRM_API3_Exception $e) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
     }
     watchdog('recurring', 'Succesfuly ended subscription for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
