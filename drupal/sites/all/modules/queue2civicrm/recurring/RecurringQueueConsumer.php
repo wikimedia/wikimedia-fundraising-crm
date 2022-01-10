@@ -178,6 +178,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           'frequency_interval' => '1',
           'frequency_unit' => 'month',
           'installments' => 0,
+          'original_gross' => $msg['original_gross'] ?? NULL,
+          'original_currency' => $msg['original_currency'] ?? NULL,
           'gross' => $msg['gross'],
           'currency' => $msg['currency'],
           'create_date' => $msg['date'],
