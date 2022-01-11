@@ -6,6 +6,7 @@ namespace Civi\Api4\Action\EOYEmail;
 use API_Exception;
 use Civi;
 use Civi\Api4\EOYEmail;
+use Civi\Api4\Exception\EOYEmail\NoContributionException;
 use Civi\Api4\Exception\EOYEmail\NoEmailException;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
@@ -117,7 +118,7 @@ class Send extends AbstractAction {
           ->setContactID($this->getContactID())
           ->execute();
       }
-      catch (NoEmailException $e) {
+      catch (NoEmailException| NoContributionException $e) {
         // Invalid email address or something
         $this->markFailed($e->getExtraParams()['email'], 'wmf_eoy_receipt send error', $e->getMessage());
         $failed++;
