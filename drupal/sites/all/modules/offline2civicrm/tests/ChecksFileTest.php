@@ -14,17 +14,6 @@ class ChecksFileTest extends BaseChecksFileTest {
     require_once __DIR__ . "/includes/ChecksFileProbe.php";
   }
 
-  /**
-   * @throws \API_Exception
-   */
-  public function tearDown(): void {
-    Contact::delete(FALSE)
-      ->addWhere('first_name', '=', 'Test_first_name')
-      ->setUseTrash(FALSE)
-      ->execute();
-    parent::tearDown();
-  }
-
   public function testEmptyRow(): void {
     $this->expectException(EmptyRowException::class);
     // A few kinds of empty.
@@ -40,10 +29,11 @@ class ChecksFileTest extends BaseChecksFileTest {
   /**
    * Populate contribution_tracking.country
    *
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
    * @throws \Civi\WMFException\WMFException
-   * @throws \CRM_Core_Exception
    */
-  public function testImportCountry() {
+  public function testImportCountry(): void {
     // A few kinds of empty.
     $data = [
       'Check Number' => mt_rand(),
@@ -51,9 +41,9 @@ class ChecksFileTest extends BaseChecksFileTest {
       'Country' => 'AR',
       'Email' => 'email@phony.com',
       'External Batch Number' => mt_rand(),
-      'First Name' => 'Test_first_name',
+      'First Name' => 'Daisy',
       'Gift Source' => 'Community Gift',
-      'Last Name' => 'Test_last_name',
+      'Last Name' => 'Duck',
       'Original Amount' => '123',
       'Original Currency' => 'USD',
       'Payment Instrument' => 'Trilogy',

@@ -10,13 +10,8 @@ class CitibankFileTest extends BaseChecksFileTest {
 
   public function setUp():void {
     parent::setUp();
-    $this->trxn_ids = array('S1234123445401', 'F123412349E701');
+    $this->trxn_ids = ['S1234123445401', 'F123412349E701'];
     $this->gateway = 'citibank';
-  }
-
-  public function tearDown(): void {
-    Contact::delete(FALSE)->addWhere('source', '=', 'citibank import')->execute();
-    parent::tearDown();
   }
 
   /**
