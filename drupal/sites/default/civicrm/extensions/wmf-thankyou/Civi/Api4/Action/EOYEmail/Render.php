@@ -4,7 +4,9 @@
 namespace Civi\Api4\Action\EOYEmail;
 
 use Civi;
+use Civi\Api4\Exception\EOYEmail\NoContributionException;
 use Civi\Api4\Exception\EOYEmail\NoEmailException;
+use Civi\Api4\Exception\EOYEmail\ParseException;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 
@@ -92,7 +94,7 @@ class Render extends AbstractAction {
       try {
         $result[$row->email] = $this->renderLetter($row->email);
       }
-      catch (Civi\Api4\Exception\EOYEmail\ParseException $e) {
+      catch (ParseException $e) {
         $result['parse_failures'][] = $row->email;
       }
     }
@@ -135,7 +137,11 @@ class Render extends AbstractAction {
         ->execute()->first();
     }
     catch (\ParseError $e) {
-      throw new Civi\Api4\Exception\EOYEmail\ParseException('Failed to parse template', 'parse_error');
+      throw new ParseException('Failed to parse template', 'parse_error');
+    }
+    catch (NoContributionException $e) {
+      // Catch the error to add the email - which the original class didn't know.
+      throw new NoContributionException($e->getMessage(), 'no_contribution', ['email' => $email]);
     }
 
     return [
