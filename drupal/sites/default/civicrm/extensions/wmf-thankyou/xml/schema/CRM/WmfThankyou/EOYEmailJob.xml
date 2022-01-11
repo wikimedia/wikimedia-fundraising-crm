@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/WmfThankyou</base>
+  <class>EOYEmailJob</class>
+  <name>wmf_eoy_receipt_donor</name>
+  <comment>Tracking for EOY emails</comment>
+  <log>true</log>
+  <field>
+    <name>id</name>
+    <title>EOY email job ID</title>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>EOY email job ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+  <field>
+    <name>email</name>
+    <title>Email</title>
+    <type>varchar</type>
+    <length>254</length>
+    <html>
+      <type>Text</type>
+      <size>30</size>
+    </html>
+    <rule>email</rule>
+    <comment>Email address</comment>
+  </field>
+  <field>
+    <name>status</name>
+    <title>Processing status</title>
+    <type>varchar</type>
+    <length>254</length>
+    <pseudoconstant>
+      <callback>CRM_WmfThankyou_BAO_EOYEmailJob::getStatuses</callback>
+    </pseudoconstant>
+    <html>
+      <type>Text</type>
+      <size>20</size>
+    </html>
+    <comment>queued|failed|sent</comment>
+  </field>
+  <field>
+    <name>year</name>
+    <title>Send year</title>
+    <type>int</type>
+    <length>254</length>
+    <html>
+      <type>Text</type>
+      <size>20</size>
+    </html>
+  </field>
+  <index>
+    <name>email_year</name>
+    <fieldName>email</fieldName>
+    <fieldName>year</fieldName>
+  </index>
+  <index>
+    <name>status</name>
+    <fieldName>status</fieldName>
+  </index>
+</table>

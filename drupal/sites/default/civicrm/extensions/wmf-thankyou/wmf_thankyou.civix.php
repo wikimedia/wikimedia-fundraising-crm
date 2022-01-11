@@ -449,5 +449,11 @@ function _wmf_thankyou_civix_civicrm_alterSettingsFolders(&$metaDataFolders = NU
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
  */
 function _wmf_thankyou_civix_civicrm_entityTypes(&$entityTypes) {
-  $entityTypes = array_merge($entityTypes, []);
+  $entityTypes = array_merge($entityTypes, [
+    'CRM_WmfThankyou_DAO_EOYEmailJob' => [
+      'name' => 'EOYEmailJob',
+      'class' => 'CRM_WmfThankyou_DAO_EOYEmailJob',
+      'table' => 'wmf_eoy_receipt_donor',
+    ],
+  ]);
 }
