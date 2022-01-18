@@ -24,10 +24,10 @@ function orphan_slayer_process_orphans($gateway, $age, $batch, $timeLimit) {
     $secondsElapsed = time() - $startTime;
     $orphan = $slayer->get_oldest();
   }
-  if ($slain >= $batch) {
+  if ($batch > 0 && $slain >= $batch) {
     watchdog('orphan slayer', "Reached batch limit of $batch orphans");
   }
-  if ($secondsElapsed >= $timeLimit) {
+  if ($timeLimit > 0 && $secondsElapsed >= $timeLimit) {
     watchdog('orphan slayer', "Reached time limit of $timeLimit seconds");
   }
   watchdog('orphan slayer', "Slayed $slain orphans in $secondsElapsed seconds");
