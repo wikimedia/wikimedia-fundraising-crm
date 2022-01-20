@@ -1,7 +1,0 @@
-	Caro {{name}}, 
-
-	Grazie per la tua donazione alla Wikimedia Foundation. È stata
-davvero apprezzata di cuore! 
-
-	Per le tue registrazioni: La tua donazione il
-{{receive_date}} è stata {{amount|l10n_currency(locale)}}.

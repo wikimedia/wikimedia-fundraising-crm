@@ -559,7 +559,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     // Check the subject
     $expectedSubject = trim(file_get_contents(
         __DIR__ .
-        "/../../../thank_you/templates/subject/recurring_notification.en.subject"
+        "/../../../thank_you/templates/recurring_notification.en.subject.txt"
     ));
     $this->assertEquals( $expectedSubject, $sent['subject']);
   }

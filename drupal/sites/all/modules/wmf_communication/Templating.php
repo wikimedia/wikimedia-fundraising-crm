@@ -192,7 +192,7 @@ class Templating {
   }
 
   protected function getRelativeFilePath($language) {
-    return "{$this->format}/{$this->template_name}.{$language}.{$this->format}";
+    return "{$this->template_name}.{$language}.{$this->format}.txt";
   }
 
   /**
