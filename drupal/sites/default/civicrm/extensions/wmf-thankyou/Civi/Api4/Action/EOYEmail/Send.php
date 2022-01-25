@@ -146,8 +146,9 @@ class Send extends AbstractAction {
           }
           $this->recordActivities($email);
           ++$succeeded;
-          CRM_Core_DAO::executeQuery('UPDATE wmf_eoy_receipt_donor SET status = "sent" WHERE email = %1', [
+          CRM_Core_DAO::executeQuery('UPDATE wmf_eoy_receipt_donor SET status = "sent" WHERE email = %1 AND year = %2', [
             1 => [$email['to_address'], 'String'],
+            2 => [$this->getYear(), 'Integer'],
           ]);
         }
           // Should be just phpMailer exception but weird normalizeContent throws WMFException
