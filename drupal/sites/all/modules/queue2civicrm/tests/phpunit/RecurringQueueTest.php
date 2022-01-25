@@ -555,11 +555,11 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Check the right donation currency, original currency is CAD
     $this->assertRegExp('/C\$/',$sent['html']);
-
-    // Check the subject
+    // Check the subject.
+    // Note this test will move to an extension, at which point this relative path will change.
     $expectedSubject = trim(file_get_contents(
         __DIR__ .
-        "/../../../thank_you/templates/recurring_notification.en.subject.txt"
+        '/../../../../../default/civicrm/extensions/wmf-civicrm/msg_templates/recurring_notification/recurring_notification.en.subject.txt'
     ));
     $this->assertEquals( $expectedSubject, $sent['subject']);
   }

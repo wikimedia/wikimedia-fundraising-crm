@@ -949,7 +949,8 @@ function thank_you_render($params) {
   $params['receive_date'] = strftime('%Y-%m-%d', $date - (60 * 60 * 10));
 
   $template = new Templating(
-    drupal_get_path('module', 'thank_you') . DIRECTORY_SEPARATOR . 'templates',
+    // This hard-coded path is transitional.
+    drupal_get_path('module', 'thank_you') . DIRECTORY_SEPARATOR . '../../../default/civicrm/extensions/wmf-civicrm/msg_templates/' . $params['template'],
     $params['template'],
     $params['locale'],
     $params
