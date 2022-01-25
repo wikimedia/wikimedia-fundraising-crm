@@ -11,7 +11,6 @@ files[] = Templating.php
 files[] = Translation.php
 files[] = twigext_l10n/CldrData.php
 files[] = twigext_l10n/TwigLocalization.php
-files[] = CiviMail/CiviMailBulkStore.php
 files[] = CiviMail/CiviMailStore.php
 files[] = CiviMail/CiviMailingRecord.php
 files[] = CiviMail/CiviMailQueueRecord.php

@@ -19,7 +19,7 @@ class CiviMailTest extends CiviMailTestBase {
 			$revision
 		);
 		$this->assertInstanceOf(
-			'wmf_communication\ICiviMailingRecord',
+			\wmf_communication\CiviMailingRecord::class,
 			$storedMailing,
 			'addMailing should return an ICiviMailingRecord'
 		);
