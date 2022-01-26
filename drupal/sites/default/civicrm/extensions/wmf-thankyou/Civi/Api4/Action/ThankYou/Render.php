@@ -75,9 +75,7 @@ class Render extends AbstractAction {
    *
    * @param \Civi\Api4\Generic\Result $result
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
-   * @throws \Exception
+   * @throws \Throwable
    */
   public function _run(Result $result): void {
     $templateParams = $this->getTemplateParameters();
@@ -90,11 +88,12 @@ class Render extends AbstractAction {
       $templateParams
     );
 
-    $page_content = $template->render('html');
-    $page_content = str_replace('<p></p>', '', $page_content);
+    $html = $template->loadTemplate('html')->render($templateParams);
+    $subject = $template->loadTemplate('subject')->render($templateParams);
+    $page_content = str_replace('<p></p>', '', $html);
     $result[] = [
       'html' => $page_content,
-      'subject' => trim($template->render('subject')),
+      'subject' => trim($subject),
     ];
   }
 
