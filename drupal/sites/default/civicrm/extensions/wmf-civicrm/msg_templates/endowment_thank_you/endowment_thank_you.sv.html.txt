@@ -1,33 +1,33 @@
-{% if first_name and last_name %}
-<p>Hej {{ first_name }}!
-</p>{% else %}<p>
+{if $first_name and $last_name}
+<p>Hej {$first_name}!
+</p>{else}<p>
   Bästa bidragsgivare,</p>
-{%endif%}
+{/if}
 
 
-{% if recurring %}
+{if $recurring}
 <p>
-  Jag är väldigt glad att få tacka dig för din månatliga gåva på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, på alla de människor som söker fri kunskaps vägnar.
+  Jag är väldigt glad att få tacka dig för din månatliga gåva på {$amount}, på alla de människor som söker fri kunskaps vägnar.
 </p>
 
 <p>
-  Din donation håller Wikipedia självständigt. Ditt månatliga stöd är viktigt för vår långtidsplanering, som hjälper oss att se vad Wikipedia kan åstadkomma under de kommande åren. En gång i månadenkommer en donation på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} att debiteras av Wikimedia Foundation till dess att du ber om att få avsluta.<b> I januari varje år kommer vi att skicka en sammanfattning över dina bidrag under föregående år till dig.</b> Om du av någon anledning vill säga upp din månatliga donation kan du följa dessa enkla <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">instruktioner</a>.
+  Din donation håller Wikipedia självständigt. Ditt månatliga stöd är viktigt för vår långtidsplanering, som hjälper oss att se vad Wikipedia kan åstadkomma under de kommande åren. En gång i månadenkommer en donation på {$amount} att debiteras av Wikimedia Foundation till dess att du ber om att få avsluta.<b> I januari varje år kommer vi att skicka en sammanfattning över dina bidrag under föregående år till dig.</b> Om du av någon anledning vill säga upp din månatliga donation kan du följa dessa enkla <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">instruktioner</a>.
 </p>
 
-{% else %}
+{else}
 
 <p>
-  Jag är väldigt glad att få tacka dig för din gåva på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, på alla de människor som söker fri kunskaps vägnar.
+  Jag är väldigt glad att få tacka dig för din gåva på {$amount}, på alla de människor som söker fri kunskaps vägnar.
 </p>
-{% endif %}
+{/if}
 
-{% if "RecurringRestarted" in contribution_tags %}
+{if in_array("RecurringRestarted", $contribution_tags)}
 <p>Vi löste nyligen ett litet tekniskt problem som pausade några månatliga donationer. Vi har återställt din återkommande donation och den kommer att fungera som vanligt framöver. Vi kommer inte att ta betalt av dig för de månader vi hoppade över. Tack för ditt tålamod och stöd, och tveka inte att skicka ett e-postmeddelande till donate@wikimedia.org om du har några frågor.</p>
-{%endif%}
+{/if}
 
-{% if "UnrecordedCharge" in contribution_tags %}
-<p>Vi har nyligen löst ett tekniskt problem som gjorde att ett litet antal bidragsgivare inte fick en bekräftelse på sina donationer. Vi skickar detta e-postmeddelande som ett tack för din donation den {{ receive_date }}. Vi uppskattar verkligen ditt tålamod och stöd och tveka inte att skicka ett e-postmeddelande till donate@wikimedia.org om du har några frågor.</p>
-{%endif%}
+{if in_array("UnrecordedCharge",  $contribution_tags)}
+<p>Vi har nyligen löst ett tekniskt problem som gjorde att ett litet antal bidragsgivare inte fick en bekräftelse på sina donationer. Vi skickar detta e-postmeddelande som ett tack för din donation den {$receive_date}. Vi uppskattar verkligen ditt tålamod och stöd och tveka inte att skicka ett e-postmeddelande till donate@wikimedia.org om du har några frågor.</p>
+{/if}
 
 <p>
   Ju längre jag håller på med det här arbetet, desto mer inser jag att det inte finns en upplevelse av Wikipedia. Vi är alla olika och vår nyfikenhet uttrycker sig  på olika sätt.
@@ -51,12 +51,12 @@
 <p>Vissa arbetsgivare matchar sina anställdas bidrag. Se efter om din arbetsgivare har <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">ett sådant bidragsprogram för företag</a>.
 </p>
 
-<p>För din bokföring: Din donation, nummer {{ transaction_id }}, den {{ receive_date }}, var på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+<p>För din bokföring: Din donation, nummer {$transaction_id}, den {$receive_date}, var på {$amount}.
 </p>
 
 <p>Detta brev är ett kvitto på ditt bidrag. Inga varor eller tjänster tillhandahålls, vare sig delvis eller i sin helhet, i samband med detta bidrag. Vår postadress är: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA.  skatteavdragsnummer i USA: 20-0049703
 </p>
 
-<p>Om du inte vill få framtida mejl om insamlingar från Wikimedia Foundation kan du <a href="{{ unsubscribe_link | raw }}">avsluta prenumerationen direkt.</a> Observera att vi kommer att fortsätta att skicka dig kvitton som detta för framtida donationer.
+<p>Om du inte vill få framtida mejl om insamlingar från Wikimedia Foundation kan du <a href="{$unsubscribe_link}">avsluta prenumerationen direkt.</a> Observera att vi kommer att fortsätta att skicka dig kvitton som detta för framtida donationer.
 </p>
-<!-- TI_BEGIN{"version":1,"name":"endowment_thank_you.sv.html","revision":20200107}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"endowment_thank_you.sv.html","revision":20200107]TI_END -->

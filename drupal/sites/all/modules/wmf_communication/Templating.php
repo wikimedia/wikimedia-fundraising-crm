@@ -161,10 +161,27 @@ class Templating {
         ],
         WATCHDOG_INFO
       );
-      $language = Translation::next_fallback($language);
+      $language = self::next_fallback($language);
     } while ($language);
 
     throw new Exception("No fallbacks for template {$this->template_name}, from {$this->language}");
+  }
+
+
+  /**
+   * Given a specific locale, get the next most general locale
+   *
+   * TODO: get from LanguageTag library and refactor interface
+   */
+  static function next_fallback($language) {
+    $parts = preg_split('/[-_]/', $language);
+    if (count($parts) > 1) {
+      return $parts[0];
+    }
+    if ($language === 'en') {
+      return NULL;
+    }
+    return 'en';
   }
 
   /**

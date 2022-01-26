@@ -1,5 +1,5 @@
-{% if first_name %}
-  {{ first_name }}, donația ta reprezintă încă un motiv pentru a sărbători.
-{% else %}
+{if $first_name}
+  {$first_name}, donația ta reprezintă încă un motiv pentru a sărbători.
+{else}
   Donația ta reprezintă încă un motiv pentru a sărbători.
-{% endif %}
+{/if}

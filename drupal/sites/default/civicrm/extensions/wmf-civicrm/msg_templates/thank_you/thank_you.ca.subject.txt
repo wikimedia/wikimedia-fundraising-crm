@@ -1,5 +1,5 @@
-{% if first_name %}
-{{ first_name }}, la teva donació és un motiu més de celebració.
-{% else %}
+{if $first_name}
+{$first_name}, la teva donació és un motiu més de celebració.
+{else}
 La teva donació és un motiu més de celebració.
-{%endif%}
+{/if}

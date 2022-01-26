@@ -1,40 +1,40 @@
 <span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">心から感謝するとともに、領収書をお送りします。</span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
-{% if first_name and last_name %}
-<p>{{ last_name }}様
-</p>{% else %}
+{if $first_name and $last_name}
+<p>{$last_name}様
+</p>{else}
 <p>寄付者の皆さま、</p>
-{%endif%}
+{/if}
 
-{% if recurring %}
-<p>ウィキペディアを支援するために月額 {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} の定期寄付をしてくださったあなたに心から感謝しています。この場を借りて、より良い世界の実現に向けられたあなたの寛大さと並外れた意欲に感謝いたします。</p>
+{if $recurring}
+<p>ウィキペディアを支援するために月額 {$amount} の定期寄付をしてくださったあなたに心から感謝しています。この場を借りて、より良い世界の実現に向けられたあなたの寛大さと並外れた意欲に感謝いたします。</p>
 
 <p>あなたからの毎月のご寄付により、ウィキペディアは大きく前進し、未来のための計画を立てることができます。</p>
-<p>月に一度、{{ (currency ~ " " ~ amount) | l10n_currency(locale) }} のご寄付がウィキメディア財団から引き落とされます。これは、停止希望の連絡をいただかない限り継続されます。
+<p>月に一度、{$amount} のご寄付がウィキメディア財団から引き落とされます。これは、停止希望の連絡をいただかない限り継続されます。
   <b>毎年1月に、前年度分のご寄付の概要をお送りします。</b>
   何らかの理由で寄付のキャンセルをご希望の場合は
-  <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">
+  <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">
     キャンセル方法</a>に従ってください。
 </p>
-{% else %}
+{else}
 
-<p>ウィキペディアを支援するために今回 {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} のご寄付をお寄せくださりありがとうございます。この場を借りて、より良い世界の実現に向けられたあなたの寛大さと並外れた意欲に感謝いたします。
+<p>ウィキペディアを支援するために今回 {$amount} のご寄付をお寄せくださりありがとうございます。この場を借りて、より良い世界の実現に向けられたあなたの寛大さと並外れた意欲に感謝いたします。
 </p>
-{% endif %}
+{/if}
 
 <p>私がウィキペディアを設立したのは20年前のことです。それ以来、私たちの愛すべき百科事典は、順調な時期と困難な時期を経て大きく成長し、今日、これまでになくその真の目的を果たしています。ウィキペディアは、無数の人々が学び、発見し、探求し、調べるために役立っています。</p>
 <p>ウィキペディアは、どんな状況下にいる読者に対しても、彼らが知る権利を持つ知識を得るための機会を提供し続けています。</p>
 <p>これもあなたのおかげです。私たち非営利団体は、あなたのご支援によって本来の目的に忠実でいることができます。ウィキペディアが世界で最も訪問者数の多いウェブサイトの一つになった今でも、あなたのご支援によって編集が行われ、新しい読者に記事が届けられています。</p>
-<p>横に並んで一緒にキャンドルを吹き消す機会はないかもしれませんが、今年一年を通して<a href="https://wikimediafoundation.org/{{ locale }}/wikipedia20/">ウィキペディア20周年</a>を祝うにあたり、あなたが私たちウィキメディア財団一人ひとりの心のなかにいることを忘れないでください。</p>
+<p>横に並んで一緒にキャンドルを吹き消す機会はないかもしれませんが、今年一年を通して<a href="https://wikimediafoundation.org/{$locale}/wikipedia20/">ウィキペディア20周年</a>を祝うにあたり、あなたが私たちウィキメディア財団一人ひとりの心のなかにいることを忘れないでください。</p>
 
-{% if "RecurringRestarted" in contribution_tags %}
+{if in_array("RecurringRestarted", $contribution_tags)}
 <p>このたび、毎月の継続寄付中断の原因になっていた技術的問題が解決されました。今後、継続寄付は再開されます。停止期間のご請求を改めておこなうことはございません。皆さまのご協力とご支援に感謝いたします。ご質問等おありでしたら、お手数ですがdonate@wikimedia.orgまでお問い合わせください。</p>
-{%endif%}
+{/if}
 
-{% if "UnrecordedCharge" in contribution_tags %}
-<p>一部の寄付者の方に、ご寄付完了のメールが届かないという技術的問題が解決されました。本メールをもって{{ receive_date }}付のご寄付受領の御礼に代えさせていただきます。皆さまのご協力とご支援に感謝いたします。ご質問等おありでしたら、お手数ですがdonate@wikimedia.orgまでお問い合わせください。</p>
-{%endif%}
+{if in_array("UnrecordedCharge",  $contribution_tags)}
+<p>一部の寄付者の方に、ご寄付完了のメールが届かないという技術的問題が解決されました。本メールをもって{$receive_date}付のご寄付受領の御礼に代えさせていただきます。皆さまのご協力とご支援に感謝いたします。ご質問等おありでしたら、お手数ですがdonate@wikimedia.orgまでお問い合わせください。</p>
+{/if}
 
 <p>いつもありがとうございます。</p>
 
@@ -46,16 +46,16 @@
 <p>多くの雇用主の方が、寛大にも、従業員の寄付額に連動する寄付をしてくださっています。皆さまの雇用主が <a href="https://donate.wikimedia.org/wiki/Matching_Gifts/ja">コーポレートマッチングギフト制度</a>に参画されているかご確認ください。
 </p>
 
-{% if gift_source != "Donor Advised Fund" %}
+{if $gift_source != "Donor Advised Fund"}
 
-<p>受領記録：寄付番号{{ transaction_id }}、{{ receive_date }}付 {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}
+<p>受領記録：寄付番号{$transaction_id}、{$receive_date}付 {$amount}
 </p>
 
 <p>この手紙は寄付の領収書代わりとなります。この寄付の全部または一部に対する見返りとして、物品やサービスは一切提供されていません。郵送先住所：Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. 米国国内税免税番号：20-0049703
 </p>
 
-{%endif%}
-<p>ご寄付に関するウィキメディア財団からの通知がご不用の場合は、<a href="{{ unsubscribe_link | raw }}">今すぐに配信停止の手続きをしていただけます</a>。その場合もこのメールのような受領通知は、今後もご寄付をいただいたときにご送付いたします。
+{/if}
+<p>ご寄付に関するウィキメディア財団からの通知がご不用の場合は、<a href="{$unsubscribe_link}">今すぐに配信停止の手続きをしていただけます</a>。その場合もこのメールのような受領通知は、今後もご寄付をいただいたときにご送付いたします。
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.ja.html","revision":20210323}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.ja.html","revision":20210323]TI_END -->

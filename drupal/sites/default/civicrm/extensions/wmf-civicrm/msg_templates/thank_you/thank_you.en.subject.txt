@@ -1,5 +1,5 @@
-{% if first_name and last_name %}
-   {{ first_name }}, your
-{% else %}
+{if $first_name and $last_name}
+   {$first_name}, your
+{else}
   Your
-{% endif %} donation is one more reason to celebrate.
+{/if} donation is one more reason to celebrate.

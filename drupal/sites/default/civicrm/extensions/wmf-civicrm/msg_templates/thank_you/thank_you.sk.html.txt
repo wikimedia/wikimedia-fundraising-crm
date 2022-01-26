@@ -2,36 +2,36 @@
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
 
-{% if first_name %}
-<p>Ahoj, {{ first_name }}!
-</p>{% else %}<p>
+{if $first_name}
+<p>Ahoj, {$first_name}!
+</p>{else}<p>
 Vážený darca,</p>
-{%endif%}
+{/if}
 
 
-{% if recurring %}
+{if $recurring}
 <p>
-Som nesmierne vďačný za to, že som ten, kto vám poďakuje za opakovaný dar v hodnote {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, ktorý ste poskytli na podporu Wikipédie. Chcem využiť túto príležitosť na oslavu vašej veľkorysosti a vašej výnimočnej ochoty podieľať sa na vytváraní lepšej budúcnosti pre svet.
+Som nesmierne vďačný za to, že som ten, kto vám poďakuje za opakovaný dar v hodnote {$amount}, ktorý ste poskytli na podporu Wikipédie. Chcem využiť túto príležitosť na oslavu vašej veľkorysosti a vašej výnimočnej ochoty podieľať sa na vytváraní lepšej budúcnosti pre svet.
 </p>
 
 <p>
-Váš mesačný príspevok dostane Wikipédiu ešte ďalej a pomôže nám plánovať dopredu. Nadácia Wikimedia Foundation si bude raz za mesiac sťahovať príspevok vo výške {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. <b>Každý január vám pošleme zhrnutie vašich príspevkov za predchádzajúci rok</b>. Ak z akéhokoľvek dôvodu chcete svoj dar zrušiť, postupujte podľa týchto <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">pokynov na jednoduché zrušenie</a>.
+Váš mesačný príspevok dostane Wikipédiu ešte ďalej a pomôže nám plánovať dopredu. Nadácia Wikimedia Foundation si bude raz za mesiac sťahovať príspevok vo výške {$amount}. <b>Každý január vám pošleme zhrnutie vašich príspevkov za predchádzajúci rok</b>. Ak z akéhokoľvek dôvodu chcete svoj dar zrušiť, postupujte podľa týchto <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">pokynov na jednoduché zrušenie</a>.
 </p>
 
-{% else %}
+{else}
 
 <p>
-Som nesmierne vďačný za to, že som ten, kto vám poďakuje za jednorazový dar v hodnote {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}, ktorý ste poskytli na podporu Wikipédie. Chcem využiť túto príležitosť na oslavu vašej veľkorysosti a vašej výnimočnej ochoty podieľať sa na vytváraní lepšej budúcnosti pre svet.
+Som nesmierne vďačný za to, že som ten, kto vám poďakuje za jednorazový dar v hodnote {$amount}, ktorý ste poskytli na podporu Wikipédie. Chcem využiť túto príležitosť na oslavu vašej veľkorysosti a vašej výnimočnej ochoty podieľať sa na vytváraní lepšej budúcnosti pre svet.
 </p>
-{% endif %}
+{/if}
 
-{% if "RecurringRestarted" in contribution_tags %}
+{if in_array("RecurringRestarted", $contribution_tags)}
 <p>Nedávno sme vyriešili malý technický problém, ktorý dočasne pozastavil niektoré mesačné príspevky. Váš mesačný príspevok sme obnovili: bude spracovaný ako obvykle. Za vynechané mesiace Vám samozrejme nebudeme nič účtovať. Ďakujeme Vám za Vašu trpezlivosť a podporu, a ak máte akékoľvek otázky, neváhajte a napíšte nám na adresu donate@wikimedia.org.</p>
-{%endif%}
+{/if}
 
-{% if "UnrecordedCharge" in contribution_tags %}
-<p>Nedávno sme vyriešili technický problém, ktorý spôsobil, že niektorí darcovia nedostali potvrdenie o svojom príspevku. Prijmite, prosím, tento e-mail ako poďakovanie za Váš príspevok dňa {{ receive_date }}. Vážime si Vašu trpezlivosť a podporu, a ak máte akékoľvek otázky, neváhajte a napíšte nám na adresu donate@wikimedia.org.</p>
-{%endif%}
+{if in_array("UnrecordedCharge",  $contribution_tags)}
+<p>Nedávno sme vyriešili technický problém, ktorý spôsobil, že niektorí darcovia nedostali potvrdenie o svojom príspevku. Prijmite, prosím, tento e-mail ako poďakovanie za Váš príspevok dňa {$receive_date}. Vážime si Vašu trpezlivosť a podporu, a ak máte akékoľvek otázky, neváhajte a napíšte nám na adresu donate@wikimedia.org.</p>
+{/if}
 
 <p>
 Wikipédiu som založil pred 20 rokmi. Odvtedy sa naša obľúbená encyklopédia rozrástla v dobrých aj v ťažkých časoch a dnes, viac ako kedykoľvek predtým, slúži svojmu skutočnému účelu. Pomáha miliónom ľudí študovať, objavovať a skúmať.
@@ -56,16 +56,16 @@ zakladateľ Wikipédie
 
 <p>Mnohí zamestnávatelia štedro podporia príspevky svojich zamestnancov: opýtajte sa svojho zamestnávateľa a zistite, či máte <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">podnikový program darov</a>.
 </p>
-{% if gift_source != "Donor Advised Fund" %}
+{if $gift_source != "Donor Advised Fund"}
 
-<p>Pre Vaše záznamy: Váš dar číslo {{ transaction_id }}, zo dňa {{ receive_date }} bol {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+<p>Pre Vaše záznamy: Váš dar číslo {$transaction_id}, zo dňa {$receive_date} bol {$amount}.
 </p>
 
 <p>Tento list môže slúžiť ako záznam o Vašom dare. Za tento príspevok nebol poskytnutý žiadny tovar ani služby, a to ani čiastočne. Naša poštová adresa je: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Číslo daňového oslobodenia v USA: 20-0049703
 </p>
-{%endif%}
+{/if}
 
-<p>Ak nechcete dostávať žiadne e-maily o akejkoľvek finančnej zbierke od nadácie Wikimedia Foundation, <a href="{{ unsubscribe_link | raw }}">môžete sa okamžite odhlásiť</a>. Upozorňujeme, že v prípade budúcich darov Vám aj naďalej budeme posielať takéto potvrdenia o príjme.
+<p>Ak nechcete dostávať žiadne e-maily o akejkoľvek finančnej zbierke od nadácie Wikimedia Foundation, <a href="{$unsubscribe_link}">môžete sa okamžite odhlásiť</a>. Upozorňujeme, že v prípade budúcich darov Vám aj naďalej budeme posielať takéto potvrdenia o príjme.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.sk.html","revision":20210323}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.sk.html","revision":20210323]TI_END -->
