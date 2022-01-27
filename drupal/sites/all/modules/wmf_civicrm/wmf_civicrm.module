@@ -872,6 +872,9 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
           break;
         }
         switch (strtolower($msg['payment_submethod'])) {
+          case 'cash_abitab':
+            $payment_instrument = 'Abitab';
+            break;
           case 'cash_boleto':
             $payment_instrument = 'Boleto';
             break;
@@ -889,6 +892,9 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
             break;
           case 'cash_oxxo':
             $payment_instrument = 'OXXO';
+            break;
+          case 'cash_pago_efectivo':
+            $payment_instrument = 'Pago Efectivo';
             break;
           case 'cash_pago_facil':
             $payment_instrument = 'Pago Facil';

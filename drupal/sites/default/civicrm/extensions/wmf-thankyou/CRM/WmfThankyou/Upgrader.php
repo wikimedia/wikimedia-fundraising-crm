@@ -57,4 +57,19 @@ class CRM_WmfThankyou_Upgrader extends CRM_WmfThankyou_Upgrader_Base {
     return TRUE;
   }
 
+  /**
+   * Add id field.
+   *
+   * @return bool
+   */
+  public function upgrade_0003(): bool {
+    $this->ctx->log->info('Applying update 0003 - add id field');
+    CRM_Core_DAO::executeQuery('
+      ALTER TABLE wmf_eoy_receipt_donor
+      ADD COLUMN `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT "EOY email job ID",
+      ADD PRIMARY KEY (`id`)
+    ');
+    return TRUE;
+  }
+
 }

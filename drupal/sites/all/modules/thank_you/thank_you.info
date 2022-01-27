@@ -7,7 +7,3 @@ dependencies[] = wmf_communication
 package = Wikimedia
 configure = admin/config/thank_you
 files[] = Html2Text.php
-files[] = generators/FindUnconsumedTokens.php
-files[] = generators/RenderTranslatedPage.php
-files[] = generators/ThankYou.php
-files[] = generators/ThankYouSubject.php
