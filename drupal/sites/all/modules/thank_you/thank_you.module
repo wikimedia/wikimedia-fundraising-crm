@@ -100,7 +100,7 @@ function thank_you_send_test_form() {
   // TODO: add a staging list so that one can test before enabling
   // TODO elsewhere: these locales should be in canonical form
   $langs = [];
-  foreach (glob(__DIR__ . '/templates/html/thank_you.*.html') as $lang) {
+  foreach (glob(__DIR__ . '/../../../default/civicrm/extensions/wmf-civicrm/msg_templates/thank_you/thank_you.*.html.txt') as $lang) {
     $lang = substr($lang, strrpos($lang, '/') + 1);
     $lang = substr($lang, strpos($lang, '.') + 1);
     $lang = substr($lang, 0, strpos($lang, '.'));
