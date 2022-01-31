@@ -75,6 +75,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
@@ -117,6 +118,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
@@ -129,7 +131,8 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
     // approvePayment response set up
     $approvePaymentResponse = new ApprovePaymentResponse();
-    $approvePaymentResponse->setStatus(FinalStatus::COMPLETE);
+    $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
+      ->setSuccessful(TRUE);
 
     // set configured response to mock approvePayment call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -197,6 +200,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::FAILED)
+      ->setSuccessful(FALSE)
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 50,
@@ -231,6 +235,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
@@ -277,6 +282,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::FAILED)
+      ->setSuccessful(FALSE)
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
@@ -313,6 +319,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::COMPLETE)
+      ->setSuccessful(TRUE)
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
@@ -348,6 +355,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
       ->setRiskScores([
         'cvv' => 100,
         'avs' => 100,
@@ -411,6 +419,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
@@ -423,7 +432,8 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
     // approvePayment response set up
     $approvePaymentResponse = new ApprovePaymentResponse();
-    $approvePaymentResponse->setStatus(FinalStatus::COMPLETE);
+    $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
+      ->setSuccessful(TRUE);
 
     // set configured response to mock approvePayment call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -481,6 +491,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
       // Default review threshold is 75
       ->setRiskScores([
         'cvv' => 50,
@@ -494,7 +505,8 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
     // approvePayment response set up
     $approvePaymentResponse = new ApprovePaymentResponse();
-    $approvePaymentResponse->setStatus(FinalStatus::COMPLETE);
+    $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
+      ->setSuccessful(TRUE);
 
     // set configured response to mock approvePayment call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -548,6 +560,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
       // Default review threshold is 75
       ->setRiskScores([
         'cvv' => 50,

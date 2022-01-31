@@ -67,16 +67,20 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     parent::setUp();
     $this->createPaymentResponse = (new CreatePaymentResponse())
       ->setGatewayTxnId('000000850010000188130000200001')
-      ->setStatus(FinalStatus::PENDING_POKE);
+      ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE);
     $this->createPaymentResponse2 = (new CreatePaymentResponse())
       ->setGatewayTxnId('000000850010000188140000200001')
-      ->setStatus(FinalStatus::PENDING_POKE);
+      ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE);
     $this->approvePaymentResponse = (new ApprovePaymentResponse())
       ->setGatewayTxnId('000000850010000188130000200001')
-      ->setStatus(FinalStatus::COMPLETE);
+      ->setStatus(FinalStatus::COMPLETE)
+      ->setSuccessful(TRUE);
     $this->approvePaymentResponse2 = (new ApprovePaymentResponse())
       ->setGatewayTxnId('000000850010000188140000200001')
-      ->setStatus(FinalStatus::COMPLETE);
+      ->setStatus(FinalStatus::COMPLETE)
+      ->setSuccessful(TRUE);
 
     $this->oldPromPath = variable_get('metrics_reporting_prometheus_path');
     variable_set('metrics_reporting_prometheus_path', '/tmp/');
@@ -740,7 +744,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         'No doughnuts for you!',
         LogLevel::ERROR
       )
-    );
+    )->setSuccessful(FALSE);
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn(
@@ -815,7 +819,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         "That's your first declined payment!",
         LogLevel::ERROR
       )
-    );
+    )->setSuccessful(FALSE);
     $this->hostedCheckoutProvider->expects($this->any())
       ->method('createPayment')
       ->willReturn(
@@ -870,7 +874,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         "That's your second declined payment!",
         LogLevel::ERROR
       )
-    );
+    )->setSuccessful(FALSE);
     $this->hostedCheckoutProvider->expects($this->any())
       ->method('createPayment')
       ->willReturn(
@@ -937,7 +941,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         "That's your third declined payment!",
         LogLevel::ERROR
       )
-    );
+    )->setSuccessful(FALSE);
     $this->hostedCheckoutProvider->expects($this->any())
       ->method('createPayment')
       ->willReturn(
@@ -1019,7 +1023,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         'Better not try me again!',
         LogLevel::ERROR
       )
-    );
+    )->setSuccessful(FALSE);
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn(
@@ -1100,7 +1104,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         'No doughnuts for you!',
         LogLevel::ERROR
       )
-    );
+    )->setSuccessful(FALSE);
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn(
@@ -1149,7 +1153,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         $expectedInvoiceId . ' ALREADY EXISTS","httpStatusCode":409',
         LogLevel::ERROR
       )
-    );
+    )->setSuccessful(FALSE);
     $expectedDescription = $this->getExpectedDescription();
     $firstCallParams = [
       'recurring_payment_token' => 'abc123-456zyx-test12',
@@ -1340,7 +1344,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         'Better not try me again!',
         LogLevel::ERROR
       )
-    );
+    )->setSuccessful(FALSE);
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn(
