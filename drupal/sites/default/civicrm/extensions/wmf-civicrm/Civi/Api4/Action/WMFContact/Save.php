@@ -350,6 +350,8 @@ class Save extends AbstractAction {
    * language string. It often creates nasty variants like 'es_NO' - Norwegian
    * Spanish - for spanish speakers who filled in the form while in Norway.
    *
+   * Note that the function Civi\WMFHelpers\Language::getLanguageCode is likely useful.
+   *
    * We hateses it my precious.
    *
    * Bug https://phabricator.wikimedia.org/T279389 is open to clean this up.
