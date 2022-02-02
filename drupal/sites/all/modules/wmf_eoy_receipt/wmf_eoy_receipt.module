@@ -1,0 +1,16 @@
+<?php
+
+
+function wmf_eoy_receipt_calculate_summaries($options = []) {
+  civicrm_initialize();
+  $donors = new Civi\EoySummary($options);
+
+  return $donors->calculate_year_totals();
+}
+
+function wmf_eoy_receipt_send_letters($options = []) {
+  civicrm_initialize();
+  $donors = new Civi\EoySummary($options);
+
+  $donors->send_letters();
+}
