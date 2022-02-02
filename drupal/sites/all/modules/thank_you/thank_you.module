@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\ThankYou;
+use Civi\Api4\Activity;
 use Civi\Omnimail\MailFactory;
 use SmashPig\Core\UtcDate;
 use wmf_communication\CiviMailStore;
@@ -647,7 +648,17 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
       $civi_mailing = $civimail_store->addMailing('thank_you', $template_info->name, 'missing body', $subject, $template_info->revision);
     }
     $civi_queue_record = $civimail_store->addQueueRecord($civi_mailing, $email, $contact_id);
-    $civimail_store->addActivity($civi_queue_record, $subject, $html);
+
+    Activity::create(FALSE)->setValues([
+      'source_contact_id' => $civi_queue_record->getContactID(),
+      'target_contact_id' => $civi_queue_record->getContactID(),
+      'activity_type_id:name' => 'Email',
+      'activity_date_time' => 'now',
+      'subject' => $subject,
+      'details' => $html,
+      'status_id' => 2,
+    ])->execute();
+
   } catch (TemplateInfoMissingException $e) {
     watchdog(
       'thank_you',

@@ -21,7 +21,6 @@ class CiviMailStore {
 
 	protected static $mailings = array();
 	protected static $jobs = array();
-	protected static $emailActivityTypeId = -1;
 
 
   /**
@@ -129,31 +128,6 @@ VALUES ( %1, %2, %3 )";
 			throw new CiviQueueInsertException( $msg, 0, $e );
 		}
 		return new CiviMailQueueRecord( $queue, $email );
-	}
-
-	public function addActivity( $queueRecord, $subject, $details, $date = null ) {
-		if ( !$date ) {
-			$date = gmdate( 'YmdHis' );
-		}
-		if ( self::$emailActivityTypeId == -1 ) {
-			self::$emailActivityTypeId = CRM_Core_PseudoConstant::getKey(
-				'CRM_Activity_BAO_Activity',
-				'activity_type_id',
-				'Email'
-			);
-		}
-		$activity = array(
-			'source_contact_id' => $queueRecord->getContactID(),
-			'target_contact_id' => $queueRecord->getContactID(),
-			'activity_type_id' => self::$emailActivityTypeId,
-			'activity_date_time' => $date,
-			'subject' => $subject,
-			'details' => $details,
-			'status_id' => 2,
-			'deleteActivityTarget' => FALSE,
-		);
-
-		CRM_Activity_BAO_Activity::create( $activity );
 	}
 
   /**
