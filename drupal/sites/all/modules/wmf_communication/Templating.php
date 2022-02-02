@@ -120,7 +120,10 @@ class Templating {
    *
    * @return Twig_Template
    */
-  protected function loadTemplate() {
+  public function loadTemplate($format = NULL) {
+    if ($format) {
+      $this->format = $format;
+    }
     // We'll cache the result under the first language code we looked for,
     // so we don't need to go through the fallback chain next time.
     $originalLookupCacheKey = $this->getFilePath($this->language);
@@ -192,7 +195,7 @@ class Templating {
   }
 
   protected function getRelativeFilePath($language) {
-    return "{$this->format}/{$this->template_name}.{$language}.{$this->format}";
+    return "{$this->template_name}.{$language}.{$this->format}.txt";
   }
 
   /**

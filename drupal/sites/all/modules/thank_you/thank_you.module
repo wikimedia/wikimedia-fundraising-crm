@@ -1,12 +1,12 @@
 <?php
 
+use Civi\Api4\ThankYou;
 use Civi\Omnimail\MailFactory;
 use SmashPig\Core\UtcDate;
 use wmf_communication\CiviMailStore;
 use wmf_communication\CiviMailingInsertException;
 use wmf_communication\CiviMailingMissingException;
 use wmf_communication\CiviQueueInsertException;
-use wmf_communication\Templating;
 use Civi\WMFException\WMFException;
 
 // TODO:
@@ -100,7 +100,7 @@ function thank_you_send_test_form() {
   // TODO: add a staging list so that one can test before enabling
   // TODO elsewhere: these locales should be in canonical form
   $langs = [];
-  foreach (glob(__DIR__ . '/templates/html/thank_you.*.html') as $lang) {
+  foreach (glob(__DIR__ . '/../../../default/civicrm/extensions/wmf-civicrm/msg_templates/thank_you/thank_you.*.html.txt') as $lang) {
     $lang = substr($lang, strrpos($lang, '/') + 1);
     $lang = substr($lang, strpos($lang, '.') + 1);
     $lang = substr($lang, 0, strpos($lang, '.'));
@@ -207,7 +207,7 @@ function thank_you_send_test_form_submit($form_id, $form_values) {
   # Massage the params a bit
   $names = preg_split('/ +/', $params['name'], 2, PREG_SPLIT_NO_EMPTY);
   if (count($names) == 2) {
-    list($params['first_name'], $params['last_name']) = $names;
+    [$params['first_name'], $params['last_name']] = $names;
   }
   else {
     $params['first_name'] = $params['last_name'] = '';
@@ -513,8 +513,16 @@ function thank_you_send_mail($params) {
     $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
     throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
   }
+  $rendered = ThankYou::render(FALSE)
+    // @todo switch to passing in 'raw' contact language.
+    ->setLanguage($params['locale'])
+    ->setTemplateName($params['template'])
+    ->setReceiveDate($params['receive_date'])
+    ->setTemplateParameters($params)
+    ->execute()->first();
+  $html = $rendered['html'];
+  $subject = $rendered['subject'];
 
-  [$html, $subject] = thank_you_render($params);
   if (!$html || !$subject) {
     $msg = "HTML rendering of template failed in {$params['locale']}.";
     throw new WMFException(WMFException::UNKNOWN, $msg, ['thank_you_params' => $params]);
@@ -928,37 +936,6 @@ EOT;
     [],
     WATCHDOG_INFO
   );
-}
-
-
-/**
- * Render thank you mails.
- *
- * @param $params array template parameters
- *
- * @return array
- * @throws \Exception
- */
-function thank_you_render($params) {
-
-  // Format the datestamp
-  $date = strtotime($params['receive_date']);
-
-  // For tax reasons, any donation made in the US on Jan 1 UTC should have a timestring in HST.
-  // So do 'em all that way.
-  $params['receive_date'] = strftime('%Y-%m-%d', $date - (60 * 60 * 10));
-
-  $template = new Templating(
-    drupal_get_path('module', 'thank_you') . DIRECTORY_SEPARATOR . 'templates',
-    $params['template'],
-    $params['locale'],
-    $params
-  );
-
-  $page_content = $template->render('html');
-  $page_content = str_replace('<p></p>', '', $page_content);
-  $subject = trim($template->render('subject'));
-  return [$page_content, $subject];
 }
 
 function build_unsub_link($contributionId, $emailAddr, $language) {
