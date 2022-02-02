@@ -1,5 +1,0 @@
-name = WMF Test Settings
-description = An interface for setting test-specific variables
-core = 7.x
-package = Wikimedia
-configure = admin/config/wmf_test_settings
