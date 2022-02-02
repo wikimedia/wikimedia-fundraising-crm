@@ -12,7 +12,7 @@ class CiviMailTestBase extends BaseWmfDrupalPhpUnitTestCase {
 	protected $body = '<p>Dear Wikipedia supporter,</p><p>You are beautiful.</p>';
 	protected $subject = 'Thank you';
 	/**
-	 * @var ICiviMailStore
+	 * @var CiviMailStore
 	 */
 	protected $mailStore;
 	protected $contactID;
