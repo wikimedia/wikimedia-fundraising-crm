@@ -189,6 +189,95 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
   }
 
   /**
+   * Test moving PendingPoke(600) to Completed(800) with
+   * recurring payment tokens
+   */
+  public function testResolveRecurringToComplete(): void {
+    // generate a pending message to test
+    $pending_message = $this->createTestPendingRecord(
+      'ingenico',
+      ['recurring' => 1]
+    );
+
+    // getHostedPaymentStatus response set up
+    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+      ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
+      ->setRecurringPaymentToken('TokenOfMyAffection')
+      ->setRiskScores([
+        'cvv' => 50,
+        'avs' => 0,
+      ]);
+
+    // set configured response to mock getHostedPaymentStatus call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('getHostedPaymentStatus')
+      ->willReturn($hostedPaymentStatusResponse);
+
+    // approvePayment response set up
+    $approvePaymentResponse = new ApprovePaymentResponse();
+    $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
+      ->setSuccessful(TRUE);
+
+    // set configured response to mock approvePayment call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->willReturn($approvePaymentResponse);
+
+    // run the pending message through PendingTransaction::resolve()
+    $result = PendingTransaction::resolve()
+      ->setMessage($pending_message)
+      ->execute();
+
+    // confirm status is now complete
+    $this->assertEquals(
+      FinalStatus::COMPLETE,
+      $result[$pending_message['order_id']]['status']
+    );
+
+    // confirm payments-init queue message added
+    $payments_init_queue_message = QueueWrapper::getQueue('payments-init')
+      ->pop();
+    $this->assertNotNull($payments_init_queue_message);
+
+    // confirm donation queue message added
+    $donation_queue_message = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNotNull($donation_queue_message);
+    SourceFields::removeFromMessage($donation_queue_message);
+    $this->assertEquals([
+      'contribution_tracking_id',
+      'country',
+      'first_name',
+      'last_name',
+      'email',
+      'gateway',
+      'order_id',
+      'gateway_account',
+      'payment_method',
+      'payment_submethod',
+      'date',
+      'gross',
+      'currency',
+      'recurring',
+      'gateway_txn_id',
+      'recurring_payment_token'
+    ], array_keys($donation_queue_message)
+    );
+
+    $this->assertEquals(
+      $hostedPaymentStatusResponse->getGatewayTxnId(),
+      $donation_queue_message['gateway_txn_id']
+    );
+    $this->assertEquals(
+      'TokenOfMyAffection', $donation_queue_message['recurring_payment_token']
+    );
+    $this->assertEquals(
+      1, $donation_queue_message['recurring']
+    );
+  }
+
+  /**
    * Test scenario where transaction is set to failed from the gateway.
    * Expectation is that the resolve method proceeds to move the transaction to
    * a "cancelled" status.
@@ -679,17 +768,17 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
   /**
    * @param string $gateway
-   *
+   * @param array $additionalKeys
    * @return array
    * @throws \SmashPig\Core\DataStores\DataStoreException
    * @throws \SmashPig\Core\SmashPigException
    */
-  protected function createTestPendingRecord($gateway = 'test'): array {
+  protected function createTestPendingRecord($gateway = 'test', $additionalKeys = []): array {
     $id = mt_rand();
     $payment_method = ($gateway == 'paypal_ec') ? 'paypal' : 'cc';
     $payment_submethod = ($gateway == 'paypal_ec') ? '' : 'visa';
 
-    $message = [
+    $message = array_merge([
       'contribution_tracking_id' => $id,
       'country' => 'US',
       'first_name' => 'Testy',
@@ -704,7 +793,7 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
       'date' => time(),
       'gross' => 10,
       'currency' => 'GBP',
-    ];
+    ], $additionalKeys);
 
     PendingDatabase::get()->storeMessage($message);
     return $message;

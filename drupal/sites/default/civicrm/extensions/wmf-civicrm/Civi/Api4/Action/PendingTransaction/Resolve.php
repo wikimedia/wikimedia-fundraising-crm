@@ -11,6 +11,7 @@ use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentData\ValidationAction;
 use SmashPig\PaymentProviders\IPaymentProvider;
+use SmashPig\PaymentProviders\PaymentDetailResponse;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 /**
@@ -101,12 +102,12 @@ class Resolve extends AbstractAction {
     switch ($validationAction) {
       case ValidationAction::PROCESS:
         // If score less than review threshold, approve the transaction.
-        $newStatus = $this->approvePaymentAndReturnStatus($provider, $gatewayTxnId);
+        $newStatus = $this->approvePaymentAndReturnStatus($provider, $statusResult);
         break;
 
       case ValidationAction::REJECT:
         if ($this->matchesUnrefundedDonor()) {
-          $newStatus = $this->approvePaymentAndReturnStatus($provider, $gatewayTxnId);
+          $newStatus = $this->approvePaymentAndReturnStatus($provider, $statusResult);
         } else {
           $cancelResult = $provider->cancelPayment($gatewayTxnId);
           $newStatus = $cancelResult->getStatus();
@@ -115,7 +116,7 @@ class Resolve extends AbstractAction {
 
       case ValidationAction::REVIEW:
         if ($this->matchesUnrefundedDonor()) {
-          $newStatus = $this->approvePaymentAndReturnStatus($provider, $gatewayTxnId);
+          $newStatus = $this->approvePaymentAndReturnStatus($provider, $statusResult);
           break;
         } else {
           // Just delete the pending message and leave the transaction at the
@@ -368,8 +369,9 @@ class Resolve extends AbstractAction {
   }
 
   protected function approvePaymentAndReturnStatus(
-    IPaymentProvider $provider, string $gatewayTxnId
+    IPaymentProvider $provider, PaymentDetailResponse $statusResult
   ): string {
+    $gatewayTxnId = $statusResult->getGatewayTxnId();
     // Ingenico only needs the gateway_txn_id, but we send more info to
     // be generic like the SmashPig extension recurring charge logic.
     $approveResult = $provider->approvePayment([
@@ -382,6 +384,10 @@ class Resolve extends AbstractAction {
       $donationsMessage = $this->message;
       $donationsMessage['gateway_txn_id'] = $gatewayTxnId;
       unset($donationsMessage['gateway_session_id']);
+      $token = $statusResult->getRecurringPaymentToken();
+      if ($token) {
+        $donationsMessage['recurring_payment_token'] = $token;
+      }
       QueueWrapper::push('donations', $donationsMessage);
     }
     else {
