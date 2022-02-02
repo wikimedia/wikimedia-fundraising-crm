@@ -791,7 +791,7 @@ function drupal_retrieve_form($form_id, &$form_state) {
 
   // We first check to see if there's a function named after the $form_id.
   // If there is, we simply pass the arguments on to it to get the form.
-  if (!is_callable($form_id)) {
+  if (!function_exists($form_id)) {
     // In cases where many form_ids need to share a central constructor function,
     // such as the node editing form, modules can implement hook_forms(). It
     // maps one or more form_ids to the correct constructor functions.
@@ -1393,7 +1393,10 @@ function _form_validate(&$elements, &$form_state, $form_id = NULL) {
         // identical to the empty option's value, we reset the element's value
         // to NULL to trigger the regular #required handling below.
         // @see form_process_select()
-        elseif ($elements['#type'] == 'select' && !$elements['#multiple'] && $elements['#required'] && !isset($elements['#default_value']) && $elements['#value'] === $elements['#empty_value']) {
+        elseif ($elements['#type'] == 'select' && $elements['#required']
+        && (!array_key_exists('#multiple', $elements) || !$elements['#multiple'])
+        && !isset($elements['#default_value'])
+        && $elements['#value'] === $elements['#empty_value']) {
           $elements['#value'] = NULL;
           form_set_value($elements, NULL, $form_state);
         }
