@@ -1,36 +1,36 @@
 <span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Ihre Quittung und ein herzliches Dankeschön.</span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
-{% if first_name %}
-<p>Hallo {{ first_name }}
-</p>{% else %}<p>
+{if $first_name}
+<p>Hallo {$first_name}
+</p>{else}<p>
 Liebe/r Spender/in,</p>
-{%endif%}
+{/if}
 
 
-{% if recurring %}
+{if $recurring}
 <p>
-ich freue mich sehr, Ihnen für Ihre monatliche Spende in Höhe von {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} danken zu dürfen, mit der Sie Wikipedia unterstützen. Mit Ihrer Großzügigkeit beweisen Sie Ihre außergewöhnliche Bereitschaft an der Schaffung einer besseren Zukunft für unsere Welt mitzuwirken.
+ich freue mich sehr, Ihnen für Ihre monatliche Spende in Höhe von {$amount} danken zu dürfen, mit der Sie Wikipedia unterstützen. Mit Ihrer Großzügigkeit beweisen Sie Ihre außergewöhnliche Bereitschaft an der Schaffung einer besseren Zukunft für unsere Welt mitzuwirken.
 </p>
 
 <p>
-Ihr monatlicher Beitrag bringt Wikipedia voran und ermöglicht es uns, vorauszuplanen. Einmal im Monat bucht die Wikimedia Foundation eine Spende in Höhe von {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ab. <b>Im Januar eines jeden Jahres werden wir Ihnen eine Zusammenfassung Ihrer Beiträge für das Vorjahr zusenden</b>. Wenn Sie Ihre Spende einstellen möchten, befolgen Sie bitte die <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">Stornierungsanweisungen</a>.
+Ihr monatlicher Beitrag bringt Wikipedia voran und ermöglicht es uns, vorauszuplanen. Einmal im Monat bucht die Wikimedia Foundation eine Spende in Höhe von {$amount} ab. <b>Im Januar eines jeden Jahres werden wir Ihnen eine Zusammenfassung Ihrer Beiträge für das Vorjahr zusenden</b>. Wenn Sie Ihre Spende einstellen möchten, befolgen Sie bitte die <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">Stornierungsanweisungen</a>.
 </p>
 
-{% else %}
+{else}
 
 <p>
-ich freue mich sehr, Ihnen für Ihre einmalige Spende in Höhe von {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} danken zu dürfen, mit der Sie Wikipedia unterstützen. Mit Ihrer Großzügigkeit beweisen Sie Ihre außergewöhnliche Bereitschaft an der Schaffung einer besseren Zukunft für unsere Welt mitzuwirken.
+ich freue mich sehr, Ihnen für Ihre einmalige Spende in Höhe von {$amount} danken zu dürfen, mit der Sie Wikipedia unterstützen. Mit Ihrer Großzügigkeit beweisen Sie Ihre außergewöhnliche Bereitschaft an der Schaffung einer besseren Zukunft für unsere Welt mitzuwirken.
 </p>
-{% endif %}
+{/if}
 
-{% if "RecurringRestarted" in contribution_tags %}
+{if in_array("RecurringRestarted", $contribution_tags)}
 <p>Wir haben kürzlich ein kleines technisches Problem behoben, das dazu geführt hat, dass einige regelmäßige monatliche Spenden ausgesetzt wurden. Wir haben deine regelmäßige Spende wieder eingesetzt und diese wird in Zukunft normal weiterlaufen. Wir werden dir die Monate, die wir übersprungen haben, nicht berechnen. Danke für deine Geduld und deine Unterstützung. Bitte wende dich bei Fragen gerne per E-Mail über donate@wikimedia.org an uns.</p>
-{%endif%}
+{/if}
 
-{% if "UnrecordedCharge" in contribution_tags %}
-<p>Wir haben kürzlich ein technisches Problem behoben, aufgrund dessen eine kleine Anzahl von Spenderinnen und Spendern keine Bestätigung über ihre Spende erhalten hat. Mit diesem E-Mail möchten wir uns herzlich für deine Spende vom {{ receive_date }} bedanken. Wir wissen deine Geduld und deine Unterstützung sehr zu schätzen. Bitte wende dich bei Fragen gerne per E-Mail über donate@wikimedia.org an uns.</p>
-{%endif%}
+{if in_array("UnrecordedCharge",  $contribution_tags)}
+<p>Wir haben kürzlich ein technisches Problem behoben, aufgrund dessen eine kleine Anzahl von Spenderinnen und Spendern keine Bestätigung über ihre Spende erhalten hat. Mit diesem E-Mail möchten wir uns herzlich für deine Spende vom {$receive_date} bedanken. Wir wissen deine Geduld und deine Unterstützung sehr zu schätzen. Bitte wende dich bei Fragen gerne per E-Mail über donate@wikimedia.org an uns.</p>
+{/if}
 
 <p>
 Ich habe Wikipedia vor 20 Jahren gegründet. Seitdem ist unsere geschätzte Enzyklopädie in guten wie auch in schweren Zeiten stark gewachsen und dient heute mehr denn je ihrem wahren Zweck. Sie hilft Millionen von Menschen beim Studieren, Entdecken, Erforschen und Recherchieren.
@@ -57,20 +57,20 @@ Gründer von Wikipedia
 <p>Viele Arbeitgeber leisten großzügige Zuzahlungen zu Spenden ihrer Arbeitnehmenden: Bitte erkundigen Sie sich bei Ihrem Arbeitgeber, ob ein über ein <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">unternehmensweites Beitragszuzahlungsprogramm existiert</a>.
 </p>
 
-{% if gift_source != "Donor Advised Fund" %}
+{if $gift_source != "Donor Advised Fund"}
 
-<p>Für Ihre Unterlagen: Ihre Spende mit der Nummer {{ transaction_id }} vom {{ receive_date }} betrug {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+<p>Für Ihre Unterlagen: Ihre Spende mit der Nummer {$transaction_id} vom {$receive_date} betrug {$amount}.
 </p>
 
 <p>Dieses Schreiben kann als Nachweis Ihrer Spende dienen. Diese Spende beinhaltete keinerlei Güter oder Dienstleistungen. Postanschrift: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. US Steuerbefreiungsnummer (tax-exempt number): 20-0049703
 </p>
 
-{%endif%}
+{/if}
 
 
-<p>Falls Sie in Zukunft keine E-Mails der Wikimedia Foundation mehr erhalten möchten, <a href="{{ unsubscribe_link | raw }}">können Sie sich hier abmelden</a>. Bitte beachten Sie, dass wir Ihnen weiterhin Bestätigungsemails für zukünftige Spenden zusenden werden.
+<p>Falls Sie in Zukunft keine E-Mails der Wikimedia Foundation mehr erhalten möchten, <a href="{$unsubscribe_link}">können Sie sich hier abmelden</a>. Bitte beachten Sie, dass wir Ihnen weiterhin Bestätigungsemails für zukünftige Spenden zusenden werden.
 </p>
 
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.de.html","revision":20210428}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.de.html","revision":20210428]TI_END -->
 

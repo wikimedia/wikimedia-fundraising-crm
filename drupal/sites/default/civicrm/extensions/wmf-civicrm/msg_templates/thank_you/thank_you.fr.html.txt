@@ -4,36 +4,36 @@
 
 
 
-{% if first_name %}
-<p>Bonjour {{ first_name }} !
-</p>{% else %}<p>
+{if $first_name}
+<p>Bonjour {$first_name} !
+</p>{else}<p>
 Cher donateur, chère donatrice,</p>
-{%endif%}
+{/if}
 
-{% if recurring %}
+{if $recurring}
 
 <p>
-Je suis heureux d'être celui à qui revient le privilège de vous remercier pour le don mensuel de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} que vous faites en soutien à Wikipédia. Ça me donne l'occasion de célébrer votre générosité, mais aussi l'admirable élan qui vous a poussé à participer à la création d'un meilleur futur pour le savoir libre.
+Je suis heureux d'être celui à qui revient le privilège de vous remercier pour le don mensuel de {$amount} que vous faites en soutien à Wikipédia. Ça me donne l'occasion de célébrer votre générosité, mais aussi l'admirable élan qui vous a poussé à participer à la création d'un meilleur futur pour le savoir libre.
 </p>
 
 <p>
-Votre don mensuel va permettre à Wikipédia d'aller plus loin et de continuer à grandir. Chaque mois, un don de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} sera prélevé sur votre compte par la Wikimedia Foundation, et ce jusqu’à nouvel avis de votre part. <b>En janvier, nous vous enverrons une fiche récapitulative de vos dons pour l’année qui vient de s’achever</b>. Et si pour une quelconque raison, vous souhaitez annuler votre don, suivez ces <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">instructions</a>.
+Votre don mensuel va permettre à Wikipédia d'aller plus loin et de continuer à grandir. Chaque mois, un don de {$amount} sera prélevé sur votre compte par la Wikimedia Foundation, et ce jusqu’à nouvel avis de votre part. <b>En janvier, nous vous enverrons une fiche récapitulative de vos dons pour l’année qui vient de s’achever</b>. Et si pour une quelconque raison, vous souhaitez annuler votre don, suivez ces <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={$locale}">instructions</a>.
 
 </p>
 
-{% else %}
+{else}
 <p>
-Je suis heureux d'être celui à qui revient le privilège de vous remercier pour le don de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} que vous avez fait en soutien à Wikipédia. Ça me donne l'occasion de célébrer votre générosité, mais aussi l'admirable élan qui vous a poussé à participer à la création d'un meilleur futur pour le savoir libre
+Je suis heureux d'être celui à qui revient le privilège de vous remercier pour le don de {$amount} que vous avez fait en soutien à Wikipédia. Ça me donne l'occasion de célébrer votre générosité, mais aussi l'admirable élan qui vous a poussé à participer à la création d'un meilleur futur pour le savoir libre.
 </p>
-{% endif %}
+{/if}
 
-{% if "RecurringRestarted" in contribution_tags %}
+{if in_array("RecurringRestarted", $contribution_tags)}
 <p>Nous avons récemment résolu un petit problème technique qui a mis en suspens certains dons mensuels récurrents. Nous avons rétabli votre don récurrent et il sera traité de manière normale à l’avenir. Nous ne vous ferons pas payer les mois qui ont été manqués. Merci de votre patience et de votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.</p>
-{%endif%}
+{/if}
 
-{% if "UnrecordedCharge" in contribution_tags %}
-<p>Nous avons récemment résolu un problème technique à cause duquel un certain nombre de donateurs n’ont pas reçu de confirmation de leur don. Par le biais de cet e-mail, nous vous remercions de votre don du {{ receive_date }}. Nous apprécions sincèrement votre patience et votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.</p>
-{%endif%}
+{if in_array("UnrecordedCharge",  $contribution_tags)}
+<p>Nous avons récemment résolu un problème technique à cause duquel un certain nombre de donateurs n’ont pas reçu de confirmation de leur don. Par le biais de cet e-mail, nous vous remercions de votre don du {$receive_date}. Nous apprécions sincèrement votre patience et votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.</p>
+{/if}
 
 <p>J'ai créé Wikipédia il y a vingt ans. Depuis, l'encyclopédie que nous aimons tous a grandi, traversant des périodes heureuses et des périodes difficiles, et aujourd'hui, plus que jamais, Wikipédia remplit sa mission : permettre à des millions de personnes d'étudier, de découvrir, d'approfondir et d'explorer.</p>
 
@@ -60,7 +60,7 @@ Fondateur de Wikipédia
 <p>Les dons jumelés sont un excellent moyen de doubler votre don à la Wikimedia Foundation. De nombreuses sociétés soutiennent les efforts philanthropiques de leurs employés en offrant un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">programme de dons jumelés</a>.
 </p>
 
-<p>Pour vos archives&nbsp;: Votre don numéro {{ transaction_id }}, du {{ receive_date }} équivalait à {{ amount }} {{ currency }}.
+<p>Pour vos archives&nbsp;: Votre don numéro {$transaction_id}, du {$receive_date} équivalait à {$amount}.
 </p>
 
 <p>Cette lettre a valeur de reçu. Aucun service et aucun bien ne vous ont été échangés contre votre contribution. Notre adresse postale est&nbsp;: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, États-Unis.
@@ -72,7 +72,7 @@ Fondateur de Wikipédia
 <p>Numéro d’exemption fiscale aux États-Unis&nbsp;: 20-0049703
 </p>
 
-<p>Si vous ne désirez plus recevoir d'emails de la Wikimedia Foundation, vous pouvez vous <a href="{{ unsubscribe_link | raw }}">désabonner facilement ici</a>. Vous continuerez cependant à recevoir des reçus pour tous les dons que vous effectuerez à l'avenir.
+<p>Si vous ne désirez plus recevoir d'emails de la Wikimedia Foundation, vous pouvez vous <a href="{$unsubscribe_link}">désabonner facilement ici</a>. Vous continuerez cependant à recevoir des reçus pour tous les dons que vous effectuerez à l'avenir.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.fr.html","revision":20210428}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.fr.html","revision":20210428]TI_END -->

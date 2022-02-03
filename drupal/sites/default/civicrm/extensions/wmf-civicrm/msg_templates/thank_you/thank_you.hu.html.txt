@@ -3,44 +3,44 @@
 
 
 
-{% if first_name %}
-<p>Helló {{ first_name }}!
-</p>{% else %}<p>
+{if $first_name}
+<p>Helló {$first_name}!
+</p>{else}<p>
 Tisztelt Támogató!</p>
-{%endif%}
+{/if}
 
 
-{% if recurring %}
+{if $recurring}
 <p>
-Nagyon hálás vagyok, hogy én mondhatok köszönetet neked a Wikipédiát támogató rendszeres, {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű adományodért. Szeretném megragadni az alkalmat, hogy megköszönjem nagylelkűségedet és kivételes hajlandóságodat arra, hogy egy jobb jövőt teremtsünk a világ számára.
+Nagyon hálás vagyok, hogy én mondhatok köszönetet neked a Wikipédiát támogató rendszeres, {$amount} összegű adományodért. Szeretném megragadni az alkalmat, hogy megköszönjem nagylelkűségedet és kivételes hajlandóságodat arra, hogy egy jobb jövőt teremtsünk a világ számára.
 </p>
 
 <p>
-Havi hozzájárulásod sokat jelent a Wikipédia számára, és segít nekünk abban, hogy előre tervezhessünk. A Wikimédia Alapítvány havonta egyszer megterheli számládat egy {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű adománnyal, és <b>minden januárban elküldjük neked az előző évi hozzájárulásaidról szóló kimutatást</b>. Ha bármilyen okból úgy döntenél, hogy többé nem szeretnél adományozni, a lemondáshoz, kérjük, kövesd <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">ezeket az egyszerű utasításokat</a>.
+Havi hozzájárulásod sokat jelent a Wikipédia számára, és segít nekünk abban, hogy előre tervezhessünk. A Wikimédia Alapítvány havonta egyszer megterheli számládat egy {$amount} összegű adománnyal, és <b>minden januárban elküldjük neked az előző évi hozzájárulásaidról szóló kimutatást</b>. Ha bármilyen okból úgy döntenél, hogy többé nem szeretnél adományozni, a lemondáshoz, kérjük, kövesd <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">ezeket az egyszerű utasításokat</a>.
 
 </p>
 
-{% else %}
+{else}
 
 <p>
-Nagyon hálás vagyok, hogy én mondhatok köszönetet neked a Wikipédiát támogató egyszeri, {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} összegű adományodért. Szeretném megragadni az alkalmat, hogy megköszönjem nagylelkűségedet és kivételes hajlandóságodat arra, hogy egy jobb jövőt teremtsünk a világ számára.
+Nagyon hálás vagyok, hogy én mondhatok köszönetet neked a Wikipédiát támogató egyszeri, {$amount} összegű adományodért. Szeretném megragadni az alkalmat, hogy megköszönjem nagylelkűségedet és kivételes hajlandóságodat arra, hogy egy jobb jövőt teremtsünk a világ számára.
 </p>
-{% endif %}
+{/if}
 
-{% if "RecurringRestarted" in contribution_tags %}
+{if in_array("RecurringRestarted", $contribution_tags)}
 <p>Nemrégiben megoldottunk egy kisebb műszaki jellegű problémát, amely egy időre megakadályozta egyes havi rendszeres hozzájárulások beérkezését.  Visszaállítottuk havi rendszeres támogatásai fogadásának lehetőségét, így a folyamat a jövőben megfelelően fog működni. A kimaradt hónapokra eső összeget nem számítjuk fel Önnek. Köszönjük türelmét és támogatását, és amennyiben bármilyen kérdése van, kérjük, lépjen velünk kapcsolatba a donate@wikimedia.org e-mail-címen.</p>
-{%endif%}
+{/if}
 
-{% if "UnrecordedCharge" in contribution_tags %}
-<p>Nemrégiben megoldottunk egy kisebb műszaki jellegű hibát, aminek következtében, néhány támogatónk nem kapott megerősítést támogatása beérkezéséről. Kérjük, fogadja ezt az e-mailt köszönetünk jeléül a(z) {{ receive_date }}. napján nyújtott támogatásáért. Nagyra értékeljük türelmét és támogatását, és amennyiben bármilyen kérdése van, kérjük, lépjen velünk kapcsolatba a donate@wikimedia.org e-mail-címen.</p>
-{%endif%}
+{if in_array("UnrecordedCharge",  $contribution_tags)}
+<p>Nemrégiben megoldottunk egy kisebb műszaki jellegű hibát, aminek következtében, néhány támogatónk nem kapott megerősítést támogatása beérkezéséről. Kérjük, fogadja ezt az e-mailt köszönetünk jeléül a(z) {$receive_date}. napján nyújtott támogatásáért. Nagyra értékeljük türelmét és támogatását, és amennyiben bármilyen kérdése van, kérjük, lépjen velünk kapcsolatba a donate@wikimedia.org e-mail-címen.</p>
+{/if}
 
 <p>
 20 évvel ezelőtt alapítottam a Wikipédiát. Azóta szeretett enciklopédiánk sokat fejlődött, remek időszakokat és nehézségeket is egyaránt megélt, és ma minden eddiginél hatékonyabban szolgálja valódi célját. Több millió embernek segít a tanulás, az új dolgok felfedezése és a kutatás terén.
 </p>
 
 <p>
-A Wikipédia minden nap új lehetőséget ad az olvasóinak arra, hogy olyan tudásra tegyenek szert, amely jogosan lehet az övék – körülményeiktől függetlenül. 
+A Wikipédia minden nap új lehetőséget ad az olvasóinak arra, hogy olyan tudásra tegyenek szert, amely jogosan lehet az övék – körülményeiktől függetlenül.
 </p>
 
 <p>
@@ -48,7 +48,7 @@ Te vagy az, aki ezt lehetővé teszi. A támogatásod biztosítja a lehetősége
 </p>
 
 <p>
-Lehet, hogy nem tudjuk veled együtt „elfújni a gyertyákat” a születésnapi tortán, azonban amikor idén a <a href="https://wikimediafoundation.org/wikipedia20/">Wikipédia 20 éves fennállását</a> ünnepeljük, minden munkatársunk hálával gondol rád a Wikimédia Alapítványnál. 
+Lehet, hogy nem tudjuk veled együtt „elfújni a gyertyákat” a születésnapi tortán, azonban amikor idén a <a href="https://wikimediafoundation.org/wikipedia20/">Wikipédia 20 éves fennállását</a> ünnepeljük, minden munkatársunk hálával gondol rád a Wikimédia Alapítványnál.
 </p>
 
 <p>Köszönök mindent!</p>
@@ -60,19 +60,19 @@ A Wikipédia alapítója
 <p>Számos munkaadó nagyvonalúan megduplázza az alkalmazottak adományait: kérjük, érdeklődd meg munkaadódnál, hogy van-e <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">vállalati adománymegduplázó programjuk</a>.
 </p>
 
-{% if gift_source != "Donor Advised Fund" %}
+{if $gift_source != "Donor Advised Fund"}
 
-<p>Az adományozás adatai: {{ receive_date }} napon tett, {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} adományod száma {{ transaction_id }}.
+<p>Az adományozás adatai: {$receive_date} napon tett, {$amount} adományod száma {$transaction_id}.
 </p>
 
 <p>Ez a levél az adományozásod visszaigazolásának tekinthető. A hozzájárulásod ellentételezéseként semmilyen árut vagy szolgáltatást – egészében vagy részleteiben – nem adtunk át. Címünk: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, Amerikai Egyesült Államok. Amerikai egyesült államokbeli adómentességi szám: 20-0049703
 </p>
 
-{%endif%}
+{/if}
 
-<p>Ha nem szeretnél a jövőben adománygyűjtéssel kapcsolatos e-maileket kapni a Wikimedia Foundationtől, <a href="{{ unsubscribe_link | raw }}">azonnal leiratkozhatsz</a>. Kérjük, vedd figyelembe, hogy ennek ellenére küldünk neked ehhez hasonló visszaigazolásokat a jövőbeli adományozásaid esetén.
+<p>Ha nem szeretnél a jövőben adománygyűjtéssel kapcsolatos e-maileket kapni a Wikimedia Foundationtől, <a href="{$unsubscribe_link}">azonnal leiratkozhatsz</a>. Kérjük, vedd figyelembe, hogy ennek ellenére küldünk neked ehhez hasonló visszaigazolásokat a jövőbeli adományozásaid esetén.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.he.html","revision":20210318}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.he.html","revision":20210318]TI_END -->
 
 

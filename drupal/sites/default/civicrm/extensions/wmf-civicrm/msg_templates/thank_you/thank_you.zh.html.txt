@@ -1,32 +1,32 @@
 <span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">谨此向您提供收据并表达我们由衷的感谢。</span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
-{% if first_name %}
-<p>您好 {{ first_name }},</p>
+{if $first_name}
+<p>您好 {$first_name},</p>
 
-{% else %}
+{else}
 <p>尊敬的捐赠者，</p>
-{%endif%}
+{/if}
 
-{% if recurring %}
+{if $recurring}
 <p>
-	我很荣幸可以代表维基百科 (Wikipedia) 感谢您捐赠给我们的重复性 {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} 的捐款。谨借这个机会感谢您的慷慨大方，还感受到了您在为全世界创建更好未来的方面所展现的大力支持。
+	我很荣幸可以代表维基百科 (Wikipedia) 感谢您捐赠给我们的重复性 {$amount} 的捐款。谨借这个机会感谢您的慷慨大方，还感受到了您在为全世界创建更好未来的方面所展现的大力支持。
 </p>
 
 <p>
-	您每月的捐款将能让 Wikipedia 继续向前迈进，还可以让我们为将来做好准备。每个月一次，Wikimedia Foundation 将从您的账户收取 {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} 的捐款。<b>每年的一月，我们将向您寄送去年您的捐款总结报告</b>。如果您有任何原因想要取消捐款，请按照这个<a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">简单取消说明</a>进行操作。
+	您每月的捐款将能让 Wikipedia 继续向前迈进，还可以让我们为将来做好准备。每个月一次，Wikimedia Foundation 将从您的账户收取 {$amount} 的捐款。<b>每年的一月，我们将向您寄送去年您的捐款总结报告</b>。如果您有任何原因想要取消捐款，请按照这个<a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">简单取消说明</a>进行操作。
 </p>
 
-{% else %}
+{else}
 <p>
-	我很荣幸可以代表维基百科 (Wikipedia)感谢您捐赠给我们的一次性 {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} 的款项。谨借这个机会感谢您的慷慨大方；此外，我们也感受到了您在为全世界创建更好未来的方面所展现的大力支持。
+	我很荣幸可以代表维基百科 (Wikipedia)感谢您捐赠给我们的一次性 {$amount} 的款项。谨借这个机会感谢您的慷慨大方；此外，我们也感受到了您在为全世界创建更好未来的方面所展现的大力支持。
 </p>
 
-{% endif %}
+{/if}
 
-<p>{% if "RecurringRestarted" in contribution_tags %} 最近我们解决了影响每月定期捐款的技术问题。今后每月的自动捐款将会被自动处理。我们不会让您补缴因技术问题而未捐的金额。感谢您的耐心和支持，如有任何问题，请随时发邮件到 donate@wikimedia.org。 {%endif%}</p>
+<p>{% if "RecurringRestarted" in contribution_tags %} 最近我们解决了影响每月定期捐款的技术问题。今后每月的自动捐款将会被自动处理。我们不会让您补缴因技术问题而未捐的金额。感谢您的耐心和支持，如有任何问题，请随时发邮件到 donate@wikimedia.org。 {/if}</p>
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} 我们最近解决了一个导致一小部分捐赠者没有收到捐赠者确认通知的问题。对此我们深表歉意同时非常感谢您$date的捐款。再次感谢您的耐心和支持,如有任何问题，请随时发邮件到 donate@wikimedia.org。 {%endif%}</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} 我们最近解决了一个导致一小部分捐赠者没有收到捐赠者确认通知的问题。对此我们深表歉意同时非常感谢您$date的捐款。再次感谢您的耐心和支持,如有任何问题，请随时发邮件到 donate@wikimedia.org。 {/if}</p>
 
 <p>
 我在 20 年前创建了 Wikipedia。从那个时候开始，我们这个广受欢迎的百科全书成长了许多，经历了各种美好的时光，克服了各种挑战；直到今天，它比起以往更能达成它真正的使命——帮助上百万人学习、发现、探索和研究。
@@ -54,12 +54,12 @@ Wikipedia 创始人
 
 <p>大多数公司会提供配额捐赠: 请联络贵公司，询问他们是否提供<a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">配捐计划</a> 。</p>
 
-<p>特此证明：你于{{ receive_date }}日做出{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}的捐款，捐款号{{ transaction_id }}。</p>
+<p>特此证明：你于{$receive_date}日做出{$amount}的捐款，捐款号{$transaction_id}。</p>
 
-{% if recurring %}<p> 这次捐款是重复性的，每个月维基基金会都会从你的账号扣除，直到您通知停止。如果您想取消支付，请参见我们<a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">快捷取消指令</a>。 </p>{%endif%}
+{if $recurring}<p> 这次捐款是重复性的，每个月维基基金会都会从你的账号扣除，直到您通知停止。如果您想取消支付，请参见我们<a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={$locale}">快捷取消指令</a>。 </p>{/if}
 
 <p>此函可作为您的捐款备案。针对此次捐款，不提供整体或部分商品或服务。维基媒体基金会是非盈利慈善机构，符合美国501(c)(3) 免税资格。我们的地址是 P.O. Box 98204, Washington, DC 20090-8204, USA 免税号: 20-0049703。</p>
 
-<p>如果您不希望将来从Wikimedia Foundation收到任何筹款电子邮件，<a href="{{ unsubscribe_link | raw }}">则可以立即退订</a>。 请注意，我们仍将像这样的收据发送给您，以供将来捐赠。</p>
+<p>如果您不希望将来从Wikimedia Foundation收到任何筹款电子邮件，<a href="{$unsubscribe_link}">则可以立即退订</a>。 请注意，我们仍将像这样的收据发送给您，以供将来捐赠。</p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.zh.html","revision":20210319}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.zh.html","revision":20210319]TI_END -->

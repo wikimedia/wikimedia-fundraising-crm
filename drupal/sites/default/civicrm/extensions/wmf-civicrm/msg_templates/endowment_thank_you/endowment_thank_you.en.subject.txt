@@ -1,5 +1,5 @@
-{% if first_name %}
-    {{ first_name }}, your
-{% else %}
+{if $first_name}
+    {$first_name}, your
+{else}
     Your
-{% endif %} gift allows us to look far ahead.
+{/if} gift allows us to look far ahead.

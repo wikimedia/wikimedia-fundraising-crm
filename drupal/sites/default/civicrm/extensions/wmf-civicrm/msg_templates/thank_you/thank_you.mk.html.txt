@@ -1,31 +1,31 @@
 <span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Потврда и искрено благодарам.</span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
-{% if first_name %}
-<p>Почитуван(а) {{ first_name }},</p>
-{% else %}
+{if $first_name}
+<p>Почитуван(а) {$first_name},</p>
+{else}
 <p>Драг дарителу,</p>
-{%endif%}
+{/if}
 
-{% if recurring %}
+{if $recurring}
 
 <p>
-Многу сум среќен што можам да ви се заблагодарам за повторниот подарок од {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} што го направивте за поддршка на Википедија. Сакам да ја искористам оваа можност да ја прославам вашата великодушност и вашата исклучителна подготвеност да учествувате во создавањето на подобра иднина за светот.
+Многу сум среќен што можам да ви се заблагодарам за повторниот подарок од {$amount} што го направивте за поддршка на Википедија. Сакам да ја искористам оваа можност да ја прославам вашата великодушност и вашата исклучителна подготвеност да учествувате во создавањето на подобра иднина за светот.
 </p>
 
 <p>
-Вашиот месечен придонес ќе ја однесе Википедија далеку и ќе ни помогне да планираме однапред. Еднаш месечно, донација од {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ќе се книжи на сметка на Фондацијата Викимедија. <b>Секој јануари ќе ви праќаме краток преглед од вашите придонеси за претходната година</b>. Ако од која било причина сакате да ја откажете вашата донација, следете ги овие <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={{ locale }}">упатства за лесно откажување</a>.
+Вашиот месечен придонес ќе ја однесе Википедија далеку и ќе ни помогне да планираме однапред. Еднаш месечно, донација од {$amount} ќе се книжи на сметка на Фондацијата Викимедија. <b>Секој јануари ќе ви праќаме краток преглед од вашите придонеси за претходната година</b>. Ако од која било причина сакате да ја откажете вашата донација, следете ги овие <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={$locale}">упатства за лесно откажување</a>.
 </p>
 
-{% else %}
+{else}
 <p>
-Многу сум среќен што можам да ви се заблагодарам за еднократниот подарок од {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} што го дадовте за поддршка на Википедија. Сакам да ја искористам оваа можност да ја прославам вашата великодушност и вашата исклучителна подготвеност да учествувате во создавањето на подобра иднина за светот.
+Многу сум среќен што можам да ви се заблагодарам за еднократниот подарок од {$amount} што го дадовте за поддршка на Википедија. Сакам да ја искористам оваа можност да ја прославам вашата великодушност и вашата исклучителна подготвеност да учествувате во создавањето на подобра иднина за светот.
 </p>
-{% endif %}
+{/if}
 
-<p>{% if "RecurringRestarted" in contribution_tags %} Неодамна решивме еден мал технички проблем што ја запре уплатата на извесни месечни донации. Сега уплатите се во ред и нештата одат според планот. Нема да ви ги наплатиме прескокнатите месеци. Ви благодариме на трпението и поддршката, и слободно обратете ни се на donate@wikimedia.org ако имате некакви прашања. {%endif%}</p>
+<p>{% if "RecurringRestarted" in contribution_tags %} Неодамна решивме еден мал технички проблем што ја запре уплатата на извесни месечни донации. Сега уплатите се во ред и нештата одат според планот. Нема да ви ги наплатиме прескокнатите месеци. Ви благодариме на трпението и поддршката, и слободно обратете ни се на donate@wikimedia.org ако имате некакви прашања. {/if}</p>
 
-<p>{% if "UnrecordedCharge" in contribution_tags %} Неодамна решивме еден технички проблем што предизвика мал број на дарители да не добијат потврди за даруваното. Прифатете го писмово како благодарница за Вашата уплата на $date. Навистина го цениме Вашето трпение и Вашата поддршка, и слободно обратете ни се на donate@wikimedia.org ако имате некакви прашања. {%endif%}</p>
+<p>{% if "UnrecordedCharge" in contribution_tags %} Неодамна решивме еден технички проблем што предизвика мал број на дарители да не добијат потврди за даруваното. Прифатете го писмово како благодарница за Вашата уплата на $date. Навистина го цениме Вашето трпение и Вашата поддршка, и слободно обратете ни се на donate@wikimedia.org ако имате некакви прашања. {/if}</p>
 
 <p>
 Ја основав Википедија пред 20 години. Оттогаш, нашата сакана енциклопедија порасна многу, низ убави времиња и тешкотии, а денес, повеќе од кога било, ја исполнува својата вистинска цел. Таа им помага на милиони луѓе да учат, откриваат, истражуваат и проучуваат.
@@ -52,13 +52,13 @@
 
 <p>Многу работодавачи даваат истомерни прилози кога даруваат нивните вработени: проверете дали вашето претпријатие има <a class="external text" href="https://wikimediafoundation.org/wiki/Matching_Gifts/form">програм за истомерно дарување</a>.</p>
 
-<p>За ваша евиденција: Вашиот прилог со бр. {{ transaction_id }} даден на {{ receive_date }} изнесуваше {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>
+<p>За ваша евиденција: Вашиот прилог со бр. {$transaction_id} даден на {$receive_date} изнесуваше {$amount}.</p>
 
 <p>Ова писмо може да Ви послужи како евиденција за Вашата донација. За донацијава не се доставени стоки или услуги, во целост или делумно. Фондацијата Викимедија (Wikimedia Foundation, Inc.) е непрофитна добротворна корпорација изземена од даночење во САД согласно 501(c)(3). Нашата адреса гласи: 149 New Montgomery, 3rd Floor, San Francisco, CA, 94105. U.S. број на даночна изземеност: 20-0049703</p>
 
 <p>
-Ако не сакате да добивате идни е-пораки за собирање средства од Фондацијата Викимедија, можете <a href="{{ unsubscribe_link | raw }}">веднаш да се откажете од претплатата</a>. Забележете дека сепак ќе ви испратиме сметки, како оваа, за идни донации.
+Ако не сакате да добивате идни е-пораки за собирање средства од Фондацијата Викимедија, можете <a href="{$unsubscribe_link}">веднаш да се откажете од претплатата</a>. Забележете дека сепак ќе ви испратиме сметки, како оваа, за идни донации.
 	</p>
 
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.mk.html","revision":20210318}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.mk.html","revision":20210318]TI_END -->

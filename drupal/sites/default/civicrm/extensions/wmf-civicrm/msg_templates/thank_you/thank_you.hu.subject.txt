@@ -1,5 +1,5 @@
-{% if first_name %}
-{{ first_name }}, az adományod egy újabb ok az ünneplésre
-{% else %}
+{if $first_name}
+{$first_name}, az adományod egy újabb ok az ünneplésre
+{else}
 Az adományod egy újabb ok az ünneplésre
-{%endif%}
+{/if}

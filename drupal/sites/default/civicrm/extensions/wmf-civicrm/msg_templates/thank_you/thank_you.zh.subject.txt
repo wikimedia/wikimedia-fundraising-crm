@@ -1,5 +1,5 @@
-{% if first_name %}
-{{ first_name }}，您的捐款为我们的 20 周年庆锦上添花。
-{% else %}
+{if $first_name}
+{$first_name}，您的捐款为我们的 20 周年庆锦上添花。
+{else}
 您的捐款为我们的 20 周年庆锦上添花。
-{%endif%}
+{/if}

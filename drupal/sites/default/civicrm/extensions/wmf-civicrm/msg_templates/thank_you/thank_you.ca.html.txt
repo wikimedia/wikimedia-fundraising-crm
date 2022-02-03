@@ -3,41 +3,41 @@
 
 
 
-{% if first_name and last_name %}
-<p>Benvolgut/Benvolguda {{ first_name }},
-</p>{% else %}<p>
+{if $first_name and $last_name}
+<p>Benvolgut/Benvolguda {$first_name},
+</p>{else}<p>
 Estimat/da donant,</p>
-{%endif%}
+{/if}
 
 
-{% if recurring %}
-<p> 
-Estic molt agraït de poder-te donar les gràcies per les donacions periòdiques de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} que has fet per donar suport a la Viquipèdia. Vull aprofitar l'avinentesa per a celebrar la teva generositat i excepcional voluntat de participar en la creació d'un futur millor per al coneixement lliure.
+{if $recurring}
+<p>
+Estic molt agraït de poder-te donar les gràcies per les donacions periòdiques de {$amount} que has fet per donar suport a la Viquipèdia. Vull aprofitar l'avinentesa per a celebrar la teva generositat i excepcional voluntat de participar en la creació d'un futur millor per al coneixement lliure.
 </p>
 
 <p>
-La teva contribució mensual a la Viquipèdia la durà molt més lluny i ens ajudarà a planificar amb anticipació. Un cop al mes, la Fundació Wikimedia et carregarà una donació de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}. <b>Cada mes de gener, t’enviarem un resum de les aportacions que hagis fet l’any anterior.</b> Si per qualsevol motiu vols cancel·lar la teva donació mensual, segueix les <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">senzilles instruccions de cancel·lació que trobaràs a continuació</a>.
+La teva contribució mensual a la Viquipèdia la durà molt més lluny i ens ajudarà a planificar amb anticipació. Un cop al mes, la Fundació Wikimedia et carregarà una donació de {$amount}. <b>Cada mes de gener, t’enviarem un resum de les aportacions que hagis fet l’any anterior.</b> Si per qualsevol motiu vols cancel·lar la teva donació mensual, segueix les <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">senzilles instruccions de cancel·lació que trobaràs a continuació</a>.
 </p>
 
 
-{% else %}
+{else}
 
 <p>
-Estic molt agraït de poder-te donar les gràcies per la teva donació única de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} que has fet per donar suport a la Viquipèdia. Vull aprofitar l'avinentesa per a celebrar la teva generositat i excepcional voluntat de participar en la creació d'un futur millor per al coneixement lliure.
+Estic molt agraït de poder-te donar les gràcies per la teva donació única de {$amount} que has fet per donar suport a la Viquipèdia. Vull aprofitar l'avinentesa per a celebrar la teva generositat i excepcional voluntat de participar en la creació d'un futur millor per al coneixement lliure.
 </p>
 
 
-{% endif %}
+{/if}
 
 
 
-{% if "RecurringRestarted" in contribution_tags %}
+{if in_array("RecurringRestarted", $contribution_tags)}
 <p>Fa poc hem resolt un petit problema tècnic que va posar en pausa algunes donacions mensuals. Hem reinstaurat la teva donació periòdica i d’ara en endavantes processarà amb normalitat. No et cobrarem els mesos que no s’ha fet la donació. Gràcies per la teva paciència i suport i, en cas que tinguis preguntes, no dubtis a enviar un correu electrònic a donate@wikimedia.org.</p>
-{%endif%}
+{/if}
 
-{% if "UnrecordedCharge" in contribution_tags %}
-<p>Fa poc hem resolt un problema tècnic que va fer que un petit nombre de donants no rebessin la confirmació de la seva donació. Et preguem que acceptis aquest correu electrònic com un agraïment per la teva donació del {{ receive_date }}. Apreciem molt la teva paciència i suport i, en cas que tinguis preguntes, no dubtis a enviar un correu electrònic a donate@wikimedia.org.</p>
-{%endif%}
+{if in_array("UnrecordedCharge",  $contribution_tags)}
+<p>Fa poc hem resolt un problema tècnic que va fer que un petit nombre de donants no rebessin la confirmació de la seva donació. Et preguem que acceptis aquest correu electrònic com un agraïment per la teva donació del {$receive_date}. Apreciem molt la teva paciència i suport i, en cas que tinguis preguntes, no dubtis a enviar un correu electrònic a donate@wikimedia.org.</p>
+{/if}
 
 
 
@@ -46,15 +46,15 @@ Vaig fundar la Viquipèdia fa 20 anys. Des de llavors, la nostra estimada encicl
 </p>
 
 <p>
-Cada dia, la Viquipèdia ofereix als lectors una nova oportunitat per a adquirir coneixements sobre els quals tenen un dret legítim, siguin quines siguin les seves circumstàncies. 
+Cada dia, la Viquipèdia ofereix als lectors una nova oportunitat per a adquirir coneixements sobre els quals tenen un dret legítim, siguin quines siguin les seves circumstàncies.
 </p>
 
 <p>
 Tu ets qui fa que això sigui possible. El teu suport permet fer modificacions i que els articles arribin a nous lectors, i ofereix a la nostra organització sense ànim de lucre els mitjans per mantenir-se fidel a la seva missió, fins i tot ara que la Viquipèdia ha esdevingut un dels llocs web més visitats del món.
 </p>
 
-<p> 
-Pot ser que no tinguem l’ocasió de bufar les espelmes presencialment tots plegats, però com que celebrarem els <a href="https://wikimediafoundation.org/wikipedia20/">20 anys de la Viquipèdia</a> al llarg de tot l’any, volem que sàpigues que aquí, a la Fundació Wikimedia, et tenim ben present. 
+<p>
+Pot ser que no tinguem l’ocasió de bufar les espelmes presencialment tots plegats, però com que celebrarem els <a href="https://wikimediafoundation.org/wikipedia20/">20 anys de la Viquipèdia</a> al llarg de tot l’any, volem que sàpigues que aquí, a la Fundació Wikimedia, et tenim ben present.
 </p>
 
 
@@ -67,13 +67,13 @@ Fundador de la Viquipèdia
 <p>Moltes empreses doblen la donació que fan els seus treballadors: per favor, comproveu si la vostra empresa té <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">un programa similar</a>.
 </p>
 
-<p>Per a la vostra informació: La vostra donació, numero {{ transaction_id }} amb data {{ receive_date }} va ser de {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+<p>Per a la vostra informació: La vostra donació, numero {$transaction_id} amb data {$receive_date} va ser de {$amount}.
 </p>
 
 <p>Aquesta carta pot servir com a rècord de la vostra donació. Cap bé o servei va ser proporcionat, en sencer o en part, per aquesta contribució. La nostra adreça postal és:  Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
 </p>
 
-<p>Si no desitgeu rebre propers corrers electrònics sobre donacions de la Fundació Wikimèdia, podeu <a href="{{ unsubscribe_link | raw }}">cancel·lar la subscripció instantàniament</a>. Si us plau verifiqueu si encara us enviem informacions, per a donacions futures.
+<p>Si no desitgeu rebre propers corrers electrònics sobre donacions de la Fundació Wikimèdia, podeu <a href="{$unsubscribe_link}">cancel·lar la subscripció instantàniament</a>. Si us plau verifiqueu si encara us enviem informacions, per a donacions futures.
 </p>
-<!-- TI_BEGIN{"name":"Thank you email 2021","revision":20210428}TI_END -->
+<!-- TI_BEGIN["name":"Thank you email 2021","revision":20210428]TI_END -->
 
