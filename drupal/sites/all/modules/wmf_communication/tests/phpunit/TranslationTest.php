@@ -10,7 +10,7 @@ class TranslationTest extends BaseWmfDrupalPhpUnitTestCase {
     protected $msgKey = 'donate_interface-submit-button';
 
     function testNextFallback() {
-        $langcode = Translation::next_fallback( 'fr-US' );
+        $langcode = Templating::next_fallback( 'fr-US' );
         $this->assertEquals( 'fr', $langcode );
     }
 

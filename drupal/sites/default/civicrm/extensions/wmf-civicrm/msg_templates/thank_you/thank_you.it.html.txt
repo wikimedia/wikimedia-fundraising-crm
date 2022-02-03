@@ -2,36 +2,36 @@
 <span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Ecco la tua ricevuta, grazie di cuore.</span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
-{% if first_name %}
-<p>Ciao {{ first_name }}!
-</p>{% else %}<p>
+{if $first_name}
+<p>Ciao {$first_name}!
+</p>{else}<p>
 Caro/a donatore/trice,</p>
-{%endif%}
+{/if}
 
-{% if recurring %}
+{if $recurring}
 <p>
-Sono davvero felice di poter essere io a ringraziarti per la tua donazione ricorrente di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a sostegno di Wikipedia. Voglio cogliere questa occasione per celebrare la tua generosità e la tua eccezionale disponibilità a partecipare alla creazione di un futuro migliore per il mondo.
+Sono davvero felice di poter essere io a ringraziarti per la tua donazione ricorrente di {$amount} a sostegno di Wikipedia. Voglio cogliere questa occasione per celebrare la tua generosità e la tua eccezionale disponibilità a partecipare alla creazione di un futuro migliore per il mondo.
 </p>
 
 <p>
-La tua donazione mensile porterà Wikipedia lontano e ci aiuterà a pianificare il futuro. Una volta al mese, una donazione di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} ti verrà addebitata dalla Wikimedia Foundation. <b>Ogni anno, a gennaio, ti invieremo un resoconto delle tue donazioni dell’anno precedente</b>. Se per qualsiasi motivo desideri annullare la tua donazione, segui <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">queste semplici istruzioni</a>.
+La tua donazione mensile porterà Wikipedia lontano e ci aiuterà a pianificare il futuro. Una volta al mese, una donazione di {$amount} ti verrà addebitata dalla Wikimedia Foundation. <b>Ogni anno, a gennaio, ti invieremo un resoconto delle tue donazioni dell’anno precedente</b>. Se per qualsiasi motivo desideri annullare la tua donazione, segui <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">queste semplici istruzioni</a>.
 </p>
 
-{% else %}
+{else}
 
 <p>
-Sono davvero felice di poter essere io a ringraziarti per la tua donazione di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} a sostegno di Wikipedia. Voglio cogliere questa occasione per celebrare la tua generosità e la tua eccezionale disponibilità. Stai contribuendo alla creazione di un futuro migliore per il mondo.
+Sono davvero felice di poter essere io a ringraziarti per la tua donazione di {$amount} a sostegno di Wikipedia. Voglio cogliere questa occasione per celebrare la tua generosità e la tua eccezionale disponibilità. Stai contribuendo alla creazione di un futuro migliore per il mondo.
 </p>
 
-{% endif %}
+{/if}
 
-{% if "RecurringRestarted" in contribution_tags %}
+{if in_array("RecurringRestarted", $contribution_tags)}
 <p>Siamo riusciti a risolvere recentemente dei piccoli problemi tecnici che avevano messo in pausa alcune donazioni mensili ricorrenti. Abbiamo ripristinato la tua donazione ricorrente che verrà processata regolarmente d’ora in avanti. Non ti verranno addebitati i mesi di sospensione. Ti ringraziamo per la tua pazienza e per il tuo supporto, e se hai delle domande non esitare a scriverci al seguente indirizzo e-mail  donate@wikimedia.org.</p>
-{%endif%}
+{/if}
 
-{% if "UnrecordedCharge" in contribution_tags %}
-<p>Siamo riusciti a risolvere recentemente dei problemi tecnici che hanno impedito ad un piccolo numero di donatori di ricevere la conferma della propria donazione. Ti preghiamo di accettare questa e-mail come ringraziamento della tua donazione del {{ receive_date }}. Ti ringraziamo tantissimo della tua pazienza e del tuo supporto e se hai delle domande non esitare a scriverci al seguente indirizzo e-mail:  donate@wikimedia.org.</p>
-{%endif%}
+{if in_array("UnrecordedCharge",  $contribution_tags)}
+<p>Siamo riusciti a risolvere recentemente dei problemi tecnici che hanno impedito ad un piccolo numero di donatori di ricevere la conferma della propria donazione. Ti preghiamo di accettare questa e-mail come ringraziamento della tua donazione del {$receive_date}. Ti ringraziamo tantissimo della tua pazienza e del tuo supporto e se hai delle domande non esitare a scriverci al seguente indirizzo e-mail:  donate@wikimedia.org.</p>
+{/if}
 
 
 <p>
@@ -58,18 +58,18 @@ Fondatore di Wikipedia
 
 <p>Molti datori di lavoro verseranno con generosità gli stessi contributi dei propri dipendenti: verifica se il tuo datore di lavoro ha attivato un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">programma aziendale di matching gift</a>.</p>
 
-{% if gift_source != "Donor Advised Fund" %}
+{if $gift_source != "Donor Advised Fund"}
 
-<p>Il tuo riepilogo: La tua donazione, numero {{ transaction_id }}, del {{ receive_date }}, è di {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+<p>Il tuo riepilogo: La tua donazione, numero {$transaction_id}, del {$receive_date}, è di {$amount}.
 </p>
 
 <p>Questa lettera può servire come copia di attestazione della tua donazione. Per questo contributo non sono stati forniti, in tutto o in parte, né beni né servizi. Il nostro indirizzo postale è: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Numero per esenzione fiscale degli Stati Uniti: 20-0049703
 </p>
 
-{%endif%}
+{/if}
 
-<p>Se non desideri ricevere altre e-mail di raccolta fondi da Wikimedia Foundation, puoi <a href="{{ unsubscribe_link | raw }}">annullare subito la tua iscrizione</a>. Nota: continueremo a inviarti ricevute come questa per future donazioni.
+<p>Se non desideri ricevere altre e-mail di raccolta fondi da Wikimedia Foundation, puoi <a href="{$unsubscribe_link}">annullare subito la tua iscrizione</a>. Nota: continueremo a inviarti ricevute come questa per future donazioni.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.it.html","revision":20210317}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.it.html","revision":20210317]TI_END -->
 

@@ -1,38 +1,38 @@
 <span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">קבלה ותודה מקרב לב.
 </span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+<div dir="rtl">
 
-
-{% if first_name %}
-<p>שלום {{ first_name }}!
-</p>{% else %}<p>
+{if $first_name}
+<p>שלום {$first_name}!
+</p>{else}<p>
 תורם יקר, תורמת יקרה</p>
-{%endif%}
+{/if}
 
 
-{% if recurring %}
+{if $recurring}
 <p>
-אני כל־כך אסיר תודה על כך שאני הוא שמביע את הערכתי על התרומה החוזרת שלך בסך {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} לתמיכה בוויקיפדיה. אני רוצה לנצל את ההזדמנות הזאת כדי לציין את הנדיבות שלך ואת נכונותך היוצאת מן הכלל להשתתף ביצירת עתיד טוב יותר לעולם.
+אני כל־כך אסיר תודה על כך שאני הוא שמביע את הערכתי על התרומה החוזרת שלך בסך {$amount} לתמיכה בוויקיפדיה. אני רוצה לנצל את ההזדמנות הזאת כדי לציין את הנדיבות שלך ואת נכונותך היוצאת מן הכלל להשתתף ביצירת עתיד טוב יותר לעולם.
 </p>
 
 <p>
-התרומה החודשית שלך תיקח את ויקיפדיה רחוק ותעזור לנו לתכנן קדימה. פעם בחודש, תרומה של {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} תיגבה על ידי קרן ויקימדיה. <b>בכל שנה, בחודש ינואר, נשלח לך סיכום של התרומות שלך בשנה הקודמת</b>. אם מסיבה כלשהי תרצה לבטל את התרומה שלך, מלא אחר <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">הנחיות הביטול הפשוטות</a> האלו.
+התרומה החודשית שלך תיקח את ויקיפדיה רחוק ותעזור לנו לתכנן קדימה. פעם בחודש, תרומה של {$amount} תיגבה על ידי קרן ויקימדיה. <b>בכל שנה, בחודש ינואר, נשלח לך סיכום של התרומות שלך בשנה הקודמת</b>. אם מסיבה כלשהי תרצה לבטל את התרומה שלך, מלא אחר <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">הנחיות הביטול הפשוטות</a> האלו.
 </p>
 
-{% else %}
+{else}
 
 <p>
-אני כל־כך אסיר תודה על כך שאני הוא שמביע את הערכתי על התרומה החד־פעמית שלך בסך {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} לתמיכה בוויקיפדיה. אני רוצה לנצל את ההזדמנות הזאת כדי לציין את הנדיבות שלך ואת נכונותך היוצאת מן הכלל להשתתף ביצירת עתיד טוב יותר לעולם.
+אני כל־כך אסיר תודה על כך שאני הוא שמביע את הערכתי על התרומה החד־פעמית שלך בסך {$amount} לתמיכה בוויקיפדיה. אני רוצה לנצל את ההזדמנות הזאת כדי לציין את הנדיבות שלך ואת נכונותך היוצאת מן הכלל להשתתף ביצירת עתיד טוב יותר לעולם.
 </p>
-{% endif %}
+{/if}
 
-{% if "RecurringRestarted" in contribution_tags %}
+{if in_array("RecurringRestarted", $contribution_tags)}
 <p>לאחרונה פתרנו בעיה טכנית קטנה שעצרה אחדות מהתרומות החוזרות החודשיות. חידשנו את התרומה החוזרת שלך, ומעכשיו והלאה היא תועבר כרגיל. לא נחייב אותך על החודשים הקודמים שבהם לא חויבת. אנו מודים לך על הסבלנות ועל התמיכה. באפשרותך ליצור איתנו קשר בכתובת הדוא”ל donate@wikimedia.org בכל שאלה.</p>
-{%endif%}
+{/if}
 
-{% if "UnrecordedCharge" in contribution_tags %}
-<p>לאחרונה טיפלנו בבעיה טכנית שגרמה למספר מצומצם של תורמים להפסיק לקבל אישור לתרומתם. אנא ראה/י בהודעת דוא”ל זו אות תודה עבור התרומה שלך מ-{{ receive_date }}. אנו באמת מעריכים את הסבלנות והתמיכה שלך. באפשרותך ליצור איתנו קשר בדוא"ל donate@wikimedia.org בכל שאלה.</p>
-{%endif%}
+{if in_array("UnrecordedCharge",  $contribution_tags)}
+<p>לאחרונה טיפלנו בבעיה טכנית שגרמה למספר מצומצם של תורמים להפסיק לקבל אישור לתרומתם. אנא ראה/י בהודעת דוא”ל זו אות תודה עבור התרומה שלך מ-{$receive_date}. אנו באמת מעריכים את הסבלנות והתמיכה שלך. באפשרותך ליצור איתנו קשר בדוא"ל donate@wikimedia.org בכל שאלה.</p>
+{/if}
 
 <p>
 ייסדתי את ויקיפדיה לפני 20 שנה. מאז, האנציקלופדיה האהובה שלנו גדלה מאוד, בתקופות טובות ועם קשיים רבים, והיום, יותר מתמיד, היא משרתת את מטרתה האמיתית. היא מסייעת למיליוני אנשים ללמוד, לגלות, לחקור ולהתעמק.
@@ -58,21 +58,21 @@
 <p>מעסיקים רבים מבטיחים לתרום כמה שהעובדים שלהם תורמים: אנא בדקו אם בחברה שלכם יש <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">תכנית התאמת תרומות</a>.
 </p>
 
-{% if gift_source != "Donor Advised Fund" %}
+{if $gift_source != "Donor Advised Fund"}
 
 
-<p>לידיעתך: תרומתך מספר {{ transaction_id }} ב־{{ receive_date }} הייתה בסך {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+<p>לידיעתך: תרומתך מספר {$transaction_id} ב־{$receive_date} הייתה בסך {$amount}.
 </p>
 
 <p>מכתב זה יכול לשמש כעדות לתרומתך. לא סופקו כל טובין או שירותים, בין אם במלואם או בחלקם, בתמורה לתרומה זו. כתובת למשלוח דואר: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. מספר פטור ממס בארה"ב: 20-0049703
 </p>
 
-{%endif%}
+{/if}
 
-<p>אם אינך רוצה לקבל בעתיד מקרן ויקימדיה דוא"ל לגיוס כספים, <a href="{{ unsubscribe_link | raw }}">באפשרותך לבטל את ההרשמה באופן מיידי.</a> לידיעתך, אנחנו עדיין נשלח לך קבלות, בדומה לקבלה זו, עבור תרומות עתידיות.
+<p>אם אינך רוצה לקבל בעתיד מקרן ויקימדיה דוא"ל לגיוס כספים, <a href="{$unsubscribe_link}">באפשרותך לבטל את ההרשמה באופן מיידי.</a> לידיעתך, אנחנו עדיין נשלח לך קבלות, בדומה לקבלה זו, עבור תרומות עתידיות.
 </p>
+</div>
 
-
-<!-- TI_BEGIN{"version":1,"name":"thank_you.he.html","revision":20210317}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.he.html","revision":20210317]TI_END -->
 
 

@@ -1,41 +1,41 @@
 <span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">En kvittering og en hjertelig takk.</span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
-{% if first_name %}
-<p>Hei {{ first_name }},
-</p>{% else %}<p>
+{if $first_name}
+<p>Hei {$first_name},
+</p>{else}<p>
 Kjære giver,</p>
-{%endif%}
+{/if}
 
-{% if recurring %}
+{if $recurring}
 
 <p>
-Jeg er så takknemlig for å være den som takker deg for din gjentatte gave på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} du har gitt til støtte for Wikipedia. Jeg ønsker å benytte anledningen til å feire sjenerøsiteten din og din eksepsjonelle vilje til å delta i å skape en bedre fremtid for verden.
+Jeg er så takknemlig for å være den som takker deg for din gjentatte gave på {$amount} du har gitt til støtte for Wikipedia. Jeg ønsker å benytte anledningen til å feire sjenerøsiteten din og din eksepsjonelle vilje til å delta i å skape en bedre fremtid for verden.
 </p>
 
 <p>
-Ditt månedlige bidrag vil ta Wikipedia langt og hjelpe oss med å planlegge fremover. En donasjon på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} vil bli debitert av Wikimedia Foundation én gang i måneden. <b>Hver januar vil vi sende deg et sammendrag av bidragene dine for det forrige året</b>. Hvis du av en eller annen grunn ønsker å avslutte bidraget ditt, følg disse <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={{ locale }}">enkle kanselleringsinstruksene</a>.
+Ditt månedlige bidrag vil ta Wikipedia langt og hjelpe oss med å planlegge fremover. En donasjon på {$amount} vil bli debitert av Wikimedia Foundation én gang i måneden. <b>Hver januar vil vi sende deg et sammendrag av bidragene dine for det forrige året</b>. Hvis du av en eller annen grunn ønsker å avslutte bidraget ditt, følg disse <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">enkle kanselleringsinstruksene</a>.
 </p>
 
-{% else %}
+{else}
 
 <p>
-Jeg er så takknemlig for å være den som takker deg for éngangsgaven på {{ (currency ~ " " ~ amount) | l10n_currency(locale) }} du har gitt til støtte for Wikipedia. Jeg ønsker å benytte anledningen til å feire sjenerøsiteten din og din eksepsjonelle vilje til å delta i å skape en bedre fremtid for verden.
+Jeg er så takknemlig for å være den som takker deg for éngangsgaven på {$amount} du har gitt til støtte for Wikipedia. Jeg ønsker å benytte anledningen til å feire sjenerøsiteten din og din eksepsjonelle vilje til å delta i å skape en bedre fremtid for verden.
 </p>
 
-{% endif %}
+{/if}
 
-{% if "RecurringRestarted" in contribution_tags %}
+{if in_array("RecurringRestarted", $contribution_tags)}
 <p>
 Nylig løste vi et mindre teknisk problem som midlertidig stanset noen månedlige bidrag. Vi har gjenopptatt ditt månedlige trekk og det vil bli behandlet som normalt i tiden som kommer. Vi vil ikke belaste deg for de foregående månedene. Takk for tålmodigheten og for støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.
 </p>
-{%endif%}
+{/if}
 
-{% if "UnrecordedCharge" in contribution_tags %}
+{if in_array("UnrecordedCharge",  $contribution_tags)}
 <p>
-Nylig løste vi et teknisk problem som gjorde at en rekke små givere ikke fikk bekreftelse på sine donasjoner. Du mottar denne e-posten som en takk for din donasjon {{ receive_date }}. Vi setter virkelig pris på tålmodigheten og støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.
+Nylig løste vi et teknisk problem som gjorde at en rekke små givere ikke fikk bekreftelse på sine donasjoner. Du mottar denne e-posten som en takk for din donasjon {$receive_date}. Vi setter virkelig pris på tålmodigheten og støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.
 </p>
-{%endif%}
+{/if}
 
 <p>
 Jeg grunnla Wikipedia for 20 år siden. Siden den gang har vår elskede encyklopedi vokst mye, gjennom gode tider og motgang, og i dag tjener den mer enn noen gang sitt sanne formål. Den hjelper millioner av mennesker med å studere, oppdage, utforske og undersøke.
@@ -64,13 +64,13 @@ Grunnlegger av Wikipedia
 <p>Mange arbeidsgivere matcher gaver fra de ansatte, så sjekk gjerne med din bedrift om de har et <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">bedriftsprogram for å matche ansattes gaver</a>.
 </p>
 
-<p>Til informasjon: Din gave, nummer {{ transaction_id }}, den {{ receive_date }} var {{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.
+<p>Til informasjon: Din gave, nummer {$transaction_id}, den {$receive_date} var {$amount}.
 </p>
 
 <p>Dette brevet er en bekreftelse på gaven. Det ble ikke levert noen varer eller tjenester, helt eller delvis, for dette bidraget. Vår postadresse er: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. Amerikansk skattefritaksnummer: 20-0049703
 </p>
 
-<p>Ønsker du ikke å få e-poster om innsamlinger fra Wikimedia Foundation i fremtiden, <a href="{{ unsubscribe_link | raw }}">kan du melde deg av umiddelbart</a>. Merk at vi fremdeles vil sende deg kvitteringer, som denne, for fremtidige donasjoner.
+<p>Ønsker du ikke å få e-poster om innsamlinger fra Wikimedia Foundation i fremtiden, <a href="{$unsubscribe_link}">kan du melde deg av umiddelbart</a>. Merk at vi fremdeles vil sende deg kvitteringer, som denne, for fremtidige donasjoner.
 </p>
 
-<!-- TI_BEGIN{"version":1,"name":"thank_you.nb.html","revision":20210319}TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.nb.html","revision":20210319]TI_END -->

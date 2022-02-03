@@ -78,18 +78,52 @@ class Render extends AbstractAction {
    * @throws \Throwable
    */
   public function _run(Result $result): void {
+    $locale = $this->getLanguage();
     $templateParams = $this->getTemplateParameters();
+    if (!$locale) {
+      Civi::log('wmf')->info('Donor language unknown.  Defaulting to English...', ['language' => $this->getLanguage()]);
+      $locale = 'en';
+    }
+    // TemplateParams['locale'] holds the mediawiki-style locale.
+    // It is used for
+    // 1 - a template parameter for adding locale to a url
+    // 2 - loading the template - this usage will be removed once
+    // we move the templates to the database (at which point users can edit too).
+    $templateParams['locale'] = strtolower(str_replace('_', '-', $locale));
+    // If is important to do this before we do any currency formatting.
+    // There is a destruct method on the AutoClean class that
+    // means once this variable is torn down (e.g. at the end of the
+    // function) the locale will revert back.
+    $swapLocale = \CRM_Utils_AutoClean::swapLocale($this->getLanguage());
+
     $templateParams['receive_date'] = $this->getReceiveDate();
+    $templateParams['gift_source'] = $templateParams['gift_source'] ?? NULL;
+    $templateParams['stock_value'] = $templateParams['stock_value'] ?? NULL;
+    if ($templateParams['stock_value']) {
+      $templateParams['stock_value'] = Civi::format()
+        ->money($templateParams['stock_value'], $templateParams['currency']);
+    }
+    if ($templateParams['amount']) {
+      $templateParams['amount'] = Civi::format()
+        ->money($templateParams['amount'], $templateParams['currency']);
+    }
+
+    $templatesDirectory =       // This hard-coded path is transitional.
+      __DIR__ . DIRECTORY_SEPARATOR . '../../../../../wmf-civicrm/msg_templates/' . $this->getTemplateName();
+    // @todo - stop loading the 'old' way & load from the database.
     $template = new Templating(
-      // This hard-coded path is transitional.
-      __DIR__ . DIRECTORY_SEPARATOR . '../../../../../wmf-civicrm/msg_templates/' . $this->getTemplateName(),
+      $templatesDirectory,
       $this->getTemplateName(),
-      $this->getLanguage(),
+      $templateParams['locale'],
       $templateParams
     );
 
-    $html = $template->loadTemplate('html')->render($templateParams);
-    $subject = $template->loadTemplate('subject')->render($templateParams);
+    $smarty = \CRM_Core_Smarty::singleton();
+    // At this stage we are still using the old templating system to select our translation.
+    $htmlTemplate = $templatesDirectory . DIRECTORY_SEPARATOR . $template->loadTemplate('html')->getTemplateName();
+    $html = $smarty->fetchWith($htmlTemplate, $templateParams);
+    $subjectTemplate = $templatesDirectory . DIRECTORY_SEPARATOR . $template->loadTemplate('subject')->getTemplateName();
+    $subject = $smarty->fetchWith($subjectTemplate, $templateParams);
     $page_content = str_replace('<p></p>', '', $html);
     $result[] = [
       'html' => $page_content,

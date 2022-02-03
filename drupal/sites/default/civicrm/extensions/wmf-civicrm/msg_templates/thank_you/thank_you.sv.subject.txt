@@ -1,5 +1,5 @@
-{% if first_name %}
-  {{ first_name }}, din gåva ger oss ännu ett skäl att fira.
-{% else %}
+{if $first_name}
+  {$first_name}, din gåva ger oss ännu ett skäl att fira.
+{else}
   Din gåva ger oss ännu ett skäl att fira.
-{% endif %}
+{/if}

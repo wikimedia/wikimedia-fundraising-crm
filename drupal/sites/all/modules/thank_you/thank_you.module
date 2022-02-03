@@ -416,7 +416,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
     'from_name' => thank_you_get_from_name($template),
     'from_address' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
     'last_name' => $mailingData['last_name'],
-    'locale' => $locale,
+    'language' => $mailingData['preferred_language'] ?: 'en_US',
     'name' => $mailingData['display_name'],
     'receive_date' => $mailingData['receive_date'],
     'recipient_address' => $mailingData['email'],
@@ -494,7 +494,6 @@ function thank_you_send_mail($params) {
     'currency',
     'from_name',
     'from_address',
-    'locale',
     'receive_date',
     'recipient_address',
     'recurring',
@@ -514,9 +513,12 @@ function thank_you_send_mail($params) {
     $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
     throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
   }
+  if (empty($params['language'])) {
+    $params['language'] = Civi\WMFHelpers\Language::getLanguageCode($params['locale'] ?? 'en');
+  }
   $rendered = ThankYou::render(FALSE)
     // @todo switch to passing in 'raw' contact language.
-    ->setLanguage($params['locale'])
+    ->setLanguage($params['language'])
     ->setTemplateName($params['template'])
     ->setReceiveDate($params['receive_date'])
     ->setTemplateParameters($params)
@@ -546,7 +548,7 @@ function thank_you_send_mail($params) {
     'from_address' => $params['from_address'],
     'to_name' => $params['name'],
     'to_address' => $params['recipient_address'],
-    'locale' => $params['locale'],
+    'locale' => $params['language'],
     'html' => $html,
     'subject' => $subject,
     'reply_to' => $civi_queue_record ? $civi_queue_record->getVerp() : "ty.{$params['contact_id']}.{$params['contribution_id']}@donate.wikimedia.org",
@@ -599,6 +601,8 @@ function thank_you_send_mail($params) {
  * Gets the template name and revision number from an html comment
  *
  * @param string $html HTML source of the thank you email
+ *  This should contain a string like
+ *  <!-- TI_BEGIN["version":1,"name":"endowment_thank_you.sv.html","revision":20200107]TI_END -->
  *
  * @returns stdClass, 'revision' contains rev no, 'name' contains template name
  *
@@ -610,7 +614,9 @@ function thank_you_get_template_info($html) {
   $matches = [];
   $info = NULL;
   if (preg_match('/<!-- TI_BEGIN(.+)TI_END -->/', $html, $matches)) {
-    $info = json_decode($matches[1]);
+    // The '{' in the template was upsetting smarty. This permits *any* open & close
+    // delimiter (in practice [ ....] ).
+    $info = json_decode('{' . substr($matches[1], 1, -1) . '}');
   }
   if ($info === NULL || !is_object($info)) {
     throw new TemplateInfoMissingException();

@@ -410,7 +410,12 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           'from_name' => thank_you_get_from_name($template),
           'from_address' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
           'last_name' => $contact['last_name'],
+          // Locale is the mediawiki variant - either 'en' or 'en-US'.
+          // Where 'preferred_language' is known then locale should generally
+          // be ignored, except where required for constructing urls.
           'locale' => $locale,
+          // Preferred language is as stored in the civicrm database - eg. 'en_US'.
+          'language' => $contact['preferred_language'],
           'name' => $contact['display_name'],
           'receive_date' => $start_date,
           'day_of_month' => $day_of_month,
