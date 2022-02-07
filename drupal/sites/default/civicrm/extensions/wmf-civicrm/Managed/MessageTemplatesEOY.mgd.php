@@ -28,7 +28,7 @@ return [
       'version' => 4,
       'checkPermissions' => FALSE,
       'values' => [
-        'msg_title' => 'End of year thank you message',
+        'msg_title' => 'WMF End of year thank you message',
         'msg_text' => $msgText,
         'msg_html' => $htmlText,
         'msg_subject' => $subject,

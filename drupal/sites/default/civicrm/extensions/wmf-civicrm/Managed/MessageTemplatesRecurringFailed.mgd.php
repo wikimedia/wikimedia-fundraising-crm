@@ -18,7 +18,7 @@ return [
       'version' => 4,
       'checkPermissions' => FALSE,
       'values' => [
-        'msg_title' => 'Recurring failure message',
+        'msg_title' => 'WMF Recurring failure message',
         'msg_text' => $msgText,
         'msg_html' => $htmlText,
         'msg_subject' => $subject,
