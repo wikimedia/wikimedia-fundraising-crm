@@ -558,8 +558,8 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     // Check the subject.
     // Note this test will move to an extension, at which point this relative path will change.
     $expectedSubject = trim(file_get_contents(
-        __DIR__ .
-        '/../../../../../default/civicrm/extensions/wmf-civicrm/msg_templates/recurring_notification/recurring_notification.en.subject.txt'
+      __DIR__ .
+      '/../../../../../default/civicrm/extensions/wmf-civicrm/msg_templates/monthly_convert/monthly_convert.en.subject.txt'
     ));
     $this->assertEquals( $expectedSubject, $sent['subject']);
   }

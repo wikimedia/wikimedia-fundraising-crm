@@ -383,13 +383,13 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         // Set up the language for the email
         $locale = $contact['preferred_language'];
         if (!$locale) {
-          watchdog('recurring_notification', "Donor language unknown.  Defaulting to English...", NULL, WATCHDOG_INFO);
+          watchdog('monthly_convert', "Donor language unknown.  Defaulting to English...", NULL, WATCHDOG_INFO);
           $locale = 'en';
         }
         $locale = wmf_common_locale_civi_to_mediawiki($locale);
 
         // Using the same params sent through in thank_you.module thank_you_for_contribution
-        $template = 'recurring_notification';
+        $template = 'monthly_convert';
         $start_date = $newContributionRecur['values'][$newContributionRecur['id']]['start_date'];
 
         // Get the day of the month
@@ -431,10 +431,10 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
         $success = thank_you_send_mail($params);
         if ($success) {
-          watchdog('recurring_notification', "Recurring notification sent successfully for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], [], WATCHDOG_INFO);
+          watchdog('monthly_convert', "Monthly convert sent successfully for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], [], WATCHDOG_INFO);
         }
         else {
-          watchdog('recurring_notification', "Recurring notification mail failed for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], [], WATCHDOG_ERROR);
+          watchdog('monthly_convert', "Monthly convert mail failed for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], [], WATCHDOG_ERROR);
         }
       }
     } catch (\CiviCRM_API3_Exception $e) {

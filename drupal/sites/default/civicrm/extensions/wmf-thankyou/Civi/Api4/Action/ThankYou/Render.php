@@ -45,7 +45,7 @@ class Render extends AbstractAction {
   /**
    * The name of the selected template.
    *
-   * Options are thank_you, endowment_thank_you, recurring_notification.
+   * Options are thank_you, endowment_thank_you, monthly_convert.
    *
    * @var string
    */

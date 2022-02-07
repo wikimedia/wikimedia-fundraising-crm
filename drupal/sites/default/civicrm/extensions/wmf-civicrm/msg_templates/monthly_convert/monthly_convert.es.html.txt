@@ -8,4 +8,4 @@
 </p>
 <p>Si no deseas recibir ningún correo electrónico sobre recaudación de fondos por parte de Wikimedia Foundation en el futuro, puedes <a href="{$unsubscribe_link}">cancelar tu suscripción ahora</a>. Ten en cuenta que seguiremos enviándote recibos como este por futuras donaciones.
 </p>
-<!-- TI_BEGIN["version":1,"sourceUrl":"","name":"recurring_notification.es.html","revision":20211012]TI_END -->
+<!-- TI_BEGIN["version":1,"sourceUrl":"","name":"monthly_convert.es.html","revision":20211012]TI_END -->
