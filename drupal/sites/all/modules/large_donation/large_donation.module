@@ -1,7 +1,6 @@
 <?php
 
 use Civi\Omnimail\MailFactory;
-use wmf_communication\Mailer;
 use wmf_communication\Templating;
 
 /**
@@ -9,23 +8,23 @@ use wmf_communication\Templating;
  */
 function large_donation_menu() {
 
-  $items = array();
+  $items = [];
 
-  $items['admin/config/large_donation'] = array(
+  $items['admin/config/large_donation'] = [
     'title' => 'Large Donation Processor',
-    'access arguments' => array('administer large_donation'),
+    'access arguments' => ['administer large_donation'],
     'page callback' => 'system_admin_menu_block_page',
     'file' => 'system.admin.inc',
     'file path' => drupal_get_path('module', 'system'),
-  );
+  ];
 
-  $items['admin/config/large_donation/configure'] = array(
+  $items['admin/config/large_donation/configure'] = [
     'title' => 'Configure',
     'description' => 'Configure large donation settings.',
-    'access arguments' => array('administer large_donation'),
+    'access arguments' => ['administer large_donation'],
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('large_donation_settings'),
-  );
+    'page arguments' => ['large_donation_settings'],
+  ];
 
   return $items;
 }
@@ -34,11 +33,11 @@ function large_donation_menu() {
  * Implementation of hook_permission().
  */
 function large_donation_permission() {
-  return array(
-    'administer large_donation' => array(
+  return [
+    'administer large_donation' => [
       'title' => t('Administer Large Donations'),
-    ),
-  );
+    ],
+  ];
 }
 
 /**
@@ -46,7 +45,7 @@ function large_donation_permission() {
  */
 function large_donation_settings($formId, $formState) {
   civicrm_initialize();
-  $form = array();
+  $form = [];
 
   // Should we display a blank new entry for adding a threshold level?
   $plus_new_level = isset($formState['clicked_button'])
@@ -54,7 +53,7 @@ function large_donation_settings($formId, $formState) {
 
   // Are we deleting something?
   $is_deleting = isset($formState['clicked_button'])
-    && $formState['clicked_button']['#attributes']['class'] === array('delete');
+    && $formState['clicked_button']['#attributes']['class'] === ['delete'];
 
   if ($is_deleting) {
     preg_match('/^delete_(\d+|NEW)$/', $formState['clicked_button']['#attributes']['id'], $matches);
@@ -77,37 +76,37 @@ function large_donation_settings($formId, $formState) {
   $levels = $result->fetchAllAssoc('id', PDO::FETCH_ASSOC);
 
   if ($plus_new_level) {
-    $levels[] = array(
+    $levels[] = [
       'id' => 'NEW',
       'threshold' => '',
       'addressee' => '',
-    );
+    ];
   }
 
   $uiIndex = 1;
   foreach ($levels as $row) {
-    $form["group_{$row['id']}"] = array(
+    $form["group_{$row['id']}"] = [
       '#type' => 'fieldset',
-    );
+    ];
 
-    $form["group_{$row['id']}"]["delete_{$row['id']}"] = array(
+    $form["group_{$row['id']}"]["delete_{$row['id']}"] = [
       '#type' => 'button',
-      '#value' => t('Delete notification !index', array('!index' => $uiIndex)),
-      '#attributes' => array(
+      '#value' => t('Delete notification !index', ['!index' => $uiIndex]),
+      '#attributes' => [
         'id' => "delete_{$row['id']}",
-        'class' => array('delete'),
-      ),
-    );
+        'class' => ['delete'],
+      ],
+    ];
 
-    $form["group_{$row['id']}"]["threshold_{$row['id']}"] = array(
+    $form["group_{$row['id']}"]["threshold_{$row['id']}"] = [
       '#type' => 'textfield',
-      '#title' => t('Large donation value !index', array('!index' => $uiIndex)),
+      '#title' => t('Large donation value !index', ['!index' => $uiIndex]),
       '#required' => TRUE,
       '#default_value' => $row['threshold'],
       '#description' => t('Donations over this amount (USD) will trigger an email.'),
-    );
+    ];
 
-    $form["group_{$row['id']}"]["financial_types_excluded_{$row['id']}"] = array(
+    $form["group_{$row['id']}"]["financial_types_excluded_{$row['id']}"] = [
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => t('Financial types to be excluded'),
@@ -115,31 +114,31 @@ function large_donation_settings($formId, $formState) {
       '#options' => civicrm_api3('Contribution', 'getoptions', ['field' => 'financial_type_id'])['values'],
       '#size' => 5,
       '#default_value' => explode(',', $row['financial_types_excluded']),
-    );
+    ];
 
-    $form["group_{$row['id']}"]["addressee_{$row['id']}"] = array(
+    $form["group_{$row['id']}"]["addressee_{$row['id']}"] = [
       '#type' => 'textarea',
-      '#title' => t('Email Notification Addresses !index', array('!index' => $uiIndex)),
+      '#title' => t('Email Notification Addresses !index', ['!index' => $uiIndex]),
       '#required' => FALSE,
       '#default_value' => $row['addressee'],
       '#description' => t('Addresses, separated by commas or newlines, to be notified on large contributions.'),
-    );
+    ];
 
     $uiIndex++;
   }
 
-  $form['add_threshold'] = array(
+  $form['add_threshold'] = [
     '#type' => 'button',
     '#value' => t('Add threshold level'),
-    '#attributes' => array(
+    '#attributes' => [
       'id' => 'add_threshold',
-    ),
-  );
+    ],
+  ];
 
-  $form['submit'] = array(
+  $form['submit'] = [
     '#type' => 'submit',
     '#value' => t('Save configuration'),
-  );
+  ];
 
   return $form;
 }
@@ -156,12 +155,12 @@ function large_donation_settings_submit($form, $formState) {
         $id = NULL;
       }
       db_merge('large_donation_notification')
-        ->key(array('id' => $id))
-        ->fields(array(
+        ->key(['id' => $id])
+        ->fields([
           'threshold' => $value,
           'addressee' => $addressee,
           'financial_types_excluded' => $financialTypesExcluded,
-        ))
+        ])
         ->execute();
     }
   }
@@ -182,7 +181,7 @@ function large_donation_civicrm_post($action, $type, $id, &$contribution) {
         }
 
         foreach (large_donation_get_notification_thresholds() as $notification) {
-          $excludedFinancialTypes = explode(',' , $notification['financial_types_excluded']);
+          $excludedFinancialTypes = explode(',', $notification['financial_types_excluded']);
           if (!in_array($contribution->financial_type_id, $excludedFinancialTypes)) {
             if ($contribution->total_amount > $notification['threshold']) {
               watchdog('large_donation', "Notifying of large donation, contribution: {$contribution->id} above threshold {$notification['threshold']}");
@@ -244,33 +243,33 @@ function large_donation_get_minimum_threshold() {
 function large_donation_notification_send($contribution, $notification) {
   $contact_link = CRM_Utils_System::url(
     'civicrm/contact/view',
-    array(
+    [
       'selectedChild' => 'contribute',
       'cid' => $contribution->contact_id,
       'reset' => 1,
-    ),
+    ],
     TRUE,
     'Contributions'
   );
 
   $contribution_link = CRM_Utils_System::url(
     'civicrm/contact/view/contribution',
-    array(
+    [
       'action' => 'view',
       'id' => $contribution->id,
       'reset' => 1,
-    ),
+    ],
     TRUE
   );
 
   $to = $notification['addressee'];
 
-  $params = array(
-    'threshold' => floatval($notification['threshold']),
+  $params = [
+    'threshold' => (float) $notification['threshold'],
     'contribution' => $contribution,
     'contact_link' => $contact_link,
     'contribution_link' => $contribution_link,
-  );
+  ];
 
   if (!$to) {
     watchdog('large_donation', 'Notification recipient address is not set up!', NULL, WATCHDOG_ERROR);
@@ -283,17 +282,17 @@ function large_donation_notification_send($contribution, $notification) {
   $message = $template->render();
 
   try {
-    $email = array(
+    $email = [
       'to' => $to,
       'from_address' => 'fr-tech+large_donation@wikimedia.org',
       'from_name' => 'Large Donation Bot',
       'subject' => "WMF - large donation: \${$contribution->total_amount}",
       'html' => $message,
-    );
+    ];
     $mailer->send($email);
     watchdog('large_donation', 'A large donation notification was sent to: ' . print_r($to, TRUE));
   }
   catch (Exception $e) {
-    watchdog('large_donation', 'Sending large donation message failed for contribution: ' . $contribution->id . '<pre>' . check_plain(print_r($contribution, TRUE)) . "\n\n" . $e->getMessage() . '</pre>', array(), WATCHDOG_ERROR);
+    watchdog('large_donation', 'Sending large donation message failed for contribution: ' . $contribution->id . '<pre>' . check_plain(print_r($contribution, TRUE)) . "\n\n" . $e->getMessage() . '</pre>', [], WATCHDOG_ERROR);
   }
 }
