@@ -43,7 +43,6 @@ return [
     'name' => 'eoy_thank_you_reserved',
     'entity' => 'MessageTemplate',
     'cleanup' => 'never',
-    'update' => 'never',
     'params' => [
       'debug' => TRUE,
       'version' => 4,

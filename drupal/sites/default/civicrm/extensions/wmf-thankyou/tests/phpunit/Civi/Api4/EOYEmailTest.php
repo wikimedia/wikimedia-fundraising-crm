@@ -331,19 +331,20 @@ class EOYEmailTest extends TestCase {
       'subject' => 'A record of your support for Wikipedia',
       'contactIDs' => [$contact['id']],
       'html' => "<p>
-Dear Jimmy,
-</p>
+      Dear Jimmy,
+  </p>
 
 <p>
-This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
+  This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
-Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2019:
+  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2019
 </p>
 
 <p><b>
   Your 2019 total was USD 20.00.
 </b></p>
+
 <p><b>Total donations to Wikimedia Foundation:</b></p>
 <p>
   Donation 1: 10.00 USD on 2019-11-27
@@ -352,13 +353,11 @@ Thank you for demonstrating your support for our mission to make free and reliab
   Donation 2: 10.00 USD on 2019-11-28
 </p>
 
-<p><b>Total donations to Wikimedia Endowment:</b></p>
-
 
 
 <p>With gratitude,</p>
 <p>
-The Wikimedia Foundation
+  The Wikimedia Foundation
 </p>
 
 <p>The Wikimedia Endowment ensures Wikimedia Foundation's free knowledge resources remain accessible and valuable for generations to come.</p>
@@ -477,19 +476,20 @@ The Wikimedia Foundation
       'subject' => 'A record of your support for Wikipedia',
       'contactIDs' => [$contactID],
       'html' => '<p>
-Dear Bob,
-</p>
+      Dear Bob,
+  </p>
 
 <p>
-This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
+  This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
-Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2018:
+  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2018
 </p>
 
 <p><b>
   Your 2018 total was USD 9,800.00.
 </b></p>
+
 <p><b>Total donations to Wikimedia Foundation:</b></p>
 <p>
   Donation 1: 50.00 USD on 2018-01-26
@@ -573,8 +573,6 @@ Thank you for demonstrating your support for our mission to make free and reliab
   Donation 27: 800.00 USD on 2018-12-22
 </p>
 
-<p><b>Total donations to Wikimedia Endowment:</b></p>
-
 
 <p>
   If you’d like to cancel your monthly donation, follow these easy <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&amp;basic=true&amp;language=en">easy cancellation instructions</a>.
@@ -582,7 +580,7 @@ Thank you for demonstrating your support for our mission to make free and reliab
 
 <p>With gratitude,</p>
 <p>
-The Wikimedia Foundation
+  The Wikimedia Foundation
 </p>
 
 <p>The Wikimedia Endowment ensures Wikimedia Foundation\'s free knowledge resources remain accessible and valuable for generations to come.</p>
@@ -619,14 +617,14 @@ The Wikimedia Foundation
       'contactIDs' => [$contactID],
       'subject' => 'A record of your support for Wikipedia',
       'html' => '<p>
-Dear Bob,
-</p>
+      Dear Bob,
+  </p>
 
 <p>
-This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
+  This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
-Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2018:
+  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2018
 </p>
 
 <p><b>
@@ -635,6 +633,7 @@ Thank you for demonstrating your support for our mission to make free and reliab
 <p><b>
   Your 2018 total was CAD 850.00.
 </b></p>
+
 <p><b>Total donations to Wikimedia Foundation:</b></p>
 <p>
   Donation 1: 50.00 USD on 2018-02-01
@@ -649,8 +648,6 @@ Thank you for demonstrating your support for our mission to make free and reliab
   Donation 4: 50.00 CAD on 2018-10-20
 </p>
 
-<p><b>Total donations to Wikimedia Endowment:</b></p>
-
 
 <p>
   If you’d like to cancel your monthly donation, follow these easy <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&amp;basic=true&amp;language=en">easy cancellation instructions</a>.
@@ -658,7 +655,7 @@ Thank you for demonstrating your support for our mission to make free and reliab
 
 <p>With gratitude,</p>
 <p>
-The Wikimedia Foundation
+  The Wikimedia Foundation
 </p>
 
 <p>The Wikimedia Endowment ensures Wikimedia Foundation\'s free knowledge resources remain accessible and valuable for generations to come.</p>

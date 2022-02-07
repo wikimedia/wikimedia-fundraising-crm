@@ -33,7 +33,6 @@ return [
     'name' => 'recurring_failed_message_reserved',
     'entity' => 'MessageTemplate',
     'cleanup' => 'never',
-    'update' => 'never',
     'params' => [
       'debug' => TRUE,
       'version' => 4,

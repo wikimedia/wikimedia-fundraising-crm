@@ -1,12 +1,16 @@
 <p>
-{if '{contact.first_name}' && '{contact.last_name}'}Dear {contact.first_name},
-{else}{/if}</p>
+  {if '{contact.first_name}' && '{contact.last_name}'}
+    Dear {contact.first_name},
+  {else}
+
+  {/if}
+</p>
 
 <p>
-This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
+  This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
-Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in {$year}:
+  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in {$year}
 </p>
 
 {foreach from=$totals item=total}
@@ -14,6 +18,8 @@ Thank you for demonstrating your support for our mission to make free and reliab
   Your {$year} total was {$total.currency} {$total.amount}.
 </b></p>
 {/foreach}
+
+{if $hasAnnualFund}
 <p><b>Total donations to Wikimedia Foundation:</b></p>
 {foreach from=$contributions key=index item=contribution}
 {if $contribution.financial_type != 'Endowment'}
@@ -22,7 +28,9 @@ Thank you for demonstrating your support for our mission to make free and reliab
 </p>
 {/if}
 {/foreach}
+{/if}
 
+{if $hasEndowment}
 <p><b>Total donations to Wikimedia Endowment:</b></p>
 
 {foreach from=$contributions key=index item=contribution}
@@ -32,6 +40,7 @@ Thank you for demonstrating your support for our mission to make free and reliab
 </p>
 {/if}
 {/foreach}
+{/if}
 
 {if $active_recurring}
 <p>
@@ -41,7 +50,7 @@ Thank you for demonstrating your support for our mission to make free and reliab
 
 <p>With gratitude,</p>
 <p>
-The Wikimedia Foundation
+  The Wikimedia Foundation
 </p>
 
 <p>The Wikimedia Endowment ensures Wikimedia Foundation's free knowledge resources remain accessible and valuable for generations to come.</p>
