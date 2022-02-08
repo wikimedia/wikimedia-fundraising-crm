@@ -66,8 +66,7 @@ class SMTPMailer extends MailerBase implements IMailer {
     # n.b. - must set AltBody after MsgHTML(), or the text will be overwritten.
     $locale = empty($email['locale']) ? NULL : $email['locale'];
     $mailer->msgHTML($this->wrapHtmlSnippet($email['html'], $locale));
-    $this->normalizeContent($email);
-    $mailer->AltBody = $email['plaintext'];
+    $mailer->AltBody = \CRM_Utils_String::htmlToText($email['html']);
     // End copy-pasta
 
     // WMF specific settings

@@ -2,9 +2,6 @@
 
 namespace Civi\Omnimail;
 
-use Civi\WMFException\WMFException;
-use Html2Text\Html2Text;
-
 /**
  * Shared functionality for mailer classes
  */
@@ -75,16 +72,6 @@ abstract class MailerBase {
 {$html}
 </body>
 </html>";
-  }
-
-  protected function normalizeContent(&$email) {
-    $converter = new Html2Text($email['html'], FALSE, ['do_links' => 'table']);
-    $email['plaintext'] = wordwrap($converter->get_text(), 100);
-
-    if ($email['plaintext'] === FALSE) {
-      watchdog('thank_you', "Text rendering of template failed in {$email['locale']}.", [], WATCHDOG_ERROR);
-      throw new WMFException(WMFException::UNKNOWN, "Could not render plaintext");
-    }
   }
 
   /**

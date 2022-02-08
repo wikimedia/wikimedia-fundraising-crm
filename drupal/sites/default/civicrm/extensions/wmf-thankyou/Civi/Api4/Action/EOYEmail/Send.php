@@ -151,7 +151,7 @@ class Send extends AbstractAction {
             2 => [$this->getYear(), 'Integer'],
           ]);
         }
-          // Should be just phpMailer exception but weird normalizeContent throws WMFException
+          // Should be just phpMailer exception but need to test post changes in phpmailer to remove wmf exception.
         catch (Exception $e) {
           // Invalid email address or something
           $this->markFailed($email['to_address'], 'wmf_eoy_receipt send error', $e->getMessage());
