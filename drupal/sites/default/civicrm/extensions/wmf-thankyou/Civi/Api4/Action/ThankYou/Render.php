@@ -108,22 +108,19 @@ class Render extends AbstractAction {
         ->money($templateParams['amount'], $templateParams['currency']);
     }
 
-    $templatesDirectory =       // This hard-coded path is transitional.
-      __DIR__ . DIRECTORY_SEPARATOR . '../../../../../wmf-civicrm/msg_templates/' . $this->getTemplateName();
-    // @todo - stop loading the 'old' way & load from the database.
-    $template = new Templating(
-      $templatesDirectory,
-      $this->getTemplateName(),
-      $templateParams['locale'],
-      $templateParams
-    );
+    $templateStrings = Civi\Api4\Message::load(FALSE)
+      ->setLanguage($this->getLanguage())
+      ->setFallbackLanguage('en_US')
+      ->setWorkflow($this->getTemplateName())->execute()->first();
 
+    foreach ($templateStrings as $key => $string) {
+      $template[$key] = $string['string'];
+    }
     $smarty = \CRM_Core_Smarty::singleton();
-    // At this stage we are still using the old templating system to select our translation.
-    $htmlTemplate = $templatesDirectory . DIRECTORY_SEPARATOR . $template->loadTemplate('html')->getTemplateName();
-    $html = $smarty->fetchWith($htmlTemplate, $templateParams);
-    $subjectTemplate = $templatesDirectory . DIRECTORY_SEPARATOR . $template->loadTemplate('subject')->getTemplateName();
-    $subject = $smarty->fetchWith($subjectTemplate, $templateParams);
+    // @todo - Once we have created a template within CiviCRM we can use
+    // the render method as in eoy_email.
+    $html = $smarty->fetchWith('string:' . $template['msg_html'], $templateParams);
+    $subject = $smarty->fetchWith('string:' . $template['msg_subject'], $templateParams);
     $page_content = str_replace('<p></p>', '', $html);
     $result[] = [
       'html' => $page_content,
