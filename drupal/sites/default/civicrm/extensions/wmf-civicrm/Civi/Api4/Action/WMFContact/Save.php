@@ -23,7 +23,8 @@ use wmf_civicrm\ImportStatsCollector;
  * @method $this setMessage(array $msg) Set WMF normalised values.
  * @method array getMessage() Get WMF normalised values.
  * @method $this setContactID(int $contactID) Set the contact id to update.
- * @method int|null getContactID() get the contact it to update
+ * @method int|null getContactID() get the contact it to update.
+ * @method $this setIsLowConfidenceNameSource(bool $isLowConfidenceNameSource) Set IsLowConfidenceNameSource.
  *
  * @package Civi\Api4
  */
@@ -42,6 +43,14 @@ class Save extends AbstractAction {
    * @var int
    */
   protected $contactID;
+
+  /**
+   * Indicate that donation came in via a low confidence name data source e.g.
+   * Apple Pay
+   *
+   * @var bool
+   */
+  protected $isLowConfidenceNameSource;
 
   protected function getTimer(): \Statistics\Collector\AbstractCollector {
     return ImportStatsCollector::getInstance();
@@ -557,16 +566,22 @@ class Save extends AbstractAction {
     }
     if (!empty($msg['email'])) {
       // Check for existing....
-      $matches = Email::get(FALSE)
-        ->addWhere('contact_id.first_name', '=', $msg['first_name'])
-        ->addWhere('contact_id.last_name', '=', $msg['last_name'])
+      $email = Email::get(FALSE)
         ->addWhere('contact_id.is_deleted', '=', 0)
         ->addWhere('contact_id.is_deceased', '=', 0)
         ->addWhere('email', '=', $msg['email'])
-        ->addWhere('is_primary', '=', TRUE)
-        ->setSelect(['contact_id'])
+        ->addWhere('is_primary', '=', TRUE);
+
+      // Skip name matching for low confidence contact name sources
+      if ($this->getIsLowConfidenceNameSource() === FALSE) {
+        $email->addWhere('contact_id.first_name', '=', $msg['first_name'])
+          ->addWhere('contact_id.last_name', '=', $msg['last_name']);
+      }
+
+      $matches = $email->setSelect(['contact_id'])
         ->setLimit(2)
         ->execute();
+
       if (count($matches) === 1) {
         return $matches->first()['contact_id'];
       }
@@ -583,7 +598,7 @@ class Save extends AbstractAction {
       }
     }
     $matches = Address::get(FALSE)
-      ->addWhere('city', '=',  $msg['city'])
+      ->addWhere('city', '=', $msg['city'])
       ->addWhere('postal_code', '=', $msg['postal_code'])
       ->addWhere('street_address', '=', $msg['street_address'])
       ->addWhere('contact_id.first_name', '=', $msg['first_name'])
@@ -661,4 +676,27 @@ class Save extends AbstractAction {
       $this->createRelationship($contactId, $msg['employer_id'], 'Employee of', $relationshipParams);
     }
   }
+
+  /**
+   * Do we have low confidence in the name provided for the contact.
+   *
+   * Some donation data sources provide unreliable contact name data e.g. Apple
+   * Pay. Knowing this allows us to give less weight to data from unreliable
+   * sources during the dedupe processes.
+   *
+   * @return bool
+   */
+  protected function getIsLowConfidenceNameSource(): bool {
+    if (
+      $this->isLowConfidenceNameSource === NULL &&
+      !empty($this->getMessage()['payment_method'])
+    ) {
+      $this->isLowConfidenceNameSource = $this->getMessage()['payment_method'] === 'apple';
+    } 
+    else {
+      $this->isLowConfidenceNameSource = FALSE;
+    }
+    return $this->isLowConfidenceNameSource;
+  }
+
 }
