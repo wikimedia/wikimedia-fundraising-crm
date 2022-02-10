@@ -506,7 +506,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     CiviCRM_API3_Exception $exception,
     &$paymentParams
   ) {
-    Civi::log()->info('Error: '.$exception->getErrorCode().' invoice_id:'.$paymentParams['invoice_id']);
+    Civi::log('wmf')->info('Error: '.$exception->getErrorCode().' invoice_id:'.$paymentParams['invoice_id']);
     switch ($exception->getErrorCode()) {
       case ErrorCode::DUPLICATE_ORDER_ID:
         // If we get an error that means the merchant reference has already
@@ -514,7 +514,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $currentInvoiceId = $paymentParams['invoice_id'];
         $nextInvoiceId = self::getNextInvoiceId($currentInvoiceId);
         $paymentParams['invoice_id'] = $nextInvoiceId;
-        Civi::log()->info('Duplicate invoice ID: Current invoice_id: '.$currentInvoiceId.' Next invoice_id: '.$nextInvoiceId);
+        Civi::log('wmf')->info('Duplicate invoice ID: Current invoice_id: '.$currentInvoiceId.' Next invoice_id: '.$nextInvoiceId);
         return TRUE;
       default:
         return FALSE;
