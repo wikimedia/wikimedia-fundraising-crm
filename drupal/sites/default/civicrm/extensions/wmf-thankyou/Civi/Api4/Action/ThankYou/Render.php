@@ -99,13 +99,22 @@ class Render extends AbstractAction {
     $templateParams['receive_date'] = $this->getReceiveDate();
     $templateParams['gift_source'] = $templateParams['gift_source'] ?? NULL;
     $templateParams['stock_value'] = $templateParams['stock_value'] ?? NULL;
+    $templateParams['isRecurringRestarted'] = !empty($templateParams['contribution_tags']) && in_array('RecurringRestarted', $templateParams['contribution_tags'], FALSE);
+    $templateParams['isDelayed'] = !empty($templateParams['contribution_tags']) && in_array('UnrecordedCharge', $templateParams['contribution_tags'], FALSE);
+
     if ($templateParams['stock_value']) {
       $templateParams['stock_value'] = Civi::format()
         ->money($templateParams['stock_value'], $templateParams['currency']);
     }
+    else {
+      $templateParams['stock_value'] = 0;
+    }
     if ($templateParams['amount']) {
       $templateParams['amount'] = Civi::format()
         ->money($templateParams['amount'], $templateParams['currency']);
+    }
+    else {
+      $templateParams['amount'] = 0;
     }
 
     $templateStrings = Civi\Api4\Message::load(FALSE)

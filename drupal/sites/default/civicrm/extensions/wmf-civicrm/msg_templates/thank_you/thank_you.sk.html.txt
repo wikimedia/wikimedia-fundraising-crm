@@ -25,11 +25,11 @@ Som nesmierne vďačný za to, že som ten, kto vám poďakuje za jednorazový d
 </p>
 {/if}
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>Nedávno sme vyriešili malý technický problém, ktorý dočasne pozastavil niektoré mesačné príspevky. Váš mesačný príspevok sme obnovili: bude spracovaný ako obvykle. Za vynechané mesiace Vám samozrejme nebudeme nič účtovať. Ďakujeme Vám za Vašu trpezlivosť a podporu, a ak máte akékoľvek otázky, neváhajte a napíšte nám na adresu donate@wikimedia.org.</p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>Nedávno sme vyriešili technický problém, ktorý spôsobil, že niektorí darcovia nedostali potvrdenie o svojom príspevku. Prijmite, prosím, tento e-mail ako poďakovanie za Váš príspevok dňa {$receive_date}. Vážime si Vašu trpezlivosť a podporu, a ak máte akékoľvek otázky, neváhajte a napíšte nám na adresu donate@wikimedia.org.</p>
 {/if}
 

@@ -25,13 +25,13 @@ Ik wil je graag bedanken voor je eenmalige donatie van {$amount} ter ondersteuni
 
 {/if}
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>
 Onlangs hebben we een kleine technische storing opgelost, die ervoor zorgde dat sommige maandelijkse donaties tijdelijk waren stopgezet. We hebben de betaling van jouw periodieke bijdrage hersteld, waardoor het betalingsproces weer normaal verloopt. We zullen de donaties die zijn overgeslagen niet alsnog innen. Hartelijk dank voor je geduld, en mail gerust naar donate@wikimedia.org als je nog vragen hebt.
 </p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>
 Onlangs hebben we een kleine technische storing opgelost die ervoor zorgde dat enkele donateurs geen bevestiging van hun donatie ontvingen. Zie deze e-mail als een bedankje voor je donatie van {$receive_date}.
 We waarderen je geduld en steun, en mail gerust naar donate@wikimedia.org als je nog vragen hebt.

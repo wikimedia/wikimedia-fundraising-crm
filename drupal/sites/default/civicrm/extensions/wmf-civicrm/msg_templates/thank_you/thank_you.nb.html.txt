@@ -25,13 +25,13 @@ Jeg er så takknemlig for å være den som takker deg for éngangsgaven på {$am
 
 {/if}
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>
 Nylig løste vi et mindre teknisk problem som midlertidig stanset noen månedlige bidrag. Vi har gjenopptatt ditt månedlige trekk og det vil bli behandlet som normalt i tiden som kommer. Vi vil ikke belaste deg for de foregående månedene. Takk for tålmodigheten og for støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.
 </p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>
 Nylig løste vi et teknisk problem som gjorde at en rekke små givere ikke fikk bekreftelse på sine donasjoner. Du mottar denne e-posten som en takk for din donasjon {$receive_date}. Vi setter virkelig pris på tålmodigheten og støtten din. Send gjerne e-post til donate@wikimedia.org hvis du har spørsmål.
 </p>

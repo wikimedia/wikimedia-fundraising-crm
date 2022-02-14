@@ -21,11 +21,11 @@
 </p>
 {/if}
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>Vi löste nyligen ett litet tekniskt problem som pausade några månatliga donationer. Vi har återställt din återkommande donation och den kommer att fungera som vanligt framöver. Vi kommer inte att ta betalt av dig för de månader vi hoppade över. Tack för ditt tålamod och stöd, och tveka inte att skicka ett e-postmeddelande till donate@wikimedia.org om du har några frågor.</p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>Vi har nyligen löst ett tekniskt problem som gjorde att ett litet antal bidragsgivare inte fick en bekräftelse på sina donationer. Vi skickar detta e-postmeddelande som ett tack för din donation den {$receive_date}. Vi uppskattar verkligen ditt tålamod och stöd och tveka inte att skicka ett e-postmeddelande till donate@wikimedia.org om du har några frågor.</p>
 {/if}
 

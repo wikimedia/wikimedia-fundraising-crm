@@ -25,11 +25,11 @@ Drogi Darczyńco,</p>
 
 <p>Raczej nie będziemy mieli szansy na wspólne zdmuchnięcie świeczek, ale świętujemy <a href="https://wikimediafoundation.org/{$locale}/wikipedia20/">20-lecie Wikipedii</a> przez cały rok i wiedz, że wszyscy pracownicy Wikimedia Foundation myślą o Tobie z wdzięcznością. </p>
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>W ostatnim czasie rozwiązaliśmy niewielki problem techniczny, przez który realizacja pewnych comiesięcznych datków była wstrzymana. Przywróciliśmy Twoją miesięczną darowiznę i od teraz będzie ona przetwarzana tak, jak dotychczas. Nie pobierzemy od Ciebie opłaty za pominięte miesiące. Dziękujemy za Twoją cierpliwość i wsparcie, a w przypadku jakichkolwiek pytań zachęcamy do kontaktu pod adresem e-mail donate@wikimedia.org.</p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>W ostatnim czasie rozwiązaliśmy problem techniczny, przez który niewielka liczba darczyńców nie otrzymywała potwierdzenia przekazania datku. Prosimy przyjąć niniejszą wiadomość e-mail jako podziękowanie za datek z dnia {$receive_date}. Dziękujemy za Twoją cierpliwość i wsparcie, a w przypadku jakichkolwiek pytań zachęcamy do kontaktu pod adresem e-mail donate@wikimedia.org.</p>
 {/if}
 

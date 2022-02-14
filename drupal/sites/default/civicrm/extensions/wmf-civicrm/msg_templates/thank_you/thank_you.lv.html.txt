@@ -27,7 +27,7 @@ Esmu patiesi gandarīts izteikt tev pateicību par vienreizējo dāvanu {$amount
 
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>Nesen mēs atrisinājām tehnisku problēmu, kuras dēļ daži ziedotāji nesaņēma apstiprinājumu par ziedojumu. Lūdzu, pieņemiet šo e-pasta ziņojumu kā pateicību par ziedojumu šajā datumā: {$receive_date}. Mēs patiesi novērtējam Jūsu pacietību un atbalstu, un, ja Jums ir kādi jautājumi, lūdzu, rakstiet uz e-pastu donate@wikimedia.org.</p>
 {/if}
 

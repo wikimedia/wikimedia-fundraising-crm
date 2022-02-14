@@ -24,11 +24,11 @@ Bästa bidragsgivare,</p>
 
 <p>Även om vi inte kan träffas personligen för att blåsa ut ljusen, ska du veta att när vi i år  firar <a href="https://wikimediafoundation.org/{$locale}/wikipedia20/">20 år med Wikipedia</a>, finns du i allas våra hjärtan här på Wikimedia Foundation.</p>
 
-  {if in_array("RecurringRestarted", $contribution_tags)}
+  {if $isRecurringRestarted}
 <p>Vi löste nyligen ett litet tekniskt problem som pausade vissa månatliga bidrag. Din återkommande gåva är nu återinförd, och vi kommer inte att debitera dig för de månader som hoppades över. Tack för ditt tålamod och stöd, och tveka inte att mejla till donate@wikimedia.org om du har några frågor.</p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>Vi har nyligen löst ett tekniskt problem som gjorde att ett litet antal bidragsgivare inte fick sina gåvor bekräftade. Du får det här meddelandet som ett tack för ditt bidrag den {$receive_date}. Vi uppskattar verkligen ditt tålamod och stöd, och tveka inte att mejla till donate@wikimedia.org om du har några frågor.</p>
 {/if}
 
