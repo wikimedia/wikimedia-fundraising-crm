@@ -41,7 +41,9 @@ function _civicrm_api3_civiproxy_getpreferences_spec(&$spec) {
 function civicrm_api3_civiproxy_getpreferences(array $params): array {
    $returnParams = [
     'preferred_language' => ['type' => 'string'],
+    'first_name' => ['type' => 'string'],
     'address.country_id:name' => ['type' => 'string'],
+    'email.email' => ['type' => 'string'],
     'is_opt_out' => ['type' => 'bool'],
     'Communication.opt_in' => ['type' => 'bool', 'field_name' => 'is_opt_in']
   ];
@@ -50,7 +52,8 @@ function civicrm_api3_civiproxy_getpreferences(array $params): array {
      ->addWhere('hash', '=', (string) $params['hash'])
      ->addWhere('id', '=', (int) $params['contact_id'])
      ->setSelect(array_keys($returnParams))
-     ->setJoin([['Address AS address', 'LEFT', NULL, ['address.is_primary', '=', 1]]])
+     ->addJoin('Address AS address', 'LEFT', ['address.is_primary', '=', 1])
+     ->addJoin('Email AS email', 'LEFT', ['email.is_primary', '=', 1])
      ->execute()->first();
 
    if (empty($result)) {
@@ -58,7 +61,9 @@ function civicrm_api3_civiproxy_getpreferences(array $params): array {
    }
 
    return [
-     'country' => $result['address.country_id:name'] ?? NULL,
+     'country' => $result['address.country_id:name']?? NULL,
+     'email' => $result['email.email']?? NULL,
+     'first_name' => $result['first_name'] ?? NULL,
      'preferred_language' => $result['preferred_language'] ?? NULL,
      'is_opt_in' => empty($result['is_opt_out']) && ($result['Communication.opt_in'] ?? NULL) !== FALSE
    ];

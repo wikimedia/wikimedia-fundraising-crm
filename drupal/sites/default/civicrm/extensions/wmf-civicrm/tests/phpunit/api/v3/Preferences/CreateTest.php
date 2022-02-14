@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Email;
 use Civi\Api4\Address;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\CiviEnvBuilder;
@@ -51,6 +52,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
    *
    * @throws \CRM_Core_Exception
    */
+
   public function testEmailPreferenceCenterUpdateApi(): void {
     $contactID = Contact::create(FALSE)->setValues([
       'first_name' => 'Bob',
@@ -58,12 +60,16 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
       'hash' => '12341234',
       'Communication.opt_in' => 0,
       'contact_type' => 'Individual',
-      'preferred_language' => 'en',
+      'preferred_language' => 'fr_CA',
     ])->addChain('address', Address::create(FALSE)
       ->addValue('contact_id', '$id')
-      ->addValue('country_id:label', 'Canada')
+      ->addValue('country_id:name', 'CA')
       ->addValue('location_type_id:name', 'Home')
       ->addValue('is_primary', 1)
+    ) ->addChain('email', Email::create(FALSE)
+      ->addValue('contact_id', '$id')
+      ->addValue('email', 'bob.roberto@test.com')
+      ->addValue('location_type_id:name', 'Home')
     )
       ->execute()->first()['id'];
 
@@ -72,6 +78,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
       'contact_hash' => '12341234',
       'language' => 'es',
       "country" => 'US',
+      "email" => 'test1@gmail.com',
       'send_email' => 'true',
     ]);
 
@@ -81,39 +88,54 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
 
     $address = Address::get(FALSE)
       ->addWhere('contact_id', '=', (int) $contactID)
+      ->addWhere('is_primary', '=', 1)
       ->addWhere('location_type_id:name', '=', 'EmailPreference')
       ->addSelect('country_id.iso_code')
       ->execute()
       ->first();
-    echo "\nTest1: Email Preference Center update civicrm_contact id: $contactID's preferred_language to es, country to US(1228) and civicrm_value_1_communication_4.opt_in to 1.";
+
+    $email = Email::get(FALSE)
+      ->addWhere('contact_id', '=', (int) $contactID)
+      ->addWhere('is_primary', '=', 1)
+      ->execute()
+      ->first();
 
     $this->assertEquals(1, $contact['Communication.opt_in']);
     $this->assertEquals('es', $contact['preferred_language']);
     $this->assertEquals('US', $address['country_id.iso_code']);
+    $this->assertEquals('test1@gmail.com', $email['email']);
 
     $this->callAPISuccess('Preferences', 'create', [
       'contact_id' => $contactID,
       'contact_hash' => '12341234',
       'language' => 'pt-br',
       "country" => 'AF',
+      "email" => 'test2@gmail.com',
       'send_email' => 'false',
     ]);
 
-    echo "\nTest2: Email Preference Center update civicrm_contact id: $contactID's preferred_language to pt-br, country to AF(1001) and civicrm_value_1_communication_4.opt_in to 0.";
     $contact2 = Contact::get(FALSE)->addWhere('id', '=', (int) $contactID)
       ->setSelect(['preferred_language', 'Communication.opt_in'])
       ->execute()->first();
 
     $address2 = Address::get(FALSE)
       ->addWhere('contact_id', '=', (int) $contactID)
+      ->addWhere('is_primary', '=', 1)
       ->addWhere('location_type_id:name', '=', 'EmailPreference')
       ->addSelect('country_id.iso_code')
+      ->execute()
+      ->first();
+
+    $email2 = Email::get(FALSE)
+      ->addWhere('contact_id', '=', (int) $contactID)
+      ->addWhere('is_primary', '=', 1)
       ->execute()
       ->first();
 
     $this->assertEquals(0, $contact2['Communication.opt_in']);
     $this->assertEquals('pt-br', $contact2['preferred_language']);
     $this->assertEquals('AF', $address2['country_id.iso_code']);
+    $this->assertEquals('test2@gmail.com', $email2['email']);
   }
 
 }

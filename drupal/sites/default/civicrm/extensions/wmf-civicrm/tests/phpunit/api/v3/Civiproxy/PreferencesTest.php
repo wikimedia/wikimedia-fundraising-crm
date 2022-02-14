@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\Address;
+use Civi\Api4\Email;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
@@ -49,25 +50,31 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
    *
    * @throws \CRM_Core_Exception
    */
-  public function testApi(): void {
+  public function testGetEmailPreferenceApi(): void {
     $contactID = Contact::create(FALSE)->setValues([
       'first_name' => 'Bob',
       'last_name' => 'Roberto',
       'hash' => 'abx',
-      'country' => 'US',
       'Communication.opt_in' => 0,
       'contact_type' => 'Individual',
       'preferred_language' => 'en_US',
     ]) ->addChain('address', Address::create(FALSE)
       ->addValue('contact_id', '$id')
-      ->addValue('country_id:label', 'United States')
+      ->addValue('country_id:label', 'Canada')
+      ->addValue('location_type_id:name', 'Home')
+    ) ->addChain('email', Email::create(FALSE)
+      ->addValue('contact_id', '$id')
+      ->addValue('email', 'bob.roberto@test.com')
       ->addValue('location_type_id:name', 'Home')
     )
     ->execute()->first()['id'];
     $contact = $this->callAPISuccess('Civiproxy', 'getpreferences', ['hash' => 'abx', 'contact_id' => $contactID]);
+
     $this->assertEquals(FALSE, $contact['is_opt_in']);
-    $this->assertEquals('US', $contact['country']);
+    $this->assertEquals('Bob', $contact['first_name']);
+    $this->assertEquals('CA', $contact['country']);
     $this->assertEquals('en_US', $contact['preferred_language']);
+    $this->assertEquals('bob.roberto@test.com', $contact['email']);
   }
 
 }

@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Email;
 use Civi\Api4\Contact;
 use Civi\Api4\Address;
 use Civi\Api4\Country;
@@ -28,6 +29,12 @@ function _civicrm_api3_preferences_create_spec(&$spec) {
   $spec['language'] = [
     'name' => 'language',
     'title' => 'Language',
+    'api.required' => TRUE,
+    'type' => CRM_Utils_Type::T_STRING,
+  ];
+  $spec['email'] = [
+    'name' => 'email',
+    'title' => 'Email',
     'api.required' => TRUE,
     'type' => CRM_Utils_Type::T_STRING,
   ];
@@ -79,29 +86,20 @@ function civicrm_api3_preferences_create(array $params): array {
     ->addWhere('location_type_id:name', '=', 'EmailPreference')
     ->execute();
 
-  $countryId = Country::get(FALSE)
-    ->addWhere('iso_code', '=', (string) $params['country'])
-    ->execute()
-    ->first()['id'];
+  $email = Email::get(FALSE)
+    ->addWhere('contact_id', '=', (int) $params['contact_id'])
+    ->addWhere('is_primary', '=',1)
+    ->execute();
 
   Civi::log('wmf')
-    ->info("Email Preference Center update - civicrm_contact id: {$params['contact_id']}'s preferred_language to {$params['language']}, country to {$params['country']}($countryId) and civicrm_value_1_communication_4.opt_in to {$params['send_email']}.");
-  // country_id could be null, because we get the country options from CountryNames::getNames( $uiLang ),
-  // and here we update country_id in civicrm_address which has FK with civicrm_country.
-  // Need to confirm what should we do with the null country_id?
-  if(!$countryId){
-    Civi::log('wmf')
-      ->error("Email Preference Center update - civicrm_contact id: {$params['contact_id']}'s is trying to update preferred_language to {$params['language']}, country to {$params['country']}, and civicrm_value_1_communication_4.opt_in to {$params['send_email']}, but no country_id is been found from civicrm_country table.");
-  }
+    ->info("Email Preference Center update - civicrm_contact id: {$params['contact_id']}'s preferred_language to {$params['language']}, country to {$params['country']} and civicrm_value_1_communication_4.opt_in to {$params['send_email']}.");
 
   if (count($address) === 1) {
     Address::update(FALSE)->setValues([
       'country_id.iso_code' => (string) $params['country'],
-      'location_type_id:name' => 'EmailPreference',
       'is_primary' => 1,
     ])
-      ->addWhere('location_type_id:name', '=', 'EmailPreference')
-      ->addWhere('contact_id', '=', (int) $params['contact_id'])
+      ->addWhere('id', '=', $address->first()['id'])
       ->execute();
   }
   else {
@@ -110,6 +108,21 @@ function civicrm_api3_preferences_create(array $params): array {
     Address::create(FALSE)->setValues([
       'location_type_id:name' => 'EmailPreference',
       'country_id.iso_code' => (string) $params['country'],
+      'contact_id' => (int) $params['contact_id'],
+      'is_primary' => 1,
+    ])->execute();
+  }
+
+  if (count($email) === 1) {
+    Email::update(FALSE)->setValues([
+      'email' => (string) $params['email']
+    ])
+      ->addWhere('id', '=', $email->first()['id'])
+      ->execute();
+  }
+  else {
+    Email::create(FALSE)->setValues([
+      'email' => (string) $params['email'],
       'contact_id' => (int) $params['contact_id'],
       'is_primary' => 1,
     ])->execute();
