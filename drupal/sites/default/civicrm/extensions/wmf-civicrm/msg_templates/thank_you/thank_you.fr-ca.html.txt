@@ -25,13 +25,13 @@ Je suis très reconnaissant d'être celui à qui revient le privilège de vous r
 
 {/if}
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>
 Nous avons récemment résolu un petit problème technique qui a mis en suspens certains dons mensuels récurrents. Nous avons rétabli votre don récurrent et il sera traité de manière normale à l’avenir. Nous ne vous ferons pas payer les mois qui ont été manqués. Merci de votre patience et de votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.
 </p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>
 Nous avons récemment résolu un problème technique à cause duquel un certain nombre de donateurs n’ont pas reçu de confirmation de leur don. Par le biais de cet e-mail, nous vous remercions de votre don du {$receive_date}. Nous apprécions sincèrement votre patience et votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.
 </p>

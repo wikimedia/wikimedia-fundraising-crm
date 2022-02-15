@@ -24,11 +24,11 @@ ich freue mich sehr, Ihnen für Ihre einmalige Spende in Höhe von {$amount} dan
 </p>
 {/if}
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>Wir haben kürzlich ein kleines technisches Problem behoben, das dazu geführt hat, dass einige regelmäßige monatliche Spenden ausgesetzt wurden. Wir haben deine regelmäßige Spende wieder eingesetzt und diese wird in Zukunft normal weiterlaufen. Wir werden dir die Monate, die wir übersprungen haben, nicht berechnen. Danke für deine Geduld und deine Unterstützung. Bitte wende dich bei Fragen gerne per E-Mail über donate@wikimedia.org an uns.</p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>Wir haben kürzlich ein technisches Problem behoben, aufgrund dessen eine kleine Anzahl von Spenderinnen und Spendern keine Bestätigung über ihre Spende erhalten hat. Mit diesem E-Mail möchten wir uns herzlich für deine Spende vom {$receive_date} bedanken. Wir wissen deine Geduld und deine Unterstützung sehr zu schätzen. Bitte wende dich bei Fragen gerne per E-Mail über donate@wikimedia.org an uns.</p>
 {/if}
 

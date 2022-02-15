@@ -26,11 +26,11 @@ Stimate donator,</p>
 
 <p>Este posibil să nu avem ocazia să sărbătorim împreună în persoană împlinirea a <a href="https://wikimediafoundation.org/{$locale}/wikipedia20/">20 de ani de Wikipedia</a> pe parcursul întregului an, însă dorim să știi că ești în inimile tuturor celor din cadrul Wikimedia Foundation. </p>
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>Recent, am rezolvat o mică problemă tehnică care a blocat unele donații lunare recurente. Am reactivat donația ta recurentă care va fi procesată în mod normal de acum înainte. Nu îți vom percepe taxa pentru lunile care au fost omise. Îți mulțumim pentru răbdare și sprijin și te rugăm să ne trimiți orice eventuale întrebări la adresa donate@wikimedia.org.</p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>Recent, am rezolvat o problemă tehnică care a făcut ca un mic număr de donatori să nu primească nicio confirmare în urma donației realizate. Te rugăm să accepți acest e-mail ca mulțumire pentru donația ta. {$receive_date}. Îți apreciem răbdarea și sprijinul și te rugăm să ne trimiți orice eventuale întrebări la adresa donate@wikimedia.org.</p>
 {/if}
 

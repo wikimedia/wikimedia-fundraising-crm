@@ -45,7 +45,7 @@ class Render extends AbstractAction {
   /**
    * The name of the selected template.
    *
-   * Options are thank_you, endowment_thank_you, recurring_notification.
+   * Options are thank_you, endowment_thank_you, monthly_convert.
    *
    * @var string
    */
@@ -99,31 +99,37 @@ class Render extends AbstractAction {
     $templateParams['receive_date'] = $this->getReceiveDate();
     $templateParams['gift_source'] = $templateParams['gift_source'] ?? NULL;
     $templateParams['stock_value'] = $templateParams['stock_value'] ?? NULL;
+    $templateParams['isRecurringRestarted'] = !empty($templateParams['contribution_tags']) && in_array('RecurringRestarted', $templateParams['contribution_tags'], FALSE);
+    $templateParams['isDelayed'] = !empty($templateParams['contribution_tags']) && in_array('UnrecordedCharge', $templateParams['contribution_tags'], FALSE);
+
     if ($templateParams['stock_value']) {
       $templateParams['stock_value'] = Civi::format()
         ->money($templateParams['stock_value'], $templateParams['currency']);
+    }
+    else {
+      $templateParams['stock_value'] = 0;
     }
     if ($templateParams['amount']) {
       $templateParams['amount'] = Civi::format()
         ->money($templateParams['amount'], $templateParams['currency']);
     }
+    else {
+      $templateParams['amount'] = 0;
+    }
 
-    $templatesDirectory =       // This hard-coded path is transitional.
-      __DIR__ . DIRECTORY_SEPARATOR . '../../../../../wmf-civicrm/msg_templates/' . $this->getTemplateName();
-    // @todo - stop loading the 'old' way & load from the database.
-    $template = new Templating(
-      $templatesDirectory,
-      $this->getTemplateName(),
-      $templateParams['locale'],
-      $templateParams
-    );
+    $templateStrings = Civi\Api4\Message::load(FALSE)
+      ->setLanguage($this->getLanguage())
+      ->setFallbackLanguage('en_US')
+      ->setWorkflow($this->getTemplateName())->execute()->first();
 
+    foreach ($templateStrings as $key => $string) {
+      $template[$key] = $string['string'];
+    }
     $smarty = \CRM_Core_Smarty::singleton();
-    // At this stage we are still using the old templating system to select our translation.
-    $htmlTemplate = $templatesDirectory . DIRECTORY_SEPARATOR . $template->loadTemplate('html')->getTemplateName();
-    $html = $smarty->fetchWith($htmlTemplate, $templateParams);
-    $subjectTemplate = $templatesDirectory . DIRECTORY_SEPARATOR . $template->loadTemplate('subject')->getTemplateName();
-    $subject = $smarty->fetchWith($subjectTemplate, $templateParams);
+    // @todo - Once we have created a template within CiviCRM we can use
+    // the render method as in eoy_email.
+    $html = $smarty->fetchWith('string:' . $template['msg_html'], $templateParams);
+    $subject = $smarty->fetchWith('string:' . $template['msg_subject'], $templateParams);
     $page_content = str_replace('<p></p>', '', $html);
     $result[] = [
       'html' => $page_content,

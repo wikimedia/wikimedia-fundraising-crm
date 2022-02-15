@@ -12,4 +12,4 @@
 </p>
 <p>If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{$unsubscribe_link}">unsubscribe instantly</a>. Please note we will still send you receipts, like this one, for future donations.
 </p>
-<!-- TI_BEGIN["version":1,"sourceUrl":"","name":"recurring_notification.en.html","revision":20210413]TI_END -->
+<!-- TI_BEGIN["version":1,"sourceUrl":"","name":"monthly_convert.en.html","revision":20210413]TI_END -->

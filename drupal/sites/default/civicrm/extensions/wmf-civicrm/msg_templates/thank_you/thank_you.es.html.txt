@@ -25,11 +25,11 @@ Me alegro de ser el que te dé las gracias por la donación puntual de {$amount}
 </p>
 {/if}
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>Acabamos de resolver un pequeño problema técnico que ha interrumpido algunas donaciones periódicas mensuales. Hemos rehabilitado tu donación periódica, que se volverá a procesar con normalidad de ahora en adelante. No te cobraremos los meses que se han omitido. Agradecemos tu paciencia y tu colaboración. Si tienes alguna pregunta, no dudes en enviarnos un correo electrónico a donate@wikimedia.org.</p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>Acabamos de resolver un problema técnico que causó la falta de confirmación de donaciones a un reducido número de donantes. Acepta este correo como agradecimiento por tu donación del {$receive_date}. Agradecemos tu paciencia y tu colaboración. Si tienes alguna pregunta, no dudes en enviarnos un correo electrónico a donate@wikimedia.org.</p>
 {/if}
 

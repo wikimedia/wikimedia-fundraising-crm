@@ -27,11 +27,11 @@ Nagyon hálás vagyok, hogy én mondhatok köszönetet neked a Wikipédiát tám
 </p>
 {/if}
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>Nemrégiben megoldottunk egy kisebb műszaki jellegű problémát, amely egy időre megakadályozta egyes havi rendszeres hozzájárulások beérkezését.  Visszaállítottuk havi rendszeres támogatásai fogadásának lehetőségét, így a folyamat a jövőben megfelelően fog működni. A kimaradt hónapokra eső összeget nem számítjuk fel Önnek. Köszönjük türelmét és támogatását, és amennyiben bármilyen kérdése van, kérjük, lépjen velünk kapcsolatba a donate@wikimedia.org e-mail-címen.</p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>Nemrégiben megoldottunk egy kisebb műszaki jellegű hibát, aminek következtében, néhány támogatónk nem kapott megerősítést támogatása beérkezéséről. Kérjük, fogadja ezt az e-mailt köszönetünk jeléül a(z) {$receive_date}. napján nyújtott támogatásáért. Nagyra értékeljük türelmét és támogatását, és amennyiben bármilyen kérdése van, kérjük, lépjen velünk kapcsolatba a donate@wikimedia.org e-mail-címen.</p>
 {/if}
 

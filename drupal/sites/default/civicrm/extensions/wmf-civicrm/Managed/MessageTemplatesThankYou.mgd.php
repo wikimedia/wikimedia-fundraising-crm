@@ -1,15 +1,14 @@
 <?php
-$directory = __DIR__ . '/../msg_templates/recurring_failed_message/';
-$htmlText = file_get_contents($directory . 'recurring_failed_message.en.html.txt');
-$msgText = file_get_contents($directory . 'recurring_failed_message.en.text.txt');
-$subject = file_get_contents($directory . 'recurring_failed_message.en.subject.txt');
+$directory = __DIR__ . '/../msg_templates/thank_you/';
+$htmlText = file_get_contents($directory . 'thank_you.en.html.txt');
+$subject = file_get_contents($directory . 'thank_you.en.subject.txt');
 
 /**
  * Add recurring_failed_message template.
  */
 return [
   [
-    'name' => 'recurring_failed_message',
+    'name' => 'thank_you',
     'entity' => 'MessageTemplate',
     'cleanup' => 'never',
     'update' => 'never',
@@ -18,19 +17,20 @@ return [
       'version' => 4,
       'checkPermissions' => FALSE,
       'values' => [
-        'msg_title' => 'WMF Recurring failure message',
-        'msg_text' => $msgText,
+        'msg_title' => 'WMF Thank You',
+        // Text version is ui-required but we don't use it - so use a space.
+        'msg_text' => ' ',
         'msg_html' => $htmlText,
         'msg_subject' => $subject,
         'is_default' => TRUE,
         'is_active' => TRUE,
         'is_reserved' => FALSE,
-        'workflow_name' => 'recurring_failed_message',
+        'workflow_name' => 'thank_you',
       ],
     ],
   ],
   [
-    'name' => 'recurring_failed_message_reserved',
+    'name' => 'thank_you_reserved',
     'entity' => 'MessageTemplate',
     'cleanup' => 'never',
     'params' => [
@@ -38,14 +38,15 @@ return [
       'version' => 4,
       'checkPermissions' => FALSE,
       'values' => [
-        'msg_title' => 'Recurring failure message',
-        'msg_text' => $msgText,
+        'msg_title' => 'thank_you',
+        // Text version is ui-required but we don't use it - so use a space.
+        'msg_text' => ' ',
         'msg_html' => $htmlText,
         'msg_subject' => $subject,
         'is_default' => FALSE,
         'is_active' => TRUE,
         'is_reserved' => TRUE,
-        'workflow_name' => 'recurring_failed_message',
+        'workflow_name' => 'thank_you',
       ],
     ],
   ],

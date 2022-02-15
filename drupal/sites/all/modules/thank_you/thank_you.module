@@ -134,7 +134,7 @@ function thank_you_send_test_form() {
     '#options' => [
       'thank_you' => 'thank_you',
       'endowment_thank_you' => 'endowment_thank_you',
-      'recurring_notification' => 'recurring_notification',
+      'monthly_convert' => 'monthly_convert',
     ],
   ];
 
@@ -223,7 +223,7 @@ function thank_you_send_test_form_submit($form_id, $form_values) {
     $params['contribution_tags'] = preg_split('/[\s,]+/', $params['contribution_tags']);
   }
 
-  // Day of month for recurring notification template
+  // Day of month for monthly convert template
   $ordinal = new \NumberFormatter($params['locale'], \NumberFormatter::ORDINAL);
   $params['day_of_month'] = $ordinal->format(date('j'));
 

@@ -24,11 +24,11 @@ Jeg er så taknemmelig for at være den, der takker dig for den engangsgave på 
 </p>
 {/if}
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>Vi har for nyligt løst et mindre teknisk problem, der satte nogle månedlige donationer på pause. Vi har genstartet din tilbagevendende donation, og den vil blive behandlet som normalt fremover. Vi vil ikke opkræve dig for de måneder, der blev sprunget over. Tak for din tålmodighed og din støtte, og du er naturligvis velkommen til at skrive til donate@wikimedia.org, hvis du har eventuelle spørgsmål.</p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>Vi har for nyligt løst et teknisk problem, som forårsagede, at et lille antal donorer ikke modtog en bekræftelse på deres donation. Modtag denne e-mail som en tak for din donation d. {$receive_date}. Vi sætter oprigtigt pris på din tålmodighed og din støtte, og du er naturligvis velkommen til at skrive til donate@wikimedia.org, hvis du har eventuelle spørgsmål.</p>
 {/if}
 

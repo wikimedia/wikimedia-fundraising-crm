@@ -31,11 +31,11 @@ Estic molt agraït de poder-te donar les gràcies per la teva donació única de
 
 
 
-{if in_array("RecurringRestarted", $contribution_tags)}
+{if $isRecurringRestarted}
 <p>Fa poc hem resolt un petit problema tècnic que va posar en pausa algunes donacions mensuals. Hem reinstaurat la teva donació periòdica i d’ara en endavantes processarà amb normalitat. No et cobrarem els mesos que no s’ha fet la donació. Gràcies per la teva paciència i suport i, en cas que tinguis preguntes, no dubtis a enviar un correu electrònic a donate@wikimedia.org.</p>
 {/if}
 
-{if in_array("UnrecordedCharge",  $contribution_tags)}
+{if $isDelayed}
 <p>Fa poc hem resolt un problema tècnic que va fer que un petit nombre de donants no rebessin la confirmació de la seva donació. Et preguem que acceptis aquest correu electrònic com un agraïment per la teva donació del {$receive_date}. Apreciem molt la teva paciència i suport i, en cas que tinguis preguntes, no dubtis a enviar un correu electrònic a donate@wikimedia.org.</p>
 {/if}
 

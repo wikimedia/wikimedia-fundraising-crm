@@ -1,7 +1,6 @@
 <?php
 
 use Civi\Omnimail\MailFactory;
-use wmf_communication\Templating;
 
 /**
  * Implementation of hook_menu().
@@ -266,7 +265,8 @@ function large_donation_notification_send($contribution, $notification) {
 
   $params = [
     'threshold' => (float) $notification['threshold'],
-    'contribution' => $contribution,
+    'total_amount' => $contribution->total_amount,
+    'source' => $contribution->source,
     'contact_link' => $contact_link,
     'contribution_link' => $contribution_link,
   ];
@@ -278,8 +278,7 @@ function large_donation_notification_send($contribution, $notification) {
 
   $mailer = MailFactory::singleton()->getMailer();
 
-  $template = new Templating(__DIR__ . '/templates', 'notification', 'en', $params, 'html');
-  $message = $template->render();
+  $message = wmf_large_donation_get_message($params);
 
   try {
     $email = [
@@ -295,4 +294,29 @@ function large_donation_notification_send($contribution, $notification) {
   catch (Exception $e) {
     watchdog('large_donation', 'Sending large donation message failed for contribution: ' . $contribution->id . '<pre>' . check_plain(print_r($contribution, TRUE)) . "\n\n" . $e->getMessage() . '</pre>', [], WATCHDOG_ERROR);
   }
+}
+
+/**
+ * Get the contents of the notification email.
+ *
+ * @param array $params
+ *
+ * @return string
+ */
+function wmf_large_donation_get_message(array $params): string {
+
+  return "<p>To whom it may concern:</p>
+
+<p>A large donation was made (over {$params['threshold']} USD):</p>
+
+<p>converted amount: {$params['total_amount']} USD</p>
+
+<p>original amount: {$params['source']}</p>
+
+<p><a href='{$params['contact_link']}'>View Contributions from Contact in CiviCRM</a></p>
+
+<p><a href='{$params['contribution_link']}'>View Contribution in CiviCRM</a></p>
+
+<p>You may need to examine this donation.</p>
+  ";
 }
