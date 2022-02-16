@@ -8,6 +8,7 @@ use Civi\WMFHooks\QuickForm;
 use Civi\WMFHooks\Data;
 use Civi\Api4\MessageTemplate;
 use Civi\WMFHelpers\Language;
+use Civi\WMFHooks\PreferencesLink;
 use CRM_WmfCivicrm_ExtensionUtil as E;
 // phpcs:enable
 
@@ -456,6 +457,22 @@ function wmf_civicrm_civicrm_permission(array &$permissions) {
  */
 function wmf_civicrm_civicrm_customPre(string $op, int $groupID, int $entityID, array &$params): void {
   Data::customPre($op, $groupID, $entityID, $params);
+}
+
+/**
+ * Add Email Preferences Center link to contact summary block list
+ * @param array $blocks
+ */
+function wmf_civicrm_civicrm_contactSummaryBlocks(array &$blocks) {
+  PreferencesLink::contactSummaryBlocks($blocks);
+}
+
+/**
+ * Assign template parameters for email preference link contact summary block
+ * @param CRM_Core_Page $page
+ */
+function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
+  PreferencesLink::pageRun($page);
 }
 
 /**
