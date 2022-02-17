@@ -2794,7 +2794,12 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
           $customField = isset($customFields[$customFieldsIndex]) ? $customFields[$customFieldsIndex] : NULL;
         }
         if ($customField) {
-          $rows[$rowNum][$tableCol] =  CRM_Core_BAO_CustomField::displayValue($val, $customField);
+          if ($customField['data_type'] === 'Money') {
+            $rows[$rowNum][$tableCol] = $val;
+          }
+          else {
+            $rows[$rowNum][$tableCol] = CRM_Core_BAO_CustomField::displayValue($val, $customField);
+          }
           if (!empty($this->_drilldownReport)) {
             foreach ($this->_drilldownReport as $baseUrl => $label) {
               // Only one - that was a crap way of grabbing it. Too late to think of
@@ -2913,7 +2918,7 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
         }
       case 'Money':
         if ($htmlType === 'Text') {
-          $retValue = CRM_Utils_Money::format($value, NULL, '%a');
+          $retValue = $value;
           break;
         }
       case 'String':
@@ -4143,7 +4148,7 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
    */
   protected function getContributionColumns($options) {
 
-    $options = array_merge(['group_title' => E::ts('Contributions')], $options);
+    $options = array_merge(['group_title' => E::ts('Contributions'), 'grouping' => 'contribution'], $options);
     $specs = [
       'id' => [
         'title' => ts('Contribution ID'),
@@ -6393,7 +6398,7 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
    * @return array
    */
   function alterCampaign($value, &$row) {
-    $campaigns = CRM_Campaign_BAO_Campaign::getCampaigns();
+    $campaigns = CRM_Campaign_BAO_Campaign::getCampaigns(NULL, NULL, FALSE, FALSE, FALSE, TRUE);
     return CRM_Utils_Array::value($value, $campaigns);
   }
 
@@ -8948,7 +8953,7 @@ WHERE cg.extends IN ('" . $extendsString . "') AND
     foreach ($rows as $key => $row) {
       foreach ($row as $columnName => $amount) {
         if ($columnName !== $this->getAggregateRowFieldAlias()) {
-          $rows[$key][$columnName] = CRM_Utils_Money::format($amount);
+          $rows[$key][$columnName] = $amount;
         }
       }
     }

@@ -393,8 +393,7 @@ class Save extends AbstractAction {
         }
       }
       if (!$preferredLanguage) {
-        // FIXME: wish we had the contact_id here :(
-        watchdog('wmf_civicrm', 'Failed to guess donor\'s preferred language, falling back to some hideous default', NULL, WATCHDOG_INFO);
+        \Civi::log('wmf')->info('wmf_civicrm Failed to guess donor\'s preferred language, falling back to some hideous default');
       }
     }
     else {

@@ -1,5 +1,6 @@
 <?php namespace queue2civicrm\recurring;
 
+use Civi\Api4\ContributionRecur;
 use wmf_common\TransactionalWmfQueueConsumer;
 use \Civi\WMFException\WMFException;
 
@@ -332,17 +333,10 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
         'trxn_id' => $msg['subscr_id'],
       ];
-      $processors = \Civi::cache()
-        ->get('queue2civicrm_civicrm_payment_processors');
-      if (!$processors) {
-        $processors = array_flip(civicrm_api3('ContributionRecur', 'getoptions', ['field' => 'payment_processor_id'])['values']);
-        \Civi::cache()
-          ->set('queue2civicrm_civicrm_payment_processors', $processors);
-      }
-      if (isset($processors[$msg['gateway']])) {
+      if ($this->getPaymentProcessorID($msg['gateway'])) {
         // We could pass the gateway name to the api for resolution but it would reject
         // any gateway values with no valid processor mapping so we do this ourselves.
-        $params['payment_processor_id'] = $processors[$msg['gateway']];
+        $params['payment_processor_id'] = $this->getPaymentProcessorID($msg['gateway']);
       }
 
       // Create a new recurring donation with a token
@@ -594,6 +588,46 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     else {
       watchdog('recurring', 'Successfully canceled subscription for failed payment for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
     }
+  }
+
+  /**
+   * Get the available payment processors.
+   *
+   * @return int[]
+   *   e.g ['adyen' => 1, 'paypal_ec' => 1]
+   *
+   * @throws \API_Exception
+   */
+  protected function getPaymentProcessors(): array {
+    // Note that the options themselves are cached already in core.
+    // This caching doesn't add much more.
+    $processors = \Civi::cache('metadata')->get('queue2civicrm_civicrm_payment_processors');
+    if (!$processors) {
+      $processors = [];
+      $options = ContributionRecur::getFields(FALSE)
+        ->setLoadOptions(['id', 'name'])
+        ->addWhere('name', '=', 'payment_processor_id')
+        ->execute()->first()['options'];
+      foreach ($options as $option) {
+        $processors[$option['name']] = $option['id'];
+      }
+      \Civi::cache('metadata')->set('queue2civicrm_civicrm_payment_processors', $processors);
+    }
+    return $processors;
+  }
+
+  /**
+   * Get the payment processor id for our gateway.
+   *
+   * @param string $gateway
+   *
+   * @return int[]|false
+   *
+   * @throws \API_Exception
+   */
+  protected function getPaymentProcessorID(string $gateway) {
+    $processors = $this->getPaymentProcessors();
+    return $processors[$gateway] ?? FALSE;
   }
 
 }

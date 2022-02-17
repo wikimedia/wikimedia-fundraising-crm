@@ -6,8 +6,8 @@
  * Time: 10:14 PM
  */
 // The record will be automatically inserted, updated, or deleted from the
-// database as appropriate. For more details, see "hook_civicrm_managed" at:
-// http://wiki.civicrm.org/confluence/display/CRMDOC/Hook+Reference
+// database as appropriate.
+// @see https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_managed/
 return [
   0 =>
     [
