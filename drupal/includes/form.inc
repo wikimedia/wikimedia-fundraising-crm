@@ -791,7 +791,7 @@ function drupal_retrieve_form($form_id, &$form_state) {
 
   // We first check to see if there's a function named after the $form_id.
   // If there is, we simply pass the arguments on to it to get the form.
-  if (!is_callable($form_id)) {
+  if (!function_exists($form_id)) {
     // In cases where many form_ids need to share a central constructor function,
     // such as the node editing form, modules can implement hook_forms(). It
     // maps one or more form_ids to the correct constructor functions.
@@ -2087,7 +2087,7 @@ function _form_builder_handle_input_element($form_id, &$element, &$form_state) {
   // #access=FALSE on an element usually allow access for some users, so forms
   // submitted with drupal_form_submit() may bypass access restriction and be
   // treated as high-privilege users instead.
-  $process_input = empty($element['#disabled']) && (($form_state['programmed'] && $form_state['programmed_bypass_access_check']) || ($form_state['process_input'] && (!isset($element['#access']) || $element['#access'])));
+  $process_input = empty($element['#disabled']) && ($element['#type'] !== 'value') && (($form_state['programmed'] && $form_state['programmed_bypass_access_check']) || ($form_state['process_input'] && (!isset($element['#access']) || $element['#access'])));
 
   // Set the element's #value property.
   if (!isset($element['#value']) && !array_key_exists('#value', $element)) {
