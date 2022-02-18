@@ -19,6 +19,8 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
 
   use Api3TestTrait;
 
+  protected $contactID;
+
   /**
    * Set up for headless tests.
    *
@@ -41,7 +43,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
    * @throws \API_Exception
    */
   public function tearDown() {
-    Contact::delete(FALSE)->addWhere('hash', '=', 'abx')->execute();
+    Contact::delete(FALSE)->addWhere('id', '=', $this->contactID)->execute();
     parent::tearDown();
   }
 
@@ -54,10 +56,9 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
    */
 
   public function testEmailPreferenceCenterUpdateApi(): void {
-    $contactID = Contact::create(FALSE)->setValues([
+    $this->contactID = Contact::create(FALSE)->setValues([
       'first_name' => 'Bob',
       'last_name' => 'Roberto',
-      'hash' => '12341234',
       'Communication.opt_in' => 0,
       'contact_type' => 'Individual',
       'preferred_language' => 'fr_CA',
@@ -73,21 +74,23 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
     )
       ->execute()->first()['id'];
 
+    $checksum = CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID);
+
     $this->callAPISuccess('Preferences', 'create', [
-      'contact_id' => $contactID,
-      'contact_hash' => '12341234',
+      'contact_id' => $this->contactID,
+      'checksum' => $checksum,
       'language' => 'es',
       "country" => 'US',
       "email" => 'test1@gmail.com',
       'send_email' => 'true',
     ]);
 
-    $contact = Contact::get(FALSE)->addWhere('id', '=', (int) $contactID)
+    $contact = Contact::get(FALSE)->addWhere('id', '=', (int) $this->contactID)
       ->setSelect(['preferred_language', 'Communication.opt_in'])
       ->execute()->first();
 
     $address = Address::get(FALSE)
-      ->addWhere('contact_id', '=', (int) $contactID)
+      ->addWhere('contact_id', '=', (int) $this->contactID)
       ->addWhere('is_primary', '=', 1)
       ->addWhere('location_type_id:name', '=', 'EmailPreference')
       ->addSelect('country_id.iso_code')
@@ -95,7 +98,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
       ->first();
 
     $email = Email::get(FALSE)
-      ->addWhere('contact_id', '=', (int) $contactID)
+      ->addWhere('contact_id', '=', (int) $this->contactID)
       ->addWhere('is_primary', '=', 1)
       ->execute()
       ->first();
@@ -106,20 +109,20 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
     $this->assertEquals('test1@gmail.com', $email['email']);
 
     $this->callAPISuccess('Preferences', 'create', [
-      'contact_id' => $contactID,
-      'contact_hash' => '12341234',
+      'contact_id' => $this->contactID,
+      'checksum' => $checksum,
       'language' => 'pt-br',
       "country" => 'AF',
       "email" => 'test2@gmail.com',
       'send_email' => 'false',
     ]);
 
-    $contact2 = Contact::get(FALSE)->addWhere('id', '=', (int) $contactID)
+    $contact2 = Contact::get(FALSE)->addWhere('id', '=', (int) $this->contactID)
       ->setSelect(['preferred_language', 'Communication.opt_in'])
       ->execute()->first();
 
     $address2 = Address::get(FALSE)
-      ->addWhere('contact_id', '=', (int) $contactID)
+      ->addWhere('contact_id', '=', (int) $this->contactID)
       ->addWhere('is_primary', '=', 1)
       ->addWhere('location_type_id:name', '=', 'EmailPreference')
       ->addSelect('country_id.iso_code')
@@ -127,7 +130,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
       ->first();
 
     $email2 = Email::get(FALSE)
-      ->addWhere('contact_id', '=', (int) $contactID)
+      ->addWhere('contact_id', '=', (int) $this->contactID)
       ->addWhere('is_primary', '=', 1)
       ->execute()
       ->first();

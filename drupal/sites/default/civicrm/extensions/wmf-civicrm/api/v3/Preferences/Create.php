@@ -14,9 +14,9 @@ use Civi\Api4\Country;
  * @see https://docs.civicrm.org/dev/en/latest/framework/api-architecture/
  */
 function _civicrm_api3_preferences_create_spec(&$spec) {
-  $spec['contact_hash'] = [
-    'name' => 'contact_hash',
-    'title' => 'Contact Hash',
+  $spec['checksum'] = [
+    'name' => 'checksum',
+    'title' => 'Checksum',
     'api.required' => TRUE,
     'type' => CRM_Utils_Type::T_STRING,
   ];
@@ -65,18 +65,21 @@ function _civicrm_api3_preferences_create_spec(&$spec) {
  */
 function civicrm_api3_preferences_create(array $params): array {
   if (
-    !preg_match('/^[0-9a-f]*$/', $params['contact_hash']) ||
+    !preg_match('/^[0-9a-f_]*$/', $params['checksum']) ||
     !preg_match('/^[0-9a-zA-Z_-]*$/', $params['language']) ||
     !preg_match('/^[a-zA-Z]*$/', $params['country'])
   ) {
     throw new API_Exception('Invalid data in e-mail preferences message.', 'invalid_message');
   }
 
+  if (!CRM_Contact_BAO_Contact_Utils::validChecksum($params['contact_id'], $params['checksum'])) {
+    throw new API_Exception('Checksum mismatch');
+  }
+
   $result = Contact::update(FALSE)->setValues([
     'Communication.opt_in' => $params['send_email'],
     'preferred_language' => $params['language'],
   ])
-    ->addWhere('hash', '=', (string) $params['contact_hash'])
     ->addWhere('id', '=', (int) $params['contact_id'])
     ->execute()->first();
 

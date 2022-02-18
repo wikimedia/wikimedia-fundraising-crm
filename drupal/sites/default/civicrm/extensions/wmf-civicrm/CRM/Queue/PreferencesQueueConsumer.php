@@ -18,8 +18,8 @@ class CRM_Queue_PreferencesQueueConsumer extends WmfQueueConsumer {
       $result = civicrm_api3('Preferences', 'create', $message);
       if ($result['count'] !== 1) {
         Civi::log('wmf')->info(
-          "No records updated from e-mail preferences message with " .
-          "hash {$message['contact_hash']} and contact_id {$message['contact_id']}."
+          "No records updated from e-mail preferences message with checksum " .
+          "{$message['checksum']} and contact_id {$message['contact_id']}."
         );
       }
     }
