@@ -3,10 +3,9 @@
 use Civi\Api4\Email;
 use Civi\Api4\Contact;
 use Civi\Api4\Address;
-use Civi\Api4\Country;
 
 /**
- * PreferencesQueue.consume API specification (optional)
+ * Preferences.create API specification (optional)
  * This is used for documentation and validation.
  *
  * @param array $spec description of fields supported by this API call
@@ -53,7 +52,7 @@ function _civicrm_api3_preferences_create_spec(&$spec) {
 }
 
 /**
- * PreferencesQueue.consume API
+ * Preferences.create API
  *
  * @param array $params
  *
@@ -131,5 +130,6 @@ function civicrm_api3_preferences_create(array $params): array {
     ])->execute();
   }
 
-  return civicrm_api3_create_success(([[$params['contact_id'] => (array) $result]]), $params, 'Preferencesqueue', 'consume');
+  // TODO: add info about email and address updates to the contact update result
+  return civicrm_api3_create_success([$params['contact_id'] => (array) $result], $params, 'Preferences', 'create');
 }
