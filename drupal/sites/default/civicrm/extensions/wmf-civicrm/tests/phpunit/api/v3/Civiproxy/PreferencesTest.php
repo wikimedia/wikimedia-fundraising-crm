@@ -17,6 +17,8 @@ use Civi\Api4\Contact;
 class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
   use Api3TestTrait;
 
+  protected $contactID;
+
   /**
    * Set up for headless tests.
    *
@@ -39,7 +41,7 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
    * @throws \API_Exception
    */
   public function tearDown() {
-    Contact::delete(FALSE)->addWhere('hash', '=', 'abx')->execute();
+    Contact::delete(FALSE)->addWhere('id', '=', $this->contactID)->execute();
     parent::tearDown();
   }
 
@@ -51,10 +53,9 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
    * @throws \CRM_Core_Exception
    */
   public function testGetEmailPreferenceApi(): void {
-    $contactID = Contact::create(FALSE)->setValues([
+    $this->contactID = Contact::create(FALSE)->setValues([
       'first_name' => 'Bob',
       'last_name' => 'Roberto',
-      'hash' => 'abx',
       'Communication.opt_in' => 0,
       'contact_type' => 'Individual',
       'preferred_language' => 'en_US',
@@ -68,7 +69,9 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
       ->addValue('location_type_id:name', 'Home')
     )
     ->execute()->first()['id'];
-    $contact = $this->callAPISuccess('Civiproxy', 'getpreferences', ['hash' => 'abx', 'contact_id' => $contactID]);
+
+    $checksum = CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID);
+    $contact = $this->callAPISuccess('Civiproxy', 'getpreferences', ['checksum' => $checksum, 'contact_id' => $this->contactID]);
 
     $this->assertEquals(FALSE, $contact['is_opt_in']);
     $this->assertEquals('Bob', $contact['first_name']);
