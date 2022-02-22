@@ -13,9 +13,9 @@ use CRM_Wmf_ExtensionUtil as E;
  * @see https://docs.civicrm.org/dev/en/latest/framework/api-architecture/
  */
 function _civicrm_api3_civiproxy_getpreferences_spec(&$spec) {
-  $spec['hash'] = [
-    'name' => 'hash',
-    'title' => 'Hash',
+  $spec['checksum'] = [
+    'name' => 'checksum',
+    'title' => 'Checksum',
     'api.required' => TRUE,
     'type' => CRM_Utils_Type::T_STRING,
   ];
@@ -39,6 +39,11 @@ function _civicrm_api3_civiproxy_getpreferences_spec(&$spec) {
  * @see civicrm_api3_create_success
  */
 function civicrm_api3_civiproxy_getpreferences(array $params): array {
+  // Can check the checksum before doing our own select
+  if (!CRM_Contact_BAO_Contact_Utils::validChecksum($params['contact_id'], $params['checksum'])) {
+    throw new API_Exception(E::ts('No result found'));
+  }
+
    $returnParams = [
     'preferred_language' => ['type' => 'string'],
     'first_name' => ['type' => 'string'],
@@ -49,7 +54,6 @@ function civicrm_api3_civiproxy_getpreferences(array $params): array {
   ];
 
    $result = (array) Contact::get(FALSE)
-     ->addWhere('hash', '=', (string) $params['hash'])
      ->addWhere('id', '=', (int) $params['contact_id'])
      ->setSelect(array_keys($returnParams))
      ->addJoin('Address AS address', 'LEFT', ['address.is_primary', '=', 1])
