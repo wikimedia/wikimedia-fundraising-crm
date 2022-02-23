@@ -3,7 +3,6 @@
 use Civi\Api4\Email;
 use Civi\Api4\Contact;
 use Civi\Api4\Address;
-use Civi\Api4\Country;
 
 /**
  * PreferencesQueue.consume API specification (optional)
