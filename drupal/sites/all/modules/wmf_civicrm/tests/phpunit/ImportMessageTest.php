@@ -390,41 +390,13 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'gateway_txn_id' => $gateway_txn_id,
           'gross' => '1.23',
           'payment_method' => 'cc',
-          'language' => 'en_ZZ',
+          'language' => 'en_ZW',
           'name_prefix' => $new_prefix,
           'name_suffix' => 'Sr.',
         ],
         [
           'contact' => [
             'preferred_language' => 'en',
-            'prefix' => $new_prefix,
-            'suffix' => 'Sr.',
-          ],
-          'contribution' => $this->getBaseContribution($gateway_txn_id),
-        ],
-      ];
-
-    $gateway_txn_id = mt_rand();
-    $cases[] =
-      // Invalid language suffix for invalid short lang.
-      [
-        [
-          'currency' => 'USD',
-          'date' => '2012-05-01 00:00:00',
-          'email' => 'nobody@wikimedia.org',
-          'gateway' => 'test_gateway',
-          'gateway_txn_id' => $gateway_txn_id,
-          'gross' => '1.23',
-          'payment_method' => 'cc',
-          'language' => 'zz_ZZ',
-          'name_prefix' => $new_prefix,
-          'name_suffix' => 'Sr.',
-          'prefix' => $new_prefix,
-          'suffix' => 'Sr.',
-        ],
-        [
-          'contact' => [
-            'preferred_language' => 'zz',
             'prefix' => $new_prefix,
             'suffix' => 'Sr.',
           ],
@@ -1399,6 +1371,26 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertArrayHasKey('start', $second_timer);
     $this->assertArrayHasKey('end', $second_timer);
     $this->assertArrayHasKey('diff', $second_timer);
+  }
+
+  public function testMessageImportInvalidLocaleThrowsException() {
+    $this->expectException(\CRM_Core_Exception::class);
+
+    $msg = [
+      'currency' => 'USD',
+      'date' => '2012-05-01 00:00:00',
+      'email' => 'nobody@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'language' => 'xx_XX',
+      'name_prefix' => "M" . mt_rand(),
+      'name_suffix' => 'Sr.',
+      'prefix' => "M" . mt_rand(),
+      'suffix' => 'Sr.',
+    ];
+    $this->messageImport($msg);
   }
 
 
