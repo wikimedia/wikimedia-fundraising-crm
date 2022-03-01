@@ -149,7 +149,7 @@ class Save extends AbstractAction {
     if (isset($msg['contribution_tracking_id']) && is_numeric($msg['contribution_tracking_id'])) {
       $cdId = (int) $msg['contribution_tracking_id'];
     }
-    $contact['preferred_language'] = $this->getPreferredLanguage($msg['language'] ?? '', $cdId, $msg['country'] ?? '');;
+    $contact['preferred_language'] = $this->getPreferredLanguage($msg['language'] ?? '', $cdId, $msg['country'] ?? '');
 
     // Copy some fields, if they exist
     $direct_fields = [
@@ -691,7 +691,7 @@ class Save extends AbstractAction {
       !empty($this->getMessage()['payment_method'])
     ) {
       $this->isLowConfidenceNameSource = $this->getMessage()['payment_method'] === 'apple';
-    } 
+    }
     else {
       $this->isLowConfidenceNameSource = FALSE;
     }
