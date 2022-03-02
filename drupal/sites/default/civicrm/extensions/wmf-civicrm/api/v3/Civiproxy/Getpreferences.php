@@ -1,7 +1,6 @@
 <?php
 
 use Civi\Api4\Contact;
-use Civi\Api4\CustomField as CustomField;
 use CRM_Wmf_ExtensionUtil as E;
 
 /**
@@ -13,9 +12,9 @@ use CRM_Wmf_ExtensionUtil as E;
  * @see https://docs.civicrm.org/dev/en/latest/framework/api-architecture/
  */
 function _civicrm_api3_civiproxy_getpreferences_spec(&$spec) {
-  $spec['hash'] = [
-    'name' => 'hash',
-    'title' => 'Hash',
+  $spec['checksum'] = [
+    'name' => 'checksum',
+    'title' => 'Checksum',
     'api.required' => TRUE,
     'type' => CRM_Utils_Type::T_STRING,
   ];
@@ -28,7 +27,7 @@ function _civicrm_api3_civiproxy_getpreferences_spec(&$spec) {
 }
 
 /**
- * Civiproxy.Preferences API
+ * Civiproxy.Getpreferences API
  *
  * @param array $params
  *
@@ -39,28 +38,36 @@ function _civicrm_api3_civiproxy_getpreferences_spec(&$spec) {
  * @see civicrm_api3_create_success
  */
 function civicrm_api3_civiproxy_getpreferences(array $params): array {
-   $returnParams = [
-    'preferred_language' => ['type' => 'string'],
-    'address.country_id:name' => ['type' => 'string'],
-    'is_opt_out' => ['type' => 'bool'],
-    'Communication.opt_in' => ['type' => 'bool', 'field_name' => 'is_opt_in']
+  // Can check the checksum before doing our own select
+  if (!CRM_Contact_BAO_Contact_Utils::validChecksum($params['contact_id'], $params['checksum'])) {
+    throw new API_Exception(E::ts('No result found'));
+  }
+
+  $result = (array) Contact::get(FALSE)
+    ->addWhere('id', '=', (int) $params['contact_id'])
+    ->setSelect([
+      'preferred_language',
+      'first_name',
+      'address.country_id:name',
+      'email.email',
+      'is_opt_out',
+      'Communication.opt_in',
+    ])
+    ->addJoin('Address AS address', 'LEFT', ['address.is_primary', '=', 1])
+    ->addJoin('Email AS email', 'LEFT', ['email.is_primary', '=', 1])
+    ->execute()->first();
+
+  if (empty($result)) {
+    throw new API_Exception(E::ts('No result found'));
+  }
+
+  // FIXME: use civicrm_api3_create_success
+  return [
+    'country' => $result['address.country_id:name'] ?? NULL,
+    'email' => $result['email.email'] ?? NULL,
+    'first_name' => $result['first_name'] ?? NULL,
+    'preferred_language' => $result['preferred_language'] ?? NULL,
+    'is_opt_in' => empty($result['is_opt_out']) && ($result['Communication.opt_in'] ?? NULL) !== FALSE
   ];
-
-   $result = (array) Contact::get(FALSE)
-     ->addWhere('hash', '=', (string) $params['hash'])
-     ->addWhere('id', '=', (int) $params['contact_id'])
-     ->setSelect(array_keys($returnParams))
-     ->setJoin([['Address AS address', 'LEFT', NULL, ['address.is_primary', '=', 1]]])
-     ->execute()->first();
-
-   if (empty($result)) {
-     throw new API_Exception(E::ts('No result found'));
-   }
-
-   return [
-     'country' => $result['address.country_id:name'] ?? NULL,
-     'preferred_language' => $result['preferred_language'] ?? NULL,
-     'is_opt_in' => empty($result['is_opt_out']) && ($result['Communication.opt_in'] ?? NULL) !== FALSE
-   ];
 
 }

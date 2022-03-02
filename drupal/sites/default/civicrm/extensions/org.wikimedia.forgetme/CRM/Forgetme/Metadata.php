@@ -122,9 +122,6 @@ class CRM_Forgetme_Metadata {
       'civicrm_address' => [
         'showme' => TRUE,
       ],
-      'civicrm_grant' => [
-        'showme' => TRUE,
-      ],
       'civicrm_contribution' => [
         'showme' => TRUE,
         ],
