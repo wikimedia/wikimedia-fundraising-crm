@@ -16,8 +16,8 @@ use Civi\Api4\GroupContact;
 function _civicrm_api3_omnigroupmember_match_spec(array &$spec) {
   $spec['group_id']['api.required'] = TRUE;
   $spec['group_id']['type'] = CRM_Utils_Type::T_INT;
-  $spec['batch']['api.default'] = 1000;
-  $spec['batch']['type'] = CRM_Utils_Type::T_INT;
+  $spec['limit']['api.default'] = 1000;
+  $spec['limit']['type'] = CRM_Utils_Type::T_INT;
 }
 
 function civicrm_api3_omnigroupmember_match(array $params) {
@@ -28,9 +28,10 @@ function civicrm_api3_omnigroupmember_match(array $params) {
     ->addSelect('contact_id', 'email.email')
     ->addWhere('group_id', '=', $params['group_id'])
     ->addWhere('contact_id', '>', $lastId)
-    ->addJoin('Email AS email', 'LEFT', ['contact_id', '=', 'email.contact_id'])
+    ->addWhere('contact_id.is_deleted', '=', FALSE)
+    ->addJoin('Email AS email', 'INNER', ['contact_id', '=', 'email.contact_id'], ['email.is_primary', '=', TRUE])
     ->addOrderBy('contact_id')
-    ->setLimit($params['batch'])
+    ->setLimit($params['limit'])
     ->execute();
 
   foreach ($contacts as $contact) {
