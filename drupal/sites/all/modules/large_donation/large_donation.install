@@ -89,7 +89,7 @@ function large_donation_schema() {
       ),
       'financial_types_excluded' => array(
         'type' => 'varchar',
-        'length' => 32,
+        'length' => 128,
       ),
       'addressee' => array(
         'type' => 'text',
@@ -109,4 +109,19 @@ function large_donation_schema() {
   ];
 
 return $schema;
+}
+
+/**
+ * Expand financial_types_excluded to 128 chars
+ */
+function large_donation_update_7010() {
+  db_change_field(
+    'large_donation_notification',
+    'financial_types_excluded',
+    'financial_types_excluded',
+    [
+      'type' => 'varchar',
+      'length' => 128
+    ]
+  );
 }
