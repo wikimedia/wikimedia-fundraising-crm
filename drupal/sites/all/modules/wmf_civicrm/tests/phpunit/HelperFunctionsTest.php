@@ -1,12 +1,22 @@
 <?php
 
+use Civi\Api4\OptionValue;
+
 /**
  * @group WmfCivicrm
  * @group WmfCivicrmHelpers
  */
 class HelperFunctionsTest extends BaseWmfDrupalPhpUnitTestCase {
 
-    /**
+  public function tearDown(): void {
+    OptionValue::delete(FALSE)
+      ->addWhere('option_group_id:name', '=', 'languages')
+      ->addWhere('name', '=', 'en_IL')
+      ->execute();
+    parent::tearDown();
+  }
+
+  /**
      * Test wmf_ensure_language_exists
      *
      * If that ever gets fixed it may break this test - but only the test would

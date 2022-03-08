@@ -5,6 +5,7 @@ namespace Civi\Wmf;
 use Civi\Api4\Contact;
 use Civi\Api4\CustomField;
 use Civi\Api4\Email;
+use Civi\Api4\OptionValue;
 use Civi\Test;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\CiviEnvBuilder;
@@ -121,6 +122,10 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
       'contact_id' => ['IN' => [$this->contactID, $this->contactID2]],
       'api.Contribution.delete' => 1,
     ]);
+    OptionValue::delete(FALSE)
+      ->addWhere('option_group_id:name', '=', 'languages')
+      ->addWhere('name', '=', 'en')
+      ->execute();
     \CRM_Core_Session::singleton()->set('userID', NULL);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID, 'skip_undelete' => TRUE]);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID2, 'skip_undelete' => TRUE]);

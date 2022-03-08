@@ -320,7 +320,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'middle_name' => 'Middle',
             'prefix' => $new_prefix,
             'suffix' => 'Sr.',
-            'preferred_language' => 'en',
+            'preferred_language' => 'en_US',
           ],
           'contribution' => [
             'address_id' => '',
@@ -396,7 +396,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         ],
         [
           'contact' => [
-            'preferred_language' => 'en',
+            'preferred_language' => 'en_US',
             'prefix' => $new_prefix,
             'suffix' => 'Sr.',
           ],
