@@ -8,7 +8,6 @@ use League\Csv\Reader;
 use SmashPig\Core\Context;
 use League\Csv\Writer;
 use League\Csv\Statement;
-use Civi\Api4\Name;
 use Civi\WMFException\WMFException;
 use Civi\WMFException\EmptyRowException;
 use Civi\WMFException\IgnoredRowException;
@@ -453,15 +452,6 @@ abstract class ChecksFile {
    * @throws \Civi\WMFException\WMFException
    */
   protected function mungeMessage(&$msg) {
-    if (!empty($msg['full_name']) && (empty($msg['first_name']) || empty($msg['last_name']))) {
-      // Parse name parts into fields if we have the full name and the name parts are
-      // not otherwise specified.
-      $msg = array_merge(array_filter((array) Name::parse(FALSE)
-        ->setNames([$msg['full_name']])
-        ->execute()->first()), $msg);
-      $msg['addressee_custom'] = $msg['full_name'];
-    }
-
     if (empty($msg['gateway'])) {
       $msg['gateway'] = $this->gateway;
     }

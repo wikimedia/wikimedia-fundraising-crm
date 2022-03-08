@@ -406,6 +406,32 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $gateway_txn_id = mt_rand();
     $cases[] =
+      // Full name
+      [
+        [
+          'currency' => 'USD',
+          'date' => '2012-05-01 00:00:00',
+          'email' => 'nobody@wikimedia.org',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => $gateway_txn_id,
+          'gross' => '1.23',
+          'payment_method' => 'cc',
+          'language' => 'en_US',
+          'full_name' => 'Dr. Martin Luther King, Jr.',
+        ],
+        [
+          'contact' => [
+            'prefix' => 'Dr.',
+            'first_name' => 'Martin',
+            'middle_name' => 'Luther',
+            'last_name' => 'King',
+            'suffix' => 'Jr',
+          ],
+          'contribution' => $this->getBaseContribution($gateway_txn_id),
+        ],
+      ];
+    $gateway_txn_id = mt_rand();
+    $cases[] =
       // Organization contribution
       [
         [

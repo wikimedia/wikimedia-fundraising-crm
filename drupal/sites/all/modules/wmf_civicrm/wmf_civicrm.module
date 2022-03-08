@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\CustomField;
+use Civi\Api4\Name;
 use Civi\Api4\WMFContact;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
@@ -1654,17 +1655,16 @@ function wmf_civicrm_normalize_msg($msg) {
 
   $msg = array_map($trim_strings, $msg);
 
-  //defaults: Keys that aren't actually required, but which will cause some portion of the code to complain
-  //if they don't exist (even if they're blank).
+  // defaults: Keys that aren't actually required, but which will cause some
+  // portion of the code to complain if they don't exist (even if they're
+  // blank). Note that defaults for name fields are applied a bit further on,
+  // after any full_name is parsed
   // FIXME: don't use defaults.  Access msg properties using a functional interface.
   $defaults = [
     // FIXME: Default to now. If you can think of a better thing to do in
     // the name of historical exchange rates.  Searching ts and
     // source_enqueued_time is a good start.
     'date' => time(),
-    'first_name' => '',
-    'middle_name' => '',
-    'last_name' => '',
     'organization_name' => '',
     'email' => '',
     'street_address' => '',
@@ -1805,10 +1805,24 @@ function wmf_civicrm_normalize_msg($msg) {
     }
   }
 
-  if (empty($msg['first_name']) and empty($msg['last_name'])) {
+  if (!empty($msg['full_name']) && (empty($msg['first_name']) || empty($msg['last_name']))) {
+    // Parse name parts into fields if we have the full name and the name parts are
+    // not otherwise specified.
+    $parsed = Name::parse(FALSE)
+      ->setNames([$msg['full_name']])
+      ->execute()->first();
+    $msg = array_merge(array_filter((array) $parsed), $msg);
+    $msg['addressee_custom'] = $msg['full_name'];
+  }
+
+  if (empty($msg['first_name']) && empty($msg['last_name'])) {
     $msg['first_name'] = 'Anonymous';
     $msg['last_name'] = '';
   }
+
+  // Apply name defaults after full_name has been parsed
+  $nameDefaults = ['first_name' => '', 'middle_name' => '', 'last_name' => ''];
+  $msg = array_merge($nameDefaults, $msg);
 
   // Check for special flags
   // TODO: push non-generic cases into database
