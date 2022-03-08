@@ -10,6 +10,7 @@ use Civi\Api4\Email;
 use WmfDatabase;
 use Civi\Api4\Contact;
 use wmf_civicrm\ImportStatsCollector;
+use Civi\WMFHelpers\Language;
 
 /**
  * Class Create.
@@ -411,16 +412,9 @@ class Save extends AbstractAction {
     if ($preferredLanguage) {
       if (!wmf_civicrm_check_language_exists($preferredLanguage)) {
         $parts = explode('_', $preferredLanguage);
-        if (wmf_civicrm_check_language_exists($parts[0])) {
-          // in other words en_NO will be converted to en
-          // rather than Norwegian English.
-          $preferredLanguage = $parts[0];
-        }
-        else {
-          // otherwise let's create it rather than fail.
-          // seems like the easiest way not to lose visibility, data or the plot.
-          wmf_civicrm_ensure_language_exists($preferredLanguage);
-        }
+        // If we don't find a locale below then an exception will be thrown.
+        $default_locale = Language::getLanguageCode($parts[0]);
+        $preferredLanguage = $default_locale;
       }
     }
     return $preferredLanguage;
