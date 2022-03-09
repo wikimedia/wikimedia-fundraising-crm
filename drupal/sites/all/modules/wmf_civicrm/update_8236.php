@@ -2,7 +2,7 @@
 
 use Civi\WMFHelpers\Language;
 
-function _wmf_civicrm_update_8235_update_preferred_language() {
+function _wmf_civicrm_update_8236_update_preferred_language() {
   civicrm_initialize();
   $result = CRM_Core_DAO::executeQuery('SELECT
     c.id, c.preferred_language
@@ -32,6 +32,9 @@ function wmf_civicrm_set_default_for_invalid_locale_with_supported_lang ($contac
   $locale = strtolower($preferred_language);
   $parts = explode("_", $locale);
   $fallback_locales = array(
+    "ab" => "ab_GE",
+    "ak" => "ak_GH",
+    "bar" => "de_DE",
     "als" => "sq_AL",
     "ang" => "en_GB",
     "ast" => "es_ES",
@@ -132,7 +135,7 @@ function wmf_civicrm_set_default_for_invalid_locale_with_supported_lang ($contac
     "yue" => "yue_CN"
   );
   try {
-    if ( $fallback_locales[$locale] ) {
+    if ( array_key_exists( $locale, $fallback_locales ) ) {
       $default_locale = $fallback_locales[$locale];
     } else {
       $default_locale = Language::getLanguageCode($parts[0]);
@@ -148,7 +151,7 @@ function wmf_civicrm_set_default_for_invalid_locale_with_supported_lang ($contac
       )
     ));
   } catch (\CRM_Core_Exception $e) {
-    watchdog('update_8235',
+    watchdog('update_8236',
       'Error: wmf_civicrm_set_default_for_invalid_locale_with_supported_lang on %preferred_language execution failed.
        Cause: %message',
       array(

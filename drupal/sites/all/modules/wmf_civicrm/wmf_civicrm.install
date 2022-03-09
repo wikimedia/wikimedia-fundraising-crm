@@ -744,9 +744,8 @@ function wmf_civicrm_update_8230() {
  * Fix language mess by updating the contact label with the supported civi locale
  * for the selected language
  */
-function wmf_civicrm_update_8235() {
+function wmf_civicrm_update_8236() {
   wmf_civicrm_bootstrap_civi();
-  require_once 'update_8235.php' ;
-  _wmf_civicrm_update_8235_update_preferred_language();
+  require_once 'update_8236.php' ;
+  _wmf_civicrm_update_8236_update_preferred_language();
 }
-
