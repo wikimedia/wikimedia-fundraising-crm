@@ -75,7 +75,7 @@ function civicrm_api3_omnimailing_load($params) {
       'body_html' => !empty($mailing['body_html']) ? _omnimailing_strip_emojis($mailing['body_html']) : '',
       'body_text' => !empty($mailing['body_text']) ? _omnimailing_strip_emojis($mailing['body_text']) : '',
       'name' => !empty($mailing['name']) ? $mailing['name'] : 'sp' . $mailing['external_identifier'],
-      'subject' => substr(_omnimailing_strip_emojis($mailing['subject']), 0, 128),
+      'subject' => mb_substr(_omnimailing_strip_emojis($mailing['subject']), 0, 128),
       'created_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
       'hash' => 'sp' . $mailing['external_identifier'],
       'scheduled_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
