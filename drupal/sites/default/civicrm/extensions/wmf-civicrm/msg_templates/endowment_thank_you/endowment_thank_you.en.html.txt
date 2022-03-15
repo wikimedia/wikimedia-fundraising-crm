@@ -7,13 +7,24 @@
 <p>Dear donor,</p>
 {/if}
 
-<p>I'm so grateful to be the one who thanks you for the one-time gift of {$amount} you made to the Wikimedia Endowment. I want to take this opportunity to celebrate your generosity and your exceptional willingness to take part in creating a better future for the world. With this donation to Wikimedia’s long-term security fund, you're allowing us to look far ahead, with hope and confidence that free knowledge will be supported for generations to come.</p>
+<p>I'm so grateful to be the one who thanks you for the
+{if $gift_source eq 'Retirement Fund - Endowment Specified' or  $gift_source eq 'Retirement Fund'}
+  qualified charitable distribution of {$amount} that you gifted to Wikimedia from your Individual Retirement Account
+{else}
+  one-time gift of {$amount} you made to the Wikimedia Endowment.
+{/if}
+
+I want to take this opportunity to celebrate your generosity and your exceptional willingness to take part in creating a better future for the world. With this donation to Wikimedia’s long-term security fund, you're allowing us to look far ahead, with hope and confidence that free knowledge will be supported for generations to come.</p>
 
 <p>I founded Wikipedia 20 years ago. Since then, our beloved encyclopedia has grown a lot, through good times and hardships, and today, more than ever, it is serving its true purpose. It helps millions of people study, discover, explore, and research.</p>
 
 <p>Each day, Wikipedia gives readers a new chance to acquire the knowledge that is so rightfully theirs, no matter what their circumstances might be.</p>
 
 <p>You’re the one who makes this possible. Your support allows edits to be made and articles to reach new readers; it gives our non-profit the means to stay true to its mission, even as Wikipedia has become one of the most visited websites in the world.</p>
+
+{if $gift_source eq 'Retirement Fund - Endowment Specified' or  $gift_source eq 'Retirement Fund'}
+<p>Donors who make qualified charitable distributions have planned for the future. You’ve saved for your own retirement and have chosen to transfer some of those investments over to us. This is why the Wikimedia Foundation directs all QCD donations to the Wikimedia Endowment, where they can continue to serve as long-term investments that will generate financial support for Wikipedia and other Wikimedia projects in perpetuity.</p>
+{/if}
 
 <p>We might not get a chance to blow out the candles in person together, but as we celebrate <a href="https://wikimediafoundation.org/wikipedia20/">20 years of Wikipedia</a> throughout the year, know that you are in the heart of everyone here at the Wikimedia Foundation.</p>
 
