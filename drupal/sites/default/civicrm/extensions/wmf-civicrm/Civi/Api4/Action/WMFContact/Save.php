@@ -113,7 +113,7 @@ class Save extends AbstractAction {
       $contact['organization_name'] = $msg['organization_name'];
     }
     if (strtolower($msg['contact_type']) !== "organization") {
-      foreach (['first_name', 'last_name', 'middle_name'] as $name) {
+      foreach (['first_name', 'last_name', 'middle_name', 'nick_name'] as $name) {
         if (isset($msg[$name])) {
           $contact[$name] = wmf_civicrm_string_clean($msg[$name], 64);
         }
@@ -136,6 +136,10 @@ class Save extends AbstractAction {
       // We should start migrating to APIv4 format so supporting it
       // is a first step.
       $msg['name_prefix'] = $msg['prefix_id:label'];
+    }
+    if (!empty($msg['suffix_id:label'])) {
+      // Same with suffix
+      $msg['name_suffix'] = $msg['suffix_id:label'];
     }
     if (!empty($msg['name_prefix'])) {
       $contact['prefix_id'] = $msg['name_prefix'];

@@ -33,17 +33,14 @@ class SquareFileTest extends BaseChecksFileTest {
       'currency' => 'USD',
       'date' => 1426129877,
       'email' => 'Max@gmail.com',
-      'first_name' => 'Max',
       'full_name' => 'Max Normal',
       'gateway' => 'square',
       'gateway_status_raw' => 'Completed',
       'gateway_txn_id' => 'abc123',
       'gross' => '35.00',
-      'last_name' => 'Normal',
       'net' => '35.00',
       'phone' => '3333333333',
       'postal_code' => '94103',
-      'addressee_custom' => 'Max Normal'
     );
 
     $importer = new SquareFileProbe();
@@ -74,17 +71,14 @@ class SquareFileTest extends BaseChecksFileTest {
       'currency' => 'USD',
       'date' => 1426129877,
       'email' => 'Max@gmail.com',
-      'first_name' => 'Max',
       'full_name' => 'Max Normal',
       'gateway' => 'square',
       'gateway_status_raw' => 'Refunded',
       'gateway_txn_id' => 'abc123',
       'gross' => '35.00',
-      'last_name' => 'Normal',
       'net' => '35.00',
       'phone' => '3333333333',
       'postal_code' => '94103',
-      'addressee_custom' => 'Max Normal'
     );
 
     $importer = new SquareFileProbe();
