@@ -84,7 +84,7 @@ class Save extends AbstractAction {
     if (!array_key_exists('contact_type', $msg)) {
       $msg['contact_type'] = "Individual";
     }
-    elseif ($msg['contact_type'] != "Individual" && $msg['contact_type'] != "Organization") {
+    elseif ($msg['contact_type'] !== "Individual" && $msg['contact_type'] !== "Organization") {
       // looks like an unsupported type was sent, revert to default
       watchdog('wmf_civicrm', 'Non-supported contact_type received: %type', ['%type' => print_r($msg['contact_type'], TRUE)], WATCHDOG_INFO);
       $msg['contact_type'] = "Individual";
@@ -100,8 +100,8 @@ class Save extends AbstractAction {
       'contact_type' => $msg['contact_type'],
       'contact_source' => $msg['contact_source'],
       'debug' => TRUE,
-      'addressee_custom' => $msg['addressee_custom'] ?? NULL,
-      'addressee_display' => $msg['addressee_custom'] ?? NULL,
+      'addressee_custom' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
+      'addressee_display' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
       'addressee_id' => empty($msg['addressee_custom']) ? NULL : 'Customized',
 
       // We speed up our imports by passing in this param.
@@ -112,10 +112,11 @@ class Save extends AbstractAction {
     if (!empty($msg['organization_name'])) {
       $contact['organization_name'] = $msg['organization_name'];
     }
-    if (strtolower($msg['contact_type']) !== "organization") {
+
+    if (strtolower($msg['contact_type']) !== 'organization') {
       foreach (['first_name', 'last_name', 'middle_name', 'nick_name'] as $name) {
         if (isset($msg[$name])) {
-          $contact[$name] = wmf_civicrm_string_clean($msg[$name], 64);
+          $contact[$name] = $this->cleanString($msg[$name], 64);
         }
       }
     }
@@ -694,6 +695,35 @@ class Save extends AbstractAction {
       $this->isLowConfidenceNameSource = FALSE;
     }
     return $this->isLowConfidenceNameSource;
+  }
+
+  /**
+   * Clean up a string by
+   *  - trimming preceding & ending whitespace
+   *  - removing any in-string double whitespace
+   *
+   * @param string $string
+   * @param int $length
+   *
+   * @return string
+   */
+  protected function cleanString($string, $length) {
+    $replacements = [
+      // Hex for &nbsp;
+      '/\xC2\xA0/' => ' ',
+      '/&nbsp;/' => ' ',
+      // Replace multiple ideographic space with just one.
+      '/(\xE3\x80\x80){2}/' => html_entity_decode("&#x3000;"),
+      // Trim ideographic space (this could be done in trim further down but seems a bit fiddly)
+      '/^(\xE3\x80\x80)/' => ' ',
+      '/(\xE3\x80\x80)$/' => ' ',
+      // Replace multiple space with just one.
+      '/\s\s+/' => ' ',
+      // And html ampersands with normal ones.
+      '/&amp;/' => '&',
+      '/&Amp;/' => '&',
+    ];
+    return mb_substr(trim(preg_replace(array_keys($replacements), $replacements, $string)), 0, $length);
   }
 
 }
