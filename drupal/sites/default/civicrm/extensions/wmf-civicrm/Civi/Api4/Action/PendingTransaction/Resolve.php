@@ -264,7 +264,7 @@ class Resolve extends AbstractAction {
     if (
       $this->message['payment_method'] === 'cc' &&
       !$fredgeHadCvvScore &&
-      empty($riskScoresFromStatus['cvv'])
+      !array_key_exists('cvv', $riskScoresFromStatus)
     ) {
       return ValidationAction::REVIEW;
     }
