@@ -211,7 +211,7 @@ function exchange_rate_cache_set($currency, $timestamp, $rate) {
 }
 
 function exchange_rates_update_all( $date = null ) {
-
+  civicrm_initialize();
 	// Ouroboros
 	$currencies = array_keys( CurrencyRates::getCurrencyRates() );
 
