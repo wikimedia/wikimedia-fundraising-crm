@@ -131,7 +131,7 @@ trait GuzzleTestTrait {
   protected function setUpClientWithHistoryContainer() {
     $this->container = [];
     $history = Middleware::history($this->container);
-    $handler = HandlerStack::create($this->getMockHandler());
+    $handler = HandlerStack::create($this->mockHandler);
     $handler->push($history);
     $this->guzzleClient = new Client(['base_uri' => $this->baseUri, 'handler' => $handler]);
   }

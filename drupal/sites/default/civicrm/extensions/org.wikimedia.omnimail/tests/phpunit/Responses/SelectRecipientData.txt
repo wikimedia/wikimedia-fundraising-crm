@@ -1,0 +1,45 @@
+<Envelope>
+<Body>
+		<RESULT>
+<SUCCESS>TRUE</SUCCESS>
+<EMAIL>jenny@example.com</EMAIL>
+<Email>jenny@example.com</Email>
+<RecipientId>123456</RecipientId>
+<EmailType>0</EmailType>
+<LastModified>3/3/22 2:50 AM</LastModified>
+<CreatedFrom>3</CreatedFrom>
+<OptedIn>3/2/22 6:08 AM</OptedIn>
+<OptedOut/>
+<ResumeSendDate/>
+<ORGANIZATION_ID>9101112</ORGANIZATION_ID>
+<CRMLeadSource/>
+<COLUMNS>
+<COLUMN>
+<NAME>Country</NAME>
+<VALUE/>
+</COLUMN>
+<COLUMN>
+<NAME>Country Code</NAME>
+<VALUE/>
+</COLUMN>
+<COLUMN>
+<NAME>firstname</NAME>
+<VALUE>Jenny</VALUE>
+</COLUMN>
+<COLUMN>
+<NAME>lastname</NAME>
+<VALUE>Lee</VALUE>
+</COLUMN>
+<COLUMN>
+<NAME>Segment</NAME>
+<VALUE>0</VALUE>
+</COLUMN>
+</COLUMNS>
+<CONTACT_LISTS>
+<CONTACT_LIST_ID>1</CONTACT_LIST_ID>
+</CONTACT_LISTS>
+</RESULT>
+
+
+	</Body>
+</Envelope>

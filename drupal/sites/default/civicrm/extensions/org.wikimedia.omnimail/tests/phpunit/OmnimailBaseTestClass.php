@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/GuzzleTestTrait.php';
 
+use Civi\Test\Api3TestTrait;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
@@ -29,7 +30,7 @@ use Omnimail\Silverpop\Connector\SilverpopGuzzleConnector;
  */
 class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements HeadlessInterface, TransactionalInterface {
 
-  use \Civi\Test\Api3TestTrait;
+  use Api3TestTrait;
   use GuzzleTestTrait;
 
   /**
@@ -86,13 +87,15 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     $responses = [];
     if ($authenticateFirst) {
       $this->authenticate();
+      // Make sure there is a logout at the end.
+      $body[] = file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt');
     }
     foreach ($body as $responseBody) {
       $responses[] = new Response(200, [], $responseBody);
     }
-    $mock = new MockHandler($responses);
-    $handler = HandlerStack::create($mock);
-    return new Client(['handler' => $handler]);
+    $this->mockHandler = new MockHandler($responses);
+    $this->setUpClientWithHistoryContainer();
+    return $this->getGuzzleClient();
   }
 
   /**
