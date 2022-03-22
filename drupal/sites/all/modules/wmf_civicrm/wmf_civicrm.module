@@ -653,19 +653,6 @@ function wmf_civicrm_get_civi_id($type, $name) {
   }
 }
 
-function wmf_civicrm_get_message_contribution_type($msg) {
-  $gateway = strtolower($msg['gateway']);
-  if ($gateway === 'merkle') {
-    return 'merkle';
-  }
-  elseif ($gateway === 'arizonalockbox') {
-    return 'Arizona Lockbox';
-  }
-  else {
-    return 'cash';
-  }
-}
-
 /**
  * Determines which civi-only payment instrument is appropriate for the current
  * message, and returns the civi payment instrument's human-readable display
@@ -1666,11 +1653,7 @@ function wmf_civicrm_normalize_msg($msg) {
 
   if (empty($msg['contribution_type_id'])) {
     if (empty($msg['contribution_type'])) {
-      $msg['contribution_type'] = wmf_civicrm_get_message_contribution_type($msg);
-
-      if (!$msg['contribution_type']) {
-        throw new WMFException(WMFException::INVALID_MESSAGE, 'No contribution type specified');
-      }
+      $msg['contribution_type'] = 'cash';
     }
     $msg['contribution_type_id'] = wmf_civicrm_get_civi_id('contribution_type_id', $msg['contribution_type']);
   }

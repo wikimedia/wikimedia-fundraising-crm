@@ -458,9 +458,6 @@ abstract class ChecksFile {
     if (isset($msg['raw_contribution_type'])) {
       $contype = $msg['raw_contribution_type'];
       switch ($contype) {
-        case "Merkle":
-          $msg['gateway'] = "merkle";
-          break;
 
         case "Cash":
           $msg['contribution_type'] = "cash";

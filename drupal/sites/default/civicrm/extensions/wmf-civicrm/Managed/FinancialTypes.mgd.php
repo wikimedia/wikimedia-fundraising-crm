@@ -28,10 +28,8 @@ $return = [
 $financialTypes = [
   'Cash',
   'Benevity',
-  'Merkle',
   'Refund',
   'Chargeback',
-  'Arizona Lockbox',
   'Engage',
   'Endowment Gift',
 ];

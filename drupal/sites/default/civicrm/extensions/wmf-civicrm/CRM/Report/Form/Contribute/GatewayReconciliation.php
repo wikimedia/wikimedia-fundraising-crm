@@ -10,7 +10,6 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
       '' => '--any--',
       'ADYEN' => 'Adyen',
       'AMAZON' => 'Amazon',
-      'ARIZONALOCKBOX' => 'Arizona Lockbox',
       'ASTROPAY' => 'AstroPay',
       'BITPAY' => 'Bitpay',
       'COINBASE' => 'Coinbase',
