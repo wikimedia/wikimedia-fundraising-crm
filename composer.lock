@@ -2055,16 +2055,16 @@
         },
         {
             "name": "mrmarkfrench/silverpop-php-connector",
-            "version": "1.5.3",
+            "version": "1.5.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
-                "reference": "60d272707c52adf474c53d8236b0d06f1604294c"
+                "reference": "266ee967c8835aa26a37e1a9bcbd19af4deb48ec"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/60d272707c52adf474c53d8236b0d06f1604294c",
-                "reference": "60d272707c52adf474c53d8236b0d06f1604294c",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/266ee967c8835aa26a37e1a9bcbd19af4deb48ec",
+                "reference": "266ee967c8835aa26a37e1a9bcbd19af4deb48ec",
                 "shasum": ""
             },
             "require": {
@@ -2099,9 +2099,9 @@
             ],
             "support": {
                 "issues": "https://github.com/mrmarkfrench/silverpop-php-connector/issues",
-                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.5.3"
+                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.5.4"
             },
-            "time": "2021-03-31T17:54:16+00:00"
+            "time": "2022-03-16T06:19:25+00:00"
         },
         {
             "name": "neitanod/forceutf8",
@@ -4663,11 +4663,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.1",
+            "version": "1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "421eceb7845cfafd1ea53042e5a7dfde016225a9"
+                "reference": "d8cf5e373879484f70a3fd44f889cd22a8621a5e"
             },
             "require": {
                 "league/csv": "^9.0",
@@ -4707,7 +4707,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2021-03-18T01:14:12+00:00"
+            "time": "2022-03-17T06:06:05+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
