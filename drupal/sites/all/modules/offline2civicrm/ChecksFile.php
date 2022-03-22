@@ -663,6 +663,8 @@ abstract class ChecksFile {
       'Payment Gateway' => 'gateway',
       'Postal Code' => 'postal_code',
       'Postmark Date' => 'postmark_date',
+      'Phone Number' => 'phone',
+      'Phone' => 'phone',
       'Prefix' => 'name_prefix',
       'Raw Payment Instrument' => 'raw_payment_instrument',
       'Received Date' => 'date',
