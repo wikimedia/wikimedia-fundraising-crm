@@ -74,6 +74,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'state_province' => 'MA',
       'street_address' => '1000 Markdown Markov',
       'thankyou_date' => 1398902400,
+      'phone' => '(123) 456-0000',
       'contact_id' => NULL,
     ];
 
@@ -127,7 +128,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'gateway' => 'engage',
       'gateway_txn_id' => '6dbb8d844c7509076e2a275fb76d0130',
       'gift_source' => 'Foundation Gift',
-      'gross' => 51.23,
+      'gross' => '51.23',
       'import_batch_number' => '1235',
       'organization_name' => 'One Pacific Entitlement',
       'payment_method' => 'Check',
@@ -138,6 +139,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'street_address' => '1000 Markdown Markov',
       'thankyou_date' => 1398902400,
       'contact_id' => NULL,
+      'phone' => '+357 (123) 456-0000',
     ];
 
     $importer = new EngageChecksFileProbe();
