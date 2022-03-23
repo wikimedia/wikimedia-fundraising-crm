@@ -8,6 +8,15 @@
 use Civi\WMFHooks\CalculatedData;
 
 $calculatedData = new CalculatedData();
+// The option value for relationship is also ensured in the relationship
+// block extension but we do it here as well in case that is not enabled
+// in future for any reason.
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'cg_extend_objects',
+  'name' => 'civicrm_relationship',
+  'label' => ts('Relationship'),
+  'value' => 'Relationship',
+]);
 
 return [
   'wmf_donor' => [
