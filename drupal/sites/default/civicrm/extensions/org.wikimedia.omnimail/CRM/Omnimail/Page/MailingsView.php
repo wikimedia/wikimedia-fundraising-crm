@@ -5,9 +5,11 @@ class CRM_Omnimail_Page_MailingsView extends CRM_Core_Page {
   public function run() {
     // Example: Set the page-title dynamically; alternatively, declare a static title in xml/Menu/*.xml
     CRM_Utils_System::setTitle(ts('MailingsView'));
+    $contactID = CRM_Utils_Request::retrieve('cid', 'Integer');
+    $this->assign('remoteDataURL', '/civicrm/a/#/omnimail/remote-contact?cid=' . $contactID);
 
     $mailings = civicrm_api3('MailingProviderData', 'get', [
-      'contact_id' => CRM_Utils_Request::retrieve('cid', 'Integer'),
+      'contact_id' => $contactID,
       'return' => [
         'event_type',
         'mailing_identifier',

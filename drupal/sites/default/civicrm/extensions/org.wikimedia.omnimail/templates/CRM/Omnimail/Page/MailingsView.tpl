@@ -26,6 +26,7 @@
 {* relationship selector *}
 <h3>Mailing events (up to 500 most recent)</h3>
 
+  <a href="{$remoteDataURL|smarty:nodefaults}">Acoustic data</a>
   <table
     class="crm-contact-mailings">
     <thead>

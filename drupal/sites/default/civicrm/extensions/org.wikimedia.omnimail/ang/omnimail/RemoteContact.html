@@ -1,0 +1,13 @@
+<div class="crm-container">
+  <h1 crm-page-title>Acoustic Record</h1>
+  <p>Note this data is fetched in real time from Acoustic and may differ from CiviCRM data.</p>
+  <table>
+    <tr ng-repeat="(key, value) in $ctrl.remoteContact[0]">
+      <td ng-if ="key != 'url'">{{key}}</td>
+      <td ng-if ="key != 'groups' && key != 'url' && key != 'contact_identifier'">{{value}}</td>
+      <td ng-if ="key == 'contact_identifier'"><a href='{{$ctrl.remoteContact[0].url}}'>{{value}}</a></td>
+      <td ng-if ="key == 'groups'">
+        <p ng-repeat="group in value">{{group.id}} <a href='{{group.url}}'>{{group.title}}</a></td>
+    </tr>
+  </table>
+</div>
