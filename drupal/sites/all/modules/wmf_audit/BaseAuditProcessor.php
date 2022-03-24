@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Contribution;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFException\WMFException;
 
@@ -481,7 +482,34 @@ abstract class BaseAuditProcessor {
     if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
       foreach ($total_missing['negative'] as $record) {
         //check to see if the parent exists. If it does, normalize and send.
-        if ($this->main_transaction_exists_in_civi($record)) {
+        $foundParent = $this->main_transaction_exists_in_civi($record);
+        if (!$foundParent && !empty($record['invoice_id'])) {
+          // Sometimes it's difficult to find a parent transaction by the
+          // gateway-side ID, for example for Ingenico recurring refunds.
+          // Try again by invoice ID.
+          if (!empty($record['invoice_id'])) {
+            $parentByInvoice = Contribution::get(FALSE)
+              ->addClause(
+                'OR',
+                ['invoice_id', '=', $record['invoice_id']],
+                // For recurring payments, we sometimes append a | and a random
+                // number after the invoice ID
+                ['invoice_id', 'LIKE', $record['invoice_id'] . '|%']
+              )
+              ->execute()
+              ->first();
+            if ($parentByInvoice['trxn_id']) {
+              // need to pull out the actual trxn id
+              // this is very Ingenico focused but it is an Ingenico edge case where recurrings
+              // have a 2 instead of a 1
+              // 000000123410000010640000200001 vs 000000123410000010640000100001
+              $record['gateway_parent_id'] = preg_replace('/\D/', '', $parentByInvoice['trxn_id']);
+              $record['gateway_refund_id'] = $record['gateway_parent_id'];
+              $foundParent = TRUE;
+            }
+          }
+        }
+        if ($foundParent) {
           $normal = $this->normalize_negative($record);
           $this->send_queue_message($normal, 'negative');
           $neg_count += 1;

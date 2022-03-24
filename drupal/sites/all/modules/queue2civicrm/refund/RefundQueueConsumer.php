@@ -1,5 +1,6 @@
 <?php namespace queue2civicrm\refund;
 
+use Civi\Api4\Contribution;
 use Exception;
 use wmf_common\TransactionalWmfQueueConsumer;
 use \Civi\WMFException\WMFException;
@@ -44,6 +45,19 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
     }
 
     $contributions = wmf_civicrm_get_contributions_from_gateway_id($gateway, $parentTxn);
+    // Fall back to searching by invoice ID, generally for Ingenico recurring
+    if (empty($contributions) && !empty($message['invoice_id'])) {
+      $contributions = Contribution::get(FALSE)
+        ->addClause(
+          'OR',
+          ['invoice_id', '=', $message['invoice_id']],
+          // For recurring payments, we sometimes append a | and a random number after the invoice ID
+          ['invoice_id', 'LIKE', $message['invoice_id'] . '|%']
+        )
+        ->execute()
+        // Flatten it to an array so it's false-y if no result
+        ->getArrayCopy();
+    }
 
     if ($this->isPaypalRefund($gateway) && empty($contributions)) {
       /**
@@ -60,7 +74,6 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
         , $parentTxn
       );
     }
-
 
     if ($contributions) {
       // Perform the refund!
