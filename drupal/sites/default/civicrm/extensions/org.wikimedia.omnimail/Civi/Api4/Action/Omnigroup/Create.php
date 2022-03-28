@@ -3,7 +3,8 @@ namespace Civi\Api4\Action\Omnigroup;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use \CRM_Omnimail_ExtensionUtil as E;
+use Civi\Api4\Omnigroup;
+use Civi\Api4\Group;
 use GuzzleHttp\Client;
 
 /**
@@ -68,14 +69,30 @@ class Create extends AbstractAction {
     $omnigroup = new \CRM_Omnimail_Omnigroup([
       'mail_provider' => $this->getMailProvider(),
     ]);
-    $result[] = $omnigroup->create([
-      'client' => $this->getClient(),
-      'mail_provider' => $this->getMailProvider(),
-      'group_id' => $this->getGroupID(),
-      'database_id' => $this->getDatabaseID(),
-      'visibility' => (int) $this->getIsPublic(),
-      'check_permissions' => $this->getCheckPermissions(),
-    ]);
+    $group = Group::get($this->getCheckPermissions())
+      ->addWhere('id', '=', $this->getGroupID())
+      ->setSelect(['Group_Metadata.remote_group_identifier', 'title'])
+      ->execute()->first();
+
+    $remoteGroupID = $group['Group_Metadata.remote_group_identifier'] ?? NULL;
+    if (!$remoteGroupID) {
+      $remoteGroup = $omnigroup->create([
+        'client' => $this->getClient(),
+        'mail_provider' => $this->getMailProvider(),
+        'group_id' => $this->getGroupID(),
+        'database_id' => $this->getDatabaseID(),
+        'visibility' => (int) $this->getIsPublic(),
+        'check_permissions' => $this->getCheckPermissions(),
+      ]);
+      $remoteGroupID = $remoteGroup['list_id'];
+      $result[$this->getGroupID()] = $remoteGroup;
+
+      Group::update($this->getCheckPermissions())
+        ->addWhere('id', '=', $this->getGroupID())
+        ->addValue('Group_Metadata.remote_group_identifier', $remoteGroupID)
+        ->execute();
+    }
+    $result[$this->getGroupID()]['Group_Metadata.remote_group_identifier'] = $remoteGroupID;
   }
 
   /**

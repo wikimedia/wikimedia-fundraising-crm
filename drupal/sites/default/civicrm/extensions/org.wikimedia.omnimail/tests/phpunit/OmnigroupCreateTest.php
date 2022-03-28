@@ -47,6 +47,7 @@ class OmnigroupCreateTest extends OmnimailBaseTestClass {
     $this->assertEquals([
         'list_id' => 42133432,
         'parent_id' => 9574333,
+        'Group_Metadata.remote_group_identifier' => 42133432,
         'name' => 'Omnigroup test',
       ],
       Omnigroup::create(FALSE)
