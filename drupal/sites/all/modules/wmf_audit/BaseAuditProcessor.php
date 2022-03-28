@@ -499,11 +499,10 @@ abstract class BaseAuditProcessor {
               ->execute()
               ->first();
             if ($parentByInvoice['trxn_id']) {
-              // need to pull out the actual trxn id
-              // this is very Ingenico focused but it is an Ingenico edge case where recurrings
-              // have a 2 instead of a 1
-              // 000000123410000010640000200001 vs 000000123410000010640000100001
-              $record['gateway_parent_id'] = preg_replace('/\D/', '', $parentByInvoice['trxn_id']);
+              // $parentByInvoice['trxn_id'] has extra information in it for example
+              // RECURRING INGENICO 000000123410000010640000200001
+              // Need to get just the transaction id after the processor name
+              $record['gateway_parent_id'] = (WmfTransaction::from_unique_id($parentByInvoice['trxn_id']))->gateway_txn_id;
               $record['gateway_refund_id'] = $record['gateway_parent_id'];
               $foundParent = TRUE;
             }
