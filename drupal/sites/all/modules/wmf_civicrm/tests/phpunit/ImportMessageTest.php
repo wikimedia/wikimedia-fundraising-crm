@@ -795,6 +795,23 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'contribution' => $this->getBaseContribution($gateway_txn_id),
         ],
       ];
+
+    $cases[] = // Unsupported 3 char language code
+      [
+        array_merge(
+          $this->getMinimalImportData($gateway_txn_id),
+          [
+            'language' => 'shn',
+          ]
+        ),
+        [
+          'contact' => [
+            'preferred_language' => 'en_US',
+          ],
+          'contribution' => $this->getBaseContribution($gateway_txn_id),
+        ],
+      ];
+
     return $cases;
   }
 

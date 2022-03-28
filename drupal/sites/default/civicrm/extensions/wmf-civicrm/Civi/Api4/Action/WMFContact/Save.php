@@ -403,11 +403,19 @@ class Save extends AbstractAction {
       }
     }
     else {
-      // If the language is already an existing full locale, don't mangle it
-      if (strlen($incomingLanguage) > 2 && wmf_civicrm_check_language_exists($incomingLanguage)) {
-        $preferredLanguage = $incomingLanguage;
+      if (strlen($incomingLanguage) > 2) {
+        if (wmf_civicrm_check_language_exists($incomingLanguage)) {
+          // If the language is already an existing full locale, don't mangle it
+          $preferredLanguage = $incomingLanguage;
+        }
+        elseif (preg_match('/^[A-Za-z]+$/', $incomingLanguage)) {
+          // If the language code is 3 or more letters, we can't easily shoehorn it
+          // into CiviCRM. It's possible we could find better fallbacks, but for
+          // now just go with the system default.
+          $preferredLanguage = 'en_US';
+        }
       }
-      else {
+      if (!$preferredLanguage) {
         $preferredLanguage = strtolower(substr($incomingLanguage, 0, 2));
         if ($country) {
           $preferredLanguage .= '_' . strtoupper(substr($country, 0, 2));
