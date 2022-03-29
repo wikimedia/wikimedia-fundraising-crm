@@ -95,6 +95,7 @@ class Get extends AbstractAction {
       'email' => $this->getEmail(),
       'contact_id' => $this->getContactID(),
       'group_identifier' => $this->getGroupIdentifier(),
+      'check_permissions' => $this->getCheckPermissions(),
     ]);
   }
 
