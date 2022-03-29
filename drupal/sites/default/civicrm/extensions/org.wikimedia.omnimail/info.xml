@@ -18,7 +18,7 @@
   <version>1.0</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>4.7</ver>
+    <ver>5.47</ver>
   </compatibility>
   <comments>Omnimail wraps mailers and mail providers, making them available for CiviCRM. So far only Silverpop is implemented for CiviCRM</comments>
   <civix>
