@@ -29,6 +29,21 @@ class Omnigroup extends Generic\AbstractEntity {
       ->setCheckPermissions($checkPermissions);
   }
 
+
+  /**
+   * Omnigroup Push.
+   *
+   * Push the group up to the external provider, including contacts.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\Omnigroup\Push
+   */
+  public static function push(bool $checkPermissions = TRUE): Push {
+    return (new Push(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
  /**
   * Get permissions.
   *
