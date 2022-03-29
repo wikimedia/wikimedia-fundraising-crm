@@ -56,7 +56,13 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
 
   public function setUp(): void {
     parent::setUp();
-    civicrm_initialize();
+    // This base url is only useful when using the tests to help develop - ie if you call
+    // `$this->setUpClientWithHistoryContainer();` and then run an acoustic api
+    // you can capture the outgoing in incoming responses. However, by the time
+    // it is committed the call to `$this->setUpClientWithHistoryContainer();`
+    // would be replaced to a call to `$this->getMockRequest()` which loads the
+    // mock response rather than doing a live call.
+    $this->setBaseUri('https://api-campaign-us-4.goacoustic.com/');
     Civi::service('settings_manager')->flush();
     \Civi::$statics['_omnimail_settings'] = [];
   }

@@ -3,7 +3,6 @@ namespace Civi\Api4\Action\Omnicontact;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use \CRM_Omnimail_ExtensionUtil as E;
 use GuzzleHttp\Client;
 
 /**
@@ -12,12 +11,11 @@ use GuzzleHttp\Client;
  * Provided by the  extension.
  *
  * @method $this setDatabaseID(int $databaseID)
- * @method $this setEmail(string|null $email)
- * @method string|null getEmail()
- * @method $this setContactID(int $contactID)
- * @method int getContactID()
- * @method $this setGroupIdentifier(array $groupIdentifier)
- * @method array getGroupIdentifier()
+ * @method $this setEmail(bool $email)
+ * @method bool getEmail()
+ * @method $this setValues(array $values)
+ * @method array getValues()
+ * @method array getGroupID()
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
  * @method $this setClient(Client$client) Generally Silverpop....
@@ -25,7 +23,7 @@ use GuzzleHttp\Client;
  *
  * @package Civi\Api4
  */
-class Get extends AbstractAction {
+class Create extends AbstractAction {
 
   /**
    * @var object
@@ -35,12 +33,7 @@ class Get extends AbstractAction {
   /**
    * @var array
    */
-  protected $groupIdentifier;
-
-  /**
-   * @var int
-   */
-  protected $contactID;
+  protected $groupID;
 
   /**
    * @var string
@@ -48,6 +41,12 @@ class Get extends AbstractAction {
   protected $email;
 
   /**
+   * @var array
+   */
+  protected $values = [];
+
+  /**
+   *
    * For staging use id from docs - buildkit should configure this.
    *
    * https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_Integrated_Processes/Acoustic_Integration#Sandbox
@@ -62,12 +61,15 @@ class Get extends AbstractAction {
   protected $mailProvider = 'Silverpop';
 
   /**
-   * Get the remote database ID.
+   * Set the group ID.
    *
-   * @return int
-   *
-   * @throws \API_Exception
+   * @param int|array $groupID
    */
+  public function setGroupID($groupID): self {
+    $this->groupID = (array) $groupID;
+    return $this;
+  }
+
   /**
    * Get the remote database ID.
    *
@@ -92,13 +94,13 @@ class Get extends AbstractAction {
     $omniObject = new \CRM_Omnimail_Omnicontact([
       'mail_provider' => $this->getMailProvider(),
     ]);
-    $result[] = $omniObject->get([
+    $result[] = $omniObject->create([
       'client' => $this->getClient(),
       'mail_provider' => $this->getMailProvider(),
       'database_id' => $this->getDatabaseID(),
       'email' => $this->getEmail(),
-      'contact_id' => $this->getContactID(),
-      'group_identifier' => $this->getGroupIdentifier(),
+      'group_id' => $this->getGroupID(),
+      'values' => $this->getValues(),
       'check_permissions' => $this->getCheckPermissions(),
     ]);
   }

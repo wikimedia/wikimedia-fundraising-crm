@@ -16,6 +16,20 @@ use Civi\Api4\Action\Omnicontact\Get;
 class Omnicontact extends Generic\AbstractEntity {
 
   /**
+   * Omnicontact create.
+   *
+   * Add or update an Acoustic recipient.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\OmniContact\Create
+   */
+  public static function create(bool $checkPermissions = TRUE): Create {
+    return (new Create(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
    * OmnimailJobProgress Check.
    *
    * @param bool $checkPermissions
