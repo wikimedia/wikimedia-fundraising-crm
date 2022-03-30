@@ -127,7 +127,7 @@ return [
  *
  * @return array
  */
-function _wmf_civicrm_get_gift_data_fields() {
+function _wmf_civicrm_get_gift_data_fields(): array {
   return [
     'Fund' => [
       'name' => 'Fund',
@@ -693,7 +693,21 @@ function _wmf_civicrm_get_prospect_fields(): array {
         '9' => '9',
         '10' => '10',
       ],
-    ]
+    ],
+    'Prospect_Insight' => [
+      'name' => 'Prospect_Insight',
+      'label' => 'Prospect Insight',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'help_pre' => 'iWave determined prospect insight',
+      'column_name' => 'prospect_insight_280',
+      'option_values' => [
+        '1' =>  'Hidden Gem',
+        '2' => 'Your Champion',
+        'Distinguished Philanthropist' => 'Distinguished Philanthropist',
+        'Not Now Prospect' => 'Not Now Prospect',
+      ],
+    ],
   ];
 }
 
@@ -702,7 +716,7 @@ function _wmf_civicrm_get_prospect_fields(): array {
  *
  * @return array
  */
-function _wmf_civicrm_get_partner_fields() {
+function _wmf_civicrm_get_partner_fields(): array {
   return [
     'Partner' => [
       'name' => 'Partner',
@@ -722,7 +736,7 @@ function _wmf_civicrm_get_partner_fields() {
  *
  * @return array
  */
-function _wmf_civicrm_get_wmf_contribution_extra_fields() {
+function _wmf_civicrm_get_wmf_contribution_extra_fields(): array {
   return [
     'settlement_date' => [
       'name' => 'settlement_date',
@@ -988,7 +1002,7 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields() {
  *
  * @return array
  */
-function _wmf_civicrm_get_communication_fields() {
+function _wmf_civicrm_get_communication_fields(): array {
   return [
     'opt_in' => [
       'name' => 'opt_in',
@@ -1050,7 +1064,7 @@ function _wmf_civicrm_get_communication_fields() {
  *
  * @return array[]
  */
-function _wmf_civicrm_get_stock_fields() {
+function _wmf_civicrm_get_stock_fields(): array {
   return [
     'description_of_stock' => [
       'name' => 'Description_of_Stock',
