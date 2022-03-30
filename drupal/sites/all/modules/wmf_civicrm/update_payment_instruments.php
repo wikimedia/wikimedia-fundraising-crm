@@ -44,6 +44,7 @@ function wmf_install_get_payment_instruments() {
     'Alipay',
     'Amazon',
     'Apple Pay',
+    'Google Pay',
     'Bitcoin',
     'Bank Transfer',
     'Boleto',

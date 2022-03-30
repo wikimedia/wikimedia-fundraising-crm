@@ -740,6 +740,7 @@ function wmf_civicrm_update_8230() {
   wmf_install_add_missing_payment_instruments();
 }
 
+
 /**
  * Fix language mess by updating the contact label with the supported civi locale
  * for the selected language
@@ -748,4 +749,14 @@ function wmf_civicrm_update_8236() {
   wmf_civicrm_bootstrap_civi();
   require_once 'update_8236.php' ;
   _wmf_civicrm_update_8236_update_preferred_language();
+}
+
+
+/**
+ * Add Google payment instrument
+ */
+function wmf_civicrm_update_8237() {
+  wmf_civicrm_bootstrap_civi();
+  require_once 'update_payment_instruments.php';
+  wmf_install_add_missing_payment_instruments();
 }
