@@ -13,6 +13,9 @@ class EOYEmailTest extends TestCase {
 
   use Api3TestTrait;
 
+  protected $oldFromName;
+  protected $oldFromAddress;
+
   /**
    * Created IDs.
    *
@@ -25,13 +28,17 @@ class EOYEmailTest extends TestCase {
    */
   public function setUp(): void {
     parent::setUp();
-    variable_set('thank_you_from_address', 'bobita@example.org');
-    variable_set('thank_you_from_name', 'Bobita');
+    $this->oldFromName = \Civi::settings()->get('wmf_eoy_thank_you_from_name');
+    $this->oldFromAddress = \Civi::settings()->get('wmf_eoy_thank_you_from_address');
+    \Civi::settings()->set('wmf_eoy_thank_you_from_name', 'Bobita');
+    \Civi::settings()->set('wmf_eoy_thank_you_from_address', 'bobita@example.org');
     $mailfactory = MailFactory::singleton();
     $mailfactory->setActiveMailer(NULL, new Mailer());
   }
 
   public function tearDown(): void {
+    \Civi::settings()->set('wmf_eoy_thank_you_from_name', $this->oldFromName);
+    \Civi::settings()->set('wmf_eoy_thank_you_from_address', $this->oldFromAddress);
     CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_donor WHERE year = 2018");
     foreach ($this->ids as $entity => $entityIDs) {
       foreach ($entityIDs as $entityID) {

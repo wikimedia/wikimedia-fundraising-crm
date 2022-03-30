@@ -17,6 +17,8 @@ class ThankYouTest extends TestCase {
 
   protected $old_civimail_rate;
 
+  protected $old_endowment_from_name;
+
   /**
    * IDS of various entities created.
    *
@@ -32,6 +34,7 @@ class ThankYouTest extends TestCase {
     TestMailer::setup();
     $this->old_civimail = variable_get('thank_you_add_civimail_records', 'false');
     $this->old_civimail_rate = variable_get('thank_you_civimail_rate', 1.0);
+    $this->old_endowment_from_name = Civi::settings()->get('wmf_endowment_thank_you_from_name');
 
     $contact = reset($this->callAPISuccess('Contact', 'create', [
       'contact_type' => 'Individual',
@@ -86,6 +89,7 @@ class ThankYouTest extends TestCase {
    */
   public function tearDown(): void {
     try {
+      Civi::settings()->set('wmf_endowment_thank_you_from_name', $this->old_endowment_from_name);
       Contribution::delete(FALSE)
         ->addWhere('id', 'IN', $this->ids['Contribution'])
         ->execute();
@@ -203,7 +207,7 @@ class ThankYouTest extends TestCase {
    */
   public function testSendEndowmentThankYou(): void {
     variable_set('thank_you_add_civimail_records', 'false');
-    variable_set('thank_you_endowment_from_name', 'Endowment TY Sender');
+    Civi::settings()->set('wmf_endowment_thank_you_from_name', 'Endowment TY Sender');
     $this->createContribution(['financial_type_id:name' => 'Endowment Gift'], 0);
     $result = thank_you_for_contribution($this->getContributionID());
     $this->assertTrue($result);

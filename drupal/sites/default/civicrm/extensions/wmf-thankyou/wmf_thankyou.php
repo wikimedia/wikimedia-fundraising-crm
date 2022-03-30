@@ -198,15 +198,16 @@ function wmf_thankyou_civicrm_preProcess($formName, &$form) {
  * Implements hook_civicrm_navigationMenu().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu
- *
+ */
 function wmf_thankyou_civicrm_navigationMenu(&$menu) {
-  _wmf_thankyou_civix_insert_navigation_menu($menu, 'Mailings', array(
-    'label' => E::ts('New subliminal message'),
-    'name' => 'mailing_subliminal_message',
-    'url' => 'civicrm/mailing/subliminal',
-    'permission' => 'access CiviMail',
+  _wmf_thankyou_civix_insert_navigation_menu($menu,
+    'Administer/Customize Data and Screens', [
+    'label' => E::ts('WMF Thank You configuration'),
+    'name' => 'wmf_thank_you_configuration',
+    'url' => 'civicrm/admin/setting/wmf-thankyou',
+    'permission' => 'administer CiviCRM',
     'operator' => 'OR',
     'separator' => 0,
-  ));
+  ]);
   _wmf_thankyou_civix_navigationMenu($menu);
-} // */
+}

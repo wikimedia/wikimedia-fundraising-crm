@@ -1,8 +1,10 @@
 <?php namespace queue2civicrm\recurring;
 
 use Civi\Api4\ContributionRecur;
+use Civi\WMFException\WMFException;
+use Civi\WMFThankYou\From;
 use wmf_common\TransactionalWmfQueueConsumer;
-use \Civi\WMFException\WMFException;
+
 
 class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
@@ -401,8 +403,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           'contact_id' => $contactId,
           'currency' => $msg['original_currency'],
           'first_name' => $contact['first_name'],
-          'from_name' => thank_you_get_from_name($template),
-          'from_address' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
+          'from_name' => From::getFromName($template),
+          'from_address' => From::getFromAddress($template),
           'last_name' => $contact['last_name'],
           // Locale is the mediawiki variant - either 'en' or 'en-US'.
           // Where 'preferred_language' is known then locale should generally
