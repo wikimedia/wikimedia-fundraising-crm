@@ -676,8 +676,7 @@ class CalculatedData {
       ' . implode(',', $aggregateFieldStrings) . "
 
     FROM (
-      SELECT
-      " . (!$this->isTriggerContext() ? ' c.contact_id,': '') ."
+      SELECT" . (!$this->isTriggerContext() ? ' c.contact_id,': '') ."
         MAX(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS largest_donation,
         MAX(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation,
         MAX(COALESCE(total_amount, 0)) AS all_funds_largest_donation,
@@ -698,12 +697,12 @@ class CalculatedData {
       USE INDEX(FK_civicrm_contribution_contact_id)
       WHERE " . ($this->isTriggerContext() ? ' contact_id = NEW.contact_id ' : $this->getWhereClause()) . "
         AND contribution_status_id = 1
-        AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
-      " . (!$this->isTriggerContext() ? ' GROUP BY contact_id ': '') ."
+        AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)"
+      . (!$this->isTriggerContext() ? ' GROUP BY contact_id ': '') ."
     ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
-    ON latest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id ' : ' totals.contact_id ') . "
+    ON latest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id') . "
     AND latest.receive_date = totals.last_donation_date
     AND latest.contribution_status_id = 1
     AND latest.total_amount > 0
@@ -713,7 +712,7 @@ class CalculatedData {
 
   LEFT JOIN civicrm_contribution earliest
     USE INDEX(FK_civicrm_contribution_contact_id)
-    ON earliest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id ' : ' totals.contact_id ') . "
+    ON earliest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id') . "
     AND earliest.receive_date = totals.first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
@@ -725,7 +724,7 @@ class CalculatedData {
     AND largest.contribution_status_id = 1
     AND largest.total_amount > 0
     AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
-  GROUP BY " . ($this->isTriggerContext() ? ' NEW.contact_id ' : ' totals.contact_id ') . "
+  GROUP BY " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id') . "
 
   ON DUPLICATE KEY UPDATE
     last_donation_currency = VALUES(last_donation_currency),
