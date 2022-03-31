@@ -57,7 +57,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       return array_merge($return, $response->getFields());
     }
     catch (Exception $e) {
-      throw new API_Exception($e->getMessage());
+      return ['message' => $e->getMessage()];
     }
 
   }

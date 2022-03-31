@@ -12,8 +12,10 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
 
   /**
    * Example: Run an external SQL script when the module is installed.
+   *
+   * @throws \CiviCRM_API3_Exception
    */
-  public function install() {
+  public function install(): void {
     $this->addCustomFields();
   }
 
@@ -123,7 +125,7 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
    * @return TRUE on success
    * @throws Exception
    */
-  public function upgrade_1002() {
+  public function upgrade_1002(): bool {
     $this->ctx->log->info('Applying update 1002, adding custom fields');
     $this->addCustomFields();
     return TRUE;
@@ -132,7 +134,7 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
   /**
    * @throws \CiviCRM_API3_Exception
    */
-  public function upgrade_1003() {
+  public function upgrade_1003(): bool {
     $this->addCustomFields();
     return TRUE;
   }
@@ -143,6 +145,17 @@ class CRM_Omnimail_Upgrader extends CRM_Omnimail_Upgrader_Base {
   public function upgrade_1004(): bool {
     CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_omnimail_job_progress
 ADD COLUMN created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+    return TRUE;
+  }
+
+  /**
+   * Add Group custom fields.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function upgrade_1005(): bool {
+    $this->ctx->log->info('Applying update 1004, adding group custom fields');
+    $this->addCustomFields();
     return TRUE;
   }
 
@@ -213,7 +226,7 @@ ADD COLUMN created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
    *
    * @throws \CiviCRM_API3_Exception
    */
-  public function addCustomFields() {
+  public function addCustomFields(): void {
     CRM_Core_BAO_OptionValue::ensureOptionValueExists([
       'option_group_id' => 'cg_extend_objects',
       'name' => 'civicrm_mailing',
@@ -221,43 +234,75 @@ ADD COLUMN created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
       'value' => 'Mailing',
     ]);
 
-    $customGroupDetail = [
-      'extends' => 'Mailing',
-      'name' => 'mailing_metadata',
-    ];
-    $customGroups = civicrm_api3('CustomGroup', 'get',  $customGroupDetail );
-    if (!$customGroups['count']) {
-      $customGroupDetail['title']  = E::ts('Mailing data');
-      $customGroups = civicrm_api3('CustomGroup', 'create',$customGroupDetail);
-    }
-    $customFields = civicrm_api3('CustomField', 'get', [
-      'custom_group_id' => $customGroups['id'],
-    ])['values'];
-    $fieldsToCreate = [
-      'query_criteria' => [
-        'custom_group_id' => $customGroups['id'],
-        'name' => 'query_criteria',
-        'label' => E::ts('Query Criteria'),
-        'data_type' => 'Memo',
-        'html_type' => 'TextArea',
-      ],
-      'query_string' => [
-        'custom_group_id' => $customGroups['id'],
-        'name' => 'query_string',
-        'label' => E::ts('Query String'),
-        'data_type' => 'Memo',
-        'html_type' => 'TextArea',
-        'column_name' => 'query_string'
-      ],
-    ];
+    // Ensure the option value exists that will allow us to add
+    // a custom group that extends civicrm_group.
+    CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+      'option_group_id' => 'cg_extend_objects',
+      'name' => 'civicrm_group',
+      'label' => ts('Group'),
+      'value' => 'Group',
+    ]);
 
-    foreach ($customFields as $customField) {
-      if (isset($fieldsToCreate[$customField['name']])) {
-        unset($fieldsToCreate[$customField['name']]);
+    $customGroupDetails = [
+      [
+        'extends' => 'Mailing',
+        'name' => 'mailing_metadata',
+        'title' => E::ts('Mailing data'),
+        'fields' => [
+          'query_criteria' => [
+            'name' => 'query_criteria',
+            'label' => E::ts('Query Criteria'),
+            'data_type' => 'Memo',
+            'html_type' => 'TextArea',
+          ],
+          'query_string' => [
+            'name' => 'query_string',
+            'label' => E::ts('Query String'),
+            'data_type' => 'Memo',
+            'html_type' => 'TextArea',
+            'column_name' => 'query_string'
+          ],
+        ],
+      ],
+      [
+        'name' => 'Group_Metadata',
+        'title' => 'Group Metadata',
+        'extends' => 'Group',
+        'table_name' => 'civicrm_value_group_metadata',
+        'fields' => [
+          'Remote Group Identifier' => [
+            'name' => 'remote_group_identifier',
+            'column_name' => 'remote_group_identifier',
+            'label' => 'Remote Group ID',
+            'help_pre' => 'Acoustic list ID',
+            'help_post' => '',
+            'data_type' => 'Int',
+            'html_type' => 'Text',
+          ],
+        ],
+      ],
+    ];
+    foreach ($customGroupDetails as $customGroupDetail) {
+      $customGroupID = civicrm_api3('CustomGroup', 'get', ['name' => $customGroupDetail['name']])['id'] ?? NULL;
+      if (!$customGroupID) {
+        $customGroupID = civicrm_api3('CustomGroup', 'create', $customGroupDetail)['id'];
       }
-    }
-    foreach ($fieldsToCreate as $field) {
-      civicrm_api3('CustomField', 'create', $field);
+
+      $customFields = civicrm_api3('CustomField', 'get', [
+        'custom_group_id' => $customGroupID,
+      ])['values'];
+
+      $fieldsToCreate = $customGroupDetail['fields'];
+
+      foreach ($customFields as $customField) {
+        if (isset($fieldsToCreate[$customField['name']])) {
+          unset($fieldsToCreate[$customField['name']]);
+        }
+      }
+      foreach ($fieldsToCreate as $field) {
+        $field['custom_group_id'] = $customGroupID;
+        civicrm_api3('CustomField', 'create', $field);
+      }
     }
   }
 }

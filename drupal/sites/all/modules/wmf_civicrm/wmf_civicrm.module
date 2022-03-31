@@ -677,6 +677,9 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
       case 'apple':
         $payment_instrument = 'Apple Pay';
         break;
+      case 'google':
+        $payment_instrument = 'Google Pay';
+        break;
       case 'check':
         $payment_instrument = 'Check';
         break;
