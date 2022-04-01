@@ -1,21 +1,29 @@
 (function(angular, $, _) {
-
   angular.module('omnimail').config(function($routeProvider) {
-      $routeProvider.when('/omnimail/remote-contact', {
-        controller: 'OmnimailCtrl',
-        controllerAs: '$ctrl',
-        templateUrl: '~/omnimail/RemoteContact.html',
+    $routeProvider.when('/omnimail/remote-contact', {
+      controller: 'OmnimailCtrl',
+      controllerAs: '$ctrl',
+      templateUrl: '~/omnimail/RemoteContact.html',
 
-        // If you need to look up data when opening the page, list it out
-        // under "resolve".
-        resolve: {
-          remoteContact: function(crmApi4, $route) {
-            return crmApi4('Omnicontact', 'get', {
-              contactID: $route.current.params.cid
-            });
-          }
+      // If you need to look up data when opening the page, list it out
+      // under "resolve".
+      resolve: {
+        remoteContact: function(crmApi4, $route) {
+          return crmApi4('Omnicontact', 'get', {
+            contactID: $route.current.params.cid
+          });
         }
-      });
+      }
+    })
+  }).run(
+    function($rootScope) {
+      // Triggered on problems with "resolve"
+      $rootScope.$on('$routeChangeError',
+        function(event, toState, toParams, fromState, fromParams, options){
+          event.preventDefault();
+          alert(fromState.error_message);
+        }
+      );
     }
   );
 
