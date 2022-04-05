@@ -278,6 +278,8 @@ ADD COLUMN created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
             'help_post' => '',
             'data_type' => 'Int',
             'html_type' => 'Text',
+            // View only - users can't alter.
+            'is_view' => TRUE,
           ],
         ],
       ],
