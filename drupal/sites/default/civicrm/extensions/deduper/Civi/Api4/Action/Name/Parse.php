@@ -74,9 +74,8 @@ class Parse extends AbstractAction {
       'prefix_id:label' => $nameParser->getSalutation(),
       'first_name' => $nameParser->getFirstname(),
       'last_name' => $nameParser->getLastname(),
-      'middle_name' => $nameParser->getMiddlename(),
+      'middle_name' => strlen($nameParser->getMiddlename()) ? $nameParser->getMiddlename() : $nameParser->getInitials(),
       'nick_name' => $nameParser->getNickName(),
-      'initials' => $nameParser->getInitials(),
       'suffix_id:label' => $nameParser->getSuffix(),
     ];
   }
