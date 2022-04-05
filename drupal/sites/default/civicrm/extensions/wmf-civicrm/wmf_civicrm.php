@@ -266,6 +266,20 @@ function wmf_civicrm_civicrm_navigationMenu(&$menu) {
     'operator' => 'OR',
     'separator' => 0,
   ]);
+  if (Civi::settings()->get('environment') === 'Development') {
+    // This assumes we are using the default port - since it's only
+    // here to help us devs it's probably OK for it to be a bit brittle.
+    _wmf_thankyou_civix_insert_navigation_menu($menu,
+      'Administer', [
+        'label' => 'Mail catcher',
+        'name' => 'wmf_dev_mail_catcher',
+        'url' => 'http://wmff.localhost:1080/',
+        'permission' => 'administer CiviCRM',
+        'operator' => 'OR',
+        'separator' => 0,
+      ]
+    );
+  }
   _wmf_civicrm_civix_navigationMenu($menu);
 }
 

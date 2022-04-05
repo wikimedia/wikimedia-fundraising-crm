@@ -47,6 +47,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       $response = $request->getResponse();
       $return = [
         'email' => $response->getEmail(),
+        'groups' => $this->getReturnGroups($response, $params['check_permissions']),
         'contact_identifier' => $response->getContactIdentifier(),
         'opt_in_date' => $response->getOptInIsoDateTime() ?: NULL,
         'opt_out_date' => $response->getOptOutIsoDateTime() ?: NULL,
@@ -57,9 +58,35 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       return array_merge($return, $response->getFields());
     }
     catch (Exception $e) {
-      return ['message' => $e->getMessage()];
+      throw new API_Exception($e->getMessage());
     }
 
+  }
+
+  /**
+   * @param \Omnimail\Silverpop\Responses\Contact $response
+   * @param array $return
+   *
+   * @return array
+   * @throws \API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function getReturnGroups(Contact $response, $checkPermissions): array {
+    $groups = $response->getGroupIdentifiers();
+    $return = [];
+    if (!empty($groups)) {
+      $groups = Group::get($checkPermissions)
+        ->addWhere('Group_Metadata.remote_group_identifier', 'IN', $groups)
+        ->addSelect('id', 'title', 'Group_Metadata.remote_group_identifier')
+        ->execute();
+      foreach ($groups as $group) {
+        $group['group_identifier'] = $group['Group_Metadata.remote_group_identifier'];
+        $group['url'] = 'https://engage4.silverpop.com/lists.do?action=listSummary&listId=' . $group['group_identifier'];
+        unset($group['Group_Metadata.remote_group_identifier']);
+        $return[$group['id']] = $group;
+      }
+    }
+    return $return;
   }
 
 }

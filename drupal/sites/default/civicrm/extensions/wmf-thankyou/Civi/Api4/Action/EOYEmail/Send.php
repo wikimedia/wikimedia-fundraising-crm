@@ -11,6 +11,7 @@ use Civi\Api4\Exception\EOYEmail\NoEmailException;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Omnimail\MailFactory;
+use Civi\WMFThankYou\From;
 use CRM_Core_DAO;
 use Exception;
 
@@ -96,8 +97,8 @@ class Send extends AbstractAction {
    * @throws \API_Exception
    */
   public function sendLetters(): array {
-    $fromAddress = variable_get('thank_you_from_address');
-    $fromName = variable_get('thank_you_from_name');
+    $fromAddress = From::getFromAddress('eoy');
+    $fromName = From::getFromName('eoy');
     if (!$fromAddress || !$fromName) {
       throw new API_Exception('Must configure a valid return address in the Thank-you module');
     }

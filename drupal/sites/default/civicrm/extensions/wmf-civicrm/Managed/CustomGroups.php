@@ -136,7 +136,7 @@ return [
  *
  * @return array
  */
-function _wmf_civicrm_get_gift_data_fields() {
+function _wmf_civicrm_get_gift_data_fields(): array {
   return [
     'Fund' => [
       'name' => 'Fund',
@@ -626,7 +626,7 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'column_name' => 'family_composition_173',
       'is_searchable' => 1,
       'option_values' => [
-        1  => 'Single',
+        1 => 'Single',
         2 => 'Single with Children',
         3 => 'Couple',
         4 => 'Couple with children',
@@ -646,7 +646,7 @@ function _wmf_civicrm_get_prospect_fields(): array {
         1 => 'Professional/Technical',
         2 => 'Upper Management/Executive',
         3 => 'Sales/Service',
-        4  => 'Office/Clerical',
+        4 => 'Office/Clerical',
         5 => 'Skilled Trade',
         6 => 'Retired',
         7 => 'Administrative/Management',
@@ -678,6 +678,73 @@ function _wmf_civicrm_get_prospect_fields(): array {
         '9' => '9',
         '10' => '10',
       ],
+    ],
+    'Prospect_Insight' => [
+      'name' => 'Prospect_Insight',
+      'label' => 'Prospect Insight',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'help_pre' => 'iWave determined prospect insight',
+      'column_name' => 'prospect_insight_280',
+      'option_values' => [
+        '1' =>  'Hidden Gem',
+        '2' => 'Your Champion',
+        'Distinguished Philanthropist' => 'Distinguished Philanthropist',
+        'Not Now Prospect' => 'Not Now Prospect',
+      ],
+    ],
+    'Estimated_Capacity' => [
+      'name' => 'Estimated_Capacity',
+      'label' => 'Estimated Capacity',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_searchable' => true,
+      'is_search_range' => false,
+      'weight' => 295,
+      'text_length' => 255,
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'column_name' => 'estimated_capacity_281'
+    ],
+    'Planned_Giving_Score' => [
+      'name' => 'Planned_Giving_Score',
+      'label' => 'Planned Giving Score',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => true,
+      'is_search_range' => false,
+      'weight' => 312,
+      'is_active' => true,
+      'text_length' => 255,
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'column_name' => 'planned_giving_score_282',
+      'option_values' => [
+        '1' => '1',
+        '2' => '2',
+        '3' => '3',
+        '4' => '4',
+      ],
+    ],
+    'Planned_Giving_Segment' => [
+      'name' => 'Planned_Giving_Segment',
+      'label' => 'Planned Giving Segment',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => true,
+      'is_search_range' => false,
+      'weight' => 313,
+      'is_active' => true,
+      'text_length' => 255,
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'column_name' => 'planned_giving_segment_283',
+      'option_values' => [
+        '1' => 'Potential Planned Giver',
+        '2' => 'Ideal Planned Giver',
+        'Not a Planned Giver' => 'Not a Planned Giver',
+        'Strong Planned Giving Prospect' => 'Strong Planned Giving Prospect',
+      ],
     ]
   ];
 }
@@ -687,7 +754,7 @@ function _wmf_civicrm_get_prospect_fields(): array {
  *
  * @return array
  */
-function _wmf_civicrm_get_partner_fields() {
+function _wmf_civicrm_get_partner_fields(): array {
   return [
     'Partner' => [
       'name' => 'Partner',
@@ -707,7 +774,7 @@ function _wmf_civicrm_get_partner_fields() {
  *
  * @return array
  */
-function _wmf_civicrm_get_wmf_contribution_extra_fields() {
+function _wmf_civicrm_get_wmf_contribution_extra_fields(): array {
   return [
     'settlement_date' => [
       'name' => 'settlement_date',
@@ -973,7 +1040,7 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields() {
  *
  * @return array
  */
-function _wmf_civicrm_get_communication_fields() {
+function _wmf_civicrm_get_communication_fields(): array {
   return [
     'opt_in' => [
       'name' => 'opt_in',
@@ -1035,7 +1102,7 @@ function _wmf_civicrm_get_communication_fields() {
  *
  * @return array[]
  */
-function _wmf_civicrm_get_stock_fields() {
+function _wmf_civicrm_get_stock_fields(): array {
   return [
     'description_of_stock' => [
       'name' => 'Description_of_Stock',

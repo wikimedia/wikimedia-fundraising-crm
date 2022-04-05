@@ -3,12 +3,13 @@
 use Civi\Api4\ThankYou;
 use Civi\Api4\Activity;
 use Civi\Omnimail\MailFactory;
+use Civi\WMFException\WMFException;
+use Civi\WMFThankYou\From;
 use SmashPig\Core\UtcDate;
 use wmf_communication\CiviMailStore;
 use wmf_communication\CiviMailingInsertException;
 use wmf_communication\CiviMailingMissingException;
 use wmf_communication\CiviQueueInsertException;
-use Civi\WMFException\WMFException;
 
 // TODO:
 // * use more exceptions in place of watchdog/return false
@@ -93,7 +94,7 @@ function thank_you_send_test_form() {
   $form['from_address'] = [
     '#type' => 'textfield',
     '#title' => t('Sender\'s email address'),
-    '#default_value' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
+    '#default_value' => From::getFromAddress('thank_you'),
     '#required' => TRUE,
   ];
 
@@ -229,10 +230,15 @@ function thank_you_send_test_form_submit($form_id, $form_values) {
 
   if ($params['locale'] === "all") {
     $langs = [];
-    foreach (glob(__DIR__ . "/templates/html/{$params['template']}.*.html") as $lang) {
+    foreach (glob(__DIR__ . '/../../../default/civicrm/extensions/wmf-civicrm/msg_templates/thank_you/thank_you.*.html.txt') as $lang) {
       $lang = substr($lang, strrpos($lang, '/') + 1);
       $lang = substr($lang, strpos($lang, '.') + 1);
       $lang = substr($lang, 0, strpos($lang, '.'));
+      // Special case: localization needs Portuguese (Portugal) to be passed in as
+      // pt_PT but our filename is just thank_you.pt.html.
+      if ($lang === 'pt') {
+        $lang = 'pt_PT';
+      }
       $langs[$lang] = $lang;
     }
 
@@ -413,8 +419,8 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
     'contact_id' => $mailingData['contact_id'],
     'currency' => $currency,
     'first_name' => $mailingData['first_name'],
-    'from_name' => thank_you_get_from_name($template),
-    'from_address' => variable_get('thank_you_from_address', 'donate@wikimedia.org'),
+    'from_name' => From::getFromName($template),
+    'from_address' => From::getFromAddress($template),
     'last_name' => $mailingData['last_name'],
     'language' => $mailingData['preferred_language'] ?: 'en_US',
     'name' => $mailingData['display_name'],
@@ -446,14 +452,6 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
     $msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
     throw new WMFException(WMFException::BAD_EMAIL, $msg);
   }
-}
-
-function thank_you_get_from_name($template) {
-  $setting = 'thank_you_from_name';
-  if ($template === 'endowment_thank_you') {
-    $setting = 'thank_you_endowment_from_name';
-  }
-  return variable_get($setting, 'Wikimedia Foundation');
 }
 
 function thank_you_update_ty_date($contribution) {
@@ -701,29 +699,6 @@ function thank_you_settings_form() {
       'true' => t('Send Thank You emails'),
     ],
     '#default_value' => variable_get('thank_you_enabled', 'true'),
-  ];
-
-  $form['thank_you_from_name'] = [
-    '#type' => 'textfield',
-    '#title' => t('From name (default)'),
-    '#default_value' => variable_get('thank_you_from_name', ''),
-    '#required' => TRUE,
-    '#description' => t('*** This is overwritten by any translations that may exist ***'),
-  ];
-
-  $form['thank_you_endowment_from_name'] = [
-    '#type' => 'textfield',
-    '#title' => t('From name (endowment)'),
-    '#default_value' => variable_get('thank_you_endowment_from_name', ''),
-    '#required' => TRUE,
-    '#description' => t('Used when financial type is Endowment Gift'),
-  ];
-
-  $form['thank_you_from_address'] = [
-    '#type' => 'textfield',
-    '#title' => t('From address'),
-    '#default_value' => variable_get('thank_you_from_address', ''),
-    '#required' => TRUE,
   ];
 
   $form['thank_you_days'] = [
