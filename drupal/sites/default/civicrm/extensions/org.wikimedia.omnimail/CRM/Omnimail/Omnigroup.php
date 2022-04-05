@@ -32,11 +32,11 @@ class CRM_Omnimail_Omnigroup extends CRM_Omnimail_Omnimail{
   public function create(array $params): array {
     /* @var \Omnimail\Silverpop\Mailer $mailer */
     $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
-    /* @var \Omnimail\Silverpop\Requests\CreateContactListRequest $request */
     $groupName = Group::get($params['check_permissions'])->addWhere('id', '=', $params['group_id'])->addSelect('name')->execute()->first()['name'];
     if (!$groupName) {
       throw new API_Exception('invalid group ID');
     }
+    /* @var \Omnimail\Silverpop\Requests\CreateContactListRequest $request */
     $request = $mailer->createGroup([
       'name' => $groupName,
       'databaseID' => $params['database_id'],
