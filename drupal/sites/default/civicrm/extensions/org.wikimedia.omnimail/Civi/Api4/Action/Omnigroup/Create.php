@@ -3,7 +3,6 @@ namespace Civi\Api4\Action\Omnigroup;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\Api4\Omnigroup;
 use Civi\Api4\Group;
 use GuzzleHttp\Client;
 
@@ -39,7 +38,9 @@ class Create extends AbstractAction {
   protected $groupID;
 
   /**
-   * @required
+   * For staging use id from docs - buildkit should configure this.
+   *
+   * https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_Integrated_Processes/Acoustic_Integration#Sandbox
    *
    * @var int
    */
@@ -99,18 +100,12 @@ class Create extends AbstractAction {
    * Get the remote database ID.
    *
    * @return int
-   *
-   * @throws \API_Exception
    */
-  public function getDataBaseID(): int {
-    if ($this->databaseID) {
-      return $this->databaseID;
+  public function getDatabaseID(): int {
+    if (!$this->databaseID) {
+      $this->databaseID = \Civi::settings()->get('omnimail_credentials')[$this->getMailProvider()]['database_id'][0];
     }
-    $databases = \Civi::settings()->get('omnimail_credentials')[$this->getMailProvider()]['database_id'];
-    if (empty($databases)) {
-      throw new \API_Exception('Could not determine database - for staging use id from docs - https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_Integrated_Processes/Acoustic_Integration#Sandbox');
-    }
-    return reset($databases);
+    return $this->databaseID;
   }
 
   /**

@@ -109,6 +109,18 @@ return [
     'description' => 'Credentials for omnimail',
     'help_text' => 'You can set these using the $civicrm_settings global',
   ],
+  'omnimail_field_mapping' => [
+    'group_name' => 'Omnimail Preferences',
+    'group' => 'omnimail',
+    'name' => 'omnimail_field_mapping',
+    'type' => 'Array',
+    'default' => [],
+    'title' => 'Omnimail Field Mapping',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'Mapping of fields to sync with Acoustic',
+    'help_text' => 'You can set these using the $civicrm_settings global',
+  ],
   'omnimail_omnihell_enabled' => [
     'group_name' => 'Omnimail Preferences',
     'group' => 'omnimail',

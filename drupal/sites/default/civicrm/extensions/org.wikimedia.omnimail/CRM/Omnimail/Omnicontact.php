@@ -2,7 +2,6 @@
 
 use Civi\Api4\Email;
 use Civi\Api4\Group;
-use Omnimail\Silverpop\Responses\RecipientsResponse;
 use Omnimail\Omnimail;
 use Omnimail\Silverpop\Responses\Contact;
 
@@ -17,6 +16,48 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
    * @var
    */
   protected $request;
+
+  /**
+   * Create a group (list) membership in Acoustic DB.
+   *
+   * @param array $params
+   *
+   * @return array
+   * @throws \API_Exception
+   */
+  public function create(array $params): array {
+    /* @var \Omnimail\Silverpop\Mailer $mailer */
+    $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
+    $groupIdentifier = (array) Group::get($params['check_permissions'])->addWhere('id', 'IN', $params['group_id'])->addSelect('Group_Metadata.remote_group_identifier')->execute()->indexBy('Group_Metadata.remote_group_identifier');
+    if (empty($groupIdentifier)) {
+      throw new API_Exception('Valid external group expected');
+    }
+    $request = $mailer->addContact([
+      'groupIdentifier' => array_keys($groupIdentifier),
+      'email' => $params['email'],
+      'databaseID' => $params['database_id'],
+      'fields' => $this->mapFields($params['values']),
+    ]);
+    /* @var Contact $reponse */
+    $response = $request->getResponse();
+    return [
+      'contact_identifier' => $response->getContactIdentifier(),
+    ];
+  }
+
+  /**
+   * Map CiviCRM field names to Acoustic.
+   */
+  protected function mapFields($values): array {
+    $fields = [];
+    $mapping = Civi::settings()->get('omnimail_field_mapping');
+    foreach ($values as $key => $value) {
+      if (isset($mapping[$key])) {
+        $fields[$mapping[$key]] = $value;
+      }
+    }
+    return $fields;
+  }
 
   /**
    * @param array $params
