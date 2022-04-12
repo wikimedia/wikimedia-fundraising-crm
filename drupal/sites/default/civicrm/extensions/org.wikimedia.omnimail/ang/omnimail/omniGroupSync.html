@@ -1,0 +1,10 @@
+<div class="crm-container">
+  <div crm-ui-debug="routeParams"></div>
+  <form name="omnigroupSyncTask" crm-ui-id-scope>
+    <button class="btn btn-primary"
+     crm-confirm="{message: ts('Are you sure you push this group to Acoustic?')}"
+     on-yes="omniGroupSync(routeParams.id)">
+      {{ ts('Push group to Acoustic') }}
+    </button>
+  </form>
+</div>
