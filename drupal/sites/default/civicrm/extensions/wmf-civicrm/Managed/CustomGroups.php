@@ -1268,6 +1268,40 @@ function _wmf_civicrm_get_benefactor_fields(): array {
       'text_length' => 255,
       'date_format' => 'mm/dd/yy',
     ],
+    'Endowment_Level' => [
+      'name' => 'Endowment_Level',
+      'label' => 'Endowment Level',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => 1,
+      'text_length' => 255,
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'option_values' => [
+        "1"=> "$5m+",
+        "2"=> "$1m+",
+        "3"=> "$100k+",
+        "4"=> "$50k+",
+        "5"=> "$5k+",
+        "6"=> "$1k+"
+      ],
+    ],
+    'Benefactor_Level' => [
+      'name' => 'Benefactor_Level',
+      'label' => 'Benefactor Level',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => 1,
+      'text_length' => 255,
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'option_values' => [
+        "1"=> "Major Benefactor ($50k+)",
+        "2"=> "Patron Donors ($15k-49,999)",
+        "3"=> "Leading Donors ($5k-$14,999)",
+        "4"=> "Sustaining Donor ($1k-$4,999)"
+      ],
+    ],
   ];
 }
 
