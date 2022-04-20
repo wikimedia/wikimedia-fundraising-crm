@@ -12,7 +12,6 @@ dependencies[] = civicrm
 files[] = EngageChecksFile.php
 files[] = ChecksFile.php
 files[] = ChecksImportLog.php
-files[] = CoinbaseFile.php
 files[] = ContributionConversion.php
 files[] = ForeignChecksFile.php
 files[] = JpMorganFile.php
