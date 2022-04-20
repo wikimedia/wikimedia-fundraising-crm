@@ -5,7 +5,7 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Gateway.
    *
-   * eg. jpmorgan, paypal etc.
+   * eg. benevity, engage etc.
    *
    * @var string
    */

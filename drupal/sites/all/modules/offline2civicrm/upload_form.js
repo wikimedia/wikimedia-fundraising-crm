@@ -13,8 +13,6 @@
 
                 if ( /JPM/.test( uploadFile ) ) {
                     fileType = "jpmorgan";
-                } else if ( /Paypal/.test( uploadFile ) ) {
-                    fileType = "paypal";
                 } else if ( /Organization|Individual/.test( uploadFile ) ) {
                     fileType = "engage";
                 } else if ( /Foreign/.test( uploadFile ) ) {

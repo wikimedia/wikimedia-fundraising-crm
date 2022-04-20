@@ -140,7 +140,6 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
       'generic_ind' => t('Generic Individuals'),
       'generic_org' => t('Generic Organizations'),
       'jpmorgan' => t('JP Morgan'),
-      'paypal' => t('PayPal EFT'),
       'square' => t('Square'),
       'stripe' => t('Stripe'),
       'trilogy' => t('Trilogy'),
@@ -402,9 +401,6 @@ function offline2civicrm_get_importer_class($uploadFormat, $fileUri, $additional
 
     case 'fidelity':
       return new FidelityFile($fileUri, $additionalFields);
-
-    case 'paypal':
-      return new PayPalChecksFile($fileUri, $additionalFields);
 
     case 'jpmorgan':
       return new JpMorganFile($fileUri, $additionalFields);
