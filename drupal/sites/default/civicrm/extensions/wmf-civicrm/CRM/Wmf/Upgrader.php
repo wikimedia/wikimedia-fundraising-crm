@@ -544,4 +544,30 @@ SET
   //   return TRUE;
   // }
 
+  public function upgrade_4218(): bool {
+    $oldOptionGroupId = CRM_Core_DAO::singleValueQuery(
+      "SELECT option_group_id FROM civicrm_custom_field WHERE name = 'Endowment_Level'");
+      if(!$oldOptionGroupId){
+        CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_group ( `name`, `title`, `is_active` ) VALUES ('Benefactor_Page_Listing_Endowment_Level', 'Benefactor Page Listing :: Endowment Level', 1)");
+        $newOptionGroupId = CRM_Core_DAO::singleValueQuery(
+          "SELECT id FROM civicrm_option_group WHERE name = 'Benefactor_Page_Listing_Endowment_Level'");
+        if ($newOptionGroupId)
+        {
+          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+  VALUES ($newOptionGroupId, '$5m+', 1, '$5m+',  0,  0, 1, '', 0, 0, 1)");
+          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+  VALUES ($newOptionGroupId, '$1m+', 2, '$5m+',  0,  0, 2, '', 0, 0, 1)");
+          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+  VALUES ($newOptionGroupId, '$100k+', 3, '$5m+',  0,  0, 3, '', 0, 0, 1)");
+          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+  VALUES ($newOptionGroupId, '$50k+', 4, '$5m+',  0,  0, 4, '', 0, 0, 1)");
+          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+  VALUES ($newOptionGroupId, '$5k+', 5, '$5m+',  0,  0, 5, '', 0, 0, 1)");
+          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+  VALUES ($newOptionGroupId, '$1k+', 6, '$5m+',  0,  0, 6, '', 0, 0, 1)");
+          CRM_Core_DAO::executeQuery( "UPDATE civicrm_custom_field SET option_group_id=$newOptionGroupId, html_type='Select' WHERE name = 'Endowment_Level'" );
+        }
+      }
+    return TRUE;
+  }
 }
