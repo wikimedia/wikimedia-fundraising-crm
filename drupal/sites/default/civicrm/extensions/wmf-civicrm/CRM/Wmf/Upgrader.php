@@ -570,4 +570,16 @@ SET
       }
     return TRUE;
   }
+
+  /**
+   * @return bool
+   * remove the trailing number from email
+   */
+  public function upgrade_4219(): bool {
+    // replace c0m to com
+    CRM_Core_DAO::executeQuery( "update civicrm_email set email = replace(email,'c0m' , 'com'), on_hold=0, hold_date=NULL where email like ('%@%.c0m')" );
+    // remove trailing number from domain if email contains '@'
+    CRM_Core_DAO::executeQuery( "update civicrm_email set email = left( email, length(email) - length(REGEXP_SUBSTR(reverse(email),'[0-9]+'))), on_hold=0, hold_date=NULL where SUBSTRING(email, length(email), 1) REGEXP '[0-9]' and email LIKE '%@%.%'" );
+    return TRUE;
+  }
 }
