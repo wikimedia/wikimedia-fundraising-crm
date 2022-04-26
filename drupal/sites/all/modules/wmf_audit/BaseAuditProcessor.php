@@ -334,6 +334,7 @@ abstract class BaseAuditProcessor {
 
   /**
    * Checks to see if the transaction already exists in civi
+   * Override if the parser doesn't normalize.
    *
    * @param array $transaction Array of donation data
    *
