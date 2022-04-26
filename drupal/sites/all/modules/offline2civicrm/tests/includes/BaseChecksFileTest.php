@@ -109,7 +109,10 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
       // As are paranormal investigators
       'Fox Mulder',
       'Satoshi Nakamoto',
-      'fox.mulder.doppelganger@pm.me'
+      'fox.mulder.doppelganger@pm.me',
+      // It is well known mice that evolved from scientists
+      'Charles Darwin',
+      'Marie Currie',
     ];
     CRM_Core_DAO::executeQuery(
       'DELETE FROM civicrm_contact WHERE display_name IN ("'

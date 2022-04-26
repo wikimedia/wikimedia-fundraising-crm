@@ -8,15 +8,7 @@ use Civi\Api4\Contact;
  */
 class StripeTest extends BaseChecksFileTest {
 
-  public function setUp(): void {
-    parent::setUp();
-    $this->gateway = 'stripe';
-  }
-
-  public function tearDown(): void {
-    Contact::delete(FALSE)->addWhere('last_name', 'IN', ['Darwin', 'Currie'])->execute();
-    parent::tearDown();
-  }
+  protected $gateway = 'stripe';
 
   /**
    * Test basic import.
