@@ -40,8 +40,8 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
    *
    * @throws \API_Exception
    */
-  public function tearDown() {
-    Contact::delete(FALSE)->addWhere('id', '=', $this->contactID)->execute();
+  public function tearDown(): void {
+    Contact::delete(FALSE)->addWhere('id', '=', $this->contactID)->setUseTrash(FALSE)->execute();
     parent::tearDown();
   }
 
@@ -50,6 +50,7 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
    *
    * Note how the function name begins with the word "test".
    *
+   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function testGetEmailPreferenceApi(): void {
