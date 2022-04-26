@@ -55,12 +55,18 @@ class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework
 
   /**
    * Reset the pending database
+   *
+   * @throws \API_Exception
    */
   public function tearDown(): void {
     TestingDatabase::clearStatics();
     if ($this->contactId) {
+      Contribution::delete(FALSE)
+        ->addWhere('contact_id', '=', $this->contactId)
+        ->execute();
       Contact::delete(FALSE)
         ->addWhere('id', '=', $this->contactId)
+        ->setUseTrash(FALSE)
         ->execute();
     }
   }

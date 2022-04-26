@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingGlobalConfiguration;
@@ -24,8 +26,12 @@ class Civi_Api4_Action_PendingTable_ConsumeTest extends \PHPUnit\Framework\TestC
    * The tearDown() method is executed after the test was executed (optional).
    *
    * This can be used for cleanup.
+   *
+   * @throws \API_Exception
    */
   public function tearDown(): void {
+    Contribution::delete(FALSE)->addWhere('contact_id.display_name', '=', 'Testy McTester')->execute();
+    Contact::delete(FALSE)->addWhere('display_name', '=', 'Testy McTester')->setUseTrash(FALSE)->execute();
     parent::tearDown();
   }
 
