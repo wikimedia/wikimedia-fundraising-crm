@@ -4,6 +4,7 @@ namespace Civi\Wmf;
 
 use Civi\Api4\Activity;
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\Api4\WMFDataManagement;
 use Civi\Test;
 use Civi\Test\Api3TestTrait;
@@ -42,6 +43,19 @@ class ArchiveThankYouTest extends TestCase implements HeadlessInterface, HookInt
       ->apply();
   }
 
+  /**
+   * The tearDown() method is executed after the test was executed (optional).
+   *
+   * This can be used for cleanup.
+   *
+   * @throws \API_Exception
+   */
+  public function tearDown(): void {
+    Contribution::delete(FALSE)->addWhere('contact_id.display_name', '=', 'Billy Bill')->execute();
+    Contact::delete(FALSE)->addWhere('display_name', '=', 'Billy Bill')->setUseTrash(FALSE)->execute();
+    parent::tearDown();
+  }
+
   /***
    * Test purging old thank you details
    *
@@ -49,7 +63,7 @@ class ArchiveThankYouTest extends TestCase implements HeadlessInterface, HookInt
    */
   public function testArchiveThankYou(): void {
     $contactID = Contact::create(FALSE)
-      ->setValues(['first_name' => 'Bob', 'contact_type' => 'Individual'])
+      ->setValues(['first_name' => 'Billy', 'last_name' => 'Bill', 'contact_type' => 'Individual'])
       ->execute()->first()['id'];
     $activityID = Activity::create(FALSE)->setValues([
       'activity_type_id:name' => 'Email',
