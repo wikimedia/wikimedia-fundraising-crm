@@ -14,7 +14,7 @@ use Civi\Api4\Contact;
  * This is a generic test class implemented with PHPUnit.
  * @group headless
  */
-class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface {
   use Api3TestTrait;
 
   protected $contactID;
