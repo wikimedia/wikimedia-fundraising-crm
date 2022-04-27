@@ -137,7 +137,6 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
       'fidelity' => t('Fidelity'),
       'foreign_checks' => t('Foreign Checks'),
       'generic_ind' => t('Generic Individuals'),
-      'generic_org' => t('Generic Organizations'),
       'jpmorgan' => t('JP Morgan'),
       'stripe' => t('Stripe'),
       'trilogy' => t('Trilogy'),
@@ -383,9 +382,6 @@ function offline2civicrm_get_importer_class($uploadFormat, $fileUri, $additional
 
     case 'generic_ind':
       return new WmfImportFile($fileUri, $additionalFields);
-
-    case 'generic_org':
-      return new WmfOrgImportFile($fileUri, $additionalFields);
 
     case 'benevity':
       return new BenevityFile($fileUri, $additionalFields);
