@@ -17,7 +17,6 @@ files[] = ForeignChecksFile.php
 files[] = JpMorganFile.php
 files[] = BitpayFile.php
 files[] = BenevityFile.php
-files[] = CitibankFile.php
 files[] = CitibankIndividualsFile.php
 files[] = FidelityFile.php
 files[] = StripeFile.php
