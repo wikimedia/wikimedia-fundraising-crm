@@ -20,9 +20,7 @@ files[] = BenevityFile.php
 files[] = CitibankFile.php
 files[] = CitibankIndividualsFile.php
 files[] = FidelityFile.php
-files[] = SquareFile.php
 files[] = StripeFile.php
 files[] = TrilogyFile.php
 files[] = WmfImportFile.php
-files[] = WmfOrgImportFile.php
 
