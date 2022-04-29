@@ -14,3 +14,4 @@ mysql -u root <<EOS
 	SET GLOBAL innodb_default_row_format='dynamic';
   SET GLOBAL innodb_file_per_table = 1;
   SET GLOBAL innodb_large_prefix = ON;
+EOS
