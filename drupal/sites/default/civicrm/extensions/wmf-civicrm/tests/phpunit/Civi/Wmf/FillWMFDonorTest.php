@@ -44,11 +44,27 @@ class FillWMFDonorTest extends TestCase implements HeadlessInterface, HookInterf
   }
 
   /**
+   * The tearDown() method is executed after the test was executed (optional).
+   *
+   * This can be used for cleanup.
+   *
+   * @todo - this is the same as ArchiveThankYouTest - might be
+   * time to introduce a shared parent soon.
+   *
+   * @throws \API_Exception
+   */
+  public function tearDown(): void {
+    Contribution::delete(FALSE)->addWhere('contact_id.display_name', '=', 'Billy Bill')->execute();
+    Contact::delete(FALSE)->addWhere('display_name', '=', 'Billy Bill')->setUseTrash(FALSE)->execute();
+    parent::tearDown();
+  }
+
+  /**
    * @throws \Civi\API\Exception\UnauthorizedException
    * @throws \API_Exception
    */
   public function testFillWMFDonor(): void {
-    $contactID = Contact::create(FALSE)->setValues(['first_name' => 'Sarah', 'contact_type' => 'Individual'])->execute()->first()['id'];
+    $contactID = Contact::create(FALSE)->setValues(['first_name' => 'Billy', 'last_name' => 'Bill', 'contact_type' => 'Individual'])->execute()->first()['id'];
     Contribution::create(FALSE)->setValues([
       'receive_date' => '2021-08-02',
       'financial_type_id:name' => 'Donation',
