@@ -65,6 +65,8 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function tearDown(): void {
     $this->doCleanUp();
+    // Employer contact ids are cached in statics.
+    unset(\Civi::$statics['offline2civicrm']);
     parent::tearDown();
   }
 

@@ -13,18 +13,23 @@ use Civi\Api4\Contribution;
  */
 class BenevityTest extends BaseChecksFileTest {
 
+  /**
+   * Gateway.
+   *
+   * eg. benevity, engage etc.
+   *
+   * @var string
+   */
+  protected $gateway = 'benevity';
+
   public function setUp(): void {
     $this->ensureAnonymousContactExists();
     parent::setUp();
 
     $this->setExchangeRates($this->epochtime, ['USD' => 1, 'BTC' => 3]);
-    $this->gateway = 'benevity';
-
-    \Civi::$statics = array();
-    $countries = $this->callAPISuccess('Country', 'get', array('options' => array('limit' => 0)));
-    $this->callAPISuccess('Setting', 'create', array('countryLimit' => array_keys($countries['values'])));
-    $this->callAPISuccess('Setting', 'create', array('provinceLimit' => array()));
-
+    $countries = $this->callAPISuccess('Country', 'get', ['options' => ['limit' => 0]]);
+    $this->callAPISuccess('Setting', 'create', ['countryLimit' => array_keys($countries['values'])]);
+    $this->callAPISuccess('Setting', 'create', ['provinceLimit' => []]);
   }
 
   /**
@@ -368,7 +373,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that import resolves ambiguous individuals by choosing based on the
    * employer where nick_name match in play.
    */
-  public function testImportSucceedIndividualDismabiguateByEmployerNickName() {
+  public function testImportSucceedIndividualDisambiguateByEmployerNickName(): void {
     $organization = $this->callAPISuccess('Contact', 'create', array(
       'organization_name' => 'Micey',
       'nick_name' => 'Mickey Mouse Inc',
