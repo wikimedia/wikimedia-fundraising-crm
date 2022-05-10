@@ -3,7 +3,6 @@ description = Module for common files, functions and resources for WMF modules
 core = 7.x
 package = Wikimedia
 configure = admin/config/wmf_common
-files[] = CsvBatchFile.php
 files[] = TransactionalWmfQueueConsumer.php
 files[] = WmfDatabase.php
 files[] = WmfQueueConsumer.php

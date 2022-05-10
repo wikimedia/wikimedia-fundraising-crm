@@ -11,9 +11,7 @@
             if ( uploadFile ) {
                 $submitButton.removeAttr( "disabled" );
 
-                if ( /JPM/.test( uploadFile ) ) {
-                    fileType = "jpmorgan";
-                } else if ( /Organization|Individual/.test( uploadFile ) ) {
+                if ( /Organization|Individual/.test( uploadFile ) ) {
                     fileType = "engage";
                 } else if ( /Foreign/.test( uploadFile ) ) {
                     fileType = "foreign_checks";

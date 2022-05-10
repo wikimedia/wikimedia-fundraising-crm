@@ -1152,26 +1152,26 @@ abstract class ChecksFile {
    */
   protected function getOrganizationID(string $organizationName, bool $isCreateIfNotExists = FALSE): int {
     // Using the Civi Statics pattern for php caching makes it easier to reset in unit tests.
-    if (!isset(\Civi::$statics[__CLASS__]['organization'][$organizationName])) {
+    if (!isset(\Civi::$statics['offline2civicrm']['organization'][$organizationName])) {
       $contacts = civicrm_api3('Contact', 'get', ['nick_name' => $organizationName, 'contact_type' => 'Organization']);
       if ($contacts['count'] == 0) {
         $contacts = civicrm_api3('Contact', 'get', ['organization_name' => $organizationName, 'contact_type' => 'Organization']);
       }
       if ($contacts['count'] == 1) {
-        \Civi::$statics[__CLASS__]['organization'][$organizationName] = $contacts['id'];
+        \Civi::$statics['offline2civicrm']['organization'][$organizationName] = $contacts['id'];
       }
       else {
-        \Civi::$statics[__CLASS__]['organization'][$organizationName] = NULL;
+        \Civi::$statics['offline2civicrm']['organization'][$organizationName] = NULL;
         if ($isCreateIfNotExists) {
-          \Civi::$statics[__CLASS__]['organization'][$organizationName] = Contact::create(FALSE)->setValues([
+          \Civi::$statics['offline2civicrm']['organization'][$organizationName] = Contact::create(FALSE)->setValues([
             'organization_name' => $organizationName,
             'source' => $this->gateway . ' created via import',
           ])->execute()->first()['id'];
         }
       }
     }
-    if (\Civi::$statics[__CLASS__]['organization'][$organizationName]) {
-      return \Civi::$statics[__CLASS__]['organization'][$organizationName];
+    if (\Civi::$statics['offline2civicrm']['organization'][$organizationName]) {
+      return \Civi::$statics['offline2civicrm']['organization'][$organizationName];
     }
     throw new WMFException(
       WMFException::IMPORT_CONTRIB,
