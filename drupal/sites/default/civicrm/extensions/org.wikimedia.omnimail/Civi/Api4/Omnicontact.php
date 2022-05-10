@@ -44,13 +44,13 @@ class Omnicontact extends Generic\AbstractEntity {
  /**
   * Get permissions.
   *
-  * It may be that we don't need a permission check on this api at all at there is a check on the entity
-  * retrieved.
+  * Per https://phabricator.wikimedia.org/T305505 it seems we
+  * want all Civi users to be able to access get info.
   *
   * @return array
   */
   public static function permissions():array {
-    return ['check' => 'administer CiviCRM'];
+    return ['default' => 'administer CiviCRM', 'get' => 'access CiviCRM'];
   }
 
   /**
