@@ -1116,6 +1116,45 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * If we get a matching contact name and email, update the preferred language
+   *
+   * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
+   */
+  public function testUpdateLanguageWithContactExisting() {
+    $existingContact = $this->callAPISuccess('Contact', 'Create', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Dupey',
+      'email' => 'dupe@example.org',
+      'preferred_language' => 'es_ES'
+    ]);
+
+    $this->contact_id = $existingContact['id'];
+
+    $msg = [
+      'first_name' => 'Test',
+      'last_name' => 'Dupey',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'dupe@example.org',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      // This should be normalized to es_MX and then used to update the contact record
+      'language' => 'es-419'
+    ];
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+    $updatedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->contact_id]);
+    $this->assertEquals('es_MX', $updatedContact['preferred_language']);
+  }
+
+  /**
    * If we get a contact ID and a bad email, leave the existing contact alone
    *
    * @throws \Civi\WMFException\WMFException
