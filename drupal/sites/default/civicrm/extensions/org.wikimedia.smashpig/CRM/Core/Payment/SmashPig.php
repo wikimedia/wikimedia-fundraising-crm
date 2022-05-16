@@ -92,7 +92,6 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
         $this->throwException('ApprovePayment failed', $approvePaymentResponse);
       }
 
-      $gatewayTxnId = $approvePaymentResponse->getGatewayTxnId();
     }
 
     return [
