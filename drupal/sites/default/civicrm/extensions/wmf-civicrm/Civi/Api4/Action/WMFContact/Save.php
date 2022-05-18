@@ -151,11 +151,7 @@ class Save extends AbstractAction {
       wmf_civicrm_ensure_option_exists($msg['name_suffix'], 'suffix_id', 'individual_suffix');
     }
 
-    $cdId = NULL;
-    if (isset($msg['contribution_tracking_id']) && is_numeric($msg['contribution_tracking_id'])) {
-      $cdId = (int) $msg['contribution_tracking_id'];
-    }
-    $contact['preferred_language'] = $this->getPreferredLanguage($msg['language'] ?? '', $cdId, $msg['country'] ?? '');
+    $contact['preferred_language'] = $this->getPreferredLanguage($msg);
 
     // Copy some fields, if they exist
     $direct_fields = [
@@ -371,18 +367,20 @@ class Save extends AbstractAction {
    *
    * Bug https://phabricator.wikimedia.org/T279389 is open to clean this up.
    *
-   * @param string $incomingLanguage language from external source
-   * @param int|null $contributionTrackingID contribution tracking id - could this be unset?
-   * @param string $country
    *
-   * @throws \CiviCRM_API3_Exception
+   * @param array $msg
+   * @return string
+   * @throws \API_Exception
    */
-  protected function getPreferredLanguage(string $incomingLanguage, ?int $contributionTrackingID, string $country): string {
+  protected function getPreferredLanguage(array $msg): string {
+    $incomingLanguage = $msg['language'] ?? '';
+    $country = $msg['country'] ?? '';
     $preferredLanguage = '';
     if (!$incomingLanguage) {
       // TODO: use LanguageTag to prevent truncation of >2 char lang codes
       // guess from contribution_tracking data
-      if ($contributionTrackingID) {
+      if (isset($msg['contribution_tracking_id']) && is_numeric($msg['contribution_tracking_id'])) {
+        $contributionTrackingID = (int) $msg['contribution_tracking_id'];
         $tracking = wmf_civicrm_get_contribution_tracking(['contribution_tracking_id' => $contributionTrackingID]);
         if ($tracking and !empty($tracking['language'])) {
           if (strpos($tracking['language'], '-')) {
@@ -524,6 +522,11 @@ class Save extends AbstractAction {
       if (!empty($msg['employer'])) {
         // WMF-only custom field
         $updateParams['Communication.Employer_Name'] = $msg['employer'];
+      }
+      if (!empty($msg['language'])) {
+        // Only update this if we've got something on the message, so we don't
+        // overwrite previous good data with some lame default.
+        $updateParams['preferred_language'] = $this->getPreferredLanguage($msg);
       }
     }
     if (!empty($updateParams)) {
