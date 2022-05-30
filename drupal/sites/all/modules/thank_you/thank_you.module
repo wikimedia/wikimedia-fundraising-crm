@@ -84,20 +84,6 @@ function thank_you_send_test_form() {
     '#required' => TRUE,
   ];
 
-  $form['from_name'] = [
-    '#type' => 'textfield',
-    '#title' => t('Sender\'s name'),
-    '#default_value' => 'Thank-you Testmeister',
-    '#required' => TRUE,
-  ];
-
-  $form['from_address'] = [
-    '#type' => 'textfield',
-    '#title' => t('Sender\'s email address'),
-    '#default_value' => From::getFromAddress('thank_you'),
-    '#required' => TRUE,
-  ];
-
   // load the available languages to test
   // TODO: add a staging list so that one can test before enabling
   // TODO elsewhere: these locales should be in canonical form
@@ -419,8 +405,6 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
     'contact_id' => $mailingData['contact_id'],
     'currency' => $currency,
     'first_name' => $mailingData['first_name'],
-    'from_name' => From::getFromName($template),
-    'from_address' => From::getFromAddress($template),
     'last_name' => $mailingData['last_name'],
     'language' => $mailingData['preferred_language'] ?: 'en_US',
     'name' => $mailingData['display_name'],
@@ -490,8 +474,6 @@ function thank_you_send_mail($params) {
     'amount',
     'contribution_id',
     'currency',
-    'from_name',
-    'from_address',
     'receive_date',
     'recipient_address',
     'recurring',
@@ -542,8 +524,8 @@ function thank_you_send_mail($params) {
   }
 
   $email = [
-    'from_name' => $params['from_name'],
-    'from_address' => $params['from_address'],
+    'from_name' => From::getFromName($params['template']),
+    'from_address' => From::getFromAddress($params['template']),
     'to_name' => $params['name'],
     'to_address' => $params['recipient_address'],
     'locale' => $params['language'],
