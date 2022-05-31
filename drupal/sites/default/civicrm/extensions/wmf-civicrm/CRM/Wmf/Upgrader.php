@@ -18,6 +18,8 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
     $settings = new CRM_Wmf_Upgrader_Settings();
     $settings->setWmfSettings();
     $this->addCustomFields();
+    // Reset navigation on install.
+    civicrm_api3('Navigation', 'reset', ['for' => 'report']);
   }
 
   /**
