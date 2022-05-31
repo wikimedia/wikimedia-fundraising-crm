@@ -19,15 +19,6 @@ function geocoder_civicrm_config(&$config) {
 }
 
 /**
- * Implements hook_civicrm_xmlMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
- */
-function geocoder_civicrm_xmlMenu(&$files) {
-  _geocoder_civix_civicrm_xmlMenu($files);
-}
-
-/**
  * Implements hook_civicrm_install().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
@@ -82,79 +73,68 @@ function geocoder_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
- * Implements hook_civicrm_managed().
+ * Load our metadata files (we have extra metadata in them that we use).
  *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
+ * @param array $entities
+ */
+function geocoder_civicrm_geo_managed(&$entities) {
+  if (!isset(Civi::$statics['geocoder_civicrm_geo_managed']['entities'])) {
+    $managedFiles = CRM_Utils_File::findFiles(__DIR__, '*.mgd.php');
+    $geocoders = [];
+    foreach ($managedFiles as $file) {
+      $es = include $file;
+      foreach ($es as $e) {
+        if (empty($e['module'])) {
+          $e['module'] = E::LONG_NAME;
+        }
+        if (empty($e['params']['version'])) {
+          $e['params']['version'] = '3';
+        }
+        $geocoders[] = $e;
+      }
+    }
+    Civi::$statics['geocoder_civicrm_geo_managed']['entities'] = $geocoders;
+  }
+  $entities = Civi::$statics['geocoder_civicrm_geo_managed']['entities'];
+}
+
+/**
+ * Make sure all our geocoders are in managed.
+ *
+ * Historically they weren't because the managed system didn't
+ * support 'update' => 'never' and kept enabling / reverting them.
+ * But now, for a few releases, we will hold a routine to help convert.
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
  */
 function geocoder_civicrm_managed(&$entities) {
-  _geocoder_civix_civicrm_managed($entities);
-}
-
-/**
- * Generate a list of geocoders to manage.
- *
- * In order to avoid having them installed when we do not wish we alter the
- * file names & manage ourselves.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
- */
-function geocoder_civicrm_geo_managed(&$entities) {
-  $mgdFiles = _geocoder_civix_find_files(__DIR__, '*.mgd.geo.php');
-  foreach ($mgdFiles as $file) {
-    $es = include $file;
-    foreach ($es as $e) {
-      if (empty($e['module'])) {
-        $e['module'] = E::LONG_NAME;
+  if (!empty(Civi::$statics['geocoder_civicrm_managed']['check'])) {
+    return;
+  }
+  $geocoders = CRM_Core_DAO::executeQuery('SELECT id, name FROM civicrm_geocoder')->fetchAll();
+  $ids = [];
+  foreach ($geocoders as $geocoder) {
+    $ids[$geocoder['name']] = $geocoder['id'];
+  }
+  if (!empty($ids)) {
+    $managedEntities = CRM_Core_DAO::executeQuery("SELECT name FROM civicrm_managed WHERE module = 'org.wikimedia.geocoder' AND entity_type = 'Geocoder' AND entity_id IN (" . implode(',', $ids) . ')')->fetchAll();
+    foreach ($managedEntities as $managedEntity) {
+      if (isset($ids[$managedEntity['name']])) {
+        unset($ids[$managedEntity['name']]);
       }
-      if (empty($e['params']['version'])) {
-        $e['params']['version'] = '3';
-      }
-      $entities[] = $e;
+    }
+    foreach ($ids as $name => $id) {
+      CRM_Core_DAO::executeQuery("INSERT INTO civicrm_managed (module, name, entity_type, entity_id) VALUES('org.wikimedia.geocoder', '$name', 'Geocoder', $id)");
     }
   }
-}
+  Civi::$statics['geocoder_civicrm_managed']['check'] = TRUE;
 
-/**
- * Implements hook_civicrm_caseTypes().
- *
- * Generate a list of case-types.
- *
- * Note: This hook only runs in CiviCRM 4.4+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
- */
-function geocoder_civicrm_caseTypes(&$caseTypes) {
-  _geocoder_civix_civicrm_caseTypes($caseTypes);
-}
-
-/**
- * Implements hook_civicrm_angularModules().
- *
- * Generate a list of Angular modules.
- *
- * Note: This hook only runs in CiviCRM 4.5+. It may
- * use features only available in v4.6+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
- */
-function geocoder_civicrm_angularModules(&$angularModules) {
-  _geocoder_civix_civicrm_angularModules($angularModules);
-}
-
-/**
- * Implements hook_civicrm_alterSettingsFolders().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
- */
-function geocoder_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _geocoder_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
 /**
  * Implements hook_civicrm_entityTypes.
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
  *
  * @param array $entityTypes
  *   Registered entity types.
@@ -188,9 +168,8 @@ function geocoder_civicrm_alterLogTables(&$logTableSpec) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
  *
-function geocoder_civicrm_preProcess($formName, &$form) {
 
-} // */
+ // */
 
 /**
  * Implements hook_civicrm_navigationMenu().

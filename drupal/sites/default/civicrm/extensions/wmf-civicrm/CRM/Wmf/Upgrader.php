@@ -18,7 +18,7 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
    * @throws \CiviCRM_API3_Exception
    * @throws \API_Exception
    */
-  public function install() {
+  public function install(): void {
     $settings = new CRM_Wmf_Upgrader_Settings();
     $settings->setWmfSettings();
     $this->addCustomFields();
@@ -32,16 +32,26 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
       ->addValue('label', 'Spanish (Latin America)')
       ->addValue('value', 'es_MX')
       ->execute();
+
+    $this->syncGeocoders();
   }
 
   /**
    * Create WMF specific custom fields.
    *
    * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function addCustomFields(): void {
     WMFConfig::syncCustomFields(FALSE)->execute();
+  }
+
+  /**
+   * Create WMF specific custom fields.
+   *
+   * @throws \API_Exception
+   */
+  public function syncGeocoders(): void {
+    WMFConfig::syncGeocoders(FALSE)->execute();
   }
 
   /**

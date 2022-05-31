@@ -6,6 +6,7 @@ use Civi\Api4\Email;
 use Civi\Api4\Relationship;
 use Civi\WMFException\WMFException;
 use wmf_civicrm\ImportStatsCollector;
+use Civi\Api4\WMFConfig;
 
 define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
 
@@ -65,7 +66,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   public function setUp(): void {
     parent::setUp();
     wmf_civicrm_ensure_option_value_exists(wmf_civicrm_get_direct_mail_field_option_id(), ImportMessageTest_campaign);
-    wmf_civicrm_ensure_correct_geocoder_enabled();
     $geoCoders = civicrm_api3('Geocoder', 'get', ['is_active' => 1]);
     $this->assertEquals(1, $geoCoders['count']);
   }

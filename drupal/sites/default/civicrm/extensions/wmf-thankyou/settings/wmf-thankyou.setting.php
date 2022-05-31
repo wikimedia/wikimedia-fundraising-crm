@@ -1,5 +1,5 @@
 <?php
-use CRM_Wmf_ExtensionUtil as E;
+use CRM_WmfThankyou_ExtensionUtil as E;
 
 return [
   'wmf_thank_you_from_name' => [
