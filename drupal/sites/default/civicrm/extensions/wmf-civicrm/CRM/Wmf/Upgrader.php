@@ -1,4 +1,6 @@
 <?php
+
+use Civi\Api4\WMFConfig;
 use CRM_Wmf_ExtensionUtil as E;
 
 /**
@@ -15,6 +17,17 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
   public function install() {
     $settings = new CRM_Wmf_Upgrader_Settings();
     $settings->setWmfSettings();
+    $this->addCustomFields();
+  }
+
+  /**
+   * Create WMF specific custom fields.
+   *
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function addCustomFields(): void {
+    WMFConfig::syncCustomFields(FALSE)->execute();
   }
 
   /**

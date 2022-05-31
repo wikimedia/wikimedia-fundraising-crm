@@ -18,13 +18,6 @@ function wmf_civicrm_drush_command() {
     'aliases' => ['recalc'],
   ];
 
-  $items['update-custom-fields'] = [
-    'description' => 'Update/sync civicrm custom fields',
-    'examples' => [
-      'drush ucf',
-    ],
-    'aliases' => ['ucf'],
-  ];
   return $items;
 }
 
@@ -52,7 +45,4 @@ function drush_wmf_civicrm_recalculate_contributions() {
 	$start = new DateTime( $start_string, new DateTimeZone( 'UTC' ) );
 	$end = new DateTime( $end_string, new DateTimeZone( 'UTC' ) );
 	module_invoke( 'wmf_civicrm', 'recalculate_contributions', $start, $end );
-}
-function drush_wmf_civicrm_update_custom_fields() {
-	module_invoke( 'wmf_civicrm', 'update_custom_fields');
 }

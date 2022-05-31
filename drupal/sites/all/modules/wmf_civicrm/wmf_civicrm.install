@@ -3,7 +3,6 @@
 use Civi\Api4\OptionValue;
 
 require_once(__DIR__ . "/bootstrap.inc");
-require_once 'update_custom_fields.php';
 
 /**
  * On new install call these functions.
@@ -22,7 +21,6 @@ function wmf_civicrm_install() {
   civicrm_initialize();
   // the escalate is only required for tests/
   _wmf_civicrm_escalate_permissions();
-  _wmf_civicrm_update_custom_fields();
   // create financial types & payment instruments
   wmf_civicrm_update_7000();
   // Reset navigation on install.
