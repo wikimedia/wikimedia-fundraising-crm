@@ -19,12 +19,6 @@ function exchange_rates_drush_command() {
 			'recalculate' => 'Whether to recalculate contributions from the same range'
 		)
 	);
-	$items['exchange-rates-publish'] = array(
-		'description' => 'Reads latest local exchange rates and pushes out via google sheets API.',
-		'examples' => array(
-			'drush exchange-rates-publish',
-		)
-	);
 	return $items;
 }
 
@@ -51,9 +45,4 @@ function drush_exchange_rates_backfill() {
 	$start = $start_string ? new DateTime( $start_string, new DateTimeZone( 'UTC' ) ) : null;
 	$end = $end_string ? new DateTime( $end_string, new DateTimeZone( 'UTC' ) ) : null;
 	module_invoke( 'exchange_rates', 'backfill', $start, $end, $recalculate );
-}
-
-function drush_exchange_rates_publish() {
-  module_invoke( 'exchange_rates', 'publish_to_google_sheets');
-  return true;
 }
