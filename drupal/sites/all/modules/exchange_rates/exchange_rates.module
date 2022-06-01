@@ -2,7 +2,8 @@
 // FIXME: some functions begin with the incorrect prefix "exchange_rate_"
 use exchange_rates\OandaRetriever;
 use exchange_rates\EcbRetriever;
-use exchange_rates\ExchangeRateUpdateException;
+use \Civi\ExchangeException\ExchangeRateUpdateException;
+use \Civi\ExchangeException\ExchangeRatesException;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 function exchange_rates_menu() {
@@ -262,7 +263,4 @@ function exchange_rates_backfill( $start, $end, $recalculate ) {
 	if ( $recalculate ) {
 		wmf_civicrm_recalculate_contributions( $start, $end );
 	}
-}
-
-class ExchangeRatesException extends Exception {
 }

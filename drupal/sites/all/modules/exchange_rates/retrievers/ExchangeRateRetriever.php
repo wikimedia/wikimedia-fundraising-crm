@@ -38,5 +38,3 @@ class ExchangeRateUpdateResult {
 	 */
 	public $quotesRemaining = -1;
 }
-
-class ExchangeRateUpdateException extends Exception {}
