@@ -3,7 +3,6 @@
 use Civi\Api4\OptionValue;
 
 require_once(__DIR__ . "/bootstrap.inc");
-require_once 'update_custom_fields.php';
 
 /**
  * On new install call these functions.
@@ -22,14 +21,8 @@ function wmf_civicrm_install() {
   civicrm_initialize();
   // the escalate is only required for tests/
   _wmf_civicrm_escalate_permissions();
-  _wmf_civicrm_update_custom_fields();
   // create financial types & payment instruments
   wmf_civicrm_update_7000();
-  // Reset navigation on install.
-  wmf_civicrm_update_7063();
-
-  // Update merge activity to filter=1 (likely already in core & can just go).
-  wmf_civicrm_update_7210();
   // Update message template.
   wmf_civicrm_update_7280();
   // Add index on contact.nick_name (not upstreamed - maybe not appropriate)
@@ -40,12 +33,8 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7570();
   // ReportInstance create - moved to mgd.
   wmf_civicrm_update_7585();
-  // Enable our selected geocoders.
-  wmf_civicrm_update_7615();
   // Add activity.location index, not in core.
   wmf_civicrm_update_7890();
-
-  wmf_civicrm_update_8115();
 }
 
 /**
@@ -72,35 +61,6 @@ function wmf_civicrm_update_7000() {
   wmf_civicrm_bootstrap_civi();
   require_once 'update_payment_instruments.php';
   wmf_install_add_missing_payment_instruments();
-}
-
-/**
- * Reset navigation menu.
- *
- * CRM-17176
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_7063() {
-  civicrm_initialize();
-  civicrm_api3('Navigation', 'reset', array(
-    'for' => "report",
-  ));
-}
-
-/**
- * Oops this activity type was added without filter = 1 being set.
- *
- * CRM-18327 / T119246.
- */
-function wmf_civicrm_update_7210() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm_option_value ov
-       LEFT JOIN civicrm_option_group og ON og.id = ov.option_group_id
-       SET filter = 1
-       WHERE ov.name = 'Contact Deleted By Merge' AND og.name = 'activity_type'"
-  );
 }
 
 /**
@@ -331,17 +291,6 @@ function wmf_civicrm_update_7585() {
       'contact_dashboard_tab' => array('contact_dashboard_tab' => '1'),
     )),
   ));
-}
-
-/**
- * Add geocoder extension.
- *
- * Disable geocoders we don't want.
- *
- * Bug: T184830
- */
-function wmf_civicrm_update_7615() {
-  wmf_civicrm_ensure_correct_geocoder_enabled();
 }
 
 /**
@@ -665,19 +614,6 @@ function wmf_civicrm_update_8095() {
 function wmf_civicrm_update_8110() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ADD INDEX entity_total (entity_id, lifetime_usd_total)');
-}
-
-/**
- * Update es_MX display name to "Spanish (Latin America)"
- */
-function wmf_civicrm_update_8115() {
-  civicrm_initialize();
-  OptionValue::update(FALSE)
-    ->addWhere('option_group_id:name', '=', 'languages')
-    ->addWhere('name', '=', 'es_MX')
-    ->addValue('label', 'Spanish (Latin America)')
-    ->addValue('value', 'es_MX')
-    ->execute();
 }
 
 /**

@@ -102,7 +102,11 @@ function wmf_civicrm_civicrm_managed(&$entities) {
   // go once the module installs are transitioned.
   $tempEntities = [];
   _wmf_civicrm_civix_civicrm_managed($tempEntities);
-  foreach ($tempEntities as $tempEntity) {
+  foreach ($tempEntities as $index =>  $tempEntity) {
+    // WMF only uses our own geocoder ...
+    if ($tempEntity['entity'] === 'Geocoder' &&  $tempEntity['name'] !== 'uk_postcode') {
+      $tempEntities[$index]['params']['is_active'] = 0;
+    }
     if ($tempEntity['entity'] === 'Monolog' || $tempEntity['entity'] === 'MessageTemplate' || $tempEntity['entity'] === 'Translation') {
       // We are not transitioning monologs or Message Templates & this will fail due to there not being
       // a v3 api.

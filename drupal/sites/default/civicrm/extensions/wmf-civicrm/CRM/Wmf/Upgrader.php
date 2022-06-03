@@ -1,4 +1,7 @@
 <?php
+
+use Civi\Api4\WMFConfig;
+use Civi\Api4\OptionValue;
 use CRM_Wmf_ExtensionUtil as E;
 
 /**
@@ -11,10 +14,44 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
 
   /**
    * Example: Run an external SQL script when the module is installed.
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \API_Exception
    */
-  public function install() {
+  public function install(): void {
     $settings = new CRM_Wmf_Upgrader_Settings();
     $settings->setWmfSettings();
+    $this->addCustomFields();
+    // Reset navigation on install.
+    civicrm_api3('Navigation', 'reset', ['for' => 'report']);
+
+    // Update es_MX display name to "Spanish (Latin America)"
+   OptionValue::update(FALSE)
+      ->addWhere('option_group_id:name', '=', 'languages')
+      ->addWhere('name', '=', 'es_MX')
+      ->addValue('label', 'Spanish (Latin America)')
+      ->addValue('value', 'es_MX')
+      ->execute();
+
+    $this->syncGeocoders();
+  }
+
+  /**
+   * Create WMF specific custom fields.
+   *
+   * @throws \API_Exception
+   */
+  public function addCustomFields(): void {
+    WMFConfig::syncCustomFields(FALSE)->execute();
+  }
+
+  /**
+   * Create WMF specific custom fields.
+   *
+   * @throws \API_Exception
+   */
+  public function syncGeocoders(): void {
+    WMFConfig::syncGeocoders(FALSE)->execute();
   }
 
   /**
