@@ -1,7 +1,5 @@
 <?php
 
-use Civi\Api4\OptionValue;
-
 require_once(__DIR__ . "/bootstrap.inc");
 
 /**
@@ -31,8 +29,6 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7570();
   // ReportInstance create - moved to mgd.
   wmf_civicrm_update_7585();
-  // Add activity.location index, not in core.
-  wmf_civicrm_update_7890();
 }
 
 /**
@@ -275,16 +271,6 @@ function wmf_civicrm_update_7585() {
 }
 
 /**
- * Add index to civicrm_activity.location.
- *
- * Bug: T228106
- */
-function wmf_civicrm_update_7890() {
-  civicrm_initialize();
-  $tables = ['civicrm_activity' => ['location']];
-  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-}
-
 /**
  * Disable slow system checks.
  *

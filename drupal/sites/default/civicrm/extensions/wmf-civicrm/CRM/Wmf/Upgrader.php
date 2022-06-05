@@ -36,6 +36,9 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
     $this->syncGeocoders();
     // Bug: T115044 Add index to nick_name column as we have decided to use it for Benevity imports.
     CRM_Core_BAO_SchemaHandler::createIndexes(['civicrm_contact' => ['nick_name']]);
+
+    // Bug: T228106 Add index to civicrm_activity.location.
+    CRM_Core_BAO_SchemaHandler::createIndexes(['civicrm_activity' => ['location']]);
   }
 
   /**
