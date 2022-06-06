@@ -7,7 +7,7 @@
     ],
     "require": {
         "wikimedia/omnimail-silverpop" : "*",
-        "league/csv" : "9.3.*",
+        "league/csv" : "9.6.*",
         "guzzlehttp/guzzle": "~6.0",
         "mrmarkfrench/silverpop-php-connector" : "*",
         "omnimail/omnimail" : "^0.3",
