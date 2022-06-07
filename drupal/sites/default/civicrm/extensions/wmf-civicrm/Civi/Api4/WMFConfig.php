@@ -3,6 +3,7 @@ namespace Civi\Api4;
 
 use Civi\Api4\Action\WMFConfig\SyncCustomFields;
 use Civi\Api4\Action\WMFConfig\SyncGeocoders;
+use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
  * Class WMF Configuration management.
@@ -37,7 +38,13 @@ class WMFConfig extends Generic\AbstractEntity {
       ->setCheckPermissions($checkPermissions);
   }
 
-
-  public static function getFields() {}
+  /**
+   * @return \Civi\Api4\Generic\BasicGetFieldsAction
+   */
+  public static function getFields(): BasicGetFieldsAction {
+    return new BasicGetFieldsAction(__CLASS__, __FUNCTION__, function () {
+      return [];
+    });
+  }
 
 }
