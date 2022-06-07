@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Entity;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
@@ -169,10 +170,7 @@ class CRM_Emailamender_IntegrationTest extends \PHPUnit\Framework\TestCase imple
 
     $fields = array_keys($originalValues);
     $values = array_values($originalValues);
-    $parser = new CRM_Contact_Import_Parser_Contact($fields);
-    $parser->_contactType = 'Individual';
-    $parser->_onDuplicate = CRM_Import_Parser::DUPLICATE_NOCHECK;
-    $parser->init();
+    $parser = $this->getParser($fields, CRM_Import_Parser::DUPLICATE_NOCHECK);
     $this->assertEquals(
       CRM_Import_Parser::VALID,
       $parser->import(CRM_Import_Parser::DUPLICATE_NOCHECK, $values),
@@ -225,10 +223,7 @@ class CRM_Emailamender_IntegrationTest extends \PHPUnit\Framework\TestCase imple
 
       $fields = array_keys($importValues);
       $values = array_values($importValues);
-      $parser = new CRM_Contact_Import_Parser_Contact($fields);
-      $parser->_contactType = 'Individual';
-      $parser->_onDuplicate = $duplicateActionType;
-      $parser->init();
+      $parser = $this->getParser($fields, $duplicateActionType);
       $this->assertEquals(
         CRM_Import_Parser::VALID,
         $parser->import($duplicateActionType, $values),
@@ -242,6 +237,74 @@ class CRM_Emailamender_IntegrationTest extends \PHPUnit\Framework\TestCase imple
       $this->ids['Contact'] = array_merge(array_keys($getContacts), $this->ids['Contact']);
       $this->assertCount(2, $getContacts);
     }
+  }
+
+
+  /**
+   * Emulate a logged in user since certain functions use that.
+   * value to store a record in the DB (like activity)
+   *
+   * @see https://issues.civicrm.org/jira/browse/CRM-8180
+   *
+   * @return int
+   *   Contact ID of the created user.
+   */
+  public function createLoggedInUser(): int {
+    $params = [
+      'first_name' => 'Logged In',
+      'last_name' => 'User ',
+      'contact_type' => 'Individual',
+    ];
+    $contactID = $this->callAPISuccess('Contact', 'create', $params);
+    $this->callAPISuccess('UFMatch', 'get', ['uf_id' => 6, 'api.UFMatch.delete' => []]);
+    $this->callAPISuccess('UFMatch', 'create', [
+      'contact_id' => $contactID,
+      'uf_name' => 'superman',
+      'uf_id' => 6,
+    ]);
+
+    $session = \CRM_Core_Session::singleton();
+    $session->set('userID', $contactID);
+    return $contactID;
+  }
+
+  /**
+   * @param array $fields
+   * @param mixed $duplicateActionType
+   *
+   * @return \CRM_Contact_Import_Parser_Contact
+   *
+   * @noinspection PhpDocMissingThrowsInspection
+   * @noinspection PhpUnhandledExceptionInspection
+   */
+  protected function getParser(array $fields, int $duplicateActionType): CRM_Contact_Import_Parser_Contact {
+    $parser = new CRM_Contact_Import_Parser_Contact($fields);
+    $parser->_contactType = 'Individual';
+    $parser->_onDuplicate = $duplicateActionType;
+
+    if (class_exists('\Civi\Api4\UserJob')) {
+      try {
+        // We are on 5.50 or higher - create one.
+        $jobID = \Civi\Api4\UserJob::create(FALSE)->setValues([
+          'status_id' => 1,
+          'type_id' => 1,
+          'metadata' => [
+            'submitted_values' => [
+              'onDuplicate' => $duplicateActionType,
+              'contactSubType' => '',
+              'contactType' => 1,
+              'doGeocodeAddress' => '',
+            ],
+          ],
+        ])->execute()->first()['id'];
+        $parser->setUserJobID($jobID);
+      }
+      catch (Exception $e) {
+
+      }
+    }
+    $parser->init();
+    return $parser;
   }
 
 }
