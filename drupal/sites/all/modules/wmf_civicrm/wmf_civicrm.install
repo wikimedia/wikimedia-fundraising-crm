@@ -1,7 +1,5 @@
 <?php
 
-use Civi\Api4\OptionValue;
-
 require_once(__DIR__ . "/bootstrap.inc");
 
 /**
@@ -25,16 +23,12 @@ function wmf_civicrm_install() {
   wmf_civicrm_update_7000();
   // Update message template.
   wmf_civicrm_update_7280();
-  // Add index on contact.nick_name (not upstreamed - maybe not appropriate)
-  wmf_civicrm_update_7455();
   // enable civi campaign (not sure if setting default will work - try).
   wmf_civicrm_update_7525();
   // Dedupe rules
   wmf_civicrm_update_7570();
   // ReportInstance create - moved to mgd.
   wmf_civicrm_update_7585();
-  // Add activity.location index, not in core.
-  wmf_civicrm_update_7890();
 }
 
 /**
@@ -174,23 +168,6 @@ function wmf_civicrm_update_7280() {
 }
 
 /**
- * Add index to nick_name column as we have decided to use it for imports.
- *
- * We have decided the Benevity Import should accept org matches on nick_name
- * or organization_name in order to provide the option to refer to them with
- * 2 names. In order to use it it must be indexed. Note that I believe the
- * index size is relative to the number of values in it (currently a few
- * hundred).
- *
- * Bug: T115044
- */
-function wmf_civicrm_update_7455() {
-  civicrm_initialize();
-  $tables = array('civicrm_contact' => array('nick_name'));
-  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-}
-
-/**
  * Enable CiviCampaign.
  */
 function wmf_civicrm_update_7525() {
@@ -294,16 +271,6 @@ function wmf_civicrm_update_7585() {
 }
 
 /**
- * Add index to civicrm_activity.location.
- *
- * Bug: T228106
- */
-function wmf_civicrm_update_7890() {
-  civicrm_initialize();
-  $tables = ['civicrm_activity' => ['location']];
-  CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-}
-
 /**
  * Disable slow system checks.
  *
