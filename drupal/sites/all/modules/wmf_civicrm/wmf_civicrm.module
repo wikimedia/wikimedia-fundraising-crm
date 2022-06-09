@@ -686,18 +686,54 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
       case 'bt':
         $payment_instrument = 'Bank Transfer';
         switch (strtolower($msg['payment_submethod'])) {
-          // India
-          case 'netbanking':
+          case 'ach': // Worldwide, via DLocal
+            $payment_instrument .= ': ACH';
+            break;
+          case 'banco_do_brasil': // Brazil
+            $payment_instrument .= ': Banco do Brasil';
+            break;
+          case 'bbva': // Peru
+            $payment_instrument .= ': BBVA';
+            break;
+          case 'bcp': // Peru
+            $payment_instrument .= ': BCP';
+            break;
+          case 'bradesco': // Brazil
+            $payment_instrument .= ': Bradesco';
+            break;
+          case 'interbank': // Peru
+            $payment_instrument .= ': Interbank';
+            break;
+          case 'itau': // Brazil
+            $payment_instrument .= ': Itau';
+            break;
+          case 'mercadopago': // Latin America
+            $payment_instrument .= ': MercadoPago';
+            break;
+          case 'netbanking': // India
             $payment_instrument .= ': Netbanking';
             break;
-          case 'paytmwallet':
+          case 'paytmwallet': // India
             $payment_instrument .= ': PayTM Wallet';
             break;
-          case 'pix':
+          case 'picpay': // Brazil
+            $payment_instrument .= ': PicPay';
+            break;
+          case 'pix': // Brazil
             $payment_instrument .= ': Pix';
             break;
-          case 'upi':
+          case 'pse': // Colombia
+            $payment_instrument .= ': PSE';
+            break;
+          case 'santander': // Brazil
+          case 'santander_rio': // Argentina (same bank as above)
+            $payment_instrument .= ': Santander';
+            break;
+          case 'upi': // India
             $payment_instrument .= ': UPI';
+            break;
+          case 'webpay_bt': // Chile
+            $payment_instrument .= ': Webpay';
             break;
         }
         break;
@@ -771,6 +807,9 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
           case 'cabal':
             $payment_instrument .= ': Cabal';
             break;
+          case 'cabal-debit':
+            $payment_instrument .= ': Cabal Debit';
+            break;
           case 'naranja':
             $payment_instrument .= ': Naranja';
             break;
@@ -798,9 +837,14 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
           case 'oca':
             $payment_instrument .= ': OCA';
             break;
-          // India
-          case 'rupay':
+          case 'rupay': // India
             $payment_instrument .= ': RuPay';
+            break;
+          case 'alia': // Ecuador
+            $payment_instrument .= ': Alia';
+            break;
+          case 'codenza': // Colombia
+            $payment_instrument .= ': Codenza';
             break;
         }
         break;
