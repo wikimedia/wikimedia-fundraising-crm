@@ -122,6 +122,7 @@ function wmf_install_get_payment_instruments() {
     'OXXO',
     'Pago Efectivo',
     'Pago Facil',
+    'Bank Transfer: Pix',
     'Provencia Pagos',
     'Red Pagos',
     'Rapi Pago',

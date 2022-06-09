@@ -693,6 +693,9 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
           case 'paytmwallet':
             $payment_instrument .= ': PayTM Wallet';
             break;
+          case 'pix':
+            $payment_instrument .= ': Pix';
+            break;
           case 'upi':
             $payment_instrument .= ': UPI';
             break;
