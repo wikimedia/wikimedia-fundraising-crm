@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e28a5ad965c4f69f33f3b2b3398e90aa",
+    "content-hash": "52d08542ecf08ae54d875419dd876bf4",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -4572,16 +4572,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.7.9.9",
+            "version": "v0.7.9.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "c7ff93dedfcab627e4cd7989c739abcb6dd74d6f"
+                "reference": "0f2ab5596de6828bb7bb335e48376ef97391821f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/c7ff93dedfcab627e4cd7989c739abcb6dd74d6f",
-                "reference": "c7ff93dedfcab627e4cd7989c739abcb6dd74d6f",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/0f2ab5596de6828bb7bb335e48376ef97391821f",
+                "reference": "0f2ab5596de6828bb7bb335e48376ef97391821f",
                 "shasum": ""
             },
             "require": {
@@ -4657,9 +4657,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.7.9.9"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.7.9.10"
             },
-            "time": "2022-06-02T17:06:19+00:00"
+            "time": "2022-06-08T21:34:56+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -6451,5 +6451,5 @@
     "platform-overrides": {
         "php": "7.3.19"
     },
-    "plugin-api-version": "2.2.0"
+    "plugin-api-version": "2.3.0"
 }
