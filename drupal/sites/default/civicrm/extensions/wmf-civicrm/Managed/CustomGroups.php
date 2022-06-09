@@ -127,7 +127,18 @@ return [
       'table_name' => 'civicrm_value_relationship_metadata',
     ],
     'fields' => _wmf_civicrm_get_relationship_metadata_fields(),
-  ]
+  ],
+  'Assistant' => [
+    'group' => [
+      'name' => 'Assistant',
+      'title' => 'Assistant',
+      'extends' => 'Individual',
+      'style' => 'Inline',
+      'is_active' => 1,
+      'table_name' => 'civicrm_value_assistant_15',
+    ],
+    'fields' => _wmf_civicrm_get_assistant_fields(),
+  ],
 ];
 
 
@@ -1316,6 +1327,48 @@ function _wmf_civicrm_get_relationship_metadata_fields(): array {
       'data_type' => 'Boolean',
       'html_type' => 'Radio',
       'default_value' => 0,
+    ],
+  ];
+}
+
+function _wmf_civicrm_get_assistant_fields(): array {
+  return [
+    // typo is on prod
+    'Assitant_Name' => [
+      'name' => 'Assitant_Name',
+      'label' => 'Assistant Name & Title',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'column_name' => 'assitant_name_70',
+      'is_searchable' => TRUE,
+    ],
+    'Assistant_Contact' => [
+      'name' => 'Assistant_Contact',
+      'label' => 'Assistant Contact',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'text_length' => 255,
+      'column_name' => 'email_71',
+      'is_searchable' => TRUE,
+    ],
+
+    'Assistant_Phone_Number' => [
+      'name' => 'Assistant_Phone_Number',
+      'label' => 'Assistant Phone Number',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_searchable' => FALSE,
+      'text_length' => 255,
+      'column_name' => 'assistant_phone_number_135',
+    ],
+    'Assistant_Email' => [
+      'name' => 'Assistant_Email',
+      'label' => 'Assistant Email',
+      'html_type' => 'Text',
+      'data_type' => 'String',
+      'is_searchable' => TRUE,
+      'text_length' => 255,
+      'column_name' => 'assistant_email_287',
     ],
   ];
 }
