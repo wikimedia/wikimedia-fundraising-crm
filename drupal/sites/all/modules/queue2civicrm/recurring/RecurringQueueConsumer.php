@@ -403,8 +403,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           'contact_id' => $contactId,
           'currency' => $msg['original_currency'],
           'first_name' => $contact['first_name'],
-          'from_name' => From::getFromName($template),
-          'from_address' => From::getFromAddress($template),
           'last_name' => $contact['last_name'],
           // Locale is the mediawiki variant - either 'en' or 'en-US'.
           // Where 'preferred_language' is known then locale should generally
