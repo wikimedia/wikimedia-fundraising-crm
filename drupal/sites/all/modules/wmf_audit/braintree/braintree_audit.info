@@ -1,0 +1,7 @@
+name = Braintree Audit
+description = Auditing framework for contacts and contributions that come in through nightly reconciliation files, for Braintree
+core = 7.x
+dependencies[] = wmf_audit
+package = WMF Audit
+configure = admin/config/wmf_audit/braintree_audit
+files[] = BraintreeAuditProcessor.php
