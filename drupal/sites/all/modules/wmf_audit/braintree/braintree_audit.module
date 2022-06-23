@@ -21,39 +21,39 @@ function braintree_audit_menu() {
  * Callback for menu
  */
 function braintree_audit_settings() {
-  $form['braintree__audit_recon_files_dir'] = [
+  $form['braintree_audit_recon_files_dir'] = [
     '#type' => 'textfield',
     '#title' => t('Directory containing incoming reconciliation files'),
     '#required' => TRUE,
-    '#default_value' => variable_get('braintree__audit_recon_files_dir'),
+    '#default_value' => variable_get('braintree_audit_recon_files_dir'),
   ];
-  $form['braintree__audit_recon_completed_dir'] = [
+  $form['braintree_audit_recon_completed_dir'] = [
     '#type' => 'textfield',
     '#title' => t('Directory for completed reconciliation files'),
     '#required' => TRUE,
-    '#default_value' => variable_get('braintree__audit_recon_completed_dir'),
+    '#default_value' => variable_get('braintree_audit_recon_completed_dir'),
   ];
-  $form['braintree__audit_working_log_dir'] = [
+  $form['braintree_audit_working_log_dir'] = [
     '#type' => 'textfield',
     '#title' => t('Working directory for payments logs (Not the source - that is defined at the wmf_audit level)'),
     '#required' => TRUE,
-    '#default_value' => variable_get('braintree__audit_working_log_dir'),
+    '#default_value' => variable_get('braintree_audit_working_log_dir'),
   ];
-  $form['braintree__audit_test_mode'] = [
+  $form['braintree_audit_test_mode'] = [
     '#type' => 'checkbox',
     '#title' => t('When this box is checked, no queue messages will be sent.'),
     '#required' => FALSE,
-    '#default_value' => variable_get('braintree__audit_test_mode'),
+    '#default_value' => variable_get('braintree_audit_test_mode'),
   ];
-  $form['braintree__audit_log_search_past_days'] = [
+  $form['braintree_audit_log_search_past_days'] = [
     '#type' => 'textfield',
     '#title' => t('Plus or minus log search (in days)'),
     '#required' => TRUE,
-    '#default_value' => variable_get('braintree__audit_log_search_past_days'),
+    '#default_value' => variable_get('braintree_audit_log_search_past_days'),
   ];
   return system_settings_form($form);
 }
 
-function braintree__audit_create_processor($options) {
+function braintree_audit_create_processor($options) {
   return new BraintreeAuditProcessor($options);
 }
