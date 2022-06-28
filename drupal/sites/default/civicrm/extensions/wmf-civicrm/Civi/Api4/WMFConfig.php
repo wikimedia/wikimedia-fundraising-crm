@@ -33,7 +33,7 @@ class WMFConfig extends Generic\AbstractEntity {
    *
    * @return \Civi\Api4\Action\WMFConfig\SyncGeocoders
    */
-  public static function syncGeocoders(bool $checkPermissions = TRUE): syncGeocoders {
+  public static function syncGeocoders(bool $checkPermissions = TRUE): SyncGeocoders {
     return (new SyncGeocoders(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
