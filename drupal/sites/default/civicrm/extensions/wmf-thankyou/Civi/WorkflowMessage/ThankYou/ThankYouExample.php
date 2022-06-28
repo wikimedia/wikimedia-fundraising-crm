@@ -1,0 +1,126 @@
+<?php
+
+namespace Civi\WorkflowMessage\ThankYou;
+
+use Civi\Test as DemoData;
+use Civi\WorkflowMessage\WorkflowMessageExample;
+use Civi\Api4\WorkflowMessage;
+use Civi\WorkflowMessage\GenericWorkflowMessage;
+
+class ThankYouExample extends WorkflowMessageExample {
+
+  /**
+   * Get the examples this class is able to deliver.
+   */
+  public function getExamples(): iterable {
+    $workflows = [
+      'thank_you' => 'Thank You',
+      'endowment_thank_you' => 'Endowment Thank You',
+      'monthly_convert' => 'Monthly Convert',
+    ];
+    foreach ($workflows as $workflow => $label) {
+      yield [
+        'name' => 'workflow/' . $workflow . '/' . $this->getExampleName(),
+        'title' => $label,
+        'tags' => ['preview'],
+        'workflow' => $workflow,
+      ];
+    }
+    yield [
+      'name' => 'workflow/thank_you/stock',
+      'title' => 'Thank you for stock',
+      'tags' => ['preview'],
+      'workflow' => 'thank_you',
+      'example' =>'stock',
+    ];
+    yield [
+      'name' => 'workflow/thank_you/delayed',
+      'title' => 'Thank you (delayed)',
+      'tags' => ['preview'],
+      'workflow' => 'thank_you',
+      'example' =>'delayed',
+    ];
+    yield [
+      'name' => 'workflow/thank_you/recurring',
+      'title' => 'Thank you (recurring)',
+      'tags' => ['preview'],
+      'workflow' => 'thank_you',
+      'example' =>'recurring',
+    ];
+    yield [
+      'name' => 'workflow/thank_you/restarted',
+      'title' => 'Thank you (restarted recurring)',
+      'tags' => ['preview'],
+      'workflow' => 'thank_you',
+      'example' =>'restarted',
+    ];
+    yield [
+      'name' => 'workflow/endowment_thank_you/retirement',
+      'title' => 'Endowment Thank you (retirement gift source)',
+      'tags' => ['preview'],
+      'workflow' => 'endowment_thank_you',
+      'example' =>'retirement',
+    ];
+  }
+
+  /**
+   * Get the name of the workflow this is used in.
+   *
+   * (wrapper for confusing property name)
+   *
+   * @return string
+   */
+  protected function getWorkflowName(): string {
+    return $this->wfName;
+  }
+
+  /**
+   * Build an example to use when rendering the workflow.
+   *
+   * @param array $example
+   *
+   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function build(array &$example): void {
+    $workFlow = WorkflowMessage::get(TRUE)->addWhere('name', '=', $example['workflow'])->execute()->first();
+    $this->setWorkflowName($workFlow['name']);
+    $messageTemplate = new $workFlow['class']();
+    $example = explode('/', $example['name']);
+    $this->addExampleData($messageTemplate, $example[2]);
+    $example['data'] = $this->toArray($messageTemplate);
+  }
+
+  /**
+   * Add relevant example data.
+   *
+   * @param \CRM_Contribute_WorkflowMessage_ThankYou|\CRM_Contribute_WorkflowMessage_EndowmentThankYou|\CRM_Contribute_WorkflowMessage_MonthlyConvert $messageTemplate
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function addExampleData(GenericWorkflowMessage $messageTemplate, $example): void {
+    $messageTemplate->setContact(DemoData::example('entity/Contact/Barb'));
+    $messageTemplate->setCurrency('EUR');
+    $messageTemplate->setAmount(4000.99);
+    $messageTemplate->setTransactionID('CNTCT-567');
+    $messageTemplate->setReceiveDate(date('Y-m-d'), strtotime('One month ago'));
+    if ($example === 'stock') {
+      $messageTemplate->setStockValue(5200);
+      $messageTemplate->setDescriptionOfStock('Index fund stock');
+    }
+    if ($example === 'recurring') {
+      $messageTemplate->setIsRecurring(TRUE);
+    }
+    if ($example === 'restarted') {
+      $messageTemplate->setIsRecurringRestarted(TRUE);
+    }
+    if ($example === 'delayed') {
+      $messageTemplate->setIsDelayed(TRUE);
+    }
+    if ($example === 'retirement') {
+      $messageTemplate->setGiftSource('Retirement Fund');
+    }
+  }
+
+}

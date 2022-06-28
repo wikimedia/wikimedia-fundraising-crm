@@ -3,7 +3,7 @@ namespace Civi\Api4;
 
 use Civi\Omnimail\MailFactory;
 use Civi\Test\Api3TestTrait;
-use CRM_Contribute_WorkflowMessage_EOYThankYou;
+use Civi\WorkflowMessage\EOYThankYou;
 use CRM_Core_DAO;
 use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
@@ -927,7 +927,7 @@ WHERE
    * @throws \API_Exception
    */
   protected function assertTemplateCalculations(array $contactIDs, array $totals, array $contributions): void {
-    $template = new CRM_Contribute_WorkflowMessage_EOYThankYou();
+    $template = new EOYThankYou();
     $template->setContactIDs($contactIDs);
     $template->setLocale('pt_BR');
     $template->setYear(2018);
