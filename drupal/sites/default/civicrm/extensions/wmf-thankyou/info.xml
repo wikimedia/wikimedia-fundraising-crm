@@ -23,8 +23,14 @@
   <comments>This interacts with the WMF thank you drupal module. Hopefully one day that code will live on the civi side</comments>
   <civix>
     <namespace>CRM/WmfThankyou</namespace>
+    <format>22.05.2</format>
   </civix>
   <classloader>
-    <psr4 prefix="Civi\" path="Civi" />
+    <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
+  <mixins>
+    <mixin>menu-xml@1.0.0</mixin>
+    <mixin>setting-php@1.0.0</mixin>
+    <mixin>scan-classes@1.0.0</mixin>
+  </mixins>
 </extension>

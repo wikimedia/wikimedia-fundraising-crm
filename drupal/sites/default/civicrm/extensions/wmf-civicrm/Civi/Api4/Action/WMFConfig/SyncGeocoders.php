@@ -4,7 +4,6 @@ namespace Civi\Api4\Action\WMFConfig;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\Api4\CustomField;
 
 /**
  * Class SyncGeocodes
