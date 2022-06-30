@@ -232,6 +232,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     switch ($params['payment_instrument']) {
       case 'iDeal':
         return 'rtbt';
+      case 'Paypal';
+        return 'paypal';
       default:
         return 'cc';
     }
