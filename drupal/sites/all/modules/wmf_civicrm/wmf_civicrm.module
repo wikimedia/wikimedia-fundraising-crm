@@ -978,6 +978,7 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
         break;
       case 'paypal':
       case 'paypal_ec':
+      case 'braintree':
         // These PayPal flows are distinct gateway classes, but are
         // recorded together.  They might share an account, although the
         // configuration will have to be broken up across gateway globals.

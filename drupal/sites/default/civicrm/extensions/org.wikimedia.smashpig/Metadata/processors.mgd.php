@@ -147,4 +147,23 @@ return [
       'payment_type' => 1,
     ],
   ],
+  7 => [
+    'name' => 'SmashPig - Braintree',
+    'entity' => 'payment_processor_type',
+    'params' => [
+      'version' => 3,
+      'title' => 'Braintree via SmashPig',
+      'name' => 'smashpig_braintree',
+      'description' => 'SmashPig Braintree Processor',
+      'user_name_label' => 'Unused',
+      'password_label' => 'Unused',
+      'signature_label' => 'Unused',
+      'subject_label' => 'Unused',
+      'class_name' => 'Payment_SmashPig',
+      'url_site_default' => 'https://dummyurl.com',
+      'url_api_default' => 'https://dummyurl.com',
+      'billing_mode' => 1,
+      'payment_type' => 1,
+    ],
+  ],
 ];

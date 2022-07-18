@@ -3,6 +3,7 @@
 $processors = [
   'adyen',
   'amazon',
+  'braintree',
   'dlocal',
   'globalcollect',
   'ingenico',
