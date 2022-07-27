@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "52d08542ecf08ae54d875419dd876bf4",
+    "content-hash": "91ba0495ea25d23e84b4bbca90b06180",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -4518,11 +4518,11 @@
         },
         {
             "name": "wikimedia/donation-interface",
-            "version": "v2.5.7.1",
+            "version": "v2.5.7.3",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "b37f4732d810d1bd46a529603afef7fa65127b30"
+                "reference": "2a89f1a0007bef080588370337c96ad62d3e0b83"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -4537,7 +4537,7 @@
                 "predis/predis": "^1.1",
                 "psr/log": "^1.0",
                 "symfony/yaml": "^3",
-                "wikimedia/smash-pig": "^0.7"
+                "wikimedia/smash-pig": "0.8.2"
             },
             "require-dev": {
                 "mediawiki/mediawiki-codesniffer": "38.0.0",
@@ -4552,6 +4552,9 @@
                 "phan-taint-check-plugin": "2.0.2"
             },
             "autoload": {
+                "files": [
+                    "gateway_common/WmfFramework.php"
+                ],
                 "classmap": [
                     "adyen_gateway",
                     "amazon_gateway",
@@ -4561,11 +4564,8 @@
                     "gateway_forms",
                     "globalcollect_gateway",
                     "ingenico_gateway",
-                    "paypal_gateway",
+                    "paypal_ec_gateway",
                     "DonationInterface.class.php"
-                ],
-                "files": [
-                    "gateway_common/WmfFramework.php"
                 ]
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -4576,7 +4576,7 @@
             "support": {
                 "irc": "irc://irc.libera.chat/wikimedia-fundraising"
             },
-            "time": "2021-12-24T00:14:26+00:00"
+            "time": "2022-07-26T23:38:53+00:00"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -4628,16 +4628,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.7.9.10",
+            "version": "v0.8.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "0f2ab5596de6828bb7bb335e48376ef97391821f"
+                "reference": "1d32da14204460678894e998d860881bb756a259"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/0f2ab5596de6828bb7bb335e48376ef97391821f",
-                "reference": "0f2ab5596de6828bb7bb335e48376ef97391821f",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/1d32da14204460678894e998d860881bb756a259",
+                "reference": "1d32da14204460678894e998d860881bb756a259",
                 "shasum": ""
             },
             "require": {
@@ -4713,9 +4713,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.7.9.10"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.2"
             },
-            "time": "2022-06-08T21:34:56+00:00"
+            "time": "2022-07-25T15:07:07+00:00"
         },
         {
             "name": "willdurand/geocoder",
