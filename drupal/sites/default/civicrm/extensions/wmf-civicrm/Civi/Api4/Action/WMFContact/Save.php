@@ -72,10 +72,13 @@ class Save extends AbstractAction {
     $contact_id = $this->getContactID();
     $msg = $this->getMessage();
     if (!$contact_id) {
+      watchdog('wmf_civicrm', 'Looking for matching contact', [], WATCHDOG_INFO);
       $contact_id = $this->getExistingContactID($msg);
       if ($contact_id) {
         $msg['contact_id'] = $contact_id;
+        watchdog('wmf_civicrm', 'Matching contact found, updating contact', [], WATCHDOG_INFO);
         $this->handleUpdate($msg);
+        watchdog('wmf_civicrm', 'Finished updating contact', [], WATCHDOG_INFO);
         $result[] = ['id' => $contact_id];
         return;
       }
@@ -93,7 +96,7 @@ class Save extends AbstractAction {
     if (!array_key_exists('contact_source', $msg)) {
       $msg['contact_source'] = "online donation";
     }
-
+    watchdog('wmf_civicrm', 'No matching contact found, creating new contact', [], WATCHDOG_INFO);
     // Create the contact record
     $contact = [
       'id' => $contact_id,
@@ -210,7 +213,7 @@ class Save extends AbstractAction {
     // Attempt to insert the contact
     try {
       $contact_result = civicrm_api3('Contact', 'Create', $contact);
-      watchdog('wmf_civicrm', 'Successfully ' . ($contact_id ? 'updated' : 'created ') . ' contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);
+      watchdog('wmf_civicrm', 'Successfully ' . ($contact_id ? 'updated' : 'created ') . ' contact: %id', ['%id' => $contact_result['id']], WATCHDOG_INFO);
       $this->createEmployerRelationshipIfSpecified($contact_result['id'], $msg);
       if (WmfDatabase::isNativeTxnRolledBack()) {
         throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
@@ -287,7 +290,9 @@ class Save extends AbstractAction {
     if ($isCreate) {
       // Insert the location records if this is being called as a create.
       // For update it's handled in the update routing.
+      watchdog('wmf_civicrm', 'Adding addresses to contact', [], WATCHDOG_INFO);
       wmf_civicrm_message_address_insert($msg, $contact_id);
+      watchdog('wmf_civicrm', 'Finished adding addresses to contact', [], WATCHDOG_INFO);
     }
     if (WmfDatabase::isNativeTxnRolledBack()) {
       throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact auxiliary fields");
