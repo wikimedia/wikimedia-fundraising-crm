@@ -1552,7 +1552,9 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
     // https://issues.civicrm.org/jira/browse/CRM-21786
     // or don't pass fix_address= 0 (but we need to understand performance reasons
     // why we haven't done that.
+    watchdog('wmf_civicrm', 'Adding geocoder data', [], WATCHDOG_INFO);
     CRM_Core_BAO_Address::addGeocoderData($address_params);
+    watchdog('wmf_civicrm', 'Finished adding geocoder data', [], WATCHDOG_INFO);
     civicrm_api3('Address', 'Create', $address_params);
   }
   catch (CiviCRM_API3_Exception $ex) {
