@@ -10,16 +10,21 @@ class BraintreeAuditProcessor extends BaseAuditProcessor {
     return new BraintreeAudit();
   }
 
+  /**
+   * @param $file
+   * Get the date from parsed file name
+   * @return array|string|string[]|null
+   * @throws \Exception
+   */
   protected function get_recon_file_sort_key($file) {
-    // Example:  settlement_batch_report_2022-06-21.csv
+    // Example: settlement_batch_report_2022-06-21.json or
+    // settlement_batch_report_2022-06-21.csv
     // For that, we'd want to return 20220621
-    $parts = preg_split('/_|\./', $file);
-    $date_piece = $parts[count($parts) - 3];
-    $date = preg_replace('/-/', '', $date_piece);
-    if (!preg_match('/^\d{8}$/', $date)) {
-      throw new Exception("Unparseable reconciliation file name: {$file}");
+    if(preg_match('/[0-9]{4}[-][0-9]{2}[-][0-9]{2}/', $file, $date_piece)){
+      return preg_replace('/-/', '', $date_piece[0]);
+    }else {
+      throw new Exception("Un-parseable reconciliation file name: {$file}");
     }
-    return $date;
   }
 
   protected function get_log_distilling_grep_string() {
@@ -34,6 +39,13 @@ class BraintreeAuditProcessor extends BaseAuditProcessor {
     return $this->parse_json_log_line($logline);
   }
 
+  /**
+   * Save file from SmashPig\PaymentProviders\Braintree\Maintenance\SearchTransactions
+   * Three reports (donation refund and dispute) will name as settlement_batch_report_yyyy-mm-dd.json,
+   * settlement_batch_report_refund_yyyy-mm-dd.json and settlement_batch_report_dispute_yyyy-mm-dd.json
+   *
+   * @return string
+   */
   protected function regex_for_recon() {
     return '/settlement_batch_report_/';
   }
