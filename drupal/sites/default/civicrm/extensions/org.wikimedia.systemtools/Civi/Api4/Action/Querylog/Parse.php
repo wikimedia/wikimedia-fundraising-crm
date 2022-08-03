@@ -47,7 +47,7 @@ class Parse extends AbstractAction {
     $lines = file($this->getFileName(), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     $parsed = [];
     $writer = Writer::createFromPath(dirname($this->getFileName()) . '/query_log_parsed.csv', 'w+');
-    $writer->insertOne(['Date', 'Query', 'Seconds taken', 'Affected rows', 'Affected columns']);
+    $writer->insertOne(['Date', 'Query', 'Seconds taken', 'Affected rows', 'Affected columns', 'Deleted Records', 'Updated Records', 'Inserted Records']);
 
     $currentIndex = 0;
     foreach ($lines as $index => $line) {
@@ -71,15 +71,30 @@ class Parse extends AbstractAction {
             'seconds' => '',
             'rows' => '',
             'columns' => '',
+            'deleted' => '',
+            'updated' => '',
+            'inserted' => '',
           ];
           $currentIndex = $index;
         }
         elseif ($type === 'info') {
-          $re = '/QUERY DONE IN (\d*.\d*)  seconds. Result is (\d*) rows by (\d*) columns./m';
+          $re = '/QUERY DONE IN (\d*.\d*)  seconds./m';
           preg_match_all($re, $line, $matches, PREG_SET_ORDER, 0);
           $parsed[$currentIndex]['seconds'] = $matches[0][1];
-          $parsed[$currentIndex]['rows'] = $matches[0][2];
-          $parsed[$currentIndex]['columns'] = $matches[0][2];
+          $re = '/Result is (\d*) rows by (\d*) columns./m';
+          preg_match_all($re, $line, $matches, PREG_SET_ORDER, 0);
+          $parsed[$currentIndex]['rows'] = $matches[0][1];
+          $parsed[$currentIndex]['columns'] = $matches[0][2] ?? '';
+          $re = '/(\d*) row\(s\)s subject to delete action/m';
+          preg_match_all($re, $line, $matches, PREG_SET_ORDER, 0);
+          $parsed[$currentIndex]['deleted'] = $matches[0][1] ?? '';
+          $re = '/(\d*) row\(s\)s subject to update action/m';
+          preg_match_all($re, $line, $matches, PREG_SET_ORDER, 0);
+          $parsed[$currentIndex]['updated'] = $matches[0][1] ?? '';
+
+          $re = '/(\d*) row\(s\)s subject to insert action/m';
+          preg_match_all($re, $line, $matches, PREG_SET_ORDER, 0);
+          $parsed[$currentIndex]['inserted'] = $matches[0][1] ?? '';
         }
 
       }
