@@ -149,6 +149,8 @@ class ImportStatsCollector extends AbstractCollector {
       'message_email_update',
       'message_contribution_recur_insert', // recurring only
       'message_contribution_insert',
+      'create_contact_civi_api',
+      'update_contact_civi_api',
     ];
 
     // loop through import stats, pull out the stats we want and average them.
