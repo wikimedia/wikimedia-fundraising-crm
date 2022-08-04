@@ -109,6 +109,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'opt_in' => '1',
               'order_id' => '82431234.1',
               'contribution_tracking_id' => '82431234',
+              'processor_contact_id' => '82431234.1',
             ],
           ],
         ],
