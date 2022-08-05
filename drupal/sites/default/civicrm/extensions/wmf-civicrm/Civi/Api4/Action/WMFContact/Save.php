@@ -424,10 +424,15 @@ class Save extends AbstractAction {
     }
     if ($preferredLanguage) {
       if (!wmf_civicrm_check_language_exists($preferredLanguage)) {
-        $parts = explode('_', $preferredLanguage);
-        // If we don't find a locale below then an exception will be thrown.
-        $default_locale = Language::getLanguageCode($parts[0]);
-        $preferredLanguage = $default_locale;
+        try {
+          $parts = explode('_', $preferredLanguage);
+          // If we don't find a locale below then an exception will be thrown.
+          $default_locale = Language::getLanguageCode($parts[0]);
+          $preferredLanguage = $default_locale;
+        }
+        catch(\CRM_Core_Exception $ex) {
+          $preferredLanguage = 'en_US';
+        }
       }
     }
     return $preferredLanguage;

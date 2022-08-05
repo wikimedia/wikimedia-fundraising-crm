@@ -1455,28 +1455,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertArrayHasKey('diff', $second_timer);
   }
 
-  public function testMessageImportInvalidLocaleThrowsException() {
-    $this->expectException(\CRM_Core_Exception::class);
-
-    $msg = [
-      'currency' => 'USD',
-      'date' => '2012-05-01 00:00:00',
-      'email' => 'nobody@wikimedia.org',
-      'gateway' => 'test_gateway',
-      'gateway_txn_id' => mt_rand(),
-      'gross' => '1.23',
-      'payment_method' => 'cc',
-      'language' => 'xx_XX',
-      'name_prefix' => "M" . mt_rand(),
-      'name_suffix' => 'Sr.',
-      'prefix' => "M" . mt_rand(),
-      'suffix' => 'Sr.',
-    ];
-    $this->messageImport($msg);
-  }
-
-
-
   /**
    * Assert that 2 arrays are the same in all the ways that matter :-).
    *
