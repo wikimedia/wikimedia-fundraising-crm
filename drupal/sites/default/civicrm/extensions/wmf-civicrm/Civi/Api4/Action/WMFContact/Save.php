@@ -209,7 +209,9 @@ class Save extends AbstractAction {
     }
     // Attempt to insert the contact
     try {
+      $this->startTimer( 'create_contact_civi_api' );
       $contact_result = civicrm_api3('Contact', 'Create', $contact);
+      $this->stopTimer( 'create_contact_civi_api' );
       watchdog('wmf_civicrm', 'Successfully ' . ($contact_id ? 'updated' : 'created ') . ' contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);
       $this->createEmployerRelationshipIfSpecified($contact_result['id'], $msg);
       if (WmfDatabase::isNativeTxnRolledBack()) {
@@ -530,10 +532,12 @@ class Save extends AbstractAction {
       }
     }
     if (!empty($updateParams)) {
+      $this->startTimer( 'update_contact_civi_api' );
       Contact::update(FALSE)
         ->addWhere('id', '=', $msg['contact_id'])
         ->setValues($updateParams)
         ->execute();
+      $this->stopTimer( 'update_contact_civi_api' );
     }
     $this->createEmployerRelationshipIfSpecified($msg['contact_id'], $msg);
 
