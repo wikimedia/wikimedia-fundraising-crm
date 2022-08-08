@@ -197,13 +197,21 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    */
   protected function throwException( $errorMessage, PaymentProviderResponse $processorResponse ) {
     if (!$processorResponse->hasErrors()) {
+      // Response has neither PaymentErrors nor ValidationErrors
       $errorCode = ErrorCode::UNKNOWN;
     }
     elseif ($processorResponse->hasError(ErrorCode::DECLINED_DO_NOT_RETRY)) {
       $errorCode = ErrorCode::DECLINED_DO_NOT_RETRY;
     }
     else {
-      $errorCode = $processorResponse->getErrors()[0]->getErrorCode();
+      $paymentErrors = $processorResponse->getErrors();
+      if ( empty( $paymentErrors ) ) {
+        // If hasErrors is true and getErrors returns an empty array, we must have
+        // a validation error.
+        $errorCode = ErrorCode::VALIDATION;
+      } else {
+        $errorCode = $processorResponse->getErrors()[0]->getErrorCode();
+      }
     }
     $errorData = [
       'smashpig_processor_response' => $processorResponse

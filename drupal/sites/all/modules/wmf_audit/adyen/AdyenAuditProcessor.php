@@ -1,6 +1,8 @@
 <?php
 
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\Adyen\Audit\AdyenAudit;
+use SmashPig\PaymentProviders\Adyen\TokenizeRecurringJob;
 
 class AdyenAuditProcessor extends BaseAuditProcessor {
 
@@ -85,7 +87,8 @@ class AdyenAuditProcessor extends BaseAuditProcessor {
 
   /**
    * Override parent function to deal with recurring donations with modification_reference.
-   * We do not watn to have the
+   * We do not want to pass the modification_reference,
+   * also need to make sure the transaction id not null before send audit job to civi
    *
    * @param array $body
    * @param string $type
@@ -94,6 +97,17 @@ class AdyenAuditProcessor extends BaseAuditProcessor {
    */
   protected function send_queue_message($body, $type) {
     unset($body['modification_reference']);
+    // The processor_contact_id will be used for get tokenization for recurring donations.
+    if( !empty( $body['recurring'] ) ) {
+      $body['processor_contact_id'] = $body['order_id'];
+    }
+    if (
+      $body['gateway'] === 'adyen' && TokenizeRecurringJob::donationNeedsTokenizing($body)
+    ) {
+      $job = TokenizeRecurringJob::fromDonationMessage($body);
+      QueueWrapper::push('jobs-adyen', $job);
+      return;
+    }
     parent::send_queue_message($body, $type);
   }
 }

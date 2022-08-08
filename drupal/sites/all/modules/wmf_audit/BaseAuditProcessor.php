@@ -312,7 +312,7 @@ abstract class BaseAuditProcessor {
       $send_message['gross_currency'] = $record['gross_currency'];
     }
     else {
-      $send_message['gross_currency'] = $record['gross'];
+      $send_message['gross_currency'] = $record['currency'];
     }
     return $send_message;
   }

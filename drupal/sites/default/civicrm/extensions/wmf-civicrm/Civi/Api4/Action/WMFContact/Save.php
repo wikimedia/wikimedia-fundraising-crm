@@ -209,7 +209,9 @@ class Save extends AbstractAction {
     }
     // Attempt to insert the contact
     try {
+      $this->startTimer( 'create_contact_civi_api' );
       $contact_result = civicrm_api3('Contact', 'Create', $contact);
+      $this->stopTimer( 'create_contact_civi_api' );
       watchdog('wmf_civicrm', 'Successfully ' . ($contact_id ? 'updated' : 'created ') . ' contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);
       $this->createEmployerRelationshipIfSpecified($contact_result['id'], $msg);
       if (WmfDatabase::isNativeTxnRolledBack()) {
@@ -422,10 +424,15 @@ class Save extends AbstractAction {
     }
     if ($preferredLanguage) {
       if (!wmf_civicrm_check_language_exists($preferredLanguage)) {
-        $parts = explode('_', $preferredLanguage);
-        // If we don't find a locale below then an exception will be thrown.
-        $default_locale = Language::getLanguageCode($parts[0]);
-        $preferredLanguage = $default_locale;
+        try {
+          $parts = explode('_', $preferredLanguage);
+          // If we don't find a locale below then an exception will be thrown.
+          $default_locale = Language::getLanguageCode($parts[0]);
+          $preferredLanguage = $default_locale;
+        }
+        catch(\CRM_Core_Exception $ex) {
+          $preferredLanguage = 'en_US';
+        }
       }
     }
     return $preferredLanguage;
@@ -530,10 +537,12 @@ class Save extends AbstractAction {
       }
     }
     if (!empty($updateParams)) {
+      $this->startTimer( 'update_contact_civi_api' );
       Contact::update(FALSE)
         ->addWhere('id', '=', $msg['contact_id'])
         ->setValues($updateParams)
         ->execute();
+      $this->stopTimer( 'update_contact_civi_api' );
     }
     $this->createEmployerRelationshipIfSpecified($msg['contact_id'], $msg);
 
