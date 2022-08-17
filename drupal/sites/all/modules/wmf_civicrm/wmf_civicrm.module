@@ -1234,30 +1234,6 @@ function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
 }
 
 /**
- * Ensure the selected language is valid in CiviCRM DB.
- *
- * In 4.6 CiviCRM validates preferred_language against the language
- * option_group in the DB.
- *
- * wmf has (at least in the tests) defined these ad hoc.
- * Options are to manage the list of available languages or create them at
- * run time if required. This function does the latter.
- *
- * When retrieved using getoptions it uses a pseudoconstant
- * so, the DB query won't run more than once. I haven't added an
- * extra level of caching into this function at this stage for fear of fragility
- * if it gets updated elsewhere but it could be done.
- *
- * @param string
- *
- * @return mixed
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_ensure_language_exists($languageAbbreviation) {
-  wmf_civicrm_ensure_option_exists($languageAbbreviation, 'preferred_language', 'languages', ['value' => substr($languageAbbreviation, 0, 2)]);
-}
-
-/**
  * Check if the language string exists.
  *
  * @param string $languageAbbreviation

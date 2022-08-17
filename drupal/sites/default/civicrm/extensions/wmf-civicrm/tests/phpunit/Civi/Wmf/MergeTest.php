@@ -614,10 +614,9 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function testBatchMergeConflictPreferredLanguage($dataSet) {
+  public function testBatchMergeConflictPreferredLanguage($dataSet): void {
     // Can't use api if we are trying to use invalid data.
-    wmf_civicrm_ensure_language_exists('en');
-    wmf_civicrm_ensure_language_exists('en_NZ');
+
     \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '{$dataSet['languages'][0]}' WHERE id = $this->contactID");
     \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '{$dataSet['languages'][1]}' WHERE id = $this->contactID2");
 
@@ -651,8 +650,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
     $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2012-01-01', 'invoice_id' => 2, 'trxn_id' => 2]);
 
-    wmf_civicrm_ensure_language_exists('en_US');
-    wmf_civicrm_ensure_language_exists('fr_FR');
     \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language1' WHERE id = $this->contactID");
     \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
 
@@ -684,8 +681,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2012-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
     $this->contributionCreate(['contact_id' => $this->contactID2, 'receive_date' => '2010-01-01', 'invoice_id' => 2, 'trxn_id' => 2]);
 
-    wmf_civicrm_ensure_language_exists('en_US');
-    wmf_civicrm_ensure_language_exists('fr_FR');
     \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language1' WHERE id = $this->contactID");
     \CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = '$language2' WHERE id = $this->contactID2");
 
