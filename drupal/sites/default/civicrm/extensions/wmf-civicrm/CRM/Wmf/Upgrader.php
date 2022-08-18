@@ -1,8 +1,8 @@
-<?php
+<?php /** @noinspection PhpUnused */
 
+use Civi\Api4\OptionGroup;
 use Civi\Api4\WMFConfig;
 use Civi\Api4\OptionValue;
-use CRM_Wmf_ExtensionUtil as E;
 
 /**
  * Collection of upgrade steps.
@@ -81,7 +81,7 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
    * Example: Run an external SQL script when the module is uninstalled.
    */
   // public function uninstall() {
-  //  $this->executeSqlFile('sql/myuninstall.sql');
+  //  $this->executeSqlFile('sql/my-uninstall.sql');
   // }
 
   /**
@@ -135,6 +135,7 @@ SET end_date = NULL WHERE id IN
    *
    * @return TRUE on success
    * @throws Exception
+   * @noinspection SqlWithoutWhere
    */
   public function upgrade_4201(): bool {
     // tested on staging Query OK, 4040 rows affected (24.646 sec)
@@ -172,6 +173,8 @@ SET end_date = NULL WHERE id IN
    *
    * @return TRUE on success
    * @throws Exception
+   *
+   * @noinspection SqlWithoutWhere
    */
   public function upgrade_4203(): bool {
     CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution_recur
@@ -262,10 +265,11 @@ SET end_date = NULL WHERE id IN
    * After previous fix ups we still have 1971 'completed' contributions with
    * no end date or cancel date. I have determined that 10 of these are in progress
    * and the rest should have an end date. The 3 queries in this update should clear
-   * them all out & we should hopefully be done with this data snaffu.
+   * them all out & we should hopefully be done with this data snafu.
    * Bug: T283798
    *
    * @return TRUE on success
+   * @noinspection SqlWithoutWhere
    */
   public function upgrade_4206(): bool {
     // Step 1 - set status to 'in progress' where the contributions are genuinely ongoing
@@ -400,6 +404,7 @@ SET end_date = NULL WHERE id IN
    * Bug: T288721
    *
    * @return TRUE on success
+   * @noinspection SqlWithoutWhere
    */
   public function upgrade_4209(): bool {
     CRM_Core_DAO::executeQuery("UPDATE wmf_donor
@@ -502,7 +507,7 @@ SET
   }
 
   /**
-   * Run sql to reset the accidentally cancelled ideal recurrings during the token update when switching from Adyen to
+   * Run sql to reset the accidentally cancelled ideal recurring contributions during the token update when switching from Adyen to
    * Adyen Checkout
    *
    * Bug: T277120
@@ -614,7 +619,7 @@ SET
   }
 
   /**
-   * @return bool
+   * @return true
    * remove the trailing number from email
    */
   public function upgrade_4219(): bool {
