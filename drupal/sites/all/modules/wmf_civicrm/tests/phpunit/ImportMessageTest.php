@@ -6,7 +6,6 @@ use Civi\Api4\Email;
 use Civi\Api4\Relationship;
 use Civi\WMFException\WMFException;
 use wmf_civicrm\ImportStatsCollector;
-use Civi\Api4\WMFConfig;
 
 define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
 
@@ -82,18 +81,17 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Test importing messages using variations form messagerProvider dataprovider.
+   * Test importing messages using variations form messageProvider data-provider.
    *
    * @dataProvider messageProvider
    *
    * @param array $msg
    * @param array $expected
    *
-   * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  public function testMessageInsert($msg, $expected) {
+  public function testMessageInsert(array $msg, array $expected): void {
     if (!empty($msg['contribution_recur_id'])) {
       // Create this here - the fixtures way was not reliable
       $msg['contact_id'] = $this->createIndividual();
@@ -192,7 +190,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return int
    */
-  protected function createContribution($params = []) {
+  protected function createContribution($params = []): int {
     return Contribution::create(FALSE)->setValues(array_merge([
       'total_amount' => '2.34',
       'currency' => 'USD',
@@ -216,8 +214,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $gateway_txn_id = mt_rand();
     $check_number = (string) mt_rand();
-
-    $new_prefix = 'M' . mt_rand();
 
     $cases = [
       // Minimal contribution
@@ -302,7 +298,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'last_name' => 'Last',
           'middle_name' => 'Middle',
           'no_thank_you' => 'no forwarding address',
-          'name_prefix' => $new_prefix,
+          'name_prefix' => 'Mr.',
           'name_suffix' => 'Sr.',
           'payment_method' => 'check',
           'stock_description' => 'Long-winded prolegemenon',
@@ -318,7 +314,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'is_opt_out' => '1',
             'last_name' => 'Last',
             'middle_name' => 'Middle',
-            'prefix' => $new_prefix,
+            'prefix' => 'Mr.',
             'suffix' => 'Sr.',
             'preferred_language' => 'en_US',
           ],
@@ -391,13 +387,13 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'gross' => '1.23',
           'payment_method' => 'cc',
           'language' => 'en_ZW',
-          'name_prefix' => $new_prefix,
+          'name_prefix' => 'Mr.',
           'name_suffix' => 'Sr.',
         ],
         [
           'contact' => [
             'preferred_language' => 'en_US',
-            'prefix' => $new_prefix,
+            'prefix' => 'Mr.',
             'suffix' => 'Sr.',
           ],
           'contribution' => $this->getBaseContribution($gateway_txn_id),
@@ -866,7 +862,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @throws \Civi\WMFException\WMFException
    */
-  public function testKeepOnHold() {
+  public function testKeepOnHold(): void {
     $contactID = $this->createIndividual();
     $this->callAPISuccess('Email', 'create', [
       'email' => 'Agatha@wikimedia.org',

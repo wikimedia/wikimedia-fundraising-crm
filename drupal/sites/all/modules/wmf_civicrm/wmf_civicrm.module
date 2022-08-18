@@ -1262,36 +1262,6 @@ function wmf_civicrm_get_valid_languages() {
 }
 
 /**
- * Ensure the required option value exists.
- *
- * @param string $option_value
- * @param string $field_name
- * @param string|int $option_group_name
- *   Option group name or option group ID if known
- * @param array $spec
- *   Values for the entity if it is to be created.
- * @param string $entity
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_ensure_option_exists($option_value, $field_name, $option_group_name, $spec = [], $entity = 'Contact') {
-  $available_options = civicrm_api3($entity, 'getoptions', [
-    'field' => $field_name,
-  ]);
-  if ($option_value && empty($available_options['values'][$option_value])) {
-    $uniqueParams = [
-      'option_group_id' => $option_group_name,
-      'name' => $option_value,
-    ];
-    $checkForInactive = civicrm_api3('OptionValue', 'get', array_merge(['is_active' => 0], $uniqueParams));
-    if (!empty($checkForInactive['id'])) {
-      $uniqueParams['id'] = $checkForInactive['id'];
-    }
-    civicrm_api3('OptionValue', 'create', array_merge($uniqueParams, $spec));
-  }
-}
-
-/**
  * Update the contact record
  *
  * Serves as a standard way for message processors to handle contact
