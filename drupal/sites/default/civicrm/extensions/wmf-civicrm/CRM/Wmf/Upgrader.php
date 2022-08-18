@@ -638,4 +638,58 @@ SET
     CRM_Core_DAO::executeQuery( "update civicrm_email set email = left( email, length(email) - length(REGEXP_SUBSTR(reverse(email),'[0-9]+'))), on_hold=0, hold_date=NULL where SUBSTRING(email, length(email), 1) REGEXP '[0-9]' and email LIKE '%@%.%'" );
     return TRUE;
   }
+
+  /**
+   * Remove unused option values.
+   *
+   * @return true
+   * @throws \API_Exception
+   */
+  public function upgrade_4220(): bool {
+    $optionGroups = OptionGroup::get(FALSE)
+      ->addWhere('name', 'IN', ['individual_prefix', 'individual_suffix', 'languages'])
+      ->addSelect('id', 'name')->execute()->indexBy('name');
+
+    $prefixOptions = $this->getInUseOptions('prefix_id');
+    CRM_Core_DAO::executeQuery('
+      DELETE FROM civicrm_option_value
+      WHERE option_group_id = ' . $optionGroups['individual_prefix']['id'] . '
+        AND value NOT IN (' . implode(',', $prefixOptions) .')');
+
+    $suffixOptions = $this->getInUseOptions('suffix_id');
+    CRM_Core_DAO::executeQuery('
+      DELETE FROM civicrm_option_value
+      WHERE option_group_id = ' . $optionGroups['individual_suffix']['id'] . '
+        AND value NOT IN (' . implode(',', $suffixOptions) .')');
+
+    $languages = $this->getInUseOptions('preferred_language');
+    CRM_Core_DAO::executeQuery("
+      DELETE FROM civicrm_option_value
+      WHERE option_group_id = {$optionGroups['languages']['id']}
+        -- extra cautionary check - only ones with cruft-for-labels
+        AND label = name
+        AND name NOT IN ('" . implode("', '", $languages) ."')");
+
+    return TRUE;
+  }
+
+  /**
+   * Get the values actually used for the option.
+   *
+   * @param string $field
+   *
+   * @return array
+   */
+  private function getInUseOptions(string $field): array {
+    $dbResult = CRM_Core_DAO::executeQuery("
+      SELECT distinct $field as option_field FROM civicrm_contact
+      WHERE $field IS NOT NULL
+    ");
+    $usedOptions = [];
+    while ($dbResult->fetch()) {
+      $usedOptions[] = $dbResult->option_field;
+    }
+    return $usedOptions;
+  }
+
 }
