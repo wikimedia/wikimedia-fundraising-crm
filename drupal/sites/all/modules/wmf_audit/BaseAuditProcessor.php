@@ -1432,7 +1432,7 @@ abstract class BaseAuditProcessor {
       throw new Exception(__FUNCTION__ . ": Unhandled message type '$type'");
     }
 
-    QueueWrapper::push($queueNames[$type], $body);
+    QueueWrapper::push($queueNames[$type], $body, true);
   }
 
 }

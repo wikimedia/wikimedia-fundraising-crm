@@ -105,7 +105,7 @@ class AdyenAuditProcessor extends BaseAuditProcessor {
       $body['gateway'] === 'adyen' && TokenizeRecurringJob::donationNeedsTokenizing($body)
     ) {
       $job = TokenizeRecurringJob::fromDonationMessage($body);
-      QueueWrapper::push('jobs-adyen', $job);
+      QueueWrapper::push('jobs-adyen', $job, true);
       return;
     }
     parent::send_queue_message($body, $type);

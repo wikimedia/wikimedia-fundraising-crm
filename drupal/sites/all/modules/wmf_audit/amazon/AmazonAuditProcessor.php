@@ -85,7 +85,7 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
     ) {
       $body['order_reference_id'] = substr($body['gateway_txn_id'], 0, 19);
       $job = RecordPaymentJob::fromAmazonMessage($body);
-      QueueWrapper::push('jobs-amazon', $job);
+      QueueWrapper::push('jobs-amazon', $job, true);
       return;
     }
     parent::send_queue_message($body, $type);

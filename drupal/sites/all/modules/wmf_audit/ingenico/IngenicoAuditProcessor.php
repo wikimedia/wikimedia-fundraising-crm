@@ -138,7 +138,7 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
       TokenizeRecurringJob::donationNeedsTokenizing($body)
     ) {
       $job = TokenizeRecurringJob::fromDonationMessage($body);
-      QueueWrapper::push('jobs-ingenico', $job);
+      QueueWrapper::push('jobs-ingenico', $job, true);
       return;
     }
     parent::send_queue_message($body, $type);
