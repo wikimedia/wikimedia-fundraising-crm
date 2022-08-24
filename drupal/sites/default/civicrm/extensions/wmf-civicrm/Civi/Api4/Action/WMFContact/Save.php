@@ -144,11 +144,9 @@ class Save extends AbstractAction {
     }
     if (!empty($msg['name_prefix'])) {
       $contact['prefix_id'] = $msg['name_prefix'];
-      wmf_civicrm_ensure_option_exists($msg['name_prefix'], 'prefix_id', 'individual_prefix');
     }
     if (!empty($msg['name_suffix'])) {
       $contact['suffix_id'] = $msg['name_suffix'];
-      wmf_civicrm_ensure_option_exists($msg['name_suffix'], 'suffix_id', 'individual_suffix');
     }
 
     $contact['preferred_language'] = $this->getPreferredLanguage($msg);

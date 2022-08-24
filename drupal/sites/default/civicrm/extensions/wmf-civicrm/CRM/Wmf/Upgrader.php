@@ -33,6 +33,15 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
       ->addValue('value', 'es_MX')
       ->execute();
 
+   // Our name formatter likes to go dotless. Add this here so
+   // it runs for dev installs but not again on prod
+   OptionValue::update(FALSE)
+     ->addWhere('option_group_id:name', '=', 'individual_suffix')
+     ->addWhere('name', '=', 'Jr.')
+     ->addValue('label', 'Jr')
+     ->addValue('name', 'Jr')
+     ->execute();
+
     $this->syncGeocoders();
     // Bug: T115044 Add index to nick_name column as we have decided to use it for Benevity imports.
     CRM_Core_BAO_SchemaHandler::createIndexes(['civicrm_contact' => ['nick_name']]);
