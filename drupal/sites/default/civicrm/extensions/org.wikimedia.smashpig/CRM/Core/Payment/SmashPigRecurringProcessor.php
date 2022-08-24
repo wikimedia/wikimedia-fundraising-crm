@@ -229,7 +229,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'recurring' => TRUE,
       ];
 
-      QueueWrapper::push('donations', $queueMessage);
+      QueueWrapper::push('donations', $queueMessage, true);
     }
     else {
       // Create the contribution
