@@ -23,6 +23,8 @@ $settings = [
     'first_name' => 'firstname',
     'last_name' => 'lastname' ,
   ],
+  // Prevents acl cache clearing (as of recording already set on prod/staging)
+  'acl_cache_refresh_mode' => 'deterministic',
 
   // We specify the tokens we want to have available to limit
   // processing to what is useful. These add nice formatted address block tokens.

@@ -61,11 +61,12 @@ Next run the api - it's visible in the apiv4 explorer if you need help with that
 is the code for me.
 
 ```
- echo '{"fileName":"/Users/eileenmcnaughton/CiviCRM.sql_log.7a880382d2e1d80611365ce1.log"}' | cv api4 Querylog.parse --in=json
+ echo '{"fileName":"/Users/eileenmcnaughton/CiviCRM.sql_log.7a880382d2e1d80611365ce1.log" "version":4}' | drush @wmff Querylog.parse --in=json
  ```
 
 The api call will output a csv file with the main details of the query in columns.
 
+Further reading https://wikitech.wikimedia.org/wiki/Fundraising#Queries_%26_timing
 
 ## Known Issues
 Regex is included to replace any emails but other personal data may be in the file so
