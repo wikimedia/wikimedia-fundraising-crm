@@ -2,6 +2,7 @@ drupal/sites/default/*settings.php
 !drupal/sites/default/default.settings.php
 drupal/sites/default/files
 vendor
+!drupal/sites/all/modules/civicrm/vendor
 .version-stamp
 drupal/sites/default/civicrm/extensions/cache
 drupal/sites/default/civicrm.settings.d/pre.d/100-civirpow.php
