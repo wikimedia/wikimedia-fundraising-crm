@@ -6,7 +6,7 @@ namespace Civi\WMFHooks;
 use Civi\Api4\CustomGroup;
 use CRM_Core_PseudoConstant;
 
-class CalculatedData {
+class CalculatedData extends TriggerHook {
 
   protected const WMF_MIN_ROLLUP_YEAR = 2006;
   protected const WMF_MAX_ROLLUP_YEAR = 2023;
@@ -55,32 +55,6 @@ class CalculatedData {
    */
   public function isTriggerContext(): string {
     return $this->triggerContext;
-  }
-
-  /**
-   * @var string
-   */
-  protected $tableName;
-
-  /**
-   * Get the table name.
-   *
-   * this is set if the info function has requested only one table name.
-   *
-   * @return string|null
-   */
-  public function getTableName(): ?string {
-    return $this->tableName;
-  }
-
-  /**
-   * @param string|null $tableName
-   *
-   * @return CalculatedData
-   */
-  public function setTableName(?string $tableName): CalculatedData {
-    $this->tableName = $tableName;
-    return $this;
   }
 
   /**

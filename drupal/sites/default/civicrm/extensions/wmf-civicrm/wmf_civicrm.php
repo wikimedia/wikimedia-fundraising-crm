@@ -3,6 +3,7 @@
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
 use Civi\WMFHooks\CalculatedData;
+use Civi\WMFHooks\ContributionRecurTrigger;
 use Civi\WMFHooks\Permissions;
 use Civi\WMFHooks\QuickForm;
 use Civi\WMFHooks\Data;
@@ -303,6 +304,9 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   $processor = new CalculatedData();
   $wmfTriggerInfo = $processor->setTableName($tableName)->triggerInfo();
   $info = array_merge($info, $wmfTriggerInfo);
+  $recurProcessor = new ContributionRecurTrigger();
+  $recurTriggerInfo = $recurProcessor->setTableName($tableName)->triggerInfo();
+  $info = array_merge($info, $recurTriggerInfo);
 }
 
 /**
