@@ -1,10 +1,13 @@
 <?php
 
+use Civi\WMFException\WMFException;
+
 /**
  * @group Adyen
  * @group WmfAudit
  */
 class AdyenAuditTest extends BaseAuditTestCase {
+  protected $idForRefundTest;
 
   public function setUp(): void {
     parent::setUp();
@@ -47,6 +50,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'gateway_txn_id' => '4522268860022701',
         'gross' => 1.00,
         'payment_method' => 'cc',
+        'contribution_status_id' => 1
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
@@ -69,12 +73,38 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'gateway_txn_id' => '4555568860022701',
         'gross' => 1.00,
         'payment_method' => 'cc',
+        ];
+        $contribution = wmf_civicrm_contribution_message_import($msg);
+    }
+    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
+    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
+
+    // Fake refunded transaction
+    $existing = wmf_civicrm_get_contributions_from_gateway_id('adyen', '4555568860022703');
+    if ($existing) {
+      // Previous test run may have crashed before cleaning up
+      $contribution = $existing[0];
+    }
+    else {
+      $msg = [
+        'contribution_tracking_id' => 1004,
+        'invoice_id' => 1004.0,
+        'currency' => 'USD',
+        'date' => 1455825706,
+        'email' => 'asdf@asdf.com',
+        'gateway' => 'adyen',
+        'gateway_txn_id' => '4522268860022703',
+        'gross' => 1.00,
+        'payment_method' => 'cc',
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
+    $this->idForRefundTest = $contribution['id'];
   }
+
+
 
   public function auditTestProvider() {
     return [
@@ -225,6 +255,27 @@ class AdyenAuditTest extends BaseAuditTestCase {
     ];
   }
 
+  public function auditErrorTestProvider() {
+    return [
+      [
+        __DIR__ . '/data/Adyen/refund/',
+        [
+          'refund' => [
+            [
+              'date' => 1455128736,
+              'gateway' => 'adyen',
+              'gateway_parent_id' => '4522268860023102',
+              'gateway_refund_id' => '4522268869854111',
+              'gross' => '1.00',
+              'gross_currency' => 'USD',
+              'type' => 'refund',
+            ],
+          ],
+        ],
+      ],
+    ];
+  }
+
   /**
    * @dataProvider auditTestProvider
    */
@@ -233,6 +284,28 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
     $this->runAuditor();
 
+    $this->assertMessages($expectedMessages);
+  }
+
+  public function testAlreadyRefundedTransactionIsSkipped() {
+    variable_set('adyen_audit_recon_files_dir',  __DIR__ . '/data/Adyen/refunded/');
+    $expectedMessages = [
+      'refund' => []
+    ];
+    
+    $msg = [
+      'currency' => 'USD',
+      'date' => 1455825706,
+      'gateway' => 'adyen',
+      'gateway_txn_id' => '4522268860022701',
+      'gross' => 1.00,
+    ];
+    wmf_civicrm_mark_refund($this->idForRefundTest, 'refund', TRUE, $msg['date'],
+      $msg['gateway_txn_id'],
+      $msg['currency'],
+      $msg['gross']
+    );
+    $this->runAuditor();
     $this->assertMessages($expectedMessages);
   }
 

@@ -1,10 +1,13 @@
 <?php
 
+use Civi\WMFException\WMFException;
+
 /**
  * @group Ingenico
  * @group WmfAudit
  */
 class IngenicoAuditTest extends BaseAuditTestCase {
+  protected $idForRefundTest;
 
   protected $contact_ids = [];
 
@@ -109,8 +112,31 @@ class IngenicoAuditTest extends BaseAuditTestCase {
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
+    $this->contact_ids[] = $contribution['contact_id'];
+
+    // Fake refunded transaction
+    $existing = wmf_civicrm_get_contributions_from_gateway_id('ingenico', '1111662247');
+    if ($existing) {
+      // Previous test run may have crashed before cleaning up
+      $contribution = $existing[0];
+    }
+    else {
+      $msg = [
+        'contribution_tracking_id' => 1014,
+        'invoice_id' => '1014.0',
+        'currency' => 'USD',
+        'date' => 1455825706,
+        'email' => 'asdf@asdf.com',
+        'gateway' => 'globalcollect',
+        'gateway_txn_id' => '1111662247',
+        'gross' => 1.00,
+        'payment_method' => 'cc',
+      ];
+      $contribution = wmf_civicrm_contribution_message_import($msg);
+    }
     $this->consumeCtQueue();
     $this->contact_ids[] = $contribution['contact_id'];
+    $this->idForRefundTest = $contribution['id'];
   }
 
   public function tearDown(): void {
@@ -344,10 +370,33 @@ class IngenicoAuditTest extends BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles($path, $expectedMessages) {
-    variable_set('ingenico_audit_recon_files_dir', $path);
+    variable_set('ingenico_audit_recon_files_dir',  $path);
 
     $this->runAuditor();
 
+    $this->assertMessages($expectedMessages);
+  }
+
+  public function testAlreadyRefundedTransactionIsSkipped() {
+    variable_set('ingenico_audit_recon_files_dir', __DIR__ . '/data/Ingenico/refundNoGatewayIDinCivi/');
+    $expectedMessages = [
+      'refund' => []
+    ];
+
+    $msg = [
+      'currency' => 'USD',
+      'date' => 1455825706,
+      'gateway' => 'globalcollect',
+      'gateway_txn_id' => '1111662247',
+      'gross' => 1.00,
+    ];
+    wmf_civicrm_mark_refund($this->idForRefundTest, 'refund', TRUE, $msg['date'],
+      $msg['gateway_txn_id'],
+      $msg['currency'],
+      $msg['gross']
+    );
+
+    $this->runAuditor();
     $this->assertMessages($expectedMessages);
   }
 
