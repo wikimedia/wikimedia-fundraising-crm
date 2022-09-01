@@ -128,6 +128,12 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     }
     // check for parent record in civicrm_contribution_recur and fetch its id
     $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
+
+    if ($recur_record) {
+      // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
+      \Civi\WMFHelpers\ContributionRecur::reactivateIfInactive( $recur_record );
+    }
+
     // Since October 2018 or so, PayPal has been doing two things that really
     // mess with us.
     // 1) Sending mass cancellations for old-style subscriptions (i.e. ones we
