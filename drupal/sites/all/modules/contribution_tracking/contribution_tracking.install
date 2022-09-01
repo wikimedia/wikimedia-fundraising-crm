@@ -181,8 +181,7 @@ function contribution_tracking_update_7020() {
 }
 
 /**
- * Add contribution_source table. Not adding the triggers here as we
- * want to move those to code.
+ * Add contribution_source table.
  */
 function contribution_tracking_update_7030() {
   db_query( file_get_contents( __DIR__ . '/contribution_source.sql' ) );
