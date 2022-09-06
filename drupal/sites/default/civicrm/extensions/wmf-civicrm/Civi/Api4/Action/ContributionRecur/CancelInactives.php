@@ -22,7 +22,6 @@ class CancelInactives extends AbstractAction {
     $inactives = ContributionRecur::get(FALSE)
       ->addWhere('contribution_status_id', 'NOT IN', [1,3,4])
       ->addWhere('next_sched_contribution_date', '<', $limitDate)
-      ->addWhere('cancel_date', 'IS NULL')
       ->execute();
 
     foreach($inactives as $inactive) {
