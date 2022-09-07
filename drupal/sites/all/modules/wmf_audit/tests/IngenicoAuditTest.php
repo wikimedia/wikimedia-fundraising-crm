@@ -151,7 +151,8 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'city' => 'Denver',
               'state_province' => 'CO',
               'postal_code' => '87654',
-              'invoice_id' => '5551212.68168'
+              'invoice_id' => '5551212.68168',
+              'merchant_id' => '1234'
             ],
           ],
         ],
@@ -184,7 +185,8 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'utm_source' => 'B1718_0429_nlNL_m_p1_lg_txt_cnt.no-LP.rtbt.rtbt_ideal',
               'street_address' => 'N0NE PROVIDED',
               'city' => 'NOCITY',
-              'invoice_id' => '57123456.84401'
+              'invoice_id' => '57123456.84401',
+              'merchant_id' => '1234'
             ],
           ],
         ],
@@ -267,7 +269,8 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'city' => 'Cityville',
               'state_province' => 'OR',
               'postal_code' => '12345',
-              'invoice_id' => '55599991.635'
+              'invoice_id' => '55599991.635',
+              'merchant_id' => '8765'
             ],
           ],
         ],
@@ -300,7 +303,8 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'utm_source' => 'B1718_0429_nlNL_m_p1_lg_txt_cnt.no-LP..cc',
               'street_address' => 'N0NE PROVIDED',
               'city' => 'NOCITY',
-              'invoice_id' => '57123456.84401'
+              'invoice_id' => '57123456.84401',
+              'merchant_id' => '1234',
             ],
             [
               'contribution_tracking_id' => '5551212',
@@ -327,8 +331,8 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'state_province' => 'CO',
               'postal_code' => '87654',
               'invoice_id' => '5551212.1',
+              'merchant_id' => '1234',
               'user_ip' => '111.222.33.44',
-              'gateway_account' => '1234'
             ],
           ],
         ],
