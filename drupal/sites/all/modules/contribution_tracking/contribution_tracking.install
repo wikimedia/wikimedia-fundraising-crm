@@ -1,5 +1,9 @@
 <?php
 
+function contribution_tracking_install() {
+  contribution_tracking_update_7030();
+}
+
 function contribution_tracking_schema() {
   $schema[ 'contribution_tracking' ] = array(
     'description' => t( 'Tracks user experience through donation pipeline.' ),
@@ -140,7 +144,7 @@ function contribution_tracking_update_7000() {
 function contribution_tracking_update_7010() {
   db_query("
     UPDATE contribution_tracking
-    SET language = NULL 
+    SET language = NULL
     WHERE
     language LIKE '?%'
     OR language LIKE '\" % '
@@ -174,4 +178,11 @@ function contribution_tracking_update_7020() {
     ALTER TABLE contribution_tracking
     MODIFY COLUMN `id` INT(10) UNSIGNED NOT NULL
   ");
+}
+
+/**
+ * Add contribution_source table.
+ */
+function contribution_tracking_update_7030() {
+  db_query( file_get_contents( __DIR__ . '/contribution_source.sql' ) );
 }
