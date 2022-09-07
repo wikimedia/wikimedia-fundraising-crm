@@ -1,4 +1,6 @@
 <?php
+
+use Civi\Api4\ContributionRecur;
 use Civi\WMFException\WMFException;
 
 /**
@@ -581,20 +583,14 @@ function wmf_civicrm_get_legacy_paypal_subscription($msg) {
  * @param array $msg
  */
 function wmf_civicrm_update_legacy_paypal_subscription($recur_record, $msg) {
-  $query = "UPDATE civicrm_contribution_recur
-    SET contribution_status_id = %1,
-      cancel_date = NULL,
-      end_date = NULL,
-      processor_id = %2
-    WHERE id = %3";
-  $completedStatusId = CRM_Contribute_PseudoConstant::getKey(
-    'CRM_Contribute_BAO_Contribution','contribution_status_id', 'Completed'
-  );
-  CRM_Core_DAO::executeQuery($query, [
-    1 => [$completedStatusId, 'Int'],
-    2 => [$msg['subscr_id'], 'String'],
-    3 => [$recur_record->id, 'Int']
-  ]);
+  ContributionRecur::update(FALSE)
+    ->addWhere('id', '=', $recur_record->id)
+    ->setValues([
+      'contribution_status_id.name' => 'In Progress',
+      'cancel_date' => NULL,
+      'end_date' => NULL,
+      'processor_id' => $msg['subscr_id']
+    ])->execute();
 }
 
 function wmf_civicrm_get_recurring_payment_token($gateway, $token) {
