@@ -49,10 +49,21 @@ function drush_civicrm_cleanup_old_deleted_contacts_civicrm_cleanup_contacts() {
     'return' => ['id', 'modified_date'],
   ])['values'];
 
+  $modifiedDate = null;
   foreach ($contacts as $contactID => $contact) {
-    civicrm_api3('Contact', 'delete', ['skip_undelete' => 1, 'id' => $contactID]);
+    try {
+      civicrm_api3('Contact', 'delete', ['skip_undelete' => 1, 'id' => $contactID]);
+      if (!$modifiedDate) {
+        $modifiedDate = $contact['modified_date'];
+      }
+    } 
+    catch (Exception $e) {
+      $message = 'This contact id is not able to be deleted: ' . $contactID;
+      drush_print($message);
+      watchdog('civicrm_cleanup_logs', $message);
+    }
   }
-  $message = 'Deleted deleted contacts, most recent modified_date:' . $contact['modified_date'];
+  $message = !$modifiedDate ? "No deleted contact found to delete" : "Deleted deleted contacts, most recent modified_date: " . $modifiedDate;
   drush_print($message);
   watchdog('civicrm_cleanup_logs', $message);
 }

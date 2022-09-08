@@ -3,6 +3,7 @@
 use Civi\Api4\CustomField;
 use Civi\Api4\Name;
 use Civi\Api4\WMFContact;
+use Civi\WMFHelpers\ContributionRecur;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
@@ -240,6 +241,8 @@ function wmf_civicrm_contribution_message_import(&$msg) {
         watchdog('queue2civicrm_import', 'Found matching recurring record for subscr_id: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO);
         $msg['contribution_recur_id'] = $recur_record->id;
         $msg['contact_id'] = $recur_record->contact_id;
+        // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
+        ContributionRecur::reactivateIfInactive($recur_record);
       }
     }
     else {

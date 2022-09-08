@@ -483,6 +483,7 @@ abstract class BaseAuditProcessor {
     if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
       foreach ($total_missing['negative'] as $record) {
         //check to see if the parent exists. If it does, normalize and send.
+        $parentByInvoice = [];
         $foundParent = $this->main_transaction_exists_in_civi($record);
         if (!$foundParent && !empty($record['invoice_id'])) {
           // Sometimes it's difficult to find a parent transaction by the
@@ -510,6 +511,10 @@ abstract class BaseAuditProcessor {
           }
         }
         if ($foundParent) {
+          if(count($parentByInvoice)
+            && CRM_Contribute_BAO_Contribution::isContributionStatusNegative($parentByInvoice['contribution_status_id'])){
+            continue;
+          }
           $normal = $this->normalize_negative($record);
           $this->send_queue_message($normal, 'negative');
           $neg_count += 1;
