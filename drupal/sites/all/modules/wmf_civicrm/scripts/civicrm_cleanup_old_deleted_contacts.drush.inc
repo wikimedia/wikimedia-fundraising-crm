@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contact;
+
 /**
  * Implementation of hook_drush_command()
  */
@@ -36,32 +38,41 @@ function civicrm_cleanup_old_deleted_contacts_drush_command() {
  *
  * Bug: T245087
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function drush_civicrm_cleanup_old_deleted_contacts_civicrm_cleanup_contacts() {
   module_invoke('civicrm', 'initialize');
 
   $batch_size = (integer) drush_get_option('batch', 1000);
-  $contacts = civicrm_api3('Contact', 'get', [
-    'is_deleted' => 1,
-    'modified_date' => ['<' => drush_get_option('date_cutoff', '2017-01-01')],
-    'options' => ['limit' => $batch_size, 'sort' => 'modified_date'],
-    'return' => ['id', 'modified_date'],
-  ])['values'];
+  $last_modified_date = \Civi::settings()->get('wmf_last_delete_deleted_contact_modified_date');
+  $date_cut_off = drush_get_option('date_cutoff', '2017-01-01');
+  $contactsGet = Contact::get(FALSE)
+    ->addWhere('is_deleted', '=', TRUE)
+    ->setLimit($batch_size)
+    ->addSelect('id', 'modified_date', 'is_deleted')
+    ->addOrderBy('modified_date');
 
-  $modifiedDate = null;
+  if ($last_modified_date) {
+    $contactsGet->addWhere('modified_date', 'BETWEEN', [$last_modified_date, $date_cut_off]);
+  }
+  else {
+    $contactsGet->addWhere('modified_date', '<', $date_cut_off);
+  }
+  $contacts = $contactsGet->execute()->indexBy('id');
+  $modifiedDate = '';
   foreach ($contacts as $contactID => $contact) {
+    $modifiedDate = $contact['modified_date'];
     try {
       civicrm_api3('Contact', 'delete', ['skip_undelete' => 1, 'id' => $contactID]);
-      if (!$modifiedDate) {
-        $modifiedDate = $contact['modified_date'];
-      }
-    } 
+    }
     catch (Exception $e) {
       $message = 'This contact id is not able to be deleted: ' . $contactID;
       drush_print($message);
       watchdog('civicrm_cleanup_logs', $message);
     }
+  }
+  if ($modifiedDate) {
+    \Civi::settings()->set('wmf_last_delete_deleted_contact_modified_date', $modifiedDate);
   }
   $message = !$modifiedDate ? "No deleted contact found to delete" : "Deleted deleted contacts, most recent modified_date: " . $modifiedDate;
   drush_print($message);
