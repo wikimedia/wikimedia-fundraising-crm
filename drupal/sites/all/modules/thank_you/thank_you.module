@@ -639,7 +639,7 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
       'source_contact_id' => $civi_queue_record->getContactID(),
       'target_contact_id' => $civi_queue_record->getContactID(),
       'activity_type_id:name' => 'Email',
-      'activity_date_time' => 'now',
+      'activity_date_time' => 'now UTC',
       'subject' => $subject,
       'details' => $html,
       'status_id' => 2,
