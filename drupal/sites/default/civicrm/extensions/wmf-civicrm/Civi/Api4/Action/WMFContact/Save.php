@@ -103,6 +103,9 @@ class Save extends AbstractAction {
       'addressee_custom' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
       'addressee_display' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
       'addressee_id' => empty($msg['addressee_custom']) ? NULL : 'Customized',
+      // Major gifts wants greeting processing - but we are not sure speedwise.
+      'skip_greeting_processing' => TRUE,
+
     ];
     if (!empty($msg['organization_name'])) {
       $contact['organization_name'] = $msg['organization_name'];
