@@ -53,7 +53,7 @@ class Consume extends AbstractAction {
     $processed = 0;
     wmf_common_create_smashpig_context('pending_transaction_resolver', $this->gateway);
     $pendingDb = PendingDatabase::get();
-    $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway);
+    $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway, ['cc', 'google']);
     while (
       $message &&
       $message['date'] < UtcDate::getUtcTimestamp("-{$this->minimumAge} minutes") &&
@@ -69,7 +69,7 @@ class Consume extends AbstractAction {
       );
       $pendingDb->deleteMessage($message);
       $processed++;
-      $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway);
+      $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway, ['cc', 'google']);
     }
     // TODO add to prometheus
     $result->append([

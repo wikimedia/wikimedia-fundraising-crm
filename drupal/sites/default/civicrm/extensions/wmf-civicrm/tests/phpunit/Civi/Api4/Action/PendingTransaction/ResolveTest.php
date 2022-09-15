@@ -80,7 +80,7 @@ class ResolveTest extends TestCase {
     $pending_message = $this->createTestPendingRecord($gateway);
     $this->createTestPaymentFraudRecord($pending_message['contribution_tracking_id'], $pending_message['order_id'], $gateway);
 
-    // getHostedPaymentStatus response set up
+    // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
@@ -90,9 +90,9 @@ class ResolveTest extends TestCase {
         'avs' => 0,
       ]);
 
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // run the pending message through PendingTransaction::resolve()
@@ -123,7 +123,7 @@ class ResolveTest extends TestCase {
     // generate a pending message to test
     $pending_message = $this->createTestPendingRecord('ingenico');
 
-    // getHostedPaymentStatus response set up
+    // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
@@ -133,9 +133,9 @@ class ResolveTest extends TestCase {
         'avs' => 0,
       ]);
 
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // approvePayment response set up
@@ -208,7 +208,7 @@ class ResolveTest extends TestCase {
       ['recurring' => 1]
     );
 
-    // getHostedPaymentStatus response set up
+    // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
@@ -219,9 +219,9 @@ class ResolveTest extends TestCase {
         'avs' => 0,
       ]);
 
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // approvePayment response set up
@@ -304,9 +304,9 @@ class ResolveTest extends TestCase {
         'avs' => 50,
       ]);
 
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // resolve pending trxn
@@ -338,9 +338,9 @@ class ResolveTest extends TestCase {
         'cvv' => 50,
         'avs' => 0,
       ]);
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // set configured response to mock cancelPayment call
@@ -385,9 +385,9 @@ class ResolveTest extends TestCase {
         'cvv' => 50,
         'avs' => 0,
       ]);
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // resolve pending trxn
@@ -422,9 +422,9 @@ class ResolveTest extends TestCase {
         'cvv' => 50,
         'avs' => 0,
       ]);
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // resolve pending trxn
@@ -448,7 +448,7 @@ class ResolveTest extends TestCase {
     // generate a pending message to test
     $pending_message = $this->createTestPendingRecord('ingenico');
 
-    // getHostedPaymentStatus response set up
+    // getLatestPaymentStatus response set up
     // cvv 100 & avs 100 codes represent a 'no_match' result
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
@@ -459,9 +459,9 @@ class ResolveTest extends TestCase {
         'avs' => 100,
       ]);
 
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // cancelPayment should be called when reject status determined.
@@ -513,7 +513,7 @@ class ResolveTest extends TestCase {
     // generate a pending message to test
     $pending_message = $this->createTestPendingRecord('ingenico');
 
-    // getHostedPaymentStatus response set up
+    // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
@@ -523,9 +523,9 @@ class ResolveTest extends TestCase {
         'avs' => 0,
       ]);
 
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // approvePayment response set up
@@ -585,7 +585,7 @@ class ResolveTest extends TestCase {
     // generate a pending message to test
     $pending_message = $this->createTestPendingRecord('ingenico');
 
-    // getHostedPaymentStatus response set up
+    // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
@@ -596,9 +596,9 @@ class ResolveTest extends TestCase {
         'avs' => 50,
       ]);
 
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // approvePayment response set up
@@ -654,7 +654,7 @@ class ResolveTest extends TestCase {
     // generate a pending message to test
     $pending_message = $this->createTestPendingRecord('ingenico');
 
-    // getHostedPaymentStatus response set up
+    // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
@@ -665,9 +665,9 @@ class ResolveTest extends TestCase {
         'avs' => 50,
       ]);
 
-    // set configured response to mock getHostedPaymentStatus call
+    // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
-      ->method('getHostedPaymentStatus')
+      ->method('getLatestPaymentStatus')
       ->willReturn($hostedPaymentStatusResponse);
 
     // should not approvePayment
