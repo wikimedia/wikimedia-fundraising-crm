@@ -11,14 +11,14 @@ use SmashPig\Core\DataStores\PaymentsFraudDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\PaymentData\FinalStatus;
-use SmashPig\PaymentProviders\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
-use SmashPig\PaymentProviders\ApprovePaymentResponse;
+use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\PaymentProviders\CancelPaymentResponse;
+use SmashPig\PaymentProviders\Responses\CancelPaymentResponse;
 
 /**
  * @group PendingTransactionResolver

@@ -9,8 +9,8 @@ use SmashPig\Core\UtcDate;
 use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentData\FinalStatus;
-use SmashPig\PaymentProviders\ApprovePaymentResponse;
-use SmashPig\PaymentProviders\CreatePaymentResponse;
+use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
+use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
@@ -45,16 +45,16 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    */
   private $hostedCheckoutProvider;
 
-  /** @var \SmashPig\PaymentProviders\CreatePaymentResponse */
+  /** @var \SmashPig\PaymentProviders\Responses\CreatePaymentResponse */
   private $createPaymentResponse;
 
-  /** @var \SmashPig\PaymentProviders\CreatePaymentResponse */
+  /** @var \SmashPig\PaymentProviders\Responses\CreatePaymentResponse */
   private $createPaymentResponse2;
 
-  /** @var \SmashPig\PaymentProviders\ApprovePaymentResponse */
+  /** @var \SmashPig\PaymentProviders\Responses\ApprovePaymentResponse */
   private $approvePaymentResponse;
 
-  /** @var \SmashPig\PaymentProviders\ApprovePaymentResponse */
+  /** @var \SmashPig\PaymentProviders\Responses\ApprovePaymentResponse */
   private $approvePaymentResponse2;
 
   /**

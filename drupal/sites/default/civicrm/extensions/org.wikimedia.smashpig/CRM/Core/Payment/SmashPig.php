@@ -4,9 +4,9 @@ use Civi\Payment\Exception\PaymentProcessorException;
 use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
-use SmashPig\PaymentProviders\CreatePaymentResponse;
-use SmashPig\PaymentProviders\ApprovePaymentResponse;
-use SmashPig\PaymentProviders\PaymentProviderResponse;
+use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
+use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 
 require_once "CRM/SmashPig/ContextWrapper.php";
 
