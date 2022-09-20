@@ -86,11 +86,11 @@ class Kernel {
         $this->dispatcher->dispatch('civi.api.exception', new ExceptionEvent($e, NULL, $apiRequest, $this));
       }
 
-      if ($e instanceof \PEAR_Exception) {
-        $err = $this->formatPearException($e, $apiRequest);
-      }
-      elseif ($e instanceof \API_Exception) {
+      if ($e instanceof \API_Exception) {
         $err = $this->formatApiException($e, $apiRequest);
+      }
+      elseif ($e instanceof \PEAR_Exception) {
+        $err = $this->formatPearException($e, $apiRequest);
       }
       else {
         $err = $this->formatException($e, $apiRequest);
@@ -120,7 +120,7 @@ class Kernel {
 
     try {
       $this->boot($apiRequest);
-      list($apiProvider, $apiRequest) = $this->resolve($apiRequest);
+      [$apiProvider, $apiRequest] = $this->resolve($apiRequest);
       $this->authorize($apiProvider, $apiRequest);
       return TRUE;
     }
@@ -143,9 +143,9 @@ class Kernel {
   public function runRequest($apiRequest) {
     $this->boot($apiRequest);
 
-    list($apiProvider, $apiRequest) = $this->resolve($apiRequest);
+    [$apiProvider, $apiRequest] = $this->resolve($apiRequest);
     $this->authorize($apiProvider, $apiRequest);
-    list ($apiProvider, $apiRequest) = $this->prepare($apiProvider, $apiRequest);
+    [$apiProvider, $apiRequest] = $this->prepare($apiProvider, $apiRequest);
     $result = $apiProvider->invoke($apiRequest);
 
     return $this->respond($apiProvider, $apiRequest, $result);

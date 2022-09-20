@@ -9,6 +9,9 @@ use Civi\Api4\Utils\CoreUtil;
 /**
  * Shared functionality for form submission pre & post processing.
  * @package Civi\Api4\Action\Afform
+ *
+ * @method $this setFillMode(string $fillMode) Set entity/form fill mode.
+ * @method string getFillMode()
  */
 abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
 
@@ -24,6 +27,13 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
    * @var array
    */
   protected $args = [];
+
+  /**
+   * Used by prefill action to indicate if the entire form or just one entity is being filled.
+   * @var string
+   * @options form,entity
+   */
+  protected $fillMode = 'form';
 
   /**
    * @var array
@@ -68,14 +78,18 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
   protected function loadEntities() {
     foreach ($this->_formDataModel->getEntities() as $entityName => $entity) {
       $this->_entityIds[$entityName] = [];
+      $idField = CoreUtil::getIdFieldName($entity['type']);
       if (!empty($entity['actions']['update'])) {
-        if (!empty($this->args[$entityName]) && !empty($entity['url-autofill'])) {
-          $ids = array_map('trim', explode(',', $this->args[$entityName]));
+        if (
+          !empty($this->args[$entityName]) &&
+          (!empty($entity['url-autofill']) || isset($entity['fields'][$idField]))
+        ) {
+          $ids = (array) $this->args[$entityName];
           // Limit number of records to 1 unless using af-repeat
           $ids = array_slice($ids, 0, !empty($entity['af-repeat']) ? $entity['max'] ?? NULL : 1);
           $this->loadEntity($entity, $ids);
         }
-        elseif (!empty($entity['autofill'])) {
+        elseif (!empty($entity['autofill']) && $this->fillMode !== 'entity') {
           $this->autofillEntity($entity, $entity['autofill']);
         }
       }
@@ -90,10 +104,17 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
    */
   private function loadEntity(array $entity, array $ids) {
     $api4 = $this->_formDataModel->getSecureApi4($entity['name']);
+    $idField = CoreUtil::getIdFieldName($entity['type']);
+    if (!empty($entity['fields'][$idField]['saved_search'])) {
+      $ids = $this->validateBySavedSearch($entity, $ids);
+    }
+    if (!$ids) {
+      return;
+    }
     $result = $api4($entity['type'], 'get', [
       'where' => [['id', 'IN', $ids]],
       'select' => array_keys($entity['fields']),
-    ])->indexBy('id');
+    ])->indexBy($idField);
     foreach ($ids as $index => $id) {
       $this->_entityIds[$entity['name']][$index] = [
         'id' => isset($result[$id]) ? $id : NULL,
@@ -103,7 +124,7 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
         $data = ['fields' => $result[$id]];
         foreach ($entity['joins'] ?? [] as $joinEntity => $join) {
           $data['joins'][$joinEntity] = (array) $api4($joinEntity, 'get', [
-            'where' => self::getJoinWhereClause($entity['type'], $joinEntity, $id),
+            'where' => self::getJoinWhereClause($this->_formDataModel, $entity['name'], $joinEntity, $id),
             'limit' => !empty($join['af-repeat']) ? $join['max'] ?? 0 : 1,
             'select' => array_keys($join['fields']),
             'orderBy' => self::getEntityField($joinEntity, 'is_primary') ? ['is_primary' => 'DESC'] : [],
@@ -133,28 +154,55 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
     }
   }
 
+  private function validateBySavedSearch($entity, array $ids) {
+    $idField = CoreUtil::getIdFieldName($entity['type']);
+    $fetched = civicrm_api4($entity['type'], 'autocomplete', [
+      'ids' => $ids,
+      'formName' => 'afform:' . $this->name,
+      'fieldName' => $entity['name'] . ':' . $idField,
+    ])->indexBy($idField);
+    $validIds = [];
+    // Preserve keys
+    foreach ($ids as $index => $id) {
+      if (isset($fetched[$id])) {
+        $validIds[$index] = $id;
+      }
+    }
+    return $validIds;
+  }
+
   /**
    * @return array
    */
   abstract protected function processForm();
 
   /**
-   * @param $mainEntityName
-   * @param $joinEntityName
-   * @param $mainEntityId
+   * @param \Civi\Afform\FormDataModel $formDataModel
+   * @param string $mainEntityName
+   * @param string $joinEntityType
+   * @param int|string $mainEntityId
    * @return array
    * @throws \API_Exception
    */
-  protected static function getJoinWhereClause($mainEntityName, $joinEntityName, $mainEntityId) {
+  protected static function getJoinWhereClause(FormDataModel $formDataModel, string $mainEntityName, string $joinEntityType, $mainEntityId) {
+    $entity = $formDataModel->getEntity($mainEntityName);
+    $mainEntityType = $entity['type'];
     $params = [];
-    if (self::getEntityField($joinEntityName, 'entity_id')) {
+
+    // Add data as clauses e.g. `is_primary: true`
+    foreach ($entity['joins'][$joinEntityType]['data'] ?? [] as $key => $val) {
+      $params[] = [$key, '=', $val];
+    }
+
+    // Figure out the FK field between the join entity and the main entity
+    if (self::getEntityField($joinEntityType, 'entity_id')) {
       $params[] = ['entity_id', '=', $mainEntityId];
-      if (self::getEntityField($joinEntityName, 'entity_table')) {
-        $params[] = ['entity_table', '=', CoreUtil::getTableName($mainEntityName)];
+      if (self::getEntityField($joinEntityType, 'entity_table')) {
+        $params[] = ['entity_table', '=', CoreUtil::getTableName($mainEntityType)];
       }
     }
     else {
-      $mainEntityField = \CRM_Core_DAO_AllCoreTables::convertEntityNameToLower($mainEntityName) . '_id';
+      $mainEntityField = \CRM_Core_DAO_AllCoreTables::convertEntityNameToLower($mainEntityType) . '_id';
       $params[] = [$mainEntityField, '=', $mainEntityId];
     }
     return $params;

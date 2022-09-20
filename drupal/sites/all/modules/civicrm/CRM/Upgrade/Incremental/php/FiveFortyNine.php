@@ -76,59 +76,6 @@ class CRM_Upgrade_Incremental_php_FiveFortyNine extends CRM_Upgrade_Incremental_
     $this->addTask('Add civicrm_option_group.option_value_fields column', 'addColumn',
       'civicrm_option_group', 'option_value_fields', "varchar(128) DEFAULT \"name,label,description\" COMMENT 'Which optional columns from the option_value table are in use by this group.'");
     $this->addTask('Populate civicrm_option_group.option_value_fields column', 'fillOptionValueFields');
-
-    // Note I checked none of these fields have existing NULL values.
-    // Staging - Query OK, 0 rows affected (22 min 49.303 sec)
-    CRM_Core_DAO::executeQuery('
-      ALTER TABLE `civicrm_contact`
-CHANGE `do_not_email` `do_not_email` tinyint NOT NULL DEFAULT 0,
-CHANGE `do_not_phone` `do_not_phone` tinyint NOT NULL DEFAULT 0,
-CHANGE `do_not_mail` `do_not_mail` tinyint NOT NULL DEFAULT 0,
-CHANGE `do_not_trade` `do_not_trade` tinyint NOT NULL DEFAULT 0,
-CHANGE `do_not_sms` `do_not_sms` tinyint NOT NULL DEFAULT 0
-
-    ');
-    // select COUNT(*) FROM civicrm_activity WHERE `is_deleted` IS NULL;
-    // |100 |
-    // none of the others have NULLs
-    CRM_Core_DAO::executeQuery('UPDATE civicrm_activity SET is_deleted = 0 WHERE `is_deleted` IS NULL');
-    CRM_Core_DAO::executeQuery("ALTER table civicrm_activity
-change `is_test` `is_test` tinyint(4) NOT NULL DEFAULT 0,
-change `is_auto` `is_auto` tinyint(4) NOT NULL DEFAULT 0,
-change `is_current_revision` `is_current_revision` tinyint(4) NOT NULL DEFAULT 1,
-change `is_deleted` `is_deleted` tinyint(4) NOT NULL DEFAULT 0,
-change `is_star` `is_star` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'Activity marked as favorite.'");
-
-    // Query OK, 0 rows affected (26 min 11.515 sec)
-    // no nulls....
-    CRM_Core_DAO::executeQuery('ALTER TABLE `civicrm_contribution` CHANGE `is_test` `is_test` tinyint NOT NULL DEFAULT 0,
-CHANGE `is_pay_later` `is_pay_later` tinyint NOT NULL DEFAULT 0 ,
-CHANGE `is_template` `is_template` tinyint NOT NULL DEFAULT 0 ');
-
-    // no nulls....
-    CRM_Core_DAO::executeQuery("
-ALTER TABLE `civicrm_address`
-CHANGE `is_primary` `is_primary` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this the primary address.',
-CHANGE `is_billing` `is_billing` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this the billing address.',
-CHANGE `manual_geo_code` `manual_geo_code` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this a manually entered geo code'
-");
-
-    CRM_Core_DAO::executeQuery("UPDATE civicrm_email SET is_primary = 0 WHERE is_primary IS NULL");
-
-    CRM_Core_DAO::executeQuery("
-ALTER TABLE `civicrm_email`
-CHANGE `is_primary` `is_primary` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this the primary email.',
-CHANGE `is_billing` `is_billing` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this the billing email.'
-  ");
-
-    CRM_Core_DAO::executeQuery("
- ALTER TABLE `civicrm_mailing_job`
- CHANGE `is_test` `is_test` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this job for a test mail?'
- ");
-
-
-    // no nulls....
-    CRM_Core_DAO::executeQuery("ALTER TABLE `civicrm_financial_trxn` CHANGE `is_payment` `is_payment` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this entry either a payment or a reversal of a payment?'");
   }
 
   /**

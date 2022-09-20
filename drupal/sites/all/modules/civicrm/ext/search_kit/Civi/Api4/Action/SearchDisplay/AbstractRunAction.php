@@ -3,7 +3,6 @@
 namespace Civi\Api4\Action\SearchDisplay;
 
 use Civi\API\Exception\UnauthorizedException;
-use Civi\Api4\Generic\Traits\ArrayQueryActionTrait;
 use Civi\Api4\Query\SqlField;
 use Civi\Api4\SearchDisplay;
 use Civi\Api4\Utils\CoreUtil;
@@ -26,7 +25,8 @@ use Civi\Api4\Utils\FormattingUtil;
  */
 abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
 
-  use SavedSearchInspectorTrait;
+  use \Civi\Api4\Generic\Traits\SavedSearchInspectorTrait;
+  use \Civi\Api4\Generic\Traits\ArrayQueryActionTrait;
 
   /**
    * Either the name of the display or an array containing the display definition (for preview mode)
@@ -205,6 +205,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     $out = [];
     switch ($column['type']) {
       case 'field':
+      case 'html':
         $rawValue = $data[$column['key']] ?? NULL;
         if (!$this->hasValue($rawValue) && isset($column['empty_value'])) {
           $out['val'] = $this->replaceTokens($column['empty_value'], $data, 'view');
@@ -229,6 +230,12 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
           if ($edit) {
             $out['edit'] = $edit;
           }
+        }
+        if ($column['type'] === 'html') {
+          if (is_array($out['val'])) {
+            $out['val'] = implode(', ', $out['val']);
+          }
+          $out['val'] = \CRM_Utils_String::purifyHTML($out['val']);
         }
         break;
 
@@ -303,7 +310,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       $cssClass = $clause[0] ?? '';
       if ($cssClass) {
         $condition = $this->getRuleCondition(array_slice($clause, 1));
-        if (is_null($condition[0]) || (ArrayQueryActionTrait::filterCompare($data, $condition))) {
+        if (is_null($condition[0]) || (self::filterCompare($data, $condition))) {
           $classes[] = $cssClass;
         }
       }
@@ -327,7 +334,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       }
       if ($iconClass) {
         $condition = $this->getRuleCondition($icon['if'] ?? []);
-        if (!is_null($condition[0]) && !(ArrayQueryActionTrait::filterCompare($data, $condition))) {
+        if (!is_null($condition[0]) && !(self::filterCompare($data, $condition))) {
           continue;
         }
         $result[] = ['class' => $iconClass, 'side' => $icon['side'] ?? 'left'];
@@ -471,7 +478,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       }
       return TRUE;
     }
-    return ArrayQueryActionTrait::filterCompare($data, $item['condition']);
+    return self::filterCompare($data, $item['condition']);
   }
 
   /**
@@ -502,18 +509,21 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       if ($prefix) {
         $path = str_replace('[', '[' . $prefix, $path);
       }
-      // Check access for edit/update links
+      // Check access for edit/update/delete links
       // (presumably if a record is shown in SearchKit the user already has view access, and the check is expensive)
       if ($path && isset($data) && !in_array($link['action'], ['view', 'preview'], TRUE)) {
         $id = $data[$prefix . $idKey] ?? NULL;
         $id = is_array($id) ? $id[$index] ?? NULL : $id;
         if ($id) {
+          $values = [$idField => $id];
+          // If not aggregated, add other values to help checkAccess be efficient
+          if (!is_array($data[$prefix . $idKey])) {
+            $values += \CRM_Utils_Array::filterByPrefix($data, $prefix);
+          }
           $access = civicrm_api4($link['entity'], 'checkAccess', [
             // Fudge links with funny action names to check 'update'
             'action' => $link['action'] === 'delete' ? 'delete' : 'update',
-            'values' => [
-              $idField => $id,
-            ],
+            'values' => $values,
           ], 0)['access'];
           if (!$access) {
             return NULL;
@@ -553,7 +563,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       $editable['value'] = $data[$editable['value_path']];
       // Ensure field is appropriate to this entity sub-type
       $field = $this->getField($column['key']);
-      $entityValues = FormattingUtil::filterByPrefix($data, $editable['id_path'], $editable['id_key']);
+      $entityValues = FormattingUtil::filterByPath($data, $editable['id_path'], $editable['id_key']);
       if (!$this->fieldBelongsToEntity($editable['entity'], $field['name'], $entityValues)) {
         return NULL;
       }
@@ -721,7 +731,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    * @return string
    */
   private function replaceTokens($tokenExpr, $data, $format, $index = 0) {
-    if (strpos($tokenExpr, '[') !== FALSE) {
+    if (strpos(($tokenExpr ?? ''), '[') !== FALSE) {
       foreach ($this->getTokens($tokenExpr) as $token) {
         $val = $data[$token] ?? NULL;
         if (isset($val) && $format === 'view') {
@@ -732,7 +742,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
         if ($format === 'url' && (!isset($replacement) || $replacement === '')) {
           return NULL;
         }
-        $tokenExpr = str_replace('[' . $token . ']', $replacement, $tokenExpr);
+        $tokenExpr = str_replace('[' . $token . ']', ($replacement ?? ''), ($tokenExpr ?? ''));
       }
     }
     return $tokenExpr;
@@ -818,91 +828,6 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       }
     }
     return $result;
-  }
-
-  /**
-   * @param array $fieldNames
-   *   If multiple field names are given they will be combined in an OR clause
-   * @param mixed $value
-   */
-  private function applyFilter(array $fieldNames, $value) {
-    // Global setting determines if % wildcard should be added to both sides (default) or only the end of a search string
-    $prefixWithWildcard = \Civi::settings()->get('includeWildCardInName');
-
-    // Based on the first field, decide which clause to add this condition to
-    $fieldName = $fieldNames[0];
-    $field = $this->getField($fieldName);
-    // If field is not found it must be an aggregated column & belongs in the HAVING clause.
-    if (!$field) {
-      $this->_apiParams += ['having' => []];
-      $clause =& $this->_apiParams['having'];
-    }
-    // If field belongs to an EXCLUDE join, it should be added as a join condition
-    else {
-      $prefix = strpos($fieldName, '.') ? explode('.', $fieldName)[0] : NULL;
-      foreach ($this->_apiParams['join'] ?? [] as $idx => $join) {
-        if (($join[1] ?? 'LEFT') === 'EXCLUDE' && (explode(' AS ', $join[0])[1] ?? '') === $prefix) {
-          $clause =& $this->_apiParams['join'][$idx];
-        }
-      }
-    }
-    // Default: add filter to WHERE clause
-    if (!isset($clause)) {
-      $clause =& $this->_apiParams['where'];
-    }
-
-    $filterClauses = [];
-
-    foreach ($fieldNames as $fieldName) {
-      $field = $this->getField($fieldName);
-      $dataType = $field['data_type'] ?? NULL;
-      // Array is either associative `OP => VAL` or sequential `IN (...)`
-      if (is_array($value)) {
-        $value = array_filter($value, [$this, 'hasValue']);
-        // If array does not contain operators as keys, assume array of values
-        if (array_diff_key($value, array_flip(CoreUtil::getOperators()))) {
-          // Use IN for regular fields
-          if (empty($field['serialize'])) {
-            $filterClauses[] = [$fieldName, 'IN', $value];
-          }
-          // Use an OR group of CONTAINS for array fields
-          else {
-            $orGroup = [];
-            foreach ($value as $val) {
-              $orGroup[] = [$fieldName, 'CONTAINS', $val];
-            }
-            $filterClauses[] = ['OR', $orGroup];
-          }
-        }
-        // Operator => Value array
-        else {
-          $andGroup = [];
-          foreach ($value as $operator => $val) {
-            $andGroup[] = [$fieldName, $operator, $val];
-          }
-          $filterClauses[] = ['AND', $andGroup];
-        }
-      }
-      elseif (!empty($field['serialize'])) {
-        $filterClauses[] = [$fieldName, 'CONTAINS', $value];
-      }
-      elseif (!empty($field['options']) || in_array($dataType, ['Integer', 'Boolean', 'Date', 'Timestamp'])) {
-        $filterClauses[] = [$fieldName, '=', $value];
-      }
-      elseif ($prefixWithWildcard) {
-        $filterClauses[] = [$fieldName, 'CONTAINS', $value];
-      }
-      else {
-        $filterClauses[] = [$fieldName, 'LIKE', $value . '%'];
-      }
-    }
-    // Single field
-    if (count($filterClauses) === 1) {
-      $clause[] = $filterClauses[0];
-    }
-    else {
-      $clause[] = ['OR', $filterClauses];
-    }
   }
 
   /**
@@ -1037,19 +962,6 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       }
     }
     return $result ?: $alias;
-  }
-
-  /**
-   * Checks if a filter contains a non-empty value
-   *
-   * "Empty" search values are [], '', and NULL.
-   * Also recursively checks arrays to ensure they contain at least one non-empty value.
-   *
-   * @param $value
-   * @return bool
-   */
-  private function hasValue($value) {
-    return $value !== '' && $value !== NULL && (!is_array($value) || array_filter($value, [$this, 'hasValue']));
   }
 
   /**

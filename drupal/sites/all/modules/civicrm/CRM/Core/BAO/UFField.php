@@ -747,7 +747,7 @@ SELECT  id
    */
   public static function assignAddressField($key, &$profileAddressFields, $profileFilter, $paymentProcessorBillingFields = NULL) {
     $billing_id = CRM_Core_BAO_LocationType::getBilling();
-    list($prefixName, $index) = CRM_Utils_System::explode('-', $key, 2);
+    [$prefixName, $index] = CRM_Utils_System::explode('-', $key, 2);
 
     $profileFields = civicrm_api3('uf_field', 'get', array_merge($profileFilter,
       [
@@ -1038,6 +1038,33 @@ SELECT  id
     $fields = self::getAvailableFieldsFlat();
     $fields['formatting'] = ['title' => ts('Formatting')];
     return CRM_Utils_Array::collect('title', $fields);
+  }
+
+  /**
+   * Get pseudoconstant list for `field_name`
+   *
+   * Includes APIv4-style names for custom fields for portability.
+   *
+   * @return array
+   */
+  public static function getAvailableFieldOptions() {
+    $fields = self::getAvailableFieldsFlat();
+    $fields['formatting'] = ['title' => ts('Formatting')];
+    $options = [];
+    foreach ($fields as $fieldName => $field) {
+      $option = [
+        'id' => $fieldName,
+        'name' => $fieldName,
+        'label' => $field['title'],
+      ];
+      if (!empty($field['custom_group_id']) && !empty($field['id'])) {
+        $groupName = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_CustomGroup', $field['custom_group_id']);
+        $fieldName = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_CustomField', $field['id']);
+        $option['name'] = "$groupName.$fieldName";
+      }
+      $options[] = $option;
+    }
+    return $options;
   }
 
   /**

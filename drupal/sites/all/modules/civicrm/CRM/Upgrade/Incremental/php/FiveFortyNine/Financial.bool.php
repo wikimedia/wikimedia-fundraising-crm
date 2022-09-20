@@ -8,6 +8,9 @@ return [
     'is_active' => "DEFAULT 1 COMMENT 'Is this property active?'",
     'is_default' => "DEFAULT 0 COMMENT 'Is this account the default one (or default tax one) for its financial_account_type?'",
   ],
+  'civicrm_financial_trxn' => [
+    'is_payment' => "DEFAULT 0 COMMENT 'Is this entry either a payment or a reversal of a payment?'",
+  ],
   'civicrm_payment_processor' => [
     'is_active' => "DEFAULT 1 COMMENT 'Is this processor active?'",
     'is_default' => "DEFAULT 0 COMMENT 'Is this processor the default?'",

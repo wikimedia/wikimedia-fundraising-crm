@@ -23,13 +23,6 @@ abstract class CRM_Import_Form_DataSource extends CRM_Import_Forms {
    * Set variables up before form is built.
    */
   public function preProcess() {
-    $this->_id = CRM_Utils_Request::retrieve('id', 'Positive', $this, FALSE);
-    $params = "reset=1";
-    if ($this->_id) {
-      $params .= "&id={$this->_id}";
-    }
-    CRM_Core_Session::singleton()->pushUserContext(CRM_Utils_System::url(static::PATH, $params));
-
     // check for post max size
     CRM_Utils_Number::formatUnitSize(ini_get('post_max_size'), TRUE);
     $this->assign('importEntity', $this->getTranslatedEntity());
@@ -62,6 +55,7 @@ abstract class CRM_Import_Form_DataSource extends CRM_Import_Forms {
    * Common form elements.
    */
   public function buildQuickForm() {
+    $this->assign('errorMessage', $this->getErrorMessage());
     $config = CRM_Core_Config::singleton();
     // When we switch to using the DataSource.tpl used by Contact we can remove this in
     // favour of the one used by Contact - I was trying to consolidate
@@ -117,24 +111,33 @@ abstract class CRM_Import_Form_DataSource extends CRM_Import_Forms {
   }
 
   /**
+   * Get an error message to assign to the template.
+   *
+   * @return string
+   */
+  protected function getErrorMessage(): string {
+    return '';
+  }
+
+  /**
    * A long-winded way to add one radio element to the form.
    */
   protected function addContactTypeSelector() {
     //contact types option
     $contactTypeOptions = [];
     if (CRM_Contact_BAO_ContactType::isActive('Individual')) {
-      $contactTypeOptions[CRM_Import_Parser::CONTACT_INDIVIDUAL] = ts('Individual');
+      $contactTypeOptions['Individual'] = ts('Individual');
     }
     if (CRM_Contact_BAO_ContactType::isActive('Household')) {
-      $contactTypeOptions[CRM_Import_Parser::CONTACT_HOUSEHOLD] = ts('Household');
+      $contactTypeOptions['Household'] = ts('Household');
     }
     if (CRM_Contact_BAO_ContactType::isActive('Organization')) {
-      $contactTypeOptions[CRM_Import_Parser::CONTACT_ORGANIZATION] = ts('Organization');
+      $contactTypeOptions['Organization'] = ts('Organization');
     }
     $this->addRadio('contactType', ts('Contact Type'), $contactTypeOptions);
 
     $this->setDefaults([
-      'contactType' => CRM_Import_Parser::CONTACT_INDIVIDUAL,
+      'contactType' => 'Individual',
     ]);
   }
 
@@ -156,40 +159,6 @@ abstract class CRM_Import_Form_DataSource extends CRM_Import_Forms {
     $this->processDatasource();
     $this->controller->resetPage('MapField');
     parent::postProcess();
-  }
-
-  /**
-   * Common form postProcess.
-   * @deprecated - just use postProcess.
-   *
-   * @param string $parserClassName
-   * @param string|null $entity
-   *   Entity to set for paraser currently only for custom import
-   */
-  protected function submitFileForMapping($parserClassName, $entity = NULL) {
-    CRM_Core_Session::singleton()->set('dateTypes', $this->getSubmittedValue('dateFormats'));
-    $this->processDatasource();
-
-    $mapper = [];
-
-    $parser = new $parserClassName($mapper);
-    if ($entity) {
-      $parser->setEntity($this->get($entity));
-    }
-    $parser->setMaxLinesToProcess(100);
-    $parser->setUserJobID($this->getUserJobID());
-    $parser->run(
-      $this->getSubmittedValue('uploadFile'),
-      $this->getSubmittedValue('fieldSeparator'),
-      [],
-      $this->getSubmittedValue('skipColumnHeader'),
-      CRM_Import_Parser::MODE_MAPFIELD,
-      $this->getSubmittedValue('contactType')
-    );
-
-    // add all the necessary variables to the form
-    $parser->set($this);
-    $this->controller->resetPage('MapField');
   }
 
   /**

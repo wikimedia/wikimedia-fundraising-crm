@@ -32,6 +32,8 @@ use Civi\Api4\Utils\ReflectionUtils;
  * @method bool getDebug()
  * @method $this setChain(array $chain)
  * @method array getChain()
+ * @method $this setLanguage(string|null $language)
+ * @method string|null getLanguage()
  */
 abstract class AbstractAction implements \ArrayAccess {
 
@@ -43,6 +45,20 @@ abstract class AbstractAction implements \ArrayAccess {
    * @var int
    */
   protected $version = 4;
+
+  /**
+   * Preferred language (optional)
+   *
+   * This option will notify major localization subsystems (`ts()`, multilingual, etc)
+   * about which locale should be used for composing/formatting messaging.
+   *
+   * This indicates the preferred language. The effective language is determined
+   * by `Civi\Core\Locale::negotiate($preferredLanguage)`.
+   *
+   * @var string
+   * @optionsCallback getLanguageOptions
+   */
+  protected $language;
 
   /**
    * Additional api requests - will be called once per result.
@@ -327,13 +343,14 @@ abstract class AbstractAction implements \ArrayAccess {
   /**
    * @inheritDoc
    */
-  public function offsetExists($offset) {
+  public function offsetExists($offset): bool {
     return in_array($offset, ['entity', 'action', 'params', 'version', 'check_permissions', 'id']) || isset($this->_arrayStorage[$offset]);
   }
 
   /**
    * @inheritDoc
    */
+  #[\ReturnTypeWillChange]
   public function &offsetGet($offset) {
     $val = NULL;
     if (in_array($offset, ['entity', 'action'])) {
@@ -359,7 +376,7 @@ abstract class AbstractAction implements \ArrayAccess {
   /**
    * @inheritDoc
    */
-  public function offsetSet($offset, $value) {
+  public function offsetSet($offset, $value): void {
     if (in_array($offset, ['entity', 'action', 'entityName', 'actionName', 'params', 'version', 'id'])) {
       throw new \API_Exception('Cannot modify api4 state via array access');
     }
@@ -374,7 +391,7 @@ abstract class AbstractAction implements \ArrayAccess {
   /**
    * @inheritDoc
    */
-  public function offsetUnset($offset) {
+  public function offsetUnset($offset): void {
     if (in_array($offset, ['entity', 'action', 'entityName', 'actionName', 'params', 'check_permissions', 'version', 'id'])) {
       throw new \API_Exception('Cannot modify api4 state via array access');
     }
@@ -513,6 +530,12 @@ abstract class AbstractAction implements \ArrayAccess {
       $options = FormattingUtil::getPseudoconstantList($info['field'], $info['expr'], $record, 'create');
       $record[$fieldName] = FormattingUtil::replacePseudoconstant($options, $info['val'], TRUE);
     }
+    // The DAO works better with ints than booleans. See https://github.com/civicrm/civicrm-core/pull/23970
+    foreach ($record as $key => $value) {
+      if (is_bool($value)) {
+        $record[$key] = (int) $value;
+      }
+    }
   }
 
   /**
@@ -555,6 +578,22 @@ abstract class AbstractAction implements \ArrayAccess {
         $this->_debugOutput['callback'] = get_class($callable);
       }
     }
+  }
+
+  /**
+   * Get available preferred languages.
+   *
+   * @return array
+   */
+  protected function getLanguageOptions(): array {
+    $languages = \CRM_Contact_BAO_Contact::buildOptions('preferred_language');
+    ksort($languages);
+    $result = array_keys($languages);
+    if (!\Civi::settings()->get('partial_locales')) {
+      $uiLanguages = \CRM_Core_I18n::uiLanguages(TRUE);
+      $result = array_values(array_intersect($result, $uiLanguages));
+    }
+    return $result;
   }
 
 }

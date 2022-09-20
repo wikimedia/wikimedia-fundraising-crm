@@ -36,8 +36,10 @@ class DAODeleteAction extends AbstractBatchAction {
     $items = $this->getBatchRecords();
 
     if ($this->getCheckPermissions()) {
+      $idField = CoreUtil::getIdFieldName($this->getEntityName());
       foreach ($items as $key => $item) {
-        if (!CoreUtil::checkAccessRecord($this, $item, \CRM_Core_Session::getLoggedInContactID() ?: 0)) {
+        // Don't pass the entire item because only the id is a trusted value
+        if (!CoreUtil::checkAccessRecord($this, [$idField => $item[$idField]], \CRM_Core_Session::getLoggedInContactID() ?: 0)) {
           throw new UnauthorizedException("ACL check failed");
         }
         $items[$key]['check_permissions'] = TRUE;
@@ -54,28 +56,29 @@ class DAODeleteAction extends AbstractBatchAction {
    * @throws \API_Exception
    */
   protected function deleteObjects($items) {
-    $ids = [];
+    $idField = CoreUtil::getIdFieldName($this->getEntityName());
+    $result = [];
     $baoName = $this->getBaoName();
 
     // Use BAO::del() method if it is not deprecated
     if (method_exists($baoName, 'del') && !ReflectionUtils::isMethodDeprecated($baoName, 'del')) {
       foreach ($items as $item) {
-        $args = [$item['id']];
+        $args = [$item[$idField]];
         $bao = call_user_func_array([$baoName, 'del'], $args);
         if ($bao !== FALSE) {
-          $ids[] = ['id' => $item['id']];
+          $result[] = [$idField => $item[$idField]];
         }
         else {
-          throw new \API_Exception("Could not delete {$this->getEntityName()} id {$item['id']}");
+          throw new \API_Exception("Could not delete {$this->getEntityName()} $idField {$item[$idField]}");
         }
       }
     }
     else {
       foreach ($baoName::deleteRecords($items) as $instance) {
-        $ids[] = ['id' => $instance->id];
+        $result[] = [$idField => $instance->$idField];
       }
     }
-    return $ids;
+    return $result;
   }
 
 }

@@ -276,9 +276,10 @@ abstract class CRM_Import_DataSource {
    *
    * The array has all values.
    *
+   * @param array $statuses
+   *
    * @return int
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function getRowCount(array $statuses = []): int {
@@ -383,18 +384,6 @@ abstract class CRM_Import_DataSource {
       return NULL;
     }
     if (!$this->tableName) {
-      // If we are just loading this table we will do some validation.
-      // In the case of viewing historical jobs the table could have
-      // been deleted so we check that when we first load it.
-      if (strpos($tableName, 'civicrm_tmp_') !== 0
-        || !CRM_Utils_Rule::alphanumeric($tableName)) {
-        // The table name is generated and stored by code, not users so it
-        // should be safe - but a check seems prudent all the same.
-        throw new CRM_Core_Exception('Table cannot be deleted');
-      }
-      if (!CRM_Core_DAO::singleValueQuery('SHOW TABLES LIKE %1', [1 => [$tableName, 'String']])) {
-        throw new CRM_Import_Exception_ImportTableUnavailable('table deleted');
-      }
       $this->tableName = $tableName;
     }
     return $this->tableName;
@@ -565,7 +554,7 @@ abstract class CRM_Import_DataSource {
         break;
       }
     }
-    /* @var \CRM_Import_Parser */
+    /** @var \CRM_Import_Parser $parser */
     $parser = new $parserClass();
     $parser->setUserJobID($this->getUserJobID());
     return $parser;
@@ -648,7 +637,7 @@ abstract class CRM_Import_DataSource {
    */
   protected function getStatusMapping(): array {
     return [
-      CRM_Import_Parser::VALID => ['imported', 'new', 'soft_credit_imported', 'pledge_payment_imported'],
+      CRM_Import_Parser::VALID => ['imported', 'new', 'valid', 'soft_credit_imported', 'pledge_payment_imported'],
       CRM_Import_Parser::ERROR => ['error', 'invalid', 'soft_credit_error', 'pledge_payment_error'],
       CRM_Import_Parser::DUPLICATE => ['duplicate'],
       CRM_Import_Parser::NO_MATCH => ['invalid_no_match'],
@@ -657,7 +646,8 @@ abstract class CRM_Import_DataSource {
       CRM_Contribute_Import_Parser_Contribution::SOFT_CREDIT => ['soft_credit_imported'],
       CRM_Contribute_Import_Parser_Contribution::PLEDGE_PAYMENT => ['pledge_payment_imported'],
       CRM_Contribute_Import_Parser_Contribution::PLEDGE_PAYMENT_ERROR => ['pledge_payment_error'],
-      'new' => ['new'],
+      'new' => ['new', 'valid'],
+      'valid' => ['valid'],
     ];
   }
 
