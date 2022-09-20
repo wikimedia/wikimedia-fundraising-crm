@@ -936,8 +936,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->callAPISuccess('Contribution', 'delete', ['id' => $contribution['id']]);
   }
 
-  public function testDuplicateHandling() {
-    $error = NULL;
+  public function testDuplicateHandling(): void {
     $invoiceID = mt_rand(0, 1000);
     $this->createContribution(['contact_id' => $this->createIndividual(), 'invoice_id' => $invoiceID]);
     $msg = [
@@ -950,17 +949,16 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => 'CON_TEST_GATEWAY' . mt_rand(),
     ];
 
-    $exceptioned = FALSE;
     try {
       $this->messageImport($msg);
     }
     catch (WMFException $ex) {
-      $exceptioned = TRUE;
       $this->assertTrue($ex->isRequeue());
       $this->assertEquals('DUPLICATE_INVOICE', $ex->getErrorName());
       $this->assertEquals(WMFException::DUPLICATE_INVOICE, $ex->getCode());
+      return;
     }
-    $this->assertTrue($exceptioned);
+    $this->fail('An exception was expected.');
   }
 
   /**
