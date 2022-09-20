@@ -50,5 +50,19 @@ return [
       'size' => 20,
     ],
     'settings_pages' => ['wmf-civicrm' => ['weight' => 40]],
-  ]
+  ],
+  'wmf_save_process_greetings_on_create' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_save_process_greetings_on_create',
+    'default' => 1,
+    'type' => 'Boolean',
+    'quick_form_type' => 'YesNo',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('Should greeting processing be done during create'),
+    'help_text' => '',
+    'html_type' => 'radio',
+    'settings_pages' => ['wmf-civicrm' => ['weight' => 50]],
+  ],
 ];
