@@ -23,7 +23,7 @@ use SmashPig\PaymentProviders\Responses\CancelPaymentResponse;
 /**
  * @group PendingTransactionResolver
  */
-class ResolveTest extends TestCase {
+class IngenicoResolveTest extends TestCase {
 
   protected $hostedCheckoutProvider;
 
