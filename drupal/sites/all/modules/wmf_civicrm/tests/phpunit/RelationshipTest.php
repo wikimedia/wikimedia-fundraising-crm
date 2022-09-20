@@ -36,7 +36,7 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   public function testBadRelationshipTarget(): void {
-    $this->expectException(CRM_Core_Exception::class);
+    $this->expectException(WMFException::class);
     $msg = [
       'currency' => 'USD',
       'date' => time(),
