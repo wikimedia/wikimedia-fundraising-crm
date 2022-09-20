@@ -60,10 +60,12 @@ function drush_civicrm_cleanup_old_deleted_contacts_civicrm_cleanup_contacts() {
   }
   $contacts = $contactsGet->execute()->indexBy('id');
   $modifiedDate = '';
+  $count = 0;
   foreach ($contacts as $contactID => $contact) {
     $modifiedDate = $contact['modified_date'];
     try {
       civicrm_api3('Contact', 'delete', ['skip_undelete' => 1, 'id' => $contactID]);
+      $count++;
     }
     catch (Exception $e) {
       $message = 'This contact id is not able to be deleted: ' . $contactID;
@@ -74,7 +76,7 @@ function drush_civicrm_cleanup_old_deleted_contacts_civicrm_cleanup_contacts() {
   if ($modifiedDate) {
     \Civi::settings()->set('wmf_last_delete_deleted_contact_modified_date', $modifiedDate);
   }
-  $message = !$modifiedDate ? "No deleted contact found to delete" : "Deleted deleted contacts, most recent modified_date: " . $modifiedDate;
+  $message = !$modifiedDate ? "No deleted contact found to delete" : "Deleted $count deleted contacts, most recent modified_date: " . $modifiedDate;
   drush_print($message);
   watchdog('civicrm_cleanup_logs', $message);
 }

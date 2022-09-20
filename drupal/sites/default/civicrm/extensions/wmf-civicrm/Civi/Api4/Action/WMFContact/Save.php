@@ -104,7 +104,7 @@ class Save extends AbstractAction {
       'addressee_display' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
       'addressee_id' => empty($msg['addressee_custom']) ? NULL : 'Customized',
       // Major gifts wants greeting processing - but we are not sure speedwise.
-      'skip_greeting_processing' => TRUE,
+      'skip_greeting_processing' => !\Civi::settings()->get('wmf_save_process_greetings_on_create'),
 
     ];
     if (!empty($msg['organization_name'])) {
@@ -124,7 +124,7 @@ class Save extends AbstractAction {
       // For inserts however we can rely on the core api.
       $contact['email'] = $msg['email'];
     }
-    if (strtolower($msg['contact_type']) == "organization") {
+    if (strtolower($msg['contact_type']) === 'organization') {
       // @todo probably can remove handling for sort name and display name now.
       $contact['sort_name'] = $msg['organization_name'];
       $contact['display_name'] = $msg['organization_name'];

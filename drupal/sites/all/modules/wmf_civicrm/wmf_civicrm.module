@@ -528,7 +528,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
   catch (CiviCRM_API3_Exception $e) {
     watchdog('wmf_civicrm', 'Error inserting contribution: ' . $e->getMessage() . ' ' . $e->getCode(), NULL, WATCHDOG_INFO);
     // Constraint violations occur when data is rolled back to resolve a deadlock.
-    if (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) {
+    if (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
       throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getExtraParams());
     }
 
