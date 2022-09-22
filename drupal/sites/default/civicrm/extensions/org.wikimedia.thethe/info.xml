@@ -14,14 +14,19 @@
     <url desc="Support">http://chat.civicrm.org</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2019-03-19</releaseDate>
-  <version>1.0</version>
+  <releaseDate>2022-03-22</releaseDate>
+  <version>1.1</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.13</ver>
+    <ver>5.51</ver>
   </compatibility>
   <comments>By tweaking the sort name we make it easier to find duplicates and search for orgs when we are not sure if the The would have been entered. This is especially helpful on sites that have turned off 'automatic wildcard' - which gives a huge performance boost at the loss of some convenience. Another benefit is being able to dedupe organisations with differently entered names (using sort_name as a search key)</comments>
   <civix>
     <namespace>CRM/Thethe</namespace>
+    <format>22.05.2</format>
   </civix>
+  <mixins>
+    <mixin>menu-xml@1.0.0</mixin>
+    <mixin>setting-php@1.0.0</mixin>
+  </mixins>
 </extension>
