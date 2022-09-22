@@ -23,5 +23,9 @@
   <comments>This is intended as a throw - away extension for supporting target smart data</comments>
   <civix>
     <namespace>CRM/Targetsmart</namespace>
+    <format>22.05.2</format>
   </civix>
+  <mixins>
+    <mixin>setting-php@1.0.0</mixin>
+  </mixins>
 </extension>
