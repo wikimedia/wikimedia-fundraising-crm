@@ -17,5 +17,9 @@
   <comments>Developed for the Australian Greens, http://greens.org.au/</comments>
   <civix>
     <namespace>CRM/ExtendedMailingStats</namespace>
+    <format>22.05.2</format>
   </civix>
+  <mixins>
+    <mixin>mgd-php@1.0.0</mixin>
+  </mixins>
 </extension>
