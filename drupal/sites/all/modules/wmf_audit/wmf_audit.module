@@ -34,6 +34,7 @@ function wmf_audit_menu() {
  * @param array $options Runtime parameters
  */
 function wmf_audit_main($gateway, $options) {
+  civicrm_initialize();
   wmf_common_create_smashpig_context("{$gateway}_audit", $gateway);
   wmf_common_set_smashpig_message_source(
     'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor'
