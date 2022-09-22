@@ -1,6 +1,5 @@
 <?php
 
-use Civi\Api4\Entity;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
@@ -155,73 +154,6 @@ class CRM_Emailamender_IntegrationTest extends \PHPUnit\Framework\TestCase imple
 
     $this->assertEquals(2, $getEmailResults['count'], 'Wrong number of corrected emails found. Expected 2 found ' . $getEmailResults['count']);
     $this->assertEquals(2, $this->getCorrectedEmailAddressActivityCount($emailDetails['contact_id']));
-  }
-
-  /**
-   * Emulate a logged in user since certain functions use that.
-   * value to store a record in the DB (like activity)
-   *
-   * @see https://issues.civicrm.org/jira/browse/CRM-8180
-   *
-   * @return int
-   *   Contact ID of the created user.
-   */
-  public function createLoggedInUser(): int {
-    $params = [
-      'first_name' => 'Logged In',
-      'last_name' => 'User ',
-      'contact_type' => 'Individual',
-    ];
-    $contactID = $this->callAPISuccess('Contact', 'create', $params);
-    $this->callAPISuccess('UFMatch', 'get', ['uf_id' => 6, 'api.UFMatch.delete' => []]);
-    $this->callAPISuccess('UFMatch', 'create', [
-      'contact_id' => $contactID,
-      'uf_name' => 'superman',
-      'uf_id' => 6,
-    ]);
-
-    $session = \CRM_Core_Session::singleton();
-    $session->set('userID', $contactID);
-    return $contactID;
-  }
-
-  /**
-   * @param array $fields
-   * @param mixed $duplicateActionType
-   *
-   * @return \CRM_Contact_Import_Parser_Contact
-   *
-   * @noinspection PhpDocMissingThrowsInspection
-   * @noinspection PhpUnhandledExceptionInspection
-   */
-  protected function getParser(array $fields, int $duplicateActionType): CRM_Contact_Import_Parser_Contact {
-    $parser = new CRM_Contact_Import_Parser_Contact($fields);
-    $parser->_contactType = 'Individual';
-    $parser->_onDuplicate = $duplicateActionType;
-
-    if (class_exists('\Civi\Api4\UserJob')) {
-      try {
-        // We are on 5.50 or higher - create one.
-        $jobID = \Civi\Api4\UserJob::create(FALSE)->setValues([
-          'status_id' => 1,
-          'type_id' => 1,
-          'metadata' => [
-            'submitted_values' => [
-              'onDuplicate' => $duplicateActionType,
-              'contactSubType' => '',
-              'contactType' => 1,
-              'doGeocodeAddress' => '',
-            ],
-          ],
-        ])->execute()->first()['id'];
-        $parser->setUserJobID($jobID);
-      }
-      catch (Exception $e) {
-
-      }
-    }
-    $parser->init();
-    return $parser;
   }
 
 }
