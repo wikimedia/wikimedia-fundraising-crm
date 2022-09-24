@@ -20,9 +20,11 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
 
   /**
    * Function to get Activity Columns
+   *
    * @param array $options column options
    *
    * @return array
+   * @throws \CRM_Core_Exception
    */
   public function getActivityColumns(array $options = []): array {
     $defaultOptions = [
@@ -200,14 +202,14 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
   /**
    * Get columns for Case.
    *
-   * @param $options
+   * @param array $options
    *
    * @return array
    *
    * @throws \CiviCRM_API3_Exception
    */
   public function getCaseColumns(array $options): array {
-    if (!in_array('CiviCase', CRM_Core_Config::singleton()->enableComponents)) {
+    if (!in_array('CiviCase', CRM_Core_Config::singleton()->enableComponents, TRUE)) {
       return ['civicrm_case' => ['fields' => [], 'metadata' => []]];
     }
 
@@ -283,8 +285,9 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
    * @param array $options
    *
    * @return array
+   * @throws \CRM_Core_Exception
    */
-  protected function getContactColumns($options = []) {
+  protected function getContactColumns($options = []): array {
     $defaultOptions = [
       'prefix' => '',
       'prefix_label' => '',
@@ -568,8 +571,9 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
    * @param array $options column options
    *
    * @return array
+   * @throws \CiviCRM_API3_Exception
    */
-  function getLatestActivityColumns($options) {
+  function getLatestActivityColumns(array $options) {
     $defaultOptions = [
       'prefix' => '',
       'prefix_label' => '',
@@ -603,8 +607,9 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
    * @param array $options
    *
    * @return array
+   * @throws \CRM_Core_Exception
    */
-  protected function getContributionRecurColumns($options = []): array {
+  protected function getContributionRecurColumns(array $options = []): array {
     $spec = [
       'id' => [
         'is_fields' => TRUE,
@@ -764,7 +769,7 @@ trait CRM_Extendedreport_Form_Report_ColumnDefinitionTrait {
    *
    * @return array
    */
-  protected function getContributionSoftColumns($options = []): array {
+  protected function getContributionSoftColumns(array $options = []): array {
     $spec = [
       'id' => [
         'is_fields' => FALSE,

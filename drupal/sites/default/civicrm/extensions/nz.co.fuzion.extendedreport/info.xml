@@ -13,19 +13,24 @@
     <author>Eileen McNaughton</author>
     <email>eileen@fuzion.co.nz</email>
   </maintainer>
-  <releaseDate>2022-02-07</releaseDate>
-  <version>5.12</version>
+  <releaseDate>2022-08-15</releaseDate>
+  <version>5.18</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.46</ver>
+    <ver>5.51</ver>
   </compatibility>
   <comments>Extended reports create other report options such as crosstab urls, multiple contact custom fields, price
     set reports
   </comments>
   <civix>
     <namespace>CRM/Extendedreport</namespace>
+    <format>22.05.2</format>
   </civix>
   <classloader>
-    <psr4 prefix="Civi\" path="Civi" />
+    <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
+  <mixins>
+    <mixin>ang-php@1.0.0</mixin>
+    <mixin>mgd-php@1.0.0</mixin>
+  </mixins>
 </extension>

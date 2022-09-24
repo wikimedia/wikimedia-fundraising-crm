@@ -2,10 +2,6 @@
 
 require_once __DIR__ . '../../BaseTestClass.php';
 
-use Civi\Test\HeadlessInterface;
-use Civi\Test\HookInterface;
-use Civi\Test\TransactionalInterface;
-
 /**
  * Test contribution DetailExtended class.
  *
@@ -27,12 +23,11 @@ class ContributionContributionsTest extends BaseTestClass {
   /**
    * Test metadata retrieval.
    *
-   * @throws \CRM_Core_Exception
    */
   public function testGetMetadata(): void {
     $metadata = $this->callAPISuccess('ReportTemplate', 'getmetadata', ['report_id' => 'contribution/contributions'])['values'];
     $this->assertEquals('Contribution ID', $metadata['fields']['contribution_id']['title']);
-    $this->assertTrue(is_array($metadata['fields']['contribution_id']));
+    $this->assertIsArray($metadata['fields']['contribution_id']);
   }
 
   /**
@@ -42,7 +37,6 @@ class ContributionContributionsTest extends BaseTestClass {
    *   array to override function parameters
    *
    * @dataProvider getRowVariants
-   * @throws \CRM_Core_Exception
    */
   public function testGetRows(array $overrides): void {
     $params = array_merge([
@@ -130,7 +124,6 @@ class ContributionContributionsTest extends BaseTestClass {
   /**
    * Test that is doesn't matter if the having filter is selected.
    *
-   * @throws \CRM_Core_Exception
    */
   public function testGetRowsHavingFilterNotSelected(): void {
     $params = [
@@ -149,7 +142,6 @@ class ContributionContributionsTest extends BaseTestClass {
   /**
    * Test that between filter is respected.
    *
-   * @throws \CRM_Core_Exception
    */
   public function testGetRowsHavingFilterBetween(): void {
     // Create 2 contacts - one with total of $50 & one with total of $100.
@@ -264,7 +256,6 @@ class ContributionContributionsTest extends BaseTestClass {
    * @param array $ids
    *
    * @return array
-   * @throws \CRM_Core_Exception
    */
   protected function createTwoContactsWithContributions(array $ids = []): array {
     $contribution = [];
@@ -291,7 +282,6 @@ class ContributionContributionsTest extends BaseTestClass {
    * @param string|int $value
    *
    * @return array
-   * @throws \CRM_Core_Exception
    */
   protected function getRowsFilteredByCustomField(int $id, $value): array {
     $params = [
