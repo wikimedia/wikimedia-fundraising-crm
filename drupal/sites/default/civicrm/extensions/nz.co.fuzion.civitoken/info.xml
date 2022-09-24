@@ -18,7 +18,7 @@
   <version>1.9</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.44</ver>
+    <ver>5.54</ver>
   </compatibility>
   <comments>Extra CiviCRM tokens by Fuzion</comments>
   <classloader>
@@ -26,5 +26,10 @@
   </classloader>
   <civix>
     <namespace>CRM/Civitoken</namespace>
+    <format>22.05.2</format>
   </civix>
+  <mixins>
+    <mixin>ang-php@1.0.0</mixin>
+    <mixin>setting-php@1.0.0</mixin>
+  </mixins>
 </extension>
