@@ -1,4 +1,6 @@
 {
+  "name": "civicrm/ckeditor5",
+  "description": "This presents CKEditor 5 as an option for the wysiwyg editor.",
   "extra": {
     "downloads": {
       "ckeditor5": {

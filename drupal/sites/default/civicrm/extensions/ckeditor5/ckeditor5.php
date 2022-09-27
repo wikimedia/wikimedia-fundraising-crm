@@ -13,15 +13,6 @@ function ckeditor5_civicrm_config(&$config) {
 }
 
 /**
- * Implements hook_civicrm_xmlMenu().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_xmlMenu
- */
-function ckeditor5_civicrm_xmlMenu(&$files) {
-  _ckeditor5_civix_civicrm_xmlMenu($files);
-}
-
-/**
  * Implements hook_civicrm_install().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_install
@@ -76,54 +67,6 @@ function ckeditor5_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
- * Implements hook_civicrm_managed().
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_managed
- */
-function ckeditor5_civicrm_managed(&$entities) {
-  _ckeditor5_civix_civicrm_managed($entities);
-}
-
-/**
- * Implements hook_civicrm_caseTypes().
- *
- * Generate a list of case-types.
- *
- * Note: This hook only runs in CiviCRM 4.4+.
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_caseTypes
- */
-function ckeditor5_civicrm_caseTypes(&$caseTypes) {
-  _ckeditor5_civix_civicrm_caseTypes($caseTypes);
-}
-
-/**
- * Implements hook_civicrm_angularModules().
- *
- * Generate a list of Angular modules.
- *
- * Note: This hook only runs in CiviCRM 4.5+. It may
- * use features only available in v4.6+.
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_angularModules
- */
-function ckeditor5_civicrm_angularModules(&$angularModules) {
-  _ckeditor5_civix_civicrm_angularModules($angularModules);
-}
-
-/**
- * Implements hook_civicrm_alterSettingsFolders().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterSettingsFolders
- */
-function ckeditor5_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _ckeditor5_civix_civicrm_alterSettingsFolders($metaDataFolders);
-}
-
-/**
  * Implements hook_civicrm_entityTypes().
  *
  * Declare entity types provided by this module.
@@ -132,13 +75,6 @@ function ckeditor5_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
  */
 function ckeditor5_civicrm_entityTypes(&$entityTypes) {
   _ckeditor5_civix_civicrm_entityTypes($entityTypes);
-}
-
-/**
- * Implements hook_civicrm_thems().
- */
-function ckeditor5_civicrm_themes(&$themes) {
-  _ckeditor5_civix_civicrm_themes($themes);
 }
 
 /**
@@ -194,9 +130,8 @@ function ckeditor5_civicrm_coreResourceList(&$items, $region) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_preProcess
  *
-function ckeditor5_civicrm_preProcess($formName, &$form) {
 
-} // */
+ // */
 
 /**
  * Implements hook_civicrm_navigationMenu().
