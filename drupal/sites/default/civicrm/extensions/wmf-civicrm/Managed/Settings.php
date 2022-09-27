@@ -26,6 +26,9 @@ $settings = [
   // Prevents acl cache clearing (as of recording already set on prod/staging)
   'acl_cache_refresh_mode' => 'deterministic',
 
+  // Enable message translation with locale parsing.
+  'partial_locales' => 1,
+
   // We specify the tokens we want to have available to limit
   // processing to what is useful. These add nice formatted address block tokens.
   'civitoken_enabled_tokens' => [
