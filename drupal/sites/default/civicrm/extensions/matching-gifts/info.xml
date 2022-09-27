@@ -26,5 +26,6 @@
   </classloader>
   <civix>
     <namespace>CRM/MatchingGifts</namespace>
+    <format>22.05.2</format>
   </civix>
 </extension>
