@@ -14,14 +14,15 @@
     <url desc="Support">https://github.com/progressivetech/net.ourpowerbase.exportpermission/issues</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2021-07-21</releaseDate>
-  <version>1.2</version>
+  <releaseDate>2022-09-27l</releaseDate>
+  <version>1.3</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.35</ver>
+    <ver>5.53</ver>
   </compatibility>
   <comments>This extensions does not stop people from exporting data, it only hides the action from the menu.</comments>
   <civix>
     <namespace>CRM/Exportpermission</namespace>
+    <format>22.05.2</format>
   </civix>
 </extension>
