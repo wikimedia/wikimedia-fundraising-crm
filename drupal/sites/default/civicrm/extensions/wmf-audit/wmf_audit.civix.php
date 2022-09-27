@@ -6,10 +6,10 @@
  * The ExtensionUtil class provides small stubs for accessing resources of this
  * extension.
  */
-class CRM_SmashPig_ExtensionUtil {
-  const SHORT_NAME = 'smashpig';
-  const LONG_NAME = 'org.wikimedia.smashpig';
-  const CLASS_PREFIX = 'CRM_SmashPig';
+class CRM_WmfAudit_ExtensionUtil {
+  const SHORT_NAME = 'wmf_audit';
+  const LONG_NAME = 'wmf-audit';
+  const CLASS_PREFIX = 'CRM_WmfAudit';
 
   /**
    * Translate a string using the extension's domain.
@@ -24,7 +24,7 @@ class CRM_SmashPig_ExtensionUtil {
    *   Translated text.
    * @see ts
    */
-  public static function ts($text, $params = []): string {
+  public static function ts($text, $params = []) {
     if (!array_key_exists('domain', $params)) {
       $params['domain'] = [self::LONG_NAME, NULL];
     }
@@ -41,7 +41,7 @@ class CRM_SmashPig_ExtensionUtil {
    *   Ex: 'http://example.org/sites/default/ext/org.example.foo'.
    *   Ex: 'http://example.org/sites/default/ext/org.example.foo/css/foo.css'.
    */
-  public static function url($file = NULL): string {
+  public static function url($file = NULL) {
     if ($file === NULL) {
       return rtrim(CRM_Core_Resources::singleton()->getUrl(self::LONG_NAME), '/');
     }
@@ -77,9 +77,9 @@ class CRM_SmashPig_ExtensionUtil {
 
 }
 
-use CRM_SmashPig_ExtensionUtil as E;
+use CRM_WmfAudit_ExtensionUtil as E;
 
-function _smashpig_civix_mixin_polyfill() {
+function _wmf_audit_civix_mixin_polyfill() {
   if (!class_exists('CRM_Extension_MixInfo')) {
     $polyfill = __DIR__ . '/mixin/polyfill.php';
     (require $polyfill)(E::LONG_NAME, E::SHORT_NAME, E::path());
@@ -91,7 +91,7 @@ function _smashpig_civix_mixin_polyfill() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_config
  */
-function _smashpig_civix_civicrm_config(&$config = NULL) {
+function _wmf_audit_civix_civicrm_config(&$config = NULL) {
   static $configured = FALSE;
   if ($configured) {
     return;
@@ -112,7 +112,7 @@ function _smashpig_civix_civicrm_config(&$config = NULL) {
 
   $include_path = $extRoot . PATH_SEPARATOR . get_include_path();
   set_include_path($include_path);
-  _smashpig_civix_mixin_polyfill();
+  _wmf_audit_civix_mixin_polyfill();
 }
 
 /**
@@ -120,12 +120,12 @@ function _smashpig_civix_civicrm_config(&$config = NULL) {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_install
  */
-function _smashpig_civix_civicrm_install() {
-  _smashpig_civix_civicrm_config();
-  if ($upgrader = _smashpig_civix_upgrader()) {
+function _wmf_audit_civix_civicrm_install() {
+  _wmf_audit_civix_civicrm_config();
+  if ($upgrader = _wmf_audit_civix_upgrader()) {
     $upgrader->onInstall();
   }
-  _smashpig_civix_mixin_polyfill();
+  _wmf_audit_civix_mixin_polyfill();
 }
 
 /**
@@ -133,9 +133,9 @@ function _smashpig_civix_civicrm_install() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
  */
-function _smashpig_civix_civicrm_postInstall() {
-  _smashpig_civix_civicrm_config();
-  if ($upgrader = _smashpig_civix_upgrader()) {
+function _wmf_audit_civix_civicrm_postInstall() {
+  _wmf_audit_civix_civicrm_config();
+  if ($upgrader = _wmf_audit_civix_upgrader()) {
     if (is_callable([$upgrader, 'onPostInstall'])) {
       $upgrader->onPostInstall();
     }
@@ -147,9 +147,9 @@ function _smashpig_civix_civicrm_postInstall() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_uninstall
  */
-function _smashpig_civix_civicrm_uninstall() {
-  _smashpig_civix_civicrm_config();
-  if ($upgrader = _smashpig_civix_upgrader()) {
+function _wmf_audit_civix_civicrm_uninstall() {
+  _wmf_audit_civix_civicrm_config();
+  if ($upgrader = _wmf_audit_civix_upgrader()) {
     $upgrader->onUninstall();
   }
 }
@@ -159,14 +159,14 @@ function _smashpig_civix_civicrm_uninstall() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_enable
  */
-function _smashpig_civix_civicrm_enable() {
-  _smashpig_civix_civicrm_config();
-  if ($upgrader = _smashpig_civix_upgrader()) {
+function _wmf_audit_civix_civicrm_enable() {
+  _wmf_audit_civix_civicrm_config();
+  if ($upgrader = _wmf_audit_civix_upgrader()) {
     if (is_callable([$upgrader, 'onEnable'])) {
       $upgrader->onEnable();
     }
   }
-  _smashpig_civix_mixin_polyfill();
+  _wmf_audit_civix_mixin_polyfill();
 }
 
 /**
@@ -175,9 +175,9 @@ function _smashpig_civix_civicrm_enable() {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_disable
  * @return mixed
  */
-function _smashpig_civix_civicrm_disable() {
-  _smashpig_civix_civicrm_config();
-  if ($upgrader = _smashpig_civix_upgrader()) {
+function _wmf_audit_civix_civicrm_disable() {
+  _wmf_audit_civix_civicrm_config();
+  if ($upgrader = _wmf_audit_civix_upgrader()) {
     if (is_callable([$upgrader, 'onDisable'])) {
       $upgrader->onDisable();
     }
@@ -196,21 +196,21 @@ function _smashpig_civix_civicrm_disable() {
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_upgrade
  */
-function _smashpig_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  if ($upgrader = _smashpig_civix_upgrader()) {
+function _wmf_audit_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
+  if ($upgrader = _wmf_audit_civix_upgrader()) {
     return $upgrader->onUpgrade($op, $queue);
   }
 }
 
 /**
- * @return CRM_SmashPig_Upgrader
+ * @return CRM_WmfAudit_Upgrader
  */
-function _smashpig_civix_upgrader() {
-  if (!file_exists(__DIR__ . '/CRM/SmashPig/Upgrader.php')) {
+function _wmf_audit_civix_upgrader() {
+  if (!file_exists(__DIR__ . '/CRM/WmfAudit/Upgrader.php')) {
     return NULL;
   }
   else {
-    return CRM_SmashPig_Upgrader_Base::instance();
+    return CRM_WmfAudit_Upgrader_Base::instance();
   }
 }
 
@@ -225,7 +225,7 @@ function _smashpig_civix_upgrader() {
  *
  * @return bool
  */
-function _smashpig_civix_insert_navigation_menu(&$menu, $path, $item) {
+function _wmf_audit_civix_insert_navigation_menu(&$menu, $path, $item) {
   // If we are done going down the path, insert menu
   if (empty($path)) {
     $menu[] = [
@@ -246,7 +246,7 @@ function _smashpig_civix_insert_navigation_menu(&$menu, $path, $item) {
         if (!isset($entry['child'])) {
           $entry['child'] = [];
         }
-        $found = _smashpig_civix_insert_navigation_menu($entry['child'], implode('/', $path), $item);
+        $found = _wmf_audit_civix_insert_navigation_menu($entry['child'], implode('/', $path), $item);
       }
     }
     return $found;
@@ -256,9 +256,9 @@ function _smashpig_civix_insert_navigation_menu(&$menu, $path, $item) {
 /**
  * (Delegated) Implements hook_civicrm_navigationMenu().
  */
-function _smashpig_civix_navigationMenu(&$nodes) {
+function _wmf_audit_civix_navigationMenu(&$nodes) {
   if (!is_callable(['CRM_Core_BAO_Navigation', 'fixNavigationMenu'])) {
-    _smashpig_civix_fixNavigationMenu($nodes);
+    _wmf_audit_civix_fixNavigationMenu($nodes);
   }
 }
 
@@ -266,17 +266,17 @@ function _smashpig_civix_navigationMenu(&$nodes) {
  * Given a navigation menu, generate navIDs for any items which are
  * missing them.
  */
-function _smashpig_civix_fixNavigationMenu(&$nodes) {
+function _wmf_audit_civix_fixNavigationMenu(&$nodes) {
   $maxNavID = 1;
   array_walk_recursive($nodes, function($item, $key) use (&$maxNavID) {
     if ($key === 'navID') {
       $maxNavID = max($maxNavID, $item);
     }
   });
-  _smashpig_civix_fixNavigationMenuItems($nodes, $maxNavID, NULL);
+  _wmf_audit_civix_fixNavigationMenuItems($nodes, $maxNavID, NULL);
 }
 
-function _smashpig_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID) {
+function _wmf_audit_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID) {
   $origKeys = array_keys($nodes);
   foreach ($origKeys as $origKey) {
     if (!isset($nodes[$origKey]['attributes']['parentID']) && $parentID !== NULL) {
@@ -291,7 +291,7 @@ function _smashpig_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID) 
       $origKey = $newKey;
     }
     if (isset($nodes[$origKey]['child']) && is_array($nodes[$origKey]['child'])) {
-      _smashpig_civix_fixNavigationMenuItems($nodes[$origKey]['child'], $maxNavID, $nodes[$origKey]['attributes']['navID']);
+      _wmf_audit_civix_fixNavigationMenuItems($nodes[$origKey]['child'], $maxNavID, $nodes[$origKey]['attributes']['navID']);
     }
   }
 }
@@ -303,6 +303,6 @@ function _smashpig_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID) 
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
  */
-function _smashpig_civix_civicrm_entityTypes(&$entityTypes) {
+function _wmf_audit_civix_civicrm_entityTypes(&$entityTypes) {
   $entityTypes = array_merge($entityTypes, []);
 }

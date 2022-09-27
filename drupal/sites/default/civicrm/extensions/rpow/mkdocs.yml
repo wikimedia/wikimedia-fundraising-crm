@@ -1,0 +1,41 @@
+# Use mkdocs to generate a manual for this extension. For more information about
+# mkdocs, see https://docs.civicrm.org/dev/en/latest/documentation/#mkdocs
+site_name: Rpow
+edit_uri: https://lab.civicrm.org/extensions/rpow/-/edit/master/docs/
+repo_url: https://github.com/totten/rpow.git
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/gitlab
+
+nav:
+- Home: index.md
+- About: about.md
+- Install: install.md
+- Develop: develop.md
+
+markdown_extensions:
+  - attr_list
+  - admonition
+  - def_list
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      guess_lang: true
+      extend_pygments_lang:
+        - name: php
+          lang: php
+          options:
+            startinline: true
+  - pymdownx.superfences:
+      css_class: codehilite
+  - pymdownx.inlinehilite:
+      css_class: codehilite
+  - pymdownx.tilde
+  - pymdownx.betterem
+  - pymdownx.mark
+
+plugins:
+  - search:
+      lang: en

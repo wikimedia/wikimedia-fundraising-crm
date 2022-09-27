@@ -214,7 +214,9 @@ class Save extends AbstractAction {
         throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
       }
     }
-    catch (\CiviCRM_API3_Exception $ex) {
+    // Soon we will only catch CRM_Core_Exception as the other exceptions are now aliased to it
+    // preparatory to being phased out
+    catch (\CiviCRM_API3_Exception|\CRM_Core_Exception $ex) {
       if (in_array($ex->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) {
         throw new WMFException(
           WMFException::DATABASE_CONTENTION,
@@ -463,7 +465,7 @@ class Save extends AbstractAction {
         ->setValues($params)
         ->execute();
     }
-    catch (\API_Exception $ex) {
+    catch (\API_Exception|\CRM_Core_Exception $ex) {
       throw new WMFException(WMFException::IMPORT_CONTACT, $ex->getMessage());
     }
   }
