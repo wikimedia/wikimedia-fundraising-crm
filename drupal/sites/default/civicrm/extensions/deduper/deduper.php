@@ -23,15 +23,6 @@ function deduper_civicrm_config(&$config) {
 }
 
 /**
- * Implements hook_civicrm_xmlMenu().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_xmlMenu
- */
-function deduper_civicrm_xmlMenu(&$files) {
-  _deduper_civix_civicrm_xmlMenu($files);
-}
-
-/**
  * Implements hook_civicrm_install().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_install
@@ -86,40 +77,12 @@ function deduper_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
- * Implements hook_civicrm_managed().
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_managed
- */
-function deduper_civicrm_managed(&$entities) {
-  _deduper_civix_civicrm_managed($entities);
-}
-
-/**
- * Implements hook_civicrm_caseTypes().
- *
- * Generate a list of case-types.
- *
- * Note: This hook only runs in CiviCRM 4.4+.
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_caseTypes
- *
- * @throws \CRM_Core_Exception
- */
-function deduper_civicrm_caseTypes(&$caseTypes) {
-  _deduper_civix_civicrm_caseTypes($caseTypes);
-}
-
-/**
  * Implements hook_civicrm_angularModules().
  *
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_angularModules
  */
 function deduper_civicrm_angularModules(&$angularModules) {
-  _deduper_civix_civicrm_angularModules($angularModules);
   $angularModules['xeditable'] = [
     'ext' => 'deduper',
     'js' => ['bower_components/angular-xeditable/dist/js/xeditable.js'],
@@ -135,23 +98,16 @@ function deduper_civicrm_angularModules(&$angularModules) {
  * Implements hook_civicrm_searchKitTasks().
  *
  * @param array[] $tasks
+ *
+ * @noinspection PhpUnused
  */
-function deduper_civicrm_searchKitTasks(&$tasks) {
+function deduper_civicrm_searchKitTasks(array &$tasks) {
   $tasks['Contact']['flip'] = [
     'module' => 'dedupeSearchTasks',
     'title' => E::ts('Flip first/last name'),
     'icon' => 'fa-random',
     'uiDialog' => ['templateUrl' => '~/dedupeSearchTasks/dedupeSearchTaskFlip.html'],
   ];
-}
-
-/**
- * Implements hook_civicrm_alterSettingsFolders().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterSettingsFolders
- */
-function deduper_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _deduper_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
 /**
@@ -459,13 +415,4 @@ function deduper_civicrm_container($container) {
 function deduper_civicrm_entityTypes(&$entityTypes) {
   _deduper_civix_civicrm_entityTypes($entityTypes);
   $entityTypes['CRM_Deduper_DAO_ContactNamePairFamily']['links_callback'][] = ['CRM_Deduper_BAO_ContactNamePairFamily', 'alterLinks'];
-}
-
-/**
- * Implements hook_civicrm_themes().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_themes
- */
-function deduper_civicrm_themes(&$themes) {
-  _deduper_civix_civicrm_themes($themes);
 }
