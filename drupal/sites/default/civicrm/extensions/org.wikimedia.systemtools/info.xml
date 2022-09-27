@@ -20,9 +20,10 @@
   <compatibility>
     <ver>5.0</ver>
   </compatibility>
-  <comments>Not too sure what will go in this other than our modifyQuery helper - maybe failmail helpers</comments>
+  <comments>Tools to help analyse queries</comments>
   <civix>
     <namespace>CRM/Systemtools</namespace>
+    <format>22.05.2</format>
   </civix>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
