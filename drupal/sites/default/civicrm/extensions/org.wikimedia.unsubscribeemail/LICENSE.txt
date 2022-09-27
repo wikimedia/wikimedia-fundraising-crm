@@ -1,5 +1,5 @@
 Package: org.wikimedia.unsubscribeemail
-Copyright (C) 2016, eileen <emcnaughton@wikimedia.org>
+Copyright (C) 2021, eileen <emcnaughton@wikimedia.org>
 Licensed under the GNU Affero Public License 3.0 (below).
 
 -------------------------------------------------------------------------------
