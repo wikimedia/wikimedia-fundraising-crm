@@ -95,4 +95,136 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 		$normalized = wmf_civicrm_normalize_msg( $msg );
 		$this->assertEquals( 0.79, $normalized['net'] );
 	}
+
+  public function testAdyenApplepay() {
+    $msg = array(
+      'gateway' => 'adyen',
+      'payment_method' => 'apple',
+      'payment_submethod' => 'visa',
+      'first_name' => 'blah',
+      'last_name' => 'wah',
+      'country' => 'US',
+      'currency' => 'USD',
+      'gross' => '1.00',
+      'net' => '',
+      'fee' => '0.21',
+    );
+    $payment_instrument = wmf_civicrm_get_message_payment_instrument( $msg );
+    $this->assertEquals( 'Apple Pay: Visa', $payment_instrument );
+  }
+
+  public function testAdyenGooglepay() {
+    $msg = array(
+      'gateway' => 'adyen',
+      'payment_method' => 'google',
+      'payment_submethod' => 'visa',
+      'first_name' => 'blah',
+      'last_name' => 'wah',
+      'country' => 'US',
+      'currency' => 'USD',
+      'gross' => '1.00',
+      'net' => '',
+      'fee' => '0.21',
+    );
+    $payment_instrument = wmf_civicrm_get_message_payment_instrument( $msg );
+    $this->assertEquals( 'Google Pay: Visa', $payment_instrument );
+  }
+
+  public function testBTPaymentInstrument() {
+    $msg = array(
+      'gateway' => 'pix',
+      'payment_method' => 'bt',
+      'payment_submethod' => 'banco_do_brasil',
+      'first_name' => 'blah',
+      'last_name' => 'wah',
+      'country' => 'US',
+      'currency' => 'USD',
+      'gross' => '1.00',
+      'net' => '',
+      'fee' => '0.21',
+    );
+    $payment_instrument = wmf_civicrm_get_message_payment_instrument( $msg );
+    $this->assertEquals( 'Bank Transfer: Banco do Brasil', $payment_instrument );
+  }
+
+  public function testCCPaymentInstrument() {
+    $msg = array(
+      'gateway' => 'adyen',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'cb',
+      'first_name' => 'blah',
+      'last_name' => 'wah',
+      'country' => 'US',
+      'currency' => 'USD',
+      'gross' => '1.00',
+      'net' => '',
+      'fee' => '0.21',
+    );
+    $payment_instrument = wmf_civicrm_get_message_payment_instrument( $msg );
+    $this->assertEquals( 'Credit Card: Carte Bleue', $payment_instrument );
+  }
+
+  public function testEWPaymentInstrument() {
+    $msg = array(
+      'payment_method' => 'ew',
+      'payment_submethod' => 'ew_moneybookers',
+      'first_name' => 'blah',
+      'last_name' => 'wah',
+      'country' => 'US',
+      'currency' => 'USD',
+      'gross' => '1.00',
+      'net' => '',
+      'fee' => '0.21',
+    );
+    $payment_instrument = wmf_civicrm_get_message_payment_instrument( $msg );
+    $this->assertEquals( 'Moneybookers', $payment_instrument );
+  }
+
+  public function testOBTPaymentInstrument() {
+    $msg = array(
+      'payment_method' => 'obt',
+      'payment_submethod' => 'bpay',
+      'first_name' => 'blah',
+      'last_name' => 'wah',
+      'country' => 'US',
+      'currency' => 'USD',
+      'gross' => '1.00',
+      'net' => '',
+      'fee' => '0.21',
+    );
+    $payment_instrument = wmf_civicrm_get_message_payment_instrument( $msg );
+    $this->assertEquals( 'Bpay', $payment_instrument );
+  }
+
+  public function testRTBTPaymentInstrument() {
+    $msg = array(
+      'payment_method' => 'rtbt',
+      'payment_submethod' => 'rtbt_nordea_sweden',
+      'first_name' => 'blah',
+      'last_name' => 'wah',
+      'country' => 'US',
+      'currency' => 'USD',
+      'gross' => '1.00',
+      'net' => '',
+      'fee' => '0.21',
+    );
+    $payment_instrument = wmf_civicrm_get_message_payment_instrument( $msg );
+    $this->assertEquals( 'Nordea', $payment_instrument );
+  }
+
+  public function testCashPaymentInstrument() {
+    $msg = array(
+      'payment_method' => 'cash',
+      'payment_submethod' => 'cash_abitab',
+      'first_name' => 'blah',
+      'last_name' => 'wah',
+      'country' => 'US',
+      'currency' => 'USD',
+      'gross' => '1.00',
+      'net' => '',
+      'fee' => '0.21',
+    );
+    $payment_instrument = wmf_civicrm_get_message_payment_instrument( $msg );
+    $this->assertEquals( 'Abitab', $payment_instrument );
+  }
 }
