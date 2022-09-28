@@ -688,8 +688,16 @@ function wmf_civicrm_update_8241() {
     WHERE ts BETWEEN '20220615000000' AND '20220630235999'
     AND utm_source LIKE '%optIn0%' "
   );
+}
+
+/**
+ * Set opt-outs missed because of GatewayChooser bug (corrected version of second step)
+ * See https://phabricator.wikimedia.org/T311974
+ */
+function wmf_civicrm_update_8242() {
+  wmf_civicrm_bootstrap_civi();
   // Insert missing civicrm_value_1_communication_4 rows
-  // Should insert 14,368 rows
+  // Should insert 14,362 rows
   CRM_Core_DAO::executeQuery(
     "INSERT INTO civicrm_value_1_communication_4 (entity_id, opt_in)
     SELECT c.contact_id, 0
@@ -698,6 +706,7 @@ function wmf_civicrm_update_8241() {
     LEFT JOIN civicrm_value_1_communication_4 n ON n.entity_id = c.contact_id
     WHERE ts BETWEEN '20220615000000' AND '20220630235999'
     AND utm_source LIKE '%optIn0%'
-    AND n.id IS NULL"
+    AND n.id IS NULL
+    GROUP BY c.contact_id"
   );
 }
