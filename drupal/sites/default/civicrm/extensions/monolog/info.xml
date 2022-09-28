@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <extension key="monolog" type="module">
   <file>monolog</file>
-  <name>monolog</name>
+  <name>Monolog</name>
   <description>Use monolog for calls to Civi::log().</description>
   <license>MIT</license>
   <maintainer>
@@ -18,7 +18,7 @@
   <version>1.0</version>
   <develStage>beta</develStage>
   <compatibility>
-    <ver>5.38</ver>
+    <ver>5.45</ver>
   </compatibility>
   <comments>Implementation of monolog logging library to support nuanced logging</comments>
   <classloader>
@@ -26,5 +26,9 @@
   </classloader>
   <civix>
     <namespace>CRM/Monolog</namespace>
+    <format>22.05.2</format>
   </civix>
+  <mixins>
+    <mixin>mgd-php@1.0.0</mixin>
+  </mixins>
 </extension>
