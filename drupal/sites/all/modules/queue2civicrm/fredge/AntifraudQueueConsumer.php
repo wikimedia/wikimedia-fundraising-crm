@@ -18,7 +18,7 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
     watchdog(
       'fredge',
       "Beginning processing of payments-antifraud message for $id",
-      array(),
+      [],
       WATCHDOG_INFO
     );
 

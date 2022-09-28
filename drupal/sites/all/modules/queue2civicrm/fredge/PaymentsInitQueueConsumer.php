@@ -18,8 +18,7 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
     $logId = "{$message['gateway']}-{$message['order_id']}";
     watchdog(
       'fredge',
-      "Beginning processing of payments-init message for $logId: " .
-      json_encode($message),
+      "Beginning processing of payments-init message for $logId",
       [],
       WATCHDOG_INFO
     );

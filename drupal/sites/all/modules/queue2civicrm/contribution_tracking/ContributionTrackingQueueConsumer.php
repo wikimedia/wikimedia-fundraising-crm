@@ -23,7 +23,7 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
 
     watchdog(
       'contribution-tracking',
-      "Beginning processing of contribution-tracking message {$message['id']}: " . json_encode($message),
+      "Beginning processing of contribution-tracking message {$message['id']}",
       [],
       WATCHDOG_INFO
     );
