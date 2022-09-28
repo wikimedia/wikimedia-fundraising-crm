@@ -167,11 +167,11 @@ function civicrm_api3_generic_getfields($apiRequest, $unique = TRUE) {
     }
     else {
       // not implemented MagicFunctionProvider
-      $helper = NULL;
+      $helper = '';
     }
   }
   catch (\Civi\API\Exception\NotImplementedException $e) {
-    $helper = NULL;
+    $helper = '';
   }
   if (function_exists($helper)) {
     // alter
@@ -374,7 +374,7 @@ function civicrm_api3_generic_getrefcount($apiRequest) {
   }
   $daoClass = $entityToClassMap[$apiRequest['entity']];
 
-  /* @var $dao CRM_Core_DAO */
+  /** @var CRM_Core_DAO $dao */
   $dao = new $daoClass();
   $dao->id = $apiRequest['params']['id'];
   if ($dao->find(TRUE)) {

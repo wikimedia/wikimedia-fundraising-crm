@@ -8,6 +8,11 @@ return [
   'civicrm_action_log' => [
     'is_error' => "DEFAULT 0 COMMENT 'Was there any error sending the reminder?'",
   ],
+  'civicrm_address' => [
+    'is_primary' => "DEFAULT 0 COMMENT 'Is this the primary address.'",
+    'is_billing' => "DEFAULT 0 COMMENT 'Is this the billing address.'",
+    'manual_geo_code' => "DEFAULT 0 COMMENT 'Is this a manually entered geo code'",
+  ],
   'civicrm_country' => [
     'is_province_abbreviated' => "DEFAULT 0 COMMENT 'Should state/province be displayed as abbreviation for contacts from this country?'",
     'is_active' => "DEFAULT 1 COMMENT 'Is this Country active?'",
@@ -33,6 +38,10 @@ return [
   'civicrm_dashboard' => [
     'is_active' => "DEFAULT 0 COMMENT 'Is this dashlet active?'",
     'is_reserved' => "DEFAULT 0 COMMENT 'Is this dashlet reserved?'",
+  ],
+  'civicrm_email' => [
+    'is_primary' => "DEFAULT 0 COMMENT 'Is this the primary email address'",
+    'is_billing' => "DEFAULT 0 COMMENT 'Is this the billing?'",
   ],
   'civicrm_im' => [
     'is_primary' => "DEFAULT 0 COMMENT 'Is this the primary IM for this contact and location.'",

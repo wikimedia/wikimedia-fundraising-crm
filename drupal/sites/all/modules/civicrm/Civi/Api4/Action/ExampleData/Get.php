@@ -23,28 +23,11 @@ use Civi\Test\ExampleDataLoader;
  * metadata fields (`name`, `title`, `tags`, `file`) to avoid extraneous scanning, but
  * substantive fields (`data`) are computed as-needed.
  *
- * @method string getLanguage()
- * @method $this setLanguage(string $language)
- *
  * FIXME: When we have an update for dev-docs, include a `@link` here.
  */
 class Get extends BasicGetAction {
 
-  /**
-   * Specify the language to use if this is a multi-lingual environment.
-   *
-   * E.g. "en_US" or "fr_CA"
-   *
-   * @var string
-   */
-  protected $language;
-
   public function _run(Result $result) {
-    if ($this->getLanguage()) {
-      // On destruct the language swaps back again.
-      $swapLocale = \CRM_Utils_AutoClean::swapLocale($this->getLanguage());
-    }
-
     if ($this->select !== [] && !in_array('name', $this->select)) {
       $this->select[] = 'name';
     }

@@ -319,12 +319,6 @@ class CRM_Contribute_Form_Contribution_Main extends CRM_Contribute_Form_Contribu
       $this->buildComponentForm($this->_id, $this);
     }
 
-    if (\Civi::settings()->get('forceRecaptcha')) {
-      if (!$this->_userID) {
-        CRM_Utils_ReCAPTCHA::enableCaptchaOnForm($this);
-      }
-    }
-
     // Build payment processor form
     CRM_Core_Payment_ProcessorForm::buildQuickForm($this);
 
@@ -1361,10 +1355,6 @@ class CRM_Contribute_Form_Contribution_Main extends CRM_Contribute_Form_Contribu
       }
       else {
         CRM_Price_BAO_PriceSet::processAmount($this->_values['fee'], $params, $lineItem[$priceSetId], $priceSetId);
-      }
-
-      if ($params['tax_amount']) {
-        $this->set('tax_amount', $params['tax_amount']);
       }
 
       if ($proceFieldAmount) {

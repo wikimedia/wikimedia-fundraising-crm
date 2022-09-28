@@ -9,8 +9,6 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
 
   protected $_baseTable = 'civicrm_participant';
 
-  protected $skipACL = FALSE;
-
   protected $_groupFilter = TRUE;
 
   protected $_tagFilter = TRUE;
@@ -54,7 +52,6 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
       $this->getColumns('Contact', [
         'fields' => TRUE,
         'join_fields' => TRUE,
-        'filters' => FALSE,
         'prefix' => 'related_',
         'prefix_label' => 'Related Contact ',
       ]) +
@@ -142,13 +139,13 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
   /**
    * Overriding for the sake of handling relationship type ID.
    */
-  function postProcess() {
+  public function postProcess(): void {
     $this->beginPostProcess();
     $this->relationType = NULL;
     $originalRelationshipTypes = [];
 
     $relationships = [];
-    if ((array) $this->_params['relationship_relationship_type_id_value'] ?? FALSE) {
+    if ($this->_params['relationship_relationship_type_id_value'] ?? FALSE) {
       $originalRelationshipTypes = $this->_params['relationship_relationship_type_id_value'];
       foreach ($this->_params['relationship_relationship_type_id_value'] as $relString) {
         $relType = explode('_', $relString);
@@ -172,7 +169,7 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
    *
    * @return array
    */
-  public function fromClauses() {
+  public function fromClauses(): array {
     $fromClauses = [
       'event_from_participant',
       'contact_from_participant',
@@ -188,7 +185,7 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
   /**
    * Generate report FROM clause.
    */
-  public function from() {
+  public function from(): void {
     parent::from();
     if ($this->isTableSelected('civicrm_contribution')) {
       $this->_from .= "
@@ -214,15 +211,15 @@ class CRM_Extendedreport_Form_Report_Event_ParticipantExtended extends CRM_Exten
    *
    * @throws \CiviCRM_API3_Exception
    */
-  public function alterDisplay(&$rows) {
+  public function alterDisplay(&$rows): void {
     // custom code to alter rows
 
     $entryFound = FALSE;
     $eventType = CRM_Core_OptionGroup::values('event_type');
 
-    $financialTypes = CRM_Contribute_PseudoConstant::financialType();
+    $financialTypes = CRM_Contribute_BAO_Contribution::buildOptions('financial_type_id', 'get');
     $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus();
-    $paymentInstruments = CRM_Contribute_PseudoConstant::paymentInstrument();
+    $paymentInstruments = CRM_Contribute_BAO_Contribution::buildOptions('payment_instrument_id', 'get');
     $honorTypes = CRM_Core_OptionGroup::values('honor_type', FALSE, FALSE, FALSE, NULL, 'label');
     $genders = CRM_Core_PseudoConstant::get('CRM_Contact_DAO_Contact', 'gender_id', ['localize' => TRUE]);
 

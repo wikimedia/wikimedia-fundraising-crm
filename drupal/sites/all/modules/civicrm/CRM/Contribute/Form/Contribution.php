@@ -703,8 +703,8 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       }
     }
 
-    // If contribution is a template receive date is not required
-    $receiveDateRequired = !$this->_values['is_template'];
+    // If contribution is a template receive date is not required and if we are in a live credit card mode
+    $receiveDateRequired = !$this->_values['is_template'] && !$this->_mode;
     // add various dates
     $this->addField('receive_date', ['entity' => 'contribution'], $receiveDateRequired, FALSE);
     $this->addField('receipt_date', ['entity' => 'contribution'], FALSE, FALSE);
@@ -1243,7 +1243,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  protected function processFormContribution(
+  private function processFormContribution(
     $params,
     $result,
     $contributionParams,
@@ -1257,10 +1257,8 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     $contactID = $contributionParams['contact_id'];
 
     $isEmailReceipt = !empty($form->_values['is_email_receipt']);
-    $isSeparateMembershipPayment = !empty($params['separate_membership_payment']);
     $pledgeID = !empty($params['pledge_id']) ? $params['pledge_id'] : $form->_values['pledge_id'] ?? NULL;
-    if (!$isSeparateMembershipPayment && !empty($form->_values['pledge_block_id']) &&
-      (!empty($params['is_pledge']) || $pledgeID)) {
+    if ((!empty($params['is_pledge']) || $pledgeID)) {
       $isPledge = TRUE;
     }
     else {

@@ -153,17 +153,6 @@ class WorkflowMessage {
       }
       $cache->set($cacheKey, $map);
     }
-    // These classes load fine on dev & prod and tests pass on dev, but fail
-    // on jenkins - why oh why oh why?
-    // I notice jenkins is using redis but local devs are not - some combo
-    // of Redis + unit tests????
-    $classesJenkinsKeepsFailingToLoad = [
-      'eoy_thank_you' => 'Civi\WorkflowMessage\EOYThankYou',
-      'thank_you' => 'Civi\WorkflowMessage\ThankYou',
-      'monthly_convert' => 'Civi\WorkflowMessage\MonthlyConvert',
-      'endowment_thank_you' => 'Civi\WorkflowMessage\EndowmentThankYou',
-    ];
-    $map = array_merge($classesJenkinsKeepsFailingToLoad, $map);
     return $map;
   }
 

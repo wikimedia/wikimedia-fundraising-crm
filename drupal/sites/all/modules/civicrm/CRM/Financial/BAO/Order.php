@@ -294,6 +294,13 @@ class CRM_Financial_BAO_Order {
   protected $priceFieldMetadata = [];
 
   /**
+   * Metadata for price field values.
+   *
+   * @var array
+   */
+  protected $priceFieldValueMetadata = [];
+
+  /**
    * Metadata for price sets.
    *
    * @var array
@@ -451,12 +458,6 @@ class CRM_Financial_BAO_Order {
       foreach ($this->getPriceOptions() as $fieldID => $valueID) {
         $this->setPriceSetIDFromSelectedField($fieldID);
       }
-      if (!$this->priceSetID && $this->getTemplateContributionID()) {
-        // Load the line items from the contribution.
-        foreach ($this->getLineItems() as $lineItem) {
-          return $lineItem['price_field_id.price_set_id'];
-        }
-      }
     }
     return $this->priceSetID;
   }
@@ -573,7 +574,23 @@ class CRM_Financial_BAO_Order {
    * @return array
    */
   public function getPriceFieldSpec(int $id) :array {
-    return $this->getPriceFieldsMetadata()[$id];
+    return $this->getPriceFieldsMetadata()[$id] ?? $this->getPriceFieldMetadata($id);
+  }
+
+  /**
+   * Get the metadata for the given field value.
+   *
+   * @internal use in tested core code only.
+   *
+   * @param int $id
+   *
+   * @return array
+   */
+  public function getPriceFieldValueSpec(int $id) :array {
+    if (!isset($this->priceFieldValueMetadata[$id])) {
+      $this->priceFieldValueMetadata[$id] = PriceFieldValue::get(FALSE)->addWhere('id', '=', $id)->execute()->first();
+    }
+    return $this->priceFieldValueMetadata[$id];
   }
 
   /**
@@ -588,6 +605,28 @@ class CRM_Financial_BAO_Order {
       $this->getPriceSetMetadata();
     }
     return $this->priceFieldMetadata;
+  }
+
+  /**
+   * Get the metadata for the given price field.
+   *
+   * Note this uses a different method to getPriceFieldMetadata.
+   *
+   * There is an assumption in the code currently that all purchases
+   * are within a single price set. However, discussions have been around
+   * the idea that when form-builder supports contributions price sets will
+   * not be used as form-builder in itself is a configuration unit.
+   *
+   * Currently there are couple of unit tests that mix & match & rather than
+   * updating the tests to avoid notices when orders are loaded for receipting,
+   * the migration to this new method is starting....
+   *
+   * @param int $id
+   *
+   * @return array
+   */
+  public function getPriceFieldMetadata(int $id): array {
+    return CRM_Price_BAO_PriceField::getPriceField($id);
   }
 
   /**
@@ -796,6 +835,10 @@ class CRM_Financial_BAO_Order {
     $params['financial_type_id'] = 0;
     if ($this->getTemplateContributionID()) {
       $lineItems = $this->getLinesFromTemplateContribution();
+      // Set the price set ID from the first line item (we need to set this here
+      // to prevent a loop later when we retrieve the price field metadata to
+      // set the 'title' (as accessed from workflow message templates).
+      $this->setPriceSetID($lineItems[0]['price_field_id.price_set_id']);
     }
     else {
       foreach ($this->getPriceOptions() as $fieldID => $valueID) {
@@ -832,6 +875,7 @@ class CRM_Financial_BAO_Order {
       elseif ($taxRate) {
         $lineItem['tax_amount'] = ($taxRate / 100) * $lineItem['line_total'];
       }
+      $lineItem['title'] = $this->getLineItemTitle($lineItem);
     }
     return $lineItems;
   }
@@ -949,7 +993,8 @@ class CRM_Financial_BAO_Order {
       $this->addTotalsToLineBasedOnOverrideTotal((int) $lineItem['financial_type_id'], $lineItem);
     }
     else {
-      $lineItem['tax_amount'] = ($this->getTaxRate($lineItem['financial_type_id']) / 100) * $lineItem['line_total'];
+      $lineItem['tax_rate'] = $this->getTaxRate($lineItem['financial_type_id']);
+      $lineItem['tax_amount'] = ($lineItem['tax_rate'] / 100) * $lineItem['line_total'];
     }
     if (!empty($lineItem['membership_type_id'])) {
       $lineItem['entity_table'] = 'civicrm_membership';
@@ -959,6 +1004,24 @@ class CRM_Financial_BAO_Order {
     }
     if ($this->getPriceSetID() === $this->getDefaultPriceSetForComponent('contribution')) {
       $this->fillDefaultContributionLine($lineItem);
+    }
+    if (empty($lineItem['label'])) {
+      $lineItem['label'] = PriceFieldValue::get(FALSE)->addWhere('id', '=', (int) $lineItem['price_field_value_id'])->addSelect('label')->execute()->first()['label'];
+    }
+    if (empty($lineItem['price_field_id']) && !empty($lineItem['membership_type_id'])) {
+      // We have to 'guess' the price field since the calling code hasn't
+      // passed it in (which it really should but ... history).
+      foreach ($this->priceFieldMetadata as $pricefield) {
+        foreach ($pricefield['options'] ?? [] as $option) {
+          if ((int) $option['membership_type_id'] === $lineItem['membership_type_id']) {
+            $lineItem['price_field_id'] = $pricefield['id'];
+            $lineItem['price_field_value_id'] = $option['id'];
+          }
+        }
+      }
+    }
+    if (empty($lineItem['title'])) {
+      $lineItem['title'] = $this->getLineItemTitle($lineItem);
     }
     $this->lineItems[$index] = $lineItem;
   }
@@ -1013,6 +1076,7 @@ class CRM_Financial_BAO_Order {
         foreach ($field['options'] as $option) {
           if ((int) $option['membership_type_id'] === (int) $lineItem['membership_type_id']) {
             $lineItem['price_field_id'] = $field['id'];
+            $lineItem['price_field_id.label'] = $field['label'];
             $lineItem['price_field_value_id'] = $option['id'];
             $lineItem['qty'] = 1;
           }
@@ -1105,6 +1169,7 @@ class CRM_Financial_BAO_Order {
         'entity_id',
         'entity_table',
         'price_field_id',
+        'price_field_id.label',
         'price_field_id.price_set_id',
         'price_field_value_id',
         'financial_type_id',
@@ -1149,12 +1214,36 @@ class CRM_Financial_BAO_Order {
     $defaults = [
       'qty' => 1,
       'price_field_id' => $this->getDefaultPriceFieldID(),
+      'price_field_id.label' => $this->defaultPriceField['label'],
       'price_field_value_id' => $this->getDefaultPriceFieldValueID(),
       'entity_table' => 'civicrm_contribution',
       'unit_price' => $lineItem['line_total'],
       'label' => ts('Contribution Amount'),
     ];
     $lineItem = array_merge($defaults, $lineItem);
+  }
+
+  /**
+   * Get a 'title' for the line item.
+   *
+   * This descriptor is used in message templates. It could conceivably
+   * by used elsewhere but if so determination would likely move to the api.
+   *
+   * @param array $lineItem
+   *
+   * @return string
+   */
+  private function getLineItemTitle(array $lineItem): string {
+    // Title is used in output for workflow templates.
+    $htmlType = $this->getPriceFieldSpec($lineItem['price_field_id'])['html_type'] ?? NULL;
+    $lineItemTitle = (!$htmlType || $htmlType === 'Text') ? $lineItem['label'] : $this->getPriceFieldSpec($lineItem['price_field_id'])['label'] . ' - ' . $lineItem['label'];
+    if (!empty($lineItem['price_field_value_id'])) {
+      $description = $this->priceFieldValueMetadata[$lineItem['price_field_value_id']]['description'] ?? '';
+      if ($description) {
+        $lineItemTitle .= ' ' . CRM_Utils_String::ellipsify($description, 30);
+      }
+    }
+    return $lineItemTitle;
   }
 
 }

@@ -87,7 +87,7 @@ class SpecGatherer {
 
     foreach ($DAOFields as $DAOField) {
       if ($DAOField['name'] == 'id' && $action == 'create') {
-        continue;
+        $DAOField['required'] = FALSE;
       }
       if (array_key_exists('contactType', $DAOField) && $spec->getValue('contact_type') && $DAOField['contactType'] != $spec->getValue('contact_type')) {
         continue;
@@ -225,7 +225,7 @@ class SpecGatherer {
   private function getDAOFields(string $entityName): array {
     $bao = CoreUtil::getBAOFromApiName($entityName);
     if (!$bao) {
-      throw new \API_Exception('Entity not loaded' . $entityName);
+      throw new \API_Exception('Entity not loaded: ' . $entityName);
     }
     return $bao::getSupportedFields();
   }

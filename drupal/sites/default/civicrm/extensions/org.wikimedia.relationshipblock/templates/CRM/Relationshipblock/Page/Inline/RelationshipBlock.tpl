@@ -3,7 +3,7 @@
     {if $permission EQ 'edit'}
       <div class="crm-edit-help"><span class="crm-i fa-pencil"></span>{ts}Edit{/ts}</div>
     {/if}
-    {if $existingRelationships}
+    {if !empty($existingRelationships)}
       {foreach from=$existingRelationships item=existingRelationship}
         <div class="crm-summary-row">
           <div class="crm-label">{$existingRelationship.relationship_type|escape}</div>
@@ -28,7 +28,7 @@
           });
         });
       {/literal}</script>
-    {else}
+    {elseif isset($keyRelationshipLabel)}
       <div class="crm-summary-row">
         <div class="crm-label">{$keyRelationshipLabel|escape}</div>
         <div class="crm-content"></div>

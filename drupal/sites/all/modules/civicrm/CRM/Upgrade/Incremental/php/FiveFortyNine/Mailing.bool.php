@@ -10,6 +10,9 @@ return [
     'is_archived' => "DEFAULT 0 COMMENT 'Is this mailing archived?'",
     'dedupe_email' => "DEFAULT 0 COMMENT 'Remove duplicate emails?'",
   ],
+  'civicrm_mailing_job' => [
+    'is_test' => "DEFAULT 0 COMMENT 'Is this job for a test mail?'",
+  ],
   'civicrm_mailing_component' => [
     'is_active' => "DEFAULT 1 COMMENT 'Is this property active?'",
   ],

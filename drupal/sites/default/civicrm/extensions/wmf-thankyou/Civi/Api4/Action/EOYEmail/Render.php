@@ -128,11 +128,12 @@ class Render extends AbstractAction {
     foreach ($templateStrings as $key => $string) {
       $template[$key] = $string['string'];
     }
-    $swapLocale = \CRM_Utils_AutoClean::swapLocale($contactDetails['language']);
+
     try {
       $rendered = Civi\Api4\WorkflowMessage::render(FALSE)
         ->setMessageTemplate($template)
         ->setValues($template_params)
+        ->setLanguage($contactDetails['language'])
         ->setWorkflow('eoy_thank_you')
         ->execute()->first();
     }

@@ -152,7 +152,7 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
     $requiredDirectories = ['persist/contribute/images/.trash', 'persist/contribute/images/.trash/.tmb'];
     foreach ($requiredDirectories as $directory) {
       $directory = Civi::paths()->getPath('[civicrm.files]/' . $directory);
-      if (!is_dir($directory) && !mkdir($directory)) {
+      if (!is_dir($directory) && !mkdir($directory, 0775, TRUE)) {
         throw new \RuntimeException(sprintf('Directory "%s" does not exist', $directory));
 
       }

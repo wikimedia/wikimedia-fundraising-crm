@@ -209,6 +209,13 @@
 
       instances[name] = editor;
 
+      // Update source element on blur; especially important for javascript-based UIs
+      editor.editing.view.document.on('blur', function() {
+        editor.updateSourceElement();
+        $(item).trigger("blur");
+        $(item).trigger("change");
+      });
+
       editor.on('destroy', function(e) {
         var name = $(e.source.sourceElement).attr('name') || $(e.source.sourceElement).attr('id');
         delete instances[name];
@@ -222,12 +229,26 @@
      */
     function initialize() {
       if (CRM.config.ELFinderLocation) {
-        initializeWithELFinder();
+        if (CRM.config.CKEditor5CustomConfig) {
+          initializeCustomWithELFinder();
+        }
+        else{
+          initializeWithELFinder();
+        }
       }
       else {
         initializeWithBaseUploader();
       }
     }
+
+    /**
+     * Create a custom editor instance with Elfinder.
+     */
+    function initializeCustomWithELFinder() {
+      $(item).addClass('crm-wysiwyg-enabled');
+      ClassicEditor.create($(item)[0], CRM.config.CKEditor5CustomConfig).then(onReadyElFinder);
+    }
+
     /**
      * Create the editor instance with the BaseUploader.
      */

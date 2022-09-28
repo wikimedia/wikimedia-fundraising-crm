@@ -96,7 +96,7 @@ class ActionObjectProvider implements EventSubscriberInterface, ProviderInterfac
    * @throws \API_Exception
    */
   protected function runChain($request, $row) {
-    list($entity, $action, $params, $index) = $request;
+    [$entity, $action, $params, $index] = $request;
     // Swap out variables in $entity, $action & $params
     $this->resolveChainLinks($entity, $row);
     $this->resolveChainLinks($action, $row);
@@ -118,7 +118,7 @@ class ActionObjectProvider implements EventSubscriberInterface, ProviderInterfac
     }
     elseif (is_string($val) && strlen($val) > 1 && substr($val, 0, 1) === '$') {
       $key = substr($val, 1);
-      $val = $result[$key] ?? \CRM_Utils_Array::pathGet($result, explode('.', $key));
+      $val = $result[$key] ?? \CRM_Utils_Array::pathGet($result, explode('.', $key)) ?? $val;
     }
   }
 
@@ -175,7 +175,7 @@ class ActionObjectProvider implements EventSubscriberInterface, ProviderInterfac
       array_column(\CRM_Extension_System::singleton()->getMapper()->getActiveModuleFiles(), 'filePath')
     );
     foreach ($locations as $location) {
-      $dir = \CRM_Utils_File::addTrailingSlash(dirname($location)) . 'Civi/Api4';
+      $dir = \CRM_Utils_File::addTrailingSlash(dirname($location ?? '')) . 'Civi/Api4';
       if (is_dir($dir)) {
         foreach (glob("$dir/*.php") as $file) {
           $className = 'Civi\Api4\\' . basename($file, '.php');

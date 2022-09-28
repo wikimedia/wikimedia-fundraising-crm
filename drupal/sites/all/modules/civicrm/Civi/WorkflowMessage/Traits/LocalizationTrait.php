@@ -23,7 +23,7 @@ trait LocalizationTrait {
    * @return string
    */
   public function getLocale(): ?string {
-    return $this->locale ?? \CRM_Core_I18n::getLocale();
+    return $this->locale;
   }
 
   /**

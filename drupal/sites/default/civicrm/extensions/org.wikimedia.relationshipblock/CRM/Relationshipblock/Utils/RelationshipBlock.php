@@ -23,6 +23,7 @@ class CRM_Relationshipblock_Utils_RelationshipBlock {
       'contact_id_b' => $contactID,
       'contact_id_a.is_deleted' => ['!=' => 1],
       'contact_id_b.is_deleted' => ['!=' => 1],
+      'check_permissions' => TRUE,
       'return' => [
         'id',
         'relationship_type_id',

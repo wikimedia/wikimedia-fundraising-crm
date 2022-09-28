@@ -6,7 +6,7 @@ This extension alters the sort name saved for organisations. It allows you to re
 
 Having standardised sort names is also useful for doing deduping - sort_name can be used as a field in a rule and The Justice League can then be deduped with Justice League.
 
-The extension also permits suffixes to be removed or strings to be removed from anywhere in the sort name.
+The extension also permits suffixes to be removed or strings to be removed from anywhere in the sort name. The prefixes and suffixes to be replaced can be configured under Administer->Customize Data and Screens->Organization Sort Name Settings (per the screenshot above).
 
 The extension is licensed under [AGPL-3.0](LICENSE.txt).
 

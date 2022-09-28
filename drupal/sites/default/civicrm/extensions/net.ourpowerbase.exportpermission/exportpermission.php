@@ -16,13 +16,6 @@ function exportpermission_civicrm_config(&$config) {
 }
 
 /**
- * Implements hook_civicrm_xmlMenu().
- */
-function exportpermission_civicrm_xmlMenu(&$files) {
-  _exportpermission_civix_civicrm_xmlMenu($files);
-}
-
-/**
  * Implements hook_civicrm_install().
  */
 function exportpermission_civicrm_install() {
@@ -62,32 +55,6 @@ function exportpermission_civicrm_disable() {
  */
 function exportpermission_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
   return _exportpermission_civix_civicrm_upgrade($op, $queue);
-}
-
-/**
- * Implements hook_civicrm_managed().
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- */
-function exportpermission_civicrm_managed(&$entities) {
-  _exportpermission_civix_civicrm_managed($entities);
-}
-
-/**
- * Implements hook_civicrm_angularModules().
- *
- * Generate a list of Angular modules.
- */
-function exportpermission_civicrm_angularModules(&$angularModules) {
-  _exportpermission_civix_civicrm_angularModules($angularModules);
-}
-
-/**
- * Implements hook_civicrm_alterSettingsFolders().
- */
-function exportpermission_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _exportpermission_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
 /**
@@ -189,3 +156,11 @@ function exportpermission_civicrm_buildForm($formName, &$form) {
   }
 }
 
+/**
+ * Implements hook_civicrm_entityTypes().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
+ */
+function exportpermission_civicrm_entityTypes(&$entityTypes) {
+  _exportpermission_civix_civicrm_entityTypes($entityTypes);
+}

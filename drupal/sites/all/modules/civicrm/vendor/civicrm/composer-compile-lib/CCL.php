@@ -251,8 +251,8 @@ class CCL {
   /**
    * Atomically dumps content into a file.
    *
-   * @param string $filename The file to be written to
-   * @param string $content  The data to write into the file
+   * @param string          $filename The file to be written to
+   * @param string|resource $content  The data to write into the file
    *
    * @throws IOException if the file cannot be written to
    */
@@ -263,8 +263,8 @@ class CCL {
   /**
    * Appends content to an existing file.
    *
-   * @param string $filename The file to which to append content
-   * @param string $content  The content to append
+   * @param string          $filename The file to which to append content
+   * @param string|resource $content  The content to append
    *
    * @throws IOException If the file is not writable
    */

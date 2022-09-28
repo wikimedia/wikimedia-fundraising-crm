@@ -10,15 +10,6 @@ function extendedmailingstats_civicrm_config(&$config) {
 }
 
 /**
- * Implementation of hook_civicrm_xmlMenu
- *
- * @param $files array(string)
- */
-function extendedmailingstats_civicrm_xmlMenu(&$files) {
-  _extendedmailingstats_civix_civicrm_xmlMenu($files);
-}
-
-/**
  * Implementation of hook_civicrm_install
  */
 function extendedmailingstats_civicrm_install() {
@@ -57,16 +48,6 @@ function extendedmailingstats_civicrm_disable() {
  */
 function extendedmailingstats_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
   return _extendedmailingstats_civix_civicrm_upgrade($op, $queue);
-}
-
-/**
- * Implementation of hook_civicrm_managed
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- */
-function extendedmailingstats_civicrm_managed(&$entities) {
-  return _extendedmailingstats_civix_civicrm_managed($entities);
 }
 
 /**
@@ -209,7 +190,6 @@ function _extendedmailingstats_cron($params) {
   return true;
 }
 
-
 ################################################################################
 
 function _extendedmailingstats_do_query($params, $sql) {
@@ -227,14 +207,12 @@ function _extendedmailingstats_do_query($params, $sql) {
   }
 }
 
-
 function _extendedmailingstats_record_status($params, $doing) {
   $sql = <<<END
 INSERT INTO agc_report_mailing_stats_performance (doing) VALUES ("${doing}");
 END;
   _extendedmailingstats_do_query($params, $sql);
 }
-
 
 ################################################################################
 
@@ -400,7 +378,6 @@ END;
   _extendedmailingstats_do_query($params, $sql);
 }
 
-
 ################################################################################
 
 // This needs to be run before most other queries to create the row in the results table
@@ -419,8 +396,6 @@ INSERT  IGNORE INTO agc_report_mailing_stats (mailing_id, mailing_name, created_
 END;
   _extendedmailingstats_do_query($params, $sql);
 }
-
-
 
 ################################################################################
 
@@ -445,7 +420,6 @@ SET
 END;
   _extendedmailingstats_do_query($params, $sql);
 }
-
 
 function _extendedmailingstats_cron_recipients($params, $task, $gmail_only=0) {
 
@@ -499,7 +473,6 @@ END;
   _extendedmailingstats_do_query($params, $sql);
 }
 
-
 function _extendedmailingstats_cron_contribution_page_clicks ($params) {
 _extendedmailingstats_record_status($params,"contribution_page_clicks");
   $sql = <<<END
@@ -525,7 +498,6 @@ SET
 END;
   _extendedmailingstats_do_query($params, $sql);
 }
-
 
 // If any value other than 48 hours is to be used, an appropriately named column needs to be added to the results table
 function _extendedmailingstats_cron_contributions ($params, $hours = 48) {
@@ -576,7 +548,6 @@ END;
   _extendedmailingstats_do_query($params, $sql);
 }
 
-
 /**
  * Implements hook_civicrm_entityTypes.
  *
@@ -591,3 +562,20 @@ function extendedmailingstats_civicrm_entityTypes(&$entityTypes) {
   );
 }
 
+/**
+ * Implements hook_civicrm_postInstall().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
+ */
+function extendedmailingstats_civicrm_postInstall() {
+  _extendedmailingstats_civix_civicrm_postInstall();
+}
+
+// /**
+//  * Implements hook_civicrm_entityTypes().
+//  *
+//  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
+//  */
+// function extendedmailingstats_civicrm_entityTypes(&$entityTypes) {
+//   _extendedmailingstats_civix_civicrm_entityTypes($entityTypes);
+// }

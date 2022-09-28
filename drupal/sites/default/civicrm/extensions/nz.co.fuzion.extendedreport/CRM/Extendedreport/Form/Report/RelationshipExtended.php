@@ -76,7 +76,7 @@ class CRM_Extendedreport_Form_Report_RelationshipExtended extends CRM_Extendedre
      *
      * @return string
      */
-    public function whereTagClause($field, $value, $op) {
+    public function whereTagClause($field, $value, $op): string {
       // not using left join in query because if any contact
       // belongs to more than one tag, results duplicate
       // entries.
@@ -92,7 +92,7 @@ class CRM_Extendedreport_Form_Report_RelationshipExtended extends CRM_Extendedre
                             WHERE entity_table = 'civicrm_contact' AND {$clause} ) ";
   }
 
-  function from() {
+  public function from(): void {
     $this->setFromBase('civicrm_contact', 'id', $this->_aliases['contact_a_civicrm_contact']);
     $this->_from .= "
       INNER JOIN civicrm_relationship {$this->_aliases['civicrm_relationship']}
@@ -161,9 +161,9 @@ class CRM_Extendedreport_Form_Report_RelationshipExtended extends CRM_Extendedre
   /**
    * @param $rows
    *
-   * @return mixed
+   * @return array
    */
-  public function statistics(&$rows) {
+  public function statistics(&$rows): array {
     $statistics = parent::statistics($rows);
 
     $isStatusFilter = FALSE;
@@ -203,7 +203,7 @@ class CRM_Extendedreport_Form_Report_RelationshipExtended extends CRM_Extendedre
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function postProcess() {
+  public function postProcess(): void {
     $this->beginPostProcess();
     $this->relationType = NULL;
     $originalRelationshipTypes = [];
@@ -231,7 +231,7 @@ class CRM_Extendedreport_Form_Report_RelationshipExtended extends CRM_Extendedre
   /**
    * @param $rows
    */
-  public function alterDisplay(&$rows) {
+  public function alterDisplay(&$rows): void {
     parent::alterDisplay($rows);
     // custom code to alter rows
     $entryFound = TRUE;

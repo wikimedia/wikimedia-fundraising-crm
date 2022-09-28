@@ -137,8 +137,10 @@ class ClassScanner {
     static::scanFolders($classes, $civicrmRoot, 'Civi/WorkflowMessage', '\\');
     static::scanFolders($classes, $civicrmRoot, 'CRM/*/Import', '_');
     if (\CRM_Utils_Constant::value('CIVICRM_UF') === 'UnitTests') {
-      static::scanFolders($classes, $civicrmRoot . 'tests/phpunit', 'CRM/*/WorkflowMessage', '_');
-      static::scanFolders($classes, $civicrmRoot . 'tests/phpunit', 'Civi/*/WorkflowMessage', '\\');
+      if (strpos(get_include_path(), $civicrmRoot . 'tests/phpunit') !== FALSE) {
+        static::scanFolders($classes, $civicrmRoot . 'tests/phpunit', 'CRM/*/WorkflowMessage', '_');
+        static::scanFolders($classes, $civicrmRoot . 'tests/phpunit', 'Civi/*/WorkflowMessage', '\\');
+      }
     }
 
     $cache->set($cacheKey, $classes, static::TTL);
@@ -198,6 +200,11 @@ class ClassScanner {
             $classes[] = $class;
           }
         }
+        elseif (!interface_exists($class) && !trait_exists($class)) {
+          // If you get this error, then perhaps (a) you need to fix the name of file/class/namespace or (b) you should disable class-scanning.
+          // throw new \RuntimeException("Scanned file {$relFile} for class {$class}, but it was not found.");
+          // We can't throw an exception since it breaks some test environments. We can't log because this happens too early and it leads to an infinite loop. error_log() works but is debatable if anyone will look there.
+        }
       }
     }
   }
@@ -221,6 +228,7 @@ class ClassScanner {
     if (!isset(static::$caches[$name])) {
       switch ($name) {
         case 'index':
+          global $_DB_DATAOBJECT;
           if (empty($_DB_DATAOBJECT['CONFIG'])) {
             // Atypical example: You have a test with a @dataProvider that relies on ClassScanner. Runs before bot.
             return new \CRM_Utils_Cache_ArrayCache([]);

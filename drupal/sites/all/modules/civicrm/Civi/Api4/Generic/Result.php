@@ -87,21 +87,7 @@ class Result extends \ArrayObject implements \JsonSerializable {
    * @throws \API_Exception
    */
   public function single() {
-    $result = NULL;
-    foreach ($this as $values) {
-      if ($result === NULL) {
-        $result = $values;
-      }
-      else {
-        throw new \API_Exception("Expected to find one {$this->entity} record, but there were multiple.");
-      }
-    }
-
-    if ($result === NULL) {
-      throw new \API_Exception("Expected to find one {$this->entity} record, but there were zero.");
-    }
-
-    return $result;
+    return \CRM_Utils_Array::single($this, "{$this->entity} record");
   }
 
   /**
@@ -157,7 +143,7 @@ class Result extends \ArrayObject implements \JsonSerializable {
    *
    * @return int
    */
-  public function count() {
+  public function count(): int {
     return $this->rowCount ?? parent::count();
   }
 
@@ -211,6 +197,7 @@ class Result extends \ArrayObject implements \JsonSerializable {
   /**
    * @return array
    */
+  #[\ReturnTypeWillChange]
   public function jsonSerialize() {
     return $this->getArrayCopy();
   }

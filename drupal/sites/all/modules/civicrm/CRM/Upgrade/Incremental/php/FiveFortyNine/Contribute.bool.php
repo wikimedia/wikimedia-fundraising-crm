@@ -1,5 +1,11 @@
 <?php
 return [
+    // No DAO change?
+  'civicrm_contribution' => [
+    'is_test' => "DEFAULT 0",
+    'is_pay_later' => "DEFAULT 0",
+    'is_template' => "DEFAULT 0 COMMENT 'Shows this is a template for recurring contributions.'",
+  ],
   'civicrm_contribution_page' => [
     'is_credit_card_only' => "DEFAULT 0 COMMENT 'if true - processing logic must reject transaction at confirmation stage if pay method != credit card'",
     'is_monetary' => "DEFAULT 1 COMMENT 'if true - allows real-time monetary transactions otherwise non-monetary transactions'",
