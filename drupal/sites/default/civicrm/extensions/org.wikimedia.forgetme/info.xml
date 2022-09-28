@@ -20,8 +20,12 @@
   <compatibility>
     <ver>5.3</ver>
   </compatibility>
-  <comments></comments>
+  <comments/>
   <civix>
     <namespace>CRM/Forgetme</namespace>
+    <format>22.05.2</format>
   </civix>
+  <mixins>
+    <mixin>ang-php@1.0.0</mixin>
+  </mixins>
 </extension>
