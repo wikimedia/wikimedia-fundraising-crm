@@ -28,7 +28,7 @@ class CancelInactives extends AbstractAction {
       ContributionRecur::update(FALSE)
         ->addWhere('id', '=', $inactive['id'])
         ->setValues([
-          'contribution_status_id.name' => 'Cancelled',
+          'contribution_status_id:name' => 'Cancelled',
           'cancel_date' => date('Y-m-d H:i:s', strtotime('now')),
           'cancel_reason' => 'Automatically cancelled for inactivity'
         ])->execute();

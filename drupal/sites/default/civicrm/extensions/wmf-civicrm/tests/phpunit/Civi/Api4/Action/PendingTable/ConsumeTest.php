@@ -1,7 +1,10 @@
 <?php
 
+namespace Civi\Api4\Action\PendingTable;
+
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
+use PHPUnit\Framework\TestCase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingGlobalConfiguration;
@@ -9,7 +12,7 @@ use SmashPig\Tests\TestingGlobalConfiguration;
 /**
  * This is a generic test class for the extension (implemented with PHPUnit).
  */
-class Civi_Api4_Action_PendingTable_ConsumeTest extends \PHPUnit\Framework\TestCase {
+class ConsumeTest extends TestCase {
 
   /**
    * The setup() method is executed before the test is executed (optional).

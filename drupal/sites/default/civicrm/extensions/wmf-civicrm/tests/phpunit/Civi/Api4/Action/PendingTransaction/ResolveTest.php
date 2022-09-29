@@ -1,9 +1,12 @@
 <?php
 
+namespace Civi\Api4\Action\PendingTransaction;
+
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\Email;
 use Civi\Api4\PendingTransaction;
+use PHPUnit\Framework\TestCase;
 use SmashPig\Core\DataStores\PaymentsFraudDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\CrmLink\Messages\SourceFields;
@@ -20,7 +23,7 @@ use SmashPig\PaymentProviders\CancelPaymentResponse;
 /**
  * @group PendingTransactionResolver
  */
-class Civi_Api4_Action_PendingTransaction_ResolveTest extends \PHPUnit\Framework\TestCase {
+class ResolveTest extends TestCase {
 
   protected $hostedCheckoutProvider;
 
