@@ -17,15 +17,6 @@ function omnimail_civicrm_config(&$config) {
 }
 
 /**
- * Implements hook_civicrm_xmlMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
- */
-function omnimail_civicrm_xmlMenu(&$files) {
-  _omnimail_civix_civicrm_xmlMenu($files);
-}
-
-/**
  * Implements hook_civicrm_install().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
@@ -80,18 +71,6 @@ function omnimail_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
- * Implements hook_civicrm_managed().
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
- */
-function omnimail_civicrm_managed(&$entities) {
-  _omnimail_civix_civicrm_managed($entities);
-}
-
-/**
  * Implements hook_civicrm_entityTypes.
  *
  * @param array $entityTypes
@@ -108,43 +87,6 @@ function omnimail_civicrm_entityTypes(&$entityTypes) {
     'class' => 'CRM_Omnimail_DAO_OmnimailJobProgress',
     'table' => 'civicrm_omnimail_job_progress',
   );
-}
-
-/**
- * Implements hook_civicrm_caseTypes().
- *
- * Generate a list of case-types.
- *
- * Note: This hook only runs in CiviCRM 4.4+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
- */
-function omnimail_civicrm_caseTypes(&$caseTypes) {
-  _omnimail_civix_civicrm_caseTypes($caseTypes);
-}
-
-/**
- * Implements hook_civicrm_angularModules().
- *
- * Generate a list of Angular modules.
- * Generate a list of Angular modules.
- *
- * Note: This hook only runs in CiviCRM 4.5+. It may
- * use features only available in v4.6+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_angularModules
- */
-function omnimail_civicrm_angularModules(&$angularModules) {
-  _omnimail_civix_civicrm_angularModules($angularModules);
-}
-
-/**
- * Implements hook_civicrm_alterSettingsFolders().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
- */
-function omnimail_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _omnimail_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
 
 /**
@@ -218,9 +160,8 @@ function omnimail_civicrm_pre($op, $objectName, $id, &$params) {
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
  *
-function omnimail_civicrm_preProcess($formName, &$form) {
 
-} // */
+ // */
 
 /**
  * Implements hook_civicrm_navigationMenu().
@@ -238,3 +179,12 @@ function omnimail_civicrm_navigationMenu(&$menu) {
   ));
   _omnimail_civix_navigationMenu($menu);
 } // */
+
+// /**
+//  * Implements hook_civicrm_entityTypes().
+//  *
+//  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
+//  */
+// function omnimail_civicrm_entityTypes(&$entityTypes) {
+//   _omnimail_civix_civicrm_entityTypes($entityTypes);
+// }

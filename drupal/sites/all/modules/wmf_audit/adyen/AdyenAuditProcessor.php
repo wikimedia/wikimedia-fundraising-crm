@@ -1,15 +1,34 @@
 <?php
 
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\PaymentProviders\Adyen\Audit\AdyenAudit;
+use SmashPig\PaymentProviders\Adyen\Audit\AdyenPaymentsAccountingReport;
+use SmashPig\PaymentProviders\Adyen\Audit\AdyenSettlementDetailReport;
 use SmashPig\PaymentProviders\Adyen\TokenizeRecurringJob;
+use Civi\WMFAudit\MultipleFileTypeParser;
 
-class AdyenAuditProcessor extends BaseAuditProcessor {
+
+class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileTypeParser {
 
   protected $name = 'adyen';
 
+  protected $filePath;
+
+  public function setFilePath($file) {
+    $this->filePath = $file;
+  }
+
+  public function getFilePath() {
+    return $this->filePath;
+  }
+
+  // There are two different files we use for the audit SettlementDetailReport is weekly
+  // and PaymentsAccountingReport is nightly
   protected function get_audit_parser() {
-    return new AdyenAudit();
+    if (preg_match('/payments_accounting_report_/', $this->getFilePath())) {
+      return new AdyenPaymentsAccountingReport();
+    } else {
+      return new AdyenSettlementDetailReport();
+    }
   }
 
   // Note: the output is only used to sort files in chronological order
@@ -42,7 +61,7 @@ class AdyenAuditProcessor extends BaseAuditProcessor {
   }
 
   protected function regex_for_recon() {
-    return '/settlement_detail_report_batch_/';
+    return '/settlement_detail_report_batch_|payments_accounting_report_/';
   }
 
   /**

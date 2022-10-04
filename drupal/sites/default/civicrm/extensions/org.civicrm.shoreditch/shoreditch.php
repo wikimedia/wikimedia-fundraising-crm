@@ -13,15 +13,6 @@ function shoreditch_civicrm_config(&$config) {
 }
 
 /**
- * Implements hook_civicrm_xmlMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
- */
-function shoreditch_civicrm_xmlMenu(&$files) {
-  _shoreditch_civix_civicrm_xmlMenu($files);
-}
-
-/**
  * Implements hook_civicrm_install().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
@@ -67,61 +58,6 @@ function shoreditch_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
- * Implements hook_civicrm_managed().
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_managed
- */
-function shoreditch_civicrm_managed(&$entities) {
-  _shoreditch_civix_civicrm_managed($entities);
-}
-
-/**
- * Implements hook_civicrm_caseTypes().
- *
- * Generate a list of case-types
- *
- * Note: This hook only runs in CiviCRM 4.4+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
- */
-function shoreditch_civicrm_caseTypes(&$caseTypes) {
-  _shoreditch_civix_civicrm_caseTypes($caseTypes);
-}
-
-/**
- * Implements hook_civicrm_angularModules().
- *
- * Generate a list of Angular modules.
- *
- * Note: This hook only runs in CiviCRM 4.5+. It may
- * use features only available in v4.6+.
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
- */
-function shoreditch_civicrm_angularModules(&$angularModules) {
-  _shoreditch_civix_civicrm_angularModules($angularModules);
-}
-
-/**
- * Implements hook_civicrm_alterSettingsFolders().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_alterSettingsFolders
- */
-function shoreditch_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
-  _shoreditch_civix_civicrm_alterSettingsFolders($metaDataFolders);
-}
-
-/**
- * Implements hook_civicrm_thems().
- */
-function shoreditch_civicrm_themes(&$themes) {
-  _shoreditch_civix_civicrm_themes($themes);
-}
-
-/**
  * Implements hook_civicrm_postInstall().
  */
 function shoreditch_civicrm_postInstall() {
@@ -139,13 +75,15 @@ function shoreditch_civicrm_coreResourceList(&$items, $region) {
   if ($region == 'html-header') {
     CRM_Core_Resources::singleton()->addStyleFile('org.civicrm.shoreditch', 'css/bootstrap.css', -50, 'html-header');
     CRM_Core_Resources::singleton()->addStyleFile('org.civicrm.shoreditch', 'css/custom-civicrm.css', 99, 'html-header');
-    CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/transition.js', 1000, 'html-header');
-    CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/scrollspy.js', 1000, 'html-header');
-    CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/dropdown.js', 1000, 'html-header');
-    CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/collapse.js', 1000, 'html-header');
-    CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/modal.js', 1000, 'html-header');
-    CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/tab.js', 1000, 'html-header');
-    CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/button.js', 1000, 'html-header');
+    if (!Civi::settings()->get('shoreditch_disable_bootstrap_js')) {
+      CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/transition.js', 1000, 'html-header');
+      CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/scrollspy.js', 1000, 'html-header');
+      CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/dropdown.js', 1000, 'html-header');
+      CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/collapse.js', 1000, 'html-header');
+      CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/modal.js', 1000, 'html-header');
+      CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/tab.js', 1000, 'html-header');
+      CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'base/js/button.js', 1000, 'html-header');
+    }
     CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'js/noConflict.js', 1001, 'html-header');
     CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'js/add-missing-date-addons.js');
     CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'js/jquery-ui-popup-overrides.js');
@@ -181,9 +119,38 @@ function shoreditch_civicrm_pageRun(&$page) {
 }
 
 /**
+ * Implements hook_civicrm_navigationMenu().
+ */
+function shoreditch_civicrm_navigationMenu(&$menu) {
+  _shoreditch_civix_insert_navigation_menu($menu, 'Administer/Customize Data and Screens', [
+    'label' => E::ts('Shoreditch Settings'),
+    'name' => 'shoreditch-settings',
+    'url' => 'civicrm/admin/setting/shoreditch',
+    'permission' => 'Administer CiviCRM',
+  ]);
+}
+
+/**
  * @return bool
  *   TRUE if Shoreditch is the active theme.
  */
 function _shoreditch_isActive() {
+  // The Job civicrm_api3_job_cleanup can clear the DB cache, causing the
+  // CiviCRM menu to be empty on the first load after the command ran.
+  // Without the menu, the getActiveThemeKey is unable to detect the current
+  // theme. This condition ensures the menu is filled.
+  if (!CRM_Core_DAO::checkTableHasData(CRM_Core_DAO_Menu::getTableName())) {
+    CRM_Core_Menu::store(FALSE);
+  }
+
   return Civi::service('themes')->getActiveThemeKey() === 'shoreditch';
+}
+
+/**
+ * Implements hook_civicrm_entityTypes().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
+ */
+function shoreditch_civicrm_entityTypes(&$entityTypes) {
+  _shoreditch_civix_civicrm_entityTypes($entityTypes);
 }

@@ -675,69 +675,33 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
   }
 
   if (array_key_exists('payment_method', $msg) && trim($msg['payment_method']) != '') {
-
+    $payment_submethod = null;
+    if (isset($msg['payment_submethod'])){
+      $payment_submethod = strtolower($msg['payment_submethod']);
+    }
     switch (strtolower($msg['payment_method'])) {
       case 'apple':
         $payment_instrument = 'Apple Pay';
+        if (!empty($payment_submethod)
+          && array_key_exists($payment_submethod, Civi\WMFHelpers\FinanceInstrument::APPLE_PAY_SUBMETHOD_LIST)) {
+          $payment_instrument .= ': ' . Civi\WMFHelpers\FinanceInstrument::APPLE_PAY_SUBMETHOD_LIST[$payment_submethod];
+        }
         break;
       case 'google':
         $payment_instrument = 'Google Pay';
+        if (!empty($payment_submethod)
+          && array_key_exists($payment_submethod, Civi\WMFHelpers\FinanceInstrument::GOOGLE_PAY_SUBMETHOD_LIST)) {
+          $payment_instrument .= ': ' . Civi\WMFHelpers\FinanceInstrument::GOOGLE_PAY_SUBMETHOD_LIST[$payment_submethod];
+        }
         break;
       case 'check':
         $payment_instrument = 'Check';
         break;
       case 'bt':
         $payment_instrument = 'Bank Transfer';
-        switch (strtolower($msg['payment_submethod'])) {
-          case 'ach': // Worldwide, via DLocal
-            $payment_instrument .= ': ACH';
-            break;
-          case 'banco_do_brasil': // Brazil
-            $payment_instrument .= ': Banco do Brasil';
-            break;
-          case 'bbva': // Peru
-            $payment_instrument .= ': BBVA';
-            break;
-          case 'bcp': // Peru
-            $payment_instrument .= ': BCP';
-            break;
-          case 'bradesco': // Brazil
-            $payment_instrument .= ': Bradesco';
-            break;
-          case 'interbank': // Peru
-            $payment_instrument .= ': Interbank';
-            break;
-          case 'itau': // Brazil
-            $payment_instrument .= ': Itau';
-            break;
-          case 'mercadopago': // Latin America
-            $payment_instrument .= ': MercadoPago';
-            break;
-          case 'netbanking': // India
-            $payment_instrument .= ': Netbanking';
-            break;
-          case 'paytmwallet': // India
-            $payment_instrument .= ': PayTM Wallet';
-            break;
-          case 'picpay': // Brazil
-            $payment_instrument .= ': PicPay';
-            break;
-          case 'pix': // Brazil
-            $payment_instrument .= ': Pix';
-            break;
-          case 'pse': // Colombia
-            $payment_instrument .= ': PSE';
-            break;
-          case 'santander': // Brazil
-          case 'santander_rio': // Argentina (same bank as above)
-            $payment_instrument .= ': Santander';
-            break;
-          case 'upi': // India
-            $payment_instrument .= ': UPI';
-            break;
-          case 'webpay_bt': // Chile
-            $payment_instrument .= ': Webpay';
-            break;
+        if (!empty($payment_submethod)
+          && array_key_exists($payment_submethod, Civi\WMFHelpers\FinanceInstrument::BT_SUBMETHOD_LIST)) {
+          $payment_instrument .= ': ' . Civi\WMFHelpers\FinanceInstrument::BT_SUBMETHOD_LIST[$payment_submethod];
         }
         break;
       case 'cc':
@@ -746,109 +710,9 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
           watchdog('wmf_civicrm', 'No credit card submethod given', NULL, WATCHDOG_WARNING);
           break;
         }
-        switch (strtolower($msg['payment_submethod'])) {
-          case 'visa':
-            $payment_instrument .= ': Visa';
-            break;
-          case 'visa-beneficial':
-            $payment_instrument .= ': Visa Beneficial';
-            break;
-          case 'visa-electron':
-            $payment_instrument .= ': Visa Electron';
-            break;
-          case 'visa-debit':
-            $payment_instrument .= ': Visa Debit';
-            break;
-          case 'mc':
-            $payment_instrument .= ': MasterCard';
-            break;
-          case 'mc-debit':
-            $payment_instrument .= ': MasterCard Debit';
-            break;
-          case 'amex':
-            $payment_instrument .= ': American Express';
-            break;
-          case 'maestro':
-            $payment_instrument .= ': Maestro';
-            break;
-          case 'solo':
-            $payment_instrument .= ': Solo';
-            break;
-          case 'laser':
-            $payment_instrument .= ': Laser';
-            break;
-          case 'jcb':
-            $payment_instrument .= ': JCB';
-            break;
-          case 'discover':
-            $payment_instrument .= ': Discover';
-            break;
-          case 'cb':
-            $payment_instrument .= ': Carte Bleue';
-            break;
-          case 'cmr':
-            $payment_instrument .= ': CMR Falabella';
-            break;
-          case 'diners':
-            $payment_instrument .= ': Diners';
-            break;
-          case 'elo':
-            $payment_instrument .= ': Elo';
-            break;
-          case 'hiper':
-            $payment_instrument .= ': HiperCard';
-            break;
-          case 'magna':
-            $payment_instrument .= ': Magna';
-            break;
-          case 'mercadolivre':
-            $payment_instrument .= ': MercadoLivre';
-            break;
-          case 'presto':
-            $payment_instrument .= ': Presto';
-            break;
-          case 'cabal':
-            $payment_instrument .= ': Cabal';
-            break;
-          case 'cabal-debit':
-            $payment_instrument .= ': Cabal Debit';
-            break;
-          case 'naranja':
-            $payment_instrument .= ': Naranja';
-            break;
-          case 'shopping':
-            $payment_instrument .= ': Tarjeta Shopping';
-            break;
-          case 'nativa':
-            $payment_instrument .= ': Nativa';
-            break;
-          case 'cencosud':
-            $payment_instrument .= ': Cencosud';
-            break;
-          case 'argen':
-            $payment_instrument .= ': Argencard';
-            break;
-          case 'webpay':
-            $payment_instrument .= ': Webpay';
-            break;
-          case 'bij':
-            $payment_instrument .= ': Bijenkorf';
-            break;
-          case 'lider':
-            $payment_instrument .= ': Lider';
-            break;
-          case 'oca':
-            $payment_instrument .= ': OCA';
-            break;
-          case 'rupay': // India
-            $payment_instrument .= ': RuPay';
-            break;
-          case 'alia': // Ecuador
-            $payment_instrument .= ': Alia';
-            break;
-          case 'codenza': // Colombia
-            $payment_instrument .= ': Codenza';
-            break;
+        if (!empty($payment_submethod)
+          && array_key_exists($payment_submethod, Civi\WMFHelpers\FinanceInstrument::CARD_SUBMETHOD_LIST)) {
+          $payment_instrument .= ': ' . Civi\WMFHelpers\FinanceInstrument::CARD_SUBMETHOD_LIST[$payment_submethod];
         }
         break;
       case 'dd':
@@ -858,100 +722,35 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
         $payment_instrument = 'EFT';
         break;
       case 'ew':
-        switch (strtolower($msg['payment_submethod'])) {
-          case 'ew_paypal':
-            $payment_instrument = 'Paypal';
-            break;
-          case 'ew_webmoney':
-            $payment_instrument = 'Webmoney';
-            break;
-          case 'ew_moneybookers':
-            $payment_instrument = 'Moneybookers';
-            break;
-          case 'ew_cashu':
-            $payment_instrument = 'Cashu';
-            break;
-          case 'ew_yandex':
-            $payment_instrument = 'Yandex';
-            break;
-          case 'ew_alipay':
-            $payment_instrument = 'Alipay';
-            break;
+        if (!empty($payment_submethod)
+          && array_key_exists($payment_submethod, Civi\WMFHelpers\FinanceInstrument::EW_SUBMETHOD_LIST)) {
+          $payment_instrument = Civi\WMFHelpers\FinanceInstrument::EW_SUBMETHOD_LIST[$payment_submethod];
         }
         break;
       case 'obt':
-        if (strtolower($msg['payment_submethod'] === 'bpay')) {
-          $payment_instrument = 'Bpay';
+        if (!empty($payment_submethod)
+          && array_key_exists($payment_submethod, Civi\WMFHelpers\FinanceInstrument::OBT_SUBMETHOD_LIST)) {
+          $payment_instrument = Civi\WMFHelpers\FinanceInstrument::OBT_SUBMETHOD_LIST[$payment_submethod];
         }
         break;
       case 'rtbt':
-        switch (strtolower($msg['payment_submethod'])) {
-          case 'rtbt_nordea_sweden':
-            $payment_instrument = 'Nordea';
-            break;
-          case 'rtbt_ideal':
-            $payment_instrument = 'iDeal';
-            break;
-          case 'rtbt_enets':
-            $payment_instrument = 'Enets';
-            break;
-          case 'rtbt_sofortuberweisung':
-            $payment_instrument = 'Sofort';
-            break;
-          case 'rtbt_eps':
-            $payment_instrument = 'EPS';
-            break;
+        if (!empty($payment_submethod)
+          && array_key_exists($payment_submethod, Civi\WMFHelpers\FinanceInstrument::RTBT_SUBMETHOD_LIST)) {
+          $payment_instrument = Civi\WMFHelpers\FinanceInstrument::RTBT_SUBMETHOD_LIST[$payment_submethod];
         }
         break;
       case 'stock':
         $payment_instrument = 'Stock';
-        break;
+      break;
       case 'cash':
         $payment_instrument = 'Cash';
         if (empty($msg['payment_submethod'])) {
           watchdog('wmf_civicrm', 'No cash submethod given', NULL, WATCHDOG_WARNING);
           break;
         }
-        switch (strtolower($msg['payment_submethod'])) {
-          case 'cash_abitab':
-            $payment_instrument = 'Abitab';
-            break;
-          case 'cash_boleto':
-            $payment_instrument = 'Boleto';
-            break;
-          case 'cash_banamex':
-            $payment_instrument = 'Banamex';
-            break;
-          case 'cash_bancomer':
-            $payment_instrument = 'Bancomer';
-            break;
-          case 'cash_davivienda':
-            $payment_instrument = 'Davivienda';
-            break;
-          case 'cash_efecty':
-            $payment_instrument = 'Efecty';
-            break;
-          case 'cash_oxxo':
-            $payment_instrument = 'OXXO';
-            break;
-          case 'cash_pago_efectivo':
-            $payment_instrument = 'Pago Efectivo';
-            break;
-          case 'cash_pago_facil':
-            $payment_instrument = 'Pago Facil';
-            break;
-          case 'cash_provencia_pagos':
-            $payment_instrument = 'Provencia Pagos';
-            break;
-          case 'cash_red_pagos':
-            $payment_instrument = 'Red Pagos';
-            break;
-          case 'cash_rapipago':
-            $payment_instrument = 'Rapi Pago';
-            break;
-          case 'cash_santander':
-            $payment_instrument = 'Santander';
-            break;
+        if (!empty($payment_submethod)
+          && array_key_exists($payment_submethod, Civi\WMFHelpers\FinanceInstrument::CASH_SUBMETHOD_LIST)) {
+          $payment_instrument = Civi\WMFHelpers\FinanceInstrument::CASH_SUBMETHOD_LIST[$payment_submethod];
         }
         break;
       case 'payflowpro':
@@ -1021,6 +820,7 @@ function wmf_civicrm_get_message_payment_instrument($msg) {
   //I was going to check to make sure the target gateway was a real thing, but: Hello, overhead. No.
   return $payment_instrument ?? $msg['payment_method'];
 }
+
 
 /**
  * Normalize contribution amounts

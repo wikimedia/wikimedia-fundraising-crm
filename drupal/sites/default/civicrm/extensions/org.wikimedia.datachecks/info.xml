@@ -21,8 +21,9 @@
     <ver>4.7</ver>
   </compatibility>
   <comments>The extension exposes api actions eg. civicrm_api3('Data', 'check', array())
-      or civicrm_api3('Data', 'fix', array('check' => 'PrimaryLocation'))</comments>
+      or civicrm_api3('Data', 'fix', array('check' =&gt; 'PrimaryLocation'))</comments>
   <civix>
     <namespace>CRM/Datachecks</namespace>
+    <format>22.05.2</format>
   </civix>
 </extension>

@@ -10,6 +10,10 @@
   /**
    * Directive for handling the search criteria element.
    *
+   * Note this code is responsible for adding the options when selecting - eg.
+   * if you choose 'Group', 'IN' for criteria the groups are populated in
+   * the right hand drop down. It is initiated by the html directive crm-search-selector.
+   *
    * This allows the fields for the search to show & hide and to display the right options/widgets.
    *
    * ```

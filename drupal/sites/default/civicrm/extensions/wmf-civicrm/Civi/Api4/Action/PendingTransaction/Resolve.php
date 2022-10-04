@@ -11,7 +11,7 @@ use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentData\ValidationAction;
 use SmashPig\PaymentProviders\IPaymentProvider;
-use SmashPig\PaymentProviders\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 /**
@@ -26,7 +26,7 @@ use SmashPig\PaymentProviders\PaymentProviderFactory;
  */
 class Resolve extends AbstractAction {
 
-  protected static $_resolvableMethods = ['cc'];
+  protected static $_resolvableMethods = ['cc', 'google'];
 
   /**
    * Associative array of data from SmashPig's pending table.
@@ -54,22 +54,20 @@ class Resolve extends AbstractAction {
       $this->message['payment_method']
     );
 
-    // Get hosted payment status
-    $statusResult = $provider->getHostedPaymentStatus(
-      $this->message['gateway_session_id']
-    );
-    $gatewayTxnId = $statusResult->getGatewayTxnId();
-    $riskScores = $statusResult->getRiskScores();
+    // Get the latest payment detail, currently only adyen and ingenico have this function
+    $latestPaymentDetailResult = $provider->getLatestPaymentStatus($this->message);
+    $gatewayTxnId = $latestPaymentDetailResult->getGatewayTxnId();
+    $riskScores = $latestPaymentDetailResult->getRiskScores();
     // start building the Civi API4 output
     $result[$this->message['order_id']] = [
       'gateway_txn_id' => $gatewayTxnId,
-      'status' => $statusResult->getStatus(),
+      'status' => $latestPaymentDetailResult->getStatus(),
       'risk_scores' => $riskScores,
     ];
 
     // check if status is 600 (PENDING_POKE)
     // if not, just delete the message
-    if (!$statusResult->requiresApproval()) {
+    if (!$latestPaymentDetailResult->requiresApproval()) {
       return;
     }
 
@@ -102,12 +100,12 @@ class Resolve extends AbstractAction {
     switch ($validationAction) {
       case ValidationAction::PROCESS:
         // If score less than review threshold, approve the transaction.
-        $newStatus = $this->approvePaymentAndReturnStatus($provider, $statusResult);
+        $newStatus = $this->approvePaymentAndReturnStatus($provider, $latestPaymentDetailResult);
         break;
 
       case ValidationAction::REJECT:
         if ($this->matchesUnrefundedDonor()) {
-          $newStatus = $this->approvePaymentAndReturnStatus($provider, $statusResult);
+          $newStatus = $this->approvePaymentAndReturnStatus($provider, $latestPaymentDetailResult);
         } else {
           $cancelResult = $provider->cancelPayment($gatewayTxnId);
           $newStatus = $cancelResult->getStatus();
@@ -116,7 +114,7 @@ class Resolve extends AbstractAction {
 
       case ValidationAction::REVIEW:
         if ($this->matchesUnrefundedDonor()) {
-          $newStatus = $this->approvePaymentAndReturnStatus($provider, $statusResult);
+          $newStatus = $this->approvePaymentAndReturnStatus($provider, $latestPaymentDetailResult);
           break;
         } else {
           // Just delete the pending message and leave the transaction at the
@@ -146,7 +144,7 @@ class Resolve extends AbstractAction {
 
   protected function isMessageResolvable() {
     // payment method checks
-    // should never be empty, that's just a sanity check
+    // should never be empty, and should already filter out non resolvable methods, that's just a sanity check
     if (empty($this->message['payment_method']) ||
         !in_array(
           $this->message['payment_method'],
@@ -162,7 +160,7 @@ class Resolve extends AbstractAction {
     // This is needed for the first two gateways we wrote rectifiers for
     // (Ingenico and PayPal) but won't be the ID we use for Adyen
     // Should never be empty for Ingenico or PayPal
-    if (empty($this->message['gateway_session_id'])) {
+    if (empty($this->message['gateway_session_id']) && in_array($this->message['gateway'], ['ingenico', 'paypal'])) {
       return FALSE;
     }
     return TRUE;

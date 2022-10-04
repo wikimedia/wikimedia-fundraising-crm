@@ -3,6 +3,7 @@
 use Civi\Api4\Contribution;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFException\WMFException;
+use Civi\WMFAudit\MultipleFileTypeParser;
 
 abstract class BaseAuditProcessor {
 
@@ -1366,6 +1367,10 @@ abstract class BaseAuditProcessor {
    */
   protected function parse_recon_file($file) {
     $recon_data = [];
+    // Send the file through to the processor if needed
+    if($this instanceof MultipleFileTypeParser) {
+      $this->setFilePath($file);
+    }
     $recon_parser = $this->get_audit_parser();
 
     try {
