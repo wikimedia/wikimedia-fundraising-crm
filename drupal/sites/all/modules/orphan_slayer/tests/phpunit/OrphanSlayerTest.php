@@ -69,8 +69,6 @@ class OrphanSlayerTest extends PHPUnit\Framework\TestCase {
         $expected['damaged_id'] = '1';
         $expected['original_queue'] = 'pending';
         $expected['amount'] = '123';
-        $result = DamagedDatabase::get()->fetchMessageByGatewayOrderId( 'paypal_ec', $orphan['order_id'] );
-        $this->assertEquals($expected, $result, "Orphan was not stored in damaged queue");
         $result = PendingDatabase::get()->fetchMessageByGatewayOrderId( 'paypal_ec', $orphan['order_id'] );
         $this->assertEquals($result, null, "Orphan was not deleted");
     }
