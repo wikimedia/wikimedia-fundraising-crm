@@ -404,7 +404,7 @@ abstract class BaseAuditProcessor {
 
     $total_missing = [];
     $recon_file_stats = [];
-
+    $total_donations = 0;
     for ($i = 0; $i < $count; ++$i) {
       $parsed = [];
       $missing = [];
@@ -428,6 +428,7 @@ abstract class BaseAuditProcessor {
       $recon_file_stats[$file] = wmf_audit_count_missing($missing);
       $time = microtime(TRUE) - $start_time;
       wmf_audit_echo(wmf_audit_count_missing($missing) . ' missing transactions (of a possible ' . $parse_count . ") identified in $time seconds\n");
+      $total_donations += $parse_count;
 
       //If the file is empty, move it off.
       // Note that we are not archiving files that have missing transactions,
@@ -547,10 +548,12 @@ abstract class BaseAuditProcessor {
         $missing_at_end += $count;
       }
     }
-
+    $total_donations_found_in_log = $total_missing_count - $missing_at_end;
     $wrap_up = "\nDone! Final stats:\n";
-    $wrap_up .= "Total missing at start: $total_missing_count\n";
-    $wrap_up .= 'Missing at end: ' . $missing_at_end . "\n\n";
+    $wrap_up .= "Total number of donations in audit file: $total_donations\n";
+    $wrap_up .= "Number missing from database: $total_missing_count\n";
+    $wrap_up .= 'Missing transactions found in logs: ' . $total_donations_found_in_log . "\n";
+    $wrap_up .= 'Missing transactions not found in logs: ' . $missing_at_end . "\n\n";
 
     if ($missing_at_end > 0) {
       $wrap_up .= "Missing transaction summary:\n";
@@ -851,6 +854,7 @@ abstract class BaseAuditProcessor {
               }
             }
             wmf_audit_echo("Log Date: $log_date: Checked $checked missing transactions from $audit_date, and found $found\n");
+
           }
         }
       }

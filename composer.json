@@ -25,7 +25,7 @@
         "coderkungfu/php-queue": "^1.0",
         "cogpowered/finediff": "0.*",
         "ext-intl": "*",
-        "wikimedia/donation-interface": "2.5.8",
+        "wikimedia/donation-interface": "2.5.8.1",
         "wikimedia/smash-pig": "0.8.3.1",
         "phpmailer/phpmailer": "^6",
         "phpseclib/phpseclib":  "~2.0",
