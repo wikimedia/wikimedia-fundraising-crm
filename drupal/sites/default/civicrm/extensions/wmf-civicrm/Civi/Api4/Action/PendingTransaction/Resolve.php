@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\PendingTransaction;
 use Civi\Api4\Contact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use \DateTime;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\PaymentsFraudDatabase;
 use SmashPig\Core\DataStores\QueueWrapper;
@@ -316,7 +317,9 @@ class Resolve extends AbstractAction {
 
   /**
    * Looks for a matching donor with at least one 'good' (Completed)
-   * contribution and no contributions in other statuses
+   * contribution and no contributions in other statuses, and who
+   * has not made a contribution in the past 24 hours (so we avoid
+   * pushing through duplicate contributions).
    *
    * @return bool True if donor found matching the conditions, false otherwise
    * @throws \API_Exception
@@ -335,7 +338,8 @@ class Resolve extends AbstractAction {
       ->addSelect(
         'id',
         'COUNT(DISTINCT completedContrib.id) AS completedDonations',
-        'COUNT(DISTINCT otherContrib.id) AS otherDonations'
+        'COUNT(DISTINCT otherContrib.id) AS otherDonations',
+        'MAX(completedContrib.receive_date) AS latestCompleted'
       )
       ->addJoin('Email AS email', 'LEFT', ['email.is_primary', '=', 1])
       ->addJoin(
@@ -357,12 +361,16 @@ class Resolve extends AbstractAction {
       return FALSE;
     }
     foreach ($statusCountsByDonor as $counts) {
-      if ($counts['completedDonations'] > 0 && $counts['otherDonations'] === 0) {
+      if (
+        $counts['completedDonations'] > 0 &&
+        $counts['otherDonations'] === 0 &&
+        (new DateTime($counts['latestCompleted'])) < (new DateTime("-1 day"))
+      ) {
         return TRUE;
       }
     }
-    // All matched donors either had no completed donations
-    // or had some donations in another status.
+    // All matched donors either had no completed donations, had some
+    // donations in another status, or had a donation in the past day.
     return FALSE;
   }
 
