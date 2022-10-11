@@ -65,4 +65,31 @@ return [
     'html_type' => 'radio',
     'settings_pages' => ['wmf-civicrm' => ['weight' => 50]],
   ],
+  //
+  'wmf_refund_alert_factor' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_refund_alert_factor',
+    'default' => 0.02,
+    'type' => 'Float',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('Refund discrepancy alert factor'),
+    'help_text' => E::ts(
+      'Send a failmail when a refund differs from the original contribution by more than this factor'
+    ),
+    'html_type' => 'number',
+    'html_attributes' => [
+      'size' => '5',
+    ],
+    // FixCivi: these would make a lot more sense under 'html_attributes' but you'd have to take that up
+    // with SettingsTrait::addFieldsDefinedInSettingsMetadata which passes the 'options' to the same
+    // class's add function as its $attributes argument.
+    'options' => [
+      'step' => '0.01',
+      'min' => '0',
+      'max' => '1',
+    ],
+    'settings_pages' => ['wmf-civicrm' => ['weight' => 60]],
+   ],
 ];

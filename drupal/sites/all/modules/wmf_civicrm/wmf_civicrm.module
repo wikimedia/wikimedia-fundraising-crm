@@ -1789,7 +1789,8 @@ function wmf_civicrm_mark_refund(
     }
   }
 
-  if ($amount_scammed > 0.02 * $original_amount) {
+  $alert_factor = Civi::settings()->get('wmf_refund_alert_factor');
+  if ($amount_scammed > $alert_factor * $original_amount) {
     wmf_common_failmail('wmf_civicrm', "Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}. See "
       . CRM_Utils_System::url('civicrm/contact/view/contribution', [
         'reset' => 1,
