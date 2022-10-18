@@ -1,0 +1,18 @@
+{
+    "type": "search",
+    "requires": [],
+    "entity_type": null,
+    "join_entity": null,
+    "title": "Search damaged messages",
+    "description": "",
+    "is_dashlet": false,
+    "is_public": false,
+    "is_token": false,
+    "contact_summary": null,
+    "icon": "fa-list-alt",
+    "server_route": "civicrm/damaged",
+    "permission": "access CiviCRM",
+    "redirect": null,
+    "create_submission": false,
+    "navigation": null
+}
