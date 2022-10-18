@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a11d6d0ab96ea7cd88a23c3798146be9",
+    "content-hash": "ed530f24a04c8941776826fd79c2ce64",
     "packages": [
         {
             "name": "addshore/psr-6-mediawiki-bagostuff-adapter",
@@ -4518,11 +4518,11 @@
         },
         {
             "name": "wikimedia/donation-interface",
-            "version": "v2.5.8.1",
+            "version": "v2.5.8.2",
             "source": {
                 "type": "git",
                 "url": "https://gerrit.wikimedia.org/r/mediawiki/extensions/DonationInterface.git",
-                "reference": "c222dbd38bc1b60cce2599ed5dce1f4e8a1278d4"
+                "reference": "f1150d3865f279345e0d0743c9330ae146849ee7"
             },
             "require": {
                 "addshore/psr-6-mediawiki-bagostuff-adapter": "0.1",
@@ -4537,7 +4537,7 @@
                 "predis/predis": "^1.1",
                 "psr/log": "^1.0",
                 "symfony/yaml": "^3",
-                "wikimedia/smash-pig": "0.8.3.1"
+                "wikimedia/smash-pig": "0.8.3.2"
             },
             "require-dev": {
                 "mediawiki/mediawiki-codesniffer": "38.0.0",
@@ -4576,7 +4576,7 @@
             "support": {
                 "irc": "irc://irc.libera.chat/wikimedia-fundraising"
             },
-            "time": "2022-10-06T19:45:56+00:00"
+            "time": "2022-10-18T16:52:31+00:00"
         },
         {
             "name": "wikimedia/omnimail-silverpop",
@@ -4628,16 +4628,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.8.3.1",
+            "version": "v0.8.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "fb65c41aeae2739402433cfcfb4ec1a7b89d10fa"
+                "reference": "af854590519033f4fbb6b84eb34424bc27c586f4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/fb65c41aeae2739402433cfcfb4ec1a7b89d10fa",
-                "reference": "fb65c41aeae2739402433cfcfb4ec1a7b89d10fa",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/af854590519033f4fbb6b84eb34424bc27c586f4",
+                "reference": "af854590519033f4fbb6b84eb34424bc27c586f4",
                 "shasum": ""
             },
             "require": {
@@ -4713,9 +4713,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.3.1"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.3.2"
             },
-            "time": "2022-09-29T19:46:42+00:00"
+            "time": "2022-10-18T00:10:58+00:00"
         },
         {
             "name": "willdurand/geocoder",
