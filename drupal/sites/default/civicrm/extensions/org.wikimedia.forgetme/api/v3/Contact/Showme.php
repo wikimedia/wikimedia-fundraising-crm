@@ -37,7 +37,10 @@ function civicrm_api3_contact_showme($params) {
   $additionalObjects = [];
   foreach ($references['values'] as $reference) {
     $entity = CRM_Core_DAO_AllCoreTables::getBriefName(CRM_Core_DAO_AllCoreTables::getClassForTable($reference['table']));
-    $additionalObjects[$entity] = $reference['count'];
+    // Don't delete related contacts and avoid potential circular references
+    if ($entity !== 'Contact') {
+      $additionalObjects[$entity] = $reference['count'];
+    }
   }
 
   foreach ($additionalObjects as $entity => $count) {

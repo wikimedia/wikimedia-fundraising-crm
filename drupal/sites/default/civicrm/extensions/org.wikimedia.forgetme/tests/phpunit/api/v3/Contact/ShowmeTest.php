@@ -33,6 +33,16 @@ class api_v3_Contact_ShowmeTest extends api_v3_Contact_BaseTestClass implements 
       'contact_type' => 'Individual',
       'email' => 'garlicless@example.com',
      ]);
+    // We shouldn't traverse references to other contacts
+    $orgID = $this->createTestContact([
+      'organization_name' => 'Scooby Gang',
+      'contact_type' => 'Organization',
+      'primary_contact_id' => $contactID,
+    ]);
+    $this->callAPISuccess('contact', 'create', [
+      'id' => $contactID,
+      'employer_id' => $orgID
+    ]);
     $paymentToken = $this->createPaymentToken([
         'contact_id' => $contactID]
     );
