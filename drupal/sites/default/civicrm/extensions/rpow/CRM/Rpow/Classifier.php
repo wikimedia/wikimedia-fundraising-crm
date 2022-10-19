@@ -134,7 +134,7 @@ class CRM_Rpow_Classifier {
     $mode = $PLAIN;
     $esc = FALSE;
     for ($i = 0; $i < $len; $i++) {
-      $char = $sql{$i};
+      $char = $sql[$i];
       // echo "check ($char) in mode ($mode) while buf=($buf)\n";
 
       switch ($mode) {
@@ -169,12 +169,12 @@ class CRM_Rpow_Classifier {
   }
 
   public function stripParens($sql) {
-    if ($sql{0} !== '(') {
+    if ($sql[0] !== '(') {
       return $sql;
     }
 
     $len = mb_strlen($sql);
-    if ($sql{$len - 1} !== ')') {
+    if ($sql[$len - 1] !== ')') {
       return $sql;
     }
 
