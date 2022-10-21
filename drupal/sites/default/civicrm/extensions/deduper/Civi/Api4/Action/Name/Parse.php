@@ -68,6 +68,20 @@ class Parse extends AbstractAction {
    * @return array
    */
   protected function parseName(string $name): array {
+    // Detect multibyte initials, which currently break TheIconic parser
+    // Delete this when fix is merged upstream: https://github.com/theiconic/name-parser/pull/39
+    if (mb_ereg_match('.*\b[^\x00-\x7F]\b',$name)) {
+      $parts = explode(' ', $name, 2);
+      return [
+        'prefix_id:label' => '',
+        'first_name' => $parts[0],
+        'last_name' => $parts[1] ?? '',
+        'middle_name' => '',
+        'nick_name' => '',
+        'suffix_id:label' => ''
+      ];
+    }
+
     $parser = new Parser();
     $nameParser = $parser->parse($name);
     return [
