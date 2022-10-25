@@ -158,6 +158,14 @@ class Resolve extends AbstractAction {
         )) {
       return FALSE;
     }
+    // gateway_txn_id check, Adyen needs this but it can be set to false if its from a redirect
+    if ((empty($this->message['gateway_txn_id']) ||
+        $this->message['gateway_txn_id'] == "false") &&
+        ($this->message['gateway'] == 'adyen')
+      ) {
+      return FALSE;
+    }
+
     // contribution_tracking_id sanity check, also should never be empty
     if (empty($this->message['contribution_tracking_id'])) {
       return FALSE;
