@@ -100,8 +100,13 @@ class Resolve extends AbstractAction {
     $validationAction = $this->getValidationAction($riskScores);
     switch ($validationAction) {
       case ValidationAction::PROCESS:
-        // If score less than review threshold, approve the transaction.
-        $newStatus = $this->approvePaymentAndReturnStatus($provider, $latestPaymentDetailResult);
+        // If score less than review threshold and no donation in past day, approve the transaction.
+        if ($this->hasDonationsInPastDay()) {
+          $cancelResult = $provider->cancelPayment($gatewayTxnId);
+          $newStatus = $cancelResult->getStatus();
+        } else {
+          $newStatus = $this->approvePaymentAndReturnStatus( $provider, $latestPaymentDetailResult );
+        }
         break;
 
       case ValidationAction::REJECT:
@@ -334,28 +339,7 @@ class Resolve extends AbstractAction {
       // Don't try to match if we have incomplete information
       return FALSE;
     }
-    $statusCountsByDonor = Contact::get(FALSE)
-      ->addSelect(
-        'id',
-        'COUNT(DISTINCT completedContrib.id) AS completedDonations',
-        'COUNT(DISTINCT otherContrib.id) AS otherDonations',
-        'MAX(completedContrib.receive_date) AS latestCompleted'
-      )
-      ->addJoin('Email AS email', 'LEFT', ['email.is_primary', '=', 1])
-      ->addJoin(
-        'Contribution AS completedContrib', 'LEFT',
-        ['completedContrib.contribution_status_id', '=', 1]
-      )
-      ->addJoin(
-        'Contribution AS otherContrib', 'LEFT',
-        ['otherContrib.contribution_status_id', '<>', 1]
-      )
-      ->setGroupBy(['id',])
-      ->addWhere('email.email', '=', $this->message['email'])
-      ->addWhere('first_name', '=', $this->message['first_name'])
-      ->addWhere('last_name', '=', $this->message['last_name'])
-      ->setLimit(10)
-      ->execute();
+    $statusCountsByDonor = $this->getDonationStatistics(TRUE);
     if ($statusCountsByDonor->count() === 0) {
       // No matching donor found
       return FALSE;
@@ -372,6 +356,61 @@ class Resolve extends AbstractAction {
     // All matched donors either had no completed donations, had some
     // donations in another status, or had a donation in the past day.
     return FALSE;
+  }
+
+  protected function hasDonationsInPastDay(): bool {
+    if (
+      empty($this->message['email']) ||
+      empty($this->message['first_name']) ||
+      empty($this->message['last_name'])
+    ) {
+      // Don't try to match if we have incomplete information
+      return FALSE;
+    }
+    $statusCountsByDonor = $this->getDonationStatistics(FALSE);
+    foreach($statusCountsByDonor as $counts) {
+      if ((new DateTime($counts['latestCompleted'])) > (new DateTime("-1 day"))) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
+   * Get statistics on donations for all donor records matching the name & email.
+   *
+   * @param bool $includeNonCompleteDonation pass FALSE to skip a join to contribution
+   * @return Result
+   * @throws \API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function getDonationStatistics(bool $includeNonCompleteDonation): Result {
+    $getApiCall = Contact::get(FALSE)
+      ->addSelect(
+        'id',
+        'COUNT(DISTINCT completedContrib.id) AS completedDonations',
+        'MAX(completedContrib.receive_date) AS latestCompleted',
+      )
+      ->addJoin('Email AS email', 'LEFT', ['email.is_primary', '=', 1])
+      ->addJoin(
+        'Contribution AS completedContrib', 'LEFT',
+        ['completedContrib.contribution_status_id', '=', 1]
+      )
+      ->setGroupBy(['id',])
+      ->addWhere('email.email', '=', $this->message['email'])
+      ->addWhere('first_name', '=', $this->message['first_name'])
+      ->addWhere('last_name', '=', $this->message['last_name'])
+      ->addWhere('is_deleted', '=', 0)
+      ->setLimit(10);
+    if ($includeNonCompleteDonation) {
+      $getApiCall
+        ->addSelect('COUNT(DISTINCT otherContrib.id) AS otherDonations')
+        ->addJoin(
+          'Contribution AS otherContrib', 'LEFT',
+          ['otherContrib.contribution_status_id', '<>', 1]
+        );
+    }
+    return $getApiCall->execute();
   }
 
   protected function approvePaymentAndReturnStatus(
