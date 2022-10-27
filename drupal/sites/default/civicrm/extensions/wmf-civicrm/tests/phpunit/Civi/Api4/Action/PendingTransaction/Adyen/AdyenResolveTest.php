@@ -116,7 +116,7 @@ class AdyenResolveTest extends TestCase {
       $pending_message['order_id'],
       $gateway,
     );
-  
+
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
@@ -783,6 +783,11 @@ class AdyenResolveTest extends TestCase {
       'gross' => 10,
       'currency' => 'GBP',
     ], $additionalKeys);
+
+    // adyen needs a gateway txn id
+    if ($gateway == 'adyen') {
+      $message['gateway_txn_id'] = mt_rand();
+    }
 
     PendingDatabase::get()->storeMessage($message);
     return $message;
