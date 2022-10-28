@@ -17,6 +17,17 @@ CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'label' => ts('Relationship'),
   'value' => 'Relationship',
 ]);
+// FIXME: Should we do these in an ActivityType.mgd.php?
+$mg_year_end_appeal_activity_type = CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'name' => 'Major Gifts Year End Appeal',
+  'label' => ts('Major Gifts Year End Appeal'),
+]);
+$endowment_year_end_appeal_activity_type = CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'name' => 'Endowment Year End Appeal',
+  'label' => ts('Endowment Year End Appeal'),
+]);
 
 return [
   'wmf_donor' => [
@@ -138,6 +149,32 @@ return [
       'table_name' => 'civicrm_value_assistant_15',
     ],
     'fields' => _wmf_civicrm_get_assistant_fields(),
+  ],
+  'Major_Gifts_Year_End_Appeal' => [
+    'group' =>  [
+      'name' => 'Major_Gifts_Year_End_Appeal',
+      'title' => 'Major Gifts Year End Appeal',
+      'extends' => 'Activity',
+      'extends_entity_column_value' => $mg_year_end_appeal_activity_type['value'],
+      'style' => 'Inline',
+      'weight' => 31,
+      'is_active' => 1,
+      'table_name' => 'civicrm_value_major_gifts_y_27',
+    ],
+    'fields' => _wmf_civicrm_get_mg_year_end_appeal_fields(),
+  ],
+  'Endowment_Year_End_Appeal' => [
+    'group' => [
+      'name' => 'Endowment_Year_End_Appeal',
+      'title' => 'Endowment Year End Appeal',
+      'extends' => 'Activity',
+      'extends_entity_column_value' => $endowment_year_end_appeal_activity_type['value'],
+      'style' => 'Inline',
+      'weight' => 32,
+      'is_active' => TRUE,
+      'table_name' => 'civicrm_value_endowment_yea_28',
+    ],
+    'fields' => _wmf_civicrm_get_endowment_year_end_appeal_fields(),
   ],
 ];
 
@@ -1370,5 +1407,101 @@ function _wmf_civicrm_get_assistant_fields(): array {
       'text_length' => 255,
       'column_name' => 'assistant_email_287',
     ],
+  ];
+}
+
+function _wmf_civicrm_get_mg_year_end_appeal_fields(): array {
+  return [
+    'Appeal_Ask_Amount' => [
+      'name' => 'Appeal_Ask_Amount',
+      'label' => 'Appeal Ask Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_required' => TRUE,
+      'is_searchable' => TRUE,
+      'text_length' => 255,
+      'is_search_range' => TRUE,
+      'weight' => 2,
+      'column_name' => 'appeal_ask_amount_303',
+    ],
+    'Solicitor' => [
+      'name' => 'Solicitor',
+      'label' => 'Relationship Manager',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => TRUE,
+      'weight' => 6,
+      'text_length' => 255,
+      'column_name' => 'solicitor_305',
+      'option_values' => _wmf_civicrm_get_solicitor_values()
+    ],
+    'Appeal_Type' => [
+      'name' => 'Appeal_Type',
+      'label' => 'Appeal Type',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_required' => TRUE,
+      'is_searchable' => TRUE,
+      'weight' => 9,
+      'text_length' => 255,
+      'column_name' => 'appeal_type_309',
+      'option_values' => [
+        '1' => 'Letter',
+        '2' => 'Email'
+      ]
+    ],
+  ];
+}
+
+function _wmf_civicrm_get_endowment_year_end_appeal_fields(): array {
+  return [
+    [
+      'name' => 'Appeal_Ask_Amount',
+      'label' => 'Appeal Ask Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_required' => TRUE,
+      'is_searchable' => TRUE,
+      'is_search_range' => TRUE,
+      'weight' => 3,
+      'text_length' => 255,
+      'column_name' => 'appeal_ask_amount_304',
+    ],
+    [
+      'name' => 'Solicitor',
+      'label' => 'Relationship Manager',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => TRUE,
+      'weight' => 7,
+      'text_length' => 255,
+      'column_name' => 'solicitor_306',
+      'option_values' => _wmf_civicrm_get_solicitor_values(),
+    ],
+    [
+      'name' => 'Appeal_Type',
+      'label' => 'Appeal Type',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_required' => TRUE,
+      'is_searchable' => TRUE,
+      'weight' => 10,
+      'column_name' => 'appeal_type_307',
+      'option_values' => [
+        '1' => 'Letter',
+        '2' => 'Email',
+      ]
+    ],
+  ];
+}
+
+function _wmf_civicrm_get_solicitor_values(): array {
+  return [
+    '1' => 'Sue Gardner',
+    '2' => 'Jimmy Wales',
+    '3' => 'Lila Tretikov',
+    '4' => 'Katherine Maher',
+    '5' => 'Maryana Iskander',
+    '6' => 'General',
   ];
 }
