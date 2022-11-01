@@ -808,6 +808,31 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         ],
       ];
 
+    $cases[] =
+      // Unicode middle initial in full_name is not mangled
+      // for now, workaround sticks it on last name (which
+      // may be the right thing to do for some cases)
+      [
+        [
+          'full_name' => 'Someone Ó Something',
+          'country' => 'US',
+          'currency' => 'USD',
+          'date' => '2012-05-01 00:00:00',
+          'email' => 'nobody@wikimedia.org',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => $gateway_txn_id,
+          'gross' => '1.23',
+          'payment_method' => 'cc',
+        ],
+        [
+          'contact' => [
+            'first_name' => 'Someone',
+            'last_name' => 'Ó Something',
+          ],
+          'contribution' => $this->getBaseContribution($gateway_txn_id),
+        ],
+      ];
+
     return $cases;
   }
 
