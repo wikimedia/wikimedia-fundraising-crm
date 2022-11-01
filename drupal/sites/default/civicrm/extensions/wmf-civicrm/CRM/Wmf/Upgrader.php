@@ -674,6 +674,27 @@ SET
   }
 
   /**
+   * Remove unused option values.
+   *
+   * @return true
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_4221(): bool {
+    OptionValue::update(FALSE)
+      ->addWhere('option_group_id.name', '=', 'email_greeting')
+      ->addWhere('is_default', '=', TRUE)
+      ->addWhere('filter', '=', 1)
+      ->setValues([
+        'label' => "Dear {if '{contact.first_name}'}{contact.first_name}{else}donor{/if}",
+        // Only the label really seems to matter but both feels more
+        // consistent with the others.
+        'name' => "Dear {if '{contact.first_name}'}{contact.first_name}{else}donor{/if}",
+      ])
+      ->execute();
+    return TRUE;
+  }
+
+  /**
    * Get the values actually used for the option.
    *
    * @param string $field
