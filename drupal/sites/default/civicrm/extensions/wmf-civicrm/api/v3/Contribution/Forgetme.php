@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\CustomField;
+use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\IDeleteDataProvider;
 use SmashPig\PaymentProviders\IPaymentProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
@@ -37,7 +38,7 @@ function civicrm_api3_contribution_forgetme(array $params): array {
   $deleted = [];
   foreach ($contributions as $contribution) {
     // Get the SmashPig payment processor for the given contribution
-    $provider = _civicrm_api3_contribution_forgetme_getproviderobject($contribution[$customFieldMap['gateway']]);
+    $provider = _civicrm_api3_contribution_forgetme_getproviderobject($contribution);
     if ($provider instanceof IDeleteDataProvider) {
       $provider->deleteDataForPayment($contribution[$customFieldMap['gateway_txn_id']]);
       $deleted[] = $contribution;
@@ -63,10 +64,26 @@ function _civicrm_api3_contribution_forgetme_getcustomfields(): array {
   return $customFields;
 }
 
-function _civicrm_api3_contribution_forgetme_getproviderobject(string $gateway): IPaymentProvider {
-  wmf_common_create_smashpig_context('forgetme', $gateway);
-  // Just use 'cc' as the payment method - it doesn't matter for the data deletion API call
-  // TODO: PaymentProviderFactory::getProviderForDefaultMethod() might be nice to have
-  return PaymentProviderFactory::getProviderForMethod('cc');
+function _civicrm_api3_contribution_forgetme_getproviderobject(array $contrbution): ?IPaymentProvider {
+  $customFieldMap = _civicrm_api3_contribution_forgetme_getcustomfields();
+  if (empty($contrbution[$customFieldMap['gateway']])) {
+    return null;
+  }
+  try {
+    // Wrap this in the try/catch as well in case of gateways like 'engage' which don't
+    // correspond to anything known to SmashPig
+    wmf_common_create_smashpig_context('forgetme', $contrbution[$customFieldMap['gateway']]);
+    // TODO: PaymentProviderFactory::getProviderForDefaultMethod() might be nice to have
+    // Use first provider defined in config - doesn't actually matter for now as the GDPR
+    // method is defined on the base class.
+    $providerConfig = Context::get()->getProviderConfiguration()->val('payment-provider');
+    if (empty($providerConfig)) {
+      return null;
+    }
+    $firstMethod = array_keys($providerConfig)[0];
+    return PaymentProviderFactory::getProviderForMethod($firstMethod);
+  } catch(Exception $ex) {
+    return null;
+  }
 }
 
