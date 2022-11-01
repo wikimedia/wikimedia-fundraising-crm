@@ -40,11 +40,11 @@ function civicrm_api3_contribution_showme($params) {
     // For our current purposes, we expect to have our WMF custom field on any
     // donations processed via the gateways which support forgetme requests.
     if (!empty($contribution[$customFieldMap['gateway']])) {
-      $provider = _civicrm_api3_contribution_forgetme_getproviderobject($contribution[$customFieldMap['gateway']]);
+      $provider = _civicrm_api3_contribution_forgetme_getproviderobject($contribution);
       $return['showme'][$id] = "{$contribution['receive_date']}: {$contribution[$customFieldMap['original_amount']]} " .
         "{$contribution[$customFieldMap['original_currency']]}, ({$contribution[$customFieldMap['gateway']]} " .
         "{$contribution[$customFieldMap['gateway_txn_id']]})";
-      if ( $provider instanceof IDeleteDataProvider ) {
+      if ($provider instanceof IDeleteDataProvider) {
         $return['showme'][$id] .= ' - processor supports data deletion requests';
       }
     } else {
