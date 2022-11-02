@@ -619,7 +619,9 @@ abstract class BaseAuditProcessor {
           continue;
         }
         if (preg_match($this->regex_for_recon(), $file)) {
-          $sort_key = $this->get_recon_file_sort_key($file); // report date or sequence number or something
+          // sort the files depending on how each processor handles the file names
+          // the last three files in $files_by_sort_key will be the ones looked at
+          $sort_key = $this->get_recon_file_sort_key($file);
           $files_by_sort_key[$sort_key][] = $files_directory . '/' . $file;
         }
       }
