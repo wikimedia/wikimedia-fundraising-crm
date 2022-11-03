@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'civicrm/civicrm-core',
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
-        'reference' => '5ba0767a9ffb20eb7566883c8fa69d61b496fd0c',
+        'pretty_version' => '5.54.x-dev',
+        'version' => '5.54.9999999.9999999-dev',
+        'reference' => '7193fddf92f70d35b13da532649c4460ee9b1dcf',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -56,9 +56,9 @@
             'dev_requirement' => false,
         ),
         'civicrm/civicrm-core' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
-            'reference' => '5ba0767a9ffb20eb7566883c8fa69d61b496fd0c',
+            'pretty_version' => '5.54.x-dev',
+            'version' => '5.54.9999999.9999999-dev',
+            'reference' => '7193fddf92f70d35b13da532649c4460ee9b1dcf',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -119,9 +119,9 @@
             'dev_requirement' => false,
         ),
         'dompdf/dompdf' => array(
-            'pretty_version' => 'v2.0.0',
-            'version' => '2.0.0.0',
-            'reference' => '79573d8b8a141ec8a17312515de8740eed014fa9',
+            'pretty_version' => 'v2.0.1',
+            'version' => '2.0.1.0',
+            'reference' => 'c5310df0e22c758c85ea5288175fc6cd777bc085',
             'type' => 'library',
             'install_path' => __DIR__ . '/../dompdf/dompdf',
             'aliases' => array(),
