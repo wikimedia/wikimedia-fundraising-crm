@@ -3,6 +3,7 @@
 
 namespace Civi\WMFHooks;
 
+use Civi\Api4\CustomField;
 use Civi\Api4\CustomGroup;
 use CRM_Core_PseudoConstant;
 
@@ -32,6 +33,24 @@ class CalculatedData extends TriggerHook {
    * @var string
    */
   protected $whereClause;
+
+  public static function getCalculatedCustomFieldGroupID(): int {
+    return CustomGroup::get( FALSE )
+      ->setSelect( [ 'id' ] )
+      ->addWhere( 'name', '=', 'wmf_donor' )
+      ->execute()
+      ->first()['id'];
+  }
+
+  public static function getCalculatedCustomFieldIDs(): \Generator {
+    $result = CustomField::get( FALSE )
+      ->setSelect( [ 'id' ] )
+      ->addWhere( 'custom_group_id:name', '=', 'wmf_donor' )
+      ->execute();
+    foreach ( $result as $index => $value ) {
+      yield $value['id'];
+    }
+  }
 
   /**
    * @return mixed

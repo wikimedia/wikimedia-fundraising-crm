@@ -52,6 +52,22 @@ class QuickForm {
         }
         break;
 
+      case 'CRM_Contact_Form_Merge':
+        $template = \CRM_Core_Form::getTemplate();
+        $groupId = CalculatedData::getCalculatedCustomFieldGroupID();
+        if (isset($template->_tpl_vars['rows']["custom_group_$groupId"])) {
+          unset($template->_tpl_vars['rows']["custom_group_$groupId"]);
+        }
+        foreach( CalculatedData::getCalculatedCustomFieldIDs() as $id) {
+          $elementName = "move_custom_$id";
+          if ($form->elementExists($elementName)) {
+            $form->removeElement($elementName);
+          }
+          if (isset($template->_tpl_vars['rows'][$elementName])) {
+            unset($template->_tpl_vars['rows'][$elementName]);
+          }
+        }
+        break;
     }
   }
 
