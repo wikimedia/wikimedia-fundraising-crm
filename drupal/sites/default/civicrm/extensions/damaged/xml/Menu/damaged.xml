@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/damaged/edit</path>
+    <page_callback>CRM_Damaged_Form_SmashpigDamaged</page_callback>
+    <title>SmashpigDamaged</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>
