@@ -1,35 +1,35 @@
 <?php
 
 class CRM_Damaged_DamagedRow {
-  
+
   protected $id;
-  
+
   protected $original_date;
-  
+
   protected $damaged_date;
-  
+
   protected $retry_date;
-  
+
   protected $original_queue;
-  
+
   protected $gateway;
-  
+
   protected $order_id;
-  
+
   protected $gateway_txn_id;
-  
+
   protected $error;
-  
+
   protected $trace;
-  
+
   protected $message;
-  
+
   protected $rawDamagedRow;
-  
+
   public function __construct($damagedRow) {
     $this->setRawDamagedRow($damagedRow)
       ->setId($damagedRow['id']);
-    
+
     if (array_key_exists('original_date', $damagedRow)) {
       $this->setOriginalDate($damagedRow['original_date']);
     }
@@ -61,97 +61,97 @@ class CRM_Damaged_DamagedRow {
       $this->setGateway($damagedRow['gateway']);
     }
   }
-  
+
   public function getId(): int {
     return $this->id;
   }
-  
+
   public function setId($id): self {
     $this->id = $id;
     return $this;
   }
-  
+
   public function getOriginalDate(): string {
     return $this->original_date;
   }
-  
+
   public function setOriginalDate($orig_date): self {
     $this->original_date = $orig_date;
     return $this;
   }
-  
+
   public function getDamagedDate(): string {
     return $this->damaged_date;
   }
-  
+
   public function setDamagedDate($damaged_date): self {
     $this->damaged_date = $damaged_date;
     return $this;
   }
-  
+
   public function getRetryDate(): string {
     return $this->retry_date;
   }
-  
+
   public function setRetryDate($retry_date): self {
     $this->retry_date = $retry_date;
     return $this;
   }
-  
+
   public function getOriginalQueue(): string {
     return $this->original_queue;
   }
-  
+
   public function setOriginalQueue($queue): self {
     $this->original_queue = $queue;
     return $this;
   }
-  
+
   public function getGateway(): string {
     return $this->gateway;
   }
-  
+
   public function setGateway($gateway): self {
     $this->gateway = $gateway;
     return $this;
   }
-  
+
   public function getOrderId(): string {
     return $this->order_id;
   }
-  
+
   public function setOrderId($orderId): self {
     $this->order_id = $orderId;
     return $this;
   }
-  
+
   public function getGatewayTxnId(): string {
     return $this->gateway_txn_id;
   }
-  
+
   public function setGatewayTxnId($gatewayTxnId): self {
     $this->gateway_txn_id = $gatewayTxnId;
     return $this;
   }
-  
+
   public function getError(): string {
     return $this->error;
   }
-  
+
   public function setError($error): self {
     $this->error = $error;
     return $this;
   }
-  
+
   public function getTrace(): string {
     return $this->trace;
   }
-  
+
   public function setTrace($trace): self {
     $this->trace = $trace;
     return $this;
   }
-  
+
   /**
    * @throws \CRM_Core_Exception
    */
@@ -172,7 +172,7 @@ class CRM_Damaged_DamagedRow {
     }
     return $this;
   }
-  
+
   public function getRawDamagedRow(): array {
     $damagedRow = [
       'id' => $this->id,
@@ -190,10 +190,10 @@ class CRM_Damaged_DamagedRow {
     $this->setRawDamagedRow($damagedRow);
     return $this->rawDamagedRow;
   }
-  
+
   public function setRawDamagedRow($rawDamagedRow): self {
     $this->rawDamagedRow = $rawDamagedRow;
     return $this;
   }
-  
+
 }
