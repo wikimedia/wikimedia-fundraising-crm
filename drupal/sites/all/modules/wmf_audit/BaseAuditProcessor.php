@@ -1064,9 +1064,6 @@ abstract class BaseAuditProcessor {
       wmf_audit_log_error($message, 'FILE_PERMS');
       return FALSE;
     }
-    else {
-      chmod($newfile, 0770);
-    }
     wmf_audit_echo("Moved $file to $newfile");
     return TRUE;
   }
