@@ -33,18 +33,12 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
 
   // Note: the output is only used to sort files in chronological order
   // The settlement detail report is named with sequential batch numbers
-  // so we just need to zero-pad them to make sure they sort correctly.
+  // while the payments detail report has the date at the end of the name
   protected function get_recon_file_sort_key($file) {
-    // Example: settlement_detail_report_batch_1.csv
-    // For that, we'd want to return 00000001 (same length as a date, just for the heck of it)
-    $parts = preg_split('/_|\./', $file);
-    if (count($parts) < 6) {
-      throw new Exception("Unparseable reconciliation file name: {$file}");
-    }
-    $key = str_pad($parts[4], 8, '0', STR_PAD_LEFT);
-    if (!preg_match('/^\d{8}$/', $key)) {
-      throw new Exception("Unparseable reconciliation file name: {$file}");
-    }
+    // sort by the modified date to get the most recent files
+    $directory = $this->get_recon_dir();
+    $fullpath = $directory.'/'.$file;
+    $key = filemtime($fullpath);
     return $key;
   }
 
