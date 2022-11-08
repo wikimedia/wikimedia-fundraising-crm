@@ -12,6 +12,7 @@
 use Civi\Api4\Contact;
 use Civi\Api4\RelationshipType;
 use Civi\Api4\StateProvince;
+use Civi\Api4\DedupeRuleGroup;
 
 require_once 'api/v3/utils.php';
 
@@ -813,9 +814,7 @@ class CRM_Contact_Import_Parser_Contact extends CRM_Import_Parser {
           $data[$blockName][$loc]['is_primary'] = 1;
         }
 
-        if (0) {
-        }
-        else {
+        if (1) {
           if ($fieldName === 'state_province') {
             // CRM-3393
             if (is_numeric($value) && ((int ) $value) >= 1000) {
@@ -845,72 +844,27 @@ class CRM_Contact_Import_Parser_Contact extends CRM_Import_Parser {
           }
         }
       }
-      else {
-        if (($customFieldId = CRM_Core_BAO_CustomField::getKeyID($key))) {
-          // for autocomplete transfer hidden value instead of label
-          if ($params[$key] && isset($params[$key . '_id'])) {
-            $value = $params[$key . '_id'];
-          }
-
-          // we need to append time with date
-          if ($params[$key] && isset($params[$key . '_time'])) {
-            $value .= ' ' . $params[$key . '_time'];
-          }
-
-          // if auth source is not checksum / login && $value is blank, do not proceed - CRM-10128
-          if (($session->get('authSrc') & (CRM_Core_Permission::AUTH_SRC_CHECKSUM + CRM_Core_Permission::AUTH_SRC_LOGIN)) == 0 &&
-            ($value == '' || !isset($value))
-          ) {
-            continue;
-          }
-
-          $valueId = NULL;
-
-          //CRM-13596 - check for contact_sub_type_hidden first
-          if (array_key_exists('contact_sub_type_hidden', $params)) {
-            $type = $params['contact_sub_type_hidden'];
-          }
-          else {
-            $type = $data['contact_type'];
-            if (!empty($data['contact_sub_type'])) {
-              $type = CRM_Utils_Array::explodePadded($data['contact_sub_type']);
-            }
-          }
-
-          CRM_Core_BAO_CustomField::formatCustomField($customFieldId,
-            $data['custom'],
-            $value,
-            $type,
-            $valueId,
-            $contactID,
-            FALSE,
-            FALSE
-          );
-        }
-        elseif ($key === 'edit') {
-          continue;
-        }
-        else {
-          if ($key === 'location') {
-            foreach ($value as $locationTypeId => $field) {
-              foreach ($field as $block => $val) {
-                if ($block === 'address' && array_key_exists('address_name', $val)) {
-                  $value[$locationTypeId][$block]['name'] = $value[$locationTypeId][$block]['address_name'];
-                }
+      if (TRUE) {
+        // @todo - meaningless IF - left to keep whitespace clean in PR.
+        if ($key === 'location') {
+          foreach ($value as $locationTypeId => $field) {
+            foreach ($field as $block => $val) {
+              if ($block === 'address' && array_key_exists('address_name', $val)) {
+                $value[$locationTypeId][$block]['name'] = $value[$locationTypeId][$block]['address_name'];
               }
             }
           }
-          if (in_array($key, ['nick_name', 'job_title', 'middle_name', 'birth_date', 'gender_id', 'current_employer', 'prefix_id', 'suffix_id'])
-            && ($value == '' || !isset($value)) &&
-            ($session->get('authSrc') & (CRM_Core_Permission::AUTH_SRC_CHECKSUM + CRM_Core_Permission::AUTH_SRC_LOGIN)) == 0 ||
-            ($key === 'current_employer' && empty($params['current_employer']))) {
-            // CRM-10128: if auth source is not checksum / login && $value is blank, do not fill $data with empty value
-            // to avoid update with empty values
-            continue;
-          }
-          else {
-            $data[$key] = $value;
-          }
+        }
+        if (in_array($key, ['nick_name', 'job_title', 'middle_name', 'birth_date', 'gender_id', 'current_employer', 'prefix_id', 'suffix_id'])
+          && ($value == '' || !isset($value)) &&
+          ($session->get('authSrc') & (CRM_Core_Permission::AUTH_SRC_CHECKSUM + CRM_Core_Permission::AUTH_SRC_LOGIN)) == 0 ||
+          ($key === 'current_employer' && empty($params['current_employer']))) {
+          // CRM-10128: if auth source is not checksum / login && $value is blank, do not fill $data with empty value
+          // to avoid update with empty values
+          continue;
+        }
+        else {
+          $data[$key] = $value;
         }
       }
     }
@@ -1633,7 +1587,19 @@ class CRM_Contact_Import_Parser_Contact extends CRM_Import_Parser {
       if (isset($params['relationship'])) {
         unset($params['relationship']);
       }
-      $id = $this->getPossibleContactMatch($params, $extIDMatch, $this->getSubmittedValue('dedupe_rule_id') ?: NULL);
+      $ruleId = $this->getSubmittedValue('dedupe_rule_id') ?: NULL;
+      // if this is not the main contact and the contact types are not the same
+      $mainContactType = $this->getSubmittedValue('contactType');
+      if (!$isMainContact && $params['contact_type'] !== $mainContactType) {
+        // use the unsupervised dedupe rule for this contact type
+        $ruleId = DedupeRuleGroup::get(FALSE)
+          ->addSelect('id')
+          ->addWhere('contact_type', '=', $params['contact_type'])
+          ->addWhere('used', '=', 'Unsupervised')
+          ->execute()
+          ->first()['id'];
+      }
+      $id = $this->getPossibleContactMatch($params, $extIDMatch, $ruleId);
       if ($id && $isMainContact && $this->isSkipDuplicates()) {
         throw new CRM_Core_Exception(ts('Contact matched by dedupe rule already exists in the database.'), CRM_Import_Parser::DUPLICATE);
       }

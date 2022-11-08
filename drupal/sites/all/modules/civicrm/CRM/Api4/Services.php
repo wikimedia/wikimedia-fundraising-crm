@@ -51,7 +51,7 @@ class CRM_Api4_Services {
       array_column(\CRM_Extension_System::singleton()->getMapper()->getActiveModuleFiles(), 'filePath')
     );
     foreach ($locations as $location) {
-      $path = \CRM_Utils_File::addTrailingSlash(dirname($location)) . str_replace('\\', DIRECTORY_SEPARATOR, $namespace);
+      $path = \CRM_Utils_File::addTrailingSlash(dirname($location ?? '')) . str_replace('\\', DIRECTORY_SEPARATOR, $namespace);
       if (!file_exists($path) || !is_dir($path)) {
         $resource = new \Symfony\Component\Config\Resource\FileExistenceResource($path);
         $container->addResource($resource);
@@ -62,6 +62,9 @@ class CRM_Api4_Services {
           $matches = [];
           preg_match('/(\w*)\.php$/', $file, $matches);
           $serviceName = $namespace . array_pop($matches);
+          if (!class_exists($serviceName)) {
+            continue;
+          }
           $serviceClass = new \ReflectionClass($serviceName);
           if ($serviceClass->isInstantiable()) {
             $definition = $container->register(str_replace('\\', '_', $serviceName), $serviceName);
