@@ -10,9 +10,6 @@ use Civi\Api4\OptionValue;
 
 $settings = [
   'civi-data-mailing-template-path' => 'sites/default/civicrm/extensions/wmf-civicrm/msg_templates/recurring_failed_message',
-  // This prevents contacts being assigned English as a default
-  // when the language is unknown.
-  'contact_default_language' => 'undefined',
   // This is one we should consider removing. It was added as part of
   // T137496 to make the money format in the receipts generated from CiviCRM
   // look per MG preference. However, we don't really use that receipt now
