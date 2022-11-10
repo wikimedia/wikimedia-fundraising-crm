@@ -83,6 +83,24 @@ class ThankYou extends GenericWorkflowMessage {
   public $lastName;
 
   /**
+   * Contact Type.
+   *
+   * @var string
+   *
+   * @scope tplParams as contact_type
+   */
+  public $contactType;
+
+  /**
+   * Email greeting display.
+   *
+   * @var string
+   *
+   * @scope tplParams as email_greeting_display
+   */
+  public $emailGreetingDisplay;
+
+  /**
    * Locale that can be used in MediaWiki URLS (eg. en or fr-FR).
    *
    * @var string
@@ -207,6 +225,8 @@ class ThankYou extends GenericWorkflowMessage {
   protected function exportExtraTokenContext(array &$export): void {
     $export['smartyTokenAlias']['first_name'] = 'contact.first_name';
     $export['smartyTokenAlias']['last_name'] = 'contact.last_name';
+    $export['smartyTokenAlias']['contact_type'] = 'contact.contact_type';
+    $export['smartyTokenAlias']['email_greeting_display'] = 'email_greeting_display';
   }
 
 }
