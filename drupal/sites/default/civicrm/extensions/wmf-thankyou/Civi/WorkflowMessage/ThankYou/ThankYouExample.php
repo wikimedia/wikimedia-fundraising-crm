@@ -25,6 +25,13 @@ class ThankYouExample extends WorkflowMessageExample {
         'tags' => ['preview'],
         'workflow' => $workflow,
       ];
+      yield [
+        'name' => 'workflow/' . $workflow . '/organization',
+        'title' => $label . ' (Organization)',
+        'tags' => ['preview'],
+        'workflow' => $workflow,
+        'example' => 'organization',
+      ];
     }
     yield [
       'name' => 'workflow/thank_you/stock',
@@ -100,7 +107,13 @@ class ThankYouExample extends WorkflowMessageExample {
    * @throws \CRM_Core_Exception
    */
   private function addExampleData(GenericWorkflowMessage $messageTemplate, $example): void {
-    $messageTemplate->setContact(DemoData::example('entity/Contact/Barb'));
+    if ($example === 'organization') {
+      $organization = DemoData::example('entity/Contact/TheDailyBugle');
+      $messageTemplate->setContact($organization);
+    }
+    else {
+      $messageTemplate->setContact(DemoData::example('entity/Contact/Barb'));
+    }
     $messageTemplate->setCurrency('EUR');
     $messageTemplate->setAmount(4000.99);
     $messageTemplate->setTransactionID('CNTCT-567');
