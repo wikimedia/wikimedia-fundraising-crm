@@ -4,6 +4,8 @@
 <p>
 {if $first_name and $last_name}
 Dear {$first_name},
+{elseif $contact_type === 'Organization' && $email_greeting_display}
+{$email_greeting_display},
 {else}
 Dear donor,
 {/if}
