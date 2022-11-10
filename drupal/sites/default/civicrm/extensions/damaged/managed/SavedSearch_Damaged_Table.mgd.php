@@ -58,7 +58,12 @@ return [
           ],
           'pager' => [],
           'placeholder' => 5,
-          'sort' => [],
+          'sort' => [
+            [
+              'original_date',
+              'DESC',
+            ],
+          ],
           'columns' => [
             [
               'type' => 'field',
