@@ -158,10 +158,7 @@ class ThankYouTest extends TestCase {
    */
   public function testSendThankYou(): void {
     variable_set('thank_you_add_civimail_records', 'false');
-    $result = thank_you_for_contribution($this->getContributionID());
-    $this->assertTrue($result);
-    $this->assertEquals(1, TestMailer::countMailings());
-    $sent = TestMailer::getMailing(0);
+    $sent = $this->sendThankYou();
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals($this->getExpectedReplyTo(), $sent['reply_to']);
@@ -173,6 +170,25 @@ class ThankYouTest extends TestCase {
 
     // Check for tax information, DAF emails have this removed
     $this->assertRegExp('/tax-exempt number/', $sent['html']);
+  }
+
+  /**
+   * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
+   */
+  public function testSendThankYouOrganization(): void {
+    // Set up functions create an individual 0 & later tear it down. To re-use them
+    // we need to punt that individual out of the 0 key.
+    $this->ids['Contact'][1] = $this->ids['Contact'][0];
+    $this->ids['Contact'][0] = Contact::create(FALSE)->setValues([
+      'contact_type' => 'Organization',
+      'organization_name' => 'Big Rich Bank',
+      'email_primary.email' => 'money_pit@example.com',
+      'email_greeting_custom' => 'Dear Friend at the Big Rich Bank',
+    ])->execute()->first()['id'];
+    $sent = $this->sendThankYou();
+
+    $this->assertStringContainsString('Dear Friend at the Big Rich Bank', $sent['html']);
   }
 
   /**
@@ -209,10 +225,7 @@ class ThankYouTest extends TestCase {
     variable_set('thank_you_add_civimail_records', 'false');
     Civi::settings()->set('wmf_endowment_thank_you_from_name', 'Endowment TY Sender');
     $this->createContribution(['financial_type_id:name' => 'Endowment Gift'], 0);
-    $result = thank_you_for_contribution($this->getContributionID());
-    $this->assertTrue($result);
-    $this->assertEquals(1, TestMailer::countMailings());
-    $sent = TestMailer::getMailing(0);
+    $sent = $this->sendThankYou();
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals('Endowment TY Sender', $sent['from_name']);
@@ -240,10 +253,7 @@ class ThankYouTest extends TestCase {
       $custom_field_name => 'Donor Advised Fund',
     ]);
 
-    $result = thank_you_for_contribution($this->getContributionID());
-    $this->assertTrue($result);
-    $this->assertEquals(1, TestMailer::countMailings());
-    $sent = TestMailer::getMailing(0);
+    $sent = $this->sendThankYou();
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals($this->getExpectedReplyTo(), $sent['reply_to']);
@@ -272,10 +282,7 @@ class ThankYouTest extends TestCase {
       $description_of_stock => 'Test Stock Description',
     ]);
 
-    $result = thank_you_for_contribution($this->getContributionID());
-    $this->assertTrue($result);
-    $this->assertEquals(1, TestMailer::countMailings());
-    $sent = TestMailer::getMailing(0);
+    $sent = $this->sendThankYou();
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals($this->getExpectedReplyTo(), $sent['reply_to']);
@@ -319,6 +326,18 @@ class ThankYouTest extends TestCase {
   private function getExpectedReplyTo(): string {
     return "ty.{$this->ids['Contact'][0]}.{$this->ids['Contribution'][0]}" .
       '@donate.wikimedia.org';
+  }
+
+  /**
+   * @return mixed
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  protected function sendThankYou() {
+    $result = thank_you_for_contribution($this->getContributionID());
+    $this->assertTrue($result);
+    $this->assertEquals(1, TestMailer::countMailings());
+    return TestMailer::getMailing(0);
   }
 
 }
