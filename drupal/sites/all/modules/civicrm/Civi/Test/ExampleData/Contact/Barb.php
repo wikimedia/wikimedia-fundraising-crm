@@ -12,7 +12,7 @@ class Barb extends \Civi\Test\EntityExample {
 
   public function build(array &$example): void {
     $example['data'] = [
-      'contact_id' => '100',
+      'contact_id' => 0,
       'contact_type' => 'Individual',
       'contact_sub_type' => NULL,
       'sort_name' => 'Johnson, Barbara',

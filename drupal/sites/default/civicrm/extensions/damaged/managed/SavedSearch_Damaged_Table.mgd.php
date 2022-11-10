@@ -58,7 +58,12 @@ return [
           ],
           'pager' => [],
           'placeholder' => 5,
-          'sort' => [],
+          'sort' => [
+            [
+              'original_date',
+              'DESC',
+            ],
+          ],
           'columns' => [
             [
               'type' => 'field',
@@ -115,6 +120,7 @@ return [
               'dataType' => 'Text',
               'label' => 'Error',
               'sortable' => TRUE,
+              'rewrite' => '{"[error]"|truncate:100:"..."}',
               'link' => [
                 'path' => '',
                 'entity' => 'Damaged',
