@@ -5,6 +5,7 @@ namespace Civi\WMFHooks;
 
 use Civi\Api4\CustomField;
 use Civi\Api4\CustomGroup;
+use Civi\Api4\Generic\Result;
 use CRM_Core_PseudoConstant;
 
 class CalculatedData extends TriggerHook {
@@ -42,14 +43,18 @@ class CalculatedData extends TriggerHook {
       ->first()['id'];
   }
 
-  public static function getCalculatedCustomFieldIDs(): \Generator {
-    $result = CustomField::get( FALSE )
-      ->setSelect( [ 'id' ] )
-      ->addWhere( 'custom_group_id:name', '=', 'wmf_donor' )
+  /**
+   * Get (basic) data about the wmf donor fields.
+   *
+   * @throws \API_Exception
+   *
+   * @return \Civi\Api4\Generic\Result
+   */
+  public static function getCalculatedCustomFields(): Result {
+    return CustomField::get(FALSE)
+      ->setSelect(['id', 'name', 'label'])
+      ->addWhere('custom_group_id:name', '=', 'wmf_donor')
       ->execute();
-    foreach ( $result as $index => $value ) {
-      yield $value['id'];
-    }
   }
 
   /**

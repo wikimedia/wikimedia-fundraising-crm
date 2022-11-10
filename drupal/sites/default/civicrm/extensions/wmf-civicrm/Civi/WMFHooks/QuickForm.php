@@ -58,8 +58,21 @@ class QuickForm {
         if (isset($template->_tpl_vars['rows']["custom_group_$groupId"])) {
           unset($template->_tpl_vars['rows']["custom_group_$groupId"]);
         }
-        foreach( CalculatedData::getCalculatedCustomFieldIDs() as $id) {
+        foreach(CalculatedData::getCalculatedCustomFields() as $field) {
+          $id = $field['id'];
           $elementName = "move_custom_$id";
+          if ($field['name'] === 'last_donation_date') {
+            // Add the last donation date to the summary fields that show at the
+            // top of the merge screen - this makes it easier for Donor relations.
+            // See https://phabricator.wikimedia.org/T256314#8385450
+            $lastDonationValues = $template->_tpl_vars['rows'][$elementName];
+            $template->_tpl_vars['summary_rows'][] = [
+              'name' => 'last_donation_date',
+              'label' => $field['label'],
+              'main_contact_value' => $lastDonationValues['main'] ?? '',
+              'other_contact_value' => $lastDonationValues['other'] ?? '',
+            ];
+          }
           if ($form->elementExists($elementName)) {
             $form->removeElement($elementName);
           }
