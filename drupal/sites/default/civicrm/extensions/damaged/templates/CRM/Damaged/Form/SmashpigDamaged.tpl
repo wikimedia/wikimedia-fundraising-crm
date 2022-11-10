@@ -1,12 +1,12 @@
 {block name=head}
 {literal}
     <style>
-        html.js fieldset.collapsed {
+        html.js fieldset.damaged-collapsible-close {
             border: none;
             border-top: 2px groove rgb(192, 192, 192) !important;
             padding: 0 20px 0 20px;
             }
-        html.js fieldset.collapse-processed, fieldset.crm-damaged-message {
+        html.js fieldset.damaged-collapsible-open, fieldset.crm-damaged-message {
           border: 2px groove rgb(192, 192, 192) !important;
           padding: 0 20px 0 20px;
           font-size: 1rem;
@@ -36,13 +36,13 @@
       {$deleteMessage|escape}
     </div>
   {else}
-  <fieldset class="collapsible form-wrapper crm-damaged-error collapse-processed" id="edit-trace">
+  <fieldset class="collapsible form-wrapper crm-damaged-error damaged-collapsible-open" id="edit-trace">
     <legend><a onclick="toggle('crm-damaged-error')" href="#" class="form-link">Failure reason:</a></legend>
   <div class="crm-damaged-error">
     <p>{$error|escape}</p>
 </div>
 </fieldset>
-  <fieldset class="collapsible form-wrapper crm-damaged-trace collapse-processed" id="edit-trace">
+  <fieldset class="collapsible form-wrapper crm-damaged-trace damaged-collapsible-open" id="edit-trace">
 <legend>
     <a onclick="toggle('crm-damaged-trace')" href="#" class="form-link">{ts}Stack trace:
 {/ts}</a>
@@ -68,17 +68,16 @@
 </div>
 {literal}
  <script type="text/javascript">
-
    toggle = function(className) {
  {/literal}
  {literal}
       let parent = document.querySelector('.'+className);
-      let containsCollapsedClassed = parent.classList.contains('collapsed');
-      if (containsCollapsedClassed) {
-        parent.classList.replace('collapsed', 'collapse-processed');
+      let isCollapsed = parent.classList.contains('damaged-collapsible-close');
+      if (isCollapsed) {
+        parent.classList.replace('damaged-collapsible-close', 'damaged-collapsible-open');
         parent.querySelector('div').style.display = "block"
       } else {
-        parent.classList.replace('collapse-processed', 'collapsed');
+        parent.classList.replace('damaged-collapsible-open', 'damaged-collapsible-close');
         parent.querySelector('div').style.display = "none"
       }
   }
