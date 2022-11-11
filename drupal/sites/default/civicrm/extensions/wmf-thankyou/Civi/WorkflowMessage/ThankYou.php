@@ -226,7 +226,7 @@ class ThankYou extends GenericWorkflowMessage {
     $export['smartyTokenAlias']['first_name'] = 'contact.first_name';
     $export['smartyTokenAlias']['last_name'] = 'contact.last_name';
     $export['smartyTokenAlias']['contact_type'] = 'contact.contact_type';
-    $export['smartyTokenAlias']['email_greeting_display'] = 'email_greeting_display';
+    $export['smartyTokenAlias']['email_greeting_display'] = 'contact.email_greeting_display';
   }
 
 }
