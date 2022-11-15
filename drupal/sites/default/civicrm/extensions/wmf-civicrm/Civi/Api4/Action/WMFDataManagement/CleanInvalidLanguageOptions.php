@@ -24,7 +24,8 @@ class CleanInvalidLanguageOptions extends AbstractAction {
   private function getInUseOptions(string $field): array {
     $dbResult = \CRM_Core_DAO::executeQuery("
       SELECT distinct $field as option_field FROM civicrm_contact
-      WHERE $field IS NOT NULL
+      WHERE is_deleted = 0 AND
+      $field IS NOT NULL
     ");
     $usedOptions = [];
     while ($dbResult->fetch()) {
