@@ -2,6 +2,7 @@
 namespace Civi\Api4;
 
 use Civi\Api4\Action\WMFDataManagement\ArchiveThankYou;
+use Civi\Api4\Action\WMFDataManagement\CleanInvalidLanguageOptions;
 use Civi\Api4\Action\WMFDataManagement\UpdateWMFDonor;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
@@ -40,6 +41,18 @@ class WMFDataManagement extends Generic\AbstractEntity {
    */
   public static function updateWMFDonor(bool $checkPermissions = TRUE): UpdateWMFDonor {
     return (new UpdateWMFDonor(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Clean up unused languages.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\WMFDataManagement\CleanInvalidLanguageOptions
+   */
+  public static function CleanInvalidLanguageOptions(bool $checkPermissions = TRUE): CleanInvalidLanguageOptions {
+    return (new CleanInvalidLanguageOptions(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
