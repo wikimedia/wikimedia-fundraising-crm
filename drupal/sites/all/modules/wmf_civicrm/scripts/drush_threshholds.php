@@ -15,7 +15,7 @@
  */
 function _drush_civicrm_queue_is_backed_up($threshold, $numberOfMinutes = 5) {
   $countOfContributionsInTimeFrame = CRM_Core_DAO::singleValueQuery('
-      SELECT count(*) FROM civicrm_contact WHERE created_date > DATE_SUB(NOW(), INTERVAL %1 MINUTE);
+      SELECT count(*) FROM log_civicrm_contribution WHERE log_date > DATE_SUB(NOW(), INTERVAL %1 MINUTE);
     ',
     array(1 => array($numberOfMinutes, 'Integer'))
   );
