@@ -21,6 +21,10 @@ function civicrm_api3_contribution_showme($params) {
     return civicrm_api3_create_success([], $params);
   }
   $getParams = $params + [
+    // Add a trivial where condition on the contribution table to work around an API3 bug
+    // that adds a phantom row when querying across multiple contact_ids.
+    // See https://phabricator.wikimedia.org/T322796#8398570
+    'total_amount' => ['IS NOT NULL' => 1],
     'return' => [
       $customFieldMap['gateway'],
       $customFieldMap['gateway_txn_id'],
