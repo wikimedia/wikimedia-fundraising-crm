@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <extension key="org.wikimedia.wmffraud" type="module">
   <file>wmffraud</file>
-  <name>FIXME</name>
-  <description>FIXME</description>
+  <name>WMF Fraud</name>
+  <description>Fredge related tools</description>
   <license>AGPL-3.0</license>
   <maintainer>
     <author>eileen</author>
