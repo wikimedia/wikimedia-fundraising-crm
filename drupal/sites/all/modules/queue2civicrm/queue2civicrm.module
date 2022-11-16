@@ -148,6 +148,8 @@ function queue2civicrm_batch_process($batch = NULL, $time_limit = NULL) {
   $processed = $consumer->dequeueMessages();
   $DonationStatsCollector->endDefaultTimer();
 
+  $DonationStatsCollector->addStat('total_messages_dequeued', $processed);
+
   $DonationStatsCollector->export();
 
   // export civicrm import timer stats
