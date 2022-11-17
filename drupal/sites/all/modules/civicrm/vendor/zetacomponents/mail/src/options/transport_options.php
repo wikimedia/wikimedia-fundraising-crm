@@ -49,7 +49,7 @@ class ezcMailTransportOptions extends ezcBaseOptions
      */
     public function __construct( array $options = array() )
     {
-        $this->timeout = 5; // default value for timeout is 5 seconds
+        $this->timeout = 15; // default value for timeout is 5 seconds
         $this->ssl = false; // default value for ssl is false
 
         parent::__construct( $options );
