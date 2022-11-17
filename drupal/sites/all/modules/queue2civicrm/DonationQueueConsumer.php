@@ -17,6 +17,13 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   public function processMessage($message) {
+    // If the contribution has already been imported, this check will
+    // throw an exception that says to drop it entirely, not re-queue.
+    wmf_civicrm_check_for_duplicates(
+      $message['gateway'],
+      $message['gateway_txn_id']
+    );
+
     /**
      * prepare data for logging
      */
@@ -45,13 +52,7 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
         unset($message['pending_id']);
       }
       else {
-        // If the contribution has already been imported, this check will
-        // throw an exception that says to drop it entirely, not re-queue.
-        wmf_civicrm_check_for_duplicates(
-          $message['gateway'],
-          $message['gateway_txn_id']
-        );
-        // Otherwise, throw an exception that tells the queue consumer to
+        // Throw an exception that tells the queue consumer to
         // requeue the incomplete message with a delay.
         $errorMessage = "Message {$message['gateway']}-{$message['gateway_txn_id']} " .
           "indicates a pending DB entry with order ID {$message['order_id']}, " .
