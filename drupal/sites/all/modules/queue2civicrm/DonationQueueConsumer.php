@@ -19,10 +19,7 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
   public function processMessage($message) {
     // If the contribution has already been imported, this check will
     // throw an exception that says to drop it entirely, not re-queue.
-    wmf_civicrm_check_for_duplicates(
-      $message['gateway'],
-      $message['gateway_txn_id']
-    );
+    wmf_civicrm_check_for_duplicates($message);
 
     /**
      * prepare data for logging

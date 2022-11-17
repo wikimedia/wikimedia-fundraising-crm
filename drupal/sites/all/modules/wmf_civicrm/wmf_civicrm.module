@@ -826,25 +826,31 @@ function wmf_civicrm_verify_message_and_stage($msg) {
   }
 
   //Now check to make sure this isn't going to be a duplicate message for this gateway.
-  wmf_civicrm_check_for_duplicates($msg['gateway'], $msg['gateway_txn_id']);
+  wmf_civicrm_check_for_duplicates($msg);
   return $msg;
 }
 
 /**
  * Throw an exception if a contribution already exists
  *
- * @param string $gateway
- * @param string $gateway_txn_id
+ * @param array $message
  *
  * @throws \Civi\WMFException\WMFException
  */
-function wmf_civicrm_check_for_duplicates($gateway, $gateway_txn_id) {
+function wmf_civicrm_check_for_duplicates(array $message) {
+  if (
+    empty($message['gateway']) ||
+    empty($message['gateway_txn_id'])
+  ) {
+    throw new WMFException(WMFException::CIVI_REQ_FIELD, 'Missing required field');
+  }
+
   if (CRM_Core_DAO::singleValueQuery(
     'SELECT count(*)
     FROM wmf_contribution_extra cx
     WHERE gateway = %1 AND gateway_txn_id = %2', [
-    1 => [$gateway, 'String'],
-    2 => [$gateway_txn_id, 'String'],
+    1 => [$message['gateway'], 'String'],
+    2 => [$message['gateway_txn_id'], 'String'],
   ])) {
     throw new WMFException(
       WMFException::DUPLICATE_CONTRIBUTION,
