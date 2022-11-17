@@ -60,8 +60,14 @@ class Parse extends AbstractAction {
         // Not part of the output
         continue;
       }
+      // line[1] is cruft ("[0")
+      unset($line[1]);
+      $line = array_values($line);
+
       $line[0] = date('Y-m-d H:i:s u', $line[0]);
-      $line[1] = str_replace(['[', ']', '127.0.0.0.1:'], '', $line[1]);
+      // line[2] looks like 127.0.0.1:456] - where we want the '456' as it is unique to the connection.
+      $line[1] = substr(preg_replace("/^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}:/", '', $line[1]), 0, -1);
+
       if (empty($patterns[$line[1]])) {
         $patterns[$line[1]] = [];
       }
