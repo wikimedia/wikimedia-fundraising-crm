@@ -1809,24 +1809,6 @@ function wmf_civicrm_mark_refund(
 }
 
 /**
- * Implementation of hook_civicrm_pre
- *
- * @param string $op
- * @param string $type
- * @param int $id
- * @param array $entity
- *
- * @throws \Civi\WMFException\WMFException
- */
-function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
-  switch ($type) {
-    case 'Contribution':
-      wmf_civicrm_civicrm_pre_Contribution($op, $id, $entity);
-      break;
-  }
-}
-
-/**
  * @param string $op
  * @param int $id
  * @param array $contribution

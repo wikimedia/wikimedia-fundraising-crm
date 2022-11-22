@@ -3,6 +3,7 @@
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
 use Civi\WMFHooks\CalculatedData;
+use Civi\WMFHooks\ContributionRecur;
 use Civi\WMFHooks\ContributionRecurTrigger;
 use Civi\WMFHooks\Permissions;
 use Civi\WMFHooks\QuickForm;
@@ -222,6 +223,28 @@ function wmf_civicrm_civicrm_navigationMenu(&$menu) {
     );
   }
   _wmf_civicrm_civix_navigationMenu($menu);
+}
+
+/**
+ * Implementation of hook_civicrm_pre
+ *
+ * @param string $op
+ * @param string $type
+ * @param int $id
+ * @param array $entity
+ *
+ * @throws \Civi\WMFException\WMFException
+ */
+function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
+  switch ($type) {
+    case 'Contribution':
+      // TODO: Move from drupal module to WMFHooks
+      wmf_civicrm_civicrm_pre_Contribution($op, $id, $entity);
+      break;
+    case 'ContributionRecur':
+      ContributionRecur::pre($op, $entity);
+      break;
+  }
 }
 
 function wmf_civicrm_civicrm_alterAPIPermissions($entity, $action, &$params, &$permissions) {

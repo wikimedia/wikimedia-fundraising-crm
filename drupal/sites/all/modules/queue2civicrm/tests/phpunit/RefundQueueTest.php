@@ -211,4 +211,64 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
   }
 
+  /**
+   * Ensure that Civi core code (CRM_Contribute_BAO_ContributionRecur::updateOnTemplateUpdated)
+   * does not edit contribution_recur rows to match the currency and amount of an associated
+   * contribution when the contribution is edited.
+   *
+   * @covers \Civi\WmfHooks\ContributionRecur::pre
+   * @throws API_Exception
+   * @throws CiviCRM_API3_Exception
+   * @throws WMFException
+   */
+  public function testRefundDoesNotChangeRecurCurrency() {
+    $initialDonation = [
+      'gateway_txn_id' => 'HJZJ4JZVLGNG5S82',
+      'contribution_tracking_id' => 13,
+      'utm_source' => '..rcc',
+      'language' => 'en',
+      'email' => 'jwales@example.com',
+      'first_name' => 'Jimmy',
+      'last_name' => 'Wales',
+      'country' => 'US',
+      'gateway' => 'adyen',
+      'order_id' => '13.1',
+      'recurring' => '1',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'discover',
+      'currency' => 'EUR',
+      'gross' => '10.00',
+      'user_ip' => '172.18.0.1',
+      'recurring_payment_token' => 'DB44P92T43M84H82',
+      'processor_contact_id' => '13.1',
+      'date' => 1669082766
+    ];
+    $this->setExchangeRates(1669082766, [
+      'USD' => 1,
+      'EUR' => 1.1
+    ]);
+
+    $contribution = wmf_civicrm_contribution_message_import($initialDonation);
+    $this->ids['Contribution'][] = $contribution['id'];
+    $this->ids['ContributionRecur'][] = $recurId = $contribution['contribution_recur_id'];
+
+    // Import will convert the contribution to USD but leave the contribution_recur as EUR
+    $this->assertEquals('USD', $contribution['currency']);
+    $originalRecurRecord = $this->callAPISuccessGetSingle('ContributionRecur', ['id' => $recurId]);
+    $this->assertEquals('EUR', $originalRecurRecord['currency']);
+    $refundMessage = [
+      'type' => 'refund',
+      'date' => 1669082866,
+      'gateway' => 'adyen',
+      'gateway_parent_id' => 'HJZJ4JZVLGNG5S82',
+      'gateway_refund_id' => 'HJZJ4JZVLGNG5S82',
+      'gross' => 10.00,
+      'gross_currency' => 'EUR',
+    ];
+    $this->consumer->processMessage($refundMessage);
+    // Make sure that our pre-update hook in wmf-civicrm's WMFHooks\ContributionRecur has
+    // prevented the Civi core code from mutating the recur row's currency.
+    $newRecurRecord = $this->callAPISuccessGetSingle('ContributionRecur', ['id' => $recurId]);
+    $this->assertEquals('EUR', $newRecurRecord['currency']);
+  }
 }
