@@ -679,16 +679,16 @@ SET
    * @return true
    * @throws \CRM_Core_Exception
    */
-  public function upgrade_4221(): bool {
+  public function upgrade_4222(): bool {
     OptionValue::update(FALSE)
       ->addWhere('option_group_id.name', '=', 'email_greeting')
       ->addWhere('is_default', '=', TRUE)
       ->addWhere('filter', '=', 1)
       ->setValues([
-        'label' => "Dear {if '{contact.first_name}'}{contact.first_name}{else}donor{/if}",
+        'label' => "Dear {if {contact.first_name|boolean} && {contact.last_name|boolean}}{contact.first_name}{else}donor{/if}",
         // Only the label really seems to matter but both feels more
         // consistent with the others.
-        'name' => "Dear {if '{contact.first_name}'}{contact.first_name}{else}donor{/if}",
+        'name' => "Dear {if {contact.first_name|boolean} && {contact.last_name|boolean}}{contact.first_name}{else}donor{/if}",
       ])
       ->execute();
     return TRUE;
