@@ -63,8 +63,19 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $recurringPayments = $this->getPaymentsToCharge($contributionRecurId);
     $result = [
       'success' => ['ids' => []],
-      'failed' => ['ids' => []],
+      'failed' => ['ids' => []]
     ];
+
+    $errorCount = [
+      'failed_declined' => 0,
+      'failed_declined_do_not_retry' => 0,
+      'failed_missing_transaction_id' => 0,
+      'failed_no_response' => 0,
+      'failed_server_timeout' => 0,
+      'failed_transaction_not_found' => 0,
+      'failed_other_error' => 0
+    ];
+
     foreach ($recurringPayments as $recurringPayment) {
       try {
         $previousContribution = self::getPreviousContribution($recurringPayment);
@@ -108,15 +119,49 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $result['success']['ids'][] = $recurringPayment['id'];
       } catch (CiviCRM_API3_Exception $e) {
         $this->recordFailedPayment($recurringPayment, $e);
+        $this->addErrorStats($errorCount, $e->getCode());
         $result[$recurringPayment['id']]['error'] = $e->getMessage();
         $result['failed']['ids'][] = $recurringPayment['id'];
       }
     }
-    CRM_SmashPig_Hook::smashpigOutputStats([
+
+    $stats = array_merge([
       'Completed' => count($result['success']['ids']),
       'Failed' => count($result['failed']['ids'])
-    ]);
+    ], $errorCount);
+    CRM_SmashPig_Hook::smashpigOutputStats($stats);
     return $result;
+  }
+
+  /**
+   * Count the recurring transactions that has any of the error codes that corresponds
+   * to any of the cases.
+   * @param array $errorCount
+   * @param int $code
+   */
+  private function addErrorStats(array &$errorCount, int $code): void {
+    switch ($code) {
+      case ErrorCode::DECLINED:
+        ++$errorCount['failed_declined'];
+        break;
+      case ErrorCode::DECLINED_DO_NOT_RETRY:
+        ++$errorCount['failed_declined_do_not_retry'];
+        break;
+      case ErrorCode::MISSING_TRANSACTION_ID:
+        ++$errorCount['failed_missing_transaction_id'];
+        break;
+      case ErrorCode::NO_RESPONSE:
+        ++$errorCount['failed_no_response'];
+        break;
+      case ErrorCode::SERVER_TIMEOUT:
+        ++$errorCount['failed_server_timeout'];
+        break;
+      case ErrorCode::TRANSACTION_NOT_FOUND:
+        ++$errorCount['failed_transaction_not_found'];
+        break;
+      default:
+        ++$errorCount['failed_other_error'];
+    }
   }
 
   /**
