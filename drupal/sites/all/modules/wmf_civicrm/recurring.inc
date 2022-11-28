@@ -132,6 +132,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       'frequency_unit' => $msg['frequency_unit'],
       'frequency_interval' => $msg['frequency_interval'],
       'installments' => $msg['installments'],
+      'financial_type_id' => array_key_exists('financial_type_id', $msg) ? $msg['financial_type_id']: 'Cash',
       'start_date' => wmf_common_date_unix_to_civicrm($msg['date']),
       'create_date' => wmf_common_date_unix_to_civicrm($msg['date']),
       'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),

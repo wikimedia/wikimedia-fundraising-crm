@@ -112,6 +112,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_method' => 'cc',
       'subscr_id' => 'aslkdjalksd123123',
       'recurring' => 1,
+      'financial_type_id' => 'Cash',
     ];
 
     // import old-style recurring contribution message
@@ -158,6 +159,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => 'TEST-RECURRING-TOKEN-' . mt_rand(),
       'recurring' => 1,
       'user_ip' => '12.34.56.78',
+      'financial_type_id' => 'Cash',
     ];
 
     //import contribution message containing populated recurring and recurring_payment_token fields
@@ -214,6 +216,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => $token,
       'recurring' => 1,
       'user_ip' => '12.34.56.78',
+      'financial_type_id' => 'Cash',
     ];
 
     //import contribution message containing populated recurring and recurring_payment_token fields
@@ -230,6 +233,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => $token,
       'recurring' => 1,
       'user_ip' => '12.34.56.78',
+      'financial_type_id' => 'Cash',
     ];
 
     $secondContribution = wmf_civicrm_contribution_message_import($secondMessage);
@@ -257,7 +261,8 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       $firstRecurringRecord->payment_processor_id,
       $secondRecurringRecord->payment_processor_id
     );
-
+    $financial_type_cash = wmf_civicrm_get_civi_id('financial_type_id', 'Cash');
+    $this->assertEquals($financial_type_cash, $firstRecurringRecord->financial_type_id);
     //clean up recurring contribution records using fixture tear down destruct process
     $fixture->contribution_id = $firstContribution['id'];
     $fixture->contribution_recur_id = $firstRecurringRecord->id;
@@ -299,6 +304,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => $token,
       'recurring' => 1,
       'user_ip' => '12.34.56.78',
+      'financial_type_id' => 'Cash',
     ];
 
     //import contribution message containing populated recurring and recurring_payment_token fields

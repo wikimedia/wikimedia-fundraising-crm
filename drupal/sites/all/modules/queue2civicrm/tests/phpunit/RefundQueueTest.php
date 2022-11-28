@@ -241,7 +241,8 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'user_ip' => '172.18.0.1',
       'recurring_payment_token' => 'DB44P92T43M84H82',
       'processor_contact_id' => '13.1',
-      'date' => 1669082766
+      'date' => 1669082766,
+      'financial_type_id' => 'Cash',
     ];
     $this->setExchangeRates(1669082766, [
       'USD' => 1,
