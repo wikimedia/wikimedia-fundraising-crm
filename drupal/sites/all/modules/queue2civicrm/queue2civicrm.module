@@ -150,6 +150,9 @@ function queue2civicrm_batch_process($batch = NULL, $time_limit = NULL) {
 
   $DonationStatsCollector->addStat('total_messages_dequeued', $processed);
 
+  $DonationStatsCollector->addStat('total_messages_import_time', $DonationStatsCollector->sum('message_import_timers'));
+  $DonationStatsCollector->del('message_import_timers');
+
   $DonationStatsCollector->export();
 
   // export civicrm import timer stats
