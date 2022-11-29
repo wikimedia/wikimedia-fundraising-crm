@@ -356,7 +356,13 @@ function wmf_civicrm_contribution_message_import(&$msg) {
     ]);
   }
 
+  // Need to get this full name before ending the timer
+  $uniqueTimerName = $timer->getUniqueNamespace($overallTimerName);
   $timer->endImportTimer($overallTimerName);
+
+  DonationStatsCollector::getInstance()
+    ->addStat("message_import_timers", $timer->getTimerDiff($uniqueTimerName));
+
   return $contribution;
 }
 

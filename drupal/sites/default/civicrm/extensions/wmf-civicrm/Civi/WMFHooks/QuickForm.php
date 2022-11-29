@@ -62,13 +62,13 @@ class QuickForm {
           $id = $field['id'];
           $elementName = "move_custom_$id";
           $rowExists = isset($template->_tpl_vars['rows'][$elementName]);
-          if ($field['name'] === 'last_donation_date' && $rowExists) {
+          if ($field['name'] === 'all_funds_last_donation_date' && $rowExists) {
             // Add the last donation date to the summary fields that show at the
             // top of the merge screen - this makes it easier for Donor relations.
             // See https://phabricator.wikimedia.org/T256314#8385450
             $lastDonationValues = $template->_tpl_vars['rows'][$elementName];
             $template->_tpl_vars['summary_rows'][] = [
-              'name' => 'last_donation_date',
+              'name' => 'all_funds_last_donation_date',
               'label' => $field['label'],
               'main_contact_value' => $lastDonationValues['main'] ?? '',
               'other_contact_value' => $lastDonationValues['other'] ?? '',
