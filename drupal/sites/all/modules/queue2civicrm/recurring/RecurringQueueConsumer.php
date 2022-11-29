@@ -340,6 +340,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
         'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
         'trxn_id' => $msg['subscr_id'],
+        'financial_type_id' => 'Cash'
       ];
       if ($this->getPaymentProcessorID($msg['gateway'])) {
         // We could pass the gateway name to the api for resolution but it would reject
