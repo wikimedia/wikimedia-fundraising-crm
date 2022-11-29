@@ -58,28 +58,11 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
       }
     }
 
-    $DonationStatsCollector = DonationStatsCollector::getInstance();
-
-    // record the time spent specifically importing one-time and recurring donations
-    // TODO: move this additional stat over to ImportStatsCollector and export it with those stats
-    if ($DonationStatsCollector->getStat('timer.message_import_timer')) {
-      // we're resetting this here for a couple of bad reasons:
-      // 1 - exceptions thrown down in wmf_civicrm_contribution_message_import() leave half used timers :(
-      // 2 - the stats collector lib doesn't let us overwrite/clobber existing timer stats easily. that needs adding in.
-      $DonationStatsCollector->del("timer.message_import_timer");
-    }
-    // start a timer to count the per-donation import processing time
-    $DonationStatsCollector->startTimer("message_import_timer");
-
     // import the contribution here!
     $contribution = wmf_civicrm_contribution_message_import($message);
 
-    // end the import processing time, timer.
-    $DonationStatsCollector->endTimer("message_import_timer");
-    // add import_timer to counting stat so they can be summed up later
-    $DonationStatsCollector->addStat("message_import_timers", $DonationStatsCollector->getTimerDiff('message_import_timer'));
-
     // record other donation stats such as gateway
+    $DonationStatsCollector = DonationStatsCollector::getInstance();
     $DonationStatsCollector->recordDonationStats($message, $contribution);
 
     // update the log if things went well
