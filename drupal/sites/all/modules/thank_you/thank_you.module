@@ -70,6 +70,9 @@ function thank_you_send_test_form() {
   global $language, $user;
   $user_lc = ($user->language ? $user->language : $language->language);
 
+  drupal_set_message('This has been deprecated. The content of the test emails sent here is outdated and will not match
+    what is in the current <a href=/civicrm/admin/messageTemplates#/workflow?f=%7B"text":"wmf"%7D>message templates.</a>', 'warning');
+
   $form['name'] = [
     '#type' => 'textfield',
     '#title' => t('Donor\'s name'),
