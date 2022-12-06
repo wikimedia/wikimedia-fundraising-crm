@@ -105,7 +105,7 @@ function queue2civicrm_settings() {
   return system_settings_form($form);
 }
 
-function queue2civicrm_batch_process($batch = NULL, $time_limit = NULL) {
+function queue2civicrm_batch_process($batch = NULL, $time_limit = NULL, $wait = FALSE) {
   // We only want to initialize the SmashPig stuff once, so we use the default
   // config section rather than a processor-specific section. This means all
   // processors have to use the same database for pending donation info.
@@ -136,7 +136,8 @@ function queue2civicrm_batch_process($batch = NULL, $time_limit = NULL) {
   $consumer = new DonationQueueConsumer(
     'donations',
     $time_limit,
-    $batch
+    $batch,
+    (bool)$wait
   );
 
   $DonationStatsCollector = DonationStatsCollector::getInstance();
