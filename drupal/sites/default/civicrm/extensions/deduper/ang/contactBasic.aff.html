@@ -2,36 +2,40 @@
     {{ts('No contact id provided')}}
   </div>
   <div ng-if="options.contact_id"
-      af-api3="['Contact','getsingle', {id: options.contact_id, return: 'first_name,last_name,email, middle_name, display_name, contact_type, nick_name, street_address, city'}]"
-      af-api3-ctrl="contact">
+    af-api4="['Contact', 'get', {select: ['first_name','last_name','email_primary.email', 'email_primary.on_hold', 'email_primary.hold_date', 'middle_name', 'display_name', 'contact_type', 'nick_name', 'address_primary.street_address', 'address_primary.city'], where: [['id', '=', options.contact_id]]}]"
+    af-api4-ctrl="contact"
+ >
+
     <form name="basicContact"
-      onaftersave="crmApi4('Contact','update', {
+      onaftersave="
+      crmApi4('Contact','update', {
         'where' :[['id','=', options.contact_id]],
         'values' : {
-          last_name: contact['result'].last_name,
-          first_name: contact['result'].first_name,
-          middle_name: contact['result'].middle_name,
-          nick_name: contact['result'].nick_name
+          'last_name': contact['result'][0].last_name,
+          'first_name': contact['result'][0].first_name,
+          'middle_name': contact['result'][0].middle_name,
+          'nick_name': contact['result'][0].nick_name,
         },
         chain: {'email':['Email', 'update', {
           'where':[['contact_id', '=', '$id'], ['is_primary', '=', true]],
-          'values' : {'email' : contact['result'].email}
+          'values' : {'email' : contact['result'][0]['email_primary.email']}
         }]}
      })"
      onhide="contact.refresh()"
      editable-form crm-ui-id-scope>
-    <h1 class="basic-contact-heading" ng-show="!contact['result'].display_name">{{options.display_name}}</h1>
-    <div><h1 class="basic-contact-heading" ng-bind="contact['result'].display_name">{{contact['result'].display_name}}</h1></div>
+    <h1 class="basic-contact-heading" ng-show="!contact['result'][0].display_name">{{options.display_name}}</h1>
+    <div><h1 class="basic-contact-heading" ng-bind="contact['result'][0].display_name">{{contact['result'][0].display_name}}</h1></div>
     <div>
     </div>
-    <div><strong class="basic-contact-field">{{ ts('First Name') }}</strong>: <span editable-text="contact['result'].first_name">{{contact['result'].first_name || ".."}}</span></div>
-    <div><strong class="basic-contact-field">{{ ts('Middle Name') }}</strong>:<span editable-text="contact['result'].middle_name">{{contact['result'].middle_name || ".."}}</span></div>
-    <div><strong class="basic-contact-field">{{ ts('Last Name') }}</strong>: <span editable-text="contact['result'].last_name">{{contact['result'].last_name || ".."}}</span></div>
-    <div><strong class="basic-contact-field">{{ ts('Nick Name') }}</strong>: <span editable-text="contact['result'].nick_name">{{contact['result'].nick_name || ".."}}</span></div>
-    <div><strong class="basic-contact-field">{{ts('Email')}}</strong>: <span editable-text="contact['result'].email">{{contact['result'].email || ".."}}</span></div>
-    <div ng-show=contact['result'].street_address><strong class="basic-contact-field">{{ts('Street Address')}}</strong>: <span>{{contact['result'].street_address}}</span></div>
-    <div ng-show=contact['result'].city><strong class="basic-contact-field">{{ts('City')}}</strong>: <span>{{contact['result'].city}}</span></div>
-    <div><strong class="basic-contact-field">{{ts('Contact ID')}}</strong>: <a target="_blank" ng-if="options.contact_url" href="{{options.contact_url}}{{contact['result'].contact_id}}">{{contact['result'].id}}</a></div>
+    <div><strong class="basic-contact-field">{{ ts('First Name') }}</strong>: <span editable-text="contact['result'][0].first_name">{{contact['result'][0].first_name || ".."}}</span></div>
+    <div><strong class="basic-contact-field">{{ ts('Middle Name') }}</strong>:<span editable-text="contact['result'][0].middle_name">{{contact['result'][0].middle_name || ".."}}</span></div>
+    <div><strong class="basic-contact-field">{{ ts('Last Name') }}</strong>: <span editable-text="contact['result'][0].last_name">{{contact['result'][0].last_name || ".."}}</span></div>
+    <div><strong class="basic-contact-field">{{ ts('Nick Name') }}</strong>: <span editable-text="contact['result'][0].nick_name">{{contact['result'][0].nick_name || ".."}}</span></div>
+    <div ng-class="contact['result'][0]['email_primary.on_hold'] ? 'text-danger': ''"><strong class="basic-contact-field">{{ts('Email')}}</strong>: <span editable-text="contact['result'][0]['email_primary.email']">{{contact['result'][0]['email_primary.email'] || ".."}}</span>
+      <span ng-if="contact['result'][0]['email_primary.on_hold']">({{ts('On hold')}}) {{contact['result'][0]['email_primary.hold_date']}}</span></div>
+    <div ng-show=contact['result'][0]['address_primary.street_address']><strong class="basic-contact-field">{{ts('Street Address')}}</strong>: <span>{{contact['result'][0]['address_primary.street_address']}}</span></div>
+    <div ng-show=contact['result'][0]['address_primary.city']><strong class="basic-contact-field">{{ts('City')}}</strong>: <span>{{contact['result'][0]['address_primary.street_city']}}</span></div>
+    <div><strong class="basic-contact-field">{{ts('Contact ID')}}</strong>: <a target="_blank" ng-if="options.contact_url" href="{{options.contact_url}}{{contact['result'][0]['id']}}">{{contact['result'][0]['id']}}</a></div>
 
     <p></p>
 
