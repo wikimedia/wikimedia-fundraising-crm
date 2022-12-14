@@ -340,7 +340,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
   $found = $mailingData->fetch();
 
   // check that the API result is a valid contribution result
-  if (!$found) {
+  if (!$found || !$mailingData->contact_id) {
     // the API result is bad
     $msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r($mailingData, TRUE) . '</pre>';
     throw new WMFException(WMFException::GET_CONTRIBUTION, $msg);
