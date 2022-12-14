@@ -14,7 +14,7 @@ class PhoneImportTest extends BaseWmfDrupalPhpUnitTestCase {
         $msg = array(
             'currency' => 'USD',
             'date' => time(),
-            'email' => 'nobody@wikimedia.org',
+            'email' => 'somebody@wikimedia.org',
             'gateway' => 'test_gateway',
             'gateway_txn_id' => mt_rand(),
             'gross' => '1.23',

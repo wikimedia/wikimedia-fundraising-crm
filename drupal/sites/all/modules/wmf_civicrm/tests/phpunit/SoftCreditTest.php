@@ -16,7 +16,7 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
     $msg = [
       'currency' => 'USD',
       'date' => time(),
-      'email' => 'nobody@wikimedia.org',
+      'email' => 'somebody@wikimedia.org',
       'gateway' => 'test_gateway',
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
@@ -42,7 +42,7 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
     $msg = [
       'currency' => 'USD',
       'date' => time(),
-      'email' => 'nobody@wikimedia.org',
+      'email' => 'somebody@wikimedia.org',
       'gateway' => 'test_gateway',
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
