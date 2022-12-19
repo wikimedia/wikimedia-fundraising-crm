@@ -1033,7 +1033,7 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
  * @return bool
  */
 function wmf_civicrm_is_email_valid($email) {
-  if (empty($email) || $email === 'nobody@wikimedia.org') {
+  if (empty($email)) {
     return FALSE;
   }
   return TRUE;

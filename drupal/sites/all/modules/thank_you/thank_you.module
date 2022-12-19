@@ -360,9 +360,9 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
   }
 
   // check for contacts without an email address
-  if (empty($mailingData['email']) or $mailingData['email'] === 'nobody@wikimedia.org') {
-    watchdog('thank_you', 'No email address found. Processing as anonymous.', [], WATCHDOG_INFO);
-    wmf_civicrm_set_no_thank_you($contribution_id, 'anonymous');
+  if (empty($mailingData['email'])) {
+    watchdog('thank_you', 'No usable email address found', [], WATCHDOG_INFO);
+    wmf_civicrm_set_no_thank_you($contribution_id, 'no email');
     return FALSE;
   }
 
@@ -968,7 +968,6 @@ function thank_you_batch_test() {
 		JOIN civicrm_email
 			ON civicrm_email.contact_id = civicrm_contribution.contact_id
 		WHERE trxn_id IS NOT NULL
-		AND civicrm_email.email <> 'nobody@wikimedia.org'
 		AND thankyou_date IS NULL
 		AND no_thank_you IS NULL
 		ORDER BY id DESC LIMIT 1000;

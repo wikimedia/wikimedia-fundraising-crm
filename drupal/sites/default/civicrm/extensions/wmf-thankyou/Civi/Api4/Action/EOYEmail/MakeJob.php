@@ -94,7 +94,6 @@ INNER JOIN civicrm_contact contact ON contact.id = email.contact_id
 LEFT JOIN wmf_eoy_receipt_donor eoy ON email.email = eoy.email AND eoy.year = " . $this->getYear() ."
 WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
   AND contribution.contribution_status_id = $completedStatusId
-  AND email.email <> 'nobody@wikimedia.org'
   AND eoy.email IS NULL
 ";
 
