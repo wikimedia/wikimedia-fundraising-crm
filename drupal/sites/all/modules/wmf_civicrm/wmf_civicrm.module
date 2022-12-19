@@ -955,7 +955,7 @@ function wmf_civicrm_message_location_update($msg, $contact) {
  * @throws \Civi\WMFException\WMFException
  */
 function wmf_civicrm_message_email_update($msg, $contact_id) {
-  if (!wmf_civicrm_is_email_valid(CRM_Utils_Array::value('email', $msg))) {
+  if (empty($msg['email'])) {
     return;
   }
 
@@ -1023,20 +1023,6 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
     $code = (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTACT;
     throw new WMFException($code, "Couldn't store email for the contact.", $e->getExtraParams());
   }
-}
-
-/**
- * We do not store empty emails or placeholder emails.
- *
- * @param string $email
- *
- * @return bool
- */
-function wmf_civicrm_is_email_valid($email) {
-  if (empty($email)) {
-    return FALSE;
-  }
-  return TRUE;
 }
 
 /**

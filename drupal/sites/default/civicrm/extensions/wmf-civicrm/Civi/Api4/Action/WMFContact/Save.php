@@ -119,7 +119,7 @@ class Save extends AbstractAction {
       }
     }
 
-    if (!$contact_id && isset($msg['email']) && wmf_civicrm_is_email_valid($msg['email'])) {
+    if (!$contact_id && !empty($msg['email'])) {
       // For updates we are still using our own process which may or may not confer benefits
       // For inserts however we can rely on the core api.
       $contact['email'] = $msg['email'];
