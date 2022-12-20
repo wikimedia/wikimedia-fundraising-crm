@@ -22,7 +22,7 @@
 {if $hasAnnualFund}
 <p><b>Total donations to Wikimedia Foundation:</b></p>
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type != 'Endowment'}
+{if $contribution.financial_type != 'Endowment Gift'}
 <p>
   Donation {$index}: {$contribution.amount} {$contribution.currency} on {$contribution.receive_date}
 </p>
@@ -34,7 +34,7 @@
 <p><b>Total donations to Wikimedia Endowment:</b></p>
 
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type == 'Endowment'}
+{if $contribution.financial_type == 'Endowment Gift'}
 <p>
   Donation {$index}: {$contribution.amount} {$contribution.currency} on {$contribution.receive_date}
 </p>

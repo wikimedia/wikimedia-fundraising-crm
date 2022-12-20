@@ -18,7 +18,7 @@ A {$year}. évi teljes összeg: {$total.currency} {$total.amount}.
 
 <p><b>Összes adomány a Wikimedia Foundation részére:</b></p>
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type != 'Endowment'}
+{if $contribution.financial_type != 'Endowment Gift'}
 <p>
 {$index}. adomány: {$contribution.amount} {$contribution.currency} / {$contribution.receive_date}
 </p>

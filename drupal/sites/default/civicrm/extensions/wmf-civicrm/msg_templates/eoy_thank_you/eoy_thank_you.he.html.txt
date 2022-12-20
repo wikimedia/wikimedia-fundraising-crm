@@ -22,7 +22,7 @@
 
 <p><b>סך כל התרומות עבור קרן ויקימדיה:</b></p>
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type != 'Endowment'}
+{if $contribution.financial_type != 'Endowment Gift'}
 <p>
  תרומה 1: ‎{$contribution.amount} {$contribution.currency} {$contribution.receive_date}
 </p>

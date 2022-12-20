@@ -24,7 +24,7 @@
 
 <p><b> 对 Wikimedia Foundation 的捐款总额为</b></p>
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type != 'Endowment'}
+{if $contribution.financial_type != 'Endowment Gift'}
 <p>
 第一笔捐款 {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
 </p>

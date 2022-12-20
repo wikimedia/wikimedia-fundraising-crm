@@ -22,7 +22,7 @@ Tu total en {$year} fue de {$total.currency} {$total.amount}.
 
 <p><b>Donaciones totales a Wikimedia Foundation:</b></p>
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type != 'Endowment'}
+{if $contribution.financial_type != 'Endowment Gift'}
 <p>
 Donación {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
 </p>
