@@ -109,7 +109,7 @@ class EOYThankYou extends GenericWorkflowMessage {
     if ($this->hasEndowment === NULL) {
       $this->hasEndowment = FALSE;
       foreach ($this->contributions as $contribution) {
-        if ($contribution['financial_type_id:name'] === 'Endowment') {
+        if ($contribution['financial_type_id:name'] === 'Endowment Gift') {
           $this->hasEndowment = TRUE;
         }
       }
@@ -126,7 +126,7 @@ class EOYThankYou extends GenericWorkflowMessage {
     if ($this->hasAnnualFund === NULL) {
       $this->hasAnnualFund = FALSE;
       foreach ($this->contributions as $contribution) {
-        if ($contribution['financial_type_id:name'] !== 'Endowment') {
+        if ($contribution['financial_type_id:name'] !== 'Endowment Gift') {
           $this->hasAnnualFund = TRUE;
         }
       }
