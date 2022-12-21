@@ -22,7 +22,7 @@
 
 <p><b>Wikimedia Foundation へのご寄付の総額：</b></p>
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type != 'Endowment'}
+{if $contribution.financial_type != 'Endowment Gift'}
 <p>
 ご寄付 {$index}: {$contribution.receive_date} {$contribution.amount} {$contribution.currency}
 </p>

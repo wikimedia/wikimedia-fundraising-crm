@@ -22,7 +22,7 @@ Ihre Spendensummeim Jahr {$year} betrug {$total.currency} {$total.amount}.
 
 <p><b>Übersicht Ihrer Spenden an Wikimedia Foundation:</b></p>
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type != 'Endowment'}
+{if $contribution.financial_type != 'Endowment Gift'}
 <p>
 {$index}. Spende: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
 </p>

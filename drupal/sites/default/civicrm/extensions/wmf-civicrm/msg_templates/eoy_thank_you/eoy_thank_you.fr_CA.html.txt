@@ -23,7 +23,7 @@ Le total de vos dons {$year} s’élève à {$total.currency} {$total.amount}.
 
 <p><b>Total de vos dons à la Wikimedia Foundation :</b></p>
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type != 'Endowment'}
+{if $contribution.financial_type != 'Endowment Gift'}
 <p>
 Don {$index}: {$contribution.amount} {$contribution.currency} {$contribution.receive_date}
 </p>

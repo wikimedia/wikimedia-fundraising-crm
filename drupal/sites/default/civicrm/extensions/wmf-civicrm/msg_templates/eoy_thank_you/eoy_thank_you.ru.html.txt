@@ -22,7 +22,7 @@
 
 <p><b>Всего пожертвований Wikimedia Foundation:</b></p>
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type != 'Endowment'}
+{if $contribution.financial_type != 'Endowment Gift'}
 <p>
 Пожертвование {$index}: {$contribution.amount} {$contribution.currency} от {$contribution.receive_date}
 </p>

@@ -22,7 +22,7 @@ W roku {$year} suma Twoich darowizn wyniosła {$total.currency} {$total.amount}.
 
 <p><b>Łączna kwota darowizn na rzecz Wikimedia Foundation:</b></p>
 {foreach from=$contributions key=index item=contribution}
-{if $contribution.financial_type != 'Endowment'}
+{if $contribution.financial_type != 'Endowment Gift'}
 <p>
 Darowizna {$index}: {$contribution.amount} {$contribution.currency} w dniu {$contribution.receive_date}
 </p>
