@@ -206,7 +206,7 @@ class EOYThankYou extends GenericWorkflowMessage {
       }
       // We need both the formatted amount and the unformatted. Going with the db field holding the db value
       // and 'amount' holding formatted.
-      $this->contributions[$index]['amount'] = \Civi::format()->moneyNumber($contribution['total_amount'], $contribution['currency'], \CRM_Core_I18n::getLocale());
+      $this->contributions[$index]['amount'] = \Civi::format()->moneyNumber($contribution['total_amount'], $contribution['currency'], $this->getLocale());
       if (!array_key_exists('date', $contribution)) {
         // We convert to Hawaii time which is 10 hours earlier than
         // GMT to avoid issues with last minute donations slipping into the next year in some timezones,

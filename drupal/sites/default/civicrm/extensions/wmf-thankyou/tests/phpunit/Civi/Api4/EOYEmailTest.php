@@ -233,7 +233,7 @@ class EOYEmailTest extends TestCase {
         'total_amount' => 20.0,
         'currency' => 'USD',
         'financial_type' => 'Cash',
-        'amount' => '20.00',
+        'amount' => '20,00',
         'date' => '2018-02-01',
       ],
       2 => [
@@ -245,7 +245,7 @@ class EOYEmailTest extends TestCase {
         'total_amount' => 400.0,
         'currency' => 'PLN',
         'financial_type' => 'Endowment Gift',
-        'amount' => '400.00',
+        'amount' => '400,00',
         'date' => '2018-04-03',
       ],
       3 => [
@@ -257,7 +257,7 @@ class EOYEmailTest extends TestCase {
         'total_amount' => 30.0,
         'currency' => 'PLN',
         'financial_type' => 'Cash',
-        'amount' => '30.00',
+        'amount' => '30,00',
         'date' => '2018-08-08',
       ],
     ]);
@@ -292,7 +292,7 @@ class EOYEmailTest extends TestCase {
           'total_amount' => 400.0,
           'currency' => 'PLN',
           'financial_type' => 'Cash',
-          'amount' => '400.00',
+          'amount' => '400,00',
           'date' => '2018-02-01',
       ],
       2 => [
@@ -304,7 +304,7 @@ class EOYEmailTest extends TestCase {
         'total_amount' => 30.0,
         'currency' => 'PLN',
         'financial_type' => 'Cash',
-        'amount' => '30.00',
+        'amount' => '30,00',
         'date' => '2018-03-02',
       ],
       3 => [
@@ -316,7 +316,7 @@ class EOYEmailTest extends TestCase {
         'total_amount' => 200.0,
         'currency' => 'PLN',
         'financial_type' => 'Cash',
-        'amount' => '200.00',
+        'amount' => '200,00',
         'date' => '2018-04-03',
       ],
     ]);
