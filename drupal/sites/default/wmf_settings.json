@@ -1,6 +1,11 @@
 {
   "logging" : 1,
-  "customCSSURL" : "sites/default/civicrm/extensions/org.civicrm.shoreditch/css/custom-civicrm.css",
-  "menubar_color" : "#ffffff",
-  "editor_id" : "CKEditor5-base64"
+  "enable_components": [
+    "CiviEvent",
+    "CiviContribute",
+    "CiviMail",
+    "CiviPledge",
+    "CiviReport",
+    "CiviCampaign"
+  ]
 }

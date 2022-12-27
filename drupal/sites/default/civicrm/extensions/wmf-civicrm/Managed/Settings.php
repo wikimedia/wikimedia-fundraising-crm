@@ -7,6 +7,13 @@
 // actively defined.
 use Civi\Api4\CustomField;
 use Civi\Api4\OptionValue;
+// This file specifies the default values for settings. Actively
+// setting them over-rides these. Note that there are ALSO
+// 2 other places we specify settings
+// - sites/default/wmf_settings_developer.json for development site
+// only settings and
+// - sites/default/wmf_settings.json for settings that 'do something'
+// when enabled, ie enabling logging creates logging tables.
 
 $settings = [
   'civi-data-mailing-template-path' => 'sites/default/civicrm/extensions/wmf-civicrm/msg_templates/recurring_failed_message',
@@ -19,6 +26,11 @@ $settings = [
 
   // Enable message translation with locale parsing.
   'partial_locales' => 1,
+
+  // Shoreditch theme settings.
+  'customCSSURL' => 'sites/default/civicrm/extensions/org.civicrm.shoreditch/css/custom-civicrm.css',
+  'menubar_color' => '#ffffff',
+  'editor_id' => 'CKEditor5-base64',
 
   // We specify the tokens we want to have available to limit
   // processing to what is useful. These add nice formatted address block tokens.
