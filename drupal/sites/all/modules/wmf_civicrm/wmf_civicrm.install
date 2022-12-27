@@ -19,8 +19,6 @@ function wmf_civicrm_install() {
   civicrm_initialize();
   // the escalate is only required for tests/
   _wmf_civicrm_escalate_permissions();
-  // Update message template.
-  wmf_civicrm_update_7280();
   // enable civi campaign (not sure if setting default will work - try).
   wmf_civicrm_update_7525();
   // Dedupe rules
@@ -127,34 +125,6 @@ function wmf_civicrm_update_7275() {
   CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = REPLACE(preferred_language, '_', '') WHERE RIGHT(preferred_language, 1) = '_'");
   // Just a single oddity.
   CRM_Core_DAO::executeQuery("UPDATE civicrm_contact SET preferred_language = 'zh_CN' WHERE preferred_language = '恩_CN'");
-}
-
-/**
- * Update offline message template to match thank you letter.
- *
- * The template is cut down from our standard thank you in the following ways
- *
- * 1) I pretty much by-passed translation - I’m thinking this is mostly for a
- * small number of English language receipts to be manually generated. I’d need
- * to do something more complex to get it translating well
- * 2) I ditched the RecurringRestarted & UnrecordedCharge logic. I figured you
- * would be sending these on request.
- * 3)I have assumed we have a first name & not done the fall-back to donor (on
- * assumption manual sends know the name).
- * 4) I did not include "{% if recurring %}<p> This donation is part of a
- * recurring subscription. Monthly payments will be debited by the Wikimedia
- * Foundation until you notify us to stop. If you’d like to cancel the payments
- * please see our
- * <a
- * href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payment..
- *
- * In other words this is a pretty-simple English language solution.
- *
- * Bug T137496
- */
-function wmf_civicrm_update_7280() {
-  require_once 'update_receipt.php';
-  _wmf_civicrm_update_offline_receipt();
 }
 
 /**
