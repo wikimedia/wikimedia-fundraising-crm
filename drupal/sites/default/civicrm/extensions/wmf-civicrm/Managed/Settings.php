@@ -10,12 +10,6 @@ use Civi\Api4\OptionValue;
 
 $settings = [
   'civi-data-mailing-template-path' => 'sites/default/civicrm/extensions/wmf-civicrm/msg_templates/recurring_failed_message',
-  // This is one we should consider removing. It was added as part of
-  // T137496 to make the money format in the receipts generated from CiviCRM
-  // look per MG preference. However, we don't really use that receipt now
-  // as our thank yous are available as a button now and the concept of
-  // moneyformat is up for deprecation in core as part of a switch to brick money.
-  'moneyformat' => '%c%a',
   'omnimail_field_mapping' => [
     'first_name' => 'firstname',
     'last_name' => 'lastname' ,
