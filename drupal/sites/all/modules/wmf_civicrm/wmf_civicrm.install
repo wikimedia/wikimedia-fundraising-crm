@@ -3,43 +3,6 @@
 require_once(__DIR__ . "/bootstrap.inc");
 
 /**
- * On new install call these functions.
- *
- * Some things need to run on update but not on new installs in which case they won't be below.
- *
- * A good example is that we have update functions to 'enable all the extensions we need' - on
- * new installs we need to run this only once as the list is dynamic so we don't need to call
- * each update function that does that. Another e.g is datacleanup tasks.
- *
- * @throws \CiviCRM_API3_Exception
- * @throws \DrupalUpdateException
- * @throws \Exception
- */
-function wmf_civicrm_install() {
-  civicrm_initialize();
-  // the escalate is only required for tests/
-  _wmf_civicrm_escalate_permissions();
-}
-
-/**
- * Escalate permissions.
- *
- * In general we do api calls from php with check_permissions = FALSE so this doesn't matter.
- *
- * However, when there is an error the debug output is affected by permissions -ie
- *
- * if (CRM_Core_Permission::check('Administer CiviCRM') || CIVICRM_UF == 'UnitTests') {
- *
- * For core tests the UF is UnitTests so the extra debug is returned but we are running
- * under Drupal so we need to be more aggressive.
- */
-function _wmf_civicrm_escalate_permissions() {
-  civicrm_initialize();
-  CRM_Core_Config::singleton()->userPermissionTemp = new CRM_Core_Permission_Temp();
-  CRM_Core_Config::singleton()->userPermissionTemp->grant('administer CiviCRM');
-}
-
-/**
 /**
  * Disable slow system checks.
  *
