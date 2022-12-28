@@ -171,74 +171,6 @@ function wmf_civicrm_update_8015() {
 }
 
 /**
- * Create ts 2020 export group.
- *
- * This creates a group for the contacts to be updated in the 2020
- * ts export. From testing on staging it is possible to actually export this many rows
- * and by putting them in a group we give MG a chance to dedupe first if they wish.
- *
- * Bug: T247624
- *
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_update_8035() {
-  civicrm_initialize();
-  $groupID = (int) civicrm_api3('Group', 'create', [
-    'name' => 'targetsmart_export_2020',
-    'title' => 'Target smart export 2020',
-    'description' => 'Contacts to be exported for target smart this year',
-  ])['id'];
-  $communicationPreferencesTableName = civicrm_api3('CustomGroup', 'getvalue', ['return' => 'table_name', 'name' => 'Communication']);
-  CRM_Core_DAO::executeQuery(
-    "INSERT INTO civicrm_group_contact (group_id, status, contact_id)
-    SELECT $groupID, 'Added', wmf.entity_id
-    FROM wmf_donor AS wmf
-    INNER JOIN civicrm_contact AS c ON c.id = wmf.entity_id
-    INNER JOIN civicrm_address AS a ON (c.id = a.contact_id AND a.is_primary = 1)
-    LEFT JOIN $communicationPreferencesTableName cv ON cv.entity_id = wmf.entity_id
-    INNER JOIN civicrm_email e ON e.contact_id = c.id AND e.is_primary = 1 AND e.on_hold IS NOT NULL
-
-    WHERE
-      c.contact_type = 'Individual'
-      AND a.country_id = 1228
-      AND a.street_address IS NOT NULL
-      # This complex clause gets the earliest of endowment_first_donation_date & first_donation_date
-      # and ensures it is greater than 1 Jul 2019
-      # effectively 'first gave this financial year'
-      AND IF(wmf.first_donation_date IS NULL OR wmf.endowment_first_donation_date IS NULL,
-         COALESCE(wmf.first_donation_date, wmf.endowment_first_donation_date),
-         LEAST(wmf.first_donation_date,wmf.endowment_first_donation_date)) >= '2019-07-01'
-      AND c.is_deleted = 0
-
-      # Yep 3 forms of opt in / out & we have to be careful about NULL
-      AND c.is_opt_out = 0
-      AND (cv.do_not_solicit = 0 OR cv.do_not_solicit IS NULL)
-      AND (cv.opt_in = 1 OR cv.opt_in IS NULL)
-
-      # total of the 2 fields is greater than 5.
-      AND (wmf.total_2019_2020 + wmf.endowment_total_2019_2020 ) >= 5
-
-      # I took a look to see if there were many that needed deduping and
-      # this list stood out as being intentionally invalid addresses.
-      AND email NOT IN (
-        'na@na.com',
-        'name@domain.com',
-        'no@gmail.com',
-        'no@no.com',
-        'noemail@gmail.com',
-        'noemail@noemail.com',
-        'noemail@yahoo.com',
-        'none@none.com',
-        'noneofyourbusiness@gmail.com',
-        'nope@nope.com',
-        'nothanks@gmail.com',
-        'a@b.com'
-      )
-  ");
-
-}
-
-/**
  * Add index to civicrm_country.iso_code.
  *
  * To hone the silverpop queries we really want to join on this so we need an index.
@@ -249,59 +181,6 @@ function wmf_civicrm_update_8070() {
   civicrm_initialize();
   $tables = ['civicrm_country' => ['iso_code']];
   CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-}
-
-/*
- * Fix the fixed next_sched_contribution date for ingenio recurrings that fall an hour to soon
- *
- * @throws \API_Exception
- *
- * Bug: T264954
- */
-function wmf_civicrm_update_8090() {
-  civicrm_initialize();
-
-  CRM_Core_DAO::executeQuery("
-    UPDATE civicrm_contribution_recur
-    LEFT JOIN civicrm_contribution ON civicrm_contribution.contribution_recur_id = civicrm_contribution_recur.id
-    SET next_sched_contribution_date = DATE_ADD(next_sched_contribution_date, INTERVAL 1 DAY)
-    WHERE civicrm_contribution_recur.next_sched_contribution_date = '2020-11-03'
-    AND civicrm_contribution.receive_date > '2020-10-10'
-  ");
-}
-
-/**
- * Add civicrm_managed records for our wmf reports.
- *
- * We are converting them to being loaded through a mgd file.
- * However, since they already exist we need to add the mgd row on the prod
- * db - not required for dev dbs as the mgd will work when they don't already exist.
- *
- * This does not need to be transitioned to drupal code.
- *
- * @throws \API_Exception
- */
-function wmf_civicrm_update_8095() {
-  civicrm_initialize();
-  OptionValue::delete(FALSE)->setWhere([
-    ['option_group_id:name', '=', 'report_template'],
-    ['name', '=', 'CRM_Report_Form_Contribute_Trends'],
-  ])->execute();
-
-  $reportsToKeep = OptionValue::get(FALSE)->setWhere([
-    ['option_group_id:name', '=', 'report_template'],
-    ['name', 'IN', ['CRM_Report_Form_Contribute_WmfLybunt', 'CRM_Report_Form_Contribute_GatewayReconciliation']],
-   ])->setSelect(['id', 'name'])->execute();
-  $nameMap = [
-    'CRM_Report_Form_Contribute_GatewayReconciliation' => 'WMF gateway reconciliation report - used by Pats Pena',
-    'CRM_Report_Form_Contribute_WmfLybunt' => 'WMF LYBUNT report (possibly dead)',
-  ];
-  foreach ($reportsToKeep as $report) {
-    CRM_Core_DAO::executeQuery("
-      INSERT INTO civicrm_managed (module, name, entity_type, entity_id)
-      VALUES('wmf-civicrm', '{$nameMap[$report['name']]}', 'ReportTemplate', {$report['id']})
-   ");
-  }
 }
 
 /**
@@ -316,36 +195,6 @@ function wmf_civicrm_update_8110() {
 }
 
 /**
- * Update recurring contribution statuses to in progress.
- *
- * This fixes the status on recurring contributions where the status
- * is incorrectly 'completed' (a status we don't really use since
- * they are either in progress or cancelled).
- *
- * I've limited to updating ones with a contribution this year.
- *
- * Timing from staging
- *
- * Query OK, 189391 rows affected (1 min 25.869 sec)
- *
- * Bug: T277590
- */
-function wmf_civicrm_update_8220() {
-  civicrm_initialize();
-  CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution_recur
-    SET contribution_status_id = 5
-    WHERE id IN (
-      SELECT cr.id
-      FROM civicrm_contribution_recur cr
-      INNER JOIN civicrm_contribution c
-        ON c.contribution_recur_id = cr.id AND c.receive_date > '2021-01-01'
-      WHERE cr.contribution_status_id = 1
-      GROUP BY cr.id
-    )"
-  );
-}
-
-/**
  * Add index on civicrm_deleted_emails.
  *
  * Slow query spotted despite the table having only 206 rows.
@@ -355,51 +204,4 @@ function wmf_civicrm_update_8220() {
 function wmf_civicrm_update_8225() {
   civicrm_initialize();
   CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_deleted_email ADD PRIMARY KEY (id)');
-}
-
-/**
- * Remove duplicated language options.
- */
-function wmf_civicrm_update_8240() {
-  wmf_civicrm_bootstrap_civi();
-  CRM_Core_DAO::executeQuery('DELETE tt FROM civicrm_option_value t LEFT JOIN civicrm_option_value tt ON t.option_group_id = 86 AND t.option_group_id = 86 AND tt.id > t.id AND tt.name=t.name WHERE tt.id IS NOT NULL');
-}
-
-/**
- * Set opt-outs missed because of GatewayChooser bug
- * See https://phabricator.wikimedia.org/T311974
- */
-function wmf_civicrm_update_8241() {
-  wmf_civicrm_bootstrap_civi();
-  // Update donors with an existing civicrm_value_1_communication_4 row
-  // Should affect 894 rows (884 have opt_in = 1 and 10 have NULL)
-  CRM_Core_DAO::executeQuery(
-    "UPDATE civicrm_value_1_communication_4 n
-    INNER JOIN civicrm_contribution c ON c.contact_id=n.entity_id
-    INNER JOIN drupal.contribution_tracking t ON t.contribution_id = c.id
-    SET n.opt_in = 0
-    WHERE ts BETWEEN '20220615000000' AND '20220630235999'
-    AND utm_source LIKE '%optIn0%' "
-  );
-}
-
-/**
- * Set opt-outs missed because of GatewayChooser bug (corrected version of second step)
- * See https://phabricator.wikimedia.org/T311974
- */
-function wmf_civicrm_update_8242() {
-  wmf_civicrm_bootstrap_civi();
-  // Insert missing civicrm_value_1_communication_4 rows
-  // Should insert 14,362 rows
-  CRM_Core_DAO::executeQuery(
-    "INSERT INTO civicrm_value_1_communication_4 (entity_id, opt_in)
-    SELECT c.contact_id, 0
-    FROM drupal.contribution_tracking ct
-    INNER JOIN civicrm_contribution c ON c.id=ct.contribution_id
-    LEFT JOIN civicrm_value_1_communication_4 n ON n.entity_id = c.contact_id
-    WHERE ts BETWEEN '20220615000000' AND '20220630235999'
-    AND utm_source LIKE '%optIn0%'
-    AND n.id IS NULL
-    GROUP BY c.contact_id"
-  );
 }
