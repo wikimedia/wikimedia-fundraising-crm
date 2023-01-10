@@ -7,15 +7,16 @@
 // actively defined.
 use Civi\Api4\CustomField;
 use Civi\Api4\OptionValue;
+// This file specifies the default values for settings. Actively
+// setting them over-rides these. Note that there are ALSO
+// 2 other places we specify settings
+// - sites/default/wmf_settings_developer.json for development site
+// only settings and
+// - sites/default/wmf_settings.json for settings that 'do something'
+// when enabled, ie enabling logging creates logging tables.
 
 $settings = [
   'civi-data-mailing-template-path' => 'sites/default/civicrm/extensions/wmf-civicrm/msg_templates/recurring_failed_message',
-  // This is one we should consider removing. It was added as part of
-  // T137496 to make the money format in the receipts generated from CiviCRM
-  // look per MG preference. However, we don't really use that receipt now
-  // as our thank yous are available as a button now and the concept of
-  // moneyformat is up for deprecation in core as part of a switch to brick money.
-  'moneyformat' => '%c%a',
   'omnimail_field_mapping' => [
     'first_name' => 'firstname',
     'last_name' => 'lastname' ,
@@ -25,6 +26,11 @@ $settings = [
 
   // Enable message translation with locale parsing.
   'partial_locales' => 1,
+
+  // Shoreditch theme settings.
+  'customCSSURL' => 'sites/default/civicrm/extensions/org.civicrm.shoreditch/css/custom-civicrm.css',
+  'menubar_color' => '#ffffff',
+  'editor_id' => 'CKEditor5-base64',
 
   // We specify the tokens we want to have available to limit
   // processing to what is useful. These add nice formatted address block tokens.

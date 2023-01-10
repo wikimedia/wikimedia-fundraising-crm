@@ -11,16 +11,13 @@
 namespace Civi\Api4;
 
 /**
- * DedupeRule entity.
+ * ReportInstance entity.
  *
- * This api exposes CiviCRM (dedupe) rules.
- *
- * @searchable none
- * @see https://docs.civicrm.org/user/en/latest/organising-your-data/contacts/
- * @since 5.39
+ * @searchable secondary
+ * @since 5.58
  * @package Civi\Api4
  */
-class DedupeRule extends Generic\DAOEntity {
+class ReportInstance extends Generic\DAOEntity {
   use Generic\Traits\ManagedEntity;
 
 }
