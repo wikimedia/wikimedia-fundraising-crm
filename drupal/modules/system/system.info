@@ -9,11 +9,10 @@ files[] = system.queue.inc
 files[] = system.tar.inc
 files[] = system.updater.inc
 files[] = system.test
-files[] = tests/NamespacedClass.php
 required = TRUE
 configure = admin/config/system
 
-; Information added by Drupal.org packaging script on 2022-02-16
-version = "7.88"
+; Information added by Drupal.org packaging script on 2022-12-14
+version = "7.94"
 project = "drupal"
-datestamp = "1645030312"
+datestamp = "1671034612"
