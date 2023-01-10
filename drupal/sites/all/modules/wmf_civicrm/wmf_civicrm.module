@@ -8,7 +8,7 @@ use Civi\WMFHelpers\FinanceInstrument;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
-use wmf_civicrm\ImportStatsCollector;
+use Civi\WMFStatistics\ImportStatsCollector;
 use Civi\WMFException\WMFException;
 
 require_once 'recurring.inc';

@@ -5,7 +5,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\Email;
 use Civi\Api4\Relationship;
 use Civi\WMFException\WMFException;
-use wmf_civicrm\ImportStatsCollector;
+use Civi\WMFStatistics\ImportStatsCollector;
 
 define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
 
