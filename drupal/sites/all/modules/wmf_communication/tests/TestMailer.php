@@ -4,30 +4,42 @@ use Civi\Omnimail\IMailer;
 use Civi\Omnimail\MailFactory;
 
 class TestMailer implements IMailer {
-    static protected $mailings;
-    static protected $success = true;
+  protected $mailings = [];
+  static protected $success = true;
 
-    static public function setup() {
-        Mailer::$defaultSystem = 'test';
-        MailFactory::singleton()->setActiveMailer('test');
-        self::$mailings = array();
-        self::$success = true;
-    }
+  static public function setup() {
+      Mailer::$defaultSystem = 'test';
+      MailFactory::singleton()->setActiveMailer('test');
+      self::$success = true;
+  }
 
-    static public function setSuccess( $success ) {
-        self::$success = $success;
-    }
+  static public function setSuccess( $success ) {
+      self::$success = $success;
+  }
 
-    public function send( $email ) {
-        self::$mailings[] = $email;
-        return self::$success;
-    }
+  public function send($email) {
+      $this->mailings[] = $email;
+      return self::$success;
+  }
 
-    static public function countMailings() {
-        return count( self::$mailings );
-    }
+  /**
+   * Get the number of mailings sent in the test.
+   *
+   * @return int
+   */
+  public function countMailings(): int {
+    return count($this->mailings);
+  }
 
-    static public function getMailing( $index ) {
-        return self::$mailings[$index];
-    }
+  /**
+   * Get the content on the sent mailing.
+   *
+   * @param int $index
+   *
+   * @return array
+   */
+  public function getMailing(int $index): array {
+      return $this->mailings[$index];
+  }
+
 }

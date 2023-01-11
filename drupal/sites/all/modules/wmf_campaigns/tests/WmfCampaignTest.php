@@ -1,7 +1,5 @@
 <?php
 
-use wmf_communication\TestMailer;
-
 /**
  * @group WmfCampaigns
  */
@@ -20,8 +18,6 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
   public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
-
-    TestMailer::setup();
     unset (Civi::$statics['wmf_campaigns']['campaigns']);
     $this->campaign_custom_field_name = wmf_civicrm_get_custom_field_name('Appeal');
 
@@ -73,10 +69,10 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
     $this->ids['Contribution'][$result['id']] = $result['id'];
 
-    $this->assertEquals(1, TestMailer::countMailings(),
+    $this->assertEquals(1, $this->getMailingCount(),
       'Exactly one email was sent.');
 
-    $mailing = TestMailer::getMailing(0);
+    $mailing = $this->getMailing(0);
     $this->assertNotEquals(FALSE, strpos($mailing['html'], $this->campaign_key),
       'Campaign name found in notification email.');
   }
@@ -115,6 +111,6 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
     $this->ids['Contribution'][$result['id']] = $result['id'];
 
-    $this->assertEquals(0, TestMailer::countMailings());
+    $this->assertEquals(0, $this->getMailingCount());
   }
 }

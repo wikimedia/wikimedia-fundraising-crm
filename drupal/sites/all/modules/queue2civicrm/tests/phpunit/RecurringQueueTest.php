@@ -1,7 +1,6 @@
 <?php
 
 use queue2civicrm\recurring\RecurringQueueConsumer;
-use wmf_communication\TestMailer;
 use Civi\WMFException\WMFException;
 
 /**
@@ -525,9 +524,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->addToCleanup($firstContribution);
     $this->consumeCtQueue();
 
-    // Setup here to only generate a notification email
-    TestMailer::setup();
-
     // Set up token specific values
     $overrides['recurring_payment_token']= mt_rand();
     $overrides['currency'] = 'CAD';
@@ -541,8 +537,8 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->processRecurringSignup($subscr_id,$overrides);
 
-    $this->assertEquals( 1, TestMailer::countMailings() );
-    $sent = TestMailer::getMailing( 0 );
+    $this->assertEquals(1, $this->getMailingCount());
+    $sent = $this->getMailing( 0 );
 
     // Check the right email
     $this->assertEquals( $messageBody['email'], $sent['to_address'] );

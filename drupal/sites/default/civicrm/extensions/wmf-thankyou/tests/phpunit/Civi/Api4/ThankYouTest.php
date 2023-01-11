@@ -4,10 +4,9 @@ namespace Civi\Api4;
 use API_Exception;
 use Civi;
 use Civi\Test\Api3TestTrait;
-use CRM_Core_DAO;
 use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
-use wmf_communication\TestMailer;
+use Civi\Omnimail\MailFactory;
 
 class ThankYouTest extends TestCase {
 
@@ -26,12 +25,16 @@ class ThankYouTest extends TestCase {
    */
   protected $ids = [];
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   public function setUp(): void {
     if (!defined('WMF_UNSUB_SALT')) {
       define('WMF_UNSUB_SALT', 'abc123');
     }
     parent::setUp();
-    TestMailer::setup();
+    MailFactory::singleton()->setActiveMailer('test');
+
     $this->old_civimail = variable_get('thank_you_add_civimail_records', 'false');
     $this->old_civimail_rate = variable_get('thank_you_civimail_rate', 1.0);
     $this->old_endowment_from_name = Civi::settings()->get('wmf_endowment_thank_you_from_name');
@@ -212,8 +215,8 @@ class ThankYouTest extends TestCase {
         ),
       ]
     );
-    $this->assertEquals(1, TestMailer::countMailings());
-    $sent = TestMailer::getMailing(0);
+    $this->assertEquals(1, $this->getMailingCount());
+    $sent = $this->getMailing(0);
     $this->assertEquals($activity['details'], $sent['html']);
   }
 
@@ -329,15 +332,35 @@ class ThankYouTest extends TestCase {
   }
 
   /**
-   * @return mixed
-   * @throws \CiviCRM_API3_Exception
+   * @return array
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  protected function sendThankYou() {
+  protected function sendThankYou(): array {
     $result = thank_you_for_contribution($this->getContributionID());
     $this->assertTrue($result);
-    $this->assertEquals(1, TestMailer::countMailings());
-    return TestMailer::getMailing(0);
+    $this->assertEquals(1, $this->getMailingCount());
+    return $this->getMailing(0);
+  }
+
+  /**
+   * Get the number of mailings sent in the test.
+   *
+   * @return int
+   */
+  public function getMailingCount(): int {
+    return MailFactory::singleton()->getMailer()->countMailings();
+  }
+
+  /**
+   * Get the content on the sent mailing.
+   *
+   * @param int $index
+   *
+   * @return array
+   */
+  public function getMailing(int $index): array {
+    return MailFactory::singleton()->getMailer()->getMailing($index);
   }
 
 }

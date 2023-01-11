@@ -14,6 +14,7 @@ use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use Civi\Api4\Contact;
 use Civi\WMFException\WMFException;
+use Civi\Omnimail\MailFactory;
 
 class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
 
@@ -60,6 +61,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     $user->roles = array(DRUPAL_AUTHENTICATED_RID => 'authenticated user');
     $this->startTimestamp = time();
     civicrm_initialize();
+    MailFactory::singleton()->setActiveMailer('test');
     Civi::settings()->set( 'logging_no_trigger_permission', FALSE);
     Civi::settings()->set( 'logging', TRUE);
     $this->maxContactID = $this->getHighestContactID();
@@ -348,6 +350,26 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
       }
       throw $e;
     }
+  }
+
+  /**
+   * Get the number of mailings sent in the test.
+   *
+   * @return int
+   */
+  public function getMailingCount(): int {
+    return MailFactory::singleton()->getMailer()->countMailings();
+  }
+
+  /**
+   * Get the content on the sent mailing.
+   *
+   * @param int $index
+   *
+   * @return array
+   */
+  public function getMailing(int $index): array {
+    return MailFactory::singleton()->getMailer()->getMailing($index);
   }
 
 }

@@ -1,6 +1,6 @@
 <?php
 
-use wmf_communication\Mailer;
+use Civi\Omnimail\MailFactory;
 
 /**
  * Send out a failmail notifying fr-tech of an abnormality in processing.
@@ -20,7 +20,7 @@ function wmf_common_failmail( $module, $message, $error = null, $source = null )
     );
 
     $isRemoved = (is_callable(array($error, 'isRejectMessage'))) ? $error->isRejectMessage() : FALSE;
-    $mailer = Mailer::getDefault();
+    $mailer = MailFactory::singleton()->getMailer();
     $mailer->send(array(
       'from_address' => variable_get('site_mail', ini_get('sendmail_from')),
       'from_name' => 'Fail Mail',

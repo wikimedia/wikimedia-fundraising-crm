@@ -1,6 +1,6 @@
 <?php
 
-use wmf_communication\TestMailer;
+use Civi\Omnimail\MailFactory;
 
 /**
  * @group LargeDonation
@@ -16,8 +16,6 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
   public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
-
-    TestMailer::setup();
 
     $this->threshold = 100;
     $this->threshold_high = 1000;
@@ -59,7 +57,7 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
     parent::tearDown();
   }
 
-  function testUnderThreshold() {
+  public function testUnderThreshold(): void {
     civicrm_api3('Contribution', 'create', array(
       'contact_id' => $this->contact_id,
       'financial_type_id' => 'Cash',
@@ -69,10 +67,10 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
     ));
 
-    $this->assertEquals(0, TestMailer::countMailings());
+    $this->assertEquals(0, $this->getMailingCount());
   }
 
-  function testAboveThreshold() {
+  public function testAboveThreshold(): void {
     $amount = $this->threshold + 0.01;
     $this->callAPISuccess('Contribution', 'create', array(
       'contact_id' => $this->contact_id,
@@ -84,15 +82,14 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
       'source' => 'EUR 2020',
     ));
 
-    $this->assertEquals(1, TestMailer::countMailings());
+    $this->assertEquals(1, $this->getMailingCount());
 
-    $mailing = TestMailer::getMailing(0);
-    $this->assertEquals(1, preg_match("/{$amount}/", $mailing['html']),
-      'Found amount in the notification email body.');
+    $mailing = $this->getMailing(0);
+    $this->assertRegExp("/{$amount}/", $mailing['html'], 'Found amount in the notification email body.');
     $this->assertEquals('notifee@localhost.net', $mailing['to']);
   }
 
-  function testAboveHighThreshold() {
+  public function testAboveHighThreshold(): void {
     $amount = $this->threshold_high + 0.01;
     $this->callAPISuccess('Contribution', 'create', array(
       'contact_id' => $this->contact_id,
@@ -104,10 +101,10 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
       'source' => 'EUR 2020',
     ));
 
-    $this->assertEquals(2, TestMailer::countMailings());
+    $this->assertEquals(2, $this->getMailingCount());
 
-    $mailing = TestMailer::getMailing(0);
-    $mailing2 = TestMailer::getMailing(1);
+    $mailing = $this->getMailing(0);
+    $mailing2 = $this->getMailing(1);
     $this->assertEquals([
       'notifee@localhost.net', 'highrollingnotifee@localhost.net'
     ], [
@@ -118,7 +115,7 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Test no mailing is sent for this smaller type.
    */
-  function testAboveThresholdExcludedType() {
+  public function testAboveThresholdExcludedType(): void {
     $amount = $this->threshold + 0.01;
     $this->callAPISuccess('Contribution', 'create', array(
       'contact_id' => $this->contact_id,
@@ -130,6 +127,6 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
       'source' => 'EUR 2020',
     ) );
 
-    $this->assertEquals( 0, TestMailer::countMailings());
+    $this->assertEquals( 0, $this->getMailingCount());
   }
 }
