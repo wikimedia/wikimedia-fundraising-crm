@@ -80,6 +80,8 @@ abstract class MailerBase {
    *
    * @param string $to
    *
+   * @deprecated
+   *
    * @return array
    */
   protected function splitAddresses($to) {

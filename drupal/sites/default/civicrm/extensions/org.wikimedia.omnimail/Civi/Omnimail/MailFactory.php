@@ -80,6 +80,7 @@ class MailFactory {
         $this->setActiveMailer('smtp');
       }
       else {
+        // deprecated.
         $this->setActiveMailer('phpmailer');
       }
     }

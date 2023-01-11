@@ -1,6 +1,6 @@
 <?php
 
-use wmf_communication\Mailer;
+use Civi\Omnimail\MailFactory;
 use wmf_communication\Templating;
 
 /**
@@ -68,7 +68,7 @@ function wmf_campaigns_index_form() {
 
   $rows = [];
   foreach ($options as $option) {
-    $notificationAddress = WmfCampaign::getNotificationAddressesFromKey($option['option_value.value']);
+    $notificationAddress = !empty(WmfCampaign::getNotificationAddressesFromKey($option['option_value.value']));
     $rows[] = [
       l($option['option_value.label'], "admin/config/wmf_campaigns/edit/" . $option['option_value.value']),
       $option['option_value.value'],
@@ -210,6 +210,8 @@ function wmf_campaigns_edit_form_submit($formId, &$formState) {
 
 /**
  * Implements hook_civicrm_custom
+ *
+ * @throws \Exception
  */
 function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
   switch ($action) {
@@ -229,7 +231,7 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
       $campaignKey = NULL;
       $contributionId = NULL;
 
-      foreach ($params as $index => $values) {
+      foreach ($params as $values) {
         if ($values['column_name'] === 'appeal') {
           $contributionId = $values['entity_id'];
           $campaignKey = $values['value'];
@@ -256,34 +258,37 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
       ]);
       $contribution = array_pop($result['values']);
 
-      watchdog('wmf_campaigns', "Notifying {$notificationEmail} about match on campaign {$campaignKey}", NULL, WATCHDOG_INFO);
+      watchdog('wmf_campaigns', "Notifying " . implode(',', $notificationEmail) . " about match on campaign {$campaignKey}", NULL, WATCHDOG_INFO);
 
-      //TODO: addresses should come from GUI config.
-      $letter = [
-        'from_address' => "fr-tech+wmf_campaigns@wikimedia.org",
-        'from_name' => "Campaign notifer",
-        'reply_to' => "fr-tech+wmf_campaigns-bounce@wikimedia.org",
-        'subject' => "Campaign donation: {$campaignKey}",
-        'to' => $notificationEmail,
-      ];
-      $civiUrl = CRM_Utils_System::url('civicrm/contact/view/contribution',
-        [
-          'reset' => 1,
-          'id' => $contribution['id'],
-          'cid' => $contribution['contact_id'],
-          'action' => 'view',
-        ],
-        TRUE // absolute link
-      );
-      $params = [
-        'civiUrl' => $civiUrl,
-        'campaignKey' => $campaignKey,
-        'contribution' => $contribution,
-      ];
-      $template = new Templating(__DIR__ . '/templates', 'notification', 'en', $params, 'html');
-      $letter['html'] = $template->render();
+      $mailer = MailFactory::singleton();
+      foreach ($notificationEmail as $toAddress) {
 
-      $mailer = Mailer::getDefault();
-      $mailer->send($letter);
+        //TODO: addresses should come from GUI config.
+        $letter = [
+          'from_address' => "fr-tech+wmf_campaigns@wikimedia.org",
+          'from_name' => "Campaign notifier",
+          'reply_to' => "fr-tech+wmf_campaigns-bounce@wikimedia.org",
+          'subject' => "Campaign donation: {$campaignKey}",
+          'to_address' => $toAddress,
+        ];
+        $civiUrl = CRM_Utils_System::url('civicrm/contact/view/contribution',
+          [
+            'reset' => 1,
+            'id' => $contribution['id'],
+            'cid' => $contribution['contact_id'],
+            'action' => 'view',
+          ],
+          TRUE // absolute link
+        );
+        $params = [
+          'civiUrl' => $civiUrl,
+          'campaignKey' => $campaignKey,
+          'contribution' => $contribution,
+        ];
+        $template = new Templating(__DIR__ . '/templates', 'notification', 'en', $params, 'html');
+        $letter['html'] = $template->render();
+        $mailer->send($letter, []);
+      }
   }
+
 }
