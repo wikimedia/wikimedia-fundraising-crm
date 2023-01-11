@@ -5,7 +5,6 @@ package = Wikimedia
 configure = admin/config/wmf_communication
 dependencies[] = wmf_common
 dependencies[] = wmf_civicrm
-files[] = Mailer.php
 files[] = Templating.php
 files[] = twigext_l10n/CldrData.php
 files[] = twigext_l10n/TwigLocalization.php

@@ -1,8 +1,8 @@
 <?php
 
+use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use SmashPig\Core\UtcDate;
-use wmf_communication\Mailer;
 
 define("TEMP_EXPORT_PATH", "/tmp");
 /**
@@ -264,7 +264,7 @@ function send_matching_gifts_update_email($currentEmployerFilePath) {
     'fr-tech@wikimedia.org'
   );
 
-  $mailer = Mailer::getDefault();
+  $mailer = MailFactory::singleton()->getMailer();
   $email['to_address'] = $toAddress;
   $email['to_name'] = $toAddress;
   $email['from_address'] = 'fr-tech@wikimedia.org';
