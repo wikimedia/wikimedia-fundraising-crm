@@ -62,8 +62,8 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
     $requeued = FALSE;
 
     if ($ex->isRequeue()) {
-      $delay = intval(variable_get('wmf_common_requeue_delay', 20 * 60));
-      $maxTries = intval(variable_get('wmf_common_requeue_max', 10));
+      $delay = (int) variable_get('wmf_common_requeue_delay', 20 * 60);
+      $maxTries = (int) variable_get('wmf_common_requeue_max', 10);
       $ageLimit = $delay * $maxTries;
       // TODO: add a requeueMessage hook that allows modifying
       // the message or the decision to requeue it. Or maybe a

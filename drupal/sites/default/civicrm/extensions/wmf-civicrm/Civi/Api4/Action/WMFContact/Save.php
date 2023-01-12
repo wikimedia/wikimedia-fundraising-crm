@@ -9,7 +9,7 @@ use Civi\WMFException\WMFException;
 use Civi\Api4\Email;
 use WmfDatabase;
 use Civi\Api4\Contact;
-use wmf_civicrm\ImportStatsCollector;
+use Civi\WMFStatistics\ImportStatsCollector;
 use Civi\WMFHelpers\Language;
 
 /**

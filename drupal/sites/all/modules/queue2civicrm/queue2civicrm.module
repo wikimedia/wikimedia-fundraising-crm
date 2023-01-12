@@ -1,7 +1,7 @@
 <?php
 
 use queue2civicrm\DonationQueueConsumer;
-use wmf_civicrm\ImportStatsCollector;
+use Civi\WMFStatistics\ImportStatsCollector;
 
 // include common functions
 require_once(drupal_get_path('module', 'queue2civicrm') . '/queue2civicrm_common.inc');

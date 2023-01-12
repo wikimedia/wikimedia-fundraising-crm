@@ -7,6 +7,8 @@ use PHPMailer\PHPMailer\PHPMailer;
 
 /**
  * Use the PHPMailer engine
+ *
+ * @deprecated
  */
 class MailerPHPMailer extends MailerBase implements IMailer {
 

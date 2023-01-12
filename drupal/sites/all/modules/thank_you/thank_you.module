@@ -943,7 +943,7 @@ function thank_you_batch_test() {
   $rate = variable_get('thank_you_civimail_rate', 1.0);
 
   // Don't actually send any emails
-  wmf_communication\Mailer::$defaultSystem = 'test';
+  MailFactory::singleton()->setActiveMailer('test');
 
   // Don't want to skip anything due to age
   $oldTyDays = variable_get('thank_you_days', 14);

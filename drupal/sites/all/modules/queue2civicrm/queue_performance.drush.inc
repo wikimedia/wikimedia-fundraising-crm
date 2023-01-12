@@ -6,7 +6,7 @@
  * This is intended to be run before and after changes anticipated to affect performance.
  */
 
-use wmf_civicrm\ImportStatsCollector;
+use Civi\WMFStatistics\ImportStatsCollector;
 
 /**
  * Implementation of hook_drush_command()
