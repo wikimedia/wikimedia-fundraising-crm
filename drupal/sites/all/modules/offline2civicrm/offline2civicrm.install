@@ -45,7 +45,22 @@ function offline2civicrm_schema() {
  * Create the Batch Number field
  */
 function offline2civicrm_update_7000() {
-  $api = wmf_civicrm_bootstrap_civi();
+
+  // @todo - this is temporarily moved here so we can decommission the wmf_civicrm.install
+  // file - but end destination is wmf_civicrm extension.
+  $civi_base = implode(DIRECTORY_SEPARATOR, array(drupal_get_path('module', 'civicrm'), '..'));
+  set_include_path(
+    implode(
+      PATH_SEPARATOR,
+      array(
+        get_include_path(),
+        $civi_base,
+        $civi_base.DIRECTORY_SEPARATOR.'packages',
+      )
+    )
+  );
+  require_once "api/class.api.php";
+  $api = new civicrm_api3(array('conf_path' => conf_path()));
 
   $success = $api->CustomGroup->get([
     'name' => 'Gift_Information',

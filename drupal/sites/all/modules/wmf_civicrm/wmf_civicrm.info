@@ -10,4 +10,3 @@ dependencies[] = wmf_common
 files[] = db_switcher.inc
 files[] = DonationInterfaceFactory.php
 files[] = WmfTransaction.php
-files[] = civicrm_api_check.inc
