@@ -48,6 +48,17 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
 
     // Bug: T228106 Add index to civicrm_activity.location.
     CRM_Core_BAO_SchemaHandler::createIndexes(['civicrm_activity' => ['location']]);
+
+
+    /**
+     * Add index to civicrm_country.iso_code.
+     *
+     * To hone the silverpop queries we really want to join on this so we need an index.
+     *
+     * Bug: T253152
+     */
+    $tables = ['civicrm_country' => ['iso_code']];
+    CRM_Core_BAO_SchemaHandler::createIndexes($tables);
   }
 
   /**
@@ -75,16 +86,20 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
    * of your installation depends on accessing an entity that is itself
    * created during the installation (e.g., a setting or a managed entity), do
    * so here to avoid order of operation problems.
+   *
+   * In our case we should be confident the wmf donor table exists before adding
+   * an index.
    */
-  // public function postInstall() {
-  //  $customFieldId = civicrm_api3('CustomField', 'getvalue', array(
-  //    'return' => array("id"),
-  //    'name' => "customFieldCreatedViaManagedHook",
-  //  ));
-  //  civicrm_api3('Setting', 'create', array(
-  //    'myWeirdFieldSetting' => array('id' => $customFieldId, 'weirdness' => 1),
-  //  ));
-  // }
+  public function postInstall(): void {
+
+    /* Add combined index on entity_id and lifetime_usd_total on wmf_donor table.
+     *
+     * In testing this made a significant difference when filtering for donors with
+     * giving over x - which is a common usage.
+     *
+    */
+    CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ADD INDEX entity_total (entity_id, lifetime_usd_total)');
+  }
 
   /**
    * Example: Run an external SQL script when the module is uninstalled.
