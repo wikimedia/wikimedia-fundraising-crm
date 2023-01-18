@@ -22,6 +22,8 @@ use SmashPig\PaymentProviders\PaymentProviderFactory;
  *
  * @method $this setMessage(array $msg) Set WMF normalised values.
  * @method array getMessage() Get WMF normalised values.
+ * @method $this setAlreadyResolved(array $alreadyResolved) Set array of already-resolved transactions
+ * @method array getAlreadyResolved() Get array of already-resolved transactions
  *
  * @package Civi\Api4
  */
@@ -35,6 +37,15 @@ class Resolve extends AbstractAction {
    * @var array
    */
   protected $message = [];
+
+  /**
+   * List of transaction details that have already been resolved this run.
+   * We don't want to approve multiple transactions for the same email in
+   * a single run, as they might not have been consumed into the database
+   * yet and so not be caught by the hasDonationsInPastDay check.
+   * @var array
+   */
+  protected $alreadyResolved = [];
 
   public function _run(Result $result) {
     // Determine whether to resolve (i.e. not possible with iDEAL)
@@ -61,6 +72,7 @@ class Resolve extends AbstractAction {
     $riskScores = $latestPaymentDetailResult->getRiskScores();
     // start building the Civi API4 output
     $result[$this->message['order_id']] = [
+      'email' => $this->message['email'] ?? NULL,
       'gateway_txn_id' => $gatewayTxnId,
       'status' => $latestPaymentDetailResult->getStatus(),
       'risk_scores' => $riskScores,
@@ -83,6 +95,7 @@ class Resolve extends AbstractAction {
       ->execute()
       ->fetchAssoc();
 
+    $shouldCancel = false;
     // contribution_id is set on the contribution_tracking table when we
     // consume the donations queue
     if (!empty($existingContributionTrackingRecord['contribution_id'])) {
@@ -91,7 +104,12 @@ class Resolve extends AbstractAction {
         $this->message['contribution_tracking_id'] . ' has a completed txn ' .
         'as well as a pending one. Cancelling the pending one.'
       );
-
+      $shouldCancel = true;
+    }
+    if ($this->approvedDonationForSameDonorInThisRun()) {
+      $shouldCancel = true;
+    }
+    if ($shouldCancel) {
       $response = $provider->cancelPayment($gatewayTxnId);
       $result[$this->message['order_id']]['status'] = $response->getStatus();
       return;
@@ -178,6 +196,25 @@ class Resolve extends AbstractAction {
       return FALSE;
     }
     return TRUE;
+  }
+
+  /**
+   * @return bool true if we have just resolved a donation for the
+   * same email address.
+   */
+  protected function approvedDonationForSameDonorInThisRun(): bool {
+    foreach($this->alreadyResolved as $orderId => $alreadyResolved) {
+      if (empty($alreadyResolved['email']) || empty($this->message['email'])) {
+        continue;
+      }
+      if (
+        $alreadyResolved['email'] === $this->message['email'] &&
+        $alreadyResolved['status'] === FinalStatus::COMPLETE
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

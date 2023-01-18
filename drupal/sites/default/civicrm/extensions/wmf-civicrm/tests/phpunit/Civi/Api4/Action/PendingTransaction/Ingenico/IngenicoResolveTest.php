@@ -117,7 +117,6 @@ class IngenicoResolveTest extends TestCase {
 
   /**
    * Test moving PendingPoke(600) to Completed(800) path.
-   *
    */
   public function testResolvePendingPokeToComplete(): void {
     // generate a pending message to test
@@ -195,6 +194,59 @@ class IngenicoResolveTest extends TestCase {
       $hostedPaymentStatusResponse->getGatewayTxnId(),
       $donation_queue_message['gateway_txn_id']
     );
+  }
+
+  /**
+   * Test that a pending-poke transaction doesn't resolve when we've
+   * already processed one for the same email
+   */
+  public function testResolvePendingPokeWithAlreadyResolved(): void {
+    // generate a pending message to test
+    $pending_message = $this->createTestPendingRecord('ingenico');
+
+    // getLatestPaymentStatus response set up
+    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+      ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
+      ->setRiskScores([
+        'cvv' => 50,
+        'avs' => 0,
+      ]);
+
+    // set configured response to mock getLatestPaymentStatus call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('getLatestPaymentStatus')
+      ->willReturn($hostedPaymentStatusResponse);
+
+    // shouldn't call approvePayment
+    $this->hostedCheckoutProvider->expects($this->never())
+      ->method('approvePayment');
+
+    // set configured response to mock cancelPayment call
+    $cancelledPaymentStatusResponse = new CancelPaymentResponse();
+    $cancelledPaymentStatusResponse->setGatewayTxnId($hostedPaymentStatusResponse->getGatewayTxnId())
+      ->setStatus(FinalStatus::CANCELLED);
+
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('cancelPayment')
+      ->with($hostedPaymentStatusResponse->getGatewayTxnId())
+      ->willReturn($cancelledPaymentStatusResponse);
+
+    // run the pending message through PendingTransaction::resolve()
+    PendingTransaction::resolve()
+      ->setMessage($pending_message)
+      ->setAlreadyResolved([
+        '1' => [
+          'email' => $pending_message['email'],
+          'status' => FinalStatus::COMPLETE
+        ]
+      ])
+      ->execute();
+
+    // confirm donation queue message added
+    $donation_queue_message = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNull($donation_queue_message);
   }
 
   /**
@@ -648,6 +700,82 @@ class IngenicoResolveTest extends TestCase {
     $this->assertEquals(array_merge($pending_message, [
       'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
     ]), $donationMessage);
+  }
+
+  /**
+   * Don't try to capture a payment when we've already resolved one for the same
+   * email address in this same run, as indicated in the alreadyResolved array.
+   */
+  public function testReviewActionMatchesUnrefundedDonorButAlreadyResolvedThisRun() {
+    // generate a pending message to test
+    $pending_message = $this->createTestPendingRecord('ingenico');
+
+    // getLatestPaymentStatus response set up
+    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+      ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
+      // Default review threshold is 75
+      ->setRiskScores([
+        'cvv' => 50,
+        'avs' => 50,
+      ]);
+
+    // set configured response to mock getLatestPaymentStatus call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('getLatestPaymentStatus')
+      ->willReturn($hostedPaymentStatusResponse);
+
+    // should not approvePayment
+    $this->hostedCheckoutProvider->expects($this->never())
+      ->method('approvePayment');
+
+    // set configured response to mock cancelPayment call
+    $cancelledPaymentStatusResponse = new CancelPaymentResponse();
+    $cancelledPaymentStatusResponse->setGatewayTxnId($hostedPaymentStatusResponse->getGatewayTxnId())
+      ->setStatus(FinalStatus::CANCELLED);
+
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('cancelPayment')
+      ->with($hostedPaymentStatusResponse->getGatewayTxnId())
+      ->willReturn($cancelledPaymentStatusResponse);
+
+    $contact = Contact::create(FALSE)
+      ->setValues([
+        'first_name' => $pending_message['first_name'],
+        'last_name' => $pending_message['last_name'],
+      ])->execute()->first();
+    $this->contactId = $contact['id'];
+    Email::create(FALSE)
+      ->setValues([
+        'contact_id' => $contact['id'],
+        'email' => $pending_message['email'],
+      ])
+      ->execute();
+    Contribution::create(FALSE)
+      ->setValues([
+        'contact_id' => $contact['id'],
+        'total_amount' => '2.34',
+        'currency' => 'USD',
+        'receive_date' => '2018-06-20',
+        'financial_type_id' => 1,
+        'contribution_status_id:name' => 'Completed',
+      ])
+      ->execute();
+
+    // run the pending message through PendingTransaction::resolve()
+    PendingTransaction::resolve()
+      ->setMessage($pending_message)
+      ->setAlreadyResolved([
+        1 => [
+          'email' => $pending_message['email'],
+          'status' => FinalStatus::COMPLETE,
+        ]
+      ])
+      ->execute();
+
+    $donationMessage = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNull($donationMessage);
   }
 
   public function testReviewActionMatchesRefundedDonor() {
