@@ -84,6 +84,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
     foreach ($recurringPayments as $recurringPayment) {
       if ($this->timeLimitInSeconds > 0 && time() - $startTime > $this->timeLimitInSeconds) {
+        Civi::log('wmf')->info('Reached time limit of ' . $this->timeLimitInSeconds . ' seconds');
         break;
       }
       try {
