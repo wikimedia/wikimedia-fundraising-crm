@@ -136,5 +136,5 @@ return [
     'title' => 'Monthly charge soft descriptor',
     'description' => 'The first 22 or so characters of this string show up on credit card statements.',
     'settings_pages' => ['smashpig' => ['weight' => 8]],
-  ]
+  ],
 ];

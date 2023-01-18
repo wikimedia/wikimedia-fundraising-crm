@@ -19,7 +19,7 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
     'catch_up_days',
     'batch_size',
     'charge_descriptor',
-    'time_limit_in_seconds'
+    'time_limit_in_seconds',
   ];
   $settings = Civi::settings();
   foreach ($allowedParams as $paramName) {
@@ -58,6 +58,6 @@ function _civicrm_api3_job_process_smashpig_recurring_spec(&$params) {
   $params['contribution_recur_id'] = [
     'title' => 'Contribution Recur ID (for testing)',
     'description' => ts('When specified, only charge this one recur record'),
-    'type' => CRM_Utils_Type::T_INT
+    'type' => CRM_Utils_Type::T_INT,
   ];
 }
