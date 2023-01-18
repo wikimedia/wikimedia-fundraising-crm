@@ -18,7 +18,8 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
     'max_failures',
     'catch_up_days',
     'batch_size',
-    'charge_descriptor'
+    'charge_descriptor',
+    'time_limit_in_seconds'
   ];
   $settings = Civi::settings();
   foreach ($allowedParams as $paramName) {
@@ -33,7 +34,8 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
     $params['max_failures'],
     $params['catch_up_days'],
     $params['batch_size'],
-    $params['charge_descriptor']
+    $params['charge_descriptor'],
+    $params['time_limit_in_seconds']
   );
   $result = $recurringProcessor->run(
     $params['contribution_recur_id'] ?? NULL
