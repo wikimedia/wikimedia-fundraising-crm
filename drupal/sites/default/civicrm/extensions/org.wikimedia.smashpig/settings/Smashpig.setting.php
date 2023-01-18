@@ -102,6 +102,24 @@ return [
     'description' => 'The job will attempt to charge up to this many recurring contributions each run before stopping.',
     'settings_pages' => ['smashpig' => ['weight' => 6]],
   ],
+  'smashpig_recurring_time_limit_in_seconds' => [
+    'group_name' => 'SmashPig Preferences',
+    'group' => 'smashpig',
+    'name' => 'smashpig_recurring_time_limit_in_seconds',
+    'type' => 'Integer',
+    'quick_form_type' => 'Element',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 4,
+      'maxlength' => 4,
+    ],
+    'default' => 0,
+    'title' => 'Maximum number of seconds to spend processing (0 for no limit)',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'The job will stop charging recurring contributions after this many seconds.',
+    'settings_pages' => ['smashpig' => ['weight' => 7]],
+  ],
   'smashpig_recurring_charge_descriptor' => [
     'group name' => 'SmashPig Preferences',
     'group' => 'smashpig',
@@ -117,6 +135,6 @@ return [
     'is_contact' => 0,
     'title' => 'Monthly charge soft descriptor',
     'description' => 'The first 22 or so characters of this string show up on credit card statements.',
-    'settings_pages' => ['smashpig' => ['weight' => 7]],
-  ]
+    'settings_pages' => ['smashpig' => ['weight' => 8]],
+  ],
 ];

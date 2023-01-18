@@ -19,6 +19,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   protected $descriptor;
 
+  protected $timeLimitInSeconds;
+
   protected $smashPigProcessors;
 
   const MAX_MERCHANT_REFERENCE_RETRIES = 3;
@@ -30,6 +32,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param int $maxFailures Maximum failures before canceling subscription
    * @param int $catchUpDays Number of days in the past to look for payments
    * @param int $batchSize Maximum number of payments to process in a batch
+   * @param int $timeLimitInSeconds Maximum number of seconds to spend processing
    */
   public function __construct(
     $useQueue,
@@ -37,7 +40,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $maxFailures,
     $catchUpDays,
     $batchSize,
-    $descriptor
+    $descriptor,
+    $timeLimitInSeconds = 0
   ) {
     $this->useQueue = $useQueue;
     $this->retryDelayDays = $retryDelayDays;
@@ -47,6 +51,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $this->descriptor = $descriptor;
     $processorsApiResult = civicrm_api3('PaymentProcessor', 'get', ['class_name' => 'Payment_SmashPig']);
     $this->smashPigProcessors = $processorsApiResult['values'];
+    $this->timeLimitInSeconds = $timeLimitInSeconds;
   }
 
   /**
@@ -60,6 +65,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \CiviCRM_API3_Exception
    */
   public function run($contributionRecurId = NULL) {
+    $startTime = time();
     $recurringPayments = $this->getPaymentsToCharge($contributionRecurId);
     $result = [
       'success' => ['ids' => []],
@@ -77,6 +83,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     ];
 
     foreach ($recurringPayments as $recurringPayment) {
+      if ($this->timeLimitInSeconds > 0 && time() - $startTime > $this->timeLimitInSeconds) {
+        Civi::log('wmf')->info('Reached time limit of ' . $this->timeLimitInSeconds . ' seconds');
+        break;
+      }
       try {
         $previousContribution = self::getPreviousContribution($recurringPayment);
 
