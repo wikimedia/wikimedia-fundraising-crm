@@ -135,6 +135,13 @@ class CRM_Core_Page {
   ];
 
   /**
+   * The permission we have on this contact
+   *
+   * @var string
+   */
+  public $_permission;
+
+  /**
    * Class constructor.
    *
    * @param string $title
@@ -452,7 +459,7 @@ class CRM_Core_Page {
    * @param string $entity
    *   The entity being queried.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function assignFieldMetadataToTemplate($entity) {
     $fields = civicrm_api3($entity, 'getfields', ['action' => 'get']);

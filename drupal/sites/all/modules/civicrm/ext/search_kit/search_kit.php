@@ -31,8 +31,8 @@ function search_kit_civicrm_container($container) {
  */
 function search_kit_civicrm_permission(&$permissions) {
   $permissions['administer search_kit'] = [
-    E::ts('Search Kit: edit and delete searches'),
-    E::ts('Gives non-admin users access to the Search Kit UI to create, update and delete searches and displays'),
+    E::ts('SearchKit: edit and delete searches'),
+    E::ts('Gives non-admin users access to the SearchKit UI to create, update and delete searches and displays'),
   ];
 }
 
@@ -48,6 +48,10 @@ function search_kit_civicrm_alterApiRoutePermissions(&$permissions, $entity, $ac
     if ($action === 'run' || $action === 'download' || $action === 'getSearchTasks') {
       $permissions = CRM_Core_Permission::ALWAYS_ALLOW_PERMISSION;
     }
+  }
+  // An autocomplete is a type of search dislay and should always be allowed
+  if ($action === 'autocomplete') {
+    $permissions = CRM_Core_Permission::ALWAYS_ALLOW_PERMISSION;
   }
 }
 
@@ -66,7 +70,7 @@ function search_kit_civicrm_angularModules(&$angularModules) {
   $tasks = [];
   $null = NULL;
   $checkPermissions = FALSE;
-  \CRM_Utils_Hook::singleton()->invoke(['tasks', 'checkPermissions', 'userId'],
+  \CRM_Utils_Hook::singleton()->invoke(['tasks', 'checkPermissions', 'userId', 'search', 'display'],
     $tasks, $checkPermissions, $null,
     $null, $null, $null, 'civicrm_searchKitTasks'
   );
@@ -79,17 +83,6 @@ function search_kit_civicrm_angularModules(&$angularModules) {
       }
     }
   }
-}
-
-/**
- * Implements hook_civicrm_entityTypes().
- *
- * Declare entity types provided by this module.
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
- */
-function search_kit_civicrm_entityTypes(&$entityTypes) {
-  _search_kit_civix_civicrm_entityTypes($entityTypes);
 }
 
 /**

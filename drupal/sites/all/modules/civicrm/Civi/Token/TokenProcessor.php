@@ -116,7 +116,7 @@ class TokenProcessor {
   protected $next = 0;
 
   /**
-   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $dispatcher
+   * @param \Civi\Core\CiviEventDispatcher $dispatcher
    * @param array $context
    */
   public function __construct($dispatcher, $context) {
@@ -505,6 +505,14 @@ class TokenProcessor {
           return \smarty_modifier_crmDate($value->format('Y-m-d H:i:s'), $filter[1] ?? NULL);
         }
         if ($value === '') {
+          return $value;
+        }
+
+      case 'default':
+        if (!$value) {
+          return $filter[1];
+        }
+        else {
           return $value;
         }
 

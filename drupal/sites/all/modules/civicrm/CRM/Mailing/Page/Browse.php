@@ -200,6 +200,7 @@ class CRM_Mailing_Page_Browse extends CRM_Core_Page {
         }
 
         CRM_Mailing_BAO_Mailing::del($this->_mailingId);
+        CRM_Core_Session::setStatus(ts('Selected mailing has been deleted.'), ts('Deleted'), 'success');
         CRM_Utils_System::redirect($context);
       }
       else {
@@ -242,6 +243,9 @@ class CRM_Mailing_Page_Browse extends CRM_Core_Page {
 
     $controller->setEmbedded(TRUE);
     $controller->run();
+
+    $this->assign('unscheduled', FALSE);
+    $this->assign('archived', FALSE);
 
     $urlParams = 'reset=1';
     $urlString = 'civicrm/mailing/browse';

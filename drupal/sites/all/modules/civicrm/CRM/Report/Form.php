@@ -21,7 +21,7 @@ class CRM_Report_Form extends CRM_Core_Form {
    *
    * @var string[]
    */
-  public $expectedSmartyVariables = ['pager', 'skip', 'sections', 'grandStat', 'chartEnabled', 'uniqueId', 'rows'];
+  public $expectedSmartyVariables = ['pager', 'skip', 'sections', 'grandStat', 'chartEnabled', 'uniqueId', 'rows', 'group_bys_freq'];
 
   /**
    * Deprecated constant, Reports should be updated to use the getRowCount function.
@@ -628,7 +628,7 @@ class CRM_Report_Form extends CRM_Core_Form {
     // Ensure smarty variables are assigned here since this function is called from
     // the report api and the main buildForm is not.
     self::$_template->ensureVariablesAreAssigned($this->expectedSmartyVariables);
-    $this->_dashBoardRowCount = CRM_Utils_Request::retrieve('rowCount', 'Integer');
+    $this->_dashBoardRowCount = CRM_Utils_Request::retrieve('rowCount', 'Integer') ?? CRM_Utils_Request::retrieve('crmRowCount', 'Integer');
 
     $this->_section = CRM_Utils_Request::retrieve('section', 'Integer');
 
@@ -3825,7 +3825,7 @@ WHERE cg.extends IN ('" . implode("','", $this->_customGroupExtends) . "') AND
    *
    * This function is called by both the api (tests) and the UI.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function buildGroupTempTable(): void {
     if (!empty($this->groupTempTable) || empty($this->_params['gid_value']) || $this->groupFilterNotOptimised) {
@@ -4948,6 +4948,9 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
       'employer_id' => [
         'title' => ts('Current Employer'),
       ],
+      'created_date' => [
+        'title' => ts('Created Date'),
+      ],
     ];
   }
 
@@ -4985,6 +4988,11 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
       ],
       'contact_sub_type' => [
         'title' => ts('Contact Subtype'),
+      ],
+      'created_date' => [
+        'title' => ts('Contact Created'),
+        'operatorType' => CRM_Report_Form::OP_DATE,
+        'type' => CRM_Utils_Type::T_DATE,
       ],
       'modified_date' => [
         'title' => ts('Contact Modified'),

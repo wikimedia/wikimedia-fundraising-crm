@@ -35,8 +35,6 @@ class CRM_Profile_Form_Edit extends CRM_Profile_Form {
   /**
    * Pre processing work done here.
    *
-   * @param
-   *
    */
   public function preProcess() {
     $this->_mode = CRM_Profile_Form::MODE_CREATE;
@@ -243,9 +241,7 @@ SELECT module,is_reserved
   /**
    * Process the user submitted custom data values.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function postProcess() {
     parent::postProcess();

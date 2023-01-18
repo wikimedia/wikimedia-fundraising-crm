@@ -2219,6 +2219,9 @@ SELECT contact_id
    * @return string
    */
   public static function escapeString($string) {
+    if ($string === NULL) {
+      return '';
+    }
     static $_dao = NULL;
     if (!$_dao) {
       // If this is an atypical case (e.g. preparing .sql file before CiviCRM
@@ -2659,7 +2662,7 @@ SELECT contact_id
    * Refer to CRM-17454 for information on the danger of querying the information
    * schema to derive this.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getReferencesToContactTable() {
     if (isset(\Civi::$statics[__CLASS__]) && isset(\Civi::$statics[__CLASS__]['contact_references'])) {
@@ -2730,7 +2733,7 @@ SELECT contact_id
    *
    * @param array $cidRefs
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function appendCustomContactReferenceFields(&$cidRefs) {
     $fields = civicrm_api3('CustomField', 'get', [
@@ -3387,6 +3390,16 @@ SELECT contact_id
       $suffix = '_' . ++$dupes;
     }
     $this->name = $name . $suffix;
+  }
+
+  /**
+   * Check if component is enabled for this DAO class
+   *
+   * @return bool
+   */
+  public static function isComponentEnabled(): bool {
+    $daoName = static::class;
+    return !defined("$daoName::COMPONENT") || CRM_Core_Component::isEnabled($daoName::COMPONENT);
   }
 
 }

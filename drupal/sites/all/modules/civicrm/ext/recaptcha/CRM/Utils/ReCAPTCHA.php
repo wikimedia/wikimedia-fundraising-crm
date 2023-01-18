@@ -76,7 +76,6 @@ class CRM_Utils_ReCAPTCHA {
     $html = recaptcha_get_html(\Civi::settings()->get('recaptchaPublicKey'), $error, $useHTTPS);
 
     $form->assign('recaptchaHTML', $html);
-    $form->assign('recaptchaOptions', \Civi::settings()->get('recaptchaOptions'));
     $form->add(
       'text',
       'g-recaptcha-response',
@@ -133,7 +132,7 @@ class CRM_Utils_ReCAPTCHA {
    * @param string $formName
    * @param CRM_Core_Form $form
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public static function checkAndAddCaptchaToForm($formName, &$form) {
@@ -196,17 +195,27 @@ class CRM_Utils_ReCAPTCHA {
   }
 
   /**
+   * QuickForm validate callback
+   *
    * @param $value
    * @param CRM_Core_Form $form
    *
    * @return mixed
    */
   public static function validate($value, $form) {
+    return self::checkResponse($_POST['g-recaptcha-response']);
+  }
+
+  /**
+   * @param string $response
+   * @return bool
+   */
+  public static function checkResponse($response) {
     require_once E::path('lib/recaptcha/recaptchalib.php');
 
     $resp = recaptcha_check_answer(CRM_Core_Config::singleton()->recaptchaPrivateKey,
-      $_SERVER['REMOTE_ADDR'],
-      $_POST['g-recaptcha-response']
+      CRM_Utils_System::ipAddress(),
+      $response
     );
     return $resp->is_valid;
   }

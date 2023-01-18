@@ -45,10 +45,13 @@ class CRM_Contact_BAO_GroupContact extends CRM_Contact_DAO_GroupContact implemen
    * @noinspection UnknownInspectionInspection
    */
   public static function self_hook_civicrm_post(PostEvent $event): void {
-    if (is_object($event->object) && in_array($event->action, ['create', 'edit'], TRUE)) {
+    if (is_object($event->object) && in_array($event->action, ['create', 'edit', 'delete'], TRUE)) {
       // Lookup existing info for the sake of subscription history
       if ($event->action === 'edit') {
         $event->object->find(TRUE);
+      }
+      if ($event->action === 'delete') {
+        $event->object->status = 'Deleted';
       }
 
       try {
@@ -63,7 +66,7 @@ class CRM_Contact_BAO_GroupContact extends CRM_Contact_DAO_GroupContact implemen
           ],
         ])->execute();
       }
-      catch (API_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         // A failure to create the history might be a deadlock or similar
         // This record is not important enough to trigger a larger fail.
         Civi::log()->warning('Failed to add civicrm_subscription_history record with error :error', ['error' => $e->getMessage()]);

@@ -249,7 +249,7 @@ class CRM_Contact_Page_AJAX {
         ]);
         $result = civicrm_api3('relationship', 'create', $params);
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         $ret['is_error'] = 1;
         $ret['error_message'] = $e->getMessage();
       }
@@ -371,7 +371,7 @@ class CRM_Contact_Page_AJAX {
 SELECT sort_name name, ce.email, cc.id
 FROM   civicrm_email ce INNER JOIN civicrm_contact cc ON cc.id = ce.contact_id
        {$aclFrom}
-WHERE  ce.on_hold = 0 AND cc.is_deceased = 0 AND cc.do_not_email = 0 AND {$queryString}
+WHERE  ce.on_hold = 0 AND cc.is_deceased = 0 AND cc.do_not_email = 0 AND cc.is_deleted = 0 AND {$queryString}
        {$aclWhere}
 LIMIT {$rowCount}
 )";
@@ -811,7 +811,7 @@ LIMIT {$offset}, {$rowCount}
         civicrm_api3('Exception', 'create', ['contact_id1' => $cid, 'contact_id2' => $oid]);
         return TRUE;
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         return FALSE;
       }
     }

@@ -187,7 +187,7 @@ abstract class CRM_Import_Form_MapField extends CRM_Import_Forms {
    * @param int|null $savedMappingID
    *
    * @deprecated - working to remove this in favour of `addSavedMappingFields`
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function buildSavedMappingFields($savedMappingID) {
     //to save the current mappings
@@ -266,7 +266,6 @@ abstract class CRM_Import_Form_MapField extends CRM_Import_Forms {
    * @param int $columnNumber
    * @param bool $isUpdate
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   protected function saveMappingField(int $mappingID, int $columnNumber, bool $isUpdate = FALSE): void {
@@ -293,7 +292,6 @@ abstract class CRM_Import_Form_MapField extends CRM_Import_Forms {
   /**
    * Save the Field Mapping.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   protected function saveMapping(): void {
@@ -321,7 +319,6 @@ abstract class CRM_Import_Form_MapField extends CRM_Import_Forms {
   }
 
   /**
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */

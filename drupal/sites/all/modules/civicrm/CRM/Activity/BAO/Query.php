@@ -152,7 +152,6 @@ class CRM_Activity_BAO_Query {
         if ($query->_mode == CRM_Contact_BAO_Query::MODE_CONTACTS) {
           $query->_useDistinct = TRUE;
         }
-        $query->_params[$id][3];
         self::whereClauseSingle($query->_params[$id], $query);
       }
     }
@@ -407,7 +406,7 @@ class CRM_Activity_BAO_Query {
   /**
    * Get the metadata for fields to be included on the activity search form.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @todo ideally this would be a trait included on the activity search & advanced search
    * rather than a static function.
    */
@@ -431,7 +430,6 @@ class CRM_Activity_BAO_Query {
    *
    * @param CRM_Core_Form_Search $form
    *
-   * @throws \CiviCRM_API3_Exception
    * @throws \CRM_Core_Exception
    */
   public static function buildSearchForm(&$form) {
@@ -500,7 +498,7 @@ class CRM_Activity_BAO_Query {
     // Add engagement level CRM-7775.
     $buildEngagementLevel = FALSE;
     $buildSurveyResult = FALSE;
-    if (CRM_Campaign_BAO_Campaign::isCampaignEnable() &&
+    if (CRM_Campaign_BAO_Campaign::isComponentEnabled() &&
       CRM_Campaign_BAO_Campaign::accessCampaign()
     ) {
       $buildEngagementLevel = TRUE;

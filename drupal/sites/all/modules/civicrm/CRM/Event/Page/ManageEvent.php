@@ -123,7 +123,7 @@ class CRM_Event_Page_ManageEvent extends CRM_Core_Page {
    *
    * @return array
    *   (reference) of tab links
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function &tabs() {
     // @todo Move to eventcart extension
@@ -147,13 +147,16 @@ class CRM_Event_Page_ManageEvent extends CRM_Core_Page {
           'url' => 'civicrm/event/manage/location',
           'field' => 'loc_block_id',
         ];
+      // If CiviContribute is active, create the Fees dropdown menu item.
+      if (CRM_Core_Component::isEnabled('CiviContribute')) {
+        self::$_tabLinks[$cacheKey]['fee']
+          = [
+            'title' => ts('Fees'),
+            'url' => 'civicrm/event/manage/fee',
+            'field' => 'is_monetary',
+          ];
+      }
 
-      self::$_tabLinks[$cacheKey]['fee']
-        = [
-          'title' => ts('Fees'),
-          'url' => 'civicrm/event/manage/fee',
-          'field' => 'is_monetary',
-        ];
       self::$_tabLinks[$cacheKey]['registration']
         = [
           'title' => ts('Online Registration'),
@@ -282,7 +285,7 @@ class CRM_Event_Page_ManageEvent extends CRM_Core_Page {
       $this
     );
     $createdId = CRM_Utils_Request::retrieve('cid', 'Positive', $this, FALSE, 0);
-    if (strtolower($this->_sortByCharacter) == 'all' ||
+    if ((!empty($this->_sortByCharacter) && strtolower($this->_sortByCharacter) == 'all') ||
       !empty($_POST)
     ) {
       $this->_sortByCharacter = '';
