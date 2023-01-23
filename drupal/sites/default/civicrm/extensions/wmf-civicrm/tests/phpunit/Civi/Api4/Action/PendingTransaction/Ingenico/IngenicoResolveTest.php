@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use SmashPig\Core\DataStores\PaymentsFraudDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\CrmLink\Messages\SourceFields;
+use SmashPig\PaymentData\DonorDetails;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
 use SmashPig\Tests\TestingContext;
@@ -77,7 +78,7 @@ class IngenicoResolveTest extends TestCase {
   public function testAntiFraudQueueMessageCreatedAfterHostedStatusCallWithNewScores() {
     $gateway = 'ingenico';
     // generate a pending message to test
-    $pending_message = $this->createTestPendingRecord($gateway);
+    $pending_message = $this->createTestPendingRecord();
     $this->createTestPaymentFraudRecord($pending_message['contribution_tracking_id'], $pending_message['order_id'], $gateway);
 
     // getLatestPaymentStatus response set up
@@ -88,7 +89,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
 
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -120,7 +124,7 @@ class IngenicoResolveTest extends TestCase {
    */
   public function testResolvePendingPokeToComplete(): void {
     // generate a pending message to test
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
@@ -130,7 +134,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
 
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -168,10 +175,9 @@ class IngenicoResolveTest extends TestCase {
     $this->assertNotNull($donation_queue_message);
     SourceFields::removeFromMessage($donation_queue_message);
     $this->assertEquals([
+        'full_name',
         'contribution_tracking_id',
         'country',
-        'first_name',
-        'last_name',
         'email',
         'gateway',
         'order_id',
@@ -194,6 +200,10 @@ class IngenicoResolveTest extends TestCase {
       $hostedPaymentStatusResponse->getGatewayTxnId(),
       $donation_queue_message['gateway_txn_id']
     );
+    $this->assertEquals(
+      'Testy McTesterson',
+      $donation_queue_message['full_name']
+    );
   }
 
   /**
@@ -202,7 +212,7 @@ class IngenicoResolveTest extends TestCase {
    */
   public function testResolvePendingPokeWithAlreadyResolved(): void {
     // generate a pending message to test
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
@@ -212,7 +222,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
 
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -256,7 +269,6 @@ class IngenicoResolveTest extends TestCase {
   public function testResolveRecurringToComplete(): void {
     // generate a pending message to test
     $pending_message = $this->createTestPendingRecord(
-      'ingenico',
       ['recurring' => 1]
     );
 
@@ -269,7 +281,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
 
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -307,10 +322,9 @@ class IngenicoResolveTest extends TestCase {
     $this->assertNotNull($donation_queue_message);
     SourceFields::removeFromMessage($donation_queue_message);
     $this->assertEquals([
+      'full_name',
       'contribution_tracking_id',
       'country',
-      'first_name',
-      'last_name',
       'email',
       'gateway',
       'order_id',
@@ -345,7 +359,7 @@ class IngenicoResolveTest extends TestCase {
    *
    */
   public function testResolveOnFailedTransaction(): void {
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
 
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
@@ -354,7 +368,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 50,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
 
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -377,7 +394,7 @@ class IngenicoResolveTest extends TestCase {
    *
    */
   public function testContributionIdSetAndPendingPokeDuplicateInPendingDatabase(): void {
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
     $this->createTestContributionTrackingRecord(
       $pending_message['contribution_tracking_id'],
       ['contribution_id' => mt_rand()]
@@ -389,7 +406,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('getLatestPaymentStatus')
@@ -424,7 +444,7 @@ class IngenicoResolveTest extends TestCase {
    *
    */
   public function testContributionIdSetAndFailedDuplicateInPendingDatabase(): void {
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
     $this->createTestContributionTrackingRecord(
       $pending_message['contribution_tracking_id'],
       ['contribution_id' => mt_rand()]
@@ -436,7 +456,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('getLatestPaymentStatus')
@@ -461,7 +484,7 @@ class IngenicoResolveTest extends TestCase {
    *
    */
   public function testContributionIdSetAndCompletedDuplicateInPendingDatabase(): void {
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
     $this->createTestContributionTrackingRecord(
       $pending_message['contribution_tracking_id'],
       ['contribution_id' => mt_rand()]
@@ -473,7 +496,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('getLatestPaymentStatus')
@@ -498,7 +524,7 @@ class IngenicoResolveTest extends TestCase {
    */
   public function testResolveRejectToCancelled(): void {
     // generate a pending message to test
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
     // cvv 100 & avs 100 codes represent a 'no_match' result
@@ -509,7 +535,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 100,
         'avs' => 100,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
 
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -545,7 +574,7 @@ class IngenicoResolveTest extends TestCase {
    */
   public function testContributionTrackingIdIsNotSet(): void {
     // generate a pending message to test
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
     // unset contribution_tracking_id
     unset($pending_message['contribution_tracking_id']);
 
@@ -563,7 +592,7 @@ class IngenicoResolveTest extends TestCase {
 
   public function testResolveCreatesValidPaymentsInitMessage() {
     // generate a pending message to test
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
@@ -573,7 +602,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 0,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
 
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -635,7 +667,7 @@ class IngenicoResolveTest extends TestCase {
 
   public function testReviewActionMatchesUnrefundedDonor() {
     // generate a pending message to test
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
@@ -646,7 +678,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 50,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
 
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -670,8 +705,8 @@ class IngenicoResolveTest extends TestCase {
 
     $contact = Contact::create(FALSE)
       ->setValues([
-        'first_name' => $pending_message['first_name'],
-        'last_name' => $pending_message['last_name'],
+        'first_name' => 'Testy',
+        'last_name' => 'McTesterson',
       ])->execute()->first();
     $this->contactId = $contact['id'];
     Email::create(FALSE)
@@ -699,6 +734,7 @@ class IngenicoResolveTest extends TestCase {
     unset($pending_message['gateway_session_id']);
     $this->assertEquals(array_merge($pending_message, [
       'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
+      'full_name' => 'Testy McTesterson',
     ]), $donationMessage);
   }
 
@@ -708,7 +744,7 @@ class IngenicoResolveTest extends TestCase {
    */
   public function testReviewActionMatchesUnrefundedDonorButAlreadyResolvedThisRun() {
     // generate a pending message to test
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
@@ -719,7 +755,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 50,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
 
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -742,8 +781,8 @@ class IngenicoResolveTest extends TestCase {
 
     $contact = Contact::create(FALSE)
       ->setValues([
-        'first_name' => $pending_message['first_name'],
-        'last_name' => $pending_message['last_name'],
+        'first_name' => 'Testy',
+        'last_name' => 'McTesterson',
       ])->execute()->first();
     $this->contactId = $contact['id'];
     Email::create(FALSE)
@@ -780,7 +819,7 @@ class IngenicoResolveTest extends TestCase {
 
   public function testReviewActionMatchesRefundedDonor() {
     // generate a pending message to test
-    $pending_message = $this->createTestPendingRecord('ingenico');
+    $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
@@ -791,7 +830,10 @@ class IngenicoResolveTest extends TestCase {
       ->setRiskScores([
         'cvv' => 50,
         'avs' => 50,
-      ]);
+      ])
+      ->setDonorDetails(
+        (new DonorDetails())->setFullName('Testy McTesterson')
+      );
 
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -804,8 +846,8 @@ class IngenicoResolveTest extends TestCase {
 
     $contact = Contact::create(FALSE)
       ->setValues([
-        'first_name' => $pending_message['first_name'],
-        'last_name' => $pending_message['last_name'],
+        'first_name' => 'Testy',
+        'last_name' => 'McTesterson',
       ])->execute()->first();
     $this->contactId = $contact['id'];
     Email::create(FALSE)
@@ -904,29 +946,24 @@ class IngenicoResolveTest extends TestCase {
   }
 
   /**
-   * @param string $gateway
    * @param array $additionalKeys
    * @return array
    * @throws \SmashPig\Core\DataStores\DataStoreException
    * @throws \SmashPig\Core\SmashPigException
    */
-  protected function createTestPendingRecord($gateway = 'test', $additionalKeys = []): array {
+  protected function createTestPendingRecord( $additionalKeys = [] ): array {
     $id = mt_rand();
-    $payment_method = ($gateway == 'paypal_ec') ? 'paypal' : 'cc';
-    $payment_submethod = ($gateway == 'paypal_ec') ? '' : 'visa';
 
     $message = array_merge([
       'contribution_tracking_id' => $id,
       'country' => 'US',
-      'first_name' => 'Testy',
-      'last_name' => 'McTester',
       'email' => 'test@example.org',
-      'gateway' => $gateway,
-      'gateway_session_id' => $gateway . "-" . mt_rand(),
+      'gateway' => 'ingenico',
+      'gateway_session_id' => 'ingenico-' . mt_rand(),
       'order_id' => "order-$id",
       'gateway_account' => 'default',
-      'payment_method' => $payment_method,
-      'payment_submethod' => $payment_submethod,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'date' => time(),
       'gross' => 10,
       'currency' => 'GBP',
