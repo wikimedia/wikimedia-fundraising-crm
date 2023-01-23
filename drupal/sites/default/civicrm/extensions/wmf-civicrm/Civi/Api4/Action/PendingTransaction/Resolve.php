@@ -47,6 +47,24 @@ class Resolve extends AbstractAction {
    */
   protected $alreadyResolved = [];
 
+  /**
+   * The ValidationAction representing an initial determination of
+   * fraudiness. This is calculated based on risk scores from fredge and
+   * from the status lookup call to the processor, and action thresholds
+   * set in the SmashPig processor-specific configuration.
+   * @var string
+   */
+  protected $validationAction;
+
+  /**
+   * Some constants to represent what action to take on any payment method,
+   * taking into account both the validationAction and other indicators of
+   * duplicate status or donor trustworthiness.
+   */
+  private const CAPTURE = 'capture';
+  private const CANCEL = 'cancel';
+  private const LEAVE_AT_CONSOLE = 'leave at console';
+
   public function _run(Result $result) {
     // Determine whether to resolve (i.e. not possible with iDEAL)
     if (!$this->isMessageResolvable()) {
@@ -84,86 +102,38 @@ class Resolve extends AbstractAction {
       return;
     }
 
-    // Cancel if there is already a contribution with this same ct_id.
-    // Multiple donation attempts at the front-end in quick succession often
-    // share a contribution_tracking_id. If the first is left in pending and
-    // a subsequent one succeeded, we don't want to capture the first one as
-    // the donor in all likelihood only meant to donate once.
-    $existingContributionTrackingRecord = db_select('contribution_tracking', 'ct')
-      ->fields('ct')
-      ->condition('id', $this->message['contribution_tracking_id'], '=')
-      ->execute()
-      ->fetchAssoc();
-
-    $shouldCancel = false;
-    // contribution_id is set on the contribution_tracking table when we
-    // consume the donations queue
-    if (!empty($existingContributionTrackingRecord['contribution_id'])) {
-      \Civi::Log('wmf')->info(
-        'Front-end is potentially confusing donors - ct_id ' .
-        $this->message['contribution_tracking_id'] . ' has a completed txn ' .
-        'as well as a pending one. Cancelling the pending one.'
-      );
-      $shouldCancel = true;
+    if (
+      $this->trackingRecordHasContributionId() ||
+      $this->approvedDonationForSameDonorInThisRun()
+    ) {
+      $whatToDo = self::CANCEL;
     }
-    if ($this->approvedDonationForSameDonorInThisRun()) {
-      $shouldCancel = true;
-    }
-    if ($shouldCancel) {
-      $response = $provider->cancelPayment($gatewayTxnId);
-      $result[$this->message['order_id']]['status'] = $response->getStatus();
-      return;
+    else {
+      $whatToDo = $this->decideWhatToDoBasedOnRiskScores($riskScores);
     }
 
-    $validationAction = $this->getValidationAction($riskScores);
-    switch ($validationAction) {
-      case ValidationAction::PROCESS:
-        // If score less than review threshold and no donation in past day, approve the transaction.
-        if ($this->hasDonationsInPastDay()) {
-          $cancelResult = $provider->cancelPayment($gatewayTxnId);
-          $newStatus = $cancelResult->getStatus();
-        } else {
-          $newStatus = $this->approvePaymentAndReturnStatus( $provider, $latestPaymentDetailResult );
-        }
+    switch ($whatToDo) {
+      case self::CANCEL:
+        $cancelResult = $provider->cancelPayment($gatewayTxnId);
+        $newStatus = $cancelResult->getStatus();
         break;
 
-      case ValidationAction::REJECT:
-        if ($this->matchesUnrefundedDonor()) {
-          $newStatus = $this->approvePaymentAndReturnStatus($provider, $latestPaymentDetailResult);
-        } else {
-          $cancelResult = $provider->cancelPayment($gatewayTxnId);
-          $newStatus = $cancelResult->getStatus();
-        }
+      case self::CAPTURE:
+        $newStatus = $this->approvePaymentAndReturnStatus($provider, $latestPaymentDetailResult);
         break;
 
-      case ValidationAction::REVIEW:
-        if ($this->matchesUnrefundedDonor()) {
-          $newStatus = $this->approvePaymentAndReturnStatus($provider, $latestPaymentDetailResult);
-          break;
-        } else {
-          // Just delete the pending message and leave the transaction at the
-          // merchant console for review.
-          $result[$this->message['order_id']]['status'] = FinalStatus::FAILED;
-          return;
-        }
-
-      default:
-        throw new \UnexpectedValueException("Should not get action $validationAction");
+      case self::LEAVE_AT_CONSOLE:
+        // Just delete the pending message and leave the transaction at the
+        // merchant console for review. Return early so as not to send a
+        // payments-init message since nothing new has happened.
+        $result[$this->message['order_id']]['status'] = FinalStatus::FAILED;
+        return;
     }
+
     // Update Civi API4 output
     $result[$this->message['order_id']]['status'] = $newStatus;
 
-    // Drop a message off on the payments-init queue. This is usually done at the end
-    // of a donation attempt at payments-wiki, but for orphan messages we often haven't
-    // gotten that far at the front end. I think some reports assume payments-init
-    // rows exist for all finished donation attempts.
-    $paymentsInitMessage = $this->buildPaymentsInitMessage(
-      $this->message,
-      $validationAction,
-      $newStatus,
-      $gatewayTxnId
-    );
-    QueueWrapper::push('payments-init', $paymentsInitMessage);
+    $this->sendInitMessageIfNeeded($newStatus, $gatewayTxnId);
   }
 
   protected function isMessageResolvable() {
@@ -199,6 +169,34 @@ class Resolve extends AbstractAction {
   }
 
   /**
+   * Check if there is already a contribution with this same ct_id.
+   * Multiple donation attempts at the front-end in quick succession often
+   * share a contribution_tracking_id. If the first is left in pending and
+   * a subsequent one succeeded, we don't want to capture the first one as
+   * the donor in all likelihood only meant to donate once.
+   *
+   * @return bool
+   */
+  protected function trackingRecordHasContributionId(): bool {
+    $existingContributionTrackingRecord = db_select('contribution_tracking', 'ct')
+      ->fields('ct')
+      ->condition('id', $this->message['contribution_tracking_id'], '=')
+      ->execute()
+      ->fetchAssoc();
+    $hasId = !empty($existingContributionTrackingRecord['contribution_id']);
+    if ($hasId) {
+      // contribution_id is set on the contribution_tracking table when we
+      // consume the donations queue
+      \Civi::Log('wmf')->info(
+        'Front-end is potentially confusing donors - ct_id ' .
+        $this->message['contribution_tracking_id'] . ' has a completed txn ' .
+        'as well as a pending one. Cancelling the pending one.'
+      );
+    }
+    return $hasId;
+  }
+
+  /**
    * @return bool true if we have just resolved a donation for the
    * same email address.
    */
@@ -215,6 +213,51 @@ class Resolve extends AbstractAction {
       }
     }
     return false;
+  }
+
+  /**
+   * Decides one of three courses of action based on risk scores and
+   * whether the message matches a donor in the database with a clean
+   * record. Also takes into consideration whether we have recorded a
+   * donation from the donor in the past day.
+   *
+   * @param array $riskScores
+   * @return string
+   * @throws \API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  protected function decideWhatToDoBasedOnRiskScores(array $riskScores): string {
+    $this->validationAction = $this->getValidationAction($riskScores);
+    switch ($this->validationAction) {
+      case ValidationAction::PROCESS:
+        // If score less than review threshold and no donation in past day, approve the transaction.
+        if ($this->hasDonationsInPastDay()) {
+          return self::CANCEL;
+        } else {
+          return self::CAPTURE;
+        }
+
+      case ValidationAction::REJECT:
+        if ($this->matchesUnrefundedDonor()) {
+          return self::CAPTURE;
+        } else {
+          return self::CANCEL;
+        }
+
+      case ValidationAction::REVIEW:
+        if ($this->matchesUnrefundedDonor()) {
+          return self::CAPTURE;
+        } else {
+          // Just delete the pending message and leave the transaction at the
+          // merchant console for review.
+          return self::LEAVE_AT_CONSOLE;
+        }
+
+      default:
+        throw new \UnexpectedValueException("Should not get action $this->validationAction");
+    }
   }
 
   /**
@@ -319,6 +362,33 @@ class Resolve extends AbstractAction {
     }
 
     return ValidationAction::PROCESS;
+  }
+
+  /**
+   * If there is new information to send to the payments-init queue, build a message
+   * and send it.
+   *
+   * @param string $newStatus
+   * @param string $gatewayTxnId
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  protected function sendInitMessageIfNeeded(string $newStatus, string $gatewayTxnId) {
+    // If we haven't set a validationAction, there's no new information to send to the
+    // payments-init queue.
+    if (!empty($this->validationAction)) {
+      // Drop a message off on the payments-init queue. This is usually done at the end
+      // of a donation attempt at payments-wiki, but for orphan messages we often haven't
+      // gotten that far at the front end. I think some reports assume payments-init
+      // rows exist for all finished donation attempts.
+      $paymentsInitMessage = $this->buildPaymentsInitMessage(
+        $this->message,
+        $this->validationAction,
+        $newStatus,
+        $gatewayTxnId
+      );
+      QueueWrapper::push( 'payments-init', $paymentsInitMessage );
+    }
   }
 
   /**
