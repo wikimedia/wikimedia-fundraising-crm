@@ -103,7 +103,7 @@ class Resolve extends AbstractAction {
     }
 
     if (
-      $this->trackingRecordHasContributionId() ||
+      $this->contributionTrackingRecordHasContributionId() ||
       $this->approvedDonationForSameDonorInThisRun()
     ) {
       $whatToDo = self::CANCEL;
@@ -177,7 +177,7 @@ class Resolve extends AbstractAction {
    *
    * @return bool
    */
-  protected function trackingRecordHasContributionId(): bool {
+  protected function contributionTrackingRecordHasContributionId(): bool {
     $existingContributionTrackingRecord = db_select('contribution_tracking', 'ct')
       ->fields('ct')
       ->condition('id', $this->message['contribution_tracking_id'], '=')
