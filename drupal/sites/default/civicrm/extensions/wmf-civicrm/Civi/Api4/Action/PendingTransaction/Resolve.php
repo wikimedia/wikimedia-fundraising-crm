@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\PendingTransaction;
 use Civi\Api4\Contact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\Name;
 use \DateTime;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\PaymentsFraudDatabase;
@@ -52,9 +53,16 @@ class Resolve extends AbstractAction {
    * fraudiness. This is calculated based on risk scores from fredge and
    * from the status lookup call to the processor, and action thresholds
    * set in the SmashPig processor-specific configuration.
-   * @var string
+   * @var ?string
    */
-  protected $validationAction;
+  protected $validationAction = null;
+
+  /**
+   * Array of name fields that may have been parsed out of a full_name
+   * field, cached here to avoid an extra API call to Name::parse
+   * @var ?array
+   */
+  protected $firstAndLastName = null;
 
   /**
    * Some constants to represent what action to take on any payment method,
@@ -86,6 +94,8 @@ class Resolve extends AbstractAction {
 
     // Get the latest payment detail, currently only adyen and ingenico have this function
     $latestPaymentDetailResult = $provider->getLatestPaymentStatus($this->message);
+    $this->addNewInfoFromPaymentDetailToMessage($latestPaymentDetailResult);
+
     $gatewayTxnId = $latestPaymentDetailResult->getGatewayTxnId();
     $riskScores = $latestPaymentDetailResult->getRiskScores();
     // start building the Civi API4 output
@@ -166,6 +176,25 @@ class Resolve extends AbstractAction {
       return FALSE;
     }
     return TRUE;
+  }
+
+  /**
+   * Fill in any missing donor information that has come in on the status lookup call.
+   * @param PaymentDetailResponse $latestPaymentDetailResult
+   */
+  protected function addNewInfoFromPaymentDetailToMessage(PaymentDetailResponse $latestPaymentDetailResult): void {
+    $donorDetails = $latestPaymentDetailResult->getDonorDetails();
+    if ($donorDetails !== null) {
+      // One or more of these is probably null - use array_filter to remove them
+      $donorInfoToAddToMessage = array_filter([
+        'first_name' => $donorDetails->getFirstName(),
+        'last_name' => $donorDetails->getLastName(),
+        'full_name' => $donorDetails->getFullName(),
+        'email' => $donorDetails->getEmail()
+      ]);
+      // don't overwrite if the message had info already
+      $this->message = array_merge($donorInfoToAddToMessage, $this->message);
+    }
   }
 
   /**
@@ -341,7 +370,7 @@ class Resolve extends AbstractAction {
     $antifraudMessage['risk_score'] = $totalRiskScore;
 
     if ($statusHasNewFraudScores) {
-      QueueWrapper::push( 'payments-antifraud', $antifraudMessage );
+      QueueWrapper::push('payments-antifraud', $antifraudMessage);
     }
 
     $config = Context::get()->getProviderConfiguration();
@@ -376,7 +405,7 @@ class Resolve extends AbstractAction {
   protected function sendInitMessageIfNeeded(string $newStatus, string $gatewayTxnId) {
     // If we haven't set a validationAction, there's no new information to send to the
     // payments-init queue.
-    if (!empty($this->validationAction)) {
+    if ($this->validationAction !== null) {
       // Drop a message off on the payments-init queue. This is usually done at the end
       // of a donation attempt at payments-wiki, but for orphan messages we often haven't
       // gotten that far at the front end. I think some reports assume payments-init
@@ -387,7 +416,7 @@ class Resolve extends AbstractAction {
         $newStatus,
         $gatewayTxnId
       );
-      QueueWrapper::push( 'payments-init', $paymentsInitMessage );
+      QueueWrapper::push('payments-init', $paymentsInitMessage);
     }
   }
 
@@ -446,11 +475,7 @@ class Resolve extends AbstractAction {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function matchesUnrefundedDonor(): bool {
-    if (
-      empty($this->message['email']) ||
-      empty($this->message['first_name']) ||
-      empty($this->message['last_name'])
-    ) {
+    if (!$this->messageHasMatchableFields()) {
       // Don't try to match if we have incomplete information
       return FALSE;
     }
@@ -474,11 +499,7 @@ class Resolve extends AbstractAction {
   }
 
   protected function hasDonationsInPastDay(): bool {
-    if (
-      empty($this->message['email']) ||
-      empty($this->message['first_name']) ||
-      empty($this->message['last_name'])
-    ) {
+    if (!$this->messageHasMatchableFields()) {
       // Don't try to match if we have incomplete information
       return FALSE;
     }
@@ -492,6 +513,17 @@ class Resolve extends AbstractAction {
   }
 
   /**
+   * Return true if we have enough info to look for a matching donor
+   * @return bool
+   */
+  protected function messageHasMatchableFields(): bool {
+    $hasEmail = !empty($this->message['email']);
+    $nameFields = $this->getFirstAndLastName();
+    $hasFirstAndLastName = !empty($nameFields['first_name']) && !empty($nameFields['last_name']);
+    return $hasEmail && $hasFirstAndLastName;
+  }
+
+  /**
    * Get statistics on donations for all donor records matching the name & email.
    *
    * @param bool $includeNonCompleteDonation pass FALSE to skip a join to contribution
@@ -500,6 +532,9 @@ class Resolve extends AbstractAction {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function getDonationStatistics(bool $includeNonCompleteDonation): Result {
+    // We have checked using messageHasMatchableFields to
+    // make sure this returns both first and last name.
+    $nameFields = $this->getFirstAndLastName();
     $getApiCall = Contact::get(FALSE)
       ->addSelect(
         'id',
@@ -513,8 +548,8 @@ class Resolve extends AbstractAction {
       )
       ->setGroupBy(['id',])
       ->addWhere('email.email', '=', $this->message['email'])
-      ->addWhere('first_name', '=', $this->message['first_name'])
-      ->addWhere('last_name', '=', $this->message['last_name'])
+      ->addWhere('first_name', '=', $nameFields['first_name'])
+      ->addWhere('last_name', '=', $nameFields['last_name'])
       ->addWhere('is_deleted', '=', 0)
       ->setLimit(10);
     if ($includeNonCompleteDonation) {
@@ -526,6 +561,41 @@ class Resolve extends AbstractAction {
         );
     }
     return $getApiCall->execute();
+  }
+
+  /**
+   * Some messages will just have a 'full_name' field instead of
+   * the separate first_name and last_name that we need to look
+   * donors up in the contact table. Use a name parsing library
+   * to get the first and last names into their own fields.
+   *
+   * We parse out the first and last names here to do our donor
+   * lookup, but we don't add the parsed names to the message,
+   * because the full_name parsing in the message import logic
+   * handles many more components than first and last name.
+   */
+  protected function getFirstAndLastName(): array {
+    if ($this->firstAndLastName === null) {
+      $hasFullName = !empty($this->message['full_name']);
+      $missingAtLeastOneSplitName = empty($this->message['first_name']) || empty($this->message['last_name']);
+      if ($hasFullName && $missingAtLeastOneSplitName) {
+        $parsed = Name::parse(FALSE)
+          ->setNames([$this->message['full_name']])
+          ->execute()->first();
+        $sourceData = $parsed;
+      } else {
+        $sourceData = $this->message;
+      }
+      $this->firstAndLastName = [];
+      // Either the original message or the parsed field could still be missing
+      // first_name or last_name. Just return as much as we have.
+      foreach(['first_name', 'last_name'] as $fieldName) {
+        if (!empty($sourceData[$fieldName])) {
+          $this->firstAndLastName[$fieldName] = $sourceData[$fieldName];
+        }
+      }
+    }
+    return $this->firstAndLastName;
   }
 
   protected function approvePaymentAndReturnStatus(
