@@ -928,6 +928,12 @@ DROP TRIGGER IF EXISTS civicrm_value_matching_gift_before_delete //
 DROP TRIGGER IF EXISTS civicrm_value_matching_gift_after_insert //
 DROP TRIGGER IF EXISTS civicrm_value_matching_gift_after_update //
 DROP TRIGGER IF EXISTS civicrm_value_matching_gift_after_delete //
+DROP TRIGGER IF EXISTS civicrm_value_matching_gift_29_before_insert //
+DROP TRIGGER IF EXISTS civicrm_value_matching_gift_29_before_update //
+DROP TRIGGER IF EXISTS civicrm_value_matching_gift_29_before_delete //
+DROP TRIGGER IF EXISTS civicrm_value_matching_gift_29_after_insert //
+DROP TRIGGER IF EXISTS civicrm_value_matching_gift_29_after_update //
+DROP TRIGGER IF EXISTS civicrm_value_matching_gift_29_after_delete //
 DROP TRIGGER IF EXISTS civicrm_value_organization_contact_14_before_insert //
 DROP TRIGGER IF EXISTS civicrm_value_organization_contact_14_before_update //
 DROP TRIGGER IF EXISTS civicrm_value_organization_contact_14_before_delete //
@@ -2677,6 +2683,12 @@ UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.enti
 
 CREATE TRIGGER civicrm_value_matching_gift_after_delete after delete ON civicrm_value_matching_gift FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_matching_gift (`id`, `entity_id`, `matching_gifts_provider_id`, `matching_gifts_provider_info_url`, `name_from_matching_gift_db`, `guide_url`, `online_form_url`, `minimum_gift_matched_usd`, `match_policy_last_updated`, `suppress_from_employer_field`, `subsidiaries`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`matching_gifts_provider_id`, OLD.`matching_gifts_provider_info_url`, OLD.`name_from_matching_gift_db`, OLD.`guide_url`, OLD.`online_form_url`, OLD.`minimum_gift_matched_usd`, OLD.`match_policy_last_updated`, OLD.`suppress_from_employer_field`, OLD.`subsidiaries`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id; END //
+
+CREATE TRIGGER civicrm_value_matching_gift_29_after_insert after insert ON civicrm_value_matching_gift_29 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_matching_gift_29 (`id`, `entity_id`, `date_verified_312`, `match_amount_313`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`date_verified_312`, NEW.`match_amount_313`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
+
+CREATE TRIGGER civicrm_value_matching_gift_29_after_update after update ON civicrm_value_matching_gift_29 FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`date_verified_312`,'') <> IFNULL(NEW.`date_verified_312`,'') OR IFNULL(OLD.`match_amount_313`,'') <> IFNULL(NEW.`match_amount_313`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_matching_gift_29 (`id`, `entity_id`, `date_verified_312`, `match_amount_313`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`date_verified_312`, NEW.`match_amount_313`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
+
+CREATE TRIGGER civicrm_value_matching_gift_29_after_delete after delete ON civicrm_value_matching_gift_29 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_matching_gift_29 (`id`, `entity_id`, `date_verified_312`, `match_amount_313`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`date_verified_312`, OLD.`match_amount_313`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
 
 CREATE TRIGGER civicrm_value_organization_contact_14_after_insert after insert ON civicrm_value_organization_contact_14 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_organization_contact_14 (`id`, `entity_id`, `name_56`, `contact_information_57`, `title_58`, `street_address_59`, `supplimental_street_address_60`, `city_61`, `zip_code_62`, `state_63`, `country_64`, `phone_65`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`name_56`, NEW.`contact_information_57`, NEW.`title_58`, NEW.`street_address_59`, NEW.`supplimental_street_address_60`, NEW.`city_61`, NEW.`zip_code_62`, NEW.`state_63`, NEW.`country_64`, NEW.`phone_65`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id; END //
