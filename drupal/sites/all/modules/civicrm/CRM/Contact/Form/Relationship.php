@@ -509,6 +509,7 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form {
    */
   private function deleteAction($id) {
     CRM_Contact_BAO_Relationship::del($id);
+    CRM_Core_Session::setStatus(ts('Selected relationship has been deleted successfully.'), ts('Record Deleted'), 'success');
 
     // reload all blocks to reflect this change on the user interface.
     $this->ajaxResponse['reloadBlocks'] = ['#crm-contactinfo-content'];
@@ -527,7 +528,7 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form {
     try {
       civicrm_api3('relationship', 'create', $params);
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       throw new CRM_Core_Exception('Relationship create error ' . $e->getMessage());
     }
 
@@ -590,7 +591,7 @@ class CRM_Contact_Form_Relationship extends CRM_Core_Form {
    * @param array $relationshipIds
    * @param string $note
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function saveRelationshipNotes($relationshipIds, $note) {
     foreach ($relationshipIds as $id) {

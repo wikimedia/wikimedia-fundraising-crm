@@ -99,6 +99,7 @@ class CRM_Wmf_Upgrader extends CRM_Wmf_Upgrader_Base {
      *
     */
     CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ADD INDEX entity_total (entity_id, lifetime_usd_total)');
+    CRM_Core_BAO_SchemaHandler::safeRemoveFK('civicrm_activity', 'FK_civicrm_activity_original_id');
   }
 
   /**

@@ -2,8 +2,12 @@
 // Specify our wmf custom groups.
 // Note this is not going through the civicrm_managed system
 // ie no mgd in the file prefix
-// as we want to use the bulkSave action for efficiency.
-// however we are keeping the declaration similar as it is conceptually similar.
+// for historical reasons - ie in the past the managed system did not
+// use the move efficient BulkSave. In addition it used to be poor at
+// matching existing fields. For new custom fields the CustomGroupMatchingGiftInformation.mgd.php
+// is the model to follow.
+// The fields in here could be converted but for now follow our old system - which
+// keeps the declaration similar as it is conceptually similar.
 // ** To sync the database with fields defined in this file use `drush update-custom-fields` **
 use Civi\WMFHooks\CalculatedData;
 

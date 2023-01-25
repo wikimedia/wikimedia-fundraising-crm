@@ -63,7 +63,7 @@ class Import {
    * @param int $userJobID
    * @param bool $checkPermissions
    * @return \Civi\Api4\Import\Save
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function save(int $userJobID, bool $checkPermissions = TRUE): Save {
     return (new Save('Import_' . $userJobID, __FUNCTION__))
@@ -75,7 +75,8 @@ class Import {
    * @param bool $checkPermissions
    *
    * @return \Civi\Api4\Import\Create
-   * @throws \API_Exception
+   *
+   * @throws \CRM_Core_Exception
    */
   public static function create(int $userJobID, bool $checkPermissions = TRUE): Create {
     return (new Create('Import_' . $userJobID, __FUNCTION__))
@@ -86,7 +87,7 @@ class Import {
    * @param int $userJobID
    * @param bool $checkPermissions
    * @return \Civi\Api4\Import\Update
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function update(int $userJobID, bool $checkPermissions = TRUE): Update {
     return (new Update('Import_' . $userJobID, __FUNCTION__))
@@ -106,7 +107,7 @@ class Import {
   /**
    * @param int $userJobID
    * @return \Civi\Api4\Generic\CheckAccessAction
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function checkAccess(int $userJobID): CheckAccessAction {
     return new CheckAccessAction('Import_' . $userJobID, __FUNCTION__);

@@ -1,11 +1,13 @@
 <?php
 namespace Civi\Core;
 
+use Civi\Core\Compiler\AutoServiceScannerPass;
 use Civi\Core\Compiler\EventScannerPass;
 use Civi\Core\Compiler\SpecProviderPass;
 use Civi\Core\Event\EventScanner;
 use Civi\Core\Lock\LockManager;
 use Symfony\Component\Config\ConfigCache;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
@@ -96,6 +98,7 @@ class Container {
   public function createContainer() {
     $civicrm_base_path = dirname(dirname(__DIR__));
     $container = new ContainerBuilder();
+    $container->addCompilerPass(new AutoServiceScannerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 1000);
     $container->addCompilerPass(new EventScannerPass());
     $container->addCompilerPass(new SpecProviderPass());
     $container->addCompilerPass(new RegisterListenersPass());
@@ -178,8 +181,6 @@ class Container {
       'fields' => 'contact fields',
       'contactTypes' => 'contactTypes',
       'metadata' => 'metadata',
-      'mixinScan' => 'mixinScan',
-      'mixinBoot' => 'mixinBoot',
     ];
     $verSuffixCaches = ['metadata'];
     $verSuffix = '_' . preg_replace(';[^0-9a-z_];', '_', \CRM_Utils_System::version());
@@ -191,7 +192,7 @@ class Container {
       // For Caches that we don't really care about the ttl for and/or maybe accessed
       // fairly often we use the fastArrayDecorator which improves reads and writes, these
       // caches should also not have concurrency risk.
-      $fastArrayCaches = ['groups', 'navigation', 'customData', 'fields', 'contactTypes', 'metadata', 'mixinScan', 'mixinBoot', 'js_strings'];
+      $fastArrayCaches = ['groups', 'navigation', 'customData', 'fields', 'contactTypes', 'metadata', 'js_strings'];
       if (in_array($cacheSvc, $fastArrayCaches)) {
         $definitionParams['withArray'] = 'fast';
       }
@@ -224,26 +225,6 @@ class Container {
         ],
       ]
     ))->setFactory('CRM_Utils_Cache::create')->setPublic(TRUE);
-
-    $container->setDefinition('sql_triggers', new Definition(
-      'Civi\Core\SqlTriggers',
-      []
-    ))->setPublic(TRUE);
-
-    $container->setDefinition('asset_builder', new Definition(
-      'Civi\Core\AssetBuilder',
-      []
-    ))->setPublic(TRUE);
-
-    $container->setDefinition('themes', new Definition(
-      'Civi\Core\Themes',
-      []
-    ))->setPublic(TRUE);
-
-    $container->setDefinition('format', new Definition(
-      '\Civi\Core\Format',
-      []
-    ))->setPublic(TRUE);
 
     $container->setDefinition('bundle.bootstrap3', new Definition('CRM_Core_Resources_Bundle', ['bootstrap3']))
       ->setFactory('CRM_Core_Resources_Common::createBootstrap3Bundle')->setPublic(TRUE);
@@ -382,8 +363,16 @@ class Container {
       'CRM_Contribute_RecurTokens',
       []
     ))->addTag('kernel.event_subscriber')->setPublic(TRUE);
+    $container->setDefinition('crm_group_tokens', new Definition(
+      'CRM_Core_GroupTokens',
+      []
+    ))->addTag('kernel.event_subscriber')->setPublic(TRUE);
     $container->setDefinition('crm_domain_tokens', new Definition(
       'CRM_Core_DomainTokens',
+      []
+    ))->addTag('kernel.event_subscriber')->setPublic(TRUE);
+    $container->setDefinition('crm_token_tidy', new Definition(
+      '\Civi\Token\TidySubscriber',
       []
     ))->addTag('kernel.event_subscriber')->setPublic(TRUE);
 
@@ -397,7 +386,11 @@ class Container {
       }
     }
 
-    \CRM_Api4_Services::hook_container($container);
+    // FIXME: Automatically scan BasicServices for ProviderInterface.
+    $container->getDefinition('civi_api_kernel')->addMethodCall(
+      'registerApiProvider',
+      [new Reference('action_object_provider')]
+    );
 
     \CRM_Utils_Hook::container($container);
 
@@ -412,7 +405,7 @@ class Container {
   }
 
   /**
-   * @return \Symfony\Component\EventDispatcher\EventDispatcher
+   * @return \Civi\Core\CiviEventDispatcherInterface
    */
   public function createEventDispatcher() {
     // Continue building on the original dispatcher created during bootstrap.
@@ -501,7 +494,7 @@ class Container {
   }
 
   /**
-   * @param \Symfony\Component\EventDispatcher\EventDispatcher $dispatcher
+   * @param \Civi\Core\CiviEventDispatcherInterface $dispatcher
    * @param $magicFunctionProvider
    *
    * @return \Civi\API\Kernel

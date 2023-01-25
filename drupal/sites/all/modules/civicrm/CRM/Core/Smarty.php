@@ -145,7 +145,7 @@ class CRM_Core_Smarty extends Smarty {
     $this->assign('crmPermissions', new CRM_Core_Smarty_Permissions());
 
     if ($config->debug) {
-      // $this->error_reporting = E_ALL;
+      $this->error_reporting = E_ALL;
     }
   }
 

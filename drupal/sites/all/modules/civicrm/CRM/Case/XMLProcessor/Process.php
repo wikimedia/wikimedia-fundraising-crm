@@ -18,6 +18,12 @@ class CRM_Case_XMLProcessor_Process extends CRM_Case_XMLProcessor {
   protected $defaultAssigneeOptionsValues = [];
 
   /**
+   * Does Cases support Multiple Clients.
+   * @var bool
+   */
+  public $_isMultiClient = FALSE;
+
+  /**
    * Run.
    *
    * @param string $caseType
@@ -72,7 +78,7 @@ class CRM_Case_XMLProcessor_Process extends CRM_Case_XMLProcessor {
   }
 
   /**
-   * @param $xml
+   * @param SimpleXMLElement $xml
    * @param array $params
    *
    * @throws Exception

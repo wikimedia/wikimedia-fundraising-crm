@@ -18,7 +18,7 @@
 /**
  * UF group BAO class.
  */
-class CRM_Core_BAO_UFGroup extends CRM_Core_DAO_UFGroup {
+class CRM_Core_BAO_UFGroup extends CRM_Core_DAO_UFGroup implements \Civi\Core\HookInterface {
 
   const PUBLIC_VISIBILITY = 1,
     ADMIN_VISIBILITY = 2,
@@ -1400,30 +1400,33 @@ class CRM_Core_BAO_UFGroup extends CRM_Core_DAO_UFGroup {
    *
    * @return bool
    *
+   * @deprecated
    */
   public static function del($id) {
-    CRM_Utils_Hook::pre('delete', 'UFGroup', $id);
+    return (bool) static::deleteRecord(['id' => $id]);
+  }
 
-    //check whether this group contains  any profile fields
-    $profileField = new CRM_Core_DAO_UFField();
-    $profileField->uf_group_id = $id;
-    $profileField->find();
-    while ($profileField->fetch()) {
-      CRM_Core_BAO_UFField::del($profileField->id);
+  /**
+   * Callback for hook_civicrm_pre().
+   * @param \Civi\Core\Event\PreEvent $event
+   * @throws CRM_Core_Exception
+   */
+  public static function self_hook_civicrm_pre(\Civi\Core\Event\PreEvent $event) {
+    if ($event->action === 'delete' && $event->id) {
+      // Check whether this group contains any profile fields
+      $profileField = new CRM_Core_DAO_UFField();
+      $profileField->uf_group_id = $event->id;
+      $profileField->find();
+      while ($profileField->fetch()) {
+        CRM_Core_BAO_UFField::deleteRecord(['id' => $profileField->id]);
+      }
+
+      // Delete records from uf join table
+      // Should probably use a deleteRecord rather than direct delete
+      $ufJoin = new CRM_Core_DAO_UFJoin();
+      $ufJoin->uf_group_id = $event->id;
+      $ufJoin->delete();
     }
-
-    //delete records from uf join table
-    $ufJoin = new CRM_Core_DAO_UFJoin();
-    $ufJoin->uf_group_id = $id;
-    $ufJoin->delete();
-
-    //delete profile group
-    $group = new CRM_Core_DAO_UFGroup();
-    $group->id = $id;
-    $group->delete();
-
-    CRM_Utils_Hook::post('delete', 'UFGroup', $id, $group);
-    return 1;
   }
 
   /**
@@ -1891,6 +1894,9 @@ AND    ( entity_id IS NULL OR entity_id <= 0 )
       }
     }
     elseif (substr($fieldName, 0, 9) === 'image_URL') {
+      if (!isset($attributes['accept'])) {
+        $attributes['accept'] = 'image/png, image/jpeg, image/gif';
+      }
       $form->add('file', $name, $title, $attributes, $required);
       $form->addUploadElement($name);
     }
@@ -2164,7 +2170,7 @@ AND    ( entity_id IS NULL OR entity_id <= 0 )
       $form->add('textarea', $name, $title, CRM_Core_DAO::getAttribute('CRM_Core_DAO_Email', $fieldName));
     }
     elseif (substr($fieldName, -11) == 'campaign_id') {
-      if (CRM_Campaign_BAO_Campaign::isCampaignEnable()) {
+      if (CRM_Campaign_BAO_Campaign::isComponentEnabled()) {
         $campaigns = CRM_Campaign_BAO_Campaign::getCampaigns(CRM_Utils_Array::value($contactId,
           $form->_componentCampaigns
         ));
@@ -3556,7 +3562,7 @@ SELECT  group_id
    *
    * @return string
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getFrontEndTitle(int $profileID) {
     $profile = civicrm_api3('UFGroup', 'getsingle', ['id' => $profileID, 'return' => ['title', 'frontend_title']]);

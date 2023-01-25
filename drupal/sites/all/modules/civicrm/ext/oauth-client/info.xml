@@ -15,17 +15,17 @@
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
   <releaseDate>2020-10-23</releaseDate>
-  <version>5.54.2</version>
+  <version>5.58.beta1</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.54</ver>
+    <ver>5.58</ver>
   </compatibility>
   <requires>
     <ext version="~4.5">org.civicrm.afform</ext>
   </requires>
   <comments>This extension provides a framework for OAuth support</comments>
   <classloader>
-    <psr0 prefix="CRM_" path=""/>
+    <psr0 prefix="CRM_" path="."/>
     <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
   <upgrader>CRM_OAuth_Upgrader</upgrader>
@@ -36,5 +36,6 @@
   </mixins>
   <civix>
     <namespace>CRM/OAuth</namespace>
+    <format>22.10.0</format>
   </civix>
 </extension>

@@ -74,7 +74,7 @@ abstract class SqlExpression {
    * @param bool $parseAlias
    * @param array $mustBe
    * @return SqlExpression
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function convert(string $expression, $parseAlias = FALSE, $mustBe = []) {
     $as = $parseAlias ? strrpos($expression, ' AS ') : FALSE;
@@ -91,7 +91,7 @@ abstract class SqlExpression {
     elseif ($bracketPos && $lastChar === ')') {
       $fnName = substr($expr, 0, $bracketPos);
       if ($fnName !== strtoupper($fnName)) {
-        throw new \API_Exception('Sql function must be uppercase.');
+        throw new \CRM_Core_Exception('Sql function must be uppercase.');
       }
       $className = 'SqlFunction' . $fnName;
     }
@@ -114,7 +114,7 @@ abstract class SqlExpression {
     }
     $className = __NAMESPACE__ . '\\' . $className;
     if (!class_exists($className)) {
-      throw new \API_Exception('Unable to parse sql expression: ' . $expression);
+      throw new \CRM_Core_Exception('Unable to parse sql expression: ' . $expression);
     }
     $sqlExpression = new $className($expr, $alias);
     if ($mustBe) {
@@ -123,7 +123,7 @@ abstract class SqlExpression {
           return $sqlExpression;
         }
       }
-      throw new \API_Exception('Illegal sql expression.');
+      throw new \CRM_Core_Exception('Illegal sql expression.');
     }
     return $sqlExpression;
   }
@@ -140,7 +140,7 @@ abstract class SqlExpression {
   /**
    * Renders expression to a sql string, replacing field names with column names.
    *
-   * @param Civi\Api4\Query\Api4SelectQuery $query
+   * @param \Civi\Api4\Query\Api4SelectQuery $query
    * @return string
    */
   abstract public function render(Api4SelectQuery $query): string;
@@ -169,6 +169,16 @@ abstract class SqlExpression {
   public function getType(): string {
     $className = get_class($this);
     return substr($className, strrpos($className, '\\') + 1);
+  }
+
+  /**
+   * Checks the name of this sql expression class.
+   *
+   * @param $type
+   * @return bool
+   */
+  public function isType($type): bool {
+    return $this->getType() === $type;
   }
 
   /**
@@ -209,7 +219,7 @@ abstract class SqlExpression {
    * @param array $mustBe
    * @param int $max
    * @return SqlExpression[]
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function captureExpressions(string &$arg, array $mustBe, int $max) {
     $captured = [];

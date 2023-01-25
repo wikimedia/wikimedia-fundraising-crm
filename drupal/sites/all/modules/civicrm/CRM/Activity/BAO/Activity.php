@@ -574,7 +574,7 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
    *
    * @return array
    *   Relevant data object values of open activities
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getActivities($params) {
     $activities = [];
@@ -1001,7 +1001,6 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
    *
    * @deprecated
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public static function sendEmail(
@@ -1435,6 +1434,7 @@ WHERE entity_id =%1 AND entity_table = %2";
    *   array of importable Fields
    */
   public static function &importableFields($status = FALSE) {
+    CRM_Core_Error::deprecatedFunctionWarning('api');
     if (empty(Civi::$statics[__CLASS__][__FUNCTION__])) {
       Civi::$statics[__CLASS__][__FUNCTION__] = [];
       if (!$status) {
@@ -1906,7 +1906,7 @@ AND cl.modified_id  = c.id
    * @param int $type
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getStatusesByType($type) {
     if (!isset(Civi::$statics[__CLASS__][__FUNCTION__])) {
@@ -1932,7 +1932,7 @@ AND cl.modified_id  = c.id
    * @param array $activity
    *
    * @return bool
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function isOverdue($activity) {
     return array_key_exists($activity['status_id'], self::getStatusesByType(self::INCOMPLETE)) && CRM_Utils_Date::overdue($activity['activity_date_time']);

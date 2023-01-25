@@ -200,7 +200,7 @@ abstract class CRM_Import_DataSource {
    *
    * @return array
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getUserJob(): array {
     if (!$this->userJob) {
@@ -219,7 +219,7 @@ abstract class CRM_Import_DataSource {
    *
    * @return mixed
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getSubmittedValue(string $valueName) {
     return $this->getUserJob()['metadata']['submitted_values'][$valueName];
@@ -235,7 +235,6 @@ abstract class CRM_Import_DataSource {
    *
    * @return array
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function getRows(bool $nonAssociative = TRUE): array {
@@ -252,7 +251,6 @@ abstract class CRM_Import_DataSource {
    * Get the next row.
    *
    * @return array|null
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function getRow(): ?array {
@@ -298,7 +296,7 @@ abstract class CRM_Import_DataSource {
    * that can see what fields they are mapping.
    *
    * @return array
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getColumnHeaders(): array {
     return $this->getUserJob()['metadata']['DataSource']['column_headers'];
@@ -308,7 +306,6 @@ abstract class CRM_Import_DataSource {
    * Get the field names of the fields holding data in the import tracking table.
    *
    * @return array
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function getDataFieldNames(): array {
@@ -332,7 +329,7 @@ abstract class CRM_Import_DataSource {
    * that can see what fields they are mapping.
    *
    * @return int
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getNumberOfColumns(): int {
     return $this->getUserJob()['metadata']['DataSource']['number_of_columns'];
@@ -359,7 +356,7 @@ abstract class CRM_Import_DataSource {
    *
    * @return array
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getDataSourceMetadata(): array {
     if (!$this->dataSourceMetadata && $this->getUserJobID()) {
@@ -374,7 +371,6 @@ abstract class CRM_Import_DataSource {
    *
    * @return string|null
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   protected function getTableName(): ?string {
@@ -421,7 +417,6 @@ abstract class CRM_Import_DataSource {
   /**
    * Initialize the datasource, based on the submitted values stored in the user job.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function initialize(): void {
@@ -442,7 +437,7 @@ abstract class CRM_Import_DataSource {
    * @param string $key
    * @param array $data
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function updateUserJobMetadata(string $key, array $data): void {
@@ -478,7 +473,6 @@ abstract class CRM_Import_DataSource {
    *   then it might decided not to drop the table and would want to retain
    *   some metadata.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    *
    * @noinspection PhpUnusedParameterInspection
@@ -508,7 +502,7 @@ abstract class CRM_Import_DataSource {
    *   administrative fields, relying on this convention.
    * 3) we have the capitalisation on _statusMsg - @param string $tableName
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @todo change to _status_message
    */
   protected function addTrackingFieldsToTable(string $tableName): void {
@@ -528,7 +522,7 @@ abstract class CRM_Import_DataSource {
   /**
    * Get any additional import specific tracking fields.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getAdditionalTrackingFields(): string {
     $sql = '';
@@ -544,7 +538,7 @@ abstract class CRM_Import_DataSource {
    *
    * @return CRM_Import_Parser
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getParser() {
     $parserClass = '';
@@ -566,7 +560,6 @@ abstract class CRM_Import_DataSource {
    * @return bool
    *   True if no rows remain to be imported.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function isCompleted(): bool {
@@ -584,7 +577,6 @@ abstract class CRM_Import_DataSource {
    * @param array $additionalFields
    *   Optional array e.g ['related_contact' => 4]
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function updateStatus(int $id, string $status, string $message, ? int $entityID = NULL, array $additionalFields = []): void {
@@ -605,7 +597,6 @@ abstract class CRM_Import_DataSource {
 
   /**
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   private function instantiateQueryObject(): void {
@@ -648,6 +639,7 @@ abstract class CRM_Import_DataSource {
       CRM_Contribute_Import_Parser_Contribution::PLEDGE_PAYMENT_ERROR => ['pledge_payment_error'],
       'new' => ['new', 'valid'],
       'valid' => ['valid'],
+      'imported' => ['imported', 'soft_credit_imported', 'pledge_payment_imported', 'warning_unparsed_address'],
     ];
   }
 

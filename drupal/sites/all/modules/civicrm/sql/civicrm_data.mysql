@@ -394,8 +394,6 @@ INSERT INTO civicrm_state_province (id, country_id, abbreviation, name) VALUES
 (1226, 1101, "UP", "Uttar Pradesh"),
 (1227, 1101, "WB", "West Bengal"),
 (1228, 1101, "AN", "Andaman and Nicobar Islands"),
-(1229, 1101, "DN", "Dadra and Nagar Haveli"),
-(1230, 1101, "DD", "Daman and Diu"),
 (1231, 1101, "DL", "Delhi"),
 (1232, 1101, "LD", "Lakshadweep"),
 (1233, 1101, "PY", "Pondicherry"),
@@ -4440,8 +4438,13 @@ INSERT INTO civicrm_state_province (id, country_id, abbreviation, name) VALUES
  (NULL, 1023, 'SAN', 'Sandys'),
  (NULL, 1023, 'SMI', 'Smiths'),
  (NULL, 1023, 'SOU', 'Southampton'),
- (NULL, 1023, 'WAR', 'Warwick')
- 
+ (NULL, 1023, 'WAR', 'Warwick'),
+
+-- Add in missing Indian State provinces
+
+(NULL, 1101, "DH", "Dādra and Nagar Haveli and Damān and Diu"),
+(NULL, 1101, "LA", "Ladākh")
+
  -- end of statement:
  ;
 -- +--------------------------------------------------------------------+
@@ -4741,91 +4744,102 @@ VALUES
 -- option groups and values for 'preferred communication methods' , 'activity types', 'gender', etc.
 
 INSERT INTO
-   `civicrm_option_group` (`name`, `title`, `data_type`, `is_reserved`, `is_active`, `is_locked`, `option_value_fields`)
+   `civicrm_option_group` (`name`, `title`, `data_type`, `is_reserved`, `is_active`, `is_locked`, `option_value_fields`, `description`)
 VALUES
-   ('preferred_communication_method', 'Preferred Communication Method'     , NULL,      1, 1, 0, 'name,label,description'),
-   ('activity_type'                 , 'Activity Type'                      , 'Integer', 1, 1, 0, 'name,label,description,icon'),
-   ('gender'                        , 'Gender'                             , 'Integer', 1, 1, 0, 'name,label,description'),
-   ('instant_messenger_service'     , 'Instant Messenger (IM) screen-names', NULL,      1, 1, 0, 'name,label,description'),
-   ('mobile_provider'               , 'Mobile Phone Providers'             , NULL,      1, 1, 0, 'name,label,description'),
-   ('individual_prefix'             , 'Individual contact prefixes'        , NULL,      1, 1, 0, 'name,label,description'),
-   ('individual_suffix'             , 'Individual contact suffixes'        , NULL,      1, 1, 0, 'name,label,description'),
-   ('acl_role'                      , 'ACL Role'                           , NULL,      1, 1, 0, 'name,label,description'),
-   ('accept_creditcard'             , 'Accepted Credit Cards'              , NULL,      1, 1, 0, 'name,label,description'),
-   ('payment_instrument'            , 'Payment Methods'                    , 'Integer', 1, 1, 0, 'name,label,description'),
-   ('contribution_status'           , 'Contribution Status'                , NULL,      1, 1, 1, 'name,label,description'),
-   ('pcp_status'                    , 'PCP Status'                         , NULL,      1, 1, 1, 'name,label,description'),
-   ('pcp_owner_notify'              , 'PCP owner notifications'            , NULL,      1, 1, 1, 'name,label,description'),
-   ('participant_role'              , 'Participant Role'                   , 'Integer', 1, 1, 0, 'name,label,description'),
-   ('event_type'                    , 'Event Type'                         , 'Integer', 1, 1, 0, 'name,label,description'),
-   ('contact_view_options'          , 'Contact View Options'               , NULL,      1, 1, 1, 'name,label,description'),
-   ('contact_smart_group_display'   , 'Contact Smart Group View Options'   , NULL,      1, 1, 1, 'name,label,description'),
-   ('contact_edit_options'          , 'Contact Edit Options'               , NULL,      1, 1, 1, 'name,label,description'),
-   ('advanced_search_options'       , 'Advanced Search Options'            , NULL,      1, 1, 1, 'name,label,description'),
-   ('user_dashboard_options'        , 'User Dashboard Options'             , NULL,      1, 1, 1, 'name,label,description'),
-   ('address_options'               , 'Addressing Options'                 , NULL,      1, 1, 0, 'name,label,description'),
-   ('group_type'                    , 'Group Type'                         , NULL,      1, 1, 0, 'name,label,description'),
-   ('custom_search'                 , 'Custom Search'                      , NULL,      1, 1, 0, 'name,label,description'),
-   ('activity_status'               , 'Activity Status'                    , 'Integer', 1, 1, 0, 'name,label,description,color'),
-   ('case_type'                     , 'Case Type'                          , NULL,      1, 1, 0, 'name,label,description'),
-   ('case_status'                   , 'Case Status'                        , NULL,      1, 1, 0, 'name,label,description,color'),
-   ('participant_listing'           , 'Participant Listing'                , NULL,      1, 1, 0, 'name,label,description'),
-   ('safe_file_extension'           , 'Safe File Extension'                , NULL,      1, 1, 0, 'name,label,description'),
-   ('from_email_address'            , 'From Email Address'                 , NULL,      1, 1, 0, 'name,label,description'),
-   ('mapping_type'                  , 'Mapping Type'                       , NULL,      1, 1, 1, 'name,label,description'),
-   ('wysiwyg_editor'                , 'WYSIWYG Editor'                     , NULL,      1, 1, 0, 'name,label,description'),
-   ('recur_frequency_units'         , 'Recurring Frequency Units'          , NULL,      1, 1, 0, 'name,label,description'),
-   ('phone_type'                    , 'Phone Type'                         , NULL,      1, 1, 0, 'name,label,description'),
-   ('custom_data_type'              , 'Custom Data Type'                   , NULL,      1, 1, 0, 'name,label,description'),
-   ('visibility'                    , 'Visibility'                         , NULL,      1, 1, 0, 'name,label,description'),
-   ('mail_protocol'                 , 'Mail Protocol'                      , NULL,      1, 1, 0, 'name,label,description'),
-   ('priority'                      , 'Priority'                           , NULL,      1, 1, 0, 'name,label,description'),
-   ('redaction_rule'                , 'Redaction Rule'                     , NULL,      1, 1, 0, 'name,label,description'),
-   ('report_template'               , 'Report Template'                    , NULL,      1, 1, 0, 'name,label,description'),
-   ('email_greeting'                , 'Email Greeting Type'                , NULL,      1, 1, 0, 'name,label,description'),
-   ('postal_greeting'               , 'Postal Greeting Type'               , NULL,      1, 1, 0, 'name,label,description'),
-   ('addressee'                     , 'Addressee Type'                     , NULL,      1, 1, 0, 'name,label,description'),
-   ('contact_autocomplete_options'  , 'Autocomplete Contact Search'        , NULL,      1, 1, 1, 'name,label,description'),
-   ('contact_reference_options'     , 'Contact Reference Autocomplete Options', NULL,   1, 1, 1, 'name,label,description'),
-   ('website_type'                  , 'Website Type'                       , NULL,      1, 1, 0, 'name,label,description'),
-   ('tag_used_for'                  , 'Tag Used For'                       , NULL,      1, 1, 1, 'name,label,description'),
-   ('note_used_for'                 , 'Note Used For'                      , NULL,      1, 1, 1, 'name,label,description'),
-   ('currencies_enabled'            , 'Currencies Enabled'                 , NULL,      1, 1, 0, 'name,label,description'),
-   ('event_badge'                   , 'Event Name Badge'                   , NULL,      1, 1, 0, 'name,label,description'),
-   ('note_privacy'                  , 'Privacy levels for notes'           , NULL,      1, 1, 0, 'name,label,description'),
-   ('campaign_type'                 , 'Campaign Type'                      , NULL,      1, 1, 0, 'name,label,description'),
-   ('campaign_status'               , 'Campaign Status'                    , NULL,      1, 1, 0, 'name,label,description'),
-   ('system_extensions'             , 'CiviCRM Extensions'                 , NULL,      1, 1, 0, 'name,label,description'),
-   ('mail_approval_status'          , 'CiviMail Approval Status'           , NULL,      1, 1, 0, 'name,label,description'),
-   ('engagement_index'              , 'Engagement Index'                   , NULL,      1, 1, 0, 'name,label,description'),
-   ('cg_extend_objects'             , 'Objects a custom group extends to'  , NULL,      1, 1, 0, 'name,label,description'),
-   ('paper_size'                    , 'Paper Size'                         , NULL,      1, 1, 0, 'name,label,description'),
-   ('pdf_format'                    , 'PDF Page Format'                    , NULL,      1, 1, 0, 'name,label,description'),
-   ('label_format'                  , 'Mailing Label Format'               , NULL,      1, 1, 0, 'name,label,description'),
-   ('activity_contacts'             , 'Activity Contacts'                  , NULL,      1, 1, 1, 'name,label,description'),
-   ('account_relationship'          , 'Account Relationship'               , NULL,      1, 1, 0, 'name,label,description'),
-   ('event_contacts'                , 'Event Recipients'                   , NULL,      1, 1, 0, 'name,label,description'),
-   ('conference_slot'               , 'Conference Slot'                    , NULL,      1, 1, 0, 'name,label,description'),
-   ('batch_type'                    , 'Batch Type'                         , NULL,      1, 1, 1, 'name,label,description'),
-   ('batch_mode'                    , 'Batch Mode'                         , NULL,      1, 1, 1, 'name,label,description'),
-   ('batch_status'                  , 'Batch Status'                       , NULL,      1, 1, 1, 'name,label,description'),
-   ('sms_api_type'                  , 'Api Type'                           , NULL,      1, 1, 0, 'name,label,description'),
-   ('sms_provider_name'             , 'Sms Provider Internal Name'         , NULL,      1, 1, 0, 'name,label,description'),
-   ('auto_renew_options'            , 'Auto Renew Options'                 , NULL,      1, 1, 1, 'name,label,description'),
-   ('financial_account_type'        , 'Financial Account Type'             , NULL,      1, 1, 0, 'name,label,description'),
-   ('financial_item_status'         , 'Financial Item Status'              , NULL,      1, 1, 1, 'name,label,description'),
-   ('label_type'                    , 'Label Type'                         , NULL,      1, 1, 0, 'name,label,description'),
-   ('name_badge'                    , 'Name Badge Format'                  , NULL,      1, 1, 0, 'name,label,description'),
-   ('communication_style'           , 'Communication Style'                , NULL,      1, 1, 0, 'name,label,description'),
-   ('msg_mode'                      , 'Message Mode'                       , NULL,      1, 1, 0, 'name,label,description'),
-   ('contact_date_reminder_options' , 'Contact Date Reminder Options'      , NULL,      1, 1, 1, 'name,label,description'),
-   ('wysiwyg_presets'               , 'WYSIWYG Editor Presets'             , NULL,      1, 1, 0, 'name,label,description'),
-   ('relative_date_filters'         , 'Relative Date Filters'              , NULL,      1, 1, 0, 'name,label,description'),
-   ('pledge_status'                 , 'Pledge Status'                      , NULL,      1, 1, 1, 'name,label,description'),
-   ('contribution_recur_status'     , 'Recurring Contribution Status'      , NULL,      1, 1, 1, 'name,label,description'),
-   ('environment'                   , 'Environment'                        , NULL,      1, 1, 0, 'name,label,description'),
-   ('activity_default_assignee'     , 'Activity default assignee'          , NULL,      1, 1, 0, 'name,label,description'),
-   ('entity_batch_extends'          , 'Entity Batch Extends'               , NULL,      1, 1, 0, 'name,label,description');
+   ('preferred_communication_method', 'Preferred Communication Method'     , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('activity_type'                 , 'Activity Type'                      , 'Integer', 1, 1, 0, 'name,label,description,icon',
+     'Activities track interactions with contacts. Some activity types are reserved for use by automated processes, others can be freely configured.'),
+   ('gender'                        , 'Gender'                             , 'Integer', 1, 1, 0, 'name,label,description',
+     'CiviCRM is pre-configured with standard options for individual gender (Male, Female, Other). Modify these options as needed for your installation.'),
+   ('instant_messenger_service'     , 'Instant Messenger (IM) screen-names', NULL,      1, 1, 0, 'name,label,description',
+     'Commonly-used messaging apps are listed here. Administrators may define as many additional providers as needed.'),
+   ('mobile_provider'               , 'Mobile Phone Providers'             , NULL,      1, 1, 0, 'name,label,description',
+     'When recording mobile phone numbers for contacts, it may be useful to include the Mobile Phone Service Provider (e.g. Cingular, Sprint, etc.). CiviCRM is installed with the most commonly encountered service providers. Administrators may define as many additional providers as needed.'),
+   ('individual_prefix'             , 'Individual contact prefixes'        , NULL,      1, 1, 0, 'name,label,description',
+     'CiviCRM is pre-configured with standard options for individual contact prefixes (Ms., Mr., Dr. etc.). Customize these options and add new ones as needed for your installation.'),
+   ('individual_suffix'             , 'Individual contact suffixes'        , NULL,      1, 1, 0, 'name,label,description',
+     'CiviCRM is pre-configured with standard options for individual contact name suffixes (Jr., Sr., II etc.). Customize these options and add new ones as needed for your installation.'),
+   ('acl_role'                      , 'ACL Role'                           , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('accept_creditcard'             , 'Accepted Credit Cards'              , NULL,      1, 1, 0, 'name,label,description',
+     'The following credit card options will be offered to contributors using Online Contribution pages. You will need to verify which cards are accepted by your chosen Payment Processor and update these entries accordingly.IMPORTANT: These options do not control credit card/payment method choices for sites and/or contributors using the PayPal Express service (e.g. where billing information is collected on the Payment Processor\\\'s website).'),
+   ('payment_instrument'            , 'Payment Methods'                    , 'Integer', 1, 1, 0, 'name,label,description',
+     'You may choose to record the payment method used for each contribution and fee. Reserved payment methods are required - you may modify their labels but they can not be deleted (e.g. Check, Credit Card, Debit Card). If your site requires additional payment methods, you can add them here. You can associate each payment method with a Financial Account which specifies where the payment is going (e.g. a bank account for checks and cash).'),
+   ('contribution_status'           , 'Contribution Status'                , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('pcp_status'                    , 'PCP Status'                         , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('pcp_owner_notify'              , 'PCP owner notifications'            , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('participant_role'              , 'Participant Role'                   , 'Integer', 1, 1, 0, 'name,label,description',
+     'Define participant roles for events here (e.g. Attendee, Host, Speaker...). You can then assign roles and search for participants by role.'),
+   ('event_type'                    , 'Event Type'                         , 'Integer', 1, 1, 0, 'name,label,description',
+     'Use Event Types to categorize your events. Event feeds can be filtered by Event Type and participant searches can use Event Type as a criteria.'),
+   ('contact_view_options'          , 'Contact View Options'               , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('contact_smart_group_display'   , 'Contact Smart Group View Options'   , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('contact_edit_options'          , 'Contact Edit Options'               , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('advanced_search_options'       , 'Advanced Search Options'            , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('user_dashboard_options'        , 'User Dashboard Options'             , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('address_options'               , 'Addressing Options'                 , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('group_type'                    , 'Group Type'                         , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('custom_search'                 , 'Custom Search'                      , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('activity_status'               , 'Activity Status'                    , 'Integer', 1, 1, 0, 'name,label,description,color', NULL),
+   ('case_type'                     , 'Case Type'                          , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('case_status'                   , 'Case Status'                        , NULL,      1, 1, 0, 'name,label,description,color', NULL),
+   ('participant_listing'           , 'Participant Listing'                , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('safe_file_extension'           , 'Safe File Extension'                , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('from_email_address'            , 'From Email Address'                 , NULL,      1, 1, 0, 'name,label,description',
+     'By default, CiviCRM uses the primary email address of the logged in user as the FROM address when sending emails to contacts. However, you can use this page to define one or more general Email Addresses that can be selected as an alternative. EXAMPLE: \"Client Services\" <clientservices@example.org>.'),
+   ('mapping_type'                  , 'Mapping Type'                       , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('wysiwyg_editor'                , 'WYSIWYG Editor'                     , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('recur_frequency_units'         , 'Recurring Frequency Units'          , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('phone_type'                    , 'Phone Type'                         , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('custom_data_type'              , 'Custom Data Type'                   , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('visibility'                    , 'Visibility'                         , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('mail_protocol'                 , 'Mail Protocol'                      , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('priority'                      , 'Priority'                           , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('redaction_rule'                , 'Redaction Rule'                     , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('report_template'               , 'Report Template'                    , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('email_greeting'                , 'Email Greeting Type'                , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('postal_greeting'               , 'Postal Greeting Type'               , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('addressee'                     , 'Addressee Type'                     , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('contact_autocomplete_options'  , 'Autocomplete Contact Search'        , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('contact_reference_options'     , 'Contact Reference Autocomplete Options', NULL,   1, 1, 1, 'name,label,description', NULL),
+   ('website_type'                  , 'Website Type'                       , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('tag_used_for'                  , 'Tag Used For'                       , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('note_used_for'                 , 'Note Used For'                      , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('currencies_enabled'            , 'Currencies Enabled'                 , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('event_badge'                   , 'Event Name Badge'                   , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('note_privacy'                  , 'Privacy levels for notes'           , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('campaign_type'                 , 'Campaign Type'                      , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('campaign_status'               , 'Campaign Status'                    , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('system_extensions'             , 'CiviCRM Extensions'                 , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('mail_approval_status'          , 'CiviMail Approval Status'           , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('engagement_index'              , 'Engagement Index'                   , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('cg_extend_objects'             , 'Objects a custom group extends to'  , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('paper_size'                    , 'Paper Size'                         , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('pdf_format'                    , 'PDF Page Format'                    , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('label_format'                  , 'Mailing Label Format'               , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('activity_contacts'             , 'Activity Contacts'                  , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('account_relationship'          , 'Account Relationship'               , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('event_contacts'                , 'Event Recipients'                   , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('conference_slot'               , 'Conference Slot'                    , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('batch_type'                    , 'Batch Type'                         , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('batch_mode'                    , 'Batch Mode'                         , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('batch_status'                  , 'Batch Status'                       , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('sms_api_type'                  , 'Api Type'                           , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('sms_provider_name'             , 'Sms Provider Internal Name'         , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('auto_renew_options'            , 'Auto Renew Options'                 , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('financial_account_type'        , 'Financial Account Type'             , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('financial_item_status'         , 'Financial Item Status'              , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('label_type'                    , 'Label Type'                         , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('name_badge'                    , 'Name Badge Format'                  , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('communication_style'           , 'Communication Style'                , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('msg_mode'                      , 'Message Mode'                       , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('contact_date_reminder_options' , 'Contact Date Reminder Options'      , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('wysiwyg_presets'               , 'WYSIWYG Editor Presets'             , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('relative_date_filters'         , 'Relative Date Filters'              , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('pledge_status'                 , 'Pledge Status'                      , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('contribution_recur_status'     , 'Recurring Contribution Status'      , NULL,      1, 1, 1, 'name,label,description', NULL),
+   ('environment'                   , 'Environment'                        , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('activity_default_assignee'     , 'Activity default assignee'          , NULL,      1, 1, 0, 'name,label,description', NULL),
+   ('entity_batch_extends'          , 'Entity Batch Extends'               , NULL,      1, 1, 0, 'name,label,description', NULL);
 
 SELECT @option_group_id_pcm            := max(id) from civicrm_option_group where name = 'preferred_communication_method';
 SELECT @option_group_id_act            := max(id) from civicrm_option_group where name = 'activity_type';
@@ -5053,8 +5067,6 @@ VALUES
   (@option_group_id_cs, 'Pending'    , 2, 'Pending'    , NULL, 0, 0, 2, NULL, 0, 1, 1, NULL, NULL, NULL),
   (@option_group_id_cs, 'Cancelled'  , 3, 'Cancelled'  , NULL, 0, 0, 3, NULL, 0, 1, 1, NULL, NULL, NULL),
   (@option_group_id_cs, 'Failed'     , 4, 'Failed'     , NULL, 0, 0, 4, NULL, 0, 1, 1, NULL, NULL, NULL),
-  (@option_group_id_cs, 'In Progress', 5, 'In Progress', NULL, 0, 0, 5, NULL, 0, 1, 1, NULL, NULL, NULL),
-  (@option_group_id_cs, 'Overdue'    , 6, 'Overdue'    , NULL, 0, 0, 6, NULL, 0, 1, 1, NULL, NULL, NULL),
   (@option_group_id_cs, 'Refunded'   , 7, 'Refunded'   , NULL, 0, 0, 7, NULL, 0, 1, 1, NULL, NULL, NULL),
   (@option_group_id_cs, 'Partially paid', 8, 'Partially paid', NULL, 0, 0, 8, NULL, 0, 1, 1, NULL, NULL, NULL),
   (@option_group_id_cs, 'Pending refund', 9, 'Pending refund', NULL, 0, 0, 9, NULL, 0, 1, 1, NULL, NULL, NULL),
@@ -5641,15 +5653,17 @@ VALUES
    (@option_group_id_date_filter, 'Previous 2 calendar months', 'previous_2.month', 'previous_2.month', NULL, NULL, 0,51, NULL, 0, 0, 1, NULL, NULL, NULL),
    (@option_group_id_date_filter, 'Previous 2 quarters', 'previous_2.quarter', 'previous_2.quarter', NULL, NULL, 0,52, NULL, 0, 0, 1, NULL, NULL, NULL),
    (@option_group_id_date_filter, 'Previous 2 calendar years', 'previous_2.year', 'previous_2.year', NULL, NULL, 0,53, NULL, 0, 0, 1, NULL, NULL, NULL),
-   (@option_group_id_date_filter, 'Day prior to yesterday', 'previous_before.day', 'previous_before.day', NULL, NULL, 0,54, NULL, 0, 0, 1, NULL, NULL, NULL),
-   (@option_group_id_date_filter, 'Week prior to previous week', 'previous_before.week', 'previous_before.week', NULL, NULL, 0,55, NULL, 0, 0, 1, NULL, NULL, NULL),
-   (@option_group_id_date_filter, 'Month prior to previous calendar month', 'previous_before.month', 'previous_before.month', NULL, NULL, NULL,56, NULL, 0, 0, 1, NULL, NULL, NULL),
-   (@option_group_id_date_filter, 'Quarter prior to previous quarter', 'previous_before.quarter', 'previous_before.quarter', NULL, NULL, 0,57, NULL, 0, 0, 1, NULL, NULL, NULL),
-   (@option_group_id_date_filter, 'Year prior to previous calendar year', 'previous_before.year', 'previous_before.year', NULL, NULL, 0,58, NULL, 0, 0, 1, NULL, NULL, NULL),
-   (@option_group_id_date_filter, 'From end of previous week', 'greater_previous.week', 'greater_previous.week', NULL, NULL, 0,59, NULL, 0, 0, 1, NULL, NULL, NULL),
-   (@option_group_id_date_filter, 'From end of previous calendar month', 'greater_previous.month', 'greater_previous.month', NULL, NULL, 0,60, NULL, 0, 0, 1, NULL, NULL, NULL),
-   (@option_group_id_date_filter, 'From end of previous quarter', 'greater_previous.quarter', 'greater_previous.quarter', NULL, NULL, 0,61, NULL, 0, 0, 1, NULL, NULL, NULL),
-   (@option_group_id_date_filter, 'From end of previous calendar year', 'greater_previous.year', 'greater_previous.year', NULL, NULL, 0,62, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'Previous 2 fiscal years', 'previous_2.fiscal_year', 'previous_2.fiscal_year', NULL, NULL, 0,54, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'Day prior to yesterday', 'previous_before.day', 'previous_before.day', NULL, NULL, 0,55, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'Week prior to previous week', 'previous_before.week', 'previous_before.week', NULL, NULL, 0,56, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'Month prior to previous calendar month', 'previous_before.month', 'previous_before.month', NULL, NULL, NULL,57, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'Quarter prior to previous quarter', 'previous_before.quarter', 'previous_before.quarter', NULL, NULL, 0,58, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'Year prior to previous calendar year', 'previous_before.year', 'previous_before.year', NULL, NULL, 0,59, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'Fiscal year prior to previous fiscal year', 'previous_before.fiscal_year', 'previous_before.fiscal_year', NULL, NULL, 0,60, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'From end of previous week', 'greater_previous.week', 'greater_previous.week', NULL, NULL, 0,61, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'From end of previous calendar month', 'greater_previous.month', 'greater_previous.month', NULL, NULL, 0,62, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'From end of previous quarter', 'greater_previous.quarter', 'greater_previous.quarter', NULL, NULL, 0,63, NULL, 0, 0, 1, NULL, NULL, NULL),
+   (@option_group_id_date_filter, 'From end of previous calendar year', 'greater_previous.year', 'greater_previous.year', NULL, NULL, 0,64, NULL, 0, 0, 1, NULL, NULL, NULL),
 
 -- Pledge Status
   (@option_group_id_ps, 'Completed'  , 1, 'Completed'  , NULL, 0, 0, 1, NULL, 0, 1, 1, NULL, NULL, NULL),
@@ -5780,7 +5794,7 @@ VALUES
   (@option_group_id_languages, 0, 0, 'kw_GB', 'kw', 'Cornish', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'co_FR', 'co', 'Corsican', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'cr_CA', 'cr', 'Cree', @counter := @counter + 1),
-  (@option_group_id_languages, 0, 0, 'hr_HR', 'hr', 'Croatian', @counter := @counter + 1),
+  (@option_group_id_languages, 0, 1, 'hr_HR', 'hr', 'Croatian', @counter := @counter + 1),
   (@option_group_id_languages, 0, 1, 'cs_CZ', 'cs', 'Czech', @counter := @counter + 1),
   (@option_group_id_languages, 0, 1, 'da_DK', 'da', 'Danish', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'dv_MV', 'dv', 'Divehi; Dhivehi; Maldivian;', @counter := @counter + 1),
@@ -5972,13 +5986,13 @@ VALUES
 INSERT INTO `civicrm_preferences_date`
   (name, start, end, date_format, time_format, description)
 VALUES
-  ( 'activityDate'    ,  20, 10, '',    '',  'Date for activities including contributions: receive, receipt, cancel. membership: join, start, renew. case: start, end.'         ),
+  ( 'activityDate'    ,  20, 10, '',    '',  'Date for relationships. activities. contributions: receive, receipt, cancel. membership: join, start, renew. case: start, end.'         ),
   ( 'activityDateTime',  20, 10, '',     1,  'Date and time for activity: scheduled. participant: registered.'                                                                  ),
   ( 'birth'           , 100,  0, '',    '',  'Birth and deceased dates. Only year, month and day fields are supported.'                                                         ),
   ( 'creditCard'      ,   0, 10, 'M Y', '',  'Month and year only for credit card expiration.'                                                                                  ),
   ( 'custom'          ,  20, 20, '',    '',  'Uses date range passed in by form field. Can pass in a posix date part parameter. Start and end offsets defined here are ignored.'),
   ( 'mailing'         ,   0,  1, '',    '',  'Date and time. Used for scheduling mailings.'                                                                                     ),
-  ( 'searchDate'      ,  20, 20, '',    '',  'Used in search forms and for relationships.'                                                                                      );
+  ( 'searchDate'      ,  20, 20, '',    '',  'Used in search forms.'                                                                                      );
 
 
 -- various processor options
@@ -7945,7 +7959,7 @@ INSERT INTO civicrm_msg_template
 {$ts_item|string_format:"%-30s"} {$ts_qty|string_format:"%5s"} {$ts_each|string_format:"%10s"} {if $isShowTax && \'{contribution.tax_amount|raw}\' !== \'0.00\'} {$ts_subtotal|string_format:"%10s"} {$ts_taxRate} {$ts_taxAmount|string_format:"%10s"} {/if} {$ts_total|string_format:"%10s"}
 ----------------------------------------------------------
 {foreach from=$lineItems item=line}
-{capture assign=ts_item}{$line.title}{/capture}{$ts_item|truncate:30:"..."|string_format:"%-30s"} {$line.qty|string_format:"%5s"} {$line.unit_price|crmMoney:$currency|string_format:"%10s"} {if !empty($dataArray)}{$line.unit_price*$line.qty|crmMoney:$currency|string_format:"%10s"} {if $line.tax_rate || $line.tax_amount != ""}  {$line.tax_rate|string_format:"%.2f"} %  {$line.tax_amount|crmMoney:$currency|string_format:"%10s"} {else}                  {/if}  {/if} {$line.line_total+$line.tax_amount|crmMoney:$currency|string_format:"%10s"}
+{capture assign=ts_item}{$line.title}{/capture}{$ts_item|truncate:30:"..."|string_format:"%-30s"} {$line.qty|string_format:"%5s"} {$line.unit_price|crmMoney:$currency|string_format:"%10s"} {if $isShowTax && \'{contribution.tax_amount|raw}\' !== \'0.00\'}{$line.unit_price*$line.qty|crmMoney:$currency|string_format:"%10s"} {if $line.tax_rate || $line.tax_amount != ""}  {$line.tax_rate|string_format:"%.2f"} %  {$line.tax_amount|crmMoney:$currency|string_format:"%10s"} {else}                  {/if}  {/if} {$line.line_total+$line.tax_amount|crmMoney:$currency|string_format:"%10s"}
 {/foreach}
 
 {if $isShowTax && \'{contribution.tax_amount|raw}\' !== \'0.00\'}
@@ -8600,7 +8614,7 @@ INSERT INTO civicrm_msg_template
 {$ts_item|string_format:"%-30s"} {$ts_qty|string_format:"%5s"} {$ts_each|string_format:"%10s"} {if $isShowTax && \'{contribution.tax_amount|raw}\' !== \'0.00\'} {$ts_subtotal|string_format:"%10s"} {$ts_taxRate} {$ts_taxAmount|string_format:"%10s"} {/if} {$ts_total|string_format:"%10s"}
 ----------------------------------------------------------
 {foreach from=$lineItems item=line}
-{capture assign=ts_item}{$line.title}{/capture}{$ts_item|truncate:30:"..."|string_format:"%-30s"} {$line.qty|string_format:"%5s"} {$line.unit_price|crmMoney:$currency|string_format:"%10s"} {if !empty($dataArray)}{$line.unit_price*$line.qty|crmMoney:$currency|string_format:"%10s"} {if $line.tax_rate || $line.tax_amount != ""}  {$line.tax_rate|string_format:"%.2f"} %  {$line.tax_amount|crmMoney:$currency|string_format:"%10s"} {else}                  {/if}  {/if} {$line.line_total+$line.tax_amount|crmMoney:$currency|string_format:"%10s"}
+{capture assign=ts_item}{$line.title}{/capture}{$ts_item|truncate:30:"..."|string_format:"%-30s"} {$line.qty|string_format:"%5s"} {$line.unit_price|crmMoney:$currency|string_format:"%10s"} {if $isShowTax && \'{contribution.tax_amount|raw}\' !== \'0.00\'}{$line.unit_price*$line.qty|crmMoney:$currency|string_format:"%10s"} {if $line.tax_rate || $line.tax_amount != ""}  {$line.tax_rate|string_format:"%.2f"} %  {$line.tax_amount|crmMoney:$currency|string_format:"%10s"} {else}                  {/if}  {/if} {$line.line_total+$line.tax_amount|crmMoney:$currency|string_format:"%10s"}
 {/foreach}
 
 {if $isShowTax && \'{contribution.tax_amount|raw}\' !== \'0.00\'}
@@ -11618,7 +11632,7 @@ INSERT INTO civicrm_msg_template
 {ts}Refund Details{/ts}
 
 ===============================================================================
-{ts}This Refund Amount{/ts}: {$refundAmount|crmMoney}
+{ts}This Refund Amount{/ts}: {$refundAmount|crmMoney:$currency}
 ------------------------------------------------------------------------------------
 
 {else}
@@ -11627,7 +11641,7 @@ INSERT INTO civicrm_msg_template
 {ts}Payment Details{/ts}
 
 ===============================================================================
-{ts}This Payment Amount{/ts}: {$paymentAmount|crmMoney}
+{ts}This Payment Amount{/ts}: {$paymentAmount|crmMoney:$currency}
 ------------------------------------------------------------------------------------
 {/if}
 {if $receive_date}
@@ -11649,13 +11663,13 @@ INSERT INTO civicrm_msg_template
 
 ===============================================================================
 {if $totalAmount}
-{ts}Total Fee{/ts}: {$totalAmount|crmMoney}
+{ts}Total Fee{/ts}: {$totalAmount|crmMoney:$currency}
 {/if}
 {if $totalPaid}
-{ts}Total Paid{/ts}: {$totalPaid|crmMoney}
+{ts}Total Paid{/ts}: {$totalPaid|crmMoney:$currency}
 {/if}
 {if $amountOwed}
-{ts}Balance Owed{/ts}: {$amountOwed|crmMoney} {* This will be zero after final payment. *}
+{ts}Balance Owed{/ts}: {$amountOwed|crmMoney:$currency} {* This will be zero after final payment. *}
 {/if}
 
 
@@ -11762,7 +11776,7 @@ INSERT INTO civicrm_msg_template
         {ts}This Refund Amount{/ts}
         </td>
         <td {$valueStyle}>
-        {$refundAmount|crmMoney}
+        {$refundAmount|crmMoney:$currency}
         </td>
       </tr>
     {else}
@@ -11774,7 +11788,7 @@ INSERT INTO civicrm_msg_template
         {ts}This Payment Amount{/ts}
         </td>
         <td {$valueStyle}>
-        {$paymentAmount|crmMoney}
+        {$paymentAmount|crmMoney:$currency}
         </td>
       </tr>
     {/if}
@@ -11828,7 +11842,7 @@ INSERT INTO civicrm_msg_template
       {ts}Total Fee{/ts}
     </td>
     <td {$valueStyle}>
-      {$totalAmount|crmMoney}
+      {$totalAmount|crmMoney:$currency}
     </td>
   </tr>
   {/if}
@@ -11838,7 +11852,7 @@ INSERT INTO civicrm_msg_template
       {ts}Total Paid{/ts}
     </td>
     <td {$valueStyle}>
-      {$totalPaid|crmMoney}
+      {$totalPaid|crmMoney:$currency}
     </td>
   </tr>
   {/if}
@@ -11848,7 +11862,7 @@ INSERT INTO civicrm_msg_template
       {ts}Balance Owed{/ts}
     </td>
     <td {$valueStyle}>
-      {$amountOwed|crmMoney}
+      {$amountOwed|crmMoney:$currency}
     </td> {* This will be zero after final payment. *}
   </tr>
   {/if}
@@ -11982,7 +11996,7 @@ INSERT INTO civicrm_msg_template
 {ts}Refund Details{/ts}
 
 ===============================================================================
-{ts}This Refund Amount{/ts}: {$refundAmount|crmMoney}
+{ts}This Refund Amount{/ts}: {$refundAmount|crmMoney:$currency}
 ------------------------------------------------------------------------------------
 
 {else}
@@ -11991,7 +12005,7 @@ INSERT INTO civicrm_msg_template
 {ts}Payment Details{/ts}
 
 ===============================================================================
-{ts}This Payment Amount{/ts}: {$paymentAmount|crmMoney}
+{ts}This Payment Amount{/ts}: {$paymentAmount|crmMoney:$currency}
 ------------------------------------------------------------------------------------
 {/if}
 {if $receive_date}
@@ -12013,13 +12027,13 @@ INSERT INTO civicrm_msg_template
 
 ===============================================================================
 {if $totalAmount}
-{ts}Total Fee{/ts}: {$totalAmount|crmMoney}
+{ts}Total Fee{/ts}: {$totalAmount|crmMoney:$currency}
 {/if}
 {if $totalPaid}
-{ts}Total Paid{/ts}: {$totalPaid|crmMoney}
+{ts}Total Paid{/ts}: {$totalPaid|crmMoney:$currency}
 {/if}
 {if $amountOwed}
-{ts}Balance Owed{/ts}: {$amountOwed|crmMoney} {* This will be zero after final payment. *}
+{ts}Balance Owed{/ts}: {$amountOwed|crmMoney:$currency} {* This will be zero after final payment. *}
 {/if}
 
 
@@ -12126,7 +12140,7 @@ INSERT INTO civicrm_msg_template
         {ts}This Refund Amount{/ts}
         </td>
         <td {$valueStyle}>
-        {$refundAmount|crmMoney}
+        {$refundAmount|crmMoney:$currency}
         </td>
       </tr>
     {else}
@@ -12138,7 +12152,7 @@ INSERT INTO civicrm_msg_template
         {ts}This Payment Amount{/ts}
         </td>
         <td {$valueStyle}>
-        {$paymentAmount|crmMoney}
+        {$paymentAmount|crmMoney:$currency}
         </td>
       </tr>
     {/if}
@@ -12192,7 +12206,7 @@ INSERT INTO civicrm_msg_template
       {ts}Total Fee{/ts}
     </td>
     <td {$valueStyle}>
-      {$totalAmount|crmMoney}
+      {$totalAmount|crmMoney:$currency}
     </td>
   </tr>
   {/if}
@@ -12202,7 +12216,7 @@ INSERT INTO civicrm_msg_template
       {ts}Total Paid{/ts}
     </td>
     <td {$valueStyle}>
-      {$totalPaid|crmMoney}
+      {$totalPaid|crmMoney:$currency}
     </td>
   </tr>
   {/if}
@@ -12212,7 +12226,7 @@ INSERT INTO civicrm_msg_template
       {ts}Balance Owed{/ts}
     </td>
     <td {$valueStyle}>
-      {$amountOwed|crmMoney}
+      {$amountOwed|crmMoney:$currency}
     </td> {* This will be zero after final payment. *}
   </tr>
   {/if}
@@ -20942,7 +20956,7 @@ Click this link to go to a web page where you can make your payment online:
 or need to modify your payment schedule.{/ts}
 
 
-{ts}Thank your for your generous support.{/ts}
+{ts}Thank you for your generous support.{/ts}
 ', '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -21040,7 +21054,7 @@ or need to modify your payment schedule.{/ts}
    <td>
     <p>{ts 1=\'{domain.phone}\' 2=\'{domain.email}\'}Please contact us at %1 or send email to %2 if you have questions
 or need to modify your payment schedule.{/ts}</p>
-    <p>{ts}Thank your for your generous support.{/ts}</p>
+    <p>{ts}Thank you for your generous support.{/ts}</p>
    </td>
   </tr>
 
@@ -21082,7 +21096,7 @@ Click this link to go to a web page where you can make your payment online:
 or need to modify your payment schedule.{/ts}
 
 
-{ts}Thank your for your generous support.{/ts}
+{ts}Thank you for your generous support.{/ts}
 ', '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -21180,7 +21194,7 @@ or need to modify your payment schedule.{/ts}
    <td>
     <p>{ts 1=\'{domain.phone}\' 2=\'{domain.email}\'}Please contact us at %1 or send email to %2 if you have questions
 or need to modify your payment schedule.{/ts}</p>
-    <p>{ts}Thank your for your generous support.{/ts}</p>
+    <p>{ts}Thank you for your generous support.{/ts}</p>
    </td>
   </tr>
 
@@ -22872,7 +22886,6 @@ INSERT IGNORE INTO civicrm_extension (type, full_name, name, label, file, is_act
 INSERT IGNORE INTO civicrm_extension (type, full_name, name, label, file, is_active) VALUES ('module', 'greenwich', 'Theme: Greenwich', 'Theme: Greenwich', 'greenwich', 1);
 INSERT IGNORE INTO civicrm_extension (type, full_name, name, label, file, is_active) VALUES ('module', 'eventcart', 'Event cart', 'Event cart', 'eventcart', 1);
 INSERT IGNORE INTO civicrm_extension (type, full_name, name, label, file, is_active) VALUES ('module', 'financialacls', 'Financial ACLs', 'Financial ACLs', 'financialacls', 1);
-INSERT IGNORE INTO civicrm_extension (type, full_name, name, label, file, is_active) VALUES ('module', 'contributioncancelactions', 'Contribution cancel actions', 'Contribution cancel actions', 'contributioncancelactions', 1);
 INSERT IGNORE INTO civicrm_extension (type, full_name, name, label, file, is_active) VALUES ('module', 'recaptcha', 'reCAPTCHA', 'reCAPTCHA', 'recaptcha', 1);
 INSERT IGNORE INTO civicrm_extension (type, full_name, name, label, file, is_active) VALUES ('module', 'ckeditor4', 'CKEditor4', 'CKEditor4', 'ckeditor4', 1);
 INSERT IGNORE INTO civicrm_extension (type, full_name, name, label, file, is_active) VALUES ('module', 'legacycustomsearches', 'Custom search framework', 'Custom search framework', 'legacycustomsearches', 1);
@@ -23071,8 +23084,8 @@ INSERT INTO civicrm_navigation
     ( domain_id, url, label, name, permission, permission_operator, parent_id, is_active, has_separator, weight )
 VALUES
     ( @domainID, 'civicrm/mailing/send?reset=1',                            'New Mailing', 'New Mailing',                                          'access CiviMail,create mailings', 'OR', @mailinglastID, '1', NULL, 1 ),
-    ( @domainID, 'civicrm/mailing/browse/unscheduled?reset=1&scheduled=false', 'Draft and Unscheduled Mailings', 'Draft and Unscheduled Mailings', 'access CiviMail,create mailings,schedule mailings', 'OR', @mailinglastID, '1', NULL, 2 ),
-    ( @domainID, 'civicrm/mailing/browse/scheduled?reset=1&scheduled=true', 'Scheduled and Sent Mailings', 'Scheduled and Sent Mailings',          'access CiviMail,approve mailings,create mailings,schedule mailings', 'OR', @mailinglastID, '1', NULL, 3 ),
+    ( @domainID, 'civicrm/mailing/browse/unscheduled?reset=1&scheduled=false', 'Draft Mailings', 'Draft and Unscheduled Mailings', 'access CiviMail,create mailings,schedule mailings', 'OR', @mailinglastID, '1', NULL, 2 ),
+    ( @domainID, 'civicrm/mailing/browse/scheduled?reset=1&scheduled=true', 'Sent Mailings', 'Scheduled and Sent Mailings',          'access CiviMail,approve mailings,create mailings,schedule mailings', 'OR', @mailinglastID, '1', NULL, 3 ),
     ( @domainID, 'civicrm/mailing/browse/archived?reset=1',                 'Archived Mailings', 'Archived Mailings',                              'access CiviMail,create mailings', 'OR', @mailinglastID, '1', NULL,    4 ),
     ( @domainID, 'civicrm/report/list?compid=4&reset=1', 'Mailing Reports', 'Mailing Reports', 'access CiviMail', '', @mailinglastID, '1', 1,    5 ),
     ( @domainID, 'civicrm/admin/component?reset=1',                         'Headers, Footers, and Automated Messages', 'Headers, Footers, and Automated Messages', 'access CiviMail,administer CiviCRM', 'AND', @mailinglastID, '1', NULL, 6 ),
@@ -23522,12 +23535,12 @@ VALUES
 INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
 VALUES
-    ( @domainID, 'SYBUNT (some year but not this year)', 'contribute/sybunt', 'Some year(s) but not this year. Provides a list of constituents who donated at some time in the history of your organization but did not donate during the time period you specify.', 'access CiviContribute', 'a:18:{s:6:"fields";a:3:{s:9:"sort_name";s:1:"1";s:5:"email";s:1:"1";s:5:"phone";s:1:"1";}s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:6:"yid_op";s:2:"eq";s:9:"yid_value";s:4:"2011";s:25:"contribution_status_id_op";s:2:"in";s:28:"contribution_status_id_value";a:1:{i:0;s:1:"1";}s:6:"gid_op";s:2:"in";s:9:"gid_value";a:0:{}s:8:"tagid_op";s:2:"in";s:11:"tagid_value";a:0:{}s:11:"description";s:179:"Some year(s) but not this year. Provides a list of constituents who donated at some time in the history of your organization but did not donate during the time period you specify.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:21:"access CiviContribute";s:6:"charts";s:0:"";s:9:"domain_id";i:1;}');
+    ( @domainID, 'SYBUNT (some year but not this year)', 'contribute/sybunt', 'Some year(s) but not this year. Provides a list of constituents who donated at some time in the history of your organization but did not donate during the time period you specify.', 'access CiviContribute', 'a:16:{s:6:"fields";a:3:{s:9:"sort_name";s:1:"1";s:5:"email";s:1:"1";s:5:"phone";s:1:"1";}s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:25:"contribution_status_id_op";s:2:"in";s:28:"contribution_status_id_value";a:1:{i:0;s:1:"1";}s:6:"gid_op";s:2:"in";s:9:"gid_value";a:0:{}s:8:"tagid_op";s:2:"in";s:11:"tagid_value";a:0:{}s:11:"description";s:179:"Some year(s) but not this year. Provides a list of constituents who donated at some time in the history of your organization but did not donate during the time period you specify.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:21:"access CiviContribute";s:6:"charts";s:0:"";s:9:"domain_id";i:1;}');
 
 INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
 VALUES
-    ( @domainID, 'LYBUNT (last year but not this year)', 'contribute/lybunt', 'Last year but not this year. Provides a list of constituents who donated last year but did not donate during the time period you specify as the current year.', 'access CiviContribute', 'a:19:{s:6:"fields";a:5:{s:9:"sort_name";s:1:"1";s:5:"email";s:1:"1";s:5:"phone";s:1:"1";s:22:"last_year_total_amount";s:1:"1";s:23:"civicrm_life_time_total";s:1:"1";}s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:6:"yid_op";s:2:"eq";s:9:"yid_value";s:4:"2011";s:25:"contribution_status_id_op";s:2:"in";s:28:"contribution_status_id_value";a:1:{i:0;s:1:"1";}s:6:"gid_op";s:2:"in";s:9:"gid_value";a:0:{}s:8:"tagid_op";s:2:"in";s:11:"tagid_value";a:0:{}s:11:"description";s:157:"Last year but not this year. Provides a list of constituents who donated last year but did not donate during the time period you specify as the current year.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:21:"access CiviContribute";s:6:"groups";s:0:"";s:6:"charts";s:0:"";s:9:"domain_id";i:1;}');
+    ( @domainID, 'LYBUNT (last year but not this year)', 'contribute/lybunt', 'Last year but not this year. Provides a list of constituents who donated last year but did not donate during the time period you specify as the current year.', 'access CiviContribute', 'a:17:{s:6:"fields";a:5:{s:9:"sort_name";s:1:"1";s:5:"email";s:1:"1";s:5:"phone";s:1:"1";s:22:"last_year_total_amount";s:1:"1";s:23:"civicrm_life_time_total";s:1:"1";}s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:25:"contribution_status_id_op";s:2:"in";s:28:"contribution_status_id_value";a:1:{i:0;s:1:"1";}s:6:"gid_op";s:2:"in";s:9:"gid_value";a:0:{}s:8:"tagid_op";s:2:"in";s:11:"tagid_value";a:0:{}s:11:"description";s:157:"Last year but not this year. Provides a list of constituents who donated last year but did not donate during the time period you specify as the current year.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:21:"access CiviContribute";s:6:"groups";s:0:"";s:6:"charts";s:0:"";s:9:"domain_id";i:1;}');
 
 INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
@@ -23652,4 +23665,4 @@ INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
 VALUES
     (  @domainID, 'Survey Details', 'survey/detail', 'Detailed report for canvassing, phone-banking, walk lists or other surveys.', 'access CiviReport', 'a:39:{s:6:"fields";a:2:{s:9:"sort_name";s:1:"1";s:6:"result";s:1:"1";}s:22:"assignee_contact_id_op";s:2:"eq";s:25:"assignee_contact_id_value";s:0:"";s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:17:"street_number_min";s:0:"";s:17:"street_number_max";s:0:"";s:16:"street_number_op";s:3:"lte";s:19:"street_number_value";s:0:"";s:14:"street_name_op";s:3:"has";s:17:"street_name_value";s:0:"";s:15:"postal_code_min";s:0:"";s:15:"postal_code_max";s:0:"";s:14:"postal_code_op";s:3:"lte";s:17:"postal_code_value";s:0:"";s:7:"city_op";s:3:"has";s:10:"city_value";s:0:"";s:20:"state_province_id_op";s:2:"in";s:23:"state_province_id_value";a:0:{}s:13:"country_id_op";s:2:"in";s:16:"country_id_value";a:0:{}s:12:"survey_id_op";s:2:"in";s:15:"survey_id_value";a:0:{}s:12:"status_id_op";s:2:"eq";s:15:"status_id_value";s:1:"1";s:11:"custom_1_op";s:2:"in";s:14:"custom_1_value";a:0:{}s:11:"custom_2_op";s:2:"in";s:14:"custom_2_value";a:0:{}s:17:"custom_3_relative";s:1:"0";s:13:"custom_3_from";s:0:"";s:11:"custom_3_to";s:0:"";s:11:"description";s:75:"Detailed report for canvassing, phone-banking, walk lists or other surveys.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviReport";s:6:"groups";s:0:"";s:9:"domain_id";i:1;}');
-UPDATE civicrm_domain SET version = '5.54.2';
+UPDATE civicrm_domain SET version = '5.58.beta1';

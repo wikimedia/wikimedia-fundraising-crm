@@ -116,7 +116,7 @@ class CRM_Mailing_BAO_Query {
   /**
    * Get the metadata for fields to be included on the mailing search form.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    *
    * @todo ideally this would be a trait included on the mailing search & advanced search
    * rather than a static function.
@@ -309,7 +309,7 @@ class CRM_Mailing_BAO_Query {
           'civicrm_mailing_event_bounce',
           'bounce_type_id',
           ts('Bounce type(s)'),
-          CRM_Core_PseudoConstant::get('CRM_Mailing_Event_DAO_Bounce', 'bounce_type_id', [
+          CRM_Core_PseudoConstant::get('CRM_Mailing_Event_DAO_MailingEventBounce', 'bounce_type_id', [
             'keyColumn' => 'id',
             'labelColumn' => 'name',
           ])
@@ -391,7 +391,7 @@ class CRM_Mailing_BAO_Query {
    *
    * @param \CRM_Mailing_Form_Search $form
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function buildSearchForm(&$form) {
     $form->addSearchFieldMetadata(['Mailing' => self::getSearchFieldMetadata()]);
@@ -416,7 +416,7 @@ class CRM_Mailing_BAO_Query {
     $form->addElement('select', 'mailing_job_status', ts('Mailing Job Status'), $mailingJobStatuses, FALSE);
 
     $mailingBounceTypes = CRM_Core_PseudoConstant::get(
-      'CRM_Mailing_Event_DAO_Bounce', 'bounce_type_id',
+      'CRM_Mailing_Event_DAO_MailingEventBounce', 'bounce_type_id',
       ['keyColumn' => 'id', 'labelColumn' => 'name']
     );
     $form->add('select', 'mailing_bounce_types', ts('Bounce Types'), $mailingBounceTypes, FALSE,

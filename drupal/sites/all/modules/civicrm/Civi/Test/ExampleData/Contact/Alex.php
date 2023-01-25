@@ -2,7 +2,9 @@
 
 namespace Civi\Test\ExampleData\Contact;
 
-class Alex extends \Civi\Test\EntityExample {
+use Civi\Test\EntityExample;
+
+class Alex extends EntityExample {
 
   public function getExamples(): iterable {
     yield [

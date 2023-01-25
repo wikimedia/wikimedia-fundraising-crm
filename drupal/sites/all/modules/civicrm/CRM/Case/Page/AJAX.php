@@ -74,7 +74,7 @@ class CRM_Case_Page_AJAX {
   }
 
   /**
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function caseDetails() {
     $caseId = CRM_Utils_Type::escape($_GET['caseId'], 'Positive');
@@ -104,7 +104,7 @@ class CRM_Case_Page_AJAX {
   /**
    * @throws \CRM_Core_Exception
    */
-  public function addClient() {
+  public static function addClient() {
     $caseId = CRM_Utils_Type::escape($_POST['caseID'], 'Positive');
     $contactId = CRM_Utils_Type::escape($_POST['contactID'], 'Positive');
 

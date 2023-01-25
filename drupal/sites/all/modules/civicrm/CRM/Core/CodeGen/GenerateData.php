@@ -1135,7 +1135,7 @@ class CRM_Core_CodeGen_GenerateData {
   /**
    * This method populates the civicrm_group_contact table
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   private function addGroup() {
     // add the 3 groups first
@@ -1244,7 +1244,7 @@ class CRM_Core_CodeGen_GenerateData {
    *
    * It allows the members of the advisory group to edit the Summer volunteers group.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   private function addACL(): void {
     $optionValueID = OptionValue::create(FALSE)->setValues([
@@ -1322,7 +1322,7 @@ class CRM_Core_CodeGen_GenerateData {
     $nonAssignTypes = ['Pledge Acknowledgment', 'Print PDF Letter'];
     foreach ($activityTypes as $activityType) {
       $activityTypeOptions[$activityType['activity_type_id']] = ['label' => $activityType['label'], 'name' => $activityType['label']];
-      $activityTypeOptions[$activityType['activity_type_id']]['is_add_targets'] = !in_array($nonAssignTypes, $activityType['name'], TRUE);
+      $activityTypeOptions[$activityType['activity_type_id']]['is_add_targets'] = !in_array($activityType['name'], $nonAssignTypes, TRUE);
     }
     $count = 0;
     $activityContacts = array_flip(CRM_Activity_BAO_ActivityContact::buildOptions('record_type_id', 'validate'));
@@ -2181,7 +2181,7 @@ ORDER BY cc.id; ";
     $select = 'SELECT contribution.id contribution_id, cli.id as line_item_id, contribution.contact_id, contribution.receive_date, contribution.total_amount, contribution.currency, cli.label,
       cli.financial_type_id,  cefa.financial_account_id, contribution.payment_instrument_id, contribution.check_number, contribution.trxn_id';
     $where = 'WHERE cefa.account_relationship = 1';
-    $financialAccountId = CRM_Financial_BAO_FinancialTypeAccount::getInstrumentFinancialAccount(4);
+    $financialAccountId = CRM_Financial_BAO_EntityFinancialAccount::getInstrumentFinancialAccount(4);
     foreach ($components as $component) {
       if ($component == 'contribution') {
         $from = 'FROM `civicrm_contribution` contribution';
