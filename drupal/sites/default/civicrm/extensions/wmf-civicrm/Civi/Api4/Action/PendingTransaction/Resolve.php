@@ -95,6 +95,13 @@ class Resolve extends AbstractAction {
     $latestPaymentDetailResult = $provider->getLatestPaymentStatus($this->message);
     $this->addNewInfoFromPaymentDetailToMessage($latestPaymentDetailResult);
 
+    if (!$latestPaymentDetailResult->isSuccessful()) {
+      \Civi::Log('wmf')->info('Status lookup call failed');
+      \Civi::Log('wmf')->debug(json_encode($latestPaymentDetailResult->getRawResponse()));
+      $result[$this->message['order_id']]['status'] = FinalStatus::FAILED;
+      return;
+    }
+
     $gatewayTxnId = $latestPaymentDetailResult->getGatewayTxnId();
     $riskScores = $latestPaymentDetailResult->getRiskScores();
     // start building the Civi API4 output
