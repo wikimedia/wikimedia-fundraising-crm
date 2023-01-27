@@ -5,6 +5,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Name;
+use Civi\Api4\PendingTransaction;
 use \DateTime;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\PaymentsFraudDatabase;
@@ -29,8 +30,6 @@ use SmashPig\PaymentProviders\PaymentProviderFactory;
  * @package Civi\Api4
  */
 class Resolve extends AbstractAction {
-
-  protected static $_resolvableMethods = ['cc', 'google'];
 
   /**
    * Associative array of data from SmashPig's pending table.
@@ -152,7 +151,7 @@ class Resolve extends AbstractAction {
     if (empty($this->message['payment_method']) ||
         !in_array(
           $this->message['payment_method'],
-          self::$_resolvableMethods
+          PendingTransaction::getResolvableMethods()
         )) {
       return FALSE;
     }
