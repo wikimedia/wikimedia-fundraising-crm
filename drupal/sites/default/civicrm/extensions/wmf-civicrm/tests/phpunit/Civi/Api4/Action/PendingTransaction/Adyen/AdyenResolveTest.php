@@ -80,7 +80,7 @@ class AdyenResolveTest extends TestCase {
     $pending_message = $this->createTestPendingRecord('adyen');
 
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::FAILED)
       ->setSuccessful(FALSE)
       ->setRiskScores([]);
@@ -118,7 +118,7 @@ class AdyenResolveTest extends TestCase {
     );
 
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
       ->setRiskScores([]);
@@ -167,7 +167,7 @@ class AdyenResolveTest extends TestCase {
       $gateway,
     );
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::FAILED)
       ->setSuccessful(FALSE)
       ->setRiskScores([]);
@@ -203,7 +203,7 @@ class AdyenResolveTest extends TestCase {
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
       ->setRiskScores([]);
@@ -216,6 +216,7 @@ class AdyenResolveTest extends TestCase {
     // approvePayment response set up
     $approvePaymentResponse = new ApprovePaymentResponse();
     $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
+      ->setGatewayTxnId(mt_rand())
       ->setSuccessful(TRUE);
 
     // set configured response to mock approvePayment call
@@ -290,7 +291,7 @@ class AdyenResolveTest extends TestCase {
       $gateway,
     );
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::COMPLETE)
       ->setSuccessful(TRUE)
       ->setRiskScores([]);
@@ -349,7 +350,7 @@ class AdyenResolveTest extends TestCase {
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
       ->setRiskScores([]);
@@ -362,6 +363,7 @@ class AdyenResolveTest extends TestCase {
     // approvePayment response set up
     $approvePaymentResponse = new ApprovePaymentResponse();
     $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
+      ->setGatewayTxnId(mt_rand())
       ->setSuccessful(TRUE);
 
     // set configured response to mock approvePayment call
@@ -433,7 +435,7 @@ class AdyenResolveTest extends TestCase {
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
       ->setRiskScores([]);
@@ -470,7 +472,7 @@ class AdyenResolveTest extends TestCase {
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
       ->setRiskScores([]);
@@ -538,7 +540,7 @@ class AdyenResolveTest extends TestCase {
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
       ->setRiskScores([]);
@@ -546,6 +548,7 @@ class AdyenResolveTest extends TestCase {
     // approvePayment response set up
     $approvePaymentResponse = new ApprovePaymentResponse();
     $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
+      ->setGatewayTxnId(mt_rand())
       ->setSuccessful(TRUE);
 
     // set configured response to mock getLatestPaymentStatus call
@@ -581,7 +584,7 @@ class AdyenResolveTest extends TestCase {
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
-    $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
       ->setRiskScores([]);
@@ -594,6 +597,7 @@ class AdyenResolveTest extends TestCase {
     // approvePayment response set up
     $approvePaymentResponse = new ApprovePaymentResponse();
     $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
+      ->setGatewayTxnId(mt_rand())
       ->setSuccessful(TRUE);
 
     // set configured response to mock approvePayment call
@@ -603,6 +607,9 @@ class AdyenResolveTest extends TestCase {
         'amount' => 10,
         'currency' => 'GBP',
         'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
+        'order_id' => $pending_message['order_id'],
+        'gateway_session_id' => $pending_message['gateway_session_id'],
+        'processor_contact_id' => null
       ])
       ->willReturn($approvePaymentResponse);
 

@@ -624,6 +624,9 @@ class IngenicoResolveTest extends TestCase {
         'amount' => 10,
         'currency' => 'GBP',
         'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
+        'order_id' => $pending_message['order_id'],
+        'gateway_session_id' => $pending_message['gateway_session_id'],
+        'processor_contact_id' => null
       ])
       ->willReturn($approvePaymentResponse);
 
@@ -700,6 +703,9 @@ class IngenicoResolveTest extends TestCase {
         'amount' => 10,
         'currency' => 'GBP',
         'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
+        'order_id' => $pending_message['order_id'],
+        'gateway_session_id' => $pending_message['gateway_session_id'],
+        'processor_contact_id' => null
       ])
       ->willReturn($approvePaymentResponse);
 

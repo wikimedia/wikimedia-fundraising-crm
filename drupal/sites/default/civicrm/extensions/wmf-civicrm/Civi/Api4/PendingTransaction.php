@@ -13,7 +13,7 @@ use Civi\Api4\Generic\BasicGetFieldsAction;
  */
 class PendingTransaction extends Generic\AbstractEntity {
 
-  protected static $resolvableMethods = ['cc', 'google'];
+  protected static $resolvableMethods = ['cc', 'google', 'paypal'];
 
   /**
    * Resolve a single pending transaction
