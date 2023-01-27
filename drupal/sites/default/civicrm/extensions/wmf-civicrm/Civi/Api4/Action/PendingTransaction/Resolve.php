@@ -198,8 +198,12 @@ class Resolve extends AbstractAction {
         'full_name' => $donorDetails->getFullName(),
         'email' => $donorDetails->getEmail()
       ]);
-      // don't overwrite if the message had info already
-      $this->message = array_merge($donorInfoToAddToMessage, $this->message);
+      // Don't overwrite if the message had info already, but DO overwrite blank values
+      foreach($donorInfoToAddToMessage as $field => $value) {
+        if (empty($this->message[$field])) {
+          $this->message[$field] = $value;
+        }
+      }
     }
   }
 

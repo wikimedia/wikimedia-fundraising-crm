@@ -175,7 +175,6 @@ class IngenicoResolveTest extends TestCase {
     $this->assertNotNull($donation_queue_message);
     SourceFields::removeFromMessage($donation_queue_message);
     $this->assertEquals([
-        'full_name',
         'contribution_tracking_id',
         'country',
         'email',
@@ -187,6 +186,7 @@ class IngenicoResolveTest extends TestCase {
         'date',
         'gross',
         'currency',
+        'full_name',
         'gateway_txn_id',
       ], array_keys($donation_queue_message)
     );
@@ -322,7 +322,6 @@ class IngenicoResolveTest extends TestCase {
     $this->assertNotNull($donation_queue_message);
     SourceFields::removeFromMessage($donation_queue_message);
     $this->assertEquals([
-      'full_name',
       'contribution_tracking_id',
       'country',
       'email',
@@ -335,6 +334,7 @@ class IngenicoResolveTest extends TestCase {
       'gross',
       'currency',
       'recurring',
+      'full_name',
       'gateway_txn_id',
       'recurring_payment_token'
     ], array_keys($donation_queue_message)
