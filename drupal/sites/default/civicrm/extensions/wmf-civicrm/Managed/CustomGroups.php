@@ -1146,6 +1146,24 @@ function _wmf_civicrm_get_communication_fields(): array {
       'is_active' => 1,
       'is_searchable' => 1,
     ],
+    'first_name_phonetic' => [
+      'label' => 'First name phonetic',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'help_pre' => 'Phonetic version of first name field',
+      'column_name' => 'first_name_phonetic',
+      'is_active' => 1,
+      'is_searchable' => 1,
+    ],
+    'last_name_phonetic' => [
+      'label' => 'Last name phonetic',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'help_pre' => 'Phonetic version of last name field',
+      'column_name' => 'last_name_phonetic',
+      'is_active' => 1,
+      'is_searchable' => 1,
+    ],
   ];
 }
 
