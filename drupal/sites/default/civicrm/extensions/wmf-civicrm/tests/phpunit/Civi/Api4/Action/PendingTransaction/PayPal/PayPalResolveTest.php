@@ -11,6 +11,7 @@ use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\PaymentData\DonorDetails;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
+use SmashPig\PaymentProviders\Responses\CreateRecurringPaymentsProfileResponse;
 use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
@@ -180,6 +181,66 @@ class PayPalResolveTest extends TestCase {
     $this->assertEquals('testy@example.com', $donationQueueMessage['email']);
     $this->assertEquals('Testy', $donationQueueMessage['first_name']);
     $this->assertEquals('McTesterson', $donationQueueMessage['last_name']);
+  }
+
+  public function testResolveRecurring(): void {
+    $pendingMessage = $this->createTestPendingMessage();
+    $pendingMessage['recurring'] = 1;
+
+    // getLatestPaymentStatus response set up
+    $paymentStatusResponse = (new PaymentDetailResponse())
+      ->setStatus(FinalStatus::PENDING_POKE)
+      ->setProcessorContactID(mt_rand())
+      ->setDonorDetails((new DonorDetails())
+        ->setFirstName('Testy')
+        ->setLastName('McTesterson')
+        ->setEmail('testy@example.com')
+      )
+      ->setSuccessful(TRUE);
+
+    // set configured response to mock getLatestPaymentStatus call
+    $this->paymentProvider->expects($this->once())
+      ->method('getLatestPaymentStatus')
+      ->willReturn($paymentStatusResponse);
+
+    $createProfileResponse = (new CreateRecurringPaymentsProfileResponse())
+      ->setStatus(FinalStatus::COMPLETE)
+      ->setGatewayTxnId(mt_rand())
+      ->setProfileId(mt_rand())
+      ->setSuccessful(TRUE);
+
+    $this->paymentProvider->expects($this->once())
+      ->method('createRecurringPaymentsProfile')
+      ->with([
+        'gateway_session_id' => $pendingMessage['gateway_session_id'],
+        'description' => \Civi::settings()->get('wmf_resolved_charge_descriptor'),
+        'order_id' => $pendingMessage['order_id'],
+        'amount' => $pendingMessage['gross'],
+        'currency' => $pendingMessage['currency'],
+        'email' => 'testy@example.com',
+      ])
+      ->willReturn($createProfileResponse);
+
+    // run the pending message through PendingTransaction::resolve()
+    $result = PendingTransaction::resolve()
+      ->setMessage($pendingMessage)
+      ->execute();
+
+    // confirm status is now complete
+    $this->assertEquals(
+      FinalStatus::COMPLETE,
+      $result[$pendingMessage['order_id']]['status']
+    );
+
+    // confirm payments-init queue message added
+    $paymentsInitQueueMessage = QueueWrapper::getQueue('payments-init')
+      ->pop();
+    $this->assertNotNull($paymentsInitQueueMessage);
+
+    // confirm no donation queue message added
+    $donationQueueMessage = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNull($donationQueueMessage);
+
   }
 
   private function createTestPendingMessage() {
