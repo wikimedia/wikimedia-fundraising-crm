@@ -56,8 +56,7 @@ function refund_queue_consume_drush_help($section) {
 }
 
 /**
- * Generates translated versions of the unsubscribe pages from the
- * DonationInterface i18n files.
+ * Consume refund queue
  */
 function drush_refund_queue_consume() {
   civicrm_initialize();

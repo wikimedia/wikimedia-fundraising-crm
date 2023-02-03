@@ -8,6 +8,5 @@ dependencies[] = contribution_tracking
 dependencies[] = metrics_reporting
 dependencies[] = wmf_common
 files[] = db_switcher.inc
-files[] = DonationInterfaceFactory.php
 files[] = WmfTransaction.php
 files[] = tests/includes/CiviFixtures.php
