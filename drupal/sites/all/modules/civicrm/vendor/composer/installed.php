@@ -1,11 +1,11 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
+        'pretty_version' => '5.58.x-dev',
+        'version' => '5.58.9999999.9999999-dev',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '7f02e08af6d43280cfaf04d2d4f5d8eb56948e8c',
+        'reference' => 'cd24acea9d5cf85df3b0fe54fc5cadfcf60a8cef',
         'name' => 'civicrm/civicrm-core',
         'dev' => true,
     ),
@@ -56,12 +56,12 @@
             'dev_requirement' => false,
         ),
         'civicrm/civicrm-core' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
+            'pretty_version' => '5.58.x-dev',
+            'version' => '5.58.9999999.9999999-dev',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '7f02e08af6d43280cfaf04d2d4f5d8eb56948e8c',
+            'reference' => 'cd24acea9d5cf85df3b0fe54fc5cadfcf60a8cef',
             'dev_requirement' => false,
         ),
         'civicrm/civicrm-cxn-rpc' => array(
@@ -119,12 +119,12 @@
             'dev_requirement' => false,
         ),
         'dompdf/dompdf' => array(
-            'pretty_version' => 'v2.0.1',
-            'version' => '2.0.1.0',
+            'pretty_version' => 'v2.0.2',
+            'version' => '2.0.2.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../dompdf/dompdf',
             'aliases' => array(),
-            'reference' => 'c5310df0e22c758c85ea5288175fc6cd777bc085',
+            'reference' => 'ad4c631bf8897fc1ca7b566468a969cfd71a558a',
             'dev_requirement' => false,
         ),
         'ezyang/htmlpurifier' => array(
@@ -269,12 +269,12 @@
             'dev_requirement' => false,
         ),
         'masterminds/html5' => array(
-            'pretty_version' => '2.7.5',
-            'version' => '2.7.5.0',
+            'pretty_version' => '2.7.6',
+            'version' => '2.7.6.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../masterminds/html5',
             'aliases' => array(),
-            'reference' => 'f640ac1bdddff06ea333a920c95bbad8872429ab',
+            'reference' => '897eb517a343a2281f11bc5556d6548db7d93947',
             'dev_requirement' => false,
         ),
         'myclabs/php-enum' => array(
@@ -413,12 +413,12 @@
             'dev_requirement' => false,
         ),
         'phenx/php-svg-lib' => array(
-            'pretty_version' => '0.4.1',
-            'version' => '0.4.1.0',
+            'pretty_version' => '0.5.0',
+            'version' => '0.5.0.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../phenx/php-svg-lib',
             'aliases' => array(),
-            'reference' => '4498b5df7b08e8469f0f8279651ea5de9626ed02',
+            'reference' => '76876c6cf3080bcb6f249d7d59705108166a6685',
             'dev_requirement' => false,
         ),
         'phpoffice/phpspreadsheet' => array(
