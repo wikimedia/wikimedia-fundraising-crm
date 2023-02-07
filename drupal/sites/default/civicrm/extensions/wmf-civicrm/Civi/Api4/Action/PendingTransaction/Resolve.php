@@ -5,6 +5,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Name;
+use Civi\Api4\PendingTransaction;
 use \DateTime;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\PaymentsFraudDatabase;
@@ -12,6 +13,7 @@ use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentData\ValidationAction;
+use SmashPig\PaymentProviders\ICancelablePaymentProvider;
 use SmashPig\PaymentProviders\IPaymentProvider;
 use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
@@ -29,8 +31,6 @@ use SmashPig\PaymentProviders\PaymentProviderFactory;
  * @package Civi\Api4
  */
 class Resolve extends AbstractAction {
-
-  protected static $_resolvableMethods = ['cc', 'google'];
 
   /**
    * Associative array of data from SmashPig's pending table.
@@ -92,22 +92,29 @@ class Resolve extends AbstractAction {
       $this->message['payment_method']
     );
 
-    // Get the latest payment detail, currently only adyen and ingenico have this function
+    // Get the latest status for the payment, either via the provider API
+    // or when not available (Adyen) just from the pending message.
     $latestPaymentDetailResult = $provider->getLatestPaymentStatus($this->message);
     $this->addNewInfoFromPaymentDetailToMessage($latestPaymentDetailResult);
 
-    $gatewayTxnId = $latestPaymentDetailResult->getGatewayTxnId();
+    if (!$latestPaymentDetailResult->isSuccessful()) {
+      \Civi::Log('wmf')->info('Status lookup call failed');
+      \Civi::Log('wmf')->debug(json_encode($latestPaymentDetailResult->getRawResponse()));
+      $result[$this->message['order_id']]['status'] = FinalStatus::FAILED;
+      return;
+    }
+
     $riskScores = $latestPaymentDetailResult->getRiskScores();
     // start building the Civi API4 output
     $result[$this->message['order_id']] = [
       'email' => $this->message['email'] ?? NULL,
-      'gateway_txn_id' => $gatewayTxnId,
+      'gateway_txn_id' => $latestPaymentDetailResult->getGatewayTxnId(),
       'status' => $latestPaymentDetailResult->getStatus(),
       'risk_scores' => $riskScores,
     ];
 
-    // check if status is 600 (PENDING_POKE)
-    // if not, just delete the message
+    // Check if payment is awaiting approval.
+    // If not, just delete the message
     if (!$latestPaymentDetailResult->requiresApproval()) {
       return;
     }
@@ -123,14 +130,19 @@ class Resolve extends AbstractAction {
     }
 
     switch ($whatToDo) {
-      case self::CANCEL:
-        $cancelResult = $provider->cancelPayment($gatewayTxnId);
-        $newStatus = $cancelResult->getStatus();
-        break;
-
       case self::CAPTURE:
         $newStatus = $this->approvePaymentAndReturnStatus($provider, $latestPaymentDetailResult);
         break;
+
+      case self::CANCEL:
+        if ($provider instanceof ICancelablePaymentProvider) {
+          $cancelResult = $provider->cancelPayment($latestPaymentDetailResult->getGatewayTxnId());
+          $newStatus = $cancelResult->getStatus();
+          break;
+        }
+        // If the provider doesn't support cancelling a payment in
+        // pending-poke status, just fall through to the next case
+        // and leave the payment at the console.
 
       case self::LEAVE_AT_CONSOLE:
         // Just delete the pending message and leave the transaction at the
@@ -143,7 +155,7 @@ class Resolve extends AbstractAction {
     // Update Civi API4 output
     $result[$this->message['order_id']]['status'] = $newStatus;
 
-    $this->sendInitMessageIfNeeded($newStatus, $gatewayTxnId);
+    $this->sendInitMessageIfNeeded($newStatus);
   }
 
   protected function isMessageResolvable() {
@@ -152,7 +164,7 @@ class Resolve extends AbstractAction {
     if (empty($this->message['payment_method']) ||
         !in_array(
           $this->message['payment_method'],
-          self::$_resolvableMethods
+          PendingTransaction::getResolvableMethods()
         )) {
       return FALSE;
     }
@@ -185,15 +197,26 @@ class Resolve extends AbstractAction {
   protected function addNewInfoFromPaymentDetailToMessage(PaymentDetailResponse $latestPaymentDetailResult): void {
     $donorDetails = $latestPaymentDetailResult->getDonorDetails();
     if ($donorDetails !== null) {
-      // One or more of these is probably null - use array_filter to remove them
-      $donorInfoToAddToMessage = array_filter([
+      $infoToAddToMessage = [
         'first_name' => $donorDetails->getFirstName(),
         'last_name' => $donorDetails->getLastName(),
         'full_name' => $donorDetails->getFullName(),
-        'email' => $donorDetails->getEmail()
-      ]);
-      // don't overwrite if the message had info already
-      $this->message = array_merge($donorInfoToAddToMessage, $this->message);
+        'email' => $donorDetails->getEmail(),
+      ];
+    } else {
+      $infoToAddToMessage = [];
+    }
+    $infoToAddToMessage['processor_contact_id'] = $latestPaymentDetailResult->getProcessorContactID();
+    $infoToAddToMessage['gateway_txn_id'] = $latestPaymentDetailResult->getGatewayTxnId();
+
+    // One or more of these is probably null - use array_filter to remove them
+    $infoToAddToMessage = array_filter($infoToAddToMessage);
+
+    // Don't overwrite fields where the message had info already, but DO overwrite blank values
+    foreach($infoToAddToMessage as $field => $value) {
+      if (empty($this->message[$field])) {
+        $this->message[$field] = $value;
+      }
     }
   }
 
@@ -398,11 +421,10 @@ class Resolve extends AbstractAction {
    * and send it.
    *
    * @param string $newStatus
-   * @param string $gatewayTxnId
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  protected function sendInitMessageIfNeeded(string $newStatus, string $gatewayTxnId) {
+  protected function sendInitMessageIfNeeded(string $newStatus) {
     // If we haven't set a validationAction, there's no new information to send to the
     // payments-init queue.
     if ($this->validationAction !== null) {
@@ -413,8 +435,7 @@ class Resolve extends AbstractAction {
       $paymentsInitMessage = $this->buildPaymentsInitMessage(
         $this->message,
         $this->validationAction,
-        $newStatus,
-        $gatewayTxnId
+        $newStatus
       );
       QueueWrapper::push('payments-init', $paymentsInitMessage);
     }
@@ -427,15 +448,13 @@ class Resolve extends AbstractAction {
    * @param array $pendingMessage
    * @param string $validationAction
    * @param string $finalStatus
-   * @param string $gatewayTxnId
    *
    * @return array
    */
   protected function buildPaymentsInitMessage(
     array $pendingMessage,
     string $validationAction,
-    string $finalStatus,
-    string $gatewayTxnId
+    string $finalStatus
   ) : array {
     $filteredPendingMessage = array_filter($pendingMessage, function ($key) {
       return in_array($key, [
@@ -446,6 +465,7 @@ class Resolve extends AbstractAction {
         'gateway',
         'contribution_tracking_id',
         'order_id',
+        'gateway_txn_id'
       ]);
     }, ARRAY_FILTER_USE_KEY);
 
@@ -456,7 +476,6 @@ class Resolve extends AbstractAction {
         'payments_final_status' => $finalStatus,
         'amount' => $pendingMessage['gross'],
         'date' => UtcDate::getUtcTimestamp(),
-        'gateway_txn_id' => $gatewayTxnId,
         'server' => gethostname(), // FIXME: payments-init qc should be able to get this from source_host
       ]
     );
@@ -601,28 +620,41 @@ class Resolve extends AbstractAction {
   protected function approvePaymentAndReturnStatus(
     IPaymentProvider $provider, PaymentDetailResponse $statusResult
   ): string {
-    $gatewayTxnId = $statusResult->getGatewayTxnId();
     // Ingenico only needs the gateway_txn_id, but we send more info to
     // be generic like the SmashPig extension recurring charge logic.
     $approveResult = $provider->approvePayment([
       'amount' => $this->message['gross'],
       'currency' => $this->message['currency'],
-      'gateway_txn_id' => $gatewayTxnId,
+      'order_id' => $this->message['order_id'],
+      'gateway_session_id' => $this->message['gateway_session_id'] ?? null,
+      'processor_contact_id' => $this->message['processor_contact_id'] ?? null,
+      'gateway_txn_id' => $this->message['gateway_txn_id'] ?? null,
     ]);
     if ($approveResult->isSuccessful()) {
       $newStatus = FinalStatus::COMPLETE;
-      $donationsMessage = $this->message;
-      $donationsMessage['gateway_txn_id'] = $gatewayTxnId;
-      unset($donationsMessage['gateway_session_id']);
-      $token = $statusResult->getRecurringPaymentToken();
-      if ($token) {
-        $donationsMessage['recurring_payment_token'] = $token;
+      // Some processors (PayPal) don't assign a transaction ID until
+      // after the approval
+      if (empty($this->message['gateway_txn_id'])) {
+        $this->message['gateway_txn_id'] = $approveResult->getGatewayTxnId();
       }
-      QueueWrapper::push('donations', $donationsMessage);
+      $this->sendDonationsQueueMessage($statusResult);
     }
     else {
       $newStatus = FinalStatus::FAILED;
     }
     return $newStatus;
+  }
+
+  /**
+   * @param PaymentDetailResponse $statusResult
+   */
+  protected function sendDonationsQueueMessage(PaymentDetailResponse $statusResult): void {
+    $donationsMessage = $this->message;
+    unset($donationsMessage['gateway_session_id']);
+    $token = $statusResult->getRecurringPaymentToken();
+    if ($token) {
+      $donationsMessage['recurring_payment_token'] = $token;
+    }
+    QueueWrapper::push('donations', $donationsMessage);
   }
 }
