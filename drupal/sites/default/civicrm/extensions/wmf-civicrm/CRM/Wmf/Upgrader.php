@@ -711,6 +711,21 @@ SET
   }
 
   /**
+   * Remove unused option values.
+   *
+   * @return true
+   */
+  public function upgrade_4230(): bool {
+    CRM_Core_DAO::executeQuery(
+     "UPDATE civicrm_address
+      SET street_address = NULL
+      WHERE street_address IN
+      ('" . implode("','", $this->getBadStrings()) . "')"
+    );
+    return TRUE;
+  }
+
+  /**
    * Get the values actually used for the option.
    *
    * @param string $field
@@ -727,6 +742,33 @@ SET
       $usedOptions[] = $dbResult->option_field;
     }
     return $usedOptions;
+  }
+
+  /**
+   * Get strings that can be considered non-data in street address.
+   *
+   * @return string[]
+   */
+  protected function getBadStrings(): array {
+    return [
+      'n/a',
+      '123 Fake Street',
+      'A',
+      'Anonymous',
+      'C',
+      'X',
+      'NA',
+      'xxx',
+      'z',
+      '1',
+      '3',
+      'Q',
+      'r',
+      'aa',
+      'k',
+      'asd',
+      'w',
+    ];
   }
 
 }
