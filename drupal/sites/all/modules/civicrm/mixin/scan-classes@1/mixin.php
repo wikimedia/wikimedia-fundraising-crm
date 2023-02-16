@@ -54,10 +54,8 @@ return function ($mixInfo, $bootCache) {
       \Civi\Core\ClassScanner::scanFolders($all, $baseDir, 'CRM', '_');
       \Civi\Core\ClassScanner::scanFolders($all, $baseDir, 'Civi', '\\');
       if (defined('CIVICRM_TEST')) {
-        // Bug T327360
-        // https://lab.civicrm.org/dev/core/-/issues/4088
-        // \Civi\Core\ClassScanner::scanFolders($all, "$baseDir/tests/phpunit", 'CRM', '_');
-        // \Civi\Core\ClassScanner::scanFolders($all, "$baseDir/tests/phpunit", 'Civi', '\\');
+        \Civi\Core\ClassScanner::scanFolders($all, "$baseDir/tests/phpunit", 'CRM', '_');
+        \Civi\Core\ClassScanner::scanFolders($all, "$baseDir/tests/phpunit", 'Civi', '\\');
       }
       $cache->set($cacheKey, $all, \Civi\Core\ClassScanner::TTL);
     }

@@ -1100,7 +1100,7 @@ class CRM_Core_DAO extends DB_DataObject {
   }
 
   /**
-   * Scans all the tables using a slow query and table name.
+   * Gets the names of all the tables in the schema.
    *
    * @return array
    */

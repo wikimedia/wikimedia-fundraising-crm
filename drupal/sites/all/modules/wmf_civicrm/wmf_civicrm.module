@@ -10,6 +10,7 @@ use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use Civi\WMFStatistics\ImportStatsCollector;
 use Civi\WMFException\WMFException;
+use Civi\ExchangeException\ExchangeRatesException;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
@@ -1657,7 +1658,7 @@ function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
  *
  * @return int
  *   The refund's contribution id.
- * @throws \ExchangeRatesException
+ * @throws Civi\ExchangeException\ExchangeRatesException;
  * @throws \Civi\WMFException\WMFException
  */
 

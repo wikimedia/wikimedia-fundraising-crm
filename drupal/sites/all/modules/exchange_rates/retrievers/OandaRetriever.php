@@ -1,5 +1,6 @@
 <?php
 namespace exchange_rates;
+use Civi\ExchangeException\ExchangeRateUpdateException;
 
 class OandaRetriever extends ExchangeRateRetriever {
 

@@ -5,7 +5,7 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'cd24acea9d5cf85df3b0fe54fc5cadfcf60a8cef',
+        'reference' => '755314ae9e46286a587e1138a15b92aaaa0278a1',
         'name' => 'civicrm/civicrm-core',
         'dev' => true,
     ),
@@ -61,7 +61,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'cd24acea9d5cf85df3b0fe54fc5cadfcf60a8cef',
+            'reference' => '755314ae9e46286a587e1138a15b92aaaa0278a1',
             'dev_requirement' => false,
         ),
         'civicrm/civicrm-cxn-rpc' => array(
@@ -119,12 +119,12 @@
             'dev_requirement' => false,
         ),
         'dompdf/dompdf' => array(
-            'pretty_version' => 'v2.0.2',
-            'version' => '2.0.2.0',
+            'pretty_version' => 'v2.0.3',
+            'version' => '2.0.3.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../dompdf/dompdf',
             'aliases' => array(),
-            'reference' => 'ad4c631bf8897fc1ca7b566468a969cfd71a558a',
+            'reference' => 'e8d2d5e37e8b0b30f0732a011295ab80680d7e85',
             'dev_requirement' => false,
         ),
         'ezyang/htmlpurifier' => array(
