@@ -92,7 +92,7 @@ class EOYEmailTest extends TestCase {
 
     $message = EOYEmail::render()->setCheckPermissions(FALSE)
       ->setYear(2020)->setContactID($this->ids['Contact']['suzuki'])->execute()->first();
-    $this->assertContains('Benvolgut/Benvolguda 鈴木', $message['html']);
+    $this->assertStringContainsString('Benvolgut/Benvolguda 鈴木', $message['html']);
   }
 
   /**

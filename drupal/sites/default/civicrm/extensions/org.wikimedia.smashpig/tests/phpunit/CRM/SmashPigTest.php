@@ -201,7 +201,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $contributionRecur = $this->createContributionRecur($token);
     $contribution = $this->createContribution($contributionRecur);
 
-    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution);
+    [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution);
 
     $expectedDescription = $this->getExpectedDescription();
 
@@ -305,7 +305,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       'amount' => 12.00,
     ]);
 
-    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution);
+    [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution);
 
     $expectedDescription = $this->getExpectedDescription();
 
@@ -409,7 +409,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       'amount' => 12.00,
     ]);
 
-    list($ctId, $firstInvoiceId, $secondInvoiceId) = $this->getExpectedIds($contribution);
+    [$ctId, $firstInvoiceId, $secondInvoiceId] = $this->getExpectedIds($contribution);
 
     $expectedDescription = $this->getExpectedDescription();
 
@@ -555,7 +555,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
     $contribution = $this->createContribution($contributionRecur);
-    list($ctId, $expectedInvoiceId) = $this->getExpectedIds($contribution);
+    [$ctId, $expectedInvoiceId] = $this->getExpectedIds($contribution);
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn(
@@ -621,7 +621,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     ]);
 
 
-    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution);
+    [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution);
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn(
@@ -679,7 +679,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     ]);
     // Contribution table gets converted USD amount
     $contribution = $this->createContribution($contributionRecur);
-    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution);
+    [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution);
     $expectedDescription = $this->getExpectedDescription();
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
@@ -1145,7 +1145,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
     $contribution = $this->createContribution($contributionRecur);
-    list($ctId, $expectedInvoiceId, $nextInvoiceId) = $this->getExpectedIds($contribution);
+    [$ctId, $expectedInvoiceId, $nextInvoiceId] = $this->getExpectedIds($contribution);
     $response = (new CreatePaymentResponse())->addErrors(
       new PaymentError(
         ErrorCode::DUPLICATE_ORDER_ID,
@@ -1244,7 +1244,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $contribution = $this->createContribution($contributionRecur);
 
     // Get the expected invoice ids taking into account the failures
-    list($ctId, $expectedInvoiceId, $next) = $this->getExpectedIds($contribution,$contributionRecur['failure_count']);
+    [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution,$contributionRecur['failure_count']);
 
     $expectedDescription = $this->getExpectedDescription();
     $this->hostedCheckoutProvider->expects($this->once())
@@ -1311,7 +1311,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
   protected function getExpectedIds($contribution,$failures = 0) {
     $originalInvoiceId = $contribution['invoice_id'];
     $parts = explode('|', $originalInvoiceId);
-    list($ctId, $sequence) = explode('.', $parts[0]);
+    [$ctId, $sequence] = explode('.', $parts[0]);
     $sequence += $failures;
     $expectedInvoiceId = $ctId . '.' . ($sequence + 1);
     $nextInvoiceId = $ctId . '.' . ($sequence + 2);

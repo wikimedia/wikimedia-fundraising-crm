@@ -62,7 +62,7 @@ class CRM_Wrapper_Test extends \PHPUnit\Framework\TestCase implements HeadlessIn
       ->setEntity('ContributionRecur')
       ->setEntityIDs([$contributionRecur['id']])
       ->execute()->first();
-    $this->assertContains('{assign var="greeting" value="Dear Donald"}', $msg['msg_html']);
+    $this->assertStringContainsString('{assign var="greeting" value="Dear Donald"}', $msg['msg_html']);
   }
 
   /**
@@ -86,9 +86,9 @@ class CRM_Wrapper_Test extends \PHPUnit\Framework\TestCase implements HeadlessIn
       ->setWorkflowName('my_custom_tpl')
       ->setEntityIDs([$contributionRecur['id']])
       ->execute()->first();
-    $this->assertContains('Hi Donald', $msg['msg_text']);
-    $this->assertContains('donald@duck.com', $msg['msg_text']);
-    $this->assertContains('5', $msg['msg_text']);
+    $this->assertStringContainsString('Hi Donald', $msg['msg_text']);
+    $this->assertStringContainsString('donald@duck.com', $msg['msg_text']);
+    $this->assertStringContainsString('5', $msg['msg_text']);
   }
 
   /**

@@ -287,7 +287,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       $this->original_currency, $this->original_amount + 100.00
     );
     $mailing = $this->getMailing(0);
-    $this->assertContains("<p>Refund amount mismatch for : {$this->original_contribution_id}, difference is 100. See http", $mailing['html']);
+    $this->assertStringContainsString("<p>Refund amount mismatch for : {$this->original_contribution_id}, difference is 100. See http", $mailing['html']);
   }
 
   /**

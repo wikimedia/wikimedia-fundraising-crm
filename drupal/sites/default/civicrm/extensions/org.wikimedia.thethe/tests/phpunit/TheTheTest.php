@@ -38,14 +38,6 @@ class TheTheTest extends \PHPUnit\Framework\TestCase implements HeadlessInterfac
       ->apply();
   }
 
-  public function setUp() {
-    parent::setUp();
-  }
-
-  public function tearDown() {
-    parent::tearDown();
-  }
-
   /**
    * Test sort name is saved with changes - we use
    * 1) the default 'The ' for prefix
