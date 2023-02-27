@@ -2,6 +2,8 @@
 
 namespace Civi\WMFHelpers;
 
+use Civi;
+
 class FinanceInstrument {
   public const APPLE_PAY_SUBMETHOD_LIST = [
     'apple' => 'Apple',
@@ -166,7 +168,7 @@ class FinanceInstrument {
         case 'cc':
           $payment_instrument = 'Credit Card';
           if (empty($msg['payment_submethod'])) {
-            watchdog('wmf_civicrm', 'No credit card submethod given', NULL, WATCHDOG_WARNING);
+            Civi::log('wmf')->warning('wmf_civicrm: No credit card submethod given');
             break;
           }
           if (!empty($payment_submethod)
@@ -204,7 +206,7 @@ class FinanceInstrument {
         case 'cash':
           $payment_instrument = 'Cash';
           if (empty($msg['payment_submethod'])) {
-            watchdog('wmf_civicrm', 'No cash submethod given', NULL, WATCHDOG_WARNING);
+            Civi::log('wmf')->warning('wmf_civicrm: No cash submethod given');
             break;
           }
           if (!empty($payment_submethod)
@@ -230,8 +232,8 @@ class FinanceInstrument {
       switch (strtolower($msg['gateway'])) {
         case 'amazon':
           $payment_instrument = 'Amazon';
-          if (array_key_exists('payment_method', $msg) and strtolower($msg['payment_method']) !== 'amazon') {
-            \Civi::log('wmf')->debug('payment_method constraint violated: gateway Amazon, but method=@method ; gateway_txn_id=@id', [
+          if (array_key_exists('payment_method', $msg) && strtolower($msg['payment_method']) !== 'amazon') {
+            Civi::log('wmf')->debug('payment_method constraint violated: gateway Amazon, but method=@method ; gateway_txn_id=@id', [
               '@method' => $msg['payment_method'],
               '@id' => $msg['gateway_txn_id'],
             ]);
@@ -248,8 +250,8 @@ class FinanceInstrument {
           // migrated when we do that.
 
           // Validate method if provided.
-          if (array_key_exists('payment_method', $msg) and strtolower($msg['payment_method']) !== 'paypal') {
-            \Civi::log('wmf')->debug('payment_method constraint violated: gateway Paypal, but method=@method ; gateway_txn_id=@id', [
+          if (array_key_exists('payment_method', $msg) && strtolower($msg['payment_method']) !== 'paypal') {
+            Civi::log('wmf')->debug('payment_method constraint violated: gateway Paypal, but method=@method ; gateway_txn_id=@id', [
               '@method' => $msg['payment_method'],
               '@id' => $msg['gateway_txn_id'],
             ]);
@@ -257,8 +259,8 @@ class FinanceInstrument {
           break;
         case 'square':
           $payment_instrument = 'Square Cash';
-          if (array_key_exists('payment_method', $msg) and strtolower($msg['payment_method']) !== 'square') {
-            \Civi::log('wmf')->debug('payment_method constraint violated: gateway Square, but method=@method ; gateway_txn_id=@id', [
+          if (array_key_exists('payment_method', $msg) && strtolower($msg['payment_method']) !== 'square') {
+            Civi::log('wmf')->debug('payment_method constraint violated: gateway Square, but method=@method ; gateway_txn_id=@id', [
               '@method' => $msg['payment_method'],
               '@id' => $msg['gateway_txn_id'],
             ]);
@@ -266,8 +268,8 @@ class FinanceInstrument {
           break;
         case 'trilogy':
           $payment_instrument = 'Trilogy';
-          if (array_key_exists('payment_method', $msg) and strtolower($msg['payment_method']) !== 'trilogy') {
-            \Civi::log('wmf')->debug('payment_method constraint violated: gateway Trilogy, but method=@method ; gateway_txn_id=@id', [
+          if (array_key_exists('payment_method', $msg) && strtolower($msg['payment_method']) !== 'trilogy') {
+            Civi::log('wmf')->debug('payment_method constraint violated: gateway Trilogy, but method=@method ; gateway_txn_id=@id', [
               '@method' => $msg['payment_method'],
               '@id' => $msg['gateway_txn_id'],
             ]);
