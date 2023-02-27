@@ -135,7 +135,7 @@ class FinanceInstrument {
       return $msg['raw_payment_instrument'];
     }
 
-    if (array_key_exists('payment_method', $msg) && trim($msg['payment_method']) != '') {
+    if (array_key_exists('payment_method', $msg) && trim($msg['payment_method']) !== '') {
       $payment_submethod = null;
       if (isset($msg['payment_submethod'])){
         $payment_submethod = strtolower($msg['payment_submethod']);
@@ -227,7 +227,7 @@ class FinanceInstrument {
 
     }
     if (!$payment_instrument
-      and array_key_exists('gateway', $msg)
+      && array_key_exists('gateway', $msg)
     ) {
       switch (strtolower($msg['gateway'])) {
         case 'amazon':
