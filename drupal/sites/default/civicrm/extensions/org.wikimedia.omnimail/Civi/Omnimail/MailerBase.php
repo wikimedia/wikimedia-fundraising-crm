@@ -43,11 +43,10 @@ abstract class MailerBase {
    *
    * @return string
    */
-  protected function wrapHtmlSnippet($html, $locale = NULL) {
+  protected function wrapHtmlSnippet($html, $locale = NULL): string {
     if (preg_match('/<html.*>/i', $html)) {
-      watchdog('wmf_communication',
-        "Tried to wrap something that already contains a full HTML document.",
-        NULL, WATCHDOG_ERROR);
+      \Civi::Log('wmf')->error(
+        'wmf_communication: Tried to wrap something that already contains a full HTML document.');
       return $html;
     }
 
