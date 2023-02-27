@@ -31,24 +31,6 @@ function monolog_civicrm_install() {
 }
 
 /**
- * Implements hook_civicrm_postInstall().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
- */
-function monolog_civicrm_postInstall() {
-  _monolog_civix_civicrm_postInstall();
-}
-
-/**
- * Implements hook_civicrm_uninstall().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_uninstall
- */
-function monolog_civicrm_uninstall() {
-  _monolog_civix_civicrm_uninstall();
-}
-
-/**
  * Implements hook_civicrm_enable().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_enable
@@ -67,16 +49,6 @@ function monolog_civicrm_disable() {
   if (is_a($logManager, '\Civi\MonoLog\MonologManager')) {
     $logManager->disable();
   }
-  _monolog_civix_civicrm_disable();
-}
-
-/**
- * Implements hook_civicrm_upgrade().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_upgrade
- */
-function monolog_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _monolog_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
@@ -86,17 +58,6 @@ function monolog_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  */
 function monolog_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   $c = Civi::container();
-}
-
-/**
- * Implements hook_civicrm_entityTypes().
- *
- * Declare entity types provided by this module.
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
- */
-function monolog_civicrm_entityTypes(&$entityTypes) {
-  _monolog_civix_civicrm_entityTypes($entityTypes);
 }
 
 // --- Functions below this ship commented out. Uncomment as required. ---
