@@ -61,7 +61,7 @@ function banner_history_settings_page_args() {
  * Entry point from banner-history-queue-consume drush command
  */
 function banner_history_queue_consume() {
-  watchdog('banner_history', 'Executing: banner_history_queue_consume');
+  Civi::log('wmf')->info('banner_history : Executing: banner_history_queue_consume');
 
   civicrm_initialize();
 
@@ -75,12 +75,9 @@ function banner_history_queue_consume() {
   $processed = $qc->dequeueMessages();
 
   if ($processed > 0) {
-    watchdog('banner_history',
-      "Processed $processed banner_history log ID association(s).");
-
+    Civi::log('wmf')->info('banner_history: Processed $processed banner_history log ID association(s).');
   }
   else {
-    watchdog('banner_history',
-      'No banner history log ID associations processed.');
+    Civi::log('wmf')->info('banner_history: No banner history log ID associations processed.');
   }
 }
