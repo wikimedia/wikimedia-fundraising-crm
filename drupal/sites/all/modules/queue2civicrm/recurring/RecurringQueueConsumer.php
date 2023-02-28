@@ -441,7 +441,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     } catch (\CiviCRM_API3_Exception $e) {
       throw new WMFException(WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
     }
-    watchdog('recurring', 'Succesfully inserted subscription signup for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
+    \Civi::log('wmf')->notice('recurring: Successfully inserted subscription signup for subscriber id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
   }
 
   /**
@@ -526,7 +526,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     } catch (\CiviCRM_API3_Exception $e) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
     }
-    watchdog('recurring', 'Succesfuly ended subscription for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
+    \Civi::log('wmf')->notice('recurring: Successfully ended subscription for subscriber id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
   }
 
   /**
@@ -565,7 +565,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     // update the contact
     wmf_civicrm_message_contact_update($msg, $recur_record->contact_id);
 
-    watchdog('recurring', 'Subscription succesfully modified for subscription id: %subscr_id', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
+    \Civi::log('wmf')->notice('recurring: Subscription successfully modified for subscription id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
   }
 
   /**
