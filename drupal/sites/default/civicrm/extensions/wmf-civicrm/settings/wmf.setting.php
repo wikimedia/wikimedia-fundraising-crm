@@ -92,4 +92,21 @@ return [
     ],
     'settings_pages' => ['wmf-civicrm' => ['weight' => 60]],
    ],
+  'wmf_resolved_charge_descriptor' => [
+    'group name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_resolved_charge_descriptor',
+    'type' => 'Text',
+    'quick_form_type' => 'Element',
+    'html_type' => 'text',
+    'html_attributes' => array(
+      'size' => 40,
+    ),
+    'default' => 'Donation',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'title' => 'Soft descriptor for resolved pending transactions',
+    'description' => 'The first 22 or so characters of this string show up on credit card statements.',
+    'settings_pages' => ['wmf-civicrm' => ['weight' => 70]],
+  ],
 ];

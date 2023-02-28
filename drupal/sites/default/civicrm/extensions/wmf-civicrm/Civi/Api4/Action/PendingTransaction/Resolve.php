@@ -15,6 +15,7 @@ use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentData\ValidationAction;
 use SmashPig\PaymentProviders\ICancelablePaymentProvider;
 use SmashPig\PaymentProviders\IPaymentProvider;
+use SmashPig\PaymentProviders\IRecurringPaymentProfileProvider;
 use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 
@@ -618,6 +619,42 @@ class Resolve extends AbstractAction {
   }
 
   protected function approvePaymentAndReturnStatus(
+    IPaymentProvider $provider, PaymentDetailResponse $statusResult
+  ): string {
+    if (
+      !empty($this->message['recurring']) &&
+      $provider instanceof IRecurringPaymentProfileProvider
+    ) {
+      // This flow starts a recurring payment managed at the processor-side. It
+      // does not create a payment now so does not send a donations queue message.
+      // We could send a recurring queue message here to indicate the start of the
+      // recurring payment, but the code that we are replacing does not. Instead
+      // we let the IPN listener send the queue messages when it receives
+      // notifications of recurring payment start and of the successful first
+      // charge from the payment processor.
+      return $this->startRecurringPaymentAndReturnStatus($provider);
+    } else {
+      // This flow approves a one-time payment and may also save a recurring
+      // payment token for use in future recurring payments managed by the merchant
+      return $this->approveOneTimePaymentAndReturnStatus($provider, $statusResult);
+    }
+  }
+
+  protected function startRecurringPaymentAndReturnStatus(
+    IRecurringPaymentProfileProvider $provider
+  ): string {
+    $profileResult = $provider->createRecurringPaymentsProfile([
+      'gateway_session_id' => $this->message['gateway_session_id'],
+      'description' => \Civi::settings()->get('wmf_resolved_charge_descriptor'),
+      'order_id' => $this->message['order_id'],
+      'amount' => $this->message['gross'],
+      'currency' => $this->message['currency'],
+      'email' => $this->message['email'],
+    ]);
+    return $profileResult->getStatus();
+  }
+
+  protected function approveOneTimePaymentAndReturnStatus(
     IPaymentProvider $provider, PaymentDetailResponse $statusResult
   ): string {
     // Ingenico only needs the gateway_txn_id, but we send more info to
