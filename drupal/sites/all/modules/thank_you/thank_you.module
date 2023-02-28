@@ -12,7 +12,7 @@ use wmf_communication\CiviMailingMissingException;
 use wmf_communication\CiviQueueInsertException;
 
 // TODO:
-// * use more exceptions in place of watchdog/return false
+// * use more exceptions in place of logging/return false
 // * encapsulate template params structure and validation
 // * implement 'specials' contingency passthru
 // * reconsider need for twig extensions, we already do calculated values
@@ -568,7 +568,10 @@ function thank_you_send_mail($params) {
       {error_message}', ['params' => $params, 'error_message' => $e->errorMessage()]);
 
     if (strpos($e->errorMessage(), "Invalid address:") === FALSE) {
-      watchdog('thank_you', "PhpMailer died unexpectedly: {$e->errorMessage()} at {$e->getTraceAsString()}", [], WATCHDOG_ERROR);
+      \Civi::log('wmf')->error('thank_you: PhpMailer died unexpectedly: {error_message} at {trace}', [
+        'error_message' => $e->errorMessage(),
+        'trace' => $e->getTraceAsString(),
+      ]);
       $msg = "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n"
         . __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n"
         . $e->getTraceAsString();
@@ -578,10 +581,11 @@ function thank_you_send_mail($params) {
     return FALSE;
   } catch (Exception $e) {
     $debug = array_merge($email, ["html" => '', "plaintext" => '']);
-    watchdog('thank_you', 'Sending thank you message failed with generic exception for contribution: ' .
-      '<pre>' . check_plain(print_r($params, TRUE)) . "\n\n" .
-      check_plain(print_r($debug, TRUE)) . "\n\n" .
-      $e->getMessage() . '</pre>', [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('thank_you: Sending thank you message failed with generic exception for contribution: {params} {debug} {error_message}', [
+      'params' => $params,
+      'debug' => $debug,
+      'error_message' => $e->getMessage(),
+    ]);
 
     $msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
       . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
@@ -638,11 +642,9 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
     try {
       $civi_mailing = $civimail_store->getMailing('thank_you', $template_info->name, $template_info->revision);
     } catch (CiviMailingMissingException $e) {
-      watchdog(
-        'thank_you',
-        'Could not find mailing record for email with subject ' . $subject,
-        [],
-        WATCHDOG_INFO
+      \Civi::log('wmf')->info(
+        'thank_you: Could not find mailing record for email with subject {subject}',
+        ['subject' => $subject]
       );
       $civi_mailing = $civimail_store->addMailing('thank_you', $template_info->name, 'missing body', $subject, $template_info->revision);
     }
@@ -659,25 +661,19 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
     ])->execute();
 
   } catch (TemplateInfoMissingException $e) {
-    watchdog(
-      'thank_you',
-      'Could not find template info comment in thank you email template with subject ' . $subject,
-      [],
-      WATCHDOG_INFO
+    \Civi::log('wmf')->info(
+      'thank_you: Could not find template info comment in thank you email template with subject  {subject}',
+      ['subject' => $subject]
     );
   } catch (CiviQueueInsertException $e) {
-    watchdog(
-      'thank_you',
-      'CiviMail queue insert failed: ' . $e->getMessage(),
-      [],
-      WATCHDOG_INFO
+    \Civi::log('wmf')->info(
+      'thank_you: CiviMail queue insert failed: {error_message}',
+      ['error_message' => $e->getMessage()]
     );
   } catch (CiviMailingInsertException $e) {
-    watchdog(
-      'thank_you',
-      'Could not insert fallback mailing: ' . $e->getMessage(),
-      [],
-      WATCHDOG_INFO
+    \Civi::log('wmf')->info(
+      'Could not insert fallback mailing: {error_message}',
+      ['error_message' => $e->getMessage()]
     );
   }
   return $civi_queue_record;
@@ -921,11 +917,9 @@ EOT;
     'thank_you_donation_age',
     $ageMetrics
   );
-  watchdog(
-    'thank_you',
-    "Sent {$metrics['total_thank_you_emails']} thank you emails.",
-    [],
-    WATCHDOG_INFO
+  \Civi::log('wmf')->info(
+    'thank_you: Sent {total_thank_you_emails} thank you emails.',
+    ['total_thank_you_emails' => $metrics['total_thank_you_emails']]
   );
 }
 
