@@ -787,15 +787,15 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
   $enabled = variable_get('thank_you_enabled', 'true');
 
   if ($enabled === 'false') {
-    watchdog('thank_you', 'Thank You send job is disabled', [], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('thank_you: Thank You send job is disabled');
     return;
   }
   if (!$days) {
-    watchdog('thank_you', 'Number of days to send thank you mails not configured', [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('thank_you: Number of days to send thank you mails not configured');
     return;
   }
   if (!is_numeric($batch)) {
-    watchdog('thank_you', 'Thank you mail batch size not configured', [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('thank_you: Thank you mail batch size not configured');
     return;
   }
 
@@ -808,7 +808,10 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
     variable_set('thank_you_days', $days);
   }
 
-  watchdog('thank_you', "Attempting to send $batch thank you mails for contributions from the last $days days.", [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('thank_you: Attempting to send {batch_size} thank you mails for contributions from the last {number_of_days} days.', [
+    'number_of_days' => $days,
+    'batch_size' => $batch,
+  ]);
 
   $earliest = UtcDate::getUtcDatabaseString("-$days days");
   $ty_query = <<<EOT
@@ -836,15 +839,16 @@ EOT;
   $endTime = $startTime + $timeLimit;
   while ($contribution->fetch()) {
     if (time() >= $endTime) {
-      watchdog("thank_you", "Batch time limit ($timeLimit s) elapsed", [], WATCHDOG_INFO);
+      \Civi::log('wmf')->info('thank_you: Batch time limit ({timeLimit} s) elapsed', ['time_limit' => $timeLimit]);
       break;
     }
-    watchdog(
-      'thank_you',
-      "Attempting to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}], contact_id [{$contribution->contact_id}]",
-      [],
-      WATCHDOG_INFO
-    );
+    \Civi::log('wmf')->info(
+      'thank_you: Attempting to send thank you mail for contribution ID [{contribution_id}], trxn_id [{trxn_id}], contact_id [{contact_id}]', [
+       'contribution_id' => $contribution->id,
+        'trxn_id' => $contribution->trxn_id,
+        'contact_id' => $contribution->contact_id,
+
+    ]);
     try {
       thank_you_for_contribution($contribution->id);
       $consecutiveFailures = 0;
