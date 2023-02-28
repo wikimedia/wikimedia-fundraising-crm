@@ -260,7 +260,7 @@ function thank_you_get_languages() {
  * @throws \Civi\WMFException\WMFException
  */
 function thank_you_send_test($params) {
-  watchdog('thank_you', "Starting thank_you test send to {$params['recipient_address']} in {$params['locale']}", [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('thank_you: Starting thank_you test send to {recipient_address} in {locale}', ['recipient_address' => $params['recipient_address'], 'locale' => $params['locale']]);
 
   if (thank_you_send_mail($params)) {
     drupal_set_message("Test thank you email sent to {$params['recipient_address']} in {$params['locale']}", 'info');
@@ -349,25 +349,25 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
 
   // don't send a Thank You email if one has already been sent
   if (!empty($mailingData['thankyou_date']) && !$manualSend) {
-    watchdog('thank_you', 'Thank you email already sent for this transaction.', [], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('thank_you: Thank you email already sent for this transaction.');
     return FALSE;
   }
   // only send a Thank You email if we are within the specified window
   $ageInSeconds = UtcDate::getUtcTimestamp() - UtcDate::getUtcTimestamp($mailingData['receive_date']);
   if (!$manualSend && $ageInSeconds > 86400 * variable_get('thank_you_days', 14)) {
-    watchdog('thank_you', 'Contribution is older than limit, ignoring.', [], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('thank_you: Contribution is older than limit, ignoring.');
     return FALSE;
   }
 
   // check for contacts without an email address
   if (empty($mailingData['email'])) {
-    watchdog('thank_you', 'No usable email address found', [], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('thank_you: No usable email address found');
     wmf_civicrm_set_no_thank_you($contribution_id, 'no email');
     return FALSE;
   }
 
   if (!$manualSend && $mailingData['no_thank_you']) {
-    watchdog('thank_you', "Contribution has been marked no_thank_you={$mailingData['no_thank_you']}, skipping.", [], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('thank_you: Contribution has been marked no_thank_you={no_thank_you_reason}, skipping.', ['no_thank_you_reason' => $mailingData['no_thank_you']]);
     return FALSE;
   }
 
@@ -385,12 +385,12 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
     $transaction = WmfTransaction::from_unique_id($mailingData['trxn_id']);
     $is_recurring = $transaction->is_recurring;
   } catch (WMFException $ex) {
-    watchdog('thank_you', $ex->getMessage(), NULL, WATCHDOG_NOTICE);
+    \Civi::log('wmf')->notice('thank_you: {message}', ['message', $ex->getMessage()]);
   }
 
   $locale = $mailingData['preferred_language'];
   if (!$locale) {
-    watchdog('thank_you', 'Donor language unknown.  Defaulting to English...', NULL, WATCHDOG_INFO);
+    \Civi::log('wmf')->info('thank_you: Donor language unknown.  Defaulting to English...');
     $locale = 'en';
   }
   $mw_locale = wmf_common_locale_civi_to_mediawiki($locale);
@@ -434,7 +434,11 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
   $counter = Queue2civicrmTrxnCounter::instance();
 
   if ($success) {
-    watchdog('thank_you', "Thank you mail sent successfully to contact_id [". $mailingData['contact_id'] ."] for contribution id: $contribution_id to " . $params['recipient_address'], [], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('thank_you: Thank you mail sent successfully to contact_id {contact_id} for contribution id: {contribution_id} to {recipient_address}', [
+      'contact_id' => $mailingData['contact_id'],
+      'contribution_id' => $contribution_id,
+      'recipient_address' => $params['recipient_address'],
+    ]);
     thank_you_update_ty_date($mailingData);
     $counter->increment($mailingData['gateway']);
     $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
@@ -448,7 +452,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
 
 function thank_you_update_ty_date($contribution) {
   $date = wmf_common_date_unix_to_civicrm(time());
-  watchdog('thank_you', "Updating TY send date to: $date", [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('thank_you: Updating TY send date to: {date}', ['date' => $date]);
 
   // We go directly to the database table here to avoid setting off a cascade
   // of line item updates and recalculations.
