@@ -23,7 +23,6 @@
     "require": {
         "amzn/login-and-pay-with-amazon-sdk-php": "^2.5",
         "coderkungfu/php-queue": "^1.0",
-        "cogpowered/finediff": "0.*",
         "ext-intl": "*",
         "wikimedia/donation-interface": "2.5.8.14",
         "wikimedia/smash-pig": "0.8.3.17",
