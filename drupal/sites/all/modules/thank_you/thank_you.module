@@ -466,8 +466,9 @@ function thank_you_update_ty_date($contribution) {
       2 => [$contribution['contribution_id'], 'Integer'],
     ]);
     return TRUE;
-  } catch (Exception $ex) {
-    watchdog('thank_you', 'Updating successful TY send failed with details: ' . print_r($ex, TRUE), [], WATCHDOG_ERROR);
+  }
+  catch (Exception $ex) {
+    \Civi::log('wmf')->error('thank_you: Updating successful TY send failed with details: {message}', ['message' => $ex->getMessage()]);
   }
   return FALSE;
 }
