@@ -58,8 +58,9 @@ function refund_queue_consume_drush_help( $section ) {
  * DonationInterface i18n files.
  */
 function drush_refund_queue_consume() {
-  watchdog('refund', 'Executing: drush_refund_queue_consume');
-  module_invoke( 'refund', 'batch_process' );
+  civicrm_initialize();
+  \Civi::log('wmf')->info('refund: Executing: drush_refund_queue_consume');
+  module_invoke('refund', 'batch_process');
   $errors = drush_get_error_log();
   if (!empty($errors)){
     echo "\n***ERRORS***";

@@ -83,13 +83,11 @@ function refund_batch_process() {
   wmf_common_create_smashpig_context('refund');
 
   if (variable_get('refund_disable', FALSE)) {
-    watchdog('wmf_refund_qc', 'Job is disabled.  Exiting.', NULL, WATCHDOG_INFO);
+    \Civi::log('wmf')->info('refund: Job is disabled.  Exiting.');
     return;
   }
 
-  civicrm_api_classapi(); # hah
-
-  watchdog('refund', 'Executing: refund_batch_process');
+  \Civi::log('wmf')->info('refund: Executing: refund_batch_process');
 
   $consumer = new RefundQueueConsumer (
     'refund',
@@ -101,10 +99,10 @@ function refund_batch_process() {
   $processed = $consumer->dequeueMessages();
 
   if ($processed > 0) {
-    watchdog('refund', 'Successfully processed ' . $processed . ' refund(s).');
+    \Civi::log('wmf')->info('refund: Successfully processed {processed} refund(s).', ['processed' => $processed]);
   }
   else {
-    watchdog('refund', 'No refunds processed.');
+    \Civi::log('wmf')->info('refund: No refunds processed.');
   }
 }
 
