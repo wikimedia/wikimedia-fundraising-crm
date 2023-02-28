@@ -84,9 +84,9 @@ class Save extends AbstractAction {
     if (!array_key_exists('contact_type', $msg)) {
       $msg['contact_type'] = "Individual";
     }
-    elseif ($msg['contact_type'] !== "Individual" && $msg['contact_type'] !== "Organization") {
+    elseif ($msg['contact_type'] !== 'Individual' && $msg['contact_type'] !== 'Organization') {
       // looks like an unsupported type was sent, revert to default
-      watchdog('wmf_civicrm', 'Non-supported contact_type received: %type', ['%type' => print_r($msg['contact_type'], TRUE)], WATCHDOG_INFO);
+      \Civi::log('wmf')->warning('wmf_civicrm: Non-supported contact_type received: {type}', ['type' => $msg['contact_type']]);
       $msg['contact_type'] = "Individual";
     }
 
@@ -208,7 +208,7 @@ class Save extends AbstractAction {
       $this->startTimer( 'create_contact_civi_api' );
       $contact_result = civicrm_api3('Contact', 'Create', $contact);
       $this->stopTimer( 'create_contact_civi_api' );
-      watchdog('wmf_civicrm', 'Successfully ' . ($contact_id ? 'updated' : 'created ') . ' contact: %id', ['%id' => $contact_result['id']], WATCHDOG_DEBUG);
+      \Civi::log('wmf')->debug('wmf_civicrm: Successfully ' . ($contact_id ? 'updated' : 'created ') . ' contact: {id}', ['id' => $contact_result['id']]);
       $this->createEmployerRelationshipIfSpecified($contact_result['id'], $msg);
       if (WmfDatabase::isNativeTxnRolledBack()) {
         throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
