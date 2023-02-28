@@ -2,22 +2,10 @@
 /**
  * Implementation of hook_drush_command()
  */
-function exchange_rates_drush_command() {
+function exchange_rates_drush_command(): array {
   $items['exchange-rates-update'] = [
     'description' => 'Updates exchange rates from provider.',
     'examples' => ['drush exchange-rates-update'],
-  ];
-  $items['exchange-rates-backfill'] = [
-    'description' => 'Retrieves and stores daily exchange rates for a date range.',
-    'examples' => [
-      'drush exchange-rates-backfill',
-      'drush exchange-rates-backfill --start=2014-06-20',
-    ],
-    'options' => [
-      'start' => 'Date of earliest rates to request in YYYY-MM-DD format',
-      'end' => 'Date of latest rates to request in YYYY-MM-DD format',
-      'recalculate' => 'Whether to recalculate contributions from the same range',
-    ],
   ];
   return $items;
 }
@@ -26,23 +14,9 @@ function exchange_rates_drush_command() {
  * Implementation of hook_drush_help()
  */
 function exchange_rates_drush_help($section) {
-  switch ($section) {
-    case 'drush:exchange-rates-update':
-      return dt('Attempts to retrieve the latest exchange rates from a providers, stopping when a request succeeds and storing results in the database.');
-    case 'drush:exchange-rates-backfill':
-      return dt('Backfills daily exchanges rates across a range of dates.  --start and --end parameters take a date in YYYY-MM-DD format.  If run with no parameters, will backfill starting from last updated date.  When run with --recalculate=true, will recalculate all non-USD contributions in the same range.');
-  }
+  return dt('Attempts to retrieve the latest exchange rates from a providers, stopping when a request succeeds and storing results in the database.');
 }
 
 function drush_exchange_rates_update() {
   module_invoke('exchange_rates', 'update_all');
-}
-
-function drush_exchange_rates_backfill() {
-  $start_string = drush_get_option('start');
-  $end_string = drush_get_option('end');
-  $recalculate = filter_var(drush_get_option('recalculate', FALSE), FILTER_VALIDATE_BOOLEAN);
-  $start = $start_string ? new DateTime($start_string, new DateTimeZone('UTC')) : NULL;
-  $end = $end_string ? new DateTime($end_string, new DateTimeZone('UTC')) : NULL;
-  module_invoke('exchange_rates', 'backfill', $start, $end, $recalculate);
 }
