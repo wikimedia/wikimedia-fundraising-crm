@@ -56,12 +56,10 @@ class CiviMailTest extends CiviMailTestBase {
 		);
 	}
 
-	/**
-	 * @expectedException wmf_communication\CiviMailingMissingException
-	 */
-	public function testMissingMailing() {
-		$this->mailStore->getMailing( 'fakeSource', 'fakeName', mt_rand() );
-	}
+  public function testMissingMailing(): void {
+    $this->expectException(CiviMailingMissingException::class);
+    $this->mailStore->getMailing( 'fakeSource', 'fakeName', mt_rand() );
+  }
 
 	public function testAddQueueRecord() {
 		$name = 'test_mailing';

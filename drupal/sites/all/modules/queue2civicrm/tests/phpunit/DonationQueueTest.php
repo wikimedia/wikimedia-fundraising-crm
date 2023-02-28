@@ -90,7 +90,9 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     );
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
 
-    $this->assertArraySubset($expected, $contribution);
+    foreach ($expected as $key => $item) {
+      $this->assertEquals($item, $contribution[$key]);
+    }
 
     $contribution2 = civicrm_api3(
       'Contribution',
@@ -120,7 +122,9 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'invoice_id' => $message2->get('order_id'),
       $campaignField => 'Benefactor Gift',
     );
-    $this->assertArraySubset($expected, $contribution2);
+    foreach ($expected as $key => $item) {
+      $this->assertEquals($item, $contribution2[$key]);
+    }
     $tracking = db_select('contribution_tracking', 'contribution_tracking')
       ->fields('contribution_tracking')
       ->condition('contribution_id', $contribution['id'])
@@ -176,8 +180,9 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       )
     );
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-
-    $this->assertArraySubset($expected, $contribution);
+    foreach ($expected as $key => $item) {
+      $this->assertEquals($item, $contribution[$key]);
+    }
   }
 
   /**
@@ -471,8 +476,10 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => "{$message2->get('gateway_txn_id')}",
       'original_queue' => 'test',
     );
-    $this->assertArraySubset($expected, $rows[0],
-      'Stored message had expected contents');
+    foreach ($expected as $key => $value) {
+      $this->assertEquals($value, $rows[0][$key], 'Stored message had expected contents');
+    }
+
     $this->assertNotNull($rows[0]['retry_date'], 'Should retry');
     $storedMessage = json_decode($rows[0]['message'], TRUE);
     $storedInvoiceId = $storedMessage['invoice_id'];
@@ -488,4 +495,5 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     );
     $this->assertEquals(array('DuplicateInvoiceId'), $storedTags);
   }
+
 }

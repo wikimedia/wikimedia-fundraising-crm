@@ -247,14 +247,16 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $contributionIds = array_keys($contributions['values']);
     $this->deleteThings['Contribution'][] = $contributionIds[1];
     $newContribution = $contributions['values'][$contributionIds[1]];
-    $this->assertArraySubset([
+    foreach ([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
       'total_amount' => '12.34',
       'trxn_id' => '000000850010000188130000200001',
       'contribution_status' => 'Completed',
       'invoice_id' => $expectedInvoiceId,
-    ], $newContribution);
+    ] as $key => $value) {
+      $this->assertEquals($value, $newContribution[$key]);
+    }
     // Check the updated date is at least 28 days further along
     $newContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $contributionRecur['id'],
@@ -351,14 +353,16 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $contributionIds = array_keys($contributions['values']);
     $this->deleteThings['Contribution'][] = $contributionIds[0];
     $newContribution = $contributions['values'][$contributionIds[0]];
-    $this->assertArraySubset([
+    foreach ([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
       'total_amount' => '9.00',
       'trxn_id' => '000000850010000188130000200001',
       'contribution_status' => 'Completed',
       'invoice_id' => $expectedInvoiceId,
-    ], $newContribution);
+    ] as $key => $value) {
+      $this->assertEquals($value, $newContribution[$key]);
+    }
     // Check the updated date is at least 28 days further along
     $newContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $contributionRecur['id'],
@@ -518,15 +522,16 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $this->deleteThings['Contribution'][] = $contributionIds[1];
 
     $latestContribution = $contributions['values'][$contributionIds[1]];
-    $this->assertArraySubset([
+    foreach ([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
       'total_amount' => '9.00',
       'trxn_id' => '000000850010000188140000200001',
       'contribution_status' => 'Completed',
       'invoice_id' => $secondInvoiceId,
-    ], $latestContribution);
-
+    ] as $key => $value) {
+      $this->assertEquals($value, $latestContribution[$key]);
+    }
 
     // check the next contribution date is at least 28 days further along
     $newContributionRecur = $this->callAPISuccess('ContributionRecur', 'getsingle', [
@@ -1289,14 +1294,16 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $contributionIds = array_keys($contributions['values']);
     $this->deleteThings['Contribution'][] = $contributionIds[1];
     $newContribution = $contributions['values'][$contributionIds[1]];
-    $this->assertArraySubset([
+    foreach ([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
       'total_amount' => '12.34',
       'trxn_id' => '000000850010000188130000200001',
       'contribution_status' => 'Completed',
       'invoice_id' => $expectedInvoiceId,
-    ], $newContribution);
+    ] as $key => $value) {
+      $this->assertEquals($value, $newContribution[$key]);
+    }
 
     // Check the invoice Ids
     $this->assertEquals($expectedInvoiceId, $newContribution['invoice_id']);

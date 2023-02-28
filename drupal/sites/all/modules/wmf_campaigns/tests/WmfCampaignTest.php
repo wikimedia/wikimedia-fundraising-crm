@@ -81,11 +81,10 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
    * This is a bit silly - just tests core Civi behavior
    * that throws an exception when setting a custom field
    * to a value outside of the expected range.
-   *
-   * @expectedException CiviCRM_API3_Exception
-   * @expectedExceptionMessageRegExp /fooCamp.*NOT/
    */
-  function testNonMatchingDonation() {
+  public function testNonMatchingDonation(): void {
+    $this->expectException(CiviCRM_API3_Exception::class);
+    $this->expectExceptionMessageMatches("/fooCamp.*NOT/");
     $result = civicrm_api3('Contribution', 'create', [
       'contact_id' => $this->contact_id,
       'contribution_type' => 'Cash',

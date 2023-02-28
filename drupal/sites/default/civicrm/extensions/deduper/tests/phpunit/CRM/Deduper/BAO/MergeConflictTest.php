@@ -154,7 +154,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @return array
    */
   public function booleanDataProvider(): array {
-    return [[0], [1]];
+    return [[FALSE], [TRUE]];
   }
 
   /**
