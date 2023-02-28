@@ -1,17 +1,18 @@
 <?php
 
 use queue2civicrm\refund\RefundQueueConsumer;
+
 /**
  * Implements hook_menu
  */
 function wmf_refund_qc_menu() {
-  $items[ 'admin/config/queue2civicrm/refund_qc' ] = array(
-    'title'            => 'Refund',
-    'description'      => 'Configure refund queue settings',
-    'access arguments' => array( 'administer queue2civicrm' ),
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array( 'refund_qc_settings' ),
-  );
+  $items['admin/config/queue2civicrm/refund_qc'] = [
+    'title' => 'Refund',
+    'description' => 'Configure refund queue settings',
+    'access arguments' => ['administer queue2civicrm'],
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['refund_qc_settings'],
+  ];
   return $items;
 }
 
@@ -21,33 +22,33 @@ function wmf_refund_qc_menu() {
  * @return array Of form components.
  */
 function refund_qc_settings() {
-  $form = array();
+  $form = [];
 
-  $form['description'] = array(
-    '#type'        => 'markup',
+  $form['description'] = [
+    '#type' => 'markup',
     '#markup' => t('<p>This queue contains refund notifications, usually sent by the gateway to our IPN listener, or a nightly audit manifest.  We honor these notifications by refunding the associated contributions in our CRM.</p>'),
-  );
+  ];
 
-  $form['refund_disable'] = array(
+  $form['refund_disable'] = [
     '#type' => 'checkbox',
     '#title' => t('Disable job'),
     '#description' => t('If checked, no message processing will be performed.'),
-    '#default_value' => variable_get('refund_disable', false),
-  );
+    '#default_value' => variable_get('refund_disable', FALSE),
+  ];
 
-  $form['refund_batch'] = array(
-    '#type'          => 'select',
-    '#title'         => t('Cron batch size'),
-    '#description'   => t('Maximum number of donations processed by a refund job'),
+  $form['refund_batch'] = [
+    '#type' => 'select',
+    '#title' => t('Cron batch size'),
+    '#description' => t('Maximum number of donations processed by a refund job'),
     '#default_value' => variable_get('refund_batch', 0),
-    '#options'       => array(
-      0  => 'Unlimited',
-      1   => 1,
-      5   => 5,
-      10  => 10,
-      25  => 25,
-      50  => 50,
-      75  => 75,
+    '#options' => [
+      0 => 'Unlimited',
+      1 => 1,
+      5 => 5,
+      10 => 10,
+      25 => 25,
+      50 => 50,
+      75 => 75,
       100 => 100,
       125 => 125,
       150 => 150,
@@ -56,31 +57,33 @@ function refund_qc_settings() {
       300 => 300,
       500 => 500,
       750 => 750,
-      1000 => 1000
-    ),
-  );
+      1000 => 1000,
+    ],
+  ];
 
-  $form['refund_batch_time'] = array(
+  $form['refund_batch_time'] = [
     '#type' => 'textfield',
     '#title' => t('Job time limit (in seconds)'),
     '#description' => t('Maximum elapsed duration of a refund job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
     '#required' => TRUE,
     '#default_value' => variable_get('refund_batch_time', 90),
-  );
+  ];
 
   return system_settings_form($form);
 }
 
 /**
- * Callback from Drush that actually executes the loop for processing messages in the queue.
+ * Callback from Drush that actually executes the loop for processing messages
+ * in the queue.
+ *
  * @ref refund_process_message
  * @ref drush_refund_queue_consume
  */
 function refund_batch_process() {
-  wmf_common_create_smashpig_context( 'refund' );
+  wmf_common_create_smashpig_context('refund');
 
-  if ( variable_get('refund_disable', false) ) {
-    watchdog( 'wmf_refund_qc', 'Job is disabled.  Exiting.', NULL, WATCHDOG_INFO );
+  if (variable_get('refund_disable', FALSE)) {
+    watchdog('wmf_refund_qc', 'Job is disabled.  Exiting.', NULL, WATCHDOG_INFO);
     return;
   }
 
@@ -88,14 +91,14 @@ function refund_batch_process() {
 
   watchdog('refund', 'Executing: refund_batch_process');
 
-	$consumer = new RefundQueueConsumer (
-		'refund',
-		variable_get('refund_batch_time', 0),
-		variable_get('refund_batch', 0)
+  $consumer = new RefundQueueConsumer (
+    'refund',
+    variable_get('refund_batch_time', 0),
+    variable_get('refund_batch', 0)
 
-	);
+  );
 
-	$processed = $consumer->dequeueMessages();
+  $processed = $consumer->dequeueMessages();
 
   if ($processed > 0) {
     watchdog('refund', 'Successfully processed ' . $processed . ' refund(s).');
