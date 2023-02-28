@@ -53,8 +53,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
         wmf_civicrm_message_create_contact($message);
 
         $contact_id = $message['contact_id'];
-        watchdog('opt_in', "New contact created on opt-in: $contact_id", [],
-          WATCHDOG_INFO);
+        \Civi::log('wmf')->info('opt_in:  New contact created on opt-in: {contact_id}', ['contact_id' => $contact_id]);
       }
       else {
         // look for non-primary email, if found, don't update opt-in
@@ -72,13 +71,11 @@ class OptInQueueConsumer extends WmfQueueConsumer {
           $contactParams = array_merge($contactParams, $this->getTrackingFields($message));
 
           $contact = civicrm_api3('Contact', 'create', $contactParams);
-          watchdog('opt_in', "New contact created on opt-in: {$contact['id']}", [],
-            WATCHDOG_INFO);
+          \Civi::log('wmf')->info('opt_in: New contact created on opt-in: {contact_id}', ['contact_id' => $contact['id']],);
         }
         else {
           // TODO: They entered an already existing non-primary email, opt them in and make the entered email primary
-          watchdog('opt_in', "Email already exists with no associated contacts: {$email}", [],
-            WATCHDOG_INFO);
+          \Civi::log('wmf')->info('opt_in: Email already exists with no associated contacts: {email}', ['email' => $email]);
         }
       }
     }
@@ -87,9 +84,8 @@ class OptInQueueConsumer extends WmfQueueConsumer {
       // Excellent -- we have a collection of contacts to opt in now! :)
       foreach ($contacts as $id => $contact) {
         if ($contact[$this->commsMap['opt_in']] == TRUE) {
-          watchdog('opt_in',
-            "$email: Contact with ID {$contact['id']} already opted in.", [],
-            WATCHDOG_NOTICE);
+          \Civi::log('wmf')->notice(
+            'optin: Contact with ID {contact_id} already opted in for {email}.', ['email' => $email, 'contact_id' => $contact['id']]);
           continue;
         }
         else {
@@ -99,7 +95,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
         // And opt them in
         $this->optInContacts($optUsIn, $message);
         $count = count($optUsIn);
-        watchdog('opt_in', "$email: Successfully updated $count rows.");
+        \Civi::log('wmf')->info('opt_in:  {email}: Successfully updated {count} rows.', ['email' => $email, 'count' => $count]);
       }
     }
   }
@@ -169,8 +165,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
       civicrm_api3('Email', 'replace', $params );
     }
 
-    watchdog('opt_in', "Contact updated for opt-in: $id", [],
-      WATCHDOG_INFO);
+   \Civi::log('wmf')->info('opt_in: Contact updated for opt-in: {id}', ['id' => $id]);
   }
 
   /**
