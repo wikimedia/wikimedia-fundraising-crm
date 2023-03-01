@@ -61,9 +61,8 @@ function banner_history_settings_page_args() {
  * Entry point from banner-history-queue-consume drush command
  */
 function banner_history_queue_consume() {
-  Civi::log('wmf')->info('banner_history : Executing: banner_history_queue_consume');
-
   civicrm_initialize();
+  Civi::log('wmf')->info('banner_history : Executing: banner_history_queue_consume');
 
   wmf_common_create_smashpig_context('banner_history');
 
