@@ -173,6 +173,12 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
         $request[$smashPigName] = $params[$civiName];
       }
     }
+    // One key gets mapped to two different SmashPig parameters
+    // TODO: revisit where we are storing these identifiers and
+    // whether we should add a custom table managed by this extension.
+    if (array_key_exists('recurring_invoice_id', $params)) {
+      $request['fiscal_number'] = $params['recurring_invoice_id'];
+    }
     return $request;
   }
 
