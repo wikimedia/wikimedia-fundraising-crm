@@ -112,6 +112,8 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function tearDown(): void {
+    global $civicrm_setting;
+    $civicrm_setting['CiviCRM Preferences']['allowPermDeleteFinancial'] = TRUE;
     if ($this->originalFailureMessageTemplate) {
       unset($this->originalFailureMessageTemplate['workflow_id']);
       MessageTemplate::update(FALSE)->setValues($this->originalFailureMessageTemplate)->execute();
@@ -142,8 +144,19 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
       'contact_type' => 'Individual',
       'first_name' => 'Harry',
       'last_name' => 'Henderson',
-      'email' => 'harry@hendersons.net',
       'preferred_language' => 'en_US',
+    ]);
+    $this->callAPISuccess('Email', 'create', [
+      'contact_id' => $result['id'],
+      'location_type_id' => 'Home',
+      'is_primary' => 1,
+      'email' => 'harry@hendersons.net',
+    ]);
+    $this->callAPISuccess('Address', 'create', [
+      'contact_id' => $result['id'],
+      'location_type_id' => 'Billing',
+      'is_primary' => 1,
+      'country_id' => 'US',
     ]);
     $this->deleteThings['Contact'][] = $result['id'];
     return $result['values'][$result['id']];

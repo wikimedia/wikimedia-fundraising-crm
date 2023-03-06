@@ -210,6 +210,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       ->with([
         'recurring_payment_token' => 'abc123-456zyx-test12',
         'amount' => 12.34,
+        'country' => 'US',
         'currency' => 'USD',
         'first_name' => 'Harry',
         'last_name' => 'Henderson',
@@ -316,6 +317,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       ->with([
         'recurring_payment_token' => 'abc123-456zyx-test12',
         'amount' => 9.00,
+        'country' => 'US',
         'currency' => 'USD',
         'first_name' => 'Harry',
         'last_name' => 'Henderson',
@@ -423,6 +425,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         [
           'recurring_payment_token' => 'abc123-456zyx-test12',
           'amount' => 9.00,
+          'country' => 'US',
           'currency' => 'USD',
           'first_name' => 'Harry',
           'last_name' => 'Henderson',
@@ -438,6 +441,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         [
           'recurring_payment_token' => 'abc123-456zyx-test12',
           'amount' => 9.00,
+          'country' => 'US',
           'currency' => 'USD',
           'first_name' => 'Harry',
           'last_name' => 'Henderson',
@@ -691,6 +695,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       ->with([
         'recurring_payment_token' => 'abc123-456zyx-test12',
         'amount' => 11.22,
+        'country' => 'US',
         'currency' => 'EUR',
         'first_name' => 'Harry',
         'last_name' => 'Henderson',
@@ -1163,6 +1168,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $firstCallParams = [
       'recurring_payment_token' => 'abc123-456zyx-test12',
       'amount' => '12.34',
+      'country' => 'US',
       'currency' => 'USD',
       'first_name' => 'Harry',
       'last_name' => 'Henderson',
@@ -1177,6 +1183,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $secondCallParams = [
       'recurring_payment_token' => 'abc123-456zyx-test12',
       'amount' => '12.34',
+      'country' => 'US',
       'currency' => 'USD',
       'first_name' => 'Harry',
       'last_name' => 'Henderson',
@@ -1257,6 +1264,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       ->with([
         'recurring_payment_token' => 'abc123-456zyx-test12',
         'amount' => 12.34,
+        'country' => 'US',
         'currency' => 'USD',
         'first_name' => 'Harry',
         'last_name' => 'Henderson',

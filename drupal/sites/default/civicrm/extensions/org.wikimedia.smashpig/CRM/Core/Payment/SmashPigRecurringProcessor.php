@@ -3,6 +3,7 @@
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
+use Civi\Api4\Contact;
 use Civi\Api4\FailureEmail;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
@@ -432,10 +433,11 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   protected function getPaymentParams(
     $recurringPayment, $previousContribution
   ) {
-    $donor = civicrm_api3('Contact', 'getsingle', [
-      'id' => $recurringPayment['contact_id'],
-      'return' => ['first_name', 'last_name', 'email', 'preferred_language'],
-    ]);
+    $donor = Contact::get(FALSE)
+      ->addSelect('address_primary.country_id:abbr', 'first_name', 'last_name', 'email_primary.email', 'preferred_language')
+      ->addWhere('id', '=', $recurringPayment['contact_id'])
+      ->execute()
+      ->first();
     $currentInvoiceId = self::getNextInvoiceId(
       $previousContribution['invoice_id'],
       $recurringPayment['failure_count']
@@ -449,10 +451,11 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
     return [
       'amount' => $recurringPayment['amount'],
+      'country' => $donor['address_primary.country_id:abbr'],
       'currency' => $recurringPayment['currency'],
       'first_name' => $donor['first_name'],
       'last_name' => $donor['last_name'],
-      'email' => $donor['email'],
+      'email' => $donor['email_primary.email'],
       'invoice_id' => $currentInvoiceId,
       'payment_processor_id' => $recurringPayment['payment_processor_id'],
       'contactID' => $previousContribution['contact_id'],
