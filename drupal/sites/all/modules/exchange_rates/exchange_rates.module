@@ -7,73 +7,73 @@ use \Civi\ExchangeException\ExchangeRatesException;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 function exchange_rates_menu() {
-  $items = array();
+  $items = [];
 
-  $items['admin/config/exchange_rates'] = array(
+  $items['admin/config/exchange_rates'] = [
     'title' => 'Exchange rates',
     'page callback' => 'system_admin_menu_block_page',
     'file' => 'system.admin.inc',
     'file path' => drupal_get_path('module', 'system'),
-    'access arguments' => array('administer site configuration'),
-  );
-  $items['admin/config/exchange_rates/key'] = array(
+    'access arguments' => ['administer site configuration'],
+  ];
+  $items['admin/config/exchange_rates/key'] = [
     'title' => t('Configure Credentials'),
     'description' => t('Set API key values for exchange rate providers that require authentication'),
-	'page callback' => 'drupal_get_form',
-    'page arguments' => array('exchange_rates_credentials_form'),
-    'access arguments' => array('administer site configuration'),
-	'type' => MENU_NORMAL_ITEM,
-  );
-  $items['admin/config/exchange_rates/show'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['exchange_rates_credentials_form'],
+    'access arguments' => ['administer site configuration'],
+    'type' => MENU_NORMAL_ITEM,
+  ];
+  $items['admin/config/exchange_rates/show'] = [
     'title' => 'Display exchange rates',
     'description' => 'List the current exchange rates for every country, and date retrieved.',
     'page callback' => 'exchange_rates_listing',
-    'access arguments' => array('access content'),
-  );
-  $items['admin/config/exchange_rates/update'] = array(
+    'access arguments' => ['access content'],
+  ];
+  $items['admin/config/exchange_rates/update'] = [
     'title' => t('Update exchange rates'),
     'description' => 'Force an update of the cached exchange rates.  This should only be necessary during development.',
     'page callback' => 'exchange_rates_manual_update',
-    'access arguments' => array('administer site configuration'),
-  );
+    'access arguments' => ['administer site configuration'],
+  ];
 
   return $items;
 }
 
 function exchange_rates_credentials_form() {
-	$form = array();
+  $form = [];
 
-	$form['exchange_rates_quote_oanda'] = array(
-		'#type' => 'select',
-		'#title' => 'OANDA data request',
-		'#required' => TRUE,
-		'#options' => array(
-			'bid' => 'Average bid',
-			'low_bid' => 'Low bid',
-			'high_bid' => 'High bid',
-			'midpoint' => 'Midpoint between average bid and average ask'
-		),
-		'#default_value' => variable_get('exchange_rates_quote_oanda', 'bid'),
-		'#description' => 'Which data point to request from OANDA for each currency',
-	);
+  $form['exchange_rates_quote_oanda'] = [
+    '#type' => 'select',
+    '#title' => 'OANDA data request',
+    '#required' => TRUE,
+    '#options' => [
+      'bid' => 'Average bid',
+      'low_bid' => 'Low bid',
+      'high_bid' => 'High bid',
+      'midpoint' => 'Midpoint between average bid and average ask',
+    ],
+    '#default_value' => variable_get('exchange_rates_quote_oanda', 'bid'),
+    '#description' => 'Which data point to request from OANDA for each currency',
+  ];
 
-	$form['exchange_rates_key_oanda'] = array(
-		'#type' => 'password',
-		'#title' => 'OANDA API Key',
-		'#required' => TRUE,
-		'#default_value' => variable_get('exchange_rates_key_oanda', ''),
-		'#description' => 'Key for OANDA API calls (found on OANDA account settings page)',
-	);
+  $form['exchange_rates_key_oanda'] = [
+    '#type' => 'password',
+    '#title' => 'OANDA API Key',
+    '#required' => TRUE,
+    '#default_value' => variable_get('exchange_rates_key_oanda', ''),
+    '#description' => 'Key for OANDA API calls (found on OANDA account settings page)',
+  ];
 
-	return system_settings_form($form);
+  return system_settings_form($form);
 }
 
 function exchange_rates_get_currencies() {
-  static $currencies = array();
+  static $currencies = [];
   if (empty($currencies)) {
-    $currencies = array();
+    $currencies = [];
     $res = db_query('SELECT currency FROM {exchange_rates} GROUP BY currency ORDER BY currency');
-    foreach ( $res as $row ) {
+    foreach ($res as $row) {
       $currencies[$row->currency] = $row->currency;
     }
   }
@@ -87,22 +87,23 @@ function exchange_rates_manual_update() {
 }
 
 function exchange_rates_listing() {
-  $cols = array(
+  $cols = [
     t('Currency'),
     t('Value in USD'),
-  );
+  ];
 
   $rates = exchange_rates_get_conversions();
 
-  $content[] = t('Last updated: %updated', array('%updated' => format_date(variable_get('exchange_rates_bank_update', 0))));
-  $content[] = t('Remaining quotes: %remaining', array('%remaining' => variable_get('exchange_rates_remaining_quotes', 'unknown')));
-  $content[] = theme( 'table', array( 'header' => $cols, 'rows' => $rates ) );
+  $content[] = t('Last updated: %updated', ['%updated' => format_date(variable_get('exchange_rates_bank_update', 0))]);
+  $content[] = t('Remaining quotes: %remaining', ['%remaining' => variable_get('exchange_rates_remaining_quotes', 'unknown')]);
+  $content[] = theme('table', ['header' => $cols, 'rows' => $rates]);
 
   return implode("<br />\n", $content);
 }
 
 /**
- * Return a map from (currency, rate), where the rate is given as USD equivalent.
+ * Return a map from (currency, rate), where the rate is given as USD
+ * equivalent.
  */
 function exchange_rates_get_conversions() {
   $sql = <<<EOS
@@ -122,12 +123,12 @@ ORDER BY currency ASC
 EOS;
 
   $rates = db_query($sql);
-  $rows = array();
-  foreach ( $rates as $conversion ) {
-    $rows[] = array(
+  $rows = [];
+  foreach ($rates as $conversion) {
+    $rows[] = [
       $conversion->currency,
       $conversion->latest_value,
-    );
+    ];
   }
   return $rows;
 }
@@ -141,13 +142,16 @@ function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
 
   $rate = exchange_rate_cache_get($from_currency, $timestamp);
   if (!$rate) {
-    $rate = db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = :currency AND bank_update <= :date ORDER BY bank_update DESC', 0, 1, array( ':currency' => $from_currency, ':date' => $timestamp ))->fetchField();
+    $rate = db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = :currency AND bank_update <= :date ORDER BY bank_update DESC', 0, 1, [
+      ':currency' => $from_currency,
+      ':date' => $timestamp,
+    ])->fetchField();
     exchange_rate_cache_set($from_currency, $timestamp, $rate);
   }
 
   // If a rate can't be found, use the oldest one on file.
   if (!$rate) {
-    $rate = db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = :currency ORDER BY bank_update', 0, 1, array( ':currency' => $from_currency ))->fetchField();
+    $rate = db_query_range('SELECT value_in_usd FROM {exchange_rates} WHERE currency = :currency ORDER BY bank_update', 0, 1, [':currency' => $from_currency])->fetchField();
   }
 
   if (!$rate) {
@@ -158,109 +162,111 @@ function exchange_rate_convert($from_currency, $amount = 1, $timestamp = NULL) {
   }
 
   if (!$rate) {
-    throw new ExchangeRatesException(t("No conversion available for currency !cur", array("!cur" => $from_currency)));
+    throw new ExchangeRatesException(t("No conversion available for currency !cur", ["!cur" => $from_currency]));
   }
 
   return $amount * $rate;
 }
 
 function exchange_rate_cache_key($currency, $timestamp) {
-	// Only need one entry per currency per day
-	$rounded = floor( $timestamp / ( 24 * 60 * 60 ) );
-    return "$currency-$rounded";
+  // Only need one entry per currency per day
+  $rounded = floor($timestamp / (24 * 60 * 60));
+  return "$currency-$rounded";
 }
 
 function exchange_rate_cache_get($currency, $timestamp) {
-    global $_exchange_rate_cache;
+  global $_exchange_rate_cache;
 
-    $key = exchange_rate_cache_key($currency, $timestamp);
-    if (!empty($_exchange_rate_cache) && array_key_exists($key, $_exchange_rate_cache)) {
-        return $_exchange_rate_cache[$key];
-    }
+  $key = exchange_rate_cache_key($currency, $timestamp);
+  if (!empty($_exchange_rate_cache) && array_key_exists($key, $_exchange_rate_cache)) {
+    return $_exchange_rate_cache[$key];
+  }
 }
 
 function exchange_rate_cache_set($currency, $timestamp, $rate) {
-    global $_exchange_rate_cache;
+  global $_exchange_rate_cache;
 
-    $key = exchange_rate_cache_key($currency, $timestamp);
-    $_exchange_rate_cache[$key] = $rate;
+  $key = exchange_rate_cache_key($currency, $timestamp);
+  $_exchange_rate_cache[$key] = $rate;
 }
 
-function exchange_rates_update_all( $date = null ) {
+function exchange_rates_update_all($date = NULL) {
   civicrm_initialize();
-	// Ouroboros
-	$currencies = array_keys( CurrencyRates::getCurrencyRates() );
+  // Ouroboros
+  $currencies = array_keys(CurrencyRates::getCurrencyRates());
 
-	$retrievers = array();
-	$oanda_key = variable_get( 'exchange_rates_key_oanda', '' );
-	$oanda_quote = variable_get( 'exchange_rates_quote_oanda', 'bid' );
-	if ( $oanda_key === '' ) {
-		wmf_common_failmail( 'exchange_rates', 'OANDA API key not set!  Will fall back to ECB' );
-	} else {
-		$retrievers[] = new OandaRetriever( 'drupal_http_request', $oanda_key, $oanda_quote );
-	}
+  $retrievers = [];
+  $oanda_key = variable_get('exchange_rates_key_oanda', '');
+  $oanda_quote = variable_get('exchange_rates_quote_oanda', 'bid');
+  if ($oanda_key === '') {
+    wmf_common_failmail('exchange_rates', 'OANDA API key not set!  Will fall back to ECB');
+  }
+  else {
+    $retrievers[] = new OandaRetriever('drupal_http_request', $oanda_key, $oanda_quote);
+  }
 
-	$retrievers[] = new EcbRetriever( 'drupal_http_request' );
-	$result = null;
+  $retrievers[] = new EcbRetriever('drupal_http_request');
+  $result = NULL;
 
-	foreach ( $retrievers as $retriever ) {
-		try {
-			$result = $retriever->updateRates( $currencies, $date );
-			break;
-		} catch ( ExchangeRateUpdateException $ex) {
-			wmf_common_failmail( 'exchange_rates', '', $ex );
-		}
-	}
-	if ( $result === null ) {
-		wmf_common_failmail( 'exchange_rates', 'Could not update exchange rates from any provider!' );
-		return;
-	}
+  foreach ($retrievers as $retriever) {
+    try {
+      $result = $retriever->updateRates($currencies, $date);
+      break;
+    }
+    catch (ExchangeRateUpdateException $ex) {
+      wmf_common_failmail('exchange_rates', '', $ex);
+    }
+  }
+  if ($result === NULL) {
+    wmf_common_failmail('exchange_rates', 'Could not update exchange rates from any provider!');
+    return;
+  }
 
-	$date_set = false;
-	$last_update = variable_get( 'exchange_rates_bank_update' );
-	foreach( $result->rates as $code => $rate ) {
-		exchange_rates_update_rate( $code, $rate['value'], $rate['date'] );
-		if ( !$date_set &&
-				( !$last_update || $rate['date'] > $last_update )
-		) {
-			variable_set( 'exchange_rates_bank_update',  $rate['date'] );
-			$date_set = true;
-		}
-	}
+  $date_set = FALSE;
+  $last_update = variable_get('exchange_rates_bank_update');
+  foreach ($result->rates as $code => $rate) {
+    exchange_rates_update_rate($code, $rate['value'], $rate['date']);
+    if (!$date_set &&
+      (!$last_update || $rate['date'] > $last_update)
+    ) {
+      variable_set('exchange_rates_bank_update', $rate['date']);
+      $date_set = TRUE;
+    }
+  }
 
-	if ( $result->quotesRemaining > -1 ) {
-		variable_set( 'exchange_rates_remaining_quotes', $result->quotesRemaining );
-	}
+  if ($result->quotesRemaining > -1) {
+    variable_set('exchange_rates_remaining_quotes', $result->quotesRemaining);
+  }
 }
 
 function exchange_rates_update_rate($currency, $value_in_usd, $bank_update) {
-  db_merge( 'exchange_rates' )->key( array(
-      'currency' => $currency,
-      'bank_update' => $bank_update,
-  ) )->fields( array(
-      'value_in_usd' => $value_in_usd,
-      'local_update' => time(),
-  ) )->execute();
+  db_merge('exchange_rates')->key([
+    'currency' => $currency,
+    'bank_update' => $bank_update,
+  ])->fields([
+    'value_in_usd' => $value_in_usd,
+    'local_update' => time(),
+  ])->execute();
 }
 
-function exchange_rates_backfill( $start, $end, $recalculate ) {
-	if ( $start == null ) {
-		$start_timestamp = db_query_range( 'SELECT MAX(bank_update) FROM {exchange_rates}', 0, 1 )->fetchField();
-		if ( !start_timestamp ) {
-			throw new ExchangeRatesException( 'Backfill start date not specified and no records in database' );
-		}
-		$start = new DateTime( "@$start_timestamp" ); // No TZ param
-		watchdog( 'exchange_rates', "Backfill start date not specified - using last bank update from db ({$start->format( 'Y-m-d' )})" );
-	}
-	if ( $end == null ) {
-		$end = new DateTime( 'now', new DateTimeZone( 'UTC' ) );
-		watchdog( 'exchange_rates', "Backfill end date not specified - using today ({$end->format( 'Y-m-d' )})" );
-	}
-	for ( $date = $start; $date <= $end; $date->add( new DateInterval( 'P1D' ) ) ) {
-		exchange_rates_update_all( $date );
-	}
+function exchange_rates_backfill($start, $end, $recalculate) {
+  if ($start == NULL) {
+    $start_timestamp = db_query_range('SELECT MAX(bank_update) FROM {exchange_rates}', 0, 1)->fetchField();
+    if (!start_timestamp) {
+      throw new ExchangeRatesException('Backfill start date not specified and no records in database');
+    }
+    $start = new DateTime("@$start_timestamp"); // No TZ param
+    watchdog('exchange_rates', "Backfill start date not specified - using last bank update from db ({$start->format( 'Y-m-d' )})");
+  }
+  if ($end == NULL) {
+    $end = new DateTime('now', new DateTimeZone('UTC'));
+    watchdog('exchange_rates', "Backfill end date not specified - using today ({$end->format( 'Y-m-d' )})");
+  }
+  for ($date = $start; $date <= $end; $date->add(new DateInterval('P1D'))) {
+    exchange_rates_update_all($date);
+  }
 
-	if ( $recalculate ) {
-		wmf_civicrm_recalculate_contributions( $start, $end );
-	}
+  if ($recalculate) {
+    wmf_civicrm_recalculate_contributions($start, $end);
+  }
 }
