@@ -43,6 +43,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     'amount_level',
     'contribution_recur_id',
     'contribution_page_id',
+    // Contribution type id is the old name, replaced by financial_type_id
+    'contribution_type_id',
     'creditnote_id',
     'is_test',
     'id',
@@ -208,9 +210,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function messageProvider(): array {
 
-    $contribution_type_cash = (string) wmf_civicrm_get_civi_id('contribution_type_id', 'Cash');
-    $payment_instrument_cc = (string) wmf_civicrm_get_civi_id('payment_instrument_id', 'Credit Card');
-    $payment_instrument_check = (string) wmf_civicrm_get_civi_id('payment_instrument_id', 'Check');
+    $financial_type_cash = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
+    $payment_instrument_cc = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Credit Card: Visa');
+    $payment_instrument_check = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Check');
 
     $gateway_txn_id = mt_rand();
     $check_number = (string) mt_rand();
@@ -236,11 +238,11 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'gateway_txn_id' => $gateway_txn_id,
           'gross' => '1,000.23',
           'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
         ],
         [
           'contribution' => [
             'contribution_status_id' => '1',
-            'contribution_type_id' => $contribution_type_cash,
             'currency' => 'USD',
             'fee_amount' => '0.00',
             'total_amount' => '1,000.23',
@@ -251,7 +253,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'receive_date' => '20120501000000',
             'source' => 'USD 1,000.23',
             'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-            'financial_type_id' => $contribution_type_cash,
+            'financial_type_id' => $financial_type_cash,
             'check_number' => '',
           ],
         ],
@@ -328,7 +330,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'contribution_page_id' => '',
             'contribution_recur_id' => '',
             'contribution_status_id' => '1',
-            'contribution_type_id' => $contribution_type_cash,
             'currency' => 'USD',
             'fee_amount' => 0.03,
             'invoice_id' => '',
@@ -343,7 +344,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'thankyou_date' => '20120401000000',
             'total_amount' => '1.23',
             'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-            'financial_type_id' => $contribution_type_cash,
+            'financial_type_id' => $financial_type_cash,
             'creditnote_id' => '',
             'tax_amount' => '',
           ],
@@ -386,6 +387,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'gateway_txn_id' => $gateway_txn_id,
           'gross' => '1.23',
           'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
           'language' => 'en_ZW',
           'name_prefix' => 'Mr.',
           'name_suffix' => 'Sr.',
@@ -412,6 +414,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'gateway_txn_id' => $gateway_txn_id,
           'gross' => '1.23',
           'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
           'language' => 'en_US',
           'full_name' => 'Dr. Martin Luther King, Jr.',
         ],
@@ -437,10 +440,11 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'gateway' => 'test_gateway',
           'gateway_txn_id' => $gateway_txn_id,
           'gross' => '1.23',
-          'organization_name' => 'Hedgeco',
-          'org_contact_name' => 'Testname',
-          'org_contact_title' => 'Testtitle',
+          'organization_name' => 'Hedge Co',
+          'org_contact_name' => 'Test Name',
+          'org_contact_title' => 'Test Title',
           'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
         ],
         [
           'contribution' => [
@@ -453,7 +457,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'contribution_page_id' => '',
             'contribution_recur_id' => '',
             'contribution_status_id' => '1',
-            'contribution_type_id' => $contribution_type_cash,
             'currency' => 'USD',
             'fee_amount' => '0.00',
             'invoice_id' => '',
@@ -468,13 +471,13 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'thankyou_date' => '',
             'total_amount' => '1.23',
             'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-            'financial_type_id' => $contribution_type_cash,
+            'financial_type_id' => $financial_type_cash,
             'creditnote_id' => '',
             'tax_amount' => '',
           ],
           'contact_custom_values' => [
-            'Name' => 'Testname',
-            'Title' => 'Testtitle',
+            'Name' => 'Test Name',
+            'Title' => 'Test Title',
           ],
         ],
       ];
@@ -494,6 +497,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'gateway_txn_id' => $gateway_txn_id,
           'gross' => 2.34,
           'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
         ],
         [
           'contribution' => [
@@ -507,7 +511,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'contribution_page_id' => '',
             'contribution_recur_id' => TRUE,
             'contribution_status_id' => '1',
-            'contribution_type_id' => $contribution_type_cash,
             'currency' => 'USD',
             'fee_amount' => '0.00',
             'invoice_id' => '',
@@ -522,7 +525,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'thankyou_date' => '',
             'total_amount' => 2.34,
             'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-            'financial_type_id' => $contribution_type_cash,
+            'financial_type_id' => $financial_type_cash,
             'creditnote_id' => '',
             'tax_amount' => '',
           ],
@@ -634,6 +637,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'gateway_txn_id' => $gateway_txn_id,
           'gross' => '1.23',
           'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
           'postal_code' => '02144',
           'state_province' => 'MA',
           'street_address' => '1 Davis Square',
@@ -737,6 +741,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         'last_name' => 'Last',
         'middle_name' => 'Middle',
         'payment_method' => 'cc',
+        'payment_submethod' => 'visa',
         'utm_medium' => 'endowment',
       ],
       [
@@ -750,7 +755,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'contribution_page_id' => '',
           'contribution_recur_id' => '',
           'contribution_status_id' => '1',
-          'contribution_type_id' => $endowmentFinancialType,
           'currency' => 'USD',
           'fee_amount' => 0.03,
           'invoice_id' => '',
@@ -823,6 +827,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'gateway_txn_id' => $gateway_txn_id,
           'gross' => '1.23',
           'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
         ],
         [
           'contact' => [
@@ -851,6 +856,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'contact_groups' => 'in_group',
     ];
     $contribution = $this->messageImport($msg);
@@ -907,6 +913,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => 2.34,
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
     ];
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $emails = $this->callAPISuccess('Email', 'get', [
@@ -947,6 +954,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => 2.34,
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
     ];
     $contribution = $this->messageImport($msg);
     $emails = $this->callAPISuccess('Email', 'get', [
@@ -971,6 +979,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'order_id' => $invoiceID,
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'gateway_txn_id' => 'CON_TEST_GATEWAY' . mt_rand(),
     ];
 
@@ -1027,6 +1036,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.25',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'employer' => $expectedEmployer,
     ];
     $contribution = wmf_civicrm_contribution_message_import($msg);
@@ -1088,6 +1098,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.25',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
     ];
     $contribution = $this->messageImport($msg);
     $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
@@ -1129,6 +1140,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.25',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
     ];
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
@@ -1164,6 +1176,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.25',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       // This should be normalized to es_MX and then used to update the contact record
       'language' => 'es-419'
     ];
@@ -1213,6 +1226,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.25',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
     ];
     $contribution = $this->messageImport($msg);
     $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
@@ -1239,6 +1253,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.25',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'recurring' => 1,
       'recurring_payment_token' => mt_rand(),
       'user_ip' => '123.232.232'
@@ -1268,6 +1283,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'street_address' => '1 Montgomery Street',
       'city' => 'San Francisco',
       'state_province' => 'CA',
@@ -1501,6 +1517,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => $gateway_txn_id,
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
     ];
   }
 
@@ -1513,8 +1530,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \Civi\WMFException\WMFException
    */
   protected function getBaseContribution($gateway_txn_id): array {
-    $contribution_type_cash = wmf_civicrm_get_civi_id('contribution_type_id', 'Cash');
-    $payment_instrument_cc = (string) wmf_civicrm_get_civi_id('payment_instrument_id', 'Credit Card');
+    $financial_type_cash = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
+    $payment_instrument_cc = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Credit Card: Visa');
     return [
       'address_id' => '',
       'amount_level' => '',
@@ -1525,7 +1542,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_page_id' => '',
       'contribution_recur_id' => '',
       'contribution_status_id' => '1',
-      'contribution_type_id' => $contribution_type_cash,
       'currency' => 'USD',
       'fee_amount' => '0.00',
       'invoice_id' => '',
@@ -1540,7 +1556,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'thankyou_date' => '',
       'total_amount' => '1.23',
       'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-      'financial_type_id' => $contribution_type_cash,
+      'financial_type_id' => $financial_type_cash,
       'creditnote_id' => '',
       'tax_amount' => '',
     ];
