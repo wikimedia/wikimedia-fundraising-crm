@@ -55,15 +55,15 @@ function drush_civicrm_merge() {
   $start = variable_get($startVariableName, 1);
   $batch_size = (integer) drush_get_option('batch', variable_get('wmf_civicrm_merge_batch_size', 1000));
   $end = CRM_Core_DAO::singleValueQuery("
-    SELECT max(id)
+    SELECT MAX(id)
     FROM (
       SELECT id FROM civicrm_contact WHERE id > %1 AND is_deleted = 0 ORDER BY id ASC LIMIT %2
-    ) as c",
-    array(1 => array($start, 'Integer'), 2 => array($batch_size, 'Integer'))
+    ) AS c",
+    [1 => [$start, 'Integer'], 2 => [$batch_size, 'Integer']]
   );
 
   if (empty($end)) {
-    watchdog('civicrm_merge', 'Deduping contact range from %start - there are no more contacts to dedupe.', array('%start' => $start), WATCHDOG_INFO);
+    Civi::log('wmf')->info('civicrm_merge: Deduping contact range from {start} - there are no more contacts to dedupe.', ['start' => $start]);
     return;
   }
 
@@ -82,11 +82,11 @@ function drush_civicrm_merge() {
     $mergeParams['rule_group_id'] = $ruleGroupID;
   }
 
-  watchdog('civicrm_merge', 'Deduping contact range: %start to %end', array('%start' => $start, '%end' => $end), WATCHDOG_INFO);
+  \Civi::log('wmf')->info('civicrm_merge: Deduping contact range: {start} to {end}', ['start' => $start, 'end' => $end]);
   $result = civicrm_api3('Job', 'process_batch_merge', $mergeParams);
 
   variable_set($startVariableName, $end);
-  watchdog('civicrm_merge', 'Deduped contact range: %start to %end', array('%start' => $start, '%end' => $end), WATCHDOG_INFO);
+  \Civi::log('wmf')->info('civicrm_merge: Deduped contact range: {start} to {end}', ['start' => $start, 'end' => $end]);
   drush_print("Processed id range $start to " . $end . '
   Merged ' . count($result['values']['merged']) . ". Skipped " . count($result['values']['skipped']));
 }

@@ -528,13 +528,16 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     }
   }
 
-  watchdog('wmf_civicrm', 'Contribution array for civicrm_contribution_add(): ' . print_r($contribution, TRUE), NULL, WATCHDOG_DEBUG);
+  Civi::log('wmf')->debug('wmf_civicrm: Contribution array for contribution create {contribution}: ', ['contribution' => $contribution, TRUE]);
   try {
     $contribution_result = civicrm_api3('Contribution', 'Create', array_merge($contribution, ['skipRecentView' => 1]));
-    watchdog('wmf_civicrm', "Successfully created contribution {$contribution_result['id']} for contact  {$contribution['contact_id']}", NULL, WATCHDOG_DEBUG);
+    Civi::log('wmf')->debug('wmf_civicrm: Successfully created contribution {contribution_id} for contact {contact_id}', [
+      'contribution_id' => $contribution_result['id'],
+      'contact_id' => $contribution['contact_id'],
+    ]);
   }
-  catch (CiviCRM_API3_Exception $e) {
-    watchdog('wmf_civicrm', 'Error inserting contribution: ' . $e->getMessage() . ' ' . $e->getCode(), NULL, WATCHDOG_INFO);
+  catch (CRM_Core_Exception $e) {
+    Civi::log('wmf')->info('wmf_civicrm: Error inserting contribution: {message} {code}', ['message' => $e->getMessage(), 'code' => $e->getCode()]);
     // Constraint violations occur when data is rolled back to resolve a deadlock.
     if (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
       throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getExtraParams());
@@ -1353,7 +1356,7 @@ function wmf_civicrm_normalize_msg($msg) {
       catch (Exception $e) {
         throw new WMFException(WMFException::INVALID_MESSAGE, $e->getMessage());
       }
-      watchdog('wmf_civicrm', 'Newly inserted contribution tracking id: @id', ['@id' => $contribution_tracking_id], WATCHDOG_DEBUG);
+      \Civi::log('wmf')->debug('wmf_civicrm: Newly inserted contribution tracking id: {id}', ['id' => $contribution_tracking_id]);
       $msg['contribution_tracking_id'] = $contribution_tracking_id;
     }
   }
