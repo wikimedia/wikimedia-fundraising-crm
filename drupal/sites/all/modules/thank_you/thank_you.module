@@ -955,14 +955,15 @@ function thank_you_batch_test() {
   variable_set('old_thank_you_days', $oldTyDays);
   variable_set('thank_you_days', DUMB_BIG_TY_DAYS);
 
-  watchdog('thank_you', 'Simulating up to 1000 thank you mails.', [], WATCHDOG_INFO);
-  watchdog('thank_you', "Civimail creation: $create_civi_mail. Sample rate: $rate", [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('thank_you: Simulating up to 1000 thank you mails.');
+  \Civi::log('wmf')->info('thank_you: Civimail creation: {is_create_civimail}. Sample rate: {rate}', [
+    'rate' => $rate,
+    'is_create_civimail' => $create_civi_mail,
+  ]);
 
   $start = time();
   $sent = 0;
 
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
   try {
 
     $ty_query = <<<EOT
@@ -978,14 +979,12 @@ function thank_you_batch_test() {
 		ORDER BY id DESC LIMIT 1000;
 EOT;
 
-    $result = db_query($ty_query);
-    foreach ($result as $contribution) {
-      watchdog(
-        'thank_you',
-        "Pretending to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}]",
-        [],
-        WATCHDOG_INFO
-      );
+    $contribution = \CRM_Core_DAO::executeQuery($ty_query);
+    while ($contribution->fetch()) {
+      \Civi::log('wmf')->info('thank_you: Pretending to send thank you mail for contribution ID [{contribution_id}], trxn_id [{trxn_id}]', [
+        'contribution_id' => $contribution->id,
+       'trxn_id' => $contribution->trxn_id,
+      ]);
       if (thank_you_for_contribution($contribution->id)) {
         $sent++;
       }
@@ -993,10 +992,13 @@ EOT;
   } catch (Exception $ex) {
     // Just need to make sure we reset the TY days
   }
-  $dbs->pop();
+
   $elapsed = time() - $start;
   variable_set('thank_you_days', $oldTyDays);
-  watchdog('thank_you', "Simulated sending $sent emails in $elapsed seconds.", [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('thank_you: Simulated sending {sent} emails in {elapsed} seconds.', [
+    'sent' => $sent,
+    'elapsed' => $elapsed
+  ]);
 }
 
 class ThankYouException extends Exception {
