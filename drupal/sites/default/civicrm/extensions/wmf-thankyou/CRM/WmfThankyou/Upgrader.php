@@ -16,6 +16,7 @@ class CRM_WmfThankyou_Upgrader extends CRM_WmfThankyou_Upgrader_Base {
       'weight' => '1',
       'description' => 'Sent an email receipt summarizing all donations in a given year',
       'option_group_id' => 'activity_type',
+      'filter' => 1,
     ]);
   }
 

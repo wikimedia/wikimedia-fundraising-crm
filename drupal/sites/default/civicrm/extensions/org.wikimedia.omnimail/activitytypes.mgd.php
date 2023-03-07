@@ -23,6 +23,7 @@ return [
           'is_reserved' => TRUE,
           'is_active' => TRUE,
           'cleanup' => 'never',
+          'filter' => 1,
         ],
     ],
 ];
