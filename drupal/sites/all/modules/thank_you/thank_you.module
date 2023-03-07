@@ -502,7 +502,7 @@ function thank_you_send_mail($params) {
   }
   if ($missing) {
     $as_list = implode(', ', $missing);
-    watchdog('thank_you', "Missing stuff from the TY params: {$as_list} " . check_plain(print_r($params, TRUE)), [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('thank_you: Missing stuff from the TY params: {missing} {params}', ['missing' => $missing, 'params' => $params]);
     $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
     throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
   }
@@ -548,7 +548,7 @@ function thank_you_send_mail($params) {
   ];
 
   try {
-    watchdog('thank_you', "Sending ty email to: " . $email['to_address'], [], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('thank_you: Sending ty email to: {to_address}', ['to_address' => $email['to_address']]);
     $email_success = MailFactory::singleton()->send(
       $email,
       ['List-Unsubscribe' => '<' . $params['unsubscribe_link'] . '>']
@@ -563,9 +563,9 @@ function thank_you_send_mail($params) {
     //TODO: don't assume phpmailer
     //TODO: something with the CiviMail queue record to indicate it failed;
     $debug = array_merge($email, ["html" => '', "plaintext" => '']);
-    watchdog('thank_you', 'Sending thank you message failed in phpmailer for contribution: ' .
-      '<pre>' . check_plain(print_r($params, TRUE)) . "\n\n" .
-      $e->errorMessage() . '</pre>', [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('thank_you: Sending thank you message failed in phpmailer for contribution:
+      {params} . "\n\n" .
+      {error_message}', ['params' => $params, 'error_message' => $e->errorMessage()]);
 
     if (strpos($e->errorMessage(), "Invalid address:") === FALSE) {
       watchdog('thank_you', "PhpMailer died unexpectedly: {$e->errorMessage()} at {$e->getTraceAsString()}", [], WATCHDOG_ERROR);
