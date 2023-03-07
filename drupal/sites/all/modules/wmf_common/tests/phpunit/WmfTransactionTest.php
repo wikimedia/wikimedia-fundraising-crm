@@ -118,6 +118,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       'gateway' => 'TEST_GATEWAY',
       'gateway_txn_id' => $gateway_txn_id,
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'email' => 'somebody@wikimedia.org',
     ];
     $this->messageImport($msg);

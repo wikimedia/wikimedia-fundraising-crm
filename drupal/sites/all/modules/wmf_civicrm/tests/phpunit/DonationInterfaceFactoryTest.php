@@ -17,6 +17,7 @@ class DonationInterfaceFactoryTest extends BaseWmfDrupalPhpUnitTestCase {
 			'order_id' => mt_rand(),
 			'currency' => 'USD',
 			'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
 			'language' => 'en',
 			'contribution_tracking_id' => mt_rand(),
 			'referrer' => 'dummy',

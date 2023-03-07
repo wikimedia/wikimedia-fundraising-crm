@@ -17,7 +17,7 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
-
+      'payment_submethod' => 'visa',
       'relationship_target_contact_id' => $this->createIndividual(),
       'relationship_type' => 'Spouse of',
     ];
@@ -45,7 +45,7 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
-
+      'payment_submethod' => 'visa',
       'relationship_target_contact_id' => mt_rand(),
       'relationship_type' => 'Spouse of',
     ];
@@ -63,6 +63,7 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'relationship_target_contact_id' => $this->createIndividual(),
       'relationship_type' => 'Total stranger to',
     ];

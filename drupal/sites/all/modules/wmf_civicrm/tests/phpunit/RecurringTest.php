@@ -110,6 +110,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'subscr_id' => 'aslkdjalksd123123',
       'recurring' => 1,
       'financial_type_id' => 'Cash',
@@ -155,6 +156,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       // recurring contribution payment token fields below
       'recurring_payment_token' => 'TEST-RECURRING-TOKEN-' . mt_rand(),
       'recurring' => 1,
@@ -212,6 +214,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       // recurring contribution payment token fields below
       'recurring_payment_token' => $token,
       'recurring' => 1,
@@ -230,6 +233,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '2.34',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'recurring_payment_token' => $token,
       'recurring' => 1,
       'user_ip' => '12.34.56.78',
@@ -300,6 +304,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       // recurring contribution payment token fields below
       'recurring_payment_token' => $token,
       'recurring' => 1,
@@ -330,6 +335,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '2.34',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'contribution_recur_id' => $firstRecurringRecord->id,
       'recurring' => 1,
     ];

@@ -39,6 +39,7 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'street_address' => 'N0NE PROVIDED',
       'postal_code' => 0,
     );
@@ -65,6 +66,7 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'street_address' => 'really cool place',
       'postal_code' => $voidValue,
       'city' => $voidValue,
@@ -107,6 +109,7 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'street_address' => 'N0NE PROVIDED',
       'postal_code' => 0,
     );

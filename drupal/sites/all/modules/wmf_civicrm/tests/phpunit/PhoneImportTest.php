@@ -19,6 +19,7 @@ class PhoneImportTest extends BaseWmfDrupalPhpUnitTestCase {
             'gateway_txn_id' => mt_rand(),
             'gross' => '1.23',
             'payment_method' => 'cc',
+            'payment_submethod' => 'visa',
             'phone' => $phoneNumber,
         );
 

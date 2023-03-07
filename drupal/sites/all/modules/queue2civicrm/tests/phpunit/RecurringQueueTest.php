@@ -408,6 +408,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $overrides['user_ip'] = '1.1.1.1';
     $overrides['gateway'] = 'ingenico';
     $overrides['payment_method'] = 'cc';
+    $overrides['payment_submethod'] = 'visa';
     $overrides['create_date'] = 1564068649;
     $overrides['start_date'] = 1566732720;
     $overrides['contribution_tracking_id'] = $ct_id;
@@ -471,6 +472,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $overrides['user_ip'] = '1.1.1.1';
     $overrides['gateway'] = 'ingenico';
     $overrides['payment_method'] = 'cc';
+    $overrides['payment_submethod'] = 'visa';
     $overrides['create_date'] = 1564068649;
     $overrides['start_date'] = 1566732720;
     $overrides['contribution_tracking_id'] = $ct_id;
@@ -531,6 +533,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $overrides['user_ip'] = '1.1.1.1';
     $overrides['gateway'] = 'ingenico';
     $overrides['payment_method'] = 'cc';
+    $overrides['payment_submethod'] = 'visa';
     $overrides['create_date'] = 1564068649;
     $overrides['start_date'] = 1566732720;
     $overrides['contribution_tracking_id'] = $ct_id;

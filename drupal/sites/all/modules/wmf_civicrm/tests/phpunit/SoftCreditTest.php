@@ -21,6 +21,7 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'soft_credit_to' => 'Big Pharma',
     ];
 
@@ -47,6 +48,7 @@ class SoftCreditTest extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
       'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
       'soft_credit_to' => 'Not a thing',
     ];
     $this->messageImport($msg);

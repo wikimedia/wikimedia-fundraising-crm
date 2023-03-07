@@ -50,6 +50,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'gateway_txn_id' => '4522268860022701',
         'gross' => 1.00,
         'payment_method' => 'cc',
+        'payment_submethod' => 'visa',
         'contribution_status_id' => 1
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
@@ -73,6 +74,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'gateway_txn_id' => '4555568860022701',
         'gross' => 1.00,
         'payment_method' => 'cc',
+        'payment_submethod' => 'visa',
         ];
         $contribution = wmf_civicrm_contribution_message_import($msg);
     }
@@ -96,6 +98,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'gateway_txn_id' => '4522268860022703',
         'gross' => 1.00,
         'payment_method' => 'cc',
+        'payment_submethod' => 'visa',
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
@@ -292,7 +295,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $expectedMessages = [
       'refund' => []
     ];
-    
+
     $msg = [
       'currency' => 'USD',
       'date' => 1455825706,

@@ -84,6 +84,7 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 		$msg = array(
 			'gateway' => 'adyen',
 			'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
 			'first_name' => 'blah',
 			'last_name' => 'wah',
 			'country' => 'US',

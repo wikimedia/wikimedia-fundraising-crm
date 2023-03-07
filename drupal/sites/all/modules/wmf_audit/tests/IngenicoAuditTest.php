@@ -131,6 +131,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
         'gateway_txn_id' => '1111662247',
         'gross' => 1.00,
         'payment_method' => 'cc',
+        'payment_submethod' => 'visa',
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
