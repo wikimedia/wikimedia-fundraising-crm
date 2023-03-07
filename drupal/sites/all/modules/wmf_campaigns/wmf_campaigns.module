@@ -119,21 +119,21 @@ function wmf_campaigns_edit_form($form, $formState, $campaignValue) {
   drupal_add_js(drupal_get_path('module', 'wmf_campaigns') . '/wmf_campaigns.js');
 
   $form = [];
-
-  $api = civicrm_api_classapi();
-  $success = $api->OptionValue->get([
+  civicrm_initialize();
+  $optionValues = civicrm_api3('OptionValue', 'get', [
     'option_group_id' => wmf_civicrm_get_direct_mail_field_option_id(),
     'value' => $campaignValue,
-  ]);
-  if (!$success || count($api->values) != 1) {
+    'sequential' => TRUE,
+  ])['values'];
+  if (count($optionValues) !== 1) {
     drupal_set_message("No such campaign value: {$campaignValue}");
     return;
   }
-  $campaign = $api->values[0];
+  $campaign = $optionValues[0];
 
   $result = db_select('wmf_campaigns_campaign')
     ->fields('wmf_campaigns_campaign')
-    ->condition('campaign_key', $campaign->value)
+    ->condition('campaign_key', $campaign['value'])
     ->execute()
     ->fetchAssoc();
   if (!$result) {
@@ -144,11 +144,11 @@ function wmf_campaigns_edit_form($form, $formState, $campaignValue) {
   }
 
   $form['label'] = [
-    '#markup' => "<h2>{$campaign->label}</h2>",
+    '#markup' => "<h2>{$campaign['label']}</h2>",
   ];
 
   $form['key'] = [
-    '#markup' => "<b>utm_campaign key</b>: <code>{$campaign->value}</code>",
+    '#markup' => "<b>utm_campaign key</b>: <code>{$campaign['value']}</code>",
   ];
 
   $form['notification'] = [
@@ -174,7 +174,7 @@ function wmf_campaigns_edit_form($form, $formState, $campaignValue) {
 
   $form['campaign_key'] = [
     '#type' => 'hidden',
-    '#value' => $campaign->value,
+    '#value' => $campaign['value'],
   ];
 
   $form['submit'] = [
