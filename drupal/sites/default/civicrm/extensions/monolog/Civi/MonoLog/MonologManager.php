@@ -280,7 +280,7 @@ class MonologManager {
           $minimumLevel = $modifiers[$argument];
         }
       }
-      $formatter = new LineFormatter("%channel%.%level_name%: %message% %extra%\n", NULL, TRUE, TRUE);
+      $formatter = new LineFormatter("%channel%.%level_name%: %message%\n", NULL, TRUE, TRUE);
       $handler = new StreamHandler('php://stdout', $minimumLevel, !$isFinal);
       $handler->setFormatter($formatter);
       $logger->pushHandler($handler);
@@ -315,7 +315,9 @@ class MonologManager {
    */
   protected function addSyslogLogger(string $channel, Logger $logger, string $minimumLevel, bool $isFinal): void {
     $syslog = new SyslogHandler($this->getChannelName($channel), LOG_USER, $minimumLevel, !$isFinal);
-    $formatter = new LineFormatter("%channel%.%level_name%: %message% %extra%");
+    // @todo Use the SyslogFormatter, requires Monolog 3.x
+    //https://github.com/Seldaek/monolog/blob/main/src/Monolog/Formatter/SyslogFormatter.php
+    $formatter = new LineFormatter("%channel%.%level_name%: %message%");
     $syslog->setFormatter($formatter);
     $logger->pushHandler($syslog);
   }
