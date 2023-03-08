@@ -1280,16 +1280,8 @@ function wmf_civicrm_normalize_msg($msg): array {
   }
 
   if (empty($msg['payment_instrument_id'])) {
-    if (empty($msg['payment_instrument'])) {
-      $msg['payment_instrument'] = FinanceInstrument::getPaymentInstrument($msg);
-
-      if (!$msg['payment_instrument']) {
-        throw new WMFException(WMFException::INVALID_MESSAGE, 'No payment instrument specified');
-      }
-    }
-    // CiviCRM does not require us to do this translation. It will do the same thing
-    // if we don't & through a mandatory_missing error.
-    $msg['payment_instrument_id'] = wmf_civicrm_get_civi_id('payment_instrument_id', $msg['payment_instrument']);
+    $paymentInstrument = $msg['payment_instrument'] ?? FinanceInstrument::getPaymentInstrument($msg);
+    $msg['payment_instrument_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $paymentInstrument);
   }
   if (!$msg['payment_instrument_id']) {
     throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
