@@ -191,11 +191,10 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
  *
  * @return array Contribution as inserted
  *
- * @throws \API_Exception
- * @throws \CiviCRM_API3_Exception
- * @throws \Civi\WMFException\WMFException
+ * @throws \CRM_Core_Exception
+ * @throws \Civi\WMFException\WMFException|\Statistics\Exception\StatisticsCollectorException
  */
-function wmf_civicrm_contribution_message_import(&$msg) {
+function wmf_civicrm_contribution_message_import(array &$msg): array {
   $timer = ImportStatsCollector::getInstance();
 
   if (empty($msg['recurring'])) {
@@ -221,12 +220,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
       );
       $timer->endImportTimer("get_recurring_payment_token");
       if ($token_record) {
-        watchdog(
-          'queue2civicrm_import',
-          'Found matching recurring payment token: ' . $msg['recurring_payment_token'],
-          NULL,
-          WATCHDOG_INFO
-        );
+        \Civi::log('wmf')->info('queue2civicrm_import: Found matching recurring payment token: {token}', ['token' => $msg['recurring_payment_token']]);
         $msg['contact_id'] = $token_record['contact_id'];
         $msg['payment_token_id'] = $token_record['id'];
         $msg['payment_processor_id'] = $token_record['payment_processor_id'];
@@ -240,7 +234,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
       $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
       $timer->endImportTimer("get_gateway_subscription");
       if ($recur_record) {
-        watchdog('queue2civicrm_import', 'Found matching recurring record for subscr_id: ' . $msg['subscr_id'], NULL, WATCHDOG_INFO);
+        \Civi::log('wmf')->info('queue2civicrm_import: Found matching recurring record for subscr_id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
         $msg['contribution_recur_id'] = $recur_record->id;
         $msg['contact_id'] = $recur_record->contact_id;
         // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
@@ -269,12 +263,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
   // Audit files bring in recurrings that we have the token for but were never created
   if ($createRecurringToken) {
     $token_record = wmf_civicrm_recur_payment_token_create($msg['contact_id'], $msg['gateway'], $msg['recurring_payment_token'], $msg['user_ip']);
-    watchdog(
-      'queue2civicrm_import',
-      'No payment token found. Creating : ' . $token_record['id'],
-      NULL,
-      WATCHDOG_INFO
-    );
+    \Civi::log('wmf')->info('queue2civicrm_import: No payment token found. Creating : {token}', ['token' => $token_record['id']]);
     $msg['payment_token_id'] = $token_record['id'];
     $msg['payment_processor_id'] = $token_record['payment_processor_id'];
   }
@@ -297,7 +286,7 @@ function wmf_civicrm_contribution_message_import(&$msg) {
       $recurring_transaction_id = $msg['gateway_txn_id'];
     }
 
-    watchdog('queue2civicrm_import', 'Attempting to insert new recurring subscription: ' . $recurring_transaction_id, NULL, WATCHDOG_INFO);
+    \Civi::log('wmf')->info('queue2civicrm_import: Attempting to insert new recurring subscription: {recurring_transaction_id}', ['recurring_transaction_id' => $recurring_transaction_id]);
     $timer->startImportTimer("message_contribution_recur_insert");
     wmf_civicrm_message_contribution_recur_insert($msg, $msg['contact_id'], $recurring_transaction_id);
     $timer->endImportTimer("message_contribution_recur_insert");
