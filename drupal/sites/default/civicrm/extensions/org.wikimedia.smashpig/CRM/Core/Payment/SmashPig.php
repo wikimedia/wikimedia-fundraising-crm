@@ -243,6 +243,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
         return 'rtbt';
       case 'Paypal';
         return 'paypal';
+      case 'Bank Transfer: UPI':
+        return 'bt';
       default:
         return 'cc';
     }

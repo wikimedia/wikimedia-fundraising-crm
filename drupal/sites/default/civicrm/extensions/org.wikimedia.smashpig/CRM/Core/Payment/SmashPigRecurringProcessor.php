@@ -110,23 +110,17 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         ]);
 
         $paymentParams = $this->getPaymentParams(
-          $recurringPayment, $previousContribution
+          $recurringPayment,
+          $previousContribution
         );
         $payment = $this->makePayment($paymentParams);
-        $this->recordPayment(
-          $payment, $recurringPayment, $previousContribution
-        );
 
-        // Mark the recurring contribution as completed and set next charge date
-        civicrm_api3('ContributionRecur', 'create', [
-          'id' => $recurringPayment['id'],
-          'failure_count' => 0,
-          'failure_retry_date' => NULL,
-          'contribution_status_id' => 'In Progress',
-          'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextDateForMonth(
-            $recurringPayment
-          ),
-        ]);
+        // record payment if it's not a UPI bank transfer pre-notification
+        if (!$this->isUpiBankTransferPreNotification($paymentParams['payment_instrument'])) {
+          $this->recordPayment($payment, $recurringPayment, $previousContribution);
+        }
+
+        $this->setAsInProgressAndUpdateNextChargeDate($recurringPayment);
         $result['success']['ids'][] = $recurringPayment['id'];
       } catch (CiviCRM_API3_Exception $e) {
         $this->recordFailedPayment($recurringPayment, $e);
@@ -584,6 +578,31 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       default:
         return FALSE;
     }
+  }
+
+  /**
+   * @param $payment_instrument
+   *
+   * @return bool
+   */
+  protected function isUpiBankTransferPreNotification($payment_instrument) : bool {
+    return $payment_instrument === 'Bank Transfer: UPI';
+  }
+
+  /**
+   * @param $recurringPayment
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  protected function setAsInProgressAndUpdateNextChargeDate($recurringPayment) : void {
+    civicrm_api3('ContributionRecur', 'create', [
+      'id' => $recurringPayment['id'],
+      'failure_count' => 0,
+      'failure_retry_date' => NULL,
+      'contribution_status_id' => 'In Progress',
+      'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextDateForMonth($recurringPayment),
+    ]);
   }
 
 }
