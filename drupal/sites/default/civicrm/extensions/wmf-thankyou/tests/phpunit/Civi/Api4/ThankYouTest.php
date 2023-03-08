@@ -277,10 +277,9 @@ class ThankYouTest extends TestCase {
 
     $stock_value = wmf_civicrm_get_custom_field_name('Stock Value');
     $description_of_stock = wmf_civicrm_get_custom_field_name('Description_of_Stock');
-    $contribution_type_stock = wmf_civicrm_get_civi_id('contribution_type_id', 'Stock');
     $this->callAPISuccess('Contribution', 'create', [
       'id' => $this->getContributionID(),
-      'financial_type_id' => $contribution_type_stock,
+      'financial_type_id' => 'Stock',
       $stock_value => '50.00',
       $description_of_stock => 'Test Stock Description',
     ]);

@@ -201,7 +201,12 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
   }
 
-  public function testSecondRecurringContributionWithPaymentToken() {
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   * @throws \Statistics\Exception\StatisticsCollectorException
+   */
+  public function testSecondRecurringContributionWithPaymentToken(): void {
     $fixture = CiviFixtures::createContact();
     $this->createPaymentProcessor();
     $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
@@ -265,8 +270,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       $firstRecurringRecord->payment_processor_id,
       $secondRecurringRecord->payment_processor_id
     );
-    $financial_type_cash = wmf_civicrm_get_civi_id('financial_type_id', 'Cash');
-    $this->assertEquals($financial_type_cash, $firstRecurringRecord->financial_type_id);
+    $this->assertEquals('Cash', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $firstRecurringRecord->financial_type_id));
     //clean up recurring contribution records using fixture tear down destruct process
     $fixture->contribution_id = $firstContribution['id'];
     $fixture->contribution_recur_id = $firstRecurringRecord->id;
@@ -290,7 +294,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @group nothankyou
    */
-  public function testRecurringNoThankYou() {
+  public function testRecurringNoThankYou(): void {
     $contactID = $this->createIndividual();
     $this->createPaymentProcessor();
     $token = 'TEST-RECURRING-TOKEN-' . mt_rand();

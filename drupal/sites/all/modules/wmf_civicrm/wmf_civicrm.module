@@ -595,66 +595,6 @@ function _wmf_civicrm_message_contribution_insert($msg) {
 }
 
 /**
- * Translate option value to CiviCRM id.
- *
- * Note that in general we do not need to translate these names to ids as the
- * CiviCRM api does that. This allows us to add additional error checking,
- * although possibly for not much gain.
- *
- * @param string $type
- * @param $name
- *
- * @return bool
- */
-function wmf_civicrm_get_civi_id($type, $name) {
-  static $civi_ids = [];
-  $params = ['name' => $name];
-  $dummy = [];
-
-  if (array_key_exists($type, $civi_ids) && array_key_exists($name, $civi_ids[$type])) {
-    return $civi_ids[$type][$name];
-  }
-
-  switch ($type) {
-    case 'contribution_type_id':
-    case 'financial_type_id':
-      //fixme: This is probably the upside-down way to do it. Really ought to go through the API.
-      //
-      $result = CRM_Financial_BAO_FinancialType::retrieve($params, $dummy);
-      if (!is_null($result)) {
-        $civi_ids[$type][$name] = $result->id;
-        watchdog('wmf_civicrm', "Found id for contribution_type $name: " . $civi_ids[$type][$name]);
-      }
-      else {
-        //make it. Or, throw an error here. Either way.
-        //XXX nonono
-        watchdog('wmf_civicrm', "Id for contribution_type $name not found. Creating...");
-        $params['description'] = '';
-        $params['accounting_code'] = strtoupper($name);
-        $params['is_deductible'] = 1;
-        $params['is_active'] = 1;
-        $result = CRM_Financial_BAO_FinancialType::add($params, $dummy);
-        $civi_ids[$type][$name] = $result->id;
-        watchdog('wmf_civicrm', "New id for contribution_type $name :" . $civi_ids[$type][$name]);
-      }
-      $id = $civi_ids[$type][$name];
-      if (empty($id)) {
-        throw new WMFException(WMFException::CIVI_CONFIG,
-          t('Contribution Type "!name" not found!', ['!name' => $name])
-        );
-      }
-      return $id;
-    case 'payment_instrument_id':
-      $instruments = civicrm_api3('Contribution', 'getoptions', ['field' => 'payment_instrument_id']);
-      return array_search($name, $instruments['values']);
-      break;
-
-    default:
-      throw new WMFException(WMFException::CIVI_CONFIG, t("Civi lookup for type '!type' not implemented", ["!type" => $type]));
-  }
-}
-
-/**
  * Normalize contribution amounts
  *
  * Do exchange rate conversions and set appropriate fields for CiviCRM
