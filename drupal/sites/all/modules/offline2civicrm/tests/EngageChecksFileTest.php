@@ -22,7 +22,6 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   public function testParseRow_Individual(): void {
     $data = [
       'Batch' => '1234',
-      'Contribution Type' => 'Engage',
       'Total Amount' => '50',
       'Source' => 'USD 50.00',
       'Postmark Date' => '',
@@ -54,7 +53,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'contact_source' => 'check',
       'contact_type' => 'Individual',
       'contribution_source' => 'USD 50.00',
-      'contribution_type' => 'Engage',
+      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage'),
       'country' => 'US',
       'currency' => 'USD',
       'date' => 1396310400,
@@ -69,7 +68,6 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'name_prefix' => 'Mrs.',
       'payment_method' => 'Check',
       'postal_code' => '02468',
-      'raw_contribution_type' => 'Engage',
       'restrictions' => 'Unrestricted - General',
       'state_province' => 'MA',
       'street_address' => '1000 Markdown Markov',
@@ -88,10 +86,9 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   /**
    * Test for parse row function.
    */
-  public function testParseRow_Organization(): void {
+  public function testParseRowOrganization(): void {
     $data = [
       'Batch' => '1235',
-      'Contribution Type' => 'Engage',
       'Total Amount' => '51.23',
       'Source' => 'USD 51.23',
       'Postmark Date' => '',
@@ -120,7 +117,6 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'contact_source' => 'check',
       'contact_type' => 'Organization',
       'contribution_source' => 'USD 51.23',
-      'contribution_type' => 'Engage',
       'country' => 'FR',
       'currency' => 'USD',
       'date' => 1396310400,
@@ -133,13 +129,13 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'organization_name' => 'One Pacific Entitlement',
       'payment_method' => 'Check',
       'postal_code' => '123-LAX',
-      'raw_contribution_type' => 'Engage',
       'restrictions' => 'Restricted-Foundation',
       'state_province' => 'MA',
       'street_address' => '1000 Markdown Markov',
       'thankyou_date' => 1398902400,
       'contact_id' => NULL,
       'phone' => '+357 (123) 456-0000',
+      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage'),
     ];
 
     $importer = new EngageChecksFileProbe();

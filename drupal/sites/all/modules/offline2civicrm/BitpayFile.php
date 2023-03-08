@@ -39,7 +39,7 @@ class BitpayFile extends ChecksFile {
     // 'order id',,'tx type', 'exchange rate (EUR)','description', 'buyerPhone'
   }
 
-  protected function getDefaultValues() {
+  protected function getDefaultValues(): array {
     return array_merge(parent::getDefaultValues(), array(
         'gateway' => 'bitpay',
         'payment_instrument' => 'Bitcoin',

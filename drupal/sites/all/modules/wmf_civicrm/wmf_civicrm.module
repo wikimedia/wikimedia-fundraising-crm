@@ -412,9 +412,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
   $contribution = [
     'contact_id' => $msg['contact_id'],
     'total_amount' => $msg['gross'],
-    // CiviCRM supports financial_type_id rather than contribution_type_id now. Handling both here
-    // is a first step to deprecating contribution_type_id.
-    'financial_type_id' => empty($msg['financial_type_id']) ? $msg['contribution_type_id'] : $msg['financial_type_id'],
+    'financial_type_id' => $msg['financial_type_id'],
     'payment_instrument_id' => $msg['payment_instrument_id'],
     'fee_amount' => $msg['fee'],
     'net_amount' => $msg['net'],
@@ -1222,9 +1220,9 @@ WHERE
  * @return array
  *
  * @throws \Civi\WMFException\WMFException
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
-function wmf_civicrm_normalize_msg($msg) {
+function wmf_civicrm_normalize_msg($msg): array {
   // Decode the message body.
   if (!is_array($msg)) {
     $msg = json_decode($msg->body, TRUE);
@@ -1277,11 +1275,14 @@ function wmf_civicrm_normalize_msg($msg) {
 
   wmf_civicrm_removeKnownBadStringsFromAddressFields($msg);
 
-  if (empty($msg['contribution_type_id'])) {
-    if (empty($msg['contribution_type'])) {
-      $msg['contribution_type'] = 'cash';
+  if (empty($msg['financial_type_id'])) {
+    if (!empty($msg['contribution_type'])) {
+      // @todo - remove this - after we is has been here a while without us seeing issues.
+      Civi::log('wmf')
+        ->warning('wmf_civicrm: Financial type should be set, contribution type is deprecated');
     }
-    $msg['contribution_type_id'] = wmf_civicrm_get_civi_id('contribution_type_id', $msg['contribution_type']);
+    $financialType = $msg['financial_type_id:name'] ?? ($msg['contribution_type'] ?? 'Cash');
+    $msg['financial_type_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', $financialType);
   }
 
   if (empty($msg['payment_instrument_id'])) {
@@ -1321,7 +1322,7 @@ function wmf_civicrm_normalize_msg($msg) {
       || (array_key_exists('payment_method', $msg) && strtoupper($msg['payment_method']) != "CHECK")
     ) {
 
-      watchdog('wmf_civicrm', 'Contribution missing contribution_tracking_id', [], WATCHDOG_DEBUG);
+      Civi::log('wmf')->debug('wmf_civicrm: Contribution missing contribution_tracking_id');
 
       $source = isset($msg['utm_source']) ? $msg['utm_source'] : '..' . $msg['payment_method'];
       $medium = isset($msg['utm_medium']) ? $msg['utm_medium'] : 'civicrm';
@@ -1356,12 +1357,12 @@ function wmf_civicrm_normalize_msg($msg) {
   }
 
   if ($msg['recurring'] and !$msg['subscr_id']) {
-    if ($msg['gateway'] == 'globalcollect') {
+    if ($msg['gateway'] === 'globalcollect') {
       // Well randomly grab an ID, of course :-/
       $msg['subscr_id'] = $msg['gateway_txn_id'];
     }
     else {
-      if ($msg['gateway'] == 'amazon') {
+      if ($msg['gateway'] === 'amazon') {
         // Amazon 'subscription id' is the Billing Agreement ID, which
         // is a substring of the Capture ID we record as 'gateway_txn_id'
         $msg['subscr_id'] = substr($msg['gateway_txn_id'], 0, 19);
@@ -1376,10 +1377,10 @@ function wmf_civicrm_normalize_msg($msg) {
         $msg['thankyou_date'] = $unix_time;
       }
       else {
-        watchdog('wmf_civicrm', 'Could not parse thankyou date: @date from @id', [
-          '@date' => $msg['thankyou_date'],
-          '@id' => $msg['contribution_tracking_id'],
-        ], WATCHDOG_DEBUG);
+        Civi::log('wmf')->debug('wmf_civicrm: Could not parse thankyou date: {date} from {id}', [
+          'date' => $msg['thankyou_date'],
+          'id' => $msg['contribution_tracking_id'],
+        ]);
         unset($msg['thankyou_date']);
       }
     }
