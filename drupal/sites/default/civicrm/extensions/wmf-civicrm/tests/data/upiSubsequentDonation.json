@@ -1,0 +1,22 @@
+{
+  "gateway": "dlocal",
+  "order_id": "71800.2",
+  "contribution_tracking_id": "71800",
+  "gateway_txn_id": "F-413092-a7775555-9876-1234-b5d2-999bfaba57db",
+  "full_name": "Gabbar Singh",
+  "email": "gsingh@example.com",
+  "currency": "INR",
+  "country": "IN",
+  "gross": "505.00",
+  "date": 1678396930,
+  "gateway_status": "PAID",
+  "payment_method": "bt",
+  "payment_submethod": "upi",
+  "recurring_payment_token": "5dff49d4-462c-432e-a12a-9f4c997e34c3",
+  "source_name": "SmashPig",
+  "source_type": "job-runner",
+  "source_host": "8d4274d639e6",
+  "source_run_id": 275,
+  "source_version": "unknown",
+  "source_enqueued_time": 1678397134
+}
