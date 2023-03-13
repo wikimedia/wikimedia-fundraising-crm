@@ -40,7 +40,8 @@ function fredge_antifraud_queue_consume_drush_help($section) {
 }
 
 function drush_fredge_antifraud_queue_consume() {
-  watchdog('fredge', 'Executing: drush_fredge_antifraud_queue_consume');
+  civicrm_initialize();
+  \Civi::log('fredge: Executing: drush_fredge_antifraud_queue_consume');
   module_invoke('fredge', 'antifraud_batch_process');
   $errors = drush_get_error_log();
   if (!empty($errors)) {
