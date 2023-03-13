@@ -258,7 +258,10 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
       ]);
       $contribution = array_pop($result['values']);
 
-      watchdog('wmf_campaigns', "Notifying " . implode(',', $notificationEmail) . " about match on campaign {$campaignKey}", NULL, WATCHDOG_INFO);
+      \Civi::log('wmf')->info('wmf_campaigns: Notifying {notification_email} about match on campaign {campaign}', [
+        'notification_email' => implode(',', $notificationEmail),
+        'campaign' => $campaignKey,
+      ]);
 
       $mailer = MailFactory::singleton();
       foreach ($notificationEmail as $toAddress) {
