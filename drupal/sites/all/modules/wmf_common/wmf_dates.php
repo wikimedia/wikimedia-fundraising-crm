@@ -33,7 +33,7 @@ function wmf_common_date_parse_string($date) {
     return $obj->getTimestamp();
   }
   catch (Exception $ex) {
-    watchdog('wmf_common', t('Caught date exception in ' . __METHOD__ . ': ') . $ex->getMessage(), NULL, WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('wmf_common: Caught date exception in ' . __METHOD__ . ': '. $ex->getMessage());
     return NULL;
   }
 }
@@ -103,7 +103,7 @@ function wmf_common_date_format_using_utc($format, $unixtime) {
     $formatted = $obj->format($format);
   }
   catch (Exception $ex) {
-    watchdog('wmf_common', t('Caught date exception in ' . __METHOD__ . ': ') . $ex->getMessage(), NULL, WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('wmf_common: Caught date exception in ' . __METHOD__ . ': ' . $ex->getMessage());
     return '';
   }
 

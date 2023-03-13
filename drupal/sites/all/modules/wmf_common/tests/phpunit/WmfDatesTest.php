@@ -1,7 +1,5 @@
 <?php
 /**
- * TODO: Exception is swallowed and watchdog isn't visible from phpunit, which
- * makes it annoying to debug failing tests.
  *
  * @group WmfCommon
  */
