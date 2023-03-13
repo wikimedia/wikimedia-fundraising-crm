@@ -153,14 +153,10 @@ class Templating {
         return $template;
       }
 
-      watchdog('wmf_communication',
-        "Template :key not found in language ':language', attempting next fallback...",
-        [
-          ':key' => $this->key(),
-          ':language' => $language,
-        ],
-        WATCHDOG_INFO
-      );
+      \Civi::log('wmf')->info('wmf_communication: Template {key} not found in language {language}, attempting next fallback...', [
+        'key' => $this->key(),
+        'language' => $language,
+      ]);
       $language = self::next_fallback($language);
     } while ($language);
 
@@ -194,10 +190,8 @@ class Templating {
   protected function loadTemplateFile($language) {
     $path = $this->getRelativeFilePath($language);
 
-    watchdog('wmf_communication',
-      "Searching for template file at :path",
-      [':path' => $path],
-      WATCHDOG_DEBUG
+    \Civi::log('wmf')->debug('wmf_communication: Searching for template file at {path}',
+      ['path' => $path]
     );
     try {
       return $this->twig->loadTemplate($path);
