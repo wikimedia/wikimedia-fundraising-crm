@@ -430,7 +430,7 @@ abstract class ChecksFile {
   }
 
   protected function handleDuplicate($duplicate) {
-    watchdog('offline2civicrm', 'Contribution matches existing contribution (id: @id), skipping it.', ['@id' => $duplicate[0]['id']], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('offline2civicrm: Contribution matches existing contribution (id: {id}), skipping it.', ['id' => $duplicate[0]['id']]);
     return TRUE; // true means this was a duplicate and i skipped it
   }
 
@@ -481,8 +481,7 @@ abstract class ChecksFile {
       [$currency, $source_amount] = explode(' ', $msg['contribution_source']);
 
       if (abs($source_amount - $msg['gross']) > .01) {
-        $pretty_msg = json_encode($msg);
-        watchdog('offline2civicrm', "Amount mismatch in row: " . $pretty_msg, NULL, WATCHDOG_ERROR);
+        \Civi::log('wmf')->error('offline2civicrm: Amount mismatch in row: {message}', ['message' => $msg]);
         throw new WMFException(WMFException::INVALID_MESSAGE, "Amount mismatch during checks import");
       }
 
@@ -895,12 +894,10 @@ abstract class ChecksFile {
       $this->markRowNotMatched($data);
     }
 
-    watchdog('offline2civicrm',
-      'Import checks: Contribution imported successfully (@id): !msg', [
-        '@id' => $contribution['id'],
-        '!msg' => print_r($msg, TRUE),
-      ], WATCHDOG_INFO
-    );
+    \Civi::log('wmf')->info('offline2civicrm: Import checks: Contribution imported successfully ({id}): {message}', [
+      'id' => $contribution['id'],
+      'message' => print_r($msg, TRUE)
+    ]);
     $this->numberSucceededRows++;
   }
 
