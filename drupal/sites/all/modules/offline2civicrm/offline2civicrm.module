@@ -345,7 +345,7 @@ function offline2civicrm_import_batch_finished($success, $results, $operations, 
   foreach ($results['messages'] as $message) {
     ChecksImportLog::record($message);
   }
-  watchdog('offline2civicrm', implode(' ', $results['messages']), array(), WATCHDOG_INFO);
+  \Civi::log('wmf')->info('offline2civicrm: {message}', ['message' => implode(' ', $results['messages'])]);
 }
 
 /**

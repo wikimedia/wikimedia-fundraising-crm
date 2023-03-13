@@ -32,7 +32,7 @@ function _load_headers($row) {
   if ($duplicates) {
     throw new WMFException(WMFException::INVALID_FILE_FORMAT, 'Duplicate column headers: ' . implode(", ", $duplicates));
   }
-  watchdog('offline2civicrm', 'Import checks: Column headers loaded from file', [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('offline2civicrm: Import checks: Column headers loaded from file');
 
   return $header_keys;
 }
