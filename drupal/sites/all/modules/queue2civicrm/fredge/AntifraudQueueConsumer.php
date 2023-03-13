@@ -15,11 +15,9 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
    */
   function processMessage($message) {
     $id = "{$message['gateway']}-{$message['order_id']}";
-    watchdog(
-      'fredge',
-      "Beginning processing of payments-antifraud message for $id",
-      [],
-      WATCHDOG_INFO
+    \Civi::log('wmf')->info(
+      'fredge: Beginning processing of payments-antifraud message for {id}',
+      ['id' => $id]
     );
 
     // handle the IP address conversion to binary so we can do database voodoo later.
@@ -35,12 +33,10 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
          */
         // $message['user_ip'] = inet_pton($message['user_ip']);
 
-        watchdog(
-          'fredge',
-          'Weird. Somehow an ipv6 address got through on payments. ' .
-          "Caught in antifraud consumer. $id",
-          array(),
-          WATCHDOG_WARNING
+        \Civi::log('wmf')->warning(
+          'fredge: Weird. Somehow an ipv6 address got through on payments. ' .
+          'Caught in antifraud consumer. {id}',
+          ['id' => $id]
         );
         $message['user_ip'] = 0;
       }
