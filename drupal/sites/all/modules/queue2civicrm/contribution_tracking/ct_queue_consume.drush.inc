@@ -36,7 +36,7 @@ function ct_queue_consume_drush_help($section) {
 function drush_ct_queue_consume() {
   // We need the Civi autoloader at least in order to use the civi exceptions
   civicrm_initialize();
-  watchdog('contribution_tracking', 'Executing: drush_ct_queue_consume');
+  \Civi::log('wmf')->info('contribution_tracking: Executing: drush_ct_queue_consume');
   module_invoke('ct', 'batch_process');
   $errors = drush_get_error_log();
   if (!empty($errors)) {

@@ -40,7 +40,8 @@ function fredge_paymentsinit_queue_consume_drush_help($section) {
 }
 
 function drush_fredge_paymentsinit_queue_consume() {
-  watchdog('fredge', 'Executing: drush_fredge_paymentsinit_queue_consume');
+  civicrm_initialize();
+  \Civi::log('wmf')->info('fredge: Executing: drush_fredge_paymentsinit_queue_consume');
   module_invoke('fredge', 'paymentsinit_batch_process');
   $errors = drush_get_error_log();
   if (!empty($errors)) {

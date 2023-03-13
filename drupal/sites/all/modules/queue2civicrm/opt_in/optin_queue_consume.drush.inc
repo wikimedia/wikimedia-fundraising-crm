@@ -42,7 +42,8 @@ function optin_queue_consume_drush_help($section) {
  * DonationInterface i18n files.
  */
 function drush_optin_queue_consume() {
-  watchdog('optin', 'Executing: drush_optin_queue_consume');
+  civicrm_initialize();
+  \Civi::log('wmf')->info('optin: Executing: drush_optin_queue_consume');
   module_invoke('optin', 'batch_process');
   $errors = drush_get_error_log();
   if (!empty($errors)) {

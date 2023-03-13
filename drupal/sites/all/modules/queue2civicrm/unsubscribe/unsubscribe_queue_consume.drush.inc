@@ -43,7 +43,8 @@ function unsubscribe_queue_consume_drush_help($section) {
  * DonationInterface i18n files.
  */
 function drush_unsubscribe_queue_consume() {
-  watchdog('unsubscribe', 'Executing: drush_unsubscribe_queue_consume');
+  civicrm_initialize();
+  \Civi::log('wmf')->info('unsubscribe: Executing: drush_unsubscribe_queue_consume');
   module_invoke('unsubscribe', 'batch_process');
   $errors = drush_get_error_log();
   if (!empty($errors)) {
