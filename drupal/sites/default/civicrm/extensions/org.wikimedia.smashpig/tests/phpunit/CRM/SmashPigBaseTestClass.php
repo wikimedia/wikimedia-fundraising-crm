@@ -145,6 +145,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
       'first_name' => 'Harry',
       'last_name' => 'Henderson',
       'preferred_language' => 'en_US',
+      'legal_identifier' => '1122334455',
     ]);
     $this->callAPISuccess('Email', 'create', [
       'contact_id' => $result['id'],

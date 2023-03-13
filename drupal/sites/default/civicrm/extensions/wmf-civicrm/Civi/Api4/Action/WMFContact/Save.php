@@ -103,6 +103,7 @@ class Save extends AbstractAction {
       'addressee_custom' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
       'addressee_display' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
       'addressee_id' => empty($msg['addressee_custom']) ? NULL : 'Customized',
+      'legal_identifier' => empty($msg['fiscal_number']) ? NULL : $this->cleanString($msg['fiscal_number'], 32),
       // Major gifts wants greeting processing - but we are not sure speedwise.
       'skip_greeting_processing' => !\Civi::settings()->get('wmf_save_process_greetings_on_create'),
 
@@ -494,6 +495,9 @@ class Save extends AbstractAction {
       'Partner.Partner',
     ];
     $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
+    if (!empty($msg['fiscal_number'])) {
+      $updateParams['legal_identifier'] = $this->cleanString($msg['fiscal_number'], 32);
+    }
     if (($msg['contact_type'] ?? NULL) === 'Organization') {
       // Find which of these keys we have update values for.
       $customFieldsToUpdate = array_filter(array_intersect_key($msg, array_fill_keys([

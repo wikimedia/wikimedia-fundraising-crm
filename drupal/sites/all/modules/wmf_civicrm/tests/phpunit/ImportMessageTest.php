@@ -305,6 +305,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'payment_method' => 'check',
           'stock_description' => 'Long-winded prolegemenon',
           'thankyou_date' => '2012-04-01',
+          'fiscal_number' => 'AAA11223344',
         ],
         [
           'contact' => [
@@ -319,6 +320,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'prefix' => 'Mr.',
             'suffix' => 'Sr.',
             'preferred_language' => 'en_US',
+            'legal_identifier' => 'AAA11223344',
           ],
           'contribution' => [
             'address_id' => '',

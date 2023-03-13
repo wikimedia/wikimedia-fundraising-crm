@@ -434,7 +434,14 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $recurringPayment, $previousContribution
   ) {
     $donor = Contact::get(FALSE)
-      ->addSelect('address_primary.country_id:abbr', 'first_name', 'last_name', 'email_primary.email', 'preferred_language')
+      ->addSelect(
+        'address_primary.country_id:abbr',
+        'email_primary.email',
+        'first_name',
+        'last_name',
+        'legal_identifier',
+        'preferred_language'
+      )
       ->addWhere('id', '=', $recurringPayment['contact_id'])
       ->execute()
       ->first();
@@ -453,9 +460,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'amount' => $recurringPayment['amount'],
       'country' => $donor['address_primary.country_id:abbr'],
       'currency' => $recurringPayment['currency'],
+      'email' => $donor['email_primary.email'],
       'first_name' => $donor['first_name'],
       'last_name' => $donor['last_name'],
-      'email' => $donor['email_primary.email'],
+      'legal_identifier' => $donor['legal_identifier'],
       'invoice_id' => $currentInvoiceId,
       'payment_processor_id' => $recurringPayment['payment_processor_id'],
       'contactID' => $previousContribution['contact_id'],
