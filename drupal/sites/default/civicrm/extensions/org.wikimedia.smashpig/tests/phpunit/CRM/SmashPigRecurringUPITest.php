@@ -87,18 +87,18 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
       ->with([
         'recurring_payment_token' => 'abc123-456zyx-test12',
         'amount' => '12.34',
-        'country' => 'US',
         'currency' => 'USD',
         'first_name' => 'Harry',
         'last_name' => 'Henderson',
         'email' => 'harry@hendersons.net',
+        'country' => 'US',
         'order_id' => $expectedNextOrderIdWithSequence,
-        'processor_contact_id' => $contributionRecur['invoice_id'],
-        'fiscal_number' => $contributionRecur['invoice_id'],
-        'recurring' => TRUE,
-        'user_ip' => '12.34.56.78',
         'installment' => 'recurring',
         'description' => Civi::settings()->get('smashpig_recurring_charge_descriptor'),
+        'recurring' => true,
+        'user_ip' => '12.34.56.78',
+        'processor_contact_id' => $contributionRecur['invoice_id'],
+        'fiscal_number' => $contact['legal_identifier'],
       ])
       ->willReturn(
         $this->createPaymentResponse
