@@ -219,7 +219,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         'installment' => 'recurring',
         'description' => $expectedDescription,
         'processor_contact_id' => $contributionRecur['invoice_id'],
-        'fiscal_number' => $contributionRecur['invoice_id'],
+        'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
       ])
@@ -327,7 +327,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         'installment' => 'recurring',
         'description' => $expectedDescription,
         'processor_contact_id' => $contributionRecur['invoice_id'],
-        'fiscal_number' => $contributionRecur['invoice_id'],
+        'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
       ])
@@ -436,7 +436,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
           'installment' => 'recurring',
           'description' => $expectedDescription,
           'processor_contact_id' => $contributionRecur['invoice_id'],
-          'fiscal_number' => $contributionRecur['invoice_id'],
+          'fiscal_number' => '1122334455',
           'recurring' => TRUE,
           'user_ip' => '12.34.56.78',
         ],
@@ -453,7 +453,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
           'installment' => 'recurring',
           'description' => $expectedDescription,
           'processor_contact_id' => $contributionRecur['invoice_id'],
-          'fiscal_number' => $contributionRecur['invoice_id'],
+          'fiscal_number' => '1122334455',
           'recurring' => TRUE,
           'user_ip' => '12.34.56.78',
         ],
@@ -708,7 +708,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         'installment' => 'recurring',
         'description' => $expectedDescription,
         'processor_contact_id' => $contributionRecur['invoice_id'],
-        'fiscal_number' => $contributionRecur['invoice_id'],
+        'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
       ])
@@ -1182,7 +1182,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       'installment' => 'recurring',
       'description' => $expectedDescription,
       'processor_contact_id' => $contributionRecur['invoice_id'],
-      'fiscal_number' => $contributionRecur['invoice_id'],
+      'fiscal_number' => '1122334455',
       'recurring' => TRUE,
       'user_ip' => '12.34.56.78',
     ];
@@ -1198,7 +1198,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       'installment' => 'recurring',
       'description' => $expectedDescription,
       'processor_contact_id' => $contributionRecur['invoice_id'],
-      'fiscal_number' => $contributionRecur['invoice_id'],
+      'fiscal_number' => '1122334455',
       'recurring' => TRUE,
       'user_ip' => '12.34.56.78',
     ];
@@ -1280,7 +1280,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         'installment' => 'recurring',
         'description' => $expectedDescription,
         'processor_contact_id' => $contributionRecur['invoice_id'],
-        'fiscal_number' => $contributionRecur['invoice_id'],
+        'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
       ])
