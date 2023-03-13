@@ -44,8 +44,8 @@ function banner_history_queue_consume_drush_help($section) {
  * them in a table.
  */
 function drush_banner_history_queue_consume() {
-
-  watchdog('banner_history', 'Executing: drush_banner_history_queue_consume');
+  civicrm_initialize();
+  \Civi::log('wmf')->info('banner_history: Executing: drush_banner_history_queue_consume');
   module_invoke('banner_history', 'queue_consume');
 
   // TODO Copypasta from error handling in unsubscribe_queue_consume.drush.inc
