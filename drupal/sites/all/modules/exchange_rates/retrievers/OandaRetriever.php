@@ -68,7 +68,7 @@ class OandaRetriever extends ExchangeRateRetriever {
         $result->quotesRemaining = (int) $remaining;
       }
       else {
-        watchdog('exchange-rates', "Got weird x-rate-limit-remaining header: '$remaining'");
+        \Civi::log('wmf')->info('exchange-rates: Got weird x-rate-limit-remaining header: {remaining}', ['remaining' => $remaining]);
       }
     }
     $json = json_decode($response->data);
