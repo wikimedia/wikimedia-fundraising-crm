@@ -55,11 +55,11 @@ function drush_civicrm_cleanup_logs() {
   ");
 
     if (empty($logConnID)) {
-      watchdog('civicrm_cleanup_log', 'No more cruft to process');
+      \Civi::log('wmf')->info('civicrm_cleanup_log: No more cruft to process');
       return;
     }
     CRM_Core_DAO::executeQuery("DELETE FROM log_civicrm_setting WHERE log_conn_id = '{$logConnID}'");
     $batch_size--;
   }
-  watchdog('civicrm_cleanup_logs', 'Cleaned omnimail cruft but not finished.');
+  \Civi::log('wmf')->info('civicrm_cleanup_logs: Cleaned omnimail cruft but not finished.');
 }
