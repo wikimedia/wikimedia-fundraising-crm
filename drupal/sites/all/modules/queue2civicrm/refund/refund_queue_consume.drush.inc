@@ -78,8 +78,9 @@ function drush_refund_queue_consume() {
 }
 
 function drush_refund_queue_consume_refund_process_messagefile($path) {
-  watchdog('wmf_refund', "Processing input file @path and feeding to refund_import.",
-    ['@path' => realpath($path)], WATCHDOG_INFO);
+  civicrm_initialize();
+  \Civi::log('wmf')->info('wmf_refund: Processing input file {path} and feeding to refund_import.',
+    ['path' => realpath($path)]);
   $contents = file_get_contents($path);
   $msg = json_decode($contents, TRUE);
   module_invoke('civicrm', 'initialize');
