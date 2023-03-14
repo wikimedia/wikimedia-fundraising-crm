@@ -15,7 +15,7 @@ class CRM_Forgetme_Upgrader extends CRM_Forgetme_Upgrader_Base {
   public function install() {
     $activityTypes = civicrm_api3('OptionValue', 'get', ['option_group_id' => 'activity_type', 'name' => 'forget_me']);
     if (!$activityTypes['count']) {
-      civicrm_api3('OptionValue', 'create', ['option_group_id' => 'activity_type', 'name' => 'forget_me', 'label' => ts('Forget me request')]);
+      civicrm_api3('OptionValue', 'create', ['option_group_id' => 'activity_type', 'name' => 'forget_me', 'label' => ts('Forget me request'), 'filter' => 1]);
     }
     $this->executeSqlFile( 'sql/auto_install.sql' );
   }

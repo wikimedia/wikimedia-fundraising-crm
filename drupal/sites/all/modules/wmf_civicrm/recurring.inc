@@ -120,16 +120,9 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
     ];
   }
 
-  // Using invoice_id to hold the processor_contact_id for Adyen
-  // or the fiscal_number for DLocal. This is fine for WMF since we
-  // don't use that invoice number for anything else, but we might
-  // want to use a custom field (or two) before other organizations
-  // start using SmashPig.
+  // Using invoice_id to hold the processor_contact_id for Adyen.
   if (!empty($msg['processor_contact_id'])) {
     $extra_recurring_params['invoice_id'] = $msg['processor_contact_id'];
-  }
-  elseif (!empty($msg['fiscal_number'])) {
-    $extra_recurring_params['invoice_id'] = $msg['fiscal_number'];
   }
 
   $insert_params = [

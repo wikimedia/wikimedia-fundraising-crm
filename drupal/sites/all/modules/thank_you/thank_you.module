@@ -12,7 +12,7 @@ use wmf_communication\CiviMailingMissingException;
 use wmf_communication\CiviQueueInsertException;
 
 // TODO:
-// * use more exceptions in place of watchdog/return false
+// * use more exceptions in place of logging/return false
 // * encapsulate template params structure and validation
 // * implement 'specials' contingency passthru
 // * reconsider need for twig extensions, we already do calculated values
@@ -502,7 +502,7 @@ function thank_you_send_mail($params) {
   }
   if ($missing) {
     $as_list = implode(', ', $missing);
-    watchdog('thank_you', "Missing stuff from the TY params: {$as_list} " . check_plain(print_r($params, TRUE)), [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('thank_you: Missing stuff from the TY params: {missing} {params}', ['missing' => $missing, 'params' => $params]);
     $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
     throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
   }
@@ -548,7 +548,7 @@ function thank_you_send_mail($params) {
   ];
 
   try {
-    watchdog('thank_you', "Sending ty email to: " . $email['to_address'], [], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('thank_you: Sending ty email to: {to_address}', ['to_address' => $email['to_address']]);
     $email_success = MailFactory::singleton()->send(
       $email,
       ['List-Unsubscribe' => '<' . $params['unsubscribe_link'] . '>']
@@ -563,12 +563,15 @@ function thank_you_send_mail($params) {
     //TODO: don't assume phpmailer
     //TODO: something with the CiviMail queue record to indicate it failed;
     $debug = array_merge($email, ["html" => '', "plaintext" => '']);
-    watchdog('thank_you', 'Sending thank you message failed in phpmailer for contribution: ' .
-      '<pre>' . check_plain(print_r($params, TRUE)) . "\n\n" .
-      $e->errorMessage() . '</pre>', [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('thank_you: Sending thank you message failed in phpmailer for contribution:
+      {params} . "\n\n" .
+      {error_message}', ['params' => $params, 'error_message' => $e->errorMessage()]);
 
     if (strpos($e->errorMessage(), "Invalid address:") === FALSE) {
-      watchdog('thank_you', "PhpMailer died unexpectedly: {$e->errorMessage()} at {$e->getTraceAsString()}", [], WATCHDOG_ERROR);
+      \Civi::log('wmf')->error('thank_you: PhpMailer died unexpectedly: {error_message} at {trace}', [
+        'error_message' => $e->errorMessage(),
+        'trace' => $e->getTraceAsString(),
+      ]);
       $msg = "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n"
         . __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n"
         . $e->getTraceAsString();
@@ -578,10 +581,11 @@ function thank_you_send_mail($params) {
     return FALSE;
   } catch (Exception $e) {
     $debug = array_merge($email, ["html" => '', "plaintext" => '']);
-    watchdog('thank_you', 'Sending thank you message failed with generic exception for contribution: ' .
-      '<pre>' . check_plain(print_r($params, TRUE)) . "\n\n" .
-      check_plain(print_r($debug, TRUE)) . "\n\n" .
-      $e->getMessage() . '</pre>', [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('thank_you: Sending thank you message failed with generic exception for contribution: {params} {debug} {error_message}', [
+      'params' => $params,
+      'debug' => $debug,
+      'error_message' => $e->getMessage(),
+    ]);
 
     $msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
       . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
@@ -638,11 +642,9 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
     try {
       $civi_mailing = $civimail_store->getMailing('thank_you', $template_info->name, $template_info->revision);
     } catch (CiviMailingMissingException $e) {
-      watchdog(
-        'thank_you',
-        'Could not find mailing record for email with subject ' . $subject,
-        [],
-        WATCHDOG_INFO
+      \Civi::log('wmf')->info(
+        'thank_you: Could not find mailing record for email with subject {subject}',
+        ['subject' => $subject]
       );
       $civi_mailing = $civimail_store->addMailing('thank_you', $template_info->name, 'missing body', $subject, $template_info->revision);
     }
@@ -659,25 +661,19 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
     ])->execute();
 
   } catch (TemplateInfoMissingException $e) {
-    watchdog(
-      'thank_you',
-      'Could not find template info comment in thank you email template with subject ' . $subject,
-      [],
-      WATCHDOG_INFO
+    \Civi::log('wmf')->info(
+      'thank_you: Could not find template info comment in thank you email template with subject  {subject}',
+      ['subject' => $subject]
     );
   } catch (CiviQueueInsertException $e) {
-    watchdog(
-      'thank_you',
-      'CiviMail queue insert failed: ' . $e->getMessage(),
-      [],
-      WATCHDOG_INFO
+    \Civi::log('wmf')->info(
+      'thank_you: CiviMail queue insert failed: {error_message}',
+      ['error_message' => $e->getMessage()]
     );
   } catch (CiviMailingInsertException $e) {
-    watchdog(
-      'thank_you',
-      'Could not insert fallback mailing: ' . $e->getMessage(),
-      [],
-      WATCHDOG_INFO
+    \Civi::log('wmf')->info(
+      'Could not insert fallback mailing: {error_message}',
+      ['error_message' => $e->getMessage()]
     );
   }
   return $civi_queue_record;
@@ -787,15 +783,15 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
   $enabled = variable_get('thank_you_enabled', 'true');
 
   if ($enabled === 'false') {
-    watchdog('thank_you', 'Thank You send job is disabled', [], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('thank_you: Thank You send job is disabled');
     return;
   }
   if (!$days) {
-    watchdog('thank_you', 'Number of days to send thank you mails not configured', [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('thank_you: Number of days to send thank you mails not configured');
     return;
   }
   if (!is_numeric($batch)) {
-    watchdog('thank_you', 'Thank you mail batch size not configured', [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('thank_you: Thank you mail batch size not configured');
     return;
   }
 
@@ -808,7 +804,10 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
     variable_set('thank_you_days', $days);
   }
 
-  watchdog('thank_you', "Attempting to send $batch thank you mails for contributions from the last $days days.", [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('thank_you: Attempting to send {batch_size} thank you mails for contributions from the last {number_of_days} days.', [
+    'number_of_days' => $days,
+    'batch_size' => $batch,
+  ]);
 
   $earliest = UtcDate::getUtcDatabaseString("-$days days");
   $ty_query = <<<EOT
@@ -836,15 +835,16 @@ EOT;
   $endTime = $startTime + $timeLimit;
   while ($contribution->fetch()) {
     if (time() >= $endTime) {
-      watchdog("thank_you", "Batch time limit ($timeLimit s) elapsed", [], WATCHDOG_INFO);
+      \Civi::log('wmf')->info('thank_you: Batch time limit ({timeLimit} s) elapsed', ['time_limit' => $timeLimit]);
       break;
     }
-    watchdog(
-      'thank_you',
-      "Attempting to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}], contact_id [{$contribution->contact_id}]",
-      [],
-      WATCHDOG_INFO
-    );
+    \Civi::log('wmf')->info(
+      'thank_you: Attempting to send thank you mail for contribution ID [{contribution_id}], trxn_id [{trxn_id}], contact_id [{contact_id}]', [
+       'contribution_id' => $contribution->id,
+        'trxn_id' => $contribution->trxn_id,
+        'contact_id' => $contribution->contact_id,
+
+    ]);
     try {
       thank_you_for_contribution($contribution->id);
       $consecutiveFailures = 0;
@@ -917,11 +917,9 @@ EOT;
     'thank_you_donation_age',
     $ageMetrics
   );
-  watchdog(
-    'thank_you',
-    "Sent {$metrics['total_thank_you_emails']} thank you emails.",
-    [],
-    WATCHDOG_INFO
+  \Civi::log('wmf')->info(
+    'thank_you: Sent {total_thank_you_emails} thank you emails.',
+    ['total_thank_you_emails' => $metrics['total_thank_you_emails']]
   );
 }
 
@@ -955,14 +953,15 @@ function thank_you_batch_test() {
   variable_set('old_thank_you_days', $oldTyDays);
   variable_set('thank_you_days', DUMB_BIG_TY_DAYS);
 
-  watchdog('thank_you', 'Simulating up to 1000 thank you mails.', [], WATCHDOG_INFO);
-  watchdog('thank_you', "Civimail creation: $create_civi_mail. Sample rate: $rate", [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('thank_you: Simulating up to 1000 thank you mails.');
+  \Civi::log('wmf')->info('thank_you: Civimail creation: {is_create_civimail}. Sample rate: {rate}', [
+    'rate' => $rate,
+    'is_create_civimail' => $create_civi_mail,
+  ]);
 
   $start = time();
   $sent = 0;
 
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('civicrm');
   try {
 
     $ty_query = <<<EOT
@@ -978,14 +977,12 @@ function thank_you_batch_test() {
 		ORDER BY id DESC LIMIT 1000;
 EOT;
 
-    $result = db_query($ty_query);
-    foreach ($result as $contribution) {
-      watchdog(
-        'thank_you',
-        "Pretending to send thank you mail for contribution ID [{$contribution->id}], trxn_id [{$contribution->trxn_id}]",
-        [],
-        WATCHDOG_INFO
-      );
+    $contribution = \CRM_Core_DAO::executeQuery($ty_query);
+    while ($contribution->fetch()) {
+      \Civi::log('wmf')->info('thank_you: Pretending to send thank you mail for contribution ID [{contribution_id}], trxn_id [{trxn_id}]', [
+        'contribution_id' => $contribution->id,
+       'trxn_id' => $contribution->trxn_id,
+      ]);
       if (thank_you_for_contribution($contribution->id)) {
         $sent++;
       }
@@ -993,10 +990,13 @@ EOT;
   } catch (Exception $ex) {
     // Just need to make sure we reset the TY days
   }
-  $dbs->pop();
+
   $elapsed = time() - $start;
   variable_set('thank_you_days', $oldTyDays);
-  watchdog('thank_you', "Simulated sending $sent emails in $elapsed seconds.", [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('thank_you: Simulated sending {sent} emails in {elapsed} seconds.', [
+    'sent' => $sent,
+    'elapsed' => $elapsed
+  ]);
 }
 
 class ThankYouException extends Exception {

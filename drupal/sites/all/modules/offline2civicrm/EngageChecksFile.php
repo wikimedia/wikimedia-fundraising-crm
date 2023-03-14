@@ -16,7 +16,6 @@ class EngageChecksFile extends ChecksFile {
       'Batch',
       'Check Number',
       'City',
-      'Contribution Type',
       'Country',
       'Direct Mail Appeal',
       'Email',
@@ -49,8 +48,8 @@ class EngageChecksFile extends ChecksFile {
    *
    * @return array|string[]
    */
-  protected function getDefaultValues() {
-    return array_merge(parent::getDefaultValues(), ['raw_contribution_type' => 'engage']);
+  protected function getDefaultValues(): array {
+    return array_merge(parent::getDefaultValues(), ['financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage')]);
   }
 
   /**

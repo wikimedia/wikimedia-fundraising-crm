@@ -12,9 +12,9 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $message
    *
-   * @throws \Civi\WMFException\WMFException
+   * @throws \Civi\WMFException\WMFException|\SmashPig\Core\DataStores\DataStoreException
    */
-  function processMessage($message) {
+  public function processMessage(array $message): void {
     $logId = "{$message['gateway']}-{$message['order_id']}";
     watchdog(
       'fredge',

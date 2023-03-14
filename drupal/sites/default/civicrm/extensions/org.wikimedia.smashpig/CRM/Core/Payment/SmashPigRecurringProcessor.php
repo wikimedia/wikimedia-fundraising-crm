@@ -3,6 +3,7 @@
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
+use Civi\Api4\Contact;
 use Civi\Api4\FailureEmail;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
@@ -109,23 +110,17 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         ]);
 
         $paymentParams = $this->getPaymentParams(
-          $recurringPayment, $previousContribution
+          $recurringPayment,
+          $previousContribution
         );
         $payment = $this->makePayment($paymentParams);
-        $this->recordPayment(
-          $payment, $recurringPayment, $previousContribution
-        );
 
-        // Mark the recurring contribution as completed and set next charge date
-        civicrm_api3('ContributionRecur', 'create', [
-          'id' => $recurringPayment['id'],
-          'failure_count' => 0,
-          'failure_retry_date' => NULL,
-          'contribution_status_id' => 'In Progress',
-          'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextDateForMonth(
-            $recurringPayment
-          ),
-        ]);
+        // record payment if it's not a UPI bank transfer pre-notification
+        if (!$this->isUpiBankTransferPreNotification($paymentParams['payment_instrument'])) {
+          $this->recordPayment($payment, $recurringPayment, $previousContribution);
+        }
+
+        $this->setAsInProgressAndUpdateNextChargeDate($recurringPayment);
         $result['success']['ids'][] = $recurringPayment['id'];
       } catch (CiviCRM_API3_Exception $e) {
         $this->recordFailedPayment($recurringPayment, $e);
@@ -432,10 +427,18 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   protected function getPaymentParams(
     $recurringPayment, $previousContribution
   ) {
-    $donor = civicrm_api3('Contact', 'getsingle', [
-      'id' => $recurringPayment['contact_id'],
-      'return' => ['first_name', 'last_name', 'email', 'preferred_language'],
-    ]);
+    $donor = Contact::get(FALSE)
+      ->addSelect(
+        'address_primary.country_id:abbr',
+        'email_primary.email',
+        'first_name',
+        'last_name',
+        'legal_identifier',
+        'preferred_language'
+      )
+      ->addWhere('id', '=', $recurringPayment['contact_id'])
+      ->execute()
+      ->first();
     $currentInvoiceId = self::getNextInvoiceId(
       $previousContribution['invoice_id'],
       $recurringPayment['failure_count']
@@ -449,10 +452,12 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
     return [
       'amount' => $recurringPayment['amount'],
+      'country' => $donor['address_primary.country_id:abbr'],
       'currency' => $recurringPayment['currency'],
+      'email' => $donor['email_primary.email'],
       'first_name' => $donor['first_name'],
       'last_name' => $donor['last_name'],
-      'email' => $donor['email'],
+      'legal_identifier' => $donor['legal_identifier'],
       'invoice_id' => $currentInvoiceId,
       'payment_processor_id' => $recurringPayment['payment_processor_id'],
       'contactID' => $previousContribution['contact_id'],
@@ -573,6 +578,31 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       default:
         return FALSE;
     }
+  }
+
+  /**
+   * @param $payment_instrument
+   *
+   * @return bool
+   */
+  protected function isUpiBankTransferPreNotification($payment_instrument) : bool {
+    return $payment_instrument === 'Bank Transfer: UPI';
+  }
+
+  /**
+   * @param $recurringPayment
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  protected function setAsInProgressAndUpdateNextChargeDate($recurringPayment) : void {
+    civicrm_api3('ContributionRecur', 'create', [
+      'id' => $recurringPayment['id'],
+      'failure_count' => 0,
+      'failure_retry_date' => NULL,
+      'contribution_status_id' => 'In Progress',
+      'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextDateForMonth($recurringPayment),
+    ]);
   }
 
 }

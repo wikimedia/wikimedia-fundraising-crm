@@ -456,16 +456,7 @@ abstract class ChecksFile {
       $msg['gateway'] = $this->gateway;
     }
     if (isset($msg['raw_contribution_type'])) {
-      $contype = $msg['raw_contribution_type'];
-      switch ($contype) {
-
-        case "Cash":
-          $msg['contribution_type'] = "cash";
-          break;
-
-        default:
-          $msg['contribution_type'] = $msg['raw_contribution_type'];
-      }
+      $msg['financial_type_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', $msg['raw_contribution_type']);
     }
 
     if (isset($msg['organization_name'])
@@ -602,6 +593,7 @@ abstract class ChecksFile {
       'contact_source' => 'check',
       'contact_type' => 'Individual',
       'country' => 'US',
+      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'),
     ];
   }
 
