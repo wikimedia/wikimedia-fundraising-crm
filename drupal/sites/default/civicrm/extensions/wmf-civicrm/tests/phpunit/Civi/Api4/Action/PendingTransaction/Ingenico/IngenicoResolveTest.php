@@ -917,9 +917,9 @@ class IngenicoResolveTest extends TestCase {
       'gateway' => $gateway,
       'payment_method' => 'cc',
       'user_ip' => '127.0.0.1',
-      'risk_score' => 80.25,
+      'risk_score' => 50.25,
       'score_breakdown' => [
-        'getCVVResult' => 80,
+        'getCVVResult' => 50,
         'minfraud_filter' => 0.25,
       ],
     ];
