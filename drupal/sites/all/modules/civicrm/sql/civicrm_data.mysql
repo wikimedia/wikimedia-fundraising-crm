@@ -2264,8 +2264,8 @@ INSERT INTO civicrm_state_province (id, country_id, abbreviation, name) VALUES
 (3519, 1125, "TE", "Telšių Apskritis"),
 (3520, 1125, "UT", "Utenos Apskritis"),
 (3521, 1125, "VL", "Vilniaus Apskritis"),
-(3522, 1126, "D", "Diekirch"),
-(3523, 1126, "G", "GreveNmacher"),
+(3522, 1126, "DI", "Diekirch"),
+(3523, 1126, "GR", "Grevenmacher"),
 (3550, 1119, "DGV", "Daugavpils"),
 (3551, 1119, "JEL", "Jelgava"),
 (3552, 1119, "JUR", "Jūrmala"),
@@ -4037,7 +4037,7 @@ INSERT INTO civicrm_state_province (id, country_id, abbreviation, name) VALUES
 (NULL, 1045, "ZW", "Zhongwei"),
 
 -- CRM-10863 Added Missing Province for Luxembourg
-(NULL, 1126, "L", "Luxembourg"),
+(NULL, 1126, "LU", "Luxembourg"),
 
 -- CRM-11367 Latvian regions
 (NULL, 1119, "002", "Aizkraukles novads"),
@@ -4443,9 +4443,22 @@ INSERT INTO civicrm_state_province (id, country_id, abbreviation, name) VALUES
 -- Add in missing Indian State provinces
 
 (NULL, 1101, "DH", "Dādra and Nagar Haveli and Damān and Diu"),
-(NULL, 1101, "LA", "Ladākh")
+(NULL, 1101, "LA", "Ladākh"),
 
  -- end of statement:
+
+-- Add missing provinces for Luxembourg
+(NULL, 1126, 'CA', 'Capellen'),
+(NULL, 1126, 'CL', 'Clervaux'),
+(NULL, 1126, 'EC', 'Echternach'),
+(NULL, 1126, 'ES', 'Esch-sur-Alzette'),
+(NULL, 1126, 'ME', 'Mersch'),
+(NULL, 1126, 'RD', 'Redange-sur-Attert'),
+(NULL, 1126, 'RM', 'Remich'),
+(NULL, 1126, 'VD', 'Vianden'),
+(NULL, 1126, 'WI', 'Wiltz')
+
+-- end of statement:
  ;
 -- +--------------------------------------------------------------------+
 -- | Copyright CiviCRM LLC. All rights reserved.                        |
@@ -5222,8 +5235,8 @@ VALUES
   (@option_group_id_report , 'SYBUNT Report',                           'contribute/sybunt',              'CRM_Report_Form_Contribute_Sybunt',              NULL, 0, 0, 12, 'SYBUNT means some year(s) but not this year. Provides a list of constituents who donated at some time in the history of your organization but did not donate during the time period you specify.', 0, 0, 1, @contributeCompId, NULL, NULL),
   (@option_group_id_report , 'LYBUNT Report',                           'contribute/lybunt',              'CRM_Report_Form_Contribute_Lybunt',              NULL, 0, 0, 13, 'LYBUNT means last year but not this year. Provides a list of constituents who donated last year but did not donate during the time period you specify as the current year.', 0, 0, 1, @contributeCompId, NULL, NULL),
   (@option_group_id_report , 'Soft Credit Report',                      'contribute/softcredit',          'CRM_Report_Form_Contribute_SoftCredit',          NULL, 0, 0, 14, 'Shows contributions made by contacts that have been soft-credited to other contacts.', 0, 0, 1,@contributeCompId, NULL, NULL),
-  (@option_group_id_report , 'Membership Report (Summary)',             'member/summary',                 'CRM_Report_Form_Member_Summary',                 NULL, 0, 0, 15, 'Provides a summary of memberships by type and join date.', 0, 0, 1, @memberCompId, NULL, NULL),
-  (@option_group_id_report , 'Membership Report (Detail)',              'member/detail',                  'CRM_Report_Form_Member_Detail',                  NULL, 0, 0, 16, 'Provides a list of members along with their membership status and membership details (Join Date, Start Date, End Date). Can also display contributions (payments) associated with each membership.', 0, 0, 1, @memberCompId, NULL, NULL),
+  (@option_group_id_report , 'Membership Report (Summary)',             'member/summary',                 'CRM_Report_Form_Member_Summary',                 NULL, 0, 0, 15, 'Provides a summary of memberships by type and Member Since.', 0, 0, 1, @memberCompId, NULL, NULL),
+  (@option_group_id_report , 'Membership Report (Detail)',              'member/detail',                  'CRM_Report_Form_Member_Detail',                  NULL, 0, 0, 16, 'Provides a list of members along with their membership status and membership details (Member Since, Membership Start Date, Membership Expiration Date). Can also display contributions (payments) associated with each membership.', 0, 0, 1, @memberCompId, NULL, NULL),
   (@option_group_id_report , 'Membership Report (Lapsed)',              'member/lapse',                   'CRM_Report_Form_Member_Lapse',                   NULL, 0, 0, 17, 'Provides a list of memberships that lapsed or will lapse before the date you specify.', 0, 0, 1, @memberCompId, NULL, NULL),
   (@option_group_id_report , 'Event Participant Report (List)',         'event/participantListing',       'CRM_Report_Form_Event_ParticipantListing',       NULL, 0, 0, 18, 'Provides lists of participants for an event.', 0, 0, 1, @eventCompId, NULL, NULL),
   (@option_group_id_report , 'Event Income Report (Summary)',           'event/summary',                  'CRM_Report_Form_Event_Summary',                  NULL, 0, 0, 19, 'Provides an overview of event income. You can include key information such as event ID, registration, attendance, and income generated to help you determine the success of an event.', 0, 0, 1, @eventCompId, NULL, NULL),
@@ -8106,7 +8119,7 @@ INSERT INTO civicrm_msg_template
   {$contact_phone}
 {/if}
 {/if}
-{if !empty($is_deductible) AND !empty($price)}
+{if $is_deductible AND !empty($price)}
 
 {ts 1=$price|crmMoney:$currency}The value of this premium is %1. This may affect the amount of the tax deduction you can claim. Consult your tax advisor for more information.{/ts}{/if}
 {/if}
@@ -8528,7 +8541,7 @@ INSERT INTO civicrm_msg_template
         </td>
        </tr>
       {/if}
-      {if !empty($is_deductible) AND !empty($price)}
+      {if $is_deductible AND !empty($price)}
         <tr>
          <td colspan="2" {$valueStyle}>
           <p>{ts 1=$price|crmMoney:$currency}The value of this premium is %1. This may affect the amount of the tax deduction you can claim. Consult your tax advisor for more information.{/ts}</p>
@@ -8761,7 +8774,7 @@ INSERT INTO civicrm_msg_template
   {$contact_phone}
 {/if}
 {/if}
-{if !empty($is_deductible) AND !empty($price)}
+{if $is_deductible AND !empty($price)}
 
 {ts 1=$price|crmMoney:$currency}The value of this premium is %1. This may affect the amount of the tax deduction you can claim. Consult your tax advisor for more information.{/ts}{/if}
 {/if}
@@ -9183,7 +9196,7 @@ INSERT INTO civicrm_msg_template
         </td>
        </tr>
       {/if}
-      {if !empty($is_deductible) AND !empty($price)}
+      {if $is_deductible AND !empty($price)}
         <tr>
          <td colspan="2" {$valueStyle}>
           <p>{ts 1=$price|crmMoney:$currency}The value of this premium is %1. This may affect the amount of the tax deduction you can claim. Consult your tax advisor for more information.{/ts}</p>
@@ -17822,7 +17835,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {if empty($cancelled)}
 {if empty($lineItem)}
 {ts}Membership Start Date{/ts}: {$mem_start_date}
-{ts}Membership End Date{/ts}: {$mem_end_date}
+{ts}Membership Expiration Date{/ts}: {$mem_end_date}
 {/if}
 
 {if $formValues.total_amount OR $formValues.total_amount eq 0 }
@@ -17844,7 +17857,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {capture assign=ts_total}{ts}Total{/ts}{/capture}
 {/if}
 {capture assign=ts_start_date}{ts}Membership Start Date{/ts}{/capture}
-{capture assign=ts_end_date}{ts}Membership End Date{/ts}{/capture}
+{capture assign=ts_end_date}{ts}Membership Expiration Date{/ts}{/capture}
 {$ts_item|string_format:"%-30s"} {$ts_total|string_format:"%10s"} {if !empty($dataArray)} {$ts_subtotal|string_format:"%10s"} {$ts_taxRate|string_format:"%10s"} {$ts_taxAmount|string_format:"%10s"} {$ts_total|string_format:"%10s"} {/if} {$ts_start_date|string_format:"%20s"} {$ts_end_date|string_format:"%20s"}
 --------------------------------------------------------------------------------------------------
 
@@ -17928,7 +17941,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {capture assign=labelStyle }style="padding: 4px; border-bottom: 1px solid #999; background-color: #f7f7f7;"{/capture}
 {capture assign=valueStyle }style="padding: 4px; border-bottom: 1px solid #999;"{/capture}
 
-  <table id="crm-event_receipt"
+  <table id="crm-membership_receipt"
          style="font-family: Arial, Verdana, sans-serif; text-align: left; width:100%; max-width:700px; padding:0; margin:0; border:0px;">
 
     <!-- BEGIN HEADER -->
@@ -17976,7 +17989,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
               </tr>
               <tr>
                 <td {$labelStyle}>
-                  {ts}Membership End Date{/ts}
+                  {ts}Membership Expiration Date{/ts}
                 </td>
                 <td {$valueStyle}>
                   {$mem_end_date}
@@ -18015,7 +18028,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
                             <th>{ts}Total{/ts}</th>
                           {/if}
                           <th>{ts}Membership Start Date{/ts}</th>
-                          <th>{ts}Membership End Date{/ts}</th>
+                          <th>{ts}Membership Expiration Date{/ts}</th>
                         </tr>
                         {foreach from=$value item=line}
                           <tr>
@@ -18231,7 +18244,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {if empty($cancelled)}
 {if empty($lineItem)}
 {ts}Membership Start Date{/ts}: {$mem_start_date}
-{ts}Membership End Date{/ts}: {$mem_end_date}
+{ts}Membership Expiration Date{/ts}: {$mem_end_date}
 {/if}
 
 {if $formValues.total_amount OR $formValues.total_amount eq 0 }
@@ -18253,7 +18266,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {capture assign=ts_total}{ts}Total{/ts}{/capture}
 {/if}
 {capture assign=ts_start_date}{ts}Membership Start Date{/ts}{/capture}
-{capture assign=ts_end_date}{ts}Membership End Date{/ts}{/capture}
+{capture assign=ts_end_date}{ts}Membership Expiration Date{/ts}{/capture}
 {$ts_item|string_format:"%-30s"} {$ts_total|string_format:"%10s"} {if !empty($dataArray)} {$ts_subtotal|string_format:"%10s"} {$ts_taxRate|string_format:"%10s"} {$ts_taxAmount|string_format:"%10s"} {$ts_total|string_format:"%10s"} {/if} {$ts_start_date|string_format:"%20s"} {$ts_end_date|string_format:"%20s"}
 --------------------------------------------------------------------------------------------------
 
@@ -18337,7 +18350,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {capture assign=labelStyle }style="padding: 4px; border-bottom: 1px solid #999; background-color: #f7f7f7;"{/capture}
 {capture assign=valueStyle }style="padding: 4px; border-bottom: 1px solid #999;"{/capture}
 
-  <table id="crm-event_receipt"
+  <table id="crm-membership_receipt"
          style="font-family: Arial, Verdana, sans-serif; text-align: left; width:100%; max-width:700px; padding:0; margin:0; border:0px;">
 
     <!-- BEGIN HEADER -->
@@ -18385,7 +18398,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
               </tr>
               <tr>
                 <td {$labelStyle}>
-                  {ts}Membership End Date{/ts}
+                  {ts}Membership Expiration Date{/ts}
                 </td>
                 <td {$valueStyle}>
                   {$mem_end_date}
@@ -18424,7 +18437,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
                             <th>{ts}Total{/ts}</th>
                           {/if}
                           <th>{ts}Membership Start Date{/ts}</th>
-                          <th>{ts}Membership End Date{/ts}</th>
+                          <th>{ts}Membership Expiration Date{/ts}</th>
                         </tr>
                         {foreach from=$value item=line}
                           <tr>
@@ -18641,7 +18654,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {ts}Membership Type{/ts}: {$membership_name}
 {if $mem_start_date}{ts}Membership Start Date{/ts}: {$mem_start_date|crmDate}
 {/if}
-{if $mem_end_date}{ts}Membership End Date{/ts}: {$mem_end_date|crmDate}
+{if $mem_end_date}{ts}Membership Expiration Date{/ts}: {$mem_end_date|crmDate}
 {/if}
 
 {/if}
@@ -18684,7 +18697,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {capture assign=ts_total}{ts}Total{/ts}{/capture}
 {/if}
 {capture assign=ts_start_date}{ts}Membership Start Date{/ts}{/capture}
-{capture assign=ts_end_date}{ts}Membership End Date{/ts}{/capture}
+{capture assign=ts_end_date}{ts}Membership Expiration Date{/ts}{/capture}
 {$ts_item|string_format:"%-30s"} {$ts_total|string_format:"%10s"} {if !empty($dataArray)} {$ts_subtotal|string_format:"%10s"} {$ts_taxRate|string_format:"%10s"} {$ts_taxAmount|string_format:"%10s"} {$ts_total|string_format:"%10s"} {/if} {$ts_start_date|string_format:"%20s"} {$ts_end_date|string_format:"%20s"}
 --------------------------------------------------------------------------------------------------
 
@@ -18834,7 +18847,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
   {$contact_phone}
 {/if}
 {/if}
-{if !empty($is_deductible) AND !empty($price)}
+{if $is_deductible AND !empty($price)}
 
 {ts 1=$price|crmMoney}The value of this premium is %1. This may affect the amount of the tax deduction you can claim. Consult your tax advisor for more information.{/ts}{/if}
 {/if}
@@ -18926,7 +18939,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
       {if $mem_end_date}
        <tr>
         <td {$labelStyle}>
-         {ts}Membership End Date{/ts}
+         {ts}Membership Expiration Date{/ts}
         </td>
         <td {$valueStyle}>
           {$mem_end_date|crmDate}
@@ -19029,7 +19042,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
               <th>{ts}Total{/ts}</th>
             {/if}
       <th>{ts}Membership Start Date{/ts}</th>
-      <th>{ts}Membership End Date{/ts}</th>
+      <th>{ts}Membership Expiration Date{/ts}</th>
            </tr>
            {foreach from=$value item=line}
             <tr>
@@ -19361,7 +19374,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
         </td>
        </tr>
       {/if}
-      {if !empty($is_deductible) AND !empty($price)}
+      {if $is_deductible AND !empty($price)}
         <tr>
          <td colspan="2" {$valueStyle}>
           <p>{ts 1=$price|crmMoney}The value of this premium is %1. This may affect the amount of the tax deduction you can claim. Consult your tax advisor for more information.{/ts}</p>
@@ -19435,7 +19448,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {ts}Membership Type{/ts}: {$membership_name}
 {if $mem_start_date}{ts}Membership Start Date{/ts}: {$mem_start_date|crmDate}
 {/if}
-{if $mem_end_date}{ts}Membership End Date{/ts}: {$mem_end_date|crmDate}
+{if $mem_end_date}{ts}Membership Expiration Date{/ts}: {$mem_end_date|crmDate}
 {/if}
 
 {/if}
@@ -19478,7 +19491,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {capture assign=ts_total}{ts}Total{/ts}{/capture}
 {/if}
 {capture assign=ts_start_date}{ts}Membership Start Date{/ts}{/capture}
-{capture assign=ts_end_date}{ts}Membership End Date{/ts}{/capture}
+{capture assign=ts_end_date}{ts}Membership Expiration Date{/ts}{/capture}
 {$ts_item|string_format:"%-30s"} {$ts_total|string_format:"%10s"} {if !empty($dataArray)} {$ts_subtotal|string_format:"%10s"} {$ts_taxRate|string_format:"%10s"} {$ts_taxAmount|string_format:"%10s"} {$ts_total|string_format:"%10s"} {/if} {$ts_start_date|string_format:"%20s"} {$ts_end_date|string_format:"%20s"}
 --------------------------------------------------------------------------------------------------
 
@@ -19628,7 +19641,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
   {$contact_phone}
 {/if}
 {/if}
-{if !empty($is_deductible) AND !empty($price)}
+{if $is_deductible AND !empty($price)}
 
 {ts 1=$price|crmMoney}The value of this premium is %1. This may affect the amount of the tax deduction you can claim. Consult your tax advisor for more information.{/ts}{/if}
 {/if}
@@ -19720,7 +19733,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
       {if $mem_end_date}
        <tr>
         <td {$labelStyle}>
-         {ts}Membership End Date{/ts}
+         {ts}Membership Expiration Date{/ts}
         </td>
         <td {$valueStyle}>
           {$mem_end_date|crmDate}
@@ -19823,7 +19836,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
               <th>{ts}Total{/ts}</th>
             {/if}
       <th>{ts}Membership Start Date{/ts}</th>
-      <th>{ts}Membership End Date{/ts}</th>
+      <th>{ts}Membership Expiration Date{/ts}</th>
            </tr>
            {foreach from=$value item=line}
             <tr>
@@ -20155,7 +20168,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
         </td>
        </tr>
       {/if}
-      {if !empty($is_deductible) AND !empty($price)}
+      {if $is_deductible AND !empty($price)}
         <tr>
          <td colspan="2" {$valueStyle}>
           <p>{ts 1=$price|crmMoney}The value of this premium is %1. This may affect the amount of the tax deduction you can claim. Consult your tax advisor for more information.{/ts}</p>
@@ -20223,7 +20236,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {ts}Membership Status{/ts}: {$membership_status}
 {if $mem_start_date}{ts}Membership Start Date{/ts}: {$mem_start_date|crmDate}
 {/if}
-{if $mem_end_date}{ts}Membership End Date{/ts}: {$mem_end_date|crmDate}
+{if $mem_end_date}{ts}Membership Expiration Date{/ts}: {$mem_end_date|crmDate}
 {/if}
 
 ', '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -20282,7 +20295,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
       {if $mem_end_date}
        <tr>
         <td {$labelStyle}>
-         {ts}Membership End Date{/ts}
+         {ts}Membership Expiration Date{/ts}
         </td>
         <td {$valueStyle}>
           {$mem_end_date|crmDate}
@@ -20307,7 +20320,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 {ts}Membership Status{/ts}: {$membership_status}
 {if $mem_start_date}{ts}Membership Start Date{/ts}: {$mem_start_date|crmDate}
 {/if}
-{if $mem_end_date}{ts}Membership End Date{/ts}: {$mem_end_date|crmDate}
+{if $mem_end_date}{ts}Membership Expiration Date{/ts}: {$mem_end_date|crmDate}
 {/if}
 
 ', '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -20366,7 +20379,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
       {if $mem_end_date}
        <tr>
         <td {$labelStyle}>
-         {ts}Membership End Date{/ts}
+         {ts}Membership Expiration Date{/ts}
         </td>
         <td {$valueStyle}>
           {$mem_end_date|crmDate}
@@ -23017,7 +23030,7 @@ VALUES
     ( @domainID, 'civicrm/contribute/add?reset=1&action=add&context=standalone', 'New Contribution',  'New Contribution',       'access CiviContribute,edit contributions', 'AND', @contributionlastID, '1', NULL, 2 ),
     ( @domainID, 'civicrm/contribute/search?reset=1',                       'Find Contributions',     'Find Contributions',     'access CiviContribute', '', @contributionlastID, '1', NULL, 3 ),
     ( @domainID, 'civicrm/report/list?compid=2&reset=1',                    'Contribution Reports',   'Contribution Reports',     'access CiviContribute', '', @contributionlastID, '1', 1,    4 ),
-    ( @domainID, 'civicrm/contribute/import?reset=1',                       'Import Contributions',   'Import Contributions',   'access CiviContribute,edit contributions', 'AND', @contributionlastID, '1', '1',  5 ),
+    ( @domainID, 'civicrm/import/contribution?reset=1',                       'Import Contributions',   'Import Contributions',   'access CiviContribute,edit contributions', 'AND', @contributionlastID, '1', '1',  5 ),
     ( @domainID, 'civicrm/batch?reset=1',                                   'Batch Data Entry',        'Batch Data Entry',           'access CiviContribute', '', @contributionlastID, '1', NULL, 7 );
 
 INSERT INTO civicrm_navigation
@@ -23596,12 +23609,12 @@ VALUES
 INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
 VALUES
-    ( @domainID, 'Membership Summary', 'member/summary', 'Provides a summary of memberships by type and join date.', 'access CiviMember', 'a:18:{s:6:"fields";a:2:{s:18:"membership_type_id";s:1:"1";s:12:"total_amount";s:1:"1";}s:29:"membership_join_date_relative";s:1:"0";s:25:"membership_join_date_from";s:0:"";s:23:"membership_join_date_to";s:0:"";s:21:"membership_type_id_op";s:2:"in";s:24:"membership_type_id_value";a:0:{}s:12:"status_id_op";s:2:"in";s:15:"status_id_value";a:0:{}s:25:"contribution_status_id_op";s:2:"in";s:28:"contribution_status_id_value";a:0:{}s:9:"group_bys";a:2:{s:9:"join_date";s:1:"1";s:18:"membership_type_id";s:1:"1";}s:14:"group_bys_freq";a:1:{s:9:"join_date";s:5:"MONTH";}s:11:"description";s:56:"Provides a summary of memberships by type and join date.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviMember";s:9:"domain_id";i:1;}');
+    ( @domainID, 'Membership Summary', 'member/summary', 'Provides a summary of memberships by Type and Member Since.', 'access CiviMember', 'a:18:{s:6:"fields";a:2:{s:18:"membership_type_id";s:1:"1";s:12:"total_amount";s:1:"1";}s:29:"membership_join_date_relative";s:1:"0";s:25:"membership_join_date_from";s:0:"";s:23:"membership_join_date_to";s:0:"";s:21:"membership_type_id_op";s:2:"in";s:24:"membership_type_id_value";a:0:{}s:12:"status_id_op";s:2:"in";s:15:"status_id_value";a:0:{}s:25:"contribution_status_id_op";s:2:"in";s:28:"contribution_status_id_value";a:0:{}s:9:"group_bys";a:2:{s:9:"join_date";s:1:"1";s:18:"membership_type_id";s:1:"1";}s:14:"group_bys_freq";a:1:{s:9:"join_date";s:5:"MONTH";}s:11:"description";s:59:"Provides a summary of memberships by Type and Member Since.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviMember";s:9:"domain_id";i:1;}');
 
 INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
 VALUES
-    ( @domainID, 'Membership Details', 'member/detail', 'Provides a list of members along with their membership status and membership details (Join Date, Start Date, End Date). Can also display contributions (payments) associated with each membership.', 'access CiviMember', 'a:28:{s:6:"fields";a:5:{s:9:"sort_name";s:1:"1";s:18:"membership_type_id";s:1:"1";s:21:"membership_start_date";s:1:"1";s:19:"membership_end_date";s:1:"1";s:4:"name";s:1:"1";}s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:6:"id_min";s:0:"";s:6:"id_max";s:0:"";s:5:"id_op";s:3:"lte";s:8:"id_value";s:0:"";s:29:"membership_join_date_relative";s:1:"0";s:25:"membership_join_date_from";s:0:"";s:23:"membership_join_date_to";s:0:"";s:23:"owner_membership_id_min";s:0:"";s:23:"owner_membership_id_max";s:0:"";s:22:"owner_membership_id_op";s:3:"lte";s:25:"owner_membership_id_value";s:0:"";s:6:"tid_op";s:2:"in";s:9:"tid_value";a:0:{}s:6:"sid_op";s:2:"in";s:9:"sid_value";a:0:{}s:6:"gid_op";s:2:"in";s:9:"gid_value";a:0:{}s:8:"tagid_op";s:2:"in";s:11:"tagid_value";a:0:{}s:11:"description";s:119:"Provides a list of members along with their membership status and membership details (Join Date, Start Date, End Date).";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviMember";s:9:"domain_id";i:1;}');
+    ( @domainID, 'Membership Details', 'member/detail', 'Provides a list of members along with their Membership Status and membership details (Member Since, Membership Start Date, Membership Expiration Date). Can also display contributions (payments) associated with each membership.', 'access CiviMember', 'a:28:{s:6:"fields";a:5:{s:9:"sort_name";s:1:"1";s:18:"membership_type_id";s:1:"1";s:21:"membership_start_date";s:1:"1";s:19:"membership_end_date";s:1:"1";s:4:"name";s:1:"1";}s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:6:"id_min";s:0:"";s:6:"id_max";s:0:"";s:5:"id_op";s:3:"lte";s:8:"id_value";s:0:"";s:29:"membership_join_date_relative";s:1:"0";s:25:"membership_join_date_from";s:0:"";s:23:"membership_join_date_to";s:0:"";s:23:"owner_membership_id_min";s:0:"";s:23:"owner_membership_id_max";s:0:"";s:22:"owner_membership_id_op";s:3:"lte";s:25:"owner_membership_id_value";s:0:"";s:6:"tid_op";s:2:"in";s:9:"tid_value";a:0:{}s:6:"sid_op";s:2:"in";s:9:"sid_value";a:0:{}s:6:"gid_op";s:2:"in";s:9:"gid_value";a:0:{}s:8:"tagid_op";s:2:"in";s:11:"tagid_value";a:0:{}s:11:"description";s:151:"Provides a list of members along with their Membership Status and membership details (Member Since, Membership Start Date, Membership Expiration Date).";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviMember";s:9:"domain_id";i:1;}');
 
 INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
@@ -23665,4 +23678,4 @@ INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
 VALUES
     (  @domainID, 'Survey Details', 'survey/detail', 'Detailed report for canvassing, phone-banking, walk lists or other surveys.', 'access CiviReport', 'a:39:{s:6:"fields";a:2:{s:9:"sort_name";s:1:"1";s:6:"result";s:1:"1";}s:22:"assignee_contact_id_op";s:2:"eq";s:25:"assignee_contact_id_value";s:0:"";s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:17:"street_number_min";s:0:"";s:17:"street_number_max";s:0:"";s:16:"street_number_op";s:3:"lte";s:19:"street_number_value";s:0:"";s:14:"street_name_op";s:3:"has";s:17:"street_name_value";s:0:"";s:15:"postal_code_min";s:0:"";s:15:"postal_code_max";s:0:"";s:14:"postal_code_op";s:3:"lte";s:17:"postal_code_value";s:0:"";s:7:"city_op";s:3:"has";s:10:"city_value";s:0:"";s:20:"state_province_id_op";s:2:"in";s:23:"state_province_id_value";a:0:{}s:13:"country_id_op";s:2:"in";s:16:"country_id_value";a:0:{}s:12:"survey_id_op";s:2:"in";s:15:"survey_id_value";a:0:{}s:12:"status_id_op";s:2:"eq";s:15:"status_id_value";s:1:"1";s:11:"custom_1_op";s:2:"in";s:14:"custom_1_value";a:0:{}s:11:"custom_2_op";s:2:"in";s:14:"custom_2_value";a:0:{}s:17:"custom_3_relative";s:1:"0";s:13:"custom_3_from";s:0:"";s:11:"custom_3_to";s:0:"";s:11:"description";s:75:"Detailed report for canvassing, phone-banking, walk lists or other surveys.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviReport";s:6:"groups";s:0:"";s:9:"domain_id";i:1;}');
-UPDATE civicrm_domain SET version = '5.58.1';
+UPDATE civicrm_domain SET version = '5.61.beta1';

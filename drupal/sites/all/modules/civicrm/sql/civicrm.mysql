@@ -1043,7 +1043,7 @@ CREATE TABLE `civicrm_campaign` (
   `goal_general` text COMMENT 'General goals for Campaign.',
   `goal_revenue` decimal(20,2) COMMENT 'The target revenue for this campaign.',
   PRIMARY KEY (`id`),
-  INDEX `UI_campaign_name`(name),
+  UNIQUE INDEX `UI_name`(name),
   INDEX `UI_campaign_type_id`(campaign_type_id),
   INDEX `UI_campaign_status_id`(status_id),
   UNIQUE INDEX `UI_external_identifier`(external_identifier),
@@ -1372,7 +1372,8 @@ CREATE TABLE `civicrm_cache` (
   `created_date` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'When was the cache item created',
   `expired_date` timestamp NULL DEFAULT NULL COMMENT 'When should the cache item expire',
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `UI_group_path_date`(group_name, path, created_date),
+  UNIQUE INDEX `UI_group_name_path`(group_name, path),
+  INDEX `index_expired_date`(expired_date),
   CONSTRAINT FK_civicrm_cache_component_id FOREIGN KEY (`component_id`) REFERENCES `civicrm_component`(`id`)
 )
 ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
@@ -1459,9 +1460,7 @@ CREATE TABLE `civicrm_custom_field` (
   `weight` int NOT NULL DEFAULT 1 COMMENT 'Controls field display order within an extended property group.',
   `help_pre` text COMMENT 'Description and/or help text to display before this field.',
   `help_post` text COMMENT 'Description and/or help text to display after this field.',
-  `mask` varchar(64) COMMENT 'Optional format instructions for specific field types, like date types.',
   `attributes` varchar(255) COMMENT 'Store collection of type-appropriate attributes, e.g. textarea  needs rows/cols attributes',
-  `javascript` varchar(255) COMMENT 'Optional scripting attributes for field.',
   `is_active` tinyint DEFAULT 1 COMMENT 'Is this property active?',
   `is_view` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this property set by PHP Code? A code field is viewable but not editable',
   `options_per_line` int unsigned COMMENT 'number of options per line for checkbox and radio',
@@ -1477,6 +1476,7 @@ CREATE TABLE `civicrm_custom_field` (
   `serialize` int unsigned NOT NULL DEFAULT 0 COMMENT 'Serialization method - a non-zero value indicates a multi-valued field.',
   `filter` varchar(255) COMMENT 'Stores Contact Get API params contact reference custom fields. May be used for other filters in the future.',
   `in_selector` tinyint NOT NULL DEFAULT 0 COMMENT 'Should the multi-record custom field values be displayed in tab table listing',
+  `fk_entity` varchar(255) DEFAULT NULL COMMENT 'Name of entity being referenced.',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `UI_label_custom_group_id`(label, custom_group_id),
   UNIQUE INDEX `UI_name_custom_group_id`(name, custom_group_id),
@@ -1615,13 +1615,14 @@ CREATE TABLE `civicrm_job_log` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Job log entry ID',
   `domain_id` int unsigned NOT NULL COMMENT 'Which Domain is this scheduled job for',
   `run_time` timestamp COMMENT 'Log entry date',
-  `job_id` int unsigned COMMENT 'Pointer to job id - not a FK though, just for logging purposes',
+  `job_id` int unsigned COMMENT 'Pointer to job id',
   `name` varchar(255) COMMENT 'Title of the job',
   `command` varchar(255) COMMENT 'Full path to file containing job script',
   `description` varchar(255) COMMENT 'Title line of log entry',
   `data` longtext COMMENT 'Potential extended data for specific job run (e.g. tracebacks).',
   PRIMARY KEY (`id`),
-  CONSTRAINT FK_civicrm_job_log_domain_id FOREIGN KEY (`domain_id`) REFERENCES `civicrm_domain`(`id`)
+  CONSTRAINT FK_civicrm_job_log_domain_id FOREIGN KEY (`domain_id`) REFERENCES `civicrm_domain`(`id`),
+  CONSTRAINT FK_civicrm_job_log_job_id FOREIGN KEY (`job_id`) REFERENCES `civicrm_job`(`id`) ON DELETE SET NULL
 )
 ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
@@ -2394,9 +2395,10 @@ ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMA
 CREATE TABLE `civicrm_payment_processor` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Payment Processor ID',
   `domain_id` int unsigned NOT NULL COMMENT 'Which Domain is this match entry for',
-  `name` varchar(64) COMMENT 'Payment Processor Name.',
-  `title` varchar(127) COMMENT 'Payment Processor Descriptive Name.',
-  `description` varchar(255) COMMENT 'Payment Processor Description.',
+  `name` varchar(64) NOT NULL COMMENT 'Payment Processor Name.',
+  `title` varchar(255) NOT NULL COMMENT 'Name of processor when shown to CiviCRM administrators.',
+  `frontend_title` varchar(255) NOT NULL COMMENT 'Name of processor when shown to users making a payment.',
+  `description` varchar(255) COMMENT 'Additional processor information shown to administrators.',
   `payment_processor_type_id` int unsigned NOT NULL,
   `is_active` tinyint NOT NULL DEFAULT 1 COMMENT 'Is this processor active?',
   `is_default` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this processor the default?',

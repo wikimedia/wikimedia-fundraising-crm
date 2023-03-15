@@ -179,7 +179,7 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     return $settings;
   }
 
-  public function createMailingProviderData() {
+  public function createMailingProviderData(): void {
     $this->callAPISuccess('Campaign', 'create', ['name' => 'xyz', 'title' => 'Cool Campaign']);
     $this->callAPISuccess('Mailing', 'create', ['campaign_id' => 'xyz', 'hash' => 'xyz', 'name' => 'Mail Unit Test']);
 
@@ -218,12 +218,15 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
 
   /**
    * Cleanup test setup data.
+   *
+   * @throws \Civi\Core\Exception\DBQueryException
    */
-  protected function cleanupMailingData() {
+  protected function cleanupMailingData(): void {
     CRM_Core_DAO::executeQuery("DELETE FROM civicrm_mailing_provider_data WHERE mailing_identifier IN (
       'xyz', 'xyuuuz'
    )");
     CRM_Core_DAO::executeQuery("DELETE FROM civicrm_mailing WHERE name = 'Mail Unit Test'");
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_campaign WHERE name = 'xyz'");
   }
 
   protected function makeScientists() {

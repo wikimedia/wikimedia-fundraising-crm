@@ -33,7 +33,7 @@ class OmnirecipientProcessOnHoldTest extends OmnimailBaseTestClass  {
   /**
    * Example: Test that a version is returned.
    */
-  public function testOmnirecipientProcessOnHold() {
+  public function testOmnirecipientProcessOnHold(): void {
 
     $this->createMailingProviderData();
     $this->callAPISuccess('Omnirecipient', 'process_onhold', array('mail_provider' => 'Silverpop'));

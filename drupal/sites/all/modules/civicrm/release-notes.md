@@ -15,15 +15,27 @@ Other resources for identifying changes are:
     * https://github.com/civicrm/civicrm-joomla
     * https://github.com/civicrm/civicrm-wordpress
 
-## CiviCRM 5.58.1
+## CiviCRM 5.60.0
 
-Released February 15, 2023
+Released April 5, 2023
 
-- **[Synopsis](release-notes/5.58.1.md#synopsis)**
-- **[Security advisories](release-notes/5.58.1.md#security)**
-- **[Bugs resolved](release-notes/5.58.1.md#bugs)**
-- **[Credits](release-notes/5.58.1.md#credits)**
-- **[Feedback](release-notes/5.58.1.md#feedback)**
+- **[Synopsis](release-notes/5.60.0.md#synopsis)**
+- **[Features](release-notes/5.60.0.md#features)**
+- **[Bugs resolved](release-notes/5.60.0.md#bugs)**
+- **[Miscellany](release-notes/5.60.0.md#misc)**
+- **[Credits](release-notes/5.60.0.md#credits)**
+- **[Feedback](release-notes/5.60.0.md#feedback)**
+
+## CiviCRM 5.59.0
+
+Released March 1, 2023
+
+- **[Synopsis](release-notes/5.59.0.md#synopsis)**
+- **[Features](release-notes/5.59.0.md#features)**
+- **[Bugs resolved](release-notes/5.59.0.md#bugs)**
+- **[Miscellany](release-notes/5.59.0.md#misc)**
+- **[Credits](release-notes/5.59.0.md#credits)**
+- **[Feedback](release-notes/5.59.0.md#feedback)**
 
 ## CiviCRM 5.58.0
 

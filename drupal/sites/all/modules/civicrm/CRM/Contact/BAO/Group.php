@@ -493,9 +493,9 @@ class CRM_Contact_BAO_Group extends CRM_Contact_DAO_Group {
 
     $recentOther = [];
     if (CRM_Core_Permission::check('edit groups')) {
-      $recentOther['editUrl'] = CRM_Utils_System::url('civicrm/group', 'reset=1&action=update&id=' . $group->id);
+      $recentOther['editUrl'] = CRM_Utils_System::url('civicrm/group/edit', 'reset=1&action=update&id=' . $group->id);
       // currently same permission we are using for delete a group
-      $recentOther['deleteUrl'] = CRM_Utils_System::url('civicrm/group', 'reset=1&action=delete&id=' . $group->id);
+      $recentOther['deleteUrl'] = CRM_Utils_System::url('civicrm/group/edit', 'reset=1&action=delete&id=' . $group->id);
     }
 
     // add the recently added group (unless hidden: CRM-6432)
@@ -541,15 +541,10 @@ class CRM_Contact_BAO_Group extends CRM_Contact_DAO_Group {
   }
 
   /**
-   * Update the is_active flag in the db.
-   *
+   * @deprecated - this bypasses hooks.
    * @param int $id
-   *   Id of the database record.
    * @param bool $isActive
-   *   Value we want to set the is_active field.
-   *
    * @return bool
-   *   true if we found and updated the object, else false
    */
   public static function setIsActive($id, $isActive) {
     return CRM_Core_DAO::setFieldValue('CRM_Contact_DAO_Group', $id, 'is_active', $isActive);
@@ -1304,7 +1299,7 @@ WHERE {$whereClause}";
       ],
       CRM_Core_Action::UPDATE => [
         'name' => ts('Settings'),
-        'url' => 'civicrm/group',
+        'url' => 'civicrm/group/edit',
         'qs' => 'reset=1&action=update&id=%%id%%',
         'title' => ts('Edit Group'),
       ],
@@ -1320,7 +1315,7 @@ WHERE {$whereClause}";
       ],
       CRM_Core_Action::DELETE => [
         'name' => ts('Delete'),
-        'url' => 'civicrm/group',
+        'url' => 'civicrm/group/edit',
         'qs' => 'reset=1&action=delete&id=%%id%%',
         'title' => ts('Delete Group'),
       ],
