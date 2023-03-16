@@ -43,11 +43,9 @@ class BannerHistoryQueueConsumer extends WmfQueueConsumer {
       );
     }
 
-    watchdog(
-      'banner_history',
-      "About to add row for $bannerHistoryId",
-      [],
-      WATCHDOG_INFO
+    \Civi::log('wmf')->info(
+      'banner_history: About to add row for {banner_history_id}',
+      ['banner_history_id' => $bannerHistoryId]
     );
 
     db_merge('banner_history_contribution_associations')
@@ -61,7 +59,7 @@ class BannerHistoryQueueConsumer extends WmfQueueConsumer {
       ])
       ->execute();
 
-    watchdog('banner_history', "Processed $bannerHistoryId");
+    \Civi::log('wmf')->info('banner_history: Processed {banner_history_id}', ['banner_history_id' => $bannerHistoryId]);
   }
 
 }
