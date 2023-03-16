@@ -860,13 +860,13 @@ EOT;
       $msg = "Disabling thank you job after $consecutiveFailures consecutive failures";
       if ($consecutiveFailures > $failureThreshold) {
         $abort = TRUE;
-        watchdog('thank_you', $msg, [], WATCHDOG_ALERT);
+        \Civi::log('wmf')->alert('thank_you: {message}', ['message' => $msg]);
         $logMessage .= "<br/>$msg";
       }
 
       // Always email if we're disabling the job
       if ($ex->isNoEmail() && !$abort) {
-        watchdog('thank_you', $logMessage, [], WATCHDOG_ERROR);
+        \Civi::log('wmf')->error('thank_you: {log_message}', ['log_message' => $logMessage]);
       }
       else {
         try {
@@ -875,15 +875,11 @@ EOT;
           $logMessage = substr($logMessage, strlen($errName) + 1);
           $mailException = new WMFException($ex->getCode(), $logMessage);
 
-          // Failmail also logs a WATCHDOG_ERROR
+          // Failmail also logs an ERROR
           wmf_common_failmail('thank_you', '', $mailException);
-        } catch (Exception $innerEx) {
-          watchdog(
-            'thank_you',
-            'Can\'t even send failmail, disabling thank you job',
-            [],
-            WATCHDOG_ALERT
-          );
+        }
+        catch (Exception $innerEx) {
+          \Civi::log('wmf')->alert('thank_you: Can\'t even send failmail, disabling thank you job');
           $abort = TRUE;
         }
       }

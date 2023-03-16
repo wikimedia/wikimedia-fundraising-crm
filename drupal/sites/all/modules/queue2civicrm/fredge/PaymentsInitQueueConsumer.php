@@ -16,11 +16,9 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
    */
   public function processMessage(array $message): void {
     $logId = "{$message['gateway']}-{$message['order_id']}";
-    watchdog(
-      'fredge',
-      "Beginning processing of payments-init message for $logId",
-      [],
-      WATCHDOG_INFO
+    \Civi::log('wmf')->info(
+      'fredge: Beginning processing of payments-init message for {log_id}',
+      ['log_id' => $logId]
     );
 
     $id = 0;
@@ -39,12 +37,9 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
       PaymentsInitialDatabase::isMessageFailed($message) &&
       !$processorAllowsRepeat
     ) {
-      watchdog(
-        'fredge',
-        "Deleting pending row for failed payment {$logId}",
-        [],
-        WATCHDOG_INFO
-      );
+      \Civi::log('wmf')->info('fredge" Deleting pending row for failed payment {log_id}', [
+        'log_id' => $logId,
+      ]);
       PendingDatabase::get()->deleteMessage($message);
     }
 

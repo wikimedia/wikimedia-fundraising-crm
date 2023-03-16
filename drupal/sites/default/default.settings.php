@@ -83,11 +83,13 @@
  * webserver.  For most other drivers, you must specify a
  * username, password, host, and database name.
  *
- * Some database engines support transactions.  In order to enable
- * transaction support for a given database, set the 'transactions' key
- * to TRUE.  To disable it, set it to FALSE.  Note that the default value
- * varies by driver.  For MySQL, the default is FALSE since MyISAM tables
- * do not support transactions.
+ * Transaction support is enabled by default for all drivers that support it,
+ * including MySQL. To explicitly disable it, set the 'transactions' key to
+ * FALSE.
+ * Note that some configurations of MySQL, such as the MyISAM engine, don't
+ * support it and will proceed silently even if enabled. If you experience
+ * transaction related crashes with such configuration, set the 'transactions'
+ * key to FALSE.
  *
  * For each database, you may optionally specify multiple "target" databases.
  * A target database allows Drupal to try to send certain queries to a
@@ -123,6 +125,38 @@
  *   'collation' => 'utf8_general_ci',
  * );
  * @endcode
+ *
+ * For handling full UTF-8 in MySQL, including multi-byte characters such as
+ * emojis, Asian symbols, and mathematical symbols, you may set the collation
+ * and charset to "utf8mb4" prior to running install.php:
+ * @code
+ * $databases['default']['default'] = array(
+ *   'driver' => 'mysql',
+ *   'database' => 'databasename',
+ *   'username' => 'username',
+ *   'password' => 'password',
+ *   'host' => 'localhost',
+ *   'charset' => 'utf8mb4',
+ *   'collation' => 'utf8mb4_general_ci',
+ * );
+ * @endcode
+ * When using this setting on an existing installation, ensure that all existing
+ * tables have been converted to the utf8mb4 charset, for example by using the
+ * utf8mb4_convert contributed project available at
+ * https://www.drupal.org/project/utf8mb4_convert, so as to prevent mixing data
+ * with different charsets.
+ * Note this should only be used when all of the following conditions are met:
+ * - In order to allow for large indexes, MySQL must be set up with the
+ *   following my.cnf settings:
+ *     [mysqld]
+ *     innodb_large_prefix=true
+ *     innodb_file_format=barracuda
+ *     innodb_file_per_table=true
+ *   These settings are available as of MySQL 5.5.14, and are defaults in
+ *   MySQL 5.7.7 and up.
+ * - The PHP MySQL driver must support the utf8mb4 charset (libmysqlclient
+ *   5.5.3 and up, as well as mysqlnd 5.0.9 and up).
+ * - The MySQL server must support the utf8mb4 charset (5.5.3 and up).
  *
  * You can optionally set prefixes for some or all database table names
  * by using the 'prefix' setting. If a prefix is specified, the table
@@ -213,6 +247,24 @@
 $databases = array();
 
 /**
+ * Quoting of identifiers in MySQL.
+ *
+ * To allow compatibility with newer versions of MySQL, Drupal will quote table
+ * names and some other identifiers. The ANSI standard character for identifier
+ * quoting is the double quote (") and that can be used by MySQL along with the
+ * sql_mode setting of ANSI_QUOTES. However, MySQL's own default is to use
+ * backticks (`). Drupal 7 uses backticks for compatibility. If you need to
+ * change this, you can do so with this variable. It's possible to switch off
+ * identifier quoting altogether by setting this variable to an empty string.
+ *
+ * @see https://www.drupal.org/project/drupal/issues/2978575
+ * @see https://dev.mysql.com/doc/refman/8.0/en/identifiers.html
+ * @see \DatabaseConnection_mysql::setPrefix
+ * @see \DatabaseConnection_mysql::quoteIdentifier
+ */
+# $conf['mysql_identifier_quote_character'] = '"';
+
+/**
  * Access control for update.php script.
  *
  * If you are updating your Drupal installation using the update.php script but
@@ -271,7 +323,7 @@ $drupal_hash_salt = '';
  *
  * To see what PHP settings are possible, including whether they can be set at
  * runtime (by using ini_set()), read the PHP documentation:
- * http://www.php.net/manual/en/ini.list.php
+ * http://www.php.net/manual/ini.list.php
  * See drupal_environment_initialize() in includes/bootstrap.inc for required
  * runtime settings and the .htaccess file for non-runtime settings. Settings
  * defined there should not be duplicated here so as to avoid conflict issues.
@@ -307,7 +359,7 @@ ini_set('session.cookie_lifetime', 2000000);
  * output filter may not have sufficient memory to process it.  If you
  * experience this issue, you may wish to uncomment the following two lines
  * and increase the limits of these variables.  For more information, see
- * http://php.net/manual/en/pcre.configuration.php.
+ * http://php.net/manual/pcre.configuration.php.
  */
 # ini_set('pcre.backtrack_limit', 200000);
 # ini_set('pcre.recursion_limit', 200000);
@@ -433,6 +485,35 @@ ini_set('session.cookie_lifetime', 2000000);
 # $conf['js_gzip_compression'] = FALSE;
 
 /**
+ * Block caching:
+ *
+ * Block caching may not be compatible with node access modules depending on
+ * how the original block cache policy is defined by the module that provides
+ * the block. By default, Drupal therefore disables block caching when one or
+ * more modules implement hook_node_grants(). If you consider block caching to
+ * be safe on your site and want to bypass this restriction, uncomment the line
+ * below.
+ */
+# $conf['block_cache_bypass_node_grants'] = TRUE;
+
+/**
+ * Expiration of cache_form entries:
+ *
+ * Drupal's Form API stores details of forms in cache_form and these entries are
+ * kept for at least 6 hours by default. Expired entries are cleared by cron.
+ * Busy sites can encounter problems with the cache_form table becoming very
+ * large. It's possible to mitigate this by setting a shorter expiration for
+ * cached forms. In some cases it may be desirable to set a longer cache
+ * expiration, for example to prolong cache_form entries for Ajax forms in
+ * cached HTML.
+ *
+ * @see form_set_cache()
+ * @see system_cron()
+ * @see ajax_get_form()
+ */
+# $conf['form_cache_expiration'] = 21600;
+
+/**
  * String overrides:
  *
  * To override specific strings on your site with or without enabling the Locale
@@ -480,6 +561,7 @@ ini_set('session.cookie_lifetime', 2000000);
  * specific pattern:
  * - 404_fast_paths_exclude: A regular expression to match paths to exclude,
  *   such as images generated by image styles, or dynamically-resized images.
+ *   The default pattern provided below also excludes the private file system.
  *   If you need to add more paths, you can add '|path' to the expression.
  * - 404_fast_paths: A regular expression to match paths that should return a
  *   simple 404 page, rather than the fully themed 404 page. If you don't have
@@ -488,7 +570,7 @@ ini_set('session.cookie_lifetime', 2000000);
  *
  * Add leading hash signs if you would like to disable this functionality.
  */
-$conf['404_fast_paths_exclude'] = '/\/(?:styles)\//';
+$conf['404_fast_paths_exclude'] = '/\/(?:styles)|(?:system\/files)\//';
 $conf['404_fast_paths'] = '/\.(?:txt|png|gif|jpe?g|css|js|ico|swf|flv|cgi|bat|pl|dll|exe|asp)$/i';
 $conf['404_fast_html'] = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL "@path" was not found on this server.</p></body></html>';
 
@@ -503,10 +585,10 @@ $conf['404_fast_html'] = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN"
  * server response time when loading 404 error pages and prevents the 404 error
  * from being logged in the Drupal system log. In order to prevent valid pages
  * such as image styles and other generated content that may match the
- * '404_fast_html' regular expression from returning 404 errors, it is necessary
- * to add them to the '404_fast_paths_exclude' regular expression above. Make
- * sure that you understand the effects of this feature before uncommenting the
- * line below.
+ * '404_fast_paths' regular expression from returning 404 errors, it is
+ * necessary to add them to the '404_fast_paths_exclude' regular expression
+ * above. Make sure that you understand the effects of this feature before
+ * uncommenting the line below.
  */
 # drupal_fast_404();
 
@@ -552,6 +634,187 @@ $conf['404_fast_html'] = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN"
  */
 # $conf['allow_authorize_operations'] = FALSE;
 
-# Added by WMF to load Composer dependencies
-require_once __DIR__ . '/../../../vendor/autoload.php';
+/**
+ * Theme debugging:
+ *
+ * When debugging is enabled:
+ * - The markup of each template is surrounded by HTML comments that contain
+ *   theming information, such as template file name suggestions.
+ * - Note that this debugging markup will cause automated tests that directly
+ *   check rendered HTML to fail.
+ *
+ * For more information about debugging theme templates, see
+ * https://www.drupal.org/node/223440#theme-debug.
+ *
+ * Not recommended in production environments.
+ *
+ * Remove the leading hash sign to enable.
+ */
+# $conf['theme_debug'] = TRUE;
 
+/**
+ * CSS identifier double underscores allowance:
+ *
+ * To allow CSS identifiers to contain double underscores (.example__selector)
+ * for Drupal's BEM-style naming standards, uncomment the line below.
+ * Note that if you change this value in existing sites, existing page styles
+ * may be broken.
+ *
+ * @see drupal_clean_css_identifier()
+ */
+# $conf['allow_css_double_underscores'] = TRUE;
+
+/**
+ * The default list of directories that will be ignored by Drupal's file API.
+ *
+ * By default ignore node_modules and bower_components folders to avoid issues
+ * with common frontend tools and recursive scanning of directories looking for
+ * extensions.
+ *
+ * @see file_scan_directory()
+ */
+$conf['file_scan_ignore_directories'] = array(
+  'node_modules',
+  'bower_components',
+);
+
+/**
+ * Logging of user flood control events.
+ *
+ * Drupal's user module will place a temporary block on a given IP address or
+ * user account if there are excessive failed login attempts. By default these
+ * flood control events will be logged. This can be useful for identifying
+ * brute force login attacks. Set this variable to FALSE to disable logging, for
+ * example if you are using the dblog module and want to avoid database writes.
+ *
+ * @see user_login_final_validate()
+ * @see user_user_flood_control()
+ */
+# $conf['log_user_flood_control'] = FALSE;
+
+/**
+ * Opt out of variable_initialize() locking optimization.
+ *
+ * After lengthy discussion in https://www.drupal.org/node/973436 a change was
+ * made in variable_initialize() in order to avoid excessive waiting under
+ * certain conditions. Set this variable to TRUE in order to opt out of this
+ * optimization and revert to the original behaviour.
+ */
+# $conf['variable_initialize_wait_for_lock'] = FALSE;
+
+/**
+ * Opt in to field_sql_storage_field_storage_write() optimization.
+ *
+ * To reduce unnecessary writes field_sql_storage_field_storage_write() can skip
+ * fields where values have apparently not changed. To opt in to this
+ * optimization, set this variable to TRUE.
+ */
+$conf['field_sql_storage_skip_writing_unchanged_fields'] = TRUE;
+
+/**
+ * Use site name as display-name in outgoing mail.
+ *
+ * Drupal can use the site name (i.e. the value of the site_name variable) as
+ * the display-name when sending e-mail. For example this would mean the sender
+ * might be "Acme Website" <acme@example.com> as opposed to just the e-mail
+ * address alone. In order to avoid disruption this is not enabled by default
+ * for existing sites. The feature can be enabled by setting this variable to
+ * TRUE.
+ *
+ * @see https://tools.ietf.org/html/rfc2822
+ * @see drupal_mail()
+ */
+$conf['mail_display_name_site_name'] = TRUE;
+
+/**
+ * SameSite cookie attribute.
+ *
+ * This variable can be used to set a value for the SameSite cookie attribute.
+ *
+ * Versions of PHP before 7.3 have no native support for the SameSite attribute
+ * so it is emulated.
+ *
+ * The session.cookie-samesite setting in PHP 7.3 and later will be overridden
+ * by this variable for Drupal session cookies, and any other cookies managed
+ * with drupal_setcookie().
+ *
+ * Setting this variable to FALSE disables the SameSite attribute on cookies.
+ *
+ * @see drupal_setcookie()
+ * @see drupal_session_start()
+ * @see https://www.php.net/manual/en/session.configuration.php#ini.session.cookie-samesite
+ */
+# $conf['samesite_cookie_value'] = 'None';
+
+/**
+ * Retain legacy has_js cookie.
+ *
+ * Older releases of Drupal set a has_js cookie with a boolean value which
+ * server-side code can use to determine whether JavaScript is available.
+ *
+ * This functionality can be re-enabled by setting this variable to TRUE.
+ */
+# $conf['set_has_js_cookie'] = FALSE;
+
+/**
+ * Skip file system permissions hardening.
+ *
+ * The system module will periodically check the permissions of your site's
+ * site directory to ensure that it is not writable by the website user. For
+ * sites that are managed with a version control system, this can cause problems
+ * when files in that directory such as settings.php are updated, because the
+ * user pulling in the changes won't have permissions to modify files in the
+ * directory.
+ */
+# $conf['skip_permissions_hardening'] = TRUE;
+
+/**
+ * Additional public file schemes:
+ *
+ * Public schemes are URI schemes that allow download access to all users for
+ * all files within that scheme.
+ *
+ * The "public" scheme is always public, and the "private" scheme is always
+ * private, but other schemes, such as "https", "s3", "example", or others,
+ * can be either public or private depending on the site. By default, they're
+ * private, and access to individual files is controlled via
+ * hook_file_download().
+ *
+ * Typically, if a scheme should be public, a module makes it public by
+ * implementing hook_file_download(), and granting access to all users for all
+ * files. This could be either the same module that provides the stream wrapper
+ * for the scheme, or a different module that decides to make the scheme
+ * public. However, in cases where a site needs to make a scheme public, but
+ * is unable to add code in a module to do so, the scheme may be added to this
+ * variable, the result of which is that system_file_download() grants public
+ * access to all files within that scheme.
+ */
+# $conf['file_additional_public_schemes'] = array('example');
+
+/**
+ * Sensitive request headers in drupal_http_request() when following a redirect.
+ *
+ * By default drupal_http_request() will strip sensitive request headers when
+ * following a redirect if the redirect location has a different http host to
+ * the original request, or if the scheme downgrades from https to http.
+ *
+ * These variables allow opting out of this behaviour. Careful consideration of
+ * the security implications of opting out is recommended.
+ *
+ * @see _drupal_should_strip_sensitive_headers_on_http_redirect()
+ * @see drupal_http_request()
+ */
+# $conf['drupal_http_request_strip_sensitive_headers_on_host_change'] = TRUE;
+# $conf['drupal_http_request_strip_sensitive_headers_on_https_downgrade'] = TRUE;
+
+/**
+ * Cron lock expiration timeout:
+ *
+ * Each time Drupal's cron is executed, it acquires a cron lock. Older releases
+ * of Drupal set the default cron lock expiration timeout to 240 seconds. This
+ * duration was considered short, because it often caused concurrent cron runs
+ * especially on busy sites heavily utilizing cron.
+ *
+ * Use this variable to set a custom cron lock expiration timeout (float).
+ */
+# $conf['cron_lock_expiration_timeout'] = 900.0;

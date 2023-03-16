@@ -183,7 +183,7 @@ function large_donation_civicrm_post($action, $type, $id, &$contribution) {
           $excludedFinancialTypes = explode(',', $notification['financial_types_excluded']);
           if (!in_array($contribution->financial_type_id, $excludedFinancialTypes)) {
             if ($contribution->total_amount > $notification['threshold']) {
-              watchdog('large_donation', "Notifying of large donation, contribution: {$contribution->id} above threshold {$notification['threshold']}");
+              \Civi::log('wmf')->info('large_donation: Notifying of large donation, contribution: {contribution_id} above threshold {threshold}', ['contribution_id' => $contribution->id, 'threshold' => $notification['threshold']]);
               large_donation_notification_send($contribution, $notification);
             }
           }
@@ -272,7 +272,7 @@ function large_donation_notification_send($contribution, $notification) {
   ];
 
   if (!$to) {
-    watchdog('large_donation', 'Notification recipient address is not set up!', NULL, WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('large_donation: Notification recipient address is not set up!');
     return;
   }
 
@@ -289,10 +289,14 @@ function large_donation_notification_send($contribution, $notification) {
       'html' => $message,
     ];
     $mailer->send($email);
-    watchdog('large_donation', 'A large donation notification was sent to: ' . print_r($to, TRUE));
+    \Civi::log('wmf')->info('large_donation: A large donation notification was sent to: {to}', ['to' => print_r($to, TRUE)]);
   }
   catch (Exception $e) {
-    watchdog('large_donation', 'Sending large donation message failed for contribution: ' . $contribution->id . '<pre>' . check_plain(print_r($contribution, TRUE)) . "\n\n" . $e->getMessage() . '</pre>', [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('large_donation: Sending large donation message failed for contribution: {contribution_id}<pre> {contribution} \n\n {message}</pre>', [
+      'contribution_id' => $contribution->id,
+      'contribution' => $contribution,
+      'message' => $e->getMessage(),
+    ]);
   }
 }
 

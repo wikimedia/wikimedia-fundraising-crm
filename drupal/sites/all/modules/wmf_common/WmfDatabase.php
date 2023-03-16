@@ -36,8 +36,9 @@ class WmfDatabase {
           'Civi Transaction was marked for rollback and Exception was suppressed'
         );
       }
-    } catch (Exception $ex) {
-      watchdog('wmf_common', 'Aborting DB transaction.', NULL, WATCHDOG_INFO);
+    }
+    catch (Exception $ex) {
+      \Civi::log('wmf')->info('wmf_common: Aborting DB transaction.');
       $native_civi_transaction->rollback();
       $crm_transaction->rollback();
       $drupal_transaction->rollback();
@@ -45,7 +46,7 @@ class WmfDatabase {
       throw $ex;
     }
 
-    watchdog('wmf_common', "Committing DB transaction", NULL, WATCHDOG_INFO);
+    \Civi::log('wmf')->info('wmf_common: Committing DB transaction');
     $native_civi_transaction->commit();
     unset($crm_transaction);
     unset($drupal_transaction);

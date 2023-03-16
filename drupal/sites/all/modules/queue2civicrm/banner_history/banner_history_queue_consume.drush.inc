@@ -12,28 +12,30 @@
  * Implementation of hook_drush_command()
  */
 function banner_history_queue_consume_drush_command() {
-	$items = array();
+  $items = [];
 
-	$items['banner-history-queue-consume'] = array(
-		'description' => 'Consume associations of banner history log IDs and ' .
-			'contribution tracking IDs.',
-		'aliases' => array( 'bhqc' ),
-	);
-	return $items;
+  $items['banner-history-queue-consume'] = [
+    'description' => 'Consume associations of banner history log IDs and ' .
+      'contribution tracking IDs.',
+    'aliases' => ['bhqc'],
+  ];
+  return $items;
 }
 
 /**
  * Implementation of hook_drush_help()
+ *
  * @param $section
+ *
  * @return mixed
  */
-function banner_history_queue_consume_drush_help( $section ) {
-	switch ( $section ) {
-		case 'drush:banner-history-queue-consume':
-			return dt( "Consume associations of banner history log IDs and " .
-				"contribution tracking IDs from a remote queue, then store " .
-				"them in a table." );
-	}
+function banner_history_queue_consume_drush_help($section) {
+  switch ($section) {
+    case 'drush:banner-history-queue-consume':
+      return dt("Consume associations of banner history log IDs and " .
+        "contribution tracking IDs from a remote queue, then store " .
+        "them in a table.");
+  }
 }
 
 /**
@@ -42,27 +44,27 @@ function banner_history_queue_consume_drush_help( $section ) {
  * them in a table.
  */
 function drush_banner_history_queue_consume() {
+  civicrm_initialize();
+  \Civi::log('wmf')->info('banner_history: Executing: drush_banner_history_queue_consume');
+  module_invoke('banner_history', 'queue_consume');
 
-	watchdog( 'banner_history', 'Executing: drush_banner_history_queue_consume' );
-	module_invoke( 'banner_history', 'queue_consume' );
+  // TODO Copypasta from error handling in unsubscribe_queue_consume.drush.inc
+  // Should be consolidated somewhere
 
-	// TODO Copypasta from error handling in unsubscribe_queue_consume.drush.inc
-	// Should be consolidated somewhere
+  $errors = drush_get_error_log();
 
-	$errors = drush_get_error_log();
+  if (!empty($errors)) {
 
-	if ( !empty( $errors ) ){
+    echo "\n***ERRORS***";
 
-		echo "\n***ERRORS***";
+    foreach ($errors as $error => $msgarray) {
+      echo "\n$error: ";
+      foreach ($msgarray as $count => $message) {
+        echo "\n\t$message";
+      }
+    }
 
-		foreach( $errors as $error => $msgarray ){
-			echo "\n$error: ";
-			foreach ( $msgarray as $count => $message ){
-				echo "\n\t$message";
-			}
-		}
-
-		echo "\n\n";
-		exit( drush_get_error() );
-	}
+    echo "\n\n";
+    exit(drush_get_error());
+  }
 }
