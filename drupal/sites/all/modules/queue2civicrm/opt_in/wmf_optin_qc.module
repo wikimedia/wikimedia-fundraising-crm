@@ -69,15 +69,14 @@ function optin_qc_settings() {
  * @ref drush_optin_queue_consume
  */
 function optin_batch_process() {
+  civicrm_initialize();
   if (variable_get( "optin_qc_disable", false )){
-    watchdog('optin_qc_disable', 'optin_qc is disabled. No messages processed.');
+    \Civi::log('wmf')->info('optin_qc_disable: optin_qc is disabled. No messages processed.');
     return 0;
   }
 
   wmf_common_create_smashpig_context('optin');
-  watchdog('optin', 'Executing: optin_batch_process');
-
-  civicrm_initialize();
+  \Civi::log('wmf')->info('optin: Executing: optin_batch_process');
 
   $optInConsumer = new OptInQueueConsumer(
     'opt-in',
@@ -88,9 +87,9 @@ function optin_batch_process() {
   $processed = $optInConsumer->dequeueMessages();
 
   if ($processed > 0) {
-    watchdog('opt_in', 'Successfully processed ' . $processed . ' opt-in(s).');
+    \Civi::log('wmf')->info('optin: Successfully processed {processed} opt-in(s).', ['processed' => $processed]);
   }
   else {
-    watchdog('opt_in', 'No opt-ins processed.');
+    \Civi::log('wmf')->info('optin: No opt-ins processed.');
   }
 }
