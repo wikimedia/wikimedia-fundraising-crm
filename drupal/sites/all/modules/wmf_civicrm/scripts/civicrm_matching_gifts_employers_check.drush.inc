@@ -72,9 +72,8 @@ function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
     else {
       // clean up our new data file if there are no updates to employer data
       unlink($newExportFilePath);
-      watchdog(
-        'civicrm_matching_gifts_employers_check',
-        'Removing new employers data file. No employer updates found'
+      \Civi::log('wmf')->info(
+        'civicrm_matching_gifts_employers_check: Removing new employers data file. No employer updates found'
       );
     }
   }
@@ -96,9 +95,8 @@ function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
  * @see sites/default/civicrm/extensions/matching-gifts/api/v3/MatchingGiftPolicies/Sync.php
  */
 function sync_matching_gifts_employer_data($syncBatchSize) {
-  watchdog(
-    'civicrm_matching_gifts_employers_check',
-    'Initiating matching gift employers sync'
+  \Civi::log('wmf')->info(
+    'civicrm_matching_gifts_employers_check: Initiating matching gift employers sync'
   );
 
   $syncParams = [
@@ -114,17 +112,14 @@ function sync_matching_gifts_employer_data($syncBatchSize) {
   }
 
   if ($syncResult['count'] == 0) {
-    watchdog(
-      'civicrm_matching_gifts_employers_check',
-      'No new employers available to sync since the last update'
+    \Civi::log('wmf')->info(
+      'civicrm_matching_gifts_employers_check: No new employers available to sync since the last update'
     );
   }
   else {
-    watchdog(
-      'civicrm_matching_gifts_employers_check',
-      '%count updated employer records found',
-      ['%count' => $syncResult['count']],
-      WATCHDOG_INFO
+    \Civi::log('wmf')->info(
+      'civicrm_matching_gifts_employers_check: {count} updated employer records found',
+      ['count' => $syncResult['count']]
     );
   }
 
@@ -152,11 +147,9 @@ function generate_new_export($exportFilePath) {
     );
   }
 
-  watchdog(
-    'civicrm_matching_gifts_employers_check',
-    'New employers data file created at %path',
-    ['%path' => $exportFilePath],
-    WATCHDOG_INFO
+  \Civi::log('wmf')->info(
+    'civicrm_matching_gifts_employers_check: New employers data file created at {path}',
+    ['path' => $exportFilePath]
   );
 }
 
@@ -185,17 +178,15 @@ function new_export_contains_updates(
           $currentEmployerFilePath
         )) {
         //updates detected
-        watchdog(
-          'civicrm_matching_gifts_employers_check',
-          'Changes found in new employer data file'
+        \Civi::log('wmf')->info(
+          'civicrm_matching_gifts_employers_check: Changes found in new employer data file'
         );
         return TRUE;
       }
       else {
         // no updates found between new and current
-        watchdog(
-          'civicrm_matching_gifts_employers_check',
-          'No updates present in new employer file'
+        \Civi::log('wmf')->info(
+          'civicrm_matching_gifts_employers_check: No updates present in new employer file'
         );
         return FALSE;
       }
@@ -242,11 +233,9 @@ function update_matching_gifts_employer_data(
   }
   // update file to latest
   rename($newEmployerFilePath, $currentEmployerFilePath);
-  watchdog(
-    'civicrm_matching_gifts_employers_check',
-    'Latest employers file created at %path',
-    ['%path' => $currentEmployerFilePath],
-    WATCHDOG_INFO
+  \Civi::log('wmf')->info(
+    'civicrm_matching_gifts_employers_check: Latest employers file created at {path}',
+    ['path' => $currentEmployerFilePath]
   );
 }
 
@@ -281,9 +270,9 @@ function send_matching_gifts_update_email($currentEmployerFilePath) {
 
   try {
     $mailer->send($email);
-    watchdog(
-      'civicrm_matching_gifts_employers_check',
-      'Update notification email sent to ' . $toAddress
+    \Civi::log('wmf')->info(
+      'civicrm_matching_gifts_employers_check: Update notification email sent to {to_address}',
+    ['to_address' => $toAddress]
     );
   } catch (Exception $e) {
     // something bad happened :(

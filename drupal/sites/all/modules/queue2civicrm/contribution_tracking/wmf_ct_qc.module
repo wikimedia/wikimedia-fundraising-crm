@@ -50,10 +50,10 @@ function ct_qc_settings() {
  * @see \queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer::processMessage()
  */
 function ct_batch_process() {
-
+  civicrm_initialize();
   if (variable_get( "ct_qc_disable", false )){
-    watchdog('contriution_tracking_qc', 'ct_qc is disabled. No contributions processed.');
-    return 0;
+    \Civi::log('wmf')->info('contribution_tracking_qc: ct_qc is disabled. No contributions processed.');
+    return;
   }
 
   //smashpig config is a dependency of our ContributionTrackingQueueConsumer
@@ -76,10 +76,11 @@ function ct_batch_process() {
 
 
   if ($processed > 0) {
-    watchdog('ct', 'Successfully processed ' . $processed . ' contribution tracking message(s).');
+    \Civi::log('wmf')->info('contribution_tracking: Successfully processed {processed} contribution tracking message(s).', ['processed' => $processed]);
   }
   else {
-    watchdog('ct', 'No contribution tracking messages processed.');
+    \Civi::log('wmf')->info('contribution_tracking: No contribution tracking messages processed.');
   }
+
 }
 
