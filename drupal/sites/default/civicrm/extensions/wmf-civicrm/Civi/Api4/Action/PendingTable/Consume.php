@@ -73,7 +73,7 @@ class Consume extends AbstractAction {
       );
       $pendingDb->deleteMessage($message);
       $processed++;
-      $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway, ['cc', 'google']);
+      $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway, PendingTransaction::getResolvableMethods());
       $resolvedDetails[] = $resolveResult;
     }
     // TODO add to prometheus
