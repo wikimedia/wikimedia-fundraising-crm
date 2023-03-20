@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4\Action\PendingTable;
 
+use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\PendingTransaction;
@@ -67,7 +68,7 @@ class Consume extends AbstractAction {
         ->setMessage($message)
         ->setAlreadyResolved($resolvedDetails)
         ->execute();
-      \Civi::Log('wmf')->info(
+      Civi::log('wmf')->info(
         "Pending transaction {$message['order_id']} was " .
         'resolved and the result is ' . json_encode($resolveResult->first())
       );
@@ -75,6 +76,28 @@ class Consume extends AbstractAction {
       $processed++;
       $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway, PendingTransaction::getResolvableMethods());
       $resolvedDetails[] = $resolveResult;
+    }
+    if (!$message) {
+      Civi::log('wmf')->info(
+        'All {gateway} pending transactions resolved', ['gateway' => $this->gateway]
+      );
+    }
+    if ($message['date'] >= UtcDate::getUtcTimestamp("-{$this->minimumAge} minutes")) {
+      Civi::log('wmf')->info(
+        'All {gateway} pending transactions older than {minimumAge} minutes resolved',
+        ['gateway' => $this->gateway, 'minimumAge' => $this->minimumAge]
+      );
+    }
+    if ($this->timeLimit > 0 || time() >= $startTime + $this->timeLimit) {
+      Civi::log('wmf')->info(
+        'Reached time limit of {timeLimit} seconds',
+        ['timeLimit' => $this->timeLimit]
+      );
+    }
+    if ($this->batch > 0 || $processed >= $this->batch) {
+      Civi::log('wmf')->info(
+        'Reached batch limit of {batch}', ['batch' => $this->batch]
+      );
     }
     // TODO add to prometheus
     $result->append([
