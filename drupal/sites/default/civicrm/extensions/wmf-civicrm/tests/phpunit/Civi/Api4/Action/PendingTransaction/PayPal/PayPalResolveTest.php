@@ -218,7 +218,7 @@ class PayPalResolveTest extends TestCase {
         'amount' => $pendingMessage['gross'],
         'currency' => $pendingMessage['currency'],
         'email' => 'testy@example.com',
-        'date' => date('Y-m-d H:i:s', $pendingMessage['date']),
+        'date' => $pendingMessage['date'],
       ])
       ->willReturn($createProfileResponse);
 

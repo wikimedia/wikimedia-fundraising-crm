@@ -650,7 +650,7 @@ class Resolve extends AbstractAction {
       'amount' => $this->message['gross'],
       'currency' => $this->message['currency'],
       'email' => $this->message['email'],
-      'date' => date('Y-m-d H:i:s', $this->message['date']),
+      'date' => $this->message['date'],
     ]);
     return $profileResult->getStatus();
   }
