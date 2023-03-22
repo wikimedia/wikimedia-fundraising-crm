@@ -340,6 +340,7 @@ function offline2civicrm_import_batch($offset, $limit, $importer, &$context) {
 }
 
 function offline2civicrm_import_batch_finished($success, $results, $operations, $timeTaken) {
+  civicrm_initialize();
   $status = $results['isSuccess'] ? ($results['numberErrorRows'] ? 'warning' : 'status') : 'error';
   drupal_set_message((implode('<br>', $results['messages'])), $status);
   foreach ($results['messages'] as $message) {
