@@ -7,6 +7,7 @@ use Civi\WMFHooks\CalculatedData;
 use Civi\WMFHooks\Contribution;
 use Civi\WMFHooks\ContributionRecur;
 use Civi\WMFHooks\ContributionRecurTrigger;
+use Civi\WMFHooks\Import;
 use Civi\WMFHooks\Permissions;
 use Civi\WMFHooks\QuickForm;
 use Civi\WMFHooks\Data;
@@ -331,6 +332,13 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   $recurProcessor = new ContributionRecurTrigger();
   $recurTriggerInfo = $recurProcessor->setTableName($tableName)->triggerInfo();
   $info = array_merge($info, $recurTriggerInfo);
+}
+
+/**
+ * Implements hook_civicrm_importAlterMappedRow().
+ */
+function wmf_civicrm_civicrm_importAlterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID) {
+  Import::alterMappedRow($importType, $context, $mappedRow, $rowValues, $userJobID);
 }
 
 /**
