@@ -1,8 +1,8 @@
 <?php
 
-use Civi\Api4\Contact;
 use Civi\Api4\Relationship;
 use Civi\Api4\RelationshipType;
+use Civi\WMFHelpers\Contact;
 use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
 use SmashPig\Core\Context;
@@ -1135,41 +1135,10 @@ abstract class ChecksFile {
    *
    * @return int
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
-   * @throws \Civi\WMFException\WMFException
+   * @throws \Civi\WMFException\WMFException|\CRM_Core_Exception
    */
   protected function getOrganizationID(string $organizationName, bool $isCreateIfNotExists = FALSE): int {
-    // Using the Civi Statics pattern for php caching makes it easier to reset in unit tests.
-    if (!isset(\Civi::$statics['offline2civicrm']['organization'][$organizationName])) {
-      $contacts = civicrm_api3('Contact', 'get', ['nick_name' => $organizationName, 'contact_type' => 'Organization']);
-      if ($contacts['count'] == 0) {
-        $contacts = civicrm_api3('Contact', 'get', ['organization_name' => $organizationName, 'contact_type' => 'Organization']);
-      }
-      if ($contacts['count'] == 1) {
-        \Civi::$statics['offline2civicrm']['organization'][$organizationName] = $contacts['id'];
-      }
-      else {
-        \Civi::$statics['offline2civicrm']['organization'][$organizationName] = NULL;
-        if ($isCreateIfNotExists) {
-          \Civi::$statics['offline2civicrm']['organization'][$organizationName] = Contact::create(FALSE)->setValues([
-            'organization_name' => $organizationName,
-            'source' => $this->gateway . ' created via import',
-          ])->execute()->first()['id'];
-        }
-      }
-    }
-    if (\Civi::$statics['offline2civicrm']['organization'][$organizationName]) {
-      return \Civi::$statics['offline2civicrm']['organization'][$organizationName];
-    }
-    throw new WMFException(
-      WMFException::IMPORT_CONTRIB,
-      t("Did not find exactly one Organization with the details: @organizationName. You will need to ensure a single Organization record exists for the contact first",
-        [
-          '@organizationName' => $organizationName,
-        ]
-      )
-    );
+    return Contact::getOrganizationID($organizationName, $isCreateIfNotExists, ['source' => $this->gateway . ' created via import']);
   }
 
   /**

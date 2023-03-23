@@ -1,6 +1,7 @@
 <?php
 
 use Civi\WMFException\WMFException;
+use Civi\WMFHelpers\Contact;
 
 class BenevityFile extends ChecksFile {
 
@@ -374,16 +375,7 @@ class BenevityFile extends ChecksFile {
    * @throws \CiviCRM_API3_Exception
    */
   protected function getOrganizationResolvedName($organizationName) {
-    if (!isset(\Civi::$statics['offline2civicrm']['organization_resolved_name'][$organizationName])) {
-      $contacts = civicrm_api3('Contact', 'get', ['nick_name' => $organizationName, 'contact_type' => 'Organization', 'return' => 'id,organization_name', 'sequential' => 1]);
-      if ($contacts['count'] == 1) {
-        \Civi::$statics['offline2civicrm']['organization_resolved_name'][$organizationName] = $contacts['values'][0]['organization_name'];
-      }
-      else {
-        \Civi::$statics['offline2civicrm']['organization_resolved_name'][$organizationName] = $organizationName;
-      }
-    }
-    return \Civi::$statics['offline2civicrm']['organization_resolved_name'][$organizationName];
+    return Contact::resolveOrganizationName($organizationName);
   }
 
   /**
