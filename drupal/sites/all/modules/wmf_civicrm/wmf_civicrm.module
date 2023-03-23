@@ -241,7 +241,10 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
 
   if (!$msg['contact_id']) {
     $timer->startImportTimer("create_contact");
-    wmf_civicrm_message_create_contact($msg);
+    $contact = WMFContact::save(FALSE)
+      ->setMessage($msg)
+      ->execute()->first();
+    $msg['contact_id'] = $contact['id'];
     $timer->endImportTimer("create_contact");
   }
   else {
@@ -366,19 +369,6 @@ function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
     $msg['contact_id'] = NULL;
     unset($msg['contact_hash']);
   }
-}
-
-/**
- * Create a contact from the $msg array and set the contact_id.
- *
- * @param array $msg
- *   Normalised wmf msg array.
- *
- * @throws \Civi\WMFException\WMFException
- */
-function wmf_civicrm_message_create_contact(&$msg) {
-  $contact = wmf_civicrm_message_contact_insert($msg);
-  $msg['contact_id'] = $contact['id'];
 }
 
 /**

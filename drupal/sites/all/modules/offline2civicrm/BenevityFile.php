@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\Contact;
 
@@ -224,7 +225,10 @@ class BenevityFile extends ChecksFile {
     elseif (empty($msg['contact_id'])) {
       // We still want to create the contact and link it to the organization, and
       // soft credit it.
-      wmf_civicrm_message_create_contact($msg);
+      $contact = WMFContact::save(FALSE)
+        ->setMessage($msg)
+        ->execute()->first();
+      $msg['contact_id'] = $contact['id'];
     }
     if (isset($msg['employer_id']) && $msg['contact_id'] != $this->getAnonymousContactID()) {
       // This is done in the import but if we have no donation let's still do this update.
