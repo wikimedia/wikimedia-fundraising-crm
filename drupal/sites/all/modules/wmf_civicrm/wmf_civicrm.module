@@ -94,16 +94,6 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
   }
 }
 
-function civicrm_api_classapi() {
-  civicrm_initialize();
-  if (module_load_include('php', 'civicrm', '../api/class.api') === FALSE) {
-    watchdog('civicrm_api', t('Failed to load civicrm api classes'), [], WATCHDOG_ERROR);
-  }
-  else {
-    return new civicrm_api3();
-  }
-}
-
 /**
  * Determines the settlement currency for a given donation.
  * Argument is a queue message or a civicrm contribution array.
