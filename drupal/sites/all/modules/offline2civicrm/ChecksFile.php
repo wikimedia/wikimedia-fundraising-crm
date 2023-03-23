@@ -838,17 +838,7 @@ abstract class ChecksFile {
    * @throws \CiviCRM_API3_Exception
    */
   protected function getAnonymousContactID() {
-    static $contactID = NULL;
-    if (!$contactID) {
-      $contactID = (int) civicrm_api3('Contact', 'getvalue', array(
-        'return' => 'id',
-        'contact_type' => 'Individual',
-        'first_name' => 'Anonymous',
-        'last_name' => 'Anonymous',
-        'email' => 'fakeemail@wikimedia.org',
-      ));
-    }
-    return $contactID;
+    return Contact::getAnonymousContactID();
   }
 
   /**

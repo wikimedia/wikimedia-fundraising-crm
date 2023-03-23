@@ -104,4 +104,28 @@ class Contact {
     }
   }
 
+  /**
+   * Get the ID of our anonymous contact.
+   *
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public static function getAnonymousContactID(): int {
+    static $contactID = NULL;
+    if (!$contactID) {
+      $contactID = (int) \Civi\Api4\Contact::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('contact_type', '=', 'Individual')
+        ->addWhere('first_name', '=', 'Anonymous')
+        ->addWhere('last_name', '=', 'Anonymous')
+        ->addWhere('email_primary.email', '=', 'fakeemail@wikimedia.org')
+        ->execute()->first()['id'];
+    }
+    if (!$contactID) {
+      // It always exists on production....
+      throw new \CRM_Core_Exception('The anonymous contact does not exist in your dev environment');
+    }
+    return $contactID;
+  }
+
 }
