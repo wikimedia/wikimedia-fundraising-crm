@@ -12,11 +12,9 @@ use Civi\Omnimail\MailFactory;
  */
 function wmf_common_failmail( $module, $message, $error = null, $source = null )
 {
-    watchdog(
-        'failmail',
-        "What's that? Something wrong: $message",
-        array(),
-        WATCHDOG_ERROR
+    \Civi::log('wmf')->error(
+        'failmail: What\'s that? Something wrong: {message}',
+        ['message' => $message]
     );
 
     $isRemoved = (is_callable(array($error, 'isRejectMessage'))) ? $error->isRejectMessage() : FALSE;
