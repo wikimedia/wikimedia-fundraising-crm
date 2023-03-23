@@ -681,8 +681,7 @@ function wmf_civicrm_normalize_contribution_amounts($msg) {
     and (empty($msg['original_gross']) or empty($msg['original_currency']))
   ) {
     // just... don't
-    watchdog('wmf_civicrm', 'Not freaking out about non-monetary message.',
-      NULL, WATCHDOG_INFO);
+    \Civi::log('wmf')->info('wmf_civicrm: Not freaking out about non-monetary message.');
     return $msg;
   }
 
@@ -706,9 +705,8 @@ function wmf_civicrm_normalize_contribution_amounts($msg) {
 
   $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
   if ($msg['currency'] !== $settlement_currency) {
-    watchdog('wmf_civicrm', 'Converting to settlement currency: %old -> %new',
-      ['%old' => $msg['currency'], '%new' => $settlement_currency],
-      WATCHDOG_INFO);
+    \Civi::log('wmf')->info('wmf_civicrm: Converting to settlement currency: {old} -> {new}',
+      ['old' => $msg['currency'], 'new' => $settlement_currency]);
     try {
       $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
     }
@@ -802,16 +800,14 @@ function wmf_civicrm_verify_message_and_stage($msg) {
   foreach ($max_lengths as $key => $limit) {
     if (mb_strlen($msg[$key]) > $limit) {
       if (array_key_exists($key, $truncate_tags)) {
-        watchdog(
-          'wmf_civicrm',
-          'Truncating key !key to !len chars. Original: "!val". Applying tag !tag',
+        \Civi::log('wmf')->warning(
+          'wmf_civicrm: Truncating key {key} to {length} chars. Original: "{original_value}". Applying tag {tag}',
           [
-            '!key' => $key,
-            '!len' => $limit,
-            '!val' => $msg[$key],
-            '!tag' => $truncate_tags[$key],
-          ],
-          WATCHDOG_WARNING
+            'key' => $key,
+            'length' => $limit,
+            'original_value' => $msg[$key],
+            'tag' => $truncate_tags[$key],
+          ]
         );
         $msg[$key] = mb_substr($msg[$key], 0, $limit);
         $msg['contact_tags'][] = $truncate_tags[$key];
@@ -1165,10 +1161,8 @@ function wmf_civicrm_get_country_id($raw) {
     }
   }
 
-  watchdog('wmf_civicrm',
-    "Cannot find country: [%txt]",
-    ['%txt' => $raw],
-    WATCHDOG_NOTICE
+  \Civi::log('wmf')->notice('wmf_civicrm: Cannot find country: [{country}]',
+    ['country' => $raw]
   );
   return FALSE;
 }
@@ -1904,7 +1898,9 @@ function wmf_civicrm_get_wmf_contribution_extra($contribution) {
       $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
     }
     catch (WMFException $ex) {
-      watchdog('wmf_civicrm', "Failed to parse trxn_id: {$contribution['trxn_id']}, " . $ex->getMessage());
+      \Civi::log('wmf')->info('wmf_civicrm: Failed to parse trxn_id: {trxn_id}, {message}',
+      ['trxn_id' => $contribution['trxn_id'], 'message' => $ex->getMessage()]
+      );
     }
   }
 
@@ -1994,10 +1990,13 @@ function wmf_civicrm_getLastDonationParams(&$contribution) {
       }
     }
     if (!empty($params)) {
-      watchdog(
-        'wmf_civicrm',
-        "Contribution post hook is changing values for contribution {$contribution->id} " .
-        'from ' . print_r($contactLastDonation, TRUE) . ' to ' . print_r($params, TRUE)
+      \Civi::log('wmf')->info(
+        'wmf_civicrm: Contribution post hook is changing values for contribution {contribution_id} ' .
+        'from {from} to {to}', [
+          'contribution_id' => $contribution->id,
+          'from' => $contactLastDonation,
+          'to' => $params,
+        ]
       );
     }
     return $params;
