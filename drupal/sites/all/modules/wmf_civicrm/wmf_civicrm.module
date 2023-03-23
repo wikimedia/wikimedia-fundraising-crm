@@ -1131,10 +1131,8 @@ WHERE
     return (int) $stateID;
   }
 
-  watchdog('wmf_civicrm',
-    "Cannot find state: [%state] (country %country)",
-    ['%state' => $state, '%country' => $country_id],
-    WATCHDOG_NOTICE
+  \Civi::log('wmf')->notice('wmf_civicrm: Cannot find state: {state} (country {country})',
+    ['state' => $state, 'country' => $country_id]
   );
 }
 
@@ -1501,7 +1499,7 @@ function wmf_civicrm_boost_performance() {
 }
 
 function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
-  watchdog('wmf_civicrm', "Preventing thank-you for contribution {$contribution_id} because: {$reason}", [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('wmf_civicrm: Preventing thank-you for contribution {contribution_id} because: {reason}', ['contribution_id' => $contribution_id, 'reason' => $reason]);
 
   try {
     wmf_civicrm_set_custom_field_values($contribution_id, [
@@ -1509,7 +1507,7 @@ function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
     ]);
   }
   catch (WMFException $ex) {
-    watchdog('wmf_civicrm', "Updating with no-thank-you failed with details: {$ex->getMessage()}", [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('wmf_civicrm: Updating with no-thank-you failed with details: {message}', ['message' => $ex->getMessage()]);
   }
 }
 
