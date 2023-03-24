@@ -800,7 +800,7 @@ function wmf_civicrm_verify_message_and_stage($msg) {
     'city' => 'AddressTruncated',
   ];
   foreach ($max_lengths as $key => $limit) {
-    if (strlen($msg[$key]) > $limit) {
+    if (mb_strlen($msg[$key]) > $limit) {
       if (array_key_exists($key, $truncate_tags)) {
         watchdog(
           'wmf_civicrm',
