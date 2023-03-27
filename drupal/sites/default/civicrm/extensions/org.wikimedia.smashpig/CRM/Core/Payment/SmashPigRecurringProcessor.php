@@ -5,6 +5,7 @@ use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
 use Civi\Api4\Contact;
 use Civi\Api4\FailureEmail;
+use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
 
@@ -566,6 +567,17 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     &$paymentParams
   ) {
     Civi::log('wmf')->info('Error: '.$exception->getErrorCode().' invoice_id:'.$paymentParams['invoice_id']);
+    $data = $exception->getErrorData();
+    if (
+      !empty($data['smashpig_processor_response']) &&
+      $data['smashpig_processor_response'] instanceof PaymentProviderResponse
+    ) {
+      $rawResponse = $data['smashpig_processor_response']->getRawResponse();
+      if (!is_string($rawResponse)) {
+        $rawResponse = json_encode($rawResponse);
+      }
+      Civi::log('wmf')->info('Raw response: ' . $rawResponse);
+    }
     switch ($exception->getErrorCode()) {
       case ErrorCode::DUPLICATE_ORDER_ID:
         // If we get an error that means the merchant reference has already
