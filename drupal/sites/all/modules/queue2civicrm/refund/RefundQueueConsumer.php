@@ -74,25 +74,26 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
         , $parentTxn
       );
     }
-
+    $context = ['log_id' => $logId];
     if ($contributions) {
       // Perform the refund!
       try {
-        watchdog('refund', "$logId: Marking as refunded", NULL, WATCHDOG_INFO);
+        \Civi::log('wmf')->info('refund {log_id}: Marking as refunded', $context);
         wmf_civicrm_mark_refund($contributions[0]['id'], $message['type'], TRUE, $message['date'],
           $refundTxn,
           $message['gross_currency'],
           $message['gross']
         );
 
-        watchdog('refund', "$logId: Successfully marked as refunded", NULL, WATCHDOG_INFO);
-      } catch (Exception $ex) {
-        watchdog('refund', "$logId: Could not refund due to internal error: " . $ex->getMessage(), NULL, WATCHDOG_ERROR);
+        \Civi::log('wmf')->info('refund {log_id}: Successfully marked as refunded', $context);
+      }
+      catch (Exception $ex) {
+        \Civi::log('wmf')->error('refund {log_id}: Could not refund due to internal error: {message}', array_merge($context, ['message' => $ex->getMessage()]));
         throw $ex;
       }
     }
     else {
-      watchdog('refund', "$logId: Contribution not found for this transaction!", NULL, WATCHDOG_ERROR);
+      \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
       throw new WMFException(WMFException::MISSING_PREDECESSOR, "Parent not found: " . strtoupper($gateway) . " " . $parentTxn);
     }
   }
