@@ -32,27 +32,22 @@ class UnsubscribeQueueConsumer extends TransactionalWmfQueueConsumer {
     }
 
     $emails = [strtolower($message['email'])];
-    $contribId = $message['contribution-id'];
-    watchdog('unsubscribe', "$contribId: Acting on contribution ID", [],
-      WATCHDOG_INFO);
+    $context = ['contribution_id' => $message['contribution-id']];
+    \Civi::log('wmf')->info('unsubscribe {contribution_id}: Acting on contribution ID', $context);
 
     // Find the contact from the contribution ID
-    $contacts = $this->getEmailsFromContribution($contribId);
+    $contacts = $this->getEmailsFromContribution($context['contribution_id']);
 
     if (count($contacts) === 0) {
-      watchdog('unsubscribe',
-        "$contribId: No contacts returned for contribution ID. Acking frame and returning.",
-        [],
-        WATCHDOG_NOTICE);
+      \Civi::log('wmf')->notice('unsubscribe {contribution_id}: No contacts returned for contribution ID. Acking frame and returning.',
+        $context);
     }
     else {
       // Excellent -- we have a collection of emails to unsubscribe now! :) Check opt out status and add them to the array
       foreach ($contacts as $contact) {
         if ($contact['is_opt_out'] == TRUE) {
-          watchdog('unsubscribe',
-            "$contribId: Contact already opted out with this contribution ID.",
-            [],
-            WATCHDOG_NOTICE);
+          \Civi::log('wmf')->notice('unsubscribe {contribution_id}:  Contact already opted out with this contribution ID.',
+            $context);
           continue;
         }
         $email = strtolower($contact['email']);
@@ -63,7 +58,7 @@ class UnsubscribeQueueConsumer extends TransactionalWmfQueueConsumer {
 
       // And opt them out
       $count = $this->optOutEmails($emails);
-      watchdog('unsubscribe', "$contribId: Successfully updated $count rows.");
+      \Civi::log('wmf')->notice('unsubscribe {contribution_id}:   Successfully updated {count} rows.', array_merge($context, ['count' => $count]));
     }
   }
 
