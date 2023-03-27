@@ -83,7 +83,7 @@ function recurring_batch_process() {
   wmf_common_create_smashpig_context( 'recurring' );
 
   if (variable_get( "recurring_disable", false )){
-    watchdog('recurring', 'Recurring is disabled. No contributions processed.');
+    \Civi::log('wmf')->notice('recurring: Recurring is disabled. No contributions processed.');
     return 0;
   }
 
@@ -96,10 +96,10 @@ function recurring_batch_process() {
   $recurring_processed = $consumer->dequeueMessages();
 
   if ($recurring_processed > 0) {
-    watchdog('recurring', 'Processed ' . $recurring_processed . ' subscription messages.');
+    \Civi::log('wmf')->notice('recurring: Processed {number_processed} subscription messages.', ['number_processed' => $recurring_processed]);
   }
   else {
-    watchdog('recurring', 'No contributions processed.');
+    \Civi::log('wmf')->notice('recurring: No contributions processed.');
   }
 
   return $recurring_processed;
@@ -127,7 +127,7 @@ function recurring_import( $msg ) {
  */
 function recurring_get_contribution_tracking_id( $msg ) {
   if ( array_key_exists( 'custom', $msg ) && strlen( $msg[ 'custom' ] )) {
-  	watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Using $msg["custom"], %cti', array( '%cti' => $msg['custom']), WATCHDOG_DEBUG );
+    \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Using $msg["custom"], {contribution_tracking_id}', ['contribution_tracking_id' => $msg['custom']]);
     return $msg[ 'custom' ];
   } elseif ( $msg[ 'txn_type' ] == 'subscr_payment' ) {
     $contribution_tracking_id = null;
@@ -157,7 +157,7 @@ function recurring_get_contribution_tracking_id( $msg ) {
         // we can use this related contribution tracking id
         $contribution_tracking_id = db_query( $query )->fetchField();
         if ( !empty( $contribution_tracking_id ) ) {
-          watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Selected contrib tracking id from past contributions, %cti', array( '%cti' => $contribution_tracking_id ), WATCHDOG_DEBUG );
+          \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Selected contribution tracking id from past contributions, {contribution_tracking_id}', ['contribution_tracking_id' => $contribution_tracking_id]);
           return $contribution_tracking_id;
         }
       }
@@ -177,11 +177,12 @@ function recurring_get_contribution_tracking_id( $msg ) {
         'contribution_id' => $contrib_id
       );
       $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( $tracking );
-      watchdog( 'recurring', 'recurring_get_contribution_tracking_id: Got new contrib tracking id, %cti', array( '%cti' => $contribution_tracking_id ), WATCHDOG_DEBUG );
+      \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Got new contribution tracking id, {contribution_tracking_id}', ['contribution_tracking_id' => $contribution_tracking_id]);
       return $contribution_tracking_id;
     }
-  } else {
-    watchdog( 'recurring', 'recurring_get_contribution_tracking_id: No contribution_tracking_id returned.', array(), WATCHDOG_DEBUG );
+  }
+  else {
+    \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: No contribution_tracking_id returned.');
     return null;
   }
 }
