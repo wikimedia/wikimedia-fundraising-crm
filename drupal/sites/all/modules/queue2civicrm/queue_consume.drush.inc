@@ -112,8 +112,9 @@ function drush_queue_consume() {
  * @throws \Exception
  */
 function drush_queue_consume_donations_process_messagefile($path) {
-  watchdog('queue2civicrm', "Processing input file @path and feeding to queue2civicrm_import.",
-    ['@path' => realpath($path)], WATCHDOG_INFO);
+  civicrm_initialize();
+  \Civi::log('wmf')->info('queue2civicrm: Processing input file {path} and feeding to queue2civicrm_import.',
+    ['path' => realpath($path)]);
   $contents = file_get_contents($path);
   $messages = json_decode($contents, TRUE);
   if (!is_array($messages)) {
