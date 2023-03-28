@@ -21,11 +21,8 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
       throw new ContributionTrackingDataValidationException($error);
     }
 
-    watchdog(
-      'contribution-tracking',
-      "Beginning processing of contribution-tracking message {$message['id']}",
-      [],
-      WATCHDOG_INFO
+    $this->log("Beginning processing of contribution-tracking message {contribution_tracking_id}",
+      ['contribution_tracking_id' => $message['id']]
     );
 
     // pick out the fields we want and ignore anything else (e.g. source_* fields)
@@ -81,13 +78,14 @@ LIMIT 1";
         && ((int) $existingRow['contribution_id'] !== (int) $ctData['contribution_id'])
       ) {
 
-        watchdog(
-          'contribution-tracking',
-          "Trying to update contribution tracking row {$ctData['id']} that " .
-          "already has contribution_id {$existingRow['contribution_id']} " .
-          "with new contribution id {$ctData['contribution_id']}.",
-          [],
-          WATCHDOG_INFO
+        $this->log(
+          "Trying to update contribution tracking row {contribution_tracking_id} that " .
+          "already has contribution_id {existing_contribution_id} " .
+          "with new contribution id {contribution_id}.", [
+            'contribution_tracking_id' => $ctData['id'],
+            'existing_contribution_id' => $existingRow['contribution_id'],
+            'contribution_id' => $ctData['contribution_id'],
+          ]
         );
 
         $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
@@ -120,6 +118,20 @@ LIMIT 1";
           ->execute();
       }
     }
+  }
+
+  /**
+   * Log message, ensuring CiviCRM is initialized to do so.
+   *
+   * It's OK to call civicrm_initialize() more than once if it has
+   * already been called.
+   *
+   * @param string $message
+   * @param array $context
+   */
+  private function log(string $message, array $context): void {
+    civicrm_initialize();
+    \Civi::log('wmf')->info('contribution-tracking: ' . $message, $context);
   }
 
   /**
