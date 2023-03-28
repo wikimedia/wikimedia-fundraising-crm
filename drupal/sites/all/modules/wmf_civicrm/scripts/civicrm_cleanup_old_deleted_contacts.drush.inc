@@ -68,9 +68,7 @@ function drush_civicrm_cleanup_old_deleted_contacts_civicrm_cleanup_contacts() {
       $count++;
     }
     catch (Exception $e) {
-      $message = 'This contact id is not able to be deleted: ' . $contactID;
-      drush_print($message);
-      watchdog('civicrm_cleanup_logs', $message);
+      \Civi::log('wmf')->warning('civicrm_cleanup_logs: This contact id is not able to be deleted: {contact_id}', ['contact_id' => $contactID]);
     }
   }
   if ($modifiedDate) {
@@ -78,5 +76,5 @@ function drush_civicrm_cleanup_old_deleted_contacts_civicrm_cleanup_contacts() {
   }
   $message = !$modifiedDate ? "No deleted contact found to delete" : "Deleted $count deleted contacts, most recent modified_date: " . $modifiedDate;
   drush_print($message);
-  watchdog('civicrm_cleanup_logs', $message);
+  \Civi::log('wmf')->notice('civicrm_cleanup_logs: {message}', ['message' => $message]);
 }

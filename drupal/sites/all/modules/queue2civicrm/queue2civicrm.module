@@ -116,7 +116,7 @@ function queue2civicrm_batch_process($batch = NULL, $time_limit = NULL) {
   wmf_civicrm_boost_performance();
 
   if (variable_get('queue2civicrm_disable', FALSE)) {
-    watchdog('queue2civicrm', 'Job is disabled.  Exiting.', NULL, WATCHDOG_INFO);
+    \Civi::log('wmf')->info('queue2civicrm: Job is disabled.  Exiting.');
     return;
   }
 
@@ -189,11 +189,10 @@ function queue2civicrm_batch_process($batch = NULL, $time_limit = NULL) {
    */
 
   if ($processed > 0) {
-    watchdog('queue2civicrm', 'Successfully processed ' . $processed . ' contribution(s).');
-    watchdog('queue2civicrm',
-      'Average Transaction age: ' . $DonationStatsCollector->getOverallAverageGatewayTransactionAge() . ' seconds.');
+    \Civi::log('wmf')->notice('queue2civicrm: Successfully processed {processed} contribution(s).', ['processed' => $processed]);
+    \Civi::log('wmf')->notice('queue2civicrm: Average Transaction age: {average_age} seconds.', ['average_age' => $DonationStatsCollector->getOverallAverageGatewayTransactionAge()]);
   }
   else {
-    watchdog('queue2civicrm', 'No contributions processed.');
+    \Civi::log('wmf')->notice('queue2civicrm: No contributions processed.');
   }
 }

@@ -39,8 +39,7 @@ function unsubscribe_queue_consume_drush_help($section) {
 }
 
 /**
- * Generates translated versions of the unsubscribe pages from the
- * DonationInterface i18n files.
+ * Consume unsubscribe queue
  */
 function drush_unsubscribe_queue_consume() {
   civicrm_initialize();

@@ -94,16 +94,6 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
   }
 }
 
-function civicrm_api_classapi() {
-  civicrm_initialize();
-  if (module_load_include('php', 'civicrm', '../api/class.api') === FALSE) {
-    watchdog('civicrm_api', t('Failed to load civicrm api classes'), [], WATCHDOG_ERROR);
-  }
-  else {
-    return new civicrm_api3();
-  }
-}
-
 /**
  * Determines the settlement currency for a given donation.
  * Argument is a queue message or a civicrm contribution array.
@@ -534,7 +524,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
 
     try {
       if (array_key_exists('invoice_id', $contribution)) {
-        watchdog('wmf_civicrm', 'Checking for duplicate on invoice ID ' . $contribution['invoice_id'], NULL, WATCHDOG_INFO);
+        \Civi::log('wmf')->info('wmf_civicrm : Checking for duplicate on invoice ID {invoice_id}', ['invoice_id' => $contribution['invoice_id']]);
         $invoice_id = $contribution['invoice_id'];
         $duplicate = civicrm_api3("Contribution", "getcount", ["invoice_id" => $invoice_id]);
       }
@@ -595,66 +585,6 @@ function _wmf_civicrm_message_contribution_insert($msg) {
 }
 
 /**
- * Translate option value to CiviCRM id.
- *
- * Note that in general we do not need to translate these names to ids as the
- * CiviCRM api does that. This allows us to add additional error checking,
- * although possibly for not much gain.
- *
- * @param string $type
- * @param $name
- *
- * @return bool
- */
-function wmf_civicrm_get_civi_id($type, $name) {
-  static $civi_ids = [];
-  $params = ['name' => $name];
-  $dummy = [];
-
-  if (array_key_exists($type, $civi_ids) && array_key_exists($name, $civi_ids[$type])) {
-    return $civi_ids[$type][$name];
-  }
-
-  switch ($type) {
-    case 'contribution_type_id':
-    case 'financial_type_id':
-      //fixme: This is probably the upside-down way to do it. Really ought to go through the API.
-      //
-      $result = CRM_Financial_BAO_FinancialType::retrieve($params, $dummy);
-      if (!is_null($result)) {
-        $civi_ids[$type][$name] = $result->id;
-        watchdog('wmf_civicrm', "Found id for contribution_type $name: " . $civi_ids[$type][$name]);
-      }
-      else {
-        //make it. Or, throw an error here. Either way.
-        //XXX nonono
-        watchdog('wmf_civicrm', "Id for contribution_type $name not found. Creating...");
-        $params['description'] = '';
-        $params['accounting_code'] = strtoupper($name);
-        $params['is_deductible'] = 1;
-        $params['is_active'] = 1;
-        $result = CRM_Financial_BAO_FinancialType::add($params, $dummy);
-        $civi_ids[$type][$name] = $result->id;
-        watchdog('wmf_civicrm', "New id for contribution_type $name :" . $civi_ids[$type][$name]);
-      }
-      $id = $civi_ids[$type][$name];
-      if (empty($id)) {
-        throw new WMFException(WMFException::CIVI_CONFIG,
-          t('Contribution Type "!name" not found!', ['!name' => $name])
-        );
-      }
-      return $id;
-    case 'payment_instrument_id':
-      $instruments = civicrm_api3('Contribution', 'getoptions', ['field' => 'payment_instrument_id']);
-      return array_search($name, $instruments['values']);
-      break;
-
-    default:
-      throw new WMFException(WMFException::CIVI_CONFIG, t("Civi lookup for type '!type' not implemented", ["!type" => $type]));
-  }
-}
-
-/**
  * Normalize contribution amounts
  *
  * Do exchange rate conversions and set appropriate fields for CiviCRM
@@ -681,8 +611,7 @@ function wmf_civicrm_normalize_contribution_amounts($msg) {
     and (empty($msg['original_gross']) or empty($msg['original_currency']))
   ) {
     // just... don't
-    watchdog('wmf_civicrm', 'Not freaking out about non-monetary message.',
-      NULL, WATCHDOG_INFO);
+    \Civi::log('wmf')->info('wmf_civicrm: Not freaking out about non-monetary message.');
     return $msg;
   }
 
@@ -706,9 +635,8 @@ function wmf_civicrm_normalize_contribution_amounts($msg) {
 
   $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
   if ($msg['currency'] !== $settlement_currency) {
-    watchdog('wmf_civicrm', 'Converting to settlement currency: %old -> %new',
-      ['%old' => $msg['currency'], '%new' => $settlement_currency],
-      WATCHDOG_INFO);
+    \Civi::log('wmf')->info('wmf_civicrm: Converting to settlement currency: {old} -> {new}',
+      ['old' => $msg['currency'], 'new' => $settlement_currency]);
     try {
       $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
     }
@@ -802,16 +730,14 @@ function wmf_civicrm_verify_message_and_stage($msg) {
   foreach ($max_lengths as $key => $limit) {
     if (mb_strlen($msg[$key]) > $limit) {
       if (array_key_exists($key, $truncate_tags)) {
-        watchdog(
-          'wmf_civicrm',
-          'Truncating key !key to !len chars. Original: "!val". Applying tag !tag',
+        \Civi::log('wmf')->warning(
+          'wmf_civicrm: Truncating key {key} to {length} chars. Original: "{original_value}". Applying tag {tag}',
           [
-            '!key' => $key,
-            '!len' => $limit,
-            '!val' => $msg[$key],
-            '!tag' => $truncate_tags[$key],
-          ],
-          WATCHDOG_WARNING
+            'key' => $key,
+            'length' => $limit,
+            'original_value' => $msg[$key],
+            'tag' => $truncate_tags[$key],
+          ]
         );
         $msg[$key] = mb_substr($msg[$key], 0, $limit);
         $msg['contact_tags'][] = $truncate_tags[$key];
@@ -1165,10 +1091,8 @@ function wmf_civicrm_get_country_id($raw) {
     }
   }
 
-  watchdog('wmf_civicrm',
-    "Cannot find country: [%txt]",
-    ['%txt' => $raw],
-    WATCHDOG_NOTICE
+  \Civi::log('wmf')->notice('wmf_civicrm: Cannot find country: [{country}]',
+    ['country' => $raw]
   );
   return FALSE;
 }
@@ -1197,10 +1121,8 @@ WHERE
     return (int) $stateID;
   }
 
-  watchdog('wmf_civicrm',
-    "Cannot find state: [%state] (country %country)",
-    ['%state' => $state, '%country' => $country_id],
-    WATCHDOG_NOTICE
+  \Civi::log('wmf')->notice('wmf_civicrm: Cannot find state: {state} (country {country})',
+    ['state' => $state, 'country' => $country_id]
   );
 }
 
@@ -1286,16 +1208,8 @@ function wmf_civicrm_normalize_msg($msg): array {
   }
 
   if (empty($msg['payment_instrument_id'])) {
-    if (empty($msg['payment_instrument'])) {
-      $msg['payment_instrument'] = FinanceInstrument::getPaymentInstrument($msg);
-
-      if (!$msg['payment_instrument']) {
-        throw new WMFException(WMFException::INVALID_MESSAGE, 'No payment instrument specified');
-      }
-    }
-    // CiviCRM does not require us to do this translation. It will do the same thing
-    // if we don't & through a mandatory_missing error.
-    $msg['payment_instrument_id'] = wmf_civicrm_get_civi_id('payment_instrument_id', $msg['payment_instrument']);
+    $paymentInstrument = $msg['payment_instrument'] ?? FinanceInstrument::getPaymentInstrument($msg);
+    $msg['payment_instrument_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $paymentInstrument);
   }
   if (!$msg['payment_instrument_id']) {
     throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
@@ -1575,7 +1489,7 @@ function wmf_civicrm_boost_performance() {
 }
 
 function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
-  watchdog('wmf_civicrm', "Preventing thank-you for contribution {$contribution_id} because: {$reason}", [], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('wmf_civicrm: Preventing thank-you for contribution {contribution_id} because: {reason}', ['contribution_id' => $contribution_id, 'reason' => $reason]);
 
   try {
     wmf_civicrm_set_custom_field_values($contribution_id, [
@@ -1583,7 +1497,7 @@ function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
     ]);
   }
   catch (WMFException $ex) {
-    watchdog('wmf_civicrm', "Updating with no-thank-you failed with details: {$ex->getMessage()}", [], WATCHDOG_ERROR);
+    \Civi::log('wmf')->error('wmf_civicrm: Updating with no-thank-you failed with details: {message}', ['message' => $ex->getMessage()]);
   }
 }
 
@@ -1904,7 +1818,9 @@ function wmf_civicrm_get_wmf_contribution_extra($contribution) {
       $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
     }
     catch (WMFException $ex) {
-      watchdog('wmf_civicrm', "Failed to parse trxn_id: {$contribution['trxn_id']}, " . $ex->getMessage());
+      \Civi::log('wmf')->info('wmf_civicrm: Failed to parse trxn_id: {trxn_id}, {message}',
+      ['trxn_id' => $contribution['trxn_id'], 'message' => $ex->getMessage()]
+      );
     }
   }
 
@@ -1994,10 +1910,13 @@ function wmf_civicrm_getLastDonationParams(&$contribution) {
       }
     }
     if (!empty($params)) {
-      watchdog(
-        'wmf_civicrm',
-        "Contribution post hook is changing values for contribution {$contribution->id} " .
-        'from ' . print_r($contactLastDonation, TRUE) . ' to ' . print_r($params, TRUE)
+      \Civi::log('wmf')->info(
+        'wmf_civicrm: Contribution post hook is changing values for contribution {contribution_id} ' .
+        'from {from} to {to}', [
+          'contribution_id' => $contribution->id,
+          'from' => $contactLastDonation,
+          'to' => $params,
+        ]
       );
     }
     return $params;
@@ -2139,7 +2058,7 @@ function wmf_civicrm_get_options($entity, $field) {
 
 /**
  * Determine if a code represents a supported currency. Uses the
- * DonationInterface currency list as a canonical source.
+ * SmashPig currency list as a canonical source.
  *
  * @param string $currency should be an ISO 4217 code
  *

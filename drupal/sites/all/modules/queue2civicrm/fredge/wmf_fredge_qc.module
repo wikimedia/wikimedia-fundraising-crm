@@ -106,14 +106,14 @@ function fredge_qc_settings() {
  * @see AntifraudQueueConsumer::processMessage()
  */
 function fredge_antifraud_batch_process() {
+  civicrm_initialize();
   if (variable_get( "fredge_antifraud_qc_disable", false )){
-    watchdog('fredge_antifraud_qc_disable', 'fredge_antifraud_qc is disabled. No contributions processed.');
+    \Civi::log('wmf')->notice('fredge_antifraud_qc_disable: fredge_antifraud_qc is disabled. No contributions processed.');
     return 0;
   }
 
-  watchdog('fredge', 'Executing: fredge_antifraud_batch_process');
+  \Civi::log('wmf')->notice('fredge: Executing: fredge_antifraud_batch_process');
 
-  civicrm_initialize();
   wmf_common_create_smashpig_context( 'fredge_antifraud_batch_process');
 
   $fraudQueueConsumer = new AntifraudQueueConsumer(
@@ -125,10 +125,10 @@ function fredge_antifraud_batch_process() {
   $processed = $fraudQueueConsumer->dequeueMessages();
 
   if ($processed > 0) {
-    watchdog('fredge', 'Successfully processed ' . $processed . ' antifraud message(s).');
+    \Civi::log('wmf')->notice('fredge: Successfully processed {number_processed} antifraud message(s).', ['number_processed' => $processed]);
   }
   else {
-    watchdog('fredge', 'No antifraud messages processed.');
+    \Civi::log('wmf')->notice('fredge: No antifraud messages processed.');
   }
 }
 /**
@@ -137,14 +137,14 @@ function fredge_antifraud_batch_process() {
  * @see PaymentsInitQueueConsumer::processMessage()
  */
 function fredge_paymentsinit_batch_process() {
+  civicrm_initialize();
   if (variable_get( "fredge_paymentsinit_qc_disable", false )){
-    watchdog('fredge_paymentsinit_qc_disable', 'fredge_paymentsinit_qc is disabled. No contributions processed.');
+    \Civi::log('wmf')->notice('fredge_paymentsinit_qc_disable: fredge_paymentsinit_qc is disabled. No contributions processed.');
     return 0;
   }
 
-  watchdog('fredge', 'Executing: fredge_paymentsinit_batch_process');
+  \Civi::log('wmf')->notice('fredge: Executing: fredge_paymentsinit_batch_process');
 
-  civicrm_initialize();
   wmf_common_create_smashpig_context( 'fredge_paymentsinit_batch_process');
 
   $paymentsInitConsumer = new PaymentsInitQueueConsumer(
@@ -157,10 +157,10 @@ function fredge_paymentsinit_batch_process() {
 
 
   if ($processed > 0) {
-    watchdog('fredge', 'Successfully processed ' . $processed . ' paymentsinit message(s).');
+    \Civi::log('wmf')->notice('fredge: Successfully processed {number_processed} paymentsinit message(s).', ['number_processed' => $processed]);
   }
   else {
-    watchdog('fredge', 'No paymentsinit messages processed.');
+    \Civi::log('wmf')->notice('fredge: No paymentsinit messages processed.');
   }
 }
 

@@ -21,7 +21,7 @@ function wmf_civicrm_insert_contribution_tracking($values) {
   $contribution_tracking_id = $generator->getNext();
   $values['id'] = $contribution_tracking_id;
   QueueWrapper::push('contribution-tracking', $values);
-  watchdog('wmf_civicrm', "Queued new contribution_tracking entry %id", ['%id' => $contribution_tracking_id], WATCHDOG_INFO);
+  \Civi::log('wmf')->info('wmf_civicrm: Queued new contribution_tracking entry {id}', ['id' => $contribution_tracking_id]);
   return $contribution_tracking_id;
 }
 
@@ -37,7 +37,7 @@ function wmf_civicrm_message_update_contribution_tracking($msg, $contribution) {
       'id' => $msg['contribution_tracking_id'],
       'contribution_id' => $contribution['id'],
     ]);
-    watchdog('wmf_civicrm', 'Queued update to contribution_tracking for %id', ['%id' => $msg['contribution_tracking_id']], WATCHDOG_INFO);
+    \Civi::log('wmf')->info('wmf_civicrm: Queued update to contribution_tracking for {id}', ['id' => $msg['contribution_tracking_id']]);
       return TRUE;
   }
 }

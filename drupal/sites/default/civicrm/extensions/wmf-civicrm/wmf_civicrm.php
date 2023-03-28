@@ -394,8 +394,7 @@ function wmf_civicrm_validate_contribution($fields, $form): array {
     return $errors;
   }
 
-  $engage_contribution_type_id = wmf_civicrm_get_civi_id('financial_type_id', 'Engage');
-  if ($fields['financial_type_id'] !== $engage_contribution_type_id) {
+  if (CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $fields['financial_type_id']) !== 'Engage') {
     $errors['financial_type_id'] = t("Must use the \"Engage\" contribution type.");
   }
 

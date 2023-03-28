@@ -50,7 +50,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     // route the message to the appropriate handler depending on transaction type
     if (isset($message['txn_type']) && in_array($message['txn_type'], $txn_subscr_payment)) {
       if (wmf_civicrm_get_contributions_from_gateway_id($message['gateway'], $message['gateway_txn_id'])) {
-        watchdog('recurring', "Duplicate contribution: {$message['gateway']}-{$message['gateway_txn_id']}.");
+        \Civi::log('wmf')->notice('recurring: Duplicate contribution: {gateway}-{gateway_txn_id}.', [
+          'gateway' => $message['gateway'], 'gateway_txn_id' => $message['gateway_txn_id']
+        ]);
         throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution already exists. Ignoring message.");
       }
       $this->importSubscriptionPayment($message);
@@ -200,7 +202,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         $this->importSubscriptionSignup($startMessage);
         $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
         if (!$recur_record) {
-          watchdog('recurring', 'Fallback contribution_recur record creation failed.');
+          \Civi::log('wmf')->notice('recurring: Fallback contribution_recur record creation failed.');
           throw new WMFException(
             WMFException::IMPORT_SUBSCRIPTION,
             "Could not create the initial recurring record for subscr_id {$msg['subscr_id']}"
@@ -209,7 +211,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       }
     }
     if (!$recur_record) {
-      watchdog('recurring', 'Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
+      \Civi::log('wmf')->notice('recurring: Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
       throw new WMFException(WMFException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$msg['subscr_id']}");
     }
 
@@ -385,7 +387,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         // Set up the language for the email
         $locale = $contact['preferred_language'];
         if (!$locale) {
-          watchdog('monthly_convert', "Donor language unknown.  Defaulting to English...", NULL, WATCHDOG_INFO);
+          \Civi::log('wmf')->info('monthly_convert: Donor language unknown.  Defaulting to English...');
           $locale = 'en';
         }
         $locale = wmf_common_locale_civi_to_mediawiki($locale);
@@ -430,11 +432,15 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         ];
 
         $success = thank_you_send_mail($params);
+        $context = [
+          'contribution_recur_id' => $newContributionRecur['id'],
+          'recipient_address' => $params['recipient_address'],
+        ];
         if ($success) {
-          watchdog('monthly_convert', "Monthly convert sent successfully for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], [], WATCHDOG_INFO);
+          \Civi::log('wmf')->info('monthly_convert: Monthly convert sent successfully for recurring contribution id: {contribution_recur_id} to {recipient_address}', $context);
         }
         else {
-          watchdog('monthly_convert', "Monthly convert mail failed for recurring contribution id: " . $newContributionRecur['id'] . " to " . $params['recipient_address'], [], WATCHDOG_ERROR);
+          \Civi::log('wmf')->error('monthly_convert: Monthly convert mail failed for recurring contribution id: {contribution_recur_id} to {recipient_address}', $context);
         }
       }
     } catch (\CiviCRM_API3_Exception $e) {
@@ -543,22 +549,19 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist for subscription id: ' . print_r($msg['subscr_id'], TRUE));
     }
-
-    $api = civicrm_api_classapi();
-    $update_params = [
-      'id' => $recur_record->id,
-
-      'amount' => $msg['original_gross'],
-      'frequency_unit' => $msg['frequency_unit'],
-      'frequency_interval' => $msg['frequency_interval'],
-      'modified_date' => wmf_common_date_unix_to_civicrm($msg['modified_date']),
-      //FIXME: looks wrong to base off of start_date
-      'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm(strtotime("+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg['start_date'])),
-
-      'version' => 3,
-    ];
-    if (!$api->ContributionRecur->Create($update_params)) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription record for subscription id ' . print_r($msg['subscr_id'], TRUE) . ": " . $api->errorMsg());
+    try {
+      civicrm_api3('ContributionRecur', 'create', [
+        'id' => $recur_record->id,
+        'amount' => $msg['original_gross'],
+        'frequency_unit' => $msg['frequency_unit'],
+        'frequency_interval' => $msg['frequency_interval'],
+        'modified_date' => wmf_common_date_unix_to_civicrm($msg['modified_date']),
+        //FIXME: looks wrong to base off of start_date
+        'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm(strtotime("+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg['start_date'])),
+      ]);
+    }
+    catch (\CRM_Core_Exception $e) {
+      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription record for subscription id ' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
     }
 
     // update the contact
@@ -583,20 +586,17 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist for subscription id: ' . print_r($msg['subscr_id'], TRUE));
     }
 
-    $api = civicrm_api_classapi();
-    $update_params = [
-      'id' => $recur_record->id,
-      'failure_count' => $msg['failure_count'],
-      'failure_retry_date' => wmf_common_date_unix_to_civicrm($msg['failure_retry_date']),
-
-      'version' => 3,
-    ];
-    if (!$api->ContributionRecur->Create($update_params)) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for failed payment for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $api->errorMsg());
+    try {
+      civicrm_api3('ContributionRecur', 'create', [
+        'id' => $recur_record->id,
+        'failure_count' => $msg['failure_count'],
+        'failure_retry_date' => wmf_common_date_unix_to_civicrm($msg['failure_retry_date']),
+      ]);
     }
-    else {
-      watchdog('recurring', 'Successfully recorded failed payment for subscriber id: %subscr_id ', ['%subscr_id' => print_r($msg['subscr_id'], TRUE)], WATCHDOG_NOTICE);
+    catch (\CRM_Core_Exception $e) {
+      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for failed payment for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
     }
+    \Civi::log('wmf')->notice('recurring: Successfully recorded failed payment for subscriber id: {subscriber_id} ', ['subscriber_id' => print_r($msg['subscr_id'], TRUE)]);
   }
 
 }

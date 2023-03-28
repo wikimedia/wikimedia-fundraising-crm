@@ -26,11 +26,9 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
       }
     }
     if ($ex instanceof WMFException) {
-      watchdog(
-        'wmf_common',
-        'Failure while processing message: ' . $ex->getMessage(),
-        NULL,
-        WATCHDOG_ERROR
+      \Civi::log('wmf')->error(
+        'wmf_common: Failure while processing message: {message}',
+      ['message' => $ex->getMessage()]
       );
 
       $this->handleWMFException($message, $ex, $logId);
@@ -39,7 +37,8 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
       $error = 'UNHANDLED ERROR. Halting dequeue loop. Exception: ' .
         $ex->getMessage() . "\nStack Trace: " .
         $ex->getTraceAsString();
-      watchdog('wmf_common', $error, NULL, WATCHDOG_ERROR);
+      \Civi::log('wmf')->error(
+        'wmf_common: {error}', ['error' => $error]);
       wmf_common_failmail('wmf_common', $error, NULL, $logId);
 
       throw $ex;
@@ -77,11 +76,8 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
       // and log an error if no date fields are set.
       $queuedTime = DateFields::getOriginalDateOrDefault($message, 0);
       if ($queuedTime === 0) {
-        watchdog(
-          'wmf_common',
-          "Message has no useful information about queued date",
-          $message,
-          WATCHDOG_NOTICE
+        \Civi::log('wmf')->notice('wmf_common: Message has no useful information about queued date {message}',
+          ['message' => $message]
         );
       }
       if ($queuedTime + $ageLimit < time()) {
@@ -95,20 +91,15 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
     }
 
     if ($ex->isDropMessage()) {
-      watchdog(
-        'wmf_common',
-        "Dropping message altogether: $logId",
-        NULL,
-        WATCHDOG_ERROR
+      \Civi::log('wmf')->error(
+        'wmf_common: Dropping message altogether: {log_id}',
+        ['log_id' => $logId]
       );
     }
     elseif ($ex->isRejectMessage() || $reject) {
-      $messageString = json_encode($message);
-      watchdog(
-        'wmf_common',
-        "\nRemoving failed message from the queue: \n$messageString",
-        NULL,
-        WATCHDOG_ERROR
+      \Civi::log('wmf')->error(
+        "wmf_common: Removing failed message from the queue: \n{message}",
+        ['message' => $message]
       );
       $damagedId = $this->sendToDamagedStore(
         $message,
@@ -125,8 +116,8 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
     }
 
     if ($ex->isFatal()) {
-      $error = 'Halting Process.';
-      watchdog('wmf_common', $error, NULL, WATCHDOG_ERROR);
+      \Civi::log('wmf')->error(
+        'wmf_common: Halting Process.');
 
       throw $ex;
     }
@@ -138,9 +129,10 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
   }
 
   protected function logMessage($message) {
-    $className = preg_replace('/.*\\\/', '', get_called_class());
-    $formattedMessage = json_encode($message);
-    watchdog($className, $formattedMessage, NULL, WATCHDOG_INFO);
+    \Civi::log('wmf')->info('{class_name} {message}', [
+      'class_name' => preg_replace('/.*\\\/', '', get_called_class()),
+      'message' => $message,
+    ]);
   }
 
   /**
@@ -160,10 +152,9 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
       $message['invoice_id'] = $message['order_id'];
     }
     $message['invoice_id'] .= '|dup-' . UtcDate::getUtcTimeStamp();
-    watchdog(
-      'wmf_civicrm',
-      'Found duplicate invoice ID, changing this one to ' .
-      $message['invoice_id']
+    \Civi::log('wmf')->notice(
+      'wmf_civicrm: Found duplicate invoice ID, changing this one to {invoice_id}',
+      ['invoice_id' => $message['invoice_id']]
     );
     $message['contribution_tags'][] = 'DuplicateInvoiceId';
     return $message;

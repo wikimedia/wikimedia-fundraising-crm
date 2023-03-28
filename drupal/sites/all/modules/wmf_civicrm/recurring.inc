@@ -6,7 +6,6 @@ use Civi\WMFException\WMFException;
 /**
  * Insert the recurring contribution record
  *
- * @todo Determine the watchdog level for errors.
  * @todo Are the dates being set with the correct value?
  *
  * @param array $msg
@@ -183,7 +182,7 @@ function wmf_civicrm_update_contribution_for_recurring($contribution_id, $contri
       'id' => $contribution_id,
       'contribution_recur_id' => $contribution_recur_id,
     ]);
-  } catch (CiviCRM_API3_Exception $e) {
+  } catch (CRM_Core_Exception $e) {
     $error_message = t(
       'There was a problem linking the contribution [!contribution_id] to the recurring contribution [!contribution_recur_id]: !msg',
       [
@@ -194,9 +193,9 @@ function wmf_civicrm_update_contribution_for_recurring($contribution_id, $contri
     );
     throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
   }
-  watchdog('wmf_civicrm', 'Successfully linked the contribution  [!contribution_id] to the recurring contribution [!contribution_recur_id]', [
-    '!contribution_id' => $contribution_id,
-    '!contribution_recur_id' => $contribution_recur_id,
+  \Civi::log('wmf')->notice('wmf_civicrm: Successfully linked the contribution  {contribution_id} to the recurring contribution {contribution_recur_id}', [
+    'contribution_id' => $contribution_id,
+    'contribution_recur_id' => $contribution_recur_id,
   ]);
   return TRUE;
 }
@@ -255,10 +254,9 @@ function wmf_civicrm_get_next_sched_contribution($limit = 1, $date = 'now', $run
   $completedStatusID = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Completed');
   $inProgressStatusID = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'In Progress');
 
-  watchdog(
-    'recurring_globalcollect',
-    'Looking for next scheduled contributions in timeframe @min -> @max',
-    ['@min' => $start_day, '@max' => $end_day]
+  \Civi::log('wmf')->notice(
+    'recurring_globalcollect: Looking for next scheduled contributions in timeframe {start_date} -> {end_date}',
+    ['start_date' => $start_day, 'end_date' => $end_day]
   );
 
   $query = <<<EOS
