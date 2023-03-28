@@ -1,9 +1,5 @@
 <?php
 
-function astropay_audit_watchdog($entry) {
-  AstroPayAuditTest::receiveLogline($entry);
-}
-
 /**
  * @group AstroPay
  * @group WmfAudit
