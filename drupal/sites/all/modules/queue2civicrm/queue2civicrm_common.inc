@@ -1,26 +1,26 @@
-<?php 
+<?php
 /**
- * Common functions for queue2civicrm modules 
+ * Common functions for queue2civicrm modules
  */
 
 /**
  * Log a transaction to queue2civicrm_log in the database
  * TODO: Encapsulate in a class.
- * 
+ *
  * The array needs to contain the following keys:
  *  gateway, gateway_txn_id, data, timestamp, verified
  * And optionally:
  *  cid (which is the ID of the log record to be updated)
- * 	
+ *
  * If 'cid' is present, this will update the log record, otherwise
  * this will insert a new record.
- * 
+ *
  * @param $log
  * @return mixed false on fail, cid on insert, otherwise true
  */
 function _queue2civicrm_log( $log=array() ) {
   if ( empty( $log ) ) {
-    return false;  
+    return false;
   }
 
   // Replace any nulls with the empty string.
@@ -33,7 +33,7 @@ function _queue2civicrm_log( $log=array() ) {
   // make sure we're using the default db
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push( 'default' );
-  
+
   // if cid is set in the log array, we need to update
   if ( array_key_exists('cid', $log)) {
     $result = db_update( 'queue2civicrm_log' )->fields( array(
@@ -54,7 +54,8 @@ function _queue2civicrm_log( $log=array() ) {
   }
 
   if ( !$result ) {
-    watchdog( 'queue2civicrm', 'Failed logging the transaction: %log', array( "%log" => print_r( $log, true )), WATCHDOG_ERROR );
+    civicrm_initialize();
+    \Civi::log('wmf')->error('queue2civicrm: Failed logging the transaction: {log}', ['log' => $log]);
   }
   return $result;
 }
