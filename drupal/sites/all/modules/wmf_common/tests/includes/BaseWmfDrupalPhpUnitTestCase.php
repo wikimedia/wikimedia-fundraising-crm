@@ -256,45 +256,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     }
   }
 
-  public function onNotSuccessfulTest(Throwable $t): void {
-    if (!defined('PRINT_WATCHDOG_ON_TEST_FAIL') || !PRINT_WATCHDOG_ON_TEST_FAIL) {
-      throw $t;
-    }
-    $output = "\nWatchdog messages:\n";
-
-    // show watchdog messages since the start of this test
-    $rsc = db_select('watchdog', 'wd')
-      ->condition('timestamp', $this->startTimestamp, '>=')
-      ->fields('wd')
-      ->orderBy('wid', 'ASC')
-      ->execute();
-
-    while ($result = $rsc->fetchAssoc()) {
-      if (isset ($result['variables'])) {
-        $vars = unserialize($result['variables']);
-      }
-      else {
-        $vars = NULL;
-      }
-      $message = strip_tags(
-        is_array($vars)
-          ? strtr($result['message'], $vars)
-          : $result['message']
-      );
-      $output .= "{$result['timestamp']}, lvl {$result['severity']}, {$result['type']}: $message\n";
-    }
-
-    if (method_exists($t, 'getMessage')) {
-      $accessible = \Wikimedia\TestingAccessWrapper::newFromObject($t);
-      $accessible->message = $t->getMessage() . $output;
-    }
-    else {
-      echo $output;
-    }
-
-    throw $t;
-  }
-
   /**
    * Clean up a contribution
    *
