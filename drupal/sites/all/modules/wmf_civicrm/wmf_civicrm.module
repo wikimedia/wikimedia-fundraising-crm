@@ -2058,7 +2058,7 @@ function wmf_civicrm_get_options($entity, $field) {
 
 /**
  * Determine if a code represents a supported currency. Uses the
- * DonationInterface currency list as a canonical source.
+ * SmashPig currency list as a canonical source.
  *
  * @param string $currency should be an ISO 4217 code
  *

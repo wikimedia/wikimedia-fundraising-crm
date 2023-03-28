@@ -38,8 +38,7 @@ function optin_queue_consume_drush_help($section) {
 }
 
 /**
- * Generates translated versions of the optin pages from the
- * DonationInterface i18n files.
+ * Consume opt-in queue
  */
 function drush_optin_queue_consume() {
   civicrm_initialize();
