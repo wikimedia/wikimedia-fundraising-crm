@@ -3,7 +3,7 @@
 namespace Civi\WMFHelpers;
 
 use Civi;
-use Civi\WMFException\WMFException;
+use Civi\Api4\ContributionSoft;
 
 class Contact {
 
@@ -27,7 +27,6 @@ class Contact {
    * @return int
    *
    * @throws \CRM_Core_Exception
-   * @throws \Civi\WMFException\WMFException
    */
   public static function getOrganizationID(string $organizationName, bool $isCreateIfNotExists = FALSE, $createParameters = []): int {
     // Using the Civi Statics pattern for php caching makes it easier to reset in unit tests.
@@ -54,11 +53,10 @@ class Contact {
     if (\Civi::$statics['wmf_contact']['organization'][$organizationName]['id']) {
       return \Civi::$statics['wmf_contact']['organization'][$organizationName]['id'];
     }
-    throw new WMFException(
-      WMFException::IMPORT_CONTRIB,
-      t("Did not find exactly one Organization with the details: @organizationName. You will need to ensure a single Organization record exists for the contact first",
+    throw new \CRM_Core_Exception(
+      ts("Did not find exactly one Organization with the details: %1 You will need to ensure a single Organization record exists for the contact first",
         [
-          '@organizationName' => $organizationName,
+          1 => $organizationName,
         ]
       )
     );
@@ -88,6 +86,29 @@ class Contact {
   }
 
   /**
+   * Is the individual employed by the given organization, taking soft credits into account.
+   *
+   * @param int $organizationID
+   * @param int $contactID
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public static function isContactSoftCreditorOf(int $organizationID, int $contactID): bool {
+    $softCredits = ContributionSoft::get(FALSE)->addWhere('contact_id', '=', $contactID)
+      ->addSelect('contribution_id.contact_id')->execute();
+    if (count($softCredits) === 0) {
+      return FALSE;
+    }
+    foreach ($softCredits as $softCredit) {
+      if ($softCredit['contribution_id.contact_id'] === $organizationID) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
    * Load contact by nick name and store in statics if found.
    *
    * @param string $organizationName
@@ -102,6 +123,68 @@ class Contact {
     if (count($contacts) === 1) {
       Civi::$statics['wmf_contact']['organization'][$organizationName] = $contacts->first();
     }
+  }
+
+
+  /**
+   * @param string|null $email
+   * @param string|null $firstName
+   * @param string|null $lastName
+   * @param string|null $organizationName
+   *
+   * @return false|int
+   * @throws \CRM_Core_Exception
+   */
+  public static function getIndividualID(?string $email, ?string $firstName, ?string $lastName, ?string $organizationName) {
+    if (!$email && !$firstName && !$lastName) {
+      // We do not have an email or a name, match to our anonymous contact (
+      // note address details are discarded in this case).
+      return self::getAnonymousContactID();
+    }
+    $organizationID = $organizationName ? self::getOrganizationID($organizationName) : NULL;
+
+    $contactGet = \Civi\Api4\Contact::get(FALSE)
+      ->addWhere('is_deleted', '=', 0)
+      ->addWhere('contact_type', '=', 'Individual')
+      ->addOrderBy('organization_name', 'DESC')
+      ->addSelect('employer_id', 'organization_name', 'email_primary.email');
+
+    foreach (['last_name' => $lastName, 'first_name' => $firstName, 'email_primary.email' => $email] as $fieldName => $fieldValue) {
+      if ($fieldValue) {
+        $contactGet->addWhere($fieldName, '=', $fieldValue);
+      }
+    }
+    $contacts = $contactGet->execute();
+
+    if (count($contacts) === 1) {
+      $contact = $contacts->first();
+      if ($email
+        || ($organizationID && $contact['employer_id'] === $organizationID)
+        || self::isContactSoftCreditorOf($organizationID, $contact['id'])) {
+        return $contact['id'];
+      }
+      return FALSE;
+    }
+    if (count($contacts) > 1) {
+      $possibleContacts = [];
+      foreach ($contacts as $contact) {
+        if (($organizationID && $contact['employer_id'] === $organizationID) || self::isContactSoftCreditorOf($organizationID, $contact['id'])) {
+          $possibleContacts[] = $contact['id'];
+        }
+        if (count($possibleContacts) > 1) {
+          foreach ($possibleContacts as $index => $possibleContactID) {
+            if (
+              $contacts->indexBy('id')[$possibleContactID]['employer_id']
+              !== self::getOrganizationID($organizationName)
+            ) {
+              unset($possibleContacts[$index]);
+            }
+          }
+        }
+      }
+      return (count($possibleContacts) === 1) ? reset($possibleContacts) : FALSE;
+    }
+    return FALSE;
   }
 
   /**
@@ -123,7 +206,7 @@ class Contact {
     }
     if (!$contactID) {
       // It always exists on production....
-      throw new \CRM_Core_Exception('The anonymous contact does not exist in your dev environment');
+      throw new \CRM_Core_Exception('The anonymous contact does not exist in your dev environment. Ensure exactly one contact is in CiviCRM with the email fakeemail@wikimedia.org and first name and last name being Anonymous');
     }
     return $contactID;
   }

@@ -835,9 +835,9 @@ abstract class ChecksFile {
    * Get the ID of our anonymous contact.
    *
    * @return int|NULL
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
-  protected function getAnonymousContactID() {
+  protected function getAnonymousContactID(): ?int {
     return Contact::getAnonymousContactID();
   }
 
