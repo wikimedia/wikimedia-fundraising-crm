@@ -34,7 +34,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
       }
     }
 
-    variable_set('astropay_audit_log_search_past_days', 7);
+    variable_set('astropay_audit_log_search_past_days', 1);
 
     // Fakedb doesn't fake the original txn for refunds, so add one here
     // First we need to set an exchange rate for a sickeningly specific time
