@@ -203,16 +203,6 @@ class WMFException extends Exception {
       unset ($addToMessage['trace']);
     }
     $this->message = $this->message . "\nSource: " . var_export($addToMessage, TRUE);
-
-    if (function_exists('watchdog')) {
-      // It seems that dblog_watchdog will pass through XSS, so
-      // rely on our own escaping above, rather than pass $vars.
-      $escaped = htmlspecialchars($this->getMessage(), ENT_COMPAT, 'UTF-8', FALSE);
-      watchdog('wmf_common', $escaped, NULL, WATCHDOG_ERROR);
-    }
-    if (function_exists('drush_set_error') && $this->isFatal()) {
-      drush_set_error($this->type, $this->getMessage());
-    }
   }
 
   /**
