@@ -653,7 +653,7 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
     Activity::create(FALSE)->setValues([
       'source_contact_id' => $civi_queue_record->getContactID(),
       'target_contact_id' => $civi_queue_record->getContactID(),
-      'activity_type_id:name' => 'Email',
+      'activity_type_id:name' => 'Thank you email',
       'activity_date_time' => 'now',
       'subject' => $subject,
       'details' => $html,
