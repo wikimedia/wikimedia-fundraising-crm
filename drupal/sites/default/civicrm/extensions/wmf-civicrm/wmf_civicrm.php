@@ -2,6 +2,7 @@
 
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
+use Civi\WMFHooks\Activity;
 use Civi\WMFHooks\CalculatedData;
 use Civi\WMFHooks\ContributionRecur;
 use Civi\WMFHooks\ContributionRecurTrigger;
@@ -537,5 +538,9 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
       $pos_b = array_search($b['name'], $order);
       return $pos_a - $pos_b;
     });
+  }
+
+  if ($objectName === 'Activity') {
+    Activity::links($objectId, $links);
   }
 }
