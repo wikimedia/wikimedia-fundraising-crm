@@ -131,17 +131,20 @@ class Contact {
    * @param string|null $firstName
    * @param string|null $lastName
    * @param string|null $organizationName
+   * @param int|null $organizationID Organization ID if known (organizationName not used if so)
    *
    * @return false|int
    * @throws \CRM_Core_Exception
    */
-  public static function getIndividualID(?string $email, ?string $firstName, ?string $lastName, ?string $organizationName) {
+  public static function getIndividualID(?string $email, ?string $firstName, ?string $lastName, ?string $organizationName, ?int $organizationID = NULL) {
     if (!$email && !$firstName && !$lastName) {
       // We do not have an email or a name, match to our anonymous contact (
       // note address details are discarded in this case).
       return self::getAnonymousContactID();
     }
-    $organizationID = $organizationName ? self::getOrganizationID($organizationName) : NULL;
+    if (!$organizationID) {
+      $organizationID = $organizationName ? self::getOrganizationID($organizationName) : NULL;
+    }
 
     $contactGet = \Civi\Api4\Contact::get(FALSE)
       ->addWhere('is_deleted', '=', 0)

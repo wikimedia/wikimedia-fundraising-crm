@@ -7,6 +7,7 @@ use Civi\WMFHooks\CalculatedData;
 use Civi\WMFHooks\Contribution;
 use Civi\WMFHooks\ContributionRecur;
 use Civi\WMFHooks\ContributionRecurTrigger;
+use Civi\WMFHooks\ContributionSoft;
 use Civi\WMFHooks\Import;
 use Civi\WMFHooks\Permissions;
 use Civi\WMFHooks\QuickForm;
@@ -214,11 +215,16 @@ function wmf_civicrm_civicrm_navigationMenu(&$menu) {
  * @param array $entity
  *
  * @throws \Civi\WMFException\WMFException
+ * @noinspection PhpUnused
  */
-function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
+function wmf_civicrm_civicrm_pre(string $op, $type, $id, &$entity) {
   switch ($type) {
     case 'Contribution':
       Contribution::pre($op, $entity);
+      break;
+
+    case 'ContributionSoft':
+      ContributionSoft::pre($op, $entity);
       break;
   }
 }
