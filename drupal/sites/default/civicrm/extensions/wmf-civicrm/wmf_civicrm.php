@@ -220,9 +220,6 @@ function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
     case 'Contribution':
       Contribution::pre($op, $entity);
       break;
-    case 'ContributionRecur':
-      ContributionRecur::pre($op, $entity);
-      break;
   }
 }
 
