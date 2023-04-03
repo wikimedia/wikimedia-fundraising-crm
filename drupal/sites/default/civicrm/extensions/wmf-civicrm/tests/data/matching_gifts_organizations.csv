@@ -1,0 +1,4 @@
+Batch,Contribution Type,Transaction ID,Total Amount,Source,Fee Amount,Postmark Date,Received Date,Payment Instrument,Check Number,Restrictions,Gift Source,Direct Mail Appeal,Organization CID,Organization Name,Employer of,Soft Credit to First Name,Soft Credit to Last Name,Street Address,Additional Address 1,Additional Address 2,City,State/Province,Postal Code,Country,Phone,Email,AC Flag,Do Not Email,Do Not Mail,Do Not Phone,Do Not SMS,Is Opt Out
+123,Engage,123,5,5 USD,,1/26/23,1/26/23,Check,123,Restricted - Foundation,Matching Gift,,,Disney,,Mickey,Mouse,,,,,,,,,,,,,,,
+123,Engage,,6,6 USD,3,1/27/23,1/26/23,Check,124,Restricted - Foundation,Matching Gift,,,Scrouge Bank,,Minnie,Mouse,,,,,,,,,,,,,,,
+123,Engage,,7,7 USD,,1/28/23,1/26/23,Check,125,Restricted - Foundation,Matching Gift,,,Big Business,,Donald,Duck,,,,,,,,,donald@example.com,,,,,,

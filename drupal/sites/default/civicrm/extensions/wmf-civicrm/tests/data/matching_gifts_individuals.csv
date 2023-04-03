@@ -1,0 +1,4 @@
+Batch,Contribution Type,Transaction ID,Total Amount,Source,Fee Amount,Postmark Date,Received Date,Payment Instrument,Check Number,Restrictions,Gift Source,Direct Mail Appeal,First Name,Last Name,Employee of,Organization Soft Credit CID,Soft Credit to Organization,Street Address,Additional Address 1,Additional Address 2,City,State/Province,Postal Code,Country,Phone,Email,AC Flag,Do Not Email,Do Not Mail,Do Not Phone,Do Not SMS,Is Opt Out
+456,Engage,789,78,78.00 USD,,,,Check,33,Restricted - Foundation,Payroll Deduction,,Minnie,Mouse,,1,,,,,,,,,,,,,,,,
+456,Engage,,22,22.00 USD,3,,,Check,33,Unrestricted - General,Community Gift,,Mickey,Mouse,,,Disney,,,,,,,,,mickey@example.com,,,,,,
+456,Engage,,1000,1000.00 USD,,,,Check,33,Unrestricted - General,Benefactor Gift,,Donald,Duck,,12,,,,,,,,,,,,,,,,

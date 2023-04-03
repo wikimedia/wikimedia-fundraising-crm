@@ -5,6 +5,7 @@
   <class>MappingField</class>
   <name>civicrm_mapping_field</name>
   <comment>Individual field mappings for Mapping</comment>
+  <labelField>name</labelField>
   <add>1.2</add>
   <field>
     <name>id</name>
