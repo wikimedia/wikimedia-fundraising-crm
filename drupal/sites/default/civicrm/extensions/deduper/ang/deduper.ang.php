@@ -20,5 +20,7 @@ return [
     'ngRoute',
     'contactBasic',
     'conflictBasic',
+    'xeditable',
+    'angularUtils.directives.dirPagination',
   ],
 ];
