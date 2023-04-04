@@ -91,7 +91,7 @@ class EngageChecksFile extends ChecksFile {
         // remaining address details such as city, state are discarded in this case)
         return $this->getAnonymousContactID();
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         throw new WMFException(
           WMFException::IMPORT_CONTRIB,
           t("The donation is anonymous but the anonymous contact is ambiguous. Ensure exactly one contact is in CiviCRM with the email fakeemail@wikimedia.org' and first name and last name being Anonymous "

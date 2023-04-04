@@ -4,6 +4,7 @@ require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
 use Civi\WMFHooks\Activity;
 use Civi\WMFHooks\CalculatedData;
+use Civi\WMFHooks\Contribution;
 use Civi\WMFHooks\ContributionRecur;
 use Civi\WMFHooks\ContributionRecurTrigger;
 use Civi\WMFHooks\Permissions;
@@ -239,8 +240,7 @@ function wmf_civicrm_civicrm_navigationMenu(&$menu) {
 function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
   switch ($type) {
     case 'Contribution':
-      // TODO: Move from drupal module to WMFHooks
-      wmf_civicrm_civicrm_pre_Contribution($op, $id, $entity);
+      Contribution::pre($op, $entity);
       break;
     case 'ContributionRecur':
       ContributionRecur::pre($op, $entity);

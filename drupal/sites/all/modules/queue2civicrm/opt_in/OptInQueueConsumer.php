@@ -1,5 +1,6 @@
 <?php namespace queue2civicrm\opt_in;
 
+use Civi\Api4\WMFContact;
 use wmf_common\WmfQueueConsumer;
 use \Civi\WMFException\WMFException;
 
@@ -50,9 +51,9 @@ class OptInQueueConsumer extends WmfQueueConsumer {
 
       if (!empty($message['last_name'])) {
         $message['opt_in'] = TRUE;
-        wmf_civicrm_message_create_contact($message);
-
-        $contact_id = $message['contact_id'];
+        $contact_id = $message['contact_id'] = WMFContact::save(FALSE)
+          ->setMessage($message)
+          ->execute()->first()['id'];
         \Civi::log('wmf')->info('opt_in:  New contact created on opt-in: {contact_id}', ['contact_id' => $contact_id]);
       }
       else {

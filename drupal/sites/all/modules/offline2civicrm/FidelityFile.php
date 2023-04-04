@@ -1,7 +1,6 @@
 <?php
 
 use Civi\Api4\Contact;
-use Civi\WMFException\WMFException;
 
 class FidelityFile extends ChecksFile {
 
@@ -113,7 +112,7 @@ class FidelityFile extends ChecksFile {
       try {
         $msg['id'] = $this->getOrganizationID($msg['organization_name']);
       }
-      catch (WMFException $e) {
+      catch (CRM_Core_Exception $e) {
         $msg['contact_type'] = 'Organization';
       }
     }

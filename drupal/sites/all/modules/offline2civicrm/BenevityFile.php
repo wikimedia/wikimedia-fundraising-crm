@@ -1,6 +1,8 @@
 <?php
 
+use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelpers\Contact;
 
 class BenevityFile extends ChecksFile {
 
@@ -100,7 +102,7 @@ class BenevityFile extends ChecksFile {
         }
       }
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       throw new WMFException(WMFException::INVALID_MESSAGE, $e->getMessage());
     }
     $msg['date'] = $this->additionalFields['date']['year'] . '-' . $this->additionalFields['date']['month'] . '-' . $this->additionalFields['date']['day'];
@@ -223,7 +225,10 @@ class BenevityFile extends ChecksFile {
     elseif (empty($msg['contact_id'])) {
       // We still want to create the contact and link it to the organization, and
       // soft credit it.
-      wmf_civicrm_message_create_contact($msg);
+      $contact = WMFContact::save(FALSE)
+        ->setMessage($msg)
+        ->execute()->first();
+      $msg['contact_id'] = $contact['id'];
     }
     if (isset($msg['employer_id']) && $msg['contact_id'] != $this->getAnonymousContactID()) {
       // This is done in the import but if we have no donation let's still do this update.
@@ -270,68 +275,10 @@ class BenevityFile extends ChecksFile {
    * @return int|NULL
    *   Contact ID to use, if no integer is returned a new contact will be created
    *
-   * @throws \Civi\WMFException\WMFException
+   * @throws \Civi\WMFException\WMFException|\CRM_Core_Exception
    */
-  protected function getIndividualID(&$msg) {
-    if (empty($msg['email'])
-      && (empty($msg['first_name']) && empty($msg['last_name']))
-    ) {
-      try {
-        // We do not have an email or a name, match to our anonymous contact (
-        // note address details are discarded in this case).
-        return $this->getAnonymousContactID();
-      }
-      catch (CiviCRM_API3_Exception $e) {
-        throw new WMFException(
-          WMFException::IMPORT_CONTRIB,
-          t("The donation is anonymous but the anonymous contact is ambiguous. Ensure exactly one contact is in CiviCRM with the email fakeemail@wikimedia.org' and first name and last name being Anonymous "
-          )
-        );
-      }
-    }
-
-    $params = [
-      'email' => $msg['email'],
-      'first_name' => $msg['first_name'],
-      'last_name' => $msg['last_name'],
-      'is_deleted' => 0,
-      'contact_type' => 'Individual',
-      'return' => 'current_employer',
-      'sort' => 'organization_name DESC',
-    ];
-    try {
-      $contacts = civicrm_api3('Contact', 'get', $params);
-      if ($contacts['count'] == 1) {
-        if (!empty($params['email']) || $this->isContactEmployedByOrganization($msg['matching_organization_name'], $contacts['values'][$contacts['id']])) {
-          return $contacts['id'];
-        }
-        return FALSE;
-      }
-      elseif ($contacts['count'] > 1) {
-        $possibleContacts = [];
-        $contactID = NULL;
-        foreach ($contacts['values'] as $contact) {
-          if ($this->isContactEmployedByOrganization($msg['matching_organization_name'], $contact)) {
-            $possibleContacts[] = $contact['id'];
-          }
-          if (count($possibleContacts) > 1) {
-            foreach ($possibleContacts as $index => $possibleContactID) {
-              if (
-                $contacts['values'][$possibleContactID]['current_employer']
-                !== $this->getOrganizationResolvedName($msg['matching_organization_name'])
-              ) {
-                unset($possibleContacts[$index]);
-              }
-            }
-          }
-        }
-        return (count($possibleContacts) == 1) ? reset($possibleContacts) : FALSE;
-      }
-      return FALSE;
-    }
-    catch (CiviCRM_API3_Exception $e) {
-      throw new WMFException(WMFException::IMPORT_CONTRIB, $e->getMessage());
-    }
+  protected function getIndividualID($msg) {
+    return Contact::getIndividualID($msg['email'] ?? NULL, $msg['first_name'] ?? NULL, $msg['last_name'] ?? NULL, $msg['matching_organization_name'] ?? NULL);
   }
 
   /**
@@ -343,23 +290,14 @@ class BenevityFile extends ChecksFile {
    * @return bool
    *
    * @throws \CiviCRM_API3_Exception
-   * @throws \Civi\WMFException\WMFException
    */
-  protected function isContactEmployedByOrganization($organization_name, $contact) {
-    if ($contact['current_employer'] == $this->getOrganizationResolvedName($organization_name)) {
+  protected function isContactEmployedByOrganization(string $organization_name, array $contact): bool {
+    $currentEmployer = $contact['current_employer'];
+    $contactID = (int) $contact['id'];
+    if ($currentEmployer === Contact::resolveOrganizationName($organization_name)) {
       return TRUE;
     }
-    $softCredits = civicrm_api3('ContributionSoft', 'get', ['contact_id' => $contact['id'], 'api.Contribution.get' => ['return' => 'contact_id']]);
-    if ($softCredits['count'] == 0) {
-      return FALSE;
-    }
-    foreach ($softCredits['values'] as $softCredit) {
-      if ($softCredit['api.Contribution.get']['values'][0]['contact_id'] == $this->getOrganizationID($organization_name)) {
-        return TRUE;
-      }
-    }
-    return FALSE;
-
+    return Contact::isContactSoftCreditorOf(Contact::getOrganizationID($organization_name), $contactID);
   }
 
   /**
@@ -374,16 +312,7 @@ class BenevityFile extends ChecksFile {
    * @throws \CiviCRM_API3_Exception
    */
   protected function getOrganizationResolvedName($organizationName) {
-    if (!isset(\Civi::$statics['offline2civicrm']['organization_resolved_name'][$organizationName])) {
-      $contacts = civicrm_api3('Contact', 'get', ['nick_name' => $organizationName, 'contact_type' => 'Organization', 'return' => 'id,organization_name', 'sequential' => 1]);
-      if ($contacts['count'] == 1) {
-        \Civi::$statics['offline2civicrm']['organization_resolved_name'][$organizationName] = $contacts['values'][0]['organization_name'];
-      }
-      else {
-        \Civi::$statics['offline2civicrm']['organization_resolved_name'][$organizationName] = $organizationName;
-      }
-    }
-    return \Civi::$statics['offline2civicrm']['organization_resolved_name'][$organizationName];
+    return Contact::resolveOrganizationName($organizationName);
   }
 
   /**

@@ -315,7 +315,7 @@ function deduper_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
       // Randomise log connection id. This ensures reverts can be done without reverting the whole batch if logging is enabled.
       CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(
         1 => array(
-          uniqid('rand', FALSE) . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4),
+          uniqid() . CRM_Utils_String::createRandom(4, CRM_Utils_String::ALPHANUMERIC),
           'String',
         ),
       ));

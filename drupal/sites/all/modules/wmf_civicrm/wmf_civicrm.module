@@ -241,7 +241,10 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
 
   if (!$msg['contact_id']) {
     $timer->startImportTimer("create_contact");
-    wmf_civicrm_message_create_contact($msg);
+    $contact = WMFContact::save(FALSE)
+      ->setMessage($msg)
+      ->execute()->first();
+    $msg['contact_id'] = $contact['id'];
     $timer->endImportTimer("create_contact");
   }
   else {
@@ -366,19 +369,6 @@ function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
     $msg['contact_id'] = NULL;
     unset($msg['contact_hash']);
   }
-}
-
-/**
- * Create a contact from the $msg array and set the contact_id.
- *
- * @param array $msg
- *   Normalised wmf msg array.
- *
- * @throws \Civi\WMFException\WMFException
- */
-function wmf_civicrm_message_create_contact(&$msg) {
-  $contact = wmf_civicrm_message_contact_insert($msg);
-  $msg['contact_id'] = $contact['id'];
 }
 
 /**
@@ -1706,53 +1696,6 @@ function wmf_civicrm_mark_refund(
   }
 
   return $contribution_id;
-}
-
-/**
- * @param string $op
- * @param int $id
- * @param array $contribution
- *
- * @throws \Civi\WMFException\WMFException
- */
-function wmf_civicrm_civicrm_pre_Contribution($op, $id, &$contribution) {
-  switch ($op) {
-    case 'create':
-    case 'edit':
-      // Add derived wmf_contribution_extra fields to contribution parameters
-      if (WmfDatabase::isNativeTxnRolledBack()) {
-        throw new WMFException(
-          WMFException::IMPORT_CONTRIB,
-          'Native txn rolled back before running pre contribution hook'
-        );
-      }
-      $extra = wmf_civicrm_get_wmf_contribution_extra($contribution);
-
-      if ($extra) {
-        $map = wmf_civicrm_get_custom_field_map(
-          array_keys($extra), 'contribution_extra'
-        );
-        $mapped = [];
-        foreach ($extra as $key => $value) {
-          $mapped[$map[$key]] = $value;
-        }
-        $contribution += $mapped;
-        // FIXME: Seems really ugly that we have to do this, but when
-        // a contribution is created via api3, the _pre hook fires
-        // after the custom field have been transformed and copied
-        // into the 'custom' key
-        $formatted = [];
-        _civicrm_api3_custom_format_params($mapped, $formatted, 'Contribution');
-        if (isset($contribution['custom'])) {
-          $contribution['custom'] += $formatted['custom'];
-        }
-        else {
-          $contribution['custom'] = $formatted['custom'];
-        }
-      }
-
-      break;
-  }
 }
 
 /**
