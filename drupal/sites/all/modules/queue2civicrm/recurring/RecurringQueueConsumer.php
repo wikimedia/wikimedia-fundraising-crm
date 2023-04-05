@@ -372,6 +372,10 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         $params['cycle_day'] = date('j', strtotime($params['start_date']));
       }
 
+      if (isset($msg['initial_scheme_transaction_id'])) {
+        $params['contribution_recur_smashpig.initial_scheme_transaction_id'] = $msg['initial_scheme_transaction_id'];
+      }
+
       $newContributionRecur = ContributionRecur::create(FALSE)
         ->setValues($params)
         ->execute()

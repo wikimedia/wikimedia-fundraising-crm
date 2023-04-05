@@ -1264,6 +1264,37 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   }
 
+  public function testRecurringInitialSchemeTxnId() {
+    $msg = [
+      'first_name' => 'Lex',
+      'currency' => 'USD',
+      'date' => '2023-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'totally.different@example.com',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'Ingenico',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'recurring' => 1,
+      'recurring_payment_token' => mt_rand(),
+      'initial_scheme_transaction_id' => 'FlargBlarg12345',
+      'user_ip' => '123.232.232'
+    ];
+    $contribution = $this->messageImport($msg);
+    $recurRecord = ContributionRecur::get(FALSE)
+      ->addSelect('contribution_recur_smashpig.initial_scheme_transaction_id')
+      ->addWhere('id', '=', $contribution['contribution_recur_id'])
+      ->execute()
+      ->first();
+    $this->assertEquals(
+      'FlargBlarg12345',
+      $recurRecord['contribution_recur_smashpig.initial_scheme_transaction_id']
+    );
+  }
+
   /**
    * @see https://phabricator.wikimedia.org/T262232
    */

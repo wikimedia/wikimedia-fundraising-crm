@@ -124,6 +124,10 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
     $extra_recurring_params['invoice_id'] = $msg['processor_contact_id'];
   }
 
+  if (!empty($msg['initial_scheme_transaction_id'])) {
+    $extra_recurring_params['contribution_recur_smashpig.initial_scheme_transaction_id'] = $msg['initial_scheme_transaction_id'];
+  }
+
   $insert_params = [
       'contact_id' => $contact_id,
       'amount' => $msg['original_gross'],
