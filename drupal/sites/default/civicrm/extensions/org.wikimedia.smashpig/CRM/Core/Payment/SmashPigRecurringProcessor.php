@@ -184,7 +184,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \CiviCRM_API3_Exception
    */
   protected function getPaymentsToCharge($contributionRecurId = NULL) {
-    $getAction = ContributionRecur::get(FALSE);
+    $getAction = ContributionRecur::get(FALSE)
+      ->addSelect('*')
+      ->addSelect('custom.*');
+
     if ($contributionRecurId) {
       $getAction->addWhere('id', '=', $contributionRecurId);
     } else {
@@ -447,14 +450,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       $previousContribution['invoice_id'],
       $recurringPayment['failure_count']
     );
-    $description = $this->descriptor;
     $tokenData = civicrm_api3('PaymentToken', 'getsingle', [
       'id' => $recurringPayment['payment_token_id'],
       'return' => ['token', 'ip_address'],
     ]);
-    $ipAddress = isset($tokenData['ip_address']) ? $tokenData['ip_address'] : NULL;
+    $ipAddress = $tokenData['ip_address'] ?? NULL;
 
-    return [
+    $params = [
       'amount' => $recurringPayment['amount'],
       'country' => $donor['address_primary.country_id:abbr'],
       'currency' => $recurringPayment['currency'],
@@ -467,7 +469,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'contactID' => $previousContribution['contact_id'],
       'is_recur' => TRUE,
       'contributionRecurID' => $recurringPayment['id'],
-      'description' => $description,
+      'description' => $this->descriptor,
       'token' => $tokenData['token'],
       'ip_address' => $ipAddress,
       'payment_instrument' => $previousContribution['payment_instrument'],
@@ -476,6 +478,11 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       // FIXME: SmashPig should choose 'first' or 'recurring' based on seq #
       'installment' => 'recurring',
     ];
+
+    if (isset($recurringPayment['contribution_recur_smashpig.initial_scheme_transaction_id'])) {
+      $params['initial_scheme_transaction_id'] = $recurringPayment['contribution_recur_smashpig.initial_scheme_transaction_id'];
+    }
+    return $params;
   }
 
   /**

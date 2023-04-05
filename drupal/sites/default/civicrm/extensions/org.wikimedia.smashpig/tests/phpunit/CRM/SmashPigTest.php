@@ -672,6 +672,71 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
   }
 
   /**
+   * Ensure that Initial Scheme Transaction Id is passed to payment from custom field
+   * @throws \CRM_Core_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Exception
+   */
+  public function testRecurringChargeJobInitialSchemeId() {
+    // Use the queue rather than table insert to simplify cleanup
+    \Civi::settings()->set(
+      'smashpig_recurring_use_queue', '1'
+    );
+    \Civi::settings()->set(
+      'smashpig_recurring_catch_up_days', '1'
+    );
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id']);
+    $contributionRecur = $this->createContributionRecur($token, [
+      'contribution_recur_smashpig.initial_scheme_transaction_id' => 'ABC123YouAndMe'
+    ]);
+    $contribution = $this->createContribution($contributionRecur);
+
+    [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution);
+
+    $expectedDescription = $this->getExpectedDescription();
+
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->with([
+        'recurring_payment_token' => 'abc123-456zyx-test12',
+        'amount' => 12.34,
+        'country' => 'US',
+        'currency' => 'USD',
+        'first_name' => 'Harry',
+        'last_name' => 'Henderson',
+        'email' => 'harry@hendersons.net',
+        'order_id' => $expectedInvoiceId,
+        'installment' => 'recurring',
+        'description' => $expectedDescription,
+        'processor_contact_id' => $contributionRecur['invoice_id'],
+        'fiscal_number' => '1122334455',
+        'recurring' => TRUE,
+        'user_ip' => '12.34.56.78',
+        'initial_scheme_transaction_id' => 'ABC123YouAndMe'
+      ])
+      ->willReturn(
+        $this->createPaymentResponse
+      );
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->with([
+        'amount' => 12.34,
+        'currency' => 'USD',
+        'gateway_txn_id' => '000000850010000188130000200001',
+      ])
+      ->willReturn(
+        $this->approvePaymentResponse
+      );
+    $result = civicrm_api3('Job', 'process_smashpig_recurring', []);
+    $this->assertEquals(
+      ['ids' => [$contributionRecur['id']]],
+      $result['values']['success']
+    );
+  }
+
+
+  /**
    * @throws \CRM_Core_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
    */

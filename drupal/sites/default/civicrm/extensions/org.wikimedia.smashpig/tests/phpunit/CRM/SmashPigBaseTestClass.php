@@ -268,11 +268,14 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
         'trxn_id' => 'RECURRING INGENICO ' . $processor_id,
         'processor_id' => $processor_id,
         'invoice_id' => mt_rand(10000, 10000000) . '.' . mt_rand(1, 20),
-        'contribution_status_id' => 'Pending',
+        'contribution_status_id:name' => 'Pending',
       ];
-    $result = $this->callAPISuccess('ContributionRecur', 'create', $params);
+    $result = Civi\Api4\ContributionRecur::create(FALSE)
+      ->setValues($params)
+      ->execute()
+      ->first();
     $this->deleteThings['ContributionRecur'][] = $result['id'];
-    return $result['values'][$result['id']];
+    return $result;
   }
 
   /**
