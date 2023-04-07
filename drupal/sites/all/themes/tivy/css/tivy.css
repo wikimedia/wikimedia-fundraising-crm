@@ -30,7 +30,7 @@ body.toolbar .tivy-grid-container {
       margin-left: 0; }
 
 .tivy-grid-main {
-  padding: 10px; }
+  padding: 0 10px; }
 
 body.page-civicrm-contact-view .tivy-grid-main #crm-container .crm-summary-display_name {
   font-weight: 700;
@@ -39,6 +39,6 @@ body.page-civicrm-contact-view .tivy-grid-main #crm-container .crm-summary-displ
   padding-bottom: 0; }
 
 .breadcrumb {
-  padding-bottom: 0; }
+  padding-bottom: 15px; }
   .breadcrumb a {
     font-size: 12px; }
