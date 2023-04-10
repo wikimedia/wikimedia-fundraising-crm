@@ -1006,6 +1006,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
             ($key === 'current_employer' && empty($params['current_employer']))) {
             // CRM-10128: if auth source is not checksum / login && $value is blank, do not fill $data with empty value
             // to avoid update with empty values
+            CRM_Core_Error::deprecatedWarning('code should be unreachable, slated for removal');
             continue;
           }
           else {
@@ -1528,7 +1529,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
    */
   public static function getRowsElementsAndInfo(int $mainID, int $otherID, bool $checkPermissions = TRUE) {
     $qfZeroBug = 'e8cddb72-a257-11dc-b9cc-0016d3330ee9';
-    $fields = self::getMergeFieldsMetadata();
+    $fields = self::getMergeFieldsMetadata($checkPermissions);
 
     $main = self::getMergeContactDetails($mainID);
     $other = self::getMergeContactDetails($otherID);
@@ -1545,15 +1546,17 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
       $rows["move_$field"] = [
         'main' => self::getFieldValueAndLabel($field, $main)['label'],
         'other' => self::getFieldValueAndLabel($field, $other)['label'],
-        'title' => $fields[$field]['html']['label'] ?? $fields[$field]['title'],
+        'title' => $fields[$field]['label'],
       ];
 
       $value = self::getFieldValueAndLabel($field, $other)['value'];
       //CRM-14334
-      if ($value === NULL || $value == '') {
+      if ($value === NULL || $value === '') {
         $value = 'null';
       }
-      if ($value === 0 or $value === '0') {
+      if ($value === 0 || $value === '0' || $value === FALSE) {
+        // We swap out the value for the form to a weird string in order to
+        // swap it back later. This QuickForm wrangling should be left to the form layer.
         $value = $qfZeroBug;
       }
       if (is_array($value) && empty($value[1])) {
@@ -2118,26 +2121,7 @@ ORDER BY civicrm_custom_group.weight,
 
     // **** Update contact related info for the main contact
     if (!empty($submitted)) {
-      $submitted['contact_id'] = $mainId;
-
-      //update current employer field
-      if ($currentEmloyerId = CRM_Utils_Array::value('current_employer_id', $submitted)) {
-        if (!CRM_Utils_System::isNull($currentEmloyerId)) {
-          $submitted['current_employer'] = $submitted['current_employer_id'];
-        }
-        else {
-          $submitted['current_employer'] = '';
-        }
-        unset($submitted['current_employer_id']);
-      }
-
-      //CRM-14312 include prefix/suffix from mainId if not overridden for proper construction of display/sort name
-      if (!isset($submitted['prefix_id']) && !empty($migrationInfo['main_details']['prefix_id'])) {
-        $submitted['prefix_id'] = $migrationInfo['main_details']['prefix_id'];
-      }
-      if (!isset($submitted['suffix_id']) && !empty($migrationInfo['main_details']['suffix_id'])) {
-        $submitted['suffix_id'] = $migrationInfo['main_details']['suffix_id'];
-      }
+      $submitted['id'] = $mainId;
       self::updateContact($mainId, $submitted);
     }
     $transaction->commit();
@@ -2152,26 +2136,11 @@ ORDER BY civicrm_custom_group.weight,
    *
    * @return array
    *   Array of field names to be potentially merged.
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public static function getContactFields() {
-    $contactFields = CRM_Contact_DAO_Contact::fields();
-    $invalidFields = [
-      'api_key',
-      'created_date',
-      'display_name',
-      'hash',
-      'id',
-      'modified_date',
-      'primary_contact_id',
-      'sort_name',
-      'user_unique_id',
-    ];
-    foreach ($contactFields as $field => $value) {
-      if (in_array($field, $invalidFields)) {
-        unset($contactFields[$field]);
-      }
-    }
-    return array_keys($contactFields);
+  public static function getContactFields(): array {
+    return array_keys(self::getMergeFieldsMetadata(FALSE));
   }
 
   /**
@@ -2331,48 +2300,48 @@ ORDER BY civicrm_custom_group.weight,
    * represent email greeting, postal greeting & addressee.
    *
    * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public static function getMergeFieldsMetadata() {
-    if (isset(\Civi::$statics[__CLASS__]) && isset(\Civi::$statics[__CLASS__]['merge_fields_metadata'])) {
-      return \Civi::$statics[__CLASS__]['merge_fields_metadata'];
+  public static function getMergeFieldsMetadata($checkPermissions = TRUE): array {
+    if (isset(\Civi::$statics[__CLASS__]['merge_fields_metadata'][(bool) $checkPermissions])) {
+      return \Civi::$statics[__CLASS__]['merge_fields_metadata'][(bool) $checkPermissions];
     }
-    $fields = CRM_Contact_DAO_Contact::fields();
-    static $optionValueFields = [];
-    if (empty($optionValueFields)) {
-      $optionValueFields = CRM_Core_OptionValue::getFields();
+    $contactFields = (array) Contact::getFields($checkPermissions)->execute()->indexBy('name');
+    $invalidFields = self::ignoredFields('contact');
+    foreach ($contactFields as $field => $value) {
+      if (in_array($field, $invalidFields, TRUE)) {
+        unset($contactFields[$field]);
+      }
     }
+    $optionValueFields = CRM_Core_OptionValue::getFields();
     foreach ($optionValueFields as $field => $params) {
-      $fields[$field]['title'] = $params['title'];
+      $contactFields[$field]['title'] = $params['title'];
     }
-    \Civi::$statics[__CLASS__]['merge_fields_metadata'] = $fields;
-    return \Civi::$statics[__CLASS__]['merge_fields_metadata'];
+    \Civi::$statics[__CLASS__]['merge_fields_metadata'][(bool) $checkPermissions] = $contactFields;
+    return \Civi::$statics[__CLASS__]['merge_fields_metadata'][(bool) $checkPermissions];
   }
 
   /**
    * Get the details of the contact to be merged.
    *
-   * @param int $contact_id
+   * @param int $contactID
    *
    * @return array
    *
    * @throws CRM_Core_Exception
    */
-  public static function getMergeContactDetails($contact_id) {
-    $params = [
-      'contact_id' => $contact_id,
-      'version' => 3,
-      'return' => array_merge(['display_name'], self::getContactFields()),
-    ];
-    $result = civicrm_api('contact', 'get', $params);
+  public static function getMergeContactDetails($contactID): array {
+    $result = Contact::get(FALSE)->addWhere('id', '=', $contactID)->execute()->first();
 
     // CRM-18480: Cancel the process if the contact is already deleted
-    if (isset($result['values'][$contact_id]['contact_is_deleted']) && !empty($result['values'][$contact_id]['contact_is_deleted'])) {
+    if (isset($result['is_deleted']) && !empty($result['is_deleted'])) {
       throw new CRM_Core_Exception(ts('Cannot merge because one contact (ID %1) has been deleted.', [
-        1 => $contact_id,
+        1 => $contactID,
       ]));
     }
 
-    return $result['values'][$contact_id];
+    return $result;
   }
 
   /**
@@ -2584,24 +2553,25 @@ ORDER BY civicrm_custom_group.weight,
     // go ahead with merge if there is no conflict
     $originalMigrationInfo = $migrationInfo;
     foreach ($migrationInfo as $key => $val) {
-      if ($val === "null") {
+      if ($val === 'null') {
         // Rule: Never overwrite with an empty value (in any mode)
+        // This is probably unreachable.
         unset($migrationInfo[$key]);
         continue;
       }
-      elseif ((in_array(substr($key, 5), CRM_Dedupe_Merger::getContactFields()) or
+      elseif ((in_array(substr($key, 5), CRM_Dedupe_Merger::getContactFields()) ||
           strpos($key, 'move_custom_') === 0
         ) and $val !== NULL
       ) {
         // Rule: If both main-contact, and other-contact have a field with a
         // different value, then let $mode decide if to merge it or not
         if (
-          (!empty($migrationInfo['rows'][$key]['main'])
+          ((!empty($migrationInfo['rows'][$key]['main'])
+              // Since we now load with v4 then FALSE would be right for a boolean.
+            || $migrationInfo['rows'][$key]['main'] === FALSE)
             // For custom fields a 0 (e.g in an int field) could be a true conflict. This
-            // is probably true for other fields too - e.g. 'do_not_email' but
-            // leaving that investigation as a @todo - until tests can be written.
-            // Note the handling of this has test coverage - although the data-typing
-            // of '0' feels flakey we have insurance.
+            // is probably true for other fields too - e.g. 'do_not_email'.
+            // There should be pretty solid test cover here now.
             || ($migrationInfo['rows'][$key]['main'] === '0' && substr($key, 0, 12) === 'move_custom_')
           )
           && $migrationInfo['rows'][$key]['main'] != $migrationInfo['rows'][$key]['other']
@@ -2776,19 +2746,42 @@ ORDER BY civicrm_custom_group.weight,
   }
 
   /**
+   * Get fields that should not be transferred.
+   *
+   * This is primarily because they are calculated.
+   *
+   * @param string $type
+   *
    * @return array
    */
-  protected static function ignoredFields(): array {
+  protected static function ignoredFields(string $type = 'location'): array {
     $keysToIgnore = [
-      'id',
-      'is_primary',
-      'is_billing',
-      'manual_geo_code',
-      'contact_id',
-      'reset_date',
-      'hold_date',
+      'location' => [
+        'id',
+        'is_primary',
+        'is_billing',
+        'manual_geo_code',
+        'contact_id',
+        'reset_date',
+        'hold_date',
+      ],
+      'contact' => [
+        'api_key',
+        'created_date',
+        'display_name',
+        'hash',
+        'id',
+        'modified_date',
+        'primary_contact_id',
+        'user_unique_id',
+        // These are effectively cached / calculated fields
+        'sort_name',
+        'email_greeting_display',
+        'postal_greeting_display',
+        'addressee_display',
+      ],
     ];
-    return $keysToIgnore;
+    return $keysToIgnore[$type];
   }
 
   /**
@@ -2801,7 +2794,7 @@ ORDER BY civicrm_custom_group.weight,
    * @throws \Exception
    */
   private static function getFieldValueAndLabel($field, $contact): array {
-    $fields = self::getMergeFieldsMetadata();
+    $fields = self::getMergeFieldsMetadata(FALSE);
     $value = $label = $contact[$field] ?? NULL;
     $fieldSpec = $fields[$field];
     if (!empty($fieldSpec['serialize']) && is_array($value)) {
@@ -2833,11 +2826,11 @@ ORDER BY civicrm_custom_group.weight,
         $label = ts('[x]');
       }
     }
-    elseif (!empty($fieldSpec['pseudoconstant'])) {
+    elseif (!empty($fieldSpec['options'])) {
       $label = CRM_Core_PseudoConstant::getLabel('CRM_Contact_BAO_Contact', $field, $value);
     }
-    elseif ($field == 'current_employer_id' && !empty($value)) {
-      $label = "$value (" . CRM_Contact_BAO_Contact::displayName($value) . ")";
+    elseif ($field === 'employer_id' && !empty($value)) {
+      $label = "$value (" . CRM_Contact_BAO_Contact::displayName($value) . ')';
     }
     return ['label' => $label, 'value' => $value];
   }

@@ -315,7 +315,7 @@ class CRM_Deduper_BAO_MergeHandler {
   public function getValueForField(string $fieldName, bool $isForContactToBeKept) {
     if (strpos($fieldName, 'custom_') !== 0) {
       $contactDetail = $isForContactToBeKept ? $this->dedupeData['migration_info']['main_details'] : $this->dedupeData['migration_info']['other_details'];
-      return $contactDetail[$fieldName];
+      return $contactDetail[$fieldName] ?? NULL;
     }
     // You are now entering hell. The information you want is buried... somewhere.
     if (!$isForContactToBeKept) {

@@ -57,7 +57,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testGetContactFields() {
     $fields = CRM_Deduper_BAO_MergeConflict::getContactFields();
-    $this->assertTrue(isset($fields['contact_source']));
+    $this->assertTrue(isset($fields['source']));
     $this->assertFalse(isset($fields['source'], $fields['street_address']));
   }
 
@@ -100,7 +100,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   public function testResolveAggressivePreferredContact($isReverse) {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recently_created_contact']]);
     $this->createDuplicateDonors([['first_name' => 'Sally'], []]);
     $mergedContact = $this->doMerge($isReverse, TRUE);
@@ -118,7 +118,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   public function testSafeModeDoesNotOverrideConflict($isReverse) {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recently_created_contact']]);
     $this->createDuplicateDonors([['first_name' => 'Sally'], []]);
     $this->doNotDoMerge($isReverse);
@@ -533,7 +533,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   public function testResolvePreferredContactField($isReverse) {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['earliest_created_contact']]);
     $this->createDuplicateIndividuals([['contact_source' => 'keep me'], ['contact_source' => 'ditch me']]);
     $mergedContact = $this->doMerge($isReverse);
@@ -553,7 +553,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   public function testResolvePreferredContactFieldChooseLatest($isReverse) {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recently_created_contact']]);
     $this->createDuplicateIndividuals([['contact_source' => 'ditch me'], ['contact_source' => 'keep me']]);
     $mergedContact = $this->doMerge($isReverse);
@@ -573,7 +573,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
  * @throws \CRM_Core_Exception
  */
   public function testResolvePreferredContactFieldChooseMostRecentDonor($isReverse) {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor']]);
     $this->createDuplicateDonors();
     $mergedContact = $this->doMerge($isReverse);
@@ -593,7 +593,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   public function testResolvePreferredContactFieldChooseMostProlific($isReverse) {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_prolific_contributor']]);
     $this->createDuplicateDonors();
     // Add a second contribution to the first donor - making it more prolific.
@@ -616,7 +616,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testResolvePreferredContactEmail(bool $isReverse): void {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['contact_source']]);
+    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor']]);
     $this->createDuplicateDonors([[], ['email' => 'notbob@example.com']]);
     $mergedContact = $this->doMerge($isReverse);

@@ -89,7 +89,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
 
     \Civi::settings()->set('deduper_location_priority_order', $types);
     \Civi::settings()->set('deduper_resolver_email', 'preferred_contact_with_re-assign');
-    \Civi::settings()->set('deduper_resolver_field_prefer_preferred_contact', ['contact_source', $this->getCustomFieldString('opt_in'), 'preferred_language']);
+    \Civi::settings()->set('deduper_resolver_field_prefer_preferred_contact', ['source', $this->getCustomFieldString('opt_in'), 'preferred_language']);
     \Civi::settings()->set('deduper_resolver_preferred_contact_resolution', ['most_recent_contributor']);
     \Civi::settings()->set('deduper_resolver_preferred_contact_last_resort', 'most_recently_created_contact');
     \Civi::settings()->set('deduper_resolver_custom_groups_to_skip', ['wmf_donor']);
@@ -733,7 +733,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    *
    * @throws \CRM_Core_Exception
    */
-  public function testBatchMergeConflictSource() {
+  public function testBatchMergeConflictSource(): void {
     $this->breedDuck(['id' => $this->contactID, 'source' => 'egg']);
     $this->breedDuck(['id' => $this->contactID2, 'source' => 'chicken']);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);

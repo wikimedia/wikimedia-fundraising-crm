@@ -53,7 +53,8 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
       || !empty($field['extends'])) {
         // Only add genuine contact & contact custom fields - not stuff like 'street address'
         // that getfields retrieves.
-        $generalFields[$key] = $field['title'];
+        $fieldName = !empty($field['extends']) ? $key : ($field['name'] ?? $key);
+        $generalFields[$fieldName] = $field['title'];
       }
     }
     return $generalFields;
