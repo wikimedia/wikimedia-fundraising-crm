@@ -253,7 +253,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    * @throws \CRM_Core_Exception
    * @throws \API_Exception
    */
-  public function testMergeEmailNonPrimary($isReverse) {
+  public function testMergeEmailNonPrimary($isReverse): void {
     $this->giveADuckADonation($isReverse);
     $moreRecentlyGenerousDuck = $isReverse ? $this->contactID : $this->contactID2;
      Email::replace()
@@ -587,10 +587,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
 
   /**
    * Test that a conflict on communication preferences is handled.
-   *
-   * @throws \CRM_Core_Exception
    */
-  public function testBatchMergeConflictCommunicationPreferences() {
+  public function testBatchMergeConflictCommunicationPreferences(): void {
     $this->callAPISuccess('Contact', 'create', ['id' => $this->contactID, 'do_not_email' => FALSE, 'is_opt_out' => TRUE]);
     $this->callAPISuccess('Contact', 'create', ['id' => $this->contactID2, 'do_not_email' => TRUE, 'is_opt_out' => FALSE]);
 
@@ -1031,10 +1029,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
 
   /**
    * Test that a conflict on casing in first names is handled for organization_name.
-   *
-   * @throws \CRM_Core_Exception
    */
-  public function testBatchMergeConflictNameCasingOrgs() {
+  public function testBatchMergeConflictNameCasingOrgs(): void {
     $rule_group_id = (int) $this->callAPISuccessGetValue('RuleGroup', [
       'contact_type' => 'Organization',
       'used' => 'Unsupervised',
@@ -1054,6 +1050,66 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
 
     $contact = $this->callAPISuccess('Contact', 'get', ['id' => $org1['id'], 'sequential' => 1]);
     $this->assertEquals('Donald Duck', $contact['values'][0]['organization_name']);
+  }
+
+  /**
+   * Test SlumDuck millionaire wins the postal code lottery.
+   *
+   * Addresses a bug where the presence of a conflicting postal
+   * code results in the wrong address being kept.
+   *
+   * https://phabricator.wikimedia.org/T330231
+   */
+  public function testKeepCorrectAddress(): void {
+    $toKeepID = $this->breedDuck();
+    $toRemoveID = $this->breedDuck();
+    $this->callAPISuccess('Email', 'create', [
+      'contact_id' => $toRemoveID,
+      'email' => 'duck@example.com',
+    ]);
+    $this->callAPISuccess('Email', 'create', [
+      'contact_id' => $toKeepID,
+      'email' => 'duck@example.com',
+    ]);
+    $this->callAPISuccess('Contribution', 'create', [
+      'contact_id' => $toKeepID,
+      'financial_type_id' => 1,
+      'receive_date' => '2023-04-01',
+      'total_amount' => 90,
+    ]);
+    $this->callAPISuccess('Contribution', 'create', [
+      'contact_id' => $toRemoveID,
+      'financial_type_id' => 1,
+      'receive_date' => '2022-04-01',
+      'total_amount' => 90,
+    ]);
+    $this->callAPISuccess('Address', 'create', [
+      'contact_id' => $toKeepID,
+      'street_address' => 'Duck Manor',
+      'location_type_id' => 1,
+      'postal_code' => '8567',
+    ]);
+    $this->callAPISuccess('Address', 'create', [
+      'contact_id' => $toRemoveID,
+      'street_address' => 'Duck Slum',
+      'location_type_id' => 1,
+      'postal_code' => '567',
+    ]);
+    $this->callAPISuccess('Contact', 'merge', [
+      'mode' => 'aggressive',
+      'to_keep_id' => $toKeepID,
+      'to_remove_id' => $toRemoveID,
+    ]);
+    $contact = $this->callAPISuccess('Contact', 'get', [
+      'id' => [
+        'IN' => [
+          $toKeepID,
+          $toRemoveID,
+        ],
+      ],
+    ]);
+    $this->assertEquals('Duck Manor', $contact['values'][$toKeepID]['street_address']);
+
   }
 
   /**
@@ -1715,7 +1771,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    *
    * Also get rid of the nest.
    */
-  protected function doDuckHunt() {
+  protected function doDuckHunt(): void {
     \CRM_Core_DAO::executeQuery("
       DELETE c, e
       FROM civicrm_contact c
@@ -1732,9 +1788,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    *
    * @return int
    *   id of created contribution
-   * @throws \CRM_Core_Exception
    */
-  public function contributionCreate($params): int {
+  public function contributionCreate(array $params): int {
     $params = array_merge([
       'receive_date' => date('Ymd'),
       'total_amount' => 100.00,
@@ -1756,9 +1811,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    *   Any overrides to be added to the create call.
    *
    * @return int
-   * @throws \CRM_Core_Exception
    */
-  public function breedDuck($extraParams = []): int {
+  public function breedDuck(array $extraParams = []): int {
     $contact = $this->callAPISuccess('Contact', 'create', array_merge([
       'contact_type' => 'Individual',
       'first_name' => 'Donald',
