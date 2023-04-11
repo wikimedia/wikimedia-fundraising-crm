@@ -7,6 +7,7 @@ use Civi\WMFHooks\CalculatedData;
 use Civi\WMFHooks\Contribution;
 use Civi\WMFHooks\ContributionRecur;
 use Civi\WMFHooks\ContributionRecurTrigger;
+use Civi\WMFHooks\Import;
 use Civi\WMFHooks\Permissions;
 use Civi\WMFHooks\QuickForm;
 use Civi\WMFHooks\Data;
@@ -132,6 +133,30 @@ function wmf_civicrm_civicrm_managed(&$entities) {
   }
   // Once the above is obsolete remove & uncomment this line.
   // _wmf_civicrm_civix_civicrm_managed($entities);
+}
+
+/**
+ * Intercede in searches to unset 'force' when it appears to be accidentally set.
+ *
+ * This is a long standing wmf hack & it's not sure when the url would be hit by
+ * a user but it can be replicated by accessing
+ *
+ * /civicrm/contribute/search?force=1&context=search&reset=1
+ *
+ * When this is working correctly the criteria form not the results will show.
+ *
+ * Note this is a totally weird place to do this - but seems tobe the only place called
+ * before the search is rendered.
+ *
+ * @throws \CRM_Core_Exception
+ * @noinspection PhpUnused
+ */
+function wmf_civicrm_civicrm_searchTasks() {
+  if (CRM_Utils_Request::retrieveValue('context', 'String', 'search') === 'search'
+    && CRM_Utils_Request::retrieve('qfKey', 'String') === NULL
+  ) {
+    $_GET['force'] = $_REQUEST['force'] = FALSE;
+  }
 }
 
 /**
@@ -331,6 +356,13 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   $recurProcessor = new ContributionRecurTrigger();
   $recurTriggerInfo = $recurProcessor->setTableName($tableName)->triggerInfo();
   $info = array_merge($info, $recurTriggerInfo);
+}
+
+/**
+ * Implements hook_civicrm_importAlterMappedRow().
+ */
+function wmf_civicrm_civicrm_importAlterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID) {
+  Import::alterMappedRow($importType, $context, $mappedRow, $rowValues, $userJobID);
 }
 
 /**
