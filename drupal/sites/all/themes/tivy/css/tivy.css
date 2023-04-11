@@ -42,3 +42,8 @@ body.page-civicrm-contact-view .tivy-grid-main #crm-container .crm-summary-displ
   padding-bottom: 15px; }
   .breadcrumb a {
     font-size: 12px; }
+
+/* wrap email pref center link */
+.crm-summary-row a {
+  overflow-wrap: anywhere;
+}
