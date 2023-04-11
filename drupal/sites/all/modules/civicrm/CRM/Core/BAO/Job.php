@@ -26,7 +26,7 @@ class CRM_Core_BAO_Job extends CRM_Core_DAO_Job {
    * @param array $params
    *   An assoc array of name/value pairs.
    *
-   * @return CRM_Financial_DAO_PaymentProcessorType
+   * @return CRM_Core_DAO_Job
    */
   public static function create($params) {
     $job = new CRM_Core_DAO_Job();
@@ -52,17 +52,13 @@ class CRM_Core_BAO_Job extends CRM_Core_DAO_Job {
   }
 
   /**
-   * Update the is_active flag in the db.
-   *
+   * @deprecated - this bypasses hooks.
    * @param int $id
-   *   Id of the database record.
    * @param bool $is_active
-   *   Value we want to set the is_active field.
-   *
    * @return bool
-   *   true if we found and updated the object, else false
    */
   public static function setIsActive($id, $is_active) {
+    CRM_Core_Error::deprecatedFunctionWarning('writeRecord');
     return CRM_Core_DAO::setFieldValue('CRM_Core_DAO_Job', $id, 'is_active', $is_active);
   }
 
@@ -76,6 +72,7 @@ class CRM_Core_BAO_Job extends CRM_Core_DAO_Job {
    * @throws CRM_Core_Exception
    */
   public static function del($jobID) {
+    CRM_Core_Error::deprecatedFunctionWarning('deleteRecord');
     self::deleteRecord(['id' => $jobID]);
     return TRUE;
   }

@@ -40,8 +40,9 @@ Grid will also be manageable. However, the `limit` can be confusing to use. If y
 a database of 200 contacts, all called Kate and you configure your Search Contact Set
 to find contacts with a first name of Kate with a limit of 50 it will build a Search Contact
 Set of Kates 1-50 and then a Dedupe Match Grid of those 50 Kates against all 200 contacts
-Although this will find nearly 10,000 matches it will not find that Kate 83 matches Kate 133
-- because neither of those are in the Search Contact Set.
+Although this will find 9,950 matches (ie each of those 50 Kates will match the 199 other
+Kates in the database giving 50 * 199 = 9950) it will not find that Kate 83 matches Kate 133
+-- because neither of those are in the Search Contact Set.
 
 How do you get to the rest of the matches? Well, If you dedupe a few contacts then you will
 start to see a few new Kates enter your Search Contact Set - just because the deletion of
@@ -53,9 +54,4 @@ might need to play around with limits and ID ranges to ensure that all the Kates
 database have a turn in the Search Contact Set.
 
 
-The most confusing thing to understand is the way the criteria interact with the configured
-'limit'.
-
 ![img.png](images/limit.png)
-
-In order to build a dedupe query the code has to internally find every

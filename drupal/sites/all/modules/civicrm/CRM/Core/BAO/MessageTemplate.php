@@ -43,17 +43,13 @@ class CRM_Core_BAO_MessageTemplate extends CRM_Core_DAO_MessageTemplate implemen
   }
 
   /**
-   * Update the is_active flag in the db.
-   *
+   * @deprecated - this bypasses hooks.
    * @param int $id
-   *   Id of the database record.
    * @param bool $is_active
-   *   Value we want to set the is_active field.
-   *
    * @return bool
-   *   true if we found and updated the object, else false
    */
   public static function setIsActive($id, $is_active) {
+    CRM_Core_Error::deprecatedFunctionWarning('writeRecord');
     return CRM_Core_DAO::setFieldValue('CRM_Core_DAO_MessageTemplate', $id, 'is_active', $is_active);
   }
 
@@ -165,14 +161,8 @@ class CRM_Core_BAO_MessageTemplate extends CRM_Core_DAO_MessageTemplate implemen
    * @throws \CRM_Core_Exception
    */
   public static function del($messageTemplatesID) {
-    // make sure messageTemplatesID is an integer
-    if (!CRM_Utils_Rule::positiveInteger($messageTemplatesID)) {
-      throw new CRM_Core_Exception(ts('Invalid Message template'));
-    }
-
+    CRM_Core_Error::deprecatedFunctionWarning('deleteRecord');
     static::deleteRecord(['id' => $messageTemplatesID]);
-    // Yikes - bad idea setting status messages in BAO CRUD functions. Don't do this.
-    CRM_Core_Session::setStatus(ts('Selected message template has been deleted.'), ts('Deleted'), 'success');
   }
 
   /**

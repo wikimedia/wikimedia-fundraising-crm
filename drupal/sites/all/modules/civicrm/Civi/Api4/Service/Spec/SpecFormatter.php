@@ -14,7 +14,6 @@ namespace Civi\Api4\Service\Spec;
 
 use Civi\Api4\Utils\CoreUtil;
 use Civi\Api4\Utils\FormattingUtil;
-use CRM_Core_DAO_AllCoreTables as AllCoreTables;
 
 class SpecFormatter {
 
@@ -37,6 +36,9 @@ class SpecFormatter {
         $field->setType('Field');
         $field->setTableName($data['custom_group_id.table_name']);
       }
+      if ($dataTypeName === 'EntityReference') {
+        $field->setFkEntity($data['fk_entity']);
+      }
       $field->setColumnName($data['column_name']);
       $field->setNullable(empty($data['is_required']));
       $field->setCustomFieldId($data['id'] ?? NULL);
@@ -45,7 +47,7 @@ class SpecFormatter {
       $field->setLabel($data['custom_group_id.title'] . ': ' . $data['label']);
       $field->setHelpPre($data['help_pre'] ?? NULL);
       $field->setHelpPost($data['help_post'] ?? NULL);
-      if (self::customFieldHasOptions($data)) {
+      if (\CRM_Core_BAO_CustomField::hasOptions($data)) {
         $field->setOptionsCallback([__CLASS__, 'getOptions']);
         $suffixes = ['label'];
         if (!empty($data['option_group_id'])) {
@@ -94,32 +96,10 @@ class SpecFormatter {
     $fkAPIName = $data['FKApiName'] ?? NULL;
     $fkClassName = $data['FKClassName'] ?? NULL;
     if ($fkAPIName || $fkClassName) {
-      $field->setFkEntity($fkAPIName ?: AllCoreTables::getBriefName($fkClassName));
+      $field->setFkEntity($fkAPIName ?: CoreUtil::getApiNameFromBAO($fkClassName));
     }
 
     return $field;
-  }
-
-  /**
-   * Does this custom field have options
-   *
-   * @param array $field
-   * @return bool
-   */
-  private static function customFieldHasOptions($field) {
-    // This will include boolean fields with Yes/No options.
-    if (in_array($field['html_type'], ['Radio', 'CheckBox'])) {
-      return TRUE;
-    }
-    // Do this before the "Select" string search because date fields have a "Select Date" html_type
-    // and contactRef fields have an "Autocomplete-Select" html_type - contacts are an FK not an option list.
-    if (in_array($field['data_type'], ['ContactReference', 'Date'])) {
-      return FALSE;
-    }
-    if (strpos($field['html_type'], 'Select') !== FALSE) {
-      return TRUE;
-    }
-    return !empty($field['option_group_id']);
   }
 
   /**
@@ -293,7 +273,7 @@ class SpecFormatter {
       'Link' => 'Url',
     ];
     $inputType = $map[$inputType] ?? $inputType;
-    if ($dataTypeName === 'ContactReference') {
+    if ($dataTypeName === 'ContactReference' || $dataTypeName === 'EntityReference') {
       $inputType = 'EntityRef';
     }
     if (in_array($inputType, ['Select', 'EntityRef'], TRUE) && !empty($data['serialize'])) {

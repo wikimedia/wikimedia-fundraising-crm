@@ -251,17 +251,13 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
   }
 
   /**
-   * Update the is_active flag in the db.
-   *
+   * @deprecated - this bypasses hooks.
    * @param int $id
-   *   Id of the database record.
    * @param bool $is_active
-   *   Value we want to set the is_active field.
-   *
    * @return bool
-   *   true if we found and updated the object, else false
    */
   public static function setIsActive($id, $is_active) {
+    CRM_Core_Error::deprecatedFunctionWarning('writeRecord');
     // reset the cache
     Civi::cache('fields')->flush();
     // reset ACL and system caches.
@@ -635,13 +631,15 @@ ORDER BY civicrm_custom_group.weight,
   /**
    * Clean and validate the filter before it is used in a db query.
    *
+   * @internal this will be private again soon.
+   *
    * @param string $entityType
    * @param string $subType
    *
    * @return string
    * @throws \CRM_Core_Exception
    */
-  protected static function validateSubTypeByEntity($entityType, $subType) {
+  public static function validateSubTypeByEntity($entityType, $subType) {
     $subType = trim($subType, CRM_Core_DAO::VALUE_SEPARATOR);
     if (is_numeric($subType)) {
       return $subType;
@@ -1429,11 +1427,17 @@ ORDER BY civicrm_custom_group.weight,
             }
           }
           else {
-            if ($field['data_type'] == "Float") {
-              $defaults[$elementName] = (float) $value;
+            if ($field['data_type'] === 'Float') {
+              if ($field['html_type'] === 'Text') {
+                $defaults[$elementName] = CRM_Utils_Number::formatLocaleNumeric($value);
+              }
+              else {
+                // This casting came in from svn & may not be right.
+                $defaults[$elementName] = (float) $value;
+              }
             }
-            elseif ($field['data_type'] == 'Money' &&
-              $field['html_type'] == 'Text'
+            elseif ($field['data_type'] === 'Money' &&
+              $field['html_type'] === 'Text'
             ) {
               $defaults[$elementName] = CRM_Utils_Money::formatLocaleNumericRoundedForDefaultCurrency($value);
             }
@@ -1802,7 +1806,8 @@ ORDER BY civicrm_custom_group.weight,
             }
           }
         }
-        if ($value = CRM_Utils_Request::retrieve($properties['element_name'], 'String', $form, FALSE, NULL, 'POST')) {
+        $value = CRM_Utils_Request::retrieve($properties['element_name'], 'String', $form, FALSE, NULL, 'POST');
+        if ($value !== NULL) {
           $formValues[$properties['element_name']] = $value;
         }
         elseif (isset($submittedValues[$properties['element_name']])) {
@@ -2273,6 +2278,9 @@ SELECT  civicrm_custom_group.id as groupID, civicrm_custom_group.title as groupT
   /**
    * Build the metadata tree for the custom group.
    *
+   * @internal - function is temporarily public but will be private again
+   * once separated function disentangled.
+   *
    * @param string $entityType
    * @param array $toReturn
    * @param array $subTypes
@@ -2283,7 +2291,7 @@ SELECT  civicrm_custom_group.id as groupID, civicrm_custom_group.title as groupT
    * @return array
    * @throws \CRM_Core_Exception
    */
-  private static function buildGroupTree($entityType, $toReturn, $subTypes, $queryString, $params, $subType) {
+  public static function buildGroupTree($entityType, $toReturn, $subTypes, $queryString, $params, $subType) {
     $groupTree = $multipleFieldGroups = [];
     $crmDAO = CRM_Core_DAO::executeQuery($queryString, $params);
     $customValueTables = [];

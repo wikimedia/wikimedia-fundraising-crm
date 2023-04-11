@@ -191,9 +191,10 @@ class Admin {
         foreach (array_reverse($entity['fields'], TRUE) as $index => $field) {
           if (!empty($field['fk_entity']) && !$field['options'] && !empty($schema[$field['fk_entity']]['label_field'])) {
             $isCustom = strpos($field['name'], '.');
-            // Custom fields: append "Contact ID" to original field label
+            // Custom fields: append "Contact ID" etc. to original field label
             if ($isCustom) {
-              $entity['fields'][$index]['label'] .= ' ' . E::ts('Contact ID');
+              $idField = array_column($schema[$field['fk_entity']]['fields'], NULL, 'name')['id'];
+              $entity['fields'][$index]['label'] .= ' ' . $idField['title'];
             }
             // DAO fields: use title instead of label since it represents the id (title usually ends in ID but label does not)
             else {
@@ -208,7 +209,7 @@ class Admin {
         }
         // Useful address fields (see ContactSchemaMapSubscriber)
         if ($entity['name'] === 'Contact') {
-          $addressFields = ['city', 'state_province_id', 'country_id'];
+          $addressFields = ['city', 'state_province_id', 'country_id', 'street_address', 'postal_code', 'supplemental_address_1'];
           foreach ($addressFields as $fieldName) {
             foreach (['primary', 'billing'] as $type) {
               $newField = \CRM_Utils_Array::findAll($schema['Address']['fields'], ['name' => $fieldName])[0];
@@ -458,7 +459,7 @@ class Admin {
    * @return array
    */
   private static function getSqlFunctions():array {
-    $functions = \CRM_Api4_Page_Api4Explorer::getSqlFunctions();
+    $functions = CoreUtil::getSqlFunctions();
     // Add faux function "e" for SqlEquations
     $functions[] = [
       'name' => 'e',
@@ -466,6 +467,7 @@ class Admin {
       'description' => ts('Add, subtract, multiply, divide'),
       'category' => SqlFunction::CATEGORY_MATH,
       'data_type' => 'Number',
+      'options' => FALSE,
       'params' => [
         [
           'label' => ts('Value'),

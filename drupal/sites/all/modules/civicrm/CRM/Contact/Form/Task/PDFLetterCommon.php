@@ -76,64 +76,6 @@ class CRM_Contact_Form_Task_PDFLetterCommon extends CRM_Core_Form_Task_PDFLetter
   }
 
   /**
-   * Part of the post process which prepare and extract information from the template.
-   *
-   *
-   * @param array $formValues
-   *
-   * @return array
-   *   [$categories, $html_message, $messageToken, $returnProperties]
-   *
-   * @deprecated
-   */
-  public static function processMessageTemplate($formValues) {
-    CRM_Core_Error::deprecatedFunctionWarning('no alternative');
-
-    $html_message = self::processTemplate($formValues);
-
-    $categories = self::getTokenCategories();
-
-    //time being hack to strip '&nbsp;'
-    //from particular letter line, CRM-6798
-    self::formatMessage($html_message);
-
-    $messageToken = CRM_Utils_Token::getTokens($html_message);
-
-    $returnProperties = [];
-    if (isset($messageToken['contact'])) {
-      foreach ($messageToken['contact'] as $key => $value) {
-        $returnProperties[$value] = 1;
-      }
-    }
-
-    return [$formValues, $categories, $html_message, $messageToken, $returnProperties];
-  }
-
-  /**
-   * Convert from a vague-type/file-extension to mime-type.
-   *
-   * @param string $type
-   * @return string
-   * @throws \CRM_Core_Exception
-   *
-   * @deprecated
-   */
-  private static function getMimeType($type) {
-    $mimeTypes = [
-      'pdf' => 'application/pdf',
-      'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'odt' => 'application/vnd.oasis.opendocument.text',
-      'html' => 'text/html',
-    ];
-    if (isset($mimeTypes[$type])) {
-      return $mimeTypes[$type];
-    }
-    else {
-      throw new \CRM_Core_Exception("Cannot determine mime type");
-    }
-  }
-
-  /**
    * Get the categories required for rendering tokens.
    *
    * @deprecated

@@ -4,14 +4,14 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f
+class ComposerStaticInit50dd7109ea85d2cc21c1aeb61b9f1d08
 {
     public static $files = array (
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        '25072dd6e2470089de65ae7bf11d3109' => __DIR__ . '/..' . '/symfony/polyfill-php72/bootstrap.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
-        '25072dd6e2470089de65ae7bf11d3109' => __DIR__ . '/..' . '/symfony/polyfill-php72/bootstrap.php',
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
@@ -151,7 +151,6 @@ class ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Http\\Client\\' => 16,
             'Psr\\Container\\' => 14,
-            'Psr\\Cache\\' => 10,
             'PhpOffice\\PhpWord\\' => 18,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
             'Padaliyajay\\PHPAutoprefixer\\' => 28,
@@ -198,8 +197,6 @@ class ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f
             'Civi\\Cxn\\Rpc\\' => 13,
             'Civi\\CompilePlugin\\' => 19,
             'Civi\\' => 5,
-            'Cache\\TagInterop\\' => 17,
-            'Cache\\IntegrationTests\\' => 23,
             'CCL\\' => 4,
         ),
         'B' => 
@@ -351,10 +348,6 @@ class ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f
         array (
             0 => __DIR__ . '/..' . '/psr/container/src',
         ),
-        'Psr\\Cache\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/psr/cache/src',
-        ),
         'PhpOffice\\PhpWord\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpoffice/phpword/src/PhpWord',
@@ -458,14 +451,6 @@ class ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f
             0 => __DIR__ . '/../..' . '/',
             1 => __DIR__ . '/../..' . '/Civi',
             2 => __DIR__ . '/../..' . '/setup/src',
-        ),
-        'Cache\\TagInterop\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/cache/tag-interop',
-        ),
-        'Cache\\IntegrationTests\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/cache/integration-tests/src',
         ),
         'CCL\\' => 
         array (
@@ -605,6 +590,12 @@ class ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f
         'PEAR_Exception' => __DIR__ . '/..' . '/pear/pear_exception/PEAR/Exception.php',
         'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
         'QRcode' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/barcodes/qrcode.php',
+        'Random\\BrokenRandomEngineError' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/BrokenRandomEngineError.php',
+        'Random\\CryptoSafeEngine' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/CryptoSafeEngine.php',
+        'Random\\Engine' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/Engine.php',
+        'Random\\Engine\\Secure' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/Engine/Secure.php',
+        'Random\\RandomError' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/RandomError.php',
+        'Random\\RandomException' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/Random/RandomException.php',
         'ReturnTypeWillChange' => __DIR__ . '/..' . '/symfony/polyfill-php81/Resources/stubs/ReturnTypeWillChange.php',
         'SensitiveParameter' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/SensitiveParameter.php',
         'SensitiveParameterValue' => __DIR__ . '/..' . '/symfony/polyfill-php82/Resources/stubs/SensitiveParameterValue.php',
@@ -738,11 +729,11 @@ class ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f::$prefixesPsr0;
-            $loader->fallbackDirsPsr0 = ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f::$fallbackDirsPsr0;
-            $loader->classMap = ComposerStaticInit9f9955bf8d90b6eb142de17e7c9fca9f::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit50dd7109ea85d2cc21c1aeb61b9f1d08::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit50dd7109ea85d2cc21c1aeb61b9f1d08::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit50dd7109ea85d2cc21c1aeb61b9f1d08::$prefixesPsr0;
+            $loader->fallbackDirsPsr0 = ComposerStaticInit50dd7109ea85d2cc21c1aeb61b9f1d08::$fallbackDirsPsr0;
+            $loader->classMap = ComposerStaticInit50dd7109ea85d2cc21c1aeb61b9f1d08::$classMap;
 
         }, null, ClassLoader::class);
     }
