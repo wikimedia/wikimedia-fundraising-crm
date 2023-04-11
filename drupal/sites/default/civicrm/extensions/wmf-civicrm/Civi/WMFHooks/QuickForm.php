@@ -13,6 +13,7 @@ class QuickForm {
    */
   public static function buildForm($formName, $form) {
     switch ($formName) {
+      /* @var CRM_Custom_Form_CustomDataByType $form */
       case 'CRM_Custom_Form_CustomDataByType':
         if ($form->_type === 'Contribution' && empty($form->_entityId)) {
           // New hand-entered contributions get a default for no_thank_you

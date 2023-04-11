@@ -344,15 +344,17 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
  */
 function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
   if ($formName === 'CRM_Contact_Form_DedupeFind') {
+    /* @var CRM_Contact_Form_DedupeFind $form */
     if (!$fields['limit']) {
       $errors['limit'] = ts('Save the database. Use a limit');
     }
-    $ruleGroupID = $form->rgid;
+    $ruleGroupID = $form->getDedupeRuleGroupID();
     if ($fields['limit'] > 1 && 'fishing_net' === civicrm_api3('RuleGroup', 'getvalue', ['id' => $ruleGroupID, 'return' => 'name'])) {
       $errors['limit'] = ts('The fishing net rule should only be applied to a single contact');
     }
   }
-  if ($formName == 'CRM_Contribute_Form_Contribution') {
+  if ($formName === 'CRM_Contribute_Form_Contribution') {
+    /* @var CRM_Contribute_Form_Contribution $form */
     $engageErrors = wmf_civicrm_validate_contribution($fields, $form);
     if (!empty($engageErrors)) {
       $errors = array_merge($errors, $engageErrors);
