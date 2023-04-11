@@ -1,5 +1,6 @@
 <?php namespace queue2civicrm\recurring;
 
+use Civi\Api4\ContributionRecur;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\PaymentProcessor;
 use wmf_common\TransactionalWmfQueueConsumer;
@@ -341,7 +342,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
         'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
         'trxn_id' => $msg['subscr_id'],
-        'financial_type_id' => 'Cash'
+        'financial_type_id:name' => 'Cash'
       ];
       if (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {
         // We could pass the gateway name to the api for resolution but it would reject
@@ -371,7 +372,14 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         $params['cycle_day'] = date('j', strtotime($params['start_date']));
       }
 
-      $newContributionRecur = civicrm_api3('ContributionRecur', 'create', $params);
+      if (isset($msg['initial_scheme_transaction_id'])) {
+        $params['contribution_recur_smashpig.initial_scheme_transaction_id'] = $msg['initial_scheme_transaction_id'];
+      }
+
+      $newContributionRecur = ContributionRecur::create(FALSE)
+        ->setValues($params)
+        ->execute()
+        ->first();
 
       // Send an email that the recurring donation has been created
       if (isset($msg['recurring_payment_token']) && isset($newContributionRecur['id'])) {
@@ -394,7 +402,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
         // Using the same params sent through in thank_you.module thank_you_for_contribution
         $template = 'monthly_convert';
-        $start_date = $newContributionRecur['values'][$newContributionRecur['id']]['start_date'];
+        $start_date = $newContributionRecur['start_date'];
 
         // Get the day of the month
         $day_of_month = \DateTime::createFromFormat('YmdHis', $start_date, new \DateTimeZone('UTC'))

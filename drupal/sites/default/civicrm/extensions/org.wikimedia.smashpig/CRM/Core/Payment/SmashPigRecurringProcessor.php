@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\ContributionRecur;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
@@ -34,7 +35,9 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param int $maxFailures Maximum failures before canceling subscription
    * @param int $catchUpDays Number of days in the past to look for payments
    * @param int $batchSize Maximum number of payments to process in a batch
+   * @param string $descriptor Shown on donors' card statements
    * @param int $timeLimitInSeconds Maximum number of seconds to spend processing
+   * @throws CRM_Core_Exception
    */
   public function __construct(
     $useQueue,
@@ -177,44 +180,47 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    *
    * @param ?int $contributionRecurId
    *
-   * @return array
+   * @return \Civi\Api4\Generic\Result
    * @throws \CiviCRM_API3_Exception
    */
   protected function getPaymentsToCharge($contributionRecurId = NULL) {
+    $getAction = ContributionRecur::get(FALSE)
+      ->addSelect('*')
+      ->addSelect('custom.*');
+
     if ($contributionRecurId) {
-      $params = [
-        'id' => $contributionRecurId
-      ];
+      $getAction->addWhere('id', '=', $contributionRecurId);
     } else {
       $earliest = "-$this->catchUpDays days";
-      $params = [
-        'next_sched_contribution_date' => [
-          'BETWEEN' => [
-            UtcDate::getUtcDatabaseString($earliest),
-            UtcDate::getUtcDatabaseString(),
-          ],
-        ],
-        'payment_processor_id' => ['IN' => array_keys($this->smashPigProcessors)],
-        'contribution_status_id' => [
-          'IN' => [
-            'Pending',
-            'Overdue',
-            'In Progress',
-            'Failing',
-            // @todo - remove Completed once our In Progress payments
-            // all have an IN Progress status. Ditto Failed vs Failing.
-            'Completed',
-            'Failed',
-          ],
-        ],
+      $getAction->addWhere(
+        'next_sched_contribution_date',
+        'BETWEEN',
+        [
+          UtcDate::getUtcDatabaseString($earliest),
+          UtcDate::getUtcDatabaseString(),
+        ]
+      )->addWhere(
+        'payment_processor_id', 'IN', array_keys($this->smashPigProcessors)
+      )->addWhere(
+        'contribution_status_id:name',
+        'IN',
+        [
+          'Pending',
+          'Overdue',
+          'In Progress',
+          'Failing',
+          // @todo - remove Completed once our In Progress payments
+          // all have an IN Progress status. Ditto Failed vs Failing.
+          'Completed',
+          'Failed',
+        ]
+      )->addWhere(
         // FIXME: we need this token not null clause because we've been
         // misusing the payment_processor_id for years :(
-        'payment_token_id' => ['IS NOT NULL' => TRUE],
-        'options' => ['limit' => $this->batchSize],
-      ];
+        'payment_token_id', 'IS NOT NULL'
+      )->setLimit($this->batchSize);
     }
-    $recurringPayments = civicrm_api3('ContributionRecur', 'get', $params);
-    return $recurringPayments['values'];
+    return $getAction->execute();
   }
 
   /**
@@ -444,14 +450,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       $previousContribution['invoice_id'],
       $recurringPayment['failure_count']
     );
-    $description = $this->descriptor;
     $tokenData = civicrm_api3('PaymentToken', 'getsingle', [
       'id' => $recurringPayment['payment_token_id'],
       'return' => ['token', 'ip_address'],
     ]);
-    $ipAddress = isset($tokenData['ip_address']) ? $tokenData['ip_address'] : NULL;
+    $ipAddress = $tokenData['ip_address'] ?? NULL;
 
-    return [
+    $params = [
       'amount' => $recurringPayment['amount'],
       'country' => $donor['address_primary.country_id:abbr'],
       'currency' => $recurringPayment['currency'],
@@ -464,7 +469,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'contactID' => $previousContribution['contact_id'],
       'is_recur' => TRUE,
       'contributionRecurID' => $recurringPayment['id'],
-      'description' => $description,
+      'description' => $this->descriptor,
       'token' => $tokenData['token'],
       'ip_address' => $ipAddress,
       'payment_instrument' => $previousContribution['payment_instrument'],
@@ -473,6 +478,11 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       // FIXME: SmashPig should choose 'first' or 'recurring' based on seq #
       'installment' => 'recurring',
     ];
+
+    if (isset($recurringPayment['contribution_recur_smashpig.initial_scheme_transaction_id'])) {
+      $params['initial_scheme_transaction_id'] = $recurringPayment['contribution_recur_smashpig.initial_scheme_transaction_id'];
+    }
+    return $params;
   }
 
   /**
