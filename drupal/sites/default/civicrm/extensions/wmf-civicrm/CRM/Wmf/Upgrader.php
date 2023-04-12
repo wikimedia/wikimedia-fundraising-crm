@@ -726,6 +726,20 @@ SET
   }
 
   /**
+   * Upgrade 4235 - Add new contributio tracking table.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_4235(): bool {
+    $this->ctx->log->info('Add the contribution tracking table.');
+    if (!CRM_Core_DAO::singleValueQuery("SHOW TABLES LIKE 'civicrm_contribution_tracking'")) {
+      $this->executeSqlFile('sql/auto_install.sql');
+    }
+    return TRUE;
+  }
+
+  /**
    * Get the values actually used for the option.
    *
    * @param string $field
