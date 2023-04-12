@@ -430,8 +430,8 @@ abstract class ChecksFile {
     return $msg;
   }
 
-  protected function handleDuplicate($duplicate) {
-    \Civi::log('wmf')->info('offline2civicrm: Contribution matches existing contribution (id: {id}), skipping it.', ['id' => $duplicate[0]['id']]);
+  protected function handleDuplicate($duplicateID) {
+    \Civi::log('wmf')->info('offline2civicrm: Contribution matches existing contribution (id: {id}), skipping it.', ['id' => $duplicateID]);
     return TRUE; // true means this was a duplicate and i skipped it
   }
 
@@ -792,11 +792,11 @@ abstract class ChecksFile {
    *
    * @param $msg
    *
-   * @return array|bool
-   * @throws \Civi\WMFException\WMFException
+   * @return false|int
+   * @throws \CRM_Core_Exception
    */
   protected function checkForExistingContributions($msg) {
-    return wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id']);
+    return Contribution::exists($msg['gateway'], $msg['gateway_txn_id']);
   }
 
   /**

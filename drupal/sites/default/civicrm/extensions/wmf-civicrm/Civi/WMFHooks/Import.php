@@ -38,13 +38,17 @@ class Import {
       // At this stage all imports are matched gifts which are already thanked via the portal.
       $mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal';
 
-      if (empty($mappedRow['Contribution']['contribution_extra.gateway_trxn_id'])) {
+      if (empty($mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
         // Generate a transaction ID so that we don't import the same rows multiple times
-        $mappedRow['Contribution']['contribution_extra.gateway_trxn_id'] = WMFContribution::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
+        $mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = WMFContribution::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
       }
 
       if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
         $mappedRow['Contribution']['contribution_extra.gateway'] = self::getGateway($userJobID);
+      }
+      $existingContributionID = WMFContribution::exists($mappedRow['Contribution']['contribution_extra.gateway'], $mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
+      if ($existingContributionID) {
+        throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
       }
 
       $organizationName = $organizationID = NULL;

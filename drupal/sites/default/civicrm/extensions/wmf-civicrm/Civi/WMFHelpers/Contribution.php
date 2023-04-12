@@ -36,4 +36,21 @@ class Contribution {
     return md5($date . $name_salt . $rowIndex);
   }
 
+  /**
+   * Does the contribution already exist.
+   *
+   * @param string $gateway
+   * @param string $gatewayTrxnID
+   *
+   * @return false|int
+   * @throws \CRM_Core_Exception
+   */
+  public static function exists(string $gateway, string $gatewayTrxnID) {
+    return \Civi\Api4\Contribution::get(FALSE)->addWhere(
+        'contribution_extra.gateway', '=', $gateway
+      )->addWhere(
+        'contribution_extra.gateway_txn_id', '=', $gatewayTrxnID
+      )->execute()->first()['id'] ?? FALSE;
+  }
+
 }
