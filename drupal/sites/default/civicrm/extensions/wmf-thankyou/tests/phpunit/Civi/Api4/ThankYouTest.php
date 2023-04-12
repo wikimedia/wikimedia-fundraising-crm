@@ -76,7 +76,7 @@ class ThankYouTest extends TestCase {
           'contribution_extra.original_amount' => $params['total_amount'] ?? 1.23,
           'contribution_extra.original_currency' => 'USD',
           'contribution_extra.gateway' => 'thank_you_test_gateway',
-          'contribution_extra.gateway_trxn_id' => 'thank_you_test_gateway 12345',
+          'contribution_extra.gateway_txn_id' => 'thank_you_test_gateway 12345',
         ], $params))
         ->execute()
         ->first()['id'];
