@@ -21,21 +21,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
     $message = $this->normalizeMessage($message);
 
-    /**
-     * prepare data for logging
-     *
-     * if we don't have a gateway_txn_id, we'll store the transaction type + the subscriber id instead -
-     * this should happen for all non-payment transactions.
-     */
-    $log = [
-      'gateway' => 'recurring_' . $message['gateway'],
-      'gateway_txn_id' => (!empty($message['gateway_txn_id_orig']) ? $message['gateway_txn_id_orig'] : $message['txn_type'] . ":" . $message['subscr_id']),
-      'data' => json_encode($msg_orig),
-      'timestamp' => time(),
-      'verified' => 0,
-    ];
-    $cid = _queue2civicrm_log($log);
-
     // define the subscription txn type for an actual 'payment'
     $txn_subscr_payment = ['subscr_payment'];
 
@@ -65,13 +50,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
     }
 
-    // update the log
-    if ($cid) {
-      $log['cid'] = $cid;
-      $log['timestamp'] = time();
-      $log['verified'] = 1;
-      _queue2civicrm_log($log);
-    }
   }
 
   /**
