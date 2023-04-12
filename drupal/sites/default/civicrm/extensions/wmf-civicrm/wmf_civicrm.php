@@ -39,48 +39,12 @@ function wmf_civicrm_civicrm_install() {
 }
 
 /**
- * Implements hook_civicrm_postInstall().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
- */
-function wmf_civicrm_civicrm_postInstall() {
-  _wmf_civicrm_civix_civicrm_postInstall();
-}
-
-/**
- * Implements hook_civicrm_uninstall().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_uninstall
- */
-function wmf_civicrm_civicrm_uninstall() {
-  _wmf_civicrm_civix_civicrm_uninstall();
-}
-
-/**
  * Implements hook_civicrm_enable().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_enable
  */
 function wmf_civicrm_civicrm_enable() {
   _wmf_civicrm_civix_civicrm_enable();
-}
-
-/**
- * Implements hook_civicrm_disable().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_disable
- */
-function wmf_civicrm_civicrm_disable() {
-  _wmf_civicrm_civix_civicrm_disable();
-}
-
-/**
- * Implements hook_civicrm_upgrade().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_upgrade
- */
-function wmf_civicrm_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _wmf_civicrm_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
@@ -173,17 +137,6 @@ function wmf_civicrm_civicrm_alterSettingsMetaData(&$settingsMetaData, $domainID
   foreach ($configuredSettings as $name => $value) {
     $settingsMetaData[$name]['default'] = $value;
   }
-}
-
-/**
- * Implements hook_civicrm_entityTypes().
- *
- * Declare entity types provided by this module.
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
- */
-function wmf_civicrm_civicrm_entityTypes(&$entityTypes) {
-  _wmf_civicrm_civix_civicrm_entityTypes($entityTypes);
 }
 
 /**

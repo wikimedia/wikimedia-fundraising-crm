@@ -18,11 +18,12 @@
   <version>1.1</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.41</ver>
+    <ver>5.45</ver>
   </compatibility>
   <comments>This is a intended as something of a catchall for wmf functionality. It is intended to replace the wmf_civicrm module over time</comments>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
+    <psr0 prefix="CRM_" path="."/>
   </classloader>
   <requires>
     <ext>deduper</ext>
@@ -60,11 +61,14 @@
   </requires>
   <civix>
     <namespace>CRM/Wmf</namespace>
-    <format>22.05.2</format>
+    <format>23.02.1</format>
   </civix>
   <mixins>
     <mixin>menu-xml@1.0.0</mixin>
     <mixin>mgd-php@1.0.0</mixin>
     <mixin>setting-php@1.0.0</mixin>
+    <mixin>smarty-v2@1.0.1</mixin>
+    <mixin>entity-types-php@1.0.0</mixin>
   </mixins>
+  <upgrader>CRM_Wmf_Upgrader</upgrader>
 </extension>
