@@ -3,7 +3,9 @@
 
 namespace Civi\WMFHooks;
 
+use Civi\Api4\UserJob;
 use Civi\WMFHelpers\Contact;
+use Civi\WMFHelpers\Contribution as WMFContribution;
 
 class Import {
 
@@ -33,6 +35,18 @@ class Import {
    */
   public static function alterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID): void {
     if ($context === 'import' && $importType === 'contribution_import') {
+      // At this stage all imports are matched gifts which are already thanked via the portal.
+      $mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal';
+
+      if (empty($mappedRow['Contribution']['contribution_extra.gateway_trxn_id'])) {
+        // Generate a transaction ID so that we don't import the same rows multiple times
+        $mappedRow['Contribution']['contribution_extra.gateway_trxn_id'] = WMFContribution::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
+      }
+
+      if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
+        $mappedRow['Contribution']['contribution_extra.gateway'] = self::getGateway($userJobID);
+      }
+
       $organizationName = $organizationID = NULL;
       if (($mappedRow['Contact']['contact_type'] ?? NULL) === 'Organization') {
         $organizationName = self::resolveOrganization($mappedRow['Contact']);
@@ -88,6 +102,31 @@ class Import {
     // We don't want to over-write the organization_name as we might have matched on nick name.
     unset($organizationContact['organization_name']);
     return $organizationName;
+  }
+
+  /**
+   * @param int $userJobID
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected static function getGateway(int $userJobID): string {
+    if (!isset(\Civi::$statics[__CLASS__]['user_job'])) {
+      $userJob = UserJob::get(FALSE)->addWhere('id', '=', $userJobID)->execute()->first();
+      $templateID = $userJob['metadata']['template_id'] ?? NULL;
+      $gateway = 'civicrm_import';
+      if ($templateID) {
+        try {
+          $gateway = UserJob::get(FALSE)->addSelect('name')->addWhere('id', '=', $templateID)->execute()->first()['name'];
+        }
+        catch (\CRM_Core_Exception $e) {
+          // ah well.
+        }
+      }
+      $userJob['gateway'] = $gateway;
+      \Civi::$statics[__CLASS__]['user_job'] = $userJob;
+    }
+    return \Civi::$statics[__CLASS__]['user_job']['gateway'];
   }
 
 }

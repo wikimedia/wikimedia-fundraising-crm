@@ -3,6 +3,7 @@
 use Civi\Api4\Relationship;
 use Civi\Api4\RelationshipType;
 use Civi\WMFHelpers\Contact;
+use Civi\WMFHelpers\Contribution;
 use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
 use SmashPig\Core\Context;
@@ -502,24 +503,7 @@ abstract class ChecksFile {
 
     // Generate a transaction ID so that we don't import the same rows multiple times
     if (empty($msg['gateway_txn_id'])) {
-      if ($msg['contact_type'] === 'Individual') {
-        $name_salt = $msg['first_name'] . $msg['last_name'];
-      }
-      else {
-        $name_salt = $msg['organization_name'];
-      }
-
-      if (!empty($msg['check_number'])) {
-        $msg['gateway_txn_id'] = md5($msg['check_number'] . $name_salt);
-      }
-      else {
-        // The scenario where this would happen is anonymous cash gifts.
-        // the name would be 'Anonymous Anonymous' and there might be several on the same
-        // day. Hence we rely on them all being carefully arranged in a spreadsheet and
-        // no-one messing with the order. I was worried this was fragile but there
-        // is no obvious better way.
-        $msg['gateway_txn_id'] = md5($msg['date'] . $name_salt . $this->row_index);
-      }
+      $msg['gateway_txn_id'] = Contribution::generateTransactionReference($msg, $msg['date'], $msg['check_number'] ?? NULL, (int) $this->row_index);
     }
 
     // Expand soft credit short names.
