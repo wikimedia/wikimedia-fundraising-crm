@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Wmf</base>
+  <class>ContributionTracking</class>
+  <name>civicrm_contribution_tracking</name>
+  <comment>CiviCRM Contribution Tracking table</comment>
+  <add>5.61</add>
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <length>10</length>
+    <required>true</required>
+    <comment>Unique Contribution Tracking ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+  </primaryKey>
+  <field>
+    <name>contribution_id</name>
+    <type>int unsigned</type>
+    <length>10</length>
+    <comment>FK to Contribution</comment>
+  </field>
+  <foreignKey>
+    <name>contribution_id</name>
+    <table>civicrm_contribution</table>
+    <onDelete>SET NULL</onDelete>
+    <key>id</key>
+  </foreignKey>
+  <field>
+    <name>amount</name>
+    <type>decimal</type>
+    <length>20,3</length>
+    <comment>Amount</comment>
+  </field>
+  <field>
+    <name>currency</name>
+    <type>varchar</type>
+    <length>3</length>
+    <comment>Currency ISO Code</comment>
+  </field>
+  <index>
+    <name>currency</name>
+    <fieldName>currency</fieldName>
+  </index>
+  <field>
+    <name>usd_amount</name>
+    <type>decimal</type>
+    <length>20,2</length>
+    <comment>USD Amount</comment>
+  </field>
+  <field>
+    <name>referrer</name>
+    <type>varchar</type>
+    <length>4096</length>
+    <comment>Referrer</comment>
+  </field>
+  <field>
+    <name>utm_medium</name>
+    <type>varchar</type>
+    <length>128</length>
+    <comment>UTM Medium</comment>
+  </field>
+  <index>
+    <name>utm_medium_id</name>
+    <fieldName>utm_medium</fieldName>
+  </index>
+  <field>
+    <name>utm_campaign</name>
+    <type>varchar</type>
+    <length>128</length>
+    <comment>UTM Campaign</comment>
+  </field>
+  <index>
+    <name>utm_campaign_id</name>
+    <fieldName>utm_campaign</fieldName>
+  </index>
+  <field>
+    <name>utm_key</name>
+    <type>varchar</type>
+    <length>128</length>
+    <comment>UTM Key</comment>
+  </field>
+  <field>
+    <name>banner</name>
+    <type>varchar</type>
+    <length>128</length>
+    <comment>Banner</comment>
+  </field>
+  <index>
+    <name>banner</name>
+    <fieldName>banner</fieldName>
+  </index>
+  <field>
+    <name>landing_page</name>
+    <type>varchar</type>
+    <length>128</length>
+    <comment>Landing Page</comment>
+  </field>
+  <index>
+    <name>landing_page</name>
+    <fieldName>landing_page</fieldName>
+  </index>
+  <field>
+    <name>payment_method</name>
+    <type>varchar</type>
+    <length>128</length>
+    <comment>Payment Method</comment>
+  </field>
+  <index>
+    <name>payment_method</name>
+    <fieldName>payment_method</fieldName>
+  </index>
+  <field>
+    <name>language</name>
+    <type>varchar</type>
+    <length>8</length>
+    <comment>Language</comment>
+  </field>
+  <index>
+    <name>language</name>
+    <fieldName>language</fieldName>
+  </index>
+  <field>
+    <name>country</name>
+    <type>varchar</type>
+    <length>2</length>
+    <comment>Country</comment>
+  </field>
+  <index>
+    <name>country</name>
+    <fieldName>country</fieldName>
+  </index>
+  <field>
+    <name>tracking_date</name>
+    <type>datetime</type>
+    <comment>Tracking Date</comment>
+  </field>
+  <index>
+    <name>tracking_date</name>
+    <fieldName>tracking_date</fieldName>
+  </index>
+  <field>
+    <name>os</name>
+    <type>varchar</type>
+    <length>255</length>
+    <comment>Operating System</comment>
+  </field>
+  <field>
+    <name>os_version</name>
+    <type>varchar</type>
+    <length>255</length>
+    <comment>Operating System - Major Version</comment>
+  </field>
+  <field>
+    <name>browser</name>
+    <type>varchar</type>
+    <length>255</length>
+    <comment>Browser</comment>
+  </field>
+  <field>
+    <name>browser_version</name>
+    <type>varchar</type>
+    <length>255</length>
+    <comment>Browser Version</comment>
+  </field>
+</table>
