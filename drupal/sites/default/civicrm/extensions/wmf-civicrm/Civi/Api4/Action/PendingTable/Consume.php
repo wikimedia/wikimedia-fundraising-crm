@@ -82,19 +82,19 @@ class Consume extends AbstractAction {
         'All {gateway} pending transactions resolved', ['gateway' => $this->gateway]
       );
     }
-    if ($message['date'] >= UtcDate::getUtcTimestamp("-{$this->minimumAge} minutes")) {
+    else if ($message['date'] >= UtcDate::getUtcTimestamp("-{$this->minimumAge} minutes")) {
       Civi::log('wmf')->info(
         'All {gateway} pending transactions older than {minimumAge} minutes resolved',
         ['gateway' => $this->gateway, 'minimumAge' => $this->minimumAge]
       );
     }
-    if ($this->timeLimit > 0 || time() >= $startTime + $this->timeLimit) {
+    if ($this->timeLimit > 0 && time() >= $startTime + $this->timeLimit) {
       Civi::log('wmf')->info(
         'Reached time limit of {timeLimit} seconds',
         ['timeLimit' => $this->timeLimit]
       );
     }
-    if ($this->batch > 0 || $processed >= $this->batch) {
+    if ($this->batch > 0 && $processed >= $this->batch) {
       Civi::log('wmf')->info(
         'Reached batch limit of {batch}', ['batch' => $this->batch]
       );
