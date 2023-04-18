@@ -86,6 +86,24 @@
     <comment>UTM Key</comment>
   </field>
   <field>
+    <name>gateway</name>
+    <type>varchar</type>
+    <length>32</length>
+    <comment>Gateway, e.g paypal_ec,adyen</comment>
+  </field>
+  <field>
+    <name>appeal</name>
+    <type>varchar</type>
+    <length>64</length>
+    <comment>e.g JimmyQuote - the appeal is the text to the left of the input boxes (on desktop-size screens)</comment>
+  </field>
+  <field>
+    <name>variant</name>
+    <type>varchar</type>
+    <length>64</length>
+    <comment> a 'variant' generally changes something about the input boxes or their labels</comment>
+  </field>
+  <field>
     <name>banner</name>
     <type>varchar</type>
     <length>128</length>
