@@ -741,6 +741,24 @@ SET
   }
 
   /**
+   * Link recurring UPI contribution records to contribution_tracking (see T334942)
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4242(): bool {
+    CRM_Core_DAO::executeQuery(
+      "UPDATE drupal.contribution_tracking ct
+       INNER JOIN civicrm_contribution cc ON ct.id=LEFT(invoice_id, 9)
+       SET contribution_id=cc.id
+       WHERE cc.receive_date > '2023-04-10 00:00:00'
+       AND cc.contribution_recur_id IS NOT NULL
+       AND cc.source like 'INR %'
+       AND ct.contribution_id IS NULL;"
+    );
+    return TRUE;
+  }
+
+  /**
    * Get the values actually used for the option.
    *
    * @param string $field
