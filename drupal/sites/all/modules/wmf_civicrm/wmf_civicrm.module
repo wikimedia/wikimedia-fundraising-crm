@@ -1420,6 +1420,8 @@ function wmf_civicrm_get_direct_mail_field_option_id() {
  * @throws \Civi\WMFException\WMFException
  */
 function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id) {
+  // If you only want to know if it exists then call \Civi\WMFHelpers\Contribution::exists()
+  // @todo, move this function to \Civi\WMFHelpers\Contribution, use apiv4
   $gateway = strtolower($gateway);
   $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
 		ON cc.id = cx.entity_id

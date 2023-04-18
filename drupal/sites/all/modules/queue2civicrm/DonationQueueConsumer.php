@@ -21,18 +21,6 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
     // throw an exception that says to drop it entirely, not re-queue.
     wmf_civicrm_check_for_duplicates($message);
 
-    /**
-     * prepare data for logging
-     */
-    $log = [
-      'gateway' => $message['gateway'],
-      'gateway_txn_id' => $message['gateway_txn_id'],
-      'data' => json_encode( $message ),
-      'timestamp' => time(),
-      'verified' => 0,
-    ];
-    $logId = _queue2civicrm_log( $log );
-
     // If more information is available, find it from the pending database
     // FIXME: combine the information in a SmashPig job a la Adyen, not here
     if (isset($message['completion_message_id'])) {
@@ -64,14 +52,6 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
     // record other donation stats such as gateway
     $DonationStatsCollector = DonationStatsCollector::getInstance();
     $DonationStatsCollector->recordDonationStats($message, $contribution);
-
-    // update the log if things went well
-    if ($logId) {
-      $log['cid'] = $logId;
-      $log['verified'] = 1;
-      $log['timestamp'] = time();
-      _queue2civicrm_log( $log );
-    }
 
     /**
      * === Legacy Donations Counter implementation ===

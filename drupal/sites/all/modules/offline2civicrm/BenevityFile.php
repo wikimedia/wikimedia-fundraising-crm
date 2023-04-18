@@ -3,6 +3,7 @@
 use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\Contact;
+use Civi\WMFHelpers\Contribution;
 
 class BenevityFile extends ChecksFile {
 
@@ -366,7 +367,7 @@ class BenevityFile extends ChecksFile {
    *
    * @param $msg
    *
-   * @return array|bool
+   * @return false|int
    *
    * @throws \Civi\WMFException\WMFException
    */
@@ -376,11 +377,11 @@ class BenevityFile extends ChecksFile {
 
     $main = $matched = FALSE;
     if ($donorTransactionNeedsProcessing) {
-      $main = wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id']);
+      $main = Contribution::exists($msg['gateway'], $msg['gateway_txn_id']);
     }
 
     if ($matchingTransactionNeedsProcessing) {
-      $matched = wmf_civicrm_get_contributions_from_gateway_id($msg['gateway'], $msg['gateway_txn_id'] . '_matched');
+      $matched = Contribution::exists($msg['gateway'], $msg['gateway_txn_id'] . '_matched');
     }
 
     if ($matchingTransactionNeedsProcessing && $donorTransactionNeedsProcessing) {

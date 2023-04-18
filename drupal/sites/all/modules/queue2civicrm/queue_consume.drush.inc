@@ -37,15 +37,6 @@ function queue_consume_drush_command() {
     'examples' => ['drush dpm /tmp/blurr.json' => '# process the file'],
     'aliases' => ['dpm'],
   ];
-  $items['queue-log-trim'] = [
-    'description' =>
-      'Trims the queue2civicrm_log table, deleting messages older than N days',
-    'options' => [
-      'days' => 'Maximum age in days of messages to keep',
-    ],
-    'examples' => ['drush qlt --days=60' => '# delete queue2civicrm_log entries older than 60 days'],
-    'aliases' => ['qlt'],
-  ];
   return $items;
 }
 
@@ -129,13 +120,4 @@ function drush_queue_consume_donations_process_messagefile($path) {
     // Could call DonationQueueConsumer::processMessage
     wmf_civicrm_contribution_message_import($msg);
   }
-}
-
-function drush_queue_consume_queue_log_trim() {
-  $days = drush_get_option('days', 90);
-  $timestamp = UtcDate::getUtcTimestamp("-$days days");
-  drush_print("Deleting queue2civicrm_log messages older than $days days (before timestamp $timestamp).");
-  $result = db_query("DELETE FROM queue2civicrm_log WHERE timestamp < $timestamp");
-  $affected = $result->rowCount();
-  drush_print("Deleted $affected rows from queue2civicrm.log.");
 }

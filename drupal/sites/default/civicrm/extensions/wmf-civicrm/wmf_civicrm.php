@@ -7,6 +7,7 @@ use Civi\WMFHooks\CalculatedData;
 use Civi\WMFHooks\Contribution;
 use Civi\WMFHooks\ContributionRecur;
 use Civi\WMFHooks\ContributionRecurTrigger;
+use Civi\WMFHooks\ContributionSoft;
 use Civi\WMFHooks\Import;
 use Civi\WMFHooks\Permissions;
 use Civi\WMFHooks\QuickForm;
@@ -214,11 +215,16 @@ function wmf_civicrm_civicrm_navigationMenu(&$menu) {
  * @param array $entity
  *
  * @throws \Civi\WMFException\WMFException
+ * @noinspection PhpUnused
  */
-function wmf_civicrm_civicrm_pre($op, $type, $id, &$entity) {
+function wmf_civicrm_civicrm_pre(string $op, $type, $id, &$entity) {
   switch ($type) {
     case 'Contribution':
       Contribution::pre($op, $entity);
+      break;
+
+    case 'ContributionSoft':
+      ContributionSoft::pre($op, $entity);
       break;
   }
 }
@@ -250,7 +256,6 @@ function wmf_civicrm_civicrm_alterAPIPermissions($entity, $action, &$params, &$p
  * @param array $logTableSpec
  */
 function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
-  $logTableSpec['wmf_contribution_extra'] = [];
   $contactReferences = CRM_Dedupe_Merger::cidRefs();
   foreach (array_keys($logTableSpec) as $tableName) {
     $contactIndexes = [];
@@ -282,6 +287,9 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
     'civicrm_mailing_job',
     // this table logs group membership & largely repeats log_civicrm_group_contact.
     'civicrm_subscription_history',
+    // the volume of data in this table + it's read only nature mean it
+    // doesn't make sense to track.
+    'civicrm_contribution_tracking',
     // wmf_donor contains calculated data only.
     'wmf_donor',
   ];
