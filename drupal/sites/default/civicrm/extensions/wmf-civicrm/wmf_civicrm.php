@@ -256,7 +256,6 @@ function wmf_civicrm_civicrm_alterAPIPermissions($entity, $action, &$params, &$p
  * @param array $logTableSpec
  */
 function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
-  $logTableSpec['wmf_contribution_extra'] = [];
   $contactReferences = CRM_Dedupe_Merger::cidRefs();
   foreach (array_keys($logTableSpec) as $tableName) {
     $contactIndexes = [];
@@ -288,6 +287,9 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
     'civicrm_mailing_job',
     // this table logs group membership & largely repeats log_civicrm_group_contact.
     'civicrm_subscription_history',
+    // the volume of data in this table + it's read only nature mean it
+    // doesn't make sense to track.
+    'civicrm_contribution_tracking',
     // wmf_donor contains calculated data only.
     'wmf_donor',
   ];
