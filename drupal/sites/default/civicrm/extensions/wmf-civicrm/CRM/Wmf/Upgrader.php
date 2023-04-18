@@ -726,13 +726,14 @@ SET
   }
 
   /**
-   * Upgrade 4235 - Add new contributio tracking table.
+   * Upgrade 4240 - Re-add new contribution tracking table, with minor tweaks.
    *
    * @return bool
    * @throws \CRM_Core_Exception
    */
-  public function upgrade_4235(): bool {
-    $this->ctx->log->info('Add the contribution tracking table.');
+  public function upgrade_4240(): bool {
+    $this->ctx->log->info('Re-Add the contribution tracking table.');
+    CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_contribution_tracking');
     if (!CRM_Core_DAO::singleValueQuery("SHOW TABLES LIKE 'civicrm_contribution_tracking'")) {
       $this->executeSqlFile('sql/auto_install.sql');
     }
