@@ -767,6 +767,28 @@ SET
   }
 
   /**
+   * Force dlocal trxn_id back to normal case instead of upper
+   * for both civicrm_contribution trxn_id and wmf_contribution_extra gateway_txn_id
+   * (see T335057)
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4251(): bool {
+    CRM_Core_DAO::executeQuery(
+      "UPDATE civicrm_contribution
+       SET trxn_id=CONCAT(UPPER(SUBSTRING(trxn_id,1,POSITION('-' IN trxn_id))),LOWER(SUBSTRING(trxn_id,POSITION('-' IN trxn_id)+1)))
+       WHERE trxn_id like '%DLOCAL%';"
+    );
+    CRM_Core_DAO::executeQuery(
+      "UPDATE wmf_contribution_extra
+       SET gateway_txn_id=CONCAT(UPPER(SUBSTRING(gateway_txn_id,1,1)),LOWER(SUBSTRING(gateway_txn_id,2)))
+       WHERE gateway = 'dlocal';"
+    );
+    return TRUE;
+  }
+
+  /**
    * Get the values actually used for the option.
    *
    * @param string $field
