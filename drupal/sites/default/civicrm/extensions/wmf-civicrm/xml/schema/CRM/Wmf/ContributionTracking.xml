@@ -54,6 +54,11 @@
     <comment>USD Amount</comment>
   </field>
   <field>
+    <title>Is Recurring?</title>
+    <name>is_recurring</name>
+    <type>boolean</type>
+  </field>
+  <field>
     <name>referrer</name>
     <type>varchar</type>
     <length>4096</length>
@@ -98,7 +103,7 @@
     <comment>e.g JimmyQuote - the appeal is the text to the left of the input boxes (on desktop-size screens)</comment>
   </field>
   <field>
-    <name>variant</name>
+    <name>payments_form_variant</name>
     <type>varchar</type>
     <length>64</length>
     <comment> a 'variant' generally changes something about the input boxes or their labels</comment>
@@ -124,14 +129,32 @@
     <fieldName>landing_page</fieldName>
   </index>
   <field>
-    <name>payment_method</name>
-    <type>varchar</type>
-    <length>128</length>
-    <comment>Payment Method</comment>
+    <name>payment_method_id</name>
+    <title>Payment Method Family</title>
+    <type>int</type>
+    <pseudoconstant>
+      <optionGroupName>payment_method</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+    <readonly>true</readonly>
+  </field>
+  <field>
+    <name>payment_submethod_id</name>
+    <title>Specific Payment Method</title>
+    <type>int</type>
+    <pseudoconstant>
+      <optionGroupName>payment_instrument</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+    <readonly>true</readonly>
   </field>
   <index>
-    <name>payment_method</name>
-    <fieldName>payment_method</fieldName>
+    <name>payment_method_id</name>
+    <fieldName>payment_method_id</fieldName>
   </index>
   <field>
     <name>language</name>
@@ -166,24 +189,101 @@
     <name>os</name>
     <type>varchar</type>
     <length>255</length>
-    <comment>Operating System</comment>
+    <comment>Data pending - see pending T182039. Operating System</comment>
   </field>
   <field>
     <name>os_version</name>
     <type>varchar</type>
     <length>255</length>
-    <comment>Operating System - Major Version</comment>
+    <comment>Data pending - see pending T182039. Operating System - Major Version</comment>
   </field>
   <field>
     <name>browser</name>
     <type>varchar</type>
     <length>255</length>
-    <comment>Browser</comment>
+    <comment>Data pending - see pending T182039. Browser</comment>
   </field>
   <field>
     <name>browser_version</name>
     <type>varchar</type>
     <length>255</length>
-    <comment>Browser Version</comment>
+    <comment>Data pending - see pending T182039. Browser Version</comment>
   </field>
+  <field>
+    <name>recurring_choice_id</name>
+    <title>Recurring Choice</title>
+    <type>int</type>
+    <comment>Denotes whether a recurring donation was the result of upsell or an organic recurring transaction</comment>
+    <pseudoconstant>
+      <optionGroupName>recurring_choice</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+    <readonly>true</readonly>
+  </field>
+  <field>
+    <name>device_type_id</name>
+    <title>Device Type</title>
+    <type>int</type>
+    <comment>The device the banner was served to (e.g Desktop or Mobile)</comment>
+    <pseudoconstant>
+      <optionGroupName>device_type</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+    <readonly>true</readonly>
+  </field>
+  <field>
+    <name>banner_size_id</name>
+    <title>Banner Size</title>
+    <type>int</type>
+    <comment>Large or small banner</comment>
+    <pseudoconstant>
+      <optionGroupName>banner_size</optionGroupName>
+    </pseudoconstant>
+    <html>
+      <type>Select</type>
+    </html>
+    <readonly>true</readonly>
+  </field>
+  <field>
+    <name>is_test_variant</name>
+    <title>Is a test variant</title>
+    <type>boolean</type>
+    <comment>Test, rather than a control group</comment>
+  </field>
+  <field>
+    <name>banner_variant</name>
+    <title>Banner Variant</title>
+    <type>varchar</type>
+    <length>128</length>
+    <comment>The name of the tested variant (if not control)</comment>
+    <readonly>true</readonly>
+  </field>
+  <field>
+    <name>is_pay_fee</name>
+    <title>User opted to pay fee (PTF)</title>
+    <type>boolean</type>
+    <comment>Did the user select to pay the processing fee</comment>
+  </field>
+  <field>
+    <name>mailing_identifier</name>
+    <title>Mailing Identifier</title>
+    <type>varchar</type>
+    <length>32</length>
+    <comment>External mailing identifier</comment>
+  </field>
+  <field>
+    <name>utm_source</name>
+    <title>UTM Source</title>
+    <type>varchar</type>
+    <length>128</length>
+    <comment>UTM Source. This is the original text but is separately broken out into banner etc. We aspire to drop this field if we can be sure the data in it is clean enough to always capture in sub-fields</comment>
+  </field>
+  <index>
+    <name>index_mailing_identifier</name>
+    <fieldName>mailing_identifier</fieldName>
+  </index>
 </table>
