@@ -48,7 +48,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       $transaction->gateway_txn_id, "1234x",
       "3-argument form gateway_txn_id is parsed correctly.");
     $this->assertEquals(
-      $transaction->get_unique_id(), strtoupper("GLOBALCOLLECT 1234x"),
+      $transaction->get_unique_id(),"GLOBALCOLLECT 1234x",
       "3-argument form is renormalized correctly");
 
     $transaction = WmfTransaction::from_unique_id("GLOBALCOLLECT 1234");

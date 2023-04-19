@@ -29,7 +29,7 @@ class BitpayFileTest extends BaseChecksFileTest {
     $contribution = $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $contact['id']]);
     $this->assertEquals(10, $contribution['total_amount']);
     $this->assertEquals('2018-03-06 00:00:00', $contribution['receive_date']);
-    $this->assertEquals('BITPAY 5GV8V8IZB3PJTMCFJ26AOQ', $contribution['trxn_id']);
+    $this->assertEquals('BITPAY 5gv8V8iZb3pjTmcFJ26Aoq', $contribution['trxn_id']);
     $this->assertEquals('USD', $contribution['currency']);
     $this->assertEquals('EUR 10', $contribution['contribution_source']);
   }
