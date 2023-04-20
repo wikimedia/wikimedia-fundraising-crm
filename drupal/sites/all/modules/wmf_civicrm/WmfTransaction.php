@@ -45,10 +45,10 @@ class WmfTransaction {
         if ( !$this->gateway_txn_id ) {
             throw new WMFException( WMFException::INVALID_MESSAGE, 'Missing gateway_txn_id.' );
         }
-        $parts[] = $this->gateway;
+        $parts[] = strtoupper( $this->gateway );
         $parts[] = $this->gateway_txn_id;
 
-        return strtoupper( implode( " ", $parts ) );
+        return implode( " ", $parts );
     }
 
     static function from_message( $msg ) {
