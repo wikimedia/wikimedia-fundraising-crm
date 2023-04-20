@@ -182,12 +182,6 @@ class FinanceInstrument {
         case 'eft':
           $payment_instrument = 'EFT';
           break;
-        case 'ew':
-          if (!empty($payment_submethod)
-            && array_key_exists($payment_submethod, self::EW_SUBMETHOD_LIST)) {
-            $payment_instrument = self::EW_SUBMETHOD_LIST[$payment_submethod];
-          }
-          break;
         case 'obt':
           if (!empty($payment_submethod)
             && array_key_exists($payment_submethod, self::OBT_SUBMETHOD_LIST)) {
@@ -214,12 +208,6 @@ class FinanceInstrument {
             $payment_instrument = self::CASH_SUBMETHOD_LIST[$payment_submethod];
           }
           break;
-        case 'payflowpro':
-          if (strtolower($msg['gateway']) === 'payflowpro') {
-            $payment_instrument = 'Credit Card';
-          }
-          break;
-
         case 'trilogy':
           $payment_instrument = 'Trilogy';
           break;
