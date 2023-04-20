@@ -445,6 +445,14 @@ function wmf_civicrm_civicrm_contactSummaryBlocks(array &$blocks) {
  */
 function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
   PreferencesLink::pageRun($page);
+    if (get_class($page) === 'CRM_Contribute_Page_DashBoard') {
+          Civi::service('angularjs.loader')->addModules('afsearchContributionTracking');
+        CRM_Core_Region::instance('page-body')->add([
+          'markup' => '<crm-angular-js modules="afsearchContributionTracking">
+          <div class="spacer" style="height: 20px;"></div>
+          <h3>Contribution Tracking</h3><form id="bootstrap-theme"><afsearch-contribution-tracking></afsearch-contribution-tracking></form></crm-angular-js>',
+              ]);
+      }
 }
 
 /**
