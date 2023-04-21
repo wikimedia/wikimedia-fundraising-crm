@@ -101,7 +101,7 @@ class Import {
  * @throws \CRM_Core_Exception
  */
   private static function resolveOrganization(array &$organizationContact): string {
-    $organizationName = Contact::resolveOrganizationName($organizationContact['organization_name']);
+    $organizationName = Contact::resolveOrganizationName((string) $organizationContact['organization_name']);
     $organizationContact['id'] = Contact::getOrganizationID($organizationContact['organization_name']);
     // We don't want to over-write the organization_name as we might have matched on nick name.
     unset($organizationContact['organization_name']);
