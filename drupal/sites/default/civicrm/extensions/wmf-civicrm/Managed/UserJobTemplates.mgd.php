@@ -711,7 +711,7 @@ foreach ($entities as $template) {
       'version' => 4,
       'match' => ['name'],
       'values' => [
-        'mapping_id:name' => 'Import Contribution',
+        'mapping_type_id:name' => 'Import Contribution',
         'name' => substr($template['name'], 7),
       ],
     ],
