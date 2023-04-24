@@ -11,7 +11,7 @@
     "contact_summary": null,
     "summary_contact_type": null,
     "icon": "fa-list-alt",
-    "server_route": "",
+    "server_route": "civicrm/contribution_tracking",
     "permission": "access CiviCRM",
     "redirect": null,
     "create_submission": false,
