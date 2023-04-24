@@ -91,19 +91,6 @@ function shoreditch_civicrm_coreResourceList(&$items, $region) {
 }
 
 /**
- * Implements hook_civicrm_buildForm().
- */
-function shoreditch_civicrm_buildForm($formName) {
-  if (!_shoreditch_isActive()) {
-    return;
-  }
-
-  if ($formName == 'CRM_Contact_Form_Search_Advanced') {
-    CRM_Core_Resources::singleton()->addScriptFile('org.civicrm.shoreditch', 'js/highlight-table-rows.js');
-  }
-}
-
-/**
  * Implements hook_civicrm_pageRun().
  */
 function shoreditch_civicrm_pageRun(&$page) {
