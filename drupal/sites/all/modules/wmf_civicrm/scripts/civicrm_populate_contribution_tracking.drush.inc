@@ -91,7 +91,7 @@ t.utm_campaign,
 t.utm_key,
 t.utm_source,
 SUBSTRING(t.payments_form, 1, LOCATE('.', payments_form)-1) AS gateway,
-IF(LOCATE('v=',payments_form),NULL, SUBSTRING(t.payments_form, LOCATE('.', payments_form)+1)) as appeal,
+LEFT(IF(LOCATE('v=',payments_form),NULL, SUBSTRING(t.payments_form, LOCATE('.', payments_form)+1)),64) as appeal,
 IF(LOCATE('v=',payments_form), SUBSTRING(t.payments_form, LOCATE('.', payments_form)+3),NULL) as payments_form_variant,
 
 REGEXP_REPLACE(t.utm_source, $utmSourceRegex,'\\\\1') as landing_page,
