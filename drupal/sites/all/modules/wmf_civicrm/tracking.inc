@@ -58,11 +58,11 @@ function wmf_civicrm_message_update_contribution_tracking($msg, $contribution) {
  */
 function wmf_civicrm_should_update_contribution_tracking(array $msg, bool $isInitialRecurring) : bool {
 
-  // Update the contribution tracking record for initial(first) recurring UPI contributions
+  // Update the contribution tracking record for initial(first) India recurring contributions
   // Note: The UpiDonationsQueueConsumer creates the contribution_recur record for
-  // UPI initial recurring contributions so $isInitialRecurring is false here, but we still
+  // UPI/paytmwallet initial recurring contributions so $isInitialRecurring is false here, but we still
   // want to update contribution_tracking
-  if (isInitialUpiRecurringContribution($msg)) {
+  if (isInitialIndiaRecurringContribution($msg)) {
     return TRUE;
   }
 
@@ -92,11 +92,11 @@ function wmf_civicrm_should_update_contribution_tracking(array $msg, bool $isIni
  *
  * @return bool
  */
-function isInitialUpiRecurringContribution(array $msg) : bool {
+function isInitialIndiaRecurringContribution(array $msg) : bool {
   $payment_submethod = $msg['payment_submethod'] ?? NULL;
   $recurring_payment_token = $msg['recurring_payment_token'] ?? NULL;
 
-  return $payment_submethod === 'upi' && !empty($recurring_payment_token);
+  return in_array($payment_submethod, [ 'upi', 'paytmwallet' ], true) && !empty($recurring_payment_token);
 }
 
 /**
