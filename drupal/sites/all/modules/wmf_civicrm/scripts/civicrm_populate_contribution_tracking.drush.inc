@@ -83,7 +83,7 @@ SELECT
 t.id,
 cc.id,
 SUBSTRING(t.form_amount, 1, LOCATE(' ', form_amount)-1) AS original_currency,
-SUBSTRING(t.form_amount, LOCATE(' ', form_amount)+1) AS original_amount,
+IF(REGEXP_REPLACE(t.form_amount, '.* ([0-9]+\\.?[0-9]*)$','\\\\1') = t.form_amount, NULL, REGEXP_REPLACE(t.form_amount, '.* ([0-9]+\\.?[0-9]*)$','\\\\1')) AS amount,
 t.usd_amount,
 t.referrer,
 t.utm_medium,
