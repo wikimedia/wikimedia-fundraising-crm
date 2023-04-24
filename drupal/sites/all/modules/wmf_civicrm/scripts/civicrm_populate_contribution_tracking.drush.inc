@@ -47,7 +47,7 @@ function drush_civicrm_populate_contribution_tracking() {
 
   // Regex to retrieve values between the dots. mariaDB is a bit less functional than mysql on REGEX - REGEXP_REPLACE is weird but works.
   // https://stackoverflow.com/questions/53119343/regex-replace-function-in-cases-of-no-match-1-returns-full-line-instead-of-null end in |.*
-  $utmSourceRegex = "'([^\.]*)\.([^\.]*)\.([^\.]+)\.?([^\.]+)?|.*'";
+  $utmSourceRegex = "'([^.]*)\\.([^.]*)\\.([^.]+)\\.?([^.]+)?|.*'";
 
   $crazyPaymentMethodCases = [];
   $recurringTypes = [];
@@ -83,7 +83,7 @@ SELECT
 t.id,
 cc.id,
 SUBSTRING(t.form_amount, 1, LOCATE(' ', form_amount)-1) AS original_currency,
-IF(REGEXP_REPLACE(t.form_amount, '.* ([0-9]+\\.?[0-9]*)$','\\\\1') = t.form_amount, NULL, REGEXP_REPLACE(t.form_amount, '.* ([0-9]+\\.?[0-9]*)$','\\\\1')) AS amount,
+IF(REGEXP_REPLACE(t.form_amount, '.* ([0-9]+\\\\.?[0-9]*)$','\\\\1') = t.form_amount, NULL, REGEXP_REPLACE(t.form_amount, '.* ([0-9]+\\\\.?[0-9]*)$','\\\\1')) AS amount,
 t.usd_amount,
 t.referrer,
 t.utm_medium,
