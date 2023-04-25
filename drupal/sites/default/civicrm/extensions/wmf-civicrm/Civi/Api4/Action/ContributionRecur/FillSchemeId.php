@@ -29,6 +29,7 @@ class FillSchemeId extends AbstractAction {
       ->addWhere('payment_processor_id:name', '=', 'ingenico')
       ->addWhere('contribution_status_id:name', '=', 'In Progress')
       ->addWhere('contribution_recur_smashpig.initial_scheme_transaction_id', 'IS NULL')
+      ->addWhere('contribution.receive_date', '>', '-45 days')
       ->setLimit($this->batch)
       ->execute();
 
