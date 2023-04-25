@@ -731,7 +731,7 @@ SET
    * @return bool
    * @throws \CRM_Core_Exception
    */
-  public function upgrade_4245(): bool {
+  public function upgrade_4246(): bool {
     $this->ctx->log->info('Re-Add the contribution tracking table.');
     CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_contribution_tracking');
     if (!CRM_Core_DAO::singleValueQuery("SHOW TABLES LIKE 'civicrm_contribution_tracking'")) {

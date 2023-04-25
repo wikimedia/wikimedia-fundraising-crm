@@ -102,7 +102,7 @@ $recurringTypesStatement,
 $recurringChoiceStatement,
 IF(t.utm_source RLIKE '_dsk_',1,IF(t.utm_source RLIKE '_m_',2,NULL)) as device_type_id,
 IF(t.utm_source RLIKE '_lg_',1,IF(t.utm_source RLIKE '_sm_',2,3)) as banner_size_id,
-IF(t.utm_source RLIKE '_cnt_',1,0)  as is_test_variant,
+IF(t.utm_source RLIKE '_cnt_',0,1)  as is_test_variant,
 SUBSTRING_INDEX(SUBSTRING_INDEX(REGEXP_REPLACE(t.utm_source, $utmSourceRegex,'\\\\2'), '_', 8), '_', -1) as banner_variant,
  IF(t.utm_key RLIKE 'ptf_1',1,0) as is_pay_fee,
 CASE
