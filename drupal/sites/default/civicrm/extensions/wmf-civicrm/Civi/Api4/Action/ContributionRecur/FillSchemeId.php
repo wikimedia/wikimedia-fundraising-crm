@@ -38,8 +38,8 @@ class FillSchemeId extends AbstractAction {
       $paymentStatus = $provider->getPaymentStatus( $id );
       // Cheap trick, using a blank space placeholder to mark ones that we've tried and failed to get an ID for
       // Later we can replace those with null again.
-      $schemeId = $paymentStatus['paymentOutput']['cardPaymentSpecificOutput']['initialSchemeTransactionId'] ??
-        $paymentStatus['paymentOutput']['cardPaymentSpecificOutput']['schemeTransactionId'] ?? '';
+      $schemeId = $paymentStatus['paymentOutput']['cardPaymentMethodSpecificOutput']['initialSchemeTransactionId'] ??
+        $paymentStatus['paymentOutput']['cardPaymentMethodSpecificOutput']['schemeTransactionId'] ?? '';
       ContributionRecur::update(FALSE)
         ->addWhere('id', '=', $recurRecord['id'])
         ->addValue('contribution_recur_smashpig.initial_scheme_transaction_id', $schemeId)
