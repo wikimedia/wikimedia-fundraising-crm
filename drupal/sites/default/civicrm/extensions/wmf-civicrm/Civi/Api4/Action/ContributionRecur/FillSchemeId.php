@@ -43,7 +43,13 @@ class FillSchemeId extends AbstractAction {
         ->addWhere('id', '=', $recurRecord['id'])
         ->addValue('contribution_recur_smashpig.initial_scheme_transaction_id', $schemeId)
         ->execute();
-      $result[$id] = $schemeId;
+      if ($this->debug) {
+        $result[$id] = [
+          'rawResponse' => $paymentStatus,
+        ];
+      } else {
+        $result[$id] = $schemeId;
+      }
     }
   }
 }
