@@ -81,6 +81,9 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
             db_delete('contribution_tracking')
               ->condition('id', $entityID)
               ->execute();
+            db_delete('contribution_source')
+              ->condition('contribution_tracking_id', $entityID)
+              ->execute();
           }
           else {
             civicrm_api3($entity, 'delete', [
