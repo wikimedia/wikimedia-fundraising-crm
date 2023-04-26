@@ -278,7 +278,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'gross' => $recurringPayment['amount'],
         'currency' => $recurringPayment['currency'],
         'gateway_txn_id' => $payment['processor_id'],
-        'payment_method' => 'cc',
+        'payment_method' => CRM_Core_Payment_SmashPig::getPaymentMethod($previousPayment),
         'date' => UtcDate::getUtcTimestamp(),
         'contribution_recur_id' => $recurringPayment['id'],
         'contribution_tracking_id' => $ctId,
