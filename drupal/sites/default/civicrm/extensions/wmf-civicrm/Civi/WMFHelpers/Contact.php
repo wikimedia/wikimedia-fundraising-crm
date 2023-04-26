@@ -86,6 +86,29 @@ class Contact {
   }
 
   /**
+   * Get the organization name, using caching.
+   *
+   * @param int $id
+   *
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   */
+  public static function getOrganizationName(int $id): ?string {
+    if (empty(Civi::$statics['wmf_contact']['organization_ids'][$id])) {
+      $organizationName = Civi::$statics['wmf_contact']['organization_ids'][$id] = Civi\Api4\Contact::get(FALSE)->addWhere('id', '=', $id)
+        ->addWhere('contact_type', '=', 'Organization')
+        ->addSelect('organization_name')->execute()->first()['organization_name'] ?? NULL;
+      if ($organizationName) {
+        Civi::$statics['wmf_contact']['organization'][$organizationName] = [
+          'organization_name' => $organizationName,
+          'id' => $id
+        ];
+      }
+    }
+    return Civi::$statics['wmf_contact']['organization_ids'][$id];
+  }
+
+  /**
    * Is the individual employed by the given organization, taking soft credits into account.
    *
    * @param int $organizationID

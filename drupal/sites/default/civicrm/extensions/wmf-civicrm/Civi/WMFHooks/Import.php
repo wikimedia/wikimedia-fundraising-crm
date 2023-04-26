@@ -37,7 +37,23 @@ class Import {
     if ($context === 'import' && $importType === 'contribution_import') {
       // At this stage all imports are matched gifts which are already thanked via the portal.
       $mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal';
-
+      if (
+        !empty($mappedRow['Contribution']['contact_id'])
+        && (
+          empty($mappedRow['Contact'])
+         || ($mappedRow['Contact']['contact_type'] === 'Organization' && empty($mappedRow['Contact']['organization_name']))
+        )
+      ) {
+        // We have just an ID so it is in ['Contribution']['contact_id']
+        // Since we have handling further down let's populate the contact.
+        $mappedRow['Contact']['id'] = (int) $mappedRow['Contribution']['contact_id'];
+        $organizationName = Contact::getOrganizationName($mappedRow['Contact']['id']);
+        if ($organizationName) {
+          $mappedRow['Contact']['organization_name'] = $organizationName;
+        }
+        // If it didn't return a name we can assume it is an individual.
+        $mappedRow['Contact']['contact_type'] = $organizationName ? 'Organization' : 'Individual';
+      }
       if (empty($mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
         // Generate a transaction ID so that we don't import the same rows multiple times
         $mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = WMFContribution::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
@@ -52,6 +68,7 @@ class Import {
       }
 
       $organizationName = $organizationID = NULL;
+
       if (($mappedRow['Contact']['contact_type'] ?? NULL) === 'Organization') {
         $organizationName = self::resolveOrganization($mappedRow['Contact']);
         $mappedRow['Contribution']['contact_id'] = $mappedRow['Contact']['id'];
@@ -101,9 +118,16 @@ class Import {
  * @throws \CRM_Core_Exception
  */
   private static function resolveOrganization(array &$organizationContact): string {
-    $organizationName = Contact::resolveOrganizationName((string) $organizationContact['organization_name']);
-    $organizationContact['id'] = Contact::getOrganizationID($organizationContact['organization_name']);
+    if (empty($organizationContact['id'])) {
+      $organizationName = Contact::resolveOrganizationName((string) $organizationContact['organization_name']);
+      $organizationContact['id'] = Contact::getOrganizationID($organizationContact['organization_name']);
+    }
+    else {
+      $organizationName = Contact::getOrganizationName($organizationContact['id']);
+    }
     // We don't want to over-write the organization_name as we might have matched on nick name.
+    // It's arguable as to whether this is the right behaviour when id is set (perhaps
+    // they are trying to update the name?) but this is at least consistent.
     unset($organizationContact['organization_name']);
     return $organizationName;
   }

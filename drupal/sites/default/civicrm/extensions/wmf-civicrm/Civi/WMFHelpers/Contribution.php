@@ -26,7 +26,7 @@ class Contribution {
     }
 
     if ($checkNumber) {
-      return md5($contactParams['check_number'] . $name_salt);
+      return md5($checkNumber . $name_salt);
     }
     // The scenario where this would happen is anonymous cash gifts.
     // the name would be 'Anonymous Anonymous' and there might be several on the same

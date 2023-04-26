@@ -57,6 +57,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   protected function tearDown(): void {
     UserJob::delete(FALSE)->addWhere('metadata', 'LIKE', '%civicrm_tmp_d_abc%')->execute();
     \CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_tmp_d_abc');
+    \Civi::cache('metadata')->delete('civiimport_table_fieldscivicrm_tmp_d_abc');
     Contribution::delete(FALSE)->addWhere('contact_id.nick_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.organization_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.last_name', '=', 'Doe')->execute();
@@ -155,6 +156,29 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $relationship = Relationship::get()->addWhere('contact_id_a', '=', $this->ids['Individual'])->execute()->first();
     $this->assertEquals($this->ids['Organization'], $relationship['contact_id_b']);
 
+  }
+
+  /**
+   * Test importing an organization doing an id based lookup.
+   *
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testImportOrganizationUsingID(): void {
+    $this->imitateAdminUser();
+    $this->createOrganization();
+    $data = [
+      'financial_type_id' => 'Engage',
+      'total_amount' => 50,
+      'contribution_contact_id' => $this->ids['Organization'],
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email' => 'jane@example.com',
+    ];
+    $this->createImportTable($data);
+    $this->runImport($data);
+    $contributions = Contribution::get()->addWhere('contact_id', '=', $this->ids['Organization'])->execute();
+    $this->assertCount(1, $contributions);
   }
 
   /**
