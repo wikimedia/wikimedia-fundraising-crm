@@ -5,6 +5,8 @@
 set_include_path(__DIR__ . '/../../../civicrm' . PATH_SEPARATOR . get_include_path());
 require_once __DIR__ . '/../../../civicrm/Civi/Test/Api3TestTrait.php';
 
+use Civi\Api4\Contribution;
+use Civi\Api4\ContributionTracking;
 use Civi\Test\Api3TestTrait;
 use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
 use SmashPig\Core\Context;
@@ -26,6 +28,12 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    * @var int
    */
   protected $maxContactID;
+
+  /**
+   * @var int
+   */
+  protected $trackingCount = 0;
+
   /**
    * Ids created for test purposes.
    *
@@ -65,6 +73,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     Civi::settings()->set( 'logging_no_trigger_permission', FALSE);
     Civi::settings()->set( 'logging', TRUE);
     $this->maxContactID = $this->getHighestContactID();
+    $this->trackingCount = CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_contribution_tracking');
   }
 
   public function tearDown(): void {
@@ -84,6 +93,10 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
             db_delete('contribution_source')
               ->condition('contribution_tracking_id', $entityID)
               ->execute();
+            ContributionTracking::delete(FALSE)->addWhere('id', '=', $entityID)->execute();
+          }
+          elseif ($entity === 'Contribution') {
+            $this->cleanupContribution($entityID);
           }
           else {
             civicrm_api3($entity, 'delete', [
@@ -96,6 +109,10 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
         }
       }
     }
+    db_delete('contribution_source')
+      ->condition('contribution_tracking_id', 12345)
+      ->execute();
+
     TestingDatabase::clearStatics();
     Context::set(NULL); // Nullify any SmashPig context for the next run
     parent::tearDown();
@@ -109,6 +126,8 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
       ]);
       $this->fail("Test contact left behind with display name $junkContactDisplayName");
     }
+    // Another test cleanup check...
+    $this->assertEquals($this->trackingCount, CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_contribution_tracking'));
     drupal_static_reset('large_donation_get_minimum_threshold');
     drupal_static_reset('large_donation_get_notification_thresholds');
   }
@@ -263,15 +282,25 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    * Clean up a contribution
    *
    * @param int $id
+   *
+   * @throws \CRM_Core_Exception
    */
-  protected function cleanupContribution($id) {
-    $this->callAPISuccess('Contribution', 'delete', [
-      'id' => $id,
+  protected function cleanupContribution(int $id): void {
+    $trackingRows = db_query('SELECT id, contribution_id, utm_source FROM contribution_tracking
+WHERE contribution_id = :contribution_id', [
+      ':contribution_id' => $id,
     ]);
-
-    db_delete('contribution_tracking')
-      ->condition('contribution_id', $id)
-      ->execute();
+    if ($trackingRows->rowCount() > 0) {
+      $row = $trackingRows->fetchAssoc();
+      db_delete('contribution_source')
+        ->condition('contribution_tracking_id', $row['id'])
+        ->execute();
+      db_delete('contribution_tracking')
+        ->condition('contribution_id', $id)
+        ->execute();
+    }
+    ContributionTracking::delete(FALSE)->addWhere('contribution_id', '=', $id)->execute();
+    Contribution::delete(FALSE)->addWhere('id', '=', $id)->execute();
   }
 
   protected function setUpCtSequence() {

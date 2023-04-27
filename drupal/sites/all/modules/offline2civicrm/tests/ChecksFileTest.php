@@ -9,7 +9,9 @@ use Civi\WMFException\EmptyRowException;
  */
 class ChecksFileTest extends BaseChecksFileTest {
 
-  function setUp(): void {
+  public $trxn_id = 6789;
+
+  public function setUp(): void {
     parent::setUp();
     require_once __DIR__ . "/includes/ChecksFileProbe.php";
   }
@@ -52,7 +54,7 @@ class ChecksFileTest extends BaseChecksFileTest {
       'Received Date' => '2017-07-07',
       'State' => 'CA',
       'Street Address' => '123 Sunset Boulevard',
-      'Transaction ID' => mt_rand(),
+      'Transaction ID' => $this->trxn_id,
     ];
 
     $importer = new ChecksFileProbe();

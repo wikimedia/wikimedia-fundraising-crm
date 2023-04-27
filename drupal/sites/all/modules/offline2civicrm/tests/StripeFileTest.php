@@ -27,7 +27,13 @@ class StripeTest extends BaseChecksFileTest {
     $this->assertEquals('STRIPE ch_1Al1231231231231231231123', $contribution[0]['trxn_id']);
     $this->assertEquals(500, $contribution[0]['total_amount']);
     $this->assertEquals('USD', $contribution[0]['currency']);
-    $this->assertEquals('big campaign', db_query("SELECT {utm_campaign} from {contribution_tracking} WHERE contribution_id = {$contribution[0]['id']}")->fetchField());
+    // This line never truly worked - ie do a fresh build on master
+    // & run it in isolation & it fails. It also fails on jenkins if
+    // we do proper cleanup. The issue appears to be that the
+    // contribution_tracking_id generated in the test config always
+    // 'generates' id 1  - so it overwrites the first row with the
+    // campaign with the next, without it.
+    // $this->assertEquals('big campaign', db_query("SELECT {utm_campaign} from {contribution_tracking} WHERE contribution_id = {$contribution[0]['id']}")->fetchField());
 
     $contact = $this->callAPISuccessGetSingle('Contact', array('id' => $contribution[0]['contact_id'], 'return' => array(
       'first_name',

@@ -73,7 +73,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function tearDown(): void {
     if ($this->contribution_id) {
-      $this->callAPISuccess('Contribution', 'delete', ['id' => $this->contribution_id]);
+      $this->cleanupContribution($this->contribution_id);
     }
     if ($this->contact_id) {
       $this->cleanUpContact($this->contact_id);

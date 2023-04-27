@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contribution;
+
 class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
@@ -9,7 +11,7 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @var string
    */
-  protected $gateway;
+  protected $gateway = 'generic_import';
 
   /**
    * Transaction id being worked with. This is combined with the gateway for
@@ -79,14 +81,14 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
       // Any that are already removed will be FALSE and filtered out by array filter.
       $contributions = array_filter((array) wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $this->trxn_id));
     }
-    elseif (!empty($this->trxn_ids)) {
-      foreach ($this->trxn_ids as $trxn_id) {
-        $contributions = array_merge($contributions, array_filter((array) wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $trxn_id)));
-      }
+    elseif ($this->gateway) {
+      $contributions = Contribution::get(FALSE)
+        ->addWhere('contact_id', '>', $this->maxContactID)
+        ->addWhere('contribution_extra.gateway', '=', $this->gateway)->execute();
     }
     if ($contributions) {
       foreach ($contributions as $contribution) {
-        $this->callAPISuccess('Contribution', 'delete', array('id' => $contribution['id']));
+        $this->cleanupContribution($contribution['id']);
       }
     }
     $this->doMouseHunt();
