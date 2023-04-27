@@ -375,7 +375,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    *  Test that a token is created for a new ingenico recurring donation and a recurring contribution
    *  is created correctly
    */
-  public function testRecurringTokenIngenico() {
+  public function testRecurringTokenIngenico(): void {
     // Subscr_id is the same as gateway_txn_id
     $subscr_id = mt_rand();
 
