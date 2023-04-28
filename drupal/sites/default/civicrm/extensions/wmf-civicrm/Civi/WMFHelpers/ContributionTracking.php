@@ -142,6 +142,9 @@ class ContributionTracking {
       else {
         $banner = $sourceFields[0] ?? NULL;
         $bannerParts = explode('_', $banner ?? '');
+        if ($banner) {
+          $contributionTracking['banner'] = $banner;
+        }
         if ($contributionTracking['is_test_variant'] && $banner && !empty($bannerParts[1])) {
           $contributionTracking['banner_variant'] = $bannerParts[1];
         }

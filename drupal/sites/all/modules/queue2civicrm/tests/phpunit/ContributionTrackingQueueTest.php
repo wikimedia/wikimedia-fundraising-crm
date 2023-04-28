@@ -37,6 +37,8 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'utm_source' => 'B2223_1115_en6C_m_p1_lg_amt_cnt.no-LP.paypal',
       'banner_variant' => 1115,
       'mailing_identifier' => NULL,
+      'banner' => 'B2223_1115_en6C_m_p1_lg_amt_cnt',
+      'landing_page' => 'no-LP',
     ]);
 
   }
