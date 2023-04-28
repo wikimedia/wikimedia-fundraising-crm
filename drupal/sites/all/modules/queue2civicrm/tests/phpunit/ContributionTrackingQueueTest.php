@@ -39,6 +39,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'mailing_identifier' => NULL,
       'banner' => 'B2223_1115_en6C_m_p1_lg_amt_cnt',
       'landing_page' => 'no-LP',
+      'is_test_variant' => FALSE,
     ]);
 
   }
