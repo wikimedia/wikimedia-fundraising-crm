@@ -245,6 +245,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       case 'Paypal';
         return 'paypal';
       case 'Bank Transfer: UPI':
+      case 'Bank Transfer: PayTM Wallet':
         return 'bt';
       default:
         return 'cc';
