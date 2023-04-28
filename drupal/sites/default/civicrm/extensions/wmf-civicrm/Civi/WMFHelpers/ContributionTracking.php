@@ -125,7 +125,7 @@ class ContributionTracking {
 
     $isRecurring = 0;
     if (!empty($rawData['utm_source'])) {
-      $contributionTracking['is_test_variant'] = (strpos($rawData['utm_source'] ?? '', '_cnt_') === FALSE);
+      $contributionTracking['is_test_variant'] = (strpos($rawData['utm_source'] ?? '', '_cnt_') === FALSE) && (strpos($rawData['utm_source'] ?? '', '_cnt.') === FALSE);
       $sourceFields = explode('.', $rawData['utm_source']);
       // These are escaped so 'safe' but way too annoying to populate into multiple fields.
       // The sql ones *might* be legit without the spaces?
@@ -142,7 +142,10 @@ class ContributionTracking {
       else {
         $banner = $sourceFields[0] ?? NULL;
         $bannerParts = explode('_', $banner ?? '');
-        if ($contributionTracking['is_test_variant'] && $banner && !empty($bannerParts[1])) {
+        if ($banner) {
+          $contributionTracking['banner'] = $banner;
+        }
+        if ($banner && !empty($bannerParts[1])) {
           $contributionTracking['banner_variant'] = $bannerParts[1];
         }
         $deviceTypeID = self::getDeviceTypeID((string) $rawData['utm_source']);
