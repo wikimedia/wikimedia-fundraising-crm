@@ -2,7 +2,9 @@
 
 namespace queue2civicrm\contribution_tracking;
 
+use Civi\Api4\ContributionTracking;
 use \Civi\WMFException\ContributionTrackingDataValidationException;
+use Civi\WMFHelpers\ContributionTracking as WMFHelper;
 use wmf_common\WmfQueueConsumer;
 
 class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
@@ -47,8 +49,21 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
     $csData = $this->getContributionSourceData($ctData);
 
     $ctData = $this->truncateFields($ctData);
-    $this->persistContributionTrackingData($ctData, $csData);
+    [$existingContributionID, $existingRow] = $this->getExisting($ctData['id']);
+    if ($existingContributionID
+      && !empty($ctData['contribution_id'])
+      && ($existingContributionID !== (int) $ctData['contribution_id'])
+    ) {
+      $this->rejectChangingContributionID($ctData, $existingContributionID);
+    }
+    else {
 
+      ContributionTracking::save(FALSE)
+        ->addRecord(WMFHelper::getContributionTrackingParameters($ctData))
+        ->execute();
+
+      $this->persistContributionTrackingData($ctData, $csData, $existingRow);
+    }
     $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
     $ContributionTrackingStatsCollector->recordContributionTrackingRecord();
   }
@@ -58,40 +73,13 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
    *
    * @param array $ctData data to be written to contribution_tracking tbl
    * @param array|null $csData data to be written to contribution_source tbl
+   * @param array|null $existingRow
    *
    * @throws \Exception
    */
-  protected function persistContributionTrackingData(array $ctData, ?array $csData) {
-    $checkSql = "
-SELECT id, contribution_id, utm_source FROM contribution_tracking
-WHERE id = :ct_id
-LIMIT 1";
-
-    $checkResult = db_query($checkSql, [
-      ':ct_id' => $ctData['id'],
-    ]);
-
-    if ($checkResult->rowCount() > 0) {
-      $existingRow = $checkResult->fetchAssoc();
-      if (!empty($existingRow['contribution_id'])
-        && !empty($ctData['contribution_id'])
-        && ((int) $existingRow['contribution_id'] !== (int) $ctData['contribution_id'])
-      ) {
-
-        $this->log(
-          "Trying to update contribution tracking row {contribution_tracking_id} that " .
-          "already has contribution_id {existing_contribution_id} " .
-          "with new contribution id {contribution_id}.", [
-            'contribution_tracking_id' => $ctData['id'],
-            'existing_contribution_id' => $existingRow['contribution_id'],
-            'contribution_id' => $ctData['contribution_id'],
-          ]
-        );
-
-        $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
-        $ContributionTrackingStatsCollector->recordChangeOfContributionIdError();
-        return;
-      }
+  protected function persistContributionTrackingData(array $ctData, ?array $csData, ?array $existingRow): void {
+    // @todo - move all the below to a hook to run from the ContributionTracking save.
+    if ($existingRow) {
 
       db_update('contribution_tracking')
         ->fields($ctData)
@@ -170,4 +158,47 @@ LIMIT 1";
     }
     return $truncated;
   }
+
+  /**
+   * @param $id
+   *
+   * @return array
+   *  - contributionID (int|null)
+   *  - existingRow (array)
+   */
+  protected function getExisting($id): array {
+    $checkSql = "
+SELECT id, contribution_id, utm_source FROM contribution_tracking
+WHERE id = :ct_id
+LIMIT 1";
+    $checkResult = db_query($checkSql, [
+      ':ct_id' => $id,
+    ]);
+
+    if ($checkResult->rowCount() > 0) {
+      $existingRow = $checkResult->fetchAssoc();
+      $existingContributionID = $existingRow['contribution_id'] ? (int) $existingRow['contribution_id'] : NULL;
+    }
+    return [$existingContributionID ?? NULL, $existingRow ?? NULL];
+  }
+
+  /**
+   * @param array $ctData
+   * @param $existingContributionID
+   */
+  protected function rejectChangingContributionID($ctData, $existingContributionID): void {
+    $this->log(
+      "Trying to update contribution tracking row {contribution_tracking_id} that " .
+      "already has contribution_id {existing_contribution_id} " .
+      "with new contribution id {contribution_id}.", [
+        'contribution_tracking_id' => $ctData['id'],
+        'existing_contribution_id' => $existingContributionID,
+        'contribution_id' => $ctData['contribution_id'],
+      ]
+    );
+
+    $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
+    $ContributionTrackingStatsCollector->recordChangeOfContributionIdError();
+  }
+
 }
