@@ -741,6 +741,54 @@ SET
   }
 
   /**
+   * Update addresses whose geocoding has gotten out of sync over the years.
+   *
+   * Bug: T334152
+   *
+   * On staging this was not insanely slow but we should probably turn
+   * off queues to run.
+   *
+   * Query OK, 1102514 rows affected (1 min 24.345 sec)
+   * Rows matched: 1102514  Changed: 1102514  Warnings: 0
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4250() : bool {
+    CRM_Core_DAO::executeQuery('
+      UPDATE civicrm_address a
+      LEFT JOIN civicrm_geocoder_zip_dataset z
+        ON z.postal_code = a.postal_code
+      SET a.geo_code_1 = latitude,  a.geo_code_2 = longitude
+      WHERE country_id = 1228 AND a.postal_code IS NOT NULL
+        AND (z.latitude <> a.geo_code_1 OR z.longitude <> a.geo_code_2)
+    ');
+    return TRUE;
+  }
+
+  /**
+   * Force dlocal trxn_id back to normal case instead of upper
+   * for both civicrm_contribution trxn_id and wmf_contribution_extra gateway_txn_id
+   * (see T335057)
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4251(): bool {
+    CRM_Core_DAO::executeQuery(
+      "UPDATE civicrm_contribution
+       SET trxn_id=CONCAT(UPPER(SUBSTRING(trxn_id,1,POSITION('-' IN trxn_id))),LOWER(SUBSTRING(trxn_id,POSITION('-' IN trxn_id)+1)))
+       WHERE trxn_id like '%DLOCAL%';"
+    );
+    CRM_Core_DAO::executeQuery(
+      "UPDATE wmf_contribution_extra
+       SET gateway_txn_id=CONCAT(UPPER(SUBSTRING(gateway_txn_id,1,1)),LOWER(SUBSTRING(gateway_txn_id,2)))
+       WHERE gateway = 'dlocal';"
+    );
+    return TRUE;
+  }
+
+  /**
    * Get the values actually used for the option.
    *
    * @param string $field

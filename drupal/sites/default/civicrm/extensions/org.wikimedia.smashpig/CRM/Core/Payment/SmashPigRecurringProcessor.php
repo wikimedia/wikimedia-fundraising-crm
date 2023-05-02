@@ -608,7 +608,9 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @return bool
    */
   protected function isUpiBankTransferPreNotification($payment_instrument) : bool {
-    return $payment_instrument === 'Bank Transfer: UPI';
+    return in_array(
+      $payment_instrument, ['Bank Transfer: UPI', 'Bank Transfer: PayTM Wallet']
+    );
   }
 
   /**
