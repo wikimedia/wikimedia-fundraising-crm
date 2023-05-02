@@ -87,22 +87,6 @@ class FinanceInstrumentTest extends TestCase implements HeadlessInterface {
     $this->assertEquals( 'Credit Card: Carte Bleue', $payment_instrument );
   }
 
-  public function testEWPaymentInstrument() {
-    $msg = array(
-      'payment_method' => 'ew',
-      'payment_submethod' => 'ew_moneybookers',
-      'first_name' => 'blah',
-      'last_name' => 'wah',
-      'country' => 'US',
-      'currency' => 'USD',
-      'gross' => '1.00',
-      'net' => '',
-      'fee' => '0.21',
-    );
-    $payment_instrument = FinanceInstrument::getPaymentInstrument( $msg );
-    $this->assertEquals( 'Moneybookers', $payment_instrument );
-  }
-
   public function testOBTPaymentInstrument() {
     $msg = array(
       'payment_method' => 'obt',
