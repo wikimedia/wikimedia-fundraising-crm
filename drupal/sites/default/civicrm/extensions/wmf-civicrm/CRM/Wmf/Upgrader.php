@@ -741,6 +741,32 @@ SET
   }
 
   /**
+   * Update addresses whose geocoding has gotten out of sync over the years.
+   *
+   * Bug: T334152
+   *
+   * On staging this was not insanely slow but we should probably turn
+   * off queues to run.
+   *
+   * Query OK, 1102514 rows affected (1 min 24.345 sec)
+   * Rows matched: 1102514  Changed: 1102514  Warnings: 0
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4250() : bool {
+    CRM_Core_DAO::executeQuery('
+      UPDATE civicrm_address a
+      LEFT JOIN civicrm_geocoder_zip_dataset z
+        ON z.postal_code = a.postal_code
+      SET a.geo_code_1 = latitude,  a.geo_code_2 = longitude
+      WHERE country_id = 1228 AND a.postal_code IS NOT NULL
+        AND (z.latitude <> a.geo_code_1 OR z.longitude <> a.geo_code_2)
+    ');
+    return TRUE;
+  }
+
+  /**
    * Get the values actually used for the option.
    *
    * @param string $field
