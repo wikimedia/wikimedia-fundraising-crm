@@ -97,6 +97,7 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
         'description' => Civi::settings()->get('smashpig_recurring_charge_descriptor'),
         'recurring' => true,
         'user_ip' => '12.34.56.78',
+        'payment_submethod' => 'upi',
         'processor_contact_id' => $contributionRecur['invoice_id'],
         'fiscal_number' => $contact['legal_identifier'],
       ])
