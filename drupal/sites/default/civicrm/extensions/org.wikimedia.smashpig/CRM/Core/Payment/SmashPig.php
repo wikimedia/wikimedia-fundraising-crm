@@ -72,8 +72,13 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     $provider = PaymentProviderFactory::getProviderForMethod($paymentMethod);
 
     $request = $this->convertParams($params);
+
+    Civi::log('wmf')->debug('Request params: ' . print_r($request, true));
+
     /** @var CreatePaymentResponse $createPaymentResponse */
     $createPaymentResponse = $provider->createPayment( $request );
+
+    Civi::log('wmf')->debug('Raw response: ' . print_r($createPaymentResponse->getRawResponse(), true));
 
     if (!$createPaymentResponse->isSuccessful()) {
       $this->throwException( 'CreatePayment failed', $createPaymentResponse );
