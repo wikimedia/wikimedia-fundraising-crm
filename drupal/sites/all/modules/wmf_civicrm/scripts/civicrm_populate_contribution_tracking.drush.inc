@@ -43,6 +43,8 @@ function drush_civicrm_populate_contribution_tracking() {
     }
   }
   $batch_size = (integer) drush_get_option('batch',15000);
+  $minimumID = (integer) variable_get('tracking_id_number');
+  $maximumID = $minimumID + $batch_size;
   $paymentMethods = CRM_Wmf_BAO_ContributionTracking::buildOptions('payment_method_id', 'validate');
 
   // Regex to retrieve values between the dots. mariaDB is a bit less functional than mysql on REGEX - REGEXP_REPLACE is weird but works.
@@ -119,11 +121,14 @@ SELECT ct.*
 FROM $drupalDB.`contribution_tracking` as ct
 LEFT JOIN civicrm_contribution_tracking civi_table ON civi_table.id = ct.id
 WHERE civi_table.id IS NULL
-ORDER BY ct.id DESC
+AND ct.id BETWEEN $minimumID AND $maximumID
+ORDER BY ct.id
 LIMIT %1
 ) AS t
 LEFT OUTER JOIN civicrm_contribution cc ON t.contribution_id = cc.id
 ";
+  // -1 probably not required sometimes BETWEEN confuses me & this is safe.
+  variable_set('tracking_id_number', $maximumID -1);
   \Civi::log('wmf')->info('running query {query}', ['query' => CRM_Core_DAO::composeQuery($query, [1 => [$batch_size, 'Int']])]);
   CRM_Core_DAO::executeQuery($query, [1 => [$batch_size, 'Int']]);
   \Civi::log('wmf')->info('processed {batch_size} contribution tracking rows', ['batch_size' => $batch_size]);
