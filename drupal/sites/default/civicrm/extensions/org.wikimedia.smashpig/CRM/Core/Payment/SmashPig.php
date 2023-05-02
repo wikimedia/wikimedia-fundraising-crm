@@ -68,10 +68,14 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     }
 
     $paymentMethod = self::getPaymentMethod($params);
+    $paymentSubmethod = self::getPaymentSubmethod($params);
 
     $provider = PaymentProviderFactory::getProviderForMethod($paymentMethod);
 
     $request = $this->convertParams($params);
+    if ($paymentSubmethod) {
+      $request['payment_submethod'] = $paymentSubmethod;
+    }
 
     Civi::log('wmf')->debug('Request params: ' . print_r($request, true));
 
@@ -254,6 +258,28 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
         return 'bt';
       default:
         return 'cc';
+    }
+  }
+
+  /**
+   * Get the SmashPig payment submethod corresponding to the payment attempt.
+   * Note that we really only need this for upi and PayTM so far.
+   *
+   * @param array $params
+   *
+   * @return string
+   */
+  public static function getPaymentSubmethod(array $params) {
+    switch ($params['payment_instrument']) {
+      case 'iDeal':
+        return 'rtbt_ideal';
+      case 'Bank Transfer: UPI':
+        return 'upi';
+      case 'Bank Transfer: PayTM Wallet':
+        return 'paytmwallet';
+      default:
+        // TODO: add new helper function to FinanceInstrument
+        return null;
     }
   }
 }
