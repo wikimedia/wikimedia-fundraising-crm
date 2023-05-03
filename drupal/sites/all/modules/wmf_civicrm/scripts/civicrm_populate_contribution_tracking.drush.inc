@@ -84,7 +84,7 @@ banner,landing_page, payment_method_id, payment_submethod_id,is_recurring,recurr
 SELECT
 t.id,
 cc.id,
-SUBSTRING(t.form_amount, 1, LOCATE(' ', form_amount)-1) AS original_currency,
+IF(LENGTH(SUBSTRING(t.form_amount, 1, LOCATE(' ', t.form_amount)-1)) = 3, SUBSTRING(t.form_amount, 1, LOCATE(' ', t.form_amount)-1),'') AS original_currency,
 IF(REGEXP_REPLACE(t.form_amount, '.* ([0-9]+\\\\.?[0-9]*)$','\\\\1') = t.form_amount, NULL, REGEXP_REPLACE(t.form_amount, '.* ([0-9]+\\\\.?[0-9]*)$','\\\\1')) AS amount,
 t.usd_amount,
 t.referrer,
