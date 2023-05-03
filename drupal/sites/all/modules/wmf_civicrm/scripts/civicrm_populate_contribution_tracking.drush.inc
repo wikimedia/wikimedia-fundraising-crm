@@ -128,8 +128,8 @@ LIMIT %1
 LEFT OUTER JOIN civicrm_contribution cc ON t.contribution_id = cc.id
 ";
   // -1 probably not required sometimes BETWEEN confuses me & this is safe.
-  variable_set('tracking_id_number', $maximumID -1);
   \Civi::log('wmf')->info('running query {query}', ['query' => CRM_Core_DAO::composeQuery($query, [1 => [$batch_size, 'Int']])]);
   CRM_Core_DAO::executeQuery($query, [1 => [$batch_size, 'Int']]);
   \Civi::log('wmf')->info('processed {batch_size} contribution tracking rows', ['batch_size' => $batch_size]);
+  variable_set('tracking_id_number', $maximumID -1);
 }
