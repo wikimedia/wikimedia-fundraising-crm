@@ -3,6 +3,7 @@
 /**
  * @group AstroPay
  * @group WmfAudit
+ * @group AstroPayAudit
  */
 class AstroPayAuditTest extends BaseAuditTestCase {
 
