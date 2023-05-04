@@ -4,7 +4,7 @@ use CRM_WmfThankyou_ExtensionUtil as E;
 /**
  * Collection of upgrade steps.
  */
-class CRM_WmfThankyou_Upgrader extends CRM_WmfThankyou_Upgrader_Base {
+class CRM_WmfThankyou_Upgrader extends CRM_Extension_Upgrader_Base {
 
   /**
    * Add the relevant activity type.

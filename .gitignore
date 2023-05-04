@@ -7,3 +7,7 @@ vendor
 drupal/sites/default/civicrm/extensions/cache
 drupal/sites/default/civicrm.settings.d/pre.d/100-civirpow.php
 drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/vendor
+.idea
+wmff.iml
+.phpunit.result.cache
+drupal/sites/all/modules/civicrm/bin/setup.conf
