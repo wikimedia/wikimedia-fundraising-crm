@@ -94,7 +94,7 @@ t.utm_key,
 t.utm_source,
 LEFT(SUBSTRING(t.payments_form, 1, LOCATE('.', payments_form)-1), 32) AS gateway,
 LEFT(IF(LOCATE('v=',payments_form),NULL, SUBSTRING(t.payments_form, LOCATE('.', payments_form)+1)),64) as appeal,
-IF(LOCATE('v=',payments_form), SUBSTRING(t.payments_form, LOCATE('.', payments_form)+3),NULL) as payments_form_variant,
+IF(LOCATE('v=',payments_form) , LEFT(SUBSTRING(t.payments_form, LOCATE('.', payments_form)+3), 64),NULL) as payments_form_variant,
 
 REGEXP_REPLACE(t.utm_source, $utmSourceRegex,'\\\\1') as landing_page,
 REGEXP_REPLACE(t.utm_source, $utmSourceRegex,'\\\\2') as banner,
