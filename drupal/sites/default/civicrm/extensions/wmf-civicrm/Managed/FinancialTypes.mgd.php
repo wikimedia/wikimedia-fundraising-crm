@@ -32,6 +32,7 @@ $financialTypes = [
   'Chargeback',
   'Engage',
   'Endowment Gift',
+  'Stock',
 ];
 
 foreach ($financialTypes as $financialType) {

@@ -211,7 +211,7 @@ class ThankYouTest extends TestCase {
         'activity_type_id' => CRM_Core_PseudoConstant::getKey(
           'CRM_Activity_BAO_Activity',
           'activity_type_id',
-          'Email'
+          'Thank you email'
         ),
       ]
     );
@@ -275,13 +275,12 @@ class ThankYouTest extends TestCase {
   public function testSendStockThankYou(): void {
     variable_set('thank_you_add_civimail_records', 'false');
 
-    $stock_value = wmf_civicrm_get_custom_field_name('Stock Value');
-    $description_of_stock = wmf_civicrm_get_custom_field_name('Description_of_Stock');
     $this->callAPISuccess('Contribution', 'create', [
+      'version' => 4,
       'id' => $this->getContributionID(),
       'financial_type_id' => 'Stock',
-      $stock_value => '50.00',
-      $description_of_stock => 'Test Stock Description',
+      'Stock_Information.Stock Value' => '50.00',
+      'Stock_Information.Description_of_Stock' => 'Test Stock Description',
     ]);
 
     $sent = $this->sendThankYou();
