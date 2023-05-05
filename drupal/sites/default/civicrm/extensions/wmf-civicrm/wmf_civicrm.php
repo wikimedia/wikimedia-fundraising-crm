@@ -314,6 +314,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   $recurProcessor = new ContributionRecurTrigger();
   $recurTriggerInfo = $recurProcessor->setTableName($tableName)->triggerInfo();
   $info = array_merge($info, $recurTriggerInfo);
+  $info = Activity::alterTriggerSql($info);
 }
 
 /**
