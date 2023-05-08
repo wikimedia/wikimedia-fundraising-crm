@@ -2,6 +2,8 @@
 
 namespace Civi\WMFHooks;
 
+use CRM_Core_PseudoConstant;
+
 class Activity {
 
   public static function links($activityID, &$links) {
@@ -17,9 +19,28 @@ class Activity {
         elseif ($link['name'] === 'View') {
           // Changing the view link to the email activity type
           $links[$index]['url'] = 'civicrm/activity/view';
-
         }
       }
     }
+  }
+
+  /**
+   * Bug: T332074
+   *
+   * Do not save details for thank you email
+   * In the case it takes up many GB of space & it is not subject to change
+   * @param $info
+   * @return array
+   */
+  public static function alterTriggerSql($info): array {
+    $alterInfo = [];
+    $thankYouEmailActivityTypeId = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Thank you email');
+    foreach ($info as $trigger) {
+      if ($trigger['table'] == ['civicrm_activity'] && $trigger['event'] == ['INSERT'] && $trigger['when'] == 'AFTER') {
+        $trigger['sql'] = str_replace("NEW.`phone_number`, NEW.`details`" , "NEW.`phone_number`, IF(NEW.`activity_type_id` <> ". $thankYouEmailActivityTypeId . ", NEW.`details`, NULL)", $trigger['sql']);
+      }
+      $alterInfo[] = $trigger;
+    }
+    return $alterInfo;
   }
 }

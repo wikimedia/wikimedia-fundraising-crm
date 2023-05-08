@@ -52,4 +52,28 @@ class AstroPayAuditProcessor extends BaseAuditProcessor {
     }
     return FALSE;
   }
+
+  /**
+   * This is glue to get the astropay audit parser to look at
+   * the dlocal named files from apiv2
+   * TODO: Make dlocal it's own audit
+   *
+   */
+  protected function get_compressed_log_file_names($date) {
+    return [
+      "payments-dlocal-{$date}.gz",
+    ];
+  }
+
+  /**
+   * This is glue to get the astropay audit parser to look at
+   * the dlocal named files from apiv2
+   * TODO: Make dlocal it's own audit
+   *
+   */
+  protected function get_uncompressed_log_file_names($date) {
+    return [
+      "payments-dlocal-{$date}",
+    ];
+  }
 }

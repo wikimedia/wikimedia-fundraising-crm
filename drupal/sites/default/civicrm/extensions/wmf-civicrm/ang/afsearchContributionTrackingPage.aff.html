@@ -1,3 +1,7 @@
 <div af-fieldset="">
-  <crm-search-display-table search-name="ContributionTracking" display-name="contribution_trackings_table" filters="{contribution_id: routeParams.contribution_id}"></crm-search-display-table>
+  <af-field name="id" defn="{label: 'Contribution Tracking ID', input_attrs: {}}" />
+  <af-field name="contribution_id" />
+  <af-field name="payments_form_variant" />
+  <af-field name="gateway" />
+  <crm-search-display-table search-name="ContributionTracking" display-name="contribution_trackings_table"></crm-search-display-table>
 </div>
