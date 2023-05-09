@@ -265,6 +265,39 @@ class ThankYouTest extends TestCase {
     $this->assertNotRegExp('/tax-exempt number/', $sent['html']);
   }
 
+  /**
+   * Test how the thank yous render currency.
+   *
+   * Note there is some advantage in running them like this rather than a
+   * dataProvider as we want to see it switching between them.
+   */
+  public function testRenderThankYou(): void {
+    // Note that the first string is {if $currency === 'USD'}{$currency} {/if}{$amount}
+    // and the second is {if $currency === 'USD'}{$currency} {/if}{$amount} ({$currency})
+
+    // NZD with unspecified language.
+    $this->renderEnglishVariant(NULL, 'NZD', 'NZ$10.00', 'NZ$10.00 (NZD)');
+
+    // USD with unspecified language
+    $this->renderEnglishVariant(NULL, 'USD', 'USD $10.00', 'USD $10.00 (USD)');
+
+    // USD with specified en_US language
+    $this->renderEnglishVariant('en_US', 'USD', 'USD $10.00', 'USD $10.00 (USD)');
+
+    // NZD with specified en_US language
+    $this->renderEnglishVariant('en_US', 'NZD', 'NZ$10.00', 'NZ$10.00 (NZD)');
+
+    // USD with specified en_NZ language
+    $this->renderEnglishVariant('en_NZ', 'USD', 'USD $10.00', 'USD $10.00 (USD)');
+
+    // NZD with specified en_NZ language
+    $this->renderEnglishVariant('en_NZ', 'NZD', 'NZ$10.00', 'NZ$10.00 (NZD)');
+
+    // USD with specified es_MX language
+    $result = $this->renderMessage('es_MX', ['currency' => 'USD']);
+    $this->assertStringContainsString('la donación puntual de USD 10.00 que ', $result['html']);
+    $this->assertStringContainsString('del 2022-08-08, fue de USD 10.00.', $result['html']);
+  }
 
   /**
    * Test that Stock gift thank you mails use the stock value amount
@@ -359,6 +392,60 @@ class ThankYouTest extends TestCase {
    */
   public function getMailing(int $index): array {
     return MailFactory::singleton()->getMailer()->getMailing($index);
+  }
+
+  /**
+   * @param array $parameters
+   *
+   * @return array|null
+   */
+  protected function renderMessage(?string $language = NULL, array $parameters = []): ?array {
+    $contributionID = $this->getContributionID();
+    $result = ThankYou::render(FALSE)
+      ->setLanguage($language)
+      ->setReceiveDate('2022-08-09')
+      ->setTemplateParameters(array_merge([
+        'first_name' => 'Mickey',
+        'amount' => 10,
+        'last_name' => 'Mouse',
+        'gift_source' => 'Random string',
+        'currency' => 'NZD',
+        'recurring' => FALSE,
+        'transaction_id' => 123,
+        'unsubscribe_link' => '',
+        'contact_id' =>  $this->ids['Contact'][0],
+        'contribution_id' => $contributionID,
+      ], $parameters))
+      ->setTemplateName('thank_you')->execute()->first();
+    return $result;
+  }
+
+  /**
+   * @param string $html
+   * @param string $firstCurrency
+   * @param string $secondCurrency
+   */
+  protected function assertCurrencyString(string $html, string $firstCurrency, string $secondCurrency): void {
+    $this->assertStringContainsString('one-time gift of ' . $firstCurrency . ' to support', $html);
+    $this->assertStringContainsString('For your records: Your donation, number 123, on 2022-08-08 was ' . $secondCurrency . '.', $html);
+  }
+
+  /**
+   * @param string|null $language
+   * @param string $currency
+   * @param string $firstCurrencyString
+   * @param string $secondCurrencyString
+   *
+   * @return array|null
+   */
+  protected function renderEnglishVariant(?string $language, string $currency, string $firstCurrencyString, string $secondCurrencyString): ?array {
+    $result = $this->renderMessage($language, ['currency' => $currency]);
+    $this->assertEquals('Mickey, your
+ donation is one more reason to celebrate.', $result['subject']);
+    $this->assertStringContainsString('Dear Mickey,', $result['html']);
+    $this->assertStringContainsString('Your donation, number 123', $result['html']);
+    $this->assertCurrencyString($result['html'], $firstCurrencyString, $secondCurrencyString);
+    return $result;
   }
 
 }
