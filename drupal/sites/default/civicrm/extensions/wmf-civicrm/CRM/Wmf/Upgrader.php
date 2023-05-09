@@ -789,6 +789,30 @@ SET
   }
 
   /**
+   * Set duplicate email thank you dates from accidental audit import. This will stop us from sending donors a
+   * second thank you email.
+   *
+   * Bug:T324347
+   *
+   * There should be 3301 that did not get the second thank you email
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4253() : bool {
+    CRM_Core_DAO::executeQuery('
+      UPDATE civicrm_contribution
+      SET thankyou_date="2023-04-22"
+      WHERE trxn_id LIKE "DLOCAL 3%"
+        AND thankyou_date IS NULL
+        AND receive_date > "2023-04-20"
+        AND receive_date < "2023-04-24"
+    ');
+    return TRUE;
+  }
+
+
+  /**
    * Get the values actually used for the option.
    *
    * @param string $field
