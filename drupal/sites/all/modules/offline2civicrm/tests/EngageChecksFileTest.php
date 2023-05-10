@@ -742,7 +742,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     unset($errors[0]);
 
     $this->assertCount(3, $errors);
-    $this->assertEquals('"\'Unrstricted - General\' is not a valid option for field ' . wmf_civicrm_get_custom_field_name('Fund') . '",B15_0601_enlvroskLVROSK_dsk_lg_nag_sd.no-LP.cc,C15_mlWW_mob_lw_FR,sitenotice,10563,Engage,24,"USD 24.00",5/9/2015,5/9/2015,Cash,1,"Unrstricted - General","Corporate Gift","Carl TEST Perry",Roombo,"53 International Circle",Nowe,Poland,,cperry0@salon.com,,12/21/2014,,,,,,,
+    $this->assertEquals('"\'Unrstricted - General\' is not a valid option for field ' . wmf_civicrm_get_custom_field_name('Fund') . '",B15_0601_enlvroskLVROSK_dsk_lg_nag_sd.no-LP.cc,C15_mlWW_mob_lw_FR,sitenotice,10563,Engage,24,"USD 24.00",5/9/2015,5/9/2015,Check,1,"Unrstricted - General","Corporate Gift","Carl TEST Perry",Roombo,"53 International Circle",Nowe,Poland,,cperry0@salon.com,,12/21/2014,,,,,,,
 ', $errors[1]);
 
     $skippedURI = str_replace('.csv', '_skipped.' . $user->uid . '.csv', $fileUri);
