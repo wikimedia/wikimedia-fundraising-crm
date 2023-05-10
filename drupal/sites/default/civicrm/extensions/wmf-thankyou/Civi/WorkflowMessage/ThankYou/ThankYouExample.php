@@ -21,9 +21,23 @@ class ThankYouExample extends WorkflowMessageExample {
     foreach ($workflows as $workflow => $label) {
       yield [
         'name' => 'workflow/' . $workflow . '/' . $this->getExampleName(),
-        'title' => $label,
+        'title' => $label . ' (USD)',
         'tags' => ['preview'],
         'workflow' => $workflow,
+      ];
+      yield [
+        'name' => 'workflow/' . $workflow . '/EUR',
+        'title' => $label  . ' (EUR)',
+        'tags' => ['preview'],
+        'workflow' => $workflow,
+        'example' => 'EUR',
+      ];
+      yield [
+        'name' => 'workflow/' . $workflow . '/CAD',
+        'title' => $label  . ' (CAD)',
+        'tags' => ['preview'],
+        'workflow' => $workflow,
+        'example' => 'CAD',
       ];
       yield [
         'name' => 'workflow/' . $workflow . '/organization',
@@ -102,7 +116,7 @@ class ThankYouExample extends WorkflowMessageExample {
   /**
    * Add relevant example data.
    *
-   * @param \CRM_Contribute_WorkflowMessage_ThankYou|\CRM_Contribute_WorkflowMessage_EndowmentThankYou|\CRM_Contribute_WorkflowMessage_MonthlyConvert $messageTemplate
+   * @param \Civi\WorkflowMessage\ThankYou|\Civi\WorkflowMessage\EndowmentThankYou|\Civi\WorkflowMessage\MonthlyConvert $messageTemplate
    *
    * @throws \CRM_Core_Exception
    */
@@ -114,7 +128,7 @@ class ThankYouExample extends WorkflowMessageExample {
     else {
       $messageTemplate->setContact(DemoData::example('entity/Contact/Barb'));
     }
-    $messageTemplate->setCurrency('EUR');
+    $messageTemplate->setCurrency(in_array($example, ['CAD', 'EUR'], TRUE) ? $example : 'USD');
     $messageTemplate->setAmount(4000.99);
     $messageTemplate->setTransactionID('CNTCT-567');
     $messageTemplate->setReceiveDate(date('Y-m-d'), strtotime('One month ago'));
