@@ -4,12 +4,9 @@
 namespace Civi\Api4\Action\ThankYou;
 
 use Civi;
-use Civi\Api4\Exception\EOYEmail\NoContributionException;
-use Civi\Api4\Exception\EOYEmail\NoEmailException;
-use Civi\Api4\Exception\EOYEmail\ParseException;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use wmf_communication\Templating;
+
 /**
  * Class Render.
  *
