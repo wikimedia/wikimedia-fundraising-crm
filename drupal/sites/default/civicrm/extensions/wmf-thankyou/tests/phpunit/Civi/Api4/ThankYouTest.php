@@ -110,40 +110,6 @@ class ThankYouTest extends TestCase {
   }
 
   /**
-   * @throws \CiviCRM_API3_Exception
-   */
-  public function testGetEntityTagDetail(): void {
-    unset (Civi::$statics['wmf_civicrm']['tags']);
-    $tag1 = $this->ensureTagExists('smurfy');
-    $tag2 = $this->ensureTagExists('smurfalicious');
-
-    $this->callAPISuccess(
-      'EntityTag',
-      'create',
-      [
-        'entity_id' => $this->getContributionID(),
-        'entity_table' => 'civicrm_contribution',
-        'tag_id' => 'smurfy',
-      ]
-    );
-    $this->callAPISuccess(
-      'EntityTag',
-      'create',
-      [
-        'entity_id' => $this->getContributionID(),
-        'entity_table' => 'civicrm_contribution',
-        'tag_id' => 'smurfalicious',
-      ]
-    );
-
-    $smurfiestTags = wmf_civicrm_get_tag_names($this->getContributionID());
-    $this->assertEquals(['smurfy', 'smurfalicious'], $smurfiestTags);
-
-    $this->callAPISuccess('Tag', 'delete', ['id' => $tag1]);
-    $this->callAPISuccess('Tag', 'delete', ['id' => $tag2]);
-  }
-
-  /**
    * Get the contribution id, creating it if need be.
    *
    * @return int
@@ -300,6 +266,32 @@ class ThankYouTest extends TestCase {
   }
 
   /**
+   * Test that contribution tags are rendered into smarty variables.@options
+   *
+   * ie isRecurringRestarted and isDelayed.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRenderContributionTags(): void {
+    $this->createContribution([], 0);
+    EntityTag::create(FALSE)->setValues([
+      'entity_id' => $this->ids['Contribution'][0],
+      'tag_id:name' => 'RecurringRestarted',
+      'entity_table' => 'civicrm_contribution',
+    ])->execute();
+    $result = $this->renderMessage();
+    $this->assertStringContainsString('We recently resolved a small technical issue', $result['html']);
+
+    EntityTag::create(FALSE)->setValues([
+      'entity_id' => $this->ids['Contribution'][0],
+      'tag_id:name' => 'UnrecordedCharge',
+      'entity_table' => 'civicrm_contribution',
+    ])->execute();
+    $result = $this->renderMessage();
+    $this->assertStringContainsString('technical issue which caused a small number of donors', $result['html']);
+  }
+
+  /**
    * Test that Stock gift thank you mails use the stock value amount
    *
    * @throws \CiviCRM_API3_Exception
@@ -444,6 +436,7 @@ class ThankYouTest extends TestCase {
  donation is one more reason to celebrate.', $result['subject']);
     $this->assertStringContainsString('Dear Mickey,', $result['html']);
     $this->assertStringContainsString('Your donation, number 123', $result['html']);
+    $this->assertStringNotContainsString('We recently resolved a small technical issue', $result['html']);
     $this->assertCurrencyString($result['html'], $firstCurrencyString, $secondCurrencyString);
     return $result;
   }

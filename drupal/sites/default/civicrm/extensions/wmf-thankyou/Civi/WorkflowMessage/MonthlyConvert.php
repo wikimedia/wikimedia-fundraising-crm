@@ -11,4 +11,26 @@ class MonthlyConvert extends ThankYou {
 
   public const WORKFLOW = 'monthly_convert';
 
+  /**
+   * Has the contribution been tagged as a re-started recurring.
+   *
+   * This is never true for monthly convert - saves a db lookup.
+   *
+   * @return bool
+   */
+  public function getIsRecurringRestarted(): bool {
+    return FALSE;
+  }
+
+  /**
+   * Has the contribution been tagged as a re-started recurring.
+   *
+   * This is never true for monthly convert - saves a db lookup.
+   *
+   * @return bool
+   */
+  public function getIsDelayed(): bool {
+    return FALSE;
+  }
+
 }

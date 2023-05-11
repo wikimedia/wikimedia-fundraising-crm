@@ -414,7 +414,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           'contribution_id' => $ctRecord['contribution_id'],
           // used for the bounce header
           'unsubscribe_link' => build_unsub_link($ctRecord['contribution_id'], $contact['email'], $locale),
-          'contribution_tags' => '',
         ];
 
         $success = thank_you_send_mail($params);

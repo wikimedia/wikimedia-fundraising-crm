@@ -424,7 +424,6 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE) {
     'contribution_id' => $contribution_id,
     // used for the bounce header
     'unsubscribe_link' => build_unsub_link($contribution_id, $mailingData['email'], $mw_locale),
-    'contribution_tags' => wmf_civicrm_get_tag_names($contribution_id),
     'template' => $template,
     'gift_source' => $mailingData['gift_source'],
     'stock_value' => $mailingData['stock_value'],

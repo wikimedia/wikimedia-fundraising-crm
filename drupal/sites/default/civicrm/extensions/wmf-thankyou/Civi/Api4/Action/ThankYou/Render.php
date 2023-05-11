@@ -17,6 +17,7 @@ use Civi\Api4\Generic\Result;
  * @method string getTemplateName() Get the name of the template.
  * @method $this setTemplateName(string $templateName) Get the name of the template.
  * @method string getLanguage() Get the language to render in.
+ * @method $this setContributionID(int $contributionID)
  * @method $this setLanguage(string $language) Set the language to render in.
  * @method $this setReceiveDate(string $receiveDate) Set the receiveData to UTC contribution received date.
  */
@@ -40,6 +41,11 @@ class Render extends AbstractAction {
   protected $language;
 
   /**
+   * @var int
+   */
+  protected $contributionID;
+
+  /**
    * The name of the selected template.
    *
    * Options are thank_you, endowment_thank_you, monthly_convert.
@@ -47,6 +53,10 @@ class Render extends AbstractAction {
    * @var string
    */
   protected $templateName;
+
+  public function getContributionID() {
+    return $this->contributionID ?: $this->getTemplateParameters()['contribution_id'];
+  }
 
   /**
    * The contribution receive date.
@@ -96,8 +106,19 @@ class Render extends AbstractAction {
     $templateParams['receive_date'] = $this->getReceiveDate();
     $templateParams['gift_source'] = $templateParams['gift_source'] ?? NULL;
     $templateParams['stock_value'] = $templateParams['stock_value'] ?? NULL;
-    $templateParams['isRecurringRestarted'] = !empty($templateParams['contribution_tags']) && in_array('RecurringRestarted', $templateParams['contribution_tags'], FALSE);
-    $templateParams['isDelayed'] = !empty($templateParams['contribution_tags']) && in_array('UnrecordedCharge', $templateParams['contribution_tags'], FALSE);
+
+    // @todo - this handling for tags can be removed once we switch to allowing
+    // the WorkFlow message to render using it's own method.
+    // It is here as a temporary refactor so we can add the test & remove from the
+    // other places.
+    $tags = \Civi\Api4\EntityTag::get(FALSE)
+      ->addWhere('entity_table', '=', 'civicrm_contribution')
+      ->addWhere('entity_id', '=', $this->getContributionID())
+      ->addWhere('tag_id:name', 'IN', ['RecurringRestarted', 'UnrecordedCharge'])
+      ->addSelect('tag_id:name')
+      ->execute()->indexBy('tag_id:name');
+    $templateParams['isRecurringRestarted'] = !empty($tags['RecurringRestarted']);
+    $templateParams['isDelayed'] = !empty($tags['UnrecordedCharge']);
 
     if ($templateParams['stock_value']) {
       $templateParams['stock_value'] = Civi::format()

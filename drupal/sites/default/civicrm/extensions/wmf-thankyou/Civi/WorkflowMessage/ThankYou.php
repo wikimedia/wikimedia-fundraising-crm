@@ -4,6 +4,7 @@ namespace Civi\WorkflowMessage;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\EntityTag;
 use Civi\Api4\Exception\EOYEmail\NoContributionException;
 
 /**
@@ -22,9 +23,7 @@ use Civi\Api4\Exception\EOYEmail\NoContributionException;
  * @method $this setIsRecurring(bool $isRecurring)
  * @method bool getIsRecurring()
  * @method $this setIsRecurringRestarted(bool $isRecurringRestarted)
- * @method bool getIsRecurringRestarted()
  * @method $this setIsDelayed(bool $isDelayed)
- * @method bool getIsDelayed()
  * @method $this setStockValue(int|float|string $stockValue)
  * @method $this setDescriptionOfStock(string $descriptionOfStock)
  * @method string getDescriptionOfStock()
@@ -146,11 +145,6 @@ class ThankYou extends GenericWorkflowMessage {
   public $isRecurring = FALSE;
 
   /**
-   * @var array
-   */
-  public $contribution_tags;
-
-  /**
    * @var string
    *
    * @scope tplParams as transaction_id
@@ -177,8 +171,83 @@ class ThankYou extends GenericWorkflowMessage {
 
   /**
    * @var string
+   *
+   * @scope tplParams as unsubscribe_link
    */
-  public $unsubscribe_link;
+  public $unsubscribeLink;
+
+  /**
+   * Set contribution object.
+   *
+   * @param array $contribution
+   *
+   * @return $this
+   */
+  public function setContribution(array $contribution): self {
+    $this->contribution = $contribution;
+    if (!empty($contribution['id'])) {
+      $this->contributionID = $contribution['id'];
+    }
+    return $this;
+  }
+
+  /**
+   * Set contact object.
+   *
+   * @param array $contact
+   *
+   * @return $this
+   */
+  public function setContact(array $contact): self {
+    $this->contact = $contact;
+    if (!empty($contact['id'])) {
+      $this->contactId = $contact['id'];
+    }
+    if (!empty($contact['contact_type'])) {
+      $this->contactType = $contact['contact_type'];
+    }
+    return $this;
+  }
+
+  /**
+   * @var array
+   */
+  protected $tags;
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  protected function getTags() : array {
+   if ($this->tags === NULL) {
+     $this->tags = (array) EntityTag::get(FALSE)
+       ->addWhere('entity_table', '=', 'civicrm_contribution')
+       ->addWhere('entity_id', '=', $this->getContributionID())
+       ->addWhere('tag_id:name', 'IN', ['RecurringRestarted', 'UnrecordedCharge'])
+       ->addSelect('tag_id:name')
+       ->execute()->indexBy('tag_id:name');
+   }
+   return $this->tags;
+  }
+
+  /**
+   * Has the contribution been tagged as a re-started recurring.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function getIsRecurringRestarted(): bool {
+    return $this->isRecurringRestarted ?? !empty($this->getTags()['RecurringRestarted']);
+  }
+
+  /**
+   * Has the contribution been tagged as a re-started recurring.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function getIsDelayed(): bool {
+    return $this->isDelayed ?? !empty($this->getTags()['UnrecordedCharge']);
+  }
 
   /**
    * Get the transaction ID.
