@@ -1,76 +1,84 @@
-<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Te enviamos un recibo y un sincero agradecimiento.</span>
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Wikipedia siempre te pertenecerá</span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
 {if $first_name}
-<p>¡Hola, {$first_name}!
+<p>¡Hola {$first_name}!
 </p>{else}<p>
 Estimado/a donante:</p>
 {/if}
 
 
+
 {if $recurring}
 <p>
-Me complace ser quien te agradece la donación mensual de {$amount} en apoyo a Wikipedia. Quiero aprovechar esta oportunidad para reconocer tu generosidad y excepcional voluntad de participar en la creación de un futuro mejor para el mundo.
+Gracias por comprometerte a donar {if $currency === 'USD'}{$currency} {/if}{$amount} para apoyar a Wikipedia cada mes – nos complace enormemente que estés tan comprometido con la causa. Con tu aporte estás ayudando a crear un mundo en el que el conocimiento sea libre para todos.
 </p>
 
 <p>
-Tu contribución mensual llevará a Wikipedia lejos y nos ayudará a planificar con anticipación. Una vez al mes, la Wikimedia Foundation hará un cargo por donación de {$amount} a tu cuenta. <b>Cada enero, te enviaremos un resumen de tus contribuciones correspondientes al año anterior</b>. Si por algún motivo deseas interrumpir tus donaciones, sigue estas <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">sencillas instrucciones de cancelación</a>.
+Realizaremos un cobro por el monto de tu donación una vez por mes hasta que nos solicites lo contrario. Cada enero, recibirás un resumen de tus donativos correspondientes al año anterior. Si por algún motivo deseas dejar de donar, sigue estas <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">sencillas instrucciones de cancelación</a>.
+</p>
+
+<p>
+Los donantes recurrentes como tú son el motor detrás de nuestro movimiento colectivo. Tú nos ayudas a planificar con anticipación, establecer metas más ambiciosas y ampliar nuestros horizontes, porque sabemos que tenemos una base de apoyo con la que contar.
+</p>
+
+<p>
+Cada donación nos ayuda a mejorar el acceso de las personas a información precisa y confiable, especialmente en un mundo que cambia rápidamente. Estamos decididos a extender este acceso en la medida de lo posible para asegurarnos de que, independientemente de dónde nazcas o dónde vivas, la capacidad de acceder al conocimiento libre siempre esté a tu alcance. Espero que continúes apoyándonos en la construcción de un futuro donde Wikipedia exista en todas partes, con personas de todo el mundo que contribuyan a la suma de todo el conocimiento.
 </p>
 
 {else}
 
 <p>
-Me complace ser quien te agradece la donación unica de {$amount} que hiciste en apoyo a Wikipedia. Quiero aprovechar esta oportunidad para reconocer tu generosidad y excepcional voluntad de participar en la creación de un futuro mejor para el mundo.
+Muchas gracias por tu donación de {if $currency === 'USD'}{$currency} {/if}{$amount} para apoyar a Wikipedia y a un mundo donde el conocimiento sea gratuito para todos.
 </p>
+
+<p>
+Cada donación nos ayuda a mejorar el acceso de las personas a información precisa y confiable, especialmente en un mundo que cambia rápidamente. Estoy realmente agradecida por tu apoyo para permitir que miles de millones de personas experimenten el regalo del conocimiento a través de Wikipedia.
+</p>
+
+<p>
+Estamos decididos a extender este acceso en la medida de lo posible para asegurarnos de que, independientemente de dónde nazcas o dónde vivas, la capacidad de acceder al conocimiento libre siempre esté a tu alcance. Espero que continúes apoyándonos en la construcción de un futuro donde Wikipedia exista en todas partes, con personas de todo el mundo que contribuyan a la suma de todo el conocimiento.
+</p>
+
 {/if}
 
 {if $isRecurringRestarted}
-<p>Acabamos de resolver un problema técnico menor que interrumpió algunas donaciones mensuales. Se ha restablecido el sistema de donaciones. A partir de ahora se procesarán con normalidad. No te cobraremos por los meses que omitimos. Gracias por tu paciencia y tu apoyo. Si tienes alguna pregunta envíanos un correo a donate@wikimedia.org.</p>
+<p>Acabamos de resolver un pequeño problema técnico que ha interrumpido algunas donaciones periódicas mensuales. Hemos rehabilitado tu donación periódica, que se volverá a procesar con normalidad de ahora en adelante. No te cobraremos los meses que se han omitido. Agradecemos tu paciencia y tu colaboración. Si tienes alguna pregunta, no dudes en enviarnos un correo electrónico a donate@wikimedia.org.</p>
 {/if}
 
 {if $isDelayed}
-<p>Acabamos de resolver un problema técnico que hizo que una pequeña cantidad de donantes no recibiera una confirmación de su donación. Acepta este correo electrónico como agradecimiento por tu donación del {$receive_date}. Agradecemos enormemente tu paciencia y tu apoyo. Si tienes alguna pregunta envíanos un correo a donate@wikimedia.org.</p>
+<p>Acabamos de resolver un problema técnico que causó la falta de confirmación de donaciones a un reducido número de donantes. Acepta este correo como agradecimiento por tu donación del {$receive_date}. Agradecemos tu paciencia y tu colaboración. Si tienes alguna pregunta, no dudes en enviarnos un correo electrónico a donate@wikimedia.org.</p>
 {/if}
 
 <p>
-Fundé Wikipedia hace 20 años. Desde entonces, nuestra querida enciclopedia ha crecido mucho, atravesando buenos y malos momentos, y hoy, más que nunca, cumple su verdadero propósito. Ayuda a millones de personas a estudiar, descubrir, explorar e investigar.
+Gracias nuevamente por apoyar esta extraordinaria misión, es un privilegio para mí ser parte del proyecto colaborativo más grande de la historia humana. Wikipedia siempre te pertenecerá.
 </p>
 
 <p>
-Cada día, Wikipedia ofrece a los lectores una nueva oportunidad para adquirir el conocimiento que les corresponde legítimamente, sin importar cuáles sean sus circunstancias.
+Gracias.
+<br>
+Maryana
+<br>
+<br>
+Maryana Iskander
+<br>
+Directora general de Wikimedia Foundation
 </p>
 
-<p>
-Esto es posible gracias a ti. Tu apoyo permite que se realicen ediciones, que los artículos lleguen a nuevos lectores y que nuestra organización sin fines de lucro tenga los medios para mantenerse fiel a su misión, incluso cuando Wikipedia se ha convertido en uno de los sitios web más visitados del mundo.
-</p>
-
-<p>
-Quizás no tengamos la oportunidad de apagar juntos las velas, pero mientras celebramos el <a href= "https://wikimediafoundation.org/es/wikipedia20/">vigésimo aniversario de Wikipedia</a> a lo largo de todo el año, ten la certeza de que estarás en el corazón de todos los que formamos parte de la Wikimedia Foundation.
-</p>
-
-<p>Gracias por todo,</p>
-<p>
-Jimmy Wales<br>
-Fundador de Wikipedia
-</p>
-
-<p>Muchos empleadores tendrán la generosidad de complementar los aportes de sus empleados; habla con tu empleador para saber si tiene un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts">programa corporativo de donativos complementarios.</a>
+<p>Si eres empleado, consulta con tu empleador para ver si hay algún <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts/es">programa de iguala de donaciones corporativo</a>. En un acto de generosidad, muchos empleadores harán una contribución igual a la de sus empleados.
 </p>
 
 {if $gift_source != "Donor Advised Fund"}
 
-<p>Para tus registros: tu donación número {$transaction_id}, del {$receive_date}, fue de {$amount}.
+<p>Para tu registro personal: tu donación número {$transaction_id}, del {$receive_date}, fue de {if $currency === 'USD'}{$currency} {/if}{$amount} ({$currency}).
 </p>
 
-<p>Esta carta sirve como registro de tu donación. No se entregaron mercancías ni servicios, de forma total ni parcial, a cambio de esta donación. Nuestra dirección postal es: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, EE. UU. Número de exención fiscal de los EE. UU.: 20-0049703
+<p>Esta carta es constancia de tu donación. No se entregaron mercancías ni servicios, de forma total ni parcial, a cambio de su aporte. Nuestra dirección postal es: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, EE. UU. Número de exención fiscal de los EE. UU.: 20-0049703
 </p>
 
 {/if}
 
-<p>Si no deseas recibir ningún tipo de correo electrónico sobre recaudación de fondos de la Fundación Wikimedia en el futuro, puedes <a href="{$unsubscribe_link}">darte de baja ahora</a>. Ten en cuenta que seguiremos enviándote recibos como este por futuras donaciones.
+<p>Si no deseas recibir ningún tipo de correo electrónico sobre recaudación de fondos de Wikimedia Foundation en el futuro, puedes <a href="{$unsubscribe_link}">darte de baja ahora</a>. Ten en cuenta que seguiremos enviándote recibos, como este, por futuras donaciones.
 </p>
 
-<!-- TI_BEGIN["version":1,"name":"thank_you.es-419.html","revision":20210319]TI_END -->
-
-
-
+<!-- TI_BEGIN["version":1,"name":"thank_you.es.html","revision":20210510]TI_END -->
