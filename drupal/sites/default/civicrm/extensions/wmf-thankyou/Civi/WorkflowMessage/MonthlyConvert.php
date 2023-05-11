@@ -33,4 +33,15 @@ class MonthlyConvert extends ThankYou {
     return FALSE;
   }
 
+  /**
+   * Day of month, translated.
+   *
+   * e.g 25th
+   *
+   * @var string
+   *
+   * @scope tplParams as day_of_month
+   */
+  public $dayOfMonth;
+
 }

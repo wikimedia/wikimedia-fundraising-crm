@@ -482,6 +482,9 @@ function thank_you_update_ty_date($contribution) {
  * @throws \Exception
  */
 function thank_you_send_mail($params) {
+  $templateName = $params['template'];
+  $displayName = $params['name'];
+  unset($params['template'], $params['name']);
   $require_params = [
     'amount',
     'contribution_id',
@@ -506,13 +509,12 @@ function thank_you_send_mail($params) {
     throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
   }
   if (empty($params['language'])) {
-    $params['language'] = Civi\WMFHelpers\Language::getLanguageCode($params['locale'] ?? 'en');
+    $params['language'] = Civi\WMFHelpers\Language::getLanguageCode($params['locale'] ?? 'en_US');
   }
   $rendered = ThankYou::render(FALSE)
     // @todo switch to passing in 'raw' contact language.
     ->setLanguage($params['language'])
-    ->setTemplateName($params['template'])
-    ->setReceiveDate($params['receive_date'])
+    ->setTemplateName($templateName)
     ->setTemplateParameters($params)
     ->execute()->first();
   $html = $rendered['html'];
@@ -536,9 +538,9 @@ function thank_you_send_mail($params) {
   }
 
   $email = [
-    'from_name' => From::getFromName($params['template']),
-    'from_address' => From::getFromAddress($params['template']),
-    'to_name' => $params['name'],
+    'from_name' => From::getFromName($templateName),
+    'from_address' => From::getFromAddress($templateName),
+    'to_name' => $displayName,
     'to_address' => $params['recipient_address'],
     'locale' => $params['language'],
     'html' => $html,

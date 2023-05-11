@@ -123,7 +123,7 @@ class ThankYouTest extends TestCase {
 
   /**
    * @throws \Civi\WMFException\WMFException
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testSendThankYou(): void {
     variable_set('thank_you_add_civimail_records', 'false');
@@ -395,7 +395,6 @@ class ThankYouTest extends TestCase {
     $contributionID = $this->getContributionID();
     $result = ThankYou::render(FALSE)
       ->setLanguage($language)
-      ->setReceiveDate('2022-08-09')
       ->setTemplateParameters(array_merge([
         'first_name' => 'Mickey',
         'amount' => 10,
@@ -405,6 +404,7 @@ class ThankYouTest extends TestCase {
         'recurring' => FALSE,
         'transaction_id' => 123,
         'unsubscribe_link' => '',
+        'receive_date' => '2022-08-09',
         'contact_id' =>  $this->ids['Contact'][0],
         'contribution_id' => $contributionID,
       ], $parameters))
@@ -432,8 +432,7 @@ class ThankYouTest extends TestCase {
    */
   protected function renderEnglishVariant(?string $language, string $currency, string $firstCurrencyString, string $secondCurrencyString): ?array {
     $result = $this->renderMessage($language, ['currency' => $currency]);
-    $this->assertEquals('Mickey, your
- donation is one more reason to celebrate.', $result['subject']);
+    $this->assertEquals('Mickey, your  donation is one more reason to celebrate.', $result['subject']);
     $this->assertStringContainsString('Dear Mickey,', $result['html']);
     $this->assertStringContainsString('Your donation, number 123', $result['html']);
     $this->assertStringNotContainsString('We recently resolved a small technical issue', $result['html']);

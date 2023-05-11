@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\ThankYou;
 use CRM_WmfThankyou_ExtensionUtil as E;
 
 /**
