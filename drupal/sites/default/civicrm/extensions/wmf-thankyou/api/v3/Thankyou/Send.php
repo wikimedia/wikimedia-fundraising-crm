@@ -33,7 +33,7 @@ function _civicrm_api3_thankyou_send_spec(&$spec) {
  */
 function civicrm_api3_thankyou_send($params) {
 
-  if (thank_you_for_contribution($params['contribution_id'], TRUE) === FALSE) {
+  if (thank_you_for_contribution($params['contribution_id'], TRUE, $params['template'] ?? NULL) === FALSE) {
     throw new API_Exception('Thank you failed.');
   }
   $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $params['contribution_id']]);
