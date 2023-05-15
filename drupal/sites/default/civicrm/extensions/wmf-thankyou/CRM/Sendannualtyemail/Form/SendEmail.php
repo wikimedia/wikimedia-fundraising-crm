@@ -52,10 +52,8 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
 
   /**
    * Set the rendered message property, if possible.
-   *
-   * @throws \CRM_Core_Exception
    */
-  protected function setMessage() {
+  protected function setMessage(): void {
     $this->assign('isEmailable', TRUE);
     try {
       $this->message = EOYEmail::render()
@@ -74,11 +72,7 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
       $this->assign('isEmailable', FALSE);
       $this->assign('errorText', ts('This contact does not have a usable email - no end of year letter can be sent.'));
     }
-    // In theory the api layer should throw an API_Exception.
-    // However, for some reason, a CRM_Core_Exception is bubbling up
-    // when there are no contributions. I feel like the api should
-    // convert this but ??? easy to catch here.
-    catch (API_Exception|CRM_Core_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       // No contributions for the contact last year - don't set the default
       // or do any pre-rendering.
     }

@@ -2,38 +2,49 @@
 
 namespace Civi\WorkflowMessage;
 
+use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
-use Civi\Api4\ContributionRecur;
-use Civi\Api4\Exception\EOYEmail\NoContributionException;
+use Civi\Api4\EntityTag;
 
 /**
  * This is the template class for previewing WMF end of year thank you emails.
  *
  * @support template-only
  *
- * @method array getContact()
- * @method $this setContact(array $contact)
- * @method $this setContactID(int $contactID)
+ * @method string getContactType()
+ * @method $this setContactType(string $contactType)
+ * @method $this setContributionID(int $contributionID)
+ * @method int getContributionID()
+ * @method string getEmail()
+ * @method $this setShortLocale(string $shortLocale)
+ * @method $this setEmail(string $email)
  * @method $this setAmount(string|int|float $amount)
  * @method $this setCurrency(string $currency)
  * @method string getCurrency()
- * @method $this setReceiveDate(string $receiveDate)
  * @method string getReceiveDate()
  * @method $this setIsRecurring(bool $isRecurring)
  * @method bool getIsRecurring()
  * @method $this setIsRecurringRestarted(bool $isRecurringRestarted)
- * @method bool getIsRecurringRestarted()
  * @method $this setIsDelayed(bool $isDelayed)
- * @method bool getIsDelayed()
  * @method $this setStockValue(int|float|string $stockValue)
  * @method $this setDescriptionOfStock(string $descriptionOfStock)
  * @method string getDescriptionOfStock()
  * @method $this setGiftSource(string $giftSource)
  * @method string getGiftSource()
  * @method $this setTransactionID(string $transactionID)
+ * @method $this setUnsubscribeLink(string $unsubscribeLink)
+ * @method $this getEmailGreetingDisplay(string $emailGreetingDisplay)
+ * @method $this setEmailGreetingDisplay(string $emailGreetingDisplay)
  */
 class ThankYou extends GenericWorkflowMessage {
   public const WORKFLOW = 'thank_you';
+
+  /**
+   * Contribution ID.
+   *
+   * @var int
+   */
+  public $contributionID;
 
   /**
    * Amount of contribution.
@@ -83,6 +94,11 @@ class ThankYou extends GenericWorkflowMessage {
   public $lastName;
 
   /**
+   * @var string
+   */
+  public $email;
+
+  /**
    * Contact Type.
    *
    * @var string
@@ -90,6 +106,11 @@ class ThankYou extends GenericWorkflowMessage {
    * @scope tplParams as contact_type
    */
   public $contactType;
+
+  /**
+   * @var array
+   */
+  public $contribution;
 
   /**
    * Email greeting display.
@@ -101,13 +122,20 @@ class ThankYou extends GenericWorkflowMessage {
   public $emailGreetingDisplay;
 
   /**
+   * @var string
+   *
+   * @scope tplParams as organization_name
+   */
+  public $organizationName;
+
+  /**
    * Locale that can be used in MediaWiki URLS (eg. en or fr-FR).
    *
    * @var string
    *
-   *  @scope tplParams
+   * @scope tplParams as locale
    */
-  public $locale;
+  public $shortLocale;
 
   /**
    * Value of in kind stock donation.
@@ -146,11 +174,6 @@ class ThankYou extends GenericWorkflowMessage {
   public $isRecurring = FALSE;
 
   /**
-   * @var array
-   */
-  public $contribution_tags;
-
-  /**
    * @var string
    *
    * @scope tplParams as transaction_id
@@ -177,8 +200,166 @@ class ThankYou extends GenericWorkflowMessage {
 
   /**
    * @var string
+   *
+   * @scope tplParams as unsubscribe_link
    */
-  public $unsubscribe_link;
+  public $unsubscribeLink;
+
+  /**
+   * @var float
+   */
+  private $totalAmount;
+
+  /**
+   * Set contribution object.
+   *
+   * @param array $contribution
+   *
+   * @return $this
+   */
+  public function setContribution(array $contribution): self {
+    $this->contribution = $contribution;
+    if (!empty($contribution['id'])) {
+      $this->contributionID = $contribution['id'];
+      foreach ($this->getContributionParameters() as $key => $property) {
+        if (!empty($contribution[$key]) && empty($this->$property)) {
+          $method = 'set' . ucfirst($property);
+          $this->$method($contribution[$key]);
+        }
+      }
+    }
+    return $this;
+  }
+
+  public function setReceiveDate($receiveDate): self {
+    // Format the datestamp
+    $date = strtotime($receiveDate);
+
+    // For tax reasons, any donation made in the US on Jan 1 UTC should have a time string in HST.
+    // So do 'em all that way.
+    $this->receiveDate =  strftime('%Y-%m-%d', $date - (60 * 60 * 10));
+    return $this;
+  }
+
+  /**
+   * Get the relevant contribution, loading it as required.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function getContribution(): array {
+    if (!$this->contribution) {
+      $this->setContribution(Contribution::get(FALSE)
+        ->setSelect(array_keys($this->getContributionParameters()))
+        ->addWhere('id', '=', $this->getContributionID())
+        ->execute()->first());
+    }
+    return $this->contribution;
+  }
+
+  private function getContributionParameters(): array {
+    return [
+      'total_amount' => 'totalAmount',
+      'id' => 'contributionID',
+      'contact_id' => 'contactId',
+      'receive_date' => 'receiveDate',
+      'trxn_id' => 'transactionID',
+      'currency' => 'currency',
+    ];
+  }
+
+  /**
+   * Get the relevant contribution, loading it as required.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function getContact(): array {
+    if (!$this->contact) {
+      $this->setContact(Contact::get(FALSE)
+        ->setSelect(array_keys($this->getContactParameters()))
+        ->addWhere('id', '=', $this->getContactId())
+        ->execute()->first());
+    }
+    return $this->contact;
+  }
+
+  /**
+   * Get the contact parameters to be used.
+   *
+   * @return string[]
+   */
+  private function getContactParameters(): array {
+    return [
+      'contact_type' => 'contactType',
+      'first_name' => 'firstName',
+      'last_name' => 'lastName',
+      'email_greeting_display' => 'emailGreetingDisplay',
+      'email_primary.email' => 'email',
+      'preferred_language' => 'locale',
+      'organization_name' => 'organizationName',
+    ];
+  }
+
+  /**
+   * Set contact object.
+   *
+   * @param array $contact
+   *
+   * @return $this
+   */
+  public function setContact(array $contact): self {
+    $this->contact = $contact;
+    if (!empty($contact['id'])) {
+      $this->contactId = $contact['id'];
+    }
+    foreach ($this->getContactParameters() as $key => $property) {
+      if (!empty($contact[$key]) && empty($this->$property)) {
+        $this->$property = $contact[$key];
+      }
+    }
+    return $this;
+  }
+
+  /**
+   * @var array
+   */
+  protected $tags;
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  protected function getTags() : array {
+   if ($this->tags === NULL) {
+     $this->tags = (array) EntityTag::get(FALSE)
+       ->addWhere('entity_table', '=', 'civicrm_contribution')
+       ->addWhere('entity_id', '=', $this->getContributionID())
+       ->addWhere('tag_id:name', 'IN', ['RecurringRestarted', 'UnrecordedCharge'])
+       ->addSelect('tag_id:name')
+       ->execute()->indexBy('tag_id:name');
+   }
+   return $this->tags;
+  }
+
+  /**
+   * Has the contribution been tagged as a re-started recurring.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function getIsRecurringRestarted(): bool {
+    return $this->isRecurringRestarted ?? !empty($this->getTags()['RecurringRestarted']);
+  }
+
+  /**
+   * Has the contribution been tagged as a re-started recurring.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function getIsDelayed(): bool {
+    return $this->isDelayed ?? !empty($this->getTags()['UnrecordedCharge']);
+  }
 
   /**
    * Get the transaction ID.
@@ -192,16 +373,36 @@ class ThankYou extends GenericWorkflowMessage {
   }
 
   /**
+   * Get the short locale required for media wiki use - e.g 'en'
+   */
+  public function getShortLocale(): string {
+    return $this->shortLocale ?: substr($this->getLocale(), 0, 2);
+  }
+
+  /**
    * Get amount, this formats if not already formatted.
    *
    * @return string
    * @throws \CRM_Core_Exception
    */
   public function getAmount(): string {
+    if (!$this->amount) {
+      $this->amount = $this->getContribution()['total_amount'];
+    }
     if (!is_numeric($this->amount)) {
       return $this->amount;
     }
     return \Civi::format()->money($this->amount, $this->currency);
+  }
+
+  public function setTotalAmount(float $totalAmount) : self {
+    $this->totalAmount = $totalAmount;
+    if (empty($this->amount)) {
+      // getAmount returns a formatted amount but it can cope with an
+      // unformatted one. We don't want to try to format before currency is set.
+      $this->setAmount($totalAmount);
+    }
+    return $this;
   }
 
   /**
@@ -215,6 +416,26 @@ class ThankYou extends GenericWorkflowMessage {
       return (string) $this->stockValue;
     }
     return \Civi::format()->money($this->stockValue, $this->currency);
+  }
+
+  /**
+   * Get the unsubscribe link.
+   *
+   * Note this is likely to be passed in from thank-you
+   * at the moment but really it is enough to do it here & we can remove
+   * the other function. We might need to set up a WMFWorkflowTrait
+   * to share it though. However, will do that soon...
+   *
+   * @return string
+   */
+  public function getUnsubscribeLink(): string {
+    return $this->unsubscribeLink ?: \Civi::settings()->get('wmf_unsubscribe_url') . '?' . http_build_query([
+      'p' => 'thankyou',
+      'c' => $this->getContributionID(),
+      'e' => $this->getEmail(),
+      'h' => sha1($this->getContributionID() . $this->getEmail() . \CRM_Utils_Constant::value('WMF_UNSUB_SALT')),
+      'uselang' => $this->getShortLocale(),
+    ]);
   }
 
   /**
