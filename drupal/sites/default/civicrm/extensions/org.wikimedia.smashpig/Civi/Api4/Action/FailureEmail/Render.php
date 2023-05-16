@@ -8,6 +8,7 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Email;
 use \Civi\Api4\Message;
+use Civi\Api4\WorkflowMessage;
 
 /**
  * Class Render.
@@ -84,18 +85,17 @@ class Render extends AbstractAction {
       return FALSE;
     }
 
-    $message = Message::render()
-      ->setCheckPermissions(FALSE)
-      ->setEntity('ContributionRecur')
-      ->setEntityIDs([$this->getContributionRecurID()])
+    $rendered = WorkflowMessage::render(FALSE)
       ->setLanguage($email['contact_id.preferred_language'])
-      ->setWorkflowName('recurring_failed_message')
-      ->execute();
+      ->setValues(['contributionRecurID' => $this->getContributionRecurID(), 'contactId' => $this->getContactID()])
+      ->setWorkflow('recurring_failed_message')->execute();
 
-    foreach ($message as $index => $value) {
+    foreach ($rendered as $index => $value) {
       $value['email'] = $email['email'];
       $value['display_name'] = $email['contact_id.display_name'];
       $value['language'] = $email['contact_id.preferred_language'];
+      $value['msg_text'] = $value['html'];
+      $value['msg_subject'] = $value['subject'];
       $result[$index] = $value;
     }
 

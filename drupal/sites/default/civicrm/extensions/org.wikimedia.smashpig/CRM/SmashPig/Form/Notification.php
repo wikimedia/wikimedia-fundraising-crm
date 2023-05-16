@@ -31,10 +31,6 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
       parent::preProcess();
       $this->type = $this->getNotificationType();
       $this->notification = $this->renderNotification($this->type);
-      if (empty($this->notification)) {
-        $this->qaNotification = $this->renderQANotification($this->type);
-        $this->assign( 'qanotification', $this->qaNotification);
-      }
       $this->assign( 'notification', $this->notification);
   }
 
@@ -153,16 +149,6 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
            // assume only one result
           return $results->first();
       }
-  }
-
-  private function renderQANotification( $type ) {
-    if ($type === 'recurringfailure') {
-      $results = \Civi\Api4\FailureEmail::renderqa()
-        ->setContributionRecurID( $this->getEntityId() )
-        ->execute();
-      // assume only one result
-      return $results->first();
-    }
   }
 
   private function getEntityId() {
