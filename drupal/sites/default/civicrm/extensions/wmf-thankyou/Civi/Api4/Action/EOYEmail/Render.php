@@ -9,6 +9,7 @@ use Civi\Api4\Exception\EOYEmail\NoEmailException;
 use Civi\Api4\Exception\EOYEmail\ParseException;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\WorkflowMessage;
 
 /**
  * Class Render.
@@ -120,18 +121,9 @@ class Render extends AbstractAction {
       'contactId' => end($contactDetails['ids']),
       'locale' => $contactDetails['language'],
     ];
-    $templateStrings = Civi\Api4\Message::load(FALSE)
-      ->setLanguage($contactDetails['language'])
-      ->setFallbackLanguage('en_US')
-      ->setWorkflow('eoy_thank_you')->execute()->first();
-    $template = ['workflow' => 'eoy_thank_you'];
-    foreach ($templateStrings as $key => $string) {
-      $template[$key] = $string['string'];
-    }
 
     try {
-      $rendered = Civi\Api4\WorkflowMessage::render(FALSE)
-        ->setMessageTemplate($template)
+      $rendered = WorkflowMessage::render(FALSE)
         ->setValues($template_params)
         ->setLanguage($contactDetails['language'])
         ->setWorkflow('eoy_thank_you')

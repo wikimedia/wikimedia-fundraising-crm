@@ -675,7 +675,7 @@ class EOYEmailTest extends TestCase {
   /**
    * Test the render function falls back to the best language choice.
    *
-   * We should fall back to Spanish for oddballs like 'es_NO' which
+   * We should fall back to Spanish for oddballs like 'es_NZ' which
    * our database delights in having.
    *
    * @throws \API_Exception
@@ -683,18 +683,18 @@ class EOYEmailTest extends TestCase {
   public function testRenderHalfBakedLanguage(): void {
     $this->ids['OptionValue'][] = OptionValue::create(FALSE)->setValues([
       'option_group_id.name' => 'languages',
-      'name' => 'es_NO',
+      'name' => 'es_NZ',
       'value' => 'es',
-      'label' => 'Norwegian Spanish (of course)',
+      'label' => 'Kiwi Spanish (of course)',
     ])->execute()->first()['id'];
     $contactID = $this->addTestContact([
       'first_name' => 'Bob',
-      'preferred_language' => 'es_NO',
+      'preferred_language' => 'es_NZ',
       'email' => 'bob@example.com',
     ])['id'];
     $this->createRecurringContributions($contactID, [['receive_date' => '2018-02-02', 'total_amount' => 50]]);
     $email = $this->send();
-    $this->assertEquals('Un resumen de su apoyo a Wikipedia', $email['subject']);
+    $this->assertEquals('Registro de tu apoyo a Wikipedia', $email['subject']);
     $this->assertStringContainsString('¡Hola, Bob!', $email['html']);
   }
 
