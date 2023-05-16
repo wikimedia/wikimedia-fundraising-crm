@@ -67,9 +67,6 @@
     <testsuite name="matchinggift_tests">
       <directory>drupal/sites/default/civicrm/extensions/matching-gifts/tests/phpunit</directory>
     </testsuite>
-    <testsuite name="civi-data-strings">
-      <directory>drupal/sites/default/civicrm/extensions/civi-data-translate/tests/phpunit</directory>
-    </testsuite>
     <testsuite name="omnimail_tests">
       <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit</directory>
     </testsuite>
