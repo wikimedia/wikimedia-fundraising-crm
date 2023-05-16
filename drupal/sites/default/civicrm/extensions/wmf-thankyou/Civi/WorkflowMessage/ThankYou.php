@@ -252,7 +252,7 @@ class ThankYou extends GenericWorkflowMessage {
       $this->setContribution(Contribution::get(FALSE)
         ->setSelect(array_keys($this->getContributionParameters()))
         ->addWhere('id', '=', $this->getContributionID())
-        ->execute()->first());
+        ->execute()->first() ?? []);
     }
     return $this->contribution;
   }
