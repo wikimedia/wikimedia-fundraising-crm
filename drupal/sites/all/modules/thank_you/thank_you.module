@@ -204,7 +204,7 @@ function thank_you_send_test_form_submit($form_id, $form_values) {
     $params['first_name'] = $params['last_name'] = '';
   }
 
-  $params['locale'] = wmf_common_legacy_locale_civi_to_template($params['locale']);
+  $params['locale'] = strtolower(str_replace( '_', '-', $params['locale']));
   $mw_locale = wmf_common_locale_civi_to_mediawiki($params['locale']);
   $params['unsubscribe_link'] = build_unsub_link(-1, $params['recipient_address'], $mw_locale);
 
@@ -394,8 +394,6 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     $locale = 'en';
   }
   $mw_locale = wmf_common_locale_civi_to_mediawiki($locale);
-
-  $locale = wmf_common_legacy_locale_civi_to_template( $locale );
 
   // Select the email template
   if (!$template) {
