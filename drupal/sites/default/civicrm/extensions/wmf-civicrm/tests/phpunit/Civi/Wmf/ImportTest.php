@@ -15,7 +15,7 @@ use Civi\Test\HookInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
- * FIXME - Add test description.
+ * Import tests for WMF user cases.
  *
  * Tips:
  *  - With HookInterface, you may implement CiviCRM hooks directly in the test
@@ -34,7 +34,15 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
 
   use Test\Api3TestTrait;
 
+  /**
+   * @var array
+   */
   protected $ids = [];
+
+  /**
+   * @var int
+   */
+  protected $userJobID;
 
   /**
    * @return \Civi\Test\CiviEnvBuilder
@@ -84,16 +92,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportOrganizationWithRelated(): void {
-    $this->imitateAdminUser();
-    $data = [
-      'financial_type_id' => 'Engage',
-      'total_amount' => 50,
-      'organization_name' => 'Trading Name',
-      'first_name' => 'Jane',
-      'last_name' => 'Doe',
-      'email' => 'jane@example.com',
-    ];
-    $this->createImportTable($data);
+    $data = $this->setupImport();
 
     $this->ids['Organization'] = Contact::create()->setValues(['contact_type' => 'Organization', 'organization_name' => 'Long legal name', 'nick_name' => 'Trading Name'])->execute()->first()['id'];
     // Create 2 'Jane Doe' contacts - we test it finds the second one, who has an employer relationship.
@@ -127,16 +126,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportOrganizationWithSoftCredit(): void {
-    $this->imitateAdminUser();
-    $data = [
-      'financial_type_id' => 'Engage',
-      'total_amount' => 50,
-      'organization_name' => 'Trading Name',
-      'first_name' => 'Jane',
-      'last_name' => 'Doe',
-      'email' => 'jane@example.com',
-    ];
-    $this->createImportTable($data);
+    $data = $this->setupImport();
 
     $contributionID = $this->createSoftCreditConnectedContacts();
 
@@ -192,16 +182,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportIndividualWithSoftCredit(): void {
-    $this->imitateAdminUser();
-    $data = [
-      'financial_type_id' => 'Engage',
-      'total_amount' => 50,
-      'organization_name' => 'Trading Name',
-      'first_name' => 'Jane',
-      'last_name' => 'Doe',
-      'email' => 'jane@example.com',
-    ];
-    $this->createImportTable($data);
+    $data = $this->setupImport();
 
     $contributionID = $this->createSoftCreditConnectedContacts();
 
@@ -223,6 +204,59 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $relationship = Relationship::get()->addWhere('contact_id_a', '=', $this->ids['Individual'])->execute()->first();
     $this->assertEquals($this->ids['Organization'], $relationship['contact_id_b']);
 
+  }
+
+  /**
+   * Test when there are multiple individual matches.
+   *
+   * If there are 2 employed individuals with the same name then
+   * they need merging so throw an error.
+   *
+   * There is some small chance they are legit - but more likely
+   * this requires a merge so it's probably ok to err on the side of
+   * requiring user resolution.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testImportIndividualFindAmongMany(): void {
+    $organizationID = (int) $this->callAPISuccess('Contact', 'create', [
+      'contact_type' => 'Organization',
+      'organization_name' => 'The Firm',
+    ])['id'];
+    $this->setupImport(['organization_id' => $organizationID]);
+    $this->callAPISuccess('Contact', 'create', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'employer_id' => $organizationID,
+    ]);
+    $individualID2 = $this->callAPISuccess('Contact', 'create', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'employer_id' => $organizationID,
+    ])['id'];
+    $this->createSoftCreditLink($organizationID, $individualID2);
+    $importFields = array_fill_keys([
+      'financial_type_id',
+      'total_amount',
+      '',
+      'first_name',
+      'last_name',
+      'email',
+      'organization_id',
+    ], TRUE);
+    $this->runImport($importFields, 'Individual');
+    $import = Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute()->first();
+    $this->assertEquals('ERROR', $import['_status']);
+    $this->assertStringContainsString('Multiple contact matches', $import['_status_message']);
+
+    // Let's now check that if we change individual2's relationship to be disabled then
+    // then it will select contact 1.
+    Relationship::update()->setValues(['is_active' => FALSE])->addWhere('contact_id_a', '=', $individualID2)->execute();
+    $this->runImport($importFields, 'Individual');
+    $import = Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute()->first();
+    $this->assertEquals('soft_credit_imported', $import['_status']);
   }
 
   private function getSelectQuery($columns): string {
@@ -338,6 +372,15 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
           ];
           break;
 
+        case 'organization_id':
+          $importMappings[] = [
+            'name' => $mainContactType === 'Organization' ? 'id' : 'soft_credit.contact.id',
+            'default_value' => NULL,
+            'column_number' => $index,
+            'entity_data' => $mainContactType === 'Organization' ? [] : ['soft_credit' => ['soft_credit_type_id' => $softCreditTypeID]],
+          ];
+          break;
+
         case 'first_name':
         case 'last_name':
           $importMappings[] = [
@@ -357,7 +400,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
           ];
       }
     }
-    $jobID = UserJob::create()->setValues([
+    $this->userJobID = UserJob::create()->setValues([
       'job_type' => 'contribution_import',
       'status_id' => 1,
       'metadata' => [
@@ -390,7 +433,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
         ],
         'import_mappings' => $importMappings,
     ]])->execute()->first()['id'];
-    Import::import($jobID)->execute();
+    Import::import($this->userJobID)->execute();
   }
 
   /**
@@ -414,19 +457,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ])
       ->execute()
       ->first()['id'];
-
-    // Link the second contact by a pre-existing soft credit.
-    $contributionID = Contribution::create()->setValues([
-      'contact_id' => $this->ids['Organization'],
-      'financial_type_id:name' => 'Donation',
-      'total_amount' => 700,
-    ])->execute()->first()['id'];
-    ContributionSoft::create()->setValues([
-      'contact_id' => $this->ids['Individual'],
-      'contribution_id' => $contributionID,
-      'amount' => 700,
-    ])->execute()->first()['id'];
-    return $contributionID;
+    return $this->createSoftCreditLink($this->ids['Organization'], $this->ids['Individual']);
   }
 
   private function createOrganization(): void {
@@ -437,6 +468,47 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ])
       ->execute()
       ->first()['id'];
+  }
+
+  /**
+   * @return array
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  protected function setupImport($data = []): array {
+    $this->imitateAdminUser();
+    $data = array_merge([
+      'financial_type_id' => 'Engage',
+      'total_amount' => 50,
+      'organization_name' => 'Trading Name',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email' => 'jane@example.com',
+    ], $data);
+    $this->createImportTable($data);
+    return $data;
+  }
+
+  /**
+   * @param $organizationID
+   * @param $individualID
+   *
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  private function createSoftCreditLink($organizationID, $individualID) {
+    // Link the second contact by a pre-existing soft credit.
+    $contributionID = Contribution::create()->setValues([
+      'contact_id' => $organizationID,
+      'financial_type_id:name' => 'Donation',
+      'total_amount' => 700,
+    ])->execute()->first()['id'];
+    ContributionSoft::create()->setValues([
+      'contact_id' => $individualID,
+      'contribution_id' => $contributionID,
+      'amount' => 700,
+    ])->execute()->first()['id'];
+    return $contributionID;
   }
 
 }

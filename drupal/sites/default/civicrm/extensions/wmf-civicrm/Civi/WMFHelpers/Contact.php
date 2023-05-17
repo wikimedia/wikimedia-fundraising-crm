@@ -4,6 +4,7 @@ namespace Civi\WMFHelpers;
 
 use Civi;
 use Civi\Api4\ContributionSoft;
+use Civi\Api4\RelationshipCache;
 
 class Contact {
 
@@ -155,11 +156,18 @@ class Contact {
    * @param string|null $lastName
    * @param string|null $organizationName
    * @param int|null $organizationID Organization ID if known (organizationName not used if so)
+   * @param bool $strictGiftMode Require the user to resolve gift duplicates
+   *   A gift duplicate is where more than one person with the same name details has either
+   *   an employer relationship with the organization or prior matched gifts. In strict mode
+   *   an exception will be thrown in this case, requiring the user to merge. Otherwise
+   *   one is chosen. For Benevity imports we do not use strict mode but for the new imports
+   *   the volume is such that users can reasonably clean this up at this stage.
    *
    * @return false|int
    * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public static function getIndividualID(?string $email, ?string $firstName, ?string $lastName, ?string $organizationName, ?int $organizationID = NULL) {
+  public static function getIndividualID(?string $email, ?string $firstName, ?string $lastName, ?string $organizationName, ?int $organizationID = NULL, $strictGiftMode = TRUE) {
     if (!$email && !$firstName && !$lastName) {
       // We do not have an email or a name, match to our anonymous contact (
       // note address details are discarded in this case).
@@ -197,18 +205,46 @@ class Contact {
         if (($organizationID && $contact['employer_id'] === $organizationID) || self::isContactSoftCreditorOf($organizationID, $contact['id'])) {
           $possibleContacts[] = $contact['id'];
         }
-        if (count($possibleContacts) > 1) {
-          foreach ($possibleContacts as $index => $possibleContactID) {
-            if (
-              $contacts->indexBy('id')[$possibleContactID]['employer_id']
-              !== self::getOrganizationID($organizationName)
-            ) {
+      }
+      if (count($possibleContacts) > 1) {
+        foreach ($possibleContacts as $index => $possibleContactID) {
+          $employerID = $contacts->indexBy('id')[$possibleContactID]['employer_id'];
+          // If they are employed by someone else then they have possibly moved on.
+          if (
+            ($employerID && $employerID !== $organizationID)
+            // If strict gift mode is FALSE then we de-prioritise those without relationships.
+            || (!$strictGiftMode && !$employerID)
+          ) {
+            unset($possibleContacts[$index]);
+          }
+          if (!$employerID && $strictGiftMode) {
+            // In strict mode we decide that a duplicate involving a contact with no
+            // employer, linked by prior soft credits, and a contact with a relationship
+            // still needs the user to resolve (as the obvious solution is to merge them).
+            // However, if the user really thinks they should not be merged
+            // then having a disabled or ended relationship will denote their connection is over.
+            // I can't see this arising but without this there would be no way to 'force'
+            // the import to ignore the no-longer-employed-duplicate-name donor.
+            $priorRelationships = RelationshipCache::get(FALSE)
+              ->addWhere('near_relation', '=', 'Employee of')
+              ->addWhere('is_current', '=', FALSE)
+              ->addWhere('near_contact_id', '=', $possibleContactID)
+              ->addWhere('far_contact_id', '=', $organizationID)
+              ->selectRowCount()
+              ->execute()->rowCount;
+            if ($priorRelationships) {
               unset($possibleContacts[$index]);
             }
+
           }
         }
       }
-      return (count($possibleContacts) === 1) ? reset($possibleContacts) : FALSE;
+      if (!$strictGiftMode || count($possibleContacts) === 1) {
+        return reset($possibleContacts);
+      }
+      if (count($possibleContacts) > 1) {
+        throw new \CRM_Core_Exception('Multiple contact matches with employer connection: ' . implode(',' , $possibleContacts));
+      }
     }
     return FALSE;
   }

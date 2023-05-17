@@ -279,7 +279,7 @@ class BenevityFile extends ChecksFile {
    * @throws \Civi\WMFException\WMFException|\CRM_Core_Exception
    */
   protected function getIndividualID($msg) {
-    return Contact::getIndividualID($msg['email'] ?? NULL, $msg['first_name'] ?? NULL, $msg['last_name'] ?? NULL, $msg['matching_organization_name'] ?? NULL);
+    return Contact::getIndividualID($msg['email'] ?? NULL, $msg['first_name'] ?? NULL, $msg['last_name'] ?? NULL, $msg['matching_organization_name'] ?? NULL, NULL, FALSE);
   }
 
   /**
