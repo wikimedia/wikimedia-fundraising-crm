@@ -270,8 +270,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         break;
 
       case 'subscr_modify':
-        $this->importSubscriptionModification($msg);
-        break;
+        throw new \CRM_Core_Exception('unexpected subscr_modify message');
 
       case 'subscr_failed':
         $this->importSubscriptionPaymentFailed($msg);
@@ -517,42 +516,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
     }
     \Civi::log('wmf')->notice('recurring: Successfully ended subscription for subscriber id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
-  }
-
-  /**
-   * Process a subscription modification
-   *
-   * NOTE: at the moment, we are not accepting modification messages, so this
-   * is currently unused.
-   *
-   * @param array $msg
-   *
-   * @throws \Civi\WMFException\WMFException
-   */
-  protected function importSubscriptionModification($msg) {
-    // ensure we have a record of the subscription
-    if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist for subscription id: ' . print_r($msg['subscr_id'], TRUE));
-    }
-    try {
-      civicrm_api3('ContributionRecur', 'create', [
-        'id' => $recur_record->id,
-        'amount' => $msg['original_gross'],
-        'frequency_unit' => $msg['frequency_unit'],
-        'frequency_interval' => $msg['frequency_interval'],
-        'modified_date' => wmf_common_date_unix_to_civicrm($msg['modified_date']),
-        //FIXME: looks wrong to base off of start_date
-        'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm(strtotime("+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $msg['start_date'])),
-      ]);
-    }
-    catch (\CRM_Core_Exception $e) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription record for subscription id ' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
-    }
-
-    // update the contact
-    wmf_civicrm_message_contact_update($msg, $recur_record->contact_id);
-
-    \Civi::log('wmf')->notice('recurring: Subscription successfully modified for subscription id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
   }
 
   /**

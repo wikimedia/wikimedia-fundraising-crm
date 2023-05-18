@@ -445,15 +445,25 @@ function wmf_civicrm_civicrm_contactSummaryBlocks(array &$blocks) {
  * @param CRM_Core_Page $page
  */
 function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
-  PreferencesLink::pageRun($page);
-    if (get_class($page) === 'CRM_Contribute_Page_Tab') {
-          Civi::service('angularjs.loader')->addModules('afsearchContributionTracking');
-        CRM_Core_Region::instance('page-body')->add([
-          'markup' => '<crm-angular-js modules="afsearchContributionTracking">
-          <div class="spacer" style="height: 20px;"></div>
-          <h3>Contribution Tracking</h3><form id="bootstrap-theme"><afsearch-contribution-tracking options="{contribution_id:'. $page->getVar('_id') .'}"></afsearch-contribution-tracking></form></crm-angular-js>',
-              ]);
-      }
+    PreferencesLink::pageRun($page);
+    $pageClass = get_class($page);
+    // Pages to load the ContributionTracking Module into - loading into the summary page because of the contribution view popup
+    $ctPages = ['CRM_Contact_Page_View_Summary', 'CRM_Contribute_Page_Tab'];
+    if (in_array($pageClass, $ctPages)) {
+        Civi::service('angularjs.loader')->addModules('afsearchContributionTracking');
+    }
+
+    // Only add the markup to the contribution page
+    if ($pageClass === 'CRM_Contribute_Page_Tab') {
+        $id = $page->getVar('_id');
+        if ($id != null) {
+            CRM_Core_Region::instance('page-body')->add([
+              'markup' => '<crm-angular-js modules="afsearchContributionTracking">
+              <div class="spacer" style="height: 20px;"></div>
+              <h3>Contribution Tracking</h3><form id="bootstrap-theme"><afsearch-contribution-tracking options="{contribution_id:'. $id .'}"></afsearch-contribution-tracking></form></crm-angular-js>',
+            ]);
+        }
+    }
 }
 
 /**
