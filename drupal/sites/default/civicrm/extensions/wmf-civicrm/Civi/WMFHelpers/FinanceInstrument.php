@@ -3,6 +3,7 @@
 namespace Civi\WMFHelpers;
 
 use Civi;
+use Civi\WMFException\WMFException;
 
 class FinanceInstrument {
   public const APPLE_PAY_SUBMETHOD_LIST = [
@@ -264,6 +265,10 @@ class FinanceInstrument {
           }
           break;
       }
+    }
+
+    if (!$payment_instrument && (!array_key_exists('payment_method', $msg) || !$msg['payment_method'])) {
+        throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
     }
 
     //I was going to check to make sure the target gateway was a real thing, but: Hello, overhead. No.

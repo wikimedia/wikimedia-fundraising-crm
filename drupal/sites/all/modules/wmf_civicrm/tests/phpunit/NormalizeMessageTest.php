@@ -79,20 +79,82 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->assertEquals( $original_msg, $normal_msg_2 );
     }
 
-	public function testEmptyNet() {
-		$msg = array(
-			'gateway' => 'adyen',
-			'payment_method' => 'cc',
+    public function testGetPaymentInstrumenReturnNullInNormalizeMsg() {
+        // Initialize message with no payment_instrument_id, payment_instrument, gateway, and payment_method set.
+        $original_msg = array(
+            'anonymous' => 0,
+            'check_number' => '',
+            'city' => '',
+            'comment' => '',
+            'contact_id' => mt_rand(),
+            'contact_groups' => array(),
+            'contact_tags' => array(),
+            'contribution_recur_id' => mt_rand(),
+            'contribution_tags' => array(),
+            'contribution_tracking_id' => mt_rand(),
+            'contribution_tracking_update' => '1',
+            'financial_type_id' => '9',
+            'country' => 'IL',
+            'create_date' => time() + 11,
+            'currency' => 'USD',
+            'date' => time() + 1,
+            'effort_id' => '2',
+            'email' => 'test.es@localhost.net',
+            'fee' => 0.5,
+            'first_name' => 'test',
+            'gateway' => 'UNKNOWN',
+            'gateway_txn_id' => '1234AB1234-2',
+            'gross' => 5.8,
+            'last_name' => 'es',
+            'letter_code' => '',
+            'middle_name' => '',
+            'net' => 5.29,
+            'order_id' => mt_rand(),
+            'organization_name' => '',
+            'original_currency' => 'ILS',
+            'original_gross' => '20.00',
+            'payment_date' => time(),
+            'postal_code' => '',
+            'postmark_date' => null,
+            'recurring' => '1',
+            'soft_credit_to' => null,
+            'soft_credit_to_id' => null,
+            'source_enqueued_time' => time() + 2,
+            'source_host' => 'thulium',
+            'source_name' => 'PayPal IPN (legacy)',
+            'source_run_id' => mt_rand(),
+            'source_type' => 'listener',
+            'source_version' => 'legacy',
+            'start_date' => time() + 10,
+            'state_province' => '',
+            'street_address' => '',
+            'subscr_id' => 'TEST-S-1234567' . mt_rand(),
+            'supplemental_address_1' => '',
+            'supplemental_address_2' => '',
+            'thankyou_date' => '',
+            'txn_type' => 'subscr_payment',
+            'utm_campaign' => '',
+        );
+
+        $msg = $original_msg;
+        $this->expectException(\Civi\WMFException\WMFException::class);
+        wmf_civicrm_normalize_msg( $msg );
+    }
+
+    public function testEmptyNet() {
+        $msg = array(
+            'gateway' => 'adyen',
+            'payment_method' => 'cc',
       'payment_submethod' => 'visa',
-			'first_name' => 'blah',
-			'last_name' => 'wah',
-			'country' => 'US',
-			'currency' => 'USD',
-			'gross' => '1.00',
-			'net' => '',
-			'fee' => '0.21',
-		);
-		$normalized = wmf_civicrm_normalize_msg( $msg );
-		$this->assertEquals( 0.79, $normalized['net'] );
-	}
+            'first_name' => 'blah',
+            'last_name' => 'wah',
+            'country' => 'US',
+            'currency' => 'USD',
+            'gross' => '1.00',
+            'net' => '',
+            'fee' => '0.21',
+        );
+        $normalized = wmf_civicrm_normalize_msg( $msg );
+        $this->assertEquals( 0.79, $normalized['net'] );
+    }
 }
