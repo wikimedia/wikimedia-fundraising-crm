@@ -50,6 +50,7 @@ class QuickForm {
         // temporary table that kills the server.
         if ($form->elementExists('contribution_or_softcredits')) {
           $form->removeElement('contribution_or_softcredits');
+          $form->addOptionalQuickFormElement('contribution_or_softcredits');
         }
         break;
 

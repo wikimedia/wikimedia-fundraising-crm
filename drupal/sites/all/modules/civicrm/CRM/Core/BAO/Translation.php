@@ -178,7 +178,7 @@ class CRM_Core_BAO_Translation extends CRM_Core_DAO_Translation implements HookI
     }
 
     $communicationLanguage = \Civi\Core\Locale::detect()->nominal;
-    if ($communicationLanguage === Civi::settings()->get('lcMessages')) {
+    if (!self::isTranslate($communicationLanguage)) {
       return;
     }
 
@@ -257,6 +257,34 @@ class CRM_Core_BAO_Translation extends CRM_Core_DAO_Translation implements HookI
       return ['fields' => $fields, 'language' => $bizLocale->nominal];
     }
     return [];
+  }
+
+  /**
+   * Should the translation process be followed.
+   *
+   * It can be short-circuited if there we are in the site default language and
+   * it is not translated.
+   *
+   * @param string $communicationLanguage
+   *
+   * @return bool
+   */
+  protected static function isTranslate(string $communicationLanguage): bool {
+    if ($communicationLanguage !== Civi::settings()->get('lcMessages')) {
+      return TRUE;
+    }
+    if (!isset(\Civi::$statics[__CLASS__]['translate_main'])) {
+      // The code had an assumption that you would not translate the primary language.
+      // However, the UI is such that the features (approval flow) so it makes sense
+      // to store a translation for even the site language. If we can see site are
+      // doing this then let's treat the main locale like any other locale
+      \Civi::$statics[__CLASS__]['translate_main'] = (bool) CRM_Core_DAO::singleValueQuery(
+        'SELECT COUNT(*) FROM civicrm_translation WHERE language = %1 LIMIT 1', [
+          1 => [$communicationLanguage, 'String']
+        ]
+      );
+    }
+    return \Civi::$statics[__CLASS__]['translate_main'];
   }
 
 }

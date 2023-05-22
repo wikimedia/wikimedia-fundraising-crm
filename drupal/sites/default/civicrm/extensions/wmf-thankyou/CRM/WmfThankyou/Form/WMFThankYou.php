@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Contribution;
 use Civi\Api4\ThankYou;
 use CRM_WmfThankyou_ExtensionUtil as E;
 
@@ -16,10 +17,10 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    */
-  public function buildQuickForm() {
-    $contributionID = CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this);
-    if (!$contributionID) {
-      $this->assign('no_go_reason', E::ts('A valid contribution ID is required'));
+  public function buildQuickForm(): void {
+    $contributionID = $this->getContributionID();
+    if (!$this->isValidContribution()) {
+      $this->assign('no_go_reason', E::ts('A valid contribution ID, WITH contribution_extra data is required'));
       return;
     }
 
@@ -36,11 +37,28 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
       $this->assign('no_go_reason', E::ts('A usable email is required'));
       return;
     }
-    $preferredLanguageString = CRM_Core_PseudoConstant::getLabel('CRM_Contact_BAO_Contact', 'preferred_language', $contact['preferred_language']);
+    $this->setMessage();
+    $preferredLanguage = $contact['preferred_language'] ?: 'en_US';
+    $preferredLanguageString = CRM_Core_PseudoConstant::getLabel('CRM_Contact_BAO_Contact', 'preferred_language', $preferredLanguage);
     $this->assign('language', $preferredLanguageString ?? $contact['preferred_language']);
     $this->assign('contact', $contact);
     $this->assign('contribution', $contribution);
-
+    if (!$this->isEndowment()) {
+      /** We decided not to display monthly convert - code left to help us if we want to add another
+      // as this logic is deceptively tricky
+      $this->add(
+        'Select',
+        'template',
+        ts('Type'),
+        [
+        'thank_you' => ts('Thank You'),
+        'monthly_convert' => ts('Monthly Convert'),
+        ],
+        TRUE,
+        ['onChange' => "CRM.loadPreview('" . $preferredLanguage . "'," . $contributionID . ", this.value);"]
+      );
+      **/
+    }
     $this->addButtons([
       [
         'type' => 'submit',
@@ -55,13 +73,53 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
   }
 
   /**
+   * Set the rendered message property, if possible.
+   */
+  protected function setMessage(): void {
+    try {
+      $this->message = ThankYou::render()
+        ->setContributionID($this->getContributionID())
+        ->setTemplateName($this->getTemplateName())
+        ->execute()->first();
+      $this->assign('subject', $this->message['subject']);
+      $this->assign('message', $this->message['html']);
+    }
+    catch (CRM_Core_Exception $e) {
+      // No valid contributions - probably our local dev doesn't have wmf donor data
+      // for the contribution.
+    }
+  }
+
+  /**
+   * Get the relevant template name.
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function getTemplateName() : string {
+    return $this->isEndowment() ? 'endowment_thank_you' : 'thank_you';
+  }
+
+  /**
+   * Is this an endowment gift.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function isEndowment(): bool {
+    return $this->getFinancialType() === 'Endowment Gift';
+  }
+
+  /**
    * Submit form.
    *
    * @throws \CRM_Core_Exception
    */
   public function postProcess() {
     try {
-      civicrm_api3('Thankyou', 'send', ['contribution_id' => CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this)]);
+      civicrm_api3('Thankyou', 'send', ['contribution_id' => CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this), 'template' => $this->getSubmittedValue('template')]);
       CRM_Core_Session::setStatus('Message sent', E::ts('Thank you Sent'), 'success');
     }
     catch (CiviCRM_API3_Exception $e ) {
@@ -88,6 +146,37 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
       }
     }
     return $elementNames;
+  }
+
+  /**
+   * @return int|mixed|string|null
+   * @throws \CRM_Core_Exception
+   */
+  protected function getContributionID(): int {
+    return (int) CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this);
+  }
+
+  /**
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function getFinancialType() {
+    $financialType = Contribution::get()
+      ->addWhere('id', '=', $this->getContributionID())
+      ->addSelect('financial_type_id:name')
+      ->execute()
+      ->first()['financial_type_id:name'];
+    return $financialType;
+  }
+
+  /**
+   * Is the contribution valid for thanking.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function isValidContribution(): bool {
+    return (bool) CRM_Core_DAO::singleValueQuery('SELECT id FROM wmf_contribution_extra WHERE entity_id = ' . $this->getContributionID());
   }
 
 }

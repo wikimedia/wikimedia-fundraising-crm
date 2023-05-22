@@ -33,15 +33,6 @@ class FailureEmail extends Generic\AbstractEntity {
   }
 
   /**
-   * @return \Civi\Api4\Action\FailureEmail\RenderQA
-   *
-   * @throws \API_Exception
-   */
-  public static function renderqa(): Action\FailureEmail\RenderQA {
-    return new \Civi\Api4\Action\FailureEmail\RenderQA(__CLASS__, __FUNCTION__);
-  }
-
-  /**
    * @return \Civi\Api4\Action\FailureEmail\Send
    *
    * @throws \API_Exception

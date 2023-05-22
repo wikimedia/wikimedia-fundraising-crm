@@ -39,7 +39,13 @@ function wmf_thankyou_civicrm_links($op, $objectName, $objectId, &$links, &$mask
       'url' => 'civicrm/wmf_thankyou',
       'qs' => "contribution_id=$objectId",
       'class' => 'crm-popup small-popup',
+      'weight' => 1,
     ];
+    foreach ($links as $index => $link) {
+      if ($link['name'] === 'Send Receipt') {
+        unset($links[$index]);
+      }
+    }
   }
 }
 
