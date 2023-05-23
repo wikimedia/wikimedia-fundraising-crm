@@ -1,43 +1,45 @@
-<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">A receipt and a heartfelt thank you.</span>
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Wikipedia will always belong to you</span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
 {if $first_name and $last_name}
-<p>Dear {$first_name},</p>
+Dear {$first_name},
+{elseif $contact_type === 'Organization' && $email_greeting_display}
+{$email_greeting_display},
 {else}
-<p>Dear donor,</p>
+Dear donor,
 {/if}
 
-<p>I'm so grateful to be the one who thanks you for the
+<p>Thank you for
 {if $gift_source eq 'Retirement Fund - Endowment Specified' or  $gift_source eq 'Retirement Fund'}
-  qualified charitable distribution of {$amount} that you gifted to Wikimedia from your Individual Retirement Account
+  the qualified charitable distribution of {if $currency === 'USD'}{$currency} {/if}{$amount} that you gifted to Wikimedia from your Individual Retirement Account.
 {else}
-  one-time gift of {$amount} you made to the Wikimedia Endowment.
-{/if}
-
-I want to take this opportunity to celebrate your generosity and your exceptional willingness to take part in creating a better future for the world. With this donation to Wikimedia’s long-term security fund, you're allowing us to look far ahead, with hope and confidence that free knowledge will be supported for generations to come.</p>
-
-<p>I founded Wikipedia 20 years ago. Since then, our beloved encyclopedia has grown a lot, through good times and hardships, and today, more than ever, it is serving its true purpose. It helps millions of people study, discover, explore, and research.</p>
-
-<p>Each day, Wikipedia gives readers a new chance to acquire the knowledge that is so rightfully theirs, no matter what their circumstances might be.</p>
-
-<p>You’re the one who makes this possible. Your support allows edits to be made and articles to reach new readers; it gives our non-profit the means to stay true to its mission, even as Wikipedia has become one of the most visited websites in the world.</p>
+  donating {$amount} to support Wikipedia and a future where knowledge is free for everyone.
+{/if}</p>
 
 {if $gift_source eq 'Retirement Fund - Endowment Specified' or  $gift_source eq 'Retirement Fund'}
 <p>Donors who make qualified charitable distributions have planned for the future. You’ve saved for your own retirement and have chosen to transfer some of those investments over to us. This is why the Wikimedia Foundation directs all QCD donations to the Wikimedia Endowment, where they can continue to serve as long-term investments that will generate financial support for Wikipedia and other Wikimedia projects in perpetuity.</p>
 {/if}
 
-<p>We might not get a chance to blow out the candles in person together, but as we celebrate <a href="https://wikimediafoundation.org/wikipedia20/">20 years of Wikipedia</a> throughout the year, know that you are in the heart of everyone here at the Wikimedia Foundation.</p>
+<p>None of us knows exactly what that future will look like, but here at the Wikimedia Endowment, we have made it our mission to preserve the gift of Wikipedia for generations to come. We're grateful that we can count on you to help us plan ahead, set bigger goals, and stay true to our vision: improving access to free and fair information all over the world, so that no matter where you’re born or where you live, the freedom to learn is always within your reach.</p>
 
-<p>Thank you for everything,<br>
-Jimmy Wales,<br>
-Wikipedia Founder
+<p>It's the generosity of people like you that built our movement, and we never want this to change. So in the midst of a rapidly changing world, I’m glad we can still say that Wikipedia will always belong to you, our readers.
+</p>
+
+<p>Sincerely,<br>
+Lisa Seitz-Gruwell<br>
+President, Wikimedia Endowment
 </p>
 
 
-<p>For your records: Your donation, number {$transaction_id}, on {$receive_date} was {$amount}.</p>
+<p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href="mailto:legacy@wikimedia.org">Contact us</a> to learn how to make a legacy gift. </p>
 
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+<p>For your records: Your donation, number {$transaction_id}, on {$receive_date} was {$amount} ({$currency})</p>
 
-<p>If you do not wish to receive any future fundraising emails from the Wikimedia Endowment or the Wikimedia Foundation, you can <a href="{$unsubscribe_link}">unsubscribe instantly</a>.  Please note we will still send you receipts, like this one, for future donations.</p>
+{if $gift_source eq 'Retirement Fund - Endowment Specified' or  $gift_source eq 'Retirement Fund'}
+<p>This qualified charitable distribution was received directly from your financial custodian.
+{/if}
+  This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+
+<p>If you do not wish to receive any future fundraising emails from the Wikimedia Endowment or the Wikimedia Foundation, you can <a href="{$unsubscribe_link}">unsubscribe</a>.  Please note we will still send you receipts, like this one, for future donations.</p>
 
 <!-- TI_BEGIN["version":1,"name":"endowment_thank_you.en.html","revision":2020428]TI_END -->
