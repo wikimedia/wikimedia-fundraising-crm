@@ -1147,6 +1147,7 @@ function _wmf_civicrm_get_communication_fields(): array {
       'is_searchable' => 1,
     ],
     'first_name_phonetic' => [
+      'name' => 'first_name_phonetic',
       'label' => 'First name phonetic',
       'data_type' => 'String',
       'html_type' => 'Text',
@@ -1156,6 +1157,7 @@ function _wmf_civicrm_get_communication_fields(): array {
       'is_searchable' => 1,
     ],
     'last_name_phonetic' => [
+      'name' => 'last_name_phonetic',
       'label' => 'Last name phonetic',
       'data_type' => 'String',
       'html_type' => 'Text',
