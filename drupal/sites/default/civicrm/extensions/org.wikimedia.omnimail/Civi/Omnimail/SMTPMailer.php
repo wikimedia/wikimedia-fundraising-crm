@@ -56,7 +56,20 @@ class SMTPMailer extends MailerBase implements IMailer {
       $mailer->set('Sender', $email['reply_to']);
     }
 
-    $mailer->addAddress($email['to_address'], $email['to_name']);
+    // You can pass a list of bare email addresses through "to" and they'll all
+    // become to addresses, but without names, so this should only be used by
+    // maintenancey things directed at staff.
+    if (isset($email['to'])) {
+      if (is_string($email['to'])) {
+        $email['to'] = $this->splitAddresses($email['to']);
+      }
+      foreach ($email['to'] as $to) {
+        $mailer->addAddress($to);
+      }
+    }
+    else {
+      $mailer->addAddress($email['to_address'], $email['to_name']);
+    }
 
     foreach ($headers as $header => $value) {
       $mailer->addCustomHeader("$header: $value");
