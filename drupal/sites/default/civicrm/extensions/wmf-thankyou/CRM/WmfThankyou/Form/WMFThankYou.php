@@ -87,6 +87,7 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
     catch (CRM_Core_Exception $e) {
       // No valid contributions - probably our local dev doesn't have wmf donor data
       // for the contribution.
+      \Civi::log('wmf')->error('WMFThankyouForm:: Thank you not rendered {error}', ['error' => $e->getMessage(), 'exception' => $e]);
     }
   }
 
