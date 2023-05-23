@@ -30,6 +30,8 @@ class RecurringFailedMessage extends GenericWorkflowMessage {
    * The recurring contribution.
    *
    * @var array
+   *
+   * @scope tokenContext as contribution_recur
    */
   public $contributionRecur;
 
