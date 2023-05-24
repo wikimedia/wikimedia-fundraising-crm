@@ -175,7 +175,7 @@ class Api4SelectQuery {
       $result = [];
       foreach ($this->selectAliases as $alias => $expr) {
         $returnName = $alias;
-        $alias = str_replace('.', '_', $alias);
+        $alias = str_replace([' ', '.'], '_', $alias);
         $result[$returnName] = property_exists($query, $alias) ? $query->$alias : NULL;
       }
       $results[] = $result;
