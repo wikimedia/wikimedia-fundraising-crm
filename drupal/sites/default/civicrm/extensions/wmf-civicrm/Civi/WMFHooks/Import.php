@@ -37,6 +37,10 @@ class Import {
     if ($context === 'import' && $importType === 'contribution_import') {
       // At this stage all imports are matched gifts which are already thanked via the portal.
       $mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal';
+      // Assume matching gifts if there is a soft credit involved...
+      if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
+        $mappedRow['Contribution']['contribution_extra.gateway'] = !empty($mappedRow['SoftCreditContact']) ? 'Matching Gifts' : 'CiviCRM Import';
+      }
       if (
         !empty($mappedRow['Contribution']['contact_id'])
         && (
@@ -106,8 +110,6 @@ class Import {
       // Question - should we map the custom currency field or the currency field?
       // Also, can we move this to the Contribution pre hook.
       $mappedRow['Contribution']['source'] = $originalCurrency . ' ' . \Civi::format()->machineMoney($mappedRow['Contribution']['total_amount']);
-      // For now we only have one gateway...
-      $mappedRow['Contribution']['contribution_extra.gateway'] = 'Matching Gifts';
     }
   }
 

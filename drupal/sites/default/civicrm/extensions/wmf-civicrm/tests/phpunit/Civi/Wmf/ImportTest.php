@@ -149,6 +149,21 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * Test duplicates are not imported.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testImportDuplicates(): void {
+    $data = $this->setupImport(['contribution_extra__gateway_txn_id' => '123']);
+    $this->fillImportRow($data);
+    $this->createSoftCreditConnectedContacts();
+    $this->runImport($data);
+    $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
+    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
+    $this->assertEquals('ERROR', $import[1]['_status']);
+  }
+
+  /**
    * Test importing an organization doing an id based lookup.
    *
    *
@@ -287,7 +302,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   KEY `_id` (`_id`),
   KEY `_status` (`_status`)
 ) ");
-    \CRM_Core_DAO::executeQuery('INSERT INTO civicrm_tmp_d_abc (' . implode(',', array_keys($columns)) . ') ' . $this->getSelectQuery($columns));
+    $this->fillImportRow($columns);
   }
 
   /**
@@ -509,6 +524,15 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       'amount' => 700,
     ])->execute()->first()['id'];
     return $contributionID;
+  }
+
+  /**
+   * @param $columns
+   *
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  protected function fillImportRow($columns): void {
+    \CRM_Core_DAO::executeQuery('INSERT INTO civicrm_tmp_d_abc (' . implode(',', array_keys($columns)) . ') ' . $this->getSelectQuery($columns));
   }
 
 }
