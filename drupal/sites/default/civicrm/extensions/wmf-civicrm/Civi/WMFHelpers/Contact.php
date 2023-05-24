@@ -43,8 +43,8 @@ class Contact {
       }
       elseif ($isCreateIfNotExists && count($contacts) === 0) {
         Civi::$statics['wmf_contact']['organization'][$organizationName]['id'] = \Civi\Api4\Contact::create(FALSE)->setValues(array_merge([
-            'organization_name' => $organizationName,
-          ], $createParameters)
+          'organization_name' => $organizationName,
+        ], $createParameters)
         )->execute()->first()['id'];
       }
       else {
@@ -102,7 +102,7 @@ class Contact {
       if ($organizationName) {
         Civi::$statics['wmf_contact']['organization'][$organizationName] = [
           'organization_name' => $organizationName,
-          'id' => $id
+          'id' => $id,
         ];
       }
     }
@@ -148,7 +148,6 @@ class Contact {
       Civi::$statics['wmf_contact']['organization'][$organizationName] = $contacts->first();
     }
   }
-
 
   /**
    * @param string|null $email
@@ -271,6 +270,30 @@ class Contact {
       throw new \CRM_Core_Exception('The anonymous contact does not exist in your dev environment. Ensure exactly one contact is in CiviCRM with the email fakeemail@wikimedia.org and first name and last name being Anonymous');
     }
     return $contactID;
+  }
+
+  /**
+   * Check if there is any other contacts share same primary email
+   * with the given contact id, return all ids, need to merge
+   * @param int $contact_id
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public static function duplicateContactIds(int $contact_id): array {
+    $contactIds = [];
+    // check multi contact share same email address (not merged yet)
+    $contacts = \Civi\Api4\Email::get()
+      ->addSelect('duplicateemail.contact_id')
+      ->addJoin('Email AS duplicateemail', 'INNER', ['email', '=', 'duplicateemail.email'], ['id', '<>', 'duplicateemail.id'])
+      ->addWhere('contact_id', '=', $contact_id)
+      ->execute();
+    foreach ($contacts as $contact) {
+      $contactIds[] = $contact['duplicateemail.contact_id'];
+    }
+    array_push($contactIds, $contact_id);
+    return $contactIds;
   }
 
 }
