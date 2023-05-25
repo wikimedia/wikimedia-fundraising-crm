@@ -4,6 +4,7 @@ use Civi\Api4\Relationship;
 use Civi\Api4\RelationshipType;
 use Civi\WMFHelpers\Contact;
 use Civi\WMFHelpers\Contribution;
+use Civi\WMFHelpers\Database;
 use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
 use SmashPig\Core\Context;
@@ -859,7 +860,7 @@ abstract class ChecksFile {
     }
 
     // tha business.
-    $contribution = WmfDatabase::transactionalCall([
+    $contribution = Database::transactionalCall([
       $this,
       'doImport',
     ], [$msg]);

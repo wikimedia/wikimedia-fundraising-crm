@@ -10,6 +10,7 @@ use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use Civi\WMFStatistics\ImportStatsCollector;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelpers\Database;
 use Civi\ExchangeException\ExchangeRatesException;
 
 require_once 'recurring.inc';
@@ -1033,7 +1034,7 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
   if (!wmf_civicrm_is_address_valid($address_params)) {
     return;
   }
-  if (WmfDatabase::isNativeTxnRolledBack()) {
+  if (Database::isNativeTxnRolledBack()) {
     throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back before inserting address");
   }
   try {
@@ -1052,7 +1053,7 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
     );
   }
 
-  if (WmfDatabase::isNativeTxnRolledBack()) {
+  if (Database::isNativeTxnRolledBack()) {
     throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting address");
   }
 }
@@ -1732,7 +1733,7 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
   switch ($op) {
     case 'create':
     case 'edit':
-      if (WmfDatabase::isNativeTxnRolledBack()) {
+      if (Database::isNativeTxnRolledBack()) {
         throw new WMFException(
           WMFException::IMPORT_CONTRIB,
           'Native txn rolled back before running post contribution hook'
