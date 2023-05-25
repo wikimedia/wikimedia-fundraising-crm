@@ -570,7 +570,7 @@ class CalculatedData extends TriggerHook {
    */
   protected function getUpdateWMFDonorSql(): string {
     $fields = $aggregateFieldStrings = [];
-    $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+    $endowmentFinancialType = $this->getEndowmentFinancialType();
     for ($year = self::WMF_MIN_ROLLUP_YEAR; $year <= self::WMF_MAX_ROLLUP_YEAR; $year++) {
       $nextYear = $year + 1;
       $fields[] = "total_{$year}_{$nextYear}";
@@ -762,6 +762,15 @@ class CalculatedData extends TriggerHook {
       throw new \CRM_Core_Exception('This update requires a WHERE clause');
     }
     \CRM_Core_DAO::executeQuery($this->getUpdateWMFDonorSql());
+  }
+
+  /**
+   * Get the financial type for endowment.
+   *
+   * @return int|null
+   */
+  protected function getEndowmentFinancialType(): ?int {
+    return CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
   }
 
 }
