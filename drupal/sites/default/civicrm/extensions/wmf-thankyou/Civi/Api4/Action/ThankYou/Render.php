@@ -76,17 +76,6 @@ class Render extends AbstractAction {
     // we move the templates to the database (at which point users can edit too).
     $templateParams['locale'] = strtolower(str_replace('_', '-', $locale));
 
-    $templateParams['gift_source'] = $templateParams['gift_source'] ?? NULL;
-    $templateParams['stock_value'] = $templateParams['stock_value'] ?? NULL;
-
-    if ($templateParams['stock_value']) {
-      $templateParams['stock_value'] = Civi::format()
-        ->money($templateParams['stock_value'], $templateParams['currency']);
-    }
-    else {
-      $templateParams['stock_value'] = 0;
-    }
-
     $rendered = WorkflowMessage::render(FALSE)
       ->setLanguage($this->getLanguage())
       ->setValues($this->getModelProperties())
@@ -133,9 +122,6 @@ class Render extends AbstractAction {
       'recurring' => 'isRecurring',
       'transaction_id' => 'transactionID',
       'unsubscribe_link' => 'unsubscribeLink',
-      'gift_source' => 'giftSource',
-      'stock_value' => 'stockValue',
-      'description_of_stock' => 'descriptionOfStock',
     ];
     foreach ($this->getTemplateParameters() as $fieldName => $value) {
       if (isset($mapping[$fieldName])) {
@@ -155,14 +141,13 @@ class Render extends AbstractAction {
    * @return array
    */
   protected function getContactParameters(): array {
-    return array_filter([
-      'first_name' => $this->getTemplateParameters()['first_name'] ?? NULL,
-      'last_name' => $this->getTemplateParameters()['last_name'] ?? NULL,
-      'contact_type' => $this->getTemplateParameters()['contact_type'] ?? NULL,
-      'email_greeting_display' => $this->getTemplateParameters()['email_greeting_display'] ?? NULL,
-      'id' => !empty($this->getTemplateParameters()['contact_id']) ? (int) $this->getTemplateParameters()['contact_id'] :  NULL,
-      'organization_name' => $this->getTemplateParameters()['organization_name'] ?? '',
-    ]);
+    $parameters = [];
+    foreach ($this->getContactParameterMapping() as $contactField => $incomingKey) {
+      if ($this->getTemplateParameter($incomingKey) !== NULL) {
+        $parameters[$contactField] = $this->getTemplateParameter($incomingKey);
+      }
+    }
+    return $parameters;
   }
 
   /**
@@ -173,13 +158,47 @@ class Render extends AbstractAction {
    * @return array
    */
   protected function getContributionParameters(): array {
-    return array_filter([
-      'receive_date' => $this->getTemplateParameters()['receive_date'] ?? NULL,
-      'trxn_id' => $this->getTemplateParameters()['trxn_id'] ?? NULL,
-      'id' => $this->getTemplateParameters()['contribution_id'] ?? NULL,
-      'total_amount' => $this->getTemplateParameters()['amount'] ?? NULL,
-      'currency' => $this->getTemplateParameters()['currency'] ?? NULL,
-    ]);
+    $parameters = [];
+    foreach ($this->getContributionParameterMapping() as $contributionKey => $incomingKey) {
+      if ($this->getTemplateParameter($incomingKey) !== NULL) {
+        $parameters[$contributionKey] = $this->getTemplateParameter($incomingKey);
+      }
+    }
+    return $parameters;
+  }
+
+  protected function getTemplateParameter($parameter) {
+    return $this->getTemplateParameters()[$parameter] ?? NULL;
+  }
+
+  /**
+   * @return string[]
+   */
+  protected function getContactParameterMapping(): array {
+    return [
+      'first_name' => 'first_name',
+      'last_name' => 'last_name',
+      'contact_type' => 'contact_type',
+      'email_greeting_display' => 'email_greeting_display',
+      'id' => 'contact_id',
+      'organization_name' => 'organization_name',
+    ];
+  }
+
+  /**
+   * @return string[]
+   */
+  protected function getContributionParameterMapping(): array {
+    return [
+      'receive_date' => 'receive_date',
+      'trxn_id' => 'trxn_id',
+      'id' => 'contribution_id',
+      'total_amount' => 'amount',
+      'currency' => 'currency',
+      'Stock_Information.Description_of_Stock' => 'description_of_stock',
+      'Stock_Information.Stock Value' => 'stock_value',
+      'Gift_Data.Campaign' => 'gift_source',
+    ];
   }
 
 }
