@@ -26,6 +26,16 @@ class CalculatedData extends TriggerHook {
   protected $triggerContext = TRUE;
 
   /**
+   * @param bool $triggerContext
+   *
+   * @return \Civi\WMFHooks\CalculatedData
+   */
+  public function setTriggerContext(bool $triggerContext): self {
+    $this->triggerContext = $triggerContext;
+    return $this;
+  }
+
+  /**
    * Where clause to restrict contacts/ contributions to include.
    *
    * This clause is used when doing an update out of trigger context
@@ -725,13 +735,23 @@ class CalculatedData extends TriggerHook {
    * @return string
    */
   protected function getUpdateWMFDonorSql(): string {
-    $endowmentFinancialType = $this->getEndowmentFinancialType();
     return '
+      INSERT INTO wmf_donor (
+        entity_id, ' . implode(', ', array_keys($this->getCalculatedFields())) . '
+      )'
+    . $this->getSelectSQL()  . '
+     ON DUPLICATE KEY UPDATE
+    ' . implode(', ', $this->getUpdateClauses()) . ";";
+  }
 
-    INSERT INTO wmf_donor (
-      entity_id, ' . implode(', ', array_keys($this->getCalculatedFields())) . '
-    )
-    SELECT
+  /**
+   * Get the string to select the wmf donor data.
+   *
+   * @return string
+   */
+  public function getSelectSQL(): string {
+    $endowmentFinancialType = $this->getEndowmentFinancialType();
+    return 'SELECT
       ' . ($this->isTriggerContext() ? ' NEW.contact_id as entity_id , ' : ' totals.contact_id as entity_id , ')
         . '# to honour FULL_GROUP_BY mysql mode we need an aggregate command for each
  # field - even though we know we just want `the value from the subquery`
@@ -774,10 +794,7 @@ class CalculatedData extends TriggerHook {
     AND largest.contribution_status_id = 1
     AND largest.total_amount > 0
     AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
-  GROUP BY " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id') . "
-
-  ON DUPLICATE KEY UPDATE
-    " . implode(', ', $this->getUpdateClauses()) . ";";
+  GROUP BY " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id');
   }
 
   /**
