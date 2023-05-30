@@ -35,6 +35,103 @@ class CalculatedData extends TriggerHook {
    */
   protected $whereClause;
 
+  /**
+   * Fields that are based on year-based totals.
+   *
+   * @var array
+   */
+  protected $calculatedFields;
+
+  /**
+   * Get the select clauses for year field for use when GROUP BY is not in use.
+   *
+   * @var array
+   */
+  protected $yearFieldSelects;
+
+  /**
+   * Get the select clauses for year field for use when GROUP BY is in use.
+   *
+   * @var array
+   */
+  protected $selectsAggregate;
+
+  /**
+   * Get the select clauses for year field for use when GROUP BY is in use.
+   *
+   * @var array
+   */
+  protected $updateClauses;
+
+  public function getCalculatedFields(): array {
+    if ($this->calculatedFields === NULL) {
+      $this->calculatedFields = [];
+      $this->getWMFDonorFields();
+    }
+    return $this->calculatedFields;
+  }
+
+  /**
+   * Get select clauses for the year-based fields in non-Group By mode.
+   *
+   * @return array
+   */
+  public function getTotalsFieldSelects(): array {
+    if ($this->yearFieldSelects === NULL) {
+      $this->yearFieldSelects = [];
+      foreach ($this->getCalculatedFields() as $yearField) {
+        if (($yearField['table_alias'] ?? 'totals') === 'totals') {
+          $this->yearFieldSelects[$yearField['name']] = $yearField['select_clause'];
+        }
+      }
+    }
+    return $this->yearFieldSelects;
+  }
+
+  /**
+   * Get select clauses for the year-based fields in non-Group By mode.
+   *
+   * @return array
+   */
+  public function getUpdateClauses(): array {
+    if ($this->updateClauses === NULL) {
+      $this->updateClauses = [];
+      foreach ($this->getCalculatedFields() as $yearField) {
+        $this->updateClauses[$yearField['name']] = $yearField['name'] . ' = VALUES(' . $yearField['name'] . ')';
+      }
+    }
+    return $this->updateClauses;
+  }
+
+  /**
+   * Get select clauses for the year-based fields in Group By mode.
+   *
+   * To honour FULL_GROUP_BY mysql mode we need an aggregate command for each
+   * field - even though we know we just want `the value from the subquery`
+   * MAX is a safe wrapper for that
+   * https://www.percona.com/blog/2019/05/13/solve-query-failures-regarding-only_full_group_by-sql-mode/
+   *
+   * @return array
+   */
+  public function getSelectsAggregate(): array {
+    if ($this->selectsAggregate === NULL) {
+      $this->selectsAggregate = [];
+      foreach ($this->getCalculatedFields() as $calculatedField) {
+        if (!empty($calculatedField['aggregate_select_clause'])) {
+          $this->selectsAggregate[$calculatedField['name']] = $calculatedField['aggregate_select_clause'];
+        }
+        else {
+          // When full group by is applied (which it is not currently on our prod but at some point...)
+          // it is necessary to aggregate all fields in some way - MAX is a stand in for when there is
+          // only one value of interest.
+          $operator = $calculatedField['group_by_operator'] ?? 'MAX';
+          $this->selectsAggregate[$calculatedField['name']] = $operator . '(' . $calculatedField['name'] . ") as " . $calculatedField['name'];
+        }
+      }
+    }
+    return $this->selectsAggregate;
+  }
+
   public static function getCalculatedCustomFieldGroupID(): int {
     return CustomGroup::get( FALSE )
       ->setSelect( [ 'id' ] )
@@ -208,85 +305,8 @@ class CalculatedData extends TriggerHook {
    * @return array
    */
   public function getWMFDonorFields(): array {
-    $fields = [
-      'last_donation_date' => [
-        'name' => 'last_donation_date',
-        'column_name' => 'last_donation_date',
-        'label' => ts('Last donation date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-      ],
-      'endowment_last_donation_date' => [
-        'name' => 'endowment_last_donation_date',
-        'column_name' => 'endowment_last_donation_date',
-        'label' => ts('Endowment Last donation date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-      ],
-      'all_funds_last_donation_date' => [
-        'name' => 'all_funds_last_donation_date',
-        'column_name' => 'all_funds_last_donation_date',
-        'label' => ts('All Funds Last donation date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-      ],
-      'first_donation_date' => [
-        'name' => 'first_donation_date',
-        'column_name' => 'first_donation_date',
-        'label' => ts('First donation date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-      ],
-      'endowment_first_donation_date' => [
-        'name' => 'endowment_first_donation_date',
-        'column_name' => 'endowment_first_donation_date',
-        'label' => ts('Endowment First donation date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-      ],
-      'all_funds_first_donation_date' => [
-        'name' => 'all_funds_first_donation_date',
-        'column_name' => 'all_funds_first_donation_date',
-        'label' => ts('All Funds First donation date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-      ],
+    $endowmentFinancialType = $this->getEndowmentFinancialType();
+    $this->calculatedFields = [
       // Per https://phabricator.wikimedia.org/T222958#5323233
       // This is used in emails - and needs to not mix endowments & non-endowments
       'last_donation_currency' => [
@@ -298,6 +318,10 @@ class CalculatedData extends TriggerHook {
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'table_alias' => 'latest',
+        'select_clause' => 'COALESCE(x.original_currency, latest.currency) as last_donation_currency',
+        'aggregate_select_clause' => 'MAX(COALESCE(x.original_currency,
+ latest.currency)) as last_donation_currency',
       ],
       'last_donation_amount' => [
         'name' => 'last_donation_amount',
@@ -310,18 +334,11 @@ class CalculatedData extends TriggerHook {
         'is_search_range' => 1,
         'default_value' => 0,
         'is_view' => 1,
-      ],
-      'first_donation_usd' => [
-        'name' => 'first_donation_usd',
-        'column_name' => 'first_donation_usd',
-        'label' => ts('First Donation Amount (USD)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'default_value' => 0,
-        'is_view' => 1,
+        'table_alias' => 'latest',
+        'select_clause' => 'COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount',
+        'aggregate_select_clause' => 'MAX(COALESCE(x.original_amount,
+ latest.total_amount,
+ 0)) as last_donation_amount',
       ],
       'last_donation_usd' => [
         'name' => 'last_donation_usd',
@@ -334,11 +351,15 @@ class CalculatedData extends TriggerHook {
         'is_search_range' => 1,
         'default_value' => 0,
         'is_view' => 1,
+        'table_alias' => 'latest',
+        'select_clause' => 'COALESCE(latest.total_amount, 0) as last_donation_usd',
+        'aggregate_select_clause' => 'MAX(COALESCE(latest.total_amount,
+ 0)) as last_donation_usd',
       ],
-      'lifetime_usd_total' => [
-        'name' => 'lifetime_usd_total',
-        'column_name' => 'lifetime_usd_total',
-        'label' => ts('Lifetime Donations (USD)'),
+      'first_donation_usd' => [
+        'name' => 'first_donation_usd',
+        'column_name' => 'first_donation_usd',
+        'label' => ts('First Donation Amount (USD)'),
         'data_type' => 'Money',
         'html_type' => 'Text',
         'is_active' => 1,
@@ -346,102 +367,10 @@ class CalculatedData extends TriggerHook {
         'is_search_range' => 1,
         'default_value' => 0,
         'is_view' => 1,
-      ],
-      'lifetime_including_endowment' => [
-        'name' => 'lifetime_including_endowment',
-        'column_name' => 'lifetime_including_endowment',
-        'label' => ts('Lifetime Donations (USD) (Incl Endowments)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'default_value' => 0,
-        'is_view' => 1,
-      ],
-      'endowment_lifetime_usd_total' => [
-        'name' => 'endowment_lifetime_usd_total',
-        'column_name' => 'endowment_lifetime_usd_total',
-        'label' => ts('Endowment Lifetime Donations (USD)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'default_value' => 0,
-        'is_view' => 1,
-      ],
-      'number_donations' => [
-        'name' => 'number_donations',
-        'column_name' => 'number_donations',
-        'label' => ts('Number of Donations'),
-        'data_type' => 'Int',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'default_value' => 0,
-      ],
-      'endowment_number_donations' => [
-        'name' => 'endowment_number_donations',
-        'column_name' => 'endowment_number_donations',
-        'label' => ts('Endowment Number of Donations'),
-        'data_type' => 'Int',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'default_value' => 0,
-      ],
-      'all_funds_number_donations' => [
-        'name' => 'all_funds_number_donations',
-        'column_name' => 'all_funds_number_donations',
-        'label' => ts('All Funds Number of Donations'),
-        'data_type' => 'Int',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'default_value' => 0,
-      ],
-      'largest_donation' => [
-        'name' => 'largest_donation',
-        'column_name' => 'largest_donation',
-        'label' => ts('Largest Donation'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'default_value' => 0,
-      ],
-      'endowment_largest_donation' => [
-        'name' => 'endowment_largest_donation',
-        'column_name' => 'endowment_largest_donation',
-        'label' => ts('Endowment Largest Donation'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'default_value' => 0,
-      ],
-      'all_funds_largest_donation' => [
-        'name' => 'all_funds_largest_donation',
-        'column_name' => 'all_funds_largest_donation',
-        'label' => ts('All Funds Largest Donation'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'default_value' => 0,
+        'table_alias' => 'earliest',
+        'select_clause' => 'COALESCE(earliest.total_amount, 0) as first_donation_usd,',
+        'aggregate_select_clause' => 'MAX(COALESCE(earliest.total_amount,
+ 0)) as first_donation_usd',
       ],
       'date_of_largest_donation' => [
         'name' => 'date_of_largest_donation',
@@ -455,13 +384,220 @@ class CalculatedData extends TriggerHook {
         'is_view' => 1,
         'date_format' => 'M d, yy',
         'time_format' => 2,
+        'table_alias' => 'largest',
+        'select_clause' => 'MAX(largest.receive_date) as date_of_largest_donation',
+        'aggregate_select_clause' => 'MAX(largest.receive_date) as date_of_largest_donation',
+      ],
+      'largest_donation' => [
+        'name' => 'largest_donation',
+        'column_name' => 'largest_donation',
+        'label' => ts('Largest Donation'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'default_value' => 0,
+        'select_clause' => "MAX(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS largest_donation",
+      ],
+      'endowment_largest_donation' => [
+        'name' => 'endowment_largest_donation',
+        'column_name' => 'endowment_largest_donation',
+        'label' => ts('Endowment Largest Donation'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'default_value' => 0,
+        'select_clause' => "MAX(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation",
+      ],
+      'all_funds_largest_donation' => [
+        'name' => 'all_funds_largest_donation',
+        'column_name' => 'all_funds_largest_donation',
+        'label' => ts('All Funds Largest Donation'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'default_value' => 0,
+        'select_clause' => "MAX(COALESCE(total_amount, 0)) AS all_funds_largest_donation",
+      ],
+      'lifetime_including_endowment' => [
+        'name' => 'lifetime_including_endowment',
+        'column_name' => 'lifetime_including_endowment',
+        'label' => ts('Lifetime Donations (USD) (Incl Endowments)'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'default_value' => 0,
+        'is_view' => 1,
+        'select_clause' => "SUM(COALESCE(total_amount, 0)) AS lifetime_including_endowment",
+      ],
+      'lifetime_usd_total' => [
+        'name' => 'lifetime_usd_total',
+        'column_name' => 'lifetime_usd_total',
+        'label' => ts('Lifetime Donations (USD)'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'default_value' => 0,
+        'is_view' => 1,
+        'select_clause' => "SUM(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total",
+      ],
+      'endowment_lifetime_usd_total' => [
+        'name' => 'endowment_lifetime_usd_total',
+        'column_name' => 'endowment_lifetime_usd_total',
+        'label' => ts('Endowment Lifetime Donations (USD)'),
+        'data_type' => 'Money',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'default_value' => 0,
+        'is_view' => 1,
+        'select_clause' => "SUM(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total",
+      ],
+      'last_donation_date' => [
+        'name' => 'last_donation_date',
+        'column_name' => 'last_donation_date',
+        'label' => ts('Last donation date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+        'select_clause' => "MAX(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS last_donation_date",
+      ],
+      'endowment_last_donation_date' => [
+        'name' => 'endowment_last_donation_date',
+        'column_name' => 'endowment_last_donation_date',
+        'label' => ts('Endowment Last donation date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+        'select_clause' => "MAX(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date",
+      ],
+      'all_funds_last_donation_date' => [
+        'name' => 'all_funds_last_donation_date',
+        'column_name' => 'all_funds_last_donation_date',
+        'label' => ts('All Funds Last donation date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+        'select_clause' => "MAX(IF(total_amount > 0, receive_date, NULL)) AS all_funds_last_donation_date",
+      ],
+      'first_donation_date' => [
+        'name' => 'first_donation_date',
+        'column_name' => 'first_donation_date',
+        'label' => ts('First donation date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+        'group_by_operator' => 'MIN',
+        'select_clause' => "MIN(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS first_donation_date",
+      ],
+      'endowment_first_donation_date' => [
+        'name' => 'endowment_first_donation_date',
+        'column_name' => 'endowment_first_donation_date',
+        'label' => ts('Endowment First donation date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+        'group_by_operator' => 'MIN',
+        'select_clause' => "MIN(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_first_donation_date",
+      ],
+      'all_funds_first_donation_date' => [
+        'name' => 'all_funds_first_donation_date',
+        'column_name' => 'all_funds_first_donation_date',
+        'label' => ts('All Funds First donation date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+        'group_by_operator' => 'MIN',
+        'select_clause' => 'MIN(IF(total_amount > 0, receive_date, NULL)) AS all_funds_first_donation_date',
+      ],
+      'number_donations' => [
+        'name' => 'number_donations',
+        'column_name' => 'number_donations',
+        'label' => ts('Number of Donations'),
+        'data_type' => 'Int',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'default_value' => 0,
+        'select_clause' => "COUNT(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS number_donations",
+      ],
+      'endowment_number_donations' => [
+        'name' => 'endowment_number_donations',
+        'column_name' => 'endowment_number_donations',
+        'label' => ts('Endowment Number of Donations'),
+        'data_type' => 'Int',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'default_value' => 0,
+        'select_clause' => "COUNT(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_number_donations",
+      ],
+      'all_funds_number_donations' => [
+        'name' => 'all_funds_number_donations',
+        'column_name' => 'all_funds_number_donations',
+        'label' => ts('All Funds Number of Donations'),
+        'data_type' => 'Int',
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'default_value' => 0,
+        'select_clause' => 'COUNT(IF(total_amount > 0, receive_date, NULL)) AS all_funds_number_donations',
       ],
     ];
 
     for ($year = self::WMF_MIN_ROLLUP_YEAR; $year <= self::WMF_MAX_ROLLUP_YEAR; $year++) {
       $nextYear = $year + 1;
       $weight = $year > 2018 ? ($year - 2000) : (2019 - $year);
-      $fields["total_{$year}_{$nextYear}"] = [
+      $this->calculatedFields["total_{$year}_{$nextYear}"] = [
         'name' => "total_{$year}_{$nextYear}",
         'column_name' => "total_{$year}_{$nextYear}",
         'label' => ts("FY {$year}-{$nextYear} total"),
@@ -474,8 +610,9 @@ class CalculatedData extends TriggerHook {
         'is_view' => 1,
         'weight' => $weight,
         'is_search_range' => 1,
+        'select_clause' => "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}",
       ];
-      $fields["total_{$year}"] = [
+      $this->calculatedFields["total_{$year}"] = [
         'name' => "total_{$year}",
         'column_name' => "total_{$year}",
         'label' => ts("CY {$year} total"),
@@ -488,54 +625,32 @@ class CalculatedData extends TriggerHook {
         'is_view' => 1,
         'weight' => $weight,
         'is_search_range' => 1,
+        'select_clause' => "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as total_{$year}",
       ];
       if ($year >= 2017) {
         if ($year >= 2018) {
-          $fields["endowment_total_{$year}"] = array_merge(
-            $fields["total_{$year}"],
-            ['name' => "endowment_total_{$year}", 'column_name' => "endowment_total_{$year}", 'label' => 'Endowment ' . ts("CY {$year} total")]
-          );
-          $fields["endowment_total_{$year}_{$nextYear}"] = array_merge(
-            $fields["total_{$year}_{$nextYear}"],
-            ['name' => "endowment_total_{$year}_{$nextYear}", 'column_name' => "endowment_total_{$year}_{$nextYear}", 'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total")]
-          );
-          $fields["all_funds_total_{$year}_{$nextYear}"] = array_merge(
-            $fields["total_{$year}_{$nextYear}"],
-            ['name' => "all_funds_total_{$year}_{$nextYear}", 'column_name' => "all_funds_total_{$year}_{$nextYear}", 'label' => 'All Funds ' . ts("FY {$year}-{$nextYear} total")]
-          );
-        }
-        $fields["change_{$year}_{$nextYear}"] = [
-          'name' => "change_{$year}_{$nextYear}",
-          'column_name' => "change_{$year}_{$nextYear}",
-          'label' => ts("Change {$year}-{$nextYear} total"),
-          'data_type' => 'Money',
-          'html_type' => 'Text',
-          'default_value' => 0,
-          'is_active' => 1,
-          'is_required' => 0,
-          'is_searchable' => 0,
-          'is_view' => 1,
-          'weight' => $weight,
-          'is_search_range' => 1,
-        ];
-        if ($year > 2019) {
-          $fields["endowment_change_{$year}_{$nextYear}"] = [
-            'name' => "endowment_change_{$year}_{$nextYear}",
-            'column_name' => "endowment_change_{$year}_{$nextYear}",
-            'label' => ts("Endowment Change {$year}-{$nextYear} total"),
-            'data_type' => 'Money',
-            'html_type' => 'Text',
-            'default_value' => 0,
-            'is_active' => 1,
-            'is_required' => 0,
-            'is_searchable' => 0,
-            'is_view' => 1,
-            'weight' => $weight,
-            'is_search_range' => 1,
-          ];
+          $this->calculatedFields["endowment_total_{$year}_{$nextYear}"] = array_merge(
+            $this->calculatedFields["total_{$year}_{$nextYear}"], [
+            'name' => "endowment_total_{$year}_{$nextYear}",
+            'column_name' => "endowment_total_{$year}_{$nextYear}",
+            'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total"),
+            'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}",
+          ]);
+          $this->calculatedFields["endowment_total_{$year}"] = array_merge(
+            $this->calculatedFields["total_{$year}"], [
+              'name' => "endowment_total_{$year}",
+              'column_name' => "endowment_total_{$year}",
+              'label' => 'Endowment ' . ts("CY {$year} total"),
+              'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}",
+            ]);
+          $this->calculatedFields["all_funds_total_{$year}_{$nextYear}"] = array_merge(
+            $this->calculatedFields["total_{$year}_{$nextYear}"], [
+              'name' => "all_funds_total_{$year}_{$nextYear}", 'column_name' => "all_funds_total_{$year}_{$nextYear}", 'label' => 'All Funds ' . ts("FY {$year}-{$nextYear} total"),
+              'select_clause' => "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as all_funds_total_{$year}_{$nextYear}",
+            ]);
         }
         if ($year > 2017) {
-          $fields["all_funds_change_{$year}_{$nextYear}"] = [
+          $this->calculatedFields["all_funds_change_{$year}_{$nextYear}"] = [
             'name' => "all_funds_change_{$year}_{$nextYear}",
             'column_name' => "all_funds_change_{$year}_{$nextYear}",
             'label' => ts("All Funds Change {$year}-{$nextYear} total"),
@@ -548,12 +663,53 @@ class CalculatedData extends TriggerHook {
             'is_view' => 1,
             'weight' => $weight,
             'is_search_range' => 1,
+            'select_clause' => "
+              SUM(COALESCE(IF(receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
+              - SUM(COALESCE(IF(receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
+               as all_funds_change_{$year}_{$nextYear}",
           ];
         }
+        if ($year > 2019) {
+          $this->calculatedFields["endowment_change_{$year}_{$nextYear}"] = [
+            'name' => "endowment_change_{$year}_{$nextYear}",
+            'column_name' => "endowment_change_{$year}_{$nextYear}",
+            'label' => ts("Endowment Change {$year}-{$nextYear} total"),
+            'data_type' => 'Money',
+            'html_type' => 'Text',
+            'default_value' => 0,
+            'is_active' => 1,
+            'is_required' => 0,
+            'is_searchable' => 0,
+            'is_view' => 1,
+            'weight' => $weight,
+            'is_search_range' => 1,
+            'select_clause' => "
+               SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
+              - SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
+               as endowment_change_{$year}_{$nextYear}",
+          ];
+        }
+        $this->calculatedFields["change_{$year}_{$nextYear}"] = [
+          'name' => "change_{$year}_{$nextYear}",
+          'column_name' => "change_{$year}_{$nextYear}",
+          'label' => ts("Change {$year}-{$nextYear} total"),
+          'data_type' => 'Money',
+          'html_type' => 'Text',
+          'default_value' => 0,
+          'is_active' => 1,
+          'is_required' => 0,
+          'is_searchable' => 0,
+          'is_view' => 1,
+          'weight' => $weight,
+          'is_search_range' => 1,
+          'select_clause' => "
+            SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
+            - SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
+            as change_{$year}_{$nextYear}",
+        ];
       }
     }
-
-    return $fields;
+    return $this->calculatedFields;
   }
 
   /**
@@ -569,128 +725,24 @@ class CalculatedData extends TriggerHook {
    * @return string
    */
   protected function getUpdateWMFDonorSql(): string {
-    $fields = $aggregateFieldStrings = [];
     $endowmentFinancialType = $this->getEndowmentFinancialType();
-    for ($year = self::WMF_MIN_ROLLUP_YEAR; $year <= self::WMF_MAX_ROLLUP_YEAR; $year++) {
-      $nextYear = $year + 1;
-      $fields[] = "total_{$year}_{$nextYear}";
-      $aggregateFieldStrings[] = "MAX(total_{$year}_{$nextYear}) as total_{$year}_{$nextYear}";
-      $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}";
-      $updates[] = "total_{$year}_{$nextYear} = VALUES(total_{$year}_{$nextYear})";
-
-      $fields[] = "total_{$year}";
-      $aggregateFieldStrings[] = "MAX(total_{$year}) as total_{$year}";
-      $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as total_{$year}";
-      $updates[] = "total_{$year} = VALUES(total_{$year})";
-
-      if ($year >= 2017) {
-        if ($year >= 2018) {
-          $fields[] = "endowment_total_{$year}_{$nextYear}";
-          $aggregateFieldStrings[] = "MAX(endowment_total_{$year}_{$nextYear}) as endowment_total_{$year}_{$nextYear}";
-          $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}";
-          $updates[] = "endowment_total_{$year}_{$nextYear} = VALUES(endowment_total_{$year}_{$nextYear})";
-
-          $fields[] = "endowment_total_{$year}";
-          $aggregateFieldStrings[] = "MAX(endowment_total_{$year}) as endowment_total_{$year}";
-          $fieldSelects[] = "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}";
-          $updates[] = "endowment_total_{$year} = VALUES(endowment_total_{$year})";
-
-          $fields[] = "all_funds_total_{$year}_{$nextYear}";
-          $aggregateFieldStrings[] = "MAX(all_funds_total_{$year}_{$nextYear}) as all_funds_total_{$year}_{$nextYear}";
-          $fieldSelects[] = "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as all_funds_total_{$year}_{$nextYear}";
-          $updates[] = "all_funds_total_{$year}_{$nextYear} = VALUES(all_funds_total_{$year}_{$nextYear})";
-
-          $fields[] = "all_funds_change_{$year}_{$nextYear}";
-          $aggregateFieldStrings[] = "MAX(change_{$year}_{$nextYear}) as change_{$year}_{$nextYear}";
-          $fieldSelects[] = "
-          SUM(COALESCE(IF(receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
-          - SUM(COALESCE(IF(receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
-           as all_funds_change_{$year}_{$nextYear}";
-          $updates[] = "all_funds_change_{$year}_{$nextYear} = VALUES(all_funds_change_{$year}_{$nextYear})";
-
-          if ($year >= 2020) {
-            $fields[] = "endowment_change_{$year}_{$nextYear}";
-            $aggregateFieldStrings[] = "MAX(endowment_change_{$year}_{$nextYear}) as endowment_change_{$year}_{$nextYear}";
-            $fieldSelects[] = "
-          SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
-          - SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
-           as endowment_change_{$year}_{$nextYear}";
-            $updates[] = "endowment_change_{$year}_{$nextYear} = VALUES(endowment_change_{$year}_{$nextYear})";
-
-          }
-        }
-
-        $fields[] = "change_{$year}_{$nextYear}";
-        $aggregateFieldStrings[] = "MAX(change_{$year}_{$nextYear}) as change_{$year}_{$nextYear}";
-        $fieldSelects[] = "
-          SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
-          - SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
-           as change_{$year}_{$nextYear}";
-        $updates[] = "change_{$year}_{$nextYear} = VALUES(change_{$year}_{$nextYear})";
-      }
-    }
-
     return '
-    INSERT INTO wmf_donor (
-      entity_id, last_donation_currency, last_donation_amount, last_donation_usd,
-      first_donation_usd, date_of_largest_donation,
-      largest_donation, endowment_largest_donation, all_funds_largest_donation,
-      lifetime_including_endowment,
-      lifetime_usd_total, endowment_lifetime_usd_total,
-      last_donation_date, endowment_last_donation_date, all_funds_last_donation_date,
-      first_donation_date,
-      endowment_first_donation_date,
-      all_funds_first_donation_date, number_donations,
-      endowment_number_donations, all_funds_number_donations,
-      ' . implode(', ', $fields) . '
-    )
 
+    INSERT INTO wmf_donor (
+      entity_id, ' . implode(', ', array_keys($this->getCalculatedFields())) . '
+    )
     SELECT
-      ' . ($this->isTriggerContext() ? ' NEW.contact_id as entity_id ' : ' totals.contact_id as entity_id ') . ',
-       # to honour FULL_GROUP_BY mysql mode we need an aggregate command for each
-      # field - even though we know we just want `the value from the subquery`
-      # MAX is a safe wrapper for that
-      # https://www.percona.com/blog/2019/05/13/solve-query-failures-regarding-only_full_group_by-sql-mode/
-      MAX(COALESCE(x.original_currency, latest.currency)) as last_donation_currency,
-      MAX(COALESCE(x.original_amount, latest.total_amount, 0)) as last_donation_amount,
-      MAX(COALESCE(latest.total_amount, 0)) as last_donation_usd,
-      MAX(COALESCE(earliest.total_amount, 0)) as first_donation_usd,
-      MAX(largest.receive_date) as date_of_largest_donation,
-      MAX(largest_donation) as largest_donation,
-      MAX(endowment_largest_donation) as endowment_largest_donation,
-      MAX(all_funds_largest_donation) as all_funds_largest_donation,
-      MAX(lifetime_including_endowment) as lifetime_including_endowment,
-      MAX(lifetime_usd_total) as lifetime_usd_total,
-      MAX(endowment_lifetime_usd_total) as endowment_lifetime_usd_total,
-      MAX(last_donation_date) as last_donation_date,
-      MAX(endowment_last_donation_date) as endowment_last_donation_date,
-      MAX(all_funds_last_donation_date) as all_funds_last_donation_date,
-      MIN(first_donation_date) as first_donation_date,
-      MIN(endowment_first_donation_date) as endowment_first_donation_date,
-      MIN(all_funds_first_donation_date) as all_funds_first_donation_date,
-      MAX(number_donations) as number_donations,
-      MAX(endowment_number_donations) as endowment_number_donations,
-      MAX(all_funds_number_donations) as all_funds_number_donations,
-      ' . implode(',', $aggregateFieldStrings) . "
+      ' . ($this->isTriggerContext() ? ' NEW.contact_id as entity_id , ' : ' totals.contact_id as entity_id , ')
+        . '# to honour FULL_GROUP_BY mysql mode we need an aggregate command for each
+ # field - even though we know we just want `the value from the subquery`
+ # MAX is a safe wrapper for that
+ # https://www.percona.com/blog/2019/05/13/solve-query-failures-regarding-only_full_group_by-sql-mode/
+ '
+       . implode(', ', $this->getSelectsAggregate()) . "
 
     FROM (
-      SELECT" . (!$this->isTriggerContext() ? ' c.contact_id,': '') ."
-        MAX(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS largest_donation,
-        MAX(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation,
-        MAX(COALESCE(total_amount, 0)) AS all_funds_largest_donation,
-        SUM(COALESCE(total_amount, 0)) AS lifetime_including_endowment,
-        SUM(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total,
-        SUM(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total,
-        MAX(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS last_donation_date,
-        MAX(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date,
-        MAX(IF(total_amount > 0, receive_date, NULL)) AS all_funds_last_donation_date,
-        MIN(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS first_donation_date,
-        MIN(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_first_donation_date,
-        MIN(IF(total_amount > 0, receive_date, NULL)) AS all_funds_first_donation_date,
-        COUNT(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS number_donations,
-        COUNT(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_number_donations,
-        COUNT(IF(total_amount > 0, receive_date, NULL)) AS all_funds_number_donations,
-     " . implode(',', $fieldSelects) . "
+      SELECT\n " . (!$this->isTriggerContext() ? ' c.contact_id,': '')
+      . implode(', ', $this->getTotalsFieldSelects()) . "
       FROM civicrm_contribution c
       USE INDEX(FK_civicrm_contribution_contact_id)
       WHERE " . ($this->isTriggerContext() ? ' contact_id = NEW.contact_id ' : $this->getWhereClause()) . "
@@ -725,27 +777,7 @@ class CalculatedData extends TriggerHook {
   GROUP BY " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id') . "
 
   ON DUPLICATE KEY UPDATE
-    last_donation_currency = VALUES(last_donation_currency),
-    last_donation_amount = VALUES(last_donation_amount),
-    last_donation_usd = VALUES(last_donation_usd),
-    first_donation_usd = VALUES(first_donation_usd),
-    largest_donation = VALUES(largest_donation),
-    date_of_largest_donation = VALUES(date_of_largest_donation),
-    lifetime_usd_total = VALUES(lifetime_usd_total),
-    last_donation_date = VALUES(last_donation_date),
-    first_donation_date = VALUES(first_donation_date),
-    number_donations = VALUES(number_donations),
-    endowment_largest_donation = VALUES(endowment_largest_donation),
-    all_funds_largest_donation = VALUES(all_funds_largest_donation),
-    lifetime_including_endowment = VALUES(lifetime_including_endowment),
-    endowment_lifetime_usd_total = VALUES(endowment_lifetime_usd_total),
-    endowment_last_donation_date = VALUES(endowment_last_donation_date),
-    all_funds_last_donation_date = VALUES(all_funds_last_donation_date),
-    endowment_first_donation_date = VALUES(endowment_first_donation_date),
-    all_funds_first_donation_date = VALUES(all_funds_first_donation_date),
-    endowment_number_donations = VALUES(endowment_number_donations),
-    all_funds_number_donations = VALUES(all_funds_number_donations),
-    " . implode(',', $updates) . ";";
+    " . implode(', ', $this->getUpdateClauses()) . ";";
   }
 
   /**
