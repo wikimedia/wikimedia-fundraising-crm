@@ -37,8 +37,8 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
       $this->assign('no_go_reason', E::ts('A usable email is required'));
       return;
     }
-    $this->setMessage();
     $preferredLanguage = $contact['preferred_language'] ?: 'en_US';
+    $this->setMessage($preferredLanguage);
     $preferredLanguageString = CRM_Core_PseudoConstant::getLabel('CRM_Contact_BAO_Contact', 'preferred_language', $preferredLanguage);
     $this->assign('language', $preferredLanguageString ?? $contact['preferred_language']);
     $this->assign('contact', $contact);
@@ -74,12 +74,14 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
 
   /**
    * Set the rendered message property, if possible.
+   * @param string $preferredLanguage
    */
-  protected function setMessage(): void {
+  protected function setMessage(string $preferredLanguage): void {
     try {
       $this->message = ThankYou::render()
         ->setContributionID($this->getContributionID())
         ->setTemplateName($this->getTemplateName())
+        ->setLanguage($preferredLanguage)
         ->execute()->first();
       $this->assign('subject', $this->message['subject']);
       $this->assign('message', $this->message['html']);
