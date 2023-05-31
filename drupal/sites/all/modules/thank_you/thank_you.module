@@ -20,6 +20,7 @@ use wmf_communication\CiviQueueInsertException;
 
 // FIXME: this constant is for test code
 const DUMB_BIG_TY_DAYS = 100000;
+const MAX_RENDER_ATTEMPTS = 3;
 
 /**
  * Implements hook_permission().
@@ -513,21 +514,35 @@ function thank_you_send_mail($params) {
   if (empty($params['language'])) {
     $params['language'] = Civi\WMFHelpers\Language::getLanguageCode($params['locale'] ?? 'en_US');
   }
-  try {
+  $renderAttempts = 0;
+
+  // Loop ends with 'break' or 'throw'
+  while(true) {
+    try {
     $rendered = ThankYou::render(FALSE)
-      // @todo switch to passing in 'raw' contact language.
+        // @todo switch to passing in 'raw' contact language.
       ->setLanguage($params['language'])
       ->setTemplateName($templateName)
       ->setTemplateParameters($params)
-      ->execute()->first();
-    $html = $rendered['html'];
-    $subject = $rendered['subject'];
+        ->execute()->first();
+      $html = $rendered['html'];
+      $subject = $rendered['subject'];
 
-    if (!$html || !$subject) {
-      $msg = "HTML rendering of template failed in {$params['locale']}.";
-      throw new WMFException(WMFException::UNKNOWN, $msg, ['thank_you_params' => $params]);
+      if (!$html || !$subject) {
+        $msg = "HTML rendering of template failed in {$params['locale']}.";
+        throw new WMFException(WMFException::UNKNOWN, $msg, ['thank_you_params' => $params]);
+      }
+      break;
     }
+    catch (Exception $ex) {
+      $renderAttempts++;
+      if ($renderAttempts >= MAX_RENDER_ATTEMPTS) {
+        throw $ex;
+      }
+    }
+  }
 
+  try {
     $civi_queue_record = NULL;
     $create_civi_mail = variable_get('thank_you_add_civimail_records', 'false');
     $rate = variable_get('thank_you_civimail_rate', 1.0);
