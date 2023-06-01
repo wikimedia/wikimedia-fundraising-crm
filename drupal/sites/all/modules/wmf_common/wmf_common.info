@@ -4,6 +4,5 @@ core = 7.x
 package = Wikimedia
 configure = admin/config/wmf_common
 files[] = TransactionalWmfQueueConsumer.php
-files[] = WmfDatabase.php
 files[] = WmfQueueConsumer.php
 files[] = tests/include/BaseWmfDrupalPhpUnitTestCase.php

@@ -4,6 +4,7 @@ namespace Civi\WMFHooks;
 
 use Civi;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelpers\Database;
 
 class Contribution {
 
@@ -12,7 +13,7 @@ class Contribution {
       case 'create':
       case 'edit':
         // Add derived wmf_contribution_extra fields to contribution parameters
-        if (\WmfDatabase::isNativeTxnRolledBack()) {
+        if (Database::isNativeTxnRolledBack()) {
           throw new WMFException(
             WMFException::IMPORT_CONTRIB,
             'Native txn rolled back before running pre contribution hook'

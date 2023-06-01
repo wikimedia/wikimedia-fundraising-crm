@@ -7,7 +7,7 @@ use Civi\Api4\Generic\Result;
 use Civi\Api4\Relationship;
 use Civi\WMFException\WMFException;
 use Civi\Api4\Email;
-use WmfDatabase;
+use Civi\WMFHelpers\Database;
 use Civi\Api4\Contact;
 use Civi\WMFStatistics\ImportStatsCollector;
 use Civi\WMFHelpers\Language;
@@ -201,7 +201,7 @@ class Save extends AbstractAction {
       }
     }
 
-    if (WmfDatabase::isNativeTxnRolledBack()) {
+    if (Database::isNativeTxnRolledBack()) {
       throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back before inserting contact");
     }
     // Attempt to insert the contact
@@ -211,7 +211,7 @@ class Save extends AbstractAction {
       $this->stopTimer( 'create_contact_civi_api' );
       \Civi::log('wmf')->debug('wmf_civicrm: Successfully ' . ($contact_id ? 'updated' : 'created ') . ' contact: {id}', ['id' => $contact_result['id']]);
       $this->createEmployerRelationshipIfSpecified($contact_result['id'], $msg);
-      if (WmfDatabase::isNativeTxnRolledBack()) {
+      if (Database::isNativeTxnRolledBack()) {
         throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
       }
     }
@@ -290,7 +290,7 @@ class Save extends AbstractAction {
       // For update it's handled in the update routing.
       wmf_civicrm_message_address_insert($msg, $contact_id);
     }
-    if (WmfDatabase::isNativeTxnRolledBack()) {
+    if (Database::isNativeTxnRolledBack()) {
       throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact auxiliary fields");
     }
     $result[] = $contact_result;
