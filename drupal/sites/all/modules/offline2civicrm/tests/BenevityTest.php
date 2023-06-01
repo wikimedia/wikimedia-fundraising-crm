@@ -779,13 +779,14 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
-  public function testDuplicateDetectionInvalidState() {
+  public function testDuplicateDetectionInvalidState(): void {
     [$mouseOrg] =$this->createAllOrgs();
 
     $existing = $this->callAPISuccess('Contribution', 'create', array(
       'trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED',
       'financial_type_id' => 'Engage',
       'total_amount' => 5,
+      'source' => 'USD 5.00',
       'contact_id' => $mouseOrg['id'],
     ));
 
