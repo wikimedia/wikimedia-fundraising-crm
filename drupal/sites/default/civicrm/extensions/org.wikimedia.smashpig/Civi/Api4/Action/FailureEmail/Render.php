@@ -94,7 +94,7 @@ class Render extends AbstractAction {
       $value['email'] = $email['email'];
       $value['display_name'] = $email['contact_id.display_name'];
       $value['language'] = $email['contact_id.preferred_language'];
-      $value['msg_text'] = $value['html'];
+      $value['msg_html'] = $value['html'];
       $value['msg_subject'] = $value['subject'];
       $result[$index] = $value;
     }

@@ -1,7 +1,7 @@
 <?php namespace wmf_common;
 
+use Civi\WMFHelpers\Database;
 use Exception;
-use WmfDatabase;
 
 /**
  * OK, this inheritance is getting Inception-level silly, but half our
@@ -19,7 +19,7 @@ abstract class TransactionalWmfQueueConsumer extends WmfQueueConsumer {
 		$this->logMessage( $message );
 		$callback = array( $this, 'processMessage' );
 		try {
-			WmfDatabase::transactionalCall(
+			Database::transactionalCall(
 				$callback, array( $message )
 			);
 		} catch( Exception $ex ) {

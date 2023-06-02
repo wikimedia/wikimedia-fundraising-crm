@@ -1,9 +1,10 @@
 <?php
 
-//TODO: namespace
+namespace Civi\WMFHelpers;
+
 use Civi\Core\Transaction\Manager;
 
-class WmfDatabase {
+class Database {
 
   /**
    * Multiple-database transaction around your callback.
@@ -20,10 +21,10 @@ class WmfDatabase {
    * @throws \Exception
    */
   static function transactionalCall($callback, $params) {
-    Civi::log('wmf')->info('Beginning DB transaction');
-    $drupal_transaction = db_transaction('wmf_default', ['target' => 'default']);
-    $crm_transaction = db_transaction('wmf_civicrm', ['target' => 'civicrm']);
-    $native_civi_transaction = new CRM_Core_Transaction();
+    \Civi::log('wmf')->info('Beginning DB transaction');
+    $drupal_transaction = Drupal::getTransaction('drupal');
+    $crm_transaction = Drupal::getTransaction('civicrm');
+    $native_civi_transaction = new \CRM_Core_Transaction();
 
     try {
       // Do the thing itself
@@ -32,12 +33,12 @@ class WmfDatabase {
       // Detect if anything has marked the native Civi transaction for
       // rollback, and do not proceed if so.
       if (self::isNativeTxnRolledBack()) {
-        throw new RuntimeException(
+        throw new \RuntimeException(
           'Civi Transaction was marked for rollback and Exception was suppressed'
         );
       }
     }
-    catch (Exception $ex) {
+    catch (\Exception $ex) {
       \Civi::log('wmf')->info('wmf_common: Aborting DB transaction.');
       $native_civi_transaction->rollback();
       $crm_transaction->rollback();
@@ -57,4 +58,5 @@ class WmfDatabase {
     $frame = Manager::singleton()->getFrame();
     return $frame && $frame->isRollbackOnly();
   }
+
 }
