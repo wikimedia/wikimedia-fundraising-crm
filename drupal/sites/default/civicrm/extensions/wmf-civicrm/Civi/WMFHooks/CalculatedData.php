@@ -308,6 +308,50 @@ class CalculatedData extends TriggerHook {
   }
 
   /**
+   * @param array $fieldsToShow
+   */
+  public function filterDonorFields(array $fieldsToShow): void {
+    $allFields = $this->getCalculatedFields();
+    // Reduce calculated fields to the intersection.
+    $this->calculatedFields = array_intersect_key($allFields, array_fill_keys($fieldsToShow, 1));
+
+    // Put back join fields if needed.
+    if ($this->isIncludeTable('latest')) {
+      $this->calculatedFields['last_donation_date'] = $allFields['last_donation_date'];
+    }
+    if ($this->isIncludeTable('earliest')) {
+      $this->calculatedFields['first_donation_date'] = $allFields['first_donation_date'];
+    }
+    if ($this->isIncludeTable('largest')) {
+      $this->calculatedFields['largest_donation'] = $allFields['largest_donation'];
+    }
+  }
+
+  /**
+   * Get the tables / subqueries that are required.
+   * @return array
+   */
+  public function getRequiredTables(): array {
+    $tables = [];
+    foreach ($this->calculatedFields as $field) {
+      $table = $field['table_alias'] ?? 'wmf_donor';
+      $tables[$table] = $table;
+    }
+    return $tables;
+  }
+
+  /**
+   * Is the table/ subquery to be joined in.
+   *
+   * @param string $tableAlias
+   *
+   * @return bool
+   */
+  public function isIncludeTable($tableAlias): bool {
+    return isset($this->getRequiredTables()[$tableAlias]);
+  }
+
+  /**
    * Get fields for wmf_donor custom group.
    *
    * This is the group with the custom fields for calculated donor data.
@@ -769,7 +813,10 @@ class CalculatedData extends TriggerHook {
         AND contribution_status_id = 1
         AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)"
       . (!$this->isTriggerContext() ? ' GROUP BY contact_id ': '') ."
-    ) as totals
+    ) as totals" .
+
+    (!$this->isIncludeTable('latest') ? '' : "
+
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON latest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id') . "
@@ -779,22 +826,28 @@ class CalculatedData extends TriggerHook {
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
     AND latest.financial_type_id <> $endowmentFinancialType
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
+") .
 
+  (!$this->isIncludeTable('earliest') ? '' : "
   LEFT JOIN civicrm_contribution earliest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON earliest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id') . "
     AND earliest.receive_date = totals.first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
-    AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
+    AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)")
+
+  .  (!$this->isIncludeTable('largest') ? '' : "
+
   LEFT JOIN civicrm_contribution largest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON largest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id ' : ' totals.contact_id ') . "
     AND largest.total_amount = totals.largest_donation
     AND largest.contribution_status_id = 1
     AND largest.total_amount > 0
-    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)
-  GROUP BY " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id');
+    AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)") .
+
+    " GROUP BY " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id');
   }
 
   /**
