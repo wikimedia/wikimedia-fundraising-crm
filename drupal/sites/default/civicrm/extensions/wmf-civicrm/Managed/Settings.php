@@ -16,7 +16,6 @@ use Civi\Api4\OptionValue;
 // when enabled, ie enabling logging creates logging tables.
 
 $settings = [
-  'civi-data-mailing-template-path' => 'sites/default/civicrm/extensions/wmf-civicrm/msg_templates/recurring_failed_message',
   'omnimail_field_mapping' => [
     'first_name' => 'firstname',
     'last_name' => 'lastname' ,
