@@ -47,7 +47,7 @@ class WMFDonor extends Generic\AbstractEntity {
    */
   public static function getFields(bool $checkPermissions = TRUE): BasicGetFieldsAction {
     return (new BasicGetFieldsAction(__CLASS__, __FUNCTION__, (static function() {
-      return array_merge(['id' => ['name' => 'id', 'title' => 'Contact ID']], (new CalculatedData())->getWMFDonorFields());
+      return array_merge(['id' => ['name' => 'id', 'title' => 'Contact ID']], (new CalculatedData())->setIsForceSegment(TRUE)->getWMFDonorFields());
     })))->setCheckPermissions($checkPermissions);
   }
 

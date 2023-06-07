@@ -62,13 +62,13 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface,
       ->addSelect('last_donation_date')
       ->addWhere('id', '=', $this->ids['Contact']['donor'])
       ->execute()->first();
-    $this->assertEquals((date('Y') -1) . '-08-02 00:00:00', $result['last_donation_date']);
+    $this->assertEquals($this->getDate() . ' 00:00:00', $result['last_donation_date']);
 
     // Do not specify fields.
     $result = WMFDonor::get(FALSE)
       ->addWhere('id', '=', $this->ids['Contact']['donor'])
       ->execute()->first();
-    $this->assertEquals((date('Y') -1) . '-08-02 00:00:00', $result['last_donation_date']);
+    $this->assertEquals($this->getDate() .  ' 00:00:00', $result['last_donation_date']);
 
     // Specify a field that requires an additional join.
     $result = WMFDonor::get(FALSE)
@@ -79,17 +79,70 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface,
   }
 
   /**
+   * Test the insanity that is donor segmentation..
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorGetSegments(): void {
+    $this->createDonor();
+
+    // Specify a field that requires an additional join.
+    $result = WMFDonor::get(FALSE)
+      ->setDebug(TRUE)
+      ->addSelect('donor_segment_id', 'donor_segment_id:label', 'donor_segment_id:description', 'donor_status_id', 'donor_status_id:label')
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->execute();
+
+    // This shows how to get useful sql for debugging...
+    $sql = $result->debug['sql'];
+    $this->assertStringContainsString('as donor_segment_id', $sql);
+    // Major gifts donor.
+    $row = $result->first();
+    $this->assertEquals(100, $row['donor_segment_id']);
+    $this->assertEquals(50, $row['donor_status_id']);
+    $this->assertEquals('Major Donor', $row['donor_segment_id:label']);
+    $this->assertEquals('Lapsed', $row['donor_status_id:label']);
+    $this->assertStringContainsString('$10,000.00 between ', $row['donor_segment_id:description']);
+  }
+
+  /**
    * Create a donor contact.
    *
    * @throws \CRM_Core_Exception
    */
   public function createDonor($contributionParams = [], $identifier = 'donor'): void {
-    $this->ids['Contact'][$identifier] = Contact::create(FALSE)->setValues(['first_name' => 'Billy', 'last_name' => 'Bill', 'contact_type' => 'Individual'])->execute()->first()['id'];
+    $this->createContact($identifier);
     Contribution::create(FALSE)->setValues(array_merge([
-      'receive_date' => (date('Y') -1) . '-08-02',
+      'receive_date' => $this->getDate(),
       'financial_type_id:name' => 'Donation',
       'total_amount' => 20000,
-      'contact_id' => $this->ids['Contact']['donor'],
+      'contact_id' => $this->ids['Contact'][$identifier],
     ], $contributionParams))->execute();
+  }
+
+  /**
+   * Get the data of our contribution.
+   *
+   * @return false|string
+   */
+  public function getDate() {
+    return date('Y-m-02', strtotime('-13 months'));
+  }
+
+  /**
+   * @param $identifier
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function createContact($identifier): void {
+    $this->ids['Contact'][$identifier] = Contact::create(FALSE)
+      ->setValues([
+        'first_name' => 'Billy',
+        'last_name' => 'Bill',
+        'contact_type' => 'Individual'
+      ])
+      ->execute()
+      ->first()['id'];
   }
 }

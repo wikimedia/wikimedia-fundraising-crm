@@ -26,6 +26,43 @@ class CalculatedData extends TriggerHook {
   protected $triggerContext = TRUE;
 
   /**
+   * Should the donor segment be included even if the field is not there.
+   *
+   * This is a transitional mechanism to allow us to add segment data in advance
+   * of prod having the field (which will be added late June 2023).
+   * In WMFDonor.get mode we are retrieving
+   * what WOULD be calculated - so we force it to be included via this
+   * flag.
+   *
+   * @var bool
+   */
+  public $isForceSegment = FALSE;
+
+  /**
+   * SQL for the segment selects.
+   *
+   * @var string
+   */
+  private $segmentSelectSQL;
+
+  /**
+   * SQL for the status selects.
+   *
+   * @var string
+   */
+  private $statusSelectSQL;
+
+  /**
+   * @param bool $isForceSegment
+   *
+   * @return \Civi\WMFHooks\CalculatedData
+   */
+  public function setIsForceSegment(bool $isForceSegment): self {
+    $this->isForceSegment = $isForceSegment;
+    return $this;
+  }
+
+  /**
    * @param bool $triggerContext
    *
    * @return \Civi\WMFHooks\CalculatedData
@@ -79,6 +116,44 @@ class CalculatedData extends TriggerHook {
       $this->getWMFDonorFields();
     }
     return $this->calculatedFields;
+  }
+
+  /**
+   * Get the available field options.
+   *
+   * @param string $fieldName
+   *
+   * @return array []
+   * @throws \CRM_Core_Exception
+   */
+  public function getFieldOptions(string $fieldName): array {
+    return $this->getWMFDonorFields()[$fieldName]['option_values'] ?? [];
+  }
+
+  /**
+   * Get the relevant label.
+   *
+   * @param string $fieldName
+   * @param $value
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public function getFieldLabel(string $fieldName, $value): string {
+    return $this->getFieldOptions($fieldName)[$value]['label'];
+  }
+
+  /**
+   * Get the relevant description.
+   *
+   * @param string $fieldName
+   * @param $value
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public function getFieldDescription(string $fieldName, $value): string {
+    return $this->getFieldOptions($fieldName)[$value]['description'];
   }
 
   /**
@@ -315,8 +390,8 @@ class CalculatedData extends TriggerHook {
     // Reduce calculated fields to the intersection.
     $this->calculatedFields = array_intersect_key($allFields, array_fill_keys($fieldsToShow, 1));
 
-    // Put back join fields if needed.
-    if ($this->isIncludeTable('latest')) {
+    // Put back join fields if needed for other fields, or to ensure there is at least one field present.
+    if (empty($this->calculatedFields) || $this->isIncludeTable('latest')) {
       $this->calculatedFields['last_donation_date'] = $allFields['last_donation_date'];
     }
     if ($this->isIncludeTable('earliest')) {
@@ -357,10 +432,36 @@ class CalculatedData extends TriggerHook {
    * This is the group with the custom fields for calculated donor data.
    *
    * @return array
+   * @throws \CRM_Core_Exception
    */
   public function getWMFDonorFields(): array {
     $endowmentFinancialType = $this->getEndowmentFinancialType();
     $this->calculatedFields = [
+      'donor_segment_id' => [
+        'name' => 'donor_segment_id',
+        'column_name' => 'donor_segment_id',
+        'label' => ts('Donor Segment'),
+        'data_type' => 'Int',
+        'default_value' => 1000,
+        'html_type' => 'Select',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'select_clause' => $this->getSegmentSelect(),
+        'option_values' => $this->getDonorSegmentOptions(),
+      ],
+      'donor_status_id' => [
+        'name' => 'donor_status_id',
+        'column_name' => 'donor_status_id',
+        'label' => ts('Donor Status'),
+        'data_type' => 'Int',
+        'html_type' => 'Select',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'select_clause' => $this->getSegmentStatusSelect(),
+        'option_values' => $this->getDonorStatusOptions(),
+      ],
       // Per https://phabricator.wikimedia.org/T222958#5323233
       // This is used in emails - and needs to not mix endowments & non-endowments
       'last_donation_currency' => [
@@ -675,7 +776,7 @@ class CalculatedData extends TriggerHook {
         'default_value' => 0,
         'is_active' => 1,
         'is_required' => 0,
-        'is_searchable' => ($year > 2015),
+        'is_searchable' => ($year > 2018),
         'is_view' => 1,
         'weight' => $weight,
         'is_search_range' => 1,
@@ -763,7 +864,31 @@ class CalculatedData extends TriggerHook {
         ];
       }
     }
+    if (!$this->isSegmentReady()) {
+      unset($this->calculatedFields['donor_segment_id'], $this->calculatedFields['donor_status_id']);
+    }
+
     return $this->calculatedFields;
+  }
+
+  /**
+   * Is the world ready for donor segments.
+   *
+   * More specifically - is the database ready for them. We don't want to inadvertently
+   * add triggers for these fields to production before we have added the fields.
+   *
+   * We don't want to accidentally add the fields either - but we would have to actively
+   * run WMFConfig::syncCustomFields(FALSE)->execute(); to do that - so we can probably avoid that
+   * for 2 weeks (really we probably wont' run triggers either).
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  private function isSegmentReady() : bool {
+    if (\CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_custom_field WHERE name = "donor_segment_id"')) {
+      return TRUE;
+    }
+    return $this->isForceSegment;
   }
 
   /**
@@ -873,6 +998,438 @@ class CalculatedData extends TriggerHook {
    */
   protected function getEndowmentFinancialType(): ?int {
     return CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+  }
+
+  /**
+   * Get the select clause for the donor segment status.
+   *
+   * Currently a placeholder.
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  protected function getSegmentStatusSelect(): string {
+    if (!$this->statusSelectSQL) {
+      $options = $this->getDonorStatusOptions();
+      $this->statusSelectSQL  = "\nCASE";
+      foreach ($options as $option) {
+        if (!empty($option['sql_select'])) {
+          $this->statusSelectSQL .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
+        }
+      }
+      $this->statusSelectSQL .= '
+       ELSE 100
+       END  as donor_status_id';
+    }
+    return $this->statusSelectSQL;
+  }
+
+  /**
+   * Get the select clause for the donor segment.
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  protected function getSegmentSelect(): string {
+    if (!$this->segmentSelectSQL) {
+      $options = $this->getDonorSegmentOptions();
+      $this->segmentSelectSQL  = ' CASE ';
+      foreach ($options as $option) {
+        if (!empty($option['sql_select'])) {
+          $this->segmentSelectSQL .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
+        }
+      }
+      $this->segmentSelectSQL .= '
+       ELSE 1000
+       END  as donor_segment_id';
+    }
+    return $this->segmentSelectSQL;
+
+  }
+
+  /**
+   * Get explanations of the segment options.
+   *
+   * This is primary for fr-tech brain injury prevention during QA.
+   * It's not clear the longer term role of this function.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function getSegmentOptionDetails($value): string {
+    foreach ($this->getDonorSegmentOptions() as $segmentOption) {
+      if ($segmentOption['value'] === $value) {
+        return $segmentOption['static_description'] . ' ' . $segmentOption['description'];
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Get the options for the donor status field.
+   *
+   * Ref
+   * https://docs.google.com/spreadsheets/d/1qM36MeKWyOENl-iR5umuLph5HLHG6W_6c46xJUdE3QY/edit
+   *
+   * @return array[]
+   * @throws \CRM_Core_Exception
+   */
+  public function getDonorStatusOptions(): array {
+    $details = [
+      10 => [
+        'label' => 'New',
+        'static_description' => '',
+        'value' => 10,
+        'name' => 'new',
+        'criteria' => [
+          'first_donation' => [
+            ['from' => '6 months ago', 'to' => 'now', 'total' => 0.01],
+          ],
+        ],
+      ],
+      20 => [
+        'label' => 'Consecutive',
+        'static_description' => 'gave in last 12 months and 12 months prior',
+        'value' => 20,
+        'name' => 'consecutive',
+        'criteria' => [
+          // multiple ranges are AND rather than OR
+          'multiple_range' => [
+            ['from' => '12 months ago', 'to' => 'now', 'total' => 0.01],
+            [
+              'from' => '24 months ago',
+              'to' => '12 months ago',
+              'total' => 0.01,
+            ],
+          ],
+        ],
+      ],
+      30 => [
+        'name' => 'active',
+        'label' => 'Active',
+        'value' => 30,
+        'static_description' => 'gave within the last 12 months, or 3 months if recurring',
+        'criteria' => [
+          'range' => [
+            ['from' => '12 months ago', 'to' => 'now', 'total' => 0.01],
+            [
+              'from' => '3 months ago',
+              'to' => 'now',
+              'total' => 0.01,
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+            ],
+          ],
+        ],
+      ],
+      40 => [
+        'label' => 'Recent Lapsed',
+        'static_description' => '4-6 months ago recurring',
+        'value' => 40,
+        'name' => 'recent_lapsed',
+        'criteria' => [
+          'range' => [
+            [
+              'from' => '4 months ago',
+              'to' => '6 months ago',
+              'total' => 0.01,
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+            ],
+          ],
+        ],
+      ],
+      50 => [
+        'label' => 'Lapsed',
+        'static_description' => 'last gave 12-36 months ago, or 7-36 months, if recurring',
+        'value' => 50,
+        'name' => 'lapsed',
+        'criteria' => [
+          'range' => [
+            [
+              'from' => '36 months ago',
+              'to' => '12 months ago',
+              'total' => 0.01,
+            ],
+            [
+              'from' => '36 months ago',
+              'to' => '7 months ago',
+              'total' => 0.01,
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+            ],
+          ],
+        ],
+      ],
+      60 => [
+        'label' => 'Deep Lapsed',
+        'static_description' => 'last gave 36-60 months ago',
+        'value' => 60,
+        'name' => 'deep_lapsed',
+        'criteria' => [
+          'range' => [
+            [
+              'from' => '60 months ago',
+              'to' => '36 months ago',
+              'total' => 0.01,
+            ],
+          ],
+        ],
+      ],
+      70 => [
+        'label' => 'Ultra lapsed',
+        'static_description' => 'gave prior to 60 months ago',
+        'value' => 70,
+        'name' => 'ultra_lapsed',
+        'criteria' => [
+          'range' => [
+            [
+              'from' => '200 months ago',
+              'to' => '60 months ago',
+              'total' => 0.01,
+            ],
+          ],
+        ],
+      ],
+    ];
+    foreach ($details as $index => $detail) {
+      if (!empty($detail['criteria'])) {
+        $this->addCriteriaInterpretation($details[$index]);
+      }
+    }
+    return $details;
+  }
+
+  /**
+   * Get the options for the donor segment field.
+   *
+   * Ref
+   * https://docs.google.com/spreadsheets/d/1qM36MeKWyOENl-iR5umuLph5HLHG6W_6c46xJUdE3QY/edit
+   *
+   * @return array[]
+   * @throws \CRM_Core_Exception
+   */
+  public function getDonorSegmentOptions(): array {
+    $details = [
+      100 => [
+        'label' => 'Major Donor',
+        'value' => 100,
+        // Use for triggers instead of the dynamic description, which will date.
+        'static_description' => 'has given 10,000+ in one of the past 3 12 month periods',
+        'name' => 'major_donor',
+        'criteria' => [
+          'range' => [
+            ['from' => '12 months ago', 'to' => 'now', 'total' => 10000],
+            ['from' => '24 months ago', 'to' => '12 month ago', 'total' => 10000],
+            ['from' => '36 months ago', 'to' => '24 months ago', 'total' => 10000],
+          ],
+        ],
+      ],
+      200 => [
+        'label' => 'Mid Tier',
+        'value' => 200,
+        'static_description' => 'has given 1,000+ in one of the past 5 12 month periods.',
+        'name' => 'mid_tier',
+        'criteria' => [
+          'range' => [
+            ['from' => '12 months ago', 'to' => 'now', 'total' => 1000],
+            ['from' => '24 months ago', 'to' => '12 month ago', 'total' => 1000],
+            ['from' => '36 months ago', 'to' => '24 months ago', 'total' => 1000],
+          ],
+        ],
+      ],
+      300 => [
+        'label' => 'Mid-Value Prospect',
+        'value' => 300,
+        'static_description' => 'has given 250+ in one of the past 3 12 month periods',
+        'name' => 'mid_value',
+        'criteria' => [
+          'range' => [
+            ['from' => '12 months ago', 'to' => 'now', 'total' => 250],
+            ['from' => '24 months ago', 'to' => '12 month ago', 'total' => 250],
+            ['from' => '36 months ago', 'to' => '24 months ago', 'total' => 250],
+          ],
+        ],
+      ],
+      400 => [
+        'label' => 'Recurring donor',
+        'value' => 400,
+        'static_description' => 'has made a recurring donation in last 36 months',
+        'name' => 'recurring',
+        'criteria' => [
+          'range' => [
+            ['from' => '36 months ago', 'to' => 'now', 'total' => 0.01, 'additional_criteria' => ['contribution_recur_id IS NOT NULL']],
+          ],
+        ],
+      ],
+      500 => [
+        'label' => 'Grassroots Plus Donor',
+        'value' => 500,
+        'static_description' => 'has given 50+ in one of the past 3 12 month periods',
+        'name' => 'grass_roots_plus',
+        'criteria' => [
+          'range' => [
+            ['from' => '12 months ago', 'to' => 'now', 'total' => 50],
+            ['from' => '24 months ago', 'to' => '12 month ago', 'total' => 50],
+            ['from' => '36 months ago', 'to' => '24 months ago', 'total' => 50],
+          ],
+        ],
+      ],
+      600 => [
+        'label' => 'Grassroots Donor',
+        'value' => 600,
+        'static_description' => 'has given in the last 36 months',
+        'name' => 'grass_roots',
+        'criteria' => [
+          'range' => [
+            ['from' => '36 months ago', 'to' => 'now', 'total' => .01],
+          ],
+        ],
+      ],
+      700 => [
+        'label' => 'Deep lapsed Donor',
+        'value' => 700,
+        'static_description' => 'has given between 36 & 60 months ago.',
+        'name' => 'deep_lapsed',
+        'criteria' => [
+          'range' => [
+            ['from' => '60 months ago', 'to' => '38 months ago', 'total' => .01],
+          ],
+        ],
+      ],
+      800 => [
+        'label' => 'Ultra lapsed Donor',
+        'value' => 800,
+        'static_description' => 'How does this differ from deep-lapsed',
+        'name' => 'ultra_lapsed',
+        'criteria' => [
+          'range' => [
+            ['from' => '200 months ago', 'to' => '60 months ago', 'total' => .01],
+          ],
+        ],
+      ],
+      900 => [
+        'label' => 'All other Donors',
+        'value' => 900,
+        'static_description' => 'How could this be reachable?',
+        'name' => 'other_donor',
+        'criteria' => [
+          'range' => [
+            ['from' => '200 months ago', 'to' => 'now', 'total' => .01],
+          ],
+        ],
+      ],
+      1000 => [
+        'label' => 'Non Donors',
+        'value' => 1000,
+        'static_description' => 'this can not be calculated with the others. We will have to populate once & then ?',
+        'name' => 'non_donor',
+      ],
+    ];
+    foreach ($details as $index => $detail) {
+      if (!empty($detail['criteria'])) {
+        $this->addCriteriaInterpretation($details[$index]);
+      }
+    }
+    return $details;
+  }
+
+  /**
+   * Converts a string date description to sql.
+   *
+   * E.g '12 months ago' becomes 'NOW() - INTERVAL 12 MONTH'
+   *
+   * The reason to do it like this is it is already so hard to process
+   * that this allows us to use 'plain text' when describing the criteria
+   * and hopefully a couple of brain cells will live to code another day.
+   *
+   * @param string $textDateOffset
+   *
+   * @return string
+   */
+  public function convertDateOffSetToSQL(string $textDateOffset): string {
+    if ($textDateOffset === 'now') {
+      return 'NOW()';
+    }
+    $split = explode(' ', $textDateOffset);
+    $offset = $split[0];
+    $interval = strtoupper($split[1]);
+    if ($interval === 'MONTHS') {
+      $interval = 'MONTH';
+    }
+    return "NOW() - INTERVAL $offset $interval";
+  }
+
+  /**
+   * Get the crazy insane clause for this range.
+   *
+   * @param array $range
+   *
+   * @return string
+   */
+  protected function getRangeClause(array $range): string {
+    $additionalCriteria = empty($range['additional_criteria']) ? '' : (implode(', ', $range['additional_criteria']) . ' AND ');
+    return "COALESCE(IF($additionalCriteria receive_date
+      BETWEEN (" . $this->convertDateOffsetToSQL($range['from']) . ") AND (" . $this->convertDateOffsetToSQL($range['to']) . ')
+      , total_amount, 0), 0)' . ($range['total'] === 0 ? ' > ' : ' >= ') . $range['total'];
+  }
+
+  /**
+   * @param $range
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  protected function getTextClause($range): string {
+    $textClause = 'at least ' . \Civi::format()
+        ->money($range['total']) . ' between ' . date('Y-m-d H:i:s', strtotime($range['from'])) . ' and ' . date('Y-m-d H:i:s', strtotime($range['to']));
+    if (!empty($range['additional_criteria'])) {
+      // Currently this is the only additional criteria defined so
+      // let's cut a corner.
+      $textClause .= ' AND is recurring';
+    }
+    return $textClause;
+  }
+
+  /**
+   * @param array $detail
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function addCriteriaInterpretation(array &$detail): void {
+    $textClauses = [];
+    $clauses = '';
+    // For not we are safe that only one type of range exists - ie standard
+    // 'or range', multiple_range (and) or first_donation. If that changes the below
+    // will need a re-write, if it doesn't get re-written first .. in another pass.
+    if (!empty($detail['criteria']['range'])) {
+      $rangeClauses = [];
+      foreach ($detail['criteria']['range'] as $range) {
+        $rangeClauses[] = 'SUM(' . $this->getRangeClause($range) . ')';
+        $textClauses[] = $this->getTextClause($range);
+      }
+      $clauses = implode(' OR ', $rangeClauses);
+    }
+    if (!empty($detail['criteria']['multiple_range'])) {
+      $rangeClauses = [];
+      foreach ($detail['criteria']['multiple_range'] as $range) {
+        $rangeClauses[] = 'SUM(' . $this->getRangeClause($range) . ')';
+        $textClauses[] = $this->getTextClause($range);
+      }
+      $clauses = implode(' AND ', $rangeClauses);
+    }
+    if (!empty($detail['criteria']['first_donation'])) {
+      $rangeClauses = [];
+      foreach ($detail['criteria']['first_donation'] as $range) {
+        $rangeClauses[] = 'MIN(' . $this->getRangeClause($range) . ')';
+        $textClauses[] = $this->getTextClause($range);
+      }
+      $clauses = implode(' OR ', $rangeClauses);
+    }
+    $sqlSelect = "
+         WHEN (
+         --  {$detail['label']}  {$detail['static_description']}
+         $clauses
+
+        )";
+    $detail['sql_select'] = $sqlSelect;
+    $detail['description'] = $detail['static_description'] . " - ie \n" . implode(" OR \n", $textClauses);
   }
 
 }
