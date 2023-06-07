@@ -263,7 +263,6 @@ class ThankYou extends GenericWorkflowMessage {
       'id' => 'contributionID',
       'contact_id' => 'contactId',
       'receive_date' => 'receiveDate',
-      'trxn_id' => 'transactionID',
       'contribution_extra.original_currency' => 'currency',
       'contribution_extra.original_amount' => 'amount',
       'Stock_Information.Description_of_Stock' => 'descriptionOfStock',
