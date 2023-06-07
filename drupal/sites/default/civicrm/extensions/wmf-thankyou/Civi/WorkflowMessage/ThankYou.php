@@ -264,7 +264,8 @@ class ThankYou extends GenericWorkflowMessage {
       'contact_id' => 'contactId',
       'receive_date' => 'receiveDate',
       'trxn_id' => 'transactionID',
-      'currency' => 'currency',
+      'contribution_extra.original_currency' => 'currency',
+      'contribution_extra.original_amount' => 'amount',
       'Stock_Information.Description_of_Stock' => 'descriptionOfStock',
       'Stock_Information.Stock Value' => 'stockValue',
       'Gift_Data.Campaign' => 'giftSource',
@@ -390,7 +391,7 @@ class ThankYou extends GenericWorkflowMessage {
    */
   public function getAmount(): string {
     if (!$this->amount) {
-      $this->amount = $this->getContribution()['total_amount'];
+      $this->amount = $this->getContribution()['contribution_extra.original_amount'];
     }
     if (!is_numeric($this->amount)) {
       return $this->amount;
@@ -417,6 +418,9 @@ class ThankYou extends GenericWorkflowMessage {
   public function getStockValue(): string {
     if (!is_numeric($this->stockValue)) {
       return (string) $this->stockValue;
+    }
+    if ((int) $this->stockValue === 0) {
+      return '';
     }
     return \Civi::format()->money($this->stockValue, $this->currency);
   }
