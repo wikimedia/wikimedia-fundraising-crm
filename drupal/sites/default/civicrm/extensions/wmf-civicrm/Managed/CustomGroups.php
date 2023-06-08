@@ -69,6 +69,7 @@ return [
   'Gift_Data' => [
     'group' => [
       'name' => 'Gift_Data',
+      'table_name' => 'civicrm_value_1_gift_data_7',
       'title' => ts('Gift Data'),
       'extends' => 'Contribution',
       'style' => 'inline',
