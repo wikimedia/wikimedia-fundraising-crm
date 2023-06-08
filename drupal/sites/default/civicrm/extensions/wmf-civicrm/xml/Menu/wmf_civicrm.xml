@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/wmf-segment</path>
+    <page_callback>CRM_Wmf_Page_Segment</page_callback>
+    <title>WMF Donor Segment Explanation</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>

@@ -1296,7 +1296,7 @@ class CalculatedData extends TriggerHook {
       800 => [
         'label' => 'Ultra lapsed Donor',
         'value' => 800,
-        'static_description' => 'How does this differ from deep-lapsed',
+        'static_description' => 'Has given more than 60 months ago',
         'name' => 'ultra_lapsed',
         'criteria' => [
           'range' => [
@@ -1320,6 +1320,7 @@ class CalculatedData extends TriggerHook {
         'value' => 1000,
         'static_description' => 'this can not be calculated with the others. We will have to populate once & then ?',
         'name' => 'non_donor',
+        'description' => 'never donated'
       ],
     ];
     foreach ($details as $index => $detail) {
