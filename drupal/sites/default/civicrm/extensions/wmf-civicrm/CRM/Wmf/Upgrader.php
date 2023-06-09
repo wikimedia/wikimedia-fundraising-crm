@@ -822,13 +822,17 @@ SET
    * @throws \Civi\Core\Exception\DBQueryException
    */
   public function upgrade_4260() : bool {
+    CRM_Core_DAO::executeQuery("CREATE TEMPORARY TABLE rosie
+     Select entity_id as contribution_id
+      FROM log_civicrm_value_1_gift_data_7
+     LEFT JOIN civicrm_contribution c ON c.id = entity_id
+     WHERE log_conn_id ='6454c2d96e481JbZa'");
+    CRM_Core_DAO::executeQuery('ALTER TABLE rosie ADD INDEX(contribution_id)');
     CRM_Core_DAO::executeQuery("
       UPDATE civicrm_value_1_gift_data_7
+      INNER JOIN rosie ON entity_id = contribution_id
       SET appeal = 'Annual Fund Appeal 2022 - Mailing'
-      WHERE entity_id IN (Select entity_id as contribution_id
-      FROM log_civicrm_value_1_gift_data_7
-        LEFT JOIN civicrm_contribution c ON c.id = entity_id
-      WHERE log_conn_id ='6454c2d96e481JbZa')");
+    ");
     return TRUE;
   }
 
