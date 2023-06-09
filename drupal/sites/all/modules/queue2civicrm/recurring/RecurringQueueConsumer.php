@@ -1,13 +1,14 @@
 <?php namespace queue2civicrm\recurring;
 
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\PaymentProcessor;
 use wmf_common\TransactionalWmfQueueConsumer;
 
 
 class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
-
+  const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID = 165;
   /**
    * Import messages about recurring payments
    *
@@ -16,9 +17,11 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   public function processMessage($message) {
-    // store the original message for logging later
-    $msg_orig = $message;
-
+    $txn_upgrade_recur = ['recurring_upgrade'];
+    if (isset($message['txn_type']) && in_array($message[ 'txn_type' ], $txn_upgrade_recur, true)) {
+      $this->upgradeRecurAmount($message);
+      return;
+    }
     $message = $this->normalizeMessage($message);
 
     // define the subscription txn type for an actual 'payment'
@@ -279,6 +282,42 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       default:
         throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid subscription message type');
     }
+  }
+
+  /**
+   * Upgrade Contribution Recur Amount
+   *
+   * Completes the process of upgrading the contribution recur amount
+   * if the donor agrees
+   *
+   * @param array $msg
+   *
+   * @throws \Civi\WMFException\WMFException
+   */
+  protected function upgradeRecurAmount($msg) {
+    if ($msg['txn_type'] != "recurring_upgrade" || !isset($msg['contribution_recur_id']) || !isset($msg['amount'])) {
+      throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid message type');
+    }
+    $recur_record = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $msg['contribution_recur_id'])
+      ->execute()
+      ->first();
+
+    $contact_id = $recur_record['contact_id'];
+    $amountAdded = $msg['amount'] - $recur_record['amount'];
+    ContributionRecur::update(FALSE)
+      ->addValue('amount', $msg['amount'])
+      ->addWhere('id', '=', $msg['contribution_recur_id'])
+      ->execute();
+
+    Activity::create(FALSE)
+      ->addValue('activity_type_id', self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID)
+      ->addValue('source_record_id', $msg['contribution_recur_id'])
+      ->addValue('status_id:name', 'Completed')
+      ->addValue('subject', "$ $amountAdded added")
+      ->addValue('details', "$ $amountAdded added")
+      ->addValue('source_contact_id', $contact_id)
+      ->execute();
   }
 
   /**

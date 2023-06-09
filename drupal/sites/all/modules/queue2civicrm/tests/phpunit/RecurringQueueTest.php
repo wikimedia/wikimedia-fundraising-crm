@@ -1,13 +1,16 @@
 <?php
 
-use queue2civicrm\recurring\RecurringQueueConsumer;
+use Civi\Api4\Activity;
+use Civi\Api4\ContributionRecur;
 use Civi\WMFException\WMFException;
+use queue2civicrm\recurring\RecurringQueueConsumer;
 
 /**
  * @group Queue2Civicrm
  * @group Recurring
  */
 class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
+  use \Civi\Test\ContactTestTrait;
 
   /**
    * @var RecurringQueueConsumer
@@ -42,6 +45,31 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $this->addToCleanup($contributions[0]);
     }
     return $contributions;
+  }
+
+  public function testRecurringUpgrade() {
+    $testRecurring = $this->getTestContributionRecurRecords();
+    $additionalAmount = 5;
+    $msg = [
+      'txn_type' => "recurring_upgrade",
+      'contribution_recur_id' => $testRecurring['id'],
+      'amount' => $testRecurring['amount'] + $additionalAmount
+    ];
+    $this->consumer->processMessage($msg);
+    $updatedRecurring = ContributionRecur::get(FALSE)
+      ->addSelect('id', 'amount')
+      ->addWhere('id', '=', $testRecurring['id'])
+      ->execute()
+      ->first();
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $testRecurring['id'])
+      ->addWhere('activity_type_id', '=', RecurringQueueConsumer::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID)
+      ->execute()
+      ->last();
+    $this->assertEquals($testRecurring['amount'] + $additionalAmount, $updatedRecurring['amount']);
+    $this->assertEquals($activity['subject'], "$ {$additionalAmount} added");
+    $this->ids['ContributionRecur'][$testRecurring['id']] = $testRecurring['id'];
+    $this->ids['Activity'][$activity['id']] = $activity['id'];
   }
 
   public function testCreateDistinctContributions() {
@@ -586,5 +614,27 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     if (!empty($contribution['contribution_recur_id'])) {
       $this->ids['ContributionRecur'][$contribution['contribution_recur_id']] = $contribution['contribution_recur_id'];
     }
+  }
+
+   /**
+   * Create the recurring contribution.
+   *
+   * @param array $recurParams
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function getTestContributionRecurRecords($recurParams = []): array {
+    $contactID = $recurParams['contact_id'] ?? $this->individualCreate();
+
+    return ContributionRecur::create(FALSE)->setValues(array_merge([
+      'contact_id' => $contactID,
+      'amount' => 10,
+      'frequency_interval' => 'week',
+      'start_date' => 'now',
+      'is_active' => TRUE,
+      'contribution_status_id:name' => 'Pending',
+    ], $recurParams))->execute()->first();
   }
 }
