@@ -896,6 +896,43 @@ SET
   }
 
   /**
+   * T336891 Data Axle project
+   *
+   * NEW Segment 1 (GROUP ID: 1685 Gift at least $50+ each year in the last 5 years (Jan 1, 2018 - today)
+   * @return bool
+   */
+  public function upgrade_4286() : bool {
+    // NEW Segment 1 (GROUP ID: 1685 Gift at least $50+ each year in the last 5 years (Jan 1, 2018 - today)
+    $segmentOneGroupId = CRM_Core_DAO::singleValueQuery(
+      "SELECT id FROM civicrm_group WHERE title = 'Data Axle $50+ each year since 2018 T336891'");
+    // below for local test, otherwise civicrm production already have this id as 1685 created
+    if(!$segmentOneGroupId) {
+      CRM_Core_DAO::executeQuery(
+        "INSERT INTO civicrm_group (`name`, `title`, `description`, `is_active`, `visibility`, `group_type`) VALUES ('Data_Axle_50_each_year_since_20_1703' ,'Data Axle $50+ each year since 2018 T336891', 'Given at least $50+ each year for the last 5 years (Jan 1, 2018 - today)', 1, 'User and User Admin Only', '1')");
+      $segmentOneGroupId = CRM_Core_DAO::singleValueQuery(
+        "SELECT id FROM civicrm_group WHERE title = 'Data Axle $50+ each year since 2018 T336891'");
+    }
+    // remove
+    $segmentOneContacts = CRM_Core_DAO::executeQuery(
+      "SELECT a.id FROM civicrm_contact a JOIN (SELECT contact_id as contact2223, sum(total_amount) AS amount2223 FROM civicrm_contribution WHERE receive_date BETWEEN '2022-06-13' AND '2023-06-12' GROUP BY contact_id HAVING amount2223 >= 50) b ON b.contact2223 = a.id
+    JOIN (SELECT contact_id AS contact2122, sum(total_amount) AS amount2122 FROM civicrm_contribution WHERE receive_date BETWEEN '2021-06-13' AND '2022-06-12' GROUP BY contact_id HAVING amount2122 >= 50) c ON c.contact2122 = a.id
+    JOIN (SELECT contact_id AS contact2021, sum(total_amount) AS amount2021 FROM civicrm_contribution WHERE receive_date BETWEEN '2020-06-13' AND '2021-06-12' GROUP BY contact_id HAVING amount2021 >= 50) d ON d.contact2021 = a.id
+    JOIN (SELECT contact_id AS contact1920, sum(total_amount) AS amount1920 FROM civicrm_contribution WHERE receive_date BETWEEN '2019-06-13' AND '2020-06-12' GROUP BY contact_id HAVING amount1920 >= 50) e ON e.contact1920 = a.id
+    JOIN (SELECT contact_id AS contact1819, sum(total_amount) AS amount1819 FROM civicrm_contribution WHERE receive_date BETWEEN '2018-06-13' AND '2019-06-12' GROUP BY contact_id HAVING amount1819 >= 50) f ON f.contact1819 = a.id
+    JOIN civicrm_address ca ON a.id = ca.id AND ca.is_primary = 1
+    AND ca.country_id = 1228 AND ca.street_address <> ''
+    WHERE a.contact_type = 'Individual' AND a.is_deceased = 0 AND a.is_deleted = 0
+    AND a.is_opt_out = 0");
+    $segmentOneContactIds = [];
+    while ($segmentOneContacts->fetch()) {
+      if( isset($segmentOneContacts->id) ) {
+        $segmentOneContactIds[] = $segmentOneContacts->id;
+      }
+    }
+    $this->insertContacts($segmentOneContactIds, $segmentOneGroupId);
+    return TRUE;
+  }
+  /**
    * Add Contacts to Group
    *
    * @param array $contacts
