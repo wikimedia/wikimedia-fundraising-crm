@@ -11,9 +11,11 @@
  */
 namespace Civi\Api4\Action\WMFDonor;
 
+use Civi\API\Request;
 use Civi\Api4\Generic\DAOGetAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Query\Api4SelectQuery;
+use Civi\Api4\WMFDonor;
 use Civi\WMFHooks\CalculatedData;
 
 /**
@@ -32,6 +34,50 @@ class Get extends DAOGetAction {
     return 'Contact';
   }
 
+  /**
+   * Is this api call in the select phase of processing.
+   *
+   * Used to alter entityFields() behaviour.
+   *
+   * @var bool
+   */
+  private $isSelectPhase = FALSE;
+
+  /**
+   * Adds all standard fields matched by the * wildcard
+   *
+   * We override this to filter the select to wmf_donor fields (since
+   * we are extending contact it would otherwise grab fields from the contact
+   * entity. The reason we are overriding contact is it hopefully allows us
+   * to piggy-back off it's where options. But to do that for select but not
+   * where means we need some intervention as to what fields are available here.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function expandSelectClauseWildcards(): void {
+    $this->isSelectPhase = TRUE;
+    parent::expandSelectClauseWildcards();
+    $this->isSelectPhase = FALSE;
+  }
+
+  public function entityFields(): array {
+    if (!$this->isSelectPhase) {
+      return parent::entityFields();
+    }
+    $getFields = Request::create('WMFDonor', 'getFields', [
+      'version' => 4,
+      'checkPermissions' => FALSE,
+      'action' => $this->getActionName(),
+      // Hmm maybe I could leverage the field type instead of overriding the function.
+      // But, if this works I may lose the will to dig deeper & if it doesn't
+      // I may lose the will to live.
+      'where' => [['type', 'IN', ['Field', 'Filter', 'Extra']]],
+    ]);
+    $result = new Result();
+    // Pass TRUE for the private $isInternal param
+    $getFields->_run($result, TRUE);
+    return (array) $result->indexBy('name');
+  }
 
   /**
    * @param \Civi\Api4\Generic\Result $result
@@ -83,6 +129,10 @@ class Get extends DAOGetAction {
     $calculatedData = new CalculatedData();
     $calculatedData->setTriggerContext(FALSE)
       ->setWhereClause('contact_id IN (' . $sql . ')');
+    if (!empty($this->select)) {
+      // If we have specified the fields then filter to only select those fields.
+      $calculatedData->filterDonorFields($this->select);
+    }
     $sql = $calculatedData->getSelectSQL();
     $this->_debugOutput['sql'] = $sql;
     \Civi::log('wmf')->info($sql);

@@ -57,10 +57,25 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface,
    */
   public function testWMFDonorGet(): void {
     $this->createDonor();
-    $result = WMFDonor::get(FALSE)->addSelect('last_donation_date')
+    // Select last_donation_date only.
+    $result = WMFDonor::get(FALSE)
+      ->addSelect('last_donation_date')
       ->addWhere('id', '=', $this->ids['Contact']['donor'])
       ->execute()->first();
-    $this->assertEquals('2021-08-02 00:00:00', $result['last_donation_date']);
+    $this->assertEquals((date('Y') -1) . '-08-02 00:00:00', $result['last_donation_date']);
+
+    // Do not specify fields.
+    $result = WMFDonor::get(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->execute()->first();
+    $this->assertEquals((date('Y') -1) . '-08-02 00:00:00', $result['last_donation_date']);
+
+    // Specify a field that requires an additional join.
+    $result = WMFDonor::get(FALSE)
+      ->addSelect('last_donation_usd')
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->execute()->first();
+    $this->assertEquals(20000, $result['last_donation_usd']);
   }
 
   /**
@@ -68,13 +83,13 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface,
    *
    * @throws \CRM_Core_Exception
    */
-  public function createDonor(): void {
-    $this->ids['Contact']['donor'] = Contact::create(FALSE)->setValues(['first_name' => 'Billy', 'last_name' => 'Bill', 'contact_type' => 'Individual'])->execute()->first()['id'];
-    Contribution::create(FALSE)->setValues([
-      'receive_date' => '2021-08-02',
+  public function createDonor($contributionParams = [], $identifier = 'donor'): void {
+    $this->ids['Contact'][$identifier] = Contact::create(FALSE)->setValues(['first_name' => 'Billy', 'last_name' => 'Bill', 'contact_type' => 'Individual'])->execute()->first()['id'];
+    Contribution::create(FALSE)->setValues(array_merge([
+      'receive_date' => (date('Y') -1) . '-08-02',
       'financial_type_id:name' => 'Donation',
-      'total_amount' => 1,
+      'total_amount' => 20000,
       'contact_id' => $this->ids['Contact']['donor'],
-    ])->execute();
+    ], $contributionParams))->execute();
   }
 }
