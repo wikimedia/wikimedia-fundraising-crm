@@ -1231,6 +1231,8 @@ class CalculatedData extends TriggerHook {
             ['from' => '12 months ago', 'to' => 'now', 'total' => 1000],
             ['from' => '24 months ago', 'to' => '12 month ago', 'total' => 1000],
             ['from' => '36 months ago', 'to' => '24 months ago', 'total' => 1000],
+            ['from' => '48 months ago', 'to' => '36 months ago', 'total' => 1000],
+            ['from' => '60 months ago', 'to' => '48 months ago', 'total' => 1000],
           ],
         ],
       ],
