@@ -15,7 +15,6 @@ use Civi\API\Request;
 use Civi\Api4\Generic\DAOGetAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Query\Api4SelectQuery;
-use Civi\Api4\WMFDonor;
 use Civi\WMFHooks\CalculatedData;
 
 /**
@@ -87,12 +86,25 @@ class Get extends DAOGetAction {
   protected function getObjects(Result $result): void {
     $sqlQuery = \CRM_Core_DAO::executeQuery($this->getSQL());
     $rows = [];
+    $calculatedData = new CalculatedData();
+    $calculatedData->setIsForceSegment(TRUE);
     while ($sqlQuery->fetch()) {
       /** @noinspection PhpPossiblePolymorphicInvocationInspection */
       $row = ['id' => $sqlQuery->entity_id];
-      foreach ($this->select as $donorField) {
+      foreach ($this->select as $selectedField) {
+        $fieldSplit = explode(':', $selectedField);
+        $donorField = $fieldSplit[0];
         if (isset($sqlQuery->$donorField)) {
           $row[$donorField] = $sqlQuery->$donorField;
+          // Translating the :label & :description honors the civicrm style
+          // but it's kinda just hacked in. Given it is just a couple of fields for
+          // a narrow use case that feels OK.
+          if (($fieldSplit[1] ?? NULL) === 'label') {
+            $row[$selectedField] = $calculatedData->getFieldLabel($donorField, $row[$donorField]);
+          }
+          if (($fieldSplit[1] ?? NULL) === 'description') {
+            $row[$selectedField] = $calculatedData->getFieldDescription($donorField, $row[$donorField]);
+          }
         }
       }
       $rows[] = $row;
@@ -127,11 +139,19 @@ class Get extends DAOGetAction {
     $sql = $query->getSql();
     $this->select = $select;
     $calculatedData = new CalculatedData();
+    $calculatedData->setIsForceSegment(TRUE);
     $calculatedData->setTriggerContext(FALSE)
       ->setWhereClause('contact_id IN (' . $sql . ')');
+
     if (!empty($this->select)) {
+      $selectFields = [];
+      foreach ($this->select as $selectField) {
+        $fieldSplit = explode(':', $selectField);
+        // Handle donor_segment_id:label
+        $selectFields[$fieldSplit[0]] = TRUE;
+      }
       // If we have specified the fields then filter to only select those fields.
-      $calculatedData->filterDonorFields($this->select);
+      $calculatedData->filterDonorFields(array_keys($selectFields));
     }
     $sql = $calculatedData->getSelectSQL();
     $this->_debugOutput['sql'] = $sql;
