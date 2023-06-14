@@ -1394,34 +1394,40 @@ class CalculatedData extends TriggerHook {
    * @throws \CRM_Core_Exception
    */
   protected function addCriteriaInterpretation(array &$detail): void {
-    $textClauses = [];
     $clauses = '';
+    $dynamicDescription = '';
     // For not we are safe that only one type of range exists - ie standard
     // 'or range', multiple_range (and) or first_donation. If that changes the below
     // will need a re-write, if it doesn't get re-written first .. in another pass.
     if (!empty($detail['criteria']['range'])) {
       $rangeClauses = [];
+      $textClauses = [];
       foreach ($detail['criteria']['range'] as $range) {
         $rangeClauses[] = 'SUM(' . $this->getRangeClause($range) . ')';
         $textClauses[] = $this->getTextClause($range);
       }
       $clauses = implode(' OR ', $rangeClauses);
+      $dynamicDescription = implode(" OR \n", $textClauses);
     }
     if (!empty($detail['criteria']['multiple_range'])) {
       $rangeClauses = [];
+      $textClauses = [];
       foreach ($detail['criteria']['multiple_range'] as $range) {
         $rangeClauses[] = 'SUM(' . $this->getRangeClause($range) . ')';
         $textClauses[] = $this->getTextClause($range);
       }
       $clauses = implode(' AND ', $rangeClauses);
+      $dynamicDescription = implode(" AND \n", $textClauses);
     }
     if (!empty($detail['criteria']['first_donation'])) {
       $rangeClauses = [];
+      $textClauses = [];
       foreach ($detail['criteria']['first_donation'] as $range) {
         $rangeClauses[] = 'MIN(' . $this->getRangeClause($range) . ')';
         $textClauses[] = $this->getTextClause($range);
       }
       $clauses = implode(' OR ', $rangeClauses);
+      $dynamicDescription = implode(" OR \n", $textClauses);
     }
     $sqlSelect = "
          WHEN (
@@ -1430,7 +1436,7 @@ class CalculatedData extends TriggerHook {
 
         )";
     $detail['sql_select'] = $sqlSelect;
-    $detail['description'] = $detail['static_description'] . " - ie \n" . implode(" OR \n", $textClauses);
+    $detail['description'] = $detail['static_description'] . " - ie \n" . $dynamicDescription;
   }
 
 }
