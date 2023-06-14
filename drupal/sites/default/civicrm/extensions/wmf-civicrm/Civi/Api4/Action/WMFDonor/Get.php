@@ -151,7 +151,7 @@ class Get extends DAOGetAction {
         $selectFields[$fieldSplit[0]] = TRUE;
       }
       // If we have specified the fields then filter to only select those fields.
-      $calculatedData->filterDonorFields($this->select);
+      $calculatedData->filterDonorFields(array_keys($selectFields));
     }
     $sql = $calculatedData->getSelectSQL();
     $this->_debugOutput['sql'] = $sql;
