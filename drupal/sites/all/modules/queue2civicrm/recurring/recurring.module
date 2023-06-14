@@ -13,17 +13,18 @@
  * uses the word in its field/variable names (eg subscr_payment).
  */
 use queue2civicrm\recurring\RecurringQueueConsumer;
+use Civi\Api4\ContributionTracking;
 
 /**
  * Implementation of hook_menu
  */
 function recurring_menu() {
   $items['admin/config/queue2civicrm/recurring'] = array(
-	'title' => 'Recurring payments',
-       'description' => t( 'Configure the recurring payments queue' ),
-	'access arguments' => array( 'administer queue2civicrm' ),
-	'page callback' => 'drupal_get_form',
-	'page arguments' => array( 'recurring_settings' ),
+      'title' => 'Recurring payments',
+      'description' => t( 'Configure the recurring payments queue' ),
+      'access arguments' => array( 'administer queue2civicrm' ),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array( 'recurring_settings' ),
   );
   return $items;
 }
@@ -150,15 +151,14 @@ function recurring_get_contribution_tracking_id( $msg ) {
 
       if ( count( $contrib_ids )) { // if we've got any related contributions
         // see if a record already exists
-        $dbs = wmf_civicrm_get_dbs();
-        $dbs->push( 'default' );
-        $id_list = implode( ",", $contrib_ids );
-        $query = "SELECT id FROM {contribution_tracking} WHERE contribution_id IN ( {$id_list} )";
-        // we can use this related contribution tracking id
-        $contribution_tracking_id = db_query( $query )->fetchField();
+        $contribution_tracking_id = ContributionTracking::get(FALSE)
+          ->addSelect('id')
+          ->addWhere("contribution_id", "IN", $contrib_ids)
+          ->execute()
+          ->first();
         if ( !empty( $contribution_tracking_id ) ) {
           \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Selected contribution tracking id from past contributions, {contribution_tracking_id}', ['contribution_tracking_id' => $contribution_tracking_id]);
-          return $contribution_tracking_id;
+          return $contribution_tracking_id['id'];
         }
       }
     }

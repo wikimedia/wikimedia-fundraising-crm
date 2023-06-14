@@ -2,8 +2,13 @@
 
 use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
-use Civi\WMFException\WMFException;
+use Civi\Api4\ContributionTracking;
+use Civi\Api4\Contribution;
+use Civi\WMFHelpers\ContributionTracking as WMFHelper;
 use queue2civicrm\recurring\RecurringQueueConsumer;
+use Civi\WMFException\WMFException;
+use SmashPig\Core\SequenceGenerators\Factory;
+
 
 /**
  * @group Queue2Civicrm
@@ -413,6 +418,41 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($new_subscr_id, $recur_records[0]['processor_id']);
   }
 
+  /**
+   * Test use of API4 in Contribution Tracking in recurring module
+   */
+  public function testApi4CTinRecurringGet() {
+    $email = 'test_recur_' . mt_rand() . '@example.org';
+    $recur = $this->getTestContributionRecurRecords();
+    $contribution = $this->getContribution([
+      'contribution_recur_id' => $recur['id'],
+      'contact_id' => $recur['contact_id'],
+      'trxn_id' => $recur['trxn_id']
+    ]);
+    $generator = Factory::getSequenceGenerator('contribution-tracking');
+    $contribution_tracking_id = $generator->getNext();
+    $createTestCT = ContributionTracking::save(FALSE)->addRecord(WMFHelper::getContributionTrackingParameters([
+      'utm_source' => '..rpp',
+      'utm_medium' => 'civicrm',
+      'ts' => '',
+      'contribution_id' => $contribution['id'],
+      'id' => $contribution_tracking_id
+    ]))->execute()->first();
+    $ctFromResponse = recurring_get_contribution_tracking_id([
+      'txn_type' => 'subscr_payment',
+      'subscr_id' => $recur['trxn_id'],
+      'gateway' => 'paypal',
+      'email' => $email,
+      'contribution_tracking_id' => null,
+      'date' => 1564068649
+    ]);
+
+    $this->assertEquals($createTestCT['id'], $ctFromResponse);
+    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
+    $this->ids['ContributionRecur'][$contribution['contribution_recur_id']] = $contribution['contribution_recur_id'];
+    $this->ids['ContributionTracking'][$ctFromResponse] = $ctFromResponse;
+  }
+
   public function testNoSubscrId(): void {
     $this->expectExceptionCode(WMFException::INVALID_RECURRING);
     $this->expectException(WMFException::class);
@@ -642,8 +682,8 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     }
   }
 
-   /**
-   * Create the recurring contribution.
+  /**
+   * Create a contribution_recur table row for a test
    *
    * @param array $recurParams
    *
@@ -653,15 +693,36 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected function getTestContributionRecurRecords($recurParams = []): array {
     $contactID = $recurParams['contact_id'] ?? $this->individualCreate();
+    $recur = ContributionRecur::create(FALSE)
+      ->setValues(array_merge([
+        'contact_id' => $contactID,
+        'amount' => 10,
+        'frequency_interval' => 'week',
+        'start_date' => 'now',
+        'is_active' => TRUE,
+        'contribution_status_id:name' => 'Pending',
+        'trxn_id' => 1234
+      ], $recurParams))
+      ->execute()
+      ->first();
+    return $recur;
+  }
 
-    return ContributionRecur::create(FALSE)->setValues(array_merge([
-      'contact_id' => $contactID,
-      'amount' => 10,
-      'currency' => 'USD',
-      'frequency_interval' => 'week',
-      'start_date' => 'now',
-      'is_active' => TRUE,
-      'contribution_status_id:name' => 'Pending',
+
+  /**
+   * Create a contribution_recur table row for a test
+   *
+   * @param array $recurParams
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function getContribution($recurParams = []): array {
+    return Contribution::create(FALSE)->setValues(array_merge([
+      'financial_type_id:name' => 'Donation',
+      'total_amount' => 60,
+      'receive_date' => 'now'
     ], $recurParams))->execute()->first();
   }
 }
