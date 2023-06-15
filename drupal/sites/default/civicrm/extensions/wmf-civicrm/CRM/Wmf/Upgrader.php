@@ -19,6 +19,10 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
    * @throws \API_Exception
    */
   public function install(): void {
+    // This is a temporary static to allow us to add segment fields on install
+    // on our dev sites while we are in this half-way state of not having the
+    // fields on live yet.
+    \Civi::$statics['is_install_mode'] = TRUE;
     $settings = new CRM_Wmf_Upgrader_Settings();
     $settings->setWmfSettings();
     $this->addCustomFields();

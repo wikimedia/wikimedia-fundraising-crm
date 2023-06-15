@@ -885,7 +885,7 @@ class CalculatedData extends TriggerHook {
    * @throws \CRM_Core_Exception
    */
   private function isSegmentReady() : bool {
-    if (\CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_custom_field WHERE name = "donor_segment_id"')) {
+    if (!empty(\Civi::$statics['is_install_mode']) || \CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_custom_field WHERE name = "donor_segment_id"')) {
       return TRUE;
     }
     return $this->isForceSegment;
