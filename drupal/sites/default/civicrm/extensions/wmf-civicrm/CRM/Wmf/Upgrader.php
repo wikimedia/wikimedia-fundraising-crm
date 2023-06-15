@@ -415,16 +415,16 @@ SET end_date = NULL WHERE id IN
    * @param string $table
    */
   protected function dropIndexes(array $oldIndexes, string $table): void {
-    $sql = 'ALTER TABLE ' . $table;
+    $actions = [];
     foreach ($oldIndexes as $index) {
       if (CRM_Core_BAO_SchemaHandler::checkIfIndexExists($table, $index)) {
-        $sql .= ' DROP INDEX ' . $index;
+        $actions[] = ' DROP INDEX ' . $index;
       }
       if (CRM_Core_BAO_SchemaHandler::checkIfIndexExists($table, 'index_' . $index)) {
-        $sql .= ' DROP INDEX index_' . $index;
+        $actions[] = ' DROP INDEX index_' . $index;
       }
     }
-    CRM_Core_DAO::executeQuery($sql);
+    CRM_Core_DAO::executeQuery('ALTER TABLE ' . $table . ' ' . implode(',', $actions));
   }
 
   /**
@@ -951,6 +951,36 @@ SET
       $sql = substr_replace($sql ,';', -1);
       CRM_Core_DAO::executeQuery($sql);
     }
+  }
+
+  /**
+   * Remove indexes from WMF Donor fields to permit adding new ones...
+   *
+   * Bug: T331919
+   *
+   * @return bool
+   */
+  public function upgrade_4300() : bool {
+    $this->dropIndexes([
+      'total_2015_2016',
+      'total_2016',
+      'total_2016_2017',
+      'total_2017',
+      'total_2017_2018',
+      'total_2018',
+      'total_2018_2019',
+      'total_2019',
+      'total_2019_2020',
+      'all_funds_change_2018_2019',
+      'all_funds_change_2019_2020',
+      'all_funds_total_2018_2019',
+      'all_funds_total_2019_2020',
+      'endowment_total_2018',
+      'endowment_total_2018_2019',
+      'endowment_total_2019',
+      'endowment_total_2019_2020',
+    ], 'wmf_donor');
+    return TRUE;
   }
 
   /**
