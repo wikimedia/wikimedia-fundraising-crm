@@ -984,6 +984,24 @@ SET
   }
 
   /**
+   * Add new segment & wmf donor fields
+   *
+   * Bug: T331919 & T339067
+   *
+   * @return bool
+   * @throws \API_Exception
+   */
+  public function upgrade_4305() : bool {
+    // This is a temporary static which forces the new segment fields to be included.
+    // In theory we can remove the whole isSegmentReady() function once this upgrade
+    // has run - although it might be nice to see the requirements settle down
+    // a little first in case we can't include them in triggers & want to re-purpose that function
+    \Civi::$statics['is_install_mode'] = TRUE;
+    $this->addCustomFields();
+    return TRUE;
+  }
+
+  /**
    * Get the values actually used for the option.
    *
    * @param string $field

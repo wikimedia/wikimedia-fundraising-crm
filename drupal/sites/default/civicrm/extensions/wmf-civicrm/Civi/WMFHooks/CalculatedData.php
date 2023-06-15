@@ -11,7 +11,7 @@ use CRM_Core_PseudoConstant;
 class CalculatedData extends TriggerHook {
 
   protected const WMF_MIN_ROLLUP_YEAR = 2006;
-  protected const WMF_MAX_ROLLUP_YEAR = 2023;
+  protected const WMF_MAX_ROLLUP_YEAR = 2025;
 
   /**
    * Is this class is being called in trigger context.
