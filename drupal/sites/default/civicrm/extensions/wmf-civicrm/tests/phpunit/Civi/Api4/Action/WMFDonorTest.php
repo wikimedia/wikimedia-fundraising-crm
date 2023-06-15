@@ -1,14 +1,14 @@
 <?php
 
-namespace phpunit\Civi\Api4\Action;
+namespace Civi\Api4\Action;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
+use Civi\Api4\Generic\Result;
 use Civi\Api4\WMFDonor;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
-use Civi\Test\TransactionalInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -26,7 +26,7 @@ use PHPUnit\Framework\TestCase;
  * @property array ids
  * @group headless
  */
-class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface {
 
   /**
    * @return \Civi\Test\CiviEnvBuilder
@@ -38,6 +38,19 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface,
     return Test::headless()
       ->installMe(__DIR__)
       ->apply();
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function tearDown(): void {
+    if (!empty($this->ids['Contact'])) {
+      Contribution::delete(FALSE)
+        ->addWhere('contact_id', 'IN', $this->ids['Contact'])
+        ->execute();
+      Contact::delete(FALSE)->addWhere('id', 'IN', $this->ids['Contact'])->execute();
+    }
+    parent::tearDown();
   }
 
   /**
@@ -145,4 +158,81 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface,
       ->execute()
       ->first()['id'];
   }
+
+  /**
+   * Test updating WMF donor fields for a contact.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorUpdate(): void {
+    $this->createDonor();
+    $this->clearWMFDonorData();
+    WMFDonor::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      // Normally setValues() would specify field => value but since it is
+      // calculated this is something of a placeholder. However, I think we could
+      // specify fieldName => TRUE to limit or * => TRUE for all.
+      ->setValues(['*' => TRUE])
+      ->execute();
+    $updated = Contact::get(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->addSelect('wmf_donor.donor_segment_id', 'custom.*')
+      ->execute()->first();
+    $this->assertEquals(100, $updated['wmf_donor.donor_segment_id']);
+  }
+
+  /**
+   * Test updating WMF donor fields for more than one contact.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorUpdateMultiple(): void {
+    $this->createDonor();
+    $this->createDonor([], 'second');
+    $this->clearWMFDonorData();
+
+    $updatedContacts = $this->updateWMFDonorData();
+    foreach ($updatedContacts as $updatedContact) {
+      $this->assertEquals(100, $updatedContact['wmf_donor.donor_segment_id']);
+      $this->assertEquals(20000, $updatedContact['wmf_donor.lifetime_usd_total']);
+    }
+
+    $this->clearWMFDonorData();
+    // Now do it again specifying only the donor_segment_id field - the other should not update.
+    $updatedContacts = $this->updateWMFDonorData(['donor_segment_id' => TRUE]);
+    foreach ($updatedContacts as $updatedContact) {
+      $this->assertEquals(100, $updatedContact['wmf_donor.donor_segment_id']);
+      $this->assertEquals(0, $updatedContact['wmf_donor.lifetime_usd_total']);
+    }
+  }
+
+  /**
+   * @param bool[] $fields
+   *
+   * @return \Civi\Api4\Generic\Result
+   * @throws \CRM_Core_Exception
+   */
+  protected function updateWMFDonorData(array $fields = ['*' => TRUE]): Result {
+    WMFDonor::update(FALSE)
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      // Normally setValues() would specify field => value but since it is
+      // calculated this is something of a placeholder. However, I think we could
+      // specify fieldName => TRUE to limit or * => TRUE for all.
+      ->setValues($fields)
+      ->execute();
+    return Contact::get(FALSE)
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->addSelect('wmf_donor.donor_segment_id', 'wmf_donor.lifetime_usd_total')
+      ->execute();
+  }
+
+  /**
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  protected function clearWMFDonorData(): void {
+    \CRM_Core_DAO::executeQuery('DELETE FROM wmf_donor WHERE entity_id IN (%1)', [
+      1 => [implode(',', $this->ids['Contact']), 'CommaSeparatedIntegers'],
+    ]);
+  }
+
 }
