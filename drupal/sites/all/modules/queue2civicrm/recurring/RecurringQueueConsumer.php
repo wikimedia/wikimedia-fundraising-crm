@@ -350,6 +350,15 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     $contact_id = $recur_record['contact_id'];
     $amountAdded = $msg['amount'] - $recur_record['amount'];
     $subject = "Added ". $amountAdded. " " . $msg['currency'];
+    $amountDetails = [
+      "native_currency" => $msg['currency'],
+      "native_original_amount" => $recur_record['amount'],
+      "native_amount_added" => $amountAdded,
+      "usd_original_amount" => round(exchange_rate_convert($msg['currency'], $recur_record['amount']), 2),
+      "usd_amount_added" => round(exchange_rate_convert($msg['currency'], $amountAdded), 2)
+    ];
+
+    $additionalData = json_encode($amountDetails);
 
     ContributionRecur::update(FALSE)
       ->addValue('amount', $msg['amount'])
@@ -361,7 +370,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       ->addValue('source_record_id', $msg['contribution_recur_id'])
       ->addValue('status_id:name', 'Completed')
       ->addValue('subject', $subject)
-      ->addValue('details', "Recurring upgrade")
+      ->addValue('details', $additionalData)
       ->addValue('source_contact_id', $contact_id)
       ->execute();
   }
