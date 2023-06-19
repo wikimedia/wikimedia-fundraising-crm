@@ -279,7 +279,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
       (
       SELECT email, count(*) as email_fails_count
       FROM {$this->fredge}.payments_fraud pf
-      INNER JOIN {$this->drupal}.contribution_tracking dt ON dt.id = pf.contribution_tracking_id
+      INNER JOIN civicrm_contribution_tracking dt ON dt.id = pf.contribution_tracking_id
       INNER JOIN civicrm_contribution c on dt.contribution_id = c.id
       INNER JOIN civicrm_email email ON email.contact_id = c.contact_id AND email IS NOT NULL
       WHERE validation_action = 'reject'
@@ -653,7 +653,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
       ],
     ];
 
-    $this->_columns['contribution_tracking'] = [
+    $this->_columns['civicrm_contribution_tracking'] = [
       'fields' => [
         'contribution_tracking_id' => [
           'title' => E::ts('Contribution Tracking ID'),
@@ -672,9 +672,13 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'title' => E::ts('Country'),
           'type' => CRM_Utils_Type::T_STRING,
         ],
-        'form_amount' => [
-          'title' => E::ts('Form amount'),
+        'currency' => [
+          'title' => E::ts('Currency'),
           'type' => CRM_Utils_Type::T_STRING,
+        ],
+        'amount' => [
+          'title' => E::ts('Amount'),
+          'type' => CRM_Utils_Type::T_FLOAT,
         ],
       ],
       'filters' => [
