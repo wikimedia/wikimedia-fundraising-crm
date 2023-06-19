@@ -9,6 +9,7 @@ use wmf_common\TransactionalWmfQueueConsumer;
 
 class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
   const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID = 165;
+  const RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID = 166;
   /**
    * Import messages about recurring payments
    *
@@ -17,9 +18,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   public function processMessage($message) {
-    $txn_upgrade_recur = ['recurring_upgrade'];
+    $txn_upgrade_recur = ['recurring_upgrade', 'recurring_upgrade_decline'];
     if (isset($message['txn_type']) && in_array($message[ 'txn_type' ], $txn_upgrade_recur, true)) {
-      $this->upgradeRecurAmount($message);
+      $this->doUpgradeRecurAction($message);
       return;
     }
     $message = $this->normalizeMessage($message);
@@ -285,6 +286,52 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
   }
 
   /**
+   * @param $msg
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \Civi\WMFException\WMFException
+   */
+  protected function doUpgradeRecurAction($msg) {
+    if (!isset($msg['contribution_recur_id'])) {
+      throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid message type');
+    }
+    if($msg['txn_type'] === "recurring_upgrade_decline") {
+      if (!isset($msg['contact_id'])) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid contact_id');
+      }
+      $this->upgradeRecurDecline($msg);
+    } else {
+      if (!isset($msg['amount'])) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid amount');
+      }
+      $this->upgradeRecurAmount($msg);
+    }
+  }
+
+  /**
+   * Decline upgrade recurring
+   *
+   * Completes the process of upgrading the contribution recur
+   * if the donor decline
+   *
+   * @param array $msg
+   *
+   * @throws \Civi\WMFException\WMFException
+   */
+  protected function upgradeRecurDecline($msg){
+    Activity::create(FALSE)
+      ->addValue('activity_type_id', self::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
+      ->addValue('source_record_id', $msg['contribution_recur_id'])
+      ->addValue('status_id:name', 'Completed')
+      ->addValue('subject', "Decline recurring update")
+      ->addValue('details', "Decline recurring update")
+      ->addValue('source_contact_id', $msg['contact_id'])
+      ->execute();
+  }
+
+  /**
    * Upgrade Contribution Recur Amount
    *
    * Completes the process of upgrading the contribution recur amount
@@ -295,9 +342,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   protected function upgradeRecurAmount($msg) {
-    if ($msg['txn_type'] != "recurring_upgrade" || !isset($msg['contribution_recur_id']) || !isset($msg['amount'])) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid message type');
-    }
     $recur_record = ContributionRecur::get(FALSE)
       ->addWhere('id', '=', $msg['contribution_recur_id'])
       ->execute()
@@ -305,6 +349,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
     $contact_id = $recur_record['contact_id'];
     $amountAdded = $msg['amount'] - $recur_record['amount'];
+    $subject = "Added ". $amountAdded. " " . $msg['currency'];
+
     ContributionRecur::update(FALSE)
       ->addValue('amount', $msg['amount'])
       ->addWhere('id', '=', $msg['contribution_recur_id'])
@@ -314,8 +360,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       ->addValue('activity_type_id', self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID)
       ->addValue('source_record_id', $msg['contribution_recur_id'])
       ->addValue('status_id:name', 'Completed')
-      ->addValue('subject', "$ $amountAdded added")
-      ->addValue('details', "$ $amountAdded added")
+      ->addValue('subject', $subject)
+      ->addValue('details', "Recurring upgrade")
       ->addValue('source_contact_id', $contact_id)
       ->execute();
   }

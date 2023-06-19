@@ -47,13 +47,30 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     return $contributions;
   }
 
+  public function testDeclineRecurringUpgrade() {
+    $testRecurring = $this->getTestContributionRecurRecords();
+    $msg = [
+      'txn_type' => "recurring_upgrade_decline",
+      'contribution_recur_id' => $testRecurring['id'],
+      'contact_id' => $testRecurring['contact_id']
+    ];
+    $this->consumer->processMessage($msg);
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $testRecurring['id'])
+      ->addWhere('activity_type_id', '=', RecurringQueueConsumer::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
+      ->execute()
+      ->last();
+    $this->assertEquals($activity['subject'], "Decline recurring update");
+  }
+
   public function testRecurringUpgrade() {
     $testRecurring = $this->getTestContributionRecurRecords();
     $additionalAmount = 5;
     $msg = [
       'txn_type' => "recurring_upgrade",
       'contribution_recur_id' => $testRecurring['id'],
-      'amount' => $testRecurring['amount'] + $additionalAmount
+      'amount' => $testRecurring['amount'] + $additionalAmount,
+      'currency' => $testRecurring['currency']
     ];
     $this->consumer->processMessage($msg);
     $updatedRecurring = ContributionRecur::get(FALSE)
@@ -67,7 +84,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       ->execute()
       ->last();
     $this->assertEquals($testRecurring['amount'] + $additionalAmount, $updatedRecurring['amount']);
-    $this->assertEquals($activity['subject'], "$ {$additionalAmount} added");
+    $this->assertEquals($activity['subject'], "Added ". $additionalAmount. " " . $msg['currency']);
     $this->ids['ContributionRecur'][$testRecurring['id']] = $testRecurring['id'];
     $this->ids['Activity'][$activity['id']] = $activity['id'];
   }
@@ -631,6 +648,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     return ContributionRecur::create(FALSE)->setValues(array_merge([
       'contact_id' => $contactID,
       'amount' => 10,
+      'currency' => 'USD',
       'frequency_interval' => 'week',
       'start_date' => 'now',
       'is_active' => TRUE,
