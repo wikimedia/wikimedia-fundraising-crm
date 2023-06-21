@@ -14,7 +14,9 @@ function exchange_rates_drush_command(): array {
  * Implementation of hook_drush_help()
  */
 function exchange_rates_drush_help($section) {
-  return dt('Attempts to retrieve the latest exchange rates from a providers, stopping when a request succeeds and storing results in the database.');
+  if ($section === 'drush:exchange-rates-update') {
+    return dt('Attempts to retrieve the latest exchange rates from a providers, stopping when a request succeeds and storing results in the database.');
+  }
 }
 
 function drush_exchange_rates_update() {

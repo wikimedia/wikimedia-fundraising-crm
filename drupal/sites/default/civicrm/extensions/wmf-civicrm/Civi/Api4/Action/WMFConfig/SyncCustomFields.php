@@ -88,7 +88,7 @@ class SyncCustomFields extends AbstractAction {
             }
             $customGroupSpec['fields'][$index]['option_label'][$key] = $value['label'];
             $customGroupSpec['fields'][$index]['option_value'][$key] = $value['value'];
-            $customGroupSpec['fields'][$index]['option_status'][$key] = $value['is_active'];
+            $customGroupSpec['fields'][$index]['option_status'][$key] = $value['is_active'] ?? 1;
             $customGroupSpec['fields'][$index]['option_weight'][$key] = $value['weight'];
           }
         }

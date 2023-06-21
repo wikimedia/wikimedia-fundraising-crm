@@ -1,5 +1,6 @@
 <?php
 
+use \Civi\Api4\ContributionTracking;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\SequenceGenerators\Factory;
 
@@ -110,11 +111,10 @@ function isMatchingGiftContribution($gateway_txn_id) {
 
 function wmf_civicrm_get_contribution_tracking($msg) {
   if (array_key_exists('contribution_tracking_id', $msg)) {
-    return db_select('contribution_tracking', 'contribution_tracking')
-      ->fields('contribution_tracking')
-      ->condition('id', $msg['contribution_tracking_id'])
-      ->execute()
-      ->fetchAssoc();
+    return ContributionTracking::get(FALSE)
+					->addWhere('id', '=', $msg['contribution_tracking_id'])
+          ->execute()
+          ->first();
   }
   else {
     return FALSE;

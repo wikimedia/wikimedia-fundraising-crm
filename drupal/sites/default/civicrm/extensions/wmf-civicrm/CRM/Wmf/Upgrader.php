@@ -19,6 +19,10 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
    * @throws \API_Exception
    */
   public function install(): void {
+    // This is a temporary static to allow us to add segment fields on install
+    // on our dev sites while we are in this half-way state of not having the
+    // fields on live yet.
+    \Civi::$statics['is_install_mode'] = TRUE;
     $settings = new CRM_Wmf_Upgrader_Settings();
     $settings->setWmfSettings();
     $this->addCustomFields();
@@ -411,16 +415,16 @@ SET end_date = NULL WHERE id IN
    * @param string $table
    */
   protected function dropIndexes(array $oldIndexes, string $table): void {
-    $sql = 'ALTER TABLE ' . $table;
+    $actions = [];
     foreach ($oldIndexes as $index) {
       if (CRM_Core_BAO_SchemaHandler::checkIfIndexExists($table, $index)) {
-        $sql .= ' DROP INDEX ' . $index;
+        $actions[] = ' DROP INDEX ' . $index;
       }
       if (CRM_Core_BAO_SchemaHandler::checkIfIndexExists($table, 'index_' . $index)) {
-        $sql .= ' DROP INDEX index_' . $index;
+        $actions[] = ' DROP INDEX index_' . $index;
       }
     }
-    CRM_Core_DAO::executeQuery($sql);
+    CRM_Core_DAO::executeQuery('ALTER TABLE ' . $table . ' ' . implode(',', $actions));
   }
 
   /**
@@ -947,6 +951,54 @@ SET
       $sql = substr_replace($sql ,';', -1);
       CRM_Core_DAO::executeQuery($sql);
     }
+  }
+
+  /**
+   * Remove indexes from WMF Donor fields to permit adding new ones...
+   *
+   * Bug: T331919
+   *
+   * @return bool
+   */
+  public function upgrade_4300() : bool {
+    $this->dropIndexes([
+      'total_2015_2016',
+      'total_2016',
+      'total_2016_2017',
+      'total_2017',
+      'total_2017_2018',
+      'total_2018',
+      'total_2018_2019',
+      'total_2019',
+      'total_2019_2020',
+      'all_funds_change_2018_2019',
+      'all_funds_change_2019_2020',
+      'all_funds_total_2018_2019',
+      'all_funds_total_2019_2020',
+      'endowment_total_2018',
+      'endowment_total_2018_2019',
+      'endowment_total_2019',
+      'endowment_total_2019_2020',
+    ], 'wmf_donor');
+    return TRUE;
+  }
+
+  /**
+   * Add new segment & wmf donor fields
+   *
+   * Bug: T331919 & T339067
+   *
+   * @return bool
+   * @throws \API_Exception
+   */
+  public function upgrade_4305() : bool {
+    // This is a temporary static which forces the new segment fields to be included.
+    // In theory we can remove the whole isSegmentReady() function once this upgrade
+    // has run - although it might be nice to see the requirements settle down
+    // a little first in case we can't include them in triggers & want to re-purpose that function
+    \Civi::$statics['is_install_mode'] = TRUE;
+    $this->addCustomFields();
+    return TRUE;
   }
 
   /**

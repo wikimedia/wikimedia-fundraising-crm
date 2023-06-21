@@ -73,14 +73,24 @@ class ContributionRecur {
         ->execute();
       // Also filter out multi recurring e.g. contact 1925710.
       if (count($contribution_recurs) === 1) {
-        $result[] = [
-          'id' => $contribution_recurs[0]['id'],
-          'contact_id' => $contact_id,
-          'currency' => $contribution_recurs[0]['currency'],
-          'amount' => $contribution_recurs[0]['amount'],
-          'donor_name' => $contribution_recurs[0]['contact.display_name'],
-          'next_sched_contribution_date' => $contribution_recurs[0]['next_sched_contribution_date'],
-        ];
+        // also filter out declined recurring upgrade
+        $contribution_recurs_declined = \Civi\Api4\Activity::get(FALSE)
+          ->addSelect('id')
+          ->addWhere('source_record_id', '=', $contribution_recurs[0]['id']) // Decline recurring update
+          ->addWhere('activity_type_id', '=', 166)
+          ->execute();
+        if (count($contribution_recurs_declined) === 0) {
+          $result[] = [
+            'id' => $contribution_recurs[0]['id'],
+            'contact_id' => $contact_id,
+            'currency' => $contribution_recurs[0]['currency'],
+            'amount' => $contribution_recurs[0]['amount'],
+            'donor_name' => $contribution_recurs[0]['contact.display_name'],
+            'next_sched_contribution_date' => $contribution_recurs[0]['next_sched_contribution_date'],
+          ];
+        } else {
+          \Civi::log('wmf')->info("Donor '$contact_id' declined to upgrade recurring donation");
+        }
       }
       else {
         \Civi::log('wmf')->info("Donor '$contact_id' has " . count($contribution_recurs) . " valid recurring");

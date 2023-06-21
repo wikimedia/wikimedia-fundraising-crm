@@ -11,7 +11,7 @@ use CRM_Core_PseudoConstant;
 class CalculatedData extends TriggerHook {
 
   protected const WMF_MIN_ROLLUP_YEAR = 2006;
-  protected const WMF_MAX_ROLLUP_YEAR = 2023;
+  protected const WMF_MAX_ROLLUP_YEAR = 2025;
 
   /**
    * Is this class is being called in trigger context.
@@ -761,7 +761,7 @@ class CalculatedData extends TriggerHook {
         'default_value' => 0,
         'is_active' => 1,
         'is_required' => 0,
-        'is_searchable' => ($year > 2015),
+        'is_searchable' => ($year > 2019),
         'is_view' => 1,
         'weight' => $weight,
         'is_search_range' => 1,
@@ -776,7 +776,7 @@ class CalculatedData extends TriggerHook {
         'default_value' => 0,
         'is_active' => 1,
         'is_required' => 0,
-        'is_searchable' => ($year > 2018),
+        'is_searchable' => ($year > 2019),
         'is_view' => 1,
         'weight' => $weight,
         'is_search_range' => 1,
@@ -814,7 +814,7 @@ class CalculatedData extends TriggerHook {
             'default_value' => 0,
             'is_active' => 1,
             'is_required' => 0,
-            'is_searchable' => 1,
+            'is_searchable' => ($year > 2019),
             'is_view' => 1,
             'weight' => $weight,
             'is_search_range' => 1,
@@ -885,7 +885,7 @@ class CalculatedData extends TriggerHook {
    * @throws \CRM_Core_Exception
    */
   private function isSegmentReady() : bool {
-    if (\CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_custom_field WHERE name = "donor_segment_id"')) {
+    if (!empty(\Civi::$statics['is_install_mode']) || \CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_custom_field WHERE name = "donor_segment_id"')) {
       return TRUE;
     }
     return $this->isForceSegment;
@@ -1231,6 +1231,8 @@ class CalculatedData extends TriggerHook {
             ['from' => '12 months ago', 'to' => 'now', 'total' => 1000],
             ['from' => '24 months ago', 'to' => '12 month ago', 'total' => 1000],
             ['from' => '36 months ago', 'to' => '24 months ago', 'total' => 1000],
+            ['from' => '48 months ago', 'to' => '36 months ago', 'total' => 1000],
+            ['from' => '60 months ago', 'to' => '48 months ago', 'total' => 1000],
           ],
         ],
       ],
