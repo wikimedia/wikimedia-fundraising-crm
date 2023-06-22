@@ -1398,7 +1398,7 @@ class CalculatedData extends TriggerHook {
   protected function addCriteriaInterpretation(array &$detail): void {
     $clauses = '';
     $dynamicDescription = '';
-    // For not we are safe that only one type of range exists - ie standard
+    // For now we are safe that only one type of range exists - ie standard
     // 'or range', multiple_range (and) or first_donation. If that changes the below
     // will need a re-write, if it doesn't get re-written first .. in another pass.
     if (!empty($detail['criteria']['range'])) {

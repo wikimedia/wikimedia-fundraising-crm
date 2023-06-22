@@ -10,22 +10,34 @@ As with the google specification only the first code will be applied</p>
 be combined for a unique segment - eg. 150 would be a lapsed major donor</p>
 </div>
 
-  <h3>Segments</h3>
+<h3 style="margin: 0px 0px 10px 0px;">Segments</h3>
 <table class="row-highlight">
+      <tr>
+        <th>Label</th>
+        <th>Description</th>
+        <th>Value</th>
+      </tr>
   {foreach from=$segments item='segment'}
       <tr>
         <td>{$segment.label}</td>
         <td>{$segment.description|nl2br}</td>
+        <td>{$segment.value}</td>
       </tr>
   {/foreach}
 </table>
 
-<h3>Statuses</h3>
+<h3 style="margin: 10px 0px;">Statuses</h3>
 <table class="row-highlight">
+      <tr>
+        <th>Label</th>
+        <th>Description</th>
+        <th>Value</th>
+      </tr>
     {foreach from=$statuses item='status'}
       <tr>
         <td>{$status.label}</td>
         <td>{$status.description|nl2br}</td>
+        <td>{$status.value}</td>
       </tr>
     {/foreach}
 </table>
