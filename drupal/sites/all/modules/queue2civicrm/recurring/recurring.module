@@ -12,8 +12,9 @@
  * greater clarity.  'Subscription' or its derivations are used in places where PayPal
  * uses the word in its field/variable names (eg subscr_payment).
  */
+
+use Civi\Api4\ContributionRecur;
 use queue2civicrm\recurring\RecurringQueueConsumer;
-use Civi\Api4\ContributionTracking;
 
 /**
  * Implementation of hook_menu
@@ -131,55 +132,39 @@ function recurring_get_contribution_tracking_id( $msg ) {
     \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Using $msg["custom"], {contribution_tracking_id}', ['contribution_tracking_id' => $msg['custom']]);
     return $msg[ 'custom' ];
   } elseif ( $msg[ 'txn_type' ] == 'subscr_payment' ) {
-    $contribution_tracking_id = null;
-    $contrib_ids = array();
+    $queryResult = ContributionRecur::get(FALSE)
+      ->addSelect('MIN(contribution_tracking.id) AS ctid', 'MIN(contribution.id) AS contribution_id')
+      ->addJoin('Contribution AS contribution', 'INNER')
+      ->addJoin('ContributionTracking AS contribution_tracking', 'LEFT', ['contribution_tracking.contribution_id', '=', 'contribution.id'])
+      ->addGroupBy('id')
+      ->addWhere('trxn_id', '=', $msg['subscr_id'])
+      ->setLimit(1)
+      ->execute()
+      ->first();
+    $contribution_tracking_id = $queryResult['ctid'] ?? null;
+    $contribution_id = $queryResult['contribution_id'] ?? null;
 
-    // determine if we already have a contrib tracking id for related contribs, working backwards from recur record
-    $recurring_record = wmf_civicrm_get_recur_record( $msg['subscr_id'] );
-
-    if ( $recurring_record ) { // we potentially have related contributions
-      $recur_id = $recurring_record->id;
-      // find related contribution ids
-
-      $query = "SELECT id FROM civicrm_contribution WHERE contribution_recur_id = %1";
-      $dao = CRM_Core_DAO::executeQuery( $query, array(
-        '1' => array( $recur_id, 'Integer' ),
-      ) );
-      while ( $dao->fetch() ) {
-        array_push( $contrib_ids, $dao->id );
-      }
-
-      if ( count( $contrib_ids )) { // if we've got any related contributions
-        // see if a record already exists
-        $contribution_tracking_id = ContributionTracking::get(FALSE)
-          ->addSelect('id')
-          ->addWhere("contribution_id", "IN", $contrib_ids)
-          ->execute()
-          ->first();
-        if ( !empty( $contribution_tracking_id ) ) {
-          \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Selected contribution tracking id from past contributions, {contribution_tracking_id}', ['contribution_tracking_id' => $contribution_tracking_id]);
-          return $contribution_tracking_id['id'];
-        }
-      }
+    if (!empty($contribution_tracking_id)) {
+      \Civi::log('wmf')->debug(
+        'recurring: recurring_get_contribution_tracking_id: Selected contribution tracking id from past contributions, {contribution_tracking_id}',
+        ['contribution_tracking_id' => $contribution_tracking_id]
+      );
     }
-
-    // if we still don't have a contribution tracking id, we're gonna have to make one
-    if ( !$contribution_tracking_id ) {
-      // if we already have previous contributions, we should create a contrib id connected with the first contrib
-      sort( $contrib_ids, SORT_NUMERIC );
-      $contrib_id = array_shift( $contrib_ids ); // this should return null if $contrib_ids is empty
+    // if we still don't have a contribution tracking id (but we do have previous contributions),
+    // we're gonna have to add new contribution tracking.
+    if ($contribution_id && !$contribution_tracking_id) {
       $rawDate = empty( $msg['payment_date'] ) ? $msg['date'] : $msg['payment_date'];
       $date = wmf_common_date_unix_to_sql( strtotime( $rawDate ));
       $tracking = array(
-        'utm_source' => '..rpp',
+        'utm_source' => '..rpp', // FIXME: recurring donations are not all paypal
         'utm_medium' => 'civicrm',
         'ts' => $date,
-        'contribution_id' => $contrib_id
+        'contribution_id' => $contribution_id
       );
       $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( $tracking );
       \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Got new contribution tracking id, {contribution_tracking_id}', ['contribution_tracking_id' => $contribution_tracking_id]);
-      return $contribution_tracking_id;
     }
+    return $contribution_tracking_id;
   }
   else {
     \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: No contribution_tracking_id returned.');
