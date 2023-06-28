@@ -1077,7 +1077,7 @@ class CalculatedData extends TriggerHook {
     $details = [
       10 => [
         'label' => 'New',
-        'static_description' => '',
+        'static_description' => 'first donation in last 6 months',
         'value' => 10,
         'name' => 'new',
         'criteria' => [
