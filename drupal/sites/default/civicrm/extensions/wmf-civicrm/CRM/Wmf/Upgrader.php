@@ -1050,6 +1050,35 @@ SET
   }
 
   /**
+   * Use default in tokens rather than Smarty to prevent bus errors.
+   *
+   * Token defaults were added in our last upgrade or two.
+   *
+   * This is less nuanced than our earlier 'if first & last name, use first name'
+   * but it allows us to use the templating system & skip calling smarty.
+   *
+   * The bus errors are coming from Smarty - although I think upgrading to smarty
+   * 3 would likely address.
+   *
+   * @return true
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_4320(): bool {
+    OptionValue::update(FALSE)
+      ->addWhere('option_group_id.name', '=', 'email_greeting')
+      ->addWhere('is_default', '=', TRUE)
+      ->addWhere('filter', '=', 1)
+      ->setValues([
+        'label' => 'Dear {contact.first_name|default:"donor"}',
+        // Only the label really seems to matter but both feels more
+        // consistent with the others.
+        'name' => 'Dear {contact.first_name|default:"donor"}',
+      ])
+      ->execute();
+    return TRUE;
+  }
+
+  /**
    * Get strings that can be considered non-data in street address.
    *
    * @return string[]
