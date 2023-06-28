@@ -1,8 +1,10 @@
 <?php /** @noinspection PhpUnused */
 
+use Civi\Api4\CustomField;
 use Civi\Api4\OptionGroup;
 use Civi\Api4\WMFConfig;
 use Civi\Api4\OptionValue;
+use Civi\WMFHooks\CalculatedData;
 
 /**
  * Collection of upgrade steps.
@@ -998,6 +1000,33 @@ SET
     // a little first in case we can't include them in triggers & want to re-purpose that function
     \Civi::$statics['is_install_mode'] = TRUE;
     $this->addCustomFields();
+    return TRUE;
+  }
+
+  /**
+   * Add new segment & status labels
+   *
+   * Bug: T339067
+   *
+   * Add the missing labels for segment fields.
+   *
+   * @return bool
+   * @throws \API_Exception
+   */
+  public function upgrade_4310() : bool {
+    $fieldFinder = new CalculatedData();
+    $fields = $fieldFinder->getWMFDonorFields();
+    foreach(['donor_segment_id', 'donor_status_id'] as $fieldName) {
+      $optionGroupID = CustomField::get(FALSE)
+        ->addWhere('name', '=', $fieldName)
+        ->addSelect('option_group_id')
+        ->execute()->first()['option_group_id'];
+      foreach ($fields[$fieldName]['option_values'] as $values) {
+        $values['option_group_id'] = $optionGroupID;
+        OptionValue::create(FALSE)
+          ->setValues($values)->execute();
+      }
+    }
     return TRUE;
   }
 
