@@ -106,7 +106,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
           throw new UnexpectedValueException('Two recurring charges within 23 days. recurring_id: '.$recurringPayment['id']);
         }
 
-        $result[$recurringPayment['id']]['previous_contribution'] = $previousContribution;
         // Mark the recurring contribution Processing
         civicrm_api3('ContributionRecur', 'create', [
           'id' => $recurringPayment['id'],
@@ -126,10 +125,16 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
         $this->setAsInProgressAndUpdateNextChargeDate($recurringPayment);
         $result['success']['ids'][] = $recurringPayment['id'];
+        // display information in the result array
+        $result[$recurringPayment['id']]['status'] = $payment['payment_status'];
+        $result[$recurringPayment['id']]['invoice_id'] = $payment['invoice_id'];
+        $result[$recurringPayment['id']]['processor_id'] = $payment['processor_id'];
       } catch (CiviCRM_API3_Exception $e) {
         $this->recordFailedPayment($recurringPayment, $e);
         $this->addErrorStats($errorCount, $e->getCode());
+        // display information in the result array
         $result[$recurringPayment['id']]['error'] = $e->getMessage();
+        $result[$recurringPayment['id']]['error_code'] = $e->getCode();
         $result['failed']['ids'][] = $recurringPayment['id'];
       }
     }
@@ -506,6 +511,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \CiviCRM_API3_Exception
    */
   protected function makePayment($paymentParams, $failures = 0) {
+    Civi::log('wmf')->info('Charging contribution_recur id: '.$paymentParams['contributionRecurID'].' with invoice_id: '.$paymentParams['invoice_id']);
     try {
       // Per https://github.com/civicrm/civicrm-core/pull/15639
       // contribution_id is a required id but it's required in order to
@@ -517,6 +523,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       // were to be validated in core it would fail tests like a dying canary.
       $paymentParams['contribution_id'] = 8888888888888888888888;
       $payment = civicrm_api3('PaymentProcessor', 'pay', $paymentParams);
+      $paymentInfo = $payment['values'][0];
+      Civi::log('wmf')->info('Payment successful - invoice_id: '.$paymentInfo['invoice_id'].' with status: '.$paymentInfo['payment_status'].' and processor_id: '.$paymentInfo['processor_id']);
       $payment = reset($payment['values']);
       return $payment;
     } catch (CiviCRM_API3_Exception $exception) {
