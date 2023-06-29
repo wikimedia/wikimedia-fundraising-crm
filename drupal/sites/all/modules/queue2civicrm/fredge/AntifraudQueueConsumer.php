@@ -78,7 +78,8 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
       ':order_id' => $msg['order_id'],
     ));
     if ($result->rowCount() === 1) {
-      $id = $result->fetch()->id;
+      $res = $result->fetch();
+      $id = $res->id;
       $inserting = FALSE;
     }
     $data = fredge_prep_data($msg, 'payments_fraud', $logIdentifier, $inserting);
