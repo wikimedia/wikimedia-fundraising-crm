@@ -5,6 +5,12 @@ use SmashPig\CrmLink\Messages\SourceFields;
 
 class BaseAuditTestCase extends BaseWmfDrupalPhpUnitTestCase {
 
+  public function setUp(): void {
+    // Reset any runtime options that may have been set by previous tests
+    wmf_audit_runtime_options([]);
+    parent::setUp();
+  }
+
   protected function assertMessages($expectedMessages) {
     foreach ($expectedMessages as $queueName => $expected) {
       $actual = [];
