@@ -26,12 +26,8 @@ use Civi\WMFHooks\CalculatedData;
  * It does not query the actual WMF Donor fields.
  */
 class Get extends DAOGetAction {
-  /**
-   * @return string
-   */
-  public function getEntityName(): string {
-    return 'Contact';
-  }
+
+  use SelectTrait;
 
   /**
    * Is this api call in the select phase of processing.
@@ -128,20 +124,10 @@ class Get extends DAOGetAction {
    * @throws \CRM_Core_Exception
    */
   protected function getSQL(): string {
-    // Clear out this limit so it is not used in the subquery cos MariaDB
-    // does not support that - we can try later to add it back to the query if we
-    // want & it performs
-    $this->limit = 0;
-    // Alter this select to avoid getting all the fields in the contact selection.
-    $select = $this->select;
-    $this->select = ['id'];
-    $query = new Api4SelectQuery($this);
-    $sql = $query->getSql();
-    $this->select = $select;
     $calculatedData = new CalculatedData();
     $calculatedData->setIsForceSegment(TRUE);
     $calculatedData->setTriggerContext(FALSE)
-      ->setWhereClause('contact_id IN (' . $sql . ')');
+      ->setWhereClause($this->getTemporaryTableSelectClause());
 
     if (!empty($this->select)) {
       $selectFields = [];

@@ -1,5 +1,6 @@
 <?php
 use CRM_Forgetme_ExtensionUtil as E;
+use Civi\Api4\ContributionTracking;
 
 /**
  * Fredge.get API specification (optional)
@@ -37,13 +38,16 @@ function civicrm_api3_fredge_get($params) {
   if (empty($contributions)) {
     return civicrm_api3_create_success([], $params);
   }
-  $contributionTrackings = db_select('contribution_tracking', 'contribution_tracking')
-    ->fields('contribution_tracking', ['id'])
-    ->condition('contribution_id', $contributions, 'IN')
-    ->execute()
-    ->fetchAllAssoc('id');
+  $result = ContributionTracking::get(FALSE)
+    ->addSelect('id')
+    ->addWhere('contribution_id', 'IN', $contributions)
+    ->execute();
+    $contributionTrackingIds = [];
 
-  if (empty($contributionTrackings)) {
+  foreach($result as $tracking) {
+    $contributionTrackingIds[] = $tracking['id'];
+  }
+  if ($result === null) {
     return civicrm_api3_create_success([], $params);
   }
 
@@ -51,7 +55,7 @@ function civicrm_api3_fredge_get($params) {
   $dbs->push('fredge');
   $paymentsFrauds = db_select( 'payments_fraud', 'payments_fraud')
     ->fields('payments_fraud')
-    ->condition('contribution_tracking_id', array_keys($contributionTrackings), 'IN')
+    ->condition('contribution_tracking_id', array_values($contributionTrackingIds), 'IN')
     ->execute()
     ->fetchAllAssoc('id');
 
