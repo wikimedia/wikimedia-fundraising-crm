@@ -589,25 +589,37 @@ abstract class CRM_Utils_Hook {
   }
 
   /**
-   * This hook is called when composing the ACL where clause to restrict
-   * visibility of contacts to the logged in user
+   * Called when restricting access to contact-groups or custom_field-groups or profile-groups.
+   *
+   * Hook subscribers should alter the array of $currentGroups by reference.
    *
    * @param int $type
-   *   The type of permission needed.
+   *   Action type being performed e.g. CRM_ACL_API::VIEW or CRM_ACL_API::EDIT
    * @param int $contactID
-   *   The contactID for whom the check is made.
+   *   User contactID for whom the check is made.
    * @param string $tableName
-   *   The tableName which is being permissioned.
+   *   Table name of group, e.g. 'civicrm_group' or 'civicrm_uf_group' or 'civicrm_custom_group'.
    * @param array $allGroups
-   *   The set of all the objects for the above table.
-   * @param array $currentGroups
-   *   The set of objects that are currently permissioned for this contact.
+   *   All groups from the above table, keyed by id.
+   * @param int[] $currentGroups
+   *   Ids of allowed groups (corresponding to array keys of $allGroups) to be altered by reference.
    *
    * @return null
    *   the return value is ignored
    */
   public static function aclGroup($type, $contactID, $tableName, &$allGroups, &$currentGroups) {
     $null = NULL;
+    // Legacy support for hooks that still expect 'civicrm_group' to be 'civicrm_saved_search'
+    // This was changed in 5.64
+    if ($tableName === 'civicrm_group') {
+      $initialValue = $currentGroups;
+      $legacyTableName = 'civicrm_saved_search';
+      self::singleton()
+        ->invoke(['type', 'contactID', 'tableName', 'allGroups', 'currentGroups'], $type, $contactID, $legacyTableName, $allGroups, $currentGroups, $null, 'civicrm_aclGroup');
+      if ($initialValue != $currentGroups) {
+        CRM_Core_Error::deprecatedWarning('Since 5.64 hook_civicrm_aclGroup passes "civicrm_group" instead of "civicrm_saved_search" for the $tableName when referring to Groups. Hook listeners should be updated.');
+      }
+    }
     return self::singleton()
       ->invoke(['type', 'contactID', 'tableName', 'allGroups', 'currentGroups'], $type, $contactID, $tableName, $allGroups, $currentGroups, $null, 'civicrm_aclGroup');
   }
@@ -1766,6 +1778,38 @@ abstract class CRM_Utils_Hook {
   }
 
   /**
+   * Build the group contact cache for the relevant group.
+   *
+   * This hook allows a listener to specify the sql to be used to build a group in
+   * the group contact cache.
+   *
+   * If sql is altered then the api / bao query methods of building the cache will not
+   * be called.
+   *
+   * An example of the sql it might be set to is:
+   *
+   * SELECT 7 AS group_id, contact_a.id as contact_id
+   * FROM  civicrm_contact contact_a
+   * WHERE contact_a.contact_type   = 'Household' AND contact_a.household_name LIKE '%' AND  ( 1 )  ORDER BY contact_a.id
+   * AND contact_a.id
+   *   NOT IN (
+   *   SELECT contact_id FROM civicrm_group_contact
+   *   WHERE civicrm_group_contact.status = 'Removed'
+   *   AND civicrm_group_contact.group_id = 7 )
+   *
+   * @param array $savedSearch
+   * @param int $groupID
+   * @param string $sql
+   */
+  public static function buildGroupContactCache(array $savedSearch, int $groupID, string &$sql): void {
+    $null = NULL;
+    self::singleton()->invoke(['savedSearch', 'groupID', 'sql'], $savedSearch, $groupID,
+      $sql, $null, $null, $null,
+      'civicrm_buildGroupContactCache'
+    );
+  }
+
+  /**
    * (EXPERIMENTAL) Scan extensions for a list of auto-registered interfaces.
    *
    * This hook is currently experimental. It is a means to implementing `mixin/scan-classes@1`.
@@ -2839,6 +2883,27 @@ abstract class CRM_Utils_Hook {
   }
 
   /**
+   * Build a list of ECMAScript Modules (ESM's) that are available for auto-loading.
+   *
+   * Subscribers should assume that the $importMap will be cached and re-used.
+   *
+   * Example usage:
+   *
+   *    function my_civicrm_esmImportMap($importMap): void {
+   *      $importMap->addPrefix('geolib/', E::LONG_NAME, 'packages/geometry-library-1.2.3/');
+   *    }
+   *
+   * @param \Civi\Esm\ImportMap $importMap
+   */
+  public static function esmImportMap(\Civi\Esm\ImportMap $importMap): void {
+    $null = NULL;
+    self::singleton()->invoke(['importMap'], $importMap, $null, $null,
+      $null, $null, $null,
+      'civicrm_esmImportMap'
+    );
+  }
+
+  /**
    * This hook is called for bypass a few civicrm urls from IDS check.
    *
    * @param array $skip list of civicrm urls
@@ -3075,41 +3140,6 @@ abstract class CRM_Utils_Hook {
       ['displayValue', 'value', 'entityId', 'fieldInfo'],
       $displayValue, $value, $entityId, $fieldInfo, $null,
       $null, 'civicrm_alterCustomFieldDisplayValue'
-    );
-  }
-
-  /**
-   * Alter APIv4 route permissions based on the Entity and Action
-   *
-   * This is an experimental hook intended to *relax* the requirement
-   * for "access AJAX API" when calling public-oriented APIs.
-   *
-   * Historically, when APIv2/v3 were first exposed to an HTTP interface, using
-   * the HTTP interface required an extra permission "access AJAX API". This is a
-   * broad hedge against security flaws within those API's. In the current APIv4
-   * era, security concerns are often baked into each API, so there is a debate about
-   * whether "access AJAX API" serves a purpose or just makes
-   * administration/development more complicated. (So far, there's more support
-   * for the latter.)
-   *
-   * This hook might foreseeably be abandoned either...
-   *
-   * - if it is found that "access AJAX API" guard is not needed for APIv4.
-   * - if the policy is moved into metadata.
-   *
-   * @param array|string $permissions
-   * @param string $entity
-   * @param string $action
-   *
-   * @return mixed
-   */
-  public static function alterApiRoutePermissions(&$permissions, $entity, $action) {
-    $null = NULL;
-    return self::singleton()->invoke(
-      ['permissions', 'entity', 'action'],
-      $permissions, $entity, $action,
-      $null, $null, $null,
-      'civicrm_alterApiRoutePermissions'
     );
   }
 

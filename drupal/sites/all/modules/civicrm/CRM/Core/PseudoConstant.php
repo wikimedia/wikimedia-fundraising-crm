@@ -285,7 +285,7 @@ class CRM_Core_PseudoConstant {
     }
 
     // Return "Yes" and "No" for boolean fields
-    elseif (CRM_Utils_Array::value('type', $fieldSpec) === CRM_Utils_Type::T_BOOLEAN) {
+    elseif (($fieldSpec['type'] ?? NULL) === CRM_Utils_Type::T_BOOLEAN) {
       $output = $context == 'validate' ? [0, 1] : CRM_Core_SelectValues::boolean();
       CRM_Utils_Hook::fieldOptions($entity, $fieldName, $output, $params);
       return $flip ? array_flip($output) : $output;
@@ -799,11 +799,6 @@ WHERE  id = %1";
    *   array reference of all groups.
    */
   public static function allGroup($groupType = NULL, $excludeHidden = TRUE) {
-    if ($groupType === 'validate') {
-      // validate gets passed through from getoptions. Handle in the deprecated
-      // fn rather than change the new pattern.
-      $groupType = NULL;
-    }
     $condition = CRM_Contact_BAO_Group::groupTypeCondition($groupType, $excludeHidden);
     $groupKey = ($groupType ? $groupType : 'null') . !empty($excludeHidden);
 

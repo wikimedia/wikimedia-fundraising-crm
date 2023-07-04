@@ -96,7 +96,7 @@ class CRM_Core_Form_RecurringEntity {
     // Assign variables
     $entityType = CRM_Core_DAO_AllCoreTables::getEntityNameForTable($entityTable);
     $tpl = CRM_Core_Smarty::singleton();
-    $tpl->assign('recurringEntityType', ts($entityType));
+    $tpl->assign('recurringEntityType', _ts($entityType));
     $tpl->assign('currentEntityId', self::$_entityId);
     $tpl->assign('entityTable', self::$_entityTable);
     $tpl->assign('scheduleReminderId', self::$_scheduleReminderID);
@@ -327,7 +327,7 @@ class CRM_Core_Form_RecurringEntity {
       $params['entity_id'] = self::$_entityId;
     }
     //Process this function only when you get this variable
-    if (CRM_Utils_Array::value('allowRepeatConfigToSubmit', $params) == 1) {
+    if (($params['allowRepeatConfigToSubmit'] ?? NULL) == 1) {
       if (!empty($params['entity_table']) && !empty($params['entity_id']) && $type) {
         $params['used_for'] = $type;
         if (empty($params['parent_entity_id'])) {

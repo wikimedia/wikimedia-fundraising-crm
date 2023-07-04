@@ -25,17 +25,10 @@ class CRM_Member_BAO_MembershipType extends CRM_Member_DAO_MembershipType implem
   public static $_membershipTypeInfo = [];
 
   /**
-   * Retrieve DB object and copy to defaults array.
-   *
-   * @param array $params
-   *   Array of criteria values.
-   * @param array $defaults
-   *   Array to be populated with found values.
-   *
-   * @return self|null
-   *   The DAO object, if found.
-   *
    * @deprecated
+   * @param array $params
+   * @param array $defaults
+   * @return self|null
    */
   public static function retrieve($params, &$defaults) {
     return self::commonRetrieve(self::class, $params, $defaults);
@@ -323,13 +316,13 @@ class CRM_Member_BAO_MembershipType extends CRM_Member_DAO_MembershipType implem
     }
 
     $fixed_period_rollover = FALSE;
-    if (CRM_Utils_Array::value('period_type', $membershipTypeDetails) == 'rolling') {
+    if (($membershipTypeDetails['period_type'] ?? NULL) == 'rolling') {
       if (!$startDate) {
         $startDate = $joinDate;
       }
       $actualStartDate = $startDate;
     }
-    elseif (CRM_Utils_Array::value('period_type', $membershipTypeDetails) == 'fixed') {
+    elseif (($membershipTypeDetails['period_type'] ?? NULL) == 'fixed') {
       // calculate start date
       // if !$startDate then use $joinDate
       $toDay = explode('-', (empty($startDate) ? $joinDate : $startDate));

@@ -118,7 +118,7 @@ class Render extends AbstractAction {
       'year' => $this->getYear(),
       'active_recurring' => $activeRecurring,
       'contactIDs' => $contactDetails['ids'],
-      'contactId' => end($contactDetails['ids']),
+      'contactID' => end($contactDetails['ids']),
       'locale' => $contactDetails['language'],
     ];
 

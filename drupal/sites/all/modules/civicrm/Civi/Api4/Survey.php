@@ -13,9 +13,11 @@ namespace Civi\Api4;
 /**
  * Survey entity.
  *
+ * Surveys are used as both surveys and petitions.
+ *
  * @see https://docs.civicrm.org/user/en/latest/survey/what-is-civisurvey/
  * @searchable secondary
- * @since 5.43
+ * @since 5.64
  * @package Civi\Api4
  */
 class Survey extends Generic\DAOEntity {

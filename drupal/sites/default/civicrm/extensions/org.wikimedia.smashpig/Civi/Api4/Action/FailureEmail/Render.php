@@ -87,7 +87,7 @@ class Render extends AbstractAction {
 
     $rendered = WorkflowMessage::render(FALSE)
       ->setLanguage($email['contact_id.preferred_language'])
-      ->setValues(['contributionRecurID' => $this->getContributionRecurID(), 'contactId' => $this->getContactID()])
+      ->setValues(['contributionRecurID' => $this->getContributionRecurID(), 'contactID' => $this->getContactID()])
       ->setWorkflow('recurring_failed_message')->execute();
 
     foreach ($rendered as $index => $value) {

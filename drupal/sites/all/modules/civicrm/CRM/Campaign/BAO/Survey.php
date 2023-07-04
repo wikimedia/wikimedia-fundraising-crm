@@ -21,17 +21,10 @@
 class CRM_Campaign_BAO_Survey extends CRM_Campaign_DAO_Survey implements Civi\Core\HookInterface {
 
   /**
-   * Retrieve DB object and copy to defaults array.
-   *
-   * @param array $params
-   *   Array of criteria values.
-   * @param array $defaults
-   *   Array to be populated with found values.
-   *
-   * @return self|null
-   *   The DAO object, if found.
-   *
    * @deprecated
+   * @param array $params
+   * @param array $defaults
+   * @return self|null
    */
   public static function retrieve($params, &$defaults) {
     return self::commonRetrieve(self::class, $params, $defaults);
@@ -844,8 +837,8 @@ INNER JOIN  civicrm_contact contact_a ON ( activityTarget.contact_id = contact_a
       return NULL;
     }
 
-    static $ufIds = [];
-    if (!array_key_exists($surveyId, $ufIds)) {
+    static $ufIDs = [];
+    if (!array_key_exists($surveyId, $ufIDs)) {
       //get the profile id.
       $ufJoinParams = [
         'entity_id' => $surveyId,
@@ -856,14 +849,14 @@ INNER JOIN  civicrm_contact contact_a ON ( activityTarget.contact_id = contact_a
       list($first, $second) = CRM_Core_BAO_UFJoin::getUFGroupIds($ufJoinParams);
 
       if ($first) {
-        $ufIds[$surveyId] = [$first];
+        $ufIDs[$surveyId] = [$first];
       }
       if ($second) {
-        $ufIds[$surveyId][] = array_shift($second);
+        $ufIDs[$surveyId][] = array_shift($second);
       }
     }
 
-    return $ufIds[$surveyId] ?? NULL;
+    return $ufIDs[$surveyId] ?? NULL;
   }
 
   /**

@@ -545,7 +545,9 @@ class CRM_Utils_System {
     $url = str_replace('&amp;', '&', $url);
 
     $context['output'] = $_GET['snippet'] ?? NULL;
-
+    if ($context['noindex'] ?? FALSE) {
+      self::setHttpHeader('X-Robots-Tag', 'noindex');
+    }
     $parsedUrl = CRM_Utils_Url::parseUrl($url);
     CRM_Utils_Hook::alterRedirect($parsedUrl, $context);
     $url = CRM_Utils_Url::unparseUrl($parsedUrl);
@@ -1403,7 +1405,7 @@ class CRM_Utils_System {
       return NULL;
     }
 
-    if (CRM_Utils_Array::value('resource', $params) == 'wiki') {
+    if (($params['resource'] ?? NULL) == 'wiki') {
       $docBaseURL = self::getWikiBaseURL();
     }
     else {

@@ -22,14 +22,6 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
   use CRM_Financial_Form_FrontEndPaymentFormTrait;
 
   /**
-   * How many locationBlocks should we display?
-   *
-   * @var int
-   * @const
-   */
-  const LOCATION_BLOCKS = 1;
-
-  /**
    * The id of the event we are processing.
    *
    * @var int
@@ -179,6 +171,13 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
   public $paymentInstrumentID;
 
   /**
+   * Should the payment element be shown on the confirm page instead of the first page?
+   *
+   * @var bool
+   */
+  protected $showPaymentOnConfirm = FALSE;
+
+  /**
    * Set variables up before form is built.
    */
   public function preProcess() {
@@ -217,6 +216,9 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
 
     //get the additional participant ids.
     $this->_additionalParticipantIds = $this->get('additionalParticipantIds');
+
+    $this->showPaymentOnConfirm = (in_array($this->_eventId, \Civi::settings()->get('event_show_payment_on_confirm')) || in_array('all', \Civi::settings()->get('event_show_payment_on_confirm')));
+    $this->assign('showPaymentOnConfirm', $this->showPaymentOnConfirm);
 
     if (!$this->_values) {
       // this is the first time we are hitting this, so check for permissions here
@@ -655,6 +657,9 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
       if (CRM_Core_DAO::getFieldValue('CRM_Price_DAO_PriceSet', $priceSetId, 'is_quick_config') && $form->getVar('_name') != 'Participant') {
         $form->assign('quickConfig', 1);
       }
+      else {
+        $form->assign('quickConfig', 0);
+      }
     }
     // get price info
     if ($priceSetId) {
@@ -725,9 +730,6 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
    * @throws \CRM_Core_Exception
    */
   public function confirmPostProcess($contactID = NULL, $contribution = NULL) {
-    // add/update contact information
-    unset($this->_params['note']);
-
     //to avoid conflict overwrite $this->_params
     $this->_params = $this->get('value');
 

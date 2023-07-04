@@ -17,7 +17,7 @@ namespace Civi\Api4\Query;
  * SqlFunction classes don't actually process data, SQL itself does the real work.
  * The role of each SqlFunction class is to:
  *
- * 1. Whitelist the SQL function for use by APIv4 (it doesn't allow any that don't have a SQLFunction class).
+ * 1. Whitelist a standard SQL function, or define a custom one, for use by APIv4 (it doesn't allow any that don't have a SQLFunction class).
  * 2. Document what the function does and what arguments it accepts.
  * 3. Tell APIv4 how to treat the inputs and how to format the outputs.
  *
@@ -29,6 +29,12 @@ abstract class SqlFunction extends SqlExpression {
    * @var array[]
    */
   protected $args = [];
+
+  /**
+   * Pseudoconstant suffix (for functions with option lists)
+   * @var string
+   */
+  private $suffix;
 
   /**
    * Used for categorizing functions in the UI
@@ -47,7 +53,12 @@ abstract class SqlFunction extends SqlExpression {
    * Parse the argument string into an array of function arguments
    */
   protected function initialize() {
-    $arg = trim(substr($this->expr, strpos($this->expr, '(') + 1, -1));
+    $matches = [];
+    // Capture function argument string and possible suffix
+    preg_match('/[_A-Z]+\((.*)\)(:[a-z]+)?$/', $this->expr, $matches);
+    $arg = $matches[1];
+    $this->setSuffix($matches[2] ?? NULL);
+    // Parse function arguments string, match to declared function params
     foreach ($this->getParams() as $idx => $param) {
       $prefix = NULL;
       $name = $param['name'] ?: ($idx + 1);
@@ -96,7 +107,7 @@ abstract class SqlFunction extends SqlExpression {
   }
 
   /**
-   * Change $dataType according to output of function
+   * Set $dataType and convert value by suffix
    *
    * @see \Civi\Api4\Utils\FormattingUtil::formatOutputValues
    * @param string $value
@@ -107,16 +118,34 @@ abstract class SqlFunction extends SqlExpression {
     if (static::$dataType) {
       $dataType = static::$dataType;
     }
+    if (isset($value) && $this->suffix && $this->suffix !== 'id') {
+      $dataType = 'String';
+      $option = $this->getOptions()[$value] ?? NULL;
+      // Option contains an array of suffix keys
+      if (is_array($option)) {
+        return $option[$this->suffix] ?? NULL;
+      }
+      // Flat arrays are name/value pairs
+      elseif ($this->suffix === 'label') {
+        return $option;
+      }
+      elseif ($this->suffix === 'name') {
+        return $value;
+      }
+      else {
+        return NULL;
+      }
+    }
     return $value;
   }
 
   /**
    * Render the expression for insertion into the sql query
    *
-   * @param \Civi\Api4\Query\Api4SelectQuery $query
+   * @param \Civi\Api4\Query\Api4Query $query
    * @return string
    */
-  public function render(Api4SelectQuery $query): string {
+  public function render(Api4Query $query): string {
     $output = '';
     foreach ($this->args as $arg) {
       $rendered = $this->renderArg($arg, $query);
@@ -124,15 +153,25 @@ abstract class SqlFunction extends SqlExpression {
         $output .= (strlen($output) ? ' ' : '') . $rendered;
       }
     }
+    return $this->renderExpression($output);
+  }
+
+  /**
+   * Render the final expression
+   *
+   * @param string $output
+   * @return string
+   */
+  protected function renderExpression($output): string {
     return $this->getName() . '(' . $output . ')';
   }
 
   /**
    * @param array $arg
-   * @param \Civi\Api4\Query\Api4SelectQuery $query
+   * @param \Civi\Api4\Query\Api4Query $query
    * @return string
    */
-  private function renderArg($arg, Api4SelectQuery $query): string {
+  private function renderArg($arg, Api4Query $query): string {
     $rendered = implode(' ', $arg['prefix']);
     foreach ($arg['expr'] ?? [] as $idx => $expr) {
       if (strlen($rendered) || $idx) {
@@ -150,7 +189,7 @@ abstract class SqlFunction extends SqlExpression {
    * @inheritDoc
    */
   public function getAlias(): string {
-    return $this->alias ?? $this->getName() . ':' . implode('_', $this->fields);
+    return $this->alias ?? $this->getName() . ':' . implode('_', $this->fields) . ($this->suffix ? ':' . $this->suffix : '');
   }
 
   /**
@@ -227,6 +266,15 @@ abstract class SqlFunction extends SqlExpression {
    */
   public function getType(): string {
     return 'SqlFunction';
+  }
+
+  /**
+   * @param string|null $suffix
+   */
+  private function setSuffix(?string $suffix): void {
+    $this->suffix = $suffix ?
+      str_replace(':', '', $suffix) :
+      NULL;
   }
 
   /**

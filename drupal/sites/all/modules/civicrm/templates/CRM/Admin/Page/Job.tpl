@@ -22,7 +22,7 @@
 
       {if $action ne 1 and $action ne 2}
         <div class="action-link">
-          {crmButton q="action=add&reset=1" id="newJob"  icon="plus-circle"}{ts}Add New Scheduled Job{/ts}{/crmButton}
+          {crmButton p='civicrm/admin/job/add' q="action=add&reset=1" id="newJob"  icon="plus-circle"}{ts}Add New Scheduled Job{/ts}{/crmButton}
           {crmButton p='civicrm/admin/joblog' q="reset=1" id="jobLog" icon="list-alt"}{ts}View Log (all jobs){/ts}{/crmButton}
         </div>
       {/if}
@@ -42,11 +42,11 @@
         {foreach from=$rows item=row}
         <tr id="job-{$row.id}" class="crm-entity {cycle values="odd-row,even-row"} {$row.class}{if NOT $row.is_active} disabled{/if}">
             <td class="crm-job-name"><strong><span data-field="name">{$row.name}</span></strong> ({$row.run_frequency})<br/>
-                {$row.description}<br />
+                {if array_key_exists('description', $row)}{$row.description}{/if}<br />
                 {ts}API Entity:{/ts} {$row.api_entity}<br/>
                 {ts}API Action:{/ts} <strong>{$row.api_action}</strong><br/>
             </td>
-            <td class="crm-job-name">{if $row.parameters eq null}<em>{ts}no parameters{/ts}</em>{else}<pre>{$row.parameters}</pre>{/if}</td>
+            <td class="crm-job-name">{if $row.parameters eq null}<em>{ts}no parameters{/ts}</em>{else}{$row.parameters|nl2br}{/if}</td>
             <td class="crm-job-name">{if $row.last_run eq null}never{else}{$row.last_run|crmDate:$config->dateformatDatetime}{/if}</td>
             <td id="row_{$row.id}_status" class="crm-job-is_active">{if $row.is_active eq 1} {ts}Yes{/ts} {else} {ts}No{/ts} {/if}</td>
           <td>{$row.action|smarty:nodefaults|replace:'xx':$row.id}</td>
@@ -57,7 +57,7 @@
 
     {if $action ne 1 and $action ne 2}
         <div class="action-link">
-          {crmButton q="action=add&reset=1" id="newJob-bottom"  icon="plus-circle"}{ts}Add New Scheduled Job{/ts}{/crmButton}
+          {crmButton p='civicrm/admin/job/add' q="action=add&reset=1" id="newJob-bottom"  icon="plus-circle"}{ts}Add New Scheduled Job{/ts}{/crmButton}
           {crmButton p='civicrm/admin/joblog' q="reset=1" id="jobLog-bottom" icon="list-alt"}{ts}View Log (all jobs){/ts}{/crmButton}
         </div>
     {/if}
@@ -68,7 +68,7 @@
         {ts}There are no jobs configured.{/ts}
      </div>
      <div class="action-link">
-       <a href="{crmURL p='civicrm/admin/job' q="action=add&reset=1"}" id="newJob-nojobs" class="button"><span><i class="crm-i fa-plus-circle" aria-hidden="true"></i> {ts}Add New Scheduled Job{/ts}</span></a>
+       <a href="{crmURL p='civicrm/admin/job/add' q="action=add&reset=1"}" id="newJob-nojobs" class="button"><span><i class="crm-i fa-plus-circle" aria-hidden="true"></i> {ts}Add New Scheduled Job{/ts}</span></a>
      </div>
 
 {/if}

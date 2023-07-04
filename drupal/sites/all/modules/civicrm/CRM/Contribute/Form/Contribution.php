@@ -651,7 +651,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       ts('Financial Type'),
       ['' => ts('- select -')] + $financialTypes,
       TRUE,
-      ['onChange' => "CRM.buildCustomData( 'Contribution', this.value );"]
+      ['onChange' => "CRM.buildCustomData( 'Contribution', this.value );", 'class' => 'crm-select2']
     );
 
     $paymentInstrument = FALSE;
@@ -662,7 +662,8 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       $paymentInstrument = $this->add('select', 'payment_instrument_id',
         ts('Payment Method'),
         ['' => ts('- select -')] + CRM_Contribute_BAO_Contribution::buildOptions('payment_instrument_id', 'create'),
-        $required, ['onChange' => "return showHideByValue('payment_instrument_id','{$checkPaymentID}','checkNumber','table-row','select',false);"]
+        $required,
+        ['onChange' => "return showHideByValue('payment_instrument_id','{$checkPaymentID}','checkNumber','table-row','select',false);", 'class' => 'crm-select2']
       );
     }
 
@@ -671,7 +672,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     //add receipt for offline contribution
     $this->addElement('checkbox', 'is_email_receipt', ts('Send Receipt?'));
 
-    $this->add('select', 'from_email_address', ts('Receipt From'), $this->_fromEmails);
+    $this->add('select', 'from_email_address', ts('Receipt From'), $this->_fromEmails, FALSE, ['class' => 'crm-select2 huge']);
 
     $componentDetails = [];
     if ($this->_id) {
@@ -691,7 +692,8 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     $statusElement = $this->add('select', 'contribution_status_id',
       ts('Contribution Status'),
       $status,
-      FALSE
+      FALSE,
+      ['class' => 'crm-select2']
     );
 
     $currencyFreeze = FALSE;
@@ -756,10 +758,9 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
         // instead of selecting manually
         $financialTypeIds = CRM_Price_BAO_PriceSet::getAssoc(FALSE, 'CiviContribute', 'financial_type_id');
         $element = $this->add('select', 'price_set_id', ts('Choose price set'),
-          [
-            '' => ts('Choose price set'),
-          ] + $priceSets,
-          NULL, ['onchange' => "buildAmount( this.value, " . json_encode($financialTypeIds) . ");"]
+          ['' => ts('Choose price set')] + $priceSets,
+          NULL,
+          ['onchange' => "buildAmount( this.value, " . json_encode($financialTypeIds) . ");", 'class' => 'crm-select2']
         );
         if ($this->_online && !($this->_action & CRM_Core_Action::UPDATE)) {
           $element->freeze();
@@ -794,7 +795,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       );
     }
 
-    $this->add('text', 'source', ts('Source'), CRM_Utils_Array::value('source', $attributes));
+    $this->add('text', 'source', ts('Contribution Source'), CRM_Utils_Array::value('source', $attributes));
 
     // CRM-7362 --add campaigns.
     CRM_Campaign_BAO_Campaign::addCampaign($this, CRM_Utils_Array::value('campaign_id', $this->_values));
@@ -850,9 +851,11 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
           $trxnId->freeze();
         }
         $financialType->freeze();
-        $this->assign('freezeFinancialType', TRUE);
+        $freezeFinancialType = TRUE;
+
       }
     }
+    $this->assign('freezeFinancialType', $freezeFinancialType ?? FALSE);
 
     if ($this->_action & CRM_Core_Action::VIEW) {
       $this->freeze();
@@ -1791,15 +1794,16 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       }
       $contribution = CRM_Contribute_BAO_Contribution::create($params);
 
+      $previousStatus = CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $this->_values['contribution_status_id'] ?? NULL);
       // process associated membership / participant, CRM-4395
-      if ($contribution->id && $action & CRM_Core_Action::UPDATE) {
+      if ($contribution->id && $action & CRM_Core_Action::UPDATE
+        && in_array($previousStatus, ['Pending', 'Partially paid'], TRUE)
+        && 'Completed' === CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $this->getSubmittedValue('contribution_status_id'))) {
         // @todo use Payment.create to do this, remove transitioncomponents function
         // if contribution is being created with a completed status it should be
         // created pending & then Payment.create adds the payment
         CRM_Contribute_BAO_Contribution::transitionComponents([
           'contribution_id' => $contribution->id,
-          'contribution_status_id' => $contribution->contribution_status_id,
-          'previous_contribution_status_id' => $this->_values['contribution_status_id'] ?? NULL,
           'receive_date' => $contribution->receive_date,
         ]);
       }
@@ -1834,6 +1838,21 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
 
     if ($contribution->id && array_key_exists('note', $submittedValues)) {
       CRM_Contribute_Form_AdditionalInfo::processNote($submittedValues, $this->_contactID, $contribution->id, $this->_noteID);
+    }
+
+    // If financial type has changed from non-deductible to deductible, let the user know so they can adjust the non-deductible amount
+    $toType = $submittedValues['financial_type_id'] ?? NULL;
+    $fromType = $this->_defaults['financial_type_id'] ?? NULL;
+    if (($this->_action & CRM_Core_Action::UPDATE) && ($toType != $fromType) && ($submittedValues['non_deductible_amount'] ?? NULL)) {
+      $deductible = \Civi\Api4\FinancialType::get(TRUE)
+        ->addSelect('is_deductible')
+        ->addWhere('id', 'IN', [$toType, $fromType])
+        ->execute()->indexBy('id')->column('is_deductible');
+      if ($deductible[$fromType] == FALSE && $deductible[$toType] == TRUE) {
+        CRM_Core_Session::setStatus(ts("You've changed the financial type for this %1 contribution from non-tax deductible to tax deductible, but the non-deductible amount of %2 has not been changed. This could prevent a tax receipt from being issued correctly. You may want to edit the non-deductible amount.",
+          [1 => Civi::format()->money($submittedValues['total_amount']), 2 => Civi::format()->money($submittedValues['non_deductible_amount'])]),
+          ts('Non-deductible amount'), 'alert', ['expires' => 30000]);
+      }
     }
 
     CRM_Core_Session::setStatus(implode(' ', $this->statusMessage), $this->statusMessageTitle, 'success');

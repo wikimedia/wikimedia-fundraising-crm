@@ -66,6 +66,7 @@ class SpecFormatter {
       $field->setRequired(!empty($data['required']) && empty($data['default']));
       $field->setTitle($data['title'] ?? NULL);
       $field->setLabel($data['html']['label'] ?? NULL);
+      $field->setLocalizable($data['localizable'] ?? FALSE);
       if (!empty($data['pseudoconstant'])) {
         // Do not load options if 'prefetch' is explicitly FALSE
         if (!isset($data['pseudoconstant']['prefetch']) || $data['pseudoconstant']['prefetch'] === FALSE) {
@@ -97,6 +98,10 @@ class SpecFormatter {
     $fkClassName = $data['FKClassName'] ?? NULL;
     if ($fkAPIName || $fkClassName) {
       $field->setFkEntity($fkAPIName ?: CoreUtil::getApiNameFromBAO($fkClassName));
+    }
+    // For pseudo-fk fields like `civicrm_group.parents`
+    elseif (($data['html']['type'] ?? NULL) === 'EntityRef' && !empty($data['pseudoconstant']['table'])) {
+      $field->setFkEntity(CoreUtil::getApiNameFromTableName($data['pseudoconstant']['table']));
     }
 
     return $field;
@@ -262,7 +267,7 @@ class SpecFormatter {
     $inputType = $data['html']['type'] ?? $data['html_type'] ?? NULL;
     $inputAttrs = $data['html'] ?? [];
     unset($inputAttrs['type']);
-    // Custom field contact ref filters
+    // Custom field EntityRef or ContactRef filters
     if (is_string($data['filter'] ?? NULL) && strpos($data['filter'], '=')) {
       $filters = explode('&', $data['filter']);
       $inputAttrs['filter'] = $filters;
@@ -282,9 +287,11 @@ class SpecFormatter {
     if ($inputType == 'Date' && !empty($inputAttrs['formatType'])) {
       self::setLegacyDateFormat($inputAttrs);
     }
-    // Number input for integer fields
-    if ($inputType === 'Text' && $dataTypeName === 'Int') {
+    // Number input for numeric fields
+    if ($inputType === 'Text' && in_array($dataTypeName, ['Int', 'Float'], TRUE)) {
       $inputType = 'Number';
+      // Todo: make 'step' configurable for the custom field
+      $inputAttrs['step'] = $dataTypeName === 'Int' ? 1 : .01;
     }
     // Date/time settings from custom fields
     if ($inputType == 'Date' && !empty($data['custom_group_id'])) {
@@ -315,7 +322,8 @@ class SpecFormatter {
         $filters = [];
         foreach ($val as $filter) {
           [$k, $v] = explode('=', $filter);
-          $filters[$k] = $v;
+          // Explode comma-separated values
+          $filters[$k] = strpos($v, ',') ? explode(',', $v) : $v;
         }
         // Legacy APIv3 custom field stuff
         if ($dataTypeName === 'ContactReference') {

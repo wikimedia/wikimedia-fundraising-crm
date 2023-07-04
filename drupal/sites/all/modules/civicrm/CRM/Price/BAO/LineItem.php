@@ -582,7 +582,7 @@ WHERE li.contribution_id = %1";
    *   [5] => ['price_field_id' => 5, 'price_field_value_id' => x, 'label....qty...unit_price...line_total...financial_type_id]
    *
    */
-  public static function buildLineItemsForSubmittedPriceField($priceParams, $overrideAmount = NULL, $financialTypeID = NULL) {
+  public static function buildLineItemsForSubmittedPriceField($priceParams, $overrideAmount = NULL, $financialTypeID = NULL): array {
     $lineItems = [];
     foreach ($priceParams as $key => $value) {
       $priceField = self::getPriceFieldMetaData($key);
@@ -618,7 +618,6 @@ WHERE li.contribution_id = %1";
    * @param int $entity
    * @param int $contributionId
    * @param $feeBlock
-   * @param array $lineItems
    *
    * @throws \CRM_Core_Exception
    */
@@ -627,10 +626,9 @@ WHERE li.contribution_id = %1";
     $entityID,
     $entity,
     $contributionId,
-    $feeBlock,
-    $lineItems
+    $feeBlock
   ) {
-    $entityTable = "civicrm_" . $entity;
+    $entityTable = 'civicrm_' . $entity;
     $newLineItems = [];
     CRM_Price_BAO_PriceSet::processAmount($feeBlock,
       $params, $newLineItems
@@ -812,7 +810,7 @@ WHERE li.contribution_id = %1";
 
   /**
    * Helper function to return sum of financial item's amount related to a line-item
-   * @param array $lineItemID
+   * @param int $lineItemID
    *
    * @return float $financialItem
    */
@@ -876,7 +874,7 @@ WHERE li.contribution_id = %1";
     foreach ($previousLineItems as $id => $previousLineItem) {
       if (in_array($previousLineItem['price_field_value_id'], $submittedPriceFieldValueIDs)) {
         $submittedLineItem = $submittedLineItems[$previousLineItem['price_field_value_id']];
-        if (CRM_Utils_Array::value('html_type', $lineItemsToAdd[$previousLineItem['price_field_value_id']]) == 'Text') {
+        if (($lineItemsToAdd[$previousLineItem['price_field_value_id']]['html_type'] ?? NULL) == 'Text') {
           // If a 'Text' price field was updated by changing qty value, then we are not adding new line-item but updating the existing one,
           //  because unlike other kind of price-field, it's related price-field-value-id isn't changed and thats why we need to make an
           //  exception here by adding financial item for updated line-item and will reverse any previous financial item entries.
@@ -1034,7 +1032,7 @@ WHERE li.contribution_id = %1";
         $line[$getUpdatedLineItemsDAO->price_field_value_id] = $getUpdatedLineItemsDAO->label . ' - ' . (float) $getUpdatedLineItemsDAO->qty;
       }
 
-      $partUpdateFeeAmt['fee_level'] = implode(', ', $line);
+      $partUpdateFeeAmt['fee_level'] = $line;
       $partUpdateFeeAmt['fee_amount'] = $inputParams['amount'];
       CRM_Event_BAO_Participant::add($partUpdateFeeAmt);
 

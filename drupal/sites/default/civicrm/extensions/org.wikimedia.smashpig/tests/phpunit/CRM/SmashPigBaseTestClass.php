@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\ContributionRecur;
 use Civi\Api4\Translation;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
@@ -270,7 +271,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
         'invoice_id' => mt_rand(10000, 10000000) . '.' . mt_rand(1, 20),
         'contribution_status_id:name' => 'Pending',
       ];
-    $result = Civi\Api4\ContributionRecur::create(FALSE)
+    $result = ContributionRecur::create(FALSE)
       ->setValues($params)
       ->execute()
       ->first();

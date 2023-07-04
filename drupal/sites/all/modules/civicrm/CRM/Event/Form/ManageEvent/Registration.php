@@ -260,7 +260,7 @@ class CRM_Event_Form_ManageEvent_Registration extends CRM_Event_Form_ManageEvent
       '' => ts('- Unsupervised rule -'),
     ];
     $dedupeRules += CRM_Dedupe_BAO_DedupeRuleGroup::getByType('Individual');
-    $this->add('select', 'dedupe_rule_group_id', ts('Duplicate matching rule'), $dedupeRules);
+    $this->add('select', 'dedupe_rule_group_id', ts('Duplicate matching rule'), $dedupeRules, FALSE, ['class' => 'crm-select2 huge']);
 
     $participantStatuses = CRM_Event_PseudoConstant::participantStatus();
     if (in_array('Awaiting approval', $participantStatuses) and in_array('Pending from approval', $participantStatuses) and in_array('Rejected', $participantStatuses)) {
@@ -850,7 +850,7 @@ class CRM_Event_Form_ManageEvent_Registration extends CRM_Event_Form_ManageEvent
           $ufAdd[1] = $params['custom_pre_id'];
           $wtAdd = 1;
         }
-        elseif (CRM_Utils_Array::value('additional_custom_pre_id', $params) == 'none') {
+        elseif (($params['additional_custom_pre_id'] ?? NULL) == 'none') {
         }
         else {
           $ufAdd[1] = $params['additional_custom_pre_id'];
@@ -862,7 +862,7 @@ class CRM_Event_Form_ManageEvent_Registration extends CRM_Event_Form_ManageEvent
         if (empty($params['additional_custom_post_id'])) {
           $ufAdd[2] = $params['custom_post_id'];
         }
-        elseif (CRM_Utils_Array::value('additional_custom_post_id', $params) == 'none') {
+        elseif (($params['additional_custom_post_id'] ?? NULL) == 'none') {
         }
         else {
           $ufAdd[2] = $params['additional_custom_post_id'];
