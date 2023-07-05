@@ -29,7 +29,7 @@ Cada donación nos ayuda a mejorar el acceso de las personas a información prec
 {else}
 
 <p>
-Muchas gracias por tu donación de {if $currency === 'USD'}{$currency} {/if}{$amount} para apoyar a Wikipedia y a un mundo donde el conocimiento sea gratuito para todos.
+Muchas gracias por tu donación de {$amount} para apoyar a Wikipedia y a un mundo donde el conocimiento sea gratuito para todos.
 </p>
 
 <p>
@@ -70,7 +70,7 @@ Directora general de Wikimedia Foundation
 
 {if $gift_source != "Donor Advised Fund"}
 
-<p>Para tu registro personal: tu donación número {$transaction_id}, del {$receive_date}, fue de {if $currency === 'USD'}{$currency} {/if}{$amount} ({$currency}).
+<p>Para tu registro personal: tu donación número {$transaction_id}, del {$receive_date}, fue de {$amount} ({$currency}).
 </p>
 
 <p>Esta carta es constancia de tu donación. No se entregaron mercancías ni servicios, de forma total ni parcial, a cambio de su aporte. Nuestra dirección postal es: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, EE. UU. Número de exención fiscal de los EE. UU.: 20-0049703

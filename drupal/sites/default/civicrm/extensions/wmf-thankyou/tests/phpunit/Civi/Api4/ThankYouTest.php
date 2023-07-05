@@ -261,8 +261,8 @@ class ThankYouTest extends TestCase {
 
     // USD with specified es_MX language
     $result = $this->renderMessage('es_MX', ['currency' => 'USD']);
-    $this->assertStringContainsString('la donación puntual de USD 10.00 que ', $result['html']);
-    $this->assertStringContainsString('del 2022-08-08, fue de USD 10.00.', $result['html']);
+    $this->assertStringContainsString('USD 10.00 para apoyar', $result['html']);
+    $this->assertStringContainsString(' del 2022-08-08, fue de USD 10.00 (USD).', $result['html']);
   }
 
   /**
