@@ -539,6 +539,7 @@ function  _wmf_civicrm_managed_get_translations(string $workflowName): array {
       'params' => [
         'version' => 4,
         'checkPermissions' => FALSE,
+        'match' => ['entity_id', 'entity_table', 'entity_field', 'language'],
         'values' => [
           'entity_table' => 'civicrm_msg_template',
           'entity_field' => $field,
