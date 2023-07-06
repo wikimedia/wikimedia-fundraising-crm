@@ -18,8 +18,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
   function __construct() {
 
     global $databases;
-    $this->drupal = $databases['default']['default']['database'];
-    $this->fredge = substr($this->drupal, 0,
+    $this->fredge = substr($databases['default']['default']['database'], 0,
       3) === 'dev' ? 'dev_fredge' : 'fredge';
     $this->setReportColumns();
     parent::__construct();

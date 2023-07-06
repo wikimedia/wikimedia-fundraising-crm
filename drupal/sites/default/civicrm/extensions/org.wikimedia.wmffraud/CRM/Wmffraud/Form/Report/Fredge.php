@@ -34,8 +34,8 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
       || $this->isTableSelected('civicrm_contact')
     ) {
       $this->_from .= "
-        LEFT JOIN civicrm_contribution_tracking {$this->_aliases['contribution_tracking']}
-        ON {$this->_aliases['contribution_tracking']}.id = {$this->_aliases['payments_fraud']}.contribution_tracking_id ";
+        LEFT JOIN civicrm_contribution_tracking {$this->_aliases['civicrm_contribution_tracking']}
+        ON {$this->_aliases['civicrm_contribution_tracking']}.id = {$this->_aliases['payments_fraud']}.contribution_tracking_id ";
     }
     if ($this->isTableSelected('civicrm_contribution')
       || $this->isTableSelected('civicrm_email')
@@ -43,7 +43,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
     ) {
       $this->_from .= "
         LEFT JOIN civicrm_contribution {$this->_aliases['civicrm_contribution']}
-        ON {$this->_aliases['civicrm_contribution']}.id = {$this->_aliases['contribution_tracking']}.contribution_id
+        ON {$this->_aliases['civicrm_contribution']}.id = {$this->_aliases['civicrm_contribution_tracking']}.contribution_id
       ";
     }
     if ($this->isTableSelected('civicrm_email')

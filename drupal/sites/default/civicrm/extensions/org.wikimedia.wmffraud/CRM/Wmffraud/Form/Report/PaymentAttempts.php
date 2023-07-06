@@ -27,10 +27,10 @@ class CRM_Wmffraud_Form_Report_PaymentAttempts extends CRM_Wmffraud_Form_Report_
   function from() {
     $this->_from = "
       FROM {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']}
-      LEFT JOIN civicrm_contribution_tracking {$this->_aliases['contribution_tracking']}
-        ON {$this->_aliases['payments_fraud']}.contribution_tracking_id = {$this->_aliases['contribution_tracking']}.id
+      LEFT JOIN civicrm_contribution_tracking {$this->_aliases['civicrm_contribution_tracking']}
+        ON {$this->_aliases['payments_fraud']}.contribution_tracking_id = {$this->_aliases['civicrm_contribution_tracking']}.id
       LEFT JOIN civicrm_contribution {$this->_aliases['civicrm_contribution']}
-        ON {$this->_aliases['contribution_tracking']}.contribution_id = {$this->_aliases['civicrm_contribution']}.id";
+        ON {$this->_aliases['civicrm_contribution_tracking']}.contribution_id = {$this->_aliases['civicrm_contribution']}.id";
 
     $this->addJoinToContactAndEmail();
     $this->addJoinToPaymentsFraudBreakdown();
