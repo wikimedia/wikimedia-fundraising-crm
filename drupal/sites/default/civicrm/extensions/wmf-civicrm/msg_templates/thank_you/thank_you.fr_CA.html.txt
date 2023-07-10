@@ -1,8 +1,8 @@
-<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Un reçu et un grand merci.</span>
+<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Wikipédia sera toujours à vous</span>
 <div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
 
 {if $first_name}
-<p>Bonjour {$first_name} !
+<p>Bonjour {$first_name},
 </p>{else}<p>
 Cher donateur, chère donatrice,</p>
 {/if}
@@ -10,76 +10,65 @@ Cher donateur, chère donatrice,</p>
 {if $recurring}
 
 <p>
-Je suis heureux d'être celui à qui revient le privilège de vous remercier pour la contribution mensuelle de {$amount} que vous faites en faveur de Wikipédia. Je veux profiter de cette occasion pour célébrer votre générosité, mais aussi l'admirable élan qui vous a poussé à participer à la création d'un meilleur futur pour le savoir libre.
+Merci de votre engagement à donner {if $currency === 'USD'}{$currency} {/if}{$amount} tous les mois pour soutenir Wikipédia : c’est un bel acte de fidélité et je vous en suis vraiment reconnaissante. Vous rendez possible un monde où le savoir est libre pour toutes et tous.
 </p>
 
 <p>
-Votre contribution mensuelle va permettre à Wikipédia d'aller plus loin et nous aidera à planifier l'avenir. Chaque mois, un don de {$amount} sera prélevé sur votre compte par la Wikimedia Foundation, et ce jusqu’à nouvel avis de votre part. <b>En janvier, nous vous enverrons une fiche récapitulative de vos contributions pour l’année précédente</b>. Et si pour quelque raison que ce soit, vous souhaitez annuler votre contribution, veuillez suivre ces <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={$locale}">instructions</a>.
+Votre don sera prélevé une fois par mois, jusqu’à ce que vous nous demandiez d’arrêter. Chaque année en janvier, vous recevrez un récapitulatif de vos contributions de l’an passé. Si, pour une quelconque raison, vous souhaitez interrompre votre don récurrent, suivez simplement ces <a href="https://wikimediafoundation.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_payments&basic=true&language={$locale}">instructions d'annulation</a>.
+</p>
+
+<p>
+Les personnes qui donnent régulièrement, comme vous, constituent le moteur de notre mouvement. Vous nous aidez à planifier l’avenir, à nous fixer des objectifs plus ambitieux et à élargir nos horizons, parce que nous savons que nous disposons d’une base de soutien sur laquelle compter.
+</p>
+
+<p>
+Chaque don contribue à améliorer l’accès des internautes à des informations fiables, surtout dans ce monde qui change si vite. Nous travaillons à étendre cet accès aussi loin que possible, afin que vous puissiez toujours, d’où que vous veniez et où que vous soyez, accéder à un savoir libre. J’espère que vous nous aiderez encore à construire un avenir où Wikipédia existe partout et où des personnes du monde entier contribuent à la somme de toutes les connaissances.
 </p>
 
 {else}
+<p>
+Merci d'avoir fait un don unique de {if $currency === 'USD'}{$currency} {/if}{$amount} pour soutenir Wikipédia et un monde où le savoir est libre d’accès à toutes et tous.
+</p>
 
 <p>
-Je suis très reconnaissant d'être celui à qui revient le privilège de vous remercier pour le don de {$amount} que vous avez fait en faveur de Wikipédia. Je veux profiter de cette occasion pour célébrer votre générosité, mais aussi l'admirable élan qui vous a poussé à participer à la création d'un meilleur futur pour le savoir libre.
+Chaque don aide à améliorer l’accès des internautes à des informations fiables, surtout dans ce monde qui change si vite. Je vous suis profondément reconnaissante de votre soutien, qui permet à des milliards de personnes de profiter, grâce à Wikipédia, du cadeau qu’est la connaissance.
+</p>
+
+<p>
+Nous travaillons à étendre cet accès aussi loin que possible, afin que vous puissiez toujours, d’où que vous veniez et où que vous soyez, accéder à un savoir libre. J’espère que vous continuerez à nous soutenir pour construire un avenir où Wikipédia existe partout et où des personnes du monde entier contribuent à la somme de toutes les connaissances.
 </p>
 
 {/if}
 
 {if $isRecurringRestarted}
-<p>
-Nous avons récemment résolu un petit problème technique qui a mis en suspens certains dons mensuels récurrents. Nous avons rétabli votre don récurrent et il sera traité de manière normale à l’avenir. Nous ne vous ferons pas payer les mois qui ont été manqués. Merci de votre patience et de votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.
-</p>
+<p>Nous avons récemment résolu un petit problème technique qui a mis en suspens certains dons mensuels récurrents. Nous avons rétabli votre don récurrent et il sera traité de manière normale à l’avenir. Nous ne vous ferons pas payer les mois qui ont été manqués. Merci de votre patience et de votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.</p>
 {/if}
 
 {if $isDelayed}
-<p>
-Nous avons récemment résolu un problème technique à cause duquel un certain nombre de donateurs n’ont pas reçu de confirmation de leur don. Par le biais de cet e-mail, nous vous remercions de votre don du {$receive_date}. Nous apprécions sincèrement votre patience et votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.
-</p>
+<p>Nous avons récemment résolu un problème technique à cause duquel un certain nombre de donateurs n’ont pas reçu de confirmation de leur don. Par le biais de cet e-mail, nous vous remercions de votre don du {$receive_date}. Nous apprécions sincèrement votre patience et votre soutien et n’hésitez pas à envoyer un e-mail à donate@wikimedia.org si vous avez des questions.</p>
 {/if}
 
-<p>
-J'ai fondé Wikipédia il y a vingt ans. Depuis, notre encyclopédie bien-aimée a grandi, traversant des périodes heureuses et des périodes difficiles, et aujourd'hui, plus que jamais, Wikipédia remplit sa véritable mission : permettre à des millions de personnes d'étudier, de découvrir, d'approfondir, d'explorer et rechercher d'explorer.
-</p>
+<p>Je vous remercie encore d’apporter votre soutien à cette mission remarquable ; c’est pour moi un privilège de participer au plus vaste projet collaboratif de l’histoire de l’humanité. Wikipédia sera toujours à vous. </p>
 
 <p>
-Chaque jour, Wikipédia donne à ses lecteurs une nouvelle chance d'acquérir les connaissances qui leur reviennent de droit, où qu'ils soient et quelle que soit leur situation.
-</p>
-
-<p>
-Ce n'est possible que grâce à vous. Votre soutien permet l'amélioration d'articles et la diffusion du savoir auprès d’un plus grand nombre de lecteurs. Vous donnez à notre organisation à but non lucratif les moyens de rester fidèle à ses valeurs, quand bien même Wikipédia est devenu l'un des sites les plus utilisés au monde.
-</p>
-
-<p>
-Nous n'aurons peut-être pas l'occasion de souffler les bougies ensemble, mais alors que nous célébrons les <a href="https://wikimediafoundation.org/fr/">20 ans de Wikipédia</a> tout au long de l'année, sachez que vous êtes dans le cœur de tous les membres de la Wikimedia Foundation.
-</p>
-
-<p>
-Merci pour tout,
-</p>
-
-<p>
-Jimmy Wales,<br>
-Fondateur de Wikipédia
+Avec toute ma reconnaissance,
+<br>
+Maryana
+<br>
+<br>
+Maryana Iskander
+<br>
+Directrice générale, Wikimedia Foundation
 </p>
 
 <br>
 
-<p>Les dons jumelés sont un excellent moyen de doubler votre don à la Wikimedia Foundation. De nombreuses sociétés soutiennent les efforts philanthropiques de leurs employés en offrant un <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts/fr">programme de dons jumelés</a>.
-</p>
+<p>Si vous travaillez en entreprise, nous vous invitons à contacter votre employeur pour vous renseigner sur un éventuel <a class="external text" href="https://donate.wikimedia.org/wiki/Matching_Gifts/fr">programme de dons concertés</a>. Beaucoup d’entreprises effectuent généreusement des dons équivalents à ceux de leur personnel.</p>
 
-<p>Pour vos archives&nbsp;: Votre don numéro {$transaction_id}, du {$receive_date} équivalait à {$amount}.
-</p>
+<p>À conserver : votre don, numéro {$transaction_id}, du {$receive_date} s'élevait à {if $currency === 'USD'}{$currency} {/if}{$amount}.</p>
 
-<p>Cette lettre a valeur de reçu. Aucun service et aucun bien ne vous ont été échangés contre votre contribution. Notre adresse postale est&nbsp;: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, États-Unis.
-</p>
+<p>Ce courrier sert de reçu pour votre don. Aucun bien ou service n’a été fourni en échange, total ou partiel, de cette contribution. Notre adresse postale est : Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, États-Unis. Numéro d’immatriculation américain : 20-0049703</p>
 
-<p>La Wikimedia Foundation est une organisation internationale à but non lucratif qui soutient des associations locales et indépendantes à travers le monde. Notre statut d'exonération varie selon la législation de chaque pays. Si vous avez des questions au sujet des exonérations ou réductions fiscales, nous vous invitons à contacter donate@wikimedia.org.
-</p>
+<p>Si vous ne souhaitez plus recevoir de courriels de la Wikimedia Foundation, vous pouvez <a href="{$unsubscribe_link}">vous désinscrire instantanément</a>. Veuillez noter que nous continuerons de vous envoyer des reçus comme celui-ci pour vos dons futurs.</p>
 
-<p>Numéro d’exemption fiscale aux États-Unis&nbsp;: 20-0049703
-</p>
-
-<p>Si vous ne désirez plus recevoir d'emails de la Wikimedia Foundation, vous pouvez vous <a href="{$unsubscribe_link}">désabonner facilement ici</a>. Vous continuerez cependant à recevoir des reçus pour tous les dons que vous effectuerez à l'avenir.
-</p>
-
-<!-- TI_BEGIN["version":1,"name":"thank_you.fr-ca.html","revision":20210319]TI_END -->
+<!-- TI_BEGIN["version":1,"name":"thank_you.fr-ca.html","revision":20210428]TI_END -->

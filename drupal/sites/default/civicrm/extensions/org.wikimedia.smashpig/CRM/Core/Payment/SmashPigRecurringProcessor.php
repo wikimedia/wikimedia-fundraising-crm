@@ -103,7 +103,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
         // Ignore check when a specific contribution recur id is given
         if ($days < 24 && !$contributionRecurId) {
-          throw new UnexpectedValueException('Two recurring charges within 23 days. recurring_id: '.$recurringPayment['id']);
+          Civi::log('wmf')->info('Skipping payment: Two recurring charges within 23 days. recurring_id: ' . $recurringPayment['id']);
+          continue;
         }
 
         // Mark the recurring contribution Processing

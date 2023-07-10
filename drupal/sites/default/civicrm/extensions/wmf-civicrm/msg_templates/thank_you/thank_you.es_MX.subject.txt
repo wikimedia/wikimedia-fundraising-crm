@@ -1,5 +1,5 @@
 {if $first_name}
-{$first_name}, tu donación nos da un motivo más para celebrar.
+    {$first_name} -
 {else}
-Tu donación nos da un motivo más para celebrar.
-{/if}
+
+{/if}Gracias por tu donativo
