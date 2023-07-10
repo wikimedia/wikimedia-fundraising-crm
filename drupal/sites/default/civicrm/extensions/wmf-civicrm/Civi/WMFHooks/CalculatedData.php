@@ -1187,10 +1187,19 @@ class CalculatedData extends TriggerHook {
           ],
         ],
       ],
+      100 => [
+        'label' => 'Non donor',
+        'static_description' => 'no donations in last 200 months',
+        'value' => 100,
+        'name' => 'non-donor',
+      ],
     ];
     foreach ($details as $index => $detail) {
       if (!empty($detail['criteria'])) {
         $this->addCriteriaInterpretation($details[$index]);
+      }
+      else {
+        $details[$index]['description'] = $detail['static_description'];
       }
     }
     return $details;
