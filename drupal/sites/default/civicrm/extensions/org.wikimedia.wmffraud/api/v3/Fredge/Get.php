@@ -47,7 +47,7 @@ function civicrm_api3_fredge_get($params) {
   foreach($result as $tracking) {
     $contributionTrackingIds[] = $tracking['id'];
   }
-  if ($result === null) {
+  if (count($result) === 0) {
     return civicrm_api3_create_success([], $params);
   }
 
