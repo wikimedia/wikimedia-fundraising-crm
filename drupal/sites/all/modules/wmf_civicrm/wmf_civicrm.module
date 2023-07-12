@@ -1926,6 +1926,8 @@ function _wmf_civicrm_get_contact_last_donation_data(&$contribution) {
 
 /**
  * Get a grip on multiple database connections.
+ * @deprecated  we are working towards using APIV4 Apis. PaymentFraud has an apiv4.
+ * PaymentsInitial needs one and contribution_tracking is doomed.
  *
  * @return db_switcher
  */
