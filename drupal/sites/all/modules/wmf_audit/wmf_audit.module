@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\ContributionTracking;
+
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
 
 /**
@@ -278,21 +280,14 @@ function wmf_audit_get_contribution_tracking_data($record) {
   }
 
   $contribution_tracking_id = $record['contribution_tracking_id'];
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('default');
-
-  $query = "SELECT * FROM contribution_tracking WHERE id = :id";
-  $result = db_query($query, [':id' => $contribution_tracking_id]);
-  if (!$result->rowCount()) {
+  $result = ContributionTracking::get(FALSE)->addWhere('id','=',$contribution_tracking_id)->execute()->first();
+  if ($result['id']) {
+    wmf_audit_echo("Found Contribution Tracking data. ID='$contribution_tracking_id'", TRUE);
+  } else {
     wmf_audit_log_error("Missing Contribution Tracking data. Supposed ID='$contribution_tracking_id'", 'DATA_INCOMPLETE');
   }
-  else {
-    wmf_audit_echo("Found Contribution Tracking data. ID='$contribution_tracking_id'", TRUE);
-  }
 
-  $result = $result->fetchAssoc();
-  //unfortunately, the queue consumer doesn't do anything like... look up utm data if it's not there, but we have a ctid. So...
-
+  // Some of the normalization below has been done in the civicrm contribution tracking table
   if ($result) {
     if (!is_null($result['utm_source'])) {
       $utm_payment_method = explode('.', $result['utm_source']);
@@ -303,16 +298,10 @@ function wmf_audit_get_contribution_tracking_data($record) {
       $utm_payment_method = NULL;
     }
 
-    $idiotic_date_format = $result['ts'];
-    $real_timestamp = date_parse($idiotic_date_format);
-
-    $result['date'] = mktime(
-      $real_timestamp['hour'], $real_timestamp['minute'], $real_timestamp['second'], $real_timestamp['month'], $real_timestamp['day'], $real_timestamp['year']
-    );
+    // The audit is expecting a date in Unix timestamp format
+    $result['date'] = strtotime($result['tracking_date']);
 
     $keep = [
-      'optout',
-      'anonymous',
       'utm_source',
       'utm_medium',
       'utm_campaign',
