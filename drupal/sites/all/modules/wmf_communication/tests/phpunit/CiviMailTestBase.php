@@ -2,6 +2,7 @@
 namespace wmf_communication;
 
 use \BaseWmfDrupalPhpUnitTestCase;
+use Civi\WMFMailTracking\CiviMailStore;
 
 /**
  * Base class for tests of CiviMail helper classes

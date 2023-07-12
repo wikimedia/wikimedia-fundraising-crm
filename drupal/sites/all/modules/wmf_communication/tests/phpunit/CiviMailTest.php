@@ -57,7 +57,7 @@ class CiviMailTest extends CiviMailTestBase {
 	}
 
   public function testMissingMailing(): void {
-    $this->expectException(CiviMailingMissingException::class);
+    $this->expectException(\Civi\WMFMailTracking\CiviMailingMissingException::class);
     $this->mailStore->getMailing( 'fakeSource', 'fakeName', mt_rand() );
   }
 

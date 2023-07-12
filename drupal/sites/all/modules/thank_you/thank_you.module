@@ -6,10 +6,10 @@ use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use Civi\WMFThankYou\From;
 use SmashPig\Core\UtcDate;
-use wmf_communication\CiviMailStore;
-use wmf_communication\CiviMailingInsertException;
-use wmf_communication\CiviMailingMissingException;
-use wmf_communication\CiviQueueInsertException;
+use Civi\WMFMailTracking\CiviMailStore;
+use Civi\WMFMailTracking\CiviMailingInsertException;
+use Civi\WMFMailTracking\CiviMailingMissingException;
+use Civi\WMFMailTracking\CiviQueueInsertException;
 
 // TODO:
 // * use more exceptions in place of logging/return false
