@@ -365,7 +365,7 @@ class CRM_Core_Error extends PEAR_ErrorStack {
     CRM_Core_Error::backtrace('backTrace', TRUE);
 
     // If we are in an ajax callback, format output appropriately
-    if (CRM_Utils_Array::value('snippet', $_REQUEST) === CRM_Core_Smarty::PRINT_JSON) {
+    if (($_REQUEST['snippet'] ?? NULL) === CRM_Core_Smarty::PRINT_JSON) {
       $out = [
         'status' => 'fatal',
         'content' => '<div class="messages status no-popup">' . CRM_Core_Page::crmIcon('fa-info-circle') . ' ' . ts('Sorry but we are not able to provide this at the moment.') . '</div>',
@@ -689,7 +689,7 @@ class CRM_Core_Error extends PEAR_ErrorStack {
       else {
         $hash = '';
       }
-      $fileName = $config->configAndLogDir . 'CiviCRM.' . CIVICRM_DOMAIN_ID . '_' . $prefixString . $hash . 'log';
+      $fileName = $config->configAndLogDir . 'CiviCRM.' . CIVICRM_DOMAIN_ID . '.' . $prefixString . $hash . 'log';
 
       // Roll log file monthly or if greater than our threshold.
       // Size-based rotation introduced in response to filesize limits on
@@ -927,7 +927,7 @@ class CRM_Core_Error extends PEAR_ErrorStack {
       $title = ts('Error');
     }
     $session->setStatus($status, $title, 'alert', ['expires' => 0]);
-    if (CRM_Utils_Array::value('snippet', $_REQUEST) === CRM_Core_Smarty::PRINT_JSON) {
+    if (($_REQUEST['snippet'] ?? NULL) === CRM_Core_Smarty::PRINT_JSON) {
       CRM_Core_Page_AJAX::returnJsonResponse(['status' => 'error']);
     }
     CRM_Utils_System::redirect($redirect);

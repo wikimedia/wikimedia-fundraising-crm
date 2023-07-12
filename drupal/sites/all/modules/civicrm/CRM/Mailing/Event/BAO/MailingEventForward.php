@@ -183,7 +183,7 @@ class CRM_Mailing_Event_BAO_MailingEventForward extends CRM_Mailing_Event_DAO_Ma
       $successfulForward = TRUE;
       // Register the delivery event.
 
-      CRM_Mailing_Event_BAO_MailingEventDelivered::create($params);
+      CRM_Mailing_Event_BAO_MailingEventDelivered::recordDelivery($params);
     }
 
     $transaction->commit();
@@ -284,7 +284,7 @@ class CRM_Mailing_Event_BAO_MailingEventForward extends CRM_Mailing_Event_DAO_Ma
 
       $addressCnt = 1;
       foreach ($params['address'] as $cnt => $addressBlock) {
-        if (CRM_Utils_Array::value('location_type_id', $values) ==
+        if (($values['location_type_id'] ?? NULL) ==
           CRM_Utils_Array::value('location_type_id', $addressBlock)
         ) {
           $addressCnt = $cnt;

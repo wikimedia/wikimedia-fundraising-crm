@@ -118,6 +118,9 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
   protected function formatResult(iterable $result): array {
     $rows = [];
     $keyName = CoreUtil::getIdFieldName($this->savedSearch['api_entity']);
+    if ($this->savedSearch['api_entity'] === 'RelationshipCache') {
+      $keyName = 'relationship_id';
+    }
     foreach ($result as $index => $record) {
       $data = $columns = [];
       foreach ($this->getSelectClause() as $key => $item) {
@@ -207,7 +210,8 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
           $out['val'] = $this->rewrite($column, $data);
         }
         else {
-          $out['val'] = $this->formatViewValue($column['key'], $rawValue, $data);
+          $dataType = $this->getSelectExpression($column['key'])['dataType'] ?? NULL;
+          $out['val'] = $this->formatViewValue($column['key'], $rawValue, $data, $dataType);
         }
         if ($this->hasValue($column['label']) && (!empty($column['forceLabel']) || $this->hasValue($out['val']))) {
           $out['label'] = $this->replaceTokens($column['label'], $data, 'view');
@@ -279,9 +283,10 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    * @return string
    */
   private function rewrite(array $column, array $data): string {
-    $output = $this->replaceTokens($column['rewrite'], $data, 'view');
     // Cheap strpos to skip Smarty processing if not needed
-    if (strpos($output, '{') !== FALSE) {
+    $hasSmarty = strpos($column['rewrite'], '{') !== FALSE;
+    $output = $this->replaceTokens($column['rewrite'], $data, 'view');
+    if ($hasSmarty) {
       $smarty = \CRM_Core_Smarty::singleton();
       $output = $smarty->fetchWith("string:$output", []);
     }
@@ -736,7 +741,8 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       foreach ($this->getTokens($tokenExpr) as $token) {
         $val = $data[$token] ?? NULL;
         if (isset($val) && $format === 'view') {
-          $val = $this->formatViewValue($token, $val, $data);
+          $dataType = $this->getSelectExpression($token)['dataType'] ?? NULL;
+          $val = $this->formatViewValue($token, $val, $data, $dataType);
         }
         if (!(is_null($index))) {
           $replacement = is_array($val) ? $val[$index] ?? '' : $val;
@@ -759,16 +765,15 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    * @param string $key
    * @param mixed $rawValue
    * @param array $data
+   * @param string $dataType
    * @return array|string
    */
-  protected function formatViewValue($key, $rawValue, $data) {
+  protected function formatViewValue($key, $rawValue, $data, $dataType) {
     if (is_array($rawValue)) {
-      return array_map(function($val) use ($key, $data) {
-        return $this->formatViewValue($key, $val, $data);
+      return array_map(function($val) use ($key, $data, $dataType) {
+        return $this->formatViewValue($key, $val, $data, $dataType);
       }, $rawValue);
     }
-
-    $dataType = $this->getSelectExpression($key)['dataType'] ?? NULL;
 
     $formatted = $rawValue;
 
@@ -893,6 +898,10 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    * @param array $apiParams
    */
   protected function augmentSelectClause(&$apiParams): void {
+    // Don't mess with EntitySets
+    if ($this->savedSearch['api_entity'] === 'EntitySet') {
+      return;
+    }
     // Add primary key field if actions are enabled
     // (only needed for non-dao entities, as Api4SelectQuery will auto-add the id)
     if (!in_array('DAOEntity', CoreUtil::getInfoItem($this->savedSearch['api_entity'], 'type')) &&
@@ -944,11 +953,24 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       $this->addSelectExpression($addition);
     }
 
-    // When selecting monetary fields, also select currency
     foreach ($apiParams['select'] as $select) {
+      // When selecting monetary fields, also select currency
       $currencyFieldName = $this->getCurrencyField($select);
       if ($currencyFieldName) {
         $this->addSelectExpression($currencyFieldName);
+      }
+      // Add field dependencies needed to resolve pseudoconstants
+      $clause = $this->getSelectExpression($select);
+      if ($clause && $clause['expr']->getType() === 'SqlField' && !empty($clause['fields'])) {
+        $fieldAlias = array_keys($clause['fields'])[0];
+        $field = $clause['fields'][$fieldAlias];
+        if (!empty($field['input_attrs']['control_field']) && strpos($fieldAlias, ':')) {
+          $prefix = substr($fieldAlias, 0, strrpos($fieldAlias, $field['name']));
+          // Don't need to add the field if a suffixed version already exists
+          if (!$this->getSelectExpression($prefix . $field['input_attrs']['control_field'] . ':label')) {
+            $this->addSelectExpression($prefix . $field['input_attrs']['control_field']);
+          }
+        }
       }
     }
   }
@@ -963,7 +985,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     $clause = $this->getSelectExpression($select);
     // Only deal with fields of type money.
     // TODO: In theory it might be possible to support aggregated columns but be careful about FULL_GROUP_BY errors
-    if (!($clause && $clause['expr']->isType('SqlField') && $clause['dataType'] === 'Money' && $clause['fields'])) {
+    if (!($clause && $clause['dataType'] === 'Money' && $clause['fields'])) {
       return NULL;
     }
     $moneyFieldAlias = array_keys($clause['fields'])[0];
@@ -972,7 +994,15 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     if ($moneyField['type'] === 'Custom') {
       return NULL;
     }
+
     $prefix = substr($moneyFieldAlias, 0, strrpos($moneyFieldAlias, $moneyField['name']));
+
+    // If using aggregation, this will only work if grouping by currency
+    if ($clause['expr']->isType('SqlFunction')) {
+      $groupingByCurrency = array_intersect([$prefix . 'currency', 'currency'], $this->savedSearch['api_params']['groupBy'] ?? []);
+      return \CRM_Utils_Array::first($groupingByCurrency);
+    }
+
     // If the entity has a field named 'currency', just assume that's it.
     if ($this->getField($prefix . 'currency')) {
       return $prefix . 'currency';
@@ -1216,7 +1246,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       $labelField = CoreUtil::getInfoItem($field['fk_entity'], 'label_field');
       if ($labelField) {
         $records = civicrm_api4($field['fk_entity'], 'get', [
-          'checkPermissions' => $this->checkPermissions,
+          'checkPermissions' => $this->checkPermissions && empty($this->display['acl_bypass']),
           'where' => [[$idField, 'IN', (array) $value]],
           'select' => [$labelField],
         ]);

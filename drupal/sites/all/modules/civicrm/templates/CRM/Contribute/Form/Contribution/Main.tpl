@@ -76,9 +76,9 @@
       <div class="help">{ts}You have a current Lifetime Membership which does not need to be renewed.{/ts}</div>
     {/if}
 
-    {if !empty($useForMember) && !$ccid}
+    {if $isShowMembershipBlock && !$ccid}
       <div class="crm-public-form-item crm-section">
-        {include file="CRM/Contribute/Form/Contribution/MembershipBlock.tpl" context="makeContribution"}
+        {include file="CRM/Contribute/Form/Contribution/MainMembershipBlock.tpl"}
       </div>
     {elseif !empty($ccid)}
       {if $lineItem && $priceSetID && !$is_quick_config}
@@ -218,7 +218,7 @@
         {include file="CRM/UF/Form/Block.tpl" fields=$customPre}
       </div>
 
-      {if $isHonor}
+      {if array_key_exists('pcp_display_in_roll', $form)}
         <fieldset class="crm-public-form-item crm-group pcp-group">
           <div class="crm-public-form-item crm-section pcp-section">
             <div class="crm-public-form-item crm-section display_in_roll-section">
@@ -297,8 +297,8 @@
     {/if}
   </div>
   <script type="text/javascript">
-    {if $isHonor}
-    pcpAnonymous();
+    {if array_key_exists('pcp_display_in_roll', $form)}
+      pcpAnonymous();
     {/if}
 
     {literal}

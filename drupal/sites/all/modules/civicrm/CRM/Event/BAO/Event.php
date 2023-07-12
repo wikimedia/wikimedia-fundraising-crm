@@ -17,17 +17,10 @@
 class CRM_Event_BAO_Event extends CRM_Event_DAO_Event implements \Civi\Core\HookInterface {
 
   /**
-   * Retrieve DB object and copy to defaults array.
-   *
-   * @param array $params
-   *   Array of criteria values.
-   * @param array $defaults
-   *   Array to be populated with found values.
-   *
-   * @return self|null
-   *   The DAO object, if found.
-   *
    * @deprecated
+   * @param array $params
+   * @param array $defaults
+   * @return self|null
    */
   public static function retrieve($params, &$defaults) {
     return self::commonRetrieve(self::class, $params, $defaults);
@@ -319,6 +312,25 @@ WHERE  ( civicrm_event.is_template IS NULL OR civicrm_event.is_template = 0 )";
     }
 
     return $events;
+  }
+
+  /**
+   * Callback for the experimental `event_show_payment_on_confirm` setting.
+   * Should be removed when that setting gets retired.
+   * @return array
+   */
+  public static function getEventsForSelect2() {
+    $options = ['all' => ts('- all -')];
+    // Check that CiviEvent is enabled before calling the api
+    if (class_exists('\Civi\Api4\Event')) {
+      $options += \Civi\Api4\Event::get(FALSE)
+        ->addSelect('id', 'title')
+        ->addWhere('is_active', '=', TRUE)
+        ->execute()
+        ->indexBy('id')
+        ->column('title');
+    }
+    return $options;
   }
 
   /**
@@ -1344,7 +1356,7 @@ WHERE civicrm_event.is_active = 1
           if (
             CRM_Utils_Array::value('data_type', $v, '') == 'File' ||
             CRM_Utils_Array::value('name', $v, '') == 'image_URL' ||
-            CRM_Utils_Array::value('field_type', $v) == 'Formatting'
+            ($v['field_type'] ?? NULL) == 'Formatting'
           ) {
             unset($fields[$k]);
           }

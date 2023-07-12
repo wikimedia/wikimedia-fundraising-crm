@@ -547,7 +547,12 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
       unset($attributes['disabled']);
     }
 
-    $element = $this->addElement($type, $name, CRM_Utils_String::purifyHTML($label), $attributes, $extra);
+    if ($type === 'checkbox') {
+      $element = $this->addElement($type, $name, CRM_Utils_String::purifyHTML($label), NULL, $attributes);
+    }
+    else {
+      $element = $this->addElement($type, $name, CRM_Utils_String::purifyHTML($label), $attributes, $extra);
+    }
     if (HTML_QuickForm::isError($element)) {
       CRM_Core_Error::statusBounce(HTML_QuickForm::errorMessage($element));
     }
@@ -1580,8 +1585,8 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
     );
     $attributes = ['formatType' => 'searchDate'];
     $extra = ['time' => $isDateTime];
-    $this->add('datepicker', $fieldName . $from, ts($fromLabel), $attributes, $required, $extra);
-    $this->add('datepicker', $fieldName . $to, ts($toLabel), $attributes, $required, $extra);
+    $this->add('datepicker', $fieldName . $from, _ts($fromLabel), $attributes, $required, $extra);
+    $this->add('datepicker', $fieldName . $to, _ts($toLabel), $attributes, $required, $extra);
   }
 
   /**
@@ -1672,7 +1677,7 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
       [, $id] = explode('_', $name);
       $label = $props['label'] ?? CRM_Core_DAO::getFieldValue('CRM_Core_DAO_CustomField', 'label', $id);
       $gid = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_CustomField', 'option_group_id', $id);
-      if (CRM_Utils_Array::value('context', $props) != 'search') {
+      if (($props['context'] ?? NULL) != 'search') {
         $props['data-option-edit-path'] = array_key_exists('option_url', $props) ? $props['option_url'] : 'civicrm/admin/options/' . CRM_Core_DAO::getFieldValue('CRM_Core_DAO_OptionGroup', $gid);
       }
     }
@@ -1682,14 +1687,14 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
       foreach ($info['values'] as $uniqueName => $fieldSpec) {
         if (
           $uniqueName === $props['field'] ||
-          CRM_Utils_Array::value('name', $fieldSpec) === $props['field'] ||
+          ($fieldSpec['name'] ?? NULL) === $props['field'] ||
           in_array($props['field'], CRM_Utils_Array::value('api.aliases', $fieldSpec, []))
         ) {
           break;
         }
       }
-      $label = $props['label'] ?? $fieldSpec['title'];
-      if (CRM_Utils_Array::value('context', $props) != 'search') {
+      $label = $props['label'] ?? $fieldSpec['html']['label'] ?? $fieldSpec['title'];
+      if (($props['context'] ?? NULL) != 'search') {
         $props['data-option-edit-path'] = array_key_exists('option_url', $props) ? $props['option_url'] : CRM_Core_PseudoConstant::getOptionEditUrl($fieldSpec);
       }
     }
@@ -1785,8 +1790,7 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
     // Core field - get metadata.
     $fieldSpec = civicrm_api3($props['entity'], 'getfield', $props);
     $fieldSpec = $fieldSpec['values'];
-    $fieldSpecLabel = $fieldSpec['html']['label'] ?? CRM_Utils_Array::value('title', $fieldSpec);
-    $label = CRM_Utils_Array::value('label', $props, $fieldSpecLabel);
+    $label = $props['label'] ?? $fieldSpec['html']['label'] ?? $fieldSpec['title'];
 
     $widget = $props['type'] ?? $fieldSpec['html']['type'];
     if ($widget == 'TextArea' && $context == 'search') {
@@ -2260,8 +2264,13 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
     ];
     $props['api'] += [
       'formName' => 'qf:' . get_class($this),
-      'fieldName' => $name,
     ];
+    // If fieldName is missing and no default entity is set for the form, this will throw an excption.
+    // In that case, you should explicitly supply api.fieldName in the format `EntityName.field_name`
+    // because without it autocompleteSubscribers can't do their job.
+    if (empty($props['api']['fieldName'])) {
+      $props['api']['fieldName'] = $this->getDefaultEntity() . '.' . $name;
+    }
     $props['class'] = ltrim(($props['class'] ?? '') . ' crm-form-autocomplete');
     $props['placeholder'] = $props['placeholder'] ?? self::selectOrAnyPlaceholder($props, $required);
     $props['data-select-params'] = json_encode($props['select']);

@@ -13,6 +13,7 @@ return [
         'name' => 'Administer_Custom_Fields',
         'label' => E::ts('Administer Custom Fields'),
         'form_values' => NULL,
+        'mapping_id' => NULL,
         'search_custom_id' => NULL,
         'api_entity' => 'CustomField',
         'api_params' => [
@@ -28,14 +29,16 @@ return [
             'option_group_id:label',
           ],
           'orderBy' => [],
-          'where' => [],
+          'where' => [['custom_group_id.is_reserved', '=', FALSE]],
           'groupBy' => [],
           'join' => [],
           'having' => [],
         ],
         'expires_date' => NULL,
         'description' => NULL,
-        'mapping_id' => NULL,
+      ],
+      'match' => [
+        'name',
       ],
     ],
   ],
@@ -61,6 +64,7 @@ return [
           'pager' => [
             'show_count' => TRUE,
             'expose_limit' => TRUE,
+            'hide_single' => TRUE,
           ],
           'sort' => [],
           'columns' => [
@@ -127,7 +131,7 @@ return [
               'alignment' => 'text-right',
             ],
             [
-              'text' => E::ts('Actions'),
+              'text' => '',
               'style' => 'default',
               'size' => 'btn-xs',
               'icon' => 'fa-bars',
@@ -159,7 +163,7 @@ return [
                 ],
                 [
                   'entity' => 'CustomField',
-                  'action' => 'move',
+                  'action' => 'detach',
                   'join' => '',
                   'target' => 'crm-popup',
                   'icon' => 'fa-random',
@@ -197,9 +201,15 @@ return [
             'path' => 'civicrm/admin/custom/group/field/add?reset=1&action=add&gid=[custom_group_id]',
             'text' => E::ts('Add Custom Field'),
             'icon' => 'fa-plus',
+            'autoOpen' => TRUE,
           ],
+          'placeholder' => 5,
         ],
         'acl_bypass' => FALSE,
+      ],
+      'match' => [
+        'name',
+        'saved_search_id',
       ],
     ],
   ],

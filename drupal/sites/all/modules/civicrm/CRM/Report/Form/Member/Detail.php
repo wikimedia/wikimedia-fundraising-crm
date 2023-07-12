@@ -94,7 +94,7 @@ class CRM_Report_Form_Member_Detail extends CRM_Report_Form {
             'title' => ts('Member Since'),
             'default' => TRUE,
           ],
-          'source' => ['title' => ts('Source')],
+          'source' => ['title' => ts('Membership Source')],
         ],
         'filters' => [
           'membership_join_date' => ['operatorType' => CRM_Report_Form::OP_DATE],
@@ -178,10 +178,7 @@ class CRM_Report_Form_Member_Detail extends CRM_Report_Form {
           'receipt_date' => NULL,
           'fee_amount' => NULL,
           'net_amount' => NULL,
-          'total_amount' => [
-            'title' => ts('Payment Amount (most recent)'),
-            'statistics' => ['sum' => ts('Amount')],
-          ],
+          'total_amount' => NULL,
         ],
         'filters' => [
           'receive_date' => ['operatorType' => CRM_Report_Form::OP_DATE],
@@ -214,7 +211,7 @@ class CRM_Report_Form_Member_Detail extends CRM_Report_Form {
         ],
         'order_bys' => [
           'receive_date' => [
-            'title' => ts('Date Received'),
+            'title' => ts('Contribution Date'),
             'default_weight' => '2',
             'default_order' => 'DESC',
           ],
@@ -294,9 +291,15 @@ class CRM_Report_Form_Member_Detail extends CRM_Report_Form {
 
     //used when contribution field is selected.
     if ($this->isTableSelected('civicrm_contribution')) {
+      // if we're grouping (by membership), we need to make sure the inner join picks the most recent contribution.
+      $groupedBy = !empty($this->_params['group_bys']['id']);
       $this->_from .= "
              LEFT JOIN civicrm_membership_payment cmp
-                 ON {$this->_aliases['civicrm_membership']}.id = cmp.membership_id
+                 ON ({$this->_aliases['civicrm_membership']}.id = cmp.membership_id";
+      $this->_from .= $groupedBy ? "
+                 AND cmp.id = (SELECT MAX(id) FROM civicrm_membership_payment WHERE civicrm_membership_payment.membership_id = {$this->_aliases['civicrm_membership']}.id))"
+                 : ")";
+      $this->_from .= "
              LEFT JOIN civicrm_contribution {$this->_aliases['civicrm_contribution']}
                  ON cmp.contribution_id={$this->_aliases['civicrm_contribution']}.id\n";
     }

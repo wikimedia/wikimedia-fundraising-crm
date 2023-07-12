@@ -82,7 +82,7 @@ class CRM_Core_BAO_Navigation extends CRM_Core_DAO_Navigation {
     }
 
     if (!isset($params['id']) ||
-      (CRM_Utils_Array::value('parent_id', $params) != CRM_Utils_Array::value('current_parent_id', $params))
+      (($params['parent_id'] ?? NULL) != ($params['current_parent_id'] ?? NULL))
     ) {
       /* re/calculate the weight, if the Parent ID changed OR create new menu */
 
@@ -173,7 +173,8 @@ class CRM_Core_BAO_Navigation extends CRM_Core_DAO_Navigation {
       $domainID = CRM_Core_Config::domainID();
       $query = "
 SELECT id, label, parent_id, weight, is_active, name
-FROM civicrm_navigation WHERE domain_id = $domainID";
+FROM civicrm_navigation WHERE domain_id = $domainID
+ORDER BY weight";
       $result = CRM_Core_DAO::executeQuery($query);
 
       $pidGroups = [];
@@ -830,7 +831,7 @@ FROM civicrm_navigation WHERE domain_id = $domainID";
     }
     $params = [
       'name' => $name,
-      'label' => ts($name),
+      'label' => _ts($name),
       'url' => $url,
       'parent_id' => $parent_id,
       'is_active' => TRUE,
@@ -887,7 +888,7 @@ FROM civicrm_navigation WHERE domain_id = $domainID";
    */
   public static function buildHomeMenu(&$menu) {
     foreach ($menu as &$item) {
-      if (CRM_Utils_Array::value('name', $item['attributes']) === 'Home') {
+      if (($item['attributes']['name'] ?? NULL) === 'Home') {
         unset($item['attributes']['label'], $item['attributes']['url']);
         $item['attributes']['icon'] = 'crm-logo-sm';
         $item['attributes']['attr']['accesskey'] = 'm';

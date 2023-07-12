@@ -335,6 +335,12 @@ if (!defined('CIVICRM_CRED_KEYS') ) {
   // Some old installers may not set a decent value, and this extra complexity is a failsafe.
   // Feel free to simplify post-install.
 }
+if (!defined('CIVICRM_DEPLOY_ID') ) {
+  define( '_CIVICRM_DEPLOY_ID', '%%deployID%%');
+  define( 'CIVICRM_DEPLOY_ID', _CIVICRM_DEPLOY_ID === '%%' . 'deployID' . '%%' ? '' : _CIVICRM_DEPLOY_ID );
+  // Some old installers may not set a decent value, and this extra complexity is a failsafe.
+  // Feel free to simplify post-install.
+}
 
 /**
  * The signing key is used to generate and verify shareable tokens.
@@ -599,11 +605,6 @@ if (!defined('CIVICRM_CLEANURL')) {
   else {
     define('CIVICRM_CLEANURL', 0);
   }
-}
-
-// force PHP to auto-detect Mac line endings
-if (version_compare(PHP_VERSION, '8.1') < 0) {
-  ini_set('auto_detect_line_endings', '1');
 }
 
 // make sure the memory_limit is at least 64 MB

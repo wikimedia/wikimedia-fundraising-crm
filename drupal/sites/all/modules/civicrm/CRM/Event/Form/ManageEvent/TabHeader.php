@@ -115,7 +115,7 @@ WHERE      e.id = %1
       ];
       $dao = CRM_Core_DAO::executeQuery($sql, $params);
       if (!$dao->fetch()) {
-        throw new CRM_Core_Exception('Unable to determine Event information');;
+        throw new CRM_Core_Exception('Unable to determine Event information');
       }
       if (!$dao->is_location) {
         $tabs['location']['valid'] = FALSE;
@@ -223,7 +223,7 @@ WHERE      e.id = %1
 
     if (is_array($tabs)) {
       foreach ($tabs as $subPage => $pageVal) {
-        if (CRM_Utils_Array::value('current', $pageVal) === TRUE) {
+        if (($pageVal['current'] ?? NULL) === TRUE) {
           $current = $subPage;
           break;
         }

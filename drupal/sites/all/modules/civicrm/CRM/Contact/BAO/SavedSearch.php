@@ -157,13 +157,6 @@ class CRM_Contact_BAO_SavedSearch extends CRM_Contact_DAO_SavedSearch implements
       }
     }
 
-    if ($customSearchClass = CRM_Utils_Array::value('customSearchClass', $result)) {
-      // check if there is a special function - formatSavedSearchFields defined in the custom search form
-      if (method_exists($customSearchClass, 'formatSavedSearchFields')) {
-        $customSearchClass::formatSavedSearchFields($result);
-      }
-    }
-
     return $result;
   }
 
@@ -221,32 +214,6 @@ class CRM_Contact_BAO_SavedSearch extends CRM_Contact_DAO_SavedSearch implements
       }
     }
     return NULL;
-  }
-
-  /**
-   * Contact IDS Sql (whatever that means!).
-   *
-   * @param int $id
-   *
-   * @return string
-   */
-  public static function contactIDsSQL($id) {
-    $params = self::getSearchParams($id);
-    if ($params && !empty($params['customSearchID'])) {
-      return CRM_Contact_BAO_SearchCustom::contactIDSQL(NULL, $id);
-    }
-    else {
-      $tables = $whereTables = ['civicrm_contact' => 1];
-      $where = CRM_Contact_BAO_SavedSearch::whereClause($id, $tables, $whereTables);
-      if (!$where) {
-        $where = '( 1 )';
-      }
-      $from = CRM_Contact_BAO_Query::fromClause($whereTables);
-      return "
-SELECT contact_a.id
-$from
-WHERE  $where";
-    }
   }
 
   /**

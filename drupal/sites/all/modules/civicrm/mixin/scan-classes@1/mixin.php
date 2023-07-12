@@ -18,12 +18,12 @@
  *   - Class files never have multiple dots in the name. ("CRM/Foo.php" is a class; "CRM/Foo.bar.php" is not).
  *   - The ONLY files which match these patterns are STRICTLY class files.
  *   - The ONLY classes which match these patterns are SAFE/INTENDED for use with `hook_scanClasses`.
- *   - Test directories are not scanned in version 1.0.1. See https://github.com/civicrm/civicrm-core/pull/26157
+ *   - Test directories are not scanned in version 1.1+. See https://github.com/civicrm/civicrm-core/pull/26157
  *
  * To minimize unintended activations, this only loads Civi interfaces. It skips other interfaces.
  *
  * @mixinName scan-classes
- * @mixinVersion 1.0.1
+ * @mixinVersion 1.1.0
  * @since 5.52
  *
  * @param CRM_Extension_MixInfo $mixInfo

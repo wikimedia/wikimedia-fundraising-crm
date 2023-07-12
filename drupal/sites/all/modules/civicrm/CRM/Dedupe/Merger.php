@@ -233,9 +233,6 @@ class CRM_Dedupe_Merger {
     }
 
     CRM_Utils_Hook::merge('cidRefs', $contactReferences);
-    if ($contactReferences !== $coreReferences) {
-      CRM_Core_Error::deprecatedWarning("Deprecated hook ::merge in context of 'cidRefs. Use entityTypes instead.");
-    }
     \Civi::$statics[__CLASS__]['contact_references'] = $contactReferences;
     return \Civi::$statics[__CLASS__]['contact_references'];
   }
@@ -269,7 +266,8 @@ class CRM_Dedupe_Merger {
   public static function locTables() {
     static $locTables;
     if (!$locTables) {
-      $locTables = ['civicrm_email', 'civicrm_address', 'civicrm_phone'];
+      // should be in sync with getLocationBlockInfo
+      $locTables = ['civicrm_email', 'civicrm_address', 'civicrm_phone', 'civicrm_im', 'civicrm_website'];
 
       // Allow hook_civicrm_merge() to adjust $locTables
       CRM_Utils_Hook::merge('locTables', $locTables);
@@ -1544,12 +1542,12 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
         continue;
       }
       $rows["move_$field"] = [
-        'main' => self::getFieldValueAndLabel($field, $main)['label'],
-        'other' => self::getFieldValueAndLabel($field, $other)['label'],
+        'main' => self::getFieldValueAndLabel($field, $main, $checkPermissions)['label'],
+        'other' => self::getFieldValueAndLabel($field, $other, $checkPermissions)['label'],
         'title' => $fields[$field]['label'],
       ];
 
-      $value = self::getFieldValueAndLabel($field, $other)['value'];
+      $value = self::getFieldValueAndLabel($field, $other, $checkPermissions)['value'];
       //CRM-14334
       if ($value === NULL || $value === '') {
         $value = 'null';
@@ -1565,6 +1563,8 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
 
       // Display a checkbox to migrate, only if the values are different
       if ($value != $main[$field]) {
+        // Don't check source if main is empty, because the source of the other contact is not the source of the merged contact
+        $isChecked = ($field === 'source') ? FALSE : (!isset($main[$field]) || $main[$field] === '');
         $elements[] = [
           0 => 'advcheckbox',
           1 => "move_$field",
@@ -1572,7 +1572,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
           3 => NULL,
           4 => NULL,
           5 => $value,
-          'is_checked' => (!isset($main[$field]) || $main[$field] === ''),
+          'is_checked' => $isChecked,
         ];
       }
 
@@ -1869,10 +1869,10 @@ ORDER BY civicrm_custom_group.weight,
     $queryString = "$strSelect $strFrom $strWhere $orderBy";
 
     // lets see if we can retrieve the groupTree from cache
-    $cacheString = $queryString . '_Inline';;
+    $cacheString = $queryString . '_Inline';
 
-    $cacheKey = "CRM_Core_DAO_CustomGroup_Query " . md5($cacheString);
-    $multipleFieldGroupCacheKey = "CRM_Core_DAO_CustomGroup_QueryMultipleFields " . md5($cacheString);
+    $cacheKey = 'CRM_Core_DAO_CustomGroup_Query ' . md5($cacheString);
+    $multipleFieldGroupCacheKey = 'CRM_Core_DAO_CustomGroup_QueryMultipleFields ' . md5($cacheString);
     $cache = CRM_Utils_Cache::singleton();
     $groupTree = $cache->get($cacheKey);
     $multipleFieldGroups = $cache->get($multipleFieldGroupCacheKey);
@@ -1894,7 +1894,6 @@ ORDER BY civicrm_custom_group.weight,
     if (isset($groupTree['info']) && !empty($groupTree['info']) &&
       !empty($groupTree['info']['tables'])
     ) {
-      $select = $from = $where = [];
       $groupTree['info']['where'] = NULL;
 
       foreach ($groupTree['info']['tables'] as $table => $fields) {
@@ -1940,8 +1939,10 @@ ORDER BY civicrm_custom_group.weight,
    * @param string $column
    * @param string $value
    * @param string $delimiter
+   *
    * @return string
    *   SQL condition.
+   * @throws \CRM_Core_Exception
    */
   private static function whereListHas($column, $value, $delimiter = CRM_Core_DAO::VALUE_SEPARATOR) {
     // ?
@@ -2025,34 +2026,6 @@ ORDER BY civicrm_custom_group.weight,
       CRM_Dedupe_Merger::removeContactBelongings($otherId, $removeTables);
       $removeTables = [];
     }
-
-    // FIXME: fix gender, prefix and postfix, so they're edible by createProfileContact()
-    $names['gender'] = ['newName' => 'gender_id', 'groupName' => 'gender'];
-    $names['individual_prefix'] = [
-      'newName' => 'prefix_id',
-      'groupName' => 'individual_prefix',
-    ];
-    $names['individual_suffix'] = [
-      'newName' => 'suffix_id',
-      'groupName' => 'individual_suffix',
-    ];
-    $names['communication_style'] = [
-      'newName' => 'communication_style_id',
-      'groupName' => 'communication_style',
-    ];
-    $names['addressee'] = [
-      'newName' => 'addressee_id',
-      'groupName' => 'addressee',
-    ];
-    $names['email_greeting'] = [
-      'newName' => 'email_greeting_id',
-      'groupName' => 'email_greeting',
-    ];
-    $names['postal_greeting'] = [
-      'newName' => 'postal_greeting_id',
-      'groupName' => 'postal_greeting',
-    ];
-    CRM_Core_OptionGroup::lookupValues($submitted, $names, TRUE);
 
     if (!isset($submitted)) {
       $submitted = [];
@@ -2299,27 +2272,30 @@ ORDER BY civicrm_custom_group.weight,
    * This is basically the contact metadata, augmented with fields to
    * represent email greeting, postal greeting & addressee.
    *
+   * @param bool $checkPermissions
+   *
    * @return array
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public static function getMergeFieldsMetadata($checkPermissions = TRUE): array {
-    if (isset(\Civi::$statics[__CLASS__]['merge_fields_metadata'][(bool) $checkPermissions])) {
-      return \Civi::$statics[__CLASS__]['merge_fields_metadata'][(bool) $checkPermissions];
-    }
-    $contactFields = (array) Contact::getFields($checkPermissions)->execute()->indexBy('name');
-    $invalidFields = self::ignoredFields('contact');
-    foreach ($contactFields as $field => $value) {
-      if (in_array($field, $invalidFields, TRUE)) {
-        unset($contactFields[$field]);
+  public static function getMergeFieldsMetadata(bool $checkPermissions = TRUE): array {
+    if (!isset(\Civi::$statics[__CLASS__]['merge_fields_metadata'][(int) $checkPermissions])) {
+      $contactFields = (array) Contact::getFields($checkPermissions)
+        ->execute()
+        ->indexBy('name');
+      $invalidFields = self::ignoredFields('contact');
+      foreach ($contactFields as $field => $value) {
+        if (in_array($field, $invalidFields, TRUE)) {
+          unset($contactFields[$field]);
+        }
       }
+      $optionValueFields = CRM_Core_OptionValue::getFields();
+      foreach ($optionValueFields as $field => $params) {
+        $contactFields[$field]['title'] = $params['title'];
+      }
+      \Civi::$statics[__CLASS__]['merge_fields_metadata'][(int) $checkPermissions] = $contactFields;
     }
-    $optionValueFields = CRM_Core_OptionValue::getFields();
-    foreach ($optionValueFields as $field => $params) {
-      $contactFields[$field]['title'] = $params['title'];
-    }
-    \Civi::$statics[__CLASS__]['merge_fields_metadata'][(bool) $checkPermissions] = $contactFields;
-    return \Civi::$statics[__CLASS__]['merge_fields_metadata'][(bool) $checkPermissions];
+    return \Civi::$statics[__CLASS__]['merge_fields_metadata'][(int) $checkPermissions];
   }
 
   /**
@@ -2332,6 +2308,11 @@ ORDER BY civicrm_custom_group.weight,
    * @throws CRM_Core_Exception
    */
   public static function getMergeContactDetails($contactID): array {
+    $params = [
+      'contact_id' => $contactID,
+      'version' => 3,
+      'return' => array_merge(['display_name'], self::getContactFields()),
+    ];
     $result = Contact::get(FALSE)->addWhere('id', '=', $contactID)->execute()->first();
 
     // CRM-18480: Cancel the process if the contact is already deleted
@@ -2618,7 +2599,7 @@ ORDER BY civicrm_custom_group.weight,
         }
 
         // For other locations, don't merge/add if the values are the same
-        elseif (CRM_Utils_Array::value('main', $migrationInfo['rows'][$key]) == $migrationInfo['rows'][$key]['other']) {
+        elseif (($migrationInfo['rows'][$key]['main'] ?? NULL) == $migrationInfo['rows'][$key]['other']) {
           unset($migrationInfo[$key]);
         }
       }
@@ -2787,14 +2768,15 @@ ORDER BY civicrm_custom_group.weight,
   /**
    * Get the field value & label for the given field.
    *
-   * @param $field
-   * @param $contact
+   * @param string $field
+   * @param array $contact
+   * @param bool $checkPermissions
    *
    * @return array
    * @throws \Exception
    */
-  private static function getFieldValueAndLabel($field, $contact): array {
-    $fields = self::getMergeFieldsMetadata(FALSE);
+  private static function getFieldValueAndLabel(string $field, array $contact, bool $checkPermissions): array {
+    $fields = self::getMergeFieldsMetadata($checkPermissions);
     $value = $label = $contact[$field] ?? NULL;
     $fieldSpec = $fields[$field];
     if (!empty($fieldSpec['serialize']) && is_array($value)) {

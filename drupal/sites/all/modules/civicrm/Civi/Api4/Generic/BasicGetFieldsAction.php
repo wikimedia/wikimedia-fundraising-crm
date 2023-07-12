@@ -321,13 +321,14 @@ class BasicGetFieldsAction extends BasicGetAction {
           'ChainSelect' => ts('Chain-Select'),
           'CheckBox' => ts('Checkboxes'),
           'Date' => ts('Date Picker'),
+          'Email' => ts('Email'),
           'EntityRef' => ts('Autocomplete Entity'),
           'File' => ts('File'),
+          'Location' => ts('Address Location'),
           'Number' => ts('Number'),
           'Radio' => ts('Radio Buttons'),
           'Select' => ts('Select'),
           'Text' => ts('Text'),
-          'Location' => ts('Address Location'),
         ],
       ],
       [
@@ -345,6 +346,11 @@ class BasicGetFieldsAction extends BasicGetAction {
       [
         'name' => 'entity',
         'data_type' => 'String',
+      ],
+      [
+        'name' => 'localizable',
+        'data_type' => 'Boolean',
+        'default_value' => FALSE,
       ],
       [
         'name' => 'readonly',

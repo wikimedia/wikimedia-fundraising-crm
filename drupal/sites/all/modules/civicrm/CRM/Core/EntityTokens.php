@@ -78,6 +78,7 @@ class CRM_Core_EntityTokens extends AbstractTokenSubscriber {
     $cacheKey = $this->getCacheKey();
     if (!Civi::cache('metadata')->has($cacheKey)) {
       $tokensMetadata = $this->getBespokeTokens();
+      $tokensMetadata = array_merge($tokensMetadata, $this->getRelatedTokens());
       foreach ($this->getFieldMetadata() as $field) {
         $this->addFieldToTokenMetadata($tokensMetadata, $field, $this->getExposedFields());
       }
@@ -119,15 +120,11 @@ class CRM_Core_EntityTokens extends AbstractTokenSubscriber {
       return $row->customToken($entity, \CRM_Core_BAO_CustomField::getKeyID($field), $this->getFieldValue($row, 'id'));
     }
     if ($this->isMoneyField($field)) {
-      $currency = $this->getCurrency($row);
+      $currency = $this->getCurrency($row) ?: \Civi::settings()->get('defaultCurrency');
       if (empty($fieldValue) && !is_numeric($fieldValue)) {
         $fieldValue = 0;
       }
-      if (!$currency) {
-        // too hard basket for now - just do what we always did.
-        return $row->format('text/plain')->tokens($entity, $field,
-          \CRM_Utils_Money::format($fieldValue, $currency));
-      }
+
       return $row->format('text/plain')->tokens($entity, $field,
         Money::of($fieldValue, $currency));
 
@@ -272,6 +269,13 @@ class CRM_Core_EntityTokens extends AbstractTokenSubscriber {
    * Get any tokens with custom calculation.
    */
   protected function getBespokeTokens(): array {
+    return [];
+  }
+
+  /**
+   * Get related entity tokens.
+   */
+  protected function getRelatedTokens(): array {
     return [];
   }
 

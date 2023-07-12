@@ -336,25 +336,37 @@ class CRM_Event_Form_Registration_AdditionalParticipant extends CRM_Event_Form_R
 
     //CRM-4320
     if ($allowToProceed) {
-      $buttons = array_merge($buttons, [
-        [
-          'type' => 'upload',
-          'name' => ts('Continue'),
-          'spacing' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
-          'isDefault' => TRUE,
-        ],
-      ]);
       if ($includeSkipButton) {
-        $buttons = array_merge($buttons, [
+        $buttons[] =
           [
             'type' => 'next',
             'name' => ts('Skip Participant'),
             'subName' => 'skip',
             'icon' => 'fa-fast-forward',
-          ],
-        ]);
+          ];
       }
+      $buttonParams = [
+        'type' => 'upload',
+        'spacing' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
+        'isDefault' => TRUE,
+      ];
+      if ($this->isLastParticipant(TRUE)) {
+        if ($this->_values['event']['is_confirm_enabled'] || $this->_values['event']['is_monetary']) {
+          $buttonParams['name'] = ts('Review');
+          $buttonParams['icon'] = 'fa-chevron-right';
+        }
+        else {
+          $buttonParams['name'] = ts('Register');
+          $buttonParams['icon'] = 'fa-check';
+        }
+      }
+      else {
+        $buttonParams['name'] = ts('Continue');
+        $buttonParams['icon'] = 'fa-chevron-right';
+      }
+      $buttons[] = $buttonParams;
     }
+
     $this->addButtons($buttons);
     $this->addFormRule(['CRM_Event_Form_Registration_AdditionalParticipant', 'formRule'], $this);
     $this->unsavedChangesWarn = TRUE;
@@ -430,7 +442,7 @@ class CRM_Event_Form_Registration_AdditionalParticipant extends CRM_Event_Form_R
             else {
               // check with first_name and last_name for additional participants
               if (!empty($value['first_name']) && ($value['first_name'] == CRM_Utils_Array::value('first_name', $fields)) &&
-                (CRM_Utils_Array::value('last_name', $value) == CRM_Utils_Array::value('last_name', $fields))
+                (($value['last_name'] ?? NULL) == CRM_Utils_Array::value('last_name', $fields))
               ) {
                 $errors['first_name'] = ts('The first name and last name must be unique for each participant.');
                 break;

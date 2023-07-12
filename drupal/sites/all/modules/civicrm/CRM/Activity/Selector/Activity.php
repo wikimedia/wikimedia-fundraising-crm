@@ -206,6 +206,7 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
           'url' => $url,
           'qs' => $qsView,
           'title' => ts('View Activity'),
+          'weight' => -20,
         ],
       ];
     }
@@ -226,6 +227,7 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
             'url' => $updateUrl,
             'qs' => $qsUpdate,
             'title' => ts('Update Activity'),
+            'weight' => -10,
           ],
         ];
       }
@@ -257,6 +259,7 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
           'url' => $delUrl,
           'qs' => $qsDelete,
           'title' => ts('Delete Activity'),
+          'weight' => 100,
         ],
       ];
     }
@@ -396,7 +399,7 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
 
       // add class to this row if overdue
       if (CRM_Utils_Date::overdue(CRM_Utils_Array::value('activity_date_time', $row))
-        && CRM_Utils_Array::value('status_id', $row) == 1
+        && ($row['status_id'] ?? NULL) == 1
       ) {
         $row['overdue'] = 1;
         $row['class'] = 'status-overdue';

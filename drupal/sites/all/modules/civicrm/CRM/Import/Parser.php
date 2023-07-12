@@ -91,6 +91,11 @@ abstract class CRM_Import_Parser implements UserJobInterface {
   protected $statesByCountry = [];
 
   /**
+   * @var int|null
+   */
+  protected $siteDefaultCountry = NULL;
+
+  /**
    * @return int|null
    */
   public function getUserJobID(): ?int {
@@ -672,7 +677,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     $queue = Civi::queue('user_job_' . $this->getUserJobID(), ['type' => 'Sql', 'error' => 'abort', 'runner' => 'task', 'user_job_id' => $this->getUserJobID(), 'retry_limit' => 5]);
     UserJob::update(FALSE)->setValues(['queue_id.name' => 'user_job_' . $this->getUserJobID()])->addWhere('id', '=', $this->getUserJobID())->execute();
     $offset = 0;
-    $batchSize = 50;
+    $batchSize = Civi::settings()->get('import_batch_size');
     while ($totalRows > 0) {
       if ($totalRows < $batchSize) {
         $batchSize = $totalRows;
@@ -1174,7 +1179,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
 
       $addressCnt = 1;
       foreach ($params['address'] as $cnt => $addressBlock) {
-        if (CRM_Utils_Array::value('location_type_id', $values) ==
+        if (($values['location_type_id'] ?? NULL) ==
           CRM_Utils_Array::value('location_type_id', $addressBlock)
         ) {
           $addressCnt = $cnt;
@@ -1691,6 +1696,9 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     $fieldMap = $this->getOddlyMappedMetadataFields();
     $fieldMapName = empty($fieldMap[$fieldName]) ? $fieldName : $fieldMap[$fieldName];
     $fieldMapName = str_replace('__', '.', $fieldMapName);
+    // See https://lab.civicrm.org/dev/core/-/issues/4317#note_91322 - a further hack for quickform not
+    // handling dots in field names. One day we will get rid of the Quick form screen...
+    $fieldMapName = str_replace('~~', '_.', $fieldMapName);
     // This whole business of only loading metadata for one type when we actually need it for all is ... dubious.
     if (empty($this->getImportableFieldsMetadata()[$fieldMapName])) {
       if ($loadOptions || !$limitToContactType) {
@@ -1954,7 +1962,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
    * @return int
    */
   protected function getSiteDefaultCountry(): int {
-    if (!isset($this->siteDefaultCountry)) {
+    if ($this->siteDefaultCountry === NULL) {
       $this->siteDefaultCountry = (int) Civi::settings()->get('defaultContactCountry');
     }
     return $this->siteDefaultCountry;
