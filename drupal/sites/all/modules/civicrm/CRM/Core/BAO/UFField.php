@@ -40,7 +40,7 @@ class CRM_Core_BAO_UFField extends CRM_Core_DAO_UFField {
     $id = $params['id'] ?? NULL;
 
     $op = empty($id) ? 'create' : 'edit';
-    CRM_Utils_Hook::pre('UFField', $op, $id, $params);
+    CRM_Utils_Hook::pre($op, 'UFField', $id, $params);
     // Merge in data from existing field
     if (!empty($id)) {
       $UFField = new CRM_Core_BAO_UFField();
@@ -107,26 +107,20 @@ class CRM_Core_BAO_UFField extends CRM_Core_DAO_UFField {
     $fieldsType = CRM_Core_BAO_UFGroup::calculateGroupType($ufField->uf_group_id, TRUE);
     CRM_Core_BAO_UFGroup::updateGroupTypes($ufField->uf_group_id, $fieldsType);
 
-    CRM_Utils_Hook::post('UFField', $op, $ufField->id, $ufField);
+    CRM_Utils_Hook::post($op, 'UFField', $ufField->id, $ufField);
 
     civicrm_api3('profile', 'getfields', ['cache_clear' => TRUE]);
     return $ufField;
   }
 
   /**
-   * Retrieve DB object and copy to defaults array.
-   *
-   * @param array $params
-   *   Array of criteria values.
-   * @param array $defaults
-   *   Array to be populated with found values.
-   *
-   * @return self|null
-   *   The DAO object, if found.
-   *
    * @deprecated
+   * @param array $params
+   * @param array $defaults
+   * @return self|null
    */
   public static function retrieve($params, &$defaults) {
+    CRM_Core_Error::deprecatedFunctionWarning('API');
     return self::commonRetrieve(self::class, $params, $defaults);
   }
 
@@ -1140,7 +1134,7 @@ SELECT  id
         ],
         'receive_date' => [
           'name' => 'receive_date',
-          'title' => ts('Date Received'),
+          'title' => ts('Contribution Date'),
         ],
         'payment_instrument' => [
           'name' => 'payment_instrument',

@@ -399,24 +399,28 @@
         require: '?ngModel',
         link: function (scope, elm, attr, ngModel) {
 
-          var editor = CRM.wysiwyg.create(elm);
-          if (!ngModel) {
-            return;
-          }
+          // Wait for #id to stabilize so the wysiwyg doesn't init with an id like `cke_{{:: fieldId }}`
+          $timeout(function() {
+            var editor = CRM.wysiwyg.create(elm);
 
-          if (attr.ngBlur) {
-            $(elm).on('blur', function() {
-              $timeout(function() {
-                scope.$eval(attr.ngBlur);
+            if (!ngModel) {
+              return;
+            }
+
+            if (attr.ngBlur) {
+              $(elm).on('blur', function() {
+                $timeout(function() {
+                  scope.$eval(attr.ngBlur);
+                });
               });
-            });
-          }
+            }
 
-          ngModel.$render = function(value) {
-            editor.done(function() {
-              CRM.wysiwyg.setVal(elm, ngModel.$viewValue || '');
-            });
-          };
+            ngModel.$render = function(value) {
+              editor.done(function() {
+                CRM.wysiwyg.setVal(elm, ngModel.$viewValue || '');
+              });
+            };
+          });
         }
       };
     })
@@ -751,15 +755,15 @@
           };
 
           if (ctrl.ngModel) {
-            var oldValue;
             // Ensure widget is updated when model changes
             ctrl.ngModel.$render = function() {
-              element.val(ctrl.ngModel.$viewValue || '');
               // Trigger change so the Select2 renders the current value,
               // but only if the value has actually changed (to avoid recursion)
-              if (!angular.equals(ctrl.ngModel.$viewValue, oldValue)) {
-                oldValue = ctrl.ngModel.$viewValue;
-                element.change();
+              // We need to coerce null|false in the model to '' and numbers to strings.
+              // We need 0 not to be equivalent to null|false|''
+              const newValue = (ctrl.ngModel.$viewValue === null || ctrl.ngModel.$viewValue === undefined || ctrl.ngModel.$viewValue === false) ? '' : ctrl.ngModel.$viewValue.toString();
+              if (newValue !== element.val().toString()) {
+                element.val(newValue).change();
               }
             };
 
@@ -1237,7 +1241,7 @@
           var ts = CRM.ts();
 
           function read() {
-            var htmlVal = element.html();
+            var htmlVal = element.text();
             if (!htmlVal) {
               htmlVal = scope.defaultValue || '';
               element.text(htmlVal);

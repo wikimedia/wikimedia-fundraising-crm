@@ -38,6 +38,9 @@ return [
         'expires_date' => NULL,
         'description' => NULL,
       ],
+      'match' => [
+        'name',
+      ],
     ],
   ],
   [
@@ -62,6 +65,7 @@ return [
           'pager' => [
             'show_count' => TRUE,
             'expose_limit' => TRUE,
+            'hide_single' => TRUE,
           ],
           'placeholder' => 5,
           'sort' => [
@@ -181,6 +185,10 @@ return [
           ],
         ],
         'acl_bypass' => FALSE,
+      ],
+      'match' => [
+        'name',
+        'saved_search_id',
       ],
     ],
   ],

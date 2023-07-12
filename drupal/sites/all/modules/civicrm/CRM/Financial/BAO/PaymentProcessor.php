@@ -73,17 +73,10 @@ class CRM_Financial_BAO_PaymentProcessor extends CRM_Financial_DAO_PaymentProces
   }
 
   /**
-   * Retrieve DB object and copy to defaults array.
-   *
-   * @param array $params
-   *   Array of criteria values.
-   * @param array $defaults
-   *   Array to be populated with found values.
-   *
-   * @return self|null
-   *   The DAO object, if found.
-   *
    * @deprecated
+   * @param array $params
+   * @param array $defaults
+   * @return self|null
    */
   public static function retrieve($params, &$defaults) {
     return self::commonRetrieve(self::class, $params, $defaults);
@@ -307,6 +300,8 @@ class CRM_Financial_BAO_PaymentProcessor extends CRM_Financial_DAO_PaymentProces
       $fieldsToProvide = [
         'id',
         'name',
+        'title',
+        'frontend_title',
         'payment_processor_type_id',
         'user_name',
         'password',
@@ -337,6 +332,8 @@ class CRM_Financial_BAO_PaymentProcessor extends CRM_Financial_DAO_PaymentProces
     $processors['values'][0] = [
       'object' => new CRM_Core_Payment_Manual(),
       'id' => 0,
+      'frontend_title' => ts('Pay later'),
+      'title' => ts('Pay later'),
       'payment_processor_type_id' => 0,
       // This shouldn't be required but there are still some processors hacked into core with nasty 'if's.
       'payment_processor_type' => 'Manual',

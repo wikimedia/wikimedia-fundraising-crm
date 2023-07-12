@@ -145,9 +145,11 @@ class CRM_Contribute_Form_ContributionPage_Amount extends CRM_Contribute_Form_Co
       $this->assign('price', TRUE);
     }
 
-    $this->addField('price_set_id', [
-      'entity' => 'PriceField',
+    $this->addSelect('price_set_id', [
+      'entity' => 'PriceSet',
+      'option_url' => 'civicrm/admin/price',
       'options' => $price,
+      'label' => ts('Price Set'),
       'onchange' => "showHideAmountBlock( this.value, 'price_set_id' );",
     ]);
 
@@ -173,7 +175,7 @@ class CRM_Contribute_Form_ContributionPage_Amount extends CRM_Contribute_Form_Co
         );
         $this->add('datepicker', 'pledge_calendar_date', ts('Specific Calendar Date'), [], FALSE, ['time' => FALSE]);
         $month = CRM_Utils_Date::getCalendarDayOfMonth();
-        $this->add('select', 'pledge_calendar_month', ts('Specific day of Month'), $month);
+        $this->add('select', 'pledge_calendar_month', ts('Specific day of Month'), $month, FALSE, ['class' => 'crm-select2 eight']);
         $pledgeDefaults = [
           'contribution_date' => ts('Day of Contribution'),
           'calendar_date' => ts('Specific Calendar Date'),

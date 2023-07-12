@@ -154,7 +154,7 @@ class CRM_Event_Form_Search extends CRM_Core_Form_Search {
       if (count($eventIds) == 1) {
         //convert form values to clause.
         $seatClause = [];
-        if (CRM_Utils_Array::value('participant_test', $this->_formValues) == '1' || CRM_Utils_Array::value('participant_test', $this->_formValues) == '0') {
+        if (($this->_formValues['participant_test'] ?? NULL) == '1' || ($this->_formValues['participant_test'] ?? NULL) == '0') {
           $seatClause[] = "( participant.is_test = {$this->_formValues['participant_test']} )";
         }
         if (!empty($this->_formValues['participant_status_id'])) {
@@ -279,11 +279,6 @@ class CRM_Event_Form_Search extends CRM_Core_Form_Search {
     if (isset($this->_ssID) && empty($_POST)) {
       // if we are editing / running a saved search and the form has not been posted
       $this->_formValues = CRM_Contact_BAO_SavedSearch::getFormValues($this->_ssID);
-    }
-
-    // We don't show test records in summaries or dashboards
-    if (empty($this->_formValues['participant_test']) && $this->_force) {
-      $this->_formValues["participant_test"] = 0;
     }
 
     $this->_queryParams = CRM_Contact_BAO_Query::convertFormValues($this->_formValues, 0, FALSE, NULL, ['event_id']);

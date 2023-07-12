@@ -71,30 +71,33 @@ class CRM_Case_BAO_Case extends CRM_Case_DAO_Case implements \Civi\Core\HookInte
     if ($e->entity === 'Activity' && in_array($e->action, ['create', 'edit'])) {
       /** @var CRM_Activity_DAO_Activity $activity */
       $activity = $e->object;
+      $params = $e->params;
 
       // If subject contains a ‘[case #…]’ string, file activity on the related case (CRM-5916)
       $matches = [];
-      $subjectToMatch = $activity->subject ?? '';
-      if (preg_match('/\[case #([0-9a-h]{7})\]/', $subjectToMatch, $matches)) {
-        $key = CRM_Core_DAO::escapeString(CIVICRM_SITE_KEY);
-        $hash = $matches[1];
-        $query = "SELECT id FROM civicrm_case WHERE SUBSTR(SHA1(CONCAT('$key', id)), 1, 7) = '" . CRM_Core_DAO::escapeString($hash) . "'";
-      }
-      elseif (preg_match('/\[case #(\d+)\]/', $subjectToMatch, $matches)) {
-        $query = "SELECT id FROM civicrm_case WHERE id = '" . CRM_Core_DAO::escapeString($matches[1]) . "'";
+      if (!isset($params['case_id'])) {
+        $subjectToMatch = $activity->subject ?? '';
+        if (preg_match('/\[case #([0-9a-h]{7})\]/', $subjectToMatch, $matches)) {
+          $key = CRM_Core_DAO::escapeString(CIVICRM_SITE_KEY);
+          $query = "SELECT id FROM civicrm_case WHERE SUBSTR(SHA1(CONCAT('$key', id)), 1, 7) = %1";
+        }
+        elseif (preg_match('/\[case #(\d+)\]/', $subjectToMatch, $matches)) {
+          $query = "SELECT id FROM civicrm_case WHERE id = %1";
+        }
       }
       if (!empty($matches)) {
-        $caseParams = [
-          'activity_id' => $activity->id,
-          'case_id' => CRM_Core_DAO::singleValueQuery($query),
-        ];
-        if ($caseParams['case_id']) {
-          CRM_Case_BAO_Case::processCaseActivity($caseParams);
-        }
-        else {
+        $params['case_id'] = CRM_Core_DAO::singleValueQuery($query, [1 => [$matches[1], 'String']]) ?: NULL;
+        if (!$params['case_id']) {
           CRM_Activity_BAO_Activity::logActivityAction($activity, "Case details for {$matches[1]} not found while recording an activity on case.");
         }
       }
+      // Add CaseActivity record (or remove if $params['case_id'] is falsey)
+      if (isset($params['case_id'])) {
+        CRM_Case_BAO_Case::updateCaseActivity($activity->id, $params['case_id']);
+      }
+    }
+    if ($e->entity === 'RelationshipType') {
+      CRM_Case_XMLProcessor::flushStaticCaches();
     }
   }
 
@@ -696,7 +699,8 @@ HERESQL;
       $casesList[$key]['manager'] = self::getCaseManagerContact($caseTypes[$case['case_type_id']], $case['case_id']);
 
       $casesList[$key]['date'] = $activityTypeLabels[$case['activity_type_id']] ?? NULL;
-      if ($actId = CRM_Utils_Array::value('activity_id', $case)) {
+      $actId = $case['activity_id'] ?? NULL;
+      if ($actId) {
         if (self::checkPermission($actId, 'view', $case['activity_type_id'], $userID)) {
           if ($type == 'recent') {
             $casesList[$key]['date'] = sprintf('<a class="action-item crm-hover-button" href="%s" title="%s">%s</a>',
@@ -1357,7 +1361,7 @@ HERESQL;
     $tplParams['activityTypeName'] = CRM_Core_PseudoConstant::getLabel('CRM_Activity_DAO_Activity', 'activity_type_id', $activityTypeId);
     $tplParams['activity'] = $activityInfo;
     foreach ($tplParams['activity']['fields'] as $k => $val) {
-      if (CRM_Utils_Array::value('label', $val) == ts('Subject')) {
+      if (($val['label'] ?? NULL) == ts('Subject')) {
         $activitySubject = $val['value'];
         break;
       }
@@ -1400,7 +1404,7 @@ HERESQL;
 
       $displayName = $info['display_name'] ?? NULL;
 
-      [$result[CRM_Utils_Array::value('contact_id', $info)], $subject, $message, $html] = CRM_Core_BAO_MessageTemplate::sendTemplate(
+      [$result[$info['contact_id'] ?? NULL], $subject, $message, $html] = CRM_Core_BAO_MessageTemplate::sendTemplate(
         [
           'groupName' => 'msg_tpl_workflow_case',
           'workflow' => 'case_activity',
@@ -1431,7 +1435,7 @@ HERESQL;
         $recordedActivityParams['target_contact_id'][] = $info['contact_id'];
       }
       else {
-        unset($result[CRM_Utils_Array::value('contact_id', $info)]);
+        unset($result[$info['contact_id'] ?? NULL]);
       }
     }
 

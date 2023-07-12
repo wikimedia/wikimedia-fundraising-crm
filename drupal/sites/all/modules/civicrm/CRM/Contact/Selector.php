@@ -262,6 +262,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
           'qs' => "reset=1&cid=%%id%%{$searchContext}{$extraParams}",
           'title' => ts('View Contact Details'),
           'ref' => 'view-contact',
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::VIEW),
         ],
         CRM_Core_Action::UPDATE => [
           'name' => ts('Edit'),
@@ -270,35 +271,36 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
           'qs' => "reset=1&action=update&cid=%%id%%{$searchContext}{$extraParams}",
           'title' => ts('Edit Contact Details'),
           'ref' => 'edit-contact',
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::UPDATE),
         ],
       ];
 
-      $config = CRM_Core_Config::singleton();
       //CRM-16552: mapAPIKey is not mandatory as google no longer requires an API Key
-      if ($config->mapProvider && ($config->mapAPIKey || $config->mapProvider == 'Google')) {
+      if (\Civi::settings()->get('mapProvider') === 'Google' || (\Civi::settings()->get('mapProvider') && \Civi::settings()->get('mapAPIKey'))) {
         self::$_links[CRM_Core_Action::MAP] = [
           'name' => ts('Map'),
           'url' => 'civicrm/contact/map',
           'qs' => "reset=1&cid=%%id%%{$searchContext}{$extraParams}",
           'title' => ts('Map Contact'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::MAP),
         ];
       }
 
       // Adding Context Menu Links in more action
       if ($contextMenu) {
         $counter = 7000;
-        foreach ($contextMenu as $key => $value) {
+        foreach ($contextMenu as $value) {
           $contextVal = '&context=' . $value['key'];
-          if ($value['key'] == 'delete') {
+          if ($value['key'] === 'delete') {
             $contextVal = $searchContext;
           }
           $url = "civicrm/contact/view/{$value['key']}";
           $qs = "reset=1&action=add&cid=%%id%%{$contextVal}{$extraParams}";
-          if ($value['key'] == 'activity') {
+          if ($value['key'] === 'activity') {
             $qs = "action=browse&selectedChild=activity&reset=1&cid=%%id%%{$extraParams}";
           }
-          elseif ($value['key'] == 'email') {
-            $url = "civicrm/contact/view/activity";
+          elseif ($value['key'] === 'email') {
+            $url = 'civicrm/contact/view/activity';
             $qs = "atype=3&action=add&reset=1&cid=%%id%%{$extraParams}";
           }
 
@@ -309,6 +311,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
             'title' => $value['title'],
             'ref' => $value['ref'],
             'class' => $value['class'] ?? NULL,
+            'weight' => $value['weight'],
           ];
         }
       }
@@ -416,7 +419,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
             if (strpos($name, '-') !== FALSE) {
               [$fieldName, $lType, $type] = CRM_Utils_System::explode('-', $name, 3);
 
-              if ($lType == 'Primary') {
+              if ($lType === 'Primary') {
                 $locationTypeName = 1;
               }
               else {
@@ -440,7 +443,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
               }
             }
             //to handle sort key for Internal contactId.CRM-2289
-            if ($name == 'id') {
+            if ($name === 'id') {
               $name = 'contact_id';
             }
 
@@ -556,7 +559,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
     if (($output == CRM_Core_Selector_Controller::EXPORT ||
         $output == CRM_Core_Selector_Controller::SCREEN
       ) &&
-      $this->_formValues['radio_ts'] == 'ts_sel'
+      $this->_formValues['radio_ts'] === 'ts_sel'
     ) {
       $includeContactIds = TRUE;
     }
@@ -589,7 +592,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
     // mask value to hide map link if there are not lat/long
     $mapMask = $mask & 4095;
 
-    if ($this->_searchContext == 'smog') {
+    if ($this->_searchContext === 'smog') {
       $gc = CRM_Core_SelectValues::groupContactStatus();
     }
 
@@ -605,10 +608,10 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
           if (strpos($key, '-') !== FALSE) {
             [$fieldName, $id, $type] = CRM_Utils_System::explode('-', $key, 3);
 
-            if ($id == 'Primary') {
+            if ($id === 'Primary') {
               $locationTypeName = 1;
             }
-            elseif ($fieldName == 'url') {
+            elseif ($fieldName === 'url') {
               $locationTypeName = "website-{$id}";
             }
             else {
@@ -669,7 +672,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
       $this->_query->convertToPseudoNames($result);
       // the columns we are interested in
       foreach ($names as $property) {
-        if ($property == 'status') {
+        if ($property === 'status') {
           continue;
         }
         if ($cfID = CRM_Core_BAO_CustomField::getKeyID($property)) {
@@ -734,7 +737,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
       }
 
       if ($output != CRM_Core_Selector_Controller::EXPORT &&
-        $this->_searchContext == 'smog'
+        $this->_searchContext === 'smog'
       ) {
         if (empty($result->status) &&
           $groupID
@@ -777,6 +780,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
               'qs' => 'reset=1&cid=%%id%%',
               'class' => 'no-popup',
               'title' => ts('View Contact Details'),
+              'weight' => -20,
             ],
             [
               'name' => ts('Restore'),
@@ -791,6 +795,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
               'url' => 'civicrm/contact/view/delete',
               'qs' => 'reset=1&cid=%%id%%&skip_undelete=1',
               'title' => ts('Permanently Delete Contact'),
+              'weight' => 100,
             ];
           }
           $row['action'] = CRM_Core_Action::formLink(
@@ -952,6 +957,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
             'qs' => 'reset=1&cid=%%id%%',
             'class' => 'no-popup',
             'title' => ts('View Contact Details'),
+            'weight' => -20,
           ],
           [
             'name' => ts('Restore'),
@@ -966,6 +972,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
             'url' => 'civicrm/contact/view/delete',
             'qs' => 'reset=1&cid=%%id%%&skip_undelete=1',
             'title' => ts('Permanently Delete Contact'),
+            'weight' => 100,
           ];
         }
         $row['action'] = CRM_Core_Action::formLink(

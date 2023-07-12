@@ -68,6 +68,7 @@ class Submit extends AbstractProcessor {
     \Civi::dispatcher()->dispatch('civi.afform.validate', $event);
     $errors = $event->getErrors();
     if ($errors) {
+      \Civi::log('afform')->error('Afform Validation errors: ' . print_r($errors, TRUE));
       throw new \CRM_Core_Exception(ts('Validation Error', ['plural' => '%1 Validation Errors', 'count' => count($errors)]), 0, ['validation' => $errors]);
     }
 
@@ -210,7 +211,7 @@ class Submit extends AbstractProcessor {
 
     $isRequired = $attributes['defn']['required'] ?? $fullDefn['required'] ?? FALSE;
     if ($isRequired) {
-      $label = $attributes['defn']['label'] ?? $fullDefn['label'];
+      $label = $attributes['defn']['label'] ?? $fullDefn['label'] ?? $fieldName;
       return E::ts('%1 is a required field.', [1 => $label]);
     }
     return NULL;
@@ -330,6 +331,7 @@ class Submit extends AbstractProcessor {
       catch (\CRM_Core_Exception $e) {
         // What to do here? Sometimes we should silently ignore errors, e.g. an optional entity
         // intentionally left blank. Other times it's a real error the user should know about.
+        \Civi::log('afform')->debug("Silently ignoring exception in Afform processGenericEntity call: " . $e->getMessage());
       }
     }
   }

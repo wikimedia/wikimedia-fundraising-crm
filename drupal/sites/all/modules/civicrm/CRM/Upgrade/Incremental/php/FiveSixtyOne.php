@@ -9,7 +9,6 @@
  +--------------------------------------------------------------------+
  */
 
-use Civi\Api4\Contribution;
 use Civi\Api4\MappingField;
 
 /**
@@ -41,6 +40,14 @@ class CRM_Upgrade_Incremental_php_FiveSixtyOne extends CRM_Upgrade_Incremental_B
     }
   }
 
+  public function setPostUpgradeMessage(&$postUpgradeMessage, $rev): void {
+    if ($rev === '5.61.1') {
+      if (defined('CIVICRM_UF') && CIVICRM_UF === 'Drupal8') {
+        $postUpgradeMessage .= '<p>' . ts('You must do a one-time clear of Drupal caches now before visiting CiviCRM pages to rebuild the menu routes to avoid fatal errors. <a %1>Read more</a>.', [1 => 'href="https://civicrm.org/redirect/drupal-5.61" target="_blank"']) . '</p>';
+      }
+    }
+  }
+
   /**
    * Upgrade step; adds tasks including 'runSql'.
    *
@@ -69,6 +76,12 @@ class CRM_Upgrade_Incremental_php_FiveSixtyOne extends CRM_Upgrade_Incremental_B
 
     $this->addTask(ts('Drop index %1', [1 => 'civicrm_campaign.UI_campaign_name']), 'dropIndex', 'civicrm_campaign', 'UI_campaign_name');
     $this->addTask(ts('Create index %1', [1 => 'civicrm_campaign.UI_name']), 'addIndex', 'civicrm_campaign', 'name', 'UI');
+  }
+
+  /**
+   * Needs to exist for postUpgradeMessage to get called.
+   */
+  public function upgrade_5_61_1($rev): void {
   }
 
   /**
@@ -115,10 +128,11 @@ class CRM_Upgrade_Incremental_php_FiveSixtyOne extends CRM_Upgrade_Incremental_B
       'contribution_check_number' => 'check_number',
       'contribution_campaign_id' => 'campaign_id',
     ];
-    $apiv4 = Contribution::getFields(FALSE)->addWhere('custom_field_id', '>', 0)->execute();
-    foreach ($apiv4 as $apiv4Field) {
-      $fieldMap['custom_' . $apiv4Field['custom_field_id']] = $apiv4Field['name'];
-    }
+    $fieldMap += CRM_Core_DAO::executeQuery('
+      SELECT CONCAT("custom_", fld.id) AS old, CONCAT(grp.name, ".", fld.name) AS new
+      FROM civicrm_custom_field fld, civicrm_custom_group grp
+      WHERE grp.id = fld.custom_group_id AND grp.extends = "Contribution"
+    ')->fetchMap('old', 'new');
 
     // Update the mapped fields.
     foreach ($mappings as $mapping) {

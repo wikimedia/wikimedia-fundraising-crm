@@ -51,6 +51,10 @@ class Admin {
       'modules' => $extensions,
       'defaultContactType' => \CRM_Contact_BAO_ContactType::basicTypeInfo()['Individual']['name'] ?? NULL,
       'defaultDistanceUnit' => \CRM_Utils_Address::getDefaultDistanceUnit(),
+      'jobFrequency' => \Civi\Api4\Job::getFields()
+        ->addWhere('name', '=', 'run_frequency')
+        ->setLoadOptions(['id', 'label'])
+        ->execute()->first()['options'],
       'tags' => Tag::get()
         ->addSelect('id', 'name', 'color', 'is_selectable', 'description')
         ->addWhere('used_for', 'CONTAINS', 'civicrm_saved_search')
@@ -87,6 +91,7 @@ class Admin {
       '>=' => '≥',
       '<=' => '≤',
       'CONTAINS' => E::ts('Contains'),
+      'NOT CONTAINS' => E::ts("Doesn't Contain"),
       'IN' => E::ts('Is One Of'),
       'NOT IN' => E::ts('Not One Of'),
       'LIKE' => E::ts('Is Like'),
@@ -188,8 +193,8 @@ class Admin {
   private static function addImplicitFKFields(array $schema):array {
     foreach ($schema as &$entity) {
       if ($entity['searchable'] !== 'bridge') {
-        foreach (array_reverse($entity['fields'], TRUE) as $index => $field) {
-          if (!empty($field['fk_entity']) && !$field['options'] && !empty($schema[$field['fk_entity']]['label_field'])) {
+        foreach (array_reverse($entity['fields'] ?? [], TRUE) as $index => $field) {
+          if (!empty($field['fk_entity']) && !$field['options'] && !$field['suffixes'] && !empty($schema[$field['fk_entity']]['label_field'])) {
             $isCustom = strpos($field['name'], '.');
             // Custom fields: append "Contact ID" etc. to original field label
             if ($isCustom) {
@@ -364,6 +369,24 @@ class Admin {
                 ];
               }
             }
+          }
+        }
+        // Custom EntityRef joins
+        foreach ($fields as $field) {
+          if ($field['type'] === 'Custom' && $field['input_type'] === 'EntityRef') {
+            $targetEntity = $allowedEntities[$field['fk_entity']];
+            // Add the EntityRef join
+            [, $bareFieldName] = explode('.', $field['name']);
+            $alias = $entity['name'] . '_' . $field['fk_entity'] . '_' . $bareFieldName;
+            $joins[$entity['name']][] = [
+              'label' => $entity['title'] . ' ' . $field['title'],
+              'description' => $field['description'],
+              'entity' => $field['fk_entity'],
+              'conditions' => self::getJoinConditions($field['name'], $alias . '.id'),
+              'defaults' => [],
+              'alias' => $alias,
+              'multi' => FALSE,
+            ];
           }
         }
       }

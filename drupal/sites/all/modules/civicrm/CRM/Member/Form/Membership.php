@@ -31,6 +31,11 @@ class CRM_Member_Form_Membership extends CRM_Member_Form {
 
   protected $_memType = NULL;
 
+  /**
+   * If this is set (to 'test' or 'live') then the payment processor will be shown on the form to take a payment.
+   *
+   * @var string|null
+   */
   public $_mode;
 
   public $_contributeMode = 'direct';
@@ -549,7 +554,7 @@ DESC limit 1");
       $this->add('number', 'num_terms', ts('Number of Terms'), ['size' => 6]);
     }
 
-    $this->add('text', 'source', ts('Source'),
+    $this->add('text', 'source', ts('Membership Source'),
       CRM_Core_DAO::getAttribute('CRM_Member_DAO_Membership', 'source')
     );
 
@@ -576,7 +581,7 @@ DESC limit 1");
       $this->add('text', 'total_amount', ts('Amount'));
       $this->addRule('total_amount', ts('Please enter a valid amount.'), 'money');
 
-      $this->add('datepicker', 'receive_date', ts('Received'), [], FALSE, ['time' => TRUE]);
+      $this->add('datepicker', 'receive_date', ts('Contribution Date'), [], FALSE, ['time' => TRUE]);
 
       $this->add('select', 'payment_instrument_id',
         ts('Payment Method'),
@@ -737,9 +742,7 @@ DESC limit 1");
       CRM_Core_Payment_Form::validatePaymentInstrument($params['payment_processor_id'], $params, $errors, NULL);
     }
 
-    $joinDate = NULL;
     if (!empty($params['join_date'])) {
-
       $joinDate = CRM_Utils_Date::processDate($params['join_date']);
 
       foreach ($selectedMemberships as $memType) {
@@ -756,7 +759,7 @@ DESC limit 1");
         }
 
         $membershipDetails = CRM_Member_BAO_MembershipType::getMembershipType($memType);
-        if ($startDate && CRM_Utils_Array::value('period_type', $membershipDetails) === 'rolling') {
+        if ($startDate && ($membershipDetails['period_type'] ?? NULL) === 'rolling') {
           if ($startDate < $joinDate) {
             $errors['start_date'] = ts('Start date must be the same or later than Member since.');
           }
@@ -777,7 +780,7 @@ DESC limit 1");
             }
 
             if (empty($params['status_id']) || in_array($params['status_id'], $status_ids) == FALSE) {
-              $errors['status_id'] = ts('Please enter a status that does NOT represent a current membership status.');
+              $errors['status_id'] = ts('A current lifetime membership cannot have an end date. You can either remove the end date or change the status to a non-current status like Cancelled, Expired, or Deceased.');
             }
 
             if (!empty($params['is_override']) && !CRM_Member_StatusOverrideTypes::isPermanent($params['is_override'])) {
@@ -981,9 +984,9 @@ DESC limit 1");
         'isTest' => (bool) ($this->_action & CRM_Core_Action::PREVIEW),
         'modelProps' => [
           'receiptText' => $this->getSubmittedValue('receipt_text'),
-          'contributionId' => $formValues['contribution_id'],
-          'contactId' => $this->_receiptContactId,
-          'membershipId' => $this->getMembershipID(),
+          'contributionID' => $formValues['contribution_id'],
+          'contactID' => $this->_receiptContactId,
+          'membershipID' => $this->getMembershipID(),
         ],
       ]
     );
@@ -1000,15 +1003,14 @@ DESC limit 1");
     $this->storeContactFields($this->_params);
     $this->beginPostProcess();
 
-    $params = $softParams = $ids = [];
+    $params = $softParams = [];
 
-    $mailSend = FALSE;
     $this->processBillingAddress();
     $formValues = $this->_params;
     $formValues = $this->setPriceSetParameters($formValues);
 
     if ($this->_id) {
-      $ids['membership'] = $params['id'] = $this->_id;
+      $params['id'] = $this->_id;
     }
 
     // Set variables that we normally get from context.
@@ -1066,7 +1068,7 @@ DESC limit 1");
 
       $completedContributionStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
       if (empty($params['is_override']) &&
-        CRM_Utils_Array::value('contribution_status_id', $params) != $completedContributionStatusId
+        ($params['contribution_status_id'] ?? NULL) != $completedContributionStatusId
       ) {
         $params['status_id'] = $pendingMembershipStatusId;
         $params['skipStatusCal'] = TRUE;
@@ -1208,13 +1210,12 @@ DESC limit 1");
       if ($paymentStatus !== 'Completed') {
         $params['status_id'] = $pendingMembershipStatusId;
         $params['skipStatusCal'] = TRUE;
-        //as membership is pending set dates to null.
+        // as membership is pending set dates to null.
         foreach ($this->_memTypeSelected as $memType) {
           $membershipTypeValues[$memType]['joinDate'] = NULL;
           $membershipTypeValues[$memType]['startDate'] = NULL;
           $membershipTypeValues[$memType]['endDate'] = NULL;
         }
-        $startDate = NULL;
       }
       $now = CRM_Utils_Time::date('YmdHis');
       $params['receive_date'] = CRM_Utils_Time::date('Y-m-d H:i:s');
@@ -1239,8 +1240,7 @@ DESC limit 1");
       // required for creating membership for related contacts
       $params['action'] = $this->_action;
 
-      //create membership record.
-      $count = 0;
+      // create membership record
       foreach ($this->_memTypeSelected as $memType) {
         $membershipParams = array_merge($membershipTypeValues[$memType], $params);
         if (isset($result['fee_amount'])) {
@@ -1257,7 +1257,6 @@ DESC limit 1");
         // of a single path!
         unset($membershipParams['lineItems']);
         $membershipParams['payment_instrument_id'] = $this->getPaymentInstrumentID();
-        // @todo stop passing $ids (membership and userId only are set above)
         $params['contribution'] = $membershipParams['contribution'] ?? NULL;
         unset($params['lineItems']);
       }
@@ -1265,16 +1264,30 @@ DESC limit 1");
     }
     else {
       $params['action'] = $this->_action;
+
       foreach ($lineItem[$this->_priceSetId] as $id => $lineItemValues) {
         if (empty($lineItemValues['membership_type_id'])) {
           continue;
         }
 
-        // @todo figure out why recieve_date isn't being set right here.
+        // @todo figure out why receive_date isn't being set right here.
         if (empty($params['receive_date'])) {
           $params['receive_date'] = CRM_Utils_Time::date('Y-m-d H:i:s');
         }
         $membershipParams = array_merge($params, $membershipTypeValues[$lineItemValues['membership_type_id']]);
+
+        // If is_override is empty then status_id="" (because it's a hidden field). That will trigger a recalculation in CRM_Member_BAO_Membership::create
+        //   unless is_override = TRUE or skipStatusCal = TRUE. But skipStatusCal also skips date calculations.
+        // If we are recording a contribution we *do* want to trigger a recalculation of membership status so it can go from Pending->New/Current
+        // So here we check if status_id is empty, default (ie. status in database) is pending and that we are not recording a contribution -
+        //   If all those are true then we skip the status calculation and explicitly set the pending status (to avoid a DB constraint status_id=0).
+        if (empty($membershipParams['status_id'])
+          && !empty($this->_defaultValues['status_id'])
+          && !$this->getSubmittedValue('record_contribution')
+          && (int) $this->_defaultValues['status_id'] === $pendingMembershipStatusId
+        ) {
+          $membershipParams['status_id'] = $this->_defaultValues['status_id'];
+        }
 
         if (!empty($softParams)) {
           $params['soft_credit'] = $softParams;
@@ -1282,8 +1295,7 @@ DESC limit 1");
         unset($membershipParams['contribution_status_id']);
         $membershipParams['skipLineItem'] = TRUE;
         unset($membershipParams['lineItems']);
-        // @todo stop passing $ids (membership and userId only are set above)
-        $this->setMembership((array) CRM_Member_BAO_Membership::create($membershipParams, $ids));
+        $this->setMembership((array) CRM_Member_BAO_Membership::create($membershipParams));
         $lineItem[$this->_priceSetId][$id]['entity_id'] = $this->membership['id'];
         $lineItem[$this->_priceSetId][$id]['entity_table'] = 'civicrm_membership';
 
@@ -1317,7 +1329,7 @@ DESC limit 1");
       }
       if (Civi::settings()->get('invoicing')) {
         $dataArray = [];
-        foreach ($lineItem[$this->_priceSetId] as $key => $value) {
+        foreach ($lineItem[$this->_priceSetId] as $value) {
           if (isset($value['tax_amount']) && isset($value['tax_rate'])) {
             if (isset($dataArray[$value['tax_rate']])) {
               $dataArray[$value['tax_rate']] = $dataArray[$value['tax_rate']] + CRM_Utils_Array::value('tax_amount', $value);
@@ -1333,12 +1345,10 @@ DESC limit 1");
     }
     $this->assign('lineItem', !empty($lineItem) && !$isQuickConfig ? $lineItem : FALSE);
 
-    $receiptSend = FALSE;
     $contributionId = $this->ids['Contribution'] ?? CRM_Member_BAO_Membership::getMembershipContributionId($this->getMembershipID());
     $membershipIds = $this->_membershipIDs;
     if ($this->getSubmittedValue('send_receipt') && $contributionId && !empty($membershipIds)) {
-      $contributionDetails = CRM_Contribute_BAO_Contribution::getContributionDetails(
-        CRM_Export_Form_Select::MEMBER_EXPORT, $this->_membershipIDs);
+      $contributionDetails = CRM_Contribute_BAO_Contribution::getContributionDetails(CRM_Export_Form_Select::MEMBER_EXPORT, $this->_membershipIDs);
       if ($contributionDetails[$this->getMembershipID()]['contribution_status'] === 'Completed') {
         $formValues['contact_id'] = $this->_contactID;
         $formValues['contribution_id'] = $contributionId;
@@ -1381,12 +1391,10 @@ DESC limit 1");
       !in_array($this->_memType, $this->_memTypeSelected)
     ) {
       if ($this->isCreateRecurringContribution()) {
-        CRM_Core_Session::setStatus(ts('Associated recurring contribution cannot be updated on membership type change.', ts('Error'), 'error'));
+        CRM_Core_Session::setStatus(ts('Associated recurring contribution cannot be updated on membership type change.'), ts('Error'), 'error');
         return;
       }
 
-      // fetch lineitems by updated membership ID
-      $lineItems = CRM_Price_BAO_LineItem::getLineItems($this->getMembershipID(), 'membership');
       // retrieve the related contribution ID
       $contributionID = CRM_Core_DAO::getFieldValue(
         'CRM_Member_DAO_MembershipPayment',
@@ -1413,8 +1421,7 @@ DESC limit 1");
         $this->getMembershipID(),
         'membership',
         $contributionID,
-        $priceSetDetails['fields'],
-        $lineItems
+        $priceSetDetails['fields']
       );
       CRM_Core_Session::setStatus(ts('Associated contribution is updated on membership type change.'), ts('Success'), 'success');
     }
@@ -1519,9 +1526,13 @@ DESC limit 1");
     //CRM-15187
     // display message when membership type is changed
     if (($this->_action & CRM_Core_Action::UPDATE) && $this->getMembershipID() && !in_array($this->_memType, $this->_memTypeSelected)) {
-      $lineItem = CRM_Price_BAO_LineItem::getLineItems($this->getMembershipID(), 'membership');
-      $maxID = max(array_keys($lineItem));
-      $lineItem = $lineItem[$maxID];
+      $lineItems = CRM_Price_BAO_LineItem::getLineItems($this->getMembershipID(), 'membership');
+      if (empty($lineItems)) {
+        return;
+      }
+
+      $maxID = max(array_keys($lineItems));
+      $lineItem = $lineItems[$maxID];
       $membershipTypeDetails = $this->allMembershipTypeDetails[$this->getMembership()['membership_type_id']];
       if ($membershipTypeDetails['financial_type_id'] != $lineItem['financial_type_id']) {
         CRM_Core_Session::setStatus(

@@ -292,11 +292,11 @@ class CRM_Utils_System_Drupal8 extends CRM_Utils_System_DrupalBase {
 
     // Not all links that CiviCRM generates are Drupal routes, so we use the weaker ::fromUri method.
     try {
-      $url = \Drupal\Core\Url::fromUri("{$base}{$url['path']}", array(
+      $url = \Drupal\Core\Url::fromUri("{$base}{$url['path']}", [
         'query' => $url['query'],
         'fragment' => $fragment,
         'absolute' => $absolute,
-      ))->toString();
+      ])->toString();
     }
     catch (Exception $e) {
       \Drupal::logger('civicrm')->error($e->getMessage());
@@ -433,6 +433,7 @@ class CRM_Utils_System_Drupal8 extends CRM_Utils_System_DrupalBase {
 
     // We need to call the config hook again, since we now know
     // all the modules that are listening on it (CRM-8655).
+    $config = CRM_Core_Config::singleton();
     CRM_Utils_Hook::config($config);
 
     if ($loadUser) {

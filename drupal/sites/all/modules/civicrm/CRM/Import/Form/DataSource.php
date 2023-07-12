@@ -220,8 +220,8 @@ abstract class CRM_Import_Form_DataSource extends CRM_Import_Forms {
       $mappingID = Mapping::get(FALSE)->addWhere('name', '=', $mappingName)->addSelect('id')->execute()->first()['id'];
       // Unset fields that should not be copied over.
       unset($userJob['id'], $userJob['name'], $userJob['created_date'], $userJob['is_template'], $userJob['queue_id'], $userJob['start_date'], $userJob['end_date']);
-      $userJob['metadata']['Template']['mapping_id'] = $mappingID;
       $userJob['metadata']['template_id'] = $templateID;
+      $userJob['metadata']['Template']['mapping_id'] = $mappingID;
       $userJob['created_id'] = CRM_Core_Session::getLoggedInContactID();
       $userJob['expires_date'] = '+1 week';
       $userJobID = UserJob::create(FALSE)->setValues($userJob)->execute()->first()['id'];

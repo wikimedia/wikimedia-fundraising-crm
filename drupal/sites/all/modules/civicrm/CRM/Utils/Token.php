@@ -1711,7 +1711,7 @@ class CRM_Utils_Token {
         else {
           $entity = 'Contact';
         }
-        $sorted[ts($entity)][] = ['id' => $k, 'text' => $v];
+        $sorted[_ts($entity)][] = ['id' => $k, 'text' => $v];
       }
     }
 
@@ -1766,6 +1766,11 @@ class CRM_Utils_Token {
         'membership_offline_receipt' => [
           // receipt_text_renewal appears to be long gone.
           'receipt_text_renewal' => 'receipt_text',
+          '$isAmountZero' => 'no longer available / relevant',
+        ],
+        'event_offline_receipt' => [
+          '$contributeMode' => 'no longer available / relevant',
+          '$isAmountZero' => 'no longer available / relevant',
         ],
         'pledge_acknowledgement' => [
           '$domain' => 'no longer available / relevant',

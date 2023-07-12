@@ -49,7 +49,7 @@ class Get extends DAOGetAction {
    *
    * @throws \CRM_Core_Exception
    */
-  protected function expandSelectClauseWildcards(): void {
+  public function expandSelectClauseWildcards(): void {
     $this->isSelectPhase = TRUE;
     parent::expandSelectClauseWildcards();
     $this->isSelectPhase = FALSE;

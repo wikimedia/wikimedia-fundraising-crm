@@ -697,7 +697,7 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
     if (!$this->_mode) {
       return;
     }
-    $js = ($isBuildRecurBlock ? ['onChange' => "buildRecurBlock( this.value ); return false;"] : NULL);
+    $js = ($isBuildRecurBlock ? ['onChange' => "buildRecurBlock( this.value ); return false;"] : []);
     if ($isBuildAutoRenewBlock) {
       $js = ['onChange' => "buildAutoRenew( null, this.value, '{$this->_mode}');"];
     }
@@ -706,7 +706,7 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
       ts('Payment Processor'),
       array_diff_key($this->_processors, [0 => 1]),
       $isRequired,
-      $js
+      $js + ['class' => 'crm-select2']
     );
     // The concept of _online is not really explained & the code is old
     // @todo figure out & document.

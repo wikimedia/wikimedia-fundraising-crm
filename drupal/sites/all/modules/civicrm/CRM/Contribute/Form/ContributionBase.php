@@ -446,6 +446,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       $this->set('values', $this->_values);
       $this->set('fields', $this->_fields);
     }
+    $this->assign('isShowMembershipBlock', $this->isShowMembershipBlock());
     $this->set('membershipBlock', $this->getMembershipBlock());
 
     // Handle PCP
@@ -496,7 +497,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       CRM_Utils_Array::value('cancelSubscriptionUrl', $this->_values)
     );
 
-    $title = !empty($this->_values['frontend_title']) ? $this->_values['frontend_title'] : $this->_values['title'];
+    $title = $this->_values['frontend_title'];
 
     $this->setTitle(($this->_pcpId ? $this->_pcpInfo['title'] : $title));
     $this->_defaults = [];
@@ -960,12 +961,12 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
           if (count($organizations)) {
             // Related org url - pass checksum if needed
             $args = [
-              'ufId' => $form->_values['onbehalf_profile_id'],
+              'ufID' => $form->_values['onbehalf_profile_id'],
               'cid' => '',
             ];
             if (!empty($_GET['cs'])) {
               $args = [
-                'ufId' => $form->_values['onbehalf_profile_id'],
+                'ufID' => $form->_values['onbehalf_profile_id'],
                 'uid' => $this->_contactID,
                 'cs' => $_GET['cs'],
                 'cid' => '',
@@ -1304,9 +1305,8 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
    */
   protected function isMembershipPriceSet(): bool {
     if ($this->_useForMember === NULL) {
-      if (CRM_Core_Component::isEnabled('CiviMember') &&
-        (!$this->isQuickConfig() || !empty($this->_ccid)) &&
-        CRM_Core_Component::getComponentID('CiviMember') === (int) $this->order->getPriceSetMetadata()['extends']) {
+      if ($this->getFormContext() === 'membership' &&
+        !$this->isQuickConfig()) {
         $this->_useForMember = 1;
       }
       else {
@@ -1315,6 +1315,31 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       $this->set('useForMember', $this->_useForMember);
     }
     return (bool) $this->_useForMember;
+  }
+
+  /**
+   * Get the form context.
+   *
+   * This is important for passing to the buildAmount hook as CiviDiscount checks it.
+   *
+   * @return string
+   */
+  public function getFormContext(): string {
+    return $this->order->isMembershipPriceSet() ? 'membership' : 'contribution';
+  }
+
+  /**
+   * Should the membership block be displayed.
+   *
+   * This should be shown when a membership is available to purchase.
+   *
+   * It could be a quick config price set or a standard price set that extends
+   * CiviMember.
+   *
+   * @return bool
+   */
+  protected function isShowMembershipBlock(): bool {
+    return CRM_Core_Component::isEnabled('CiviMember') && $this->getMembershipBlock();
   }
 
   /**
