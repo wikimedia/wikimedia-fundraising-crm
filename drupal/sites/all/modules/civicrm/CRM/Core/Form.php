@@ -1793,7 +1793,9 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
     $label = $props['label'] ?? $fieldSpec['html']['label'] ?? $fieldSpec['title'];
 
     $widget = $props['type'] ?? $fieldSpec['html']['type'];
-    if ($widget == 'TextArea' && $context == 'search') {
+    if (in_array($widget, ['TextArea', 'Email'], TRUE) && $context == 'search') {
+      // Don't require a full email to be entered in search mode.
+      // See https://lab.civicrm.org/dev/core/-/issues/4430.
       $widget = 'Text';
     }
 
