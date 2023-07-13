@@ -245,16 +245,16 @@ class ThankYouTest extends TestCase {
     $this->renderEnglishVariant(NULL, 'NZD', 'NZ$10.00', 'NZ$10.00 (NZD)');
 
     // USD with unspecified language
-    $this->renderEnglishVariant(NULL, 'USD', 'USD $10.00', 'USD $10.00 (USD)');
+    $this->renderEnglishVariant(NULL, 'USD', 'USD $10.00', '$10.00 (USD)');
 
     // USD with specified en_US language
-    $this->renderEnglishVariant('en_US', 'USD', 'USD $10.00', 'USD $10.00 (USD)');
+    $this->renderEnglishVariant('en_US', 'USD', 'USD $10.00', '$10.00 (USD)');
 
     // NZD with specified en_US language
     $this->renderEnglishVariant('en_US', 'NZD', 'NZ$10.00', 'NZ$10.00 (NZD)');
 
     // USD with specified en_NZ language
-    $this->renderEnglishVariant('en_NZ', 'USD', 'USD $10.00', 'USD $10.00 (USD)');
+    $this->renderEnglishVariant('en_NZ', 'USD', 'USD $10.00', '$10.00 (USD)');
 
     // NZD with specified en_NZ language
     $this->renderEnglishVariant('en_NZ', 'NZD', 'NZ$10.00', 'NZ$10.00 (NZD)');

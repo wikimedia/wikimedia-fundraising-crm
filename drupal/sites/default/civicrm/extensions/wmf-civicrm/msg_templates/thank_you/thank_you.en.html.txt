@@ -59,11 +59,11 @@ CEO, Wikimedia Foundation
 
 {if $gift_source != "Donor Advised Fund"}
   {if !$stock_value}
-  <p>For your records: Your donation, number {$transaction_id}, on {$receive_date} was {if $currency === 'USD'}{$currency} {/if}{$amount} ({$currency}).</p>
+  <p>For your records: Your donation, number {$transaction_id}, on {$receive_date} was {$amount} ({$currency}).</p>
   {/if}
   <p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
 {/if}
 
 <p>If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{$unsubscribe_link}">unsubscribe</a>. Please note we will still send you receipts, like this one, for future donations.</p>
 
-<!-- TI_BEGIN["name":"Thank you email 2021","revision":20210323]TI_END -->
+<!-- TI_BEGIN["name":"Thank you email 2021","revision":20210323,"currency":"{$currency}"]TI_END -->

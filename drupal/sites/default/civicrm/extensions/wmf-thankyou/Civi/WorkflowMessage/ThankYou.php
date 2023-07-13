@@ -392,10 +392,16 @@ class ThankYou extends GenericWorkflowMessage {
     if (!$this->amount) {
       $this->amount = $this->getContribution()['contribution_extra.original_amount'];
     }
-    if (!is_numeric($this->amount)) {
+    // We only want to format it once - and we want to do that once we know the
+    // 'resolved' locale - ie it resolves to email in en_US for someone whose
+    // locale is en_GB. Once the requestedLocale is set then locale will
+    // be the resolved locale. This means that we get the same formatting for USD 5
+    // for everyone getting the email in English.
+    // @see https://wikitech.wikimedia.org/wiki/Fundraising/Internal-facing/CiviCRM#Money_formatting_in_emails
+    if (!is_numeric($this->amount) || !$this->getRequestedLocale()) {
       return $this->amount;
     }
-    return \Civi::format()->money($this->amount, $this->currency);
+    return \Civi::format()->money($this->amount, $this->currency, $this->locale);
   }
 
   public function setTotalAmount(float $totalAmount) : self {
