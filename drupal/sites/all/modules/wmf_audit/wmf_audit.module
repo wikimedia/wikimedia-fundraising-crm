@@ -281,45 +281,42 @@ function wmf_audit_get_contribution_tracking_data($record) {
 
   $contribution_tracking_id = $record['contribution_tracking_id'];
   $result = ContributionTracking::get(FALSE)->addWhere('id','=',$contribution_tracking_id)->execute()->first();
-  if ($result['id']) {
-    wmf_audit_echo("Found Contribution Tracking data. ID='$contribution_tracking_id'", TRUE);
-  } else {
+
+  if (!$result) {
     wmf_audit_log_error("Missing Contribution Tracking data. Supposed ID='$contribution_tracking_id'", 'DATA_INCOMPLETE');
+    return FALSE;
   }
 
+  wmf_audit_echo("Found Contribution Tracking data. ID='$contribution_tracking_id'", TRUE);
   // Some of the normalization below has been done in the civicrm contribution tracking table
-  if ($result) {
-    if (!is_null($result['utm_source'])) {
-      $utm_payment_method = explode('.', $result['utm_source']);
-      $utm_payment_method = $utm_payment_method[2]; //...sure.
-    }
-    else {
-      //probably one of us silly people doing things in testing...
-      $utm_payment_method = NULL;
-    }
-
-    // The audit is expecting a date in Unix timestamp format
-    $result['date'] = strtotime($result['tracking_date']);
-
-    $keep = [
-      'utm_source',
-      'utm_medium',
-      'utm_campaign',
-      'language',
-      'date',
-    ];
-
-    $ret = [];
-    foreach ($keep as $thing) {
-      $ret[$thing] = $result[$thing];
-    }
-
-    //and then, so we can double-check ourselves on the outside...
-    $ret['utm_payment_method'] = $utm_payment_method;
-    return $ret;
+  if (!is_null($result['utm_source'])) {
+    $utm_payment_method = explode('.', $result['utm_source']);
+    $utm_payment_method = $utm_payment_method[2]; //...sure.
+  }
+  else {
+    //probably one of us silly people doing things in testing...
+    $utm_payment_method = NULL;
   }
 
-  return FALSE;
+  // The audit is expecting a date in Unix timestamp format
+  $result['date'] = strtotime($result['tracking_date']);
+
+  $keep = [
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'language',
+    'date',
+  ];
+
+  $ret = [];
+  foreach ($keep as $thing) {
+    $ret[$thing] = $result[$thing];
+  }
+
+  //and then, so we can double-check ourselves on the outside...
+  $ret['utm_payment_method'] = $utm_payment_method;
+  return $ret;
 }
 
 /**
