@@ -261,7 +261,7 @@ class ThankYou extends GenericWorkflowMessage {
     return [
       'total_amount' => 'totalAmount',
       'id' => 'contributionID',
-      'contact_id' => 'contactId',
+      'contact_id' => 'contactID',
       'receive_date' => 'receiveDate',
       'contribution_extra.original_currency' => 'currency',
       'contribution_extra.original_amount' => 'amount',
@@ -281,7 +281,7 @@ class ThankYou extends GenericWorkflowMessage {
     if (!$this->contact) {
       $this->setContact(Contact::get(FALSE)
         ->setSelect(array_keys($this->getContactParameters()))
-        ->addWhere('id', '=', $this->getContactId())
+        ->addWhere('id', '=', $this->getContactID())
         ->execute()->first());
     }
     return $this->contact;
@@ -314,7 +314,7 @@ class ThankYou extends GenericWorkflowMessage {
   public function setContact(array $contact): self {
     $this->contact = $contact;
     if (!empty($contact['id'])) {
-      $this->contactId = $contact['id'];
+      $this->contactID = $contact['id'];
     }
     foreach ($this->getContactParameters() as $key => $property) {
       if (!empty($contact[$key]) && empty($this->$property)) {
@@ -372,7 +372,7 @@ class ThankYou extends GenericWorkflowMessage {
    * @return string
    */
   public function getTransactionID(): string {
-    return $this->transactionID ?? 'CNTCT-' . $this->contactId;
+    return $this->transactionID ?? 'CNTCT-' . $this->contactID;
   }
 
   /**
