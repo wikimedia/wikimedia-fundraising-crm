@@ -28,14 +28,14 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
   function from() {
     $this->_from = "
       FROM {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']}";
-    if ($this->isTableSelected('contribution_tracking')
+    if ($this->isTableSelected('civicrm_contribution_tracking')
       || $this->isTableSelected('civicrm_contribution')
       || $this->isTableSelected('civicrm_email')
       || $this->isTableSelected('civicrm_contact')
     ) {
       $this->_from .= "
-        LEFT JOIN {$this->drupal}.contribution_tracking {$this->_aliases['contribution_tracking']}
-        ON {$this->_aliases['contribution_tracking']}.id = {$this->_aliases['payments_fraud']}.contribution_tracking_id ";
+        LEFT JOIN civicrm_contribution_tracking {$this->_aliases['civicrm_contribution_tracking']}
+        ON {$this->_aliases['civicrm_contribution_tracking']}.id = {$this->_aliases['payments_fraud']}.contribution_tracking_id ";
     }
     if ($this->isTableSelected('civicrm_contribution')
       || $this->isTableSelected('civicrm_email')
@@ -43,7 +43,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
     ) {
       $this->_from .= "
         LEFT JOIN civicrm_contribution {$this->_aliases['civicrm_contribution']}
-        ON {$this->_aliases['civicrm_contribution']}.id = {$this->_aliases['contribution_tracking']}.contribution_id
+        ON {$this->_aliases['civicrm_contribution']}.id = {$this->_aliases['civicrm_contribution_tracking']}.contribution_id
       ";
     }
     if ($this->isTableSelected('civicrm_email')
@@ -108,7 +108,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
     // Filter the tables set in the parent down to those for this report.
     $this->_columns = array_intersect_key($this->_columns, array_fill_keys([
       'payments_fraud',
-      'contribution_tracking',
+      'civicrm_contribution_tracking',
       'civicrm_contribution',
       'civicrm_contact',
       'civicrm_email'
@@ -125,9 +125,10 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
         ],
         'order_bys' => ['fredge_date' => 'DESC'],
       ],
-      'contribution_tracking' => [
+      'civicrm_contribution_tracking' => [
         'fields' => [
-          'form_amount' => TRUE,
+          'amount' => TRUE,
+          'currency' => TRUE,
           'country' => TRUE
         ]
       ],
@@ -145,7 +146,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
     $this->_columns['civicrm_contact']['grouping'] = 'on_success';
     $this->_columns['civicrm_contribution']['group_title'] = 'Additional information for payments that reached CiviCRM';
 
-    $this->_columns['contribution_tracking']['group_title'] = 'Contribution Tracking';
+    $this->_columns['civicrm_contribution_tracking']['group_title'] = 'Contribution Tracking';
 
     foreach (self::FRAUD_FILTERS as $columnName => $value) {
       $this->_columns["payments_fraud_breakdown_" . $columnName] = [
