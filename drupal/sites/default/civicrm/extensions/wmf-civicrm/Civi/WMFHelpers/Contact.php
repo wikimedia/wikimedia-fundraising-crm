@@ -167,7 +167,7 @@ class Contact {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public static function getIndividualID(?string $email, ?string $firstName, ?string $lastName, ?string $organizationName, ?int $organizationID = NULL, $strictGiftMode = TRUE) {
-    if (!$email && !$firstName && !$lastName) {
+    if (!$email && (!$firstName || $firstName === 'Anonymous') && (!$lastName|| $lastName === 'Anonymous')) {
       // We do not have an email or a name, match to our anonymous contact (
       // note address details are discarded in this case).
       return self::getAnonymousContactID();
@@ -255,9 +255,8 @@ class Contact {
    * @throws \CRM_Core_Exception
    */
   public static function getAnonymousContactID(): int {
-    static $contactID = NULL;
-    if (!$contactID) {
-      $contactID = (int) \Civi\Api4\Contact::get(FALSE)
+    if (!isset(\Civi::$statics[__CLASS__]['anonymous'])) {
+      \Civi::$statics[__CLASS__]['anonymous'] = (int) \Civi\Api4\Contact::get(FALSE)
         ->addSelect('id')
         ->addWhere('contact_type', '=', 'Individual')
         ->addWhere('first_name', '=', 'Anonymous')
@@ -265,11 +264,11 @@ class Contact {
         ->addWhere('email_primary.email', '=', 'fakeemail@wikimedia.org')
         ->execute()->first()['id'];
     }
-    if (!$contactID) {
+    if (!\Civi::$statics[__CLASS__]['anonymous']) {
       // It always exists on production....
       throw new \CRM_Core_Exception('The anonymous contact does not exist in your dev environment. Ensure exactly one contact is in CiviCRM with the email fakeemail@wikimedia.org and first name and last name being Anonymous');
     }
-    return $contactID;
+    return \Civi::$statics[__CLASS__]['anonymous'];
   }
 
   /**

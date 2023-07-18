@@ -122,7 +122,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'date' => 1396310400,
       'direct_mail_appeal' => 'White Mail',
       'gateway' => 'engage',
-      'gateway_txn_id' => '6dbb8d844c7509076e2a275fb76d0130',
+      'gateway_txn_id' => '9481b4dcb1d29fc965a58defa4cfb868',
       'gift_source' => 'Foundation Gift',
       'gross' => '51.23',
       'import_batch_number' => '1235',
@@ -230,10 +230,10 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $this->assertEquals(1, $minnie['is_opt_out']);
 
     // Check anonymous contact too.
-    $anonymousContact = $anonymousContact = $this->callAPISuccessGetSingle('Contact', ['email' => 'fakeemail@wikimedia.org']);
+    $anonymousContact = $this->callAPISuccessGetSingle('Contact', ['email' => 'fakeemail@wikimedia.org']);
     $this->assertEquals('Anonymous', $anonymousContact['first_name']);
     $this->assertEquals('Anonymous', $anonymousContact['last_name']);
-    $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $anonymousContact['id'], 'trxn_id' => 'ENGAGE 1F46761510A95FC3FFE271B928231E55']);
+    $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $anonymousContact['id'], 'trxn_id' => 'ENGAGE fd786ef1d6398a8bebdb69e8a81c8fdc']);
   }
 
   /**
@@ -484,7 +484,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $this->callAPISuccessGetSingle('Contribution', [
       'contact_id' => $villains[1]['id'],
-      'trxn_id' => 'ENGAGE B525137FE24A217918BE1B3AFF5AA25B',
+      'trxn_id' => 'ENGAGE 8b9b07e073fa60590365ebd6885e2b37',
     ]);
     $villain = Contact::get(FALSE)->addWhere('id', '=', $villains[1]['id'])->setSelect([
       'Organization_Contact.Name',
@@ -658,7 +658,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $this->callAPISuccessGetSingle('Contribution', [
       'contact_id' => $goodyID,
-      'trxn_id' => 'ENGAGE 26A0CCB4CDD020E6CFA16BFCC8A135FC',
+      'trxn_id' => 'ENGAGE 7a566fb6cd2f7f39b986ed60404ebbda',
       'return' => 'id',
     ]);
 
@@ -725,9 +725,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $this->assertEquals(
       [
         0 => 'Successful import!',
-        'Result' => '14 out of 18 rows were imported.',
-        'not imported' => '4 not imported rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_all_missed.' . $user->uid, $fileUri), 12) . "'> file</a>.",
-        'Duplicate' => '1 Duplicate row logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_skipped.' . $user->uid, $fileUri), 12) . "'> file</a>.",
+        'Result' => '15 out of 18 rows were imported.',
         'Error' => '3 Error rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_errors.' . $user->uid, $fileUri), 12) . "'> file</a>.",
         'Rows where new contacts were created' => '14 Rows where new contacts were created rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_all_not_matched.' . $user->uid, $fileUri), 12) . "'> file</a>.",
       ]
@@ -742,20 +740,20 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     unset($errors[0]);
 
     $this->assertCount(3, $errors);
-    $this->assertEquals('"\'Unrstricted - General\' is not a valid option for field ' . wmf_civicrm_get_custom_field_name('Fund') . '",B15_0601_enlvroskLVROSK_dsk_lg_nag_sd.no-LP.cc,C15_mlWW_mob_lw_FR,sitenotice,10563,Engage,24,"USD 24.00",5/9/2015,5/9/2015,Check,1,"Unrstricted - General","Corporate Gift","Carl TEST Perry",Roombo,"53 International Circle",Nowe,Poland,,cperry0@salon.com,,12/21/2014,,,,,,,
+    $this->assertEquals('"\'invalid value\' is not a valid option for field ' . wmf_civicrm_get_custom_field_name('Fund') . '",B15_0601_enlvroskLVROSK_dsk_lg_nag_sd.no-LP.cc,C15_mlWW_mob_lw_FR,sitenotice,10563,Engage,24,"USD 24.00",5/9/2015,5/9/2015,Check,1,"invalid value","Corporate Gift","Carl TEST Perry","Townsend Agency","53 International Circle",Nowe,Poland,,cperry0@salon.com,,12/21/2014,,,,,,,
 ', $errors[1]);
 
     $skippedURI = str_replace('.csv', '_skipped.' . $user->uid . '.csv', $fileUri);
     $this->assertFileExists($skippedURI);
     $skipped = file($skippedURI);
     // 1 + 1 header row
-    $this->assertCount(2, $skipped);
+    $this->assertCount(1, $skipped);
 
     $allURI = str_replace('.csv', '_all_missed.' . $user->uid . '.csv', $fileUri);
     $this->assertFileExists($allURI);
     $all = file($allURI);
     // 1 header row, 1 skipped, 3 errors.
-    $this->assertCount(5, $all);
+    $this->assertCount(4, $all);
 
   }
 
@@ -772,10 +770,10 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $disneyFolk = $this->callAPISuccess('Contact', 'get', [
       'last_name' => ['IN' => ['Mouse', 'Duck', 'Dog', 'Anonymous']],
     ])['values'];
-    $herosAndVillains = $this->callAPISuccess('Contact', 'get', [
-      'organization_name' => ['IN' => ['Evil Corp', 'Good Guys Inc.', 'Villains Ltd']],
+    $heroesAndVillains = $this->callAPISuccess('Contact', 'get', [
+      'organization_name' => ['IN' => ['Evil Corp', 'Good Guys Inc.', 'Villains Ltd', 'Atomic Knights', 'Stark Industries', 'Wayne Enterprises', 'Umbrella Corporation', 'Cyberdyne Systems', 'Townsend Agency', 'Team Rocket', 'Omni Consumer Products', 'Los Pollos Hermanos', "Dumbledore's Army", 'Akatsuki']],
     ]);
-    $fantasyFolk = array_merge(array_keys($disneyFolk), array_keys($herosAndVillains['values']));
+    $fantasyFolk = array_merge(array_keys($disneyFolk), array_keys($heroesAndVillains['values']));
     if (!empty($fantasyFolk)) {
       $this->callAPISuccess('Contribution', 'get', [
         'api.Contribution.delete' => 1,

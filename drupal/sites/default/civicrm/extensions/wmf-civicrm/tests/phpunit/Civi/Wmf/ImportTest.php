@@ -69,6 +69,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     Contribution::delete(FALSE)->addWhere('contact_id.nick_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.organization_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.last_name', '=', 'Doe')->execute();
+    Contribution::delete(FALSE)->addWhere('check_number', '=', 123456)->execute();
 
     Contact::delete(FALSE)->addWhere('nick_name', '=', 'Trading Name')->setUseTrash(FALSE)->execute();
     Contact::delete(FALSE)->addWhere('organization_name', '=', 'Trading Name')->setUseTrash(FALSE)->execute();
@@ -77,6 +78,13 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->addWhere('first_name', '=', 'Jane')
       ->addWhere('last_name', '=', 'Doe')
       ->setUseTrash(FALSE)->execute();
+    // Registering them all in ids['Contact'] is where the core helpers are going so
+    // is preferred - we should migrate the rest over.
+    if (!empty($this->ids['Contact'])) {
+      Contact::delete(FALSE)
+        ->addWhere('id', 'IN', $this->ids['Contact'])
+        ->setUseTrash(FALSE)->execute();
+    }
     parent::tearDown();
     unset(\Civi::$statics['wmf_contact']);
   }
@@ -161,6 +169,43 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
     $this->assertEquals('soft_credit_imported', $import[0]['_status']);
     $this->assertEquals('ERROR', $import[1]['_status']);
+  }
+
+  /**
+   * Test duplicates are imported for organizations.
+   *
+   * This reflects the likelihood that the check for one
+   * organization could have been broken down into many rows with many spft credits.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testImportDuplicateOrganizationChecks(): void {
+    $this->createOrganization();
+    $data = $this->setupImport(['contribution_extra__gateway_txn_id' => '', 'check_number' => 123456]);
+    $this->fillImportRow($data);
+    $this->runImport($data);
+    $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
+    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
+    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
+  }
+
+  /**
+   * Test duplicates are imported for Anonymous + check_number.
+   *
+   * This is because a check from an organization might be divided between
+   * many individuals, more than one of whom could be anonymous.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testImportDuplicateAnonymous(): void {
+    $this->createOrganization();
+    $this->ensureAnonymousUserExists();
+    $data = $this->setupImport(['contribution_extra__gateway_txn_id' => '', 'check_number' => 123456, 'first_name' => 'Anonymous', 'last_name' => 'Anonymous']);
+    $this->fillImportRow($data);
+    $this->runImport($data, 'Individual');
+    $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
+    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
+    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
   }
 
   /**
@@ -533,6 +578,17 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    */
   protected function fillImportRow($columns): void {
     \CRM_Core_DAO::executeQuery('INSERT INTO civicrm_tmp_d_abc (' . implode(',', array_keys($columns)) . ') ' . $this->getSelectQuery($columns));
+  }
+
+  protected function ensureAnonymousUserExists(): void {
+    if (!\Civi\WMFHelpers\Contact::getAnonymousContactID()) {
+      $this->ids['Contact']['anonyous'] = Contact::create([
+        'first_name' => 'Anonymous',
+        'last_name' => 'Anonymous',
+        'contact_type' => 'Individual',
+        'email_primary.email' => 'fakeemail@wikimedia.org',
+      ])->execute();
+    }
   }
 
 }
