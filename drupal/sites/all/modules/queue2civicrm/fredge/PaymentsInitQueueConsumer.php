@@ -42,7 +42,7 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
       ]);
       PendingDatabase::get()->deleteMessage($message);
     }
-
+    // @todo create PaymentsInitial api, PaymentsFraud api. Use.
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push('fredge');
     $query = 'SELECT id FROM payments_initial

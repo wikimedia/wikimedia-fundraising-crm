@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Wmffraud</base>
+  <class>PaymentsFraud</class>
+  <name>fredge.payments_fraud</name>
+  <comment>Record of payments fraud. Note this table is not created via the extension and has no install script. Extension adds api access</comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique PaymentsFraud ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>contribution_tracking_id</name>
+    <title>Contact Tracking ID</title>
+    <type>int unsigned</type>
+    <comment>Contact Contribution Tracking</comment>
+    <html>
+      <type>EntityRef</type>
+      <label>Contribution Tracking</label>
+    </html>
+  </field>
+  <foreignKey>
+    <name>contribution_tracking_id</name>
+    <table>civicrm_contribution_tracking</table>
+    <key>id</key>
+    <onDelete>SET NULL</onDelete>
+  </foreignKey>
+  <field>
+    <name>gateway</name>
+    <type>varchar</type>
+    <required>false</required>
+    <comment>Gateway</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>order_id</name>
+    <type>varchar</type>
+    <required>false</required>
+    <comment>Order ID</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>validation_action</name>
+    <type>varchar</type>
+    <length>16</length>
+    <required>false</required>
+    <comment>Validation Action</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>user_ip</name>
+    <type>varchar</type>
+    <required>false</required>
+    <comment>User IP Address. The actual field type is varbinary but not sure if this is supported here</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>payment_method</name>
+    <type>varchar</type>
+    <length>16</length>
+    <required>false</required>
+    <comment>Payment Method</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>risk_score</name>
+    <type>decimal</type>
+    <required>false</required>
+    <comment>Risk Score</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>server</name>
+    <type>decimal</type>
+    <length>64</length>
+    <required>false</required>
+    <comment>Server</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>date</name>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>Date</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+</table>
