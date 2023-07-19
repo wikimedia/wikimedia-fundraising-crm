@@ -30,6 +30,7 @@ function civicrm_api3_fredge_forgetme($params) {
   if (empty($fredges)) {
     return civicrm_api3_create_success([], $params);
   }
+  // @todo use apiv4 PaymentsFraud.
   $dbs = wmf_civicrm_get_dbs();
   $dbs->push('fredge');
   db_update('payments_fraud')

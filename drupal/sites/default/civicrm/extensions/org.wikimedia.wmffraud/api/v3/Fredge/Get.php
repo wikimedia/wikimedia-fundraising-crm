@@ -1,4 +1,6 @@
 <?php
+
+use Civi\Api4\PaymentsFraud;
 use CRM_Forgetme_ExtensionUtil as E;
 use Civi\Api4\ContributionTracking;
 
@@ -51,24 +53,16 @@ function civicrm_api3_fredge_get($params) {
     return civicrm_api3_create_success([], $params);
   }
 
-  $dbs = wmf_civicrm_get_dbs();
-  $dbs->push('fredge');
-  $paymentsFrauds = db_select( 'payments_fraud', 'payments_fraud')
-    ->fields('payments_fraud')
-    ->condition('contribution_tracking_id', array_values($contributionTrackingIds), 'IN')
-    ->execute()
-    ->fetchAllAssoc('id');
+  $paymentsFrauds = (array) PaymentsFraud::get(FALSE)
+    ->addWhere('contribution_tracking_id', 'IN', $contributionTrackingIds)
+    ->execute()->indexBy('id');
 
-  $values = [];
-  foreach ($paymentsFrauds as $paymentsFraud) {
-    foreach ($paymentsFraud as $key => $value) {
-      if ($key === 'user_ip') {
-        $value = long2ip($value);
-      }
-      $values[$paymentsFraud->id][$key] = $value;
+  foreach ($paymentsFrauds as $id => $paymentsFraud) {
+    if (!empty($paymentsFraud['user_ip'])) {
+      // This could perhaps be done in the api
+      $paymentsFraud[$id]['user_ip'] = long2ip($paymentsFraud['user_ip']);
     }
   }
-  $dbs->push('default');
 
-  return civicrm_api3_create_success($values, $params);
+  return civicrm_api3_create_success($paymentsFrauds, $params);
 }

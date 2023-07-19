@@ -69,7 +69,7 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
 
     $id = 0;
     $inserting = TRUE;
-
+    // @todo use apiv4 PaymentsFraud.
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push('fredge');
     $query = 'SELECT id FROM payments_fraud WHERE contribution_tracking_id = :ct_id AND order_id = :order_id LIMIT 1';
