@@ -1788,8 +1788,7 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
     }
 
     // Core field - get metadata.
-    $fieldSpec = civicrm_api3($props['entity'], 'getfield', $props);
-    $fieldSpec = $fieldSpec['values'];
+    $fieldSpec = civicrm_api3($props['entity'], 'getfield', $props)['values'];
     $label = $props['label'] ?? $fieldSpec['html']['label'] ?? $fieldSpec['title'];
 
     $widget = $props['type'] ?? $fieldSpec['html']['type'];
