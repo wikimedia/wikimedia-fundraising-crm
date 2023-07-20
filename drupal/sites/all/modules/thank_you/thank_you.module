@@ -6,10 +6,10 @@ use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use Civi\WMFThankYou\From;
 use SmashPig\Core\UtcDate;
-use wmf_communication\CiviMailStore;
-use wmf_communication\CiviMailingInsertException;
-use wmf_communication\CiviMailingMissingException;
-use wmf_communication\CiviQueueInsertException;
+use Civi\WMFMailTracking\CiviMailStore;
+use Civi\WMFMailTracking\CiviMailingInsertException;
+use Civi\WMFMailTracking\CiviMailingMissingException;
+use Civi\WMFMailTracking\CiviQueueInsertException;
 
 // TODO:
 // * use more exceptions in place of logging/return false
@@ -661,12 +661,17 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
     $template_info = thank_you_get_template_info($html);
     try {
       $civi_mailing = $civimail_store->getMailing('thank_you', $template_info->name, $template_info->revision);
-    } catch (CiviMailingMissingException $e) {
+    }
+    catch (CiviMailingMissingException $e) {
       \Civi::log('wmf')->info(
-        'thank_you: Could not find mailing record for email with subject {subject}',
-        ['subject' => $subject]
+        'thank_you: Could not find mailing record for thank_you with name {name} and revision {revision}. Attempting to create one',
+        ['name' => $template_info->name, 'revision' => $template_info->revision]
       );
       $civi_mailing = $civimail_store->addMailing('thank_you', $template_info->name, 'missing body', $subject, $template_info->revision);
+      \Civi::log('wmf')->info(
+        'thank_you: Created mailing record for thank_you with name {name} and revision {revision}.',
+        ['name' => $template_info->name, 'revision' => $template_info->revision]
+      );
     }
     $civi_queue_record = $civimail_store->addQueueRecord($civi_mailing, $email, $contact_id);
 
