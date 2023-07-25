@@ -3,7 +3,7 @@
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\Adyen\Audit\AdyenPaymentsAccountingReport;
 use SmashPig\PaymentProviders\Adyen\Audit\AdyenSettlementDetailReport;
-use SmashPig\PaymentProviders\Adyen\TokenizeRecurringJob;
+use SmashPig\PaymentProviders\Adyen\Jobs\TokenizeRecurringJob;
 use Civi\WMFAudit\MultipleFileTypeParser;
 
 
