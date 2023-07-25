@@ -1,6 +1,6 @@
 <?php
 
-use Civi\Api4\Contact;
+use Civi\Api4\ContributionTracking;
 use Civi\WMFException\EmptyRowException;
 
 /**
@@ -65,12 +65,10 @@ class ChecksFileTest extends BaseChecksFileTest {
     $contribution = $this->callAPISuccessGetSingle(
       'Contribution', ['trxn_id' => "GENERIC_IMPORT {$data['Transaction ID']}"]
     );
-    $ct = db_select('contribution_tracking', 'contribution_tracking')
-      ->fields('contribution_tracking')
-      ->condition('contribution_id', $contribution['id'])
-      ->execute()
-      ->fetchAssoc();
-    $this->assertEquals('AR', $ct['country']);
+    $contributionTracking = ContributionTracking::get(FALSE)
+      ->addWhere('contribution_id.trxn_id', '=', "GENERIC_IMPORT {$data['Transaction ID']}")
+      ->execute()->first();
+    $this->assertEquals('AR', $contributionTracking['country']);
   }
 
 }
