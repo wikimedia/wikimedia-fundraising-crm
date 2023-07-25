@@ -20,20 +20,21 @@ class Contribution {
   public static function generateTransactionReference(array $contactParams, string $date, ?string $checkNumber, int $rowIndex): string {
     if ($contactParams['contact_type'] === 'Individual') {
       $name_salt = $contactParams['first_name'] . $contactParams['last_name'];
+      if ($contactParams['first_name'] === 'Anonymous' && $contactParams['last_name'] === 'Anonymous') {
+        // For anonymous donors (and organizations) the chance of them having made
+        // several payments on the same day, possibly with the same check number
+        // is high so we include the rowIndex in our uniqueness calculation.
+        $name_salt .= $rowIndex;
+      }
     }
     else {
-      $name_salt = $contactParams['organization_name'];
+      $name_salt = $contactParams['organization_name'] . $rowIndex;
     }
 
     if ($checkNumber) {
       return md5($checkNumber . $name_salt);
     }
-    // The scenario where this would happen is anonymous cash gifts.
-    // the name would be 'Anonymous Anonymous' and there might be several on the same
-    // day. Hence we rely on them all being carefully arranged in a spreadsheet and
-    // no-one messing with the order. I was worried this was fragile but there
-    // is no obvious better way.
-    return md5($date . $name_salt . $rowIndex);
+    return md5($date . $name_salt);
   }
 
   /**
