@@ -1196,7 +1196,7 @@ class CalculatedData extends TriggerHook {
       35 => [
         'label' => 'Lybunt',
         'static_description' => 'gave last financial year but NOT this financial year to date',
-        'value' => 25,
+        'value' => 35,
         'name' => 'lybunt',
         'criteria' => [
           'range' => [
