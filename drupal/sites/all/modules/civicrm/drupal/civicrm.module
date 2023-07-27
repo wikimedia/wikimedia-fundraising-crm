@@ -179,7 +179,7 @@ function civicrm_initialize() {
 
   if (!$initialized) {
     if (function_exists('conf_path')) {
-      $settingsFile = conf_path() . '/civicrm.settings.php';
+      $settingsFile = DRUPAL_ROOT . '/' . conf_path() . '/civicrm.settings.php';
     }
     else {
       $settingsFile = conf_init() . '/civicrm.settings.php';
