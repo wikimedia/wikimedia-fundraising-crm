@@ -1456,7 +1456,7 @@ class CalculatedData extends TriggerHook {
     if (!empty($range['additional_criteria'])) {
       // Currently this is the only additional criteria defined so
       // let's cut a corner.
-      $textClause .= ' AND is recurring';
+      $textClause .= ' AND donation is recurring';
     }
     return $textClause;
   }
