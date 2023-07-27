@@ -54,7 +54,16 @@ class DB_civirpow extends DB_mysqli {
     $chosenDsn = $dsns[0];
     // If you want to inspect the connection+reconnection process, this is a handy place for a breakpoint. Note $state and $chosenDsn.
     $parsedDSN = DB::parseDSN($chosenDsn);
-    $this->setOption('ssl', $parsedDSN['ssl'] ?? 0);
+    $isSSL = 0;
+    // Any of these could indicate an ssl connection.
+    // https://docs.civicrm.org/installation/en/latest/general/mysql_tls/#dsn-settings
+    foreach (['ssl', 'key', 'cert', 'ca', 'capath', 'cipher'] as $key) {
+      if (!empty($parsedDSN[$key])) {
+        $isSSL = 1;
+      }
+    }
+
+    $this->setOption('ssl', (int) $isSSL);
     return parent::connect($parsedDSN, $persistent);
   }
 

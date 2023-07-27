@@ -1074,30 +1074,109 @@ class CalculatedData extends TriggerHook {
    * @throws \CRM_Core_Exception
    */
   public function getDonorStatusOptions(): array {
+    $midTierAndMajorGiftsExclusionRange =  [
+      ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime(), 'max_total' => 1000],
+      ['from' => $this->getFinancialYearStartDateTime(-1), 'to' => $this->getFinancialYearEndDateTime(-1), 'max_total' => 1000],
+      ['from' => $this->getFinancialYearStartDateTime(-2), 'to' => $this->getFinancialYearEndDateTime(-2), 'max_total' => 1000],
+      ['from' => $this->getFinancialYearStartDateTime(-3), 'to' => $this->getFinancialYearEndDateTime(-3), 'max_total' => 1000],
+      ['from' => $this->getFinancialYearStartDateTime(-4), 'to' => $this->getFinancialYearEndDateTime(-4), 'max_total' => 1000],
+      ['from' => $this->getFinancialYearStartDateTime(-5), 'to' => $this->getFinancialYearEndDateTime(-5), 'max_total' => 1000],
+    ];
+    // Note that the values are what are stored in the database, with the labels. We
+    // want the recurring statuses to have high values so that filters can do things
+    // like 'status < 40 to get all donors from this financial year.
+    // However, the processing order is such that recurring donors should be processed
+    // first so that any donors who are not 'mid tier excluded' - ie gave 1000
+    // or more in one of the last 5 financial years or this one to-date -
+    // will get a recurring status in preference to a one-off status.
     $details = [
+      80 => [
+        'name' => 'recurring_active',
+        'label' => 'Active Recurring',
+        'value' => 80,
+        'static_description' => 'gave recurring within last month',
+        'criteria' => [
+          'multiple_range' => array_merge([
+            [
+              'from' => '1 months ago',
+              'to' => $this->getFinancialYearEndDateTime(),
+              'total' => 0.01,
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+            ],
+          ], $midTierAndMajorGiftsExclusionRange),
+        ],
+      ],
+      85 => [
+        'label' => 'Delinquent Recurring',
+        'static_description' => 'gave recurring more than 1 month & less than 4 months ago',
+        'value' => 85,
+        'name' => 'recurring_delinquent',
+        'criteria' => [
+          'multiple_range' => array_merge([
+            [
+              'from' => '3 months ago',
+              'to' => '1 months ago',
+              'total' => 0.01,
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+            ],
+          ], $midTierAndMajorGiftsExclusionRange),
+        ],
+      ],
+      90 => [
+        'label' => 'Recent lapsed Recurring',
+        'static_description' => 'gave recurring more than 3 months & less than 7 months ago',
+        'value' => 90,
+        'name' => 'recurring_lapsed_recent',
+        'multiple_range' => array_merge([
+          'range' => [
+            [
+              'from' => '6 months ago',
+              'to' => '3 months ago',
+              'total' => 0.01,
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+            ],
+          ],
+        ], $midTierAndMajorGiftsExclusionRange),
+      ],
+      95 => [
+        'label' => 'Deep lapsed Recurring',
+        'static_description' => 'gave recurring more than 6 months & less than 37 months ago',
+        'value' => 95,
+        'name' => 'recurring_delinquent',
+        'criteria' => [
+          'multiple_range' => array_merge([
+            [
+              'from' => '36 months ago',
+              'to' => '6 months ago',
+              'total' => 0.01,
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+            ],
+          ], $midTierAndMajorGiftsExclusionRange),
+        ],
+      ],
       10 => [
         'label' => 'New',
-        'static_description' => 'first donation in last 6 months',
+        'static_description' => 'first donation this FY',
         'value' => 10,
         'name' => 'new',
         'criteria' => [
           'first_donation' => [
-            ['from' => '6 months ago', 'to' => 'now', 'total' => 0.01],
+            ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime(), 'total' => 0.01],
           ],
         ],
       ],
       20 => [
         'label' => 'Consecutive',
-        'static_description' => 'gave in last 12 months and 12 months prior',
+        'static_description' => 'gave last financial year and this financial year to date',
         'value' => 20,
         'name' => 'consecutive',
         'criteria' => [
           // multiple ranges are AND rather than OR
           'multiple_range' => [
-            ['from' => '12 months ago', 'to' => 'now', 'total' => 0.01],
+            ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime(), 'total' => 0.01],
             [
-              'from' => '24 months ago',
-              'to' => '12 months ago',
+              'from' => $this->getFinancialYearStartDateTime(-1),
+              'to' => $this->getFinancialYearEndDateTime(-1),
               'total' => 0.01,
             ],
           ],
@@ -1107,66 +1186,55 @@ class CalculatedData extends TriggerHook {
         'name' => 'active',
         'label' => 'Active',
         'value' => 30,
-        'static_description' => 'gave within the last 12 months, or 3 months if recurring',
+        'static_description' => 'gave in this FY',
         'criteria' => [
           'range' => [
-            ['from' => '12 months ago', 'to' => 'now', 'total' => 0.01],
-            [
-              'from' => '3 months ago',
-              'to' => 'now',
-              'total' => 0.01,
-              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
-            ],
+            ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime(), 'total' => 0.01],
           ],
         ],
       ],
-      40 => [
-        'label' => 'Recent Lapsed',
-        'static_description' => '4-6 months ago recurring',
-        'value' => 40,
-        'name' => 'recent_lapsed',
+      35 => [
+        'label' => 'Lybunt',
+        'static_description' => 'gave last financial year but NOT this financial year to date',
+        'value' => 25,
+        'name' => 'lybunt',
         'criteria' => [
           'range' => [
             [
-              'from' => '4 months ago',
-              'to' => '6 months ago',
+              // Note we don't need to confirm they did NOT give this financial year
+              // as they would have already triggered the previous 'consequetive' criteria
+              'from' => $this->getFinancialYearStartDateTime(-1),
+              'to' => $this->getFinancialYearEndDateTime(-1),
               'total' => 0.01,
-              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
-            ],
+            ]
           ],
         ],
       ],
       50 => [
         'label' => 'Lapsed',
-        'static_description' => 'last gave 12-36 months ago, or 7-36 months, if recurring',
+        'static_description' => 'last gave in the financial year before last',
         'value' => 50,
         'name' => 'lapsed',
         'criteria' => [
           'range' => [
             [
-              'from' => '36 months ago',
-              'to' => '12 months ago',
+              'from' => $this->getFinancialYearStartDateTime(-2),
+              'to' => $this->getFinancialYearEndDateTime(-2),
               'total' => 0.01,
-            ],
-            [
-              'from' => '36 months ago',
-              'to' => '7 months ago',
-              'total' => 0.01,
-              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
             ],
           ],
         ],
       ],
       60 => [
         'label' => 'Deep Lapsed',
-        'static_description' => 'last gave 36-60 months ago',
+        'static_description' => 'last gave between 3 & 5 financial years ago',
         'value' => 60,
         'name' => 'deep_lapsed',
         'criteria' => [
           'range' => [
             [
-              'from' => '60 months ago',
-              'to' => '36 months ago',
+              'from' => $this->getFinancialYearStartDateTime(-5),
+              'to' => $this->getFinancialYearStartDateTime(-3),
               'total' => 0.01,
             ],
           ],
@@ -1174,14 +1242,14 @@ class CalculatedData extends TriggerHook {
       ],
       70 => [
         'label' => 'Ultra lapsed',
-        'static_description' => 'gave prior to 60 months ago',
+        'static_description' => 'gave prior to 5 financial years ago',
         'value' => 70,
         'name' => 'ultra_lapsed',
         'criteria' => [
           'range' => [
             [
-              'from' => '200 months ago',
-              'to' => '60 months ago',
+              'from' => $this->getFinancialYearEndDateTime(-25),
+              'to' => $this->getFinancialYearEndDateTime(-5),
               'total' => 0.01,
             ],
           ],
@@ -1215,46 +1283,46 @@ class CalculatedData extends TriggerHook {
    * @throws \CRM_Core_Exception
    */
   public function getDonorSegmentOptions(): array {
+    $financialYears = [
+      'this' => ['start' => $this->getFinancialYearStartDateTime(), 'end' => $this->getFinancialYearEndDateTime()],
+      -1 => ['start' => $this->getFinancialYearStartDateTime(-1), 'end' => $this->getFinancialYearEndDateTime(-1)],
+      -2 => ['start' => $this->getFinancialYearStartDateTime(-2), 'end' => $this->getFinancialYearEndDateTime(-2)],
+      -3 => ['start' => $this->getFinancialYearStartDateTime(-3), 'end' => $this->getFinancialYearEndDateTime(-3)],
+      -4 => ['start' => $this->getFinancialYearStartDateTime(-4), 'end' => $this->getFinancialYearEndDateTime(-4)],
+      -5 => ['start' => $this->getFinancialYearStartDateTime(-5), 'end' => $this->getFinancialYearEndDateTime(-5)],
+    ];
+
     $details = [
       100 => [
         'label' => 'Major Donor',
         'value' => 100,
         // Use for triggers instead of the dynamic description, which will date.
-        'static_description' => 'has given 10,000+ in one of the past 3 12 month periods',
+        'static_description' => 'has given 10,000+ in one of the past 5 financial years, or in the current financial year so far',
         'name' => 'major_donor',
         'criteria' => [
           'range' => [
-            ['from' => '12 months ago', 'to' => 'now', 'total' => 10000],
-            ['from' => '24 months ago', 'to' => '12 month ago', 'total' => 10000],
-            ['from' => '36 months ago', 'to' => '24 months ago', 'total' => 10000],
+            ['from' => $financialYears['this']['start'], 'to' => $this->getFinancialYearEndDateTime(), 'total' => 10000],
+            ['from' => $financialYears[-1]['start'], 'to' => $financialYears[-1]['end'], 'total' => 10000],
+            ['from' => $financialYears[-2]['start'], 'to' => $financialYears[-2]['end'], 'total' => 10000],
+            ['from' => $financialYears[-3]['start'], 'to' => $financialYears[-3]['end'], 'total' => 10000],
+            ['from' => $financialYears[-4]['start'], 'to' => $financialYears[-4]['end'], 'total' => 10000],
+            ['from' => $financialYears[-5]['start'], 'to' => $financialYears[-5]['end'], 'total' => 10000],
           ],
         ],
       ],
       200 => [
         'label' => 'Mid Tier',
         'value' => 200,
-        'static_description' => 'has given 1,000+ in one of the past 5 12 month periods.',
+        'static_description' => 'has given 1,000+  in one of the past 5 financial years, or in the current financial year so far',
         'name' => 'mid_tier',
         'criteria' => [
           'range' => [
-            ['from' => '12 months ago', 'to' => 'now', 'total' => 1000],
-            ['from' => '24 months ago', 'to' => '12 month ago', 'total' => 1000],
-            ['from' => '36 months ago', 'to' => '24 months ago', 'total' => 1000],
-            ['from' => '48 months ago', 'to' => '36 months ago', 'total' => 1000],
-            ['from' => '60 months ago', 'to' => '48 months ago', 'total' => 1000],
-          ],
-        ],
-      ],
-      300 => [
-        'label' => 'Mid-Value Prospect',
-        'value' => 300,
-        'static_description' => 'has given 250+ in one of the past 3 12 month periods',
-        'name' => 'mid_value',
-        'criteria' => [
-          'range' => [
-            ['from' => '12 months ago', 'to' => 'now', 'total' => 250],
-            ['from' => '24 months ago', 'to' => '12 month ago', 'total' => 250],
-            ['from' => '36 months ago', 'to' => '24 months ago', 'total' => 250],
+            ['from' => $financialYears['this']['start'], 'to' => $this->getFinancialYearEndDateTime(), 'total' => 1000],
+            ['from' => $financialYears[-1]['start'], 'to' => $financialYears[-1]['end'], 'total' => 1000],
+            ['from' => $financialYears[-2]['start'], 'to' => $financialYears[-2]['end'], 'total' => 1000],
+            ['from' => $financialYears[-3]['start'], 'to' => $financialYears[-3]['end'], 'total' => 1000],
+            ['from' => $financialYears[-4]['start'], 'to' => $financialYears[-4]['end'], 'total' => 1000],
+            ['from' => $financialYears[-5]['start'], 'to' => $financialYears[-5]['end'], 'total' => 1000],
           ],
         ],
       ],
@@ -1265,64 +1333,46 @@ class CalculatedData extends TriggerHook {
         'name' => 'recurring',
         'criteria' => [
           'range' => [
-            ['from' => '36 months ago', 'to' => 'now', 'total' => 0.01, 'additional_criteria' => ['contribution_recur_id IS NOT NULL']],
+            ['from' => '36 months ago', 'to' => $this->getFinancialYearEndDateTime(), 'total' => 0.01, 'additional_criteria' => ['contribution_recur_id IS NOT NULL']],
           ],
         ],
       ],
       500 => [
         'label' => 'Grassroots Plus Donor',
         'value' => 500,
-        'static_description' => 'has given 50+ in one of the past 3 12 month periods',
+        'static_description' => 'has given 50+  in one of the past 5 financial years, or in the current financial year so far',
         'name' => 'grass_roots_plus',
         'criteria' => [
           'range' => [
-            ['from' => '12 months ago', 'to' => 'now', 'total' => 50],
-            ['from' => '24 months ago', 'to' => '12 month ago', 'total' => 50],
-            ['from' => '36 months ago', 'to' => '24 months ago', 'total' => 50],
+            ['from' => $financialYears['this']['start'], 'to' => $this->getFinancialYearEndDateTime(), 'total' => 50],
+            ['from' => $financialYears[-1]['start'], 'to' => $financialYears[-1]['end'], 'total' => 50],
+            ['from' => $financialYears[-2]['start'], 'to' => $financialYears[-2]['end'], 'total' => 50],
+            ['from' => $financialYears[-3]['start'], 'to' => $financialYears[-3]['end'], 'total' => 50],
+            ['from' => $financialYears[-4]['start'], 'to' => $financialYears[-4]['end'], 'total' => 50],
+            ['from' => $financialYears[-5]['start'], 'to' => $financialYears[-5]['end'], 'total' => 50],
           ],
         ],
       ],
       600 => [
         'label' => 'Grassroots Donor',
         'value' => 600,
-        'static_description' => 'has given in the last 36 months',
+        'static_description' => 'has given in the last 5 financial years (or the current one)',
         'name' => 'grass_roots',
         'criteria' => [
           'range' => [
-            ['from' => '36 months ago', 'to' => 'now', 'total' => .01],
-          ],
-        ],
-      ],
-      700 => [
-        'label' => 'Deep lapsed Donor',
-        'value' => 700,
-        'static_description' => 'has given between 36 & 60 months ago.',
-        'name' => 'deep_lapsed',
-        'criteria' => [
-          'range' => [
-            ['from' => '60 months ago', 'to' => '38 months ago', 'total' => .01],
-          ],
-        ],
-      ],
-      800 => [
-        'label' => 'Ultra lapsed Donor',
-        'value' => 800,
-        'static_description' => 'Has given more than 60 months ago',
-        'name' => 'ultra_lapsed',
-        'criteria' => [
-          'range' => [
-            ['from' => '200 months ago', 'to' => '60 months ago', 'total' => .01],
+            ['from' => $financialYears[-5]['start'], 'to' => $this->getFinancialYearEndDateTime(), 'total' => .01],
           ],
         ],
       ],
       900 => [
         'label' => 'All other Donors',
         'value' => 900,
-        'static_description' => 'How could this be reachable?',
+        'static_description' => 'has given but not in the last 5 financial years (or the current one)',
         'name' => 'other_donor',
         'criteria' => [
           'range' => [
-            ['from' => '200 months ago', 'to' => 'now', 'total' => .01],
+            // 300 months is our forever
+            ['from' => '300 months ago', 'to' => $this->getFinancialYearEndDateTime(), 'total' => .01],
           ],
         ],
       ],
@@ -1356,16 +1406,26 @@ class CalculatedData extends TriggerHook {
    * @return string
    */
   public function convertDateOffSetToSQL(string $textDateOffset): string {
-    if ($textDateOffset === 'now') {
-      return 'NOW()';
+    if ($textDateOffset === $this->getFinancialYearEndDateTime()) {
+      return "'" . $this->getFinancialYearEndDateTime() . "'";
     }
     $split = explode(' ', $textDateOffset);
+    if (empty($split[1]) || strpos($split[1], ':') !== FALSE) {
+      // We have an actual date, possibly including a time portion after the space.
+      return "'" . $textDateOffset . "'";
+    }
     $offset = $split[0];
     $interval = strtoupper($split[1]);
     if ($interval === 'MONTHS') {
       $interval = 'MONTH';
     }
-    return "NOW() - INTERVAL $offset $interval";
+    // If the date now is after our hard-coded financial year end then we want to
+    // use dates relative to the financial year end. The goal here is to make the
+    // triggers 'expire' at the end of the financial year, so we can back up & reset.
+    // We might change this after discussion but the 'safe' position is to freeze
+    // the fields when we roll over the year until we take action to reload the
+    // triggers.
+    return "IF (NOW() < '" . $this->getFinancialYearEndDateTime() . "', NOW() - INTERVAL $offset $interval, '" . $this->getFinancialYearEndDateTime() . "' - INTERVAL $offset $interval)";
   }
 
   /**
@@ -1379,7 +1439,7 @@ class CalculatedData extends TriggerHook {
     $additionalCriteria = empty($range['additional_criteria']) ? '' : (implode(', ', $range['additional_criteria']) . ' AND ');
     return "COALESCE(IF($additionalCriteria receive_date
       BETWEEN (" . $this->convertDateOffsetToSQL($range['from']) . ") AND (" . $this->convertDateOffsetToSQL($range['to']) . ')
-      , total_amount, 0), 0)' . ($range['total'] === 0 ? ' > ' : ' >= ') . $range['total'];
+      , total_amount, 0), 0)';
   }
 
   /**
@@ -1389,8 +1449,10 @@ class CalculatedData extends TriggerHook {
    * @throws \CRM_Core_Exception
    */
   protected function getTextClause($range): string {
-    $textClause = 'at least ' . \Civi::format()
-        ->money($range['total']) . ' between ' . date('Y-m-d H:i:s', strtotime($range['from'])) . ' and ' . date('Y-m-d H:i:s', strtotime($range['to']));
+    $comparison = isset($range['total']) ? 'at least ' : ' less than ';
+    $amount = $range['total'] ?? $range['max_total'];
+    $textClause = $comparison . \Civi::format()
+        ->money($amount) . ' between ' . date('Y-m-d H:i:s', strtotime($range['from'])) . ' and ' . date('Y-m-d H:i:s', strtotime($range['to']));
     if (!empty($range['additional_criteria'])) {
       // Currently this is the only additional criteria defined so
       // let's cut a corner.
@@ -1414,7 +1476,7 @@ class CalculatedData extends TriggerHook {
       $rangeClauses = [];
       $textClauses = [];
       foreach ($detail['criteria']['range'] as $range) {
-        $rangeClauses[] = 'SUM(' . $this->getRangeClause($range) . ')';
+        $rangeClauses[] = 'SUM(' . $this->getRangeClause($range) . ')' . $this->getValueComparisonClause($range);
         $textClauses[] = $this->getTextClause($range);
       }
       $clauses = implode(' OR ', $rangeClauses);
@@ -1424,7 +1486,7 @@ class CalculatedData extends TriggerHook {
       $rangeClauses = [];
       $textClauses = [];
       foreach ($detail['criteria']['multiple_range'] as $range) {
-        $rangeClauses[] = 'SUM(' . $this->getRangeClause($range) . ')';
+        $rangeClauses[] = 'SUM(' . $this->getRangeClause($range) . ')' . $this->getValueComparisonClause($range);
         $textClauses[] = $this->getTextClause($range);
       }
       $clauses = implode(' AND ', $rangeClauses);
@@ -1434,7 +1496,7 @@ class CalculatedData extends TriggerHook {
       $rangeClauses = [];
       $textClauses = [];
       foreach ($detail['criteria']['first_donation'] as $range) {
-        $rangeClauses[] = 'MIN(' . $this->getRangeClause($range) . ')';
+        $rangeClauses[] = 'MIN(' . $this->getRangeClause($range) . ')'  . $this->getValueComparisonClause($range);
         $textClauses[] = $this->getTextClause($range);
       }
       $clauses = implode(' OR ', $rangeClauses);
@@ -1448,6 +1510,73 @@ class CalculatedData extends TriggerHook {
         )";
     $detail['sql_select'] = $sqlSelect;
     $detail['description'] = $detail['static_description'] . " - ie \n" . $dynamicDescription;
+  }
+
+  /**
+   * @return int
+   */
+  protected function getCurrentFinancialYearStartYear(): int {
+    $currentMonth = date('m');
+    return (int) ($currentMonth < 7 ? (date('Y') - 1) : date('Y'));
+  }
+
+  /**
+   * Ge the date time string for the start of the financial year.
+   *
+   * By defaults this will be the current financial year, or an offset can be passed
+   *
+   * @param int $offset
+   *  e.g. -1 would return the start date of the last financial year.
+   *
+   * @return string
+   */
+  protected function getFinancialYearStartDateTime(int $offset = 0): string {
+    $currentFinancialYearStart = $this->getCurrentFinancialYearStartYear() . '-07-01 00:00:00';
+    if (!$offset) {
+      return $currentFinancialYearStart;
+    }
+    return date('Y-m-d H:i:s', strtotime($offset . ' year', strtotime($currentFinancialYearStart)));
+  }
+
+  /**
+   * Ge the date time string for the start of the financial year.
+   *
+   * By defaults this will be the current financial year, or an offset can be passed
+   *
+   * @param int $offset
+   *  e.g. -1 would return the start date of the last financial year.
+   *
+   * @return string
+   */
+  protected function getFinancialYearEndDateTime(int $offset = 0): string {
+    $currentFinancialYearEndDateTime = ($this->getCurrentFinancialYearStartYear() + 1) . '-06-30 23:59:59.9999';
+
+    if (!$offset) {
+      return $currentFinancialYearEndDateTime;
+    }
+    return date('Y-m-d H:i:s', strtotime($offset . ' year', strtotime($currentFinancialYearEndDateTime)));
+  }
+
+  /**
+   * Get Value comparison clause.
+   *
+   * @param array $criteria Holds one of
+   *   - total
+   *   - max_total
+   *
+   * @return string
+   *   e.g '> 1000'
+   * @throws \CRM_Core_Exception
+   */
+  protected function getValueComparisonClause(array $criteria): string {
+    if (isset($criteria['total'])) {
+      return ($criteria['total'] === 0 ? ' > ' : ' >= ') . $criteria['total'];
+    }
+    if (isset($criteria['max_total'])) {
+      return ' < ' . $criteria['max_total'];
+    }
+    // This would only be hit during development so is just for clarity.
+    throw new \CRM_Core_Exception('No total specified');
   }
 
 }
