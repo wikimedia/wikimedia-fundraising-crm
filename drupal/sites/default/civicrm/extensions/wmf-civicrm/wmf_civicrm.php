@@ -446,51 +446,25 @@ function wmf_civicrm_civicrm_contactSummaryBlocks(array &$blocks) {
  * @param CRM_Core_Page $page
  */
 function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
-    PreferencesLink::pageRun($page);
-    $pageClass = get_class($page);
-    // Pages to load the ContributionTracking Module into - loading into the summary page because of the contribution view popup
-    $ctPages = ['CRM_Contact_Page_View_Summary', 'CRM_Contribute_Page_Tab'];
-    if (in_array($pageClass, $ctPages)) {
-        Civi::service('angularjs.loader')->addModules('afsearchContributionTracking');
+  PreferencesLink::pageRun($page);
+  $pageClass = get_class($page);
+  // Pages to load the ContributionTracking Module into - loading into the summary page because of the contribution view popup
+  $ctPages = ['CRM_Contact_Page_View_Summary', 'CRM_Contribute_Page_Tab'];
+  if (in_array($pageClass, $ctPages)) {
+      Civi::service('angularjs.loader')->addModules('afsearchContributionTracking');
+  }
+
+  // Only add the markup to the contribution page
+  if ($pageClass === 'CRM_Contribute_Page_Tab') {
+    $id = $page->getVar('_id');
+    if ($id != null) {
+        CRM_Core_Region::instance('page-body')->add([
+          'markup' => '<crm-angular-js modules="afsearchContributionTracking">
+          <div class="spacer" style="height: 20px;"></div>
+          <h3>Contribution Tracking</h3><form id="bootstrap-theme"><afsearch-contribution-tracking options="{contribution_id:'. $id .'}"></afsearch-contribution-tracking></form></crm-angular-js>',
+        ]);
     }
-
-    // Only add the markup to the contribution page
-    if ($pageClass === 'CRM_Contribute_Page_Tab') {
-        $id = $page->getVar('_id');
-        if ($id != null) {
-            CRM_Core_Region::instance('page-body')->add([
-              'markup' => '<crm-angular-js modules="afsearchContributionTracking">
-              <div class="spacer" style="height: 20px;"></div>
-              <h3>Contribution Tracking</h3><form id="bootstrap-theme"><afsearch-contribution-tracking options="{contribution_id:'. $id .'}"></afsearch-contribution-tracking></form></crm-angular-js>',
-            ]);
-        }
-        else {
-          $contactID = CRM_Utils_Request::retrieveValue('cid', 'Integer');
-          if ($contactID) {
-            $segment = WMFDonor::get(FALSE)
-              ->addWhere('id', '=', $contactID)
-              ->addSelect('donor_segment_id:label')
-              ->addSelect('donor_segment_id:description')
-              ->addSelect('donor_status_id:label')
-              ->addSelect('donor_status_id:description')
-              ->execute()->first();
-            $segmentLabel = $segment['donor_segment_id:label'] ?? 'Non donor';
-            $segmentExplanation = nl2br($segment['donor_segment_id:description'] ?? 'has not made any donations');
-            $statusLabel = $segment['donor_status_id:label'] ?? 'Non donor';
-            $statusExplanation = nl2br($segment['donor_status_id:description']) ?? 'has not made any donations';
-
-            CRM_Core_Region::instance('page-body')->add([
-              'markup' => '<p>We are currently in the process of developing <a target="_blank" href="https://phabricator.wikimedia.org/T336305">donor segments</a>.
-              The code is still under active development, with the goal being to define the segments per this <a target="_blank" href="https://docs.google.com/spreadsheets/d/1qM36MeKWyOENl-iR5umuLph5HLHG6W_6c46xJUdE3QY/edit#gid=1786541006"> google doc</a>
-
-               <p>As of now the code is working to a <a target="_blank" href="'. CRM_Utils_System::url('civicrm/wmf-segment') . '">simpler set of rules (ie the meaning of the statuses is consistent across segments)</a>. Under this code the following segment is being calculated for this contact</p>
-               <p><strong>' . $segmentLabel . '</strong> - ' . $segmentExplanation . '
-              </p>
-              <p><strong>' . $statusLabel . '</strong> -  ' . $statusExplanation . '</p>'
-            ]);
-          }
-        }
-    }
+  }
 }
 
 /**
