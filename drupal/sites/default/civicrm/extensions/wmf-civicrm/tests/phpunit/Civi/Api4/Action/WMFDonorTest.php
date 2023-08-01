@@ -134,12 +134,74 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * @dataProvider segmentDataProvider
+   *
+   * @param $status
+   * @param $segment
+   * @param $contributions
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function testDonorSegmentTriggers($status, $segment, $contributions): void {
+    foreach ($contributions as $contribution) {
+      $this->createDonor($contribution);
+    }
+    $contact = Contact::get(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->addSelect('wmf_donor.donor_segment_id:name', 'wmf_donor.donor_status_id:name')->execute()->first();
+    $this->assertEquals($status, $contact['wmf_donor.donor_status_id:name']);
+    $this->assertEquals($segment, $contact['wmf_donor.donor_segment_id:name']);
+
+    // The above loaded the trigger-generated value but let's test the on-the-fly too.
+    $result = WMFDonor::get(FALSE)
+      ->setDebug(TRUE)
+      ->addSelect('donor_segment_id:name', 'donor_status_id:name')
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->execute()->first();
+
+    $this->assertEquals($status, $result['donor_status_id:name']);
+    $this->assertEquals($segment, $result['donor_segment_id:name']);
+  }
+
+  /**
+   * Get segments to test.
+   *
+   * Note that all we freeze the date to 01 Aug of the current year
+   * before testing. So all dates are 'as if today were' 01 Aug xx
+   * and php gets that date for all it's date functions.
+   *
+   * @return array[]
+   */
+  public function segmentDataProvider() : array {
+    return [
+      'new_major_donor' => [
+        'status' => 'new',
+        'segment' => 'major_donor',
+        'contributions' => [['receive_date' => 'yesterday', 'total_amount' => 12000]],
+      ],
+      'consecutive_major_donor' => [
+        'status' => 'consecutive',
+        'segment' => 'major_donor',
+        'contributions' => [['receive_date' => 'yesterday', 'total_amount' => 10], ['receive_date' => '8 months ago', 'total_amount' => 12000]],
+      ],
+      'ultra_lapsed' => [
+        'status' => 'ultra_lapsed',
+        'segment' => 'other_donor',
+        'contributions' => [['receive_date' => '2016-12-10', 'total_amount' => 50]],
+      ],
+    ];
+  }
+
+  /**
    * Create a donor contact.
    *
    * @throws \CRM_Core_Exception
    */
   public function createDonor($contributionParams = [], $identifier = 'donor'): void {
-    $this->createContact($identifier);
+    if (empty($this->ids['Contact'][$identifier])) {
+      $this->createContact($identifier);
+    }
     Contribution::create(FALSE)->setValues(array_merge([
       'receive_date' => $this->getDate(),
       'financial_type_id:name' => 'Donation',

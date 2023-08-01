@@ -144,6 +144,19 @@ class CalculatedData extends TriggerHook {
   }
 
   /**
+   * Get the relevant label.
+   *
+   * @param string $fieldName
+   * @param $value
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public function getFieldName(string $fieldName, $value): string {
+    return $this->getFieldOptions($fieldName)[$value]['name'];
+  }
+
+  /**
    * Get the relevant description.
    *
    * @param string $fieldName
