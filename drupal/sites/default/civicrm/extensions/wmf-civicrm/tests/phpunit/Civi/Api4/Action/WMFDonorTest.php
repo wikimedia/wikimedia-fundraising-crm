@@ -29,6 +29,15 @@ use PHPUnit\Framework\TestCase;
 class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface {
 
   /**
+   * Current date.
+   *
+   * We force this to get consistent test results.
+   *
+   * @var string
+   */
+  protected $currentDate;
+
+  /**
    * @return \Civi\Test\CiviEnvBuilder
    * @throws \CRM_Extension_Exception_ParseException
    */
@@ -40,6 +49,11 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->apply();
   }
 
+  public function setUp(): void {
+    $this->currentDate = date('Y') . '-08-01';
+    \CRM_Utils_Time::setTime($this->currentDate);
+    parent::setUp();
+  }
   /**
    * @throws \CRM_Core_Exception
    */
@@ -50,6 +64,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         ->execute();
       Contact::delete(FALSE)->addWhere('id', 'IN', $this->ids['Contact'])->execute();
     }
+    \CRM_Utils_Time::resetTime();
     parent::tearDown();
   }
 
@@ -139,7 +154,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    * @return false|string
    */
   public function getDate() {
-    return date('Y-m-02', strtotime('-13 months'));
+    return date('Y-m-d', strtotime('- 2 years', strtotime($this->currentDate)));
   }
 
   /**
