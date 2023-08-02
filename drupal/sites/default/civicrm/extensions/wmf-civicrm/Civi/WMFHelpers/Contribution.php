@@ -19,8 +19,8 @@ class Contribution {
    */
   public static function generateTransactionReference(array $contactParams, string $date, ?string $checkNumber, int $rowIndex): string {
     if ($contactParams['contact_type'] === 'Individual') {
-      $name_salt = $contactParams['first_name'] . $contactParams['last_name'];
-      if ($contactParams['first_name'] === 'Anonymous' && $contactParams['last_name'] === 'Anonymous') {
+      $name_salt = ($contactParams['first_name'] ?? '') . ($contactParams['last_name'] ?? '');
+      if (($contactParams['first_name'] ?? '') === 'Anonymous' && ($contactParams['last_name'] ?? '') === 'Anonymous') {
         // For anonymous donors (and organizations) the chance of them having made
         // several payments on the same day, possibly with the same check number
         // is high so we include the rowIndex in our uniqueness calculation.
