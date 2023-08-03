@@ -30,7 +30,7 @@ class WmfAuditTest extends BaseAuditTestCase {
   }
 
   private function createContributionTracking() {
-    $id = ContributionTracking::get(FALSE)->execute()->last()['id'];
+    $id = ContributionTracking::get(FALSE)->execute()->last()['id'] ?? 0;
 
     $data = [
       'id' => $id+1,
