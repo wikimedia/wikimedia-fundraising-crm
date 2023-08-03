@@ -1,13 +1,12 @@
 <?php
 
-use Civi\WMFException\WMFException;
+use Civi\Api4\Contribution;
 
 /**
  * @group Braintree
  * @group WmfAudit
  */
 class BraintreeAuditTest extends BaseAuditTestCase {
-  protected $idForRefundTest;
 
   public function setUp(): void {
     parent::setUp();
@@ -83,30 +82,24 @@ class BraintreeAuditTest extends BaseAuditTestCase {
     $this->contact_id = $contribution['contact_id'];
     $this->contribution_id = $contribution['id'];
 
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('braintree', 'dHJhbnNhY3Rpb25fa2F4eG1yfff');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    } else {
-      $msg = [
-        'gateway' => 'braintree',
-        'date' => 1656390820,
-        'gross' => '1.00',
-        'contribution_tracking_id' => '1004.0',
-        'invoice_id' => '1004.0',
-        'currency' => 'USD',
-        'email' => 'fr-tech+donor@wikimedia.org',
-        'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2F4eG1yfff',
-        'phone' => null,
-        'first_name' => 'f',
-        'last_name' => 'doner',
-        'payment_method' => 'paypal',
-      ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
-    $this->contact_id = $contribution['contact_id'];
+    $msg = [
+      'gateway' => 'braintree',
+      'date' => 1656390820,
+      'gross' => '1.00',
+      'contribution_tracking_id' => '1004.0',
+      'invoice_id' => '1004.0',
+      'currency' => 'USD',
+      'email' => 'fr-tech+donor@wikimedia.org',
+      'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2F4eG1yfff',
+      'phone' => null,
+      'first_name' => 'f',
+      'last_name' => 'doner',
+      'payment_method' => 'paypal',
+    ];
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->ids['Contact']['test'] = $this->contact_id = $contribution['contact_id'];
     $this->contribution_id = $contribution['id'];
-    $this->idForRefundTest = $contribution['id'];
+    $this->ids['Contribution']['refund_test'] = $contribution['id'];
   }
 
   public function auditTestProvider() {
@@ -188,7 +181,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
     $this->assertMessages($expectedMessages);
   }
 
-  public function testAlreadyRefundedTransactionIsSkipped() {
+  public function testAlreadyRefundedTransactionIsSkipped(): void {
     variable_set('braintree_audit_recon_files_dir',  __DIR__ . '/data/Braintree/refundNoGatewayIDinCivi/');
     $expectedMessages = [
       'refund' => []
@@ -201,7 +194,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2F4eG1yfff',
       'gross' => 1.00,
     ];
-    wmf_civicrm_mark_refund($this->idForRefundTest, 'refund', TRUE, $msg['date'],
+    wmf_civicrm_mark_refund($this->ids['Contribution']['refund_test'], 'refund', TRUE, $msg['date'],
       $msg['gateway_txn_id'],
       $msg['currency'],
       $msg['gross']
