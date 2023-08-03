@@ -91,5 +91,5 @@ function wmf_common_get_body($message, $error, $source, $isRemoved)
     } elseif (empty($message)) {
         $body[] = t("The exact message was deemed irrelevant.");
     }
-    return '<p>' . implode($body, '</p><p>') . '</p>';
+    return '<p>' . implode('</p><p>', $body) . '</p>';
 }
