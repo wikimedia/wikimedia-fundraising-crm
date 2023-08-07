@@ -127,6 +127,7 @@ $instruments = [
   'Bank Transfer: PayTM Wallet' => 'Bank Transfer: PayTM Wallet',
   'Credit Card: RuPay' => 'Credit Card: RuPay',
   'Bank Transfer: UPI' => 'Bank Transfer: UPI',
+  'Venmo' => 'Venmo',
 ];
 
 $paymentInstruments = [];
