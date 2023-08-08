@@ -11,8 +11,11 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Omnimail\Omnimail;
+use Omnimail\Silverpop\Connector\SilverpopGuzzleXmlConnector;
 use Omnimail\Silverpop\Credentials;
 use Omnimail\Silverpop\Connector\SilverpopGuzzleConnector;
+use SilverpopConnector\SilverpopRestConnector;
+use SilverpopConnector\SilverpopXmlConnector;
 
 /**
  * FIXME - Add test description.
@@ -230,6 +233,9 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    )");
     CRM_Core_DAO::executeQuery("DELETE FROM civicrm_mailing WHERE name = 'Mail Unit Test'");
     CRM_Core_DAO::executeQuery("DELETE FROM civicrm_campaign WHERE name = 'xyz'");
+    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_queue_item WHERE queue_name = "omni-snooze"');
+    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_queue WHERE name = "omni-snooze"');
+    \CRM_Queue_Service::singleton(TRUE);
   }
 
   protected function makeScientists() {
@@ -341,6 +347,32 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
       $civicrm_setting['domain'][$setting] = $temporarySettings;
       Civi::service('settings_manager')->flush();
     }
+  }
+
+  /**
+   * Add our mock client to the rest singleton.
+   *
+   * In other places we have been passing the client in but we can't do that
+   * here so trying a new tactic  - basically setting it up on the singleton
+   * first.
+   */
+  protected function addTestClientToRestSingleton() {
+    $restConnector = SilverpopRestConnector::getInstance();
+    $this->setUpClientWithHistoryContainer();
+    $restConnector->setClient($this->getGuzzleClient());
+  }
+
+  /**
+   * Add our mock client to the rest singleton.
+   *
+   * In other places we have been passing the client in but we can't do that
+   * here so trying a new tactic  - basically setting it up on the singleton
+   * first.
+   */
+  protected function addTestClientToXMLSingleton(): void {
+    /** @var SilverpopXmlConnector $connector */
+    $connector = SilverpopGuzzleXmlConnector::getInstance();
+    $connector->setClient($this->getGuzzleClient());
   }
 
 }

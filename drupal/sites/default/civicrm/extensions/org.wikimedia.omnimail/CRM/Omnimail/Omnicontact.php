@@ -18,7 +18,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
   protected $request;
 
   /**
-   * Create a group (list) membership in Acoustic DB.
+   * Create a contact with an optional group (list) membership in Acoustic DB.
    *
    * @param array $params
    *
@@ -29,14 +29,13 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
     /* @var \Omnimail\Silverpop\Mailer $mailer */
     $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
     $groupIdentifier = (array) Group::get($params['check_permissions'])->addWhere('id', 'IN', $params['group_id'])->addSelect('Group_Metadata.remote_group_identifier')->execute()->indexBy('Group_Metadata.remote_group_identifier');
-    if (empty($groupIdentifier)) {
-      throw new API_Exception('Valid external group expected');
-    }
+
     $request = $mailer->addContact([
       'groupIdentifier' => array_keys($groupIdentifier),
       'email' => $params['email'],
       'databaseID' => $params['database_id'],
       'fields' => $this->mapFields($params['values']),
+      'snoozeTimeStamp' => empty($params['snooze_end_date']) ? NULL : strtotime($params['snooze_end_date']),
     ]);
     /* @var Contact $reponse */
     $response = $request->getResponse();
