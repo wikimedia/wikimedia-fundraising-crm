@@ -1,6 +1,5 @@
 <?php
 
-use Civi\Api4\Contact;
 
 /**
  * @group Pipeline
@@ -289,7 +288,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
   }
 
-/**
+  /**
    * Test no_thank_you field being set for recurring after first payment
    *
    * @group nothankyou
@@ -365,6 +364,39 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test confirming that a recurring payment leads to a financial type of "Recurring Gift"
+   *
+   * @group recurring
+   */
+  public function testFirstRecurringHasFinancialType(): void {
+    $contactID = $this->createIndividual();
+    $this->createPaymentProcessor();
+    $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
+
+    // create the recurring payment
+    $firstMessage = [
+      'contact_id' => $contactID,
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    // recurring contribution payment token fields below
+      'recurring_payment_token' => $token,
+      'recurring' => 1,
+      'user_ip' => '12.34.56.78',
+    ];
+
+    // Normalize a recurring payment initiation message, this should lead to the resulting message
+    // having a Financial Type of "Recurring Gift"
+    $msg = wmf_civicrm_normalize_msg($firstMessage);
+
+    $this->assertEquals($msg['financial_type_id'], CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift"));
+  }
+
+  /**
    * Ensure the test payment processor exists.
    */
   protected function createPaymentProcessor(): void {
@@ -379,4 +411,5 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       ])['id'];
     }
   }
+
 }

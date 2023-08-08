@@ -1194,7 +1194,14 @@ function wmf_civicrm_normalize_msg($msg): array {
       Civi::log('wmf')
         ->warning('wmf_civicrm: Financial type should be set, contribution type is deprecated');
     }
-    $financialType = $msg['financial_type_id:name'] ?? ($msg['contribution_type'] ?? 'Cash');
+    $financialType = $msg['financial_type_id:name'] ?? $msg['contribution_type'] ?? null;
+    if (!empty($msg['recurring'])) {
+      $financialType = "Recurring Gift";
+    }
+
+    if (empty($financialType)) {
+      $financialType = "Cash";
+    }
     $msg['financial_type_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', $financialType);
   }
 
