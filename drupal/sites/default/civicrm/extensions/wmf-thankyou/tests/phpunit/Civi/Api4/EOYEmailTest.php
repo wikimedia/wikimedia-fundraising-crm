@@ -382,7 +382,7 @@ class EOYEmailTest extends TestCase {
   public function testCreateActivityRecords(): void {
     $contactIds = $this->setUpContactsSharingEmail();
     $mailing = $this->send();
-    $this->assertRegExp('/Cancel_or_change_recurring_giving/', $mailing['html']);
+    $this->assertMatchesRegularExpression('/Cancel_or_change_recurring_giving/', $mailing['html']);
     $firstContactID = reset($contactIds);
     $activity = $this->callAPISuccessGetSingle('Activity', [
       'activity_type_id' => 'wmf_eoy_receipt_sent',

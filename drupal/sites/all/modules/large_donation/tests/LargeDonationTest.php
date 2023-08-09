@@ -85,7 +85,7 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals(1, $this->getMailingCount());
 
     $mailing = $this->getMailing(0);
-    $this->assertRegExp("/{$amount}/", $mailing['html'], 'Found amount in the notification email body.');
+    $this->assertMatchesRegularExpression("/{$amount}/", $mailing['html'], 'Found amount in the notification email body.');
     $this->assertEquals('notifee@localhost.net', $mailing['to']);
   }
 
