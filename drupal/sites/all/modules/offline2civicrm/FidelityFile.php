@@ -22,7 +22,7 @@ class FidelityFile extends ChecksFile {
     if (!$this->softCreditToID) {
       $this->softCreditToID = Contact::get(FALSE)
         ->addWhere('organization_name', '=', 'Fidelity Charitable Gift Fund')
-        ->execute()->first()['id'];
+        ->execute()->first()['id'] ?? NULL;
     }
     if (!$this->softCreditToID) {
       $this->softCreditToID = Contact::create(FALSE)

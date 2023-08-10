@@ -49,7 +49,7 @@
       }
     ],
     "require-dev": {
-        "phpunit/phpunit": ">= 8.0",
+        "phpunit/phpunit": ">= 9.0",
         "seld/jsonlint": "1.7.0",
         "wikimedia/testing-access-wrapper": "~1.0",
         "php-parallel-lint/php-console-highlighter": "^0.5.0",
@@ -65,8 +65,8 @@
         "parallel-lint -e php,module,install,inc --exclude vendor --exclude drupal/sites/all/modules/civicrm/vendor --exclude sites/default/civicrm/extensions/org.wikimedia.omnimail/vendor .",
         "jsonlint $(find . -type f -iname \"*.json\" ! -path \"*/vendor/*\" ! -path \"*/bower*\" ! -path \"*/tests/data/*\" ! -path \"*/civicrm/*/afform*\" -printf \"%p \")"
       ],
-      "civilint": "phpcs --standard=\"vendor/drupal/coder/coder_sniffer/Drupal\"",
-      "civilintcbf": "phpcbf --standard=\"vendor/drupal/coder/coder_sniffer/Drupal\""
+      "civilint": "phpcs --standard=\"vendor/drupal/coder/coder_sniffer/Drupal\" --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md,yml -p",
+      "fix": "phpcbf --standard=\"vendor/drupal/coder/coder_sniffer/Drupal\""
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

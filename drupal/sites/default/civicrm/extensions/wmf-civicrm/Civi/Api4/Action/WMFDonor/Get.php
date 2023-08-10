@@ -92,7 +92,7 @@ class Get extends DAOGetAction {
         $donorField = $fieldSplit[0];
         if (isset($sqlQuery->$donorField)) {
           $row[$donorField] = $sqlQuery->$donorField;
-          // Translating the :label & :description honors the civicrm style
+          // Translating the :label & :description & :name honors the civicrm style
           // but it's kinda just hacked in. Given it is just a couple of fields for
           // a narrow use case that feels OK.
           if (($fieldSplit[1] ?? NULL) === 'label') {
@@ -100,6 +100,9 @@ class Get extends DAOGetAction {
           }
           if (($fieldSplit[1] ?? NULL) === 'description') {
             $row[$selectedField] = $calculatedData->getFieldDescription($donorField, $row[$donorField]);
+          }
+          if (($fieldSplit[1] ?? NULL) === 'name') {
+            $row[$selectedField] = $calculatedData->getFieldName($donorField, $row[$donorField]);
           }
         }
       }

@@ -144,6 +144,19 @@ class CalculatedData extends TriggerHook {
   }
 
   /**
+   * Get the relevant label.
+   *
+   * @param string $fieldName
+   * @param $value
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public function getFieldName(string $fieldName, $value): string {
+    return $this->getFieldOptions($fieldName)[$value]['name'];
+  }
+
+  /**
    * Get the relevant description.
    *
    * @param string $fieldName
@@ -1456,7 +1469,7 @@ class CalculatedData extends TriggerHook {
     if (!empty($range['additional_criteria'])) {
       // Currently this is the only additional criteria defined so
       // let's cut a corner.
-      $textClause .= ' AND is recurring';
+      $textClause .= ' AND donation is recurring';
     }
     return $textClause;
   }

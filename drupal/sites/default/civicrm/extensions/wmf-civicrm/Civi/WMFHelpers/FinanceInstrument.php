@@ -130,18 +130,21 @@ class FinanceInstrument {
    * @return string payment instrument label
    */
   public static function getPaymentInstrument(array $msg): string {
-    $payment_instrument = NULL;
-
+    $payment_instrument = null;
+    $payment_method = null;
     if (isset($msg['raw_payment_instrument'])) {
       return $msg['raw_payment_instrument'];
     }
-
     if (array_key_exists('payment_method', $msg) && trim($msg['payment_method']) !== '') {
+      $payment_method = strtolower($msg['payment_method']);
+    }
+
+    if ($payment_method) {
       $payment_submethod = null;
       if (isset($msg['payment_submethod'])){
         $payment_submethod = strtolower($msg['payment_submethod']);
       }
-      switch (strtolower($msg['payment_method'])) {
+      switch ($payment_method) {
         case 'apple':
           $payment_instrument = 'Apple Pay';
           if (!empty($payment_submethod)
@@ -180,6 +183,12 @@ class FinanceInstrument {
         case 'dd':
           $payment_instrument = 'Direct Debit';
           break;
+        case 'paypal':
+          $payment_instrument = 'Paypal';
+          break;
+        case 'venmo':
+          $payment_instrument = 'Venmo';
+          break;
         case 'eft':
           $payment_instrument = 'EFT';
           break;
@@ -213,7 +222,6 @@ class FinanceInstrument {
           $payment_instrument = 'Trilogy';
           break;
       }
-
     }
     if (!$payment_instrument
       && array_key_exists('gateway', $msg)
@@ -221,7 +229,7 @@ class FinanceInstrument {
       switch (strtolower($msg['gateway'])) {
         case 'amazon':
           $payment_instrument = 'Amazon';
-          if (array_key_exists('payment_method', $msg) && strtolower($msg['payment_method']) !== 'amazon') {
+          if ($payment_method && $payment_method !== 'amazon') {
             Civi::log('wmf')->debug('payment_method constraint violated: gateway Amazon, but method=@method ; gateway_txn_id=@id', [
               '@method' => $msg['payment_method'],
               '@id' => $msg['gateway_txn_id'],
@@ -230,7 +238,6 @@ class FinanceInstrument {
           break;
         case 'paypal':
         case 'paypal_ec':
-        case 'braintree':
           // These PayPal flows are distinct gateway classes, but are
           // recorded together.  They might share an account, although the
           // configuration will have to be broken up across gateway globals.
@@ -239,8 +246,17 @@ class FinanceInstrument {
           // migrated when we do that.
 
           // Validate method if provided.
-          if (array_key_exists('payment_method', $msg) && strtolower($msg['payment_method']) !== 'paypal') {
+          if ($payment_method && $payment_method !== 'paypal') {
             Civi::log('wmf')->debug('payment_method constraint violated: gateway Paypal, but method=@method ; gateway_txn_id=@id', [
+              '@method' => $msg['payment_method'],
+              '@id' => $msg['gateway_txn_id'],
+            ]);
+          }
+          break;
+        case 'braintree':
+          $payment_instrument = 'Venmo'; // since we only turn on venmo for braintree for no, so use Venmo as default method
+          if ($payment_method && !in_array($payment_method, ['venmo', 'paypal'])) {
+            Civi::log('wmf')->debug('payment_method constraint violated: gateway Braintree, but method=@method ; gateway_txn_id=@id', [
               '@method' => $msg['payment_method'],
               '@id' => $msg['gateway_txn_id'],
             ]);
@@ -248,7 +264,7 @@ class FinanceInstrument {
           break;
         case 'square':
           $payment_instrument = 'Square Cash';
-          if (array_key_exists('payment_method', $msg) && strtolower($msg['payment_method']) !== 'square') {
+          if ($payment_method && $payment_method !== 'square') {
             Civi::log('wmf')->debug('payment_method constraint violated: gateway Square, but method=@method ; gateway_txn_id=@id', [
               '@method' => $msg['payment_method'],
               '@id' => $msg['gateway_txn_id'],
@@ -257,7 +273,7 @@ class FinanceInstrument {
           break;
         case 'trilogy':
           $payment_instrument = 'Trilogy';
-          if (array_key_exists('payment_method', $msg) && strtolower($msg['payment_method']) !== 'trilogy') {
+          if ($payment_method && $payment_method !== 'trilogy') {
             Civi::log('wmf')->debug('payment_method constraint violated: gateway Trilogy, but method=@method ; gateway_txn_id=@id', [
               '@method' => $msg['payment_method'],
               '@id' => $msg['gateway_txn_id'],
@@ -267,7 +283,7 @@ class FinanceInstrument {
       }
     }
 
-    if (!$payment_instrument && (!array_key_exists('payment_method', $msg) || !$msg['payment_method'])) {
+    if (!$payment_instrument && !$payment_method) {
         throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
     }
 

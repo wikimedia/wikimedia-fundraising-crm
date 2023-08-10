@@ -74,22 +74,13 @@ class SyncCustomFields extends AbstractAction {
           // it will be ignored if 'option_values' is empty.
           $customGroupSpec['fields'][$index]['option_type'] = (int) !empty($field['option_values']);
           foreach ($field['option_values'] ?? [] as $key => $value) {
-            // Translate simple key/value pairs into full-blown option values
-            // Copied from v3 api code since we are using v4 in some places.
-            // but BAO still needs this.
-            if (!is_array($value)) {
-              $value = [
-                'label' => $value,
-                'value' => $key,
-                'is_active' => 1,
-                'weight' => $weight,
-              ];
-              $key = $weight++;
+            if (is_array($value) && empty($value['id'])) {
+              // The name in the option_value table is value - but Coleman has mapped to id.
+              // https://github.com/civicrm/civicrm-core/pull/17167
+              // The option values are handled in
+              // https://github.com/civicrm/civicrm-core/blob/ed3f5877550c524765812d86c2feff0c4363484e/Civi/Api4/Action/CustomField/CustomFieldSaveTrait.php#L37
+              $customGroupSpec['fields'][$index]['option_values'][$key]['id'] = $value['value'];
             }
-            $customGroupSpec['fields'][$index]['option_label'][$key] = $value['label'];
-            $customGroupSpec['fields'][$index]['option_value'][$key] = $value['value'];
-            $customGroupSpec['fields'][$index]['option_status'][$key] = $value['is_active'] ?? 1;
-            $customGroupSpec['fields'][$index]['option_weight'][$key] = $value['weight'];
           }
         }
       }
