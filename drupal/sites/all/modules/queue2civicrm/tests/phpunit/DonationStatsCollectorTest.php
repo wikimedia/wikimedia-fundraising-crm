@@ -232,7 +232,7 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
     $contribution['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution['receive_date']);
 
     // test output file does not currently exist
-    $this->assertFileNotExists($this->statsFilePath . $this->statsFilename . $this->statsFileExtension);
+    $this->assertFileDoesNotExist($this->statsFilePath . $this->statsFilename . $this->statsFileExtension);
 
     $this->donationStatsCollector->recordDonationStats($message, $contribution);
     $this->donationStatsCollector->outputFileName = $this->statsFilename;
