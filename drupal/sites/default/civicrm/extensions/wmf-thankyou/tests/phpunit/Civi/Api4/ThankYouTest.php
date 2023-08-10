@@ -131,14 +131,14 @@ class ThankYouTest extends TestCase {
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals($this->getExpectedReplyTo(), $sent['reply_to']);
-    $this->assertRegExp('/\$1.23/', $sent['html']);
-    $this->assertNotRegExp('/Wikimedia Endowment/', $sent['html']);
+    $this->assertMatchesRegularExpression('/\$1.23/', $sent['html']);
+    $this->assertDoesNotMatchRegularExpression('/Wikimedia Endowment/', $sent['html']);
 
     // 2021 email has name in the subject, switching to check for the content
-    $this->assertRegExp('/donation is one more reason to celebrate./', $sent['subject']);
+    $this->assertMatchesRegularExpression('/donation is one more reason to celebrate./', $sent['subject']);
 
     // Check for tax information, DAF emails have this removed
-    $this->assertRegExp('/tax-exempt number/', $sent['html']);
+    $this->assertMatchesRegularExpression('/tax-exempt number/', $sent['html']);
   }
 
   /**
@@ -199,11 +199,11 @@ class ThankYouTest extends TestCase {
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals('Endowment TY Sender', $sent['from_name']);
     $this->assertEquals($this->getExpectedReplyTo(), $sent['reply_to']);
-    $this->assertRegExp('/\$1.23/', $sent['html']);
-    $this->assertRegExp('/Wikimedia Endowment/', $sent['html']);
+    $this->assertMatchesRegularExpression('/\$1.23/', $sent['html']);
+    $this->assertMatchesRegularExpression('/Wikimedia Endowment/', $sent['html']);
 
     // 2021 email has name in the subject, switching to check for the content
-    $this->assertRegExp('/gift allows us to look far ahead.$/', $sent['subject']);
+    $this->assertMatchesRegularExpression('/gift allows us to look far ahead.$/', $sent['subject']);
   }
 
   /**
@@ -226,9 +226,9 @@ class ThankYouTest extends TestCase {
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals($this->getExpectedReplyTo(), $sent['reply_to']);
-    $this->assertRegExp('/\$1.23/', $sent['html']);
+    $this->assertMatchesRegularExpression('/\$1.23/', $sent['html']);
     // Check that tax information has been removed
-    $this->assertNotRegExp('/tax-exempt number/', $sent['html']);
+    $this->assertDoesNotMatchRegularExpression('/tax-exempt number/', $sent['html']);
   }
 
   /**
@@ -312,8 +312,8 @@ class ThankYouTest extends TestCase {
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals($this->getExpectedReplyTo(), $sent['reply_to']);
-    $this->assertRegExp('/\$50.00/', $sent['html']);
-    $this->assertRegExp('/\Test Stock Description/', $sent['html']);
+    $this->assertMatchesRegularExpression('/\$50.00/', $sent['html']);
+    $this->assertMatchesRegularExpression('/\Test Stock Description/', $sent['html']);
 
   }
 
@@ -387,9 +387,11 @@ class ThankYouTest extends TestCase {
   }
 
   /**
+   * @param string|null $language
    * @param array $parameters
    *
    * @return array|null
+   * @throws \CRM_Core_Exception
    */
   protected function renderMessage(?string $language = NULL, array $parameters = []): ?array {
     $contributionID = $this->getContributionID();
