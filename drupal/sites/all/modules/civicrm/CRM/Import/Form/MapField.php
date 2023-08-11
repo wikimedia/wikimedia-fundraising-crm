@@ -67,6 +67,12 @@ abstract class CRM_Import_Form_MapField extends CRM_Import_Forms {
     $this->assign('highlightedFields', $this->getHighlightedFields());
     $this->assign('dataValues', array_values($this->getDataRows([], 2)));
     $this->_mapperFields = $this->getAvailableFields();
+    $fieldMappings = $this->getFieldMappings();
+    // Check if the import file headers match the selected import mappings, throw an error if it doesn't.
+    if(count($fieldMappings) > 0 && count($this->getColumnHeaders()) !== count($fieldMappings)) {
+      CRM_Core_Session::singleton()->setStatus(ts('The data columns in this import file appear to be different from the saved mapping. Please verify that you have selected the correct saved ma
+pping before continuing.'));
+    }
     asort($this->_mapperFields);
     parent::preProcess();
   }
@@ -86,6 +92,11 @@ abstract class CRM_Import_Form_MapField extends CRM_Import_Forms {
     $this->saveMapping();
     $this->updateUserJobMetadata('submitted_values', $this->getSubmittedValues());
     $parser = $this->getParser();
+    // Check if the import file headers match the updated mappings. If it does, clear the status that was set in
+    // the initial check.
+    if(count($this->getColumnHeaders()) === count($this->getFieldMappings())) {
+      CRM_Core_Session::singleton()->getStatus(true);
+    }
     $parser->init();
     $parser->validate();
   }
@@ -228,7 +239,7 @@ abstract class CRM_Import_Form_MapField extends CRM_Import_Forms {
       // Eventually we hope to phase out the use of the civicrm_mapping data &
       // just use UserJob and Import Templates (UserJob records with 'is_template' = 1
       $mappedFieldData = $this->userJob['metadata']['import_mappings'][$columnNumber];
-      $mappedField = array_intersect_key(array_fill_keys(['name', 'column_number', 'entity_data'], TRUE), $mappedFieldData);
+      $mappedField = array_intersect_key($mappedFieldData, array_fill_keys(['name', 'column_number', 'entity_data'], TRUE));
       $mappedField['mapping_id'] = $mappingID;
     }
     else {
@@ -296,9 +307,6 @@ abstract class CRM_Import_Form_MapField extends CRM_Import_Forms {
         ->execute()
         ->indexBy('column_number');
 
-      if ((count($this->getColumnHeaders()) !== count($fieldMappings))) {
-        CRM_Core_Session::singleton()->setStatus(ts('The data columns in this import file appear to be different from the saved mapping. Please verify that you have selected the correct saved mapping before continuing.'));
-      }
       return (array) $fieldMappings;
     }
     return [];
