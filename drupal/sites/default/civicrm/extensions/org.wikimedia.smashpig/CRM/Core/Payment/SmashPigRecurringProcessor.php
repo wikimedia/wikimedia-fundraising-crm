@@ -5,6 +5,7 @@ use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\Api4\FailureEmail;
 use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 
@@ -375,6 +376,46 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   }
 
   /**
+   * Try to find a previous contribution using its recurring id
+   *
+   * @param int $recurringId
+   * @param int $isTest
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public static function getPreviousContributionByRecurringId($recurringId, $isTest) {
+    return Contribution::get(FALSE)
+      ->addSelect('*', 'payment_instrument_id:name')
+      ->addWhere('contribution_recur_id', '=', $recurringId)
+      ->addWhere('is_test', '=', $isTest)
+      ->addOrderBy('receive_date', 'DESC')
+      ->setLimit(1)
+      ->execute()
+      ->first();
+  }
+
+  /**
+   * Try to find a previous contribution using its invoice_id
+   *
+   * @param int $invoiceId
+   * @param int $isTest
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public static function getPreviousContributionByInvoiceId($invoiceId, $isTest) {
+    return Contribution::get(FALSE)
+      ->addSelect('*', 'payment_instrument_id:name')
+      ->addWhere('invoice_id', '=', $invoiceId)
+      ->addWhere('is_test', '=', $isTest)
+      ->addOrderBy('receive_date', 'DESC')
+      ->setLimit(1)
+      ->execute()
+      ->first();
+  }
+
+  /**
    * Given a recurring contribution record, try to find the most recent
    * contribution relating to it via either the contribution_recur_id
    * or invoice_id.
@@ -392,38 +433,25 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param array $recurringPayment
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getPreviousContribution($recurringPayment) {
-
-    try {
-      // first try to match on contribution_recur_id
-      return civicrm_api3('Contribution', 'getsingle', [
-        'contribution_recur_id' => $recurringPayment['id'],
-        'options' => [
-          'limit' => 1,
-          'sort' => 'receive_date DESC',
-        ],
-        'is_test' => CRM_Utils_Array::value(
-          'is_test', $recurringPayment['is_test']
-        ),
-      ]);
-    } catch (CiviCRM_API3_Exception $e) {
-      // if the above call yields no result we check to see if a previous contribution
-      // can be found using the invoice_id. If we don't find one here, we let the
-      // CiviCRM_API3_Exception exception bubble up.
-      return civicrm_api3('Contribution', 'getsingle', [
-        'invoice_id' => $recurringPayment['invoice_id'],
-        'options' => [
-          'limit' => 1,
-          'sort' => 'receive_date DESC',
-        ],
-        'is_test' => CRM_Utils_Array::value(
-          'is_test', $recurringPayment['is_test']
-        ),
-      ]);
+    // throw an error if parameters required to find a matching contribution are not available
+    if (empty($recurringPayment['id']) && empty($recurringPayment['invoice_id'])) {
+      throw new CRM_Core_Exception('Missing required parameters to find a matching contribution');
     }
-
+    $result = NULL;
+    if (!empty($recurringPayment['id'])) {
+      $result = self::getPreviousContributionByRecurringId($recurringPayment['id'], $recurringPayment['is_test']);
+    }
+    if (!$result && !empty($recurringPayment['invoice_id'])) {
+      $result = self::getPreviousContributionByInvoiceId($recurringPayment['invoice_id'], $recurringPayment['is_test']);
+    }
+    if (!$result) {
+      throw new CRM_Core_Exception('No matching contribution');
+    }
+    $result['payment_instrument'] = $result['payment_instrument_id:name'];
+    return $result;
   }
 
   /**
