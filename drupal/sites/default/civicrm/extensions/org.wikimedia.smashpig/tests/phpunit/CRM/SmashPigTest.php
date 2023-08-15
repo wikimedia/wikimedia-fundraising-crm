@@ -588,13 +588,15 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $actualDate = $contributionMessage['date'];
     $this->assertLessThan(100, abs($actualDate - $expectedDate));
     unset($contributionMessage['date']);
+    $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
+
     $this->assertEquals([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
-      'gross' => '12.34',
+      'gross' => 12.34,
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
-      'financial_type_id' => '1',
+      'financial_type_id' => $financialType,
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
       'gateway' => 'testSmashPig',
@@ -654,13 +656,15 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $actualDate = $contributionMessage['date'];
     $this->assertLessThan(100, abs($actualDate - $expectedDate));
     unset($contributionMessage['date']);
+    $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
+
     $this->assertEquals([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
       'gross' => '9.00',
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
-      'financial_type_id' => '1',
+      'financial_type_id' => $financialType,
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
       'gateway' => 'testSmashPig',
@@ -794,13 +798,14 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $actualDate = $contributionMessage['date'];
     $this->assertLessThan(100, abs($actualDate - $expectedDate));
     unset($contributionMessage['date']);
+    $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
     $this->assertEquals([
       'contact_id' => $contact['id'],
       'currency' => 'EUR',
       'gross' => '11.22',
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
-      'financial_type_id' => '1',
+      'financial_type_id' => $financialType,
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
       'gateway' => 'testSmashPig',
@@ -1291,13 +1296,14 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $this->assertNull($queue->pop(), 'Queued too many donations!');
     SourceFields::removeFromMessage($contributionMessage);
     unset($contributionMessage['date']);
+    $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
     $this->assertEquals([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
       'gross' => '12.34',
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $nextInvoiceId,
-      'financial_type_id' => '1',
+      'financial_type_id' => $financialType,
       'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
       'gateway' => 'testSmashPig',

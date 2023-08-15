@@ -269,13 +269,14 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $payment, $recurringPayment, $previousPayment
   ) {
     $invoiceId = $payment['invoice_id'];
+    $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
     if ($this->useQueue) {
       $ctId = explode('.', $invoiceId)[0];
       $pid = $recurringPayment['payment_processor_id'];
       $processorName = $this->smashPigProcessors[$pid]['name'];
       $queueMessage = [
         'contact_id' => $recurringPayment['contact_id'],
-        'financial_type_id' => $previousPayment['financial_type_id'],
+        'financial_type_id' => $financialType,
         // Setting both until we are sure contribution_type_id is not being
         // used anywhere.
         'contribution_type_id' => $previousPayment['financial_type_id'],
@@ -297,7 +298,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     else {
       // Create the contribution
       civicrm_api3('Contribution', 'create', [
-        'financial_type_id' => $previousPayment['financial_type_id'],
+        'financial_type_id' => $financialType,
         'payment_instrument_id' => $previousPayment['payment_instrument_id'],
         'total_amount' => $recurringPayment['amount'],
         'currency' => $recurringPayment['currency'],
