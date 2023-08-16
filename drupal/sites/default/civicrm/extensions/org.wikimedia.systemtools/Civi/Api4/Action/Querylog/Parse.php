@@ -55,7 +55,7 @@ class Parse extends AbstractAction {
       $date = substr($line,0,15);
       if (preg_match("/^[A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/",$date)) {
         // We have a new log line.
-        $date = date('Y-m-d H:i:s');
+        $date = date('Y-m-d H:i:s', strtotime($date));
         $type = substr($line, 18, 5) === 'debug' ? 'debug' : 'info';
         $isQuery = substr($line, 24, 9) === ' $Query =';
         if ($isQuery) {
