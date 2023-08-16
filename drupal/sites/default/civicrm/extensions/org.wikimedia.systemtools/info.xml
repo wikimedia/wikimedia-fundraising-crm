@@ -2,7 +2,7 @@
 <extension key="org.wikimedia.systemtools" type="module">
   <file>systemtools</file>
   <name>Home for WMF helpers</name>
-  <description>FIXME</description>
+  <description>Tools to diagnose queries</description>
   <license>AGPL-3.0</license>
   <maintainer>
     <author>eileenmcnaughton</author>
