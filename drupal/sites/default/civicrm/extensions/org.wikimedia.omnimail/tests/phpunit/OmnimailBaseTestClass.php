@@ -33,6 +33,8 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
   use Api3TestTrait;
   use GuzzleTestTrait;
 
+  protected $existingSettings = [];
+
   /**
    * Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
    *
@@ -63,8 +65,6 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     // would be replaced to a call to `$this->getMockRequest()` which loads the
     // mock response rather than doing a live call.
     $this->setBaseUri('https://api-campaign-us-4.goacoustic.com/');
-    Civi::service('settings_manager')->flush();
-    \Civi::$statics['_omnimail_settings'] = [];
   }
 
   /**
@@ -77,6 +77,9 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     $this->cleanupMailingData();
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_omnimail_job_progress');
     SilverpopGuzzleConnector::getInstance()->logout();
+    foreach ($this->existingSettings as $key => $value) {
+      $this->setSetting($key, $value);
+    }
     parent::tearDown();
   }
 
@@ -302,6 +305,42 @@ class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
 
     $this->createMockHandlerForFiles($files);
     $this->setUpClientWithHistoryContainer();
+  }
+
+  /**
+   * Ensure there is a database id setting.
+   *
+   * @param array|int $databaseIDs
+   *
+   * @return array
+   *   Settings prior to change
+   */
+  protected function setDatabaseID($databaseIDs = [50]): array {
+    $credentials = Civi::settings()->get('omnimail_credentials');
+    // This won't actually work if settings is set in civicrm.settings.php but will be used by CI
+    // which now will skip erase if it doesn't have any database_id
+    $this->setSetting('omnimail_credentials', ['Silverpop' => array_merge($credentials['Silverpop'] ?? [], ['database_id' => (array) $databaseIDs])]);
+    return $credentials;
+  }
+
+  /**
+   * This sets the setting for the test, recording the original value to reset.
+   *
+   * Note that this overrides any 'mandatory' setting (ie one recorded in
+   * civicrm.settings.php or, in our case, in fundraising-dev/config/civicrm/settings.d
+   *
+   * @param string $setting
+   * @param array $temporarySettings
+   */
+  protected function setSetting(string $setting, array $temporarySettings): void {
+    $this->existingSettings['omnimail_credentials'] = Civi::settings()->get($setting);
+    Civi::settings()->set($setting, $temporarySettings);
+    // Settings stored in the global are 'mandatory' - ie override the db.
+    global $civicrm_setting;
+    if (isset($civicrm_setting['domain'][$setting])) {
+      $civicrm_setting['domain'][$setting] = $temporarySettings;
+      Civi::service('settings_manager')->flush();
+    }
   }
 
 }

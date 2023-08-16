@@ -69,7 +69,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
    *
    * We should still send a rest request.
    */
-  public function testForgetmeNoRecipientData() {
+  public function testForgetmeNoRecipientData(): void {
     $this->makeScientists();
     $this->setUpForErase();
     $this->addTestClientToRestSingleton();
@@ -95,23 +95,6 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
     $restConnector = SilverpopRestConnector::getInstance();
     $this->setUpClientWithHistoryContainer();
     $restConnector->setClient($this->getGuzzleClient());
-  }
-
-  /**
-   * Ensure there is a database id setting.
-   *
-   * @param array $databaseIDs
-   *
-   * @return array
-   *   Settings prior to change
-   */
-  protected function setDatabaseID($databaseIDs = [50]): array {
-    $settings = Civi::settings()->get('omnimail_credentials');
-    // This won't actually work if settings is set in civicrm.settings.php but will be used by CI
-    // which now will skip erase if it doesn't have any database_id
-    Civi::settings()
-      ->set('omnimail_credentials', ['Silverpop' => array_merge(CRM_Utils_Array::value('Silverpop', $settings, []), ['database_id' => $databaseIDs])]);
-    return $settings;
   }
 
 }
