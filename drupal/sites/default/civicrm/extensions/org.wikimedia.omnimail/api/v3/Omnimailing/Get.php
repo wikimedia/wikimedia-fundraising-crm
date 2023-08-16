@@ -43,8 +43,6 @@ function civicrm_api3_omnimailing_get($params) {
         'scheduled_date' => $mailing->getScheduledDate(),
         'start_date' => $mailing->getSendStartDate(),
         'number_sent' => $mailing->getNumberSent(),
-        'body_html' => $mailing->getHtmlBody(),
-        'body_text' => $mailing->getTextBody(),
         'number_bounced' => $mailing->getNumberBounces(),
         'number_opened_total' => $mailing->getNumberOpens(),
         'number_opened_unique' => $mailing->getNumberUniqueOpens(),
@@ -55,6 +53,8 @@ function civicrm_api3_omnimailing_get($params) {
         // 'clicked_total' => $stats['NumGrossClick'],
         'number_abuse_complaints' => $mailing->getNumberAbuseReports(),
         'list_id' => $mailing->getListId(),
+        'body_html' => $mailing->getHtmlBody(),
+        'body_text' => $mailing->getTextBody(),
       ];
 
       foreach ($result as $key => $value) {
