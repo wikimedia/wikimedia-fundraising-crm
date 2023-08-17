@@ -4,6 +4,7 @@ namespace Civi\Api4;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 use Civi\Api4\Action\Omnicontact\Create;
 use Civi\Api4\Action\Omnicontact\Get;
+use Civi\Api4\Action\Omnicontact\Snooze;
 
 /**
 *  Class OmniContact.
@@ -28,6 +29,21 @@ class Omnicontact extends Generic\AbstractEntity {
     return (new Create(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
+
+  /**
+   * Omnicontact create.
+   *
+   * Add or update an Acoustic recipient.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\OmniContact\Snooze
+   */
+  public static function snooze(bool $checkPermissions = TRUE): Snooze {
+    return (new Snooze(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
 
   /**
    * OmnimailJobProgress Check.

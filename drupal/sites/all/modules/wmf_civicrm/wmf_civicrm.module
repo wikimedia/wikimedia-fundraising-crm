@@ -2109,6 +2109,18 @@ function wmf_civicrm_insert_failure_message_translation($language) {
  * @throws \Civi\API\Exception\NotImplementedException
  */
 function civicrm_api4_queue($ctx, $entity, $action, $params): bool {
-  civicrm_api4($entity, $action, $params);
+  try {
+    civicrm_api4($entity, $action, $params);
+  }
+  catch (CRM_Core_Exception $e) {
+    \Civi::log('wmf')->error('queued action failed {entity} {action} {params} {message} {exception}', [
+      'entity' => $entity,
+      'action' => $action,
+      'params' => $params,
+      'message' => $e->getMessage(),
+      'exception' => $e,
+    ]);
+    return FALSE;
+  }
   return TRUE;
 }

@@ -101,6 +101,7 @@ class Create extends AbstractAction {
       'email' => $this->getEmail(),
       'group_id' => $this->getGroupID(),
       'values' => $this->getValues(),
+      'snooze_end_date' => $this->getValues()['snooze_end_date'] ?? NULL,
       'check_permissions' => $this->getCheckPermissions(),
     ]);
   }

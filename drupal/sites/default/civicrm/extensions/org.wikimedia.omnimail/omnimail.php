@@ -2,6 +2,10 @@
 
 require_once 'omnimail.civix.php';
 
+use Civi\Api4\Email;
+use Civi\Api4\Omnicontact;
+use CRM_Omnimail_ExtensionUtil as E;
+
 // checking if the file exists allows compilation elsewhere if desired.
 if (file_exists( __DIR__ . '/vendor/autoload.php')) {
   require_once __DIR__ . '/vendor/autoload.php';
@@ -148,6 +152,42 @@ function omnimail_civicrm_pre($op, $objectName, $id, &$params) {
           UPDATE civicrm_mailing_provider_data SET contact_id = "'  . (int) key($mergedTo)
           . '" WHERE contact_id = "' . (int) $id . '"'
         );
+      }
+    }
+  }
+
+  // When updating the snooze date for an email queue an update to Acoustic for this information.
+  if (
+    (!empty($params['email_settings.snooze_date']) || !empty($params['primary_email.email_settings.snooze_date']))
+    // This static is a placeholder for later functionality where we want to
+    // update from Acoustic & we don't want this hook to fire to tell Acoustic about
+    // it's own data.
+    && empty(\Civi::$statics['omnimail']['is_batch_snooze_update'])
+    && in_array($objectName, ['Individual', 'Household', 'Organization', 'Contact', 'Email'])
+    && in_array($op, ['edit', 'create'])
+  ) {
+    $snoozeDate =  !empty($params['email_settings.snooze_date']) ? $params['email_settings.snooze_date'] : $params['primary_email.email_settings.snooze_date'];
+    $email = !empty($params['email']) ? $params['email'] : ($params['primary_email.email'] ?? NULL);
+    if (($email || !empty($params['id'])) && strtotime($snoozeDate) > TIME()) {
+      if (!$email) {
+        if ($objectName === 'Email') {
+          $email = Email::get(FALSE)
+            ->addWhere('id', '=', $params['id'])
+            ->addSelect('email')
+            ->execute()->first()['email'];
+        }
+        else {
+          $email = Email::get(FALSE)
+            ->addWhere('contact_id', '=', $params['id'])
+            ->addWhere('is_primary', '=', TRUE)
+            ->addSelect('email')
+            ->execute()->first()['email'];
+        }
+      }
+      if ($email) {
+      Omnicontact::snooze(FALSE)
+        ->setEmail($email)
+        ->setSnoozeDate($snoozeDate)->execute();
       }
     }
   }

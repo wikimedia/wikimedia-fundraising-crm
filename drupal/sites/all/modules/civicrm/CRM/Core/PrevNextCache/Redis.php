@@ -23,7 +23,7 @@
  */
 class CRM_Core_PrevNextCache_Redis implements CRM_Core_PrevNextCache_Interface {
 
-  const TTL = 21600;
+  const TTL = 3600;
 
   /**
    * @var Redis

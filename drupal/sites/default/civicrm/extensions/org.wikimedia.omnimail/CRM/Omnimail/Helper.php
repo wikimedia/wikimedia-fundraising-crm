@@ -23,14 +23,14 @@ class CRM_Omnimail_Helper {
    * @param $params
    * @return array
    */
-  public static function getCredentials($params) {
+  public static function getCredentials($params): array {
     $credentialKeys = ['username', 'password', 'client_id', 'client_secret', 'refresh_token', 'database_id'];
     if ((!isset($params['username']) || !isset($params['password']))
       // The latter 3 are required for Rest.
       && (!isset($params['client_id']) || !isset($params['client_secret']) || !isset($params['refresh_token']) )
     ) {
-      $credentials = self::getSetting('omnimail_credentials');
-      $credentials = CRM_Utils_Array::value($params['mail_provider'], $credentials);
+      $credentials = \Civi::settings()->get('omnimail_credentials');
+      $credentials = $credentials[$params['mail_provider']] ?? [];
     }
     foreach ($credentialKeys as $credentialKey) {
       if (!empty($params[$credentialKey])) {
