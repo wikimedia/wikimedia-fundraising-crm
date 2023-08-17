@@ -272,6 +272,21 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         'Corp Matching Gift' => 'Corp Matching Gift',
       ],
     ],
+    'Donor Specified' => [
+      'name' => 'Donor_Specified',
+      'column_name' => 'donor_specified_340',
+      'label' => ts('Donor Specified'),
+      'data_type' => 'String',
+      'html_type' => 'CheckBox',
+      'default_value' => NULL,
+      'is_required' => false,
+      'is_searchable' => true,
+      'is_search_range' => false,
+      'option_values' => [
+        'Endowment Fund' => 'Endowment Fund',
+        'Unrestricted - Fund' => 'Unrestricted - Fund',
+      ],
+    ],
   ];
 }
 
