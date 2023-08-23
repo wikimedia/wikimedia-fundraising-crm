@@ -415,7 +415,7 @@ class EOYEmailTest extends TestCase {
       ]);
     }
     $mailing = $this->send();
-    $this->assertNotRegExp('/Cancel_or_change_recurring_giving/', $mailing['html']);
+    $this->assertDoesNotMatchRegularExpression('/Cancel_or_change_recurring_giving/', $mailing['html']);
   }
 
   /**
