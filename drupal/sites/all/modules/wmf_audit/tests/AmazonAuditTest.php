@@ -41,7 +41,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
       }
     }
 
-    variable_set('amazon_audit_log_search_past_days', 7);
+    variable_set('amazon_audit_log_search_past_days', 1);
 
     // Fakedb doesn't fake the original txn for refunds, so add one here
     $existing = wmf_civicrm_get_contributions_from_gateway_id('amazon', 'P01-4968629-7654321-C070794');
