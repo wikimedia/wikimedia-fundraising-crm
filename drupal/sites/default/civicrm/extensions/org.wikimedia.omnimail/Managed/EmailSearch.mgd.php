@@ -1,6 +1,7 @@
 <?php
 
 use CRM_Omnimail_ExtensionUtil as E;
+
 return [
   [
     'name' => 'SavedSearch_snooze',
@@ -25,15 +26,27 @@ return [
             'email_settings.snooze_date',
             'on_hold:label',
             'hold_date',
+            'Email_Contact_contact_id_01.display_name',
+            'is_primary',
           ],
           'orderBy' => [],
           'where' => [],
           'groupBy' => [],
-          'join' => [],
+          'join' => [
+            [
+              'Contact AS Email_Contact_contact_id_01',
+              'INNER',
+              [
+                'contact_id',
+                '=',
+                'Email_Contact_contact_id_01.id',
+              ],
+            ],
+          ],
           'having' => [],
         ],
         'expires_date' => NULL,
-        'description' => 'Emails with snooze info',
+        'description' => E::ts('Emails with snooze info'),
       ],
       'match' => [
         'name',
@@ -70,7 +83,7 @@ return [
               'type' => 'field',
               'key' => 'email_settings.snooze_date',
               'dataType' => 'Date',
-              'label' => E::ts('Email Settings: Snooze date'),
+              'label' => E::ts('Email: Snooze date'),
               'sortable' => TRUE,
               'editable' => TRUE,
             ],
@@ -88,6 +101,13 @@ return [
                 'target' => '_blank',
               ],
               'title' => E::ts('View Contact'),
+            ],
+            [
+              'type' => 'field',
+              'key' => 'on_hold:label',
+              'dataType' => 'Integer',
+              'label' => E::ts('On Hold'),
+              'sortable' => TRUE,
             ],
             [
               'type' => 'field',
