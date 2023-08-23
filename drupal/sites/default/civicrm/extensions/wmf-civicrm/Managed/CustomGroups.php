@@ -66,6 +66,17 @@ return [
     ],
     'fields' => _wmf_civicrm_get_communication_fields(),
   ],
+  'Adjustment' => [
+    'group' => [
+      'name' => 'Adjustment',
+      'table_name' => 'civicrm_value_adjustment_31',
+      'title' => ts('Adjustment'),
+      'extends' => 'Contribution',
+      'style' => 'inline',
+      'is_active' => 1,
+    ],
+    'fields' => _wmf_civicrm_get_gift_adjustment_fields(),
+  ],
   'Gift_Data' => [
     'group' => [
       'name' => 'Gift_Data',
@@ -260,6 +271,80 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         'Mobile Giving' => 'Mobile Giving',
         'Corp Matching Gift' => 'Corp Matching Gift',
       ],
+    ],
+    'Donor Specified' => [
+      'name' => 'Donor_Specified',
+      'column_name' => 'donor_specified_340',
+      'label' => ts('Donor Specified'),
+      'data_type' => 'String',
+      'html_type' => 'CheckBox',
+      'default_value' => NULL,
+      'is_required' => false,
+      'is_searchable' => true,
+      'is_search_range' => false,
+      'option_values' => [
+        'Endowment Fund' => 'Endowment Fund',
+        'Unrestricted - Fund' => 'Unrestricted - Fund',
+      ],
+    ],
+  ];
+}
+
+/**
+ * Get fields for gift adjustment custom group.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_gift_adjustment_fields(): array {
+  return [
+    'Date' => [
+      'name' => 'Date',
+      'column_name' => 'date',
+      'label' => ts('Date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'default_value' => NULL,
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 1,
+      'help_pre' => 'Enter the date of the adjustment',
+      'date_format' => 'mm/dd/yy',
+      'weight' => 4,
+      'note_columns' => 60,
+      'note_rows' => 4,
+    ],
+    'Reason' => [
+      'name' => 'Reason',
+      'column_name' => 'reason',
+      'label' => ts('Reason'),
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'default_value' => NULL,
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 1,
+      'weight' => 8,
+      'option_values' => [
+        'Direct Mail Appeal' => 'Direct Mail Appeal',
+        'Change Restriction to Unrestricted - General' => 'Change Restriction to Unrestricted - General',
+        'Change Restriction to Endowment Fund' => 'Change Restriction to Endowment Fund',
+      ],
+    ],
+    'Notes' => [
+      'name' => 'Notes',
+      'column_name' => 'notes',
+      'label' => ts('Notes'),
+      'data_type' => 'Memo',
+      'html_type' => 'TextArea',
+      'default_value' => NULL,
+      'is_active' => 1,
+      'is_required' => 0,
+      'is_searchable' => 1,
+      'weight' => 9,
+      'help_pre' => 'Record information about the adjustment',
+      'attributes' => 'rows=4, cols=60',
+      'note_columns' => 60,
+      'note_rows' => 4,
     ],
   ];
 }
