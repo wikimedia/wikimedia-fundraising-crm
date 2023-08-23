@@ -93,7 +93,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         'opt_out_date' => $response->getOptOutIsoDateTime() ?: NULL,
         'snooze_end_date' => $response->getSnoozeEndIsoDateTime() ?: NULL,
         'last_modified_date' => $response->getLastModifiedIsoDateTime()?: NULL,
-        'url' => 'https://engage4.silverpop.com/searchRecipient.do?action=edit&recipientId=' . $response->getContactIdentifier() . '&listId=' . $params['database_id'],
+        'url' => 'https://cloud.goacoustic.com/campaign-automation/Data/Databases?cuiOverrideSrc=https%253A%252F%252Fcampaign-us-4.goacoustic.com%252FsearchRecipient.do%253FisShellUser%253D1%2526action%253Dedit%2526listId%253D9644238%2526recipientId%253D' . $response->getContactIdentifier() . '&listId=' . $params['database_id'],
       ];
       return array_merge($return, $response->getFields());
     }
