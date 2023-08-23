@@ -32,7 +32,7 @@ class CRM_Omnimail_Page_MailingsView extends CRM_Core_Page {
       ];
       $mailings[$index]['contact_identifier'] = [
         'display' => (isset($mailing['contact_identifier']) ?
-          '<a href="https://engage4.silverpop.com/searchRecipient.do?action=edit&listId=9644238&recipientId=' . $mailing['contact_identifier']
+          '<a href="https://cloud.goacoustic.com/campaign-automation/Data/Databases?cuiOverrideSrc=https%253A%252F%252Fcampaign-us-4.goacoustic.com%252FsearchRecipient.do%253FisShellUser%253D1%2526action%253Dedit%2526listId%253D9644238%2526recipientId%253D' . $mailing['contact_identifier']
           . '" class="action-item crm-hover-button no-popup" title="' . ts("View Contact in Acoustic")
           . '">' . $mailing['contact_identifier'] . '</a>' : ''),
         'name' => $mailing['contact_identifier'],
