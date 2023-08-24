@@ -32,7 +32,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       }
     }
 
-    variable_set('adyen_audit_log_search_past_days', 7);
+    variable_set('adyen_audit_log_search_past_days', 1);
 
     // Fakedb doesn't fake the original txn for refunds, so add one here
     $existing = wmf_civicrm_get_contributions_from_gateway_id('adyen', '4522268860022701');

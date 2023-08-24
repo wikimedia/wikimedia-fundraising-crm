@@ -36,7 +36,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
       }
     }
 
-    variable_set('ingenico_audit_log_search_past_days', 7);
+    variable_set('ingenico_audit_log_search_past_days', 1);
 
     // Fakedb doesn't fake the original txn for refunds, so add one here
     $existing = wmf_civicrm_get_contributions_from_gateway_id('globalcollect', '11992288');
