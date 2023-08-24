@@ -140,6 +140,7 @@ return [
             'table',
             'table-striped',
           ],
+          'button' => 'Search',
         ],
         'acl_bypass' => FALSE,
       ],
