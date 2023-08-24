@@ -68,7 +68,7 @@ return [
         'settings' => [
           'description' => E::ts('Emails with editable snooze date'),
           'sort' => [],
-          'limit' => 50,
+          'limit' => 10,
           'pager' => [],
           'placeholder' => 5,
           'columns' => [
