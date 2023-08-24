@@ -60,6 +60,7 @@ class ForeignChecksFileTest extends BaseChecksFileTest {
       'contact_type' => 'Individual',
       'gateway_txn_id' => '3333f8fd5703c6a319c4a9d2b5a2d8c6',
       'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'),
+      'restrictions' => 'Unrestricted - General'
     );
 
     $importer = new ForeignChecksFileProbe();

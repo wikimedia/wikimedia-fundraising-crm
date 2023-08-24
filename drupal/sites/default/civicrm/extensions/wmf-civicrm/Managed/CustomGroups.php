@@ -230,6 +230,8 @@ function _wmf_civicrm_get_gift_data_fields(): array {
       'is_required' => 1,
       'is_searchable' => 1,
       'option_values' => [
+        'Individual Gift' => 'Individual Gift',
+        'Online Gift' => 'Online Gift',
         'Alternative Gifts' => 'Alternative Gifts',
         'Benefactor Gift' => 'Benefactor Gift',
         'BusDev' => 'BusDev',

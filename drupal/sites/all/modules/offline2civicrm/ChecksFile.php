@@ -578,6 +578,7 @@ abstract class ChecksFile {
       'contact_type' => 'Individual',
       'country' => 'US',
       'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'),
+      'restrictions' => 'Unrestricted - General',
     ];
   }
 

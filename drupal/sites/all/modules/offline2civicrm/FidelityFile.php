@@ -83,7 +83,6 @@ class FidelityFile extends ChecksFile {
       'currency' => 'USD',
       'payment_instrument_id' => 'EFT',
       'gift_source' => 'Donor Advised Fund',
-      'restrictions' => 'Restricted - Foundation',
     ];
   }
 

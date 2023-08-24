@@ -48,7 +48,6 @@ class CitibankIndividualsFile extends ChecksFile {
       'gateway' => 'citibank',
       'no_thank_you' => 'No Contact Details',
       'payment_instrument' => 'Citibank International',
-      'restrictions' => 'Unrestricted - General',
       'currency' => 'USD',
     ]);
   }
@@ -83,7 +82,8 @@ class CitibankIndividualsFile extends ChecksFile {
    * @return string
    */
   protected function getGiftSource($msg): string {
-    return $msg['gross'] >= 1000 ? 'Benefactor Gift' : 'Community Gift';
+    // return $msg['gross'] >= 1000 ? 'Benefactor Gift' : 'Community Gift';
+    return 'Individual Gift';
   }
 
 }
