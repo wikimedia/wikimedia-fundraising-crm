@@ -30,7 +30,13 @@ return [
             'is_primary',
           ],
           'orderBy' => [],
-          'where' => [],
+          'where' => [
+            [
+              'Email_Contact_contact_id_01.is_deleted',
+              '=',
+              FALSE,
+            ],
+          ],
           'groupBy' => [],
           'join' => [
             [
