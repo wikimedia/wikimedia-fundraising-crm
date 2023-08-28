@@ -15,5 +15,9 @@
   "permission": "access CiviCRM",
   "redirect": null,
   "create_submission": false,
-  "navigation": null
+  "navigation": {
+    "parent": "Contacts",
+    "label": "Email Snooze",
+    "weight": 20
+  }
 }

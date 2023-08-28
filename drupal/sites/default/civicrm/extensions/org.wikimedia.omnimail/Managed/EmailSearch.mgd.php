@@ -30,7 +30,13 @@ return [
             'is_primary',
           ],
           'orderBy' => [],
-          'where' => [],
+          'where' => [
+            [
+              'Email_Contact_contact_id_01.is_deleted',
+              '=',
+              FALSE,
+            ],
+          ],
           'groupBy' => [],
           'join' => [
             [
@@ -68,7 +74,7 @@ return [
         'settings' => [
           'description' => E::ts('Emails with editable snooze date'),
           'sort' => [],
-          'limit' => 50,
+          'limit' => 10,
           'pager' => [],
           'placeholder' => 5,
           'columns' => [
@@ -140,6 +146,7 @@ return [
             'table',
             'table-striped',
           ],
+          'button' => 'Search',
         ],
         'acl_bypass' => FALSE,
       ],

@@ -65,13 +65,7 @@ class BenevityFile extends ChecksFile {
     foreach ($moneyFields as $moneyField) {
       $msg[$moneyField] = isset($msg[$moneyField]) ? (str_replace(',', '', $msg[$moneyField])) : 0;
     }
-
-    if ($msg['original_gross'] >= 1000) {
-      $msg['gift_source'] = 'Benefactor Gift';
-    }
-    else {
-      $msg['gift_source'] = 'Community Gift';
-    }
+    $msg['gift_source'] = 'Payroll Deduction';
     foreach ($msg as $field => $value) {
       if ($value === 'Not shared by donor') {
         $msg[$field] = '';
@@ -171,8 +165,7 @@ class BenevityFile extends ChecksFile {
       // but we don't actually know what date they did that on,
       // and recording it in our system would seem to imply we know for
       // sure it happened (as opposed to Benevity says it happens).
-      'no_thank_you' => 1,
-      'financial_type_id' => "Benevity",
+      'no_thank_you' => 1
     ];
   }
 
@@ -247,7 +240,6 @@ class BenevityFile extends ChecksFile {
       $matchedMsg['gross'] = $msg['matching_amount'];
       $matchedMsg['gateway_txn_id'] = $msg['gateway_txn_id'] . '_matched';
       $matchedMsg['gift_source'] = 'Matching Gift';
-      $matchedMsg['restrictions'] = 'Restricted - Foundation';
       if (empty($msg['gross'])) {
         // We no longer get separate values for the fee for the matching donation vs the main one.
         // So, now we assign the whole fee to the main donation, if there is one. Otherwise
