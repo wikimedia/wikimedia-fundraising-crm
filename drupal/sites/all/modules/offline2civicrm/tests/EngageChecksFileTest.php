@@ -60,7 +60,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'direct_mail_appeal' => 'White Mail',
       'first_name' => 'Sub',
       'gateway' => 'engage',
-      'gateway_txn_id' => 'e59ed825ea04516fb2abf1c130d47525',
+      'gateway_txn_id' => '7b7a53e239400a13bd6be6c91c4f6c4e',
       'gift_source' => 'Community Gift',
       'gross' => '50',
       'import_batch_number' => '1234',
@@ -122,7 +122,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'date' => 1396310400,
       'direct_mail_appeal' => 'White Mail',
       'gateway' => 'engage',
-      'gateway_txn_id' => '9481b4dcb1d29fc965a58defa4cfb868',
+      'gateway_txn_id' => '35c972ced3ea450d2da0b26eedb83a6d',
       'gift_source' => 'Foundation Gift',
       'gross' => '51.23',
       'import_batch_number' => '1235',
@@ -233,7 +233,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $anonymousContact = $this->callAPISuccessGetSingle('Contact', ['email' => 'fakeemail@wikimedia.org']);
     $this->assertEquals('Anonymous', $anonymousContact['first_name']);
     $this->assertEquals('Anonymous', $anonymousContact['last_name']);
-    $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $anonymousContact['id'], 'trxn_id' => 'ENGAGE fd786ef1d6398a8bebdb69e8a81c8fdc']);
+    $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $anonymousContact['id'], 'trxn_id' => 'ENGAGE 7cc532d783a7461f227a5da8ea80bfe1']);
   }
 
   /**
@@ -370,7 +370,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $this->callAPISuccessGetSingle('Contribution', [
       'contact_id' => $daisy[1]['id'],
-      'trxn_id' => 'ENGAGE 505C30160D9BD138D57A6ACE5151E0CD',
+      'trxn_id' => 'ENGAGE 05311655a15b75fab86956663e1819cd',
     ]);
   }
 
@@ -433,7 +433,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $this->callAPISuccessGetSingle('Contribution', [
       'contact_id' => $daisy[1]['id'],
-      'trxn_id' => 'ENGAGE 505C30160D9BD138D57A6ACE5151E0CD',
+      'trxn_id' => 'ENGAGE 05311655a15b75fab86956663e1819cd',
     ]);
   }
 
@@ -484,7 +484,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $this->callAPISuccessGetSingle('Contribution', [
       'contact_id' => $villains[1]['id'],
-      'trxn_id' => 'ENGAGE 8b9b07e073fa60590365ebd6885e2b37',
+      'trxn_id' => 'ENGAGE 3644a684f98ea8fe223c713b77189a77',
     ]);
     $villain = Contact::get(FALSE)->addWhere('id', '=', $villains[1]['id'])->setSelect([
       'Organization_Contact.Name',
@@ -575,7 +575,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     // Check Minnie 1 has the contribution.
     $this->callAPISuccessGetSingle('Contribution', [
-        'trxn_id' => 'ENGAGE 2FF5DCA37146BF766F8658855EA5471F',
+        'trxn_id' => 'ENGAGE 4b01078e96f65f2ad6573ce6fecc944d',
         'contact_id' => $minnies[1]['id'],
       ]
     );
@@ -658,7 +658,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $this->callAPISuccessGetSingle('Contribution', [
       'contact_id' => $goodyID,
-      'trxn_id' => 'ENGAGE 7a566fb6cd2f7f39b986ed60404ebbda',
+      'trxn_id' => 'ENGAGE b7a782741f667201b54880c925faec4b',
       'return' => 'id',
     ]);
 
@@ -725,9 +725,11 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $this->assertEquals(
       [
         0 => 'Successful import!',
-        'Result' => '15 out of 18 rows were imported.',
+        'Result' => '14 out of 18 rows were imported.',
         'Error' => '3 Error rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_errors.' . $user->uid, $fileUri), 12) . "'> file</a>.",
+        'Duplicate' => '1 Duplicate row logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_skipped.' . $user->uid, $fileUri), 12) . "'> file</a>.",
         'Rows where new contacts were created' => '14 Rows where new contacts were created rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_all_not_matched.' . $user->uid, $fileUri), 12) . "'> file</a>.",
+        'not imported' => '4 not imported rows logged to <a href=\'/import_output/' . substr(str_replace('.csv', '_all_missed.' . $user->uid, $fileUri), 12) . "'> file</a>.",
       ]
       , $messages);
 
@@ -747,13 +749,13 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $this->assertFileExists($skippedURI);
     $skipped = file($skippedURI);
     // 1 + 1 header row
-    $this->assertCount(1, $skipped);
+    $this->assertCount(2, $skipped);
 
     $allURI = str_replace('.csv', '_all_missed.' . $user->uid . '.csv', $fileUri);
     $this->assertFileExists($allURI);
     $all = file($allURI);
     // 1 header row, 1 skipped, 3 errors.
-    $this->assertCount(4, $all);
+    $this->assertCount(5, $all);
 
   }
 

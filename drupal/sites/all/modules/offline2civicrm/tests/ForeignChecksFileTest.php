@@ -58,7 +58,7 @@ class ForeignChecksFileTest extends BaseChecksFileTest {
       'street_address' => '1000 Markdown Markov',
       'contact_source' => 'check',
       'contact_type' => 'Individual',
-      'gateway_txn_id' => '3333f8fd5703c6a319c4a9d2b5a2d8c6',
+      'gateway_txn_id' => '7b7a53e239400a13bd6be6c91c4f6c4e',
       'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'),
       'restrictions' => 'Unrestricted - General'
     );
