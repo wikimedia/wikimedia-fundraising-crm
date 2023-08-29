@@ -6,9 +6,13 @@
 <h6>Locate the row of the email to be snoozed and select the "Email settings: snooze date" cell to update the date.</h6>
 
 
-</div>
-<af-field name="email" />
-<af-field name="on_hold" defn="{input_attrs: {multiple: true}, required: false}" />
-<af-field name="Email_Contact_contact_id_01.id" defn="{required: false, input_attrs: {}}" />
-<crm-search-display-table search-name="snooze" display-name="snooze_table"></crm-search-display-table>
+
+
+  </div>
+  <div class="af-container af-layout-cols">
+    <af-field name="email" />
+    <af-field name="Email_Contact_contact_id_01.id" defn="{required: false, input_attrs: {}}" />
+    <af-field name="on_hold" defn="{input_attrs: {multiple: true}, required: false}" />
+  </div>
+  <crm-search-display-table search-name="snooze" display-name="snooze_table"></crm-search-display-table>
 </div>
