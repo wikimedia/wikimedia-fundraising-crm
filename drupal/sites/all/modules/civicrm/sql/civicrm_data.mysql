@@ -4693,11 +4693,12 @@ SELECT @domainID := id FROM civicrm_domain where name = 'Default Domain Name';
 
 INSERT INTO civicrm_location_type (`description`,`display_name`,`is_active`,`is_default`,`is_reserved`,`name`,`vcard_name`) VALUES
 ("Place of residence","Home","1","1","0","Home","HOME"),
-("Work location","Work","1",NULL,"0","Work","WORK"),
-("Main office location","Main","1",NULL,"0","Main",NULL),
-("Other location","Other","1",NULL,"0","Other",NULL),
-("Billing Address location","Billing","1",NULL,"1","Billing",NULL)
+("Work location","Work","1","0","0","Work","WORK"),
+("Main office location","Main","1","0","0","Main",NULL),
+("Other location","Other","1","0","0","Other",NULL),
+("Billing Address location","Billing","1","0","1","Billing",NULL)
 ;
+
 INSERT INTO civicrm_relationship_type (`contact_type_a`,`contact_type_b`,`description`,`is_reserved`,`label_a_b`,`label_b_a`,`name_a_b`,`name_b_a`) VALUES
 ("Individual","Individual","Parent/child relationship.","0","Child of","Parent of","Child of","Parent of"),
 ("Individual","Individual","Spousal relationship.","0","Spouse of","Spouse of","Spouse of","Spouse of"),
@@ -4710,6 +4711,7 @@ INSERT INTO civicrm_relationship_type (`contact_type_a`,`contact_type_b`,`descri
 ("Individual","Individual","Case Coordinator","0","Case Coordinator is","Case Coordinator","Case Coordinator is","Case Coordinator"),
 ("Individual","Individual","Immediate workplace supervisor","0","Supervised by","Supervisor","Supervised by","Supervisor")
 ;
+
 INSERT INTO civicrm_tag (`description`,`name`,`parent_id`,`used_for`) VALUES
 ("Any not-for-profit organization.","Non-profit",NULL,"civicrm_contact"),
 ("For-profit organization.","Company",NULL,"civicrm_contact"),
@@ -4717,22 +4719,25 @@ INSERT INTO civicrm_tag (`description`,`name`,`parent_id`,`used_for`) VALUES
 ("High-value supporter of our organization.","Major Donor",NULL,"civicrm_contact"),
 ("Active volunteers.","Volunteer",NULL,"civicrm_contact")
 ;
+
 INSERT INTO civicrm_mailing_component (`body_html`,`body_text`,`component_type`,`is_active`,`is_default`,`name`,`subject`) VALUES
 ("Sample Header for HTML formatted content.","Sample Header for TEXT formatted content.","Header","1","1","Mailing Header","Descriptive Title for this Header"),
 ("Sample Footer for HTML formatted content<br/><a href=\"{action.optOutUrl}\">Unsubscribe</a>  <br/> {domain.address}","to unsubscribe: {action.optOutUrl}\n{domain.address}","Footer","1","1","Mailing Footer","Descriptive Title for this Footer."),
-("You have a pending subscription to the {subscribe.group} mailing list. To confirm this subscription, reply to this email or click <a href=\"{subscribe.url}\">here</a>.","You have a pending subscription to the {subscribe.group} mailing list. To confirm this subscription, reply to this email or click on this link: {subscribe.url}","Subscribe","1","1","Subscribe Message","Subscription Confirmation Request"),
-("Welcome. Your subscription to the {welcome.group} mailing list has been activated.","Welcome. Your subscription to the {welcome.group} mailing list has been activated.","Welcome","1","1","Welcome Message","Your Subscription has been Activated"),
+("You have a pending subscription to the {group.frontend_title} mailing list. To confirm this subscription, reply to this email or click <a href=\"{subscribe.url}\">here</a>.","You have a pending subscription to the {group.frontend_title} mailing list. To confirm this subscription, reply to this email or click on this link: {subscribe.url}","Subscribe","1","1","Subscribe Message","Subscription Confirmation Request"),
+("Welcome. Your subscription to the {group.frontend_title} mailing list has been activated.","Welcome. Your subscription to the {group.frontend_title} mailing list has been activated.","Welcome","1","1","Welcome Message","Your Subscription has been Activated"),
 ("You have been un-subscribed from the following groups: {unsubscribe.group}. You can re-subscribe by mailing {action.resubscribe} or clicking <a href=\"{action.resubscribeUrl}\">here</a>.","You have been un-subscribed from the following groups: {unsubscribe.group}. You can re-subscribe by mailing {action.resubscribe} or clicking {action.resubscribeUrl}","Unsubscribe","1","1","Unsubscribe Message","Un-subscribe Confirmation"),
 ("You have been re-subscribed to the following groups: {resubscribe.group}. You can un-subscribe by mailing {action.unsubscribe} or clicking <a href=\"{action.unsubscribeUrl}\">here</a>.","You have been re-subscribed to the following groups: {resubscribe.group}. You can un-subscribe by mailing {action.unsubscribe} or clicking {action.unsubscribeUrl}","Resubscribe","1","1","Resubscribe Message","Re-subscribe Confirmation"),
 ("Your email address has been removed from {domain.name} mailing lists.","Your email address has been removed from {domain.name} mailing lists.","OptOut","1","1","Opt-out Message","Opt-out Confirmation"),
 ("This is an automated reply from an un-attended mailbox. Please send any inquiries to the contact email address listed on our web-site.","This is an automated reply from an un-attended mailbox. Please send any inquiries to the contact email address listed on our web-site.","Reply","1","1","Auto-responder","Please Send Inquiries to Our Contact Email Address")
 ;
+
 INSERT INTO civicrm_financial_type (`is_active`,`is_deductible`,`is_reserved`,`name`) VALUES
 ("1","1","0","Donation"),
 ("1","1","0","Member Dues"),
 ("1","0","0","Campaign Contribution"),
 ("1","0","0","Event Fee")
 ;
+
 INSERT INTO civicrm_option_group (`is_active`,`is_reserved`,`name`,`option_value_fields`,`title`) VALUES
 ("1","1","preferred_communication_method","name,label,description","Preferred Communication Method")
 ;
@@ -4797,8 +4802,6 @@ INSERT INTO civicrm_option_value (`color`,`component_id`,`description`,`domain_i
 (NULL,"2","",NULL,"1",NULL,NULL,"1","0","0","1","Update Recurring Contribution","Update Recurring Contribution",@this_option_group_id,"39",NULL,"39"),
 (NULL,NULL,"",NULL,"1",NULL,NULL,"1","0","0","1","Reminder Sent","Reminder Sent",@this_option_group_id,"40",NULL,"40"),
 (NULL,"2","Export Accounting Batch",NULL,"1",NULL,NULL,"1","0","0","1","Export Accounting Batch","Export Accounting Batch",@this_option_group_id,"41",NULL,"41"),
-(NULL,"2","Create Batch",NULL,"1",NULL,NULL,"1","0","0","1","Create Batch","Create Batch",@this_option_group_id,"42",NULL,"42"),
-(NULL,"2","Edit Batch",NULL,"1",NULL,NULL,"1","0","0","1","Edit Batch","Edit Batch",@this_option_group_id,"43",NULL,"43"),
 (NULL,NULL,"SMS delivery",NULL,"1",NULL,NULL,"1","0","0","1","SMS delivery","SMS delivery",@this_option_group_id,"44",NULL,"44"),
 (NULL,NULL,"Inbound SMS",NULL,"1",NULL,NULL,"1","0","0","1","Inbound SMS","Inbound SMS",@this_option_group_id,"45",NULL,"45"),
 (NULL,"2","Additional payment recorded for event or membership fee.",NULL,"1",NULL,NULL,"1","0","0","1","Payment","Payment",@this_option_group_id,"46",NULL,"46"),
@@ -4808,7 +4811,8 @@ INSERT INTO civicrm_option_value (`color`,`component_id`,`description`,`domain_i
 (NULL,NULL,"Emailed Invoice.",NULL,"1",NULL,NULL,"1","0","0","1","Emailed Invoice","Emailed Invoice",@this_option_group_id,"50",NULL,"50"),
 (NULL,NULL,"Contact Merged",NULL,"1",NULL,NULL,"1","0","0","1","Contact Merged","Contact Merged",@this_option_group_id,"51",NULL,"51"),
 (NULL,NULL,"Contact was merged into another contact",NULL,"1",NULL,NULL,"1","0","0","1","Contact Deleted by Merge","Contact Deleted by Merge",@this_option_group_id,"52",NULL,"52"),
-(NULL,"2","Failed Payment",NULL,"1",NULL,NULL,"1","0","0","1","Failed Payment","Failed Payment",@this_option_group_id,"54",NULL,"54")
+(NULL,"2","Failed Payment",NULL,"1",NULL,NULL,"1","0","0","1","Failed Payment","Failed Payment",@this_option_group_id,"54",NULL,"54"),
+(NULL,"7","Case client was removed from a case",NULL,"0",NULL,"fa-trash","1","0","0","0","Case Client was removed from Case","Case Client Removed",@this_option_group_id,"55",NULL,"55")
 ;
 INSERT INTO civicrm_option_group (`data_type`,`description`,`is_active`,`is_reserved`,`name`,`option_value_fields`,`title`) VALUES
 ("Integer","CiviCRM is pre-configured with standard options for individual gender (Male, Female, Other). Modify these options as needed for your installation.","1","1","gender","name,label,description","Gender")
@@ -6080,6 +6084,7 @@ INSERT INTO civicrm_option_group (`data_type`,`is_active`,`is_reserved`,`name`,`
 ("Integer","1","1","file_type","name,label,description","File Type")
 ;
 
+
 -- CRM-6138
 --
 -- Generated from languages.tpl
@@ -6309,6 +6314,7 @@ INSERT INTO civicrm_option_value (`color`,`component_id`,`description`,`domain_i
 (NULL,NULL,NULL,NULL,"0",NULL,NULL,"1","0","0","1","Letter Mail","letter_mail",@this_option_group_id,"5",NULL,"5")
 ;
 
+
 INSERT INTO civicrm_membership_status (`end_event`,`end_event_adjust_interval`,`end_event_adjust_unit`,`is_active`,`is_admin`,`is_current_member`,`is_default`,`is_reserved`,`label`,`name`,`start_event`,`start_event_adjust_interval`,`start_event_adjust_unit`,`weight`) VALUES
 ("join_date","3","month","1","0","1","0","0","New","New","join_date",NULL,NULL,"1"),
 ("end_date",NULL,NULL,"1","0","1","1","0","Current","Current","start_date",NULL,NULL,"2"),
@@ -6318,15 +6324,17 @@ INSERT INTO civicrm_membership_status (`end_event`,`end_event_adjust_interval`,`
 ("join_date",NULL,NULL,"1","0","0","0","1","Cancelled","Cancelled","join_date",NULL,NULL,"6"),
 (NULL,NULL,NULL,"1","1","0","0","1","Deceased","Deceased",NULL,NULL,NULL,"7")
 ;
+
 INSERT INTO civicrm_preferences_date (`date_format`,`description`,`end`,`name`,`start`,`time_format`) VALUES
 ("","Date for relationships. activities. contributions: receive, receipt, cancel. membership: join, start, renew. case: start, end.","10","activityDate","20",""),
 ("","Date and time for activity: scheduled. participant: registered.","10","activityDateTime","20","1"),
 ("","Birth and deceased dates. Only year, month and day fields are supported.","0","birth","100",""),
-("M Y","Month and year only for credit card expiration.","10","creditCard","0",""),
+("m Y","Month and year only for credit card expiration.","10","creditCard","0",""),
 ("","Uses date range passed in by form field. Can pass in a posix date part parameter. Start and end offsets defined here are ignored.","20","custom","20",""),
 ("","Date and time. Used for scheduling mailings.","1","mailing","0",""),
 ("","Used in search forms.","20","searchDate","20","")
 ;
+
 INSERT INTO civicrm_payment_processor_type (`billing_mode`,`class_name`,`description`,`is_active`,`is_default`,`is_recur`,`name`,`password_label`,`signature_label`,`subject_label`,`title`,`url_api_default`,`url_api_test_default`,`url_button_default`,`url_button_test_default`,`url_recur_default`,`url_recur_test_default`,`url_site_default`,`url_site_test_default`,`user_name_label`) VALUES
 ("4","Payment_PayPalImpl",NULL,"1","0","1","PayPal_Standard",NULL,NULL,NULL,"PayPal - Website Payments Standard",NULL,NULL,NULL,NULL,"https://www.paypal.com/","https://www.sandbox.paypal.com/","https://www.paypal.com/","https://www.sandbox.paypal.com/","Merchant Account Email"),
 ("3","Payment_PayPalImpl",NULL,"1","0","1","PayPal","Password","Signature",NULL,"PayPal - Website Payments Pro","https://api-3t.paypal.com/","https://api-3t.sandbox.paypal.com/","https://www.paypal.com/en_US/i/btn/btn_xpressCheckout.gif","https://www.paypal.com/en_US/i/btn/btn_xpressCheckout.gif","https://www.paypal.com/","https://www.sandbox.paypal.com/","https://www.paypal.com/","https://www.sandbox.paypal.com/","User Name"),
@@ -6337,6 +6345,7 @@ INSERT INTO civicrm_payment_processor_type (`billing_mode`,`class_name`,`descrip
 ("1","Payment_Realex",NULL,"0","0","0","Realex","Password",NULL,"Account","Realex Payment",NULL,NULL,NULL,NULL,NULL,NULL,"https://epage.payandshop.com/epage.cgi","https://epage.payandshop.com/epage-remote.cgi","Merchant ID"),
 ("1","Payment_FirstData","FirstData (aka linkpoint)","0","0","0","FirstData","certificate path",NULL,NULL,"FirstData (aka linkpoint)",NULL,NULL,NULL,NULL,NULL,NULL,"https://secure.linkpt.net","https://staging.linkpt.net","Store name")
 ;
+
 
 INSERT INTO civicrm_dedupe_rule_group (`contact_type`,`is_reserved`,`name`,`threshold`,`title`,`used`) VALUES
 ("Individual","1","IndividualSupervised","20","Name and Email (reserved)","Supervised")
@@ -6350,6 +6359,7 @@ INSERT INTO civicrm_dedupe_rule (`dedupe_rule_group_id`,`rule_field`,`rule_table
 (@drgid,"last_name","civicrm_contact","7"),
 (@drgid,"email","civicrm_email","10")
 ;
+
 INSERT INTO civicrm_dedupe_rule_group (`contact_type`,`is_reserved`,`name`,`threshold`,`title`,`used`) VALUES
 ("Organization","0","OrganizationSupervised","10","Name or Email","Supervised")
 ;
@@ -6361,6 +6371,7 @@ INSERT INTO civicrm_dedupe_rule (`dedupe_rule_group_id`,`rule_field`,`rule_table
 (@drgid,"organization_name","civicrm_contact","10"),
 (@drgid,"email","civicrm_email","10")
 ;
+
 INSERT INTO civicrm_dedupe_rule_group (`contact_type`,`is_reserved`,`name`,`threshold`,`title`,`used`) VALUES
 ("Household","0","HouseholdSupervised","10","Name or Email","Supervised")
 ;
@@ -6372,6 +6383,7 @@ INSERT INTO civicrm_dedupe_rule (`dedupe_rule_group_id`,`rule_field`,`rule_table
 (@drgid,"household_name","civicrm_contact","10"),
 (@drgid,"email","civicrm_email","10")
 ;
+
 INSERT INTO civicrm_dedupe_rule_group (`contact_type`,`is_reserved`,`name`,`threshold`,`title`,`used`) VALUES
 ("Individual","1","IndividualUnsupervised","10","Email (reserved)","Unsupervised")
 ;
@@ -6382,6 +6394,7 @@ WHERE (name = "IndividualUnsupervised")
 INSERT INTO civicrm_dedupe_rule (`dedupe_rule_group_id`,`rule_field`,`rule_table`,`rule_weight`) VALUES
 (@drgid,"email","civicrm_email","10")
 ;
+
 INSERT INTO civicrm_dedupe_rule_group (`contact_type`,`is_reserved`,`name`,`threshold`,`title`,`used`) VALUES
 ("Organization","0","OrganizationUnsupervised","10","Name or Email","Unsupervised")
 ;
@@ -6393,6 +6406,7 @@ INSERT INTO civicrm_dedupe_rule (`dedupe_rule_group_id`,`rule_field`,`rule_table
 (@drgid,"organization_name","civicrm_contact","10"),
 (@drgid,"email","civicrm_email","10")
 ;
+
 INSERT INTO civicrm_dedupe_rule_group (`contact_type`,`is_reserved`,`name`,`threshold`,`title`,`used`) VALUES
 ("Household","0","HouseholdUnsupervised","10","Name or Email","Unsupervised")
 ;
@@ -6404,6 +6418,7 @@ INSERT INTO civicrm_dedupe_rule (`dedupe_rule_group_id`,`rule_field`,`rule_table
 (@drgid,"household_name","civicrm_contact","10"),
 (@drgid,"email","civicrm_email","10")
 ;
+
 INSERT INTO civicrm_dedupe_rule_group (`contact_type`,`is_reserved`,`name`,`threshold`,`title`,`used`) VALUES
 ("Individual","1","IndividualGeneral","15","Name and Address (reserved)","General")
 ;
@@ -6419,6 +6434,7 @@ INSERT INTO civicrm_dedupe_rule (`dedupe_rule_group_id`,`rule_field`,`rule_table
 (@drgid,"suffix_id","civicrm_contact","1")
 ;
 
+
 INSERT INTO civicrm_county (`name`,`state_province_id`) VALUES
 ("Alameda","1004"),
 ("Contra Costa","1004"),
@@ -6427,6 +6443,7 @@ INSERT INTO civicrm_county (`name`,`state_province_id`) VALUES
 ("San Mateo","1004"),
 ("Santa Clara","1004")
 ;
+
 
 -- Bounce classification patterns
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
@@ -6439,6 +6456,7 @@ WHERE (name = "AOL")
 INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"Client TOS Notification")
 ;
+
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
 ("Recipient is on vacation","30","Away")
 ;
@@ -6450,6 +6468,7 @@ INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"(be|am)? (out of|away from) (the|my)? (office|computer|town)"),
 (@bounceTypeID,"i am on vacation")
 ;
+
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
 ("Unable to resolve recipient domain","3","Dns")
 ;
@@ -6464,6 +6483,7 @@ INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"Host or domain name not found"),
 (@bounceTypeID,"Unable to resolve MX record for")
 ;
+
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
 ("Unable to deliver to destintation mail server","3","Host")
 ;
@@ -6492,6 +6512,7 @@ INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"server requires authentication"),
 (@bounceTypeID,"authentication (is )?required")
 ;
+
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
 ("User account is no longer active","1","Inactive")
 ;
@@ -6519,6 +6540,7 @@ INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"account that you tried to reach is disabled"),
 (@bounceTypeID,"User banned")
 ;
+
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
 ("Email address is not valid","1","Invalid")
 ;
@@ -6581,6 +6603,7 @@ INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"Elektronski naslov (je ukinjen|ne obstaja)"),
 (@bounceTypeID,"nepravilno nastavljen predal")
 ;
+
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
 ("Mail routing error","3","Loop")
 ;
@@ -6596,6 +6619,7 @@ INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"message was forwarded more than the maximum allowed times"),
 (@bounceTypeID,"too many (hops|recursive forwards)")
 ;
+
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
 ("User inbox is full","3","Quota")
 ;
@@ -6622,6 +6646,7 @@ INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"exceeded storage allocation"),
 (@bounceTypeID,"running out of disk space")
 ;
+
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
 ("Unable to reach destination mail server","3","Relay")
 ;
@@ -6645,6 +6670,7 @@ INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"Rejected by next-hop"),
 (@bounceTypeID,"not permitted to( *550)? relay through this server")
 ;
+
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
 ("Message caught by a content filter","1","Spam")
 ;
@@ -6681,6 +6707,7 @@ INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"ni bilo mogo..?e dostaviti zaradi varnostnega pravilnika"),
 (@bounceTypeID,"abuse report")
 ;
+
 INSERT INTO civicrm_mailing_bounce_type (`description`,`hold_threshold`,`name`) VALUES
 ("Error in SMTP transaction","3","Syntax")
 ;
@@ -6694,21 +6721,23 @@ INSERT INTO civicrm_mailing_bounce_pattern (`bounce_type_id`,`pattern`) VALUES
 (@bounceTypeID,"unknown smtp code")
 ;
 
-INSERT INTO civicrm_uf_group (`group_type`,`help_post`,`id`,`is_cms_user`,`is_reserved`,`name`,`title`) VALUES
-("Individual,Contact",NULL,"1","0","0","name_and_address","Name and Address"),
-("Individual,Contact","<p><strong>The information you provide will NOT be shared with any third party organisations.</strong></p><p>Thank you for getting involved in our campaign!</p>","2","2","0","supporter_profile","Supporter Profile"),
-("Participant",NULL,"3","0","1","participant_status","Participant Status"),
-("Individual,Contact",NULL,"4","0","1","new_individual","New Individual"),
-("Organization,Contact",NULL,"5","0","1","new_organization","New Organization"),
-("Household,Contact",NULL,"6","0","1","new_household","New Household"),
-("Contact",NULL,"7","0","1","summary_overlay","Summary Overlay"),
-("Contact",NULL,"8","0","1","shared_address","Shared Address"),
-("Contact,Organization",NULL,"9","0","1","on_behalf_organization","On Behalf Of Organization"),
-("Contribution",NULL,"10","0","1","contribution_batch_entry","Contribution Bulk Entry"),
-("Membership",NULL,"11","0","1","membership_batch_entry","Membership Bulk Entry"),
-("Individual,Contact",NULL,"12","0","0","event_registration","Your Registration Info"),
-("Individual,Contact",NULL,"13","0","1","honoree_individual","Honoree Individual")
+
+INSERT INTO civicrm_uf_group (`frontend_title`,`group_type`,`help_post`,`id`,`is_cms_user`,`is_reserved`,`name`,`title`) VALUES
+("Name and Address","Individual,Contact",NULL,"1","0","0","name_and_address","Name and Address"),
+("Supporter Profile","Individual,Contact","<p><strong>The information you provide will NOT be shared with any third party organisations.</strong></p><p>Thank you for getting involved in our campaign!</p>","2","2","0","supporter_profile","Supporter Profile"),
+("Participant Status","Participant",NULL,"3","0","1","participant_status","Participant Status"),
+("New Individual","Individual,Contact",NULL,"4","0","1","new_individual","New Individual"),
+("New Organization","Organization,Contact",NULL,"5","0","1","new_organization","New Organization"),
+("New Household","Household,Contact",NULL,"6","0","1","new_household","New Household"),
+("Summary Overlay","Contact",NULL,"7","0","1","summary_overlay","Summary Overlay"),
+("Shared Address","Contact",NULL,"8","0","1","shared_address","Shared Address"),
+("On Behalf Of Organization","Contact,Organization",NULL,"9","0","1","on_behalf_organization","On Behalf Of Organization"),
+("Contribution Bulk Entry","Contribution",NULL,"10","0","1","contribution_batch_entry","Contribution Bulk Entry"),
+("Membership Bulk Entry","Membership",NULL,"11","0","1","membership_batch_entry","Membership Bulk Entry"),
+("Your Registration Info","Individual,Contact",NULL,"12","0","0","event_registration","Your Registration Info"),
+("Honoree Individual","Individual,Contact",NULL,"13","0","1","honoree_individual","Honoree Individual")
 ;
+
 INSERT INTO civicrm_uf_join (`entity_id`,`entity_table`,`is_active`,`module`,`uf_group_id`,`weight`) VALUES
 (NULL,NULL,"1","User Registration","1","1"),
 (NULL,NULL,"1","User Account","1","1"),
@@ -6716,6 +6745,7 @@ INSERT INTO civicrm_uf_join (`entity_id`,`entity_table`,`is_active`,`module`,`uf
 (NULL,NULL,"1","Profile","2","2"),
 (NULL,NULL,"1","Profile","12","11")
 ;
+
 INSERT INTO civicrm_uf_field (`field_name`,`field_type`,`help_post`,`in_selector`,`is_required`,`is_reserved`,`is_searchable`,`label`,`location_type_id`,`phone_type_id`,`uf_group_id`,`visibility`,`weight`) VALUES
 ("first_name","Individual",NULL,"0","1","0","0","First Name",NULL,NULL,"1","User and User Admin Only","1"),
 ("last_name","Individual",NULL,"0","1","0","0","Last Name",NULL,NULL,"1","User and User Admin Only","2"),
@@ -6792,6 +6822,7 @@ INSERT INTO civicrm_uf_field (`field_name`,`field_type`,`help_post`,`in_selector
 ("last_name","Individual",NULL,"0","1","1","0","Last Name",NULL,NULL,"13","User and User Admin Only","3"),
 ("email","Contact",NULL,"0","0","1","0","Email Address","1",NULL,"13","User and User Admin Only","4")
 ;
+
 INSERT INTO civicrm_participant_status_type (`class`,`is_active`,`is_counted`,`is_reserved`,`label`,`name`,`visibility_id`,`weight`) VALUES
 ("Positive","1","1","1","Registered","Registered","1","1"),
 ("Positive","1","1","0","Attended","Attended","2","2"),
@@ -6810,11 +6841,13 @@ INSERT INTO civicrm_participant_status_type (`class`,`is_active`,`is_counted`,`i
 ("Positive","1","1","1","Pending refund","Pending refund","2","15"),
 ("Negative","1","0","1","Transferred","Transferred","2","16")
 ;
+
 INSERT INTO civicrm_contact_type (`icon`,`id`,`image_URL`,`is_active`,`is_reserved`,`label`,`name`,`parent_id`) VALUES
 ("fa-user","1",NULL,"1","1","Individual","Individual",NULL),
 ("fa-home","2",NULL,"1","1","Household","Household",NULL),
 ("fa-building","3",NULL,"1","1","Organization","Organization",NULL)
 ;
+
 
 -- +--------------------------------------------------------------------+
 -- | Copyright CiviCRM LLC. All rights reserved.                        |
@@ -7383,7 +7416,10 @@ INSERT INTO civicrm_msg_template
       ('Contributions - Receipt (off-line)', '{ts}Contribution Receipt{/ts} - {contact.display_name}
 ', '{assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}{$greeting},{/if}
 
-{ts}Below you will find a receipt for this contribution.{/ts}
+{if {contribution.contribution_page_id.receipt_text|boolean}}
+{contribution.contribution_page_id.receipt_text}
+{else}{ts}Below you will find a receipt for this contribution.{/ts}
+{/if}
 
 ===========================================================
 {ts}Contribution Information{/ts}
@@ -7429,7 +7465,7 @@ INSERT INTO civicrm_msg_template
 {if \'{contribution.receipt_date}\'}
 {ts}Receipt Date{/ts}: {contribution.receipt_date|crmDate:"shortdate"}
 {/if}
-{if \'{contribution.payment_instrument_id}\' and empty($formValues.hidden_CreditCard)}
+{if {contribution.payment_instrument_id|boolean}}
 {ts}Paid By{/ts}: {contribution.payment_instrument_id:label}
 {if \'{contribution.check_number}\'}
 {ts}Check Number{/ts}: {contribution.check_number}
@@ -7516,7 +7552,10 @@ INSERT INTO civicrm_msg_template
   <tr>
    <td>
     {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
-     <p>{ts}Below you will find a receipt for this contribution.{/ts}</p>
+      <p>
+        {if {contribution.contribution_page_id.receipt_text|boolean}}{contribution.contribution_page_id.receipt_text}
+        {else}{ts}Below you will find a receipt for this contribution.{/ts}{/if}
+      </p>
    </td>
   </tr>
   <tr>
@@ -7658,7 +7697,7 @@ INSERT INTO civicrm_msg_template
       </tr>
      {/if}
 
-     {if \'{contribution.payment_instrument_id}\' and empty($formValues.hidden_CreditCard)}
+     {if {contribution.payment_instrument_id|boolean}}
       <tr>
        <td {$labelStyle}>
         {ts}Paid By{/ts}
@@ -7811,7 +7850,10 @@ INSERT INTO civicrm_msg_template
       ('Contributions - Receipt (off-line)', '{ts}Contribution Receipt{/ts} - {contact.display_name}
 ', '{assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}{$greeting},{/if}
 
-{ts}Below you will find a receipt for this contribution.{/ts}
+{if {contribution.contribution_page_id.receipt_text|boolean}}
+{contribution.contribution_page_id.receipt_text}
+{else}{ts}Below you will find a receipt for this contribution.{/ts}
+{/if}
 
 ===========================================================
 {ts}Contribution Information{/ts}
@@ -7857,7 +7899,7 @@ INSERT INTO civicrm_msg_template
 {if \'{contribution.receipt_date}\'}
 {ts}Receipt Date{/ts}: {contribution.receipt_date|crmDate:"shortdate"}
 {/if}
-{if \'{contribution.payment_instrument_id}\' and empty($formValues.hidden_CreditCard)}
+{if {contribution.payment_instrument_id|boolean}}
 {ts}Paid By{/ts}: {contribution.payment_instrument_id:label}
 {if \'{contribution.check_number}\'}
 {ts}Check Number{/ts}: {contribution.check_number}
@@ -7944,7 +7986,10 @@ INSERT INTO civicrm_msg_template
   <tr>
    <td>
     {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
-     <p>{ts}Below you will find a receipt for this contribution.{/ts}</p>
+      <p>
+        {if {contribution.contribution_page_id.receipt_text|boolean}}{contribution.contribution_page_id.receipt_text}
+        {else}{ts}Below you will find a receipt for this contribution.{/ts}{/if}
+      </p>
    </td>
   </tr>
   <tr>
@@ -8086,7 +8131,7 @@ INSERT INTO civicrm_msg_template
       </tr>
      {/if}
 
-     {if \'{contribution.payment_instrument_id}\' and empty($formValues.hidden_CreditCard)}
+     {if {contribution.payment_instrument_id|boolean}}
       <tr>
        <td {$labelStyle}>
         {ts}Paid By{/ts}
@@ -8293,8 +8338,8 @@ INSERT INTO civicrm_msg_template
 
 {ts}Date{/ts}: {$receive_date|crmDate}
 {/if}
-{if !empty($is_monetary) and !empty($trxn_id)}
-{ts}Transaction #{/ts}: {$trxn_id}
+{if {contribution.trxn_id|boolean}}
+{ts}Transaction #{/ts}: {contribution.trxn_id}
 {/if}
 
 {if !empty($is_recur)}
@@ -8428,9 +8473,7 @@ INSERT INTO civicrm_msg_template
 
 ===========================================================
 {foreach from=$customPre item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/if}
 
@@ -8441,9 +8484,7 @@ INSERT INTO civicrm_msg_template
 
 ===========================================================
 {foreach from=$customPost item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/if}
 ', '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -8599,13 +8640,13 @@ INSERT INTO civicrm_msg_template
       </tr>
      {/if}
 
-     {if !empty($is_monetary) and !empty($trxn_id)}
+     {if {contribution.trxn_id|boolean}}
       <tr>
        <td {$labelStyle}>
         {ts}Transaction #{/ts}
        </td>
        <td {$valueStyle}>
-        {$trxn_id}
+         {contribution.trxn_id}
        </td>
       </tr>
      {/if}
@@ -8855,7 +8896,6 @@ INSERT INTO civicrm_msg_template
        </th>
       </tr>
       {foreach from=$customPre item=customValue key=customName}
-       {if (!empty($trackingFields) and ! in_array($customName, $trackingFields)) or empty($trackingFields)}
         <tr>
          <td {$labelStyle}>
           {$customName}
@@ -8864,7 +8904,6 @@ INSERT INTO civicrm_msg_template
           {$customValue}
          </td>
         </tr>
-       {/if}
       {/foreach}
      {/if}
 
@@ -8875,7 +8914,6 @@ INSERT INTO civicrm_msg_template
        </th>
       </tr>
       {foreach from=$customPost item=customValue key=customName}
-       {if (!empty($trackingFields) and ! in_array($customName, $trackingFields)) or empty($trackingFields)}
         <tr>
          <td {$labelStyle}>
           {$customName}
@@ -8884,7 +8922,6 @@ INSERT INTO civicrm_msg_template
           {$customValue}
          </td>
         </tr>
-       {/if}
       {/foreach}
      {/if}
 
@@ -8948,8 +8985,8 @@ INSERT INTO civicrm_msg_template
 
 {ts}Date{/ts}: {$receive_date|crmDate}
 {/if}
-{if !empty($is_monetary) and !empty($trxn_id)}
-{ts}Transaction #{/ts}: {$trxn_id}
+{if {contribution.trxn_id|boolean}}
+{ts}Transaction #{/ts}: {contribution.trxn_id}
 {/if}
 
 {if !empty($is_recur)}
@@ -9083,9 +9120,7 @@ INSERT INTO civicrm_msg_template
 
 ===========================================================
 {foreach from=$customPre item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/if}
 
@@ -9096,9 +9131,7 @@ INSERT INTO civicrm_msg_template
 
 ===========================================================
 {foreach from=$customPost item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/if}
 ', '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -9254,13 +9287,13 @@ INSERT INTO civicrm_msg_template
       </tr>
      {/if}
 
-     {if !empty($is_monetary) and !empty($trxn_id)}
+     {if {contribution.trxn_id|boolean}}
       <tr>
        <td {$labelStyle}>
         {ts}Transaction #{/ts}
        </td>
        <td {$valueStyle}>
-        {$trxn_id}
+         {contribution.trxn_id}
        </td>
       </tr>
      {/if}
@@ -9510,7 +9543,6 @@ INSERT INTO civicrm_msg_template
        </th>
       </tr>
       {foreach from=$customPre item=customValue key=customName}
-       {if (!empty($trackingFields) and ! in_array($customName, $trackingFields)) or empty($trackingFields)}
         <tr>
          <td {$labelStyle}>
           {$customName}
@@ -9519,7 +9551,6 @@ INSERT INTO civicrm_msg_template
           {$customValue}
          </td>
         </tr>
-       {/if}
       {/foreach}
      {/if}
 
@@ -9530,7 +9561,6 @@ INSERT INTO civicrm_msg_template
        </th>
       </tr>
       {foreach from=$customPost item=customValue key=customName}
-       {if (!empty($trackingFields) and ! in_array($customName, $trackingFields)) or empty($trackingFields)}
         <tr>
          <td {$labelStyle}>
           {$customName}
@@ -9539,7 +9569,6 @@ INSERT INTO civicrm_msg_template
           {$customValue}
          </td>
         </tr>
-       {/if}
       {/foreach}
      {/if}
 
@@ -12705,7 +12734,7 @@ INSERT INTO civicrm_msg_template
 ==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
 
 {event.title}
-{event.start_date|crmDate}{if $event.event_end_date}-{if $event.event_end_date|crmDate:"%Y%m%d" == $event.event_start_date|crmDate:"%Y%m%d"}{$event.event_end_date|crmDate:0:1}{else}{$event.event_end_date|crmDate}{/if}{/if}
+{event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date}{/if}{/if}
 
 {if !empty($event.participant_role) and $event.participant_role neq \'Attendee\' and empty($defaultRole)}
 {ts}Participant Role{/ts}: {$event.participant_role}
@@ -12734,7 +12763,7 @@ INSERT INTO civicrm_msg_template
 {/if}
 
 
-{if !empty($event.is_public)}
+{if {event.is_public|boolean}}
 {capture assign=icalFeed}{crmURL p=\'civicrm/event/ical\' q="reset=1&id=`$event.id`" h=0 a=1 fe=1}{/capture}
 {ts}Download iCalendar entry for this event.{/ts} {$icalFeed}
 {capture assign=gCalendar}{crmURL p=\'civicrm/event/ical\' q="gCalendar=1&reset=1&id=`$event.id`" h=0 a=1 fe=1}{/capture}
@@ -12806,14 +12835,14 @@ INSERT INTO civicrm_msg_template
 {/foreach}
 {/if}
 
-{if $totalTaxAmount}
-{ts}Total Tax Amount{/ts}: {$totalTaxAmount|crmMoney:$currency}
+{if {contribution.tax_amount|boolean}}
+{ts}Total Tax Amount{/ts}: {contribution.tax_amount}
 {/if}
 {if {event.is_monetary|boolean}}
 
-{if {contribution.balance_amount|boolean}}{ts}Total Paid{/ts}: {if {contribution.paid_amount|boolean}}{contribution.paid_amount}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+{if {contribution.balance_amount|boolean}}{ts}Total Paid{/ts}: {contribution.paid_amount} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
 {ts}Balance{/ts}: {contribution.balance_amount}
-{else}{ts}Total Amount{/ts}: {if {contribution.total_amount|boolean}}{contribution.total_amount}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+{else}{ts}Total Amount{/ts}: {contribution.total_amount}  {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
 {/if}
 
 {if !empty($pricesetFieldsCount) }
@@ -12843,8 +12872,8 @@ INSERT INTO civicrm_msg_template
 
 {/if}
 
-{if $register_date}
-{ts}Registration Date{/ts}: {$register_date|crmDate}
+{if {participant.register_date|boolean}}
+{ts}Registration Date{/ts}: {participant.register_date}
 {/if}
 {if $receive_date}
 {ts}Transaction Date{/ts}: {$receive_date|crmDate}
@@ -12886,62 +12915,6 @@ INSERT INTO civicrm_msg_template
 {/if}
 {/if} {* End of conditional section for Paid events *}
 
-{if !empty($customPre)}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{$customPre_grouptitle}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{foreach from=$customPre item=value key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-{$customName}: {$value}
-{/if}
-{/foreach}
-{/if}
-
-{if !empty($customPost)}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{$customPost_grouptitle}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{foreach from=$customPost item=value key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-{$customName}: {$value}
-{/if}
-{/foreach}
-{/if}
-{if !empty($customProfile)}
-
-{foreach from=$customProfile item=value key=customName}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{ts 1=$customName+1}Participant Information - Participant %1{/ts}
-
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{foreach from=$value item=val key=field}
-{if $field eq \'additionalCustomPre\' or $field eq \'additionalCustomPost\' }
-{if $field eq \'additionalCustomPre\' }
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{$additionalCustomPre_grouptitle}
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{else}
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{$additionalCustomPost_grouptitle}
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{/if}
-{foreach from=$val item=v key=f}
-{$f}: {$v}
-{/foreach}
-{/if}
-{/foreach}
-{/foreach}
-{/if}
 {if !empty($customGroup)}
 {foreach from=$customGroup item=value key=customName}
 =========================================================={if !empty($pricesetFieldsCount) }===================={/if}
@@ -12981,7 +12954,7 @@ INSERT INTO civicrm_msg_template
     {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
 
     {if !empty($event.confirm_email_text) AND (empty($isOnWaitlist) AND empty($isRequireApproval))}
-     <p>{$event.confirm_email_text|htmlize}</p>
+     <p>{$event.confirm_email_text}</p>
     {/if}
 
     {if !empty($isOnWaitlist)}
@@ -13007,7 +12980,7 @@ INSERT INTO civicrm_msg_template
      <tr>
       <td colspan="2" {$valueStyle}>
        {event.title}<br />
-       {event.start_date|crmDate}{if $event.event_end_date}-{if $event.event_end_date|crmDate:"%Y%m%d" == $event.event_start_date|crmDate:"%Y%m%d"}{$event.event_end_date|crmDate:0:1}{else}{$event.event_end_date|crmDate}{/if}{/if}
+       {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date}{/if}{/if}
       </td>
      </tr>
 
@@ -13091,7 +13064,7 @@ INSERT INTO civicrm_msg_template
 
      {/if}
 
-     {if !empty($event.is_public)}
+     {if {event.is_public|boolean}}
       <tr>
        <td colspan="2" {$valueStyle}>
         {capture assign=icalFeed}{crmURL p=\'civicrm/event/ical\' q="reset=1&id=`$event.id`" h=0 a=1 fe=1}{/capture}
@@ -13227,13 +13200,13 @@ INSERT INTO civicrm_msg_template
         </tr>
        {/foreach}
       {/if}
-      {if $totalTaxAmount}
+      {if {contribution.tax_amount|boolean}}
        <tr>
         <td {$labelStyle}>
          {ts}Total Tax Amount{/ts}
         </td>
         <td {$valueStyle}>
-         {$totalTaxAmount|crmMoney:$currency}
+          {contribution.tax_amount}
         </td>
        </tr>
       {/if}
@@ -13242,7 +13215,7 @@ INSERT INTO civicrm_msg_template
          <tr>
            <td {$labelStyle}>{ts}Total Paid{/ts}</td>
            <td {$valueStyle}>
-             {if {contribution.paid_amount|boolean}}{contribution.paid_amount|crmMoney}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+             {contribution.paid_amount} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
            </td>
           </tr>
           <tr>
@@ -13253,7 +13226,7 @@ INSERT INTO civicrm_msg_template
          <tr>
            <td {$labelStyle}>{ts}Total Amount{/ts}</td>
            <td {$valueStyle}>
-               {if {contribution.total_amount|boolean}}{contribution.total_amount|crmMoney}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+             {contribution.total_amount} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
            </td>
          </tr>
        {/if}
@@ -13287,13 +13260,13 @@ INSERT INTO civicrm_msg_template
         </tr>
        {/if}
 
-       {if $register_date}
+       {if {participant.register_date|boolean}}
         <tr>
          <td {$labelStyle}>
           {ts}Registration Date{/ts}
          </td>
          <td {$valueStyle}>
-          {$register_date|crmDate}
+           {participant.register_date}
          </td>
         </tr>
        {/if}
@@ -13385,79 +13358,6 @@ INSERT INTO civicrm_msg_template
       {/if}
 
      {/if} {* End of conditional section for Paid events *}
-
-     {if !empty($customPre)}
-      <tr>
-       <th {$headerStyle}>
-        {$customPre_grouptitle}
-       </th>
-      </tr>
-      {foreach from=$customPre item=value key=customName}
-       {if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-        <tr>
-         <td {$labelStyle}>
-          {$customName}
-         </td>
-         <td {$valueStyle}>
-          {$value}
-         </td>
-        </tr>
-       {/if}
-      {/foreach}
-     {/if}
-
-     {if !empty($customPost)}
-      <tr>
-       <th {$headerStyle}>
-        {$customPost_grouptitle}
-       </th>
-      </tr>
-      {foreach from=$customPost item=value key=customName}
-       {if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-        <tr>
-         <td {$labelStyle}>
-          {$customName}
-         </td>
-         <td {$valueStyle}>
-          {$value}
-         </td>
-        </tr>
-       {/if}
-      {/foreach}
-     {/if}
-
-     {if !empty($customProfile)}
-      {foreach from=$customProfile item=value key=customName}
-       <tr>
-        <th {$headerStyle}>
-         {ts 1=$customName+1}Participant Information - Participant %1{/ts}
-        </th>
-       </tr>
-       {foreach from=$value item=val key=field}
-        {if $field eq \'additionalCustomPre\' or $field eq \'additionalCustomPost\'}
-         <tr>
-          <td colspan="2" {$labelStyle}>
-           {if $field eq \'additionalCustomPre\'}
-            {$additionalCustomPre_grouptitle}
-           {else}
-            {$additionalCustomPost_grouptitle}
-           {/if}
-          </td>
-         </tr>
-         {foreach from=$val item=v key=f}
-          <tr>
-           <td {$labelStyle}>
-            {$f}
-           </td>
-           <td {$valueStyle}>
-            {$v}
-           </td>
-          </tr>
-         {/foreach}
-        {/if}
-       {/foreach}
-      {/foreach}
-     {/if}
 
      {if !empty($customGroup)}
       {foreach from=$customGroup item=value key=customName}
@@ -13529,7 +13429,7 @@ INSERT INTO civicrm_msg_template
 ==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
 
 {event.title}
-{event.start_date|crmDate}{if $event.event_end_date}-{if $event.event_end_date|crmDate:"%Y%m%d" == $event.event_start_date|crmDate:"%Y%m%d"}{$event.event_end_date|crmDate:0:1}{else}{$event.event_end_date|crmDate}{/if}{/if}
+{event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date}{/if}{/if}
 
 {if !empty($event.participant_role) and $event.participant_role neq \'Attendee\' and empty($defaultRole)}
 {ts}Participant Role{/ts}: {$event.participant_role}
@@ -13558,7 +13458,7 @@ INSERT INTO civicrm_msg_template
 {/if}
 
 
-{if !empty($event.is_public)}
+{if {event.is_public|boolean}}
 {capture assign=icalFeed}{crmURL p=\'civicrm/event/ical\' q="reset=1&id=`$event.id`" h=0 a=1 fe=1}{/capture}
 {ts}Download iCalendar entry for this event.{/ts} {$icalFeed}
 {capture assign=gCalendar}{crmURL p=\'civicrm/event/ical\' q="gCalendar=1&reset=1&id=`$event.id`" h=0 a=1 fe=1}{/capture}
@@ -13630,14 +13530,14 @@ INSERT INTO civicrm_msg_template
 {/foreach}
 {/if}
 
-{if $totalTaxAmount}
-{ts}Total Tax Amount{/ts}: {$totalTaxAmount|crmMoney:$currency}
+{if {contribution.tax_amount|boolean}}
+{ts}Total Tax Amount{/ts}: {contribution.tax_amount}
 {/if}
 {if {event.is_monetary|boolean}}
 
-{if {contribution.balance_amount|boolean}}{ts}Total Paid{/ts}: {if {contribution.paid_amount|boolean}}{contribution.paid_amount}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+{if {contribution.balance_amount|boolean}}{ts}Total Paid{/ts}: {contribution.paid_amount} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
 {ts}Balance{/ts}: {contribution.balance_amount}
-{else}{ts}Total Amount{/ts}: {if {contribution.total_amount|boolean}}{contribution.total_amount}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+{else}{ts}Total Amount{/ts}: {contribution.total_amount}  {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
 {/if}
 
 {if !empty($pricesetFieldsCount) }
@@ -13667,8 +13567,8 @@ INSERT INTO civicrm_msg_template
 
 {/if}
 
-{if $register_date}
-{ts}Registration Date{/ts}: {$register_date|crmDate}
+{if {participant.register_date|boolean}}
+{ts}Registration Date{/ts}: {participant.register_date}
 {/if}
 {if $receive_date}
 {ts}Transaction Date{/ts}: {$receive_date|crmDate}
@@ -13710,62 +13610,6 @@ INSERT INTO civicrm_msg_template
 {/if}
 {/if} {* End of conditional section for Paid events *}
 
-{if !empty($customPre)}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{$customPre_grouptitle}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{foreach from=$customPre item=value key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-{$customName}: {$value}
-{/if}
-{/foreach}
-{/if}
-
-{if !empty($customPost)}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{$customPost_grouptitle}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{foreach from=$customPost item=value key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-{$customName}: {$value}
-{/if}
-{/foreach}
-{/if}
-{if !empty($customProfile)}
-
-{foreach from=$customProfile item=value key=customName}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{ts 1=$customName+1}Participant Information - Participant %1{/ts}
-
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{foreach from=$value item=val key=field}
-{if $field eq \'additionalCustomPre\' or $field eq \'additionalCustomPost\' }
-{if $field eq \'additionalCustomPre\' }
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{$additionalCustomPre_grouptitle}
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{else}
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{$additionalCustomPost_grouptitle}
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{/if}
-{foreach from=$val item=v key=f}
-{$f}: {$v}
-{/foreach}
-{/if}
-{/foreach}
-{/foreach}
-{/if}
 {if !empty($customGroup)}
 {foreach from=$customGroup item=value key=customName}
 =========================================================={if !empty($pricesetFieldsCount) }===================={/if}
@@ -13805,7 +13649,7 @@ INSERT INTO civicrm_msg_template
     {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
 
     {if !empty($event.confirm_email_text) AND (empty($isOnWaitlist) AND empty($isRequireApproval))}
-     <p>{$event.confirm_email_text|htmlize}</p>
+     <p>{$event.confirm_email_text}</p>
     {/if}
 
     {if !empty($isOnWaitlist)}
@@ -13831,7 +13675,7 @@ INSERT INTO civicrm_msg_template
      <tr>
       <td colspan="2" {$valueStyle}>
        {event.title}<br />
-       {event.start_date|crmDate}{if $event.event_end_date}-{if $event.event_end_date|crmDate:"%Y%m%d" == $event.event_start_date|crmDate:"%Y%m%d"}{$event.event_end_date|crmDate:0:1}{else}{$event.event_end_date|crmDate}{/if}{/if}
+       {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date}{/if}{/if}
       </td>
      </tr>
 
@@ -13915,7 +13759,7 @@ INSERT INTO civicrm_msg_template
 
      {/if}
 
-     {if !empty($event.is_public)}
+     {if {event.is_public|boolean}}
       <tr>
        <td colspan="2" {$valueStyle}>
         {capture assign=icalFeed}{crmURL p=\'civicrm/event/ical\' q="reset=1&id=`$event.id`" h=0 a=1 fe=1}{/capture}
@@ -14051,13 +13895,13 @@ INSERT INTO civicrm_msg_template
         </tr>
        {/foreach}
       {/if}
-      {if $totalTaxAmount}
+      {if {contribution.tax_amount|boolean}}
        <tr>
         <td {$labelStyle}>
          {ts}Total Tax Amount{/ts}
         </td>
         <td {$valueStyle}>
-         {$totalTaxAmount|crmMoney:$currency}
+          {contribution.tax_amount}
         </td>
        </tr>
       {/if}
@@ -14066,7 +13910,7 @@ INSERT INTO civicrm_msg_template
          <tr>
            <td {$labelStyle}>{ts}Total Paid{/ts}</td>
            <td {$valueStyle}>
-             {if {contribution.paid_amount|boolean}}{contribution.paid_amount|crmMoney}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+             {contribution.paid_amount} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
            </td>
           </tr>
           <tr>
@@ -14077,7 +13921,7 @@ INSERT INTO civicrm_msg_template
          <tr>
            <td {$labelStyle}>{ts}Total Amount{/ts}</td>
            <td {$valueStyle}>
-               {if {contribution.total_amount|boolean}}{contribution.total_amount|crmMoney}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+             {contribution.total_amount} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
            </td>
          </tr>
        {/if}
@@ -14111,13 +13955,13 @@ INSERT INTO civicrm_msg_template
         </tr>
        {/if}
 
-       {if $register_date}
+       {if {participant.register_date|boolean}}
         <tr>
          <td {$labelStyle}>
           {ts}Registration Date{/ts}
          </td>
          <td {$valueStyle}>
-          {$register_date|crmDate}
+           {participant.register_date}
          </td>
         </tr>
        {/if}
@@ -14210,79 +14054,6 @@ INSERT INTO civicrm_msg_template
 
      {/if} {* End of conditional section for Paid events *}
 
-     {if !empty($customPre)}
-      <tr>
-       <th {$headerStyle}>
-        {$customPre_grouptitle}
-       </th>
-      </tr>
-      {foreach from=$customPre item=value key=customName}
-       {if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-        <tr>
-         <td {$labelStyle}>
-          {$customName}
-         </td>
-         <td {$valueStyle}>
-          {$value}
-         </td>
-        </tr>
-       {/if}
-      {/foreach}
-     {/if}
-
-     {if !empty($customPost)}
-      <tr>
-       <th {$headerStyle}>
-        {$customPost_grouptitle}
-       </th>
-      </tr>
-      {foreach from=$customPost item=value key=customName}
-       {if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-        <tr>
-         <td {$labelStyle}>
-          {$customName}
-         </td>
-         <td {$valueStyle}>
-          {$value}
-         </td>
-        </tr>
-       {/if}
-      {/foreach}
-     {/if}
-
-     {if !empty($customProfile)}
-      {foreach from=$customProfile item=value key=customName}
-       <tr>
-        <th {$headerStyle}>
-         {ts 1=$customName+1}Participant Information - Participant %1{/ts}
-        </th>
-       </tr>
-       {foreach from=$value item=val key=field}
-        {if $field eq \'additionalCustomPre\' or $field eq \'additionalCustomPost\'}
-         <tr>
-          <td colspan="2" {$labelStyle}>
-           {if $field eq \'additionalCustomPre\'}
-            {$additionalCustomPre_grouptitle}
-           {else}
-            {$additionalCustomPost_grouptitle}
-           {/if}
-          </td>
-         </tr>
-         {foreach from=$val item=v key=f}
-          <tr>
-           <td {$labelStyle}>
-            {$f}
-           </td>
-           <td {$valueStyle}>
-            {$v}
-           </td>
-          </tr>
-         {/foreach}
-        {/if}
-       {/foreach}
-      {/foreach}
-     {/if}
-
      {if !empty($customGroup)}
       {foreach from=$customGroup item=value key=customName}
        <tr>
@@ -14351,7 +14122,7 @@ INSERT INTO civicrm_msg_template
 
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
-{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt|boolean}{/if}
+{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt}{/if}
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
 {/if}
@@ -14546,9 +14317,7 @@ You were registered by: {$payer.name}
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
 {foreach from=$customPr item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/foreach}
 {/if}
@@ -14561,9 +14330,7 @@ You were registered by: {$payer.name}
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
 {foreach from=$customPos item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/foreach}
 {/if}
@@ -14624,8 +14391,8 @@ You were registered by: {$payer.name}
    <td>
      {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
 
-    {if !empty($event.confirm_email_text) AND (empty($isOnWaitlist) AND empty($isRequireApproval))}
-     <p>{$event.confirm_email_text|htmlize}</p>
+    {if {event.confirm_email_text|boolean} AND (empty($isOnWaitlist) AND empty($isRequireApproval))}
+     <p>{event.confirm_email_text}</p>
 
     {else}
      <p>{ts}Thank you for your registration.{/ts}
@@ -14646,7 +14413,7 @@ You were registered by: {$payer.name}
       <p>{ts}Once your registration has been reviewed, you will receive an email with a link to a web page where you can complete the registration process.{/ts}</p>
      {/if}
     {elseif !empty($is_pay_later) && empty($isAmountzero) && empty($isAdditionalParticipant)}
-     <p>{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt|boolean}{/if}</p> {* FIXME: this might be text rather than HTML *}
+     <p>{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt}{/if}</p> {* FIXME: this might be text rather than HTML *}
     {/if}
 
    </td>
@@ -14662,7 +14429,7 @@ You were registered by: {$payer.name}
      <tr>
       <td colspan="2" {$valueStyle}>
        {event.title}<br />
-       {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if $event.event_end_date}-{if $event.event_end_date|crmDate:"%Y%m%d" == $event.event_start_date|crmDate:"%Y%m%d"}{$event.event_end_date|crmDate:0:1}{else}{$event.event_end_date|crmDate:"%A"} {$event.event_end_date|crmDate}{/if}{/if}
+       {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
       </td>
      </tr>
 
@@ -15020,12 +14787,10 @@ You were registered by: {$payer.name}
 {foreach from=$customPre item=customPr key=i}
    <tr> <th {$headerStyle}>{$customPre_grouptitle.$i}</th></tr>
    {foreach from=$customPr item=customValue key=customName}
-   {if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
      <tr>
          <td {$labelStyle}>{$customName}</td>
          <td {$valueStyle}>{$customValue}</td>
      </tr>
-   {/if}
    {/foreach}
 {/foreach}
 {/if}
@@ -15034,13 +14799,11 @@ You were registered by: {$payer.name}
 {foreach from=$customPost item=customPos key=j}
    <tr> <th {$headerStyle}>{$customPost_grouptitle.$j}</th></tr>
    {foreach from=$customPos item=customValue key=customName}
-   {if (!empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
      <tr>
          <td {$labelStyle}>{$customName}</td>
          <td {$valueStyle}>{$customValue}</td>
      </tr>
-{/if}
-{/foreach}
+   {/foreach}
 {/foreach}
 {/if}
 
@@ -15112,7 +14875,7 @@ You were registered by: {$payer.name}
 
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
-{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt|boolean}{/if}
+{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt}{/if}
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
 {/if}
@@ -15307,9 +15070,7 @@ You were registered by: {$payer.name}
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
 {foreach from=$customPr item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/foreach}
 {/if}
@@ -15322,9 +15083,7 @@ You were registered by: {$payer.name}
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
 {foreach from=$customPos item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/foreach}
 {/if}
@@ -15385,8 +15144,8 @@ You were registered by: {$payer.name}
    <td>
      {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
 
-    {if !empty($event.confirm_email_text) AND (empty($isOnWaitlist) AND empty($isRequireApproval))}
-     <p>{$event.confirm_email_text|htmlize}</p>
+    {if {event.confirm_email_text|boolean} AND (empty($isOnWaitlist) AND empty($isRequireApproval))}
+     <p>{event.confirm_email_text}</p>
 
     {else}
      <p>{ts}Thank you for your registration.{/ts}
@@ -15407,7 +15166,7 @@ You were registered by: {$payer.name}
       <p>{ts}Once your registration has been reviewed, you will receive an email with a link to a web page where you can complete the registration process.{/ts}</p>
      {/if}
     {elseif !empty($is_pay_later) && empty($isAmountzero) && empty($isAdditionalParticipant)}
-     <p>{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt|boolean}{/if}</p> {* FIXME: this might be text rather than HTML *}
+     <p>{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt}{/if}</p> {* FIXME: this might be text rather than HTML *}
     {/if}
 
    </td>
@@ -15423,7 +15182,7 @@ You were registered by: {$payer.name}
      <tr>
       <td colspan="2" {$valueStyle}>
        {event.title}<br />
-       {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if $event.event_end_date}-{if $event.event_end_date|crmDate:"%Y%m%d" == $event.event_start_date|crmDate:"%Y%m%d"}{$event.event_end_date|crmDate:0:1}{else}{$event.event_end_date|crmDate:"%A"} {$event.event_end_date|crmDate}{/if}{/if}
+       {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
       </td>
      </tr>
 
@@ -15781,12 +15540,10 @@ You were registered by: {$payer.name}
 {foreach from=$customPre item=customPr key=i}
    <tr> <th {$headerStyle}>{$customPre_grouptitle.$i}</th></tr>
    {foreach from=$customPr item=customValue key=customName}
-   {if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
      <tr>
          <td {$labelStyle}>{$customName}</td>
          <td {$valueStyle}>{$customValue}</td>
      </tr>
-   {/if}
    {/foreach}
 {/foreach}
 {/if}
@@ -15795,13 +15552,11 @@ You were registered by: {$payer.name}
 {foreach from=$customPost item=customPos key=j}
    <tr> <th {$headerStyle}>{$customPost_grouptitle.$j}</th></tr>
    {foreach from=$customPos item=customValue key=customName}
-   {if (!empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
      <tr>
          <td {$labelStyle}>{$customName}</td>
          <td {$valueStyle}>{$customValue}</td>
      </tr>
-{/if}
-{/foreach}
+   {/foreach}
 {/foreach}
 {/if}
 
@@ -19104,9 +18859,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 
 ===========================================================
 {foreach from=$customPre item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/if}
 
@@ -19117,9 +18870,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 
 ===========================================================
 {foreach from=$customPost item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/if}
 ', '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -19636,7 +19387,6 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
        </th>
       </tr>
       {foreach from=$customPre item=customValue key=customName}
-       {if (!empty($trackingFields) and ! in_array($customName, $trackingFields)) or empty($trackingFields)}
         <tr>
          <td {$labelStyle}>
           {$customName}
@@ -19645,7 +19395,6 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
           {$customValue}
          </td>
         </tr>
-       {/if}
       {/foreach}
      {/if}
 
@@ -19898,9 +19647,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 
 ===========================================================
 {foreach from=$customPre item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/if}
 
@@ -19911,9 +19658,7 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
 
 ===========================================================
 {foreach from=$customPost item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/if}
 ', '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -20430,7 +20175,6 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
        </th>
       </tr>
       {foreach from=$customPre item=customValue key=customName}
-       {if (!empty($trackingFields) and ! in_array($customName, $trackingFields)) or empty($trackingFields)}
         <tr>
          <td {$labelStyle}>
           {$customName}
@@ -20439,7 +20183,6 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
           {$customValue}
          </td>
         </tr>
-       {/if}
       {/foreach}
      {/if}
 
@@ -21636,25 +21379,27 @@ or need to modify your payment schedule.{/ts}</p>
 ', 'uf_notify', @tpl_ovid_uf_notify, 0,          1) ,      
       
       
-      ('Petition - signature added', 'Thank you for signing {$petition.title} - {contact.display_name}
+      ('Petition - signature added', 'Thank you for signing {survey.title} - {contact.display_name}
 ', '{assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}{$greeting},{/if}
 
-Thank you for signing {$petition.title}.
+Thank you for signing {survey.title}.
 ', '{assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
 
-<p>Thank you for signing {$petition.title}.</p>
+<p>Thank you for signing {survey.title}.</p>
 
-{include file="CRM/Campaign/Page/Petition/SocialNetwork.tpl" petition_id=$survey_id noscript=true emailMode=true}
+{capture assign=petitionURL}{crmURL p=\'civicrm/petition/sign\' q="sid={survey.id}" a=1 fe=1 h=1}{/capture}
+{include file="CRM/common/SocialNetwork.tpl" url=$petitionURL title=\'{survey.title}\' pageURL=$petitionURL petition_id=\'{survey.id}\' noscript=true emailMode=true}
 ', 'petition_sign', @tpl_ovid_petition_sign, 1,          0),
-      ('Petition - signature added', 'Thank you for signing {$petition.title} - {contact.display_name}
+      ('Petition - signature added', 'Thank you for signing {survey.title} - {contact.display_name}
 ', '{assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}{$greeting},{/if}
 
-Thank you for signing {$petition.title}.
+Thank you for signing {survey.title}.
 ', '{assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
 
-<p>Thank you for signing {$petition.title}.</p>
+<p>Thank you for signing {survey.title}.</p>
 
-{include file="CRM/Campaign/Page/Petition/SocialNetwork.tpl" petition_id=$survey_id noscript=true emailMode=true}
+{capture assign=petitionURL}{crmURL p=\'civicrm/petition/sign\' q="sid={survey.id}" a=1 fe=1 h=1}{/capture}
+{include file="CRM/common/SocialNetwork.tpl" url=$petitionURL title=\'{survey.title}\' pageURL=$petitionURL petition_id=\'{survey.id}\' noscript=true emailMode=true}
 ', 'petition_sign', @tpl_ovid_petition_sign, 0,          1) ,      
       
       
@@ -23019,24 +22764,25 @@ INSERT INTO civicrm_msg_template
 ' ,NULL, 1, 0);
 
 INSERT INTO civicrm_job (`api_action`,`api_entity`,`description`,`domain_id`,`is_active`,`last_run`,`name`,`parameters`,`run_frequency`) VALUES
-("version_check","job","Checks for CiviCRM version updates. Important for keeping the database secure. Also sends anonymous usage statistics to civicrm.org to to assist in prioritizing ongoing development efforts.",@domainID,"1",NULL,"CiviCRM Update Check",NULL,"Daily"),
-("process_mailing","job","Sends out scheduled CiviMail mailings",@domainID,"0",NULL,"Send Scheduled Mailings",NULL,"Always"),
-("fetch_bounces","job","Fetches bounces from mailings and writes them to mailing statistics",@domainID,"0",NULL,"Fetch Bounces",NULL,"Hourly"),
-("fetch_activities","job","Inserts activity for a contact or a case by retrieving inbound emails from a mail directory",@domainID,"0",NULL,"Process Inbound Emails",NULL,"Hourly"),
-("process_pledge","job","Updates pledge records and sends out reminders",@domainID,"0",NULL,"Process Pledges","send_reminders=[1 or 0] optional- 1 to send payment reminders","Daily"),
-("geocode","job","Retrieves geocodes (lat and long) and / or parses street addresses (populates street number, street name, etc.)",@domainID,"0",NULL,"Geocode and Parse Addresses","geocoding=[1 or 0] required\nparse=[1 or 0] required\nstart=[contact ID] optional-begin with this contact ID\nend=[contact ID] optional-process contacts with IDs less than this\nthrottle=[1 or 0] optional-1 adds five second sleep","Daily"),
-("update_greeting","job","Goes through contact records and updates email and postal greetings, or addressee value",@domainID,"0",NULL,"Update Greetings and Addressees","ct=[Individual or Household or Organization] required\ngt=[email_greeting or postal_greeting or addressee] required\nforce=[0 or 1] optional-0 update contacts with null value, 1 update all\nlimit=Number optional-Limit the number of contacts to update","Daily"),
-("mail_report","job","Generates and sends out reports via email",@domainID,"0",NULL,"Mail Reports","instanceId=[ID of report instance] required\nformat=[csv or print] optional-output CSV or print-friendly HTML, else PDF","Daily"),
-("send_reminder","job","Sends out scheduled reminders via email",@domainID,"0",NULL,"Send Scheduled Reminders",NULL,"Hourly"),
-("process_participant","job","Updates pending event participant statuses based on time",@domainID,"0",NULL,"Update Participant Statuses",NULL,"Always"),
-("process_membership","job","Updates membership statuses. WARNING: Membership renewal reminders have been migrated to the Schedule Reminders functionality, which supports multiple renewal reminders.",@domainID,"0",NULL,"Update Membership Statuses",NULL,"Daily"),
-("process_respondent","job","Releases reserved survey respondents when they have been reserved for longer than the Release Frequency days specified for that survey.",@domainID,"0",NULL,"Process Survey Respondents",NULL,"Always"),
-("cleanup","job","Removes temporary data and files, and clears old data from cache tables. Recommend running this job every hour to help prevent database and file system bloat.",@domainID,"0",NULL,"Clean-up Temporary Data and Files",NULL,"Hourly"),
-("process_sms","job","Sends out scheduled SMS",@domainID,"0",NULL,"Send Scheduled SMS",NULL,"Always"),
-("group_rebuild","job","Rebuilds the smart group cache.",@domainID,"0",NULL,"Rebuild Smart Group Cache","limit=Number optional-Limit the number of smart groups rebuild","Always"),
-("disable_expired_relationships","job","Disables relationships that have expired (ie. those relationships whose end date is in the past).",@domainID,"0",NULL,"Disable expired relationships",NULL,"Daily"),
-("update_email_resetdate","mailing","Updates the reset_date on an email address to indicate that there was a valid delivery to this email address.",@domainID,"0",NULL,"Validate Email Address from Mailings.","minDays, maxDays=Consider mailings that have completed between minDays and maxDays","Daily")
+("version_check","Job","Checks for CiviCRM version updates. Important for keeping the database secure. Also sends anonymous usage statistics to civicrm.org to to assist in prioritizing ongoing development efforts.",@domainID,"1",NULL,"CiviCRM Update Check",NULL,"Daily"),
+("process_mailing","Job","Sends out scheduled CiviMail mailings",@domainID,"0",NULL,"Send Scheduled Mailings",NULL,"Always"),
+("fetch_bounces","Job","Fetches bounces from mailings and writes them to mailing statistics",@domainID,"0",NULL,"Fetch Bounces",NULL,"Hourly"),
+("fetch_activities","Job","Inserts activity for a contact or a case by retrieving inbound emails from a mail directory",@domainID,"0",NULL,"Process Inbound Emails",NULL,"Hourly"),
+("process_pledge","Job","Updates pledge records and sends out reminders",@domainID,"0",NULL,"Process Pledges","send_reminders=[1 or 0] optional- 1 to send payment reminders","Daily"),
+("geocode","Job","Retrieves geocodes (lat and long) and / or parses street addresses (populates street number, street name, etc.)",@domainID,"0",NULL,"Geocode and Parse Addresses","geocoding=[1 or 0] required\nparse=[1 or 0] required\nstart=[contact ID] optional-begin with this contact ID\nend=[contact ID] optional-process contacts with IDs less than this\nthrottle=[1 or 0] optional-1 adds five second sleep","Daily"),
+("update_greeting","Job","Goes through contact records and updates email and postal greetings, or addressee value",@domainID,"0",NULL,"Update Greetings and Addressees","ct=[Individual or Household or Organization] required\ngt=[email_greeting or postal_greeting or addressee] required\nforce=[0 or 1] optional-0 update contacts with null value, 1 update all\nlimit=Number optional-Limit the number of contacts to update","Daily"),
+("mail_report","Job","Generates and sends out reports via email",@domainID,"0",NULL,"Mail Reports","instanceId=[ID of report instance] required\nformat=[csv or print] optional-output CSV or print-friendly HTML, else PDF","Daily"),
+("send_reminder","Job","Sends out scheduled reminders via email",@domainID,"0",NULL,"Send Scheduled Reminders",NULL,"Hourly"),
+("process_participant","Job","Updates pending event participant statuses based on time",@domainID,"0",NULL,"Update Participant Statuses",NULL,"Always"),
+("process_membership","Job","Updates membership statuses. WARNING: Membership renewal reminders have been migrated to the Schedule Reminders functionality, which supports multiple renewal reminders.",@domainID,"0",NULL,"Update Membership Statuses",NULL,"Daily"),
+("process_respondent","Job","Releases reserved survey respondents when they have been reserved for longer than the Release Frequency days specified for that survey.",@domainID,"0",NULL,"Process Survey Respondents",NULL,"Always"),
+("cleanup","Job","Removes temporary data and files, and clears old data from cache tables. Recommend running this job every hour to help prevent database and file system bloat.",@domainID,"0",NULL,"Clean-up Temporary Data and Files",NULL,"Hourly"),
+("process_sms","Job","Sends out scheduled SMS",@domainID,"0",NULL,"Send Scheduled SMS",NULL,"Always"),
+("group_rebuild","Job","Rebuilds the smart group cache.",@domainID,"0",NULL,"Rebuild Smart Group Cache","limit=Number optional-Limit the number of smart groups rebuild","Always"),
+("disable_expired_relationships","Job","Disables relationships that have expired (ie. those relationships whose end date is in the past).",@domainID,"0",NULL,"Disable expired relationships",NULL,"Daily"),
+("update_email_resetdate","Mailing","Updates the reset_date on an email address to indicate that there was a valid delivery to this email address.",@domainID,"0",NULL,"Validate Email Address from Mailings.","minDays, maxDays=Consider mailings that have completed between minDays and maxDays","Daily")
 ;
+
 
 -- financial accounts
 SELECT @option_group_id_fat            := max(id) from civicrm_option_group where name = 'financial_account_type';
@@ -23061,6 +22807,7 @@ INSERT INTO civicrm_financial_account (`account_type_code`,`accounting_code`,`co
 ("OCLIAB","2730",@contactID,"Event revenue to be recognized in future months when the events occur",@opLiability,"1","0","0","0","Deferred Revenue - Event Fee"),
 ("OCLIAB","2740",@contactID,"Membership revenue to be recognized in future months",@opLiability,"1","0","0","0","Deferred Revenue - Member Dues")
 ;
+
 
 SELECT @option_group_id_arel           := max(id) from civicrm_option_group where name = 'account_relationship';
 SELECT @option_value_rel_id  := value FROM civicrm_option_value WHERE option_group_id = @option_group_id_arel AND name = 'Income Account is';
@@ -23157,6 +22904,7 @@ INSERT IGNORE INTO civicrm_extension (`file`,`full_name`,`is_active`,`label`,`na
 ("civi_pledge","civi_pledge","1","CiviPledge","CiviPledge","module"),
 ("civi_report","civi_report","1","CiviReport","CiviReport","module")
 ;
+
 INSERT INTO civicrm_option_group (`is_active`,`is_reserved`,`name`,`option_value_fields`,`title`) VALUES
 ("1","1","soft_credit_type","name,label,description","Soft Credit Types")
 ;
@@ -23177,6 +22925,7 @@ INSERT INTO civicrm_option_value (`color`,`component_id`,`description`,`domain_i
 (NULL,NULL,NULL,NULL,"0",NULL,NULL,"1","0","0","1","Personal Campaign Page","pcp",@this_option_group_id,"10",NULL,"10"),
 (NULL,NULL,NULL,NULL,"0",NULL,NULL,"1","0","0","1","Gift","gift",@this_option_group_id,"11",NULL,"11")
 ;
+
 INSERT INTO civicrm_option_group (`is_active`,`is_reserved`,`name`,`option_value_fields`,`title`) VALUES
 ("1","1","recent_items_providers","name,label,description","Recent Items Providers")
 ;
@@ -23334,7 +23083,7 @@ VALUES
     ( @domainID, 'civicrm/admin/contribute?reset=1',                        'Manage Contribution Pages',  'Manage Contribution Pages', 'access CiviContribute,administer CiviCRM', 'AND',  @contributionlastID, '1', '1',  10 ),
     ( @domainID, 'civicrm/admin/pcp?reset=1&page_type=contribute',          'Personal Campaign Pages',    'Personal Campaign Pages',   'access CiviContribute,administer CiviCRM', 'AND',  @contributionlastID, '1', NULL, 11 ),
     ( @domainID, 'civicrm/admin/contribute/managePremiums?reset=1',         'Premiums (Thank-you Gifts)', 'Premiums',                  'access CiviContribute,administer CiviCRM', 'AND',  @contributionlastID, '1', 1,    12 ),
-    ( @domainID, 'civicrm/admin/price?reset=1&action=add',                  'New Price Set',              'New Price Set',             'access CiviContribute,administer CiviCRM', 'AND',  @contributionlastID, '0', NULL, 13 ),
+    ( @domainID, 'civicrm/admin/price/edit?reset=1&action=add',             'New Price Set',              'New Price Set',             'access CiviContribute,administer CiviCRM', 'AND',  @contributionlastID, '0', NULL, 13 ),
     ( @domainID, 'civicrm/admin/price?reset=1',                             'Manage Price Sets',          'Manage Price Sets',         'access CiviContribute,administer CiviCRM', 'AND',  @contributionlastID, '1', 1, 14 ),
 
     ( @domainID, 'civicrm/financial/batch?reset=1&action=add',                             'New Batch',          'New Batch',         'create manual batch', 'AND',  @financialTransactionID, '1', NULL, 1 ),
@@ -23360,7 +23109,7 @@ VALUES
     ( @domainID, 'civicrm/event/manage?reset=1',                            'Manage Events',      'Manage Events',        'access CiviEvent,edit all events', 'AND',    @eventlastID, '1', 1, 7 ),
     ( @domainID, 'civicrm/admin/pcp?reset=1&page_type=event',               'Personal Campaign Pages',    'Personal Campaign Pages',   'access CiviEvent,administer CiviCRM', 'AND', @eventlastID, '1', 1, 8 ),
     ( @domainID, 'civicrm/admin/eventTemplate?reset=1',                     'Event Templates',    'Event Templates',      'access CiviEvent,edit all events', 'AND',    @eventlastID, '1', 1, 9 ),
-    ( @domainID, 'civicrm/admin/price?reset=1&action=add',                  'New Price Set',      'New Price Set',        'access CiviEvent,edit all events', 'AND',    @eventlastID, '0', NULL, 10 ),
+    ( @domainID, 'civicrm/admin/price/edit?reset=1&action=add',             'New Price Set',      'New Price Set',        'access CiviEvent,edit all events', 'AND',    @eventlastID, '0', NULL, 10 ),
     ( @domainID, 'civicrm/admin/price?reset=1',                             'Manage Price Sets',  'Manage Price Sets',    'access CiviEvent,edit all events', 'AND',    @eventlastID, '1', NULL, 11 );
 
 INSERT INTO civicrm_navigation
@@ -23400,7 +23149,7 @@ VALUES
     ( @domainID, 'civicrm/report/list?compid=3&reset=1',                'Membership Reports',  'Membership Reports', 'access CiviMember', '', @memberlastID, '1', 1,    4 ),
     ( @domainID, 'civicrm/batch?reset=1',                               'Batch Data Entry',     'Batch Data Entry','access CiviContribute', '', @memberlastID, '1', NULL, 5 ),
     ( @domainID, 'civicrm/member/import?reset=1',                       'Import Memberships',  'Import Members',  'access CiviMember,edit memberships', 'AND', @memberlastID, '1', 1, 6 ),
-    ( @domainID, 'civicrm/admin/price?reset=1&action=add',              'New Price Set',       'New Price Set',   'access CiviMember,administer CiviCRM', 'AND',  @memberlastID, '0', NULL, 7 ),
+    ( @domainID, 'civicrm/admin/price/edit?reset=1&action=add',         'New Price Set',       'New Price Set',   'access CiviMember,administer CiviCRM', 'AND',  @memberlastID, '0', NULL, 7 ),
     ( @domainID, 'civicrm/admin/price?reset=1',                         'Manage Price Sets',   'Manage Price Sets', 'access CiviMember,administer CiviCRM', 'AND',  @memberlastID, '1', NULL, 8 );
 
 INSERT INTO civicrm_navigation
@@ -23545,8 +23294,8 @@ SET @usersPermslastID:=LAST_INSERT_ID();
 INSERT INTO civicrm_navigation
     ( domain_id, url, label, name, permission, permission_operator, parent_id, is_active, has_separator, weight )
 VALUES
-    ( @domainID, 'civicrm/admin/access?reset=1',       'Permissions (Access Control)',    'Permissions (Access Control)',     'administer CiviCRM', '', @usersPermslastID, '1', NULL, 1 ),
-    ( @domainID, 'civicrm/admin/synchUser?reset=1',    'Synchronize Users to Contacts',   'Synchronize Users to Contacts',    'administer CiviCRM', '', @usersPermslastID, '1', NULL, 2 );
+    ( @domainID, 'civicrm/admin/access?reset=1',       'Access Control Lists',    'Permissions (Access Control)',     'administer CiviCRM', '', @usersPermslastID, '1', NULL, 5 ),
+    ( @domainID, 'civicrm/admin/synchUser?reset=1',    'Synchronize Users to Contacts',   'Synchronize Users to Contacts',    'administer CiviCRM', '', @usersPermslastID, '1', NULL, 10 );
 
 INSERT INTO civicrm_navigation
     ( domain_id, url, label, name, permission, permission_operator, parent_id, is_active, has_separator, weight )
@@ -23627,7 +23376,7 @@ VALUES
     ( @domainID, 'civicrm/admin/options/payment_instrument?reset=1',  'Payment Methods',    'Payment Instruments',   'access CiviContribute,administer CiviCRM', 'AND', @adminContributelastID, '1', NULL, 12 ),
     ( @domainID, 'civicrm/admin/options/accept_creditcard?reset=1',    'Accepted Credit Cards',  'Accepted Credit Cards', 'access CiviContribute,administer CiviCRM', 'AND', @adminContributelastID, '1', NULL, 13 ),
     ( @domainID, 'civicrm/admin/options/soft_credit_type?reset=1', 'Soft Credit Types', 'Soft Credit Types', 'access CiviContribute,administer CiviCRM', 'AND', @adminContributelastID, '1', 1, 14  ),
-    ( @domainID, 'civicrm/admin/price?reset=1&action=add',                  'New Price Set',              'New Price Set',             'access CiviContribute,administer CiviCRM', 'AND', @adminContributelastID, '0', NULL, 15 ),
+    ( @domainID, 'civicrm/admin/price/edit?reset=1&action=add',             'New Price Set',              'New Price Set',             'access CiviContribute,administer CiviCRM', 'AND', @adminContributelastID, '0', NULL, 15 ),
     ( @domainID, 'civicrm/admin/price?reset=1',                             'Manage Price Sets',          'Manage Price Sets',         'access CiviContribute,administer CiviCRM', 'AND', @adminContributelastID, '1', NULL, 16 ),
     ( @domainID, 'civicrm/admin/paymentProcessor?reset=1',                  'Payment Processors',         'Payment Processors',        'administer CiviCRM', '',                          @adminContributelastID, '1', NULL, 17  ),
     ( @domainID, 'civicrm/admin/setting/preferences/contribute?reset=1',                  'CiviContribute Component Settings',         'CiviContribute Component Settings',        'administer CiviCRM', '',                          @adminContributelastID, '1', NULL, 18  ) ;
@@ -23645,7 +23394,7 @@ VALUES
     ( @domainID, 'civicrm/event/manage?reset=1',                           'Manage Events',      'Manage Events',                    'access CiviEvent,administer CiviCRM', 'AND', @adminEventlastID, '1', 1,    2 ),
     ( @domainID, 'civicrm/admin/pcp?reset=1&page_type=event',                              'Personal Campaign Pages',    'Personal Campaign Pages',   'access CiviEvent,administer CiviCRM', 'AND', @adminEventlastID, '1', 1, 3 ),
     ( @domainID, 'civicrm/admin/eventTemplate?reset=1',                    'Event Templates',    'Event Templates',                  'access CiviEvent,administer CiviCRM', 'AND', @adminEventlastID, '1', 1,    4 ),
-    ( @domainID, 'civicrm/admin/price?reset=1&action=add',                 'New Price Set',      'New Price Set',                    'access CiviEvent,administer CiviCRM', 'AND', @adminEventlastID, '0', NULL, 5 ),
+    ( @domainID, 'civicrm/admin/price/edit?reset=1&action=add',            'New Price Set',      'New Price Set',                    'access CiviEvent,administer CiviCRM', 'AND', @adminEventlastID, '0', NULL, 5 ),
     ( @domainID, 'civicrm/admin/price?reset=1',                            'Manage Price Sets',  'Manage Price Sets',                'access CiviEvent,administer CiviCRM', 'AND', @adminEventlastID, '1', 1,    6 ),
     ( @domainID, 'civicrm/admin/options/event_type?reset=1',  'Event Types',    'Event Types',                      'access CiviEvent,administer CiviCRM', 'AND', @adminEventlastID, '1', NULL, 7 ),
     ( @domainID, 'civicrm/admin/participant_status?reset=1',                   'Participant Statuses', 'Participant Statuses',       'access CiviEvent,administer CiviCRM', 'AND', @adminEventlastID, '1', NULL, 8 ),
@@ -23682,7 +23431,7 @@ INSERT INTO civicrm_navigation
 VALUES
     ( @domainID, 'civicrm/admin/member/membershipType?reset=1',    'Membership Types',        'Membership Types',        'access CiviMember,administer CiviCRM', 'AND', @adminMemberlastID, '1', NULL, 1 ),
     ( @domainID, 'civicrm/admin/member/membershipStatus?reset=1',  'Membership Status Rules', 'Membership Status Rules', 'access CiviMember,administer CiviCRM', 'AND', @adminMemberlastID, '1', 1, 2 ),
-    ( @domainID, 'civicrm/admin/price?reset=1&action=add',         'New Price Set',           'New Price Set',           'access CiviMember,administer CiviCRM', 'AND', @adminMemberlastID, '1', NULL, 3 ),
+    ( @domainID, 'civicrm/admin/price/edit?reset=1&action=add',    'New Price Set',           'New Price Set',           'access CiviMember,administer CiviCRM', 'AND', @adminMemberlastID, '1', NULL, 3 ),
     ( @domainID, 'civicrm/admin/price?reset=1',                    'Manage Price Sets',       'Manage Price Sets',       'access CiviMember,administer CiviCRM', 'AND', @adminMemberlastID, '1', NULL, 4 ),
     ( @domainID, 'civicrm/admin/setting/preferences/member?reset=1', 'CiviMember Component Settings', 'CiviMember Component Settings','access CiviMember,administer CiviCRM', 'AND', @adminMemberlastID, '1', NULL, 5 );
 
@@ -23952,4 +23701,4 @@ INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
 VALUES
     (  @domainID, 'Survey Details', 'survey/detail', 'Detailed report for canvassing, phone-banking, walk lists or other surveys.', 'access CiviReport', 'a:39:{s:6:"fields";a:2:{s:9:"sort_name";s:1:"1";s:6:"result";s:1:"1";}s:22:"assignee_contact_id_op";s:2:"eq";s:25:"assignee_contact_id_value";s:0:"";s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:17:"street_number_min";s:0:"";s:17:"street_number_max";s:0:"";s:16:"street_number_op";s:3:"lte";s:19:"street_number_value";s:0:"";s:14:"street_name_op";s:3:"has";s:17:"street_name_value";s:0:"";s:15:"postal_code_min";s:0:"";s:15:"postal_code_max";s:0:"";s:14:"postal_code_op";s:3:"lte";s:17:"postal_code_value";s:0:"";s:7:"city_op";s:3:"has";s:10:"city_value";s:0:"";s:20:"state_province_id_op";s:2:"in";s:23:"state_province_id_value";a:0:{}s:13:"country_id_op";s:2:"in";s:16:"country_id_value";a:0:{}s:12:"survey_id_op";s:2:"in";s:15:"survey_id_value";a:0:{}s:12:"status_id_op";s:2:"eq";s:15:"status_id_value";s:1:"1";s:11:"custom_1_op";s:2:"in";s:14:"custom_1_value";a:0:{}s:11:"custom_2_op";s:2:"in";s:14:"custom_2_value";a:0:{}s:17:"custom_3_relative";s:1:"0";s:13:"custom_3_from";s:0:"";s:11:"custom_3_to";s:0:"";s:11:"description";s:75:"Detailed report for canvassing, phone-banking, walk lists or other surveys.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviReport";s:6:"groups";s:0:"";s:9:"domain_id";i:1;}');
-UPDATE civicrm_domain SET version = '5.64.beta1';
+UPDATE civicrm_domain SET version = '5.66.beta1';

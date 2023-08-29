@@ -3,8 +3,7 @@
 
   // Shared between router and searchMeta service
   var searchEntity,
-    joinIndex,
-    undefined;
+    searchTasks = {};
 
   // Declare module and route/controller/services
   angular.module('crmSearchAdmin', CRM.angRequires('crmSearchAdmin'))
@@ -181,7 +180,7 @@
         return {field: field, join: join};
       }
       function parseFnArgs(info, expr) {
-        var matches = /([_A-Z]+)\((.*)\)(:[a-z]+)?$/.exec(expr),
+        var matches = /([_A-Z]*)\((.*)\)(:[a-z]+)?$/.exec(expr),
           fnName = matches[1],
           argString = matches[2];
         info.fn = _.find(CRM.crmSearchAdmin.functions, {name: fnName || 'e'});
@@ -355,6 +354,14 @@
         parseExpr: parseExpr,
         getDefaultLabel: getDefaultLabel,
         fieldToColumn: fieldToColumn,
+        getSearchTasks: function(entityName) {
+          if (!(entityName in searchTasks)) {
+            searchTasks[entityName] = crmApi4('SearchDisplay', 'getSearchTasks', {
+              savedSearch: {api_entity: entityName}
+            });
+          }
+          return searchTasks[entityName];
+        },
         // Supply default aggregate function appropriate to the data_type
         getDefaultAggregateFn: function(info) {
           var arg = info.args[0] || {};

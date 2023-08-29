@@ -69,9 +69,8 @@ abstract class CRM_Import_Form_MapField extends CRM_Import_Forms {
     $this->_mapperFields = $this->getAvailableFields();
     $fieldMappings = $this->getFieldMappings();
     // Check if the import file headers match the selected import mappings, throw an error if it doesn't.
-    if(count($fieldMappings) > 0 && count($this->getColumnHeaders()) !== count($fieldMappings)) {
-      CRM_Core_Session::singleton()->setStatus(ts('The data columns in this import file appear to be different from the saved mapping. Please verify that you have selected the correct saved ma
-pping before continuing.'));
+    if (empty($_POST) && count($fieldMappings) > 0 && count($this->getColumnHeaders()) !== count($fieldMappings)) {
+      CRM_Core_Session::singleton()->setStatus(ts('The data columns in this import file appear to be different from the saved mapping. Please verify that you have selected the correct saved mapping before continuing.'));
     }
     asort($this->_mapperFields);
     parent::preProcess();
@@ -92,11 +91,6 @@ pping before continuing.'));
     $this->saveMapping();
     $this->updateUserJobMetadata('submitted_values', $this->getSubmittedValues());
     $parser = $this->getParser();
-    // Check if the import file headers match the updated mappings. If it does, clear the status that was set in
-    // the initial check.
-    if(count($this->getColumnHeaders()) === count($this->getFieldMappings())) {
-      CRM_Core_Session::singleton()->getStatus(true);
-    }
     $parser->init();
     $parser->validate();
   }

@@ -10,6 +10,7 @@
     <add>civicrm/acl/edit?reset=1&amp;action=add</add>
     <delete>civicrm/acl/delete?reset=1&amp;action=delete&amp;id=[id]</delete>
     <update>civicrm/acl/edit?reset=1&amp;action=edit&amp;id=[id]</update>
+    <browse>civicrm/acl</browse>
   </paths>
   <field>
     <name>id</name>
@@ -116,7 +117,7 @@
     </html>
     <pseudoconstant>
       <callback>CRM_ACL_BAO_ACL::getObjectIdOptions</callback>
-      <prefetch>false</prefetch>
+      <prefetch>disabled</prefetch>
     </pseudoconstant>
   </field>
   <field>
@@ -160,8 +161,4 @@
       <type>Number</type>
     </html>
   </field>
-  <index>
-    <name>index_priority</name>
-    <fieldName>priority</fieldName>
-  </index>
 </table>

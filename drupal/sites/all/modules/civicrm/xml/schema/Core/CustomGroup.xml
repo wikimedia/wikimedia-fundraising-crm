@@ -15,6 +15,7 @@
     <update>civicrm/admin/custom/group/edit?action=update&amp;reset=1&amp;id=[id]</update>
     <preview>civicrm/admin/custom/group/preview?reset=1&amp;gid=[id]</preview>
     <delete>civicrm/admin/custom/group/delete?reset=1&amp;id=[id]</delete>
+    <browse>civicrm/admin/custom/group</browse>
   </paths>
   <field>
     <name>id</name>
@@ -62,6 +63,7 @@
     <add>1.1</add>
     <pseudoconstant>
       <callback>CRM_Core_BAO_CustomGroup::getCustomGroupExtendsOptions</callback>
+      <suffixes>name,label,grouping</suffixes>
     </pseudoconstant>
     <html>
       <type>Select</type>
@@ -75,6 +77,7 @@
     <comment>FK to civicrm_option_value.id (for option group custom_data_type.)</comment>
     <pseudoconstant>
       <callback>CRM_Core_BAO_CustomGroup::getExtendsEntityColumnIdOptions</callback>
+      <suffixes>name,label,grouping</suffixes>
     </pseudoconstant>
     <add>2.2</add>
     <html>

@@ -10,7 +10,10 @@
  */
 
 /**
- * Dear God Why Do I Have To Write This (Dumb SQL Builder)
+ * Object-oriented SQL builder for SELECT queries.
+ *
+ * This class is foundational to CiviCRM's query functionality for the API,
+ * SearchKit, ScheduledReminders, MailingRecipients, etc.
  *
  * Usage:
  * ```
@@ -642,6 +645,13 @@ class CRM_Utils_SQL_Select extends CRM_Utils_SQL_BaseParamQuery {
 
     return CRM_Core_DAO::executeQuery($this->toSQL(), $params, $abort, $daoName,
       $freeDAO, $i18nRewrite, $trapException);
+  }
+
+  /**
+   * @return string
+   */
+  public function getFrom(): string {
+    return $this->from;
   }
 
 }

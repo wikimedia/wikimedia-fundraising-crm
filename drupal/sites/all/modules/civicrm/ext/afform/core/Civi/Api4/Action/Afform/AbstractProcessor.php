@@ -5,8 +5,10 @@ namespace Civi\Api4\Action\Afform;
 use Civi\Afform\Event\AfformEntitySortEvent;
 use Civi\Afform\Event\AfformPrefillEvent;
 use Civi\Afform\FormDataModel;
+use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Utils\CoreUtil;
+use CRM_Afform_ExtensionUtil as E;
 
 /**
  * Shared functionality for form submission pre & post processing.
@@ -29,13 +31,6 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
    * @var array
    */
   protected $args = [];
-
-  /**
-   * Used by prefill action to indicate if the entire form or just one entity is being filled.
-   * @var string
-   * @options form,entity
-   */
-  protected $fillMode = 'form';
 
   /**
    * @var array
@@ -67,8 +62,14 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result) {
-    // This will throw an exception if the form doesn't exist or user lacks permission
-    $this->_afform = (array) civicrm_api4('Afform', 'get', ['where' => [['name', '=', $this->name]]], 0);
+    $this->_afform = civicrm_api4('Afform', 'get', [
+      'where' => [['name', '=', $this->name], ['submit_currently_open', '=', TRUE]],
+    ])->first();
+    if (!$this->_afform) {
+      // Either the form doesn't exist, user lacks permission,
+      // or submit_currently_open = false.
+      throw new UnauthorizedException(E::ts('You do not have permission to submit this form'));
+    }
     $this->_formDataModel = new FormDataModel($this->_afform['layout']);
     $this->loadEntities();
     $result->exchangeArray($this->processForm());
@@ -84,11 +85,12 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
     foreach ($sortedEntities as $entityName) {
       $entity = $this->_formDataModel->getEntity($entityName);
       $this->_entityIds[$entityName] = [];
-      $idField = CoreUtil::getIdFieldName($entity['type']);
-      if (!empty($entity['actions']['update'])) {
+      $matchField = $this->matchField ?? CoreUtil::getIdFieldName($entity['type']);
+      $matchFieldDefn = $this->_formDataModel->getField($entity['type'], $matchField, 'create');
+      if (!empty($entity['actions'][$matchFieldDefn['input_attrs']['autofill']])) {
         if (
           !empty($this->args[$entityName]) &&
-          (!empty($entity['url-autofill']) || isset($entity['fields'][$idField]))
+          (!empty($entity['url-autofill']) || isset($entity['fields'][$matchField]))
         ) {
           $ids = (array) $this->args[$entityName];
           $this->loadEntity($entity, $ids);
@@ -108,7 +110,13 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
   public function loadEntity(array $entity, array $ids) {
     // Limit number of records based on af-repeat settings
     // If 'min' is set then it is repeatable, and max will either be a number or NULL for unlimited.
-    $ids = array_slice($ids, 0, isset($entity['min']) ? $entity['max'] : 1);
+    if (isset($entity['min']) && isset($entity['max'])) {
+      foreach (array_keys($ids) as $index) {
+        if ($index >= $entity['max']) {
+          unset($ids[$index]);
+        }
+      }
+    }
 
     $api4 = $this->_formDataModel->getSecureApi4($entity['name']);
     $idField = CoreUtil::getIdFieldName($entity['type']);

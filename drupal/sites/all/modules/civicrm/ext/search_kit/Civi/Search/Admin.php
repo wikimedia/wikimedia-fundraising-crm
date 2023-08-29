@@ -131,7 +131,7 @@ class Admin {
   public static function getSchema(): array {
     $schema = [];
     $entities = Entity::get()
-      ->addSelect('name', 'title', 'title_plural', 'bridge_title', 'type', 'primary_key', 'description', 'label_field', 'icon', 'dao', 'bridge', 'ui_join_filters', 'searchable', 'order_by')
+      ->addSelect('name', 'title', 'title_plural', 'bridge_title', 'type', 'primary_key', 'description', 'label_field', 'search_fields', 'icon', 'dao', 'bridge', 'ui_join_filters', 'searchable', 'order_by')
       ->addWhere('searchable', '!=', 'none')
       ->addOrderBy('title_plural')
       ->setChain([
@@ -154,7 +154,7 @@ class Admin {
             'select' => ['name', 'title', 'label', 'description', 'type', 'options', 'input_type', 'input_attrs', 'data_type', 'serialize', 'entity', 'fk_entity', 'readonly', 'operators', 'suffixes', 'nullable'],
             'where' => [['deprecated', '=', FALSE], ['name', 'NOT IN', ['api_key', 'hash']]],
             'orderBy' => ['label'],
-          ]);
+          ])->indexBy('name');
         }
         catch (\CRM_Core_Exception $e) {
           \Civi::log()->warning('Entity could not be loaded', ['entity' => $entity['name']]);
@@ -170,6 +170,7 @@ class Admin {
           }
           $entity['fields'][] = $field;
         }
+        $entity['default_columns'] = self::getDefaultColumns($entity, $getFields);
         $params = $entity['get'][0];
         // Entity must support at least these params or it is too weird for search kit
         if (!array_diff(['select', 'where', 'orderBy', 'limit', 'offset'], array_keys($params))) {
@@ -180,6 +181,44 @@ class Admin {
       }
     }
     return $schema;
+  }
+
+  /**
+   * Build default columns - these are used when creating a new search with this entity
+   *
+   * @param array $entity
+   * @param iterable $getFields
+   * @return array
+   */
+  private static function getDefaultColumns(array $entity, iterable $getFields): array {
+    // Start with id & label
+    $defaultColumns = array_merge(
+      $entity['primary_key'],
+      $entity['search_fields'] ?? []
+    );
+    $possibleColumns = [];
+    // Include grouping fields like "event_type_id"
+    foreach ((array) (CoreUtil::getCustomGroupExtends($entity['name'])['grouping'] ?? []) as $column) {
+      $possibleColumns[$column] = "$column:label";
+    }
+    // Other possible relevant columns... now we're just guessing
+    $possibleColumns['financial_type_id'] = 'financial_type_id:label';
+    $possibleColumns['description'] = 'description';
+    // E.g. "activity_status_id"
+    $possibleColumns[strtolower($entity['name']) . 'status_id'] = strtolower($entity['name']) . 'status_id:label';
+    $possibleColumns['start_date'] = 'start_date';
+    $possibleColumns['end_date'] = 'end_date';
+    $possibleColumns['is_active'] = 'is_active';
+    foreach ($possibleColumns as $fieldName => $columnName) {
+      if (
+        (str_contains($columnName, ':') && !empty($getFields[$fieldName]['options'])) ||
+        (!str_contains($columnName, ':') && !empty($getFields[$fieldName]))
+      ) {
+        $defaultColumns[] = $columnName;
+      }
+    }
+    // `array_unique` messes with the index so reset it with `array_values` so it cleanly encodes to a json array
+    return array_values(array_unique($defaultColumns));
   }
 
   /**
@@ -194,22 +233,27 @@ class Admin {
     foreach ($schema as &$entity) {
       if ($entity['searchable'] !== 'bridge') {
         foreach (array_reverse($entity['fields'] ?? [], TRUE) as $index => $field) {
-          if (!empty($field['fk_entity']) && !$field['options'] && !$field['suffixes'] && !empty($schema[$field['fk_entity']]['label_field'])) {
-            $isCustom = strpos($field['name'], '.');
-            // Custom fields: append "Contact ID" etc. to original field label
-            if ($isCustom) {
-              $idField = array_column($schema[$field['fk_entity']]['fields'], NULL, 'name')['id'];
-              $entity['fields'][$index]['label'] .= ' ' . $idField['title'];
+          if (!empty($field['fk_entity']) && !$field['options'] && !$field['suffixes'] && !empty($schema[$field['fk_entity']]['search_fields'])) {
+            $labelFields = array_unique(array_merge($schema[$field['fk_entity']]['search_fields'], (array) ($schema[$field['fk_entity']]['label_field'] ?? [])));
+            foreach ($labelFields as $labelField) {
+              $isCustom = strpos($field['name'], '.');
+              // Custom fields: append "Contact ID" etc. to original field label
+              if ($isCustom) {
+                $idField = array_column($schema[$field['fk_entity']]['fields'], NULL, 'name')['id'];
+                $entity['fields'][$index]['label'] .= ' ' . $idField['title'];
+              }
+              // DAO fields: use title instead of label since it represents the id (title usually ends in ID but label does not)
+              else {
+                $entity['fields'][$index]['label'] = $field['title'];
+              }
+              // Add the label field from the other entity to this entity's list of fields
+              $newField = \CRM_Utils_Array::findAll($schema[$field['fk_entity']]['fields'], ['name' => $labelField])[0] ?? NULL;
+              if ($newField) {
+                $newField['name'] = $field['name'] . '.' . $labelField;
+                $newField['label'] = $field['label'] . ' ' . $newField['label'];
+                array_splice($entity['fields'], $index + 1, 0, [$newField]);
+              }
             }
-            // DAO fields: use title instead of label since it represents the id (title usually ends in ID but label does not)
-            else {
-              $entity['fields'][$index]['label'] = $field['title'];
-            }
-            // Add the label field from the other entity to this entity's list of fields
-            $newField = \CRM_Utils_Array::findAll($schema[$field['fk_entity']]['fields'], ['name' => $schema[$field['fk_entity']]['label_field']])[0];
-            $newField['name'] = $field['name'] . '.' . $schema[$field['fk_entity']]['label_field'];
-            $newField['label'] = $field['label'] . ' ' . $newField['label'];
-            array_splice($entity['fields'], $index, 0, [$newField]);
           }
         }
         // Useful address fields (see ContactSchemaMapSubscriber)

@@ -1,3 +1,10 @@
+1.9.5 - Wednesday 06 September 2023
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Fixed tests.
+- Fixed #87: Use filter_var(FILTER_VALIDATE_EMAIL) instead of homegrown
+  validation for email addresses.
+
 1.9.4 - Wednesday 14 September 2022
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

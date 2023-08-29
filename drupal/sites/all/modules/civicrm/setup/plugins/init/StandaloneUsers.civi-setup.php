@@ -47,13 +47,13 @@ if (!defined('CIVI_SETUP')) {
       ->setRecords([
         [
           'name' => 'everyone',
-          'label' => 'Everyone, including anonymous users',
+          'label' => ts('Everyone, including anonymous users'),
           // Provide default open permissions
-          'permissions' => ['CiviMail subscribe/unsubscribe pages', 'make online contributions'],
+          'permissions' => ['CiviMail subscribe/unsubscribe pages', 'make online contributions', 'view event info', 'register for events'],
         ],
         [
           'name' => 'admin',
-          'label' => 'Administrator',
+          'label' => ts('Administrator'),
           'permissions' => array_keys(\CRM_Core_SelectValues::permissions()),
         ],
       ])
@@ -71,10 +71,11 @@ if (!defined('CIVI_SETUP')) {
     $params = [
       'cms_name'   => $e->getModel()->extras['adminUser'],
       'cms_pass'   => $e->getModel()->extras['adminPass'],
+      'email'       => $adminEmail,
       'notify'     => FALSE,
       'contactID'  => $contactID,
     ];
-    $userID = \CRM_Core_BAO_CMSUser::create($params, $adminEmail);
+    $userID = \CRM_Core_BAO_CMSUser::create($params, 'email');
 
     // Assign 'admin' role to user
     \Civi\Api4\User::update(FALSE)
@@ -84,7 +85,7 @@ if (!defined('CIVI_SETUP')) {
 
     $message = "Created new user \"{$e->getModel()->extras['adminUser']}\" (user ID #$userID, contact ID #$contactID) with 'admin' role and ";
     $message .= empty($e->getModel()->extras['adminPassWasSpecified'])
-    ? "random password \"" . ($e->getModel()->extras['adminPass'])
+    ? "random password \"" . ($e->getModel()->extras['adminPass']) . '"'
     : "specified password";
     \Civi::log()->notice($message);
 

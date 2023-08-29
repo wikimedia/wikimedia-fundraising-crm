@@ -217,13 +217,13 @@ ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMA
 -- *******************************************************/
 CREATE TABLE `civicrm_location_type` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Location Type ID',
-  `name` varchar(64) COMMENT 'Location Type Name.',
-  `display_name` varchar(64) COMMENT 'Location Type Display Name.',
+  `name` varchar(64) NOT NULL COMMENT 'Location Type Name.',
+  `display_name` varchar(64) NOT NULL COMMENT 'Location Type Display Name.',
   `vcard_name` varchar(64) COMMENT 'vCard Location Type Name.',
   `description` varchar(255) COMMENT 'Location Type Description.',
-  `is_reserved` tinyint COMMENT 'Is this location type a predefined system location?',
-  `is_active` tinyint COMMENT 'Is this property active?',
-  `is_default` tinyint COMMENT 'Is this location type the default?',
+  `is_reserved` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this location type a predefined system location?',
+  `is_active` tinyint NOT NULL DEFAULT 1 COMMENT 'Is this property active?',
+  `is_default` tinyint NOT NULL DEFAULT 0 COMMENT 'Is this location type the default?',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `UI_name`(name)
 )
@@ -449,8 +449,7 @@ CREATE TABLE `civicrm_acl` (
   `is_active` tinyint COMMENT 'Is this property active?',
   `priority` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  INDEX `index_acl_id`(acl_id),
-  INDEX `index_priority`(priority)
+  INDEX `index_acl_id`(acl_id)
 )
 ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
@@ -1063,7 +1062,6 @@ CREATE TABLE `civicrm_survey` (
   `title` varchar(255) NOT NULL COMMENT 'Title of the Survey.',
   `campaign_id` int unsigned DEFAULT NULL COMMENT 'Foreign key to the Campaign.',
   `activity_type_id` int unsigned DEFAULT NULL COMMENT 'Implicit FK to civicrm_option_value where option_group = activity_type',
-  `recontact_interval` text COMMENT 'Recontact intervals for each status.',
   `instructions` text COMMENT 'Script instructions for volunteers to use for the survey.',
   `release_frequency` int unsigned DEFAULT NULL COMMENT 'Number of days for recurrence of release.',
   `max_number_of_contacts` int unsigned DEFAULT NULL COMMENT 'Maximum number of contacts to allow for survey.',
@@ -1651,8 +1649,15 @@ CREATE TABLE `civicrm_mail_settings` (
   `activity_status` varchar(255) COMMENT 'Name of status to use when creating email to activity.',
   `is_non_case_email_skipped` tinyint NOT NULL DEFAULT 0 COMMENT 'Enabling this option will have CiviCRM skip any emails that do not have the Case ID or Case Hash so that the system will only process emails that can be placed on case records. Any emails that are not processed will be moved to the ignored folder.',
   `is_contact_creation_disabled_if_no_match` tinyint NOT NULL DEFAULT 0,
+  `is_active` tinyint NOT NULL DEFAULT 1 COMMENT 'Ignored for bounce processing, only for email-to-activity',
+  `activity_type_id` int unsigned COMMENT 'Implicit FK to civicrm_option_value where option_group = activity_type',
+  `campaign_id` int unsigned DEFAULT NULL COMMENT 'Foreign key to the Campaign.',
+  `activity_source` varchar(4) COMMENT 'Which email recipient to add as the activity source (from, to, cc, bcc).',
+  `activity_targets` varchar(16) COMMENT 'Which email recipients to add as the activity targets (from, to, cc, bcc).',
+  `activity_assignees` varchar(16) COMMENT 'Which email recipients to add as the activity assignees (from, to, cc, bcc).',
   PRIMARY KEY (`id`),
-  CONSTRAINT FK_civicrm_mail_settings_domain_id FOREIGN KEY (`domain_id`) REFERENCES `civicrm_domain`(`id`) ON DELETE CASCADE
+  CONSTRAINT FK_civicrm_mail_settings_domain_id FOREIGN KEY (`domain_id`) REFERENCES `civicrm_domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT FK_civicrm_mail_settings_campaign_id FOREIGN KEY (`campaign_id`) REFERENCES `civicrm_campaign`(`id`) ON DELETE SET NULL
 )
 ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
@@ -2083,8 +2088,8 @@ ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMA
 -- *******************************************************/
 CREATE TABLE `civicrm_group` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Group ID',
-  `name` varchar(64) COMMENT 'Internal name of Group.',
-  `title` varchar(255) COMMENT 'Name of Group.',
+  `name` varchar(64) NOT NULL COMMENT 'Internal name of Group.',
+  `title` varchar(255) NOT NULL COMMENT 'Name of Group.',
   `description` text COMMENT 'Optional verbose description of the group.',
   `source` varchar(64) COMMENT 'Module or process which created this group.',
   `saved_search_id` int unsigned COMMENT 'FK to saved search table.',
@@ -2102,7 +2107,7 @@ CREATE TABLE `civicrm_group` (
   `is_reserved` tinyint NOT NULL DEFAULT 0,
   `created_id` int unsigned COMMENT 'FK to contact table.',
   `modified_id` int unsigned COMMENT 'FK to contact table.',
-  `frontend_title` varchar(255) DEFAULT NULL COMMENT 'Alternative public title for this Group.',
+  `frontend_title` varchar(255) NOT NULL COMMENT 'Alternative public title for this Group.',
   `frontend_description` text DEFAULT NULL COMMENT 'Alternative public description of the group.',
   PRIMARY KEY (`id`),
   INDEX `UI_cache_date`(cache_date),
@@ -2734,7 +2739,7 @@ ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMA
 -- *******************************************************/
 CREATE TABLE `civicrm_discount` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
-  `entity_table` varchar(64) COMMENT 'physical tablename for entity being joined to discount, e.g. civicrm_event',
+  `entity_table` varchar(64) NOT NULL COMMENT 'physical tablename for entity being joined to discount, e.g. civicrm_event',
   `entity_id` int unsigned NOT NULL COMMENT 'FK to entity table specified in entity_table column.',
   `price_set_id` int unsigned NOT NULL COMMENT 'FK to civicrm_price_set',
   `start_date` date COMMENT 'Date when discount starts.',
@@ -2890,10 +2895,10 @@ ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ROW_FORMA
 -- *******************************************************/
 CREATE TABLE `civicrm_action_schedule` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) COMMENT 'Name of the action(reminder)',
+  `name` varchar(64) NOT NULL COMMENT 'Name of the action(reminder)',
   `title` varchar(64) COMMENT 'Title of the action(reminder)',
   `recipient` varchar(64) COMMENT 'Recipient',
-  `limit_to` tinyint COMMENT 'Is this the recipient criteria limited to OR in addition to?',
+  `limit_to` int COMMENT 'Is this the recipient criteria limited to OR in addition to?',
   `entity_value` varchar(255) COMMENT 'Entity value',
   `entity_status` varchar(64) COMMENT 'Entity status',
   `start_action_offset` int unsigned DEFAULT 0 COMMENT 'Reminder Interval.',
@@ -2932,6 +2937,7 @@ CREATE TABLE `civicrm_action_schedule` (
   `effective_start_date` timestamp NULL COMMENT 'Earliest date to consider start events from.',
   `effective_end_date` timestamp NULL COMMENT 'Latest date to consider end events from.',
   PRIMARY KEY (`id`),
+  UNIQUE INDEX `UI_name`(name),
   CONSTRAINT FK_civicrm_action_schedule_group_id FOREIGN KEY (`group_id`) REFERENCES `civicrm_group`(`id`) ON DELETE SET NULL,
   CONSTRAINT FK_civicrm_action_schedule_msg_template_id FOREIGN KEY (`msg_template_id`) REFERENCES `civicrm_msg_template`(`id`) ON DELETE SET NULL,
   CONSTRAINT FK_civicrm_action_schedule_sms_template_id FOREIGN KEY (`sms_template_id`) REFERENCES `civicrm_msg_template`(`id`) ON DELETE SET NULL,
@@ -3544,7 +3550,7 @@ CREATE TABLE `civicrm_activity` (
   INDEX `index_is_current_revision`(is_current_revision),
   INDEX `index_is_deleted`(is_deleted),
   CONSTRAINT FK_civicrm_activity_phone_id FOREIGN KEY (`phone_id`) REFERENCES `civicrm_phone`(`id`) ON DELETE SET NULL,
-  CONSTRAINT FK_civicrm_activity_parent_id FOREIGN KEY (`parent_id`) REFERENCES `civicrm_activity`(`id`) ON DELETE CASCADE,
+  CONSTRAINT FK_civicrm_activity_parent_id FOREIGN KEY (`parent_id`) REFERENCES `civicrm_activity`(`id`) ON DELETE SET NULL,
   CONSTRAINT FK_civicrm_activity_relationship_id FOREIGN KEY (`relationship_id`) REFERENCES `civicrm_relationship`(`id`) ON DELETE SET NULL,
   CONSTRAINT FK_civicrm_activity_original_id FOREIGN KEY (`original_id`) REFERENCES `civicrm_activity`(`id`) ON DELETE SET NULL,
   CONSTRAINT FK_civicrm_activity_campaign_id FOREIGN KEY (`campaign_id`) REFERENCES `civicrm_campaign`(`id`) ON DELETE SET NULL
@@ -3813,7 +3819,7 @@ CREATE TABLE `civicrm_contribution` (
   `check_number` varchar(255),
   `campaign_id` int unsigned COMMENT 'The campaign for which this contribution has been triggered.',
   `creditnote_id` varchar(255) COMMENT 'unique credit note id, system generated or passed in',
-  `tax_amount` decimal(20,2) COMMENT 'Total tax amount of this contribution.',
+  `tax_amount` decimal(20,2) NOT NULL DEFAULT 0 COMMENT 'Total tax amount of this contribution.',
   `revenue_recognition_date` datetime COMMENT 'Stores the date when revenue should be recognized.',
   `is_template` tinyint NOT NULL DEFAULT 0 COMMENT 'Shows this is a template for recurring contributions.',
   PRIMARY KEY (`id`),
@@ -4121,7 +4127,7 @@ CREATE TABLE `civicrm_line_item` (
   `price_field_value_id` int unsigned DEFAULT NULL COMMENT 'FK to civicrm_price_field_value',
   `financial_type_id` int unsigned DEFAULT NULL COMMENT 'FK to Financial Type.',
   `non_deductible_amount` decimal(20,2) NOT NULL DEFAULT 0.0 COMMENT 'Portion of total amount which is NOT tax deductible.',
-  `tax_amount` decimal(20,2) COMMENT 'tax of each item',
+  `tax_amount` decimal(20,2) NOT NULL DEFAULT 0 COMMENT 'tax of each item',
   `membership_num_terms` int unsigned DEFAULT NULL COMMENT 'Number of terms for this membership (only supported in Order->Payment flow). If the field is NULL it means unknown and it will be assumed to be 1 during payment.create if entity_table is civicrm_membership',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `UI_line_item_value`(entity_id, entity_table, contribution_id, price_field_value_id, price_field_id),

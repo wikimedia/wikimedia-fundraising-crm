@@ -706,7 +706,7 @@ HERESQL;
             $casesList[$key]['date'] = sprintf('<a class="action-item crm-hover-button" href="%s" title="%s">%s</a>',
               CRM_Utils_System::url('civicrm/case/activity/view', ['reset' => 1, 'cid' => $case['contact_id'], 'aid' => $case['activity_id']]),
               ts('View activity'),
-              CRM_Utils_Array::value($case['activity_type_id'], $activityTypeLabels)
+              $activityTypeLabels[$case['activity_type_id']] ?? ''
             );
           }
           else {
@@ -715,7 +715,7 @@ HERESQL;
               $status,
               CRM_Utils_System::url('civicrm/case/activity/view', ['reset' => 1, 'cid' => $case['contact_id'], 'aid' => $case['activity_id']]),
               ts('View activity'),
-              CRM_Utils_Array::value($case['activity_type_id'], $activityTypeLabels)
+              $activityTypeLabels[$case['activity_type_id']] ?? ''
             );
           }
         }
@@ -1902,7 +1902,7 @@ HERESQL;
 
     $whereClause = "mainCase.id = %2";
     if ($excludeDeleted) {
-      $whereClause .= " AND ( relAct.is_deleted = 0 OR relAct.is_deleted IS NULL )";
+      $whereClause .= " AND relAct.is_deleted = 0";
     }
 
     $query = "
@@ -1945,7 +1945,7 @@ HERESQL;
 
     $whereClause = 'relCase.id IN ( ' . implode(',', $relatedCaseIds) . ' )';
     if ($excludeDeleted) {
-      $whereClause .= " AND ( relCase.is_deleted = 0 OR relCase.is_deleted IS NULL )";
+      $whereClause .= " AND relCase.is_deleted = 0";
     }
 
     //filter for permissioned cases.

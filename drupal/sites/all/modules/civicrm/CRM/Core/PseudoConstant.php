@@ -193,6 +193,7 @@ class CRM_Core_PseudoConstant {
       'fresh' => FALSE,
       'context' => $context,
       'condition' => [],
+      'values' => [],
     ];
     $entity = CRM_Core_DAO_AllCoreTables::getBriefName($daoName);
 
@@ -208,8 +209,10 @@ class CRM_Core_PseudoConstant {
     }
 
     // Core field: load schema
-    $dao = new $daoName();
-    $fieldSpec = $dao->getFieldSpec($fieldName);
+    if (class_exists($daoName)) {
+      $dao = new $daoName();
+      $fieldSpec = $dao->getFieldSpec($fieldName);
+    }
 
     // Return false if field doesn't exist.
     if (empty($fieldSpec)) {
@@ -224,7 +227,7 @@ class CRM_Core_PseudoConstant {
 
       // if callback is specified..
       if (!empty($pseudoconstant['callback'])) {
-        $fieldOptions = call_user_func(Civi\Core\Resolver::singleton()->get($pseudoconstant['callback']), $context, $params);
+        $fieldOptions = call_user_func(Civi\Core\Resolver::singleton()->get($pseudoconstant['callback']), $fieldName, $params);
         $fieldOptions = self::formatArrayOptions($context, $fieldOptions);
         //CRM-18223: Allow additions to field options via hook.
         CRM_Utils_Hook::fieldOptions($entity, $fieldName, $fieldOptions, $params);
@@ -800,7 +803,7 @@ WHERE  id = %1";
    */
   public static function allGroup($groupType = NULL, $excludeHidden = TRUE) {
     $condition = CRM_Contact_BAO_Group::groupTypeCondition($groupType, $excludeHidden);
-    $groupKey = ($groupType ? $groupType : 'null') . !empty($excludeHidden);
+    $groupKey = ($groupType ?: 'null') . !empty($excludeHidden);
 
     if (!isset(Civi::$statics[__CLASS__]['groups']['allGroup'][$groupKey])) {
       self::populate(Civi::$statics[__CLASS__]['groups']['allGroup'][$groupKey], 'CRM_Contact_DAO_Group', FALSE, 'title', 'is_active', $condition);
@@ -1530,16 +1533,16 @@ WHERE  id = %1
     }
     // Filter domain specific options
     if (in_array('domain_id', $availableFields)) {
-      $wheres[] = 'domain_id = ' . CRM_Core_Config::domainID() . ' OR  domain_id is NULL';
+      $wheres[] = '(domain_id = ' . CRM_Core_Config::domainID() . ' OR  domain_id is NULL)';
     }
     $queryParams = [
-      1 => [$params['keyColumn'], 'String', CRM_Core_DAO::QUERY_FORMAT_NO_QUOTES],
-      2 => [$params['labelColumn'], 'String', CRM_Core_DAO::QUERY_FORMAT_NO_QUOTES],
-      3 => [$pseudoconstant['table'], 'String', CRM_Core_DAO::QUERY_FORMAT_NO_QUOTES],
+      1 => [$params['keyColumn'], 'MysqlColumnNameOrAlias'],
+      2 => [$params['labelColumn'], 'MysqlColumnNameOrAlias'],
+      3 => [$pseudoconstant['table'], 'MysqlColumnNameOrAlias'],
     ];
     // Add orderColumn param
     if (!empty($params['orderColumn'])) {
-      $queryParams[4] = [$params['orderColumn'], 'String', CRM_Core_DAO::QUERY_FORMAT_NO_QUOTES];
+      $queryParams[4] = [$params['orderColumn'], 'MysqlOrderBy'];
       $order = 'ORDER BY %4';
     }
     // Support no sorting if $params[orderColumn] is FALSE

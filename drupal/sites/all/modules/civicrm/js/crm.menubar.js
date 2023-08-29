@@ -8,7 +8,7 @@
     data: null,
     settings: {collapsibleBehavior: 'accordion'},
     position: 'over-cms-menu',
-    toggleButton: true,
+    toggleButton: (CRM.config.userFramework != 'Standalone'),
     attachTo: (CRM.menubar && CRM.menubar.position === 'above-crm-container') ? '#crm-container' : 'body',
     initialize: function() {
       var cache = CRM.cache.get('menubar');
@@ -288,22 +288,28 @@
             var
               option = $('input[name=quickSearchField]:checked'),
               params = {
-                name: request.term,
-                field_name: option.val()
+                formName: 'crmMenubar',
+                fieldName: 'crm-qsearch-input',
+                filters: {},
               };
-            CRM.api3('contact', 'getquick', params).done(function(result) {
+            if (option.val() === 'sort_name') {
+              params.input = request.term;
+            } else {
+              params.filters[option.val()] = request.term;
+            }
+            CRM.api4('Contact', 'autocomplete', params).then(function(result) {
               var ret = [];
-              if (result.values.length > 0) {
+              if (result.length > 0) {
                 $('#crm-qsearch-input').autocomplete('widget').menu('option', 'disabled', false);
-                $.each(result.values, function(k, v) {
-                  ret.push({value: v.id, label: v.data});
+                $.each(result, function(key, item) {
+                  ret.push({value: item.id, label: item.label});
                 });
               } else {
                 $('#crm-qsearch-input').autocomplete('widget').menu('option', 'disabled', true);
                 var label = option.closest('label').text();
                 var msg = ts('%1 not found.', {1: label});
                 // Remind user they are not searching by contact name (unless they enter a number)
-                if (params.field_name !== 'sort_name' && !(/[\d].*/.test(params.name))) {
+                if (option.val() !== 'sort_name' && !(/[\d].*/.test(params.name))) {
                   msg += ' ' + ts('Did you mean to search by Name/Email instead?');
                 }
                 ret.push({value: '0', label: msg});

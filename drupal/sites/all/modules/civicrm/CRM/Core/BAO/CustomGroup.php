@@ -1796,7 +1796,7 @@ ORDER BY civicrm_custom_group.weight,
         if ($value !== NULL) {
           $formValues[$properties['element_name']] = $value;
         }
-        elseif (isset($submittedValues[$properties['element_name']])) {
+        elseif (isset($submittedValues[$properties['element_name']]) && $properties['data_type'] !== 'File') {
           $properties['element_value'] = $submittedValues[$properties['element_name']];
         }
         unset($properties['customValue']);
@@ -1892,7 +1892,7 @@ ORDER BY civicrm_custom_group.weight,
                 $displayName = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $contactId, 'display_name');
                 if ($displayName) {
                   $url = CRM_Utils_System::url(str_replace('[id]', $contactId, $path));
-                  $details[$groupID][$values['id']]['fields'][$k]['contact_ref_links'][] = '<a href="' . $url . '" title="' . htmlspecialchars(ts('View Contact')) . '">' .
+                  $details[$groupID][$values['id']]['fields'][$k]['contact_ref_links'][] = '<a href="' . $url . '" title="' . ts('View Contact', ['escape' => 'htmlattribute']) . '">' .
                     $displayName . '</a>';
                 }
               }
@@ -2145,11 +2145,11 @@ SELECT  civicrm_custom_group.id as groupID, civicrm_custom_group.title as groupT
   /**
    * Loads pseudoconstant option values for the `extends_entity_column_id` field.
    *
-   * @param string $context
+   * @param string $fieldName
    * @param array $params
    * @return array
    */
-  public static function getExtendsEntityColumnIdOptions($context = NULL, $params = []) {
+  public static function getExtendsEntityColumnIdOptions(string $fieldName = NULL, array $params = []) {
     $props = $params['values'] ?? [];
     $ogId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_OptionGroup', 'custom_data_type', 'id', 'name');
     $optionValues = CRM_Core_BAO_OptionValue::getOptionValuesArray($ogId);

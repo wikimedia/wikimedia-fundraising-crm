@@ -67,6 +67,10 @@ trait CRM_Event_WorkflowMessage_ParticipantTrait {
    */
   protected $participantContacts;
 
+  private function isCiviContributeEnabled(): bool {
+    return array_key_exists('Contribution', \Civi::service('action_object_provider')->getEntities());
+  }
+
   /**
    * @param array $participantContacts
    *
@@ -93,23 +97,27 @@ trait CRM_Event_WorkflowMessage_ParticipantTrait {
    */
   public function setParticipantID(int $participantID) {
     $this->participantID = $participantID;
-    if (!$this->getContributionID()) {
+    if (!$this->getContributionID() && $this->isCiviContributeEnabled()) {
       $lineItem = LineItem::get(FALSE)
         ->addWhere('entity_table', '=', 'civicrm_participant')
-        ->addWhere('id', '=', $participantID)
+        ->addWhere('entity_id', '=', $participantID)
         ->addSelect('contribution_id')
         ->execute()->first();
       if (!empty($lineItem)) {
         $this->setContributionID($lineItem['contribution_id']);
       }
-      // It might be bad data on the site - let's do a noisy fall back to participant payment
-      // (the relationship between contribution & participant should be in the line item but
-      // some integrations might mess this up - if they are not using the order api).
-      $participantPayment = civicrm_api3('ParticipantPayment', 'get', ['participant_id' => $participantID])['values'];
-      if (!empty($participantPayment)) {
-        $participantPayment = reset($participantPayment);
-        $this->setContributionID((int) $participantPayment['contribution_id']);
-        CRM_Core_Session::setStatus('There might be a data problem, contribution id could not be loaded from the line item');
+      else {
+        // It might be bad data on the site - let's do a noisy fall back to participant payment
+        // (the relationship between contribution & participant should be in the line item but
+        // some integrations might mess this up - if they are not using the order api).
+        // Note that for free events there won't be a participant payment either hence moving the status message into the if statement.
+        $participantPayment = civicrm_api3('ParticipantPayment', 'get', ['participant_id' => $participantID])['values'];
+        if (!empty($participantPayment)) {
+          // no ts() since this should be rare
+          CRM_Core_Error::deprecatedWarning('There might be a data problem, contribution id could not be loaded from the line item');
+          $participantPayment = reset($participantPayment);
+          $this->setContributionID((int) $participantPayment['contribution_id']);
+        }
       }
     }
     return $this;
@@ -182,34 +190,36 @@ trait CRM_Event_WorkflowMessage_ParticipantTrait {
       }
       // Initiate with the current participant to ensure they are first.
       $participants = [$this->participantID => ['id' => $this->participantID, 'tax_rate_breakdown' => []]];
-      foreach ($this->getLineItems() as $lineItem) {
-        if ($lineItem['entity_table'] === 'civicrm_participant') {
-          $participantID = $lineItem['entity_id'];
+      if ($this->isCiviContributeEnabled()) {
+        foreach ($this->getLineItems() as $lineItem) {
+          if ($lineItem['entity_table'] === 'civicrm_participant') {
+            $participantID = $lineItem['entity_id'];
+          }
+          else {
+            // It is not clear if this could ever be true - testing the CiviCRM event
+            // form shows all line items assigned to participants but we should
+            // assign to primary if this can occur.
+            $participantID = $this->getPrimaryParticipantID();
+          }
+          $participants[$participantID]['line_items'][] = $lineItem;
+          if (!isset($participants[$participantID]['totals'])) {
+            $participants[$participantID]['totals'] = ['total_amount_exclusive' => 0, 'tax_amount' => 0, 'total_amount_inclusive' => 0];
+          }
+          $participants[$participantID]['totals']['total_amount_exclusive'] += $lineItem['line_total'];
+          $participants[$participantID]['totals']['tax_amount'] += $lineItem['tax_amount'];
+          $participants[$participantID]['totals']['total_amount_inclusive'] += ($lineItem['line_total'] + $lineItem['tax_amount']);
+          if (!isset($participants[$participantID]['tax_rate_breakdown'])) {
+            $participants[$participantID]['tax_rate_breakdown'] = [];
+          }
+          if (!isset($participants[$participantID]['tax_rate_breakdown'][$lineItem['tax_rate']])) {
+            $participants[$participantID]['tax_rate_breakdown'][$lineItem['tax_rate']] = [
+              'amount' => 0,
+              'rate' => $lineItem['tax_rate'],
+              'percentage' => sprintf('%.2f', $lineItem['tax_rate']),
+            ];
+          }
+          $participants[$participantID]['tax_rate_breakdown'][$lineItem['tax_rate']]['amount'] += $lineItem['tax_amount'];
         }
-        else {
-          // It is not clear if this could ever be true - testing the CiviCRM event
-          // form shows all line items assigned to participants but we should
-          // assign to primary if this can occur.
-          $participantID = $this->getPrimaryParticipantID();
-        }
-        $participants[$participantID]['line_items'][] = $lineItem;
-        if (!isset($participants[$participantID]['totals'])) {
-          $participants[$participantID]['totals'] = ['total_amount_exclusive' => 0, 'tax_amount' => 0, 'total_amount_inclusive' => 0];
-        }
-        $participants[$participantID]['totals']['total_amount_exclusive'] += $lineItem['line_total'];
-        $participants[$participantID]['totals']['tax_amount'] += $lineItem['tax_amount'];
-        $participants[$participantID]['totals']['total_amount_inclusive'] += ($lineItem['line_total'] + $lineItem['tax_amount']);
-        if (!isset($participants[$participantID]['tax_rate_breakdown'])) {
-          $participants[$participantID]['tax_rate_breakdown'] = [];
-        }
-        if (!isset($participants[$participantID]['tax_rate_breakdown'][$lineItem['tax_rate']])) {
-          $participants[$participantID]['tax_rate_breakdown'][$lineItem['tax_rate']] = [
-            'amount' => 0,
-            'rate' => $lineItem['tax_rate'],
-            'percentage' => sprintf('%.2f', $lineItem['tax_rate']),
-          ];
-        }
-        $participants[$participantID]['tax_rate_breakdown'][$lineItem['tax_rate']]['amount'] += $lineItem['tax_amount'];
       }
 
       $count = 1;

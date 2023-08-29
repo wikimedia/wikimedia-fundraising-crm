@@ -112,9 +112,30 @@ class CRM_Core_BAO_Job extends CRM_Core_DAO_Job {
     ];
     $copy = CRM_Core_DAO::copyGeneric('CRM_Core_DAO_Job', ['id' => $id], NULL, $fieldsFix);
     $copy->save();
-    CRM_Utils_Hook::copy('Job', $copy);
+    CRM_Utils_Hook::copy('Job', $copy, $id);
 
     return $copy;
+  }
+
+  /**
+   * Parse multi-line `$parameters` string into an array
+   *
+   * @param string|null $parameters
+   * @return array
+   * @throws CRM_Core_Exception
+   */
+  public static function parseParameters(?string $parameters): array {
+    $result = ['version' => 3];
+    $lines = $parameters ? explode("\n", $parameters) : [];
+
+    foreach ($lines as $line) {
+      $pair = explode("=", $line);
+      if ($pair === FALSE || count($pair) !== 2 || !trim($pair[0]) || trim($pair[1]) === '') {
+        throw new CRM_Core_Exception('Malformed API parameters in scheduled job');
+      }
+      $result[trim($pair[0])] = trim($pair[1]);
+    }
+    return $result;
   }
 
 }

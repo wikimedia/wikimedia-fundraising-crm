@@ -52,8 +52,8 @@
 
 {ts}Date{/ts}: {$receive_date|crmDate}
 {/if}
-{if !empty($is_monetary) and !empty($trxn_id)}
-{ts}Transaction #{/ts}: {$trxn_id}
+{if {contribution.trxn_id|boolean}}
+{ts}Transaction #{/ts}: {contribution.trxn_id}
 {/if}
 
 {if !empty($is_recur)}
@@ -187,9 +187,7 @@
 
 ===========================================================
 {foreach from=$customPre item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/if}
 
@@ -200,8 +198,6 @@
 
 ===========================================================
 {foreach from=$customPost item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/if}

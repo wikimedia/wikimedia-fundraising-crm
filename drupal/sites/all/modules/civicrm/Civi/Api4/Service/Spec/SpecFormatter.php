@@ -26,6 +26,8 @@ class SpecFormatter {
   public static function arrayToField(array $data, $entity) {
     $dataTypeName = self::getDataType($data);
 
+    $hasDefault = isset($data['default']) && $data['default'] !== '';
+    // Custom field
     if (!empty($data['custom_group_id'])) {
       $field = new CustomFieldSpec($data['name'], $entity, $dataTypeName);
       if (strpos($entity, 'Custom_') !== 0) {
@@ -57,38 +59,47 @@ class SpecFormatter {
       }
       $field->setReadonly($data['is_view']);
     }
+    // Core field
     else {
       $name = $data['name'] ?? NULL;
       $field = new FieldSpec($name, $entity, $dataTypeName);
       $field->setType('Field');
       $field->setColumnName($name);
       $field->setNullable(empty($data['required']));
-      $field->setRequired(!empty($data['required']) && empty($data['default']));
+      $field->setRequired(!empty($data['required']) && !$hasDefault && $name !== 'id');
       $field->setTitle($data['title'] ?? NULL);
       $field->setLabel($data['html']['label'] ?? NULL);
       $field->setLocalizable($data['localizable'] ?? FALSE);
       if (!empty($data['pseudoconstant'])) {
-        // Do not load options if 'prefetch' is explicitly FALSE
-        if (!isset($data['pseudoconstant']['prefetch']) || $data['pseudoconstant']['prefetch'] === FALSE) {
+        // Do not load options if 'prefetch' is disabled
+        if (($data['pseudoconstant']['prefetch'] ?? NULL) !== 'disabled') {
           $field->setOptionsCallback([__CLASS__, 'getOptions']);
         }
-        // These suffixes are always supported if a field has options
-        $suffixes = ['name', 'label'];
-        // Add other columns specified in schema (e.g. 'abbrColumn')
-        foreach (array_diff(FormattingUtil::$pseudoConstantSuffixes, $suffixes) as $suffix) {
-          if (!empty($data['pseudoconstant'][$suffix . 'Column'])) {
-            $suffixes[] = $suffix;
-          }
+        // Explicitly declared suffixes
+        if (!empty($data['pseudoconstant']['suffixes'])) {
+          $suffixes = $data['pseudoconstant']['suffixes'];
         }
-        if (!empty($data['pseudoconstant']['optionGroupName'])) {
-          $suffixes = CoreUtil::getOptionValueFields($data['pseudoconstant']['optionGroupName'], 'name');
+        else {
+          // These suffixes are always supported if a field has options
+          $suffixes = ['name', 'label'];
+          // Add other columns specified in schema (e.g. 'abbrColumn')
+          foreach (array_diff(FormattingUtil::$pseudoConstantSuffixes, $suffixes) as $suffix) {
+            if (!empty($data['pseudoconstant'][$suffix . 'Column'])) {
+              $suffixes[] = $suffix;
+            }
+          }
+          if (!empty($data['pseudoconstant']['optionGroupName'])) {
+            $suffixes = CoreUtil::getOptionValueFields($data['pseudoconstant']['optionGroupName'], 'name');
+          }
         }
         $field->setSuffixes($suffixes);
       }
       $field->setReadonly(!empty($data['readonly']));
     }
+    if ($hasDefault) {
+      $field->setDefaultValue(FormattingUtil::convertDataType($data['default'], $dataTypeName));
+    }
     $field->setSerialize($data['serialize'] ?? NULL);
-    $field->setDefaultValue($data['default'] ?? NULL);
     $field->setDescription($data['description'] ?? NULL);
     $field->setDeprecated($data['deprecated'] ?? FALSE);
     self::setInputTypeAndAttrs($field, $data, $dataTypeName);
@@ -240,7 +251,7 @@ class SpecFormatter {
           }
         }
         elseif ($returnFormat && !empty($pseudoconstant['callback'])) {
-          $callbackOptions = call_user_func(\Civi\Core\Resolver::singleton()->get($pseudoconstant['callback']), NULL, [], $values);
+          $callbackOptions = call_user_func(\Civi\Core\Resolver::singleton()->get($pseudoconstant['callback']), $fieldName, ['values' => $values]);
           foreach ($callbackOptions as $callbackOption) {
             if (is_array($callbackOption) && !empty($callbackOption['id']) && isset($optionIndex[$callbackOption['id']])) {
               $options[$optionIndex[$callbackOption['id']]] += $callbackOption;
@@ -276,6 +287,7 @@ class SpecFormatter {
     $map = [
       'Select Date' => 'Date',
       'Link' => 'Url',
+      'Autocomplete-Select' => 'EntityRef',
     ];
     $inputType = $map[$inputType] ?? $inputType;
     if ($dataTypeName === 'ContactReference' || $dataTypeName === 'EntityReference') {
@@ -334,6 +346,11 @@ class SpecFormatter {
         }
         $inputAttrs['filter'] = $filters;
       }
+    }
+    // Custom autocompletes
+    if (!empty($data['option_group_id']) && $inputType === 'EntityRef') {
+      $fieldSpec->setFkEntity('OptionValue');
+      $inputAttrs['filter']['option_group_id'] = $data['option_group_id'];
     }
     $fieldSpec
       ->setInputType($inputType)

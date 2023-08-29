@@ -398,7 +398,7 @@ class CRM_Case_Form_Activity extends CRM_Activity_Form_Activity {
     }
 
     //set parent id if its edit mode
-    if ($parentId = CRM_Utils_Array::value('parent_id', $this->_defaults)) {
+    if ($parentId = $this->_defaults['parent_id'] ?? NULL) {
       $params['parent_id'] = $parentId;
     }
 
@@ -601,7 +601,8 @@ class CRM_Case_Form_Activity extends CRM_Activity_Form_Activity {
 
             if (isset($id) && array_key_exists($id, $this->_relatedContacts) && isset($this->_relatedContacts[$id]['email'])) {
               //if email already exists in array then append with ', ' another role only otherwise add it to array.
-              if ($contactDetails = CRM_Utils_Array::value($this->_relatedContacts[$id]['email'], $mailToContacts)) {
+              $contactDetails = $mailToContacts[$this->_relatedContacts[$id]['email']] ?? NULL;
+              if ($contactDetails) {
                 $caseRole = $this->_relatedContacts[$id]['role'] ?? NULL;
                 $mailToContacts[$this->_relatedContacts[$id]['email']]['role'] = $contactDetails['role'] . ', ' . $caseRole;
               }

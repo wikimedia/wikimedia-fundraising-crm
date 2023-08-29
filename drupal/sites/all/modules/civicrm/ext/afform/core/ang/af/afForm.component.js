@@ -1,4 +1,5 @@
 (function(angular, $, _) {
+  "use strict";
   // Example usage: <af-form ctrl="afform">
   angular.module('af').component('afForm', {
     bindings: {
@@ -41,14 +42,15 @@
         return $scope.$parent.meta;
       };
       // With no arguments this will prefill the entire form based on url args
+      // and also check if the form is open for submissions.
       // With selectedEntity, selectedIndex & selectedId provided this will prefill a single entity
-      this.loadData = function(selectedEntity, selectedIndex, selectedId) {
-        var toLoad = 0,
-          params = {name: ctrl.getFormMeta().name, args: {}};
+      this.loadData = function(selectedEntity, selectedIndex, selectedId, selectedField) {
+        let toLoad = true;
+        const params = {name: ctrl.getFormMeta().name, args: {}};
         // Load single entity
         if (selectedEntity) {
-          toLoad = selectedId;
-          params.fillMode = 'entity';
+          toLoad = !!selectedId;
+          params.matchField = selectedField;
           params.args[selectedEntity] = {};
           params.args[selectedEntity][selectedIndex] = selectedId;
         }
@@ -56,9 +58,6 @@
         else {
           args = _.assign({}, $scope.$parent.routeParams || {}, $scope.$parent.options || {});
           _.each(schema, function (entity, entityName) {
-            if (args[entityName] || entity.actions.update) {
-              toLoad++;
-            }
             if (args[entityName] && typeof args[entityName] === 'string') {
               args[entityName] = args[entityName].split(',');
             }
@@ -67,19 +66,30 @@
         }
         if (toLoad) {
           crmApi4('Afform', 'prefill', params)
-            .then(function(result) {
-              _.each(result, function(item) {
-                data[item.name] = data[item.name] || {};
-                _.extend(data[item.name], item.values, schema[item.name].data || {});
+            .then((result) => {
+              result.forEach((item) => {
+                // Use _.each() because item.values could be cast as an object if array keys are not sequential
+                _.each(item.values, (values, index) => {
+                  data[item.name][index].joins = {};
+                  angular.merge(data[item.name][index], values, {fields: _.cloneDeep(schema[item.name].data || {})});
+                });
               });
+            }, (error) => {
+              if (error.status === 403) {
+                // Permission denied
+                disableForm();
+              } else {
+                // Unknown server error. What to do?
+              }
             });
         }
         // Clear existing contact selection
         else if (selectedEntity) {
-          data[selectedEntity][selectedIndex].fields = {};
-          if (data[selectedEntity][selectedIndex].joins) {
-            data[selectedEntity][selectedIndex].joins = {};
-          }
+          // Delete object keys without breaking object references
+          Object.keys(data[selectedEntity][selectedIndex].fields).forEach(key => delete data[selectedEntity][selectedIndex].fields[key]);
+          // Fill pre-set values
+          angular.merge(data[selectedEntity][selectedIndex].fields, _.cloneDeep(schema[selectedEntity].data || {}));
+          data[selectedEntity][selectedIndex].joins = {};
         }
       };
 
@@ -147,6 +157,13 @@
           }
         });
         return valid;
+      }
+
+      function disableForm() {
+        CRM.alert(ts('This form is not currently open for submissions.'), ts('Sorry'), 'error');
+        $('af-form[ng-form="' + ctrl.getFormMeta().name + '"]')
+          .addClass('disabled')
+          .find('button[ng-click="afform.submit()"]').prop('disabled', true);
       }
 
       this.submit = function() {

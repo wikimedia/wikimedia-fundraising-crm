@@ -1804,7 +1804,8 @@ ORDER BY   civicrm_email.is_bulkmail DESC
     }
 
     //get the campaign
-    if ($campaignId = CRM_Utils_Array::value('campaign_id', $report['mailing'])) {
+    $campaignId = $report['mailing']['campaign_id'] ?? NULL;
+    if ($campaignId) {
       $campaigns = CRM_Campaign_BAO_Campaign::getCampaigns($campaignId);
       $report['mailing']['campaign'] = $campaigns[$campaignId];
     }
@@ -2579,10 +2580,7 @@ LEFT JOIN civicrm_mailing_group g ON g.mailing_id   = m.id
         );
       }
       $form->add('checkbox', "{$prefix}updateTemplate", ts('Update Template'), NULL);
-
-      $form->add('checkbox', "{$prefix}saveTemplate", ts('Save As New Template'), NULL, FALSE,
-        ['onclick' => "showSaveDetails(this, '{$prefix}');"]
-      );
+      $form->add('checkbox', "{$prefix}saveTemplate", ts('Save As New Template'), ['onclick' => "showSaveDetails(this, '{$prefix}');"]);
       $form->add('text', "{$prefix}saveTemplateName", ts('Template Title'));
     }
 

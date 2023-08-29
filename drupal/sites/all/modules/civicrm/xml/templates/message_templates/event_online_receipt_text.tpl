@@ -34,7 +34,7 @@
 
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
-{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt|boolean}{/if}
+{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt}{/if}
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
 {/if}
@@ -229,9 +229,7 @@ You were registered by: {$payer.name}
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
 {foreach from=$customPr item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/foreach}
 {/if}
@@ -244,9 +242,7 @@ You were registered by: {$payer.name}
 ==========================================================={if !empty($pricesetFieldsCount)}===================={/if}
 
 {foreach from=$customPos item=customValue key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
  {$customName}: {$customValue}
-{/if}
 {/foreach}
 {/foreach}
 {/if}

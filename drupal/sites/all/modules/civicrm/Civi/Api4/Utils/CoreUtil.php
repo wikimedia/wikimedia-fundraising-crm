@@ -15,6 +15,7 @@ namespace Civi\Api4\Utils;
 use Civi\API\Exception\NotImplementedException;
 use Civi\API\Exception\UnauthorizedException;
 use Civi\API\Request;
+use Civi\Api4\Generic\AbstractAction;
 use CRM_Core_DAO_AllCoreTables as AllCoreTables;
 
 class CoreUtil {
@@ -78,6 +79,15 @@ class CoreUtil {
    */
   public static function getIdFieldName(string $entityName): string {
     return self::getInfoItem($entityName, 'primary_key')[0] ?? 'id';
+  }
+
+  /**
+   * Get name of field(s) to display in search context
+   * @param string $entityName
+   * @return array
+   */
+  public static function getSearchFields(string $entityName): array {
+    return self::getInfoItem($entityName, 'search_fields') ?: [];
   }
 
   /**
@@ -172,14 +182,13 @@ class CoreUtil {
    *
    * @param \Civi\Api4\Generic\AbstractAction $apiRequest
    * @param array $record
-   * @param int|string $userID
-   *   Contact ID of the user we are testing,. 0 for the anonymous user.
+   * @param int|null $userID
+   *   Contact ID of the user we are testing, 0 for the anonymous user.
    * @return bool
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\NotImplementedException
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public static function checkAccessRecord(\Civi\Api4\Generic\AbstractAction $apiRequest, array $record, int $userID) {
+  public static function checkAccessRecord(AbstractAction $apiRequest, array $record, int $userID = NULL) {
+    $userID = $userID ?? \CRM_Core_Session::getLoggedInContactID() ?? 0;
 
     // Super-admins always have access to everything
     if (\CRM_Core_Permission::check('all CiviCRM permissions and ACLs', $userID)) {
@@ -366,20 +375,28 @@ class CoreUtil {
    */
   public static function getSqlFunctions(): array {
     $fns = [];
-    foreach (glob(\Civi::paths()->getPath('[civicrm.root]/Civi/Api4/Query/SqlFunction*.php')) as $file) {
-      $matches = [];
-      if (preg_match('/(SqlFunction[A-Z_]+)\.php$/', $file, $matches)) {
-        $className = '\Civi\Api4\Query\\' . $matches[1];
-        if (is_subclass_of($className, '\Civi\Api4\Query\SqlFunction')) {
-          $fns[] = [
-            'name' => $className::getName(),
-            'title' => $className::getTitle(),
-            'description' => $className::getDescription(),
-            'params' => $className::getParams(),
-            'category' => $className::getCategory(),
-            'dataType' => $className::getDataType(),
-            'options' => CoreUtil::formatOptionList($className::getOptions(), ['id', 'name', 'label']),
-          ];
+    $path = 'Civi/Api4/Query/SqlFunction*.php';
+    // Search CiviCRM core + all active extensions
+    $directories = [\Civi::paths()->getPath("[civicrm.root]/$path")];
+    foreach (\CRM_Extension_System::singleton()->getMapper()->getActiveModuleFiles() as $ext) {
+      $directories[] = \CRM_Utils_File::addTrailingSlash(dirname($ext['filePath'])) . $path;
+    }
+    foreach ($directories as $directory) {
+      foreach (glob($directory) as $file) {
+        $matches = [];
+        if (preg_match('/(SqlFunction[A-Z_]+)\.php$/', $file, $matches)) {
+          $className = '\Civi\Api4\Query\\' . $matches[1];
+          if (is_subclass_of($className, '\Civi\Api4\Query\SqlFunction')) {
+            $fns[] = [
+              'name' => $className::getName(),
+              'title' => $className::getTitle(),
+              'description' => $className::getDescription(),
+              'params' => $className::getParams(),
+              'category' => $className::getCategory(),
+              'dataType' => $className::getDataType(),
+              'options' => CoreUtil::formatOptionList($className::getOptions(), ['id', 'name', 'label']),
+            ];
+          }
         }
       }
     }

@@ -54,7 +54,7 @@ trait Api3TestTrait {
         unset($expected[$value]);
       }
     }
-    $this->assertEquals($result, $expected, "api result array comparison failed " . $prefix . print_r($result, TRUE) . ' was compared to ' . print_r($expected, TRUE));
+    $this->assertEquals($result, $expected, 'api result array comparison failed ' . $prefix . print_r($result, TRUE) . ' was compared to ' . print_r($expected, TRUE));
   }
 
   /**
@@ -140,6 +140,17 @@ trait Api3TestTrait {
     }
     $this->assertAPIFailure($result, "We expected a failure for $entity $action but got a success", $expectedErrorMessage);
     return $result;
+  }
+
+  /**
+   * @deprecated
+   * @param string $entity
+   * @param string $action
+   * @param array $params
+   * @return array|int
+   */
+  public function callAPIAndDocument($entity, $action, $params) {
+    return $this->callAPISuccess($entity, $action, $params);
   }
 
   /**

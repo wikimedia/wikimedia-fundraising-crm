@@ -60,17 +60,18 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
    *    - 'cms_name'
    *    - 'cms_pass' plaintext password
    *    - 'notify' boolean
-   * @param string $mail
-   *   Email id for cms user.
+   * @param string $mailParam
+   *   Name of the param which contains the email address.
+   *   Because. Right. OK. That's what it is.
    *
    * @return int|bool
    *   uid if user was created, false otherwise
    */
-  public function createUser(&$params, $mail) {
+  public function createUser(&$params, $mailParam) {
     if ($this->missingStandaloneExtension()) {
       return FALSE;
     }
-    return Security::singleton()->createUser($params, $mail);
+    return Security::singleton()->createUser($params, $mailParam);
   }
 
   /**
@@ -107,12 +108,18 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
    * @inheritDoc
    */
   public function appendBreadCrumb($breadcrumbs) {
+    $crumbs = \Civi::$statics[__CLASS__]['breadcrumb'] ?? [];
+    $crumbs += array_column($breadcrumbs, NULL, 'url');
+    \Civi::$statics[__CLASS__]['breadcrumb'] = $crumbs;
+    CRM_Core_Smarty::singleton()->assign('breadcrumb', array_values($crumbs));
   }
 
   /**
    * @inheritDoc
    */
   public function resetBreadCrumb() {
+    \Civi::$statics[__CLASS__]['breadcrumb'] = [];
+    CRM_Core_Smarty::singleton()->assign('breadcrumb', NULL);
   }
 
   /**
@@ -120,6 +127,9 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
    */
   public function addHTMLHead($header) {
     $template = CRM_Core_Smarty::singleton();
+    // Smarty's append function does not check for the existence of the var before appending to it.
+    // So this prevents a stupid notice error:
+    $template->ensureVariablesAreAssigned(['pageHTMLHead']);
     $template->append('pageHTMLHead', $header);
     return;
   }
@@ -184,8 +194,7 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
     $absolute = FALSE,
     $fragment = NULL,
     $frontend = FALSE,
-    $forceBackend = FALSE,
-    $htmlize = TRUE
+    $forceBackend = FALSE
   ) {
     $fragment = $fragment ? ('#' . $fragment) : '';
     if ($absolute) {
@@ -194,6 +203,20 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
     else {
       return "/{$path}?{$query}$fragment";
     }
+  }
+
+  /**
+   * Path of the current page e.g. 'civicrm/contact/view'
+   *
+   * @return string|null
+   *   the current menu path
+   */
+  public static function currentPath() {
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    if ($path[0] == '/') {
+      $path = substr($path, 1);
+    }
+    return $path;
   }
 
   /**
@@ -551,14 +574,21 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
    */
   public function getCMSPermissionsUrlParams() {
     if ($this->missingStandaloneExtension()) {
-      return ['ufAccessURL' => '/fixme/standalone/permissions/url/params'];
+      return ['ufAccessURL' => '/civicrm/admin/roles'];
     }
     return Security::singleton()->getCMSPermissionsUrlParams();
   }
 
   public function permissionDenied() {
-    http_response_code(403);
-    echo "403 Forbidden: You do not have permission to access this resource.\n";
+    // If not logged in, they need to.
+    if (CRM_Core_Session::singleton()->get('ufID')) {
+      // They are logged in; they're just not allowed this page.
+      CRM_Core_Error::statusBounce(ts("Access denied"), CRM_Utils_System::url('civicrm'));
+    }
+    else {
+      CRM_Utils_System::redirect('/civicrm/login?anonAccessDenied');
+    }
+
     // TODO: Prettier error page
   }
 

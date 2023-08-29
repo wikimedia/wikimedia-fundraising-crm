@@ -26,8 +26,8 @@
    <td>
      {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
 
-    {if !empty($event.confirm_email_text) AND (empty($isOnWaitlist) AND empty($isRequireApproval))}
-     <p>{$event.confirm_email_text|htmlize}</p>
+    {if {event.confirm_email_text|boolean} AND (empty($isOnWaitlist) AND empty($isRequireApproval))}
+     <p>{event.confirm_email_text}</p>
 
     {else}
      <p>{ts}Thank you for your registration.{/ts}
@@ -48,7 +48,7 @@
       <p>{ts}Once your registration has been reviewed, you will receive an email with a link to a web page where you can complete the registration process.{/ts}</p>
      {/if}
     {elseif !empty($is_pay_later) && empty($isAmountzero) && empty($isAdditionalParticipant)}
-     <p>{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt|boolean}{/if}</p> {* FIXME: this might be text rather than HTML *}
+     <p>{if {event.pay_later_receipt|boolean}}{event.pay_later_receipt}{/if}</p> {* FIXME: this might be text rather than HTML *}
     {/if}
 
    </td>
@@ -64,7 +64,7 @@
      <tr>
       <td colspan="2" {$valueStyle}>
        {event.title}<br />
-       {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if $event.event_end_date}-{if $event.event_end_date|crmDate:"%Y%m%d" == $event.event_start_date|crmDate:"%Y%m%d"}{$event.event_end_date|crmDate:0:1}{else}{$event.event_end_date|crmDate:"%A"} {$event.event_end_date|crmDate}{/if}{/if}
+       {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if '{event.end_date|crmDate:"%Y%m%d"}' === '{event.start_date|crmDate:"%Y%m%d"}'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
       </td>
      </tr>
 
@@ -422,12 +422,10 @@
 {foreach from=$customPre item=customPr key=i}
    <tr> <th {$headerStyle}>{$customPre_grouptitle.$i}</th></tr>
    {foreach from=$customPr item=customValue key=customName}
-   {if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
      <tr>
          <td {$labelStyle}>{$customName}</td>
          <td {$valueStyle}>{$customValue}</td>
      </tr>
-   {/if}
    {/foreach}
 {/foreach}
 {/if}
@@ -436,13 +434,11 @@
 {foreach from=$customPost item=customPos key=j}
    <tr> <th {$headerStyle}>{$customPost_grouptitle.$j}</th></tr>
    {foreach from=$customPos item=customValue key=customName}
-   {if (!empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
      <tr>
          <td {$labelStyle}>{$customName}</td>
          <td {$valueStyle}>{$customValue}</td>
      </tr>
-{/if}
-{/foreach}
+   {/foreach}
 {/foreach}
 {/if}
 

@@ -21,7 +21,10 @@
   <tr>
    <td>
     {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
-     <p>{ts}Below you will find a receipt for this contribution.{/ts}</p>
+      <p>
+        {if {contribution.contribution_page_id.receipt_text|boolean}}{contribution.contribution_page_id.receipt_text}
+        {else}{ts}Below you will find a receipt for this contribution.{/ts}{/if}
+      </p>
    </td>
   </tr>
   <tr>
@@ -163,7 +166,7 @@
       </tr>
      {/if}
 
-     {if '{contribution.payment_instrument_id}' and empty($formValues.hidden_CreditCard)}
+     {if {contribution.payment_instrument_id|boolean}}
       <tr>
        <td {$labelStyle}>
         {ts}Paid By{/ts}

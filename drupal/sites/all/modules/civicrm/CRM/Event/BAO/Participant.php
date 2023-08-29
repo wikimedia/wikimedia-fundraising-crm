@@ -356,7 +356,7 @@ class CRM_Event_BAO_Participant extends CRM_Event_DAO_Participant implements \Ci
 
     $where = [' event.id = %1 '];
     if (!$considerTestParticipant) {
-      $where[] = ' ( participant.is_test = 0 OR participant.is_test IS NULL ) ';
+      $where[] = ' participant.is_test = 0 ';
     }
 
     // Only count Participant Roles with the "Counted?" flag.
@@ -511,7 +511,7 @@ SELECT  event.event_full_text,
 
     $isTestClause = NULL;
     if (!$considerTestParticipants) {
-      $isTestClause = ' AND ( participant.is_test IS NULL OR participant.is_test = 0 )';
+      $isTestClause = ' AND participant.is_test = 0 ';
     }
 
     $skipParticipantClause = NULL;
@@ -660,7 +660,7 @@ INNER JOIN  civicrm_price_field field       ON ( value.price_field_id = field.id
       $extIdentifier = $contactFields['external_identifier'] ?? NULL;
       if ($extIdentifier) {
         $tmpContactField['external_identifier'] = $extIdentifier;
-        $tmpContactField['external_identifier']['title'] = CRM_Utils_Array::value('title', $extIdentifier) . ' (match to contact)';
+        $tmpContactField['external_identifier']['title'] = ($extIdentifier['title'] ?? '') . ' (match to contact)';
       }
       $tmpFields['participant_contact_id']['title'] = $tmpFields['participant_contact_id']['title'] . ' (match to contact)';
 
@@ -1858,7 +1858,7 @@ WHERE    civicrm_participant.contact_id = {$contactID} AND
         return $details;
       }
       // Verify participant status is one that can be self-cancelled
-      if (!in_array($details['status'], ['Registered', 'Pending from pay later', 'On waitlist'])) {
+      if (!in_array($details['status'], ['Registered', 'Pending from pay later', 'On waitlist', 'Pending from incomplete transaction'])) {
         $details['eligible'] = FALSE;
         $details['ineligible_message'] = ts('You cannot transfer or cancel your registration for %1 as you are not currently registered for this event.', [1 => $eventTitle]);
         return $details;

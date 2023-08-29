@@ -58,13 +58,6 @@ function afform_civicrm_config(&$config) {
   $dispatcher->addListener('hook_civicrm_alterAngular', ['\Civi\Afform\AfformMetadataInjector', 'preprocess']);
   $dispatcher->addListener('hook_civicrm_check', ['\Civi\Afform\StatusChecks', 'hook_civicrm_check']);
   $dispatcher->addListener('civi.afform.get', ['\Civi\Api4\Action\Afform\Get', 'getCustomGroupBlocks']);
-
-  // Register support for email tokens
-  if (CRM_Extension_System::singleton()->getMapper()->isActiveModule('authx')) {
-    $dispatcher->addListener('hook_civicrm_alterMailContent', ['\Civi\Afform\Tokens', 'applyCkeditorWorkaround']);
-    $dispatcher->addListener('hook_civicrm_tokens', ['\Civi\Afform\Tokens', 'hook_civicrm_tokens']);
-    $dispatcher->addListener('hook_civicrm_tokenValues', ['\Civi\Afform\Tokens', 'hook_civicrm_tokenValues']);
-  }
 }
 
 /**
@@ -143,8 +136,8 @@ function afform_civicrm_managed(&$entities, $modules) {
           'values' => [
             'name' => $afform['name'],
             'label' => $afform['navigation']['label'] ?: $afform['title'],
-            'permission' => (array) $afform['permission'],
-            'permission_operator' => 'OR',
+            'permission' => $afform['permission'],
+            'permission_operator' => $afform['permission_operator'] ?? 'AND',
             'weight' => $afform['navigation']['weight'] ?? 0,
             'url' => $afform['server_route'],
             'is_active' => 1,
@@ -178,7 +171,7 @@ function afform_civicrm_tabset($tabsetName, &$tabs, $context) {
   if ($tabsetName !== 'civicrm/contact/view') {
     return;
   }
-  $contactTypes = array_merge([$context['contact_type']] ?? [], $context['contact_sub_type'] ?? []);
+  $contactTypes = array_merge((array) ($context['contact_type'] ?? []), $context['contact_sub_type'] ?? []);
   $afforms = Civi\Api4\Afform::get(FALSE)
     ->addSelect('name', 'title', 'icon', 'module_name', 'directive_name', 'summary_contact_type')
     ->addWhere('contact_summary', '=', 'tab')
@@ -188,8 +181,10 @@ function afform_civicrm_tabset($tabsetName, &$tabs, $context) {
   foreach ($afforms as $afform) {
     $summaryContactType = $afform['summary_contact_type'] ?? [];
     if (!$summaryContactType || !$contactTypes || array_intersect($summaryContactType, $contactTypes)) {
+      // Convention is to name the afform like "afformTabMyInfo" which gets the tab name "my_info"
+      $tabId = CRM_Utils_String::convertStringToSnakeCase(preg_replace('#^(afformtab|afsearchtab|afform|afsearch)#i', '', $afform['name']));
       $tabs[] = [
-        'id' => $afform['name'],
+        'id' => $tabId,
         'title' => $afform['title'],
         'weight' => $weight++,
         'icon' => 'crm-i ' . ($afform['icon'] ?: 'fa-list-alt'),
@@ -448,14 +443,21 @@ function afform_civicrm_permission_check($permission, &$granted, $contactId) {
   if (preg_match('/^@afform:(.*)/', $permission, $m)) {
     $name = $m[1];
 
-    $afform = \Civi\Api4\Afform::get()
-      ->setCheckPermissions(FALSE)
+    $afform = \Civi\Api4\Afform::get(FALSE)
       ->addWhere('name', '=', $name)
-      ->setSelect(['permission'])
+      ->addSelect('permission', 'permission_operator')
       ->execute()
       ->first();
+    // No permissions found... this shouldn't happen but just in case, set default.
+    if ($afform && empty($afform['permission'])) {
+      $afform['permission'] = ['access CiviCRM'];
+    }
     if ($afform) {
-      $granted = CRM_Core_Permission::check($afform['permission'], $contactId);
+      $check = (array) $afform['permission'];
+      if ($afform['permission_operator'] === 'OR') {
+        $check = [$check];
+      }
+      $granted = CRM_Core_Permission::check($check, $contactId);
     }
   }
 }

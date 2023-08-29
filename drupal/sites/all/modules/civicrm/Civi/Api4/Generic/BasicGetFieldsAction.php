@@ -171,7 +171,7 @@ class BasicGetFieldsAction extends BasicGetAction {
         $field['options'] = self::pseudoconstantOptions($field['pseudoconstant']['optionGroupName']);
       }
       elseif (!empty($field['pseudoconstant']['callback'])) {
-        $field['options'] = call_user_func(\Civi\Core\Resolver::singleton()->get($field['pseudoconstant']['callback']));
+        $field['options'] = call_user_func(\Civi\Core\Resolver::singleton()->get($field['pseudoconstant']['callback']), $field['name'], ['values' => $this->getValues()]);
       }
       else {
         throw new \CRM_Core_Exception('Unsupported pseudoconstant type for field "' . $field['name'] . '"');
@@ -327,8 +327,10 @@ class BasicGetFieldsAction extends BasicGetAction {
           'Location' => ts('Address Location'),
           'Number' => ts('Number'),
           'Radio' => ts('Radio Buttons'),
+          'RichTextEditor' => ts('Rich Text Editor'),
           'Select' => ts('Select'),
-          'Text' => ts('Text'),
+          'Text' => ts('Single-Line Text'),
+          'TextArea' => ts('Multi-Line Text'),
         ],
       ],
       [
@@ -362,6 +364,10 @@ class BasicGetFieldsAction extends BasicGetAction {
         'name' => 'deprecated',
         'data_type' => 'Boolean',
         'default_value' => FALSE,
+      ],
+      [
+        'name' => 'permission',
+        'data_type' => 'Array',
       ],
       [
         'name' => 'output_formatters',

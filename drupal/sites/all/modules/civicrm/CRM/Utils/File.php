@@ -90,12 +90,12 @@ class CRM_Utils_File {
    * @param bool $rmdir
    * @param bool $verbose
    *
-   * @throws Exception
+   * @throws \CRM_Core_Exception
    */
-  public static function cleanDir($target, $rmdir = TRUE, $verbose = TRUE) {
+  public static function cleanDir(string $target, bool $rmdir = TRUE, bool $verbose = TRUE) {
     static $exceptions = ['.', '..'];
-    if ($target == '' || $target == '/' || !$target) {
-      throw new Exception("Overly broad deletion");
+    if (!$target || $target === '/') {
+      throw new CRM_Core_Exception('Overly broad deletion');
     }
 
     if ($dh = @opendir($target)) {
@@ -417,16 +417,16 @@ class CRM_Utils_File {
     $uniqID = md5(uniqid(rand(), TRUE));
     $info = pathinfo($name);
     $basename = substr($info['basename'],
-      0, -(strlen(CRM_Utils_Array::value('extension', $info, '')) + (CRM_Utils_Array::value('extension', $info, '') == '' ? 0 : 1))
+      0, -(strlen($info['extension'] ?? '') + (($info['extension'] ?? '') == '' ? 0 : 1))
     );
-    if (!self::isExtensionSafe(CRM_Utils_Array::value('extension', $info, ''))) {
+    if (!self::isExtensionSafe($info['extension'] ?? '')) {
       // munge extension so it cannot have an embbeded dot in it
       // The maximum length of a filename for most filesystems is 255 chars.
       // We'll truncate at 240 to give some room for the extension.
-      return CRM_Utils_String::munge("{$basename}_" . CRM_Utils_Array::value('extension', $info) . "_{$uniqID}", '_', 240) . ".unknown";
+      return CRM_Utils_String::munge("{$basename}_" . ($info['extension'] ?? '') . "_{$uniqID}", '_', 240) . ".unknown";
     }
     else {
-      return CRM_Utils_String::munge("{$basename}_{$uniqID}", '_', 240) . "." . CRM_Utils_Array::value('extension', $info);
+      return CRM_Utils_String::munge("{$basename}_{$uniqID}", '_', 240) . "." . ($info['extension'] ?? '');
     }
   }
 
@@ -794,6 +794,11 @@ HTACCESS;
         return FALSE;
       }
     }
+
+    // windows fix
+    $parent = str_replace(DIRECTORY_SEPARATOR, '/', $parent);
+    $child = str_replace(DIRECTORY_SEPARATOR, '/', $child);
+
     $parentParts = explode('/', rtrim($parent, '/'));
     $childParts = explode('/', rtrim($child, '/'));
     while (($parentPart = array_shift($parentParts)) !== NULL) {
@@ -889,8 +894,8 @@ HTACCESS;
       case 'image/x-png':
       case 'image/png':
       case 'image/jpg':
-        list($imageWidth, $imageHeight) = getimagesize($path);
-        list($imageThumbWidth, $imageThumbHeight) = CRM_Contact_BAO_Contact::getThumbSize($imageWidth, $imageHeight);
+        [$imageWidth, $imageHeight] = getimagesize($path);
+        [$imageThumbWidth, $imageThumbHeight] = CRM_Contact_BAO_Contact::getThumbSize($imageWidth, $imageHeight);
         $url = "<a href=\"$url\" class='crm-image-popup'>
           <img src=\"$url\" width=$imageThumbWidth height=$imageThumbHeight/>
           </a>";
