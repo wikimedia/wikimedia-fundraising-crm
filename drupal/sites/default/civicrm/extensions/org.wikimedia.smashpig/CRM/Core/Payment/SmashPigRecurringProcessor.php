@@ -95,6 +95,11 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       }
       try {
         $previousContribution = self::getPreviousContribution($recurringPayment);
+        // run a small query to double-check the fresh cancel status
+        $isCancelled = self::getRecurCancelStatus($recurringPayment['id']);
+        if ($isCancelled) {
+          throw new UnexpectedValueException('No need to charge this one since the update status for . recurring_id: '.$recurringPayment['id'] .' is cancelled on '. $isCancelled);
+        }
 
         // Catch for double recurring payments in one month (23 days of one another)
         $days = date_diff(
@@ -180,6 +185,22 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   }
 
   /**
+   * There is a possibility that after getPaymentsToCharge, we update recur cancel date
+   * so need double check if cancelled before we actually start to process the recharge.
+   * @param $contributionRecurId
+   *
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function getRecurCancelStatus($contributionRecurId) {
+    $recurInfo = ContributionRecur::get(FALSE)
+      ->addSelect('cancel_date')
+      ->addWhere('id', '=', $contributionRecurId)->execute()->first();
+    return $recurInfo['cancel_date'];
+  }
+
+  /**
    * Get all the recurring payments that are due to be charged, in an
    * eligible status, and handled by SmashPig processor types. Or if
    * a $contributionRecurId is passed, just fetch details for that
@@ -222,8 +243,11 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
           'Failed',
         ]
       )->addWhere(
-        // FIXME: we need this token not null clause because we've been
-        // misusing the payment_processor_id for years :(
+      // T335152 if cancel date not null, means it has been cancelled before
+        'cancel_date', 'IS NULL'
+      )->addWhere(
+      // FIXME: we need this token not null clause because we've been
+      // misusing the payment_processor_id for years :(
         'payment_token_id', 'IS NOT NULL'
       )->setLimit($this->batchSize);
     }
@@ -372,7 +396,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    */
   public function sendFailureEmail(int $contributionRecurID, int $contactID) {
     if ( Civi::settings()->get('smashpig_recurring_send_failure_email') ) {
-        FailureEmail::send()->setCheckPermissions(FALSE)->setContactID($contactID)->setContributionRecurID($contributionRecurID)->execute();
+      FailureEmail::send()->setCheckPermissions(FALSE)->setContactID($contactID)->setContributionRecurID($contributionRecurID)->execute();
     }
   }
 
