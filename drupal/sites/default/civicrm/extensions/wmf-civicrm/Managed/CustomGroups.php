@@ -217,6 +217,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         'Restricted - Foundation' => 'Restricted - Foundation',
         'Restricted - Program' => 'Restricted - Program',
         'Restricted - Fiscal Sponsorship' => 'Restricted - Fiscal Sponsorship',
+        'Endowment Fund' => 'Endowment Fund'
       ],
     ],
     'Campaign' => [
