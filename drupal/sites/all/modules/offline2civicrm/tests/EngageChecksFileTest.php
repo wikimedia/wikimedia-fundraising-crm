@@ -482,10 +482,11 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $this->importCheckFile();
 
-    $this->callAPISuccessGetSingle('Contribution', [
-      'contact_id' => $villains[1]['id'],
-      'trxn_id' => 'ENGAGE 3644a684f98ea8fe223c713b77189a77',
-    ]);
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('trxn_id', '=', 'ENGAGE 3644a684f98ea8fe223c713b77189a77')
+      ->addWhere('contact_id', '=', $villains[1]['id'])
+      ->addSelect('Gift_Data.Donor_Specified')->execute()->first();
+    $this->assertEquals('Unrestricted - Fund', $contribution['Gift_Data.Donor_Specified'][0]);
     $villain = Contact::get(FALSE)->addWhere('id', '=', $villains[1]['id'])->setSelect([
       'Organization_Contact.Name',
       'Organization_Contact.Email',
