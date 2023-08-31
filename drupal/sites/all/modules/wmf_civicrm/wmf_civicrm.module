@@ -1331,6 +1331,8 @@ function wmf_civicrm_normalize_msg($msg): array {
 
   if (wmf_civicrm_is_endowment_gift($msg)) {
     $msg['financial_type_id'] = 'Endowment Gift';
+    $msg['restrictions'] = 'Endowment Fund';
+    $msg['gift_source'] = 'Online Gift';
   }
 
   $list_fields = [
