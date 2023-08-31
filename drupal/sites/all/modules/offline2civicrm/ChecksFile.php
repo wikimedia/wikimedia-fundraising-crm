@@ -607,6 +607,7 @@ abstract class ChecksFile {
       'Do Not Phone' => 'do_not_phone',
       'Do Not SMS' => 'do_not_sms',
       'Do Not Solicit' => 'do_not_solicit',
+      'Donor Specified' => 'Donor_Specified',
       'Email' => 'email',
       'External Batch Number' => 'import_batch_number',
       'Fee Amount' => 'fee',
