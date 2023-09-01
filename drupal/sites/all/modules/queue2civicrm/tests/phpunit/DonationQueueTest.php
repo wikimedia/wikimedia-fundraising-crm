@@ -75,7 +75,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_status' => 'Completed',
       'payment_instrument' => 'Credit Card: Visa',
       'invoice_id' => $message->get('order_id'),
-      $campaignField => '',
+      $campaignField => 'Online Gift',
     );
     $returnFields = array_keys($expected);
     $returnFields[] = 'id';
@@ -120,7 +120,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_status' => 'Completed',
       'payment_instrument' => 'Credit Card: Visa',
       'invoice_id' => $message2->get('order_id'),
-      $campaignField => 'Benefactor Gift',
+      $campaignField => 'Online Gift',
     );
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $contribution2[$key]);
@@ -167,7 +167,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_status' => 'Completed',
       'payment_instrument' => 'Credit Card: Visa',
       'invoice_id' => $message->get('invoice_id'),
-      $campaignField => 'Benefactor Gift',
+      $campaignField => 'Online Gift',
     );
     $returnFields = array_keys($expected);
 

@@ -454,6 +454,11 @@ abstract class ChecksFile {
    * @throws \Civi\WMFException\WMFException
    */
   protected function mungeMessage(&$msg) {
+    //TODO: Find a better way to check the DB for disabled gift source
+    $disabledGiftSources = ['Community Gift', 'Benefactor Gift'];
+    if (!empty($msg['gift_source']) && in_array($msg['gift_source'], $disabledGiftSources)) {
+      unset($msg['gift_source']);
+    }
     if (empty($msg['gateway'])) {
       $msg['gateway'] = $this->gateway;
     }

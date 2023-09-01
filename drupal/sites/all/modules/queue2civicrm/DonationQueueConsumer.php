@@ -45,7 +45,10 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
         throw new WMFException(WMFException::MISSING_PREDECESSOR, $errorMessage);
       }
     }
-
+    // Donations through the donation queue are most likely online gifts unless stated otherwise
+    if (empty($message['gift_source'])) {
+      $message['gift_source'] = "Online Gift";
+    }
     // import the contribution here!
     $contribution = wmf_civicrm_contribution_message_import($message);
 

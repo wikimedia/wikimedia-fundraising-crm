@@ -75,14 +75,12 @@ class CitibankIndividualsFile extends ChecksFile {
   /**
    * Get the appropriate gift source.
    *
-   * If the USD value is $1000 of more it will be 'Benefactor Gift', otherwise 'Community Gift'
    *
    * @param array $msg
    *
    * @return string
    */
   protected function getGiftSource($msg): string {
-    // return $msg['gross'] >= 1000 ? 'Benefactor Gift' : 'Community Gift';
     return 'Individual Gift';
   }
 

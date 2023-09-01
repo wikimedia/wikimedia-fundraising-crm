@@ -61,7 +61,6 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'first_name' => 'Sub',
       'gateway' => 'engage',
       'gateway_txn_id' => '7b7a53e239400a13bd6be6c91c4f6c4e',
-      'gift_source' => 'Community Gift',
       'gross' => '50',
       'import_batch_number' => '1234',
       'last_name' => 'Tell',

@@ -39,9 +39,9 @@ class EndowmentImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       ->addSelect('custom.*', '*')
       ->execute()->first();
 
-    $this->assertEquals($contributionFromDB['Gift_Data.Fund'], "Endowment Fund");
-    $this->assertEquals($contributionFromDB['Gift_Data.Campaign'], "Online Gift");
-    $this->assertEquals($contributionFromDB['financial_type_id'], CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Endowment Gift"));
+    $this->assertEquals("Endowment Fund", $contributionFromDB['Gift_Data.Fund']);
+    $this->assertEquals("Online Gift", $contributionFromDB['Gift_Data.Campaign']);
+    $this->assertEquals(CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Endowment Gift"), $contributionFromDB['financial_type_id']);
   }
 
 }
