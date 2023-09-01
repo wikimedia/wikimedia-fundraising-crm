@@ -15,7 +15,7 @@
   "dlocal_payment_method": "IR",
   "payment_method": "bt",
   "payment_submethod": "upi",
-  "recurring_payment_token": "5c3f1cd1-19cc-42fe-9793-1e4a3069d9b4",
+  "recurring_payment_token": "5dff49d4-462c-432e-a12a-9f4c997e34c3",
   "source_name": "SmashPig",
   "source_type": "listener",
   "source_host": "a0defee93e3c",
