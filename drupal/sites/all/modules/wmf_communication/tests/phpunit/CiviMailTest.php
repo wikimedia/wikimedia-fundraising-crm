@@ -11,14 +11,10 @@ namespace wmf_communication;
 class CiviMailTest extends CiviMailTestBase {
 
   public function testAddMailing() {
-    $name = 'test_mailing';
-    $revision = mt_rand();
     $storedMailing = $this->mailStore->addMailing(
       $this->source,
-      $name,
       $this->body,
-      $this->subject,
-      $revision
+      $this->subject
     );
     $this->assertInstanceOf(
       \wmf_communication\CiviMailingRecord::class,
@@ -32,20 +28,12 @@ class CiviMailTest extends CiviMailTestBase {
   }
 
   public function testGetMailing() {
-    $name = 'test_mailing';
-    $revision = mt_rand();
     $storedMailing = $this->mailStore->addMailing(
       $this->source,
-      $name,
       $this->body,
-      $this->subject,
-      $revision
+      $this->subject
     );
-    $retrievedMailing = $this->mailStore->getMailing(
-      $this->source,
-      $name,
-      $revision
-    );
+    $retrievedMailing = $this->mailStore->getMailing($this->source);
     $this->assertEquals(
       $storedMailing->getMailingID(),
       $retrievedMailing->getMailingID(),
@@ -58,20 +46,11 @@ class CiviMailTest extends CiviMailTestBase {
     );
   }
 
-  public function testMissingMailing(): void {
-    $this->expectException(\Civi\WMFMailTracking\CiviMailingMissingException::class);
-    $this->mailStore->getMailing('fakeSource', 'fakeName', mt_rand());
-  }
-
   public function testAddQueueRecord() {
-    $name = 'test_mailing';
-    $revision = mt_rand();
     $storedMailing = $this->mailStore->addMailing(
       $this->source,
-      $name,
       $this->body,
-      $this->subject,
-      $revision
+      $this->subject
     );
     $queueRecord = $this->mailStore->addQueueRecord(
       $storedMailing,
