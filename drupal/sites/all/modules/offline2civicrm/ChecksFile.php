@@ -454,6 +454,11 @@ abstract class ChecksFile {
    * @throws \Civi\WMFException\WMFException
    */
   protected function mungeMessage(&$msg) {
+    //TODO: Find a better way to check the DB for disabled gift source
+    $disabledGiftSources = ['Community Gift', 'Benefactor Gift'];
+    if (!empty($msg['gift_source']) && in_array($msg['gift_source'], $disabledGiftSources)) {
+      unset($msg['gift_source']);
+    }
     if (empty($msg['gateway'])) {
       $msg['gateway'] = $this->gateway;
     }
@@ -607,6 +612,7 @@ abstract class ChecksFile {
       'Do Not Phone' => 'do_not_phone',
       'Do Not SMS' => 'do_not_sms',
       'Do Not Solicit' => 'do_not_solicit',
+      'Donor Specified' => 'Donor_Specified',
       'Email' => 'email',
       'External Batch Number' => 'import_batch_number',
       'Fee Amount' => 'fee',

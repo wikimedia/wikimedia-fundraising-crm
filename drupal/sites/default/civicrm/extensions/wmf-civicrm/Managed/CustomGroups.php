@@ -217,6 +217,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         'Restricted - Foundation' => 'Restricted - Foundation',
         'Restricted - Program' => 'Restricted - Program',
         'Restricted - Fiscal Sponsorship' => 'Restricted - Fiscal Sponsorship',
+        'Endowment Fund' => 'Endowment Fund'
       ],
     ],
     'Campaign' => [
@@ -225,7 +226,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
       'label' => ts('Gift Source'),
       'data_type' => 'String',
       'html_type' => 'Select',
-      'default_value' => 'Community Gift',
+      'default_value' => 'Individual Gift',
       'is_active' => 1,
       'is_required' => 1,
       'is_searchable' => 1,
