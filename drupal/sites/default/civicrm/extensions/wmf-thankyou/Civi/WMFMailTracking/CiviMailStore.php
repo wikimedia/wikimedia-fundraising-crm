@@ -209,19 +209,6 @@ VALUES ( %1, %2, %3 )";
     return $queue;
   }
 
-  /**
-   * Retrieves the queue record matching the parameters.
-   *
-   * @param ICiviMailingRecord $mailingRecord
-   * @param string $email recipient address
-   * @param string $date approximate original send date
-   *
-   * @returns ICiviMailQueueRecord
-   */
-  public function getQueueRecord($mailingRecord, $email, $date = NULL) {
-    //TODO: will use this for Silverpop, but not needed for TY emails
-  }
-
   public static function makeUniqueName($source, $templateName, $revision) {
     return "$source|$templateName|$revision";
   }
