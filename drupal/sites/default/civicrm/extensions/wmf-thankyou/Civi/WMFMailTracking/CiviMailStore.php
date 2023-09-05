@@ -2,12 +2,9 @@
 
 namespace Civi\WMFMailTracking;
 
-use CRM_Activity_BAO_Activity;
 use CRM_Core_DAO;
 use CRM_Core_DAO_Email;
 use CRM_Core_Transaction;
-use CRM_Mailing_DAO_MailingJob;
-use CRM_Mailing_DAO_Mailing;
 use Exception;
 use wmf_communication\CiviMailingRecord;
 use wmf_communication\CiviMailQueueRecord;
@@ -54,7 +51,7 @@ class CiviMailStore {
           //TODO: user picker on TY config page, or add 'TY mailer' contact
           'scheduled_id' => 1,
         ];
-        $mailing = \CRM_Mailing_BAO_Mailing::add($params, CRM_Core_DAO::$_nullArray);
+        $mailing = \CRM_Mailing_BAO_Mailing::add($params);
         self::$mailings[$name] = $mailing;
       }
 
@@ -88,11 +85,11 @@ class CiviMailStore {
    * Adds a child job with completed date $date, a queue entry, and an entry
    * in the recipients table
    *
-   * @param ICiviMailingRecord $mailingRecord Mailing that is being sent
+   * @param CiviMailingRecord $mailingRecord Mailing that is being sent
    * @param string $email Email address of recipient
    * @param int $contactId Used to disambiguate contacts with the same address
    *
-   * @returns ICiviMailQueueRecord
+   * @returns CiviMailQueueRecord
    *
    * @throws CiviQueueInsertException if email isn't in Civi or an error occurs
    */
@@ -139,7 +136,7 @@ VALUES ( %1, %2, %3 )";
    * @param string $templateName
    * @param int $revision
    *
-   * @returns ICiviMailingRecord
+   * @returns CiviMailingRecord
    *
    * @throws CiviMailingMissingException no mailing found with those parameters
    */
