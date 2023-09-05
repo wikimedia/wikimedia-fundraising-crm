@@ -161,8 +161,8 @@ VALUES ( %1, %2, %3 )";
     }
     $mailing = new \CRM_Mailing_DAO_Mailing();
     $mailing->name = $name;
-
-    if (!$mailing->find() || !$mailing->fetch()) {
+    $mailing->find(TRUE);
+    if (!$mailing->id) {
       return NULL;
     }
     self::$mailings[$name] = $mailing;
@@ -176,7 +176,8 @@ VALUES ( %1, %2, %3 )";
     $job = new \CRM_Mailing_DAO_MailingJob();
     $job->mailing_id = $mailingId;
 
-    if (!$job->fetch() || $job->N == 0) {
+    $job->find(TRUE);
+    if (!$job->id) {
       return NULL;
     }
     self::$jobs[$mailingId] = $job;
