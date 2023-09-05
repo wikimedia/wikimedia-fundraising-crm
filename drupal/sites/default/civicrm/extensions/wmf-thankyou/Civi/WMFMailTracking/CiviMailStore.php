@@ -37,8 +37,7 @@ class CiviMailStore {
    * @throws CiviMailingInsertException something bad happened with the insert
    */
   public function addMailing($source, $templateName, $bodyTemplate, $subjectTemplate, $revision = 0, $jobStatus = 'Complete') {
-    $name = $this::makeUniqueName($source, $templateName, $revision);
-    $mailing = $this->getMailingInternal($name);
+    $mailing = $this->getMailingInternal($source);
 
     $transaction = new CRM_Core_Transaction();
     try {
@@ -46,13 +45,13 @@ class CiviMailStore {
         $params = [
           'subject' => $subjectTemplate,
           'body_html' => $bodyTemplate,
-          'name' => $name,
+          'name' => $source,
           'is_completed' => TRUE,
           //TODO: user picker on TY config page, or add 'TY mailer' contact
           'scheduled_id' => 1,
         ];
         $mailing = \CRM_Mailing_BAO_Mailing::add($params);
-        self::$mailings[$name] = $mailing;
+        self::$mailings[$source] = $mailing;
       }
 
       $job = $this->getJobInternal($mailing->id);
@@ -76,7 +75,7 @@ class CiviMailStore {
     }
     catch (Exception $e) {
       $transaction->rollback();
-      $msg = "Error inserting CiviMail Mailing record $name -- {$e->getMessage()}";
+      $msg = "Error inserting CiviMail Mailing record $source -- {$e->getMessage()}";
       throw new CiviMailingInsertException($msg, 0, $e);
     }
   }
@@ -141,8 +140,7 @@ VALUES ( %1, %2, %3 )";
    * @throws CiviMailingMissingException no mailing found with those parameters
    */
   public function getMailing($source, $templateName, $revision = 0) {
-    $name = $this::makeUniqueName($source, $templateName, $revision);
-    $mailing = $this->getMailingInternal($name);
+    $mailing = $this->getMailingInternal($source);
     if (!$mailing) {
       throw new CiviMailingMissingException();
     }
@@ -205,10 +203,6 @@ VALUES ( %1, %2, %3 )";
     ];
     $queue = \CRM_Mailing_Event_BAO_Queue::create($params);
     return $queue;
-  }
-
-  public static function makeUniqueName($source, $templateName, $revision) {
-    return "$source|$templateName|$revision";
   }
 
 }
