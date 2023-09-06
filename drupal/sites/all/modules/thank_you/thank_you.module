@@ -654,7 +654,6 @@ function thank_you_get_template_info($html) {
  *   header
  */
 function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
-  $civi_mailing = NULL;
   $civi_queue_record = NULL;
   $civimail_store = new CiviMailStore();
   try {

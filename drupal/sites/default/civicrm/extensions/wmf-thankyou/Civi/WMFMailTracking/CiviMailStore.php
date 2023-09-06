@@ -2,12 +2,9 @@
 
 namespace Civi\WMFMailTracking;
 
-use CRM_Activity_BAO_Activity;
 use CRM_Core_DAO;
 use CRM_Core_DAO_Email;
 use CRM_Core_Transaction;
-use CRM_Mailing_DAO_MailingJob;
-use CRM_Mailing_DAO_Mailing;
 use Exception;
 use wmf_communication\CiviMailingRecord;
 use wmf_communication\CiviMailQueueRecord;
@@ -40,8 +37,7 @@ class CiviMailStore {
    * @throws CiviMailingInsertException something bad happened with the insert
    */
   public function addMailing($source, $templateName, $bodyTemplate, $subjectTemplate, $revision = 0, $jobStatus = 'Complete') {
-    $name = $this::makeUniqueName($source, $templateName, $revision);
-    $mailing = $this->getMailingInternal($name);
+    $mailing = $this->getMailingInternal($source);
 
     $transaction = new CRM_Core_Transaction();
     try {
@@ -49,13 +45,13 @@ class CiviMailStore {
         $params = [
           'subject' => $subjectTemplate,
           'body_html' => $bodyTemplate,
-          'name' => $name,
+          'name' => $source,
           'is_completed' => TRUE,
           //TODO: user picker on TY config page, or add 'TY mailer' contact
           'scheduled_id' => 1,
         ];
-        $mailing = \CRM_Mailing_BAO_Mailing::add($params, CRM_Core_DAO::$_nullArray);
-        self::$mailings[$name] = $mailing;
+        $mailing = \CRM_Mailing_BAO_Mailing::add($params);
+        self::$mailings[$source] = $mailing;
       }
 
       $job = $this->getJobInternal($mailing->id);
@@ -79,7 +75,7 @@ class CiviMailStore {
     }
     catch (Exception $e) {
       $transaction->rollback();
-      $msg = "Error inserting CiviMail Mailing record $name -- {$e->getMessage()}";
+      $msg = "Error inserting CiviMail Mailing record $source -- {$e->getMessage()}";
       throw new CiviMailingInsertException($msg, 0, $e);
     }
   }
@@ -88,11 +84,11 @@ class CiviMailStore {
    * Adds a child job with completed date $date, a queue entry, and an entry
    * in the recipients table
    *
-   * @param ICiviMailingRecord $mailingRecord Mailing that is being sent
+   * @param CiviMailingRecord $mailingRecord Mailing that is being sent
    * @param string $email Email address of recipient
    * @param int $contactId Used to disambiguate contacts with the same address
    *
-   * @returns ICiviMailQueueRecord
+   * @returns CiviMailQueueRecord
    *
    * @throws CiviQueueInsertException if email isn't in Civi or an error occurs
    */
@@ -139,13 +135,12 @@ VALUES ( %1, %2, %3 )";
    * @param string $templateName
    * @param int $revision
    *
-   * @returns ICiviMailingRecord
+   * @returns CiviMailingRecord
    *
    * @throws CiviMailingMissingException no mailing found with those parameters
    */
   public function getMailing($source, $templateName, $revision = 0) {
-    $name = $this::makeUniqueName($source, $templateName, $revision);
-    $mailing = $this->getMailingInternal($name);
+    $mailing = $this->getMailingInternal($source);
     if (!$mailing) {
       throw new CiviMailingMissingException();
     }
@@ -164,8 +159,8 @@ VALUES ( %1, %2, %3 )";
     }
     $mailing = new \CRM_Mailing_DAO_Mailing();
     $mailing->name = $name;
-
-    if (!$mailing->find() || !$mailing->fetch()) {
+    $mailing->find(TRUE);
+    if (!$mailing->id) {
       return NULL;
     }
     self::$mailings[$name] = $mailing;
@@ -179,7 +174,8 @@ VALUES ( %1, %2, %3 )";
     $job = new \CRM_Mailing_DAO_MailingJob();
     $job->mailing_id = $mailingId;
 
-    if (!$job->fetch() || $job->N == 0) {
+    $job->find(TRUE);
+    if (!$job->id) {
       return NULL;
     }
     self::$jobs[$mailingId] = $job;
@@ -207,23 +203,6 @@ VALUES ( %1, %2, %3 )";
     ];
     $queue = \CRM_Mailing_Event_BAO_Queue::create($params);
     return $queue;
-  }
-
-  /**
-   * Retrieves the queue record matching the parameters.
-   *
-   * @param ICiviMailingRecord $mailingRecord
-   * @param string $email recipient address
-   * @param string $date approximate original send date
-   *
-   * @returns ICiviMailQueueRecord
-   */
-  public function getQueueRecord($mailingRecord, $email, $date = NULL) {
-    //TODO: will use this for Silverpop, but not needed for TY emails
-  }
-
-  public static function makeUniqueName($source, $templateName, $revision) {
-    return "$source|$templateName|$revision";
   }
 
 }
