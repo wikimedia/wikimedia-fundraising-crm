@@ -99,7 +99,24 @@ class ContributionTracking {
   public static function getContributionTrackingParameters(array $rawData): array {
     $contributionTracking = ['id' => $rawData['id']];
 
-    $fieldsToCopy = ['contribution_id', 'utm_source', 'referrer', 'utm_medium', 'utm_campaign', 'utm_key', 'utm_source', 'language', 'country'];
+    $fieldsToCopy = [
+      'amount',
+      'appeal',
+      'contribution_id',
+      'country',
+      'currency',
+      'gateway',
+      'is_recurring',
+      'language',
+      'payment_method_id',
+      'payment_submethod_id',
+      'payments_form_variant',
+      'referrer',
+      'utm_campaign',
+      'utm_key',
+      'utm_medium',
+      'utm_source',
+    ];
     foreach ($fieldsToCopy as $field) {
       if (isset($rawData[$field])) {
         $contributionTracking[$field] = $rawData[$field];
@@ -123,7 +140,6 @@ class ContributionTracking {
       $contributionTracking['payments_form_variant'] = (!empty($paymentsFormFields[2]) && stripos($paymentsFormFields[2], 'v=') !== FALSE) ? substr($paymentsFormFields[2], 3) : NULL;
     }
 
-    $isRecurring = 0;
     if (!empty($rawData['utm_source'])) {
       $contributionTracking['is_test_variant'] = (strpos($rawData['utm_source'] ?? '', '_cnt_') === FALSE) && (strpos($rawData['utm_source'] ?? '', '_cnt.') === FALSE);
       $sourceFields = explode('.', $rawData['utm_source']);
@@ -168,7 +184,7 @@ class ContributionTracking {
         }
         elseif (strpos($sourceFields[2], 'r') === 0 && !empty($paymentMethods[substr($sourceFields[2], 1)])) {
           $contributionTracking['payment_method_id'] = $paymentMethods[substr($sourceFields[2], 1)];
-          $isRecurring = $contributionTracking['is_recurring'] = 1;
+          $contributionTracking['is_recurring'] = 1;
         }
         if (!empty($sourceFields[3])) {
           // getKey returns NULL if NULL - but since submethod being present is the exception the empty check is
@@ -180,7 +196,7 @@ class ContributionTracking {
 
     if (!empty($rawData['utm_key'])) {
       $contributionTracking['is_pay_fee'] = (strpos($rawData['utm_key'], 'ptf_1') !== FALSE);
-      if ($isRecurring) {
+      if ($contributionTracking['is_recurring'] ?? false) {
         $contributionTracking['recurring_choice_id'] = (stripos($rawData['utm_key'], 'Upsell') !== FALSE || strpos($rawData['utm_key'], 'Upsell') !== FALSE) ? 1 : 2;
       }
     }
