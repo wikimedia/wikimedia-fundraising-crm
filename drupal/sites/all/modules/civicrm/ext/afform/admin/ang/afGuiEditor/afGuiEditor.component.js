@@ -98,6 +98,7 @@
         if (editor.mode === 'clone') {
           delete editor.afform.name;
           delete editor.afform.server_route;
+          delete editor.afform.navigation;
           editor.afform.is_dashlet = false;
           editor.afform.title += ' ' + ts('(copy)');
         }
@@ -118,6 +119,7 @@
 
           if (editor.mode === 'create') {
             editor.addEntity(editor.entity);
+            editor.afform.submit_enabled = true;
             editor.afform.create_submission = true;
             editor.layout['#children'].push(afGui.meta.elements.submit.element);
           }
@@ -135,6 +137,8 @@
         else if (editor.getFormType() === 'search') {
           editor.searchDisplays = getSearchDisplaysOnForm();
         }
+
+        editor.afform.permission_operator = editor.afform.permission_operator || 'AND';
 
         // Initialize undo history
         undoAction = 'initialLoad';

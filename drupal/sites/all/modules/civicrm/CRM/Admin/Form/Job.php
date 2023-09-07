@@ -19,7 +19,6 @@
  * Class for configuring jobs.
  */
 class CRM_Admin_Form_Job extends CRM_Admin_Form {
-  public $_id = NULL;
 
   /**
    * @var bool
@@ -27,11 +26,28 @@ class CRM_Admin_Form_Job extends CRM_Admin_Form {
   public $submitOnce = TRUE;
 
   public function preProcess() {
-
     parent::preProcess();
     $this->setContext();
 
-    $this->setTitle(ts('Manage - Scheduled Jobs'));
+    if ($this->_action == CRM_Core_Action::DELETE) {
+      $this->setTitle(ts('Delete Scheduled Job'));
+    }
+    elseif ($this->_action == CRM_Core_Action::ADD) {
+      $this->setTitle(ts('New Scheduled Job'));
+    }
+    elseif ($this->_action == CRM_Core_Action::UPDATE) {
+      $this->setTitle(ts('Edit Scheduled Job'));
+    }
+    elseif ($this->_action == CRM_Core_Action::VIEW) {
+      $this->setTitle(ts('Execute Scheduled Job'));
+    }
+
+    CRM_Utils_System::appendBreadCrumb([
+      [
+        'title' => ts('Scheduled Jobs'),
+        'url' => CRM_Utils_System::url('civicrm/admin/job', 'reset=1'),
+      ],
+    ]);
 
     if ($this->_id) {
       $refreshURL = CRM_Utils_System::url('civicrm/admin/job/edit',
@@ -129,23 +145,20 @@ class CRM_Admin_Form_Job extends CRM_Admin_Form {
    * @throws CRM_Core_Exception
    */
   public static function formRule($fields) {
-
     $errors = [];
 
-    require_once 'api/api.php';
-
-    /** @var \Civi\API\Kernel $apiKernel */
-    $apiKernel = \Civi::service('civi_api_kernel');
-    $apiRequest = \Civi\API\Request::create($fields['api_entity'], $fields['api_action'], ['version' => 3]);
     try {
+      $apiParams = CRM_Core_BAO_Job::parseParameters($fields['parameters']);
+      /** @var \Civi\API\Kernel $apiKernel */
+      $apiKernel = \Civi::service('civi_api_kernel');
+      $apiRequest = \Civi\API\Request::create($fields['api_entity'], $fields['api_action'], $apiParams);
       $apiKernel->resolve($apiRequest);
     }
     catch (\Civi\API\Exception\NotImplementedException $e) {
       $errors['api_action'] = ts('Given API command is not defined.');
     }
-
-    if (!empty($errors)) {
-      return $errors;
+    catch (CRM_Core_Exception $e) {
+      $errors['parameters'] = ts('Parameters must be formatted as key=value on separate lines');
     }
 
     return empty($errors) ? TRUE : $errors;
@@ -178,11 +191,9 @@ class CRM_Admin_Form_Job extends CRM_Admin_Form {
       $defaults['scheduled_run_date'] = date("Y-m-d H:i:s", $ts);
     }
 
-    // CRM-10708
-    // job entity thats shipped with core is all lower case.
-    // this makes sure camel casing is followed for proper working of default population.
+    // Legacy data might use lowercase api entity name, but it should always be CamelCase
     if (!empty($defaults['api_entity'])) {
-      $defaults['api_entity'] = ucfirst($defaults['api_entity']);
+      $defaults['api_entity'] = CRM_Utils_String::convertStringToCamel($defaults['api_entity']);
     }
 
     return $defaults;
@@ -232,7 +243,7 @@ class CRM_Admin_Form_Job extends CRM_Admin_Form {
     $dao->api_entity = $values['api_entity'];
     $dao->api_action = $values['api_action'];
     $dao->description = $values['description'];
-    $dao->is_active = CRM_Utils_Array::value('is_active', $values, 0);
+    $dao->is_active = $values['is_active'] ?? 0;
 
     // CRM-17686
     $ts = strtotime($values['scheduled_run_date']);
@@ -280,6 +291,15 @@ class CRM_Admin_Form_Job extends CRM_Admin_Form {
     $action = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Job', $id, 'api_action');
     $name = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Job', $id, 'name');
     return $name . ' (' . $entity . '.' . $action . ')';
+  }
+
+  /**
+   * Override parent to do nothing - since we don't use this array.
+   *
+   * @return array
+   */
+  protected function retrieveValues(): array {
+    return [];
   }
 
 }

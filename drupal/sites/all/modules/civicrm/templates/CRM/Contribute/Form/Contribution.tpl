@@ -55,9 +55,6 @@
         <a class="open-inline-noreturn action-item crm-hover-button" href="{$ccModeLink}"><i class="crm-i fa-credit-card" aria-hidden="true"></i> {ts}submit credit card contribution{/ts}</a>
       </div>
     {/if}
-      <div class="crm-submit-buttons">
-        {include file="CRM/common/formButtons.tpl" location=''}
-      </div>
       {if !empty($isOnline)}{assign var=valueStyle value=" class='view-value'"}{else}{assign var=valueStyle value=""}{/if}
       <table class="form-layout-compressed">
         <tr class="crm-contribution-form-block-contact_id">
@@ -280,7 +277,7 @@
 
     <!-- start of PCP -->
     {if array_key_exists('pcp_made_through_id', $form) && !$payNow}
-      <div class="crm-accordion-wrapper crm-accordion_title-accordion crm-accordion-processed {if $noPCP}collapsed{/if}" id="softCredit">
+      <div class="crm-accordion-wrapper crm-accordion_title-accordion crm-accordion-processed {if $noPCP}collapsed{/if}" id="pcp">
         <div class="crm-accordion-header">
           {ts}Personal Campaign Page{/ts}&nbsp;{help id="id-pcp"}
         </div>

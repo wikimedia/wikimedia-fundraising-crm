@@ -35,13 +35,6 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
   protected $_requireApprovalMsg;
 
   /**
-   * Deprecated parameter that we hope to remove.
-   *
-   * @var bool
-   */
-  public $_quickConfig;
-
-  /**
    * Skip duplicate check.
    *
    * This can be set using hook_civicrm_buildForm() to override the registration dupe check.
@@ -427,7 +420,11 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
       // will only work until that is done.
       // https://github.com/civicrm/civicrm-core/pull/19151
       $this->assign('moneyFormat', CRM_Utils_Money::format(1234.56));
-      self::buildAmount($this);
+      // build amount only when needed, skip incase of event full and waitlisting is enabled
+      // and few other conditions check preProcess()
+      if (!$this->_noFees) {
+        self::buildAmount($this, TRUE, NULL, $this->_priceSetId);
+      }
       if (!$this->showPaymentOnConfirm) {
         CRM_Core_Payment_ProcessorForm::buildQuickForm($this);
         $this->addPaymentProcessorFieldsToForm();
@@ -543,25 +540,13 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
    *   Form object.
    * @param bool $required
    *   True if you want to add formRule.
-   * @param int $discountId
+   * @param int|null $discountId
    *   Discount id for the event.
+   * @param int|null $priceSetID
    *
    * @throws \CRM_Core_Exception
    */
-  public static function buildAmount(&$form, $required = TRUE, $discountId = NULL) {
-    // build amount only when needed, skip incase of event full and waitlisting is enabled
-    // and few other conditions check preProcess()
-    if (property_exists($form, '_noFees') && $form->_noFees) {
-      return;
-    }
-
-    //if payment done, no need to build the fee block.
-    if (!empty($form->_paymentId)) {
-      //fix to display line item in update mode.
-      $form->assign('priceSet', $form->_priceSet ?? NULL);
-      return;
-    }
-
+  public static function buildAmount(&$form, $required = TRUE, $discountId = NULL, $priceSetID = NULL) {
     $feeFields = $form->_values['fee'] ?? NULL;
 
     if (is_array($feeFields)) {
@@ -594,15 +579,12 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
     $className = CRM_Utils_System::getClassName($form);
 
     //build the priceset fields.
-    if (isset($form->_priceSetId) && $form->_priceSetId) {
+    if ($priceSetID) {
 
       //format price set fields across option full.
       self::formatFieldsForOptionFull($form);
-
-      if (!empty($form->_priceSet['is_quick_config'])) {
-        $form->_quickConfig = $form->_priceSet['is_quick_config'];
-      }
-      $form->add('hidden', 'priceSetId', $form->_priceSetId);
+      // This is probably not required now - normally loaded from event ....
+      $form->add('hidden', 'priceSetId', $priceSetID);
 
       // CRM-14492 Admin price fields should show up on event registration if user has 'administer CiviCRM' permissions
       $adminFieldVisible = FALSE;
@@ -670,10 +652,11 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
           }
         }
       }
-      $form->_priceSet['id'] = $form->_priceSet['id'] ?? $form->_priceSetId;
+      $form->_priceSet['id'] = $form->_priceSet['id'] ?? $priceSetID;
       $form->assign('priceSet', $form->_priceSet);
     }
     else {
+      // Is this reachable?
       $eventFeeBlockValues = $elements = $elementJS = [];
       foreach ($form->_feeBlock as $fee) {
         if (is_array($fee)) {
@@ -898,7 +881,8 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
       }
     }
     foreach (CRM_Contact_BAO_Contact::$_greetingTypes as $greeting) {
-      if ($greetingType = CRM_Utils_Array::value($greeting, $fields)) {
+      $greetingType = $fields[$greeting] ?? NULL;
+      if ($greetingType) {
         $customizedValue = CRM_Core_PseudoConstant::getKey('CRM_Contact_BAO_Contact', $greeting . '_id', 'Customized');
         if ($customizedValue == $greetingType && empty($fields[$greeting . '_custom'])) {
           $errors[$greeting . '_custom'] = ts('Custom %1 is a required field if %1 is of type Customized.',
@@ -1059,6 +1043,7 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
         $params['amount'] = $this->_values['discount'][$discountId][$params['amount']]['value'];
       }
       elseif (empty($params['priceSetId'])) {
+        CRM_Core_Error::deprecatedWarning('unreachable code price set is always set here - passed as a hidden field although we could just load...');
         if (!empty($params['amount'])) {
           $params['amount'] = $this->_values['fee'][$params['amount']]['value'];
         }

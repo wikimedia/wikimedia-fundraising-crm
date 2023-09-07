@@ -21,14 +21,6 @@
 class CRM_Event_Import_Parser_Participant extends CRM_Import_Parser {
   protected $_mapperKeys;
 
-  /**
-   * Array of successfully imported participants id's
-   *
-   * @var array
-   */
-  protected $_newParticipants;
-
-
   protected $_fileName;
 
   /**
@@ -123,21 +115,11 @@ class CRM_Event_Import_Parser_Participant extends CRM_Import_Parser {
         throw new CRM_Core_Exception($formatError['error_message']);
       }
 
-      if (!$this->isUpdateExisting()) {
-        $formatted['custom'] = CRM_Core_BAO_CustomField::postProcess($formatted,
-          NULL,
-          'Participant'
-        );
-      }
-      else {
+      if ($this->isUpdateExisting()) {
         if (!empty($formatValues['participant_id'])) {
           $dao = new CRM_Event_BAO_Participant();
           $dao->id = $formatValues['participant_id'];
 
-          $formatted['custom'] = CRM_Core_BAO_CustomField::postProcess($formatted,
-            $formatValues['participant_id'],
-            'Participant'
-          );
           if ($dao->find(TRUE)) {
             $ids = [
               'participant' => $formatValues['participant_id'],
@@ -157,8 +139,6 @@ class CRM_Event_Import_Parser_Participant extends CRM_Import_Parser {
               ];
               CRM_Price_BAO_LineItem::syncLineItems($newParticipant->id, 'civicrm_participant', $newParticipant->fee_amount, $otherParams);
             }
-
-            $this->_newParticipant[] = $newParticipant->id;
             $this->setImportStatus($rowNumber, 'IMPORTED', '', $newParticipant->id);
             return;
           }
@@ -235,25 +215,12 @@ class CRM_Event_Import_Parser_Participant extends CRM_Import_Parser {
           throw new CRM_Core_Exception(ts('Unknown error'));
         }
       }
-
-      if (!(is_array($newParticipant) && civicrm_error($newParticipant))) {
-        $this->_newParticipants[] = $newParticipant['id'] ?? NULL;
-      }
     }
     catch (CRM_Core_Exception $e) {
       $this->setImportStatus($rowNumber, 'ERROR', $e->getMessage());
       return;
     }
     $this->setImportStatus($rowNumber, 'IMPORTED', '', $newParticipant['id']);
-  }
-
-  /**
-   * Get the array of successfully imported Participation ids.
-   *
-   * @return array
-   */
-  public function &getImportedParticipations() {
-    return $this->_newParticipants;
   }
 
   /**
@@ -276,27 +243,6 @@ class CRM_Event_Import_Parser_Participant extends CRM_Import_Parser {
       // ignore empty values or empty arrays etc
       if (CRM_Utils_System::isNull($value)) {
         continue;
-      }
-
-      // Handling Custom Data
-      if ($customFieldID = CRM_Core_BAO_CustomField::getKeyID($key)) {
-        $values[$key] = $value;
-        $type = $customFields[$customFieldID]['html_type'];
-        if (CRM_Core_BAO_CustomField::isSerialized($customFields[$customFieldID])) {
-          $values[$key] = self::unserializeCustomValue($customFieldID, $value, $type);
-        }
-        elseif ($type == 'Select' || $type == 'Radio') {
-          $customOption = CRM_Core_BAO_CustomOption::getCustomOption($customFieldID, TRUE);
-          foreach ($customOption as $customFldID => $customValue) {
-            $val = $customValue['value'] ?? NULL;
-            $label = $customValue['label'] ?? NULL;
-            $label = strtolower($label);
-            $value = strtolower(trim($value));
-            if (($value == $label) || ($value == strtolower($val))) {
-              $values[$key] = $val;
-            }
-          }
-        }
       }
 
       switch ($key) {

@@ -1,6 +1,9 @@
 {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}{$greeting},{/if}
 
-{ts}Below you will find a receipt for this contribution.{/ts}
+{if {contribution.contribution_page_id.receipt_text|boolean}}
+{contribution.contribution_page_id.receipt_text}
+{else}{ts}Below you will find a receipt for this contribution.{/ts}
+{/if}
 
 ===========================================================
 {ts}Contribution Information{/ts}
@@ -46,7 +49,7 @@
 {if '{contribution.receipt_date}'}
 {ts}Receipt Date{/ts}: {contribution.receipt_date|crmDate:"shortdate"}
 {/if}
-{if '{contribution.payment_instrument_id}' and empty($formValues.hidden_CreditCard)}
+{if {contribution.payment_instrument_id|boolean}}
 {ts}Paid By{/ts}: {contribution.payment_instrument_id:label}
 {if '{contribution.check_number}'}
 {ts}Check Number{/ts}: {contribution.check_number}

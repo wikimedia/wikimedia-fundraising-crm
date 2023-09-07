@@ -193,7 +193,7 @@ function civicrm_api3_profile_submit($params) {
     $contactEntities = ['contact', 'individual', 'organization', 'household'];
     $locationEntities = ['email', 'address', 'phone', 'website', 'im'];
 
-    $entity = strtolower(CRM_Utils_Array::value('entity', $field, ''));
+    $entity = strtolower($field['entity'] ?? '');
     if ($entity && !in_array($entity, array_merge($contactEntities, $locationEntities))) {
       switch ($entity) {
         case 'note':
@@ -575,7 +575,9 @@ function _civicrm_api3_buildprofile_submitfields($profileID, $optionsBehaviour, 
           }
         }
       }
-      $profileFields[$profileID][$fieldName] = array_merge($entityGetFieldsResult[$realName], $profileFields[$profileID][$entityfield]);
+      if (!empty($entityGetFieldsResult[$realName])) {
+        $profileFields[$profileID][$fieldName] = array_merge($entityGetFieldsResult[$realName], $profileFields[$profileID][$entityfield]);
+      }
       if (!isset($profileFields[$profileID][$fieldName]['api.aliases'])) {
         $profileFields[$profileID][$fieldName]['api.aliases'] = [];
       }

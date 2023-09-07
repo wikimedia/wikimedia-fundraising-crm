@@ -23,7 +23,7 @@
     {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
 
     {if !empty($event.confirm_email_text) AND (empty($isOnWaitlist) AND empty($isRequireApproval))}
-     <p>{$event.confirm_email_text|htmlize}</p>
+     <p>{$event.confirm_email_text}</p>
     {/if}
 
     {if !empty($isOnWaitlist)}
@@ -49,7 +49,7 @@
      <tr>
       <td colspan="2" {$valueStyle}>
        {event.title}<br />
-       {event.start_date|crmDate}{if $event.event_end_date}-{if $event.event_end_date|crmDate:"%Y%m%d" == $event.event_start_date|crmDate:"%Y%m%d"}{$event.event_end_date|crmDate:0:1}{else}{$event.event_end_date|crmDate}{/if}{/if}
+       {event.start_date|crmDate}{if {event.end_date|boolean}}-{if '{event.end_date|crmDate:"%Y%m%d"}' === '{event.start_date|crmDate:"%Y%m%d"}'}{event.end_date|crmDate:"Time"}{else}{event.end_date}{/if}{/if}
       </td>
      </tr>
 
@@ -133,7 +133,7 @@
 
      {/if}
 
-     {if !empty($event.is_public)}
+     {if {event.is_public|boolean}}
       <tr>
        <td colspan="2" {$valueStyle}>
         {capture assign=icalFeed}{crmURL p='civicrm/event/ical' q="reset=1&id=`$event.id`" h=0 a=1 fe=1}{/capture}
@@ -269,13 +269,13 @@
         </tr>
        {/foreach}
       {/if}
-      {if $totalTaxAmount}
+      {if {contribution.tax_amount|boolean}}
        <tr>
         <td {$labelStyle}>
          {ts}Total Tax Amount{/ts}
         </td>
         <td {$valueStyle}>
-         {$totalTaxAmount|crmMoney:$currency}
+          {contribution.tax_amount}
         </td>
        </tr>
       {/if}
@@ -284,7 +284,7 @@
          <tr>
            <td {$labelStyle}>{ts}Total Paid{/ts}</td>
            <td {$valueStyle}>
-             {if {contribution.paid_amount|boolean}}{contribution.paid_amount|crmMoney}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+             {contribution.paid_amount} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
            </td>
           </tr>
           <tr>
@@ -295,7 +295,7 @@
          <tr>
            <td {$labelStyle}>{ts}Total Amount{/ts}</td>
            <td {$valueStyle}>
-               {if {contribution.total_amount|boolean}}{contribution.total_amount|crmMoney}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+             {contribution.total_amount} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
            </td>
          </tr>
        {/if}
@@ -329,13 +329,13 @@
         </tr>
        {/if}
 
-       {if $register_date}
+       {if {participant.register_date|boolean}}
         <tr>
          <td {$labelStyle}>
           {ts}Registration Date{/ts}
          </td>
          <td {$valueStyle}>
-          {$register_date|crmDate}
+           {participant.register_date}
          </td>
         </tr>
        {/if}
@@ -427,79 +427,6 @@
       {/if}
 
      {/if} {* End of conditional section for Paid events *}
-
-     {if !empty($customPre)}
-      <tr>
-       <th {$headerStyle}>
-        {$customPre_grouptitle}
-       </th>
-      </tr>
-      {foreach from=$customPre item=value key=customName}
-       {if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-        <tr>
-         <td {$labelStyle}>
-          {$customName}
-         </td>
-         <td {$valueStyle}>
-          {$value}
-         </td>
-        </tr>
-       {/if}
-      {/foreach}
-     {/if}
-
-     {if !empty($customPost)}
-      <tr>
-       <th {$headerStyle}>
-        {$customPost_grouptitle}
-       </th>
-      </tr>
-      {foreach from=$customPost item=value key=customName}
-       {if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-        <tr>
-         <td {$labelStyle}>
-          {$customName}
-         </td>
-         <td {$valueStyle}>
-          {$value}
-         </td>
-        </tr>
-       {/if}
-      {/foreach}
-     {/if}
-
-     {if !empty($customProfile)}
-      {foreach from=$customProfile item=value key=customName}
-       <tr>
-        <th {$headerStyle}>
-         {ts 1=$customName+1}Participant Information - Participant %1{/ts}
-        </th>
-       </tr>
-       {foreach from=$value item=val key=field}
-        {if $field eq 'additionalCustomPre' or $field eq 'additionalCustomPost'}
-         <tr>
-          <td colspan="2" {$labelStyle}>
-           {if $field eq 'additionalCustomPre'}
-            {$additionalCustomPre_grouptitle}
-           {else}
-            {$additionalCustomPost_grouptitle}
-           {/if}
-          </td>
-         </tr>
-         {foreach from=$val item=v key=f}
-          <tr>
-           <td {$labelStyle}>
-            {$f}
-           </td>
-           <td {$valueStyle}>
-            {$v}
-           </td>
-          </tr>
-         {/foreach}
-        {/if}
-       {/foreach}
-      {/foreach}
-     {/if}
 
      {if !empty($customGroup)}
       {foreach from=$customGroup item=value key=customName}

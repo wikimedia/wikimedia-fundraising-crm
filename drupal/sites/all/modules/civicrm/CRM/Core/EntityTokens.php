@@ -138,7 +138,22 @@ class CRM_Core_EntityTokens extends AbstractTokenSubscriber {
         Civi::log()->info('invalid date token');
       }
     }
+    if ($this->isHTMLTextField($field)) {
+      return $row->format('text/html')->tokens($entity, $field, (string) $fieldValue);
+    }
     $row->format('text/plain')->tokens($entity, $field, (string) $fieldValue);
+  }
+
+  /**
+   * Is the text stored in html format.
+   *
+   * @param string $fieldName
+   *
+   * @return bool
+   */
+  public function isHTMLTextField(string $fieldName): bool {
+    $metadata = $this->getMetadataForField($fieldName);
+    return ($this->getMetadataForField($fieldName)['input_type'] ?? NULL) === 'RichTextEditor';
   }
 
   /**
@@ -348,10 +363,9 @@ class CRM_Core_EntityTokens extends AbstractTokenSubscriber {
    * @return bool
    */
   public function checkActive(TokenProcessor $processor) {
-    return (!empty($processor->context['actionMapping'])
+    return ((!empty($processor->context['actionMapping'])
         // This makes the 'schema context compulsory - which feels accidental
-        // since recent discu
-      && $processor->context['actionMapping']->getEntity()) || in_array($this->getEntityIDField(), $processor->context['schema']);
+      && $processor->context['actionMapping']->getEntityName()) || in_array($this->getEntityIDField(), $processor->context['schema'])) && in_array($this->getApiEntityName(), array_keys(\Civi::service('action_object_provider')->getEntities()));
   }
 
   /**
@@ -360,7 +374,7 @@ class CRM_Core_EntityTokens extends AbstractTokenSubscriber {
    * @param \Civi\ActionSchedule\Event\MailingQueryEvent $e
    */
   public function alterActionScheduleQuery(MailingQueryEvent $e): void {
-    if ($e->mapping->getEntity() !== $this->getExtendableTableName()) {
+    if ($e->mapping->getEntityTable($e->actionSchedule) !== $this->getExtendableTableName()) {
       return;
     }
     $e->query->select('e.id AS tokenContext_' . $this->getEntityIDField());

@@ -42,12 +42,14 @@
       };
 
       // Add callbacks for pre & post run
-      this.onPreRun.push(function(apiParams) {
-        apiParams.debug = true;
+      this.onPreRun.push(function(apiCalls) {
+        // So the raw SQL can be shown in the "Query Info" tab
+        apiCalls.run[2].debug = true;
       });
 
-      this.onPostRun.push(function(result) {
-        ctrl.debug = _.extend(_.pick(ctrl.debug, 'apiParams'), result.debug);
+      this.onPostRun.push(function(apiResults) {
+        // Add debug output (e.g. raw SQL) to the "Query Info" tab
+        ctrl.debug = _.extend(_.pick(ctrl.debug, 'apiParams'), apiResults.run.debug);
       });
 
       $scope.sortableColumnOptions = {

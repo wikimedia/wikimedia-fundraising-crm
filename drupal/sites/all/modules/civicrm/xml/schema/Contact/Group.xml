@@ -14,6 +14,7 @@
     <view>civicrm/group/search?force=1&amp;context=smog&amp;gid=[id]&amp;component_mode=1</view>
     <update>civicrm/group/edit?reset=1&amp;action=update&amp;id=[id]</update>
     <delete>civicrm/group/edit?reset=1&amp;action=delete&amp;id=[id]</delete>
+    <browse>civicrm/group</browse>
   </paths>
   <field>
     <name>id</name>
@@ -35,6 +36,7 @@
     <type>varchar</type>
     <title>Group Name</title>
     <length>64</length>
+    <required>true</required>
     <comment>Internal name of Group.</comment>
     <add>1.1</add>
   </field>
@@ -43,6 +45,7 @@
     <type>varchar</type>
     <title>Group Title</title>
     <length>255</length>
+    <required>true</required>
     <localizable>true</localizable>
     <comment>Name of Group.</comment>
     <add>1.1</add>
@@ -121,6 +124,7 @@
     <title>Group Where Clause</title>
     <comment>the sql where clause if a saved search acl</comment>
     <readonly>true</readonly>
+    <deprecated>true</deprecated>
     <add>1.6</add>
   </field>
   <field>
@@ -130,11 +134,13 @@
     <comment>the tables to be included in a select data</comment>
     <readonly>true</readonly>
     <serialize>PHP</serialize>
+    <deprecated>true</deprecated>
     <add>1.6</add>
   </field>
   <field>
     <name>where_tables</name>
     <type>text</type>
+    <deprecated>true</deprecated>
     <title>Tables For Where Clause</title>
     <comment>the tables to be included in the count statement</comment>
     <readonly>true</readonly>
@@ -192,7 +198,7 @@
       <keyColumn>id</keyColumn>
       <nameColumn>name</nameColumn>
       <labelColumn>title</labelColumn>
-      <prefetch>FALSE</prefetch>
+      <prefetch>disabled</prefetch>
     </pseudoconstant>
     <html>
       <type>EntityRef</type>
@@ -212,7 +218,7 @@
       <keyColumn>id</keyColumn>
       <nameColumn>name</nameColumn>
       <labelColumn>title</labelColumn>
-      <prefetch>FALSE</prefetch>
+      <prefetch>disabled</prefetch>
     </pseudoconstant>
     <html>
       <type>EntityRef</type>
@@ -295,7 +301,7 @@
     <length>255</length>
     <localizable>true</localizable>
     <comment>Alternative public title for this Group.</comment>
-    <default>NULL</default>
+    <required>TRUE</required>
     <add>5.31</add>
     <html>
       <type>Text</type>

@@ -171,9 +171,6 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
       'skipLineItem' => $params['skipLineItem'] ?? 0,
     ];
 
-    if ($paymentProcessorOutcome) {
-      $contributionParams['payment_processor'] = $paymentProcessorOutcome['payment_processor'] ?? NULL;
-    }
     if (!empty($params["is_email_receipt"])) {
       $contributionParams += [
         'receipt_date' => $receiptDate,
@@ -753,36 +750,27 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
             }
 
             if ($cid) {
-              $membership = new CRM_Member_DAO_Membership();
-              $membership->contact_id = $cid;
-              $membership->membership_type_id = $memType['id'];
-
               //show current membership, skip pending and cancelled membership records,
               //because we take first membership record id for renewal
-              $membership->whereAdd('status_id != 5 AND status_id !=6');
+              $membership = \Civi\Api4\Membership::get(FALSE)
+                ->addSelect('end_date', 'membership_type_id', 'membership_type_id.duration_unit:name')
+                ->addWhere('contact_id', '=', $cid)
+                ->addWhere('membership_type_id', '=', $memType['id'])
+                ->addWhere('status_id:name', 'NOT IN', ['Cancelled', 'Pending'])
+                ->addWhere('is_test', '=', (bool) $isTest)
+                ->addOrderBy('end_date', 'DESC')
+                ->execute()
+                ->first();
 
-              if (!is_null($isTest)) {
-                $membership->is_test = $isTest;
-              }
-
-              //CRM-4297
-              $membership->orderBy('end_date DESC');
-
-              if ($membership->find(TRUE)) {
-                if (!$membership->end_date) {
-                  $this->assign('islifetime', TRUE);
-                  continue;
-                }
+              if ($membership && $membership['membership_type_id.duration_unit:name'] !== 'lifetime') {
                 $this->assign('renewal_mode', TRUE);
-                $this->_currentMemberships[$membership->membership_type_id] = $membership->membership_type_id;
-                $memType['current_membership'] = $membership->end_date;
+                $this->_currentMemberships[$membership['membership_type_id']] = $membership['membership_type_id'];
+                $memType['current_membership'] = $membership['end_date'];
                 if (!$endDate) {
                   $endDate = $memType['current_membership'];
-                  $this->_defaultMemTypeId = $memType['id'];
                 }
                 if ($memType['current_membership'] < $endDate) {
                   $endDate = $memType['current_membership'];
-                  $this->_defaultMemTypeId = $memType['id'];
                 }
               }
             }
@@ -1070,9 +1058,13 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
     if (!isset($params['is_email_receipt']) && $isEmailReceipt) {
       $params['is_email_receipt'] = $isEmailReceipt;
     }
+    // We may no longer need to set params['is_recur'] - it used to be used in processRecurringContribution
     $params['is_recur'] = $isRecur;
     $params['payment_instrument_id'] = $contributionParams['payment_instrument_id'] ?? NULL;
-    $recurringContributionID = self::processRecurringContribution($form, $params, $contactID, $financialType);
+    $recurringContributionID = !$isRecur ? NULL : self::processRecurringContribution($form, $params, [
+      'contact_id' => $contactID,
+      'financial_type_id' => $financialType->id,
+    ]);
 
     $now = date('YmdHis');
     $receiptDate = $params['receipt_date'] ?? NULL;
@@ -1083,9 +1075,11 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
     if (isset($params['amount'])) {
       $contributionParams = array_merge(self::getContributionParams(
         $params, $financialType->id,
-        $result, $receiptDate,
+        NULL, $receiptDate,
         $recurringContributionID), $contributionParams
       );
+
+      $contributionParams['payment_processor'] = $result ? ($result['payment_processor'] ?? NULL) : NULL;
       $contributionParams['non_deductible_amount'] = self::getNonDeductibleAmount($params, $financialType, TRUE, $form);
       $contributionParams['skipCleanMoney'] = TRUE;
       // @todo this is the wrong place for this - it should be done as close to form submission
@@ -1175,24 +1169,17 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
    *
    * @param CRM_Core_Form $form
    * @param array $params
-   * @param int $contactID
-   * @param string $contributionType
+   * @param array $recurParams
    *
    * @return int|null
    */
-  public static function processRecurringContribution($form, $params, $contactID, $contributionType) {
+  public static function processRecurringContribution($form, $params, $recurParams) {
 
-    if (empty($params['is_recur'])) {
-      return NULL;
-    }
-
-    $recurParams = ['contact_id' => $contactID];
     $recurParams['amount'] = $params['amount'] ?? NULL;
     $recurParams['auto_renew'] = $params['auto_renew'] ?? NULL;
     $recurParams['frequency_unit'] = $params['frequency_unit'] ?? NULL;
     $recurParams['frequency_interval'] = $params['frequency_interval'] ?? NULL;
     $recurParams['installments'] = $params['installments'] ?? NULL;
-    $recurParams['financial_type_id'] = $params['financial_type_id'] ?? NULL;
     $recurParams['currency'] = $params['currency'] ?? NULL;
     $recurParams['payment_instrument_id'] = $params['payment_instrument_id'];
 
@@ -1226,7 +1213,6 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
     $recurParams['is_email_receipt'] = (bool) ($params['is_email_receipt'] ?? FALSE);
     // We set trxn_id=invoiceID specifically for paypal IPN. It is reset this when paypal sends us the real trxn id, CRM-2991
     $recurParams['processor_id'] = $recurParams['trxn_id'] = ($params['trxn_id'] ?? $params['invoiceID']);
-    $recurParams['financial_type_id'] = $contributionType->id;
 
     $campaignId = $params['campaign_id'] ?? $form->_values['campaign_id'] ?? NULL;
     $recurParams['campaign_id'] = $campaignId;

@@ -1,0 +1,13 @@
+{
+  "indent": 2,
+  "jasmine": true,
+  "esversion": 6,
+  "predef": [
+    "angular",
+    "inject",
+    "module",
+
+    "CRM"
+  ],
+  "-W097": true
+}

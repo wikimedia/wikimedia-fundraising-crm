@@ -935,6 +935,13 @@ class CRM_Core_DAO extends DB_DataObject {
     }
     $entityName = CRM_Core_DAO_AllCoreTables::getBriefName($className);
 
+    // For legacy reasons, empty values would sometimes be passed around as the string 'null'.
+    // The DAO treats 'null' the same as '', and an empty string makes a lot more sense!
+    // For the sake of hooks, normalize these values.
+    $record = array_map(function ($value) {
+      return $value === 'null' ? '' : $value;
+    }, $record);
+
     \CRM_Utils_Hook::pre($op, $entityName, $record[$idField] ?? NULL, $record);
     $fields = static::getSupportedFields();
     $instance = new static();
@@ -3315,7 +3322,8 @@ SELECT contact_id
       // No unique index on "name", do nothing
       return;
     }
-    $label = $this->label ?? $this->title ?? NULL;
+    $labelField = $this::$_labelField;
+    $label = $this->$labelField ?? NULL;
     if (!$label && $label !== '0') {
       // No label supplied, do nothing
       return;
@@ -3351,6 +3359,49 @@ SELECT contact_id
   public static function isComponentEnabled(): bool {
     $daoName = static::class;
     return !defined("$daoName::COMPONENT") || CRM_Core_Component::isEnabled($daoName::COMPONENT);
+  }
+
+  /**
+   * Given an incomplete record, attempt to fill missing field values from the database
+   */
+  public static function fillValues(array $existingValues, $fieldsToRetrieve): array {
+    $entityFields = static::getSupportedFields();
+    $idField = static::$_primaryKey[0];
+    // Ensure primary key is set
+    $existingValues += [$idField => NULL];
+    // It's hard to look things up without an ID! Check for another unique field to use:
+    if (!$existingValues[$idField] && is_callable([static::class, 'indices'])) {
+      foreach (static::indices(FALSE) as $index) {
+        if (!empty($index['unique']) && count($index['field']) === 1 && !empty($existingValues[$index['field'][0]])) {
+          $idField = $index['field'][0];
+        }
+      }
+    }
+    $idValue = $existingValues[$idField] ?? NULL;
+    foreach ($fieldsToRetrieve as $fieldName) {
+      $fieldMeta = $entityFields[$fieldName] ?? ['type' => NULL];
+      if (!array_key_exists($fieldName, $existingValues)) {
+        $existingValues[$fieldName] = NULL;
+        if ($idValue) {
+          $existingValues[$fieldName] = self::getFieldValue(static::class, $idValue, $fieldName, $idField);
+        }
+      }
+      if (isset($existingValues[$fieldName])) {
+        if (!empty($fieldMeta['serialize']) && !is_array($existingValues[$fieldName])) {
+          $existingValues[$fieldName] = self::unSerializeField($existingValues[$fieldName], $fieldMeta['serialize']);
+        }
+        elseif ($fieldMeta['type'] === CRM_Utils_Type::T_BOOLEAN) {
+          $existingValues[$fieldName] = (bool) $existingValues[$fieldName];
+        }
+        elseif ($fieldMeta['type'] === CRM_Utils_Type::T_INT) {
+          $existingValues[$fieldName] = (int) $existingValues[$fieldName];
+        }
+        elseif ($fieldMeta['type'] === CRM_Utils_Type::T_FLOAT) {
+          $existingValues[$fieldName] = (float) $existingValues[$fieldName];
+        }
+      }
+    }
+    return $existingValues;
   }
 
 }

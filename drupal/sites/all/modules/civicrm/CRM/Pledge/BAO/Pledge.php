@@ -184,7 +184,7 @@ class CRM_Pledge_BAO_Pledge extends CRM_Pledge_DAO_Pledge {
     }
 
     $contributionTypes = CRM_Contribute_PseudoConstant::financialType();
-    $title = CRM_Contact_BAO_Contact::displayName($pledge->contact_id) . ' - (' . ts('Pledged') . ' ' . CRM_Utils_Money::format($pledge->amount, $pledge->currency) . ' - ' . CRM_Utils_Array::value($pledge->financial_type_id, $contributionTypes) . ')';
+    $title = CRM_Contact_BAO_Contact::displayName($pledge->contact_id) . ' - (' . ts('Pledged') . ' ' . CRM_Utils_Money::format($pledge->amount, $pledge->currency) . ' - ' . ($contributionTypes[$pledge->financial_type_id] ?? '') . ')';
 
     // add the recently created Pledge
     CRM_Utils_Recent::add($title,
@@ -922,7 +922,7 @@ SELECT  pledge.contact_id              as contact_id,
           // 2. send acknowledgement mail
           if ($toEmail && !($doNotEmail || $onHold)) {
             // assign value to template
-            $template->assign('amount_paid', $details['amount_paid'] ? $details['amount_paid'] : 0);
+            $template->assign('amount_paid', $details['amount_paid'] ?: 0);
             $template->assign('next_payment', $details['scheduled_date']);
             $template->assign('amount_due', $details['amount_due']);
             $template->assign('checksumValue', $details['checksumValue']);

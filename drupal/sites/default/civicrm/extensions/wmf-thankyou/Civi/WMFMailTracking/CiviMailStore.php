@@ -25,18 +25,13 @@ class CiviMailStore {
    *
    * @param string $source the content's system of origination (eg Silverpop,
    *   WMF)
-   * @param string $templateName the source system's template name
    * @param string $bodyTemplate the body of the mailing
    * @param string $subjectTemplate the subject of the mailing
-   * @param int $revision the revision the mailing
-   * @param string $jobStatus the CiviMail status of the mailing job
-   *  enum('Scheduled', 'Running', 'Complete', 'Paused', 'Canceled')
    *
-   * We use the source, templateName and revision to create a unique name
-   *
-   * @throws CiviMailingInsertException something bad happened with the insert
+   * @return \wmf_communication\CiviMailingRecord
+   * @throws \Civi\WMFMailTracking\CiviMailingInsertException something bad happened with the insert
    */
-  public function addMailing($source, $templateName, $bodyTemplate, $subjectTemplate, $revision = 0, $jobStatus = 'Complete') {
+  public function addMailing(string $source, string $bodyTemplate, string $subjectTemplate): CiviMailingRecord {
     $mailing = $this->getMailingInternal($source);
 
     $transaction = new CRM_Core_Transaction();
@@ -56,7 +51,7 @@ class CiviMailStore {
 
       $job = $this->getJobInternal($mailing->id);
 
-      $saveJob = (!$job || $job->status !== $jobStatus);
+      $saveJob = (!$job || $job->status !== 'Complete');
 
       if (!$job) {
         $job = new \CRM_Mailing_BAO_MailingJob();
@@ -66,7 +61,7 @@ class CiviMailStore {
       }
 
       if ($saveJob) {
-        $job->status = $jobStatus;
+        $job->status = 'Complete';
         $job->save();
         self::$jobs[$mailing->id] = $job;
       }
@@ -132,14 +127,12 @@ VALUES ( %1, %2, %3 )";
    * Gets a mailing record matching the input parameters
    *
    * @param string $source
-   * @param string $templateName
-   * @param int $revision
    *
    * @returns CiviMailingRecord
    *
    * @throws CiviMailingMissingException no mailing found with those parameters
    */
-  public function getMailing($source, $templateName, $revision = 0) {
+  public function getMailing(string $source) {
     $mailing = $this->getMailingInternal($source);
     if (!$mailing) {
       throw new CiviMailingMissingException();
@@ -194,15 +187,14 @@ VALUES ( %1, %2, %3 )";
     return $job;
   }
 
-  protected function addQueueInternal($job, $email) {
+  protected function addQueueInternal($job, $email): \CRM_Mailing_Event_BAO_MailingEventQueue {
     $params = [
       'mailing_id' => $job->mailing_id,
       'job_id' => $job->id,
       'email_id' => $email->id,
       'contact_id' => $email->contact_id,
     ];
-    $queue = \CRM_Mailing_Event_BAO_Queue::create($params);
-    return $queue;
+    return \CRM_Mailing_Event_BAO_Queue::create($params);
   }
 
 }

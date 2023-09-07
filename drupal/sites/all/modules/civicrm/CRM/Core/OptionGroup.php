@@ -160,9 +160,12 @@ WHERE  v.option_group_id = g.id
       $query .= $condition;
     }
 
-    $query .= " ORDER BY v.{$orderBy}";
+    $query .= " ORDER BY %2";
 
-    $p = [1 => [$name, 'String']];
+    $p = [
+      1 => [$name, 'String'],
+      2 => ['v.' . $orderBy, 'MysqlOrderBy'],
+    ];
     $dao = CRM_Core_DAO::executeQuery($query, $p);
 
     $var = self::valuesCommon($dao, $flip, $grouping, $localize, $labelColumnName);
@@ -279,7 +282,8 @@ WHERE  v.option_group_id = g.id
   public static function lookupValues(&$params, $names, $flip = FALSE) {
     foreach ($names as $postName => $value) {
       // See if $params field is in $names array (i.e. is a value that we need to lookup)
-      if ($postalName = CRM_Utils_Array::value($postName, $params)) {
+      $postalName = $params[$postName] ?? NULL;
+      if ($postalName) {
         $postValues = [];
         // params[$postName] may be a Ctrl+A separated value list
         if (is_string($postalName) &&

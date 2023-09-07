@@ -249,7 +249,7 @@ class CRM_Core_BAO_CustomValueTable {
             || $fieldExtends === 'Organization'
             || $fieldExtends === 'Household'
           ) {
-            $paramFieldsExtendContactForEntities[$entityID]['custom_' . CRM_Utils_Array::value('custom_field_id', $field)] = $field['custom_field_id'] ?? NULL;
+            $paramFieldsExtendContactForEntities[$entityID]['custom_' . ($field['custom_field_id'] ?? '')] = $field['custom_field_id'] ?? NULL;
           }
         }
 
@@ -753,9 +753,8 @@ AND    cf.id IN ( $fieldIDList )
     }
 
     $default = array_merge(['Contact'], CRM_Contact_BAO_ContactType::basicTypes(TRUE));
-    if (!($type = CRM_Utils_Array::value('entityType', $params)) ||
-      in_array($params['entityType'], $default)
-    ) {
+    $type = $params['entityType'] ?? NULL;
+    if (!$type || in_array($params['entityType'], $default)) {
       $type = NULL;
     }
     else {

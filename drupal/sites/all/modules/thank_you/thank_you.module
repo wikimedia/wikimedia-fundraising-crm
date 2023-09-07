@@ -659,14 +659,14 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
   try {
     $template_info = thank_you_get_template_info($html);
     try {
-      $civi_mailing = $civimail_store->getMailing('thank_you', $template_info->name, $template_info->revision);
+      $civi_mailing = $civimail_store->getMailing('thank_you');
     }
     catch (CiviMailingMissingException $e) {
       \Civi::log('wmf')->info(
         'thank_you: Could not find mailing record for thank_you with name {name} and revision {revision}. Attempting to create one',
         ['name' => $template_info->name, 'revision' => $template_info->revision]
       );
-      $civi_mailing = $civimail_store->addMailing('thank_you', $template_info->name, 'missing body', $subject, $template_info->revision);
+      $civi_mailing = $civimail_store->addMailing('thank_you', 'missing body', $subject);
       \Civi::log('wmf')->info(
         'thank_you: Created mailing record for thank_you with name {name} and revision {revision}.',
         ['name' => $template_info->name, 'revision' => $template_info->revision]

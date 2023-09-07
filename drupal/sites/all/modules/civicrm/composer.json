@@ -68,7 +68,7 @@
     "tecnickcom/tcpdf" : "6.4.*",
     "totten/ca-config": "~22.11",
     "zetacomponents/base": "1.9.*",
-    "zetacomponents/mail": "~1.9.4",
+    "zetacomponents/mail": "~1.9.5",
     "marcj/topsort": "~1.1",
     "phpoffice/phpword": "^0.18.0",
     "pear/validate_finance_creditcard": "0.7.0",
@@ -235,7 +235,7 @@
         "url": "https://github.com/civicrm/jqueryui/archive/1.13.2-civicrm.zip"
       },
       "jquery-validation": {
-        "url": "https://github.com/jquery-validation/jquery-validation/archive/1.19.3.zip",
+        "url": "https://github.com/jquery-validation/jquery-validation/archive/1.19.5.zip",
         "ignore": [".*", "node_modules", "bower_components", "test", "demo", "lib"]
       },
       "json-formatter": {
@@ -272,7 +272,8 @@
     },
     "patches": {
       "adrienrn/php-mimetyper": {
-        "Update gitignore to ensure that sites that manage via git don't miss out on the important db.json file": "https://patch-diff.githubusercontent.com/raw/adrienrn/php-mimetyper/pull/15.patch"
+        "Update gitignore to ensure that sites that manage via git don't miss out on the important db.json file": "https://patch-diff.githubusercontent.com/raw/adrienrn/php-mimetyper/pull/15.patch",
+        "Apply patch to fix php8.2 deprecation notice on dynamic property $filename": "https://patch-diff.githubusercontent.com/raw/adrienrn/php-mimetyper/pull/17.patch"
       },
       "html2text/html2text": {
         "Fix deprecation warning in php8.1 on html_entity_decode": "https://raw.githubusercontent.com/civicrm/civicrm-core/e758d20e9f613ca6c4cf652c23d2cd7e5d3af3ce/tools/scripts/composer/html2text_html2_text_php81_deprecation.patch"

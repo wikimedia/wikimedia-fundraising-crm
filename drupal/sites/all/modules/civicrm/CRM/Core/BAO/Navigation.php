@@ -86,10 +86,12 @@ class CRM_Core_BAO_Navigation extends CRM_Core_DAO_Navigation {
     ) {
       /* re/calculate the weight, if the Parent ID changed OR create new menu */
 
-      if ($navName = CRM_Utils_Array::value('name', $params)) {
+      $navName = $params['name'] ?? NULL;
+      $navLabel = $params['label'] ?? NULL;
+      if ($navName) {
         $params['name'] = $navName;
       }
-      elseif ($navLabel = CRM_Utils_Array::value('label', $params)) {
+      elseif ($navLabel) {
         $params['name'] = $navLabel;
       }
 
@@ -892,30 +894,31 @@ ORDER BY weight";
         unset($item['attributes']['label'], $item['attributes']['url']);
         $item['attributes']['icon'] = 'crm-logo-sm';
         $item['attributes']['attr']['accesskey'] = 'm';
-        $item['child'] = [
-          [
-            'attributes' => [
-              'label' => ts('CiviCRM Home'),
-              'name' => 'CiviCRM Home',
-              'url' => 'civicrm/dashboard?reset=1',
-              'weight' => 1,
-            ],
+        $item['child'] = [];
+        $item['child'][] = [
+          'attributes' => [
+            'label' => ts('CiviCRM Home'),
+            'name' => 'CiviCRM Home',
+            'url' => 'civicrm/dashboard?reset=1',
+            'weight' => 1,
           ],
-          [
+        ];
+        if (CIVICRM_UF !== 'Standalone') {
+          $item['child'][] = [
             'attributes' => [
               'label' => ts('Hide Menu'),
               'name' => 'Hide Menu',
               'url' => '#hidemenu',
               'weight' => 2,
             ],
-          ],
-          [
-            'attributes' => [
-              'label' => ts('Log out'),
-              'name' => 'Log out',
-              'url' => 'civicrm/logout?reset=1',
-              'weight' => 3,
-            ],
+          ];
+        }
+        $item['child'][] = [
+          'attributes' => [
+            'label' => ts('Log out'),
+            'name' => 'Log out',
+            'url' => 'civicrm/logout?reset=1',
+            'weight' => 3,
           ],
         ];
         return;

@@ -30,7 +30,7 @@ class FormattingUtil {
   /**
    * @var string[]
    */
-  public static $pseudoConstantSuffixes = ['name', 'abbr', 'label', 'color', 'description', 'icon', 'grouping'];
+  public static $pseudoConstantSuffixes = ['name', 'abbr', 'label', 'color', 'description', 'icon', 'grouping', 'url'];
 
   /**
    * Massage values into the format the BAO expects for a write operation
@@ -232,14 +232,19 @@ class FormattingUtil {
       }
     }
     foreach ($result as $key => $value) {
+      // Skip null values or values that have already been unset by `formatOutputValue` functions
+      if (!isset($result[$key])) {
+        continue;
+      }
       $fieldExpr = SqlExpression::convert($selectAliases[$key] ?? $key);
       $fieldName = \CRM_Utils_Array::first($fieldExpr->getFields() ?? '');
       $baseName = $fieldName ? \CRM_Utils_Array::first(explode(':', $fieldName)) : NULL;
       $field = $fields[$fieldName] ?? $fields[$baseName] ?? NULL;
       $dataType = $field['data_type'] ?? ($fieldName == 'id' ? 'Integer' : NULL);
-      // Allow Sql Functions to do special formatting and/or alter the $dataType
+      // Allow Sql Functions to do alter the value and/or $dataType
       if (method_exists($fieldExpr, 'formatOutputValue') && is_string($value)) {
-        $result[$key] = $value = $fieldExpr->formatOutputValue($value, $dataType);
+        $fieldExpr->formatOutputValue($dataType, $result, $key);
+        $value = $result[$key];
       }
       if (!empty($field['output_formatters'])) {
         self::applyFormatters($result, $fieldName, $field, $value);
@@ -446,7 +451,7 @@ class FormattingUtil {
    * @return array
    */
   public static function filterByPath(array $values, string $fieldPath, string $fieldName): array {
-    $prefix = substr($fieldPath, 0, strpos($fieldPath, $fieldName));
+    $prefix = substr($fieldPath, 0, strrpos($fieldPath, $fieldName));
     return \CRM_Utils_Array::filterByPrefix($values, $prefix);
   }
 

@@ -151,13 +151,13 @@
       </tr>
      {/if}
 
-     {if !empty($is_monetary) and !empty($trxn_id)}
+     {if {contribution.trxn_id|boolean}}
       <tr>
        <td {$labelStyle}>
         {ts}Transaction #{/ts}
        </td>
        <td {$valueStyle}>
-        {$trxn_id}
+         {contribution.trxn_id}
        </td>
       </tr>
      {/if}
@@ -407,7 +407,6 @@
        </th>
       </tr>
       {foreach from=$customPre item=customValue key=customName}
-       {if (!empty($trackingFields) and ! in_array($customName, $trackingFields)) or empty($trackingFields)}
         <tr>
          <td {$labelStyle}>
           {$customName}
@@ -416,7 +415,6 @@
           {$customValue}
          </td>
         </tr>
-       {/if}
       {/foreach}
      {/if}
 
@@ -427,7 +425,6 @@
        </th>
       </tr>
       {foreach from=$customPost item=customValue key=customName}
-       {if (!empty($trackingFields) and ! in_array($customName, $trackingFields)) or empty($trackingFields)}
         <tr>
          <td {$labelStyle}>
           {$customName}
@@ -436,7 +433,6 @@
           {$customValue}
          </td>
         </tr>
-       {/if}
       {/foreach}
      {/if}
 

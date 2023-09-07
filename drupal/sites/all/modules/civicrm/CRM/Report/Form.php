@@ -897,7 +897,7 @@ class CRM_Report_Form extends CRM_Core_Form {
             if ($fieldGrp == 'filters') {
               // fill operator types
               if (!array_key_exists('operatorType', $this->_columns[$tableName][$fieldGrp][$fieldName])) {
-                switch (CRM_Utils_Array::value('type', $this->_columns[$tableName][$fieldGrp][$fieldName])) {
+                switch ($this->_columns[$tableName][$fieldGrp][$fieldName]['type'] ?? NULL) {
                   case CRM_Utils_Type::T_MONEY:
                   case CRM_Utils_Type::T_FLOAT:
                     $this->_columns[$tableName][$fieldGrp][$fieldName]['operatorType'] = CRM_Report_Form::OP_FLOAT;
@@ -1026,7 +1026,7 @@ class CRM_Report_Form extends CRM_Core_Form {
       if (array_key_exists('filters', $table)) {
         foreach ($table['filters'] as $fieldName => $field) {
           if (isset($field['default'])) {
-            if (CRM_Utils_Array::value('type', $field) & CRM_Utils_Type::T_DATE
+            if (($field['type'] ?? 0) & CRM_Utils_Type::T_DATE
             ) {
               if (is_array($field['default'])) {
                 $this->_defaults["{$fieldName}_from"] = $field['default']['from'] ?? NULL;
@@ -1062,8 +1062,8 @@ class CRM_Report_Form extends CRM_Core_Form {
           ) {
             $this->_defaults["{$fieldName}_op"] = 'mhas';
           }
-          elseif ($op = CRM_Utils_Array::value('default_op', $field)) {
-            $this->_defaults["{$fieldName}_op"] = $op;
+          elseif (!empty($field['default_op'])) {
+            $this->_defaults["{$fieldName}_op"] = $field['default_op'];
           }
         }
       }
@@ -2834,7 +2834,7 @@ WHERE cg.extends IN ('" . implode("','", $this->_customGroupExtends) . "') AND
             !empty($this->_params['group_bys'][$fieldName]) &&
             !empty($this->_params['group_bys_freq'])
           ) {
-            switch (CRM_Utils_Array::value($fieldName, $this->_params['group_bys_freq'])) {
+            switch ($this->_params['group_bys_freq'][$fieldName] ?? NULL) {
               case 'YEARWEEK':
                 $select[] = "DATE_SUB({$field['dbAlias']}, INTERVAL WEEKDAY({$field['dbAlias']}) DAY) AS {$tableName}_{$fieldName}_start";
                 $select[] = "YEARWEEK({$field['dbAlias']}) AS {$tableName}_{$fieldName}_subtotal";
@@ -3540,11 +3540,11 @@ WHERE cg.extends IN ('" . implode("','", $this->_customGroupExtends) . "') AND
                 isset($field['options']) &&
                 is_array($field['options']) && !empty($field['options'])
               ) {
-                $value = CRM_Utils_Array::value($op, $pair) . " " .
+                $value = ($pair[$op] ?? '') . " " .
                   CRM_Utils_Array::value($val, $field['options'], $val);
               }
               elseif ($val || $val == '0') {
-                $value = CRM_Utils_Array::value($op, $pair) . " " . $val;
+                $value = ($pair[$op] ?? '') . " " . $val;
               }
             }
             if ($value && empty($field['no_display'])) {
@@ -3648,7 +3648,7 @@ WHERE cg.extends IN ('" . implode("','", $this->_customGroupExtends) . "') AND
    */
   public function compileContent() {
     $templateFile = $this->getHookedTemplateFileName();
-    return CRM_Utils_Array::value('report_header', $this->_formValues) .
+    return ($this->_formValues['report_header'] ?? '') .
     CRM_Core_Form::$_template->fetch($templateFile) .
     CRM_Utils_Array::value('report_footer', $this->_formValues);
   }
@@ -3711,7 +3711,7 @@ WHERE cg.extends IN ('" . implode("','", $this->_customGroupExtends) . "') AND
         unset($_POST['crmPID_B'], $_POST['crmPID']);
       }
 
-      $pageId = $pageId ? $pageId : 1;
+      $pageId = $pageId ?: 1;
       $this->set(CRM_Utils_Pager::PAGE_ID, $pageId);
       $offset = ($pageId - 1) * $rowCount;
 
@@ -5118,7 +5118,7 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
    * @param string $table
    */
   public function setEntityRefDefaults(&$field, $table) {
-    $field['attributes'] = $field['attributes'] ? $field['attributes'] : [];
+    $field['attributes'] = $field['attributes'] ?: [];
     $field['attributes'] += [
       'entity' => CRM_Core_DAO_AllCoreTables::getEntityNameForTable($table),
       'multiple' => TRUE,
@@ -5839,6 +5839,7 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
         'options' => CRM_Core_PseudoConstant::stateProvince(),
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
         'is_group_bys' => TRUE,
       ],
       $options['prefix'] . 'country_id' => [
@@ -5847,6 +5848,7 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
         'name' => 'country_id',
         'is_fields' => TRUE,
         'is_filters' => TRUE,
+        'is_order_bys' => TRUE,
         'is_group_bys' => TRUE,
         'type' => CRM_Utils_Type::T_INT,
         'operatorType' => CRM_Report_Form::OP_MULTISELECT,
@@ -6064,7 +6066,7 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
    *   Relevant where clause.
    */
   protected function generateFilterClause($field, $fieldName) {
-    if (CRM_Utils_Array::value('type', $field) & CRM_Utils_Type::T_DATE) {
+    if (($field['type'] ?? 0) & CRM_Utils_Type::T_DATE) {
       if (($field['operatorType'] ?? NULL) ==
         CRM_Report_Form::OP_MONTH
       ) {

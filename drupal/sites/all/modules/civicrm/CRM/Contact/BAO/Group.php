@@ -315,9 +315,8 @@ class CRM_Contact_BAO_Group extends CRM_Contact_DAO_Group {
   public function addSelectWhereClause() {
     $clauses = [];
     if (!CRM_Core_Permission::check([['edit all contacts', 'view all contacts']])) {
-      $allGroups = CRM_Core_PseudoConstant::allGroup(NULL, FALSE);
-      $allowedGroups = \CRM_ACL_API::group(CRM_ACL_API::VIEW, NULL, 'civicrm_group', $allGroups);
-      $groupsIn = $allowedGroups ? implode(',', $allowedGroups) : '0';
+      $allowedGroups = CRM_Core_Permission::group(NULL, FALSE);
+      $groupsIn = $allowedGroups ? implode(',', array_keys($allowedGroups)) : '0';
       $clauses['id'][] = "IN ($groupsIn)";
     }
     CRM_Utils_Hook::selectWhereClause($this, $clauses);
@@ -342,6 +341,11 @@ class CRM_Contact_BAO_Group extends CRM_Contact_DAO_Group {
       'parents' => NULL,
     ];
 
+    if (empty($params['id']) && empty($params['frontend_title'])) {
+      // If we were calling writeRecord it would handle this, but we need
+      // to migrate the other bits of magic.
+      $params['frontend_title'] = $params['title'];
+    }
     $hook = empty($params['id']) ? 'create' : 'edit';
     CRM_Utils_Hook::pre($hook, 'Group', $params['id'] ?? NULL, $params);
 
@@ -626,17 +630,10 @@ class CRM_Contact_BAO_Group extends CRM_Contact_DAO_Group {
    */
   protected static function flushCaches() {
     CRM_Utils_System::flushCache();
-    $staticCaches = [
-      'CRM_Core_PseudoConstant' => 'groups',
-      'CRM_ACL_API' => 'group_permission',
-      'CRM_ACL_BAO_ACL' => 'permissioned_groups',
-      'CRM_Contact_BAO_Group' => 'permission_clause',
-    ];
-    foreach ($staticCaches as $class => $key) {
-      if (isset(Civi::$statics[$class][$key])) {
-        unset(Civi::$statics[$class][$key]);
-      }
-    }
+    unset(Civi::$statics['CRM_Core_PseudoConstant']['groups']);
+    unset(Civi::$statics['CRM_ACL_API']);
+    unset(Civi::$statics['CRM_ACL_BAO_ACL']['permissioned_groups']);
+    unset(Civi::$statics['CRM_Contact_BAO_Group']['permission_clause']);
   }
 
   /**
@@ -1020,6 +1017,12 @@ class CRM_Contact_BAO_Group extends CRM_Contact_DAO_Group {
     // CRM-16905 - Sort by count cannot be done with sql
     if (!empty($params['sort']) && strpos($params['sort'], 'count') === 0) {
       usort($values, function($a, $b) {
+        if ($a['count'] === 'unknown') {
+          return -1;
+        }
+        if ($b['count'] === 'unknown') {
+          return 1;
+        }
         return $a['count'] - $b['count'];
       });
       if (strpos($params['sort'], 'desc')) {
@@ -1091,12 +1094,8 @@ WHERE  id IN $groupIdString
       $title = $dao->title;
       $description = $dao->description;
       if ($public) {
-        if (!empty($dao->frontend_title)) {
-          $title = $dao->frontend_title;
-        }
-        if (!empty($dao->frontend_description)) {
-          $description = $dao->frontend_description;
-        }
+        $title = $dao->frontend_title;
+        $description = $dao->frontend_description;
       }
       if ($dao->parents) {
         $parentArray = explode(',', $dao->parents);
@@ -1260,7 +1259,8 @@ WHERE {$whereClause}";
       $params[5] = [$parent_id, 'Integer'];
     }
 
-    if ($createdBy = CRM_Utils_Array::value('created_by', $params)) {
+    $createdBy = $params['created_by'] ?? NULL;
+    if ($createdBy) {
       $clauses[] = "createdBy.sort_name LIKE %6";
       if (strpos($createdBy, '%') !== FALSE) {
         $params[6] = [$createdBy, 'String', FALSE];

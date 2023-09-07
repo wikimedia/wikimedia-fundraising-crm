@@ -39,7 +39,7 @@ abstract class CRM_Core_Page_Basic extends CRM_Core_Page {
       Civi::$statics[$baoName]['actionLinks'] = [];
       $title = $baoName::getEntityTitle();
       $paths = $baoName::getEntityPaths();
-      unset($paths['add']);
+      unset($paths['add'], $paths['browse']);
       foreach ($paths as $action => $path) {
         $actionKey = CRM_Core_Action::map($action);
         if ($actionKey) {
@@ -449,6 +449,18 @@ abstract class CRM_Core_Page_Basic extends CRM_Core_Page {
    */
   protected function getExpectedRowProperties(): array {
     return [];
+  }
+
+  /**
+   * Get the menu path corresponding to an action on this entity
+   *
+   * @param string $linkAction
+   *   e.g. "view"
+   * @return string|null
+   *   e.g. "civicrm/activity?reset=1&action=view&id=[id]"
+   */
+  public function getLinkPath(string $linkAction): ?string {
+    return $this->getBAOName()::getEntityPaths()[$linkAction] ?? NULL;
   }
 
 }

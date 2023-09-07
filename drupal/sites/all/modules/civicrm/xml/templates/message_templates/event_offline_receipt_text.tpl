@@ -38,7 +38,7 @@
 ==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
 
 {event.title}
-{event.start_date|crmDate}{if $event.event_end_date}-{if $event.event_end_date|crmDate:"%Y%m%d" == $event.event_start_date|crmDate:"%Y%m%d"}{$event.event_end_date|crmDate:0:1}{else}{$event.event_end_date|crmDate}{/if}{/if}
+{event.start_date|crmDate}{if {event.end_date|boolean}}-{if '{event.end_date|crmDate:"%Y%m%d"}' === '{event.start_date|crmDate:"%Y%m%d"}'}{event.end_date|crmDate:"Time"}{else}{event.end_date}{/if}{/if}
 
 {if !empty($event.participant_role) and $event.participant_role neq 'Attendee' and empty($defaultRole)}
 {ts}Participant Role{/ts}: {$event.participant_role}
@@ -67,7 +67,7 @@
 {/if}
 
 
-{if !empty($event.is_public)}
+{if {event.is_public|boolean}}
 {capture assign=icalFeed}{crmURL p='civicrm/event/ical' q="reset=1&id=`$event.id`" h=0 a=1 fe=1}{/capture}
 {ts}Download iCalendar entry for this event.{/ts} {$icalFeed}
 {capture assign=gCalendar}{crmURL p='civicrm/event/ical' q="gCalendar=1&reset=1&id=`$event.id`" h=0 a=1 fe=1}{/capture}
@@ -139,14 +139,14 @@
 {/foreach}
 {/if}
 
-{if $totalTaxAmount}
-{ts}Total Tax Amount{/ts}: {$totalTaxAmount|crmMoney:$currency}
+{if {contribution.tax_amount|boolean}}
+{ts}Total Tax Amount{/ts}: {contribution.tax_amount}
 {/if}
 {if {event.is_monetary|boolean}}
 
-{if {contribution.balance_amount|boolean}}{ts}Total Paid{/ts}: {if {contribution.paid_amount|boolean}}{contribution.paid_amount}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+{if {contribution.balance_amount|boolean}}{ts}Total Paid{/ts}: {contribution.paid_amount} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
 {ts}Balance{/ts}: {contribution.balance_amount}
-{else}{ts}Total Amount{/ts}: {if {contribution.total_amount|boolean}}{contribution.total_amount}{/if} {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
+{else}{ts}Total Amount{/ts}: {contribution.total_amount}  {if !empty($hookDiscount.message)}({$hookDiscount.message}){/if}
 {/if}
 
 {if !empty($pricesetFieldsCount) }
@@ -176,8 +176,8 @@
 
 {/if}
 
-{if $register_date}
-{ts}Registration Date{/ts}: {$register_date|crmDate}
+{if {participant.register_date|boolean}}
+{ts}Registration Date{/ts}: {participant.register_date}
 {/if}
 {if $receive_date}
 {ts}Transaction Date{/ts}: {$receive_date|crmDate}
@@ -219,62 +219,6 @@
 {/if}
 {/if} {* End of conditional section for Paid events *}
 
-{if !empty($customPre)}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{$customPre_grouptitle}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{foreach from=$customPre item=value key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-{$customName}: {$value}
-{/if}
-{/foreach}
-{/if}
-
-{if !empty($customPost)}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{$customPost_grouptitle}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{foreach from=$customPost item=value key=customName}
-{if ( !empty($trackingFields) and ! in_array( $customName, $trackingFields ) ) or empty($trackingFields)}
-{$customName}: {$value}
-{/if}
-{/foreach}
-{/if}
-{if !empty($customProfile)}
-
-{foreach from=$customProfile item=value key=customName}
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{ts 1=$customName+1}Participant Information - Participant %1{/ts}
-
-==========================================================={if !empty($pricesetFieldsCount) }===================={/if}
-
-{foreach from=$value item=val key=field}
-{if $field eq 'additionalCustomPre' or $field eq 'additionalCustomPost' }
-{if $field eq 'additionalCustomPre' }
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{$additionalCustomPre_grouptitle}
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{else}
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{$additionalCustomPost_grouptitle}
-----------------------------------------------------------{if !empty($pricesetFieldsCount) }--------------------{/if}
-
-{/if}
-{foreach from=$val item=v key=f}
-{$f}: {$v}
-{/foreach}
-{/if}
-{/foreach}
-{/foreach}
-{/if}
 {if !empty($customGroup)}
 {foreach from=$customGroup item=value key=customName}
 =========================================================={if !empty($pricesetFieldsCount) }===================={/if}

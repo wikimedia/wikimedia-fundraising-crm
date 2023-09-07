@@ -787,7 +787,8 @@ WHERE  is_active = 1 AND relationship_type_id = ' . CRM_Utils_Type::escape($type
       ' AND contact_id_b = ' . CRM_Utils_Type::escape($id, 'Integer') . " ) ) ";
 
     //if caseId is provided, include it duplicate checking.
-    if ($caseId = CRM_Utils_Array::value('case_id', $params)) {
+    $caseId = $params['case_id'] ?? NULL;
+    if ($caseId) {
       $queryString .= ' AND case_id = ' . CRM_Utils_Type::escape($caseId, 'Integer');
     }
 
@@ -2039,7 +2040,7 @@ AND cc.sort_name LIKE '%$name%'";
    */
   public static function isCurrentEmployerNeedingToBeCleared($params, $relationshipId, $updatedRelTypeID = NULL) {
     $existingTypeID = (int) CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Relationship', $relationshipId, 'relationship_type_id');
-    $updatedRelTypeID = $updatedRelTypeID ? $updatedRelTypeID : $existingTypeID;
+    $updatedRelTypeID = $updatedRelTypeID ?: $existingTypeID;
     $currentEmployerID = (int) civicrm_api3('Contact', 'getvalue', ['return' => 'current_employer_id', 'id' => $params['contact_id_a']]);
 
     if ($currentEmployerID !== (int) $params['contact_id_b'] || !self::isRelationshipTypeCurrentEmployer($existingTypeID)) {
@@ -2271,6 +2272,27 @@ SELECT count(*)
         $active
       );
     }
+  }
+
+  /**
+   * @param string $entityName
+   * @param string $action
+   * @param array $record
+   * @param int $userID
+   * @return bool
+   * @see CRM_Core_DAO::checkAccess
+   */
+  public static function _checkAccess(string $entityName, string $action, array $record, int $userID): bool {
+    // Delegate relationship permissions to contacts a & b
+    foreach (['a', 'b'] as $ab) {
+      if (empty($record["contact_id_$ab"]) && !empty($record['id'])) {
+        $record["contact_id_$ab"] = CRM_Core_DAO::getFieldValue(__CLASS__, $record['id'], "contact_id_$ab");
+      }
+      if (!\Civi\Api4\Utils\CoreUtil::checkAccessDelegated('Contact', 'update', ['id' => $record["contact_id_$ab"]], $userID)) {
+        return FALSE;
+      }
+    }
+    return TRUE;
   }
 
 }

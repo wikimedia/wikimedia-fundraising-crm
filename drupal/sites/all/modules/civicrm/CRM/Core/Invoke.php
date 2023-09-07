@@ -207,6 +207,9 @@ class CRM_Core_Invoke {
     self::registerPharHandler();
 
     $config = CRM_Core_Config::singleton();
+
+    // WISHLIST: if $item is a web-service route, swap prepend to $civicrm_url_defaults
+
     if ($config->userFramework == 'Joomla' && $item) {
       $config->userFrameworkURLVar = 'task';
 
@@ -249,7 +252,7 @@ class CRM_Core_Invoke {
         CRM_Utils_System::setTitle($item['title']);
       }
 
-      if (isset($item['breadcrumb']) && !isset($item['is_public'])) {
+      if (isset($item['breadcrumb']) && empty($item['is_public'])) {
         CRM_Utils_System::appendBreadCrumb($item['breadcrumb']);
       }
 

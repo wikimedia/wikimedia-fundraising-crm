@@ -860,6 +860,8 @@ class CRM_Utils_Token {
   /**
    * Replace subscription-confirmation-request tokens
    *
+   * @deprecated
+   *
    * @param string $str
    *   The string with tokens to be replaced.
    * @param string $group
@@ -872,6 +874,7 @@ class CRM_Utils_Token {
    *   The processed string
    */
   public static function &replaceSubscribeTokens($str, $group, $url, $html) {
+    CRM_Core_Error::deprecatedFunctionWarning('use token processor');
     if (self::token_match('subscribe', 'group', $str)) {
       self::token_replace('subscribe', 'group', $group, $str);
     }
@@ -926,6 +929,8 @@ class CRM_Utils_Token {
   /**
    * Replace welcome/confirmation tokens
    *
+   * @deprecated since 5.65 will be removed around 5.71
+   *
    * @param string $str
    *   The string with tokens to be replaced.
    * @param string $group
@@ -937,6 +942,7 @@ class CRM_Utils_Token {
    *   The processed string
    */
   public static function &replaceWelcomeTokens($str, $group, $html) {
+    CRM_Core_Error::deprecatedFunctionWarning('use the token processor');
     if (self::token_match('welcome', 'group', $str)) {
       self::token_replace('welcome', 'group', $group, $str);
     }

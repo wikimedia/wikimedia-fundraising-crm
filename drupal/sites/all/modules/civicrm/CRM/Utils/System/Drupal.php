@@ -23,12 +23,12 @@ class CRM_Utils_System_Drupal extends CRM_Utils_System_DrupalBase {
   /**
    * @inheritDoc
    */
-  public function createUser(&$params, $mail) {
+  public function createUser(&$params, $mailParam) {
     $form_state = form_state_defaults();
 
     $form_state['input'] = [
       'name' => $params['cms_name'],
-      'mail' => $params[$mail],
+      'mail' => $params[$mailParam],
       'op' => 'Create new account',
     ];
 
@@ -522,8 +522,8 @@ AND    u.status = 1
     $uid = $params['uid'] ?? NULL;
     if (!$uid) {
       //load user, we need to check drupal permissions.
-      $name = CRM_Utils_Array::value('name', $params, FALSE) ? $params['name'] : trim(CRM_Utils_Array::value('name', $_REQUEST));
-      $pass = CRM_Utils_Array::value('pass', $params, FALSE) ? $params['pass'] : trim(CRM_Utils_Array::value('pass', $_REQUEST));
+      $name = !empty($params['name']) ? $params['name'] : trim($_REQUEST['name'] ?? '');
+      $pass = !empty($params['pass']) ? $params['pass'] : trim($_REQUEST['pass'] ?? '');
 
       if ($name) {
         $uid = user_authenticate($name, $pass);

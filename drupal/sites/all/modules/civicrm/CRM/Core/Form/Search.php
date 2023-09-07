@@ -22,13 +22,6 @@ class CRM_Core_Form_Search extends CRM_Core_Form {
   protected $_force;
 
   /**
-   * Name of action button
-   *
-   * @var string
-   */
-  protected $_actionButtonName;
-
-  /**
    * Form values that we will be using
    *
    * @var array
@@ -95,6 +88,13 @@ class CRM_Core_Form_Search extends CRM_Core_Form {
   protected $searchFieldMetadata = ['Contact' => []];
 
   protected $_reset;
+
+  /**
+   * Saved Search ID retrieved from the GET vars.
+   *
+   * @var int
+   */
+  protected $_ssID;
 
   /**
    * @return array

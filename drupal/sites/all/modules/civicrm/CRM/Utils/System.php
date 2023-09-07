@@ -39,6 +39,7 @@
  * @method static void appendCoreResources(\Civi\Core\Event\GenericHookEvent $e) Callback for hook_civicrm_coreResourceList.
  * @method static void alterAssetUrl(\Civi\Core\Event\GenericHookEvent $e) Callback for hook_civicrm_getAssetUrl.
  * @method static bool shouldExitAfterFatal() Should the current execution exit after a fatal error?
+ * @method static string|null currentPath() Path of the current page e.g. 'civicrm/contact/view'
  */
 class CRM_Utils_System {
 
@@ -278,7 +279,7 @@ class CRM_Utils_System {
     }
 
     $config = CRM_Core_Config::singleton();
-    $url = $config->userSystem->url($path, $query, $absolute, $fragment, $frontend, $forceBackend, $htmlize);
+    $url = $config->userSystem->url($path, $query, $absolute, $fragment, $frontend, $forceBackend);
 
     if ($htmlize) {
       $url = htmlentities($url);
@@ -301,7 +302,7 @@ class CRM_Utils_System {
    * @param string $fragment
    *   A fragment identifier (named anchor) to append to the link.
    * @param bool $htmlize
-   *   Whether to encode special html characters such as &.
+   *   Unused param
    * @param bool $frontend
    *   This link should be to the CMS front end (applies to WP & Joomla).
    * @param bool $forceBackend
@@ -315,13 +316,13 @@ class CRM_Utils_System {
     $query = NULL,
     $absolute = FALSE,
     $fragment = NULL,
-    $htmlize = TRUE,
+    $htmlize = NULL,
     $frontend = FALSE,
     $forceBackend = FALSE
   ) {
     $config = CRM_Core_Config::singleton();
     $query = self::makeQueryString($query);
-    return $config->userSystem->getNotifyUrl($path, $query, $absolute, $fragment, $frontend, $forceBackend, $htmlize);
+    return $config->userSystem->getNotifyUrl($path, $query, $absolute, $fragment, $frontend, $forceBackend);
   }
 
   /**
@@ -434,17 +435,6 @@ class CRM_Utils_System {
   }
 
   /**
-   * Path of the current page e.g. 'civicrm/contact/view'
-   *
-   * @return string|null
-   *   the current menu path
-   */
-  public static function currentPath() {
-    $config = CRM_Core_Config::singleton();
-    return isset($_GET[$config->userFrameworkURLVar]) ? trim($_GET[$config->userFrameworkURLVar], '/') : NULL;
-  }
-
-  /**
    * Compose a URL. This is a wrapper for `url()` which is optimized for use in Smarty.
    *
    * @see \smarty_function_crmURL()
@@ -482,7 +472,7 @@ class CRM_Utils_System {
   public static function setTitle($title, $pageTitle = NULL) {
     self::$title = $title;
     $config = CRM_Core_Config::singleton();
-    return $config->userSystem->setTitle($title, $pageTitle);
+    return $config->userSystem->setTitle(CRM_Utils_String::purifyHtml($title), CRM_Utils_String::purifyHtml($pageTitle));
   }
 
   /**
@@ -648,7 +638,7 @@ class CRM_Utils_System {
    */
   public static function authenticateKey($abort = TRUE) {
     // also make sure the key is sent and is valid
-    $key = trim(CRM_Utils_Array::value('key', $_REQUEST));
+    $key = trim($_REQUEST['key'] ?? '');
 
     $docAdd = "More info at: " . CRM_Utils_System::docURL2('sysadmin/setup/jobs', TRUE);
 
@@ -701,8 +691,8 @@ class CRM_Utils_System {
     // auth to make sure the user has a login/password to do a shell operation
     // later on we'll link this to acl's
     if (!$name) {
-      $name = trim(CRM_Utils_Array::value('name', $_REQUEST));
-      $pass = trim(CRM_Utils_Array::value('pass', $_REQUEST));
+      $name = trim($_REQUEST['name'] ?? '');
+      $pass = trim($_REQUEST['pass'] ?? '');
     }
 
     // its ok to have an empty password
@@ -1253,7 +1243,7 @@ class CRM_Utils_System {
     // FIXME: Shouldn't the X-Forwarded-Proto check be part of CRM_Utils_System::isSSL()?
     if (Civi::settings()->get('enableSSL') &&
       !self::isSSL() &&
-      strtolower(CRM_Utils_Array::value('X_FORWARDED_PROTO', $req_headers)) != 'https'
+      strtolower($req_headers['X_FORWARDED_PROTO'] ?? '') != 'https'
     ) {
       // ensure that SSL is enabled on a civicrm url (for cookie reasons etc)
       $url = "https://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";

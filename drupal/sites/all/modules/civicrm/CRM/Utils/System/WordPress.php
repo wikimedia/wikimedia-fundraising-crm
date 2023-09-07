@@ -297,8 +297,7 @@ class CRM_Utils_System_WordPress extends CRM_Utils_System_Base {
     $absolute = FALSE,
     $fragment = NULL,
     $frontend = FALSE,
-    $forceBackend = FALSE,
-    $htmlize = TRUE
+    $forceBackend = FALSE
   ) {
     $config = CRM_Core_Config::singleton();
     $script = '';
@@ -474,8 +473,7 @@ class CRM_Utils_System_WordPress extends CRM_Utils_System_Base {
     $absolute = FALSE,
     $fragment = NULL,
     $frontend = FALSE,
-    $forceBackend = FALSE,
-    $htmlize = TRUE
+    $forceBackend = FALSE
   ) {
     $config = CRM_Core_Config::singleton();
     $separator = '&';
@@ -764,8 +762,8 @@ class CRM_Utils_System_WordPress extends CRM_Utils_System_Base {
     // Maybe login user.
     $uid = $params['uid'] ?? NULL;
     if (!$uid) {
-      $name = $name ? $name : trim(CRM_Utils_Array::value('name', $_REQUEST));
-      $pass = $pass ? $pass : trim(CRM_Utils_Array::value('pass', $_REQUEST));
+      $name = $name ?: trim($_REQUEST['name'] ?? '');
+      $pass = $pass ?: trim($_REQUEST['pass'] ?? '');
       if ($name) {
         $uid = wp_authenticate($name, $pass);
         if (!$uid) {
@@ -874,11 +872,11 @@ class CRM_Utils_System_WordPress extends CRM_Utils_System_Base {
   /**
    * @inheritDoc
    */
-  public function createUser(&$params, $mail) {
+  public function createUser(&$params, $mailParam) {
     $user_data = [
       'ID' => '',
       'user_login' => $params['cms_name'],
-      'user_email' => $params[$mail],
+      'user_email' => $params[$mailParam],
       'nickname' => $params['cms_name'],
       'role' => get_option('default_role'),
     ];

@@ -51,40 +51,47 @@ class CRM_Admin_Page_Job extends CRM_Core_Page_Basic {
           'url' => 'civicrm/admin/joblog',
           'qs' => 'jid=%%id%%&reset=1',
           'title' => ts('See log entries for this Scheduled Job'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::VIEW),
         ],
         CRM_Core_Action::VIEW => [
           'name' => ts('Execute'),
           'url' => 'civicrm/admin/job/edit',
           'qs' => 'action=view&id=%%id%%&reset=1',
           'title' => ts('Execute Scheduled Job Now'),
+          'weight' => -15,
         ],
         CRM_Core_Action::UPDATE => [
           'name' => ts('Edit'),
           'url' => 'civicrm/admin/job/edit',
           'qs' => 'action=update&id=%%id%%&reset=1',
           'title' => ts('Edit Scheduled Job'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::UPDATE),
         ],
         CRM_Core_Action::DISABLE => [
           'name' => ts('Disable'),
           'ref' => 'crm-enable-disable',
           'title' => ts('Disable Scheduled Job'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::DISABLE),
         ],
         CRM_Core_Action::ENABLE => [
           'name' => ts('Enable'),
           'ref' => 'crm-enable-disable',
           'title' => ts('Enable Scheduled Job'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::ENABLE),
         ],
         CRM_Core_Action::DELETE => [
           'name' => ts('Delete'),
           'url' => 'civicrm/admin/job/edit',
           'qs' => 'action=delete&id=%%id%%',
           'title' => ts('Delete Scheduled Job'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::DELETE),
         ],
         CRM_Core_Action::COPY => [
           'name' => ts('Copy'),
           'url' => 'civicrm/admin/job/edit',
           'qs' => 'action=copy&id=%%id%%',
           'title' => ts('Copy Scheduled Job'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::COPY),
         ],
       ];
     }
@@ -99,17 +106,13 @@ class CRM_Admin_Page_Job extends CRM_Core_Page_Basic {
    * Finally it calls the parent's run method.
    */
   public function run() {
-    // set title and breadcrumb
     CRM_Utils_System::setTitle(ts('Settings - Scheduled Jobs'));
-    $breadCrumb = [
+    CRM_Utils_System::appendBreadCrumb([
       [
-        'title' => ts('Scheduled Jobs'),
-        'url' => CRM_Utils_System::url('civicrm/admin',
-          'reset=1'
-        ),
+        'title' => ts('Administer'),
+        'url' => CRM_Utils_System::url('civicrm/admin', 'reset=1'),
       ],
-    ];
-    CRM_Utils_System::appendBreadCrumb($breadCrumb);
+    ]);
 
     $this->_id = CRM_Utils_Request::retrieve('id', 'String',
       $this, FALSE, 0

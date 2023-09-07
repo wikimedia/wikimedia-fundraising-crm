@@ -95,8 +95,6 @@ class CRM_ACL_Form_ACL extends CRM_Admin_Form {
   public function buildQuickForm() {
     parent::buildQuickForm();
 
-    $this->setPageTitle(ts('ACL'));
-
     if ($this->_action & CRM_Core_Action::DELETE) {
       return;
     }
@@ -153,7 +151,7 @@ class CRM_ACL_Form_ACL extends CRM_Admin_Form {
     $event = [
       '-1' => ts('- select event -'),
       '0' => ts('All Events'),
-    ] + CRM_Event_PseudoConstant::event(NULL, FALSE, "( is_template IS NULL OR is_template != 1 )");
+    ] + CRM_Event_PseudoConstant::event(NULL, FALSE, "is_template = 0");
 
     $this->add('select', 'group_id', ts('Group'), $group);
     $this->add('select', 'custom_group_id', ts('Custom Data'), $customGroup);

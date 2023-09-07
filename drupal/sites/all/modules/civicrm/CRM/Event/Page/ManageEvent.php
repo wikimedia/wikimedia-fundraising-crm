@@ -59,17 +59,20 @@ class CRM_Event_Page_ManageEvent extends CRM_Core_Page {
           'name' => ts('Disable'),
           'ref' => 'crm-enable-disable',
           'title' => ts('Disable Event'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::DISABLE),
         ],
         CRM_Core_Action::ENABLE => [
           'name' => ts('Enable'),
           'ref' => 'crm-enable-disable',
           'title' => ts('Enable Event'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::ENABLE),
         ],
         CRM_Core_Action::DELETE => [
           'name' => ts('Delete'),
           'url' => CRM_Utils_System::currentPath(),
           'qs' => 'action=delete&id=%%id%%',
           'title' => ts('Delete Event'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::DELETE),
         ],
         CRM_Core_Action::COPY => [
           'name' => ts('Copy'),
@@ -77,6 +80,7 @@ class CRM_Event_Page_ManageEvent extends CRM_Core_Page {
           'qs' => 'reset=1&action=copy&id=%%id%%',
           'extra' => 'onclick = "return confirm(\'' . $copyExtra . '\');"',
           'title' => ts('Copy Event'),
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::COPY),
         ],
       ];
     }
@@ -91,6 +95,7 @@ class CRM_Event_Page_ManageEvent extends CRM_Core_Page {
           'title' => ts('Register Participant'),
           'url' => 'civicrm/participant/add',
           'qs' => 'reset=1&action=add&context=standalone&eid=%%id%%',
+          'weight' => -30,
         ],
         'event_info' => [
           'name' => ts('Event Info'),
@@ -98,6 +103,7 @@ class CRM_Event_Page_ManageEvent extends CRM_Core_Page {
           'url' => 'civicrm/event/info',
           'qs' => 'reset=1&id=%%id%%',
           'fe' => TRUE,
+          'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::VIEW),
         ],
         'online_registration_test' => [
           'name' => ts('Registration (Test-drive)'),
@@ -105,6 +111,7 @@ class CRM_Event_Page_ManageEvent extends CRM_Core_Page {
           'url' => 'civicrm/event/register',
           'qs' => 'reset=1&action=preview&id=%%id%%',
           'fe' => TRUE,
+          'weight' => 30,
         ],
         'online_registration_live' => [
           'name' => ts('Registration (Live)'),
@@ -112,6 +119,7 @@ class CRM_Event_Page_ManageEvent extends CRM_Core_Page {
           'url' => 'civicrm/event/register',
           'qs' => 'reset=1&id=%%id%%',
           'fe' => TRUE,
+          'weight' => 40,
         ],
       ];
     }
@@ -312,7 +320,7 @@ class CRM_Event_Page_ManageEvent extends CRM_Core_Page {
     $params = [];
     $whereClause = $this->whereClause($params, TRUE, $this->_force);
     // because is_template != 1 would be to simple
-    $whereClause .= ' AND (is_template = 0 OR is_template IS NULL)';
+    $whereClause .= ' AND is_template = 0';
 
     $this->pager($whereClause, $params);
 
@@ -344,9 +352,6 @@ ORDER BY start_date desc
     while ($pcpDao->fetch()) {
       $eventPCPS[$pcpDao->entity_id] = $pcpDao->entity_id;
     }
-    $mapping = CRM_Utils_Array::first(CRM_Core_BAO_ActionSchedule::getMappings([
-      'id' => CRM_Event_ActionMapping::EVENT_NAME_MAPPING_ID,
-    ]));
     $eventType = CRM_Core_OptionGroup::values('event_type');
     while ($dao->fetch()) {
       if (in_array($dao->id, $permittedEventsByAction[CRM_Core_Permission::VIEW])) {
@@ -425,7 +430,7 @@ ORDER BY start_date desc
 
         //show campaigns on selector.
         $manageEvent[$dao->id]['campaign'] = $allCampaigns[$dao->campaign_id] ?? NULL;
-        $manageEvent[$dao->id]['reminder'] = CRM_Core_BAO_ActionSchedule::isConfigured($dao->id, $mapping->getId());
+        $manageEvent[$dao->id]['reminder'] = CRM_Core_BAO_ActionSchedule::isConfigured($dao->id, CRM_Event_ActionMapping::EVENT_NAME_MAPPING_ID);
         $manageEvent[$dao->id]['is_pcp_enabled'] = $eventPCPS[$dao->id] ?? NULL;
         $manageEvent[$dao->id]['event_type'] = $eventType[$manageEvent[$dao->id]['event_type_id']] ?? NULL;
         $manageEvent[$dao->id]['is_repeating_event'] = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_RecurringEntity', $dao->id, 'parent_id', 'entity_id');
