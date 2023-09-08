@@ -100,8 +100,8 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     QueueWrapper::push('upi-donations', $message);
     $contact = Contact::create(FALSE)
       ->setValues([
-        'first_name' => 'Gabbar',
-        'last_name' => 'Singh',
+        'first_name' => 'Testy',
+        'last_name' => 'McTest',
         'contact_type' => 'Individual',
       ])
       ->execute()
@@ -134,13 +134,76 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
   }
 
   /**
+   *
+   * For dLocal 'Wallet disabled' rejections we need to cancel the recurring
+   * subscription. These messages come in first via the Smashpig IPN listener
+   * and then end up on the 'upi-donations' queue as it's the closet process
+   * with access to the CiviCRM DB.
+   *
+   */
+  public function testRejectionMessage(): void {
+    // set up test records to link queue message with
+    $contact = Contact::create(FALSE)
+      ->setValues([
+        'first_name' => 'Testy',
+        'last_name' => 'McTest',
+        'contact_type' => 'Individual',
+      ])
+      ->execute()
+      ->first();
+    $token = PaymentToken::create(FALSE)
+      ->setValues([
+        'token' => '5c3f1cd1-19cc-42fe-9793-1e4a3069d9b4',
+        'contact_id' => $contact['id'],
+        'payment_processor_id' => wmf_civicrm_get_payment_processor_id('dlocal'),
+        'user_ip' => '192.168.1.1',
+      ])
+      ->execute()
+      ->first();
+    $recur = ContributionRecur::create(FALSE)
+      ->setValues([
+        'currency' => 'INR',
+        'amount' => 104,
+        'cycle_day' => 5,
+        'contact_id' => $contact['id'],
+        'payment_token_id' => $token['id'],
+      ])
+      ->execute()
+      ->first();
+
+    // push a test rejection queue message to the upi donations queue
+    $rejectionQueueMessage = json_decode(
+      file_get_contents(__DIR__ . '/../../../data/upiRejectionWalletDisabled.json'), TRUE
+    );
+    QueueWrapper::push('upi-donations', $rejectionQueueMessage);
+
+    // process the message
+    $upiDonationsQueueConsumer = new UpiDonationsQueueConsumer('upi-donations');
+    $messageCount = $upiDonationsQueueConsumer->dequeueMessages();
+
+    // confirm that only one message is processed
+    $this->assertEquals(1, $messageCount, 'Did not process exactly 1 message');
+
+    // confirm that no donation messages are pushed to the queue for rejections
+    $donationMessage = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNull($donationMessage, 'Nothing should get pushed on the donations queue for rejection messages');
+
+    // confirm that the subscription was cancelled
+    $contributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $recur['id'])
+      ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
+    $this->assertEquals('Cancelled', $contributionRecur['contribution_status_id:name']);
+    $this->assertEquals('Subscription cancelled at gateway', $contributionRecur['cancel_reason']);
+  }
+
+  /**
    * @return void
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   private function deleteTestData() : void {
     $testContact = Contact::get(FALSE)
-      ->addWhere('display_name', '=', 'Gabbar Singh')
+      ->addWhere('display_name', '=', 'Testy McTest')
       ->setSelect(['id'])
       ->execute()
       ->first();
