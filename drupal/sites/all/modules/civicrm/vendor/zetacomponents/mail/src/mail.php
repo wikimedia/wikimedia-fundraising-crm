@@ -180,13 +180,10 @@ class ezcMail extends ezcMailPart
             case 'returnPath':
                 if ( $value !== null && !$value instanceof ezcMailAddress )
                 {
-                    throw new ezcBaseValueException( $name, $value, 'ezcMailAddress or null' );
+                    // return nothing;
+                } else {
+                    $this->properties[$name] = $value;
                 }
-                if ( $value !== null && !filter_var( $value->email, FILTER_VALIDATE_EMAIL ) )
-                {
-                    throw new ezcBaseValueException( $name, $value->email, 'a valid email address or null' );
-                }
-                $this->properties[$name] = $value;
                 break;
 
             case 'from':
