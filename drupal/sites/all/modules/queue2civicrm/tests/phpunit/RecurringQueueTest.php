@@ -654,7 +654,57 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       __DIR__ .
       '/../../../../../default/civicrm/extensions/wmf-civicrm/msg_templates/monthly_convert/monthly_convert.en.subject.txt'
     ));
-    $this->assertEquals( $expectedSubject, $sent['subject']);
+    $this->assertEquals($expectedSubject, $sent['subject']);
+  }
+
+  /**
+   * Test use of Auto Rescue message consumption
+   */
+  public function testRecurringQueueConsumeAutoRescueMessage() {
+    $recur = $this->getTestContributionRecurRecords([
+      'frequency_interval' => '1',
+      'frequency_unit' => 'month',
+    ]);
+
+    $date = 1694530827;
+    $expectedNextDate = wmf_common_date_unix_to_civicrm(strtotime("+" . $recur['frequency_interval'] . " " . $recur['frequency_unit'], $date));
+    $orderId = "279.2";
+    $message = new RecurringPaymentMessage(
+    [
+      'txn_type' => 'subscr_payment',
+      'subscr_id' => $recur['trxn_id'],
+      'order_id' => $orderId,
+      'contact_id' => $recur['contact_id'],
+      'gateway' => 'adyen',
+      'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
+      'date' => $date,
+      'is_auto_rescue_retry' => TRUE,
+      'currency' => 'USD',
+      'amount' => 10,
+      'contribution_recur_id' => 39,
+      'payment_instrument_id' => 1,
+      'source_name' => 'CiviCRM',
+      'source_type' => 'direct',
+      'source_host' => '051a7ac1b08d',
+      'source_run_id' => 10315,
+      'source_version' => 'unknown',
+      'source_enqueued_time' => 1694530827,
+    ]
+    );
+    $contributionsAfterRecurring = $this->importMessage($message);
+
+    // importMessage adds the id to cleanup but it had already been added in getTestContributionRecurRecords
+    unset($this->ids['Contact'][$recur['contact_id']]);
+
+    $updatedRecur = ContributionRecur::get(FALSE)
+      ->addSelect('*', 'contribution_status_id:label')
+      ->addWhere('id', '=', $recur['id'])
+      ->execute()
+      ->first();
+
+    $this->assertEquals('Completed', $updatedRecur['contribution_status_id:label']);
+    $this->assertEquals($expectedNextDate, $updatedRecur['next_sched_contribution_date']);
+    $this->assertStringContainsString($orderId, $contributionsAfterRecurring[0]['invoice_id']);
   }
 
   /**
