@@ -884,6 +884,57 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     );
   }
 
+  /**
+   * When we use adyen auto rescue, and get additionalInfo response with retry.rescueScheduled false,
+   * we should cancel the subscription immediately without count failed retries.
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   * @throws \CRM_Core_Exception
+   */
+  public function testPaymentAutoRescueFailed() {
+    $contributionRecur = $this->setupRecurring();
+    $response = (new CreatePaymentResponse())->setRawResponse(
+      [
+        'pspReference' => 'testPspReference',
+        'resultCode' => 'Refused',
+        'refusalReason' => 'NOT_ENOUGH_BALANCE',
+        'additionalData' => [
+          'retry.rescueScheduled' => 'false',
+          'retry.rescueReference' => 'testRescueReference',
+        ],
+      ]
+    )->setSuccessful(FALSE);
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->willReturn( $response );
+
+    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+    );
+    $processor->run();
+    $queue = QueueWrapper::getQueue('donations');
+    $this->assertNull($queue->pop(), 'Should not have queued a donation!');
+    $newContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
+      'id' => $contributionRecur['id'],
+    ]);
+    $expectedCancelDate = UtcDate::getUtcTimestamp();
+    $this->assertEquals(UtcDate::getUtcTimestamp(
+      $contributionRecur['next_sched_contribution_date']
+    ), UtcDate::getUtcTimestamp(
+      $newContributionRecur['next_sched_contribution_date']
+    ));
+    $cancelDate = UtcDate::getUtcTimestamp(
+      $newContributionRecur['cancel_date']
+    );
+    $this->assertEquals('payment cannot be rescued', $newContributionRecur['cancel_reason']);
+    $this->assertLessThan(100, abs($cancelDate - $expectedCancelDate));
+    $this->assertEquals(
+      'Cancelled',
+      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
+    );
+  }
+
   public function testFailureEmailNotSentOnFirstFailedPayment() {
     Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
 
