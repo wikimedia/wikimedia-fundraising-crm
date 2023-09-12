@@ -93,7 +93,7 @@
  *                                             address embedded in the
  *                                             ezcMailAddress object may only
  *                                             contain letters from the
- *                                             function filter_var FILTER_VALIDATE_EMAIL.
+ *                                             RETURN_PATH_CHARS set.
  * @property ezcMailOptions $options
  *           Options for generating mail. See {@link ezcMailOptions}.
  *
@@ -129,6 +129,11 @@ class ezcMail extends ezcMailPart
      * Base 64 encoding.
      */
     const BASE64 = "base64";
+
+    /**
+     * Characters allowed in the returnPath address
+     */
+    const RETURN_PATH_CHARS = 'A-Za-z0-9_.@=/+{}#~\-\'';
 
     /**
      * Holds the options for this class.
@@ -180,10 +185,13 @@ class ezcMail extends ezcMailPart
             case 'returnPath':
                 if ( $value !== null && !$value instanceof ezcMailAddress )
                 {
-                    // return nothing;
-                } else {
-                    $this->properties[$name] = $value;
+                    throw new ezcBaseValueException( $name, $value, 'ezcMailAddress or null' );
                 }
+                if ( $value !== null && preg_replace( '([' . self::RETURN_PATH_CHARS . '])', '', $value->email ) != '' )
+                {
+                    throw new ezcBaseValueException( $name, $value->email, 'the characters \'' . self::RETURN_PATH_CHARS . '\'' );
+                }
+                $this->properties[$name] = $value;
                 break;
 
             case 'from':

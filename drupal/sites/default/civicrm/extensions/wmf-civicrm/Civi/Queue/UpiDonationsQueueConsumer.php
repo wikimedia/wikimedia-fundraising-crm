@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Queue;
 
+use Civi;
 use Civi\Api4\ContributionRecur;
 use Civi\WMFHelpers\PaymentProcessor;
 use CRM_Core_Payment_Scheduler;
@@ -13,8 +14,23 @@ use WmfTransaction;
 class UpiDonationsQueueConsumer extends WmfQueueConsumer {
 
   public function processMessage(array $message) {
-    // Look up contribution_recur record based on token
+    // Look up contribution_recur record
     $contributionRecur = $this->getExistingContributionRecur($message);
+
+    if ($this->isRejectionMessage($message)) {
+      // The gateway has sent us a 'Wallet Disabled' IPN, so close down the subscription.
+      if ($contributionRecur) {
+        $this->cancelRecurringContribution($contributionRecur['id']);
+      }
+      else {
+        Civi::log('wmf')->info(
+          "Unable to cancel subscription due to no active recurring record. "
+          . $message['order_id']
+        );
+      }
+      return TRUE;
+    }
+
     if ($contributionRecur) {
       // This is an installment on an existing subscription. Just set
       // a couple of IDs on the message to avoid needing to look them
@@ -30,7 +46,7 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
   }
 
   /**
-   * Finds a contribution_recur record using a particular payment_token value
+   * Finds an active contribution_recur record using a particular payment_token value
    *
    * @param array $message with at least 'gateway' and 'recurring_payment_token' set
    * @return array|null The contribution_recur record if it exists, otherwise null
@@ -47,6 +63,7 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
     }
     return ContributionRecur::get(FALSE)
       ->addWhere('payment_token_id', '=', $tokenRecord['id'])
+      ->addWhere('contribution_status_id:name', '!=', 'Cancelled')
       ->execute()
       ->first();
   }
@@ -105,7 +122,7 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
    * @param int|null $previousContributionTimestamp timestamp of the previous contribution
    * @return string Date and time of next scheduled prenotification, formatted for Civi API calls.
    */
-  protected function getNextContributionDate(array $params, ?int $previousContributionTimestamp = null): string {
+  protected function getNextContributionDate(array $params, ?int $previousContributionTimestamp = NULL): string {
     // Use the SmashPig extension's scheduler to get a standard next date
     // based on the params, then convert it to a DateTime object
     $standardDate = date_create(
@@ -116,4 +133,28 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
     $difference = date_interval_create_from_date_string('1 day');
     return date_format(date_sub($standardDate, $difference), 'Y-m-d H:i:s');
   }
+
+  /**
+   * @param $id
+   *
+   * @return array|int
+   * @throws \CRM_Core_Exception
+   */
+  protected function cancelRecurringContribution($id) {
+    $params['id'] = $id;
+    $params['contribution_status_id'] = 'Cancelled';
+    $params['cancel_date'] = UtcDate::getUtcDatabaseString();
+    $params['cancel_reason'] = 'Subscription cancelled at gateway';
+    return civicrm_api3('ContributionRecur', 'create', $params);
+  }
+
+  /**
+   * @param array $message
+   *
+   * @return bool
+   */
+  protected function isRejectionMessage(array $message): bool {
+    return $message['gateway_status'] === 'REJECTED' && $message['gateway_status_code'] === '322';
+  }
+
 }

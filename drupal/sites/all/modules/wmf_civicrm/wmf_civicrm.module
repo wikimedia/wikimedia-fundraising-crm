@@ -757,7 +757,7 @@ function wmf_civicrm_check_for_duplicates(array $message) {
     empty($message['gateway']) ||
     empty($message['gateway_txn_id'])
   ) {
-    throw new WMFException(WMFException::CIVI_REQ_FIELD, 'Missing required field');
+    throw new WMFException(WMFException::CIVI_REQ_FIELD, 'Missing required field: ' . (empty($message['gateway']) ? 'gateway, ' : '') (empty($message['gateway_trxn_id']) ? 'gateway_trxn_id, ' : ''));
   }
 
   if (CRM_Core_DAO::singleValueQuery(

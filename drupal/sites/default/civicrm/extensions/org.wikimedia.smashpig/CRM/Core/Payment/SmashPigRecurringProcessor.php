@@ -343,32 +343,76 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \Exception
    */
   protected function recordFailedPayment($recurringPayment, CiviCRM_API3_Exception $exception) {
-    $newFailureCount = $recurringPayment['failure_count'] + 1;
+    $cancelRecurringDonation = false;
+    $isAutoRescueResponse = false;
+    $errorData = $exception->getErrorData();
+    $rawResponse = NULL;
+    $errorResponse = $errorData['smashpig_processor_response'];
     $params = [
       'id' => $recurringPayment['id'],
-      'failure_count' => $newFailureCount,
     ];
-    $cancelRecurringDonation = false;
-    if ($exception->getErrorCode() === ErrorCode::DECLINED_DO_NOT_RETRY) {
-      $cancelRecurringDonation = true;
-      $params['cancel_reason'] = '(auto) un-retryable card decline reason code';
+
+    if (!empty($errorResponse) &&
+                $errorResponse instanceof PaymentProviderResponse
+    ) {
+      $rawResponse = $errorResponse->getRawResponse();
+      $isAutoRescueResponse = !empty($rawResponse['additionalData']) && isset($rawResponse['additionalData']['retry.rescueScheduled']);
     }
-    if ($newFailureCount >= $this->maxFailures) {
-      $cancelRecurringDonation = true;
-      $params['cancel_reason'] = '(auto) maximum failures reached';
+
+    if ($isAutoRescueResponse) {
+      if ($rawResponse['additionalData']['retry.rescueScheduled'] === "true") {
+        $invoiceId = $recurringPayment['invoice_id'];
+        $contribution = \Civi\Api4\Contribution::get(FALSE)
+          ->addSelect('payment_instrument_id')
+          ->addWhere('contribution_recur_id', '=', $recurringPayment['id'])
+          ->addClause('OR', ['invoice_id', 'LIKE', "$invoiceId%"])
+          ->execute()
+          ->first();
+
+        // Skip count failure_count if retry.rescueScheduled is true,
+        // which indicating that Auto Rescue will attempt to rescue this payment.
+        QueueWrapper::push('pending', [
+          'order_id' => $rawResponse['merchantReference'],
+          'gateway' => 'adyen',
+          'gateway_txn_id' => $errorResponse->getGatewayTxnId(),
+          'date' => time(),
+          'is_auto_rescue_retry' => TRUE,
+          'currency' => $recurringPayment['currency'],
+          'amount' => $recurringPayment['amount'],
+          'contribution_recur_id' => $recurringPayment['id'],
+          'contact_id' => $recurringPayment['contact_id'],
+          'payment_instrument_id' => $contribution['payment_instrument_id'],
+        ]);
+
+        // Keep status at processing
+        $params['contribution_status_id'] = 'Pending';
+      }
     }
     else {
-      $params['contribution_status_id'] = 'Failing';
-      $params['next_sched_contribution_date'] = UtcDate::getUtcDatabaseString(
+      $newFailureCount = $recurringPayment['failure_count'] + 1;
+      $params['failure_count'] = $newFailureCount;
+      if ($exception->getErrorCode() === ErrorCode::DECLINED_DO_NOT_RETRY) {
+        $cancelRecurringDonation = TRUE;
+        $params['cancel_reason'] = '(auto) un-retryable card decline reason code';
+      }
+      if ($newFailureCount >= $this->maxFailures) {
+        $cancelRecurringDonation = TRUE;
+        $params['cancel_reason'] = '(auto) maximum failures reached';
+      }
+      else {
+        $params['contribution_status_id'] = 'Failing';
+        $params['next_sched_contribution_date'] = UtcDate::getUtcDatabaseString(
         "+$this->retryDelayDays days"
-      );
+         );
+      }
+      if ($cancelRecurringDonation) {
+        // @todo note the core terminology would moe accurately set this to Failed
+        // leaving cancelled for something where a user or staff member made a choice.
+        $params['contribution_status_id'] = 'Cancelled';
+        $params['cancel_date'] = UtcDate::getUtcDatabaseString();
+      }
     }
-    if ($cancelRecurringDonation) {
-      // @todo note the core terminology would moe accurately set this to Failed
-      // leaving cancelled for something where a user or staff member made a choice.
-      $params['contribution_status_id'] = 'Cancelled';
-      $params['cancel_date'] = UtcDate::getUtcDatabaseString();
-    }
+
     civicrm_api3('ContributionRecur', 'create', $params);
 
     if ($cancelRecurringDonation) {
