@@ -1451,4 +1451,48 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     return $contributionRecur;
   }
 
+	/**
+		* We add recurring payment information to the pending queue when auto rescue transaction is initialised
+		*
+		* @throws \CiviCRM_API3_Exception
+		* @throws \PHPQueue\Exception\JobNotFoundException
+		* @throws \CRM_Core_Exception
+		*/
+	public function testPaymentAutoRescueInitialised(): void {
+		$contributionRecur = $this->setupRecurring();
+		$orderId = $contributionRecur['invoice_id'];
+		$pspReference = 'testPspReference';
+		$response = (new CreatePaymentResponse())->setRawResponse(
+			[
+				'merchantReference' => $orderId,
+				'pspReference' => $pspReference,
+				'resultCode' => 'Refused',
+				'refusalReason' => 'NOT_ENOUGH_BALANCE',
+				'additionalData' => [
+					'retry.rescueScheduled' => 'true',
+					'retry.rescueReference' => 'testRescueReference',
+				],
+			]
+		)->setGatewayTxnId($pspReference)->setSuccessful(FALSE);
+		$this->hostedCheckoutProvider->expects($this->once())
+			->method('createPayment')
+			->willReturn( $response );
+
+		$processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+			TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+		);
+		$processor->run();
+		$pendingMessage = QueueWrapper::getQueue('pending')->pop();
+		$this->assertEquals($pendingMessage['contribution_recur_id'], $contributionRecur['id']);
+		$this->assertTrue($pendingMessage['is_auto_rescue_retry']);
+		$this->assertEquals($pendingMessage['order_id'], $orderId);
+		$this->assertEquals($pendingMessage['gateway_txn_id'], $pspReference);
+		$this->assertEquals($pendingMessage['gateway'], 'adyen');
+
+		$updatedRecur = \Civi\Api4\ContributionRecur::get(FALSE)
+			->addWhere('id', '=', $contributionRecur['id'])
+			->addSelect('contribution_status_id:name',)->execute()->first();
+		$this->assertEquals($updatedRecur['contribution_status_id:name'], 'Pending');
+	}
+
 }

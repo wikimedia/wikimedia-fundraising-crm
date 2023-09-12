@@ -236,6 +236,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm(strtotime("+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $date)),
       'id' => $recur_record->id,
     ];
+    if (!empty($msg['is_auto_rescue_retry'])) {
+      $update_params['contribution_status_id'] = "Completed";
+    }
     civicrm_api3('ContributionRecur', 'Create', $update_params);
 
     // construct an array of useful info to invocations of queue2civicrm_import

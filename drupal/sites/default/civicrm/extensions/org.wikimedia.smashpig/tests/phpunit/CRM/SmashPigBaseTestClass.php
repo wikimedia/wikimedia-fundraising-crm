@@ -181,7 +181,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
         'receive_date' => date('Y-m-d H:i:s', strtotime('-1 month')),
         'trxn_id' => $contributionRecur['trxn_id'],
         'financial_type_id' => 1,
-        'invoice_id' => mt_rand(10000, 10000000) . '.' . mt_rand(1, 20) . '|recur-' . mt_rand(100000, 100000000),
+        'invoice_id' => $contributionRecur['invoice_id'] . '|recur-' . mt_rand(100000, 100000000),
         'skipRecentView' => 1,
       ];
     $result = $this->callAPISuccess('Contribution', 'create', $params);
