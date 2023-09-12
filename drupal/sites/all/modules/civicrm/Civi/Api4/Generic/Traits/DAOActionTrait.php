@@ -45,6 +45,10 @@ trait DAOActionTrait {
    * @return array
    */
   public function baoToArray($bao, $input) {
+    if (!method_exists($bao, 'fields')) {
+      \Civi::log('wmf')->error('Temporary logging - {bao} {input} {backtrace}', ['bao' => $bao, 'input' => $input, 'backtrace' => \CRM_Core_Error::formatBacktrace(debug_backtrace())]);
+     throw new \CRM_Core_Exception('temporary exception fail - should give backtrace?');
+    }
     $entityFields = array_column($bao->fields(), 'name');
     $inputFields = array_map(function($key) {
       return explode(':', $key)[0];
