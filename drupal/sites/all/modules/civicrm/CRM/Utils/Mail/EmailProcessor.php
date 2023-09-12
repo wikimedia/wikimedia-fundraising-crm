@@ -16,6 +16,8 @@
  */
 
 // we should consider moving this to the settings table
+use Civi\Api4\Activity;
+
 define('MAIL_BATCH_SIZE', 50);
 
 /**
@@ -84,6 +86,23 @@ class CRM_Utils_Mail_EmailProcessor {
     // create an array of all of to, from, cc, bcc that are in use for this Mail Account, so we don't create contacts for emails we aren't adding to the activity.
     $emailFields = array_merge($targetFields, $assigneeFields, $sourceFields);
     $createContact = !($dao->is_contact_creation_disabled_if_no_match);
+    $bounceActivityTypeID = $activityTypeID = (int) $dao->activity_type_id;
+    $activityTypes = Activity::getFields(TRUE)
+      ->setLoadOptions(['id', 'name'])
+      ->addWhere('name', '=', 'activity_type_id')
+      ->execute()->first()['options'];
+    foreach ($activityTypes as $activityType) {
+      if ($activityType['name'] === 'Bounce') {
+        $bounceActivityTypeID = (int) $activityType['id'];
+      }
+    }
+    $bounceTypes = [];
+    if ($isBounceProcessing) {
+      $result = CRM_Core_DAO::executeQuery('SELECT * FROM civicrm_mailing_bounce_type');
+      while ($result->fetch()) {
+        $bounceTypes[$result->id] = ['id' => $result->id, 'name' => $result->name, 'description' => $result->description, 'hold_threshold' => $result->hold_threshold];
+      }
+    }
 
     // retrieve the emails
     try {
@@ -116,11 +135,27 @@ class CRM_Utils_Mail_EmailProcessor {
             continue;
           }
 
+          $bounceString = '';
           // if its the activities that needs to be processed ..
           try {
+            if ($incomingMail->isBounce()) {
+              $activityTypeID = $bounceActivityTypeID;
+              $bounce = CRM_Mailing_BAO_BouncePattern::match($incomingMail->getBody());
+              if (!empty($bounce['bounce_type_id'])) {
+                $bounceType = $bounceTypes[$bounce['bounce_type_id']];
+                $bounceString = ts('Bounce type: %1. %2', [1 => $bounceType['name'], 2 => $bounceType['description']])
+                  . '<br>'
+                  . ts('Email will be put on hold after %1 of this type of bounce', [1 => $bounceType['hold_threshold']])
+                  . "\n";
+              }
+              else {
+                $bounceString = ts('Bounce type not identified, email will not be put on hold')
+                . "\n";
+              }
+            }
             $mailParams = CRM_Utils_Mail_Incoming::parseMailingObject($mail, $incomingMail->getAttachments(), $createContact, $emailFields, [$incomingMail->getFrom()]);
             $activityParams = [
-              'activity_type_id' => (int) $dao->activity_type_id,
+              'activity_type_id' => $activityTypeID,
               'campaign_id' => $dao->campaign_id ? (int) $dao->campaign_id : NULL,
               'status_id' => $dao->activity_status,
               'subject' => $incomingMail->getSubject(),
@@ -162,18 +197,28 @@ class CRM_Utils_Mail_EmailProcessor {
             }
 
             $result = civicrm_api3('Activity', 'create', $activityParams);
+            $matches = TRUE;
+            CRM_Utils_Hook::emailProcessor('activity', $activityParams, $mail, $result);
+            echo "Processed as Activity: {$mail->subject}\n";
           }
           catch (Exception $e) {
-            echo "Failed Processing: {$mail->subject}. Reason: " . $e->getMessage() . "\n";
-            $store->markIgnored($key);
-            continue;
+            // Try again with just the bounceString as the details.
+            // This allows us to still process even if we hit https://lab.civicrm.org/dev/mail/issues/36
+            // as tested in testBounceProcessingInvalidCharacter.
+            $activityParams['details'] = trim($bounceString);
+            try {
+              civicrm_api3('Activity', 'create', $activityParams);
+              $matches = TRUE;
+            }
+            catch (CRM_Core_Exception $e) {
+              echo "Failed Processing: {$mail->subject}. Reason: " . $e->getMessage() . "\n";
+              $store->markIgnored($key);
+              continue;
+            }
           }
-          $matches = TRUE;
-          CRM_Utils_Hook::emailProcessor('activity', $activityParams, $mail, $result);
-          echo "Processed as Activity: {$mail->subject}\n";
         }
 
-        // if $matches is empty, this email is not CiviMail-bound
+        // This is an awkward exit when processing is done. It probably needs revisiting
         if (!$incomingMail->isVerp() && empty($matches)) {
           $store->markIgnored($key);
           continue;

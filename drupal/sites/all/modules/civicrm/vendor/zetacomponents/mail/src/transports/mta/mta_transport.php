@@ -40,11 +40,6 @@
 class ezcMailMtaTransport implements ezcMailTransport
 {
     /**
-     * Characters allowed in the returnPath address
-     */
-    const RETURN_PATH_CHARS = 'A-Za-z0-9_.@=/+{}#~\-\'';
-
-    /**
      * Constructs a new ezcMailMtaTransport.
      */
     public function __construct(  )
@@ -73,7 +68,7 @@ class ezcMailMtaTransport implements ezcMailTransport
         $additionalParameters = "";
         if ( isset( $mail->returnPath ) )
         {
-            $sanitized = preg_replace( '([^' . self::RETURN_PATH_CHARS . '])', '', $mail->returnPath->email );
+            $sanitized = preg_replace( '([^' . ezcMail::RETURN_PATH_CHARS . '])', '', $mail->returnPath->email );
             $additionalParameters = "-f{$sanitized}";
         }
         $success = mail( ezcMailTools::composeEmailAddresses( $mail->to ),
