@@ -36,7 +36,7 @@ class ThankYouTest extends TestCase {
     MailFactory::singleton()->setActiveMailer('test');
 
     $this->old_civimail = variable_get('thank_you_add_civimail_records', 'false');
-    $this->old_civimail_rate = variable_get('thank_you_civimail_rate', 1.0);
+    $this->old_civimail_rate = \Civi::settings()->get('thank_you_civimail_rate');
     $this->old_endowment_from_name = Civi::settings()->get('wmf_endowment_thank_you_from_name');
 
     $contact = reset($this->callAPISuccess('Contact', 'create', [
@@ -101,7 +101,7 @@ class ThankYouTest extends TestCase {
         ->setUseTrash(FALSE)
         ->execute();
       variable_set('thank_you_add_civimail_records', $this->old_civimail);
-      variable_get('thank_you_civimail_rate', $this->old_civimail_rate);
+      \Civi::settings()->get('thank_you_civimail_rate');
     }
     catch (API_Exception $e) {
       $this->fail($e->getMessage());
@@ -166,7 +166,7 @@ class ThankYouTest extends TestCase {
    */
   public function testSendThankYouAddCiviMailActivity(): void {
     variable_set('thank_you_add_civimail_records', 'true');
-    variable_set('thank_you_civimail_rate', 1.0);
+    \Civi::settings()->set('thank_you_civimail_rate', 1.0);
     $result = thank_you_for_contribution($this->getContributionID());
     $this->assertTrue($result);
     $activity = $this->callAPISuccess(

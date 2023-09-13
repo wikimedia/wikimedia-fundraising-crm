@@ -130,6 +130,21 @@ return [
     ],
     'settings_pages' => ['wmf-thankyou' => ['weight' => 32]],
   ],
+  'thank_you_civimail_rate' => [
+    'name' => 'thank_you_civimail_rate',
+    'default' => 1,
+    'type' => 'Float',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 4,
+      'maxlength' => 8,
+    ],
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('CiviMail sample rate, from 0 (never) to 1 (always)'),
+    'help_text' => '',
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 40]],
+  ],
   'thank_you_failure_threshold' => [
     'name' => 'thank_you_failure_threshold',
     'default' => 5,
@@ -143,6 +158,6 @@ return [
     'is_contact' => 0,
     'title' => E::ts('Number of consecutive failures to allow before disabling thank you job'),
     'help_text' => '',
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 40]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 45]],
   ],
 ];

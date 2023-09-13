@@ -545,7 +545,7 @@ function thank_you_send_mail($params) {
   try {
     $civi_queue_record = NULL;
     $create_civi_mail = variable_get('thank_you_add_civimail_records', 'false');
-    $rate = variable_get('thank_you_civimail_rate', 1.0);
+    $rate = \Civi::settings()->get('thank_you_civimail_rate');
     if ($create_civi_mail === 'true' && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id']) && $params['contact_id'] > 0) {
       $civi_queue_record = thank_you_add_civi_queue(
         $params['recipient_address'],
@@ -719,13 +719,6 @@ function thank_you_settings_form() {
       'true' => t('Create CiviMail records'),
     ],
     '#default_value' => variable_get('thank_you_add_civimail_records', 'false'),
-  ];
-
-  $form['thank_you_civimail_rate'] = [
-    '#type' => 'textfield',
-    '#title' => t('CiviMail sample rate, from 0 (never) to 1 (always)'),
-    '#default_value' => variable_get('thank_you_civimail_rate', 1),
-    '#required' => TRUE,
   ];
 
   return system_settings_form($form);
@@ -916,7 +909,7 @@ function thank_you_batch_test() {
   civicrm_initialize();
 
   $create_civi_mail = variable_get('thank_you_add_civimail_records', 'false');
-  $rate = variable_get('thank_you_civimail_rate', 1.0);
+  $rate = \Civi::settings()->get('thank_you_civimail_rate');
 
   // Don't actually send any emails
   MailFactory::singleton()->setActiveMailer('test');
