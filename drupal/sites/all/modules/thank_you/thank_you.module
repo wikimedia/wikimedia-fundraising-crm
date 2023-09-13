@@ -978,7 +978,3 @@ EOT;
     'elapsed' => $elapsed
   ]);
 }
-
-class ThankYouException extends Exception {
-
-}
