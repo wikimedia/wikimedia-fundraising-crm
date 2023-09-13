@@ -131,6 +131,32 @@ return [
     'settings_pages' => ['wmf-thankyou' => ['weight' => 32]],
   ],
 
+   'thank_you_enabled' => [
+     'name' => 'thank_you_enabled',
+     'title' => E::ts('Enable Thank You send job'),
+     'type' => 'Boolean',
+     'quick_form_type' => 'YesNo',
+     'default' => TRUE,
+     'is_domain' => 1,
+     'is_contact' => 0,
+     'settings_pages' => ['wmf-thankyou' => ['weight' => 35]],
+   ],
+
+  'thank_you_days' => [
+    'name' => 'thank_you_days',
+    'title' => E::ts('Days before considering transaction too old to automatically thank'),
+    'default' => 14,
+    'type' => 'Integer',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 4,
+      'maxlength' => 8,
+     ],
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 40]],
+  ],
+
   'thank_you_add_civimail_records' => [
     'name' => 'thank_you_add_civimail_records',
     'type' => 'Boolean',
@@ -139,7 +165,7 @@ return [
     'default' => TRUE,
     'is_domain' => 1,
     'is_contact' => 0,
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 35]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 45]],
   ],
   'thank_you_civimail_rate' => [
     'name' => 'thank_you_civimail_rate',
@@ -154,7 +180,7 @@ return [
     'is_contact' => 0,
     'title' => E::ts('CiviMail sample rate, from 0 (never) to 1 (always)'),
     'help_text' => '',
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 40]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 50]],
   ],
   'thank_you_failure_threshold' => [
     'name' => 'thank_you_failure_threshold',
@@ -169,6 +195,39 @@ return [
     'is_contact' => 0,
     'title' => E::ts('Number of consecutive failures to allow before disabling thank you job'),
     'help_text' => '',
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 45]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 55]],
+  ],
+
+  'thank_you_batch' => [
+    'name' => 'thank_you_batch',
+    'title' => E::ts('Cron batch size'),
+    'default' => 1,
+    'type' => 'Integer',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 4,
+      'maxlength' => 8,
+    ],
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'help_text' => '',
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 55]],
+  ],
+
+  'thank_you_batch_time' => [
+    'name' => 'thank_you_batch_time',
+    'title' => E::ts('Job time limit (in seconds)'),
+    'description' => E::ts('Maximum elapsed duration of a thank you job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  A time limit is required.'),
+    'default' => 90,
+    'type' => 'Integer',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 4,
+      'maxlength' => 8,
+    ],
+    'is_domain' => 1,
+    'is_contact' => 0,
+     'help_text' => '',
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 60]],
   ],
 ];

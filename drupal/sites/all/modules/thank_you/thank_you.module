@@ -666,38 +666,6 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
 function thank_you_settings_form() {
   $form = [];
 
-  $form['thank_you_enabled'] = [
-    '#type' => 'radios',
-    '#title' => t('Enable Thank You send job'),
-    '#options' => [
-      'false' => t('Do not send Thank You emails'),
-      'true' => t('Send Thank You emails'),
-    ],
-    '#default_value' => variable_get('thank_you_enabled', 'true'),
-  ];
-
-  $form['thank_you_days'] = [
-    '#type' => 'textfield',
-    '#title' => t('Days before considering transaction too old to automatically thank'),
-    '#default_value' => variable_get('thank_you_days', 14),
-    '#required' => TRUE,
-  ];
-
-  $form['thank_you_batch'] = [
-    '#type' => 'textfield',
-    '#title' => t('Cron batch size'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('thank_you_batch', 1),
-  ];
-
-  $form['thank_you_batch_time'] = [
-    '#type' => 'textfield',
-    '#title' => t('Job time limit (in seconds)'),
-    '#description' => t('Maximum elapsed duration of a thank you job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  A time limit is required.'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('thank_you_batch_time', 90),
-  ];
-
   // this is still in use
   $form['thank_you_onestep_unsubscribe'] = [
     '#type' => 'radios',
@@ -735,10 +703,10 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
   else {
     $startTime = time();
   }
-  // the following variables should be set in the module settings, not here
-  $timeLimit = $timeLimit ?? variable_get('thank_you_batch_time', 90);
+
+  $timeLimit = $timeLimit ?? \Civi::settings()->get('thank_you_batch_time');
   $days = $days ?? variable_get('thank_you_days', FALSE);
-  $batch = $batch ?? variable_get('thank_you_batch', FALSE);
+  $batch = $batch ?? \Civi::settings()->get('thank_you_batch');
   $enabled = variable_get('thank_you_enabled', 'true');
 
   if ($enabled === 'false') {
