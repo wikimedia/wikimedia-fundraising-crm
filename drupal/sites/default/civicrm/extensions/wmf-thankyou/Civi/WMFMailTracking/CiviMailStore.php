@@ -32,7 +32,6 @@ class CiviMailStore {
    * @throws CiviQueueInsertException if email isn't in Civi or an error occurs
    */
   public function addQueueRecord($mailingRecord, $emailAddress, $contactId) {
-    $date = gmdate('YmdHis');
 
     $email = new CRM_Core_DAO_Email();
     $email->email = $emailAddress;
