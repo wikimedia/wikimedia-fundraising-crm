@@ -46,16 +46,6 @@ class CiviMailStore {
     $transaction = new CRM_Core_Transaction();
     try {
       $queue = $this->addQueueInternal($mailingRecord->getJobID(), $mailingRecord->getMailingID(), $email);
-      //add contact to recipients table
-      $sql = "INSERT INTO civicrm_mailing_recipients
-(mailing_id, email_id, contact_id)
-VALUES ( %1, %2, %3 )";
-      $params = [
-        1 => [$mailingRecord->getMailingID(), 'Integer'],
-        2 => [$email->id, 'Integer'],
-        3 => [$email->contact_id, 'Integer'],
-      ];
-      CRM_Core_DAO::executeQuery($sql, $params);
       $transaction->commit();
     }
     catch (Exception $e) {
