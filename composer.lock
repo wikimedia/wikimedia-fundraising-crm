@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c1e88c4d578c11575355b512db84cdcf",
+    "content-hash": "248ddf42c057a300cb85b47ecb9cec42",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
