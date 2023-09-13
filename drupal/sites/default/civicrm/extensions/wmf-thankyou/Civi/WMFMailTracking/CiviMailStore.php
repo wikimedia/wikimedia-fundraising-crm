@@ -19,62 +19,6 @@ class CiviMailStore {
 
   protected static $jobs = [];
 
-
-  /**
-   * Adds a mailing template, a mailing, and a 'sent' parent job to CiviMail
-   *
-   * @param string $source the content's system of origination (eg Silverpop,
-   *   WMF)
-   * @param string $bodyTemplate the body of the mailing
-   * @param string $subjectTemplate the subject of the mailing
-   *
-   * @return \wmf_communication\CiviMailingRecord
-   * @throws \Civi\WMFMailTracking\CiviMailingInsertException something bad happened with the insert
-   */
-  public function addMailing(string $source, string $bodyTemplate, string $subjectTemplate): CiviMailingRecord {
-    $mailing = $this->getMailingInternal($source);
-
-    $transaction = new CRM_Core_Transaction();
-    try {
-      if (!$mailing) {
-        $params = [
-          'subject' => $subjectTemplate,
-          'body_html' => $bodyTemplate,
-          'name' => $source,
-          'is_completed' => TRUE,
-          //TODO: user picker on TY config page, or add 'TY mailer' contact
-          'scheduled_id' => 1,
-        ];
-        $mailing = \CRM_Mailing_BAO_Mailing::add($params);
-        self::$mailings[$source] = $mailing;
-      }
-
-      $job = $this->getJobInternal($mailing->id);
-
-      $saveJob = (!$job || $job->status !== 'Complete');
-
-      if (!$job) {
-        $job = new \CRM_Mailing_BAO_MailingJob();
-        $job->start_date = $job->end_date = gmdate('YmdHis');
-        $job->job_type = 'external';
-        $job->mailing_id = $mailing->id;
-      }
-
-      if ($saveJob) {
-        $job->status = 'Complete';
-        $job->save();
-        self::$jobs[$mailing->id] = $job;
-      }
-      $transaction->commit();
-      return new CiviMailingRecord($mailing, $job);
-    }
-    catch (Exception $e) {
-      $transaction->rollback();
-      $msg = "Error inserting CiviMail Mailing record $source -- {$e->getMessage()}";
-      throw new CiviMailingInsertException($msg, 0, $e);
-    }
-  }
-
   /**
    * Adds a child job with completed date $date, a queue entry, and an entry
    * in the recipients table

@@ -10,48 +10,8 @@ namespace wmf_communication;
  */
 class CiviMailTest extends CiviMailTestBase {
 
-  public function testAddMailing() {
-    $storedMailing = $this->mailStore->addMailing(
-      $this->source,
-      $this->body,
-      $this->subject
-    );
-    $this->assertInstanceOf(
-      \wmf_communication\CiviMailingRecord::class,
-      $storedMailing,
-      'addMailing should return an ICiviMailingRecord'
-    );
-    $this->assertTrue(
-      is_numeric($storedMailing->getMailingID()),
-      'CiviMailingRecord should have a numeric mailing ID'
-    );
-  }
-
-  public function testGetMailing() {
-    $storedMailing = $this->mailStore->addMailing(
-      $this->source,
-      $this->body,
-      $this->subject
-    );
-    $retrievedMailing = $this->mailStore->getMailing($this->source);
-    $this->assertEquals(
-      $storedMailing->getMailingID(),
-      $retrievedMailing->getMailingID(),
-      'Retrieved mailing has wrong MailingID'
-    );
-    $this->assertEquals(
-      $storedMailing->getJobID(),
-      $retrievedMailing->getJobID(),
-      'Retrieved mailing has wrong JobID'
-    );
-  }
-
   public function testAddQueueRecord() {
-    $storedMailing = $this->mailStore->addMailing(
-      $this->source,
-      $this->body,
-      $this->subject
-    );
+    $storedMailing = $this->mailStore->getMailing('thank_you');
     $queueRecord = $this->mailStore->addQueueRecord(
       $storedMailing,
       'generaltrius@hondo.mil',

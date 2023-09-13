@@ -615,33 +615,6 @@ function thank_you_send_mail($params) {
 }
 
 /**
- * Gets the template name and revision number from an html comment
- *
- * @param string $html HTML source of the thank you email
- *  This should contain a string like
- *  <!-- TI_BEGIN["version":1,"name":"endowment_thank_you.sv.html","revision":20200107]TI_END -->
- *
- * @returns stdClass, 'revision' contains rev no, 'name' contains template name
- *
- * @return mixed|null
- *
- * @throws TemplateInfoMissingException if comment is not found
- */
-function thank_you_get_template_info($html) {
-  $matches = [];
-  $info = NULL;
-  if (preg_match('/<!-- TI_BEGIN(.+)TI_END -->/', $html, $matches)) {
-    // The '{' in the template was upsetting smarty. This permits *any* open & close
-    // delimiter (in practice [ ....] ).
-    $info = json_decode('{' . substr($matches[1], 1, -1) . '}');
-  }
-  if ($info === NULL || !is_object($info)) {
-    throw new TemplateInfoMissingException();
-  }
-  return $info;
-}
-
-/**
  * Add record of the sent email to CiviMail
  *
  * @param string $email recipient address
@@ -657,19 +630,12 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
   $civi_queue_record = NULL;
   $civimail_store = new CiviMailStore();
   try {
-    $template_info = thank_you_get_template_info($html);
     try {
       $civi_mailing = $civimail_store->getMailing('thank_you');
     }
     catch (CiviMailingMissingException $e) {
       \Civi::log('wmf')->info(
-        'thank_you: Could not find mailing record for thank_you with name {name} and revision {revision}. Attempting to create one',
-        ['name' => $template_info->name, 'revision' => $template_info->revision]
-      );
-      $civi_mailing = $civimail_store->addMailing('thank_you', 'missing body', $subject);
-      \Civi::log('wmf')->info(
-        'thank_you: Created mailing record for thank_you with name {name} and revision {revision}.',
-        ['name' => $template_info->name, 'revision' => $template_info->revision]
+        'thank_you: Thank you mailing missing - wtf'
       );
     }
     $civi_queue_record = $civimail_store->addQueueRecord($civi_mailing, $email, $contact_id);
@@ -683,12 +649,6 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
       'details' => $html,
       'status_id' => 2,
     ])->execute();
-
-  } catch (TemplateInfoMissingException $e) {
-    \Civi::log('wmf')->info(
-      'thank_you: Could not find template info comment in thank you email template with subject  {subject}',
-      ['subject' => $subject]
-    );
   } catch (CiviQueueInsertException $e) {
     \Civi::log('wmf')->info(
       'thank_you: CiviMail queue insert failed: {error_message}',
@@ -1020,9 +980,5 @@ EOT;
 }
 
 class ThankYouException extends Exception {
-
-}
-
-class TemplateInfoMissingException extends Exception {
 
 }
