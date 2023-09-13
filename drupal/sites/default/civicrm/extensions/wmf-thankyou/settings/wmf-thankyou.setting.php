@@ -130,6 +130,17 @@ return [
     ],
     'settings_pages' => ['wmf-thankyou' => ['weight' => 32]],
   ],
+
+  'thank_you_add_civimail_records' => [
+    'name' => 'thank_you_add_civimail_records',
+    'type' => 'Boolean',
+    'quick_form_type' => 'YesNo',
+    'title' => E::ts('Track thank you emails to CiviMail'),
+    'default' => TRUE,
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 35]],
+  ],
   'thank_you_civimail_rate' => [
     'name' => 'thank_you_civimail_rate',
     'default' => 1,

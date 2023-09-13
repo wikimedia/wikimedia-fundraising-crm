@@ -591,7 +591,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that the notification email is sent when a updonate recurring subscription is started
    */
   public function testRecurringNotificationEmailSend(): void {
-    variable_set( 'thank_you_add_civimail_records', 'false' );
+    \Civi::settings()->set('thank_you_add_civimail_records', false);
 
     // Subscr_id is the same as gateway_txn_id
     $subscr_id = mt_rand();

@@ -12,11 +12,7 @@ class ThankYouTest extends TestCase {
 
   use Api3TestTrait;
 
-  protected $old_civimail;
-
-  protected $old_civimail_rate;
-
-  protected $old_endowment_from_name;
+  protected $originalSettings = [];
 
   /**
    * IDS of various entities created.
@@ -34,10 +30,6 @@ class ThankYouTest extends TestCase {
     }
     parent::setUp();
     MailFactory::singleton()->setActiveMailer('test');
-
-    $this->old_civimail = variable_get('thank_you_add_civimail_records', 'false');
-    $this->old_civimail_rate = \Civi::settings()->get('thank_you_civimail_rate');
-    $this->old_endowment_from_name = Civi::settings()->get('wmf_endowment_thank_you_from_name');
 
     $contact = reset($this->callAPISuccess('Contact', 'create', [
       'contact_type' => 'Individual',
@@ -92,7 +84,9 @@ class ThankYouTest extends TestCase {
    */
   public function tearDown(): void {
     try {
-      Civi::settings()->set('wmf_endowment_thank_you_from_name', $this->old_endowment_from_name);
+      foreach ($this->originalSettings as $name => $value) {
+        Civi::settings()->set($name, $value);
+      }
       Contribution::delete(FALSE)
         ->addWhere('id', 'IN', $this->ids['Contribution'])
         ->execute();
@@ -100,8 +94,6 @@ class ThankYouTest extends TestCase {
         ->addWhere('id', 'IN', $this->ids['Contact'])
         ->setUseTrash(FALSE)
         ->execute();
-      variable_set('thank_you_add_civimail_records', $this->old_civimail);
-      \Civi::settings()->get('thank_you_civimail_rate');
     }
     catch (API_Exception $e) {
       $this->fail($e->getMessage());
@@ -126,7 +118,7 @@ class ThankYouTest extends TestCase {
    * @throws \CRM_Core_Exception
    */
   public function testSendThankYou(): void {
-    variable_set('thank_you_add_civimail_records', 'false');
+    $this->setSetting('thank_you_add_civimail_records', FALSE);
     $sent = $this->sendThankYou();
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
@@ -165,8 +157,8 @@ class ThankYouTest extends TestCase {
    * @throws \Civi\WMFException\WMFException
    */
   public function testSendThankYouAddCiviMailActivity(): void {
-    variable_set('thank_you_add_civimail_records', 'true');
-    \Civi::settings()->set('thank_you_civimail_rate', 1.0);
+    $this->setSetting('thank_you_add_civimail_records', TRUE);
+    $this->setSetting('thank_you_civimail_rate', 1.0);
     $result = thank_you_for_contribution($this->getContributionID());
     $this->assertTrue($result);
     $activity = $this->callAPISuccess(
@@ -191,8 +183,8 @@ class ThankYouTest extends TestCase {
    * @throws \Civi\WMFException\WMFException
    */
   public function testSendEndowmentThankYou(): void {
-    variable_set('thank_you_add_civimail_records', 'false');
-    Civi::settings()->set('wmf_endowment_thank_you_from_name', 'Endowment TY Sender');
+    $this->setSetting('thank_you_add_civimail_records', FALSE);
+    $this->setSetting('wmf_endowment_thank_you_from_name', 'Endowment TY Sender');
     $this->createContribution(['financial_type_id:name' => 'Endowment Gift'], 0);
     $sent = $this->sendThankYou();
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
@@ -213,7 +205,7 @@ class ThankYouTest extends TestCase {
    * @throws \Civi\WMFException\WMFException
    */
   public function testSendDAFThankYou(): void {
-    variable_set('thank_you_add_civimail_records', 'false');
+    $this->setSetting('thank_you_add_civimail_records', FALSE);
 
     // Set the gift source to Donor Advised Fund
     $custom_field_name = wmf_civicrm_get_custom_field_name('Gift Source');
@@ -298,7 +290,7 @@ class ThankYouTest extends TestCase {
    * @throws \Civi\WMFException\WMFException
    */
   public function testSendStockThankYou(): void {
-    variable_set('thank_you_add_civimail_records', 'false');
+    $this->setSetting('thank_you_add_civimail_records', FALSE);
 
     $this->callAPISuccess('Contribution', 'create', [
       'version' => 4,
@@ -440,6 +432,17 @@ class ThankYouTest extends TestCase {
     $this->assertStringNotContainsString('We recently resolved a small technical issue', $result['html']);
     $this->assertCurrencyString($result['html'], $firstCurrencyString, $secondCurrencyString);
     return $result;
+  }
+
+  /**
+   * Set a CiviCRM setting, storing the original value for tearDown.
+   *
+   * @param string $name
+   * @param mixed $value
+   */
+  protected function setSetting(string $name, $value): void {
+    $this->originalSettings[$name] = \Civi::settings()->get($name);
+    \Civi::settings()->set($name, $value);
   }
 
 }
