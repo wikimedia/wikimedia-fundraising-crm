@@ -728,13 +728,6 @@ function thank_you_settings_form() {
     '#required' => TRUE,
   ];
 
-  $form['thank_you_failure_threshold'] = [
-    '#type' => 'textfield',
-    '#title' => t('Number of consecutive failures to allow before disabling thank you job'),
-    '#default_value' => variable_get('thank_you_failure_threshold', 5),
-    '#required' => TRUE,
-  ];
-
   return system_settings_form($form);
 }
 
@@ -814,7 +807,7 @@ EOT;
   ]);
 
   $consecutiveFailures = 0;
-  $failureThreshold = variable_get('thank_you_failure_threshold', 5);
+  $failureThreshold = \Civi::settings()->get('thank_you_failure_threshold');
   $abort = FALSE;
   $endTime = $startTime + $timeLimit;
   while ($contribution->fetch()) {
