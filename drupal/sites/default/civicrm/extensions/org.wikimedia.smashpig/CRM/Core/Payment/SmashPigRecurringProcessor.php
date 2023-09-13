@@ -343,8 +343,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \Exception
    */
   protected function recordFailedPayment($recurringPayment, CiviCRM_API3_Exception $exception) {
-    $cancelRecurringDonation = false;
-    $isAutoRescueResponse = false;
+    $cancelRecurringDonation = FALSE;
+    $isAutoRescueResponse = FALSE;
     $errorData = $exception->getErrorData();
     $rawResponse = NULL;
     $errorResponse = $errorData['smashpig_processor_response'];
@@ -386,9 +386,15 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
         // Keep status at processing
         $params['contribution_status_id'] = 'Pending';
+      } else {
+        // This happens when a payment cannot be rescued.
+        // For example, because of account closure or fraud.
+        $cancelRecurringDonation = TRUE;
+        $params['cancel_reason'] = 'payment cannot be rescued';
       }
     }
     else {
+      // only if not handle by auto rescue, compare failure with maxFailure or update next retry day
       $newFailureCount = $recurringPayment['failure_count'] + 1;
       $params['failure_count'] = $newFailureCount;
       if ($exception->getErrorCode() === ErrorCode::DECLINED_DO_NOT_RETRY) {
@@ -405,14 +411,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         "+$this->retryDelayDays days"
          );
       }
-      if ($cancelRecurringDonation) {
-        // @todo note the core terminology would moe accurately set this to Failed
-        // leaving cancelled for something where a user or staff member made a choice.
-        $params['contribution_status_id'] = 'Cancelled';
-        $params['cancel_date'] = UtcDate::getUtcDatabaseString();
-      }
     }
-
+    if ($cancelRecurringDonation) {
+      // @todo note the core terminology would moe accurately set this to Failed
+      // leaving cancelled for something where a user or staff member made a choice.
+      $params['contribution_status_id'] = 'Cancelled';
+      $params['cancel_date'] = UtcDate::getUtcDatabaseString();
+    }
     civicrm_api3('ContributionRecur', 'create', $params);
 
     if ($cancelRecurringDonation) {
