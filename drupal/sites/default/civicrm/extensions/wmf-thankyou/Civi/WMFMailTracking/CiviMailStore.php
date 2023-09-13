@@ -45,8 +45,7 @@ class CiviMailStore {
     //They should to be de-duped later, so no need to add extra mess.
     $transaction = new CRM_Core_Transaction();
     try {
-      $childJob = $this->addChildJob($mailingRecord, $date);
-      $queue = $this->addQueueInternal($childJob, $email);
+      $queue = $this->addQueueInternal($mailingRecord->getJobID(), $mailingRecord->getMailingID(), $email);
       //add contact to recipients table
       $sql = "INSERT INTO civicrm_mailing_recipients
 (mailing_id, email_id, contact_id)
@@ -119,22 +118,10 @@ VALUES ( %1, %2, %3 )";
     return $job;
   }
 
-  protected function addChildJob($mailingRecord, $date) {
-    $job = new \CRM_Mailing_DAO_MailingJob();
-    $job->mailing_id = $mailingRecord->getMailingID();
-    $job->parent_id = $mailingRecord->getJobID();
-    $job->status = 'Complete';
-    $job->jobType = 'child';
-    $job->job_limit = 1;
-    $job->start_date = $job->end_date = $date;
-    $job->save();
-    return $job;
-  }
-
-  protected function addQueueInternal($job, $email): \CRM_Mailing_Event_BAO_MailingEventQueue {
+  protected function addQueueInternal(int $jobID, int $mailingID, $email): \CRM_Mailing_Event_BAO_MailingEventQueue {
     $params = [
-      'mailing_id' => $job->mailing_id,
-      'job_id' => $job->id,
+      'mailing_id' => $mailingID,
+      'job_id' => $jobID,
       'email_id' => $email->id,
       'contact_id' => $email->contact_id,
     ];
