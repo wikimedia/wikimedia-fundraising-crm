@@ -57,6 +57,7 @@
     <ext>message_admin</ext>
     <ext>exchange_rates</ext>
     <ext>civiimport</ext>
+    <ext>civicrm_admin_ui</ext>
   </requires>
   <civix>
     <namespace>CRM/Wmf</namespace>
