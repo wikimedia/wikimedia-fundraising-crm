@@ -751,20 +751,20 @@
         },
         {
             "name": "geocoder-php/common-http",
-            "version": "4.4.0",
+            "version": "4.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/geocoder-php/php-common-http.git",
-                "reference": "9f44a006d4b45d01dd31ea9b38ee7fb5724cd73e"
+                "reference": "4ee2cee60d21631e2a09c196bf6b9fd296bca728"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/geocoder-php/php-common-http/zipball/9f44a006d4b45d01dd31ea9b38ee7fb5724cd73e",
-                "reference": "9f44a006d4b45d01dd31ea9b38ee7fb5724cd73e",
+                "url": "https://api.github.com/repos/geocoder-php/php-common-http/zipball/4ee2cee60d21631e2a09c196bf6b9fd296bca728",
+                "reference": "4ee2cee60d21631e2a09c196bf6b9fd296bca728",
                 "shasum": ""
             },
             "require": {
-                "php": "^7.3 || ^8.0",
+                "php": "^7.4 || ^8.0",
                 "php-http/client-implementation": "^1.0",
                 "php-http/discovery": "^1.6",
                 "php-http/httplug": "^1.0 || ^2.0",
@@ -810,9 +810,9 @@
                 "http geocoder"
             ],
             "support": {
-                "source": "https://github.com/geocoder-php/php-common-http/tree/4.4.0"
+                "source": "https://github.com/geocoder-php/php-common-http/tree/4.5.0"
             },
-            "time": "2020-12-21T09:30:01+00:00"
+            "time": "2022-07-30T12:09:30+00:00"
         },
         {
             "name": "geocoder-php/free-geoip-provider",
@@ -1052,21 +1052,21 @@
         },
         {
             "name": "geocoder-php/nominatim-provider",
-            "version": "5.3.0",
+            "version": "5.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/geocoder-php/nominatim-provider.git",
-                "reference": "09ed04eca12599ba88924ecb7cbaa5d96bd86fa3"
+                "reference": "a59c34388542e25e3ba3eecd4f07d731b1fa98fe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/geocoder-php/nominatim-provider/zipball/09ed04eca12599ba88924ecb7cbaa5d96bd86fa3",
-                "reference": "09ed04eca12599ba88924ecb7cbaa5d96bd86fa3",
+                "url": "https://api.github.com/repos/geocoder-php/nominatim-provider/zipball/a59c34388542e25e3ba3eecd4f07d731b1fa98fe",
+                "reference": "a59c34388542e25e3ba3eecd4f07d731b1fa98fe",
                 "shasum": ""
             },
             "require": {
                 "geocoder-php/common-http": "^4.1",
-                "php": "^7.2",
+                "php": "^7.4 || ^8.0",
                 "willdurand/geocoder": "^4.0"
             },
             "provide": {
@@ -1074,9 +1074,9 @@
             },
             "require-dev": {
                 "geocoder-php/provider-integration-tests": "^1.0",
-                "php-http/curl-client": "^1.7",
+                "php-http/curl-client": "^2.2",
                 "php-http/message": "^1.0",
-                "phpunit/phpunit": "^7.5"
+                "phpunit/phpunit": "^9.5"
             },
             "type": "library",
             "extra": {
@@ -1105,9 +1105,9 @@
             "description": "Geocoder Nominatim adapter",
             "homepage": "http://geocoder-php.org/Geocoder/",
             "support": {
-                "source": "https://github.com/geocoder-php/nominatim-provider/tree/5.3.0"
+                "source": "https://github.com/geocoder-php/nominatim-provider/tree/5.6.0"
             },
-            "time": "2020-12-10T08:12:58+00:00"
+            "time": "2022-07-30T12:09:30+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -4728,14 +4728,14 @@
         },
         {
             "name": "wikimedia/civicrm-data-table-provider",
-            "version": "4.1.0",
+            "version": "5.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/civicrm-data-table-provider.git",
-                "reference": "7ee53de7cd5f3b987cdcae418f907b7e9d8c18c2"
+                "reference": "82a68b389340b779779db59673bd6d0e83e8120c"
             },
             "require": {
-                "geocoder-php/common-http": "4.4.*",
+                "geocoder-php/common-http": "4.5.*",
                 "php": ">=7.4",
                 "willdurand/geocoder": "^4"
             },
@@ -4782,7 +4782,7 @@
             ],
             "description": "CiviCRM datatable geocoder",
             "homepage": "http://geocoder-php.org/Geocoder/",
-            "time": "2023-09-14T04:17:28+00:00"
+            "time": "2023-09-14T05:36:56+00:00"
         },
         {
             "name": "wikimedia/composer-merge-plugin",
