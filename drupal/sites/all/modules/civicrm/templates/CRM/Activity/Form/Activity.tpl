@@ -130,19 +130,17 @@
   </tr>
   <tr class="crm-activity-form-block-details">
     <td class="label">{$form.details.label}</td>
-    {if $activityTypeNameAndLabel.machineName eq "Print PDF Letter"}
-      <td class="view-value">
-      {$form.details.html}
-      </td>
-    {elseif $activityTypeNameAndLabel.machineName eq "Inbound Email" && $form.details.value|crmStripAlternatives|strip_tags eq $form.details.value|crmStripAlternatives}
-      <td class="view-value">
-       {$form.details.html|crmStripAlternatives|nl2br}
-      </td>
-    {else}
-      <td class="view-value">
-       {$form.details.html|crmStripAlternatives}
-      </td>
-    {/if}
+    <td class="view-value">
+      {if $activityTypeNameAndLabel.machineName eq "Print PDF Letter"}
+        {$form.details.html}
+      {elseif $activityTypeNameAndLabel.machineName eq "Inbound Email" && $form.details.value|crmStripAlternatives|strip_tags eq $form.details.value|crmStripAlternatives}
+         {$form.details.html|crmStripAlternatives|nl2br}
+      {elseif $activityTypeNameAndLabel.machineName eq "Bounce"}
+        {$form.details.html|purify}
+      {else}
+         {$form.details.html|crmStripAlternatives}
+      {/if}
+    </td>
   </tr>
   <tr class="crm-activity-form-block-priority_id">
     <td class="label">{$form.priority_id.label}</td><td class="view-value">{$form.priority_id.html}</td>
