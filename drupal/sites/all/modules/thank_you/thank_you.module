@@ -44,14 +44,6 @@ function thank_you_menu() {
     'file path' => drupal_get_path('module', 'system'),
   ];
 
-  $items['admin/config/thank_you/configure'] = [
-    'title' => 'Configure thank you module',
-    'description' => 'Configure thank you note options.',
-    'access arguments' => ['administer thank you'],
-    'page callback' => 'drupal_get_form',
-    'page arguments' => ['thank_you_settings_form'],
-  ];
-
   $items['admin/config/thank_you/test'] = [
     'title' => 'Send test thank-yous',
     'description' => 'Send a test letter',
@@ -661,24 +653,6 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
     );
   }
   return $civi_queue_record;
-}
-
-function thank_you_settings_form() {
-  $form = [];
-
-  // this is still in use
-  $form['thank_you_onestep_unsubscribe'] = [
-    '#type' => 'radios',
-    '#title' => t('Unsubscription Confirmation'),
-    '#required' => TRUE,
-    '#options' => [
-      'false' => t('Require confirmation'),
-      'true' => t('Do not require confirmation'),
-    ],
-    '#default_value' => variable_get('thank_you_onestep_unsubscribe', 'false'),
-  ];
-
-  return system_settings_form($form);
 }
 
 /**
