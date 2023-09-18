@@ -1,4 +1,7 @@
 <?php
+
+use Civi\Api4\Mailing;
+use Civi\Api4\MailingJob;
 use CRM_WmfThankyou_ExtensionUtil as E;
 
 /**
@@ -18,6 +21,20 @@ class CRM_WmfThankyou_Upgrader extends CRM_Extension_Upgrader_Base {
       'option_group_id' => 'activity_type',
       'filter' => 1,
     ]);
+    // This Mailing record exists on Prod so if we create on our local dev
+    // we know it is always present.
+    $mailing = Mailing::create(FALSE)->setValues([
+      'name' => 'thank_you',
+      'subject' => 'Thank you for your gift',
+      'body_html' => 'missing body',
+      'is_completed' => TRUE,
+      'visibility' => 'User and User Admin Only',
+      'email_selection_method' => 'automatic',
+      'template_type' => 'traditional',
+    ])->execute()->first();
+    MailingJob::create(FALSE)->setValues([
+      'mailing_id' => $mailing['id'],
+    ])->execute();
   }
 
   /**

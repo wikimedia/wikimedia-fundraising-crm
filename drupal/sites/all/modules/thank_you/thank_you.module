@@ -44,14 +44,6 @@ function thank_you_menu() {
     'file path' => drupal_get_path('module', 'system'),
   ];
 
-  $items['admin/config/thank_you/configure'] = [
-    'title' => 'Configure thank you module',
-    'description' => 'Configure thank you note options.',
-    'access arguments' => ['administer thank you'],
-    'page callback' => 'drupal_get_form',
-    'page arguments' => ['thank_you_settings_form'],
-  ];
-
   $items['admin/config/thank_you/test'] = [
     'title' => 'Send test thank-yous',
     'description' => 'Send a test letter',
@@ -544,9 +536,9 @@ function thank_you_send_mail($params) {
 
   try {
     $civi_queue_record = NULL;
-    $create_civi_mail = variable_get('thank_you_add_civimail_records', 'false');
-    $rate = variable_get('thank_you_civimail_rate', 1.0);
-    if ($create_civi_mail === 'true' && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id']) && $params['contact_id'] > 0) {
+    $create_civi_mail = \Civi::settings()->get('thank_you_add_civimail_records');
+    $rate = \Civi::settings()->get('thank_you_civimail_rate');
+    if ($create_civi_mail && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id']) && $params['contact_id'] > 0) {
       $civi_queue_record = thank_you_add_civi_queue(
         $params['recipient_address'],
         $params['contact_id'],
@@ -615,33 +607,6 @@ function thank_you_send_mail($params) {
 }
 
 /**
- * Gets the template name and revision number from an html comment
- *
- * @param string $html HTML source of the thank you email
- *  This should contain a string like
- *  <!-- TI_BEGIN["version":1,"name":"endowment_thank_you.sv.html","revision":20200107]TI_END -->
- *
- * @returns stdClass, 'revision' contains rev no, 'name' contains template name
- *
- * @return mixed|null
- *
- * @throws TemplateInfoMissingException if comment is not found
- */
-function thank_you_get_template_info($html) {
-  $matches = [];
-  $info = NULL;
-  if (preg_match('/<!-- TI_BEGIN(.+)TI_END -->/', $html, $matches)) {
-    // The '{' in the template was upsetting smarty. This permits *any* open & close
-    // delimiter (in practice [ ....] ).
-    $info = json_decode('{' . substr($matches[1], 1, -1) . '}');
-  }
-  if ($info === NULL || !is_object($info)) {
-    throw new TemplateInfoMissingException();
-  }
-  return $info;
-}
-
-/**
  * Add record of the sent email to CiviMail
  *
  * @param string $email recipient address
@@ -657,19 +622,12 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
   $civi_queue_record = NULL;
   $civimail_store = new CiviMailStore();
   try {
-    $template_info = thank_you_get_template_info($html);
     try {
       $civi_mailing = $civimail_store->getMailing('thank_you');
     }
     catch (CiviMailingMissingException $e) {
       \Civi::log('wmf')->info(
-        'thank_you: Could not find mailing record for thank_you with name {name} and revision {revision}. Attempting to create one',
-        ['name' => $template_info->name, 'revision' => $template_info->revision]
-      );
-      $civi_mailing = $civimail_store->addMailing('thank_you', 'missing body', $subject);
-      \Civi::log('wmf')->info(
-        'thank_you: Created mailing record for thank_you with name {name} and revision {revision}.',
-        ['name' => $template_info->name, 'revision' => $template_info->revision]
+        'thank_you: Thank you mailing missing - wtf'
       );
     }
     $civi_queue_record = $civimail_store->addQueueRecord($civi_mailing, $email, $contact_id);
@@ -683,12 +641,6 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
       'details' => $html,
       'status_id' => 2,
     ])->execute();
-
-  } catch (TemplateInfoMissingException $e) {
-    \Civi::log('wmf')->info(
-      'thank_you: Could not find template info comment in thank you email template with subject  {subject}',
-      ['subject' => $subject]
-    );
   } catch (CiviQueueInsertException $e) {
     \Civi::log('wmf')->info(
       'thank_you: CiviMail queue insert failed: {error_message}',
@@ -701,81 +653,6 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
     );
   }
   return $civi_queue_record;
-}
-
-function thank_you_settings_form() {
-  $form = [];
-
-  $form['thank_you_enabled'] = [
-    '#type' => 'radios',
-    '#title' => t('Enable Thank You send job'),
-    '#options' => [
-      'false' => t('Do not send Thank You emails'),
-      'true' => t('Send Thank You emails'),
-    ],
-    '#default_value' => variable_get('thank_you_enabled', 'true'),
-  ];
-
-  $form['thank_you_days'] = [
-    '#type' => 'textfield',
-    '#title' => t('Days before considering transaction too old to automatically thank'),
-    '#default_value' => variable_get('thank_you_days', 14),
-    '#required' => TRUE,
-  ];
-
-  $form['thank_you_batch'] = [
-    '#type' => 'textfield',
-    '#title' => t('Cron batch size'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('thank_you_batch', 1),
-  ];
-
-  $form['thank_you_batch_time'] = [
-    '#type' => 'textfield',
-    '#title' => t('Job time limit (in seconds)'),
-    '#description' => t('Maximum elapsed duration of a thank you job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  A time limit is required.'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('thank_you_batch_time', 90),
-  ];
-
-  // this is still in use
-  $form['thank_you_onestep_unsubscribe'] = [
-    '#type' => 'radios',
-    '#title' => t('Unsubscription Confirmation'),
-    '#required' => TRUE,
-    '#options' => [
-      'false' => t('Require confirmation'),
-      'true' => t('Do not require confirmation'),
-    ],
-    '#default_value' => variable_get('thank_you_onestep_unsubscribe', 'false'),
-  ];
-
-  $form['thank_you_add_civimail_records'] = [
-    '#type' => 'radios',
-    '#title' => t('Track thank you emails to CiviMail'),
-    '#required' => TRUE,
-    '#options' => [
-      'false' => t('Do not create CiviMail records'),
-      'true' => t('Create CiviMail records'),
-    ],
-    '#default_value' => variable_get('thank_you_add_civimail_records', 'false'),
-  ];
-
-  $form['thank_you_civimail_rate'] = [
-    '#type' => 'textfield',
-    '#title' => t('CiviMail sample rate, from 0 (never) to 1 (always)'),
-    '#default_value' => variable_get('thank_you_civimail_rate', 1),
-    '#required' => TRUE,
-  ];
-
-  $form['thank_you_failure_threshold'] = [
-    '#type' => 'textfield',
-    '#title' => t('Number of consecutive failures to allow before disabling thank you job'),
-    '#default_value' => variable_get('thank_you_failure_threshold', 5),
-    '#required' => TRUE,
-  ];
-
-  return system_settings_form($form);
 }
 
 /**
@@ -800,10 +677,10 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
   else {
     $startTime = time();
   }
-  // the following variables should be set in the module settings, not here
-  $timeLimit = $timeLimit ?? variable_get('thank_you_batch_time', 90);
+
+  $timeLimit = $timeLimit ?? \Civi::settings()->get('thank_you_batch_time');
   $days = $days ?? variable_get('thank_you_days', FALSE);
-  $batch = $batch ?? variable_get('thank_you_batch', FALSE);
+  $batch = $batch ?? \Civi::settings()->get('thank_you_batch');
   $enabled = variable_get('thank_you_enabled', 'true');
 
   if ($enabled === 'false') {
@@ -854,7 +731,7 @@ EOT;
   ]);
 
   $consecutiveFailures = 0;
-  $failureThreshold = variable_get('thank_you_failure_threshold', 5);
+  $failureThreshold = \Civi::settings()->get('thank_you_failure_threshold');
   $abort = FALSE;
   $endTime = $startTime + $timeLimit;
   while ($contribution->fetch()) {
@@ -962,8 +839,8 @@ function thank_you_batch_test() {
   }
   civicrm_initialize();
 
-  $create_civi_mail = variable_get('thank_you_add_civimail_records', 'false');
-  $rate = variable_get('thank_you_civimail_rate', 1.0);
+  $create_civi_mail = \Civi::settings()->get('thank_you_add_civimail_records');
+  $rate = \Civi::settings()->get('thank_you_civimail_rate');
 
   // Don't actually send any emails
   MailFactory::singleton()->setActiveMailer('test');
@@ -1017,12 +894,4 @@ EOT;
     'sent' => $sent,
     'elapsed' => $elapsed
   ]);
-}
-
-class ThankYouException extends Exception {
-
-}
-
-class TemplateInfoMissingException extends Exception {
-
 }

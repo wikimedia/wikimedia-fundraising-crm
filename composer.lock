@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "af6d3a0da224f930055b8330842cdf05",
+    "content-hash": "8896f73a6f5f0ab60f9641eaaaee3310",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -4890,16 +4890,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.8.6",
+            "version": "v0.8.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "4af0209cd13569f8e2d31edfea78a88a73bf0de3"
+                "reference": "690028ee9a7aadc0487b0bf20c23ae6f1166c702"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/4af0209cd13569f8e2d31edfea78a88a73bf0de3",
-                "reference": "4af0209cd13569f8e2d31edfea78a88a73bf0de3",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/690028ee9a7aadc0487b0bf20c23ae6f1166c702",
+                "reference": "690028ee9a7aadc0487b0bf20c23ae6f1166c702",
                 "shasum": ""
             },
             "require": {
@@ -4909,7 +4909,7 @@
                 "ext-curl": "*",
                 "ext-json": "*",
                 "ext-pdo": "*",
-                "php": ">=7.3",
+                "php": ">=7.4",
                 "phpmailer/phpmailer": "^6",
                 "predis/predis": "^1.1",
                 "psr/cache": "^1.0",
@@ -4974,9 +4974,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.6"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.7"
             },
-            "time": "2023-08-09T01:05:57+00:00"
+            "time": "2023-09-11T15:23:52+00:00"
         },
         {
             "name": "willdurand/geocoder",
