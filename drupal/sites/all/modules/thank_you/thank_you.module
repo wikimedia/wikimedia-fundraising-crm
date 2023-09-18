@@ -736,7 +736,7 @@ EOT;
   $endTime = $startTime + $timeLimit;
   while ($contribution->fetch()) {
     if (time() >= $endTime) {
-      \Civi::log('wmf')->info('thank_you: Batch time limit ({timeLimit} s) elapsed', ['time_limit' => $timeLimit]);
+      \Civi::log('wmf')->info('thank_you: Batch time limit ({time_limit} s) elapsed', ['time_limit' => $timeLimit]);
       break;
     }
     \Civi::log('wmf')->info(
