@@ -166,4 +166,23 @@ return [
       'payment_type' => 1,
     ],
   ],
+  8 => [
+    'name' => 'SmashPig - Fundraiseup',
+    'entity' => 'payment_processor_type',
+    'params' => [
+      'version' => 3,
+      'title' => 'Fundraiseup via SmashPig',
+      'name' => 'smashpig_fundraiseup',
+      'description' => 'SmashPig Fundraiseup Processor',
+      'user_name_label' => 'Unused',
+      'password_label' => 'Unused',
+      'signature_label' => 'Unused',
+      'subject_label' => 'Unused',
+      'class_name' => 'Payment_SmashPig',
+      'url_site_default' => 'https://dummyurl.com',
+      'url_api_default' => 'https://dummyurl.com',
+      'billing_mode' => 1,
+      'payment_type' => 1,
+    ],
+  ],
 ];
