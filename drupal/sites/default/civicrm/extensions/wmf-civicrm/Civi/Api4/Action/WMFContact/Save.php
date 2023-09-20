@@ -72,10 +72,15 @@ class Save extends AbstractAction {
     $contact_id = $this->getContactID();
     $msg = $this->getMessage();
     if (!$contact_id) {
-      $contact_id = $this->getExistingContactID($msg);
-      if ($contact_id) {
+      $existingContact = $this->getExistingContact($msg);
+      if ($existingContact) {
+        $contact_id = $existingContact['contact_id'];
         $msg['contact_id'] = $contact_id;
-        $this->handleUpdate($msg);
+        $replaceNames = (
+          empty($existingContact['contact_id.first_name']) &&
+          empty($existingContact['contact_id.last_name'])
+        );
+        $this->handleUpdate($msg, $replaceNames);
         $result[] = ['id' => $contact_id];
         return;
       }
@@ -481,7 +486,7 @@ class Save extends AbstractAction {
    * @throws \API_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  public function handleUpdate(array $msg): void {
+  public function handleUpdate(array $msg, bool $replaceNames = false): void {
     // This winds up being a list of permitted fields to update. The approach of
     // filtering out some fields here probably persists more because we
     // have not been brave enough to change historical code than an underlying reason.
@@ -494,6 +499,10 @@ class Save extends AbstractAction {
       'do_not_sms',
       'Partner.Partner',
     ];
+    if ($replaceNames) {
+      $updateFields[] = 'first_name';
+      $updateFields[] = 'last_name';
+    }
     $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
     if (!empty($msg['fiscal_number'])) {
       $updateParams['legal_identifier'] = $this->cleanString($msg['fiscal_number'], 32);
@@ -576,11 +585,11 @@ class Save extends AbstractAction {
    *
    * @param array $msg
    *
-   * @return int|null
+   * @return array|null
    *
    * @throws \API_Exception
    */
-  protected function getExistingContactID(array $msg): ?int {
+  protected function getExistingContact(array $msg): ?array {
     if (empty($msg['first_name']) || empty($msg['last_name'])) {
       return NULL;
     }
@@ -598,12 +607,12 @@ class Save extends AbstractAction {
           ->addWhere('contact_id.last_name', '=', $msg['last_name']);
       }
 
-      $matches = $email->setSelect(['contact_id'])
+      $matches = $email->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name'])
         ->setLimit(2)
         ->execute();
 
       if (count($matches) === 1) {
-        return $matches->first()['contact_id'];
+        return $matches->first();
       }
       return NULL;
     }
@@ -626,11 +635,11 @@ class Save extends AbstractAction {
       ->addWhere('contact_id.is_deleted', '=', 0)
       ->addWhere('contact_id.is_deceased', '=', 0)
       ->addWhere('is_primary', '=', TRUE)
-      ->setSelect(['contact_id'])
+      ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name'])
       ->setLimit(2)
       ->execute();
     if (count($matches) === 1) {
-      return $matches->first()['contact_id'];
+      return $matches->first();
     }
 
     return NULL;

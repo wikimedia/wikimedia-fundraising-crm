@@ -1188,6 +1188,46 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('es_MX', $updatedContact['preferred_language']);
   }
 
+
+  /**
+   * If we get a matching contact email, add missing name fields from the message
+   *
+   * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
+   */
+  public function testAddMissingNameWithContactExisting() {
+    $existingContact = $this->callAPISuccess('Contact', 'Create', [
+      'contact_type' => 'Individual',
+      'email' => 'noname@example.org',
+      'preferred_language' => 'es_ES'
+    ]);
+
+    $this->contact_id = $existingContact['id'];
+
+    $msg = [
+      'first_name' => 'NowIHave',
+      'last_name' => 'AName',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'noname@example.org',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'apple', // We skip name matching for Apple Pay donors
+      'payment_submethod' => 'visa',
+      // This should be normalized to es_MX and then used to update the contact record
+      'language' => 'es-419'
+    ];
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+    $updatedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->contact_id]);
+    $this->assertEquals('NowIHave', $updatedContact['first_name']);
+    $this->assertEquals('AName', $updatedContact['last_name']);
+  }
+
   /**
    * If we get a contact ID and a bad email, leave the existing contact alone
    *
