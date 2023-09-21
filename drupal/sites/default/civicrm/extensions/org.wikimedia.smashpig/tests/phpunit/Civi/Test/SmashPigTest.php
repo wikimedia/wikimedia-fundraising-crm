@@ -202,7 +202,15 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
-    $contribution = $this->createContribution($contributionRecur);
+    $giftData = [
+      // Restrictions field
+      'Gift_Data.Fund' => 'Unrestricted_General',
+      // Gift Source field.
+      'Gift_Data.Campaign' => 'Online Gift',
+      // Direct Mail Appeal field
+      'Gift_Data.Appeal' => 'Mobile Giving',
+    ];
+    $contribution = $this->createContribution($contributionRecur, $giftData);
 
     [, $expectedInvoiceId] = $this->getExpectedIds($contribution);
 
@@ -258,7 +266,14 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'trxn_id' => '000000850010000188130000200001',
       'contribution_status_id:name' => 'Completed',
       'invoice_id' => $expectedInvoiceId,
-      ] as $key => $value) {
+       // https://phabricator.wikimedia.org/T345920
+       // Restrictions field
+       'Gift_Data.Fund' => 'Unrestricted_General',
+       // Gift Source field.
+       'Gift_Data.Campaign' => 'Online Gift',
+       // Direct Mail Appeal field
+       'Gift_Data.Appeal' => 'Mobile Giving',
+     ] as $key => $value) {
       $this->assertEquals($value, $newContribution[$key]);
     }
     // Check the updated date is at least 28 days further along
@@ -611,6 +626,9 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
+      'restrictions' => NULL,
+      'gift_source' => NULL,
+      'direct_mail_appeal' => NULL,
     ], $contributionMessage);
   }
 
@@ -678,6 +696,9 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
+      'restrictions' => NULL,
+      'gift_source' => NULL,
+      'direct_mail_appeal' => NULL,
     ], $contributionMessage);
   }
 
@@ -821,6 +842,9 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
+      'restrictions' => NULL,
+      'gift_source' => NULL,
+      'direct_mail_appeal' => NULL,
     ], $contributionMessage);
   }
 
@@ -1386,6 +1410,9 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
+      'restrictions' => NULL,
+      'gift_source' => NULL,
+      'direct_mail_appeal' => NULL,
     ], $contributionMessage);
   }
 
