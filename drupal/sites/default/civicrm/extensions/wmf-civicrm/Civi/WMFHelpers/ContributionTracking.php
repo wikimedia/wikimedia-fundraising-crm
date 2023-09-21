@@ -125,25 +125,6 @@ class ContributionTracking {
       $contributionTracking['tracking_date']  = $rawData['ts'];
     }
 
-    // TODO remove legacy form_amount and payments_form fields here once we start
-    // sending currency, amount, gateway, appeal, and variant separately.
-    if (!empty($rawData['form_amount'])) {
-      $formAmount = explode(' ', $rawData['form_amount']);
-      $contributionTracking['currency'] = $formAmount[0];
-      $contributionTracking['amount'] = is_numeric($formAmount[1] ?? NULL) ? $formAmount[1] : NULL;
-    }
-
-    if (!empty($rawData['payments_form'])) {
-      $paymentsFormFields = explode('.', $rawData['payments_form'] ?? '');
-      $contributionTracking['gateway'] = $paymentsFormFields[0];
-      if (empty($contributionTracking['appeal'])) {
-        $contributionTracking['appeal'] = empty( $paymentsFormFields[1] ) ? NULL : mb_substr( $paymentsFormFields[1], 0, 64 );
-      }
-      if (empty($contributionTracking['payments_form_variant'])) {
-        $contributionTracking['payments_form_variant'] = (!empty($paymentsFormFields[1]) && stripos($paymentsFormFields[1], 'v=') !== FALSE) ? substr($paymentsFormFields[1], 3) : NULL;
-      }
-    }
-
     $paymentMethods = self::getPaymentMethods();
     if (
       !empty($rawData['payment_method']) &&
@@ -193,22 +174,6 @@ class ContributionTracking {
       }
       if (!empty($sourceFields[1])) {
         $contributionTracking['landing_page'] = $sourceFields[1];
-      }
-
-      // TODO: stop pulling these out of utm_source once we are sending them all by themselves.
-      if (!empty($sourceFields[2]) && empty($contributionTracking['payment_method_id'])) {
-        if (!empty($paymentMethods[$sourceFields[2]])) {
-          $contributionTracking['payment_method_id'] = $paymentMethods[$sourceFields[2]];
-        }
-        elseif (strpos($sourceFields[2], 'r') === 0 && !empty($paymentMethods[substr($sourceFields[2], 1)])) {
-          $contributionTracking['payment_method_id'] = $paymentMethods[substr($sourceFields[2], 1)];
-          $contributionTracking['is_recurring'] = 1;
-        }
-        if (!empty($sourceFields[3])) {
-          // getKey returns NULL if NULL - but since submethod being present is the exception the empty check is
-          // a minor optimisation.
-          $contributionTracking['payment_submethod_id'] = \CRM_Core_PseudoConstant::getKey('CRM_Wmf_DAO_ContributionTracking', 'payment_submethod_id', $sourceFields[3]);
-        }
       }
     }
 
