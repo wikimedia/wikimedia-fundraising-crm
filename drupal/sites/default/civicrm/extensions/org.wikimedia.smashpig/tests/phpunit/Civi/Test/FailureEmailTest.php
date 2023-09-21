@@ -1,5 +1,6 @@
 <?php
-require_once(__DIR__ . '/SmashPigBaseTestClass.php');
+
+namespace Civi\Test;
 
 use Civi\Api4\FailureEmail;
 
@@ -20,7 +21,7 @@ use Civi\Api4\FailureEmail;
  * @group SmashPig
  * @group headless
  */
-class CRM_FailureEmailTest extends SmashPigBaseTestClass {
+class FailureEmailTest extends SmashPigBaseTestClass {
 
   /**
    * @throws \CRM_Core_Exception
@@ -35,7 +36,7 @@ class CRM_FailureEmailTest extends SmashPigBaseTestClass {
     $this->assertEquals('Dear Harry,
       We cancelled your recur of USD $12.34
       and we are sending you this at harry@hendersons.net
-      this month of ' . (new DateTime())->format('F') . '
+      this month of ' . (new \DateTime())->format('F') . '
       $12.34', $email['msg_html']);
     $this->assertEquals('Hey Harry', $email['msg_subject']);
   }
@@ -43,12 +44,10 @@ class CRM_FailureEmailTest extends SmashPigBaseTestClass {
   /**
    * Test send api action.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public function testSend() {
-    Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
+  public function testSend(): void {
+    \Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
     $this->setupFailureTemplate();
     $contributionRecur = $this->setupRecurring();
     $email = FailureEmail::send()->setCheckPermissions(FALSE)->setContributionRecurID($contributionRecur['id'])->execute()->first();
@@ -58,7 +57,7 @@ class CRM_FailureEmailTest extends SmashPigBaseTestClass {
     $this->assertEquals('Dear Harry,
       We cancelled your recur of USD $12.34
       and we are sending you this at harry@hendersons.net
-      this month of ' . (new DateTime())->format('F') . '
+      this month of ' . (new \DateTime())->format('F') . '
       $12.34', $activity['details']);
   }
 

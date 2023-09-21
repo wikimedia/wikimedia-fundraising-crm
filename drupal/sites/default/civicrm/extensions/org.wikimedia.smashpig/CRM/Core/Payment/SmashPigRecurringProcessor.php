@@ -362,7 +362,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     if ($isAutoRescueResponse) {
       if ($rawResponse['additionalData']['retry.rescueScheduled'] === "true") {
         $invoiceId = $recurringPayment['invoice_id'];
-        $contribution = \Civi\Api4\Contribution::get(FALSE)
+        $contribution = Contribution::get(FALSE)
           ->addSelect('payment_instrument_id')
           ->addWhere('contribution_recur_id', '=', $recurringPayment['id'])
           ->addClause('OR', ['invoice_id', 'LIKE', "$invoiceId%"])

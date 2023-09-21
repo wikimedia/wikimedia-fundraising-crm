@@ -1,6 +1,9 @@
 <?php
 
-require_once(__DIR__ . '/SmashPigBaseTestClass.php');
+namespace Civi\Test;
+
+use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Psr\Log\LogLevel;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
@@ -16,6 +19,7 @@ use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
 use Civi\Api4\Activity;
+use Civi;
 
 /**
  * Tests for SmashPig payment processor extension
@@ -34,7 +38,7 @@ use Civi\Api4\Activity;
  * @group SmashPig
  * @group headless
  */
-class CRM_SmashPigTest extends SmashPigBaseTestClass {
+class SmashPigTest extends SmashPigBaseTestClass {
 
   private $oldSettings = [];
 
@@ -132,10 +136,10 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
   /**
    * Test that doDirectPayment makes the right API calls
    *
-   * @throws \CiviCRM_API3_Exception
    * @throws \Civi\Payment\Exception\PaymentProcessorException
+   * @throws \CRM_Core_Exception
    */
-  public function testDoDirectPayment() {
+  public function testDoDirectPayment(): void {
     $processor = Civi\Payment\System::singleton()
       ->getById($this->processorId);
     $processor->setPaymentProcessor(civicrm_api3('PaymentProcessor', 'getsingle', ['id' => $this->processorId]));
@@ -179,8 +183,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $this->assertEquals(
       '000000850010000188130000200001', $result['processor_id']
     );
-    $status = CRM_Contribute_PseudoConstant::contributionStatus($result['payment_status_id']);
-    $this->assertEquals('Completed', $status);
+    $this->assertEquals('Completed', $result['payment_status']);
   }
 
   /**
@@ -188,7 +191,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    * @throws \CiviCRM_API3_Exception
    * @throws \Exception
    */
-  public function testRecurringChargeJob() {
+  public function testRecurringChargeJob(): void {
     // First test it directly inserting the new contribution
     \Civi::settings()->set(
       'smashpig_recurring_use_queue', '0'
@@ -201,7 +204,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $contributionRecur = $this->createContributionRecur($token);
     $contribution = $this->createContribution($contributionRecur);
 
-    [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution);
+    [, $expectedInvoiceId] = $this->getExpectedIds($contribution);
 
     $expectedDescription = $this->getExpectedDescription();
 
@@ -241,22 +244,21 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       ['ids' => [$contributionRecur['id']]],
       $result['values']['success']
     );
-    $contributions = civicrm_api3('Contribution', 'get', [
-      'contribution_recur_id' => $contributionRecur['id'],
-      'options' => ['sort' => 'id ASC'],
-    ]);
-    $this->assertCount(2, $contributions['values']);
-    $contributionIds = array_keys($contributions['values']);
-    $this->deleteThings['Contribution'][] = $contributionIds[1];
-    $newContribution = $contributions['values'][$contributionIds[1]];
+    $contributions = Contribution::get(FALSE)
+      ->addSelect('*', 'Gift_Data.*', 'contribution_status_id:name')
+      ->addWhere('contribution_recur_id', '=', $contributionRecur['id'])
+      ->addOrderBy('id')->execute();
+    $this->assertCount(2, $contributions);
+    $newContribution = $contributions[1];
+
     foreach ([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
       'total_amount' => '12.34',
       'trxn_id' => '000000850010000188130000200001',
-      'contribution_status' => 'Completed',
+      'contribution_status_id:name' => 'Completed',
       'invoice_id' => $expectedInvoiceId,
-    ] as $key => $value) {
+      ] as $key => $value) {
       $this->assertEquals($value, $newContribution[$key]);
     }
     // Check the updated date is at least 28 days further along
@@ -264,13 +266,13 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       'id' => $contributionRecur['id'],
     ]);
     $dateDiff = date_diff(
-      new DateTime($contributionRecur['next_sched_contribution_date']),
-      new DateTime($newContributionRecur['next_sched_contribution_date'])
+      new \DateTime($contributionRecur['next_sched_contribution_date']),
+      new \DateTime($newContributionRecur['next_sched_contribution_date'])
     );
     $this->assertGreaterThanOrEqual(27, $dateDiff->days);
     $this->assertEquals(
       'In Progress',
-      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
+      \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
   }
 
@@ -282,11 +284,10 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    * support an independent recurring subscription with its own payment amount
    * unconstrained by an earlier "first" donation.
    *
-   * @throws CRM_Core_Exception
-   * @throws CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Exception
    */
-  public function testRecurringChargeJobFirstPayment() {
+  public function testRecurringChargeJobFirstPayment(): void {
     \Civi::settings()->set(
       'smashpig_recurring_use_queue', '0'
     );
@@ -309,7 +310,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       'amount' => 12.00,
     ]);
 
-    [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution);
+    [, $expectedInvoiceId] = $this->getExpectedIds($contribution);
 
     $expectedDescription = $this->getExpectedDescription();
 
@@ -355,16 +356,15 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     ]);
     $this->assertEquals(1, count($contributions['values']));
     $contributionIds = array_keys($contributions['values']);
-    $this->deleteThings['Contribution'][] = $contributionIds[0];
     $newContribution = $contributions['values'][$contributionIds[0]];
     foreach ([
-      'contact_id' => $contact['id'],
-      'currency' => 'USD',
-      'total_amount' => '9.00',
-      'trxn_id' => '000000850010000188130000200001',
-      'contribution_status' => 'Completed',
-      'invoice_id' => $expectedInvoiceId,
-    ] as $key => $value) {
+               'contact_id' => $contact['id'],
+               'currency' => 'USD',
+               'total_amount' => '9.00',
+               'trxn_id' => '000000850010000188130000200001',
+               'contribution_status' => 'Completed',
+               'invoice_id' => $expectedInvoiceId,
+             ] as $key => $value) {
       $this->assertEquals($value, $newContribution[$key]);
     }
     // Check the updated date is at least 28 days further along
@@ -372,13 +372,13 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       'id' => $contributionRecur['id'],
     ]);
     $dateDiff = date_diff(
-      new DateTime($contributionRecur['next_sched_contribution_date']),
-      new DateTime($newContributionRecur['next_sched_contribution_date'])
+      new \DateTime($contributionRecur['next_sched_contribution_date']),
+      new \DateTime($newContributionRecur['next_sched_contribution_date'])
     );
     $this->assertGreaterThanOrEqual(27, $dateDiff->days);
     $this->assertEquals(
       'In Progress',
-      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
+      \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
   }
 
@@ -392,7 +392,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    *
    * @see sites/default/civicrm/extensions/org.wikimedia.smashpig/CRM/Core/Payment/SmashPigRecurringProcessor.php:233
    */
-  public function testRecurringChargeJobPreviousContributionLookupFallback() {
+  public function testRecurringChargeJobPreviousContributionLookupFallback(): void {
     \Civi::settings()->set(
       'smashpig_recurring_use_queue', '0'
     );
@@ -417,7 +417,11 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       'amount' => 12.00,
     ]);
 
-    [$ctId, $firstInvoiceId, $secondInvoiceId] = $this->getExpectedIds($contribution);
+    [
+      $ctId,
+      $firstInvoiceId,
+      $secondInvoiceId,
+    ] = $this->getExpectedIds($contribution);
 
     $expectedDescription = $this->getExpectedDescription();
 
@@ -468,16 +472,20 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $this->hostedCheckoutProvider->expects($this->exactly(2))
       ->method('approvePayment')
       ->withConsecutive(
-        [[
-          'amount' => 9.00,
-          'currency' => 'USD',
-          'gateway_txn_id' => '000000850010000188130000200001',
-        ]],
-        [[
-          'amount' => 9.00,
-          'currency' => 'USD',
-          'gateway_txn_id' => '000000850010000188140000200001',
-        ]])
+        [
+          [
+            'amount' => 9.00,
+            'currency' => 'USD',
+            'gateway_txn_id' => '000000850010000188130000200001',
+          ],
+        ],
+        [
+          [
+            'amount' => 9.00,
+            'currency' => 'USD',
+            'gateway_txn_id' => '000000850010000188140000200001',
+          ],
+        ])
       ->will(
         $this->onConsecutiveCalls(
           $this->approvePaymentResponse,
@@ -526,18 +534,16 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
     $this->assertCount(2, $contributions['values']);
     $contributionIds = array_keys($contributions['values']);
-    $this->deleteThings['Contribution'][] = $contributionIds[0];
-    $this->deleteThings['Contribution'][] = $contributionIds[1];
 
     $latestContribution = $contributions['values'][$contributionIds[1]];
     foreach ([
-      'contact_id' => $contact['id'],
-      'currency' => 'USD',
-      'total_amount' => '9.00',
-      'trxn_id' => '000000850010000188140000200001',
-      'contribution_status' => 'Completed',
-      'invoice_id' => $secondInvoiceId,
-    ] as $key => $value) {
+               'contact_id' => $contact['id'],
+               'currency' => 'USD',
+               'total_amount' => '9.00',
+               'trxn_id' => '000000850010000188140000200001',
+               'contribution_status' => 'Completed',
+               'invoice_id' => $secondInvoiceId,
+             ] as $key => $value) {
       $this->assertEquals($value, $latestContribution[$key]);
     }
 
@@ -546,8 +552,8 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       'id' => $contributionRecur['id'],
     ]);
     $dateDiff = date_diff(
-      new DateTime($contributionRecur['next_sched_contribution_date']),
-      new DateTime($newContributionRecur['next_sched_contribution_date'])
+      new \DateTime($contributionRecur['next_sched_contribution_date']),
+      new \DateTime($newContributionRecur['next_sched_contribution_date'])
     );
     $this->assertGreaterThanOrEqual(27, $dateDiff->days);
   }
@@ -555,8 +561,9 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
   /**
    * @throws \CRM_Core_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
+   * @throws \SmashPig\Core\ConfigurationKeyException
    */
-  public function testRecurringChargeJobQueue() {
+  public function testRecurringChargeJobQueue(): void {
     // Now test it sending the donation to the queue
     \Civi::settings()->set(
       'smashpig_recurring_use_queue', '1'
@@ -588,7 +595,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $actualDate = $contributionMessage['date'];
     $this->assertLessThan(100, abs($actualDate - $expectedDate));
     unset($contributionMessage['date']);
-    $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
+    $financialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
 
     $this->assertEquals([
       'contact_id' => $contact['id'],
@@ -609,9 +616,8 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \PHPQueue\Exception\JobNotFoundException
    */
-  public function testRecurringChargeJobFirstPaymentJobQueue() {
+  public function testRecurringChargeJobFirstPaymentJobQueue(): void {
     // Now test it sending the donation to the queue
     \Civi::settings()->set(
       'smashpig_recurring_use_queue', '1'
@@ -656,7 +662,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $actualDate = $contributionMessage['date'];
     $this->assertLessThan(100, abs($actualDate - $expectedDate));
     unset($contributionMessage['date']);
-    $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
+    $financialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
 
     $this->assertEquals([
       'contact_id' => $contact['id'],
@@ -676,7 +682,9 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
   }
 
   /**
-   * Ensure that Initial Scheme Transaction Id is passed to payment from custom field
+   * Ensure that Initial Scheme Transaction Id is passed to payment from custom
+   * field
+   *
    * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    * @throws \Exception
@@ -692,7 +700,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token, [
-      'contribution_recur_smashpig.initial_scheme_transaction_id' => 'ABC123YouAndMe'
+      'contribution_recur_smashpig.initial_scheme_transaction_id' => 'ABC123YouAndMe',
     ]);
     $contribution = $this->createContribution($contributionRecur);
 
@@ -717,7 +725,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
         'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
-        'initial_scheme_transaction_id' => 'ABC123YouAndMe'
+        'initial_scheme_transaction_id' => 'ABC123YouAndMe',
       ])
       ->willReturn(
         $this->createPaymentResponse
@@ -798,7 +806,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $actualDate = $contributionMessage['date'];
     $this->assertLessThan(100, abs($actualDate - $expectedDate));
     unset($contributionMessage['date']);
-    $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
+    $financialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
     $this->assertEquals([
       'contact_id' => $contact['id'],
       'currency' => 'EUR',
@@ -835,7 +843,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       ->willReturn(
         $response
       );
-    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
@@ -852,7 +860,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
     $this->assertEquals(
       'Failing',
-      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
+      \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
     $this->assertEquals('1', $newContributionRecur['failure_count']);
   }
@@ -880,13 +888,14 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $this->assertLessThan(100, abs($cancelDate - $expectedCancelDate));
     $this->assertEquals(
       'Cancelled',
-      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
+      \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
   }
 
   /**
-   * When we use adyen auto rescue, and get additionalInfo response with retry.rescueScheduled false,
-   * we should cancel the subscription immediately without count failed retries.
+   * When we use adyen auto rescue, and get additionalInfo response with
+   * retry.rescueScheduled false, we should cancel the subscription immediately
+   * without count failed retries.
    *
    * @throws \CiviCRM_API3_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
@@ -907,9 +916,9 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     )->setSuccessful(FALSE);
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
-      ->willReturn( $response );
+      ->willReturn($response);
 
-    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
@@ -931,10 +940,16 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $this->assertLessThan(100, abs($cancelDate - $expectedCancelDate));
     $this->assertEquals(
       'Cancelled',
-      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
+      \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \API_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \CiviCRM_API3_Exception
+   */
   public function testFailureEmailNotSentOnFirstFailedPayment() {
     Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
 
@@ -943,8 +958,8 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
     // add recurring charge that's about to fail for the first time
     $token = $this->createToken((int) $contact['id']);
-    $contributionRecur = $this->createContributionRecur($token,[
-      'failure_count' => 0
+    $contributionRecur = $this->createContributionRecur($token, [
+      'failure_count' => 0,
     ]);
     $this->createContribution($contributionRecur);
 
@@ -963,7 +978,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       );
 
     // run the recurring processor job
-    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
@@ -975,7 +990,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     // check the recurring record is now set as failing
     $this->assertEquals(
       'Failing',
-      CRM_Core_PseudoConstant::getName(
+      \CRM_Core_PseudoConstant::getName(
         'CRM_Contribute_BAO_ContributionRecur',
         'contribution_status_id',
         $contributionRecurRecord['contribution_status_id']
@@ -990,7 +1005,13 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $this->assertNull($activity);
   }
 
-  public function testFailureEmailNotSentOnSecondFailedPayment() {
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \API_Exception
+   * @throws \CiviCRM_API3_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function testFailureEmailNotSentOnSecondFailedPayment(): void {
     Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
 
     // add contact
@@ -998,8 +1019,8 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
     // add recurring charge that's about to fail for the second time
     $token = $this->createToken((int) $contact['id']);
-    $contributionRecur = $this->createContributionRecur($token,[
-      'failure_count' => 1
+    $contributionRecur = $this->createContributionRecur($token, [
+      'failure_count' => 1,
     ]);
     $this->createContribution($contributionRecur);
 
@@ -1018,7 +1039,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       );
 
     // run the recurring processor job
-    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
@@ -1030,7 +1051,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     // check the recurring record is now set as failing
     $this->assertEquals(
       'Failing',
-      CRM_Core_PseudoConstant::getName(
+      \CRM_Core_PseudoConstant::getName(
         'CRM_Contribute_BAO_ContributionRecur',
         'contribution_status_id',
         $contributionRecurRecord['contribution_status_id']
@@ -1065,8 +1086,8 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
     // add recurring charge that's about to fail for the third time
     $token = $this->createToken((int) $contact['id']);
-    $contributionRecur = $this->createContributionRecur($token,[
-      'failure_count' => 2
+    $contributionRecur = $this->createContributionRecur($token, [
+      'failure_count' => 2,
     ]);
     $this->createContribution($contributionRecur);
 
@@ -1085,7 +1106,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       );
 
     // run the recurring processor job
-    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
@@ -1097,7 +1118,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     // check the recurring record is now set as Cancelled
     $this->assertEquals(
       'Cancelled',
-      CRM_Core_PseudoConstant::getName(
+      \CRM_Core_PseudoConstant::getName(
         'CRM_Contribute_BAO_ContributionRecur',
         'contribution_status_id',
         $contributionRecurRecord['contribution_status_id']
@@ -1124,7 +1145,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    * @throws \PHPQueue\Exception\JobNotFoundException
    * @throws \CRM_Core_Exception
    */
-  public function testFailureEmailNotSentIfOtherActiveRecurringExists() {
+  public function testFailureEmailNotSentIfOtherActiveRecurringExists(): void {
     Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
 
     // add contact
@@ -1132,23 +1153,23 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
 
     // add old recurring that's about to be charged
     $token1 = $this->createToken((int) $contact['id']);
-    $contributionRecur1 = $this->createContributionRecur($token1,[
+    $contributionRecur1 = $this->createContributionRecur($token1, [
       'start_date' => gmdate('Y-m-d H:i:s', strtotime('-6 month')),
       'create_date' => gmdate('Y-m-d H:i:s', strtotime('-6 month')),
       // set this to 1 month in the past so it doesn't get run
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
     ]);
-    $contribution1 = $this->createContribution($contributionRecur1);
+    $this->createContribution($contributionRecur1);
 
     // add second (newer) recurring that's already been charged
-    $token2 = $this->createToken((int) $contact['id']);
-    $contributionRecur2 = $this->createContributionRecur($token1,[
+    $this->createToken((int) $contact['id']);
+    $contributionRecur2 = $this->createContributionRecur($token1, [
       'start_date' => gmdate('Y-m-d H:i:s', strtotime('-14 days')),
       'create_date' => gmdate('Y-m-d H:i:s', strtotime('-14 days')),
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('+14 days')),
+      'trxn_id' => 3456789,
     ]);
-    $contribution2 = $this->createContribution($contributionRecur2);
-
+    $this->createContribution($contributionRecur2);
 
     // set up our fail DO NOT RETRY response for when our old recurring
     // is charged. We could see this when a card is stopped due to
@@ -1167,7 +1188,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       );
 
     // run the recurring processor job
-    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
@@ -1179,7 +1200,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $this->assertEquals('(auto) un-retryable card decline reason code', $checkContributionRecur['cancel_reason']);
     $this->assertEquals(
       'Cancelled',
-      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $checkContributionRecur['contribution_status_id'])
+      \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $checkContributionRecur['contribution_status_id'])
     );
 
     // confirm no email was sent by checking the activity log
@@ -1188,7 +1209,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $activity = Activity::get()->setCheckPermissions(FALSE)
       ->addWhere('activity_type_id:name', '=', 'Email')
       ->addWhere('subject', 'LIKE', 'Recur fail message : %')
-      ->addWhere('source_record_id', '=',  $contributionRecur1['id'])
+      ->addWhere('source_record_id', '=', $contributionRecur1['id'])
       ->addOrderBy('activity_date_time', 'DESC')
       ->execute()->first();
 
@@ -1221,13 +1242,13 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    * @throws \CiviCRM_API3_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
    */
-  public function testMaxFailures() {
+  public function testMaxFailures(): void {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
-    $statuses = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-    $failedStatus = CRM_Utils_Array::key('Failed', $statuses);
-    $cancelledStatus = CRM_Utils_Array::key('Cancelled', $statuses);
+    $statuses = \CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
+    $failedStatus = \CRM_Utils_Array::key('Failed', $statuses);
+    $cancelledStatus = \CRM_Utils_Array::key('Cancelled', $statuses);
     civicrm_api3('ContributionRecur', 'create', [
       'id' => $contributionRecur['id'],
       'contribution_status_id' => $failedStatus,
@@ -1246,7 +1267,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       ->willReturn(
         $response
       );
-    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
@@ -1274,14 +1295,17 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    *
    * @throws \PHPQueue\Exception\JobNotFoundException
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
-  public function testDuplicateOrderId() {
+  public function testDuplicateOrderId(): void {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
     $contribution = $this->createContribution($contributionRecur);
-    [$ctId, $expectedInvoiceId, $nextInvoiceId] = $this->getExpectedIds($contribution);
+    [
+      $ctId,
+      $expectedInvoiceId,
+      $nextInvoiceId,
+    ] = $this->getExpectedIds($contribution);
     $response = (new CreatePaymentResponse())->addErrors(
       new PaymentError(
         ErrorCode::DUPLICATE_ORDER_ID,
@@ -1338,7 +1362,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       ->willReturn(
         $this->approvePaymentResponse
       );
-    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
@@ -1347,7 +1371,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     $this->assertNull($queue->pop(), 'Queued too many donations!');
     SourceFields::removeFromMessage($contributionMessage);
     unset($contributionMessage['date']);
-    $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
+    $financialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
     $this->assertEquals([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
@@ -1371,7 +1395,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    *
    * @throws \CRM_Core_Exception
    */
-  public function testRecurringChargeWithPreviousFailedAttempts() {
+  public function testRecurringChargeWithPreviousFailedAttempts(): void {
     \Civi::settings()->set(
       'smashpig_recurring_use_queue', '0'
     );
@@ -1381,11 +1405,15 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     // Have one previous payment failed
     $overrides['failure_count'] = 1;
 
-    $contributionRecur = $this->createContributionRecur($token,$overrides);
+    $contributionRecur = $this->createContributionRecur($token, $overrides);
     $contribution = $this->createContribution($contributionRecur);
 
     // Get the expected invoice ids taking into account the failures
-    [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution,$contributionRecur['failure_count']);
+    [
+      $ctId,
+      $expectedInvoiceId,
+      $next,
+    ] = $this->getExpectedIds($contribution, $contributionRecur['failure_count']);
 
     $expectedDescription = $this->getExpectedDescription();
     $this->hostedCheckoutProvider->expects($this->once())
@@ -1430,16 +1458,15 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
     ]);
     $this->assertCount(2, $contributions['values']);
     $contributionIds = array_keys($contributions['values']);
-    $this->deleteThings['Contribution'][] = $contributionIds[1];
     $newContribution = $contributions['values'][$contributionIds[1]];
     foreach ([
-      'contact_id' => $contact['id'],
-      'currency' => 'USD',
-      'total_amount' => '12.34',
-      'trxn_id' => '000000850010000188130000200001',
-      'contribution_status' => 'Completed',
-      'invoice_id' => $expectedInvoiceId,
-    ] as $key => $value) {
+               'contact_id' => $contact['id'],
+               'currency' => 'USD',
+               'total_amount' => '12.34',
+               'trxn_id' => '000000850010000188130000200001',
+               'contribution_status' => 'Completed',
+               'invoice_id' => $expectedInvoiceId,
+             ] as $key => $value) {
       $this->assertEquals($value, $newContribution[$key]);
     }
 
@@ -1453,7 +1480,7 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
    *
    * @return array
    */
-  protected function getExpectedIds($contribution,$failures = 0) {
+  protected function getExpectedIds($contribution, $failures = 0): array {
     $originalInvoiceId = $contribution['invoice_id'];
     $parts = explode('|', $originalInvoiceId);
     [$ctId, $sequence] = explode('.', $parts[0]);
@@ -1495,55 +1522,56 @@ class CRM_SmashPigTest extends SmashPigBaseTestClass {
       ->willReturn(
         $response
       );
-    $processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     return $contributionRecur;
   }
 
-	/**
-		* We add recurring payment information to the pending queue when auto rescue transaction is initialised
-		*
-		* @throws \CiviCRM_API3_Exception
-		* @throws \PHPQueue\Exception\JobNotFoundException
-		* @throws \CRM_Core_Exception
-		*/
-	public function testPaymentAutoRescueInitialised(): void {
-		$contributionRecur = $this->setupRecurring();
-		$orderId = $contributionRecur['invoice_id'];
-		$pspReference = 'testPspReference';
-		$response = (new CreatePaymentResponse())->setRawResponse(
-			[
-				'merchantReference' => $orderId,
-				'pspReference' => $pspReference,
-				'resultCode' => 'Refused',
-				'refusalReason' => 'NOT_ENOUGH_BALANCE',
-				'additionalData' => [
-					'retry.rescueScheduled' => 'true',
-					'retry.rescueReference' => 'testRescueReference',
-				],
-			]
-		)->setGatewayTxnId($pspReference)->setSuccessful(FALSE);
-		$this->hostedCheckoutProvider->expects($this->once())
-			->method('createPayment')
-			->willReturn( $response );
+  /**
+   * We add recurring payment information to the pending queue when auto rescue
+   * transaction is initialised
+   *
+   * @throws \CiviCRM_API3_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   * @throws \CRM_Core_Exception
+   */
+  public function testPaymentAutoRescueInitialised(): void {
+    $contributionRecur = $this->setupRecurring();
+    $orderId = $contributionRecur['invoice_id'];
+    $pspReference = 'testPspReference';
+    $response = (new CreatePaymentResponse())->setRawResponse(
+      [
+        'merchantReference' => $orderId,
+        'pspReference' => $pspReference,
+        'resultCode' => 'Refused',
+        'refusalReason' => 'NOT_ENOUGH_BALANCE',
+        'additionalData' => [
+          'retry.rescueScheduled' => 'true',
+          'retry.rescueReference' => 'testRescueReference',
+        ],
+      ]
+    )->setGatewayTxnId($pspReference)->setSuccessful(FALSE);
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->willReturn($response);
 
-		$processor = new CRM_Core_Payment_SmashPigRecurringProcessor(
-			TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
-		);
-		$processor->run();
-		$pendingMessage = QueueWrapper::getQueue('pending')->pop();
-		$this->assertEquals($pendingMessage['contribution_recur_id'], $contributionRecur['id']);
-		$this->assertTrue($pendingMessage['is_auto_rescue_retry']);
-		$this->assertEquals($pendingMessage['order_id'], $orderId);
-		$this->assertEquals($pendingMessage['gateway_txn_id'], $pspReference);
-		$this->assertEquals($pendingMessage['gateway'], 'adyen');
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+    );
+    $processor->run();
+    $pendingMessage = QueueWrapper::getQueue('pending')->pop();
+    $this->assertEquals($pendingMessage['contribution_recur_id'], $contributionRecur['id']);
+    $this->assertTrue($pendingMessage['is_auto_rescue_retry']);
+    $this->assertEquals($pendingMessage['order_id'], $orderId);
+    $this->assertEquals($pendingMessage['gateway_txn_id'], $pspReference);
+    $this->assertEquals('adyen', $pendingMessage['gateway']);
 
-		$updatedRecur = \Civi\Api4\ContributionRecur::get(FALSE)
-			->addWhere('id', '=', $contributionRecur['id'])
-			->addSelect('contribution_status_id:name',)->execute()->first();
-		$this->assertEquals($updatedRecur['contribution_status_id:name'], 'Pending');
-	}
+    $updatedRecur = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $contributionRecur['id'])
+      ->addSelect('contribution_status_id:name')->execute()->first();
+    $this->assertEquals('Pending', $updatedRecur['contribution_status_id:name']);
+  }
 
 }

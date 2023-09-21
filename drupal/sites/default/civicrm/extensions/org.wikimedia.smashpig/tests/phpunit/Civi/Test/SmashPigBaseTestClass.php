@@ -1,16 +1,21 @@
 <?php
 
+namespace Civi\Test;
+
+use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Translation;
-use Civi\Test\HeadlessInterface;
-use Civi\Test\TransactionalInterface;
-use Civi\Test\Api3TestTrait;
 use \Civi\Api4\MessageTemplate;
 use Civi\Api4\Activity;
+use Civi\Test;
+use Civi;
+use Civi\Test\EntityTrait;
+use PHPUnit\Framework\TestCase;
 
-class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements HeadlessInterface, TransactionalInterface {
+class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, TransactionalInterface {
 
   use Api3TestTrait;
+  use EntityTrait;
 
   /**
    * @var string
@@ -23,6 +28,8 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @var int
    */
   protected $processorId;
+
+  protected $maxContactID;
 
   /**
    * Stored version of failure template to restore.
@@ -45,14 +52,14 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    */
   protected $createdMessageTemplate;
 
+  protected $trxn_id = 123456789;
+
   /**
    * Things to cleanup.
    *
    * @var array
    */
   protected $deleteThings = [
-    'Contribution' => [],
-    'ContributionRecur' => [],
     'PaymentToken' => [],
     'PaymentProcessor' => [],
     'Contact' => [],
@@ -63,10 +70,10 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    *
    * @throws \CRM_Extension_Exception_ParseException
    */
-  public function setUpHeadless() {
+  public function setUpHeadless(): CiviEnvBuilder {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
     // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::headless()
+    return Test::headless()
       ->installMe(__DIR__)
       ->apply();
   }
@@ -79,7 +86,6 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function setUp(): void {
-    civicrm_initialize();
     $existing = $this->callAPISuccess(
       'PaymentProcessor', 'get', ['name' => $this->processorName, 'is_test' => 0]
     );
@@ -91,7 +97,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
       $this->processorId = $processor['id'];
     }
     // Ensure site is set to put mail into civicrm_mailing_spool table.
-    Civi::settings()->set('mailing_backend', ['outBound_option' => CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB]);
+    Civi::settings()->set('mailing_backend', ['outBound_option' => \CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB]);
     $this->originalFailureMessageTemplate = MessageTemplate::get(FALSE)
       ->setSelect(['*'])
       ->addWhere('workflow_name', '=', 'recurring_failed_message')
@@ -102,15 +108,14 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
       ->addWhere('language', '=', 'en_US')
       ->addWhere('status_id:name', '=', 'active')
       ->execute();
+    $this->maxContactID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
     parent::setUp();
   }
 
   /**
    * Post test cleanup.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function tearDown(): void {
     global $civicrm_setting;
@@ -125,11 +130,15 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     if ($this->createdMessageTemplate) {
       $this->deleteThings['MessageTemplate'][] = $this->createdMessageTemplate['id'];
     }
+    Contribution::delete(FALSE)->addWhere('invoice_id', 'LIKE', '%12345%')->execute();
+    ContributionRecur::delete(FALSE)->addWhere('id', '=', $this->trxn_id)->execute();
     foreach ($this->deleteThings as $type => $ids) {
       foreach ($ids as $id) {
         $this->callAPISuccess($type, 'delete', ['id' => $id, 'skip_undelete' => TRUE]);
       }
     }
+    // Ensure cleanup has been done!
+    $this->assertEquals($this->maxContactID,  $this->maxContactID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact'));
     parent::tearDown();
   }
 
@@ -137,8 +146,6 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * Creat test contact.
    *
    * @return array
-   *
-   * @throws \CRM_Core_Exception
    */
   protected function createContact():array {
     $result = $this->callApiSuccess('Contact', 'create', [
@@ -169,8 +176,6 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @param array $overrides
    *
    * @return array
-   *
-   * @throws \CRM_Core_Exception
    */
   protected function createContribution(array $contributionRecur, array $overrides = []): array {
     $params = $overrides + [
@@ -181,12 +186,9 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
         'receive_date' => date('Y-m-d H:i:s', strtotime('-1 month')),
         'trxn_id' => $contributionRecur['trxn_id'],
         'financial_type_id' => 1,
-        'invoice_id' => $contributionRecur['invoice_id'] . '|recur-' . mt_rand(100000, 100000000),
-        'skipRecentView' => 1,
+        'invoice_id' => $contributionRecur['invoice_id'] . '|recur-' . 123456,
       ];
-    $result = $this->callAPISuccess('Contribution', 'create', $params);
-    $this->deleteThings['Contribution'][] = $result['id'];
-    return $result['values'][$result['id']];
+    return $this->createTestEntity('Contribution', $params);
   }
 
   /**
@@ -200,7 +202,7 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
     $typeRecord = $this->callAPISuccess(
       'PaymentProcessorType', 'getSingle', ['name' => 'smashpig_ingenico']
     );
-    $accountType = key(CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL,
+    $accountType = key(\CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL,
       " AND v.name = 'Asset' "));
     $query = "
         SELECT id
@@ -208,11 +210,11 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
         WHERE  is_default = 1
         AND    financial_account_type_id = {$accountType}
       ";
-    $financialAccountId = CRM_Core_DAO::singleValueQuery($query);
+    $financialAccountId = \CRM_Core_DAO::singleValueQuery($query);
     $params = [];
     $params['payment_processor_type_id'] = $typeRecord['id'];
     $params['name'] = $this->processorName;
-    $params['domain_id'] = CRM_Core_Config::domainID();
+    $params['domain_id'] = \CRM_Core_Config::domainID();
     $params['is_active'] = TRUE;
     $params['financial_account_id'] = $financialAccountId;
     $result = $this->callAPISuccess('PaymentProcessor', 'create', $params);
@@ -246,11 +248,9 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
    * @param array $overrides
    *
    * @return array
-   *
-   * @throws \CRM_Core_Exception
    */
   protected function createContributionRecur(array $token, array $overrides = []):array {
-    $processor_id = mt_rand(10000, 100000000);
+    $trxn_id = ($overrides['trxn_id'] ?? NULL) ?: $this->trxn_id;
     $params = $overrides + [
         'contact_id' => $token['contact_id'],
         'amount' => 12.34,
@@ -266,17 +266,12 @@ class SmashPigBaseTestClass extends \PHPUnit\Framework\TestCase implements Headl
         'cycle_day' => gmdate('d', strtotime('-12 hours')),
         'payment_processor_id' => $this->processorId,
         'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
-        'trxn_id' => 'RECURRING INGENICO ' . $processor_id,
-        'processor_id' => $processor_id,
-        'invoice_id' => mt_rand(10000, 10000000) . '.' . mt_rand(1, 20),
+        'trxn_id' => 'RECURRING INGENICO ' . $trxn_id,
+        'processor_id' => $trxn_id,
+        'invoice_id' => 678000 . '.' . $trxn_id,
         'contribution_status_id:name' => 'Pending',
       ];
-    $result = ContributionRecur::create(FALSE)
-      ->setValues($params)
-      ->execute()
-      ->first();
-    $this->deleteThings['ContributionRecur'][] = $result['id'];
-    return $result;
+    return $this->createTestEntity('ContributionRecur', $params);
   }
 
   /**

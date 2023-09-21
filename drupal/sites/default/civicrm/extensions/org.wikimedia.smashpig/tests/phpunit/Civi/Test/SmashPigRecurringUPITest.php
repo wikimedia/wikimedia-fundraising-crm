@@ -1,6 +1,6 @@
 <?php
 
-namespace phpunit\CRM;
+namespace Civi\Test;
 
 use Civi;
 use CRM_Core_PseudoConstant;
@@ -11,7 +11,6 @@ use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
-use SmashPigBaseTestClass;
 
 /**
  * Test recurring UPI payments.
@@ -77,8 +76,8 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
       'trxn_id' => 'RECURRING DLOCAL ' . $this->generateRandomOrderId(),
       'invoice_id' => $expectedOrderIdWithSequence,
     ]);
-    $contribution = $this->createContribution($contributionRecur, [
-      'payment_instrument' => 'Bank Transfer: UPI',
+    $this->createContribution($contributionRecur, [
+      'payment_instrument_id:name' => 'Bank Transfer: UPI',
       'invoice_id' => $expectedOrderIdWithSequence . '|recur-' . $this->generateRandomOrderId(),
     ]);
 
@@ -128,8 +127,8 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
       'trxn_id' => 'RECURRING DLOCAL ' . $this->generateRandomOrderId(),
       'invoice_id' => $expectedOrderIdWithSequence,
     ]);
-    $contribution = $this->createContribution($contributionRecur, [
-      'payment_instrument' => 'Bank Transfer: UPI',
+    $this->createContribution($contributionRecur, [
+      'payment_instrument_id:name' => 'Bank Transfer: UPI',
       'invoice_id' => $expectedOrderIdWithSequence . '|recur-' . $this->generateRandomOrderId(),
     ]);
 
@@ -166,8 +165,8 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
       'trxn_id' => 'RECURRING DLOCAL ' . $this->generateRandomOrderId(),
       'invoice_id' => $expectedOrderIdWithSequence,
     ]);
-    $contribution = $this->createContribution($initialContributionRecur, [
-      'payment_instrument' => 'Bank Transfer: UPI',
+    $this->createContribution($initialContributionRecur, [
+      'payment_instrument_id:name' => 'Bank Transfer: UPI',
       'invoice_id' => $expectedOrderIdWithSequence . '|recur-' . $this->generateRandomOrderId(),
     ]);
 
@@ -195,11 +194,16 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
   }
 
   /**
+   * Always include 12345 as that will be cleaned up.
+   *
+   * (It will cleanup from previous killed runs too - which
+   * is an advantage over just tracking what we created).
+   *
    * @return int
    * @throws \Exception
    */
   private function generateRandomOrderId() : int {
-    return random_int(1E+4, 1E+7);
+    return 12345 . random_int(1E+4, 1E+7);
   }
 
 }

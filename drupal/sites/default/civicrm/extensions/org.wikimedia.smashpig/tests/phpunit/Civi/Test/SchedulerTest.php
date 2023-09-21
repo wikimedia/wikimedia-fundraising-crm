@@ -1,7 +1,9 @@
 <?php
 
-use Civi\Test\HeadlessInterface;
-use Civi\Test\TransactionalInterface;
+namespace Civi\Test;
+
+use Civi\Test;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for SmashPig recurring payment scheduler
@@ -20,12 +22,15 @@ use Civi\Test\TransactionalInterface;
  * @group SmashPig
  * @group headless
  */
-class CRM_SchedulerTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, TransactionalInterface {
+class SchedulerTest extends TestCase implements HeadlessInterface, TransactionalInterface {
 
-  public function setUpHeadless() {
+  /**
+   * @throws \CRM_Extension_Exception_ParseException
+   */
+  public function setUpHeadless(): CiviEnvBuilder {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
     // See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
-    return \Civi\Test::headless()
+    return Test::headless()
       ->installMe(__DIR__)
       ->apply();
   }
@@ -39,23 +44,23 @@ class CRM_SchedulerTest extends \PHPUnit\Framework\TestCase implements HeadlessI
     }
   }
 
-  public function testFirstOfMonth() {
+  public function testFirstOfMonth(): void {
     $record = [
       'cycle_day' => '1',
       'frequency_interval' => '1',
     ];
-    $nextChargeDate = CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
       $record, gmmktime(0, 0, 0, 1, 1, 2018)
     );
     $this->assertEquals('2018-02-01 00:00:00', $nextChargeDate);
   }
 
-  public function testThirdDuringDayOfMonth() {
+  public function testThirdDuringDayOfMonth(): void {
     $record = [
       'cycle_day' => '3',
       'frequency_interval' => '1',
     ];
-    $nextChargeDate = CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
       $record, gmmktime(18, 13, 56, 6, 3, 2020)
     );
     $this->assertEquals('2020-07-03 00:00:00', $nextChargeDate);
@@ -65,12 +70,12 @@ class CRM_SchedulerTest extends \PHPUnit\Framework\TestCase implements HeadlessI
    * If someone's cycle date is the 31st, schedule their February
    * donation for the 28th
    */
-  public function testNextMonthWithoutCycleDay() {
+  public function testNextMonthWithoutCycleDay(): void {
     $record = [
       'cycle_day' => '31',
       'frequency_interval' => '1',
     ];
-    $nextChargeDate = CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
       $record, gmmktime(0, 0, 0, 1, 31, 2018)
     );
     $this->assertEquals('2018-02-28 00:00:00', $nextChargeDate);
@@ -80,23 +85,23 @@ class CRM_SchedulerTest extends \PHPUnit\Framework\TestCase implements HeadlessI
    * In February, we charge someone with cycle_day = 31 on the 28th.
    * Make sure the next payment is scheduled for March 31.
    */
-  public function testThisMonthWithoutCycleDay() {
+  public function testThisMonthWithoutCycleDay(): void {
     $record = [
       'cycle_day' => '31',
       'frequency_interval' => '1',
     ];
-    $nextChargeDate = CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
       $record, gmmktime(0, 0, 0, 2, 28, 2018)
     );
     $this->assertEquals('2018-03-31 00:00:00', $nextChargeDate);
   }
 
-  public function testDecember() {
+  public function testDecember(): void {
     $record = [
       'cycle_day' => '9',
       'frequency_interval' => '1',
     ];
-    $nextChargeDate = CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
       $record, gmmktime(0, 0, 0, 12, 9, 2017)
     );
     $this->assertEquals('2018-01-09 00:00:00', $nextChargeDate);
@@ -106,12 +111,12 @@ class CRM_SchedulerTest extends \PHPUnit\Framework\TestCase implements HeadlessI
    * If we've charged someone late this month, keep next month's donation
    * on the normal cycle day.
    */
-  public function testOverduePayment() {
+  public function testOverduePayment(): void {
     $record = [
       'cycle_day' => '1',
       'frequency_interval' => '1',
     ];
-    $nextChargeDate = CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
       $record, gmmktime(0, 0, 0, 1, 9, 2018)
     );
     $this->assertEquals('2018-02-01 00:00:00', $nextChargeDate);
