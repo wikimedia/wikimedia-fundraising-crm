@@ -347,7 +347,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $isAutoRescueResponse = FALSE;
     $errorData = $exception->getErrorData();
     $rawResponse = NULL;
-    $errorResponse = $errorData['smashpig_processor_response'];
+    $errorResponse = $errorData['smashpig_processor_response'] ?? $exception->getMessage();
     $params = [
       'id' => $recurringPayment['id'],
     ];
