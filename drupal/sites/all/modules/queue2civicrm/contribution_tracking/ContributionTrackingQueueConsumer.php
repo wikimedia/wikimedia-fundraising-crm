@@ -27,7 +27,12 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
       ['contribution_tracking_id' => $message['id']]
     );
 
-    // pick out the fields we want and ignore anything else (e.g. source_* fields)
+    $csData = $this->getContributionSourceData($message);
+    $message = $this->truncateFields($message);
+
+    // For the legacy table insert, pick out the fields we want and ignore
+    // anything else (e.g. source_* fields). The data array to insert into
+    // the new table is built in WMFHelper::getContributionTrackingParameters
     $ctData = array_filter($message, function ($key) {
       return in_array($key, [
         'id',
@@ -46,9 +51,7 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
         'ts',
       ]);
     }, ARRAY_FILTER_USE_KEY);
-    $csData = $this->getContributionSourceData($ctData);
 
-    $ctData = $this->truncateFields($ctData);
     [$existingContributionID, $existingRow] = $this->getExisting($ctData['id']);
     if ($existingContributionID
       && !empty($ctData['contribution_id'])
@@ -59,7 +62,7 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
     else {
 
       ContributionTracking::save(FALSE)
-        ->addRecord(WMFHelper::getContributionTrackingParameters($ctData))
+        ->addRecord(WMFHelper::getContributionTrackingParameters($message))
         ->execute();
 
       $this->persistContributionTrackingData($ctData, $csData, $existingRow);
