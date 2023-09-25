@@ -92,39 +92,18 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
   }
 
   public function testSuccessfulInstallment(): void {
+    // set up test records to link queue message with
+    $contact = $this->createTestContactRecord();
+    $token = $this->createTestPaymentToken($contact['id']);
+    $recur = $this->createTestContributionRecurRecord($contact['id'], $token['id']);
+
     // Test that a donation IPN with a pre-existing token and recurring
     // record will set the donation message IDs correctly
     $message = json_decode(
       file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
     );
     QueueWrapper::push('upi-donations', $message);
-    $contact = Contact::create(FALSE)
-      ->setValues([
-        'first_name' => 'Testy',
-        'last_name' => 'McTest',
-        'contact_type' => 'Individual',
-      ])
-      ->execute()
-      ->first();
-    $token = PaymentToken::create(FALSE)
-      ->setValues([
-        'token' => '5dff49d4-462c-432e-a12a-9f4c997e34c3',
-        'contact_id' => $contact['id'],
-        'payment_processor_id' => wmf_civicrm_get_payment_processor_id('dlocal'),
-        'user_ip' => '192.168.1.1',
-      ])
-      ->execute()
-      ->first();
-    $recur = ContributionRecur::create(FALSE)
-      ->setValues([
-        'currency' => 'INR',
-        'amount' => 505,
-        'cycle_day' => 5,
-        'contact_id' => $contact['id'],
-        'payment_token_id' => $token['id'],
-      ])
-      ->execute()
-      ->first();
+
     $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
@@ -143,33 +122,9 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
    */
   public function testRejectionMessage(): void {
     // set up test records to link queue message with
-    $contact = Contact::create(FALSE)
-      ->setValues([
-        'first_name' => 'Testy',
-        'last_name' => 'McTest',
-        'contact_type' => 'Individual',
-      ])
-      ->execute()
-      ->first();
-    $token = PaymentToken::create(FALSE)
-      ->setValues([
-        'token' => '5c3f1cd1-19cc-42fe-9793-1e4a3069d9b4',
-        'contact_id' => $contact['id'],
-        'payment_processor_id' => wmf_civicrm_get_payment_processor_id('dlocal'),
-        'user_ip' => '192.168.1.1',
-      ])
-      ->execute()
-      ->first();
-    $recur = ContributionRecur::create(FALSE)
-      ->setValues([
-        'currency' => 'INR',
-        'amount' => 104,
-        'cycle_day' => 5,
-        'contact_id' => $contact['id'],
-        'payment_token_id' => $token['id'],
-      ])
-      ->execute()
-      ->first();
+    $contact = $this->createTestContactRecord();
+    $token = $this->createTestPaymentToken($contact['id']);
+    $recur = $this->createTestContributionRecurRecord($contact['id'], $token['id']);
 
     // push a test rejection queue message to the upi donations queue
     $rejectionQueueMessage = json_decode(
@@ -220,6 +175,54 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
         ->setUseTrash(FALSE)
         ->execute();
     }
+  }
+
+  /**
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function createTestContactRecord(): ?array {
+    return Contact::create(FALSE)
+      ->setValues([
+        'first_name' => 'Testy',
+        'last_name' => 'McTest',
+        'contact_type' => 'Individual',
+      ])
+      ->execute()
+      ->first();
+  }
+
+  /**
+   * @param int $id
+   */
+  protected function createTestPaymentToken(int $id): ?array {
+    return PaymentToken::create(FALSE)
+      ->setValues([
+        'token' => '5dff49d4-462c-432e-a12a-9f4c997e34c3',
+        'contact_id' => $id,
+        'payment_processor_id' => wmf_civicrm_get_payment_processor_id('dlocal'),
+        'ip_address' => '192.168.1.1',
+      ])
+      ->execute()
+      ->first();
+  }
+
+  /**
+   * @param int $contactId
+   * @param int $paymentTokenId
+   */
+  protected function createTestContributionRecurRecord(int $contactId, int $paymentTokenId): ?array {
+    return ContributionRecur::create(FALSE)
+      ->setValues([
+        'currency' => 'INR',
+        'amount' => 505,
+        'cycle_day' => 5,
+        'contact_id' => $contactId,
+        'payment_token_id' => $paymentTokenId,
+      ])
+      ->execute()
+      ->first();
   }
 
 }
