@@ -315,23 +315,36 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'contribution_recur_id' => $recurringPayment['id'],
         'contribution_tracking_id' => $ctId,
         'recurring' => TRUE,
+        // Restrictions field
+        'restrictions' => $previousPayment['Gift_Data.Fund'],
+        // Gift Source field.
+        'gift_source' => $previousPayment['Gift_Data.Campaign'],
+        // Direct Mail Appeal field
+        'direct_mail_appeal' => $previousPayment['Gift_Data.Appeal'],
       ];
 
       QueueWrapper::push('donations', $queueMessage, true);
     }
     else {
       // Create the contribution
-      civicrm_api3('Contribution', 'create', [
-        'financial_type_id' => $financialType,
+      Contribution::create(FALSE)->setValues([
+        'financial_type_id:name' => 'Recurring Gift - Cash',
         'payment_instrument_id' => $previousPayment['payment_instrument_id'],
         'total_amount' => $recurringPayment['amount'],
         'currency' => $recurringPayment['currency'],
         'contribution_recur_id' => $recurringPayment['id'],
-        'contribution_status_id' => 'Completed',
+        'contribution_status_id:name' => 'Completed',
         'invoice_id' => $invoiceId,
         'contact_id' => $recurringPayment['contact_id'],
         'trxn_id' => $payment['processor_id'],
-      ]);
+        // https://phabricator.wikimedia.org/T345920
+        // Restrictions field
+        'Gift_Data.Fund' => $previousPayment['Gift_Data.Fund'],
+        // Gift Source field.
+        'Gift_Data.Campaign' => $previousPayment['Gift_Data.Campaign'],
+        // Direct Mail Appeal field
+        'Gift_Data.Appeal' => $previousPayment['Gift_Data.Appeal'],
+      ])->execute();
     }
   }
 
@@ -347,7 +360,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $isAutoRescueResponse = FALSE;
     $errorData = $exception->getErrorData();
     $rawResponse = NULL;
-    $errorResponse = $errorData['smashpig_processor_response'];
+    $errorResponse = $errorData['smashpig_processor_response'] ?? $exception->getMessage();
     $params = [
       'id' => $recurringPayment['id'],
     ];
@@ -362,7 +375,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     if ($isAutoRescueResponse) {
       if ($rawResponse['additionalData']['retry.rescueScheduled'] === "true") {
         $invoiceId = $recurringPayment['invoice_id'];
-        $contribution = \Civi\Api4\Contribution::get(FALSE)
+        $contribution = Contribution::get(FALSE)
           ->addSelect('payment_instrument_id')
           ->addWhere('contribution_recur_id', '=', $recurringPayment['id'])
           ->addClause('OR', ['invoice_id', 'LIKE', "$invoiceId%"])
@@ -460,7 +473,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    */
   public static function getPreviousContributionByRecurringId($recurringId, $isTest) {
     return Contribution::get(FALSE)
-      ->addSelect('*', 'payment_instrument_id:name')
+      ->addSelect('*', 'Gift_Data.*', 'payment_instrument_id:name')
       ->addWhere('contribution_recur_id', '=', $recurringId)
       ->addWhere('is_test', '=', $isTest)
       ->addOrderBy('receive_date', 'DESC')
@@ -480,7 +493,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    */
   public static function getPreviousContributionByInvoiceId($invoiceId, $isTest) {
     return Contribution::get(FALSE)
-      ->addSelect('*', 'payment_instrument_id:name')
+      ->addSelect('*', 'Gift_Data.*', 'payment_instrument_id:name')
       ->addWhere('invoice_id', '=', $invoiceId)
       ->addWhere('is_test', '=', $isTest)
       ->addOrderBy('receive_date', 'DESC')

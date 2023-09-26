@@ -318,6 +318,27 @@ return [
     ],
   ],
   [
+    'name' => 'payment_method_venmo',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'payment_method',
+        'label' => 'Venmo',
+        // 274 is Venmo in payment instrument list on production
+        'value' => 274,
+        'name' => 'venmo',
+        'description' => 'App money transfer',
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ],
+  [
     'name' => 'recurring_choice_upsell',
     'entity' => 'OptionValue',
     'cleanup' => 'unused',
