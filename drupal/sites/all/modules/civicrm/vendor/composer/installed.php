@@ -5,7 +5,7 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '32bf8ff01041e625cc57a36d4c9b0bde5a4ae5e3',
+        'reference' => 'c919954c5a7ca775addbfc9fe0be0e62254048c7',
         'name' => 'civicrm/civicrm-core',
         'dev' => true,
     ),
@@ -43,7 +43,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '32bf8ff01041e625cc57a36d4c9b0bde5a4ae5e3',
+            'reference' => 'c919954c5a7ca775addbfc9fe0be0e62254048c7',
             'dev_requirement' => false,
         ),
         'civicrm/civicrm-cxn-rpc' => array(
@@ -755,12 +755,12 @@
             'dev_requirement' => false,
         ),
         'totten/ca-config' => array(
-            'pretty_version' => 'v22.11.0',
-            'version' => '22.11.0.0',
+            'pretty_version' => 'v23.07.0',
+            'version' => '23.07.0.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../totten/ca-config',
             'aliases' => array(),
-            'reference' => '8a78926b11f00e6a154098aeb2110df53b8a3c67',
+            'reference' => '12571f07b994d555bf1a956e310f224da3ebbd8d',
             'dev_requirement' => false,
         ),
         'totten/lurkerlite' => array(

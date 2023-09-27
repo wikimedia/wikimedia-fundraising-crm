@@ -5,6 +5,7 @@ $processors = [
   'amazon',
   'braintree',
   'dlocal',
+  'fundraiseup',
   'globalcollect',
   'ingenico',
   'paypal',

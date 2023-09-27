@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFHelpers\Queue;
+
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
 use Civi\Api4\WMFDonor;
@@ -29,6 +31,7 @@ function wmf_civicrm_civicrm_config(&$config) {
   $dispatcher = Civi::dispatcher();
   $dispatcher->addListener('civi.token.list', ['CRM_Wmf_Tokens', 'onListTokens']);
   $dispatcher->addListener('civi.token.eval', ['CRM_Wmf_Tokens', 'onEvalTokens']);
+  $dispatcher->addListener('hook_civicrm_queueActive', [Queue::class, 'isSiteBusy']);
 }
 
 /**
