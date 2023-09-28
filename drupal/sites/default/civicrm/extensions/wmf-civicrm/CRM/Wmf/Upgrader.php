@@ -4,6 +4,7 @@ use Civi\Api4\CustomField;
 use Civi\Api4\OptionGroup;
 use Civi\Api4\WMFConfig;
 use Civi\Api4\OptionValue;
+use Civi\Queue\QueueHelper;
 use Civi\WMFHooks\CalculatedData;
 
 /**
@@ -1103,6 +1104,52 @@ SET
       'asd',
       'w',
     ];
+  }
+
+
+  /**
+   * Queue updates to change tax amount to 0 where it is NULL.
+   *
+   * This is an upgrade that we skipped during our last update to run during maintenance.
+   *
+   * However, the main point of this it to establish a method of queuing sql updates
+   * with the actual update being trivial.
+   *
+   * Note that the helper class is likely to be incorporated into core in
+   * some form in future - but we can proceed with our flavour until that
+   * is worked through.
+   *
+   * For local dev testing run `UPDATE civicrm_contribution SET tax_amount = NULL`.
+   * before starting... Depending on the state of your database you may need to first run
+   * `alter table civicrm_contribution modify total_amount decimal(20,2) not null`
+   *
+   * @return bool
+   */
+  public function upgrade_4325() : bool {
+    $sql = 'UPDATE civicrm_contribution SET tax_amount = 0
+      WHERE tax_amount IS NULL
+      -- limit to 10k records for now as we actually want to deploy this live in a measured fashion
+      AND id < 10000 LIMIT 10';
+
+    $this->queueSQL($sql);
+    return TRUE;
+  }
+
+  /**
+   * @param string $sql
+   */
+  private function queueSQL(string $sql): void {
+    $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
+      'type' => 'Sql',
+      'runner' => 'task',
+      // This is kinda high but while debugging I was seeing sometime coworker
+      // causing this to increment too quickly while debugging. This could be
+      // due to the break point process but let's go with this for now.
+      'retry_limit' => 100,
+      'reset' => FALSE,
+      'error' => 'abort',
+    ]));
+    $queue->sql($sql, [], QueueHelper::ITERATE_UNTIL_DONE);
   }
 
 }
