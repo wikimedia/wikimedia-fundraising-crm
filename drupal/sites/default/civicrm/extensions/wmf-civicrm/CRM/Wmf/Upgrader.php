@@ -1135,6 +1135,69 @@ SET
     return TRUE;
   }
 
+  /***
+   * Update recurring contributions financial type & campaign.
+   *
+   * https://phabricator.wikimedia.org/T344012
+   *
+   * - financial type = Recurring Gift (31)
+   * - campaign = OnlineGift
+   *
+   * Note we join onto civicrm_contribution with recurring in the same
+   * series with a lower receive data to find the first in the series
+   * (ie there are no entries in the joined table).
+   *
+   * Then we do a similar join to find those that DO have earlier gifts.
+   *
+   * Note that these are kinda crazy without the group by but the batch size is
+   * so small that hopefully it's worth running lots of small batches over
+   * an expensive distinct.
+   *
+   * @return bool
+   */
+  public function upgrade_4330() : bool {
+    // To see what is found swap the first part with
+    // SELECT a.id as `id`, a.contribution_recur_id, a.receive_date, a.contact_id FROM
+    $sql = '
+     UPDATE
+     civicrm_contribution a
+       -- join to previous contributions with the same contribution recur id which happened before the given one
+       LEFT JOIN civicrm_contribution c2 ON c2.contribution_recur_id = a.contribution_recur_id AND c2.receive_date < a.receive_date
+       LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
+       ON a.id = Gift_Data.entity_id
+     SET a.financial_type_id = 31,
+         Gift_Data.campaign = "Online Gift"
+     WHERE `a`.`receive_date` > "20230701000000"
+       AND `a`.`contribution_recur_id` > 0
+       -- financial type not already of recurring type
+       AND `a`.`financial_type_id` NOT IN(31, 32)
+       AND `a`.`is_test` = 0
+       AND c2.id IS NULL
+        LIMIT 100';
+
+    $this->queueSQL($sql);
+
+    $sql = '
+     UPDATE
+     civicrm_contribution a
+       -- join to previous contributions with the same contribution recur id which happened before the given one
+       LEFT JOIN civicrm_contribution c2 ON c2.contribution_recur_id = a.contribution_recur_id
+       AND c2.receive_date < a.receive_date
+       LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
+       ON a.id = Gift_Data.entity_id
+     SET a.financial_type_id = 32,
+         Gift_Data.campaign = "Online Gift"
+     WHERE `a`.`receive_date` > "20230701000000"
+       AND `a`.`contribution_recur_id` > 0
+       -- financial type not already of recurring type
+       AND `a`.`financial_type_id` NOT IN(31, 32)
+       AND `a`.`is_test` = 0
+       AND c2.id IS NOT NULL
+        LIMIT 100';
+    $this->queueSQL($sql);
+    return TRUE;
+  }
+
   /**
    * @param string $sql
    */
