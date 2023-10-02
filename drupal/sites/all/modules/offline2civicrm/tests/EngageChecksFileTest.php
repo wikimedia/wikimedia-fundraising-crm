@@ -29,7 +29,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'Payment Instrument' => 'Check',
       'Check Number' => '2020',
       'Restrictions' => 'Unrestricted - General',
-      'Gift Source' => 'Community Gift',
+      'Gift Source' => 'Online Gift',
       'Direct Mail Appeal' => 'White Mail',
       'Prefix' => 'Mrs.',
       'First Name' => 'Sub',
@@ -73,6 +73,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'thankyou_date' => 1398902400,
       'phone' => '(123) 456-0000',
       'contact_id' => NULL,
+      'gift_source' => 'Online Gift',
     ];
 
     $importer = new EngageChecksFileProbe();

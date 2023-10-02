@@ -44,7 +44,7 @@ class ChecksFileTest extends BaseChecksFileTest {
       'Email' => 'email@phony.com',
       'External Batch Number' => mt_rand(),
       'First Name' => 'Daisy',
-      'Gift Source' => 'Community Gift',
+      'Gift Source' => 'Online Gift',
       'Last Name' => 'Duck',
       'Original Amount' => '123',
       'Original Currency' => 'USD',
