@@ -1,5 +1,6 @@
 <?php namespace queue2civicrm\recurring;
 
+use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
@@ -448,6 +449,14 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
       if (isset($msg['initial_scheme_transaction_id'])) {
         $params['contribution_recur_smashpig.initial_scheme_transaction_id'] = $msg['initial_scheme_transaction_id'];
+      }
+
+      if (isset($msg['fiscal_number'])) {
+        $save = new Save('WMFContact', 'save');
+        $save->handleUpdate([
+          'contact_id' => $contactId,
+          'fiscal_number' => $msg['fiscal_number']
+        ]);
       }
 
       $newContributionRecur = ContributionRecur::create(FALSE)

@@ -96,6 +96,7 @@ class Import {
             }
           }
         }
+
         $mappedRow['Contact']['id'] = $mappedRow['Contribution']['contact_id'] = Contact::getIndividualID(
           $mappedRow['Contact']['email_primary.email'] ?? NULL,
           $mappedRow['Contact']['first_name'] ?? NULL,

@@ -12,8 +12,6 @@ function civicrm_merge_drush_command() {
       'batch' => "Batch size",
       'rule_group_id' => "Rule ID to use - defaults to Individual Unsupervised (email match)",
       'group_id' => "Limit to a group of contacts (default is all)",
-      'threshold' => 'Threshold for aborting. If there are more than this number of contributions in the threshold period then abort.',
-      'threshold_period' => 'Number of minutes in the threshold period',
     ),
   );
 
@@ -36,18 +34,17 @@ function civicrm_merge_drush_help($section) {
  * @throws \CiviCRM_API3_Exception
  */
 function drush_civicrm_merge() {
-  require_once 'drush_threshholds.php';
   module_invoke('civicrm', 'initialize');
 
-  $threshold = (int) drush_get_option('threshold');
-  if ($threshold) {
-    $thresholdNumberOfMinutes = (int) drush_get_option('threshold_period', 5);
-    if (_drush_civicrm_queue_is_backed_up($threshold, $thresholdNumberOfMinutes)) {
-      return;
-    }
+  $event = \Civi\Core\Event\GenericHookEvent::create([
+    'status' => 'active',
+    'queue_name' => '',
+    'queue_spec' => '',
+  ]);
+  \Civi::dispatcher()->dispatch('hook_civicrm_queueActive', $event);
+  if ($event->status !== 'active') {
+    return;
   }
-
-
 
   $ruleGroupID = drush_get_option('rule_group_id');
   $groupID = drush_get_option('group_id');
