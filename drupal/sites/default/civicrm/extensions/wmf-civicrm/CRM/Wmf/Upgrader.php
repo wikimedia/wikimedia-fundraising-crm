@@ -1199,6 +1199,30 @@ SET
   }
 
   /**
+   * Update all places where gift source is community gift or benefactor gift.
+   *
+   * The goal is that from 1 July these should all be online gift.
+   *
+   * T344012
+   *
+   * @return bool
+   */
+  public function upgrade_4335() : bool {
+    $sql = "
+     UPDATE
+     civicrm_contribution a
+       LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
+       ON a.id = Gift_Data.entity_id
+     SET Gift_Data.campaign = 'Online Gift'
+     WHERE
+       Gift_Data.campaign IN ('Community Gift', 'Benefactor Gift')
+       AND `a`.`receive_date` > '20230701000000'
+     LIMIT 1000";
+    $this->queueSQL($sql);
+    return TRUE;
+  }
+
+  /**
    * @param string $sql
    */
   private function queueSQL(string $sql): void {
