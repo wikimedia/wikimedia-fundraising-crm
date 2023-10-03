@@ -1135,6 +1135,204 @@ SET
     return TRUE;
   }
 
+  /***
+   * Update recurring contributions financial type & campaign.
+   *
+   * https://phabricator.wikimedia.org/T344012
+   *
+   * - financial type = Recurring Gift (31)
+   * - campaign = OnlineGift
+   *
+   * Note we join onto civicrm_contribution with recurring in the same
+   * series with a lower receive data to find the first in the series
+   * (ie there are no entries in the joined table).
+   *
+   * Then we do a similar join to find those that DO have earlier gifts.
+   *
+   * Note that these are kinda crazy without the group by but the batch size is
+   * so small that hopefully it's worth running lots of small batches over
+   * an expensive distinct.
+   *
+   * @return bool
+   */
+  public function upgrade_4330() : bool {
+    // To see what is found swap the first part with
+    // SELECT a.id as `id`, a.contribution_recur_id, a.receive_date, a.contact_id FROM
+    $sql = '
+     UPDATE
+     civicrm_contribution a
+       -- join to previous contributions with the same contribution recur id which happened before the given one
+       LEFT JOIN civicrm_contribution c2 ON c2.contribution_recur_id = a.contribution_recur_id AND c2.receive_date < a.receive_date
+       LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
+       ON a.id = Gift_Data.entity_id
+     SET a.financial_type_id = 31,
+         Gift_Data.campaign = "Online Gift"
+     WHERE `a`.`receive_date` > "20230701000000"
+       AND `a`.`contribution_recur_id` > 0
+       -- financial type not already of recurring type
+       AND `a`.`financial_type_id` NOT IN(31, 32)
+       AND `a`.`is_test` = 0
+       AND c2.id IS NULL
+        LIMIT 100';
+
+    $this->queueSQL($sql);
+
+    $sql = '
+     UPDATE
+     civicrm_contribution a
+       -- join to previous contributions with the same contribution recur id which happened before the given one
+       LEFT JOIN civicrm_contribution c2 ON c2.contribution_recur_id = a.contribution_recur_id
+       AND c2.receive_date < a.receive_date
+       LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
+       ON a.id = Gift_Data.entity_id
+     SET a.financial_type_id = 32,
+         Gift_Data.campaign = "Online Gift"
+     WHERE `a`.`receive_date` > "20230701000000"
+       AND `a`.`contribution_recur_id` > 0
+       -- financial type not already of recurring type
+       AND `a`.`financial_type_id` NOT IN(31, 32)
+       AND `a`.`is_test` = 0
+       AND c2.id IS NOT NULL
+        LIMIT 100';
+    $this->queueSQL($sql);
+    return TRUE;
+  }
+
+  /**
+   * Update all places where gift source is community gift or benefactor gift.
+   *
+   * The goal is that from 1 July these should all be online gift.
+   *
+   * T344012
+   *
+   * @return bool
+   */
+  public function upgrade_4335() : bool {
+    $sql = "
+     UPDATE
+     civicrm_contribution a
+       LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
+       ON a.id = Gift_Data.entity_id
+     SET Gift_Data.campaign = 'Online Gift'
+     WHERE
+       Gift_Data.campaign IN ('Community Gift', 'Benefactor Gift')
+       AND `a`.`receive_date` > '20230701000000'
+     LIMIT 1000";
+    $this->queueSQL($sql);
+    return TRUE;
+  }
+
+  /**
+   * Ensure gift source (campaign) is broadly set to online gift.
+   *
+   * We are always setting it for recurring & hopefully all online
+   * contributions now but the above only did updates, not inserts.
+   *
+   * - sql to track gift sources:
+   * SELECT campaign, count(*),contact_id FROM civicrm_contribution a
+   * LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
+   * ON a.id = Gift_Data.entity_id
+   * WHERE `a`.`receive_date` > "20230701000000" GROUP BY campaign;
+   *
+   * Since production has default values for 3 fields in the GiftData
+   * set I have set the other 2 fields to their default values.
+   *
+   * The field default for gift source/ campaign is Individual Gift.
+   * Presumably anyone manually entering gifts saves this & the rest
+   * should be Online Gift. However, I did a check on payment instruments
+   * and have excluded 'Cash', 'Check' and 'Stock' from the update.
+   *
+   * SELECT value,name,label  FROM civicrm_option_value
+   * WHERE option_group_id = 10
+   *   AND value IN (
+   *     SELECT payment_instrument_id FROM civicrm_contribution a
+   *       LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data ON a.id = Gift_Data.entity_id
+   *     WHERE `a`.`receive_date` > '20230701000000' AND campaign_id IS NULL
+   *     GROUP BY payment_instrument_id)
+   *
+   * +-------+--------------------------------+--------------------------------+
+   * | value | name                           | label                          |
+   * +-------+--------------------------------+--------------------------------+
+   * | 1     | Credit Card                    | Credit Card                    |
+   * | 3     | Cash                           | Cash                           |
+   * | 4     | Check                          | Check                          |
+   * | 5     | EFT                            | EFT                            |
+   * | 9     | iDeal                          | iDeal                          |
+   * | 14    | Bank Transfer                  | Bank Transfer                  |
+   * | 15    | Credit Card: Visa              | Credit Card: Visa              |
+   * | 16    | Credit Card: MasterCard        | Credit Card: MasterCard        |
+   * | 17    | Credit Card: American Express  | Credit Card: American Express  |
+   * | 21    | Credit Card: JCB               | Credit Card: JCB               |
+   * | 22    | Credit Card: Discover          | Credit Card: Discover          |
+   * | 23    | Credit Card: Carte Bleue       | Credit Card: Carte Bleue       |
+   * | 25    | Paypal                         | Paypal                         |
+   * | 31    | Boleto                         | Boleto                         |
+   * | 188   | Stock                          | Stock                          |
+   * | 189   | Amazon                         | Amazon                         |
+   * | 193   | Citibank International         | Citibank International         |
+   * | 195   | Credit Card: Visa Electron     | Credit Card: Visa Electron     |
+   * | 196   | Credit Card: Visa Debit        | Credit Card: Visa Debit        |
+   * | 197   | Credit Card: MasterCard Debit  | Credit Card: MasterCard Debit  |
+   * | 198   | Credit Card: Diners            | Credit Card: Diners            |
+   * | 205   | Credit Card: Elo               | Credit Card: Elo               |
+   * | 216   | Bancomer                       | Bancomer                       |
+   * | 219   | OXXO                           | OXXO                           |
+   * | 223   | Rapi Pago                      | Rapi Pago                      |
+   * | 224   | Santander                      | Santander                      |
+   * | 235   | Bank Transfer: Netbanking      | Bank Transfer: Netbanking      |
+   * | 236   | Bank Transfer: PayTM Wallet    | Bank Transfer: PayTM Wallet    |
+   * | 237   | Credit Card: RuPay             | Credit Card: RuPay             |
+   * | 238   | Bank Transfer: UPI             | Bank Transfer: UPI             |
+   * | 239   | Money Order                    | Money Order                    |
+   * | 240   | Apple Pay                      | Apple Pay                      |
+   * | 241   | Abitab                         | Abitab                         |
+   * | 242   | Pago Efectivo                  | Pago Efectivo                  |
+   * | 243   | Google Pay                     | Google Pay                     |
+   * | 248   | Bank Transfer: Banco do Brasil | Bank Transfer: Banco do Brasil |
+   * | 251   | Bank Transfer: Bradesco        | Bank Transfer: Bradesco        |
+   * | 253   | Bank Transfer: Itau            | Bank Transfer: Itau            |
+   * | 257   | Bank Transfer: PSE             | Bank Transfer: PSE             |
+   * | 258   | Bank Transfer: Santander       | Bank Transfer: Santander       |
+   * | 260   | Apple Pay: Visa                | Apple Pay: Visa                |
+   * | 261   | Apple Pay: American Express    | Apple Pay: American Express    |
+   * | 263   | Apple Pay: Carte Bleue         | Apple Pay: Carte Bleue         |
+   * | 264   | Apple Pay: Discover            | Apple Pay: Discover            |
+   * | 266   | Apple Pay: JCB                 | Apple Pay: JCB                 |
+   * | 267   | Apple Pay: MasterCard          | Apple Pay: MasterCard          |
+   * | 268   | Google Pay: American Express   | Google Pay: American Express   |
+   * | 269   | Google Pay: Discover           | Google Pay: Discover           |
+   * | 272   | Google Pay: MasterCard         | Google Pay: MasterCard         |
+   * | 273   | Google Pay: Visa               | Google Pay: Visa               |
+   * | 274   | Venmo                          | Venmo                          |
+   * +-------+--------------------------------+--------------------------------+
+   *
+   * T344012
+   *
+   * @return bool
+   */
+  public function upgrade_4340() : bool {
+    $sql = "
+     INSERT INTO
+      `civicrm_value_1_gift_data_7` (entity_id, fund, campaign, appeal)
+      SELECT a.id, 'Unrestricted - General', 'Online Gift', 'spontaneousdonation'
+       FROM civicrm_contribution a
+       LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
+       ON a.id = Gift_Data.entity_id
+       WHERE Gift_Data.id IS NULL
+       AND `a`.`receive_date` > '20230701000000'
+       AND a.payment_instrument_id NOT IN (
+         -- cash
+         3,
+         -- check
+         4,
+         -- stock
+         188
+       )
+       LIMIT 1000";
+    $this->queueSQL($sql);
+    return TRUE;
+  }
+
   /**
    * @param string $sql
    */
