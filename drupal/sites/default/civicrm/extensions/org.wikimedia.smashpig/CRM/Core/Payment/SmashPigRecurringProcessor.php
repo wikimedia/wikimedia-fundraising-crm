@@ -293,6 +293,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $payment, $recurringPayment, $previousPayment
   ) {
     $invoiceId = $payment['invoice_id'];
+    // Recurring Gift is used for the first in the series, Recurring Gift - Cash thereafter.
     $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
     if ($this->useQueue) {
       $ctId = explode('.', $invoiceId)[0];

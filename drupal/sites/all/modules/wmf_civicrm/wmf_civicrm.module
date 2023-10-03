@@ -1199,6 +1199,7 @@ function wmf_civicrm_normalize_msg($msg): array {
     }
     $financialType = $msg['financial_type_id:name'] ?? $msg['contribution_type'] ?? null;
     if (!empty($msg['recurring'])) {
+      // Recurring Gift is used for the first in the series, Recurring Gift - Cash thereafter.
       $financialType = "Recurring Gift";
     }
 
