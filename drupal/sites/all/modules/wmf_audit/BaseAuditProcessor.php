@@ -18,6 +18,8 @@ abstract class BaseAuditProcessor {
 
   protected $ready_files;
 
+  protected $cutoff = -3;
+
   public function __construct($options) {
     $this->options = $options;
     // FIXME: Copy to confusing global thing.
@@ -480,60 +482,7 @@ abstract class BaseAuditProcessor {
     //
     //Handle the negatives now. That way, the parent transactions will probably exist.
     wmf_audit_echo("Processing 'negative' transactions");
-    $neg_count = 0;
-
-    if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
-      foreach ($total_missing['negative'] as $record) {
-        //check to see if the parent exists. If it does, normalize and send.
-        $parentByInvoice = [];
-        $foundParent = $this->main_transaction_exists_in_civi($record);
-        if (!$foundParent && !empty($record['invoice_id'])) {
-          // Sometimes it's difficult to find a parent transaction by the
-          // gateway-side ID, for example for Ingenico recurring refunds.
-          // Try again by invoice ID.
-          if (!empty($record['invoice_id'])) {
-            $parentByInvoice = Contribution::get(FALSE)
-              ->addClause(
-                'OR',
-                ['invoice_id', '=', $record['invoice_id']],
-                // For recurring payments, we sometimes append a | and a random
-                // number after the invoice ID
-                ['invoice_id', 'LIKE', $record['invoice_id'] . '|%']
-              )
-              ->execute()
-              ->first();
-            if ($parentByInvoice['trxn_id']) {
-              // $parentByInvoice['trxn_id'] has extra information in it for example
-              // RECURRING INGENICO 000000123410000010640000200001
-              // Need to get just the transaction id after the processor name
-              $record['gateway_parent_id'] = (WmfTransaction::from_unique_id($parentByInvoice['trxn_id']))->gateway_txn_id;
-              $record['gateway_refund_id'] = $record['gateway_parent_id'];
-              $foundParent = TRUE;
-            }
-          }
-        }
-        if ($foundParent) {
-          if(count($parentByInvoice)
-            && CRM_Contribute_BAO_Contribution::isContributionStatusNegative($parentByInvoice['contribution_status_id'])){
-            continue;
-          }
-          $normal = $this->normalize_negative($record);
-          $this->send_queue_message($normal, 'negative');
-          $neg_count += 1;
-          wmf_audit_echo('!');
-        }
-        else {
-          // Ignore cancels with no parents because they must have
-          // been cancelled before reaching Civi.
-          if (!$this->record_is_cancel($record)) {
-            //@TODO: Some version of makemissing should make these, too. Gar.
-            $remaining['negative'][$this->get_record_human_date($record)][] = $record;
-            wmf_audit_echo('.');
-          }
-        }
-      }
-      wmf_audit_echo("Processed $neg_count 'negative' transactions\n");
-    }
+    $this->handle_all_negatives($total_missing, $remaining);
 
     //Wrap it up and put a bow on it.
     //@TODO much later: Make a fredge table for these things and dump some messages over there about what we just did.
@@ -596,6 +545,64 @@ abstract class BaseAuditProcessor {
     }
 
     wmf_audit_echo($wrap_up);
+  }
+
+  protected function handle_all_negatives($total_missing, &$remaining) {
+    $neg_count = 0;
+    if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
+      foreach ($total_missing['negative'] as $record) {
+        //check to see if the parent exists. If it does, normalize and send.
+        $parentByInvoice = [];
+        $foundParent = $this->main_transaction_exists_in_civi($record);
+        if (!$foundParent && !empty($record['invoice_id'])) {
+          // Sometimes it's difficult to find a parent transaction by the
+          // gateway-side ID, for example for Ingenico recurring refunds.
+          // Try again by invoice ID.
+          if (!empty($record['invoice_id'])) {
+            $parentByInvoice = Contribution::get(FALSE)
+              ->addClause(
+                'OR',
+                ['invoice_id', '=', $record['invoice_id']],
+                // For recurring payments, we sometimes append a | and a random
+                // number after the invoice ID
+                ['invoice_id', 'LIKE', $record['invoice_id'] . '|%']
+              )
+              ->execute()
+              ->first();
+            if (!empty($parentByInvoice) && $parentByInvoice['trxn_id']) {
+              // $parentByInvoice['trxn_id'] has extra information in it for example
+              // RECURRING INGENICO 000000123410000010640000200001
+              // Need to get just the transaction id after the processor name
+              $record['gateway_parent_id'] = (WmfTransaction::from_unique_id($parentByInvoice['trxn_id']))->gateway_txn_id;
+              $record['gateway_refund_id'] = $record['gateway_parent_id'];
+              $foundParent = TRUE;
+            }
+          }
+        }
+        if ($foundParent) {
+          if (
+            count($parentByInvoice)
+            && CRM_Contribute_BAO_Contribution::isContributionStatusNegative($parentByInvoice['contribution_status_id'])
+          ) {
+            continue;
+          }
+          $normal = $this->normalize_negative($record);
+          $this->send_queue_message($normal, 'negative');
+          $neg_count += 1;
+          wmf_audit_echo('!');
+        }
+        else {
+          // Ignore cancels with no parents because they must have
+          // been cancelled before reaching Civi.
+          if (!$this->record_is_cancel($record)) {
+            //@TODO: Some version of makemissing should make these, too. Gar.
+            $remaining['negative'][$this->get_record_human_date($record)][] = $record;
+            wmf_audit_echo('.');
+          }
+        }
+      }
+      wmf_audit_echo("Processed $neg_count 'negative' transactions\n");
+    }
   }
 
   /**
@@ -875,7 +882,7 @@ abstract class BaseAuditProcessor {
         //today minus three. Again: The three is because Shut Up.
         wmf_audit_echo("Making up to $missing_count missing transactions:");
         $made = 0;
-        $cutoff = wmf_common_date_add_days(wmf_common_date_get_today_string(), -3);
+        $cutoff = wmf_common_date_add_days(wmf_common_date_get_today_string(), $this->cutoff);
         foreach ($tryme as $audit_date => $missing) {
           if ((int) $audit_date <= (int) $cutoff) {
             foreach ($missing as $id => $message) {
@@ -887,7 +894,13 @@ abstract class BaseAuditProcessor {
                 $all_data = $message;
               }
               $sendme = $this->normalize_partial($all_data);
-              $this->send_queue_message($sendme, 'main');
+              if (!empty($sendme['recurring']) && $sendme['recurring'] === '1') {
+                $this->send_queue_message($sendme, 'recurring');
+              }
+              else {
+                $this->send_queue_message($sendme, 'main');
+              }
+
               $made += 1;
               wmf_audit_echo('!');
               unset($tryme[$audit_date][$id]);
@@ -1196,6 +1209,8 @@ abstract class BaseAuditProcessor {
         return 'k';
       case 'ew':
         return 'w';
+      case 'venmo':
+        return 'v';
     }
     if ($record) {
       echo print_r($record, TRUE);
