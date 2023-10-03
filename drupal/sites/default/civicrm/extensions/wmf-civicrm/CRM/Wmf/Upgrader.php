@@ -1156,6 +1156,8 @@ SET
    * @return bool
    */
   public function upgrade_4330() : bool {
+    $recurringGiftTypeID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Recurring Gift');
+    $recurringCashTypeID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Recurring Gift - Cash');
     // To see what is found swap the first part with
     // SELECT a.id as `id`, a.contribution_recur_id, a.receive_date, a.contact_id FROM
     $sql = '
@@ -1165,12 +1167,12 @@ SET
        LEFT JOIN civicrm_contribution c2 ON c2.contribution_recur_id = a.contribution_recur_id AND c2.receive_date < a.receive_date
        LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
        ON a.id = Gift_Data.entity_id
-     SET a.financial_type_id = 31,
+     SET a.financial_type_id = ' . $recurringGiftTypeID . ',
          Gift_Data.campaign = "Online Gift"
      WHERE `a`.`receive_date` > "20230701000000"
        AND `a`.`contribution_recur_id` > 0
        -- financial type not already of recurring type
-       AND `a`.`financial_type_id` NOT IN(31, 32)
+       AND `a`.`financial_type_id` NOT IN(' . $recurringGiftTypeID . ', ' . $recurringCashTypeID . ')
        AND `a`.`is_test` = 0
        AND c2.id IS NULL
         LIMIT 100';
@@ -1185,12 +1187,12 @@ SET
        AND c2.receive_date < a.receive_date
        LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
        ON a.id = Gift_Data.entity_id
-     SET a.financial_type_id = 32,
+     SET a.financial_type_id = ' . $recurringCashTypeID . ',
          Gift_Data.campaign = "Online Gift"
      WHERE `a`.`receive_date` > "20230701000000"
        AND `a`.`contribution_recur_id` > 0
        -- financial type not already of recurring type
-       AND `a`.`financial_type_id` NOT IN(31, 32)
+       AND `a`.`financial_type_id` NOT IN(' . $recurringGiftTypeID . ', ' . $recurringCashTypeID . ')
        AND `a`.`is_test` = 0
        AND c2.id IS NOT NULL
         LIMIT 100';
