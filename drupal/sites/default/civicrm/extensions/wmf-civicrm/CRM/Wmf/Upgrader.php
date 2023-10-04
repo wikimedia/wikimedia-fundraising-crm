@@ -1419,9 +1419,100 @@ LIMIT 2000';
   }
 
   /**
-   * @param string $sql
+   * Queue updates to change tax amount to 0 where it is NULL.
+   *
+   * As with the previous tax_amount update update this is primary for local dev
+   * testing purposes - ie it is easier to test the iteration mechanism on this locally
+   * than it is for the next queued update.
+   *
+   * For local dev testing run `UPDATE civicrm_contribution SET tax_amount = NULL`.
+   * before starting... Depending on the state of your database you may need to first run
+   * `alter table civicrm_contribution modify total_amount decimal(20,2) not null`
+   *
+   * @return bool
    */
-  private function queueSQL(string $sql): void {
+  public function upgrade_4375() : bool {
+    $sql = 'UPDATE civicrm_contribution SET tax_amount = 0
+      WHERE tax_amount IS NULL
+      -- limit to the next 10k records for now as we actually want to deploy this live in a measured fashion
+      AND id BETWEEN %1 AND %2';
+
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 5,
+      ],
+      2 => [
+        'value' => 5,
+        'type' => 'Integer',
+        'increment' => 5,
+      ],
+    ],
+      [
+        'sql_returns_none' => '
+        SELECT id FROM civicrm_contribution
+      WHERE tax_amount IS NULL AND id < 11000 LIMIT 1'
+      ]);
+    return TRUE;
+  }
+
+  /**
+   * Update mailing job records to link to the same queue.
+   *
+   * Note this just brings across the one update we already started into
+   * this upgrader. The next goal is to figure out all the records to
+   * consolidate.
+   *
+   * Bug: T346194
+   *
+   * @return bool
+   */
+  public function upgrade_4380() : bool {
+    $sql = 'UPDATE  civicrm_mailing_event_queue queue
+INNER JOIN civicrm_mailing_job j ON j.id = queue.job_id
+INNER JOIN civicrm_mailing m ON j.mailing_id = m.id
+  SET job_id = 1
+WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1
+  -- this job _id seems to help the query speed.
+  -- some runs might be have less than 2k in them
+AND queue.id BETWEEN %1 AND %2';
+    $this->queueSQL($sql, [
+      1 => [
+      'value' => 0,
+      'type' => 'Integer',
+      'increment' => 2000,
+      ],
+      2 => [
+        'value' => 2000,
+        'type' => 'Integer',
+        'increment' => 2000,
+      ],
+    ],
+    [
+      'sql_returns_none' => 'SELECT queue.id FROM civicrm_mailing_event_queue queue
+INNER JOIN civicrm_mailing_job j ON j.id = queue.job_id
+INNER JOIN civicrm_mailing m ON j.mailing_id = m.id
+WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1 LIMIT 1'
+    ]);
+    return TRUE;
+  }
+
+  /**
+   * Queue up an SQL update.
+   *
+   * @param string $sql
+   * @param array $queryParameters
+   *   Parameters to interpolate in with the keys
+   *    - value
+   *    - type (Integer, String, etc)
+   *    - increment (optional, if present this is added to the value on each subsequent run.
+   * @param array $doneCondition
+   *   Criteria to determine when it is done. Currently supports one key
+   *   - sql_returns_none - a query that should return empty when done.
+   * @param int $weight
+   */
+  private function queueSQL(string $sql, array $queryParameters = [], $doneCondition = [], int $weight = 0): void {
     $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
       'type' => 'Sql',
       'runner' => 'task',
@@ -1432,7 +1523,7 @@ LIMIT 2000';
       'reset' => FALSE,
       'error' => 'abort',
     ]));
-    $queue->sql($sql, [], QueueHelper::ITERATE_UNTIL_DONE);
+    $queue->sql($sql, $queryParameters, empty($doneCondition) ? QueueHelper::ITERATE_UNTIL_DONE : QueueHelper::ITERATE_UNTIL_TRUE, $doneCondition, $weight);
   }
 
 }
