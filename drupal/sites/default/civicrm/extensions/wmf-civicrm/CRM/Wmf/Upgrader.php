@@ -1156,6 +1156,8 @@ SET
    * @return bool
    */
   public function upgrade_4330() : bool {
+    $recurringGiftTypeID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Recurring Gift');
+    $recurringCashTypeID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Recurring Gift - Cash');
     // To see what is found swap the first part with
     // SELECT a.id as `id`, a.contribution_recur_id, a.receive_date, a.contact_id FROM
     $sql = '
@@ -1165,12 +1167,12 @@ SET
        LEFT JOIN civicrm_contribution c2 ON c2.contribution_recur_id = a.contribution_recur_id AND c2.receive_date < a.receive_date
        LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
        ON a.id = Gift_Data.entity_id
-     SET a.financial_type_id = 31,
+     SET a.financial_type_id = ' . $recurringGiftTypeID . ',
          Gift_Data.campaign = "Online Gift"
      WHERE `a`.`receive_date` > "20230701000000"
        AND `a`.`contribution_recur_id` > 0
        -- financial type not already of recurring type
-       AND `a`.`financial_type_id` NOT IN(31, 32)
+       AND `a`.`financial_type_id` NOT IN(' . $recurringGiftTypeID . ', ' . $recurringCashTypeID . ')
        AND `a`.`is_test` = 0
        AND c2.id IS NULL
         LIMIT 100';
@@ -1185,12 +1187,12 @@ SET
        AND c2.receive_date < a.receive_date
        LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
        ON a.id = Gift_Data.entity_id
-     SET a.financial_type_id = 32,
+     SET a.financial_type_id = ' . $recurringCashTypeID . ',
          Gift_Data.campaign = "Online Gift"
      WHERE `a`.`receive_date` > "20230701000000"
        AND `a`.`contribution_recur_id` > 0
        -- financial type not already of recurring type
-       AND `a`.`financial_type_id` NOT IN(31, 32)
+       AND `a`.`financial_type_id` NOT IN(' . $recurringGiftTypeID . ', ' . $recurringCashTypeID . ')
        AND `a`.`is_test` = 0
        AND c2.id IS NOT NULL
         LIMIT 100';
@@ -1329,6 +1331,50 @@ SET
          188
        )
        LIMIT 1000";
+    $this->queueSQL($sql);
+    return TRUE;
+  }
+
+  /**
+   * Let's bring our mailing id  & mailing_job.id for thank you back to 1 for simplicity.
+   *
+   * We need to do these steps with the queue off & then can continue on
+   * & new ones should be attached to these, allowing us to move the existing
+   * records over via co-worker.
+   *
+   * Bug: T346194
+   *
+   * @return bool
+   */
+  public function upgrade_4350() : bool {
+    // First change the name of the mailing that is operating as our main mailing to something pattern-similar to the others.
+    CRM_Core_DAO::executeQuery('UPDATE civicrm_mailing SET NAME = "thank_you|thank_you.en.html|123456" WHERE id = 102297');
+    CRM_Core_DAO::executeQuery("INSERT INTO civicrm_mailing
+      (id, domain_id, name, subject, body_html, is_completed, scheduled_id, visibility, email_selection_method, template_type)
+      VALUES(1, 1, 'thank_you', 'Thank you for your gift', 'WMF Thank you message', 1, 1, 'User and User Admin Only', 'automatic',  'traditional')");
+    CRM_Core_DAO::executeQuery("INSERT INTO civicrm_mailing_job (id, mailing_id, start_date, end_date, status)
+    -- start date & end date are dummy fields here.
+    VALUES(1, 1, NOW(), NOW(),'complete')");
+    return TRUE;
+  }
+
+  /**
+   * Update mailing job records to link to the same queue.
+   *
+   * Note this just brings across the one update we already started into
+   * this upgrader. The next goal is to figure out all the records to
+   * consolidate.
+   *
+   * Bug: T346194
+   *
+   * @return bool
+   */
+  public function upgrade_4355() : bool {
+    $sql = 'UPDATE  civicrm_mailing_event_queue queue
+INNER JOIN civicrm_mailing_job j ON j.id = queue.job_id
+  SET job_id = 1
+WHERE j.mailing_id = 373 AND job_id <> 1
+LIMIT 2000';
     $this->queueSQL($sql);
     return TRUE;
   }
