@@ -103,8 +103,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->ids['Activity'][$activity['id']] = $activity['id'];
   }
 
-  public function testCreateDistinctContributions() {
-    civicrm_initialize();
+  public function testCreateDistinctContributions(): void {
     $subscr_id = mt_rand();
     $ctId = $this->addContributionTracking();
 
@@ -148,9 +147,9 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->assertNotEquals(FALSE, $recur_record);
 
-    $this->assertEquals(1, count($contributions));
+    $this->assertCount(1, $contributions);
     $this->assertEquals($recur_record->id, $contributions[0]['contribution_recur_id']);
-    $this->assertEquals(1, count($contributions2));
+    $this->assertCount(1, $contributions2);
     $this->assertEquals($recur_record->id, $contributions2[0]['contribution_recur_id']);
 
     $this->assertEquals($contributions[0]['contact_id'], $contributions2[0]['contact_id']);
@@ -421,7 +420,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Test use of API4 in Contribution Tracking in recurring module
    */
-  public function testApi4CTinRecurringGet() {
+  public function testApi4CTinRecurringGet(): void {
     $email = 'test_recur_' . mt_rand() . '@example.org';
     $recur = $this->getTestContributionRecurRecords();
     $contribution = $this->getContribution([
@@ -768,9 +767,9 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  protected function getContribution($recurParams = []): array {
+  protected function getContribution(array $recurParams = []): array {
     return Contribution::create(FALSE)->setValues(array_merge([
-      'financial_type_id:name' => 'Donation',
+      'financial_type_id' => \Civi\WMFHelpers\ContributionRecur::getFinancialTypeForFirstContribution(),
       'total_amount' => 60,
       'receive_date' => 'now'
     ], $recurParams))->execute()->first();

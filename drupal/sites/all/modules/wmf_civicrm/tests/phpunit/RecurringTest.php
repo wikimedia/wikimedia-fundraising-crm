@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFHelpers\ContributionRecur;
+
 
 /**
  * @group Pipeline
@@ -312,7 +314,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => $token,
       'recurring' => 1,
       'user_ip' => '12.34.56.78',
-      'financial_type_id' => 'Cash',
+      'financial_type_id' => ContributionRecur::getFinancialTypeForFirstContribution(),
     ];
 
     //import contribution message containing populated recurring and recurring_payment_token fields

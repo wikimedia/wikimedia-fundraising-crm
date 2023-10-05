@@ -2,11 +2,54 @@
 
 namespace Civi\WMFHelpers;
 
+use Civi\Api4\Contribution;
 use CRM_Core_PseudoConstant;
 
 class ContributionRecur {
 
   static $inactiveStatuses = NULL;
+
+  /**
+   * The financial type for recurring contributions is 'Recurring Gift' for the first one.
+   *
+   * @return int
+   */
+  public static function getFinancialTypeForFirstContribution(): int {
+    return \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Recurring Gift');
+  }
+
+  /**
+   * Is this the first contribution against the recurring contribution.
+   *
+   * ie are there no contributions .. yet
+   * @param int $contributionRecurID
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public static function isFirst(int $contributionRecurID): bool {
+    $existing = Contribution::get(FALSE)
+      ->addWhere('contribution_recur_id', '=', $contributionRecurID)
+      ->addSelect('id')->setLimit(1)->execute()->first()['id'] ?? NULL;
+    return !$existing;
+  }
+
+  public static function getFinancialType(int $contributionRecurID): int {
+    if (self::isFirst($contributionRecurID)) {
+      return ContributionRecur::getFinancialTypeForFirstContribution();
+    }
+    return ContributionRecur::getFinancialTypeForSubsequentContributions();
+  }
+
+  /**
+   * The financial type for recurring contributions is 'Recurring Gift - Cash' after the first one.
+   *
+   * @return int
+   */
+  public static function getFinancialTypeForSubsequentContributions(): int {
+    return \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Recurring Gift - Cash');
+  }
 
   /**
    * If recur record is in an 'inactive' status (currently defined as Completed,

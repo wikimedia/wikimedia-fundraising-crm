@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../../civicrm/Civi/Test/Api3TestTrait.php';
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Test\Api3TestTrait;
+use Civi\WMFHelpers\ContributionRecur;
 use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\SequenceGenerators\Factory;
@@ -74,6 +75,34 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     Civi::settings()->set( 'logging', TRUE);
     $this->maxContactID = $this->getHighestContactID();
     $this->trackingCount = CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_contribution_tracking');
+  }
+
+  /**
+   * CHeck that contributions that recur have the right financial type.
+   *
+   * This runs after the test but before tearDown starts.
+   *
+   * Note this test is useful for finding existing code places where this is not
+   * correct. It is probably not worth porting to out extensions when we
+   * discontinue this class.
+   */
+  protected function assertPostConditions(): void {
+    $contributions = Contribution::get(FALSE)
+      ->addSelect('financial_type_id')
+      ->addSelect('contribution_recur_id')
+      ->addWhere('contribution_recur_id', 'IS NOT EMPTY')
+      ->addOrderBy('receive_date')
+      ->execute();
+    $recurringRecords = [];
+    foreach ($contributions as $contribution) {
+      if (empty($recurringRecords[$contribution['contribution_recur_id']])) {
+        $this->assertEquals(ContributionRecur::getFinancialTypeForFirstContribution(), $contribution['financial_type_id']);
+        $recurringRecords[$contribution['contribution_recur_id']] = TRUE;
+      }
+      else {
+        $this->assertEquals(ContributionRecur::getFinancialTypeForSubsequentContributions(), $contribution['financial_type_id']);
+      }
+    }
   }
 
   public function tearDown(): void {

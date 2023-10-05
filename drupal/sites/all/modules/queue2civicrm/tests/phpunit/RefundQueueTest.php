@@ -217,11 +217,9 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * contribution when the contribution is edited.
    *
    * @covers \Civi\WmfHooks\ContributionRecur::pre
-   * @throws API_Exception
-   * @throws CiviCRM_API3_Exception
-   * @throws WMFException
+   * @throws \CRM_Core_Exception
    */
-  public function testRefundDoesNotChangeRecurCurrency() {
+  public function testRefundDoesNotChangeRecurCurrency(): void {
     $initialDonation = [
       'gateway_txn_id' => 'HJZJ4JZVLGNG5S82',
       'contribution_tracking_id' => 13,
@@ -242,7 +240,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => 'DB44P92T43M84H82',
       'processor_contact_id' => '13.1',
       'date' => 1669082766,
-      'financial_type_id' => 'Cash',
+      'financial_type_id' => \Civi\WMFHelpers\ContributionRecur::getFinancialTypeForFirstContribution(),
     ];
     $this->setExchangeRates(1669082766, [
       'USD' => 1,

@@ -1,6 +1,7 @@
 <?php namespace queue2civicrm\recurring;
 
 use Civi\Api4\Action\WMFContact\Save;
+use Civi\WMFHelpers\ContributionRecur as RecurHelper;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
@@ -116,7 +117,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
     if ($recur_record) {
       // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
-      \Civi\WMFHelpers\ContributionRecur::reactivateIfInactive( $recur_record );
+      RecurHelper::reactivateIfInactive($recur_record);
     }
 
     // Since October 2018 or so, PayPal has been doing two things that really
@@ -202,6 +203,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     $msg['contact_id'] = $recur_record->contact_id;
     $msg['contribution_recur_id'] = $recur_record->id;
 
+    if (!RecurHelper::isFirst($recur_record->id)) {
+      $msg['financial_type_id'] = RecurHelper::getFinancialTypeForSubsequentContributions();
+    }
     //insert the contribution
     $contribution = wmf_civicrm_contribution_message_import($msg);
 

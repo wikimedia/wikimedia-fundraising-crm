@@ -527,7 +527,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             'thankyou_date' => '',
             'total_amount' => 2.34,
             'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
-            'financial_type_id' => $financial_type_cash,
+            'financial_type_id' => \Civi\WMFHelpers\ContributionRecur::getFinancialTypeForFirstContribution(),
             'creditnote_id' => '',
             'tax_amount' => '',
           ],
