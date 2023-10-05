@@ -1217,7 +1217,7 @@ SET
        ON a.id = Gift_Data.entity_id
      SET Gift_Data.campaign = 'Online Gift'
      WHERE
-       Gift_Data.campaign IN ('Community Gift', 'Benefactor Gift')
+       (Gift_Data.campaign IN ('Community Gift', 'Benefactor Gift') OR Gift_Data.campaign IS NULL)
        AND `a`.`receive_date` > '20230701000000'
      LIMIT 1000";
     $this->queueSQL($sql);
@@ -1377,6 +1377,20 @@ WHERE j.mailing_id = 373 AND job_id <> 1
 LIMIT 2000';
     $this->queueSQL($sql);
     return TRUE;
+  }
+
+  /**
+   * Fix the field default for the campaign field.
+   *
+   * Note this was basically instant on staging.
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4360(): bool {
+    CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_value_1_gift_data_7 MODIFY COLUMN campaign varchar(255) DEFAULT 'Online Gift'");
+    // And re-run this update to get any that are left.
+    return $this->upgrade_4335();
   }
 
   /**

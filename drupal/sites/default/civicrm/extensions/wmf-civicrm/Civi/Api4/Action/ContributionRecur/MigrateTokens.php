@@ -97,7 +97,8 @@ class MigrateTokens extends AbstractAction {
         'payment_processor_id' => $this->adyenProcessorId,
         'invoice_id' => $invoiceId
       ])
-      ->addWhere('payment_token_id', '=', $existingTokenId);
+      ->addWhere('payment_token_id', '=', $existingTokenId)
+      ->execute();
     \Civi::log('wmf')->info(
       'Migrated Ingenico token {oldToken} with id {existingTokenId} to Adyen token {newToken} with invoice ID {invoiceId}',
       [
