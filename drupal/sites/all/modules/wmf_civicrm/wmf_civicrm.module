@@ -187,8 +187,8 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
  */
 function wmf_civicrm_contribution_message_import(array &$msg): array {
   $timer = ImportStatsCollector::getInstance();
-
-  if (empty($msg['recurring'])) {
+  $isRecurring = $msg['recurring'] ?? !empty($msg['contribution_recur_id']);
+  if (!$isRecurring) {
     $overallTimerName = "wmf_civicrm_contribution_message_import";
   }
   else {
@@ -1192,21 +1192,17 @@ function wmf_civicrm_normalize_msg($msg): array {
   wmf_civicrm_removeKnownBadStringsFromAddressFields($msg);
 
   if (empty($msg['financial_type_id'])) {
-    if (!empty($msg['contribution_type'])) {
-      // @todo - remove this - after we is has been here a while without us seeing issues.
-      Civi::log('wmf')
-        ->warning('wmf_civicrm: Financial type should be set, contribution type is deprecated');
+    if (!empty($msg['contribution_recur_id'])) {
+      $msg['financial_type_id'] = ContributionRecur::getFinancialType($msg['contribution_recur_id']);
     }
-    $financialType = $msg['financial_type_id:name'] ?? $msg['contribution_type'] ?? null;
-    if (!empty($msg['recurring'])) {
+    elseif (!empty($msg['recurring'])) {
+      // Can we remove this - seems to be set elsewhere.
       // Recurring Gift is used for the first in the series, Recurring Gift - Cash thereafter.
-      $financialType = "Recurring Gift";
+      $msg['financial_type_id'] = ContributionRecur::getFinancialTypeForFirstContribution();
     }
-
-    if (empty($financialType)) {
-      $financialType = "Cash";
+    else {
+      $msg['financial_type_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
     }
-    $msg['financial_type_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', $financialType);
   }
 
   if (empty($msg['payment_instrument_id'])) {
