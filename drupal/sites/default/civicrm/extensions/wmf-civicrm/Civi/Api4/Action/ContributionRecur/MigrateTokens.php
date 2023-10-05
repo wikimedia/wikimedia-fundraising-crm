@@ -15,6 +15,8 @@ use Symfony\Component\Filesystem\Exception\IOException;
 /**
  * Migrates Ingenico tokens specified in a CSV to Adyen tokens
  * @method setPath(string $path)
+ * @method setBatch(int $batch)
+ * @method setOffset(int $offset)
  */
 class MigrateTokens extends AbstractAction {
 
@@ -23,6 +25,16 @@ class MigrateTokens extends AbstractAction {
    * @required
    */
   protected $path;
+
+  /**
+   * @var int How many rows to process
+   */
+  protected $batch;
+
+  /**
+   * @var int Which row to start from
+   */
+  protected $offset;
 
   /**
    * @var int
@@ -46,8 +58,12 @@ class MigrateTokens extends AbstractAction {
     $reader = CsvReader::createFromPath($this->path)->setDelimiter(",")->setHeaderOffset(0);
     // TODO: check for reqyired columns: echodata, recurringDetailReference, and shopperReference
     $stmt = new CsvStatement();
-    // TODO: ->offset($this->offset)
-    // TODO: ->limit($this->batch_size);
+    if ($this->offset) {
+      $stmt = $stmt->offset($this->offset);
+    }
+    if ($this->batch) {
+      $stmt = $stmt->limit($this->batch);
+    }
 
     $records = $stmt->process($reader);
     $alreadyImported = [];
