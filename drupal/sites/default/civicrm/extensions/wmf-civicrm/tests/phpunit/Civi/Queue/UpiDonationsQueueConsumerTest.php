@@ -76,7 +76,8 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
       ->addWhere('id', '=', $contributionRecurId)
       ->execute()
       ->first();
-    $this->assertEquals('2023-04-08 00:00:00', $recurRecord['next_sched_contribution_date']);
+    $this->assertEquals('2023-04-09 00:00:00', $recurRecord['next_sched_contribution_date']);
+    $this->assertEquals('9', $recurRecord['cycle_day']);
     $tokenRecord = PaymentToken::get(FALSE)
       ->addWhere('id', '=', $recurRecord['payment_token_id'])
       ->execute()
