@@ -28,6 +28,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testCanProcessContributionTrackingMessage(): void {
     $message = $this->getMessage();
     $message['utm_source'] = 'B2223_1115_en6C_m_p1_lg_amt_cnt.no-LP.paypal';
+    $message['payment_method'] = 'paypal';
     $this->consumer->processMessage($message);
     $this->compareMessageWithDb($message);
     $this->validateContributionTracking($message['id'], [
@@ -68,6 +69,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'id' => $message['id'],
       'contribution_id' => $contributionID,
       'form_amount' => 'GBP 10.00', // updated from 35
+      'amount' => '10.00'
     ];
     $this->consumer->processMessage($updateMessage);
     $this->validateContributionTracking((int) $message['id'], [
