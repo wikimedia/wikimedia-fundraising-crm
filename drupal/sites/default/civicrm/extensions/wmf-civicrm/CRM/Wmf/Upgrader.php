@@ -1172,10 +1172,10 @@ SET
      WHERE `a`.`receive_date` > "20230701000000"
        AND `a`.`contribution_recur_id` > 0
        -- financial type not already of recurring type
-       AND `a`.`financial_type_id` NOT IN(' . $recurringGiftTypeID . ', ' . $recurringCashTypeID . ')
+       AND `a`.`financial_type_id` NOT IN(' . $recurringGiftTypeID . ')
        AND `a`.`is_test` = 0
        AND c2.id IS NULL
-        LIMIT 100';
+        LIMIT 5000';
 
     $this->queueSQL($sql);
 
@@ -1192,10 +1192,10 @@ SET
      WHERE `a`.`receive_date` > "20230701000000"
        AND `a`.`contribution_recur_id` > 0
        -- financial type not already of recurring type
-       AND `a`.`financial_type_id` NOT IN(' . $recurringGiftTypeID . ', ' . $recurringCashTypeID . ')
+       AND `a`.`financial_type_id` NOT IN(' . $recurringCashTypeID . ')
        AND `a`.`is_test` = 0
        AND c2.id IS NOT NULL
-        LIMIT 100';
+        LIMIT 5000';
     $this->queueSQL($sql);
     return TRUE;
   }
@@ -1391,6 +1391,31 @@ LIMIT 2000';
     CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_value_1_gift_data_7 MODIFY COLUMN campaign varchar(255) DEFAULT 'Online Gift'");
     // And re-run this update to get any that are left.
     return $this->upgrade_4335();
+  }
+
+  /**
+   * Fix mis-coded subsequent recurring contributions.
+   *
+   * Our original fix for the recurring contributions was mis-coding
+   * some subsequent contributions to 'Recurring Gift' (31) rather
+   * than 'Recurring Gift - Cash' (32).
+   *
+   * This is hopefully fixed as of
+   * https://gerrit.wikimedia.org/r/c/wikimedia/fundraising/crm/+/963428/
+   * but we need to fix the mis-coded ones. This just re-runs the earlier update
+   * - which has been broadened to only treat the 'right' financial type as 'done'
+   * in the where clause (it was previously excluding those with type 31 OR 32
+   * regardless of which was correct in the instance).
+   *
+   * Note running this will add the new tasks into the queue. The old ones will
+   * continue to take turns with them until done. We could kill the one ones in
+   * favour of the new - but the old ones are still doing updates towards
+   * the general goal each time they run so hey.
+   *
+   * @return bool
+   */
+  public function upgrade_4370(): bool {
+    return $this->upgrade_4330();
   }
 
   /**
