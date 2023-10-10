@@ -1499,6 +1499,39 @@ WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1 LIMIT 1'
   }
 
   /**
+   * Delete now-orphaned records in civicrm_mailing.
+   *
+   * @return bool
+   */
+  public function upgrade_4385() : bool {
+    $sql = 'DELETE j
+      FROM civicrm_mailing_job j
+      LEFT JOIN civicrm_mailing_event_queue q ON q.job_id = j.id
+      WHERE q.id IS NULL
+        AND j.id BETWEEN %1 AND %2';
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 2000,
+      ],
+      2 => [
+        'value' => 2000,
+        'type' => 'Integer',
+        'increment' => 2000,
+      ],
+    ],
+      [
+        'sql_returns_none' => '
+           SELECT j.id
+           FROM civicrm_mailing_job j
+           LEFT JOIN civicrm_mailing_event_queue q ON q.job_id = j.id
+           WHERE q.id IS NULL LIMIT 1'
+      ], 20);
+    return TRUE;
+  }
+
+  /**
    * Queue up an SQL update.
    *
    * @param string $sql
