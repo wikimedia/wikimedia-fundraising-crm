@@ -24,7 +24,7 @@ class Contribution {
     else {
       $name_salt = $contactParams['organization_name'];
     }
-    return md5($checkNumber ?: $date . $name_salt . $rowIndex);
+    return md5(($checkNumber ?: '') . $date . $name_salt . $rowIndex);
   }
 
   /**
