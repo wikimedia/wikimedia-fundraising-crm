@@ -398,11 +398,7 @@ abstract class BaseAuditProcessor {
 
     //get missing transactions from one or more recon files
     //let's just assume that the default mode will be to pop off the top three (most recent) at this point. :)
-    //...Three, because Shut Up.
-    $count = count($recon_files);
-    if ($count > 3 && !$this->get_runtime_options('run_all')) {
-      $count = 3;
-    }
+    $count = $this->get_recon_files_count( $recon_files );
 
     $total_missing = [];
     $recon_file_stats = [];
@@ -1461,6 +1457,19 @@ abstract class BaseAuditProcessor {
     }
 
     QueueWrapper::push($queueNames[$type], $body, true);
+  }
+
+  /**
+    * @param $recon_files
+    * @return int|void
+    */
+  protected function get_recon_files_count( $recon_files ) {
+    //...Three, because Shut Up.
+    $count = count( $recon_files );
+    if ( $count > 3 && !$this->get_runtime_options( 'run_all' ) ) {
+      $count = 3;
+    }
+    return $count;
   }
 
 }

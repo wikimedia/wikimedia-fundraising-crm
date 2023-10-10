@@ -332,9 +332,9 @@ function wmf_audit_make_contribution_tracking_data($record) {
   //anything we don't put in here should be handled by the universal defaults on
   //import. And that's good.
   $return = [
-    'utm_source' => $utm_stuffer,
-    'utm_medium' => $utm_stuffer,
-    'utm_campaign' => $utm_stuffer,
+    'utm_source' => $record['utm_source'] ?? $utm_stuffer,
+    'utm_medium' => $record['utm_medium'] ?? $utm_stuffer,
+    'utm_campaign' => $record['utm_campaign'] ?? $utm_stuffer,
   ];
 
   if (!array_key_exists('date', $record)) {

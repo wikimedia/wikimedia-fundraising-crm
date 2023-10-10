@@ -1,0 +1,7 @@
+name = Fundraiseup Audit
+description = Fundraiseup audit
+core = 7.x
+dependencies[] = wmf_audit
+package = WMF Audit
+configure = admin/config/wmf_audit/fundraiseup_audit
+files[] = FundraiseupAuditProcessor.php
