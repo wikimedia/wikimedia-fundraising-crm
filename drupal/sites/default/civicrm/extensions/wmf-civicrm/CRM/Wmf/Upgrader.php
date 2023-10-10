@@ -1494,7 +1494,7 @@ AND queue.id BETWEEN %1 AND %2';
 INNER JOIN civicrm_mailing_job j ON j.id = queue.job_id
 INNER JOIN civicrm_mailing m ON j.mailing_id = m.id
 WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1 LIMIT 1'
-    ]);
+    ], 2);
     return TRUE;
   }
 
@@ -1529,6 +1529,71 @@ WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1 LIMIT 1'
            WHERE q.id IS NULL LIMIT 1'
       ], 20);
     return TRUE;
+  }
+
+  /**
+   *
+   * Cull some mailing details.
+   *
+   * Even though we are busily updating the job_id on the civicrm_mailing_event_queue
+   * table I've concluded we could slip in a delete to run before it
+   * and delete a bunch of mailing queue records to save us updating them.
+   *
+   * I'm giving this job a weight of -1 so that once we deploy it it
+   * will actually get preference over the already running (at least on
+   * staging, not yet +2d for prod) updates above it. This is fun.
+   *
+   * The query at https://wikitech.wikimedia.org/wiki/Fundraising/Internal-facing/CiviCRM#CiviMail_records
+   * finds we have a tonne of mailing rows.
+   *
+   * | civicrm_mailing_event_bounce             | 2023-10-10 02:10:04 | 2008-10-31 05:00:02 |  1333353 |
+   * | civicrm_mailing_event_delivered          | 2023-10-10 02:20:26 | 2008-10-25 08:10:11 | 52720715 |
+   * | civicrm_mailing_event_forward            | NULL                | NULL                |        0 |
+   * | civicrm_mailing_event_opened             | 2013-04-10 21:15:40 | 2008-10-25 08:20:54 |   421457 |
+   * | civicrm_mailing_event_reply              | 2023-06-11 12:55:03 | 2008-10-31 05:00:03 |      402 |
+   * | civicrm_mailing_event_subscribe          | NULL                | NULL                |        0 |
+   * | civicrm_mailing_event_trackable_url_open | 2018-08-22 03:12:33 | 2008-10-25 13:26:52 |    62816 |
+   * | civicrm_mailing_event_unsubscribe        | 2021-11-16 17:10:23 | 2008-10-28 04:38:05 |     9168 |
+   *
+   * Per comments on wikitech these are of little value except when current.
+   * The exception is that bounce & reply information do give us some valuable contact
+   * history - this is now captured in activities.
+   *
+   * This change removes queue &, by cascade delete, mailing event data where the email
+   * was delivered more than a year ago. I think there is an appetite for a more aggressive
+   * approach
+   */
+  public function upgrade_4390(): bool {
+    $sql = "DELETE q
+FROM civicrm_mailing_event_queue q
+LEFT JOIN civicrm_mailing_event_delivered d ON d.event_queue_id = q.id
+
+WHERE
+d.time_stamp < DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+AND q.id BETWEEN %1 AND %2"
+    ;
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 2000,
+      ],
+      2 => [
+        'value' => 2000,
+        'type' => 'Integer',
+        'increment' => 2000,
+      ],
+    ],
+    [
+      'sql_returns_none' => '
+         SELECT q.id
+         FROM civicrm_mailing_event_queue q
+           LEFT JOIN civicrm_mailing_event_delivered d ON d.event_queue_id = q.id
+         WHERE d.time_stamp < DATE_SUB(CURDATE(), INTERVAL 1 YEAR) LIMIT 1'
+    ],
+    -5);
+    return TRUE;
+
   }
 
   /**
