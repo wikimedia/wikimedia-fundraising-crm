@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<menu>
+  <item>
+    <path>civicrm/movecontrib</path>
+    <page_callback>CRM_LCD_MoveContrib_Form_MoveContrib</page_callback>
+    <title>Move Contribution</title>
+    <access_arguments>access CiviContribute</access_arguments>
+  </item>
+</menu>

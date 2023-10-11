@@ -58,6 +58,7 @@
     <ext>exchange_rates</ext>
     <ext>civiimport</ext>
     <ext>civicrm_admin_ui</ext>
+    <ext>biz.lcdservices.movecontrib</ext>
   </requires>
   <civix>
     <namespace>CRM/Wmf</namespace>
