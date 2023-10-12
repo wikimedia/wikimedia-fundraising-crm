@@ -69,6 +69,7 @@ abstract class CRM_Queue_Queue {
         $status = 'paused';
       }
     }
+    \Civi::log('wmf')->warning('queue active called & got status' . $status);
     CRM_Utils_Hook::queueActive($status, $this->getName(), $this->queueSpec);
     // Note in future we might want to consider whether an upgrade is in progress.
     // Should we set the setting at that point?
