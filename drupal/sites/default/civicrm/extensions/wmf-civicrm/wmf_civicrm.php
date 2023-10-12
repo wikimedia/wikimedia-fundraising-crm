@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\CustomField;
 use Civi\WMFHelpers\Queue;
 
 require_once 'wmf_civicrm.civix.php';
@@ -319,6 +320,37 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   $recurTriggerInfo = $recurProcessor->setTableName($tableName)->triggerInfo();
   $info = array_merge($info, $recurTriggerInfo);
   $info = Activity::alterTriggerSql($info);
+
+  // Remove any disabled custom fields from our SQL. This allows us to stage the deletion process
+  // 1) disable the field - can be done at any time
+  // 2) reload triggers - can also be done at any time after 1 is done (but before 3)
+  // 3) delete the fields - depending on the table size this may require an outage.
+  $disabledCustomFields = CustomField::get(FALSE)
+    ->addWhere('is_active', '=', FALSE)
+    ->addSelect('column_name', 'name', 'custom_group_id.table_name', 'id')
+    ->execute();
+  $tablesToRemoveFieldsFrom = [];
+  foreach ($disabledCustomFields as $disabledCustomField) {
+    $tablesToRemoveFieldsFrom[$disabledCustomField['custom_group_id.table_name']][] = $disabledCustomField['column_name'];
+  }
+  foreach ($info as &$tableSpecification) {
+    if (array_intersect((array) $tableSpecification['table'], array_keys($tablesToRemoveFieldsFrom))) {
+      // For logging tables, which are the ones the replace will actually change, there
+      // is just one table in the table array.
+      foreach ($tablesToRemoveFieldsFrom[$tableSpecification['table'][0]] as $disabledField) {
+        // the field appears twice in the sql, once with NEW. prepended, replace that on first
+        $tableSpecification['sql'] = str_replace(
+          'OR IFNULL(OLD.`' . $disabledField . '`,\'\') <> IFNULL(NEW.`' . $disabledField . '`,\'\')',
+        '', $tableSpecification['sql']);
+        $tableSpecification['sql'] = str_replace(
+          'NEW.`' . $disabledField . '`,', '', $tableSpecification['sql']);
+        $tableSpecification['sql'] = str_replace(
+          'OLD.`' . $disabledField . '`,', '', $tableSpecification['sql']);
+        $tableSpecification['sql'] = str_replace(
+          '`' . $disabledField . '`,', '', $tableSpecification['sql']);
+      }
+    }
+  }
 }
 
 /**
