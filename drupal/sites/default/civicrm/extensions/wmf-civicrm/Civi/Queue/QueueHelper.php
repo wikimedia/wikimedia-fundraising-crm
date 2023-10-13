@@ -3,6 +3,7 @@
 namespace Civi\Queue;
 
 use Civi\Api4\Queue;
+use Civi\Core\Exception\DBQueryException;
 
 /**
  * Queue helper.
@@ -14,6 +15,7 @@ class QueueHelper {
   protected $queue;
   public const ITERATE_UNTIL_DONE = 1;
   public const ITERATE_RUN_ONCE = 0;
+  public const ITERATE_UNTIL_TRUE = 2;
 
   /**
    * @var int|null
@@ -38,17 +40,20 @@ class QueueHelper {
    * @param string $sql
    * @param array $params
    * @param int $iterate
+   * @params array $doneParameters
+   * @param int $weight
    *
    * @return $this
    */
-  public function sql(string $sql, array $params = [], int $iterate = self::ITERATE_RUN_ONCE): QueueHelper {
+  public function sql(string $sql, array $params = [], int $iterate = self::ITERATE_RUN_ONCE, $doneCondition = [], $weight = 0): QueueHelper {
     $task = new \CRM_Queue_Task([self::class, 'doSql'], [
       $sql,
       $params,
-      $iterate
+      $iterate,
+      $doneCondition
     ]);
     $task->runAs = $this->runAs;
-    $this->queue->createItem($task);
+    $this->queue->createItem($task, ['weight' => $weight]);
     return $this;
   }
 
@@ -77,24 +82,82 @@ class QueueHelper {
    *
    * @param \CRM_Queue_TaskContext $taskContext
    * @param string $sql
-   * @param array $params
+   * @param array $queryParameters
+   *   Values to interpolate into the sql. These are in the format
+   *   [1 => [500, 'Integer], 2 => ['bob' => 'String']]. They can be incremented
+   *   with the passing of incrementParams.
+   * @param int $iterate
+   *   Either self::ITERATE_ONCE or self::ITERATE_UNTIL DONE
+   * @param array $incrementParameters
+   *   Additional parameters when using ITERATE_UNTIL_DONE
+   *   These are keyed the same as the queryParameters and will be added to the
+   *   query parameters to provide batching. e.g if the queryParameters have a key
+   *   [1 => [0, 'Integer']] and the incrementParameters have
+   *   [1 => ['increment' => 200]] then on re-queueing the parameter will be set
+   *   to 200 rather than 0, and 400 for the next iteration etc.
+   * @param array $doneCondition
    *
    * @return bool
-   * @throws \Civi\Core\Exception\DBQueryException
    * @internal only use from this class.
    */
-  public static function doSql(\CRM_Queue_TaskContext $taskContext, string $sql, array $params, int $iterate): bool {
-    $result = \CRM_Core_DAO::executeQuery($sql, $params);
-    if ($iterate && $result->affectedRows() > 0) {
-      // Not finished, queue another pass.
-      $task = new \CRM_Queue_Task([self::class, 'doSql'], [
-        $sql,
-        $params,
-        $iterate
+  public static function doSql(\CRM_Queue_TaskContext $taskContext, string $sql, array $queryParameters, int $iterate, array $doneCondition = []): bool {
+    try {
+      $daoParams = [];
+      foreach ($queryParameters as $index => $queryParameter) {
+        // Flatten out the array.
+        $daoParams[$index] = [$queryParameter['value'], $queryParameter['type']];
+      }
+      $result = \CRM_Core_DAO::executeQuery($sql, $daoParams);
+    }
+    catch (DBQueryException $e) {
+      \Civi::log('queue')->error('queued action failed to run {sql} with parameters {params} sql error {sql_error_code} {message} {exception}', [
+        'sql' => $sql,
+        'params' => $queryParameters,
+        // @todo - add isDeadLock? Maybe at the error level.
+        'sql_error_code' => $e->getSQLErrorCode(),
+        'message' => $e->getMessage(),
+        'exception' => $e,
       ]);
-      $taskContext->queue->createItem($task);
+      return FALSE;
+    }
+    if (($iterate === self::ITERATE_UNTIL_DONE && $result->affectedRows() > 0)
+      || ($iterate === self::ITERATE_UNTIL_TRUE && !self::isIterationComplete($doneCondition))) {
+      foreach ($queryParameters as $index => $queryParameter) {
+        // Each loop we add on the value from the increment to our replacement params, if passed
+        // note that there isn't validation at this stage as
+        // to whether we are incrementing an Integer/DateTime. As this
+        // code settles we might add it - just not sure this is the right place.
+        if (!empty($queryParameter['increment'])) {
+          $queryParameters[$index]['value'] += $queryParameter['increment'];
+        }
+      }
+      try {
+        // Not finished, queue another pass.
+        $task = new \CRM_Queue_Task([self::class, 'doSql'], [
+          $sql,
+          $queryParameters,
+          $iterate,
+          $doneCondition
+        ]);
+        $taskContext->queue->createItem($task, ['weight' => $taskContext->queue->getSpec('weight')]);
+      }
+      catch (\CRM_Core_Exception $e) {
+        \Civi::log('queue')->error('queued action failed to re-queue {message} {exception}', [
+          'message' => $e->getMessage(),
+          'exception' => $e,
+        ]);
+      }
     }
     return TRUE;
+  }
+
+  private static function isIterationComplete($doneParams): bool {
+    if (empty($doneParams)) {
+      return TRUE;
+    }
+    // We might nuance this so keying as 'sql_returns_none' for now to allow others.
+    // when the sql returns nothing the iteration is complete.
+    return !\CRM_Core_DAO::singleValueQuery($doneParams['sql_returns_none']);
   }
 
   /**

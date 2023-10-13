@@ -1419,9 +1419,198 @@ LIMIT 2000';
   }
 
   /**
-   * @param string $sql
+   * Queue updates to change tax amount to 0 where it is NULL.
+   *
+   * As with the previous tax_amount update update this is primary for local dev
+   * testing purposes - ie it is easier to test the iteration mechanism on this locally
+   * than it is for the next queued update.
+   *
+   * For local dev testing run `UPDATE civicrm_contribution SET tax_amount = NULL`.
+   * before starting... Depending on the state of your database you may need to first run
+   * `alter table civicrm_contribution modify total_amount decimal(20,2) not null`
+   *
+   * @return bool
    */
-  private function queueSQL(string $sql): void {
+  public function upgrade_4375() : bool {
+    $sql = 'UPDATE civicrm_contribution SET tax_amount = 0
+      WHERE tax_amount IS NULL
+      -- limit to the next 10k records for now as we actually want to deploy this live in a measured fashion
+      AND id BETWEEN %1 AND %2';
+
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 5,
+      ],
+      2 => [
+        'value' => 5,
+        'type' => 'Integer',
+        'increment' => 5,
+      ],
+    ],
+      [
+        'sql_returns_none' => '
+        SELECT id FROM civicrm_contribution
+      WHERE tax_amount IS NULL AND id < 11000 LIMIT 1'
+      ]);
+    return TRUE;
+  }
+
+  /**
+   * Update mailing job records to link to the same queue.
+   *
+   * Note this just brings across the one update we already started into
+   * this upgrader. The next goal is to figure out all the records to
+   * consolidate.
+   *
+   * Bug: T346194
+   *
+   * @return bool
+   */
+  public function upgrade_4380() : bool {
+    $sql = 'UPDATE  civicrm_mailing_event_queue queue
+INNER JOIN civicrm_mailing_job j ON j.id = queue.job_id
+INNER JOIN civicrm_mailing m ON j.mailing_id = m.id
+  SET job_id = 1
+WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1
+  -- this job _id seems to help the query speed.
+  -- some runs might be have less than 2k in them
+AND queue.id BETWEEN %1 AND %2';
+    $this->queueSQL($sql, [
+      1 => [
+      'value' => 0,
+      'type' => 'Integer',
+      'increment' => 2000,
+      ],
+      2 => [
+        'value' => 2000,
+        'type' => 'Integer',
+        'increment' => 2000,
+      ],
+    ],
+    [
+      'sql_returns_none' => 'SELECT queue.id FROM civicrm_mailing_event_queue queue
+INNER JOIN civicrm_mailing_job j ON j.id = queue.job_id
+INNER JOIN civicrm_mailing m ON j.mailing_id = m.id
+WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1 LIMIT 1'
+    ], 2);
+    return TRUE;
+  }
+
+  /**
+   * Delete now-orphaned records in civicrm_mailing.
+   *
+   * @return bool
+   */
+  public function upgrade_4385() : bool {
+    $sql = 'DELETE j
+      FROM civicrm_mailing_job j
+      LEFT JOIN civicrm_mailing_event_queue q ON q.job_id = j.id
+      WHERE q.id IS NULL
+        AND j.id BETWEEN %1 AND %2';
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 2000,
+      ],
+      2 => [
+        'value' => 2000,
+        'type' => 'Integer',
+        'increment' => 2000,
+      ],
+    ],
+      [
+        'sql_returns_none' => '
+           SELECT j.id
+           FROM civicrm_mailing_job j
+           LEFT JOIN civicrm_mailing_event_queue q ON q.job_id = j.id
+           WHERE q.id IS NULL LIMIT 1'
+      ], 20);
+    return TRUE;
+  }
+
+  /**
+   *
+   * Cull some mailing details.
+   *
+   * Even though we are busily updating the job_id on the civicrm_mailing_event_queue
+   * table I've concluded we could slip in a delete to run before it
+   * and delete a bunch of mailing queue records to save us updating them.
+   *
+   * I'm giving this job a weight of -1 so that once we deploy it it
+   * will actually get preference over the already running (at least on
+   * staging, not yet +2d for prod) updates above it. This is fun.
+   *
+   * The query at https://wikitech.wikimedia.org/wiki/Fundraising/Internal-facing/CiviCRM#CiviMail_records
+   * finds we have a tonne of mailing rows.
+   *
+   * | civicrm_mailing_event_bounce             | 2023-10-10 02:10:04 | 2008-10-31 05:00:02 |  1333353 |
+   * | civicrm_mailing_event_delivered          | 2023-10-10 02:20:26 | 2008-10-25 08:10:11 | 52720715 |
+   * | civicrm_mailing_event_forward            | NULL                | NULL                |        0 |
+   * | civicrm_mailing_event_opened             | 2013-04-10 21:15:40 | 2008-10-25 08:20:54 |   421457 |
+   * | civicrm_mailing_event_reply              | 2023-06-11 12:55:03 | 2008-10-31 05:00:03 |      402 |
+   * | civicrm_mailing_event_subscribe          | NULL                | NULL                |        0 |
+   * | civicrm_mailing_event_trackable_url_open | 2018-08-22 03:12:33 | 2008-10-25 13:26:52 |    62816 |
+   * | civicrm_mailing_event_unsubscribe        | 2021-11-16 17:10:23 | 2008-10-28 04:38:05 |     9168 |
+   *
+   * Per comments on wikitech these are of little value except when current.
+   * The exception is that bounce & reply information do give us some valuable contact
+   * history - this is now captured in activities.
+   *
+   * This change removes queue &, by cascade delete, mailing event data where the email
+   * was delivered more than a year ago. I think there is an appetite for a more aggressive
+   * approach
+   */
+  public function upgrade_4390(): bool {
+    $sql = "DELETE q
+FROM civicrm_mailing_event_queue q
+LEFT JOIN civicrm_mailing_event_delivered d ON d.event_queue_id = q.id
+
+WHERE
+d.time_stamp < DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+AND q.id BETWEEN %1 AND %2"
+    ;
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 2000,
+      ],
+      2 => [
+        'value' => 2000,
+        'type' => 'Integer',
+        'increment' => 2000,
+      ],
+    ],
+    [
+      'sql_returns_none' => '
+         SELECT q.id
+         FROM civicrm_mailing_event_queue q
+           LEFT JOIN civicrm_mailing_event_delivered d ON d.event_queue_id = q.id
+         WHERE d.time_stamp < DATE_SUB(CURDATE(), INTERVAL 1 YEAR) LIMIT 1'
+    ],
+    -5);
+    return TRUE;
+
+  }
+
+  /**
+   * Queue up an SQL update.
+   *
+   * @param string $sql
+   * @param array $queryParameters
+   *   Parameters to interpolate in with the keys
+   *    - value
+   *    - type (Integer, String, etc)
+   *    - increment (optional, if present this is added to the value on each subsequent run.
+   * @param array $doneCondition
+   *   Criteria to determine when it is done. Currently supports one key
+   *   - sql_returns_none - a query that should return empty when done.
+   * @param int $weight
+   */
+  private function queueSQL(string $sql, array $queryParameters = [], $doneCondition = [], int $weight = 0): void {
     $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
       'type' => 'Sql',
       'runner' => 'task',
@@ -1432,7 +1621,7 @@ LIMIT 2000';
       'reset' => FALSE,
       'error' => 'abort',
     ]));
-    $queue->sql($sql, [], QueueHelper::ITERATE_UNTIL_DONE);
+    $queue->sql($sql, $queryParameters, empty($doneCondition) ? QueueHelper::ITERATE_UNTIL_DONE : QueueHelper::ITERATE_UNTIL_TRUE, $doneCondition, $weight);
   }
 
 }
