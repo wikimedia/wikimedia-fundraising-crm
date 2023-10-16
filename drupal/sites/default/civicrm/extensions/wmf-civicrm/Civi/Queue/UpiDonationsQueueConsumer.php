@@ -5,7 +5,6 @@ use Civi;
 use Civi\Api4\ContributionRecur;
 use Civi\WMFHelpers\PaymentProcessor;
 use CRM_Core_Payment_Scheduler;
-use DateTimeZone;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use wmf_common\WmfQueueConsumer;
@@ -28,7 +27,7 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
           . $message['order_id']
         );
       }
-      return TRUE;
+      return;
     }
 
     if ($contributionRecur) {
@@ -109,29 +108,12 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
       'trxn_id' => WmfTransaction::from_message($normalized)->get_unique_id(),
     ];
 
-    $params['next_sched_contribution_date'] = $this->getNextContributionDate($params, $normalized['date']);
+    $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextDateForMonth(
+      $params, $normalized['date']
+    );
 
     $newContributionRecur = civicrm_api3('ContributionRecur', 'create', $params);
     return $newContributionRecur['id'];
-  }
-
-  /**
-   * Gets a date and time to send the next UPI prenotification
-   *
-   * @param array $params needs at least 'frequency_interval' and 'cycle_day'
-   * @param int|null $previousContributionTimestamp timestamp of the previous contribution
-   * @return string Date and time of next scheduled prenotification, formatted for Civi API calls.
-   */
-  protected function getNextContributionDate(array $params, ?int $previousContributionTimestamp = NULL): string {
-    // Use the SmashPig extension's scheduler to get a standard next date
-    // based on the params, then convert it to a DateTime object
-    $standardDate = date_create(
-      CRM_Core_Payment_Scheduler::getNextDateForMonth($params, $previousContributionTimestamp),
-      new DateTimeZone('UTC')
-    );
-    // subtract 1 day for prenotification
-    $difference = date_interval_create_from_date_string('1 day');
-    return date_format(date_sub($standardDate, $difference), 'Y-m-d H:i:s');
   }
 
   /**
