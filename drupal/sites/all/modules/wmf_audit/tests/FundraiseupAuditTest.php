@@ -317,9 +317,15 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->addWhere('invoice_id', 'LIKE', $donation['invoice_id'] . "%")
       ->execute()->first();
 
+    $contact = \Civi\Api4\Contact::get(FALSE)
+      ->addSelect('custom.*',)
+      ->addWhere('id', '=', $contribution['contact_id'])
+      ->execute()->first();
+
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
 
+    $this->assertEquals($contact["External_Identifiers.fundraiseup_id"], $donation['external_identifier']);
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $contribution[$key]);
     }
@@ -356,9 +362,15 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->addWhere('invoice_id', 'LIKE', $donation['invoice_id'] . "%")
       ->execute()->first();
 
+    $contact = \Civi\Api4\Contact::get(FALSE)
+      ->addSelect('custom.*',)
+      ->addWhere('id', '=', $contribution['contact_id'])
+      ->execute()->first();
+
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
 
+    $this->assertEquals($contact["External_Identifiers.fundraiseup_id"], $donation['external_identifier']);
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $contribution[$key]);
     }
@@ -394,9 +406,15 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->addWhere('invoice_id', 'LIKE', $donation['invoice_id'] . "%")
       ->execute()->first();
 
+    $contact = \Civi\Api4\Contact::get(FALSE)
+      ->addSelect('custom.*',)
+      ->addWhere('id', '=', $contribution['contact_id'])
+      ->execute()->first();
+
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
 
+    $this->assertEquals($contact["External_Identifiers.fundraiseup_id"], $donation['external_identifier']);
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $contribution[$key]);
     }
