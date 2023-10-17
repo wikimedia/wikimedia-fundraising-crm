@@ -139,7 +139,8 @@ class QueueHelper {
           $iterate,
           $doneCondition
         ]);
-        $taskContext->queue->createItem($task, ['weight' => $taskContext->queue->getSpec('weight')]);
+
+        $taskContext->queue->createItem($task);
       }
       catch (\CRM_Core_Exception $e) {
         \Civi::log('queue')->error('queued action failed to re-queue {message} {exception}', [

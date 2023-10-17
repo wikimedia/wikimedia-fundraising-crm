@@ -1595,6 +1595,9 @@ AND q.id BETWEEN %1 AND %2"
     return TRUE;
 
   }
+  public function upgrade_4391(): bool {
+    return $this->upgrade_4390();
+  }
 
   /**
    * Queue up an SQL update.
