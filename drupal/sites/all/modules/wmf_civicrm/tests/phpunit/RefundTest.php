@@ -69,7 +69,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'financial_type_id' => 'Cash',
       'total_amount' => $this->original_amount,
       'contribution_source' => $this->original_currency . ' ' . $this->original_amount,
-      'receive_date' => wmf_common_date_unix_to_civicrm($time),
+      'receive_date' => date('Y-m-d') . ' 04:05:06',
       'trxn_id' => $this->trxn_id,
     ));
     $this->original_contribution_id = $results['id'];
@@ -144,39 +144,41 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * Check that marking a contribution as refunded updates custom data
    * appropriately.
    */
-  public function testMarkRefundCheckCustomData() {
-    civicrm_api3('contribution', 'create', array(
+  public function testMarkRefundCheckCustomData(): void {
+    $this->callAPISuccess('Contribution', 'create', [
+      'version' => 4,
       'contact_id' => $this->contact_id,
-      'financial_type_id' => 'Cash',
+      'financial_type_id:name' => 'Cash',
       'total_amount' => 50,
-      'contribution_source' => 'USD 50',
-      'receive_date' => '2014-11-01',
-    ));
+      'source' => 'USD 50',
+      'receive_date' => '2024-11-01',
+    ]);
     // Create an additional negative contribution. This is how they were prior to Feb 2016.
     // We want to check it is ignored for the purpose of determining the most recent donation
     // although it should contribute to the lifetime total.
-    civicrm_api3('contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', array(
       'contact_id' => $this->contact_id,
-      'financial_type_id' => 'Cash',
+      'financial_type_id:name' => 'Cash',
+      'version' => 4,
       'total_amount' => -10,
       'contribution_source' => 'USD -10',
-      'receive_date' => '2015-12-01',
+      'receive_date' => '2025-12-01',
     ));
-    wmf_civicrm_mark_refund($this->original_contribution_id, 'refund', FALSE, '2015-09-09', 'my_special_ref');
+    wmf_civicrm_mark_refund($this->original_contribution_id, 'refund', FALSE, '2025-09-09', 'my_special_ref');
 
 
-    $this->assertCustomFieldValues($this->contact_id, [
-      'lifetime_usd_total' => 40,
-      'last_donation_date' => '2014-11-01',
-      'last_donation_amount' => 50,
-      'last_donation_usd' => 50,
-      'last_donation_currency' => 'USD',
-      'total_2014' => 50,
-      'total_2015' => -10,
-      'number_donations'  => 1,
-      'total_2014_2015' => 50,
-      'total_2015_2016' => -10,
-      $this->financialYearTotalFieldName => 0,
+    $this->assertContactValues($this->contact_id, [
+      'wmf_donor.lifetime_usd_total' => 40,
+      'wmf_donor.last_donation_date' => '2024-11-01 00:00:00',
+      'wmf_donor.last_donation_amount' => 50,
+      'wmf_donor.last_donation_usd' => 50,
+      'wmf_donor.last_donation_currency' => 'USD',
+      'wmf_donor.total_2024' => 50,
+      'wmf_donor.total_2025' => -10,
+      'wmf_donor.number_donations'  => 1,
+      'wmf_donor.total_2024_2025' => 50,
+      'wmf_donor.total_2025_2026' => -10,
+      'wmf_donor.' . $this->financialYearTotalFieldName => 0,
     ]);
   }
 
@@ -203,30 +205,32 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * The new donation gets today's date as we have not passed a refund date.
    *
-   * @throws \CiviCRM_API3_Exception
    * @throws \Civi\ExchangeException\ExchangeRatesException;
    * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
    */
-  public function testMakeLesserRefund() {
+  public function testMakeLesserRefund(): void {
     $lesser_amount = round($this->original_amount - 0.25, 2);
 
     $time = time();
     // Add an earlier contribution - this will be the most recent if our contribution is
     // deleted.
-    civicrm_api3('contribution', 'create', array(
+    $receiveDate = date('Y-m-d', strtotime('1 year ago'));
+    $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contact_id,
-      'financial_type_id' => 'Cash',
+      'version' => 4,
+      'financial_type_id:name' => 'Cash',
       'total_amount' => 40,
-      'contribution_source' => 'NZD' . ' ' . 200,
-      'receive_date' => '1 year ago',
+      'source' => 'NZD' . ' ' . 200,
+      'receive_date' => $receiveDate,
       'trxn_id' => "TEST_GATEWAY {$this->gateway_txn_id} " . ($time - 200),
-    ));
-    $this->assertCustomFieldValues($this->contact_id, [
-      'lifetime_usd_total' => 41.23,
-      'last_donation_date' => date('Y-m-d', $time),
-      'last_donation_amount' => 1.23,
-      'last_donation_usd' => 1.23,
-      $this->financialYearTotalFieldName => 1.23,
+    ]);
+    $this->assertContactValues($this->contact_id, [
+      'wmf_donor.lifetime_usd_total' => 41.23,
+      'wmf_donor.last_donation_date' => date('Y-m-d') . ' 04:05:06',
+      'wmf_donor.last_donation_amount' => 1.23,
+      'wmf_donor.last_donation_usd' => 1.23,
+      'wmf_donor.' . $this->financialYearTotalFieldName => 1.23,
     ]);
 
     wmf_civicrm_mark_refund(
@@ -252,14 +256,13 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       $refund_contribution['contribution_source'],
       'Refund contribution has correct lesser amount'
     );
-    $this->assertCustomFieldValues($this->contact_id, [
-      'lifetime_usd_total' => 40,
-      'last_donation_date' => date('Y-m-d', strtotime('1 year ago')),
-      'last_donation_usd' => 40,
-      'total_' . (date('Y') -1) => 40,
-      $this->financialYearTotalFieldName => 0,
-      'last_donation_currency' => 'NZD',
-      'last_donation_amount' => 200,
+    $this->assertContactValues($this->contact_id, [
+      'wmf_donor.lifetime_usd_total' => 40,
+      'wmf_donor.last_donation_date' => date('Y-m-d 00:00:00', strtotime('1 year ago')),
+      'wmf_donor.last_donation_usd' => 40,
+      'wmf_donor.' . $this->financialYearTotalFieldName => 0,
+      'wmf_donor.last_donation_currency' => 'NZD',
+      'wmf_donor.last_donation_amount' => 200,
     ]);
   }
 

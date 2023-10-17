@@ -169,6 +169,15 @@ function wmf_civicrm_get_custom_field_map($field_names, $group_name = NULL) {
   return $custom_fields;
 }
 
+/**
+ * @param $field_name
+ * @param null $group_name
+ *
+ * @deprecated - try ot use apiv4 instead.
+ *
+ * @return mixed
+ * @throws \CRM_Core_Exception
+ */
 function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
   $custom_fields = wmf_civicrm_get_custom_field_map([$field_name], $group_name);
   return $custom_fields[$field_name];

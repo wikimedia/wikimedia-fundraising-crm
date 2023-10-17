@@ -284,6 +284,8 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    * @param int $contactID
    * @param array $expected
    *   Array in format name => value eg. ['total_2017_2018' => 50]
+   *
+   * @deprecated uses apiv3 - use assertContactValues()
    */
   protected function assertCustomFieldValues($contactID, $expected) {
     $return = [];
@@ -304,6 +306,24 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
       else {
         $this->assertEquals($value, $contact[wmf_civicrm_get_custom_field_name($key)], "wrong value for $key");
       }
+    }
+  }
+
+  /**
+   * Asset the specified fields match those on the given contact.
+   *
+   * @param int $contactID
+   * @param array $expected
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function assertContactValues(int $contactID, array $expected) {
+    $contact = Contact::get(FALSE)->setSelect(
+      array_keys($expected)
+    )->addWhere('id', '=', $contactID)->execute()->first();
+
+    foreach ($expected as $key => $value) {
+      $this->assertEquals($value, $contact[$key], "wrong value for $key");
     }
   }
 

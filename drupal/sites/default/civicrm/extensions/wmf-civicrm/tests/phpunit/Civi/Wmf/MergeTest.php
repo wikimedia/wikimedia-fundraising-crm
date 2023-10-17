@@ -148,14 +148,10 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    */
   public function testMergeHook(bool $isReverse): void {
     $this->giveADuckADonation($isReverse);
-    $contact = $this->callAPISuccess('Contact', 'get', [
-      'id' => $isReverse ? $this->contactID2 : $this->contactID,
-      'sequential' => 1,
-      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total'), wmf_civicrm_get_custom_field_name('do_not_solicit')],
-    ])['values'][0];
-    $this->assertEquals(10, $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')],
-      'logging is ' . \Civi::settings()->get('logging')
-    );
+    $this->assertContactValues($isReverse ? $this->contactID2 : $this->contactID, [
+      'wmf_donor.lifetime_usd_total' => 10,
+    ]);
+
     $result = $this->callAPISuccess('Job', 'process_batch_merge', [
       'criteria' => ['contact' => ['id' => ['IN' => [$this->contactID, $this->contactID2]]]],
     ]);
@@ -166,22 +162,13 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
       'wmf_donor.last_donation_amount' => 20,
       'wmf_donor.last_donation_currency' => 'NZD',
       'wmf_donor.last_donation_usd' => 9,
-      'wmf_donor.last_donation_date' => '2016-04-04 00:00:00',
+      'wmf_donor.last_donation_date' => '2024-07-04 00:00:00',
       'wmf_donor.first_donation_usd' => 5,
       'wmf_donor.first_donation_date' => '2013-01-04 00:00:00',
-      'wmf_donor.date_of_largest_donation' => '2014-08-04 00:00:00',
+      'wmf_donor.date_of_largest_donation' => '2023-08-04 00:00:00',
       'wmf_donor.number_donations' => 3,
-      'wmf_donor.total_2011' => 0,
-      'wmf_donor.total_2012' => 0,
-      'wmf_donor.total_2013' => 5,
-      'wmf_donor.total_2014' => 10,
-      'wmf_donor.total_2015' => 0,
-      'wmf_donor.total_2016' => 9,
-      'wmf_donor.total_2016_2017' => 0,
-      'wmf_donor.total_2015_2016' => 9,
-      'wmf_donor.total_2014_2015' => 10,
-      'wmf_donor.total_2013_2014' => 0,
-      'wmf_donor.total_2012_2013' => 5,
+      'wmf_donor.total_2022_2023' => 0,
+      'wmf_donor.total_2023_2024' => 10,
     ]);
 
     // Now lets check the one to be deleted has a do_not_solicit = 0.
@@ -189,19 +176,18 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
       'contact_type' => 'Individual',
       'first_name' => 'Donald',
       'last_name' => 'Duck',
-      'email' => 'the_don@duckland.com',
-      wmf_civicrm_get_custom_field_name('do_not_solicit') => 0,
+      'email_primary.email' => 'the_don@duckland.com',
+      'version' => 4,
+      'Communication.do_not_solicit' => 0,
     ]);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', [
       'criteria' => ['contact' => ['id' => $this->contactID]],
     ]);
     $this->assertCount(1, $result['values']['merged']);
-    $contact = $this->callAPISuccess('Contact', 'get', [
-      'id' => $this->contactID,
-      'sequential' => 1,
-      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total'), wmf_civicrm_get_custom_field_name('do_not_solicit')],
+    $this->assertContactValues($this->contactID, [
+      'wmf_donor.lifetime_usd_total' => 24,
+      'Communication.do_not_solicit' => TRUE,
     ]);
-    $this->assertEquals(1, $contact['values'][0][wmf_civicrm_get_custom_field_name('do_not_solicit')]);
   }
 
   /**
@@ -288,51 +274,47 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    *
    * After merging we check the same again.
    *
-   * Although a bit tangental we test calcs on deleting a contribution at the end.
+   * Although a bit tangential we test calculations on deleting a contribution at the end.
    *
    * @throws \CRM_Core_Exception
    * @throws \API_Exception
    */
-  public function testMergeEndowmentCalculation() {
+  public function testMergeEndowmentCalculation(): void {
     $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contactID,
-      'financial_type_id' => 'Endowment Gift',
+      'financial_type_id:name' => 'Endowment Gift',
       'total_amount' => 10,
       'currency' => 'USD',
-      'receive_date' => '2014-08-04',
-      wmf_civicrm_get_custom_field_name('original_currency') => 'NZD',
-      wmf_civicrm_get_custom_field_name('original_amount') => 8,
+      'version' => 4,
+      'receive_date' => '2024-08-04',
+      'contribution_extra.original_currency' => 'NZD',
+      'contribution_extra.original_amount' => 8,
     ]);
     $cashJob = $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contactID2,
-      'financial_type_id' => 'Cash',
+      'financial_type_id:name' => 'Cash',
       'total_amount' => 5,
+      'version' => 4,
       'currency' => 'USD',
-      'receive_date' => '2013-01-04',
+      'receive_date' => '2023-01-04',
     ]);
 
     $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contactID2,
-      'financial_type_id' => 'Endowment Gift',
+      'financial_type_id:name' => 'Endowment Gift',
       'total_amount' => 7,
       'currency' => 'USD',
-      'receive_date' => '2015-01-04',
+      'version' => 4,
+      'receive_date' => '2025-01-04',
     ]);
 
-    $contact = $this->callAPISuccess('Contact', 'get', [
-      'id' => $this->contactID,
-      'sequential' => 1,
-      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total')],
-    ])['values'][0];
+    $this->assertContactValues($this->contactID, [
+      'wmf_donor.lifetime_usd_total' => 0,
+    ]);
 
-    $this->assertEquals(0, $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
-
-    $contact = $this->callAPISuccess('Contact', 'get', [
-      'id' => $this->contactID2,
-      'sequential' => 1,
-      'return' => [wmf_civicrm_get_custom_field_name('lifetime_usd_total')],
-    ])['values'][0];
-    $this->assertEquals(5, $contact[wmf_civicrm_get_custom_field_name('lifetime_usd_total')]);
+    $this->assertContactValues($this->contactID2, [
+      'wmf_donor.lifetime_usd_total' => 5,
+    ]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', [
       'criteria' => ['contact' => ['id' => ['IN' => [$this->contactID, $this->contactID2]]]],
@@ -343,12 +325,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
       'wmf_donor.last_donation_amount' => 5,
       'wmf_donor.last_donation_currency' => 'USD',
       'wmf_donor.last_donation_usd' => 5,
-      'wmf_donor.last_donation_date' => '2013-01-04 00:00:00',
-      'wmf_donor.total_2016_2017' => 0,
-      'wmf_donor.total_2015_2016' => 0,
-      'wmf_donor.total_2014_2015' => 0,
-      'wmf_donor.total_2013_2014' => 0,
-      'wmf_donor.total_2012_2013' => 5,
+      'wmf_donor.last_donation_date' => '2023-01-04 00:00:00',
+      'wmf_donor.total_2023_2024' => 0,
     ]);
 
     $this->callAPISuccess('Contribution', 'delete', ['id' => $cashJob['id']]);
@@ -358,11 +336,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
       'wmf_donor.last_donation_currency' => '',
       'wmf_donor.last_donation_usd' => 0,
       'wmf_donor.last_donation_date' => '',
-      'wmf_donor.total_2016_2017' => 0,
-      'wmf_donor.total_2015_2016' => 0,
-      'wmf_donor.total_2014_2015' => 0,
-      'wmf_donor.total_2013_2014' => 0,
-      'wmf_donor.total_2012_2013' => 0,
+      'wmf_donor.total_2023_2024' => 0,
     ]);
   }
 
@@ -1830,26 +1804,23 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
    *
    * @param bool $isReverse
    *   Reverse which duck is the most recent donor? ie. make duck 1 more recent.
-   *
-   * @throws \CRM_Core_Exception
    */
-  private function giveADuckADonation($isReverse) {
+  private function giveADuckADonation(bool $isReverse): void {
     $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $isReverse ? $this->contactID2 : $this->contactID,
       'financial_type_id' => 'Cash',
       'total_amount' => 10,
       'currency' => 'USD',
-      // Should cause 'is_2014 to be true.
-      'receive_date' => '2014-08-04',
-      wmf_civicrm_get_custom_field_name('original_currency') => 'NZD',
-      wmf_civicrm_get_custom_field_name('original_amount') => 8,
+      'version' => 4,
+      'receive_date' => '2023-08-04',
+      'contribution_extra.original_currency' => 'NZD',
+      'contribution_extra.original_amount' => 20,
     ]);
     $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $isReverse ? $this->contactID : $this->contactID2,
       'financial_type_id' => 'Cash',
       'total_amount' => 5,
       'currency' => 'USD',
-      // Should cause 'is_2012_donor to be true.
       'receive_date' => '2013-01-04',
     ]);
     $this->callAPISuccess('Contribution', 'create', [
@@ -1858,8 +1829,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
       'total_amount' => 9,
       'currency' => 'USD',
       'source' => 'NZD 20',
-      // Should cause 'is_2015_donor to be true.
-      'receive_date' => '2016-04-04',
+      'receive_date' => '2024-07-04',
     ]);
   }
 
