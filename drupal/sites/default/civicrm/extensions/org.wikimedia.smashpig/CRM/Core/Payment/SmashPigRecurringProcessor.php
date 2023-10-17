@@ -598,8 +598,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'token' => $tokenData['token'],
       'ip_address' => $ipAddress,
       'payment_instrument' => $previousContribution['payment_instrument'],
-      // Checking against null to stop Undefined index: invoice_id in logs
-      'recurring_invoice_id' => $recurringPayment['invoice_id'] ?? NULL,
+      'processor_contact_id' => $recurringPayment['contribution_recur_smashpig.processor_contact_id'] ?? NULL,
       // FIXME: SmashPig should choose 'first' or 'recurring' based on seq #
       'installment' => 'recurring',
     ];

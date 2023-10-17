@@ -279,6 +279,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
    */
   protected function createContributionRecur(array $token, array $overrides = []):array {
     $trxn_id = ($overrides['trxn_id'] ?? NULL) ?: $this->trxn_id;
+    $invoice_id = 678000 . '.' . $trxn_id;
     $params = $overrides + [
         'contact_id' => $token['contact_id'],
         'amount' => 12.34,
@@ -296,8 +297,9 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
         'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
         'trxn_id' => 'RECURRING INGENICO ' . $trxn_id,
         'processor_id' => $trxn_id,
-        'invoice_id' => 678000 . '.' . $trxn_id,
+        'invoice_id' => $invoice_id,
         'contribution_status_id:name' => 'Pending',
+        'contribution_recur_smashpig.processor_contact_id' => $invoice_id,
       ];
     return $this->createTestEntity('ContributionRecur', $params);
   }
