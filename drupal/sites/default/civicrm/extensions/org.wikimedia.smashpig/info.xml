@@ -2,7 +2,7 @@
 <extension key="org.wikimedia.smashpig" type="module">
   <file>smashpig</file>
   <name>SmashPig payments extension</name>
-  <description>Do Civi stuff with the SmashPig payments library</description>
+  <description>Charge recurring contributions with the SmashPig payments library</description>
   <license>AGPL-3.0</license>
   <maintainer>
     <author>Elliott Eggleston</author>
@@ -16,22 +16,24 @@
   </urls>
   <releaseDate>2018-06-11</releaseDate>
   <version>1.0</version>
-  <develStage>alpha</develStage>
+  <develStage>beta</develStage>
   <compatibility>
-    <ver>5.26</ver>
+    <ver>5.27</ver>
   </compatibility>
   <comments>Module for supporting civistrings.</comments>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
+    <psr0 prefix="CRM_" path="."/>
   </classloader>
-  <comments>This is a new, barely developed module. So far it only charges recurring payments via the Ingenico Connect API</comments>
+  <comments>This module charges recurring payments via Adyen Checkout, Ingenico Connect, and DLocal</comments>
   <civix>
     <namespace>CRM/SmashPig</namespace>
-    <format>22.05.2</format>
+    <format>23.02.1</format>
   </civix>
   <mixins>
     <mixin>menu-xml@1.0.0</mixin>
     <mixin>mgd-php@1.0.0</mixin>
     <mixin>setting-php@1.0.0</mixin>
+    <mixin>smarty-v2@1.0.1</mixin>
   </mixins>
 </extension>
