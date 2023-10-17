@@ -45,6 +45,17 @@ return [
     ],
     'fields' => $calculatedData->getWMFDonorFields(),
   ],
+  'External_Identifiers' => [
+    'group' => [
+      'extends' => 'Contact',
+      'name' => 'External_Identifiers',
+      'table_name' => 'External_Identifiers',
+      'title' => ts('External Identifiers'),
+      'is_active' => 1,
+      'style' => 'inline',
+    ],
+    'fields' => _wmf_civicrm_get_external_identifiers_fields(),
+  ],
   'contribution_extra' => [
     'group' => [
       'extends' => 'Contribution',
@@ -906,6 +917,29 @@ function _wmf_civicrm_get_partner_fields(): array {
       'text_length' => 255,
       'note_columns' => 60,
       'note_rows' => 4,
+    ],
+  ];
+}
+
+/**
+ * These are donor identifiers in external systems, like the
+ * Fundraise Up Supporter ID. In WmfContact\Save, the external_identifier
+ * field will be mapped to a custom field whose name is the gateway name
+ * with '_id' appended. So for example if we start storing the PayPal
+ * PAYERID we would add a field here called paypal_id.
+ * @return array
+ */
+function _wmf_civicrm_get_external_identifiers_fields(): array {
+  return [
+    'fundraiseup_id' => [
+      'name' => 'fundraiseup_id',
+      'column_name' => 'fundraiseup_id',
+      'label' => ts('Fundraise Up Supporter ID'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 0,
     ],
   ];
 }
