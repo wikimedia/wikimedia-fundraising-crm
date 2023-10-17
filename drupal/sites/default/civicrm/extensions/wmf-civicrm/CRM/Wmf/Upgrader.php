@@ -974,6 +974,9 @@ SET
       'total_2018_2019',
       'total_2019',
       'total_2019_2020',
+      'total_2020',
+      'total_2021',
+      'total_2022',
       'all_funds_change_2018_2019',
       'all_funds_change_2019_2020',
       'all_funds_total_2018_2019',
@@ -982,6 +985,9 @@ SET
       'endowment_total_2018_2019',
       'endowment_total_2019',
       'endowment_total_2019_2020',
+      'endowment_total_2020',
+      'endowment_total_2021',
+      'endowment_total_2022',
     ], 'wmf_donor');
     return TRUE;
   }
@@ -1597,6 +1603,64 @@ AND q.id BETWEEN %1 AND %2"
   }
   public function upgrade_4391(): bool {
     return $this->upgrade_4390();
+  }
+
+  /**
+   * Disable the fields that we intend to delete during maintenance window.
+   *
+   * This is mostly by way of confirming agreement on the affected fields.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_4395(): bool {
+    $fieldsToDisable = [
+      'all_funds_change_2018_2019',
+      'all_funds_change_2019_2020',
+      'all_funds_change_2020_2021',
+      'all_funds_change_2021_2022',
+      'change_2017_2018',
+      'change_2018_2019',
+      'change_2019_2020',
+      'change_2020_2021',
+      'change_2021_2022',
+      'total_2006',
+      'total_2007',
+      'total_2008',
+      'total_2009',
+      'total_2010',
+      'total_2011',
+      'total_2012',
+      'total_2013',
+      'total_2014',
+      'total_2015',
+      'total_2016',
+      'total_2017',
+      'total_2018',
+      'total_2019',
+      'total_2020',
+      'total_2021',
+      'total_2022',
+      'endowment_total_2018',
+      'endowment_total_2019',
+      'endowment_total_2020',
+      'endowment_total_2021',
+      'endowment_total_2022',
+      'total_2006_2007',
+      'total_2007_2008',
+      'total_2008_2009',
+      'total_2009_2010',
+      'total_2010_2011',
+      'total_2011_2012',
+      'total_2012_2013',
+      'total_2013_2014',
+      'total_2014_2015',
+      'total_2015_2016',
+      'total_2016_2017',
+    ];
+    CustomField::update(FALSE)->setValues(['is_active' => FALSE])
+      ->addWhere('name', 'IN', $fieldsToDisable)->execute();
+    return TRUE;
   }
 
   /**
