@@ -8,7 +8,10 @@
 // is the model to follow.
 // The fields in here could be converted but for now follow our old system - which
 // keeps the declaration similar as it is conceptually similar.
-// ** To sync the database with fields defined in this file use `drush update-custom-fields` **
+// ******
+// To sync the database with fields defined in this file use:
+// drush @wmff cvapi WMFConfig.SyncCustomFields version=4
+// ******
 use Civi\WMFHooks\CalculatedData;
 
 $calculatedData = new CalculatedData();

@@ -28,16 +28,22 @@ class Activity {
    * Bug: T332074
    *
    * Do not save details for thank you email
-   * In the case it takes up many GB of space & it is not subject to change
-   * @param $info
+   * In the case it takes up many GB of space & it is not subject to change.
+   *
+   * @param array $info
+   *
    * @return array
    */
-  public static function alterTriggerSql($info): array {
+  public static function alterTriggerSql(array $info): array {
     $alterInfo = [];
-    $thankYouEmailActivityTypeId = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Thank you email');
+    $activityTypesToSkipDetails = [
+      CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Thank you email'),
+      CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Bounce'),
+    ];
     foreach ($info as $trigger) {
-      if ($trigger['table'] == ['civicrm_activity'] && $trigger['event'] == ['INSERT'] && $trigger['when'] == 'AFTER') {
-        $trigger['sql'] = str_replace("NEW.`phone_number`, NEW.`details`" , "NEW.`phone_number`, IF(NEW.`activity_type_id` <> ". $thankYouEmailActivityTypeId . ", NEW.`details`, NULL)", $trigger['sql']);
+      if ($trigger['table'] === ['civicrm_activity'] && $trigger['event'] === ['INSERT'] && $trigger['when'] === 'AFTER') {
+        $trigger['sql'] = str_replace("NEW.`phone_number`, NEW.`details`" , "NEW.`phone_number`,
+        IF(NEW.`activity_type_id` NOT IN (". implode(',', array_filter($activityTypesToSkipDetails)) . "), NEW.`details`, NULL)", $trigger['sql']);
       }
       $alterInfo[] = $trigger;
     }
