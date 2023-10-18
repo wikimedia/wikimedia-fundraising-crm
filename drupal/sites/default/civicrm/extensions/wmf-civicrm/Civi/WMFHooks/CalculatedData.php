@@ -802,14 +802,14 @@ class CalculatedData extends TriggerHook {
             'name' => "endowment_total_{$year}_{$nextYear}",
             'column_name' => "endowment_total_{$year}_{$nextYear}",
             'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total"),
-            'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}",
+            'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}",
           ]);
           $this->calculatedFields["endowment_total_{$year}"] = array_merge(
             $this->calculatedFields["total_{$year}"], [
               'name' => "endowment_total_{$year}",
               'column_name' => "endowment_total_{$year}",
               'label' => 'Endowment ' . ts("CY {$year} total"),
-              'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}",
+              'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}",
             ]);
           $this->calculatedFields["all_funds_total_{$year}_{$nextYear}"] = array_merge(
             $this->calculatedFields["total_{$year}_{$nextYear}"], [
