@@ -1660,7 +1660,7 @@ AND q.id BETWEEN %1 AND %2"
     ];
     CRM_Core_DAO::executeQuery('
       UPDATE civicrm_custom_field SET is_active = 0
-      WHERE name in (' . implode(', ', $fieldsToDisable) . ')');
+      WHERE name in ("' . implode('", "', $fieldsToDisable) . '")');
     return TRUE;
   }
 
