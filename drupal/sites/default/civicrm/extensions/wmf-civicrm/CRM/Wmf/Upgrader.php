@@ -1658,8 +1658,9 @@ AND q.id BETWEEN %1 AND %2"
       'total_2015_2016',
       'total_2016_2017',
     ];
-    CustomField::update(FALSE)->setValues(['is_active' => FALSE])
-      ->addWhere('name', 'IN', $fieldsToDisable)->execute();
+    CRM_Core_DAO::executeQuery('
+      UPDATE civicrm_custom_field SET is_active = 0
+      WHERE name in ("' . implode('", "', $fieldsToDisable) . '")');
     return TRUE;
   }
 
