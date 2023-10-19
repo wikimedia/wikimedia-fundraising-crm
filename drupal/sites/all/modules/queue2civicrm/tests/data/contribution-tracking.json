@@ -1,6 +1,10 @@
 {
   "id": "12345",
   "note": "This is a test note",
+  "browser": "Mosaic",
+  "browser_version": "4",
+  "os": "Solaris",
+  "os_version": "11",
   "referrer": "payments.wiki.local.wmftest.net/wiki/Main_Page",
   "amount": "35.00",
   "currency": "GBP",

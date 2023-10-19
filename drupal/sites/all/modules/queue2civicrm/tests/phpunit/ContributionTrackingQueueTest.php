@@ -41,6 +41,10 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'banner' => 'B2223_1115_en6C_m_p1_lg_amt_cnt',
       'landing_page' => 'no-LP',
       'is_test_variant' => FALSE,
+      'os' => 'Solaris',
+      'os_version' => '11',
+      'browser' => 'Mosaic',
+      'browser_version' => '4',
     ]);
 
   }
