@@ -270,4 +270,51 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $newRecurRecord = $this->callAPISuccessGetSingle('ContributionRecur', ['id' => $recurId]);
     $this->assertEquals('EUR', $newRecurRecord['currency']);
   }
+
+  /**
+    * Test refunding a mismatched refund currency.
+    *
+    *
+    * @throws \Civi\WMFException\WMFException
+    * @throws \CRM_Core_Exception
+    */
+  public function testRefundMismatchedRefundCurrency() {
+    $this->setExchangeRates(1234567, ['USD' => 1, 'PLN' => 0.5]);
+    $donation_message = new TransactionMessage(
+      [
+        'gateway' => 'test_gateway',
+        'gateway_txn_id' => mt_rand(),
+      ]
+    );
+    $refund_message = new RefundMessage(
+      [
+        'gateway' => 'test_gateway',
+        'gateway_parent_id' => $donation_message->getGatewayTxnId(),
+        'gateway_refund_id' => mt_rand(),
+        'gross' => $donation_message->get('original_gross')*0.5,
+        'gross_currency' => 'USD',
+      ]
+    );
+
+    $message_body = $donation_message->getBody();
+    wmf_civicrm_contribution_message_import($message_body);
+    $contributions = wmf_civicrm_get_contributions_from_gateway_id(
+      $donation_message->getGateway(),
+      $donation_message->getGatewayTxnId()
+    );
+    $this->ids['Contact'][] = $contributions[0]['contact_id'];
+    $this->assertCount(1, $contributions);
+
+    $this->consumer->processMessage($refund_message->getBody());
+    $contributions = $this->callAPISuccess(
+      'Contribution',
+      'get',
+      ['contact_id' => $contributions[0]['contact_id'], 'sequential' => 1]
+    );
+    $this->assertCount(1, $contributions['values']);
+    $this->assertEquals(
+      'Chargeback',
+      CRM_Contribute_PseudoConstant::contributionStatus($contributions['values'][0]['contribution_status_id'])
+    );
+  }
 }
