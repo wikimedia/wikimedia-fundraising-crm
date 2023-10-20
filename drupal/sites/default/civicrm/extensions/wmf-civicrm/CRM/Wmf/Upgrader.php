@@ -1688,12 +1688,16 @@ AND q.id BETWEEN %1 AND %2"
       and event_type='Suppressed'
       and a.activity_date_time > '2023-10-19 15:00:00'
     ");
+    return TRUE;
+  }
+
+  public function upgrade_4398(): bool {
     $processed = 0;
     $startTime = time();
     \Civi::log('wmf')->info("Starting revert of 100 unsubscribes at $startTime");
     $results = CRM_Core_DAO::executeQuery("SELECT * FROM T349358 WHERE is_processed = 0 LIMIT 100");
     while ($results->fetch()) {
-      civicrm_api3_logging_revert([
+      civicrm_api3('Logging', 'revert', [
         'log_conn_id' => $results->log_conn_id,
         'log_date' => $results->log_date,
         'tables' => ['civicrm_contact', 'civicrm_activity', 'civicrm_activity_contact']
