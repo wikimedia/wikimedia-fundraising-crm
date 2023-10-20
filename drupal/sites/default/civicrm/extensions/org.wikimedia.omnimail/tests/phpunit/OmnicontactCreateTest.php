@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/OmnimailBaseTestClass.php';
 
+use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
 use Civi\Api4\Group;
@@ -74,9 +75,17 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/AddRecipient.txt'),
       file_get_contents(__DIR__ . '/Responses/UpdateRecipient.txt'),
     ]);
+    $email = 'the_don@example.org';
+
+    $contact = Contact::create(FALSE)->setValues([
+      'contact_type' => 'Individual',
+      'first_name' => 'Donald',
+      'last_name' => 'Duck',
+      'email_primary.email' => $email,
+    ])->execute()->first();
 
     Omnicontact::create(FALSE)
-      ->setEmail('the_don@example.org')
+      ->setEmail($email)
       ->setClient($this->getGuzzleClient())
       ->setDatabaseID(1234)
       ->setValues([
@@ -86,6 +95,13 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
       ])
       ->execute()->first();
     $guzzleSentRequests = $this->getRequestBodies();
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $contact['id'])
+      ->addWhere('activity_type_id:name', '=', 'EmailSnoozed')
+      ->execute();
+
+    $this->contactIDs[] = $contact['id'];
+    $this->assertCount(1, $activity);
     $this->assertEquals(trim(file_get_contents(__DIR__ . '/Requests/SnoozeRecipient.txt')), $guzzleSentRequests[1]);
   }
 
@@ -109,17 +125,18 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
     $this->addTestClientToXMLSingleton();
 
     $snoozeDate = date('Y-m-d', strtotime('+ 1 week'));
-    Contact::create(FALSE)->setValues([
+    $contact = Contact::create(FALSE)->setValues([
       'contact_type' => 'Individual',
       'first_name' => 'Donald',
       'last_name' => 'Duck',
-      'primary_email.email' => 'the_don@example.com',
-      'primary_email.email_settings.snooze_date' => $snoozeDate,
-    ])->execute();
+      'email_primary.email' => 'the_don@example.com',
+      'email_primary.email_settings.snooze_date' => $snoozeDate,
+    ])->execute()->first();
     $queue = Queue::get(FALSE)
       ->addWhere('name', '=', 'omni-snooze')
       ->addWhere('status', '=', 'active')
       ->execute();
+    $this->contactIDs[] = $contact['id'];
     $this->assertCount(1, $queue);
     $this->assertEquals('active', $queue->first()['status']);
     $this->runQueue();

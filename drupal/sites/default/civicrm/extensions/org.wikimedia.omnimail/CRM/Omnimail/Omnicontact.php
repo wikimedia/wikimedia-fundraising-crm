@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Activity;
 use Civi\Api4\Email;
 use Civi\Api4\Group;
 use Omnimail\Omnimail;
@@ -29,6 +30,20 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
     /* @var \Omnimail\Silverpop\Mailer $mailer */
     $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
     $groupIdentifier = (array) Group::get($params['check_permissions'])->addWhere('id', 'IN', $params['group_id'])->addSelect('Group_Metadata.remote_group_identifier')->execute()->indexBy('Group_Metadata.remote_group_identifier');
+    $activity = null;
+    if (!empty($params['snooze_end_date'])) {
+      $contact = \Civi\Api4\Contact::get(FALSE)->addWhere('email_primary.email', '=', $params['email'])->addSelect('id')->execute()->first();
+      $contact_id = $contact['id'];
+      $activity = Activity::create(FALSE)
+        ->addValue('activity_type_id:name', 'EmailSnoozed')
+        ->addValue('status_id:name', 'Scheduled')
+        ->addValue('subject', "Email snooze scheduled")
+        ->addValue('source_contact_id', $contact_id)
+        ->addValue('source_record_id', $contact_id)
+        ->addValue('activity_date_time', 'now')
+        ->execute()
+        ->first();
+    }
 
     $request = $mailer->addContact([
       'groupIdentifier' => array_keys($groupIdentifier),
@@ -39,6 +54,13 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
     ]);
     /* @var Contact $reponse */
     $response = $request->getResponse();
+    if (!empty($params['snooze_end_date'])) {
+      Activity::update(FALSE)
+        ->addValue('status_id:name', 'Completed')
+        ->addWhere('id', '=', $activity['id'])
+        ->execute();
+    }
+
     return [
       'contact_identifier' => $response->getContactIdentifier(),
     ];
