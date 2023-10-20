@@ -50,7 +50,7 @@ class OmnirecipientProcessUnsubscribesTest extends OmnimailBaseTestClass {
     $this->assertEquals(0, $contact['is_opt_out']);
 
     $contact = $this->callAPISuccess('Contact', 'getsingle', array('id' => $this->contactIDs['isaac']));
-    $this->assertEquals(1, $contact['is_opt_out']);
+    $this->assertEquals(0, $contact['is_opt_out']);
 
   }
 
