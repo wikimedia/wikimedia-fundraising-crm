@@ -1691,25 +1691,32 @@ AND q.id BETWEEN %1 AND %2"
     return TRUE;
   }
 
-  public function upgrade_4398(): bool {
-    $processed = 0;
-    $startTime = time();
-    \Civi::log('wmf')->info("Starting revert of 100 unsubscribes at $startTime");
-    $results = CRM_Core_DAO::executeQuery("SELECT * FROM T349358 WHERE is_processed = 0 LIMIT 100");
-    while ($results->fetch()) {
-      civicrm_api3('Logging', 'revert', [
-        'log_conn_id' => $results->log_conn_id,
-        'log_date' => $results->log_date,
-        'tables' => ['civicrm_contact', 'civicrm_activity', 'civicrm_activity_contact']
-      ]);
-      CRM_Core_DAO::executeQuery(
-        'UPDATE T349358 SET is_processed = 1 WHERE id = %1',
-        [1 => [$results->id, 'String']]
-      );
-      $processed++;
+  public function upgrade_4399(): bool {
+    $keepGoing = TRUE;
+    $batchSize = 1000;
+    while($keepGoing) {
+      $processed = 0;
+      $startTime = time();
+      \Civi::log('wmf')->info("Starting revert of $batchSize unsubscribes at $startTime");
+      $results = CRM_Core_DAO::executeQuery("SELECT * FROM T349358 WHERE is_processed = 0 LIMIT $batchSize");
+      while ($results->fetch()) {
+        civicrm_api3('Logging', 'revert', [
+          'log_conn_id' => $results->log_conn_id,
+          'log_date' => $results->log_date,
+          'tables' => ['civicrm_contact', 'civicrm_activity', 'civicrm_activity_contact']
+        ]);
+        CRM_Core_DAO::executeQuery(
+          'UPDATE T349358 SET is_processed = 1 WHERE id = %1',
+          [1 => [$results->id, 'String']]
+        );
+        $processed++;
+      }
+      $timeTaken = time() - $startTime;
+      \Civi::log('wmf')->info("Reverted $processed unsubscribes in $timeTaken seconds");
+      if ($processed < $batchSize) {
+        $keepGoing = FALSE;
+      }
     }
-    $timeTaken = time() - $startTime;
-    \Civi::log('wmf')->info("Reverted $processed unsubscribes in $timeTaken seconds");
     return TRUE;
   }
 
