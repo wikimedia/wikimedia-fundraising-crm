@@ -17,6 +17,11 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   public function processMessage($message) {
+    // no need to insert contribution, return empty array is enough
+    if (isset($message['monthly_convert_decline']) && $message['monthly_convert_decline']) {
+      wmf_civicrm_remove_recurring_token($message);
+      return;
+    }
     // If the contribution has already been imported, this check will
     // throw an exception that says to drop it entirely, not re-queue.
     wmf_civicrm_check_for_duplicates($message);
@@ -72,4 +77,5 @@ class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
       PendingDatabase::get()->deleteMessage($message);
     }
   }
+
 }
