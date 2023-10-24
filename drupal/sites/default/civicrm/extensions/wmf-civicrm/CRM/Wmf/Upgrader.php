@@ -1721,6 +1721,17 @@ AND q.id BETWEEN %1 AND %2"
   }
 
   /**
+   * Add an index for lookup up payment tokens. This should speed up donations queue processing
+   * for initial recurring donations.
+   * @return bool
+   */
+  public function upgrade_4400(): bool {
+    $tables = ['civicrm_payment_token' => ['token']];
+    CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+    return TRUE;
+  }
+
+  /**
    * Queue up an SQL update.
    *
    * @param string $sql
