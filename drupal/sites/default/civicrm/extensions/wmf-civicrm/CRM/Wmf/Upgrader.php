@@ -1664,59 +1664,14 @@ AND q.id BETWEEN %1 AND %2"
     return TRUE;
   }
 
-  public function upgrade_4397(): bool {
-    CRM_Core_DAO::executeQuery('
-      CREATE TABLE T349358 (
-        id int(10) unsigned auto_increment primary key,
-        log_conn_id varchar(17),
-        log_date timestamp,
-        email varchar(255),
-        contact_id int(10) unsigned,
-        mailing_identifier varchar(255),
-        is_processed tinyint default 0
-      )');
-    CRM_Core_DAO::executeQuery("
-      INSERT INTO T349358 (log_conn_id, log_date, email, contact_id, mailing_identifier)
-      select log_conn_id, log_date, d.email, d.contact_id, mailing_identifier
-      from civicrm_mailing_provider_data d
-      inner join civicrm_campaign c on c.name=d.mailing_identifier
-      inner join civicrm_activity a on a.activity_type_id=99 and a.campaign_id = c.id
-      inner join civicrm_activity_contact ac on ac.contact_id = d.contact_id and ac.activity_id = a.id and ac.record_type_id=2
-      inner join log_civicrm_activity la on la.id = a.id
-      where recipient_action_datetime > '2023-10-19 15:00:00'
-      and recipient_action_datetime < '2023-10-19 16:00:00'
-      and event_type='Suppressed'
-      and a.activity_date_time > '2023-10-19 15:00:00'
-    ");
-    return TRUE;
-  }
-
-  public function upgrade_4399(): bool {
-    $keepGoing = TRUE;
-    $batchSize = 1000;
-    while($keepGoing) {
-      $processed = 0;
-      $startTime = time();
-      \Civi::log('wmf')->info("Starting revert of $batchSize unsubscribes at $startTime");
-      $results = CRM_Core_DAO::executeQuery("SELECT * FROM T349358 WHERE is_processed = 0 LIMIT $batchSize");
-      while ($results->fetch()) {
-        civicrm_api3('Logging', 'revert', [
-          'log_conn_id' => $results->log_conn_id,
-          'log_date' => $results->log_date,
-          'tables' => ['civicrm_contact', 'civicrm_activity', 'civicrm_activity_contact']
-        ]);
-        CRM_Core_DAO::executeQuery(
-          'UPDATE T349358 SET is_processed = 1 WHERE id = %1',
-          [1 => [$results->id, 'String']]
-        );
-        $processed++;
-      }
-      $timeTaken = time() - $startTime;
-      \Civi::log('wmf')->info("Reverted $processed unsubscribes in $timeTaken seconds");
-      if ($processed < $batchSize) {
-        $keepGoing = FALSE;
-      }
-    }
+  /**
+   * Add an index for lookup up payment tokens. This should speed up donations queue processing
+   * for initial recurring donations.
+   * @return bool
+   */
+  public function upgrade_4400(): bool {
+    $tables = ['civicrm_payment_token' => ['token']];
+    CRM_Core_BAO_SchemaHandler::createIndexes($tables);
     return TRUE;
   }
 

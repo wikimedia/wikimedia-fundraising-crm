@@ -224,7 +224,8 @@ class ThankYou extends GenericWorkflowMessage {
       foreach ($this->getContributionParameters() as $key => $property) {
         if (!empty($contribution[$key]) && empty($this->$property)) {
           $method = 'set' . ucfirst($property);
-          $this->$method($contribution[$key]);
+          $value = ($key === 'contribution_recur_id') ? (bool) $contribution[$key] : $contribution[$key];
+          $this->$method($value);
         }
       }
     }
@@ -268,6 +269,7 @@ class ThankYou extends GenericWorkflowMessage {
       'Stock_Information.Description_of_Stock' => 'descriptionOfStock',
       'Stock_Information.Stock Value' => 'stockValue',
       'Gift_Data.Campaign' => 'giftSource',
+      'contribution_recur_id' => 'isRecurring',
     ];
   }
 
