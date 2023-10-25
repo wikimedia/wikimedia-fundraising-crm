@@ -21,6 +21,11 @@ function civicrm_api3_omnirecipient_process_unsubscribes($params) {
   $params['contact_id'] = array('BETWEEN' => [1, 999999999]);
   $result = civicrm_api3('MailingProviderData', 'get', $params);
 
+  \Civi::log('wmf')->info('Unsubscribing {count} emails',[
+    'count' => $result['count']
+  ]);
+
+
   foreach ($result['values'] as $unsubscribes) {
     CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(
       1 => array(
