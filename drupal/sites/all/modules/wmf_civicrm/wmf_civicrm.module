@@ -3,17 +3,16 @@
 use Civi\Api4\CustomField;
 use Civi\Api4\Name;
 use Civi\Api4\WMFContact;
+use Civi\ExchangeException\ExchangeRatesException;
 use Civi\WMFHelpers\ContributionRecur;
 use Civi\WMFHelpers\FinanceInstrument;
-use SmashPig\Core\Helpers\CurrencyRoundingHelper;
-use SmashPig\Core\UtcDate;
-use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use Civi\WMFStatistics\ImportStatsCollector;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\Database;
-use Civi\ExchangeException\ExchangeRatesException;
-use SmashPig\PaymentProviders\PaymentProviderFactory;
-use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
+use SmashPig\Core\Helpers\CurrencyRoundingHelper;
+use SmashPig\Core\UtcDate;
+use SmashPig\PaymentData\ReferenceData\CurrencyRates;
+use SmashPig\Core\DataStores\QueueWrapper;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
@@ -227,8 +226,11 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
         \Civi::log('wmf')->info('queue2civicrm_import: Found matching recurring record for subscr_id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
         $msg['contribution_recur_id'] = $recur_record->id;
         $msg['contact_id'] = $recur_record->contact_id;
+        // Add financial type for susbequent installment
+        $msg['financial_type_id'] = ContributionRecur::getFinancialType($msg['contribution_recur_id']);
         // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
         ContributionRecur::reactivateIfInactive($recur_record);
+        check_recur_modification_and_queue( $recur_record, $msg );
       }
     }
     else {
@@ -437,6 +439,28 @@ function getImportTimerName($isRecurring): string {
  */
 function _get_import_timer(): \Statistics\Collector\AbstractCollector {
   return ImportStatsCollector::getInstance();
+}
+
+/**
+  * @param object $recur_record
+  * @param array $msg
+  * @return void
+  * @throws \SmashPig\Core\ConfigurationKeyException
+  * @throws \SmashPig\Core\DataStores\DataStoreException
+  */
+function check_recur_modification_and_queue( object $recur_record, array $msg ): void {
+  $recur_amount = $recur_record->amount;
+  $recur_currency = $recur_record->currency;
+  $amount_mismatch = !empty($msg['original_gross']) && ($msg['original_gross'] != $recur_amount );
+  $currency_match = $recur_currency === $msg['original_currency'];
+  if ($currency_match && $amount_mismatch) {
+    $msg['amount'] = $msg['original_gross'];
+    $msg[ 'txn_type' ] = 'recurring_upgrade';
+    if ( $msg[ 'original_gross' ] < $recur_amount ) {
+      $msg[ 'txn_type' ] = 'recurring_downgrade';
+    }
+    QueueWrapper::push( 'recurring', $msg );
+  }
 }
 
 /**

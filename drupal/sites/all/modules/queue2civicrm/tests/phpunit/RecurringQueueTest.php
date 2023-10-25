@@ -80,8 +80,8 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $amountDetails = [
       "native_currency" => $msg['currency'],
       "native_original_amount" => $testRecurring['amount'],
-      "native_amount_added" => $additionalAmount,
       "usd_original_amount" => round(exchange_rate_convert($msg['currency'], $testRecurring['amount']), 2),
+      "native_amount_added" => $additionalAmount,
       "usd_amount_added" => round(exchange_rate_convert($msg['currency'], $additionalAmount), 2)
     ];
 
@@ -97,8 +97,8 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       ->execute()
       ->last();
     $this->assertEquals($testRecurring['amount'] + $additionalAmount, $updatedRecurring['amount']);
-    $this->assertEquals($activity['subject'], "Added ". $additionalAmount. " " . $msg['currency']);
-    $this->assertEquals($activity['details'], json_encode($amountDetails));
+    $this->assertEquals("Added ". $additionalAmount. " " . $msg['currency'], $activity['subject']);
+    $this->assertEquals(json_encode($amountDetails), $activity['details']);
     $this->ids['ContributionRecur'][$testRecurring['id']] = $testRecurring['id'];
     $this->ids['Activity'][$activity['id']] = $activity['id'];
   }
