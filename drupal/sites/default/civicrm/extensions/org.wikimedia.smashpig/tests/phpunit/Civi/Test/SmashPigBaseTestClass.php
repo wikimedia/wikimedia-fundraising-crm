@@ -4,12 +4,12 @@ namespace Civi\Test;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
+use Civi\WMFHelpers\ContributionRecur as RecurHelper;
 use Civi\Api4\Translation;
 use \Civi\Api4\MessageTemplate;
 use Civi\Api4\Activity;
 use Civi\Test;
 use Civi;
-use Civi\Test\EntityTrait;
 use PHPUnit\Framework\TestCase;
 
 class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, TransactionalInterface {
@@ -143,6 +143,34 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
   }
 
   /**
+   * CHeck that contributions that recur have the right financial type.
+   *
+   * This runs after the test but before tearDown starts.
+   *
+   * Note this test is useful for finding existing code places where this is not
+   * correct. It is probably not worth porting to out extensions when we
+   * discontinue this class.
+   */
+  protected function assertPostConditions(): void {
+    $contributions = Contribution::get(FALSE)
+      ->addSelect('financial_type_id')
+      ->addSelect('contribution_recur_id')
+      ->addWhere('contribution_recur_id', 'IS NOT EMPTY')
+      ->addOrderBy('receive_date')
+      ->execute();
+    $recurringRecords = [];
+    foreach ($contributions as $contribution) {
+      if (empty($recurringRecords[$contribution['contribution_recur_id']])) {
+        $this->assertEquals(RecurHelper::getFinancialTypeForFirstContribution(), $contribution['financial_type_id']);
+        $recurringRecords[$contribution['contribution_recur_id']] = TRUE;
+      }
+      else {
+        $this->assertEquals(RecurHelper::getFinancialTypeForSubsequentContributions(), $contribution['financial_type_id']);
+      }
+    }
+  }
+
+  /**
    * Creat test contact.
    *
    * @return array
@@ -185,7 +213,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
         'contribution_recur_id' => $contributionRecur['id'],
         'receive_date' => date('Y-m-d H:i:s', strtotime('-1 month')),
         'trxn_id' => $contributionRecur['trxn_id'],
-        'financial_type_id' => 1,
+        'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
         'invoice_id' => $contributionRecur['invoice_id'] . '|recur-' . 123456,
       ];
     return $this->createTestEntity('Contribution', $params);
