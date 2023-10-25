@@ -41,8 +41,23 @@ class Snooze extends AbstractAction {
       'retry_interval' => 20,
       'error' => 'abort',
     ]);
-    if (!$this->getEmail()) {
+    $email = $this->getEmail();
+    if (!$email) {
       throw new \CRM_Core_Exception('Email required.');
+    }
+    $contact = \Civi\Api4\Contact::get(FALSE)->addWhere('email_primary.email', '=', $email)->addSelect('id')->execute()->first();
+    if (!empty($contact)) {
+      $contact_id = $contact['id'];
+      $activity = Activity::create(FALSE)
+        ->addValue('activity_type_id:name', 'EmailSnoozed')
+        ->addValue('status_id:name', 'Scheduled')
+        ->addValue('subject', "Email snooze scheduled")
+        ->addValue('details', "Snoozing email - $email")
+        ->addValue('source_contact_id', $contact_id)
+        ->addValue('source_record_id', $contact_id)
+        ->addValue('activity_date_time', 'now')
+        ->execute()
+        ->first();
     }
     $queue->createItem(new \CRM_Queue_Task('civicrm_api4_queue',
       [
@@ -54,6 +69,7 @@ class Snooze extends AbstractAction {
           'checkPermissions' => $this->getCheckPermissions(),
           'values' => [
             'snooze_end_date' => date('Y-m-d H:i:s', strtotime($this->getSnoozeDate())),
+            'activity_id' => !empty($activity) && $activity['id']
           ],
         ],
       ],
