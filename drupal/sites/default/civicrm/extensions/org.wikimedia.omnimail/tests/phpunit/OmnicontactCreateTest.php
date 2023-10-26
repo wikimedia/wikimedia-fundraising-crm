@@ -84,6 +84,16 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
       'email_primary.email' => $email,
     ])->execute()->first();
 
+    $activity = Activity::create(FALSE)
+        ->addValue('activity_type_id:name', 'EmailSnoozed')
+        ->addValue('status_id:name', 'Scheduled')
+        ->addValue('subject', "Email snooze scheduled")
+        ->addValue('source_contact_id', $contact['id'])
+        ->addValue('source_record_id',$contact['id'])
+        ->addValue('activity_date_time', 'now')
+        ->execute()
+        ->first();
+
     Omnicontact::create(FALSE)
       ->setEmail($email)
       ->setClient($this->getGuzzleClient())
@@ -92,16 +102,18 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
         'last_name' => 'Donald',
         'first_name' => 'Duck',
         'snooze_end_date' => '2023-09-09',
+        'activity_id' => $activity['id']
       ])
       ->execute()->first();
     $guzzleSentRequests = $this->getRequestBodies();
     $activity = Activity::get(FALSE)
-      ->addWhere('source_record_id', '=', $contact['id'])
-      ->addWhere('activity_type_id:name', '=', 'EmailSnoozed')
-      ->execute();
+      ->addWhere('id', '=', $activity['id'])
+      ->addSelect('status_id:name')
+      ->execute()
+      ->last();
 
     $this->contactIDs[] = $contact['id'];
-    $this->assertCount(1, $activity);
+    $this->assertEquals('Completed', $activity['status_id:name']);
     $this->assertEquals(trim(file_get_contents(__DIR__ . '/Requests/SnoozeRecipient.txt')), $guzzleSentRequests[1]);
   }
 
@@ -140,6 +152,13 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
     $this->assertCount(1, $queue);
     $this->assertEquals('active', $queue->first()['status']);
     $this->runQueue();
+    $activity = Activity::get(FALSE)
+      ->addSelect('status_id:name')
+      ->addWhere('source_record_id', '=', $contact['id'])
+      ->addWhere('activity_type_id:name', '=', 'EmailSnoozed')
+      ->execute()->last();
+    $this->assertNotNull($activity);
+    $this->assertEquals('Completed', $activity['status_id:name']);
     $requestContent = str_replace(urlencode('RESUME_SEND_DATE>09/09/2023'), 'RESUME_SEND_DATE' . urlencode('>' . date('m/d/Y', strtotime($snoozeDate))), trim(file_get_contents(__DIR__ . '/Requests/SnoozeRecipient.txt')));
     $guzzleSentRequests = $this->getRequestBodies();
     $this->assertEquals($requestContent, $guzzleSentRequests[1]);
