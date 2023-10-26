@@ -619,7 +619,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
       'financial_type_id' => $financialType,
-      'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
       'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
@@ -680,7 +679,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $actualDate = $contributionMessage['date'];
     $this->assertLessThan(100, abs($actualDate - $expectedDate));
     unset($contributionMessage['date']);
-    $financialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
+    $financialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift");
 
     $this->assertEquals([
       'contact_id' => $contact['id'],
@@ -689,7 +688,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
       'financial_type_id' => $financialType,
-      'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
       'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
@@ -835,7 +833,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
       'financial_type_id' => $financialType,
-      'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
       'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
@@ -1403,7 +1400,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $nextInvoiceId,
       'financial_type_id' => $financialType,
-      'contribution_type_id' => '1',
       'payment_instrument_id' => '4',
       'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
