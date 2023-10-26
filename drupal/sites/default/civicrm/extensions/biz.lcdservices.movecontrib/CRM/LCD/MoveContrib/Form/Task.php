@@ -119,9 +119,10 @@ class CRM_LCD_MoveContrib_Form_Task extends CRM_Contribute_Form_Task {
     }
 
     parent::postProcess();
-
-    $session = CRM_Core_Session::singleton();
-    CRM_Utils_System::redirect($session->readUserContext());
+    if (!CRM_Utils_Request::retrieveValue('task_item', 'String') === 'move') {
+      $session = CRM_Core_Session::singleton();
+      CRM_Utils_System::redirect($session->readUserContext());
+    }
   }
 
   /**

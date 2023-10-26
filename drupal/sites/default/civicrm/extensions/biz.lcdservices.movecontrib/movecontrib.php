@@ -2,6 +2,7 @@
 
 require_once 'movecontrib.civix.php';
 
+use CRM_LCD_MoveContrib_ExtensionUtil as E;
 /**
  * Implements hook_civicrm_config().
  *
@@ -61,12 +62,18 @@ function movecontrib_civicrm_searchTasks($objectType, &$tasks) {
     '$tasks' => $tasks,
   ));*/
 
-  if ($objectType == 'contribution' && CRM_Core_Permission::check('allow Move Contribution')) {
-    $tasks[] = array(
-      'title' => 'Move contributions',
+  if ($objectType === 'contribution' && CRM_Core_Permission::check('allow Move Contribution')) {
+    $tasks[] = [
+      'title' => E::ts('Move contributions'),
       'class' => 'CRM_LCD_MoveContrib_Form_Task',
+      // Code suggests result key is likely meaningless.
       'result' => TRUE,
-    );
+      'is_single_mode' => TRUE,
+      'title_single_mode' => E::ts('Move contribution'),
+      'name' => 'move_contribution',
+      'url' => 'civicrm/contribute/task?reset=1&task_item=move',
+      'key' => 'move',
+    ];
   }
 }
 
