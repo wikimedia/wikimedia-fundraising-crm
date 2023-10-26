@@ -2,6 +2,7 @@
 
 require_once 'omnimail.civix.php';
 
+use Civi\Api4\CustomGroup;
 use Civi\Api4\Email;
 use Civi\Api4\Omnicontact;
 use CRM_Omnimail_ExtensionUtil as E;
@@ -155,76 +156,44 @@ function omnimail_civicrm_pre($op, $objectName, $id, &$params) {
       }
     }
   }
+}
 
-  // When updating the snooze date for an email queue an update to Acoustic for this information.
-  if (
-    (!empty($params['email_settings.snooze_date']) || !empty($params['primary_email.email_settings.snooze_date']))
+function omnimail_civicrm_custom($op, $groupID, $entityID, &$params) {
+  // Early return if not the relevant group.
+  if ((int) $groupID !== _omnimail_civicrm_get_snooze_group_id()
+    || !in_array($op, ['edit', 'create'])
     // This static is a placeholder for later functionality where we want to
     // update from Acoustic & we don't want this hook to fire to tell Acoustic about
     // it's own data.
-    && empty(\Civi::$statics['omnimail']['is_batch_snooze_update'])
-    && in_array($objectName, ['Individual', 'Household', 'Organization', 'Contact', 'Email'])
-    && in_array($op, ['edit', 'create'])
+    || !empty(\Civi::$statics['omnimail']['is_batch_snooze_update'])
   ) {
-    $snoozeDate =  !empty($params['email_settings.snooze_date']) ? $params['email_settings.snooze_date'] : $params['primary_email.email_settings.snooze_date'];
-    $email = !empty($params['email']) ? $params['email'] : ($params['primary_email.email'] ?? NULL);
-    if (($email || !empty($params['id'])) && strtotime($snoozeDate) > TIME()) {
-      if (!$email) {
-        if ($objectName === 'Email') {
-          $email = Email::get(FALSE)
-            ->addWhere('id', '=', $params['id'])
-            ->addSelect('email')
-            ->execute()->first()['email'];
+    return;
+  }
+  foreach ($params as $customFieldValue) {
+    if ($customFieldValue['column_name'] === 'snooze_date') {
+      $snoozeDate = $customFieldValue['value'];
+      if (!empty($snoozeDate)) {
+        $email = Email::get(FALSE)
+          ->addWhere('id', '=', $customFieldValue['entity_id'])
+          ->addWhere('is_primary', '=', TRUE)
+          ->addSelect('email')
+          ->execute()->first()['email'];
+        if ($email) {
+          Omnicontact::snooze(FALSE)
+            ->setEmail($email)
+            ->setSnoozeDate($snoozeDate)->execute();
         }
-        else {
-          $email = Email::get(FALSE)
-            ->addWhere('contact_id', '=', $params['id'])
-            ->addWhere('is_primary', '=', TRUE)
-            ->addSelect('email')
-            ->execute()->first()['email'];
-        }
-      }
-      if ($email) {
-      Omnicontact::snooze(FALSE)
-        ->setEmail($email)
-        ->setSnoozeDate($snoozeDate)->execute();
       }
     }
   }
+
 }
 
-// --- Functions below this ship commented out. Uncomment as required. ---
-
-/**
- * Implements hook_civicrm_preProcess().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
-
- // */
-
-/**
- * Implements hook_civicrm_navigationMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
- *
-function omnimail_civicrm_navigationMenu(&$menu) {
-  _omnimail_civix_insert_navigation_menu($menu, NULL, array(
-    'label' => ts('The Page', array('domain' => 'org.wikimedia.omnimail')),
-    'name' => 'the_page',
-    'url' => 'civicrm/the-page',
-    'permission' => 'access CiviReport,access CiviContribute',
-    'operator' => 'OR',
-    'separator' => 0,
-  ));
-  _omnimail_civix_navigationMenu($menu);
-} // */
-
-// /**
-//  * Implements hook_civicrm_entityTypes().
-//  *
-//  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
-//  */
-// function omnimail_civicrm_entityTypes(&$entityTypes) {
-//   _omnimail_civix_civicrm_entityTypes($entityTypes);
-// }
+function _omnimail_civicrm_get_snooze_group_id(): int {
+  if (!isset(\Civi::$statics[__FUNCTION__])) {
+    \Civi::$statics[__FUNCTION__] = CustomGroup::get(FALSE)
+      ->addWhere('name', '=', 'email_settings')
+      ->execute()->first()['id'];
+  }
+  return (int) \Civi::$statics[__FUNCTION__];
+}
