@@ -16,6 +16,11 @@ require_once 'vendor/autoload.php';
  */
 function civicrm_api3_omnirecipient_process_forgetme($params) {
   $forgets = civicrm_api3('OmnimailJobProgress', 'get', ['job' => 'omnimail_privacy_erase', 'mailing_provider' => $params['mail_provider']]);
+
+  \Civi::log('wmf')->info('Forgetting {count} emails',[
+    'count' => $forgets['count']
+  ]);
+
   foreach ($forgets['values'] as $forget) {
     $result = civicrm_api3('Omnirecipient', 'erase', [
       'email' => json_decode($forget['job_identifier'], TRUE),
