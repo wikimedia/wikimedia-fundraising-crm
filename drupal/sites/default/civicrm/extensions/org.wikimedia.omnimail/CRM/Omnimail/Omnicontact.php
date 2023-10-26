@@ -42,30 +42,14 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
     /* @var Contact $reponse */
     $response = $request->getResponse();
     $activityDetail = "Email $email was successfully snoozed till $snoozeEndDate";
-				$activity_id = $params['values']['activity_id'] ?? NULL;
-    if (!empty($activity_id)) {
+    $activity_id = $params['values']['activity_id'] ?? NULL;
+    if ($activity_id) {
       Activity::update(FALSE)
         ->addValue('status_id:name', 'Completed')
         ->addValue('subject', "Email snoozed")
         ->addValue('details', $activityDetail)
-        ->addWhere('id', '=',$activity_id)
+        ->addWhere('id', '=', $activity_id)
         ->execute();
-    } else {
-      // When the contact is snoozed in the process of creation
-      $contact = \Civi\Api4\Contact::get(FALSE)->addWhere('email_primary.email', '=', $email)->addSelect('id')->execute()->first();
-      if (!empty($contact)) {
-        $contact_id = $contact['id'];
-        Activity::create(FALSE)
-          ->addValue('activity_type_id:name', 'EmailSnoozed')
-          ->addValue('status_id:name', 'Completed')
-          ->addValue('subject', "Email snoozed")
-          ->addValue('details', $activityDetail)
-          ->addValue('source_contact_id', $contact_id)
-          ->addValue('source_record_id', $contact_id)
-          ->addValue('activity_date_time', 'now')
-          ->execute()
-          ->first();
-      }
     }
 
     return [

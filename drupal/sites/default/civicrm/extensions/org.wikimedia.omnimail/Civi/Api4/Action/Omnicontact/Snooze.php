@@ -2,6 +2,8 @@
 
 namespace Civi\Api4\Action\Omnicontact;
 
+use Civi\Api4\Activity;
+use Civi\Api4\Contact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 
@@ -45,10 +47,10 @@ class Snooze extends AbstractAction {
     if (!$email) {
       throw new \CRM_Core_Exception('Email required.');
     }
-    $contact = \Civi\Api4\Contact::get(FALSE)->addWhere('email_primary.email', '=', $email)->addSelect('id')->execute()->first();
+    $contact = Contact::get(FALSE)->addWhere('email_primary.email', '=', $email)->addSelect('id')->execute()->first();
     if (!empty($contact)) {
       $contact_id = $contact['id'];
-      $activity = Activity::create(FALSE)
+      $activity_id = Activity::create(FALSE)
         ->addValue('activity_type_id:name', 'EmailSnoozed')
         ->addValue('status_id:name', 'Scheduled')
         ->addValue('subject', "Email snooze scheduled")
@@ -57,7 +59,7 @@ class Snooze extends AbstractAction {
         ->addValue('source_record_id', $contact_id)
         ->addValue('activity_date_time', 'now')
         ->execute()
-        ->first();
+        ->first()['id'] ?? NULL;
     }
     $queue->createItem(new \CRM_Queue_Task('civicrm_api4_queue',
       [
@@ -69,7 +71,7 @@ class Snooze extends AbstractAction {
           'checkPermissions' => $this->getCheckPermissions(),
           'values' => [
             'snooze_end_date' => date('Y-m-d H:i:s', strtotime($this->getSnoozeDate())),
-            'activity_id' => !empty($activity) && $activity['id']
+            'activity_id' => $activity_id,
           ],
         ],
       ],
