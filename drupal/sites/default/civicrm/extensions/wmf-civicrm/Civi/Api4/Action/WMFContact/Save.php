@@ -67,11 +67,10 @@ class Save extends AbstractAction {
    * @throws \Civi\WMFException\WMFException
    */
   public function _run(Result $result): void {
-
-    $isCreate = !$this->getContactID();
     $contact_id = $this->getContactID();
+    $isCreate = !$contact_id;
     $msg = $this->getMessage();
-    if (!$contact_id) {
+    if ($isCreate) {
       $existingContact = $this->getExistingContact($msg);
       if ($existingContact) {
         $contact_id = $existingContact['contact_id'];
@@ -111,7 +110,6 @@ class Save extends AbstractAction {
       'legal_identifier' => empty($msg['fiscal_number']) ? NULL : $this->cleanString($msg['fiscal_number'], 32),
       // Major gifts wants greeting processing - but we are not sure speedwise.
       'skip_greeting_processing' => !\Civi::settings()->get('wmf_save_process_greetings_on_create'),
-
     ];
     if (!empty($msg['organization_name'])) {
       $contact['organization_name'] = $msg['organization_name'];
@@ -194,8 +192,8 @@ class Save extends AbstractAction {
       'Organization_Contact.Name' => 'Name',
     ];
     if (!empty($msg['gateway'])) {
-      // Save external platform contact id
-      $custom_field_mangle['external_identifier'] = $msg['gateway'] . '_id';
+      // Save external platform contact id if venmo, then save user name
+      $custom_field_mangle['external_identifier'] = (!empty($msg['payment_method']) && $msg['payment_method'] === 'venmo') ? 'venmo_user_name': $msg['gateway'] . '_id';
     }
     foreach ($custom_field_mangle as $msgField => $customField) {
       if (isset($msg[$msgField])) {

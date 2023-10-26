@@ -1107,6 +1107,16 @@ function _wmf_civicrm_get_external_identifiers_fields(): array {
       'is_searchable' => 1,
       'is_view' => 0,
     ],
+    'venmo_user_name' => [
+      'name' => 'venmo_user_name',
+      'column_name' => 'venmo_user_name',
+      'label' => ts('Venmo user name'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ],
   ];
 }
 
