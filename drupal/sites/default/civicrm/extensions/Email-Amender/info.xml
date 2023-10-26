@@ -11,11 +11,11 @@
     <author>John P Kirk</author>
     <email>john@civifirst.com</email>
   </maintainer>
-  <releaseDate>2022-11-20</releaseDate>
-  <version>3.3.0</version>
+  <releaseDate>2023-09-25</releaseDate>
+  <version>3.3.1</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.52</ver>
+    <ver>5.66</ver>
   </compatibility>
   <category>Data Cleaning</category>
   <comments>
@@ -26,11 +26,18 @@
   </comments>
   <civix>
     <namespace>CRM/Emailamender</namespace>
-    <format>22.05.2</format>
+    <format>23.02.1</format>
   </civix>
   <url desc="documentation">https://github.com/JohnFF/Email-Amender/wiki</url>
   <mixins>
     <mixin>menu-xml@1.0.0</mixin>
     <mixin>setting-php@1.0.0</mixin>
+    <mixin>smarty-v2@1.0.0</mixin>
+    <mixin>mgd-php@1.0.0</mixin>
   </mixins>
+  <classloader>
+    <psr0 prefix="CRM_" path="."/>
+    <psr4 prefix="Civi\" path="Civi"/>
+  </classloader>
+  <upgrader>CRM_Emailamender_Upgrader</upgrader>
 </extension>
