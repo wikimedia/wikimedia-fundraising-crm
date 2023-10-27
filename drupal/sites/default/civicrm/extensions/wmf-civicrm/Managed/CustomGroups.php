@@ -52,7 +52,7 @@ return [
     'group' => [
       'extends' => 'Contact',
       'name' => 'External_Identifiers',
-      'table_name' => 'External_Identifiers',
+      'table_name' => 'wmf_external_contact_identifiers',
       'title' => ts('External Identifiers'),
       'is_active' => 1,
       'style' => 'inline',
