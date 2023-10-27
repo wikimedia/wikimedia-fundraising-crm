@@ -294,17 +294,20 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   ) {
     $invoiceId = $payment['invoice_id'];
     // Recurring Gift is used for the first in the series, Recurring Gift - Cash thereafter.
-    $financialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
+    $financialTypeID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
+    if (empty($previousPayment['contribution_recur_id'])) {
+      // It seems like adyen has situations where the previous payment is not
+      // attached to the recurring contribution - in which case it makes sense
+      // to treat the contribution as the first one.
+      $financialTypeID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift");
+    }
     if ($this->useQueue) {
       $ctId = explode('.', $invoiceId)[0];
       $pid = $recurringPayment['payment_processor_id'];
       $processorName = $this->smashPigProcessors[$pid]['name'];
       $queueMessage = [
         'contact_id' => $recurringPayment['contact_id'],
-        'financial_type_id' => $financialType,
-        // Setting both until we are sure contribution_type_id is not being
-        // used anywhere.
-        'contribution_type_id' => $previousPayment['financial_type_id'],
+        'financial_type_id' => $financialTypeID,
         'payment_instrument_id' => $previousPayment['payment_instrument_id'],
         'invoice_id' => $invoiceId,
         'gateway' => $processorName,
@@ -329,7 +332,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     else {
       // Create the contribution
       Contribution::create(FALSE)->setValues([
-        'financial_type_id:name' => 'Recurring Gift - Cash',
+        'financial_type_id' => $financialTypeID,
         'payment_instrument_id' => $previousPayment['payment_instrument_id'],
         'total_amount' => $recurringPayment['amount'],
         'currency' => $recurringPayment['currency'],
