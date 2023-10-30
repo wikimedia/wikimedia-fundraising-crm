@@ -27,34 +27,50 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
    * @throws \API_Exception
    */
   public function create(array $params): array {
-    /* @var \Omnimail\Silverpop\Mailer $mailer */
-    $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
-    $groupIdentifier = (array) Group::get($params['check_permissions'])->addWhere('id', 'IN', $params['group_id'])->addSelect('Group_Metadata.remote_group_identifier')->execute()->indexBy('Group_Metadata.remote_group_identifier');
-    $email = $params['email'];
-    $snoozeEndDate = $params['snooze_end_date'];
-    $request = $mailer->addContact([
-      'groupIdentifier' => array_keys($groupIdentifier),
-      'email' => $email,
-      'databaseID' => $params['database_id'],
-      'fields' => $this->mapFields($params['values']),
-      'snoozeTimeStamp' => empty($snoozeEndDate) ? NULL : strtotime($snoozeEndDate),
-    ]);
-    /* @var Contact $reponse */
-    $response = $request->getResponse();
-    $activityDetail = "Email $email was successfully snoozed till $snoozeEndDate";
-    $activity_id = $params['values']['activity_id'] ?? NULL;
-    if ($activity_id) {
-      Activity::update(FALSE)
-        ->addValue('status_id:name', 'Completed')
-        ->addValue('subject', "Email snoozed")
-        ->addValue('details', $activityDetail)
-        ->addWhere('id', '=', $activity_id)
-        ->execute();
-    }
+    try {
+      /* @var \Omnimail\Silverpop\Mailer $mailer */
+      $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
+      $groupIdentifier = (array) Group::get($params['check_permissions'])
+        ->addWhere('id', 'IN', $params['group_id'])
+        ->addSelect('Group_Metadata.remote_group_identifier')
+        ->execute()
+        ->indexBy('Group_Metadata.remote_group_identifier');
+      $email = $params['email'];
+      $snoozeEndDate = $params['snooze_end_date'];
+      $request = $mailer->addContact([
+        'groupIdentifier' => array_keys($groupIdentifier),
+        'email' => $email,
+        'databaseID' => $params['database_id'],
+        'fields' => $this->mapFields($params['values']),
+        'snoozeTimeStamp' => empty($snoozeEndDate) ? NULL : strtotime($snoozeEndDate),
+      ]);
+      /* @var Contact $reponse */
+      $response = $request->getResponse();
+      $activityDetail = "Email $email was successfully snoozed till $snoozeEndDate";
+      $activity_id = $params['values']['activity_id'] ?? NULL;
+      if ($activity_id) {
+        Activity::update(FALSE)
+          ->addValue('status_id:name', 'Completed')
+          ->addValue('subject', "Email snoozed")
+          ->addValue('details', $activityDetail)
+          ->addWhere('id', '=', $activity_id)
+          ->execute();
+      }
 
-    return [
-      'contact_identifier' => $response->getContactIdentifier(),
-    ];
+      return [
+        'contact_identifier' => $response->getContactIdentifier(),
+      ];
+    }
+    catch (Exception $e) {
+      Civi::log('omnimail')->error('Contact update failed {message}
+{exception}',
+
+      [
+        'message' => $e->getMessage(),
+        'exception' => $e,
+      ]);
+      throw $e;
+    }
   }
 
   /**
