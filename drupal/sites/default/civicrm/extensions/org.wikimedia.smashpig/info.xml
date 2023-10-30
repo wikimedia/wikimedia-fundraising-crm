@@ -18,7 +18,7 @@
   <version>1.0</version>
   <develStage>beta</develStage>
   <compatibility>
-    <ver>5.27</ver>
+    <ver>5.38</ver>
   </compatibility>
   <comments>Module for supporting civistrings.</comments>
   <classloader>
@@ -36,4 +36,5 @@
     <mixin>setting-php@1.0.0</mixin>
     <mixin>smarty-v2@1.0.1</mixin>
   </mixins>
+  <upgrader>CRM_SmashPig_Upgrader</upgrader>
 </extension>
