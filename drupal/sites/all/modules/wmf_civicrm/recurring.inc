@@ -126,9 +126,9 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
     ];
   }
 
-  // Using invoice_id to hold the processor_contact_id for Adyen.
+  // Using custom field to hold the processor_contact_id for Adyen.
   if (!empty($msg['processor_contact_id'])) {
-    $extra_recurring_params['invoice_id'] = $msg['processor_contact_id'];
+    $extra_recurring_params['contribution_recur_smashpig.processor_contact_id'] = $msg['processor_contact_id'];
   }
 
   if (!empty($msg['initial_scheme_transaction_id'])) {

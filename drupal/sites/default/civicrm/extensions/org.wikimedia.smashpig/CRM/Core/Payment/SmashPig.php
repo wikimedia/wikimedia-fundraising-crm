@@ -175,7 +175,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       'description' => 'description',
       'is_recur' => 'recurring',
       'ip_address' => 'user_ip',
-      'recurring_invoice_id' => 'processor_contact_id',
+      'processor_contact_id' => 'processor_contact_id',
       'initial_scheme_transaction_id' => 'initial_scheme_transaction_id',
       'legal_identifier' => 'fiscal_number'
     ];
