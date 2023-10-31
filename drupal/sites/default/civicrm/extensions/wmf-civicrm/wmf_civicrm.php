@@ -337,7 +337,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
     if (array_intersect((array) $tableSpecification['table'], array_keys($tablesToRemoveFieldsFrom))) {
       // For logging tables, which are the ones the replace will actually change, there
       // is just one table in the table array.
-      foreach ($tablesToRemoveFieldsFrom[$tableSpecification['table'][0]] as $disabledField) {
+      foreach ($tablesToRemoveFieldsFrom[$tableSpecification['table'][0]] ?? [] as $disabledField) {
         // the field appears twice in the sql, once with NEW. prepended, replace that on first
         $tableSpecification['sql'] = str_replace(
           'OR IFNULL(OLD.`' . $disabledField . '`,\'\') <> IFNULL(NEW.`' . $disabledField . '`,\'\')',
