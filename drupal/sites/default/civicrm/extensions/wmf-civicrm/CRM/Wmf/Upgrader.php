@@ -1801,6 +1801,34 @@ AND q.id BETWEEN %1 AND %2"
   }
 
   /**
+   * Run the recurring gift financial type update once more.
+   *
+   * After the last fix on monthly convert ones they don't seem
+   * to be being created anymore but 1550 remain to be fixed up.
+   *
+   * Note I found one that would be recoded possibly incorrectly through this
+   * - ie https://civicrm.wikimedia.org/civicrm/contact/view/contribution?reset=1&id=96033970&cid=26220292&action=view&context=contribution&selectedChild=contribute
+   * - perhaps the type is correct given the first in the series was a refund
+   * but it is a $1 test transaction so we can ignore that I think.
+   *
+   * SQL to find
+   * SELECT count(*),max(a.receive_date)
+   * FROM   civicrm_contribution a
+   * LEFT JOIN civicrm_contribution c2 ON c2.contribution_recur_id = a.contribution_recur_id
+   *  AND c2.receive_date < a.receive_date
+   * LEFT JOIN `civicrm_value_1_gift_data_7` Gift_Data
+   *   ON a.id = Gift_Data.entity_id
+   * WHERE `a`.`receive_date` > "20230701000000"
+   *   AND `a`.`contribution_recur_id` > 0
+   *   AND `a`.`financial_type_id` NOT IN (31)   AND `a`.`is_test` = 0   AND c2.id IS NULL
+   *
+   * @return bool
+   */
+  public function upgrade_4410(): bool {
+    return $this->upgrade_4330();
+  }
+
+  /**
    * Queue up an SQL update.
    *
    * @param string $sql
