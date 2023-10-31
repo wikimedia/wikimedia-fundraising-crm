@@ -1675,6 +1675,64 @@ AND q.id BETWEEN %1 AND %2"
     return TRUE;
   }
 
+  public function upgrade_4405(): bool {
+    $fieldsToDrop = [
+      'all_funds_change_2018_2019',
+      'all_funds_change_2019_2020',
+      'all_funds_change_2020_2021',
+      'all_funds_change_2021_2022',
+      'change_2017_2018',
+      'change_2018_2019',
+      'change_2019_2020',
+      'change_2020_2021',
+      'change_2021_2022',
+      'total_2006',
+      'total_2007',
+      'total_2008',
+      'total_2009',
+      'total_2010',
+      'total_2011',
+      'total_2012',
+      'total_2013',
+      'total_2014',
+      'total_2015',
+      'total_2016',
+      'total_2017',
+      'total_2018',
+      'total_2019',
+      'total_2020',
+      'total_2021',
+      'total_2022',
+      'endowment_total_2018',
+      'endowment_total_2019',
+      'endowment_total_2020',
+      'endowment_total_2021',
+      'endowment_total_2022',
+      'total_2006_2007',
+      'total_2007_2008',
+      'total_2008_2009',
+      'total_2009_2010',
+      'total_2010_2011',
+      'total_2011_2012',
+      'total_2012_2013',
+      'total_2013_2014',
+      'total_2014_2015',
+      'total_2015_2016',
+      'total_2016_2017',
+    ];
+    foreach ($fieldsToDrop as $fieldName) {
+      if (CRM_Core_BAO_SchemaHandler::checkIfFieldExists('wmf_donor', $fieldName, FALSE)) {
+        $dropSQL[] = ' DROP COLUMN ' . $fieldName;
+      }
+    }
+    if (!empty($fieldsToDrop)) {
+      $sql = ' ALTER TABLE wmf_donor ' . implode(",\n", $dropSQL);
+      CRM_Core_DAO::executeQuery($sql);
+      civicrm_api3('System', 'flush');
+    }
+    return TRUE;
+  }
+
   /**
    * Rename External_Identifiers table to wmf_external_contact_identifiers
    * @return bool
