@@ -195,14 +195,11 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
  * @throws \Civi\WMFException\WMFException|\Statistics\Exception\StatisticsCollectorException
  */
 function wmf_civicrm_contribution_message_import(array &$msg): array {
+  // we need to know recurring status this early so we can decide on the timer naming
   $isRecurring = $msg['recurring'] ?? !empty($msg['contribution_recur_id']);
-  if (!$isRecurring) {
-    $overallTimerName = "wmf_civicrm_contribution_message_import";
-  }
-  else {
-    $overallTimerName = "wmf_civicrm_recurring_message_import";
-  }
-  get_import_timer()->startImportTimer($overallTimerName);
+  $importTimerName = getImportTimerName($isRecurring);
+  get_import_timer()->startImportTimer($importTimerName);
+
   civicrm_initialize();
 
   get_import_timer()->startImportTimer("verify_and_stage");
@@ -343,13 +340,28 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   }
 
   // Need to get this full name before ending the timer
-  $uniqueTimerName = get_import_timer()->getUniqueNamespace($overallTimerName);
-  get_import_timer()->endImportTimer($overallTimerName);
+  $uniqueTimerName = get_import_timer()->getUniqueNamespace($importTimerName);
+  get_import_timer()->endImportTimer($importTimerName);
 
   DonationStatsCollector::getInstance()
     ->addStat("message_import_timers", get_import_timer()->getTimerDiff($uniqueTimerName));
 
   return $contribution;
+}
+
+/**
+ * @param $isRecurring
+ *
+ * @return string
+ */
+function getImportTimerName($isRecurring): string {
+  if (!$isRecurring) {
+    $overallTimerName = "wmf_civicrm_contribution_message_import";
+  }
+  else {
+    $overallTimerName = "wmf_civicrm_recurring_message_import";
+  }
+  return $overallTimerName;
 }
 
 /**
