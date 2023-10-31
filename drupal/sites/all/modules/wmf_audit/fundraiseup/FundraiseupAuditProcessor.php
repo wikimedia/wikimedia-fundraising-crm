@@ -14,6 +14,14 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
     return new FundraiseupAudit();
   }
 
+  /**
+   * No logs for FRUP, hence no working log dir
+   * @return false
+   */
+  protected function get_working_log_dir() {
+    return FALSE;
+  }
+
   protected function get_log_distilling_grep_string() {
     return NULL;
   }

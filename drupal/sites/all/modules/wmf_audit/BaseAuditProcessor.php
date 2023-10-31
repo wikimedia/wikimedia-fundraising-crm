@@ -141,7 +141,7 @@ abstract class BaseAuditProcessor {
   }
 
   /**
-   * Returns the configurable path to the working log dir
+   * Returns the configurable path to the working log dir, or false if not needed.
    *
    * @return string Path to the directory
    */
@@ -1093,7 +1093,7 @@ abstract class BaseAuditProcessor {
     ];
 
     foreach ($directories as $id => $dir) {
-      if (!is_dir($dir)) {
+      if ($dir && !is_dir($dir)) {
         if ($id === 'log_archive' || $id === 'recon') {
           //already done. We don't want to try to create these, because required files come from here.
           wmf_audit_log_error("Missing required directory $dir", 'MISSING_DIR_' . strtoupper($id));
