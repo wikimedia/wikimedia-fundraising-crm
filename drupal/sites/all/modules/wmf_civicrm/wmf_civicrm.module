@@ -276,12 +276,6 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   if ($initial_recurring) {
     $recurring_transaction_id = "";
     if ($msg['subscr_id']) {
-      // FIXME: level across processors
-      if ($msg['gateway'] === 'globalcollect') {
-        if (FALSE === strpos($msg['subscr_id'], 'RECURRING GLOBALCOLLECT')) {
-          $msg['subscr_id'] = "RECURRING GLOBALCOLLECT {$msg['subscr_id']}";
-        }
-      }
       $recurring_transaction_id = $msg['subscr_id'];
     }
 
