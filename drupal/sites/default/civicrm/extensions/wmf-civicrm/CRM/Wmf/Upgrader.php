@@ -1729,6 +1729,19 @@ AND q.id BETWEEN %1 AND %2"
 
     return TRUE;
   }
+
+  /**
+   * Clean up some unused tables
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4404(): bool {
+    CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS T349358');
+    CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS External_Identifiers');
+    CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS log_External_Identifiers');
+    return TRUE;
+  }
+
   /**
    * Queue up an SQL update.
    *
