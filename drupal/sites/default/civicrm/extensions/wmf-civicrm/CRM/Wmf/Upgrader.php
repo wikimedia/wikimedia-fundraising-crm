@@ -1676,6 +1676,60 @@ AND q.id BETWEEN %1 AND %2"
   }
 
   /**
+   * Rename External_Identifiers table to wmf_external_contact_identifiers
+   * @return bool
+   * @throws CRM_Core_Exception
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4402(): bool {
+    // Bail out if not needed
+    $currentTableName = CRM_Core_DAO::singleValueQuery(
+      "SELECT table_name FROM civicrm_custom_group WHERE name='External_Identifiers'"
+    );
+    if ($currentTableName === 'wmf_external_contact_identifiers') {
+      return TRUE;
+    }
+    CRM_Core_DAO::executeQuery("
+      CREATE TABLE `wmf_external_contact_identifiers` (
+        `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Default MySQL primary key',
+        `entity_id` int(10) unsigned NOT NULL COMMENT 'Table that this extends',
+        `fundraiseup_id` varchar(255) DEFAULT NULL,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `unique_entity_id` (`entity_id`),
+        KEY `index_fundraiseup_id` (`fundraiseup_id`),
+        CONSTRAINT `FK_wmf_external_contact_identifiers_entity_id` FOREIGN KEY (`entity_id`) REFERENCES `civicrm_contact` (`id`) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+    // Move over the data
+    CRM_Core_DAO::executeQuery("
+      INSERT INTO wmf_external_contact_identifiers (entity_id, fundraiseup_id)
+      SELECT entity_id, fundraiseup_id
+      FROM External_Identifiers
+    ");
+    // Triggers are not yet applied to the old table, so the old log table is empty
+    CRM_Core_DAO::executeQuery("
+      CREATE TABLE `log_wmf_external_contact_identifiers` (
+        `id` int(10) unsigned DEFAULT NULL COMMENT 'Default MySQL primary key',
+        `entity_id` int(10) unsigned DEFAULT NULL COMMENT 'Table that this extends',
+        `log_date` timestamp NOT NULL DEFAULT current_timestamp(),
+        `log_conn_id` varchar(17) DEFAULT NULL,
+        `log_user_id` int(11) DEFAULT NULL,
+        `log_action` enum('Initialization','Insert','Update','Delete') DEFAULT NULL,
+        `fundraiseup_id` varchar(255) DEFAULT NULL,
+        KEY `index_id` (`id`),
+        KEY `index_log_conn_id` (`log_conn_id`),
+        KEY `index_log_date` (`log_date`),
+        KEY `index_entity_id` (`entity_id`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=4
+    ");
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_custom_group
+      SET table_name = 'wmf_external_contact_identifiers' WHERE name='External_Identifiers'
+    ");
+
+    return TRUE;
+  }
+  /**
    * Queue up an SQL update.
    *
    * @param string $sql
