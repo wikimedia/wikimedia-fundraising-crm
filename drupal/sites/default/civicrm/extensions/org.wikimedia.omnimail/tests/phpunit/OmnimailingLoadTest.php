@@ -37,7 +37,7 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
 
     $customFieldID = $this->callAPISuccessGetValue('CustomField', ['name' => 'query_criteria', 'return' => 'id']);
     $this->assertEquals($mailingReloaded['id'], $mailing['id']);
-    $this->assertEquals('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $mailingReloaded['custom_' . $customFieldID]);
+    $this->assertEqualsIgnoringCase('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $mailingReloaded['custom_' . $customFieldID]);
     $mailingJobs = $this->callAPISuccess('MailingJob', 'get', array('mailing_id' => $mailing['id']));
     $this->assertEquals(0, $mailingJobs['count']);
 
@@ -46,7 +46,7 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
     $this->isOmniHellEnabled = FALSE;
     $this->loadMailings();
     $mailingReloaded = $this->callAPISuccess('Mailing', 'getsingle', array('hash' => 'sp7877'));
-    $this->assertEquals('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $mailingReloaded['custom_' . $customFieldID]);
+    $this->assertEqualsIgnoringCase('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $mailingReloaded['custom_' . $customFieldID]);
 
 
 

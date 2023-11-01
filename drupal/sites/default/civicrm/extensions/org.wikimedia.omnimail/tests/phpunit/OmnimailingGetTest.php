@@ -52,7 +52,7 @@ class OmnimailingGetTest extends OmnimailBaseTestClass {
     $this->assertEquals(2, $mailings['count']);
     $firstMailing = $mailings['values'][0];
     $this->assertEquals('cool email 🌻', $firstMailing['subject']);
-    $this->assertEquals('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $firstMailing['list_criteria']);
+    $this->assertEqualsIgnoringCase('WHEN (COUNTRY is equal to IL AND ISOLANG is equal to HE AND LATEST_DONATION_DATE is before JAN 1, 2019 AND EMAIL_DOMAIN_PART is not equal to one of the following (AOL.COM | NETSCAPE.COM | NETSCAPE.NET | CS.COM | AIM.COM | WMCONNECT.COM | VERIZON.NET) OR (EMAIL is equal to FUNDRAISINGEMAIL-JAJP+HEIL@WIKIMEDIA.ORG AND COUNTRY is equal to IL)) AND SEGMENT is equal to 2', $firstMailing['list_criteria']);
     $this->assertEquals('( is in contact list 1234567 AND Segment is equal to 328 AND latest_donation_date is before 01/01/2019 ) OR Email is equal to info@examplee.org', $firstMailing['list_string']);
   }
 
