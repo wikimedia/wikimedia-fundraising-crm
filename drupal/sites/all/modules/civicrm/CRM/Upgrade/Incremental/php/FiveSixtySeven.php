@@ -56,7 +56,6 @@ class CRM_Upgrade_Incremental_php_FiveSixtySeven extends CRM_Upgrade_Incremental
     $this->addTask('Add cache_fill_took column to Group table', 'addColumn', 'civicrm_group', 'cache_fill_took',
       'DOUBLE DEFAULT NULL COMMENT "Seconds taken to fill smart group cache, not always related to cache_date"',
       FALSE);
-    $this->addTask('Update civicrm_mailing_event_queue to permit deleting records from civicrm_mailing_job', 'updateMailingEventQueueTable');
     $this->addTask('Update CiviMail menus labels', 'updateMailingMenuLabels');
   }
 
