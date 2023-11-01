@@ -1725,11 +1725,14 @@ AND q.id BETWEEN %1 AND %2"
         $dropSQL[] = ' DROP COLUMN ' . $fieldName;
       }
     }
-    if (!empty($fieldsToDrop)) {
+    if (!empty($dropSQL)) {
       $sql = ' ALTER TABLE wmf_donor ' . implode(",\n", $dropSQL);
       CRM_Core_DAO::executeQuery($sql);
-      civicrm_api3('System', 'flush');
     }
+    CRM_Core_DAO::executeQuery('DELETE f FROM civicrm_custom_field f INNER JOIN civicrm_custom_group g ON f.custom_group_id = g.id AND g.name = "wmf_donor"
+      WHERE f.name IN ("' . implode('", "', $fieldsToDrop) . '")
+   ');
+    civicrm_api3('System', 'flush');
     return TRUE;
   }
 
@@ -1826,6 +1829,17 @@ AND q.id BETWEEN %1 AND %2"
    */
   public function upgrade_4410(): bool {
     return $this->upgrade_4330();
+  }
+
+  /**
+   * Re-run upgrade 4405 - I forgot to clean up civicrm_custom_field.
+   *
+   * Bug: T347724
+   *
+   * @return bool
+   */
+  public function upgrade_4415() : bool {
+    return $this->upgrade_4405();
   }
 
   /**
