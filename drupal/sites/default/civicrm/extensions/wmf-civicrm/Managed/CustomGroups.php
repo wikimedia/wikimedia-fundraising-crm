@@ -1475,6 +1475,26 @@ function _wmf_civicrm_get_communication_fields(): array {
  */
 function _wmf_civicrm_get_stock_fields(): array {
   return [
+    'stock_qty' => [
+      'name' => 'Stock Quantity',
+      'column_name' => 'stock_qty',
+      'label' => ts('Stock Quantity'),
+      'data_type' => 'Int',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ],
+    'stock_ticker' => [
+      'name' => 'Stock Ticker',
+      'column_name' => 'stock_ticker',
+      'label' => ts('Stock Ticker'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ],
     'description_of_stock' => [
       'name' => 'Description_of_Stock',
       'column_name' => 'description_of_stock',
