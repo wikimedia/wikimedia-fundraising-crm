@@ -15,6 +15,10 @@
  * @copyright CiviCRM LLC https://civicrm.org/licensing
  */
 
+use Civi\Api4\PriceField;
+use Civi\Api4\PriceFieldValue;
+use Civi\Api4\PriceSet;
+
 /**
  * Business object for managing price sets.
  *
@@ -449,7 +453,7 @@ AND ( expire_on IS NULL OR expire_on >= {$currentTime} )
 
     $visibility = CRM_Core_PseudoConstant::visibility('name');
     while ($dao->fetch()) {
-      $fieldID = $dao->id;
+      $fieldID = (int) $dao->id;
 
       $setTree[$setID]['fields'][$fieldID] = [];
       $setTree[$setID]['fields'][$fieldID]['id'] = $fieldID;
@@ -459,7 +463,7 @@ AND ( expire_on IS NULL OR expire_on >= {$currentTime} )
           continue;
         }
 
-        if ($field == 'visibility_id') {
+        if ($field === 'visibility_id') {
           $setTree[$setID]['fields'][$fieldID]['visibility'] = $visibility[$dao->$field];
         }
         $setTree[$setID]['fields'][$fieldID][$field] = $dao->$field;
@@ -475,11 +479,11 @@ WHERE  id = %1";
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
     if ($dao->fetch()) {
       $setTree[$setID]['extends'] = $dao->extends;
-      $setTree[$setID]['financial_type_id'] = $dao->financial_type_id;
+      $setTree[$setID]['financial_type_id'] = (int) $dao->financial_type_id;
       $setTree[$setID]['help_pre'] = $dao->help_pre;
       $setTree[$setID]['help_post'] = $dao->help_post;
-      $setTree[$setID]['is_quick_config'] = $dao->is_quick_config;
-      $setTree[$setID]['min_amount'] = $dao->min_amount;
+      $setTree[$setID]['is_quick_config'] = (bool) $dao->is_quick_config;
+      $setTree[$setID]['min_amount'] = (float) $dao->min_amount;
     }
     return $setTree;
   }
@@ -548,12 +552,7 @@ WHERE  id = %1";
    */
   public static function initSet(&$form, $entityTable = 'civicrm_event', $doNotIncludeExpiredFields = FALSE, $priceSetId = NULL) {
     CRM_Core_Error::deprecatedFunctionWarning('no alternative');
-    //check if price set is is_config
-    if (is_numeric($priceSetId)) {
-      if (CRM_Core_DAO::getFieldValue('CRM_Price_DAO_PriceSet', $priceSetId, 'is_quick_config') && $form->getVar('_name') != 'Participant') {
-        $form->assign('quickConfig', 1);
-      }
-    }
+
     // get price info
     if ($priceSetId) {
       if ($form->_action & CRM_Core_Action::UPDATE) {
@@ -600,7 +599,7 @@ WHERE  id = %1";
           if (!empty($form->_priceSet['fields'])) {
             foreach ($form->_priceSet['fields'] as $field) {
               foreach ($field['options'] as $option) {
-                $count = CRM_Utils_Array::value('count', $option, 0);
+                $count = $option['count'] ?? 0;
                 $optionsCountDetails['fields'][$field['id']]['options'][$option['id']] = $count;
               }
             }
@@ -615,7 +614,7 @@ WHERE  id = %1";
         if (!empty($form->_priceSet['fields'])) {
           foreach ($form->_priceSet['fields'] as $field) {
             foreach ($field['options'] as $option) {
-              $maxVal = CRM_Utils_Array::value('max_value', $option, 0);
+              $maxVal = $option['max_value'] ?? 0;
               $optionsMaxValueDetails['fields'][$field['id']]['options'][$option['id']] = $maxVal;
               $optionsMaxValueTotal += $maxVal;
             }
@@ -762,30 +761,50 @@ WHERE  id = %1";
   }
 
   /**
-   * Wrapper for getSetDetail with caching.
+   * Get PriceSet + Fields + FieldValues nested, with caching.
+   *
+   * This gets the same values as getSet but uses apiv4 for more
+   * predictability & better variable typing.
    *
    * We seem to be passing this array around in a painful way - presumably to avoid the hit
    * of loading it - so lets make it callable with caching.
    *
-   * Why not just add caching to the other function? We could do - it just seemed a bit unclear the best caching pattern
-   * & the function was already pretty fugly. Also, I feel like we need to migrate the interaction with price-sets into
-   * a more granular interaction - ie. retrieve specific data using specific functions on this class & have the form
-   * think less about the price sets.
-   *
    * @param int $priceSetID
    *
    * @return array
+   *
+   * @noinspection PhpUnhandledExceptionInspection
    */
-  public static function getCachedPriceSetDetail($priceSetID) {
+  public static function getCachedPriceSetDetail(int $priceSetID): array {
     $cacheKey = __CLASS__ . __FUNCTION__ . '_' . $priceSetID;
     $cache = CRM_Utils_Cache::singleton();
-    $values = $cache->get($cacheKey);
-    if (empty($values)) {
-      $data = self::getSetDetail($priceSetID);
-      $values = $data[$priceSetID];
-      $cache->set($cacheKey, $values);
+    $data = $cache->get($cacheKey);
+    if (empty($data)) {
+      $data = PriceSet::get(FALSE)
+        ->addWhere('id', '=', $priceSetID)
+        ->addSelect('*', 'visibility_id:name', 'extends:name')
+        ->execute()->first();
+      $data['fields'] = (array) PriceField::get(FALSE)
+        ->addWhere('price_set_id', '=', $priceSetID)
+        ->addSelect('*', 'visibility_id:name')
+        ->execute()->indexBy('id');
+      foreach ($data['fields'] as &$field) {
+        $field['options'] = [];
+        // Add in visibility because Smarty templates expect it and it is hard to adjust them to colon format.
+        $field['visibility'] = $field['visibility_id:name'];
+      }
+      $options = PriceFieldValue::get(FALSE)
+        ->addWhere('price_field_id', 'IN', array_keys($data['fields']))
+        ->addSelect('*', 'membership_type_id.name', 'visibility_id:name')
+        ->execute();
+      foreach ($options as $option) {
+        // Add in visibility because Smarty templates expect it and it is hard to adjust them to colon format.
+        $option['visibility'] = $option['visibility_id:name'];
+        $data['fields'][$option['price_field_id']]['options'][$option['id']] = $option;
+      }
+      $cache->set($cacheKey, $data);
     }
-    return $values;
+    return $data;
   }
 
   /**
@@ -796,7 +815,8 @@ WHERE  id = %1";
    * @param bool $validFieldsOnly
    *
    * @return void
-   * @throws \CRM_Core_Exception
+   *
+   * @deprecated since 5.68. Will be removed around 5.80.
    */
   public static function buildPriceSet(&$form, $component = NULL, $validFieldsOnly = TRUE) {
     $priceSetId = $form->get('priceSetId');
@@ -809,7 +829,6 @@ WHERE  id = %1";
     $priceSet = self::getSetDetail($priceSetId, TRUE, $validFieldsOnly);
     $form->_priceSet = $priceSet[$priceSetId] ?? NULL;
     $validPriceFieldIds = array_keys($form->_priceSet['fields']);
-    $form->assign('quickConfig', (int) CRM_Core_DAO::getFieldValue('CRM_Price_DAO_PriceSet', $priceSetId, 'is_quick_config'));
 
     // Mark which field should have the auto-renew checkbox, if any. CRM-18305
     if (!empty($form->_membershipTypeValues) && is_array($form->_membershipTypeValues)) {
@@ -846,22 +865,53 @@ WHERE  id = %1";
     // Call the buildAmount hook.
     CRM_Utils_Hook::buildAmount($component ?? 'contribution', $form, $feeBlock);
 
-    self::addPriceFieldsToForm($form, $feeBlock, $validFieldsOnly, $className, $validPriceFieldIds);
-  }
+    $hideAdminValues = !CRM_Core_Permission::check('edit contributions');
+    // CRM-14492 Admin price fields should show up on event registration if user has 'administer CiviCRM' permissions
+    $adminFieldVisible = CRM_Core_Permission::check('administer CiviCRM');
+    $checklifetime = FALSE;
+    foreach ($feeBlock as $id => $field) {
+      if (($field['visibility'] ?? NULL) == 'public' ||
+        (($field['visibility'] ?? NULL) == 'admin' && $adminFieldVisible == TRUE) ||
+        !$validFieldsOnly
+      ) {
+        $options = $field['options'] ?? NULL;
+        if ($className == 'CRM_Contribute_Form_Contribution_Main' && $component = 'membership') {
+          $contactId = $form->getVar('_membershipContactID');
+          if ($contactId && $options) {
+            $contactsLifetimeMemberships = CRM_Member_BAO_Membership::getAllContactMembership($contactId, FALSE, TRUE);
+            $contactsLifetimeMembershipTypes = array_column($contactsLifetimeMemberships, 'membership_type_id');
+            $memTypeIdsInPriceField = array_column($options, 'membership_type_id');
+            $isCurrentMember = (bool) array_intersect($memTypeIdsInPriceField, $contactsLifetimeMembershipTypes);
+            $checklifetime = $checklifetime ?: $isCurrentMember;
+          }
+        }
 
-  /**
-   * Check for lifetime membership types this contact has that are in this price field.
-   *
-   * @param array $options
-   * @param int $contactId
-   *
-   * @return bool
-   */
-  private static function checkCurrentMembership(array $options, int $contactId) : bool {
-    $contactsLifetimeMemberships = CRM_Member_BAO_Membership::getAllContactMembership($contactId, FALSE, TRUE);
-    $contactsLifetimeMembershipTypes = array_column($contactsLifetimeMemberships, 'membership_type_id');
-    $memTypeIdsInPriceField = array_column($options, 'membership_type_id');
-    return (bool) array_intersect($memTypeIdsInPriceField, $contactsLifetimeMembershipTypes);
+        $formClasses = ['CRM_Contribute_Form_Contribution', 'CRM_Member_Form_Membership'];
+
+        if (!is_array($options) || !in_array($id, $validPriceFieldIds)) {
+          continue;
+        }
+        elseif ($hideAdminValues && !in_array($className, $formClasses)) {
+          foreach ($options as $key => $currentOption) {
+            if ($currentOption['visibility_id'] == CRM_Price_BAO_PriceField::getVisibilityOptionID('admin')) {
+              unset($options[$key]);
+            }
+          }
+        }
+        if (!empty($options)) {
+          CRM_Price_BAO_PriceField::addQuickFormElement($form,
+            'price_' . $field['id'],
+            $field['id'],
+            FALSE,
+            $field['is_required'] ?? FALSE,
+            NULL,
+            $options
+          );
+        }
+      }
+    }
+    $form->assign('ispricelifetime', $checklifetime);
+
   }
 
   /**
@@ -1585,7 +1635,7 @@ WHERE     ct.id = cp.financial_type_id AND
         $amount_override = NULL;
 
         if ($priceSetID && count(self::filterPriceFieldsFromParams($priceSetID, $params)) === 1) {
-          $amount_override = CRM_Utils_Array::value('total_amount', $params);
+          $amount_override = $params['total_amount'] ?? NULL;
         }
         CRM_Price_BAO_LineItem::format($id, $params, $field, $lineItem, $amount_override);
         if (!empty($field['options'][$optionValueId]['tax_rate'])) {
@@ -1617,60 +1667,6 @@ WHERE     ct.id = cp.financial_type_id AND
         break;
     }
     return [$params, $lineItem];
-  }
-
-  /**
-   * Add the relevant price fields to the form.
-   *
-   * @param \CRM_Core_Form $form
-   * @param array $feeBlock
-   * @param bool $validFieldsOnly
-   * @param string $className
-   * @param array $validPriceFieldIds
-   */
-  protected static function addPriceFieldsToForm(CRM_Core_Form $form, $feeBlock, bool $validFieldsOnly, string $className, array $validPriceFieldIds) {
-    $hideAdminValues = !CRM_Core_Permission::check('edit contributions');
-    // CRM-14492 Admin price fields should show up on event registration if user has 'administer CiviCRM' permissions
-    $adminFieldVisible = CRM_Core_Permission::check('administer CiviCRM');
-    $checklifetime = FALSE;
-    foreach ($feeBlock as $id => $field) {
-      if (($field['visibility'] ?? NULL) == 'public' ||
-        (($field['visibility'] ?? NULL) == 'admin' && $adminFieldVisible == TRUE) ||
-        !$validFieldsOnly
-      ) {
-        $options = $field['options'] ?? NULL;
-        if ($className == 'CRM_Contribute_Form_Contribution_Main' && $component = 'membership') {
-          $contactId = $form->getVar('_membershipContactID');
-          if ($contactId && $options) {
-            $checklifetime = $checklifetime ?: self::checkCurrentMembership($options, $contactId);
-          }
-        }
-
-        $formClasses = ['CRM_Contribute_Form_Contribution', 'CRM_Member_Form_Membership'];
-
-        if (!is_array($options) || !in_array($id, $validPriceFieldIds)) {
-          continue;
-        }
-        elseif ($hideAdminValues && !in_array($className, $formClasses)) {
-          foreach ($options as $key => $currentOption) {
-            if ($currentOption['visibility_id'] == CRM_Price_BAO_PriceField::getVisibilityOptionID('admin')) {
-              unset($options[$key]);
-            }
-          }
-        }
-        if (!empty($options)) {
-          CRM_Price_BAO_PriceField::addQuickFormElement($form,
-            'price_' . $field['id'],
-            $field['id'],
-            FALSE,
-            CRM_Utils_Array::value('is_required', $field, FALSE),
-            NULL,
-            $options
-          );
-        }
-      }
-    }
-    $form->assign('ispricelifetime', $checklifetime);
   }
 
   /**

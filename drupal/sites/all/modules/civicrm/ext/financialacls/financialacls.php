@@ -93,19 +93,19 @@ function financialacls_civicrm_selectWhereClause($entity, &$clauses) {
     case 'MembershipType':
     case 'ContributionRecur':
     case 'Contribution':
-      $clauses['financial_type_id'] = _financialacls_civicrm_get_type_clause();
+      $clauses['financial_type_id'][] = _financialacls_civicrm_get_type_clause();
       break;
 
     case 'Membership':
-      $clauses['membership_type_id'] = _financialacls_civicrm_get_membership_type_clause();
+      $clauses['membership_type_id'][] = _financialacls_civicrm_get_membership_type_clause();
       break;
 
     case 'FinancialType':
-      $clauses['id'] = _financialacls_civicrm_get_type_clause();
+      $clauses['id'][] = _financialacls_civicrm_get_type_clause();
       break;
 
     case 'FinancialAccount':
-      $clauses['id'] = _financialacls_civicrm_get_accounts_clause();
+      $clauses['id'][] = _financialacls_civicrm_get_accounts_clause();
       break;
 
   }
@@ -201,7 +201,7 @@ function financialacls_civicrm_buildAmount($component, $form, &$feeBlock) {
 
   foreach ($feeBlock as $key => $value) {
     foreach ($value['options'] as $k => $options) {
-      if (!CRM_Core_Permission::check('add contributions of type ' . CRM_Contribute_PseudoConstant::financialType($options['financial_type_id']))) {
+      if (!CRM_Core_Permission::check('add contributions of type ' . CRM_Core_PseudoConstant::getName('CRM_Contribute_DAO_Contribution', 'financial_type_id', $options['financial_type_id']))) {
         unset($feeBlock[$key]['options'][$k]);
       }
     }
@@ -385,12 +385,32 @@ function financialacls_civicrm_alterMenu(array &$menu): void {
 }
 
 /**
+ * @param string $formName
+ * @param \CRM_Core_Form $form
+ */
+function financialacls_civicrm_preProcess(string $formName, \CRM_Core_Form $form): void {
+  if (!financialacls_is_acl_limiting_enabled()) {
+    return;
+  }
+  if (str_starts_with($formName, 'CRM_Contribute_Form_Contribution_')) {
+    /* @var \CRM_Contribute_Form_Contribution_Main $form */
+    if (!CRM_Core_Permission::check('add contributions of type ' . $form->getContributionPageValue('financial_type_id:name'))) {
+      CRM_Core_Error::statusBounce(ts('You do not have permission to access this page.'));
+    }
+  }
+
+}
+
+/**
  * Hide edit/enable/disable links for memberships of a given Financial Type
  * Note: The $objectID param can be an int, string or null, hence not typed
  *
  * Implements hook_civicrm_links()
  */
 function financialacls_civicrm_links(string $op, ?string $objectName, $objectID, array &$links, ?int &$mask, array &$values) {
+  if (!financialacls_is_acl_limiting_enabled()) {
+    return;
+  }
   if ($objectName === 'MembershipType') {
     $financialType = CRM_Core_PseudoConstant::getName('CRM_Member_BAO_MembershipType', 'financial_type_id', CRM_Member_BAO_MembershipType::getMembershipType($objectID)['financial_type_id']);
     $hasEditPermission = CRM_Core_Permission::check('edit contributions of type ' . $financialType);

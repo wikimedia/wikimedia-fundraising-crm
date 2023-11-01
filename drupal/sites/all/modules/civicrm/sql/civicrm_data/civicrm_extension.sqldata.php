@@ -21,10 +21,6 @@ return CRM_Core_CodeGen_SqlData::create('civicrm_extension', 'INSERT IGNORE INTO
       'name' => 'Theme: Greenwich',
     ],
     [
-      'full_name' => 'eventcart',
-      'name' => 'Event cart',
-    ],
-    [
       'full_name' => 'financialacls',
       'name' => 'Financial ACLs',
     ],
@@ -35,10 +31,6 @@ return CRM_Core_CodeGen_SqlData::create('civicrm_extension', 'INSERT IGNORE INTO
     [
       'full_name' => 'ckeditor4',
       'name' => 'CKEditor4',
-    ],
-    [
-      'full_name' => 'legacycustomsearches',
-      'name' => 'Custom search framework',
     ],
     [
       'full_name' => 'org.civicrm.flexmailer',

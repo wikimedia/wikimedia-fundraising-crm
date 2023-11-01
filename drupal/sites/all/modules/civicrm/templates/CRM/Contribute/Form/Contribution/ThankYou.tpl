@@ -72,10 +72,10 @@
 
   {include file="CRM/Contribute/Form/Contribution/MembershipBlock.tpl"}
 
-  {if $amount GTE 0 OR $minimum_fee GTE 0 OR ( $priceSetID and $lineItem ) }
+  {if $amount GTE 0 OR $minimum_fee GTE 0 OR ($priceSetID and $lineItem)}
     <div class="crm-group amount_display-group">
       <div class="header-dark">
-        {if !$membershipBlock AND $amount OR ( $priceSetID and $lineItem )}{ts}Contribution Information{/ts}{else}{ts}Membership Fee{/ts}{/if}
+        {if !$membershipBlock AND $amount OR ($priceSetID and $lineItem)}{ts}Contribution Information{/ts}{else}{ts}Membership Fee{/ts}{/if}
       </div>
 
       <div class="display-block">
@@ -98,13 +98,13 @@
           {if $totalTaxAmount}
             {ts}Tax Amount{/ts}: <strong>{$totalTaxAmount|crmMoney}</strong><br />
           {/if}
-          {if $installments}{ts}Installment Amount{/ts}{else}{ts}Amount{/ts}{/if}: <strong>{$amount|crmMoney:$currency}{if $amount_level } &ndash; {$amount_level}{/if}</strong>
+          {if $installments}{ts}Installment Amount{/ts}{else}{ts}Amount{/ts}{/if}: <strong>{$amount|crmMoney:$currency}{if $amount_level} &ndash; {$amount_level}{/if}</strong>
         {/if}
 
         {if $receive_date}
           {ts}Date{/ts}: <strong>{$receive_date|crmDate}</strong><br />
         {/if}
-        {if $contributeMode ne 'notify' and $is_monetary and ! $is_pay_later and $trxn_id}
+        {if $trxn_id}
           {ts}Transaction #{/ts}: {$trxn_id}<br />
         {/if}
         {if $membership_trx_id}
@@ -200,7 +200,7 @@
 
   {if $onbehalfProfile && $onbehalfProfile|@count}
     <div class="crm-group onBehalf_display-group label-left crm-profile-view">
-      {include file="CRM/UF/Form/Block.tpl" fields=$onbehalfProfile prefix='onbehalf'}
+      {include file="CRM/UF/Form/Block.tpl" fields=$onbehalfProfile prefix='onbehalf' hideFieldset=false}
      </div>
   {/if}
 
@@ -212,7 +212,7 @@
       <div class="display-block">
        <div class="label-left crm-section honoree_profile-section">
           <strong>{$honorName}</strong><br/>
-          {include file="CRM/UF/Form/Block.tpl" fields=$honoreeProfileFields prefix='honor'}
+          {include file="CRM/UF/Form/Block.tpl" fields=$honoreeProfileFields prefix='honor' hideFieldset=false}
         </div>
       </div>
    </div>
@@ -220,7 +220,7 @@
 
   {if $customPre}
     <fieldset class="label-left crm-profile-view">
-      {include file="CRM/UF/Form/Block.tpl" fields=$customPre}
+      {include file="CRM/UF/Form/Block.tpl" fields=$customPre prefix=false hideFieldset=false}
     </fieldset>
   {/if}
 
@@ -246,35 +246,31 @@
     </div>
   {/if}
 
-  {if ( $contributeMode ne 'notify' and (!$is_pay_later or $isBillingAddressRequiredForPayLater) and $is_monetary and ( $amount GT 0 OR $minimum_fee GT 0 ) ) or $email }
-    {if $contributeMode ne 'notify' and (!$is_pay_later or $isBillingAddressRequiredForPayLater) and $is_monetary and ( $amount GT 0 OR $minimum_fee GT 0 ) }
-      {if $billingName or $address}
-        <div class="crm-group billing_name_address-group">
-          <div class="header-dark">
-            {ts}Billing Name and Address{/ts}
-          </div>
-          <div class="crm-section no-label billing_name-section">
-            <div class="content">{$billingName}</div>
-            <div class="clear"></div>
-          </div>
-          <div class="crm-section no-label billing_address-section">
-            <div class="content">{$address|nl2br}</div>
-            <div class="clear"></div>
-          </div>
-        </div>
-      {/if}
-    {/if}
-    {if !$emailExists}
-      <div class="crm-group contributor_email-group">
+  {if $billingName or $address}
+      <div class="crm-group billing_name_address-group">
         <div class="header-dark">
-          {ts}Your Email{/ts}
+            {ts}Billing Name and Address{/ts}
         </div>
-        <div class="crm-section no-label contributor_email-section">
-          <div class="content">{$email}</div>
+        <div class="crm-section no-label billing_name-section">
+          <div class="content">{$billingName}</div>
+          <div class="clear"></div>
+        </div>
+        <div class="crm-section no-label billing_address-section">
+          <div class="content">{$address|nl2br}</div>
           <div class="clear"></div>
         </div>
       </div>
     {/if}
+  {if !$emailExists && $email}
+    <div class="crm-group contributor_email-group">
+      <div class="header-dark">
+          {ts}Your Email{/ts}
+      </div>
+      <div class="crm-section no-label contributor_email-section">
+        <div class="content">{$email}</div>
+        <div class="clear"></div>
+      </div>
+    </div>
   {/if}
 
   {if in_array('credit_card_number', $form) || in_array('bank_account_number', $form) && ($amount GT 0 OR $minimum_fee GT 0)}
@@ -308,7 +304,7 @@
 
   {if $customPost}
     <fieldset class="label-left crm-profile-view">
-      {include file="CRM/UF/Form/Block.tpl" fields=$customPost}
+      {include file="CRM/UF/Form/Block.tpl" fields=$customPost prefix=false hideFieldset=false}
     </fieldset>
   {/if}
 

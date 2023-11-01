@@ -10,9 +10,6 @@
 {* Step 1 of New Event Wizard, and Edit Event Info form. *}
 
 <div class="crm-block crm-form-block crm-event-manage-eventinfo-form-block">
-  <div class="crm-submit-buttons">
-    {include file="CRM/common/formButtons.tpl" location="top"}
-  </div>
   <table class="form-layout-compressed">
     {if !empty($form.template_id)}
       <tr class="crm-event-manage-eventinfo-form-block-template_id">
@@ -70,7 +67,7 @@
       <td class="label">{$form.max_participants.label} {help id="id-max_participants" waitlist=$waitlist}</td>
       <td>
         {$form.max_participants.html|crmAddClass:four}
-        {if call_user_func(array('CRM_Core_Permission','check'), 'administer CiviCRM') }
+        {if call_user_func(array('CRM_Core_Permission','check'), 'administer CiviCRM')}
           <a class="crm-popup crm-hover-button" target="_blank" title="{ts}Edit Participant Status Options{/ts}" href="{crmURL p='civicrm/admin/participant_status' q='reset=1'}"><i class="crm-i fa-wrench" aria-hidden="true"></i></a>
         {/if}
       </td>
@@ -123,7 +120,7 @@
       </tr>
     {/if}
   </table>
-  {include file="CRM/common/customDataBlock.tpl"}
+  {include file="CRM/common/customDataBlock.tpl" entityID=$eventID}
   <div class="crm-submit-buttons">
     {include file="CRM/common/formButtons.tpl" location="bottom"}
   </div>

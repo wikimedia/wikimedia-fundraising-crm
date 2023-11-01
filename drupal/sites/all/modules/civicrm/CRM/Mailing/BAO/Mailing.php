@@ -816,10 +816,11 @@ class CRM_Mailing_BAO_Mailing extends CRM_Mailing_DAO_Mailing implements \Civi\C
    *
    * @param array $testParams
    *   Contains form values.
+   * @param int $mailingID
    *
-   * @return void
+   * @throws \Civi\Core\Exception\DBQueryException
    */
-  public function getTestRecipients($testParams) {
+  public static function getTestRecipients(array $testParams, int $mailingID): void {
     if (!empty($testParams['test_group']) && array_key_exists($testParams['test_group'], CRM_Core_PseudoConstant::group())) {
       $contacts = civicrm_api('contact', 'get', [
         'version' => 3,
@@ -852,6 +853,8 @@ ORDER BY   civicrm_email.is_bulkmail DESC
             'job_id' => $testParams['job_id'],
             'email_id' => $dao->email_id,
             'contact_id' => $groupContact,
+            'mailing_id' => $mailingID,
+            'is_test' => TRUE,
           ];
           CRM_Mailing_Event_BAO_MailingEventQueue::create($params);
         }
@@ -908,7 +911,7 @@ ORDER BY   civicrm_email.is_bulkmail DESC
     $fields = [];
     $fields[] = 'Message-ID';
     // CRM-17754 check if Resent-Message-id is set also if not add it in when re-laying reply email
-    if ($prefix == 'r') {
+    if ($prefix === 'r') {
       $fields[] = 'Resent-Message-ID';
     }
     foreach ($fields as $field) {
@@ -916,7 +919,6 @@ ORDER BY   civicrm_email.is_bulkmail DESC
         $headers[$field] = '<' . implode($config->verpSeparator,
             [
               $localpart . $prefix,
-              $job_id,
               $event_queue_id,
               $hash,
             ]
@@ -1017,12 +1019,14 @@ ORDER BY   civicrm_email.is_bulkmail DESC
       $verp['reply'] = "\"{$this->from_name}\" <{$this->from_email}>";
     }
 
+    // Generating URLs is expensive, so we only call it once for each of these 5 URLs.
+    $genericURL = CRM_Utils_System::url('civicrm/mailing/genericUrlPath', "reset=1&jid={$job_id}&qid={$event_queue_id}&h={$hash}", TRUE, NULL, TRUE, TRUE);
     $urls = [
-      'forward' => CRM_Utils_System::url('civicrm/mailing/forward', "reset=1&jid={$job_id}&qid={$event_queue_id}&h={$hash}", TRUE, NULL, TRUE, TRUE),
-      'unsubscribeUrl' => CRM_Utils_System::url('civicrm/mailing/unsubscribe', "reset=1&jid={$job_id}&qid={$event_queue_id}&h={$hash}", TRUE, NULL, TRUE, TRUE),
-      'resubscribeUrl' => CRM_Utils_System::url('civicrm/mailing/resubscribe', "reset=1&jid={$job_id}&qid={$event_queue_id}&h={$hash}", TRUE, NULL, TRUE, TRUE),
-      'optOutUrl' => CRM_Utils_System::url('civicrm/mailing/optout', "reset=1&jid={$job_id}&qid={$event_queue_id}&h={$hash}", TRUE, NULL, TRUE, TRUE),
-      'subscribeUrl' => CRM_Utils_System::url('civicrm/mailing/subscribe', 'reset=1', TRUE, NULL, TRUE, TRUE),
+      'forward' => str_replace('genericUrlPath', 'forward', $genericURL),
+      'unsubscribeUrl' => str_replace('genericUrlPath', 'unsubscribe', $genericURL),
+      'resubscribeUrl' => str_replace('genericUrlPath', 'resubscribe', $genericURL),
+      'optOutUrl' => str_replace('genericUrlPath', 'optout', $genericURL),
+      'subscribeUrl' => str_replace('genericUrlPath', 'subscribe', $genericURL),
     ];
 
     $headers = [
@@ -2752,7 +2756,7 @@ WHERE  civicrm_mailing_job.id = %1
     }
 
     // Split up the parent jobs into multiple child jobs
-    $mailerJobSize = Civi::settings()->get('mailerJobSize');
+    $mailerJobSize = (int) Civi::settings()->get('mailerJobSize');
     CRM_Mailing_BAO_MailingJob::runJobs_pre($mailerJobSize, $mode);
     CRM_Mailing_BAO_MailingJob::runJobs(NULL, $mode);
     CRM_Mailing_BAO_MailingJob::runJobs_post($mode);
@@ -2859,7 +2863,7 @@ ORDER BY civicrm_mailing.id DESC";
       $mailing['openstats'] = "Opens: " .
         CRM_Utils_Array::value($values['mailing_id'], $openCounts, 0) .
         "<br />Clicks: " .
-        CRM_Utils_Array::value($values['mailing_id'], $clickCounts, 0);
+        $clickCounts[$values['mailing_id']] ?? 0;
 
       $actionLinks = [
         CRM_Core_Action::VIEW => [

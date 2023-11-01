@@ -294,7 +294,7 @@ function civicrm_api3_mailing_submit($params) {
   if (isset($params['approval_date'])) {
     $updateParams['approval_date'] = $params['approval_date'];
     $updateParams['approver_id'] = CRM_Core_Session::getLoggedInContactID();
-    $updateParams['approval_status_id'] = CRM_Utils_Array::value('approval_status_id', $updateParams, CRM_Core_OptionGroup::getDefaultValue('mail_approval_status'));
+    $updateParams['approval_status_id'] = $updateParams['approval_status_id'] ?? CRM_Core_OptionGroup::getDefaultValue('mail_approval_status');
   }
   if (isset($params['approval_note'])) {
     $updateParams['approval_note'] = $params['approval_note'];
@@ -663,8 +663,10 @@ function civicrm_api3_mailing_send_test($params) {
         civicrm_api3('MailingEventQueue', 'create',
           [
             'job_id' => $job['id'],
+            'is_test' => TRUE,
             'email_id' => $emailId,
             'contact_id' => $contactId,
+            'mailing_id' => $params['mailing_id'],
           ]
         );
       }

@@ -192,7 +192,7 @@ class AutocompleteAction extends AbstractAction {
       $item = [
         'id' => $row['data'][$keyField],
         'label' => $row['columns'][0]['val'],
-        'icon' => $row['columns'][0]['icons'][0]['class'] ?? NULL,
+        'icon' => $row['columns'][0]['icons']['left'][0] ?? NULL,
         'description' => [],
       ];
       foreach (array_slice($row['columns'], 1) as $col) {
@@ -285,16 +285,8 @@ class AutocompleteAction extends AbstractAction {
    */
   private function getKeyField() {
     $entityName = $this->savedSearch['api_entity'];
-    if ($this->key) {
-      /** @var \CRM_Core_DAO $dao */
-      $dao = CoreUtil::getInfoItem($entityName, 'dao');
-      if ($dao && method_exists($dao, 'indices')) {
-        foreach ($dao::indices(FALSE) as $index) {
-          if (!empty($index['unique']) && in_array($this->key, $index['field'], TRUE)) {
-            return $this->key;
-          }
-        }
-      }
+    if ($this->key && in_array($this->key, CoreUtil::getInfoItem($entityName, 'match_fields') ?? [], TRUE)) {
+      return $this->key;
     }
     return $this->display['settings']['keyField'] ?? CoreUtil::getIdFieldName($entityName);
   }

@@ -13,7 +13,6 @@ namespace Civi\Search;
 
 use Civi\Api4\Action\SearchDisplay\AbstractRunAction;
 use Civi\Api4\Entity;
-use Civi\Api4\Extension;
 use Civi\Api4\Query\SqlEquation;
 use Civi\Api4\Query\SqlFunction;
 use Civi\Api4\SearchDisplay;
@@ -35,8 +34,6 @@ class Admin {
    */
   public static function getAdminSettings():array {
     $schema = self::getSchema();
-    $extensions = Extension::get(FALSE)->addWhere('status', '=', 'installed')
-      ->execute()->indexBy('key')->column('label');
     $data = [
       'schema' => self::addImplicitFKFields($schema),
       'joins' => self::getJoins($schema),
@@ -48,7 +45,7 @@ class Admin {
       'styles' => \CRM_Utils_Array::makeNonAssociative(self::getStyles()),
       'defaultPagerSize' => (int) \Civi::settings()->get('default_pager_size'),
       'defaultDisplay' => SearchDisplay::getDefault(FALSE)->setSavedSearch(['id' => NULL])->execute()->first(),
-      'modules' => $extensions,
+      'modules' => \CRM_Core_BAO_Managed::getBaseModules(),
       'defaultContactType' => \CRM_Contact_BAO_ContactType::basicTypeInfo()['Individual']['name'] ?? NULL,
       'defaultDistanceUnit' => \CRM_Utils_Address::getDefaultDistanceUnit(),
       'jobFrequency' => \Civi\Api4\Job::getFields()
@@ -56,7 +53,7 @@ class Admin {
         ->setLoadOptions(['id', 'label'])
         ->execute()->first()['options'],
       'tags' => Tag::get()
-        ->addSelect('id', 'name', 'color', 'is_selectable', 'description')
+        ->addSelect('id', 'label', 'color', 'is_selectable', 'description')
         ->addWhere('used_for', 'CONTAINS', 'civicrm_saved_search')
         ->execute(),
     ];
@@ -98,6 +95,8 @@ class Admin {
       'NOT LIKE' => E::ts('Not Like'),
       'REGEXP' => E::ts('Matches Pattern'),
       'NOT REGEXP' => E::ts("Doesn't Match Pattern"),
+      'REGEXP BINARY' => E::ts('Matches Pattern (case-sensitive)'),
+      'NOT REGEXP BINARY' => E::ts("Doesn't Match Pattern (case-sensitive)"),
       'BETWEEN' => E::ts('Is Between'),
       'NOT BETWEEN' => E::ts('Not Between'),
       'IS EMPTY' => E::ts('Is Empty'),
@@ -153,7 +152,7 @@ class Admin {
           $getFields = civicrm_api4($entity['name'], 'getFields', [
             'select' => ['name', 'title', 'label', 'description', 'type', 'options', 'input_type', 'input_attrs', 'data_type', 'serialize', 'entity', 'fk_entity', 'readonly', 'operators', 'suffixes', 'nullable'],
             'where' => [['deprecated', '=', FALSE], ['name', 'NOT IN', ['api_key', 'hash']]],
-            'orderBy' => ['label'],
+            'orderBy' => ['label' => 'ASC'],
           ])->indexBy('name');
         }
         catch (\CRM_Core_Exception $e) {
@@ -337,21 +336,29 @@ class Admin {
 
             // For dynamic references getTargetEntities will return multiple targets; for normal joins this loop will only run once
             foreach ($reference->getTargetEntities() as $targetTable => $targetEntityName) {
-              if (!isset($allowedEntities[$targetEntityName]) || $targetEntityName === $entity['name']) {
+              if (
+                !isset($allowedEntities[$targetEntityName]) ||
+                // What to do with self-references? They're weird but sometimes useful.
+                // For now, only allowing it for dynamic columns since they're explicitly declared
+                // (e.g. a Note can be a comment on a Note), and only the 1-n join since n-1 can be done with implicit joins.
+                ($targetEntityName === $entity['name'] && !$dynamicCol)
+              ) {
                 continue;
               }
               $targetEntity = $allowedEntities[$targetEntityName];
-              // Add the straight 1-1 join
-              $alias = $entity['name'] . '_' . $targetEntityName . '_' . $keyField['name'];
-              $joins[$entity['name']][] = [
-                'label' => $entity['title'] . ' ' . ($dynamicCol ? $targetEntity['title'] : $keyField['label']),
-                'description' => '',
-                'entity' => $targetEntityName,
-                'conditions' => self::getJoinConditions($keyField['name'], $alias . '.' . $reference->getTargetKey(), $targetTable, $dynamicCol),
-                'defaults' => self::getJoinDefaults($alias, $targetEntity),
-                'alias' => $alias,
-                'multi' => FALSE,
-              ];
+              // Add the straight 1-1 join (but only if it's not a reference to itself, see above)
+              if ($targetEntityName !== $entity['name']) {
+                $alias = $entity['name'] . '_' . $targetEntityName . '_' . $keyField['name'];
+                $joins[$entity['name']][] = [
+                  'label' => $entity['title'] . ' ' . ($dynamicCol ? $targetEntity['title'] : $keyField['label']),
+                  'description' => '',
+                  'entity' => $targetEntityName,
+                  'conditions' => self::getJoinConditions($keyField['name'], $alias . '.' . $reference->getTargetKey(), $targetTable, $dynamicCol),
+                  'defaults' => self::getJoinDefaults($alias, $targetEntity),
+                  'alias' => $alias,
+                  'multi' => FALSE,
+                ];
+              }
               // Flip the conditions & add the reverse (1-n) join
               $alias = $targetEntityName . '_' . $entity['name'] . '_' . $keyField['name'];
               $joins[$targetEntityName][] = [

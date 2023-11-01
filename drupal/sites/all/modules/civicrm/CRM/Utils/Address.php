@@ -32,7 +32,7 @@ class CRM_Utils_Address {
    *   The desired address format.
    * @param bool $microformat
    *   If true indicates, the address to be built in hcard-microformat standard.
-   * @param bool $mailing
+   * @param bool $unused
    *   Should ALWAYS be false.
    * @param string[] $tokenFields
    *
@@ -44,24 +44,18 @@ class CRM_Utils_Address {
     $fields,
     $format = NULL,
     $microformat = FALSE,
-    $mailing = FALSE,
+    $unused = FALSE,
     $tokenFields = NULL
   ) {
-    $mailing = FALSE;
 
     if (!$format) {
       $format = Civi::settings()->get('address_format');
     }
-
-    if ($mailing) {
-      $format = Civi::settings()->get('mailing_format');
-    }
-
     $formatted = $format;
 
     $fullPostalCode = $fields['postal_code'] ?? NULL;
     if (!empty($fields['postal_code_suffix'])) {
-      $fullPostalCode .= "-$fields[postal_code_suffix]";
+      $fullPostalCode .= '-' . $fields['postal_code_suffix'];
     }
 
     // make sure that some of the fields do have values
@@ -78,47 +72,29 @@ class CRM_Utils_Address {
       }
     }
 
-    //CRM-16876 Display countries in all caps when in mailing mode.
-    if ($mailing && !empty($fields['country'])) {
-      if (Civi::settings()->get('hideCountryMailingLabels')) {
-        $domain = CRM_Core_BAO_Domain::getDomain();
-        $domainLocation = CRM_Core_BAO_Location::getValues(['contact_id' => $domain->contact_id]);
-        $domainAddress = $domainLocation['address'][1];
-        $domainCountryId = $domainAddress['country_id'];
-        if ($fields['country'] == CRM_Core_PseudoConstant::country($domainCountryId)) {
-          $fields['country'] = NULL;
-        }
-        else {
-          //Capitalization display on uppercase to contries with special characters
-          $fields['country'] = mb_convert_case($fields['country'], MB_CASE_UPPER, "UTF-8");
-        }
-      }
-      else {
-        $fields['country'] = mb_convert_case($fields['country'], MB_CASE_UPPER, "UTF-8");
-      }
-    }
-
     if (!$microformat) {
       // replacements in case of Individual Name Format
       $replacements = [
         'contact.display_name' => $fields['display_name'] ?? NULL,
-        'contact.individual_prefix' => $fields['individual_prefix'] ?? NULL,
         'contact.formal_title' => $fields['formal_title'] ?? NULL,
         'contact.first_name' => $fields['first_name'] ?? NULL,
         'contact.middle_name' => $fields['middle_name'] ?? NULL,
         'contact.last_name' => $fields['last_name'] ?? NULL,
-        'contact.individual_suffix' => $fields['individual_suffix'] ?? NULL,
+        'contact.individual_prefix' => $fields['prefix_id:label'] ?? ($fields['individual_prefix'] ?? NULL),
+        'contact.prefix_id:label' => $fields['prefix_id:label'] ?? ($fields['individual_prefix'] ?? NULL),
+        'contact.individual_suffix' => $fields['suffix_id:label'] ?? ($fields['individual_suffix'] ?? NULL),
+        'contact.suffix_id:label' => $fields['suffix_id:label'] ?? ($fields['individual_suffix'] ?? NULL),
         'contact.address_name' => $fields['address_name'] ?? NULL,
         'contact.street_address' => $fields['street_address'] ?? NULL,
         'contact.supplemental_address_1' => $fields['supplemental_address_1'] ?? NULL,
         'contact.supplemental_address_2' => $fields['supplemental_address_2'] ?? NULL,
         'contact.supplemental_address_3' => $fields['supplemental_address_3'] ?? NULL,
         'contact.city' => $fields['city'] ?? NULL,
-        'contact.state_province_name' => $fields['state_province_name'] ?? NULL,
-        'contact.county' => $fields['county'] ?? NULL,
-        'contact.state_province' => $fields['state_province'] ?? NULL,
+        'contact.state_province_name' => $fields['state_province_id:label'] ?? ($fields['state_province_name'] ?? NULL),
+        'contact.county' => $fields['county_id:label'] ?? ($fields['county'] ?? NULL),
+        'contact.state_province' => $fields['state_province_id:label'] ?? ($fields['state_province'] ?? NULL),
         'contact.postal_code' => $fullPostalCode,
-        'contact.country' => $fields['country'] ?? NULL,
+        'contact.country' => $fields['country_id:label'] ?? ($fields['country'] ?? NULL),
         'contact.world_region' => $fields['world_region'] ?? NULL,
         'contact.geo_code_1' => $fields['geo_code_1'] ?? NULL,
         'contact.geo_code_2' => $fields['geo_code_2'] ?? NULL,

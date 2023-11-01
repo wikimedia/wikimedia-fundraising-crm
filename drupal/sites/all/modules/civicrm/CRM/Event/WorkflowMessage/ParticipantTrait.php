@@ -38,6 +38,19 @@ trait CRM_Event_WorkflowMessage_ParticipantTrait {
   public $isPrimary;
 
   /**
+   * Should a participant count column be shown.
+   *
+   * This would be true if there is a line item on the receipt
+   * with more than one participant in it. Otherwise it's confusing to
+   * show.
+   *
+   * @var bool
+   *
+   * @scope tplParams as isShowParticipantCount
+   */
+  public $isShowParticipantCount;
+
+  /**
    * @var int
    *
    * @scope tokenContext as eventId, tplParams as eventID
@@ -152,7 +165,26 @@ trait CRM_Event_WorkflowMessage_ParticipantTrait {
   }
 
   /**
-   * Set contribution object.
+   * It is a good idea to show the participant count column.
+   *
+   * This would be true if there is a line item on the receipt
+   * with more than one participant in it. Otherwise it's confusing to
+   * show.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function getIsShowParticipantCount(): bool {
+    foreach ($this->getLineItems() as $lineItem) {
+      if ((int) $lineItem['participant_count'] > 1) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
+   * Set participant object.
    *
    * @param array $participant
    *
@@ -179,9 +211,16 @@ trait CRM_Event_WorkflowMessage_ParticipantTrait {
     if (!$this->participant) {
       $this->participant = Participant::get(FALSE)
         ->addWhere('id', '=', $this->participantID)
-        ->addSelect('registered_by_id')->execute()->first();
+        ->setSelect($this->getFieldsToLoadForParticipant())->execute()->first();
     }
     return $this->participant;
+  }
+
+  /**
+   * Get the participant fields we need to load.
+   */
+  protected function getFieldsToLoadForParticipant(): array {
+    return ['registered_by_id'];
   }
 
   /**

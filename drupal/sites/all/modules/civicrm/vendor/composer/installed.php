@@ -5,7 +5,7 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'c919954c5a7ca775addbfc9fe0be0e62254048c7',
+        'reference' => '88eaa66996586c9fbd4bf26ff3796d76cc04672c',
         'name' => 'civicrm/civicrm-core',
         'dev' => true,
     ),
@@ -43,7 +43,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'c919954c5a7ca775addbfc9fe0be0e62254048c7',
+            'reference' => '88eaa66996586c9fbd4bf26ff3796d76cc04672c',
             'dev_requirement' => false,
         ),
         'civicrm/civicrm-cxn-rpc' => array(
@@ -159,15 +159,6 @@
             'replaced' => array(
                 0 => '*',
             ),
-        ),
-        'html2text/html2text' => array(
-            'pretty_version' => '4.3.1',
-            'version' => '4.3.1.0',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../html2text/html2text',
-            'aliases' => array(),
-            'reference' => '61ad68e934066a6f8df29a3d23a6460536d0855c',
-            'dev_requirement' => false,
         ),
         'laminas/laminas-escaper' => array(
             'pretty_version' => '2.6.1',
@@ -542,6 +533,15 @@
             'install_path' => __DIR__ . '/../scssphp/scssphp',
             'aliases' => array(),
             'reference' => '0f1e1516ed2412ad43e42a6a319e77624ba1f713',
+            'dev_requirement' => false,
+        ),
+        'soundasleep/html2text' => array(
+            'pretty_version' => '2.1.0',
+            'version' => '2.1.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../soundasleep/html2text',
+            'aliases' => array(),
+            'reference' => '83502b6f8f1aaef8e2e238897199d64f284b4af3',
             'dev_requirement' => false,
         ),
         'symfony/config' => array(

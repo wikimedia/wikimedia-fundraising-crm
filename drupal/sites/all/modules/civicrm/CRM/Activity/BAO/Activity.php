@@ -801,18 +801,26 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
   }
 
   /**
+   * @param string|null $entityName
+   * @param int|null $userId
+   * @param array $conditions
    * @inheritDoc
    */
-  public function addSelectWhereClause() {
+  public function addSelectWhereClause(string $entityName = NULL, int $userId = NULL, array $conditions = []): array {
     $clauses = [];
     $permittedActivityTypeIDs = self::getPermittedActivityTypes();
-    $allActivityTypes = self::buildOptions('activity_type_id');
+    if (!empty($conditions['activity_type_id'])) {
+      $allActivityTypes = (array) $conditions['activity_type_id'];
+    }
+    else {
+      $allActivityTypes = self::buildOptions('activity_type_id', 'validate');
+    }
     if (empty($permittedActivityTypeIDs)) {
       // This just prevents a mysql fail if they have no access - should be extremely edge case.
       $permittedActivityTypeIDs = [0];
     }
-    if (array_keys($allActivityTypes) !== array_keys($permittedActivityTypeIDs)) {
-      $clauses['activity_type_id'] = ('IN (' . implode(', ', $permittedActivityTypeIDs) . ')');
+    if (array_diff($allActivityTypes, $permittedActivityTypeIDs)) {
+      $clauses['activity_type_id'] = ['IN (' . implode(', ', $permittedActivityTypeIDs) . ')'];
     }
 
     $contactClause = CRM_Utils_SQL::mergeSubquery('Contact');
@@ -820,7 +828,7 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
       $contactClause = implode(' AND contact_id ', $contactClause);
       $clauses['id'][] = "IN (SELECT activity_id FROM civicrm_activity_contact WHERE contact_id $contactClause)";
     }
-    CRM_Utils_Hook::selectWhereClause($this, $clauses);
+    CRM_Utils_Hook::selectWhereClause($this, $clauses, $userId, $conditions);
     return $clauses;
   }
 
@@ -2327,8 +2335,8 @@ INNER JOIN  civicrm_option_group grp ON (grp.id = option_group_id AND grp.name =
     $params['rowCount'] = $params['rp'];
     $params['sort'] = $params['sortBy'] ?? NULL;
     $params['caseId'] = NULL;
-    $context = $params['context'] ?? NULL;
-    $showContactOverlay = !CRM_Utils_String::startsWith($context, "dashlet");
+    $context = $params['context'] ?? '';
+    $showContactOverlay = !str_starts_with($context, "dashlet");
     $activityTypeInfo = civicrm_api3('OptionValue', 'get', [
       'option_group_id' => "activity_type",
       'options' => ['limit' => 0],

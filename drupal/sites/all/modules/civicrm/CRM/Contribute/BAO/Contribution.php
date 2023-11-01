@@ -409,6 +409,8 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution im
     $billingFirstName = $params['billing_first_name'] ?? NULL;
     $billingMiddleName = $params['billing_middle_name'] ?? NULL;
     $billingLastName = $params['billing_last_name'] ?? NULL;
+    // Note this is NOT used when creating a billing address. It is probably passed
+    // the the payment processor - which is horrible & could maybe change.
     $addressParams['address_name'] = "{$billingFirstName}" . CRM_Core_DAO::VALUE_SEPARATOR . "{$billingMiddleName}" . CRM_Core_DAO::VALUE_SEPARATOR . "{$billingLastName}";
 
     foreach ($billingFields as $value) {
@@ -1029,6 +1031,7 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution im
             'class' => 'medium-popup',
             'qs' => "reset=1&id=%%id%%&contribution_id=%%contribution_id%%",
             'title' => ts('Edit Payment'),
+            'weight' => CRM_Core_Action::getWeight(CRM_Core_Action::UPDATE),
           ],
         ];
         $paymentEditLink = CRM_Core_Action::formLink(
@@ -1655,16 +1658,21 @@ LEFT JOIN civicrm_option_value contribution_status ON (civicrm_contribution.cont
    * thought).
    *
    * @param array $params
-   * @param int $billingLocationTypeID
    *
    * @return int
    *   address id
    */
-  public static function createAddress($params, $billingLocationTypeID) {
+  public static function createAddress($params) {
+    $billingLocationTypeID = CRM_Core_BAO_LocationType::getBilling();
     [$hasBillingField, $addressParams] = self::getBillingAddressParams($params, $billingLocationTypeID);
     if ($hasBillingField) {
-      $address = CRM_Core_BAO_Address::writeRecord($addressParams);
-      return $address->id;
+      $nameFields = [
+        $params['billing_first_name'] ?? NULL,
+        $params['billing_middle_name'] ?? NULL,
+        $params['billing_last_name'] ?? NULL,
+      ];
+      $addressParams['name'] = implode(' ', array_filter($nameFields));
+      return (int) CRM_Core_BAO_Address::writeRecord($addressParams)->id;
     }
     return NULL;
 
@@ -1714,35 +1722,18 @@ WHERE      $condition
    * Online Event Registration or Online Membership signup.
    *
    * @param int $componentId
-   *   Participant/membership id.
-   * @param string $componentName
-   *   Event/Membership.
+   *   Participant id.
    *
    * @return int
    *   pending contribution id.
    */
-  public static function checkOnlinePendingContribution($componentId, $componentName) {
+  public static function checkOnlinePendingContribution($componentId) {
     $contributionId = NULL;
-    if (!$componentId ||
-      !in_array($componentName, ['Event', 'Membership'])
-    ) {
-      return $contributionId;
-    }
 
-    if ($componentName === 'Event') {
-      $idName = 'participant_id';
-      $componentTable = 'civicrm_participant';
-      $paymentTable = 'civicrm_participant_payment';
-      $source = ts('Online Event Registration');
-    }
-
-    if ($componentName === 'Membership') {
-      $idName = 'membership_id';
-      $componentTable = 'civicrm_membership';
-      $paymentTable = 'civicrm_membership_payment';
-      $source = ts('Online Contribution');
-    }
-
+    $idName = 'participant_id';
+    $componentTable = 'civicrm_participant';
+    $paymentTable = 'civicrm_participant_payment';
+    $source = ts('Online Event Registration');
     $pendingStatusId = array_search('Pending', CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name'));
 
     $query = "
@@ -3375,7 +3366,7 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
     }
     // record line items and financial items
     if (empty($params['skipLineItem'])) {
-      CRM_Price_BAO_LineItem::processPriceSet($entityId, CRM_Utils_Array::value('line_item', $params), $params['contribution'], $entityTable, $isUpdate);
+      CRM_Price_BAO_LineItem::processPriceSet($entityId, $params['line_item'] ?? NULL, $params['contribution'], $entityTable, $isUpdate);
     }
 
     // create batch entry if batch_id is passed and
@@ -3499,7 +3490,7 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
             'version' => 3,
             'id' => ($props['contribution_page_id']),
           ]);
-          $types = (array) CRM_Utils_Array::value('payment_processor', $page, 0);
+          $types = (array) $page['payment_processor'] ?? 0;
           $params['condition'] = 'id IN (' . implode(',', $types) . ')';
         }
         break;
@@ -3963,7 +3954,7 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
     // if we are still empty see if we can use anything from a contribution page.
     if (!empty($pageValues['receipt_from_email'])) {
       return [
-        CRM_Utils_Array::value('receipt_from_name', $pageValues),
+        $pageValues['receipt_from_name'] ?? NULL,
         $pageValues['receipt_from_email'],
       ];
     }
@@ -4308,6 +4299,7 @@ LIMIT 1;";
         'is_refund' => 0,
       ],
       'extra' => '',
+      'weight' => 0,
     ];
 
     if (CRM_Core_Config::isEnabledBackOfficeCreditCardPayments()) {
@@ -4325,6 +4317,7 @@ LIMIT 1;";
           'mode' => 'live',
         ],
         'extra' => '',
+        'weight' => 0,
       ];
     }
     if ($contributionStatus !== 'Pending') {
@@ -4341,6 +4334,7 @@ LIMIT 1;";
           'is_refund' => 1,
         ],
         'extra' => '',
+        'weight' => 0,
       ];
     }
 

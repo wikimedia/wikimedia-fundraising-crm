@@ -346,22 +346,25 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
       ]);
     }
     else {
-      $this->addButtons([
+      $buttons = [
         [
           'type' => 'upload',
           'name' => ts('Save'),
           'isDefault' => TRUE,
         ],
-        [
+      ];
+      if (!$this->_id) {
+        $buttons[] = [
           'type' => 'upload',
           'name' => ts('Save and New'),
           'subName' => 'new',
-        ],
-        [
-          'type' => 'cancel',
-          'name' => ts('Cancel'),
-        ],
-      ]);
+        ];
+      };
+      $buttons[] = [
+        'type' => 'cancel',
+        'name' => ts('Cancel'),
+      ];
+      $this->addButtons($buttons);
     }
   }
 
@@ -424,6 +427,21 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
     // tests when contact_id is not submitted - so this fallback
     // is precautionary in order to be similar to past behaviour.
     return (int) ($this->getSubmittedValue('contact_id') ?: $this->_contactID);
+  }
+
+  /**
+   * Get the membership ID.
+   *
+   * For new memberships this may initially be NULL.
+   *
+   * @return int
+   *
+   * @api This function will not change in a minor release and is supported for
+   * use outside of core. This annotation / external support for properties
+   * is only given where there is specific test cover.
+   */
+  public function getMembershipID(): ?int {
+    return $this->_id;
   }
 
   /**

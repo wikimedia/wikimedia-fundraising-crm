@@ -22,6 +22,14 @@ use Civi\Standalone\Security;
  */
 class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
 
+  /**
+   * @internal
+   * @return bool
+   */
+  public function isLoaded(): bool {
+    return TRUE;
+  }
+
   public function missingStandaloneExtension() {
     // error_log("sessionStart, " . (class_exists(\Civi\Standalone\Security::class) ? 'exists' : 'no ext'));
     return !class_exists(\Civi\Standalone\Security::class);
@@ -277,7 +285,7 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
     // Q. what does this do? Why do we only include this for maintenance?
     if ($maintenance) {
       $smarty = CRM_Core_Smarty::singleton();
-      echo implode('', $smarty->_tpl_vars['pageHTMLHead']);
+      echo implode('', $smarty->getTemplateVars('pageHTMLHead'));
     }
 
     // @todo Add variables from the body tag? (for Shoreditch)

@@ -304,12 +304,12 @@
 
    {foreach from=$tagSetTags item=displayTagset}
      <p class="crm-block crm-content-block crm-case-caseview-display-tagset">
-       &nbsp;&nbsp;<strong>{$displayTagset.name}:</strong>
-       {', '|implode:$displayTagset.items}
+       &nbsp;&nbsp;<strong>{$displayTagset.label}:</strong>
+       {', '|implode:$displayTagset.items|escape}
      </p>
    {/foreach}
 
-   {if !$tags && !$tagSetTags }
+   {if !$tags && !$tagSetTags}
      <div class="status">
        {ts}There are no tags currently assigned to this case.{/ts}
      </div>

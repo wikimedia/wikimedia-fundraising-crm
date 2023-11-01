@@ -148,7 +148,7 @@ trait SavedSearchInspectorTrait {
    */
   private function getQuery() {
     if (!isset($this->_selectQuery) && !empty($this->savedSearch['api_entity'])) {
-      if (!in_array('DAOEntity', CoreUtil::getInfoItem($this->savedSearch['api_entity'], 'type'), TRUE)) {
+      if (!CoreUtil::isType($this->savedSearch['api_entity'], 'DAOEntity')) {
         return $this->_selectQuery = FALSE;
       }
       $api = Request::create($this->savedSearch['api_entity'], 'get', $this->savedSearch['api_params']);
@@ -234,6 +234,17 @@ trait SavedSearchInspectorTrait {
     return !in_array($idField, $apiParams['groupBy']);
   }
 
+  private function renameIfAggregate(string $fieldPath, bool $asSelect = FALSE): string {
+    $renamed = $fieldPath;
+    if ($this->canAggregate($fieldPath)) {
+      $renamed = 'GROUP_CONCAT_' . str_replace(['.', ':'], '_', $fieldPath);
+      if ($asSelect) {
+        $renamed = "GROUP_CONCAT(UNIQUE $fieldPath) AS $renamed";
+      }
+    }
+    return $renamed;
+  }
+
   /**
    * @param string|array $fieldName
    *   If multiple field names are given they will be combined in an OR clause
@@ -271,7 +282,7 @@ trait SavedSearchInspectorTrait {
     foreach ($fieldNames as $fieldName) {
       $field = $this->getField($fieldName);
       $dataType = $field['data_type'] ?? NULL;
-      $operators = ($field['operators'] ?? []) ?: CoreUtil::getOperators();
+      $operators = array_values($field['operators'] ?? []) ?: CoreUtil::getOperators();
       // Array is either associative `OP => VAL` or sequential `IN (...)`
       if (is_array($value)) {
         $value = array_filter($value, [$this, 'hasValue']);
@@ -279,13 +290,15 @@ trait SavedSearchInspectorTrait {
         if (array_diff_key($value, array_flip(CoreUtil::getOperators()))) {
           // Use IN for regular fields
           if (empty($field['serialize'])) {
-            $filterClauses[] = [$fieldName, 'IN', $value];
+            $op = in_array('IN', $operators, TRUE) ? 'IN' : $operators[0];
+            $filterClauses[] = [$fieldName, $op, $value];
           }
           // Use an OR group of CONTAINS for array fields
           else {
+            $op = in_array('CONTAINS', $operators, TRUE) ? 'CONTAINS' : $operators[0];
             $orGroup = [];
             foreach ($value as $val) {
-              $orGroup[] = [$fieldName, 'CONTAINS', $val];
+              $orGroup[] = [$fieldName, $op, $val];
             }
             $filterClauses[] = ['OR', $orGroup];
           }
@@ -315,7 +328,8 @@ trait SavedSearchInspectorTrait {
         $filterClauses[] = [$fieldName, 'IN', (array) $value];
       }
       else {
-        $filterClauses[] = [$fieldName, '=', $value];
+        $op = in_array('=', $operators, TRUE) ? '=' : $operators[0];
+        $filterClauses[] = [$fieldName, $op, $value];
       }
     }
     // Single field

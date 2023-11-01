@@ -17,12 +17,10 @@
   <script type="text/javascript">
 
     // Putting these functions directly in template so they are available for standalone forms
-    function useAmountOther() {
-      var priceset = {/literal}{if $contriPriceset}'{$contriPriceset}'{else}0{/if}{literal};
-
-      for( i=0; i < document.Main.elements.length; i++ ) {
+    function useAmountOther(mainPriceFieldName) {
+     for( i=0; i < document.Main.elements.length; i++ ) {
         element = document.Main.elements[i];
-        if ( element.type == 'radio' && element.name == priceset ) {
+        if ( element.type == 'radio' && element.name === mainPriceFieldName ) {
           if (element.value == '0' ) {
             element.click();
           }
@@ -33,12 +31,9 @@
       }
     }
 
-    function clearAmountOther() {
-      var priceset = {/literal}{if $priceset}'#{$priceset}'{else}0{/if}{literal}
-      if( priceset ){
-        cj(priceset).val('');
-        cj(priceset).blur();
-      }
+    function clearAmountOther(otherPriceFieldName) {
+      cj('#' + otherPriceFieldName).val('');
+      cj('#' + otherPriceFieldName).blur();
       if (document.Main.amount_other == null) return; // other_amt field not present; do nothing
       document.Main.amount_other.value = "";
     }
@@ -50,7 +45,7 @@
     {include file="CRM/Contribute/Form/Contribution/PreviewHeader.tpl"}
   {/if}
 
-  {if call_user_func(array('CRM_Core_Permission','check'), 'administer CiviCRM') }
+  {if call_user_func(array('CRM_Core_Permission','check'), 'administer CiviCRM')}
     {capture assign="buttonTitle"}{ts}Configure Contribution Page{/ts}{/capture}
     {crmButton target="_blank" p="civicrm/admin/contribute/settings" q="reset=1&action=update&id=`$contributionPageID`" fb=1 title="$buttonTitle" icon="fa-wrench"}{ts}Configure{/ts}{/crmButton}
     <div class='clear'></div>
@@ -71,7 +66,7 @@
     </div>
     {include file="CRM/common/cidzero.tpl"}
 
-    {if $islifetime or $ispricelifetime}
+    {if $isShowMembershipBlock && $hasExistingLifetimeMembership}
       <div class="help">{ts}You have a current Lifetime Membership which does not need to be renewed.{/ts}</div>
     {/if}
 
@@ -94,14 +89,14 @@
       {/if}
     {else}
       <div id="priceset-div">
-        {include file="CRM/Price/Form/PriceSet.tpl" extends="Contribution"}
+        {include file="CRM/Price/Form/PriceSet.tpl" extends="Contribution" hideTotal=$quickConfig}
       </div>
     {/if}
 
     {if !$ccid}
       {crmRegion name='contribution-main-pledge-block'}
       {if $pledgeBlock}
-        {if $is_pledge_payment}
+        {if array_key_exists('pledge_amount', $form)}
           <div class="crm-public-form-item crm-section {$form.pledge_amount.name}-section">
             <div class="label">{$form.pledge_amount.label}&nbsp;<span class="crm-marker">*</span></div>
             <div class="content">{$form.pledge_amount.html}</div>
@@ -112,19 +107,19 @@
             <div class="label">&nbsp;</div>
             <div class="content">
               {$form.is_pledge.html}&nbsp;
-              {if $is_pledge_interval}
+              {if array_key_exists('pledge_frequency_interval', $form)}
                 {$form.pledge_frequency_interval.html}&nbsp;
               {/if}
               {$form.pledge_frequency_unit.html}<span id="pledge_installments_num">&nbsp;{ts}for{/ts}&nbsp;{$form.pledge_installments.html}&nbsp;{ts}installments.{/ts}</span>
             </div>
             <div class="clear"></div>
-            {if $start_date_editable}
+            {if array_key_exists('start_date', $form) && $start_date_editable}
               {if $is_date}
                 <div class="label">{$form.start_date.label}</div><div class="content">{$form.start_date.html}</div>
               {else}
                 <div class="label">{$form.start_date.label}</div><div class="content">{$form.start_date.html}</div>
               {/if}
-            {else}
+            {elseif array_key_exists('start_date', $form)}
               <div class="label">{$form.start_date.label}</div>
               <div class="content">{$start_date_display|crmDate:'%b %e, %Y'}</div>
             {/if}
@@ -169,7 +164,7 @@
         </div>
       {/if}
       {if $showMainEmail}
-        {assign var=n value=email-$bltID}
+        {assign var=n value="email-`$bltID`"}
         <div class="crm-public-form-item crm-section {$form.$n.name}-section">
           <div class="label">{$form.$n.label}</div>
           <div class="content">
@@ -188,7 +183,7 @@
         {include file="CRM/common/CMSUser.tpl"}
       </div>
       <div class="crm-public-form-item crm-section premium_block-section">
-        {include file="CRM/Contribute/Form/Contribution/PremiumBlock.tpl" context="makeContribution"}
+        {include file="CRM/Contribute/Form/Contribution/PremiumBlock.tpl" context="makeContribution" preview=false}
       </div>
 
       {if $honoreeProfileFields && $honoreeProfileFields|@count}
@@ -208,13 +203,13 @@
           {/if}
           {/crmRegion}
           <div id="honorType" class="honoree-name-email-section">
-            {include file="CRM/UF/Form/Block.tpl" fields=$honoreeProfileFields mode=8 prefix='honor'}
+            {include file="CRM/UF/Form/Block.tpl" fields=$honoreeProfileFields mode=8 prefix='honor' hideFieldset=true}
           </div>
         </fieldset>
       {/if}
 
       <div class="crm-public-form-item crm-group custom_pre_profile-group">
-        {include file="CRM/UF/Form/Block.tpl" fields=$customPre}
+        {include file="CRM/UF/Form/Block.tpl" fields=$customPre prefix=false hideFieldset=false}
       </div>
 
       {if array_key_exists('pcp_display_in_roll', $form)}
@@ -283,7 +278,7 @@
     {include file="CRM/Core/BillingBlockWrapper.tpl"}
 
     <div class="crm-public-form-item crm-group custom_post_profile-group">
-      {include file="CRM/UF/Form/Block.tpl" fields=$customPost}
+      {include file="CRM/UF/Form/Block.tpl" fields=$customPost prefix=false hideFieldset=false}
     </div>
 
     <div id="crm-submit-buttons" class="crm-submit-buttons">
@@ -323,7 +318,7 @@
     function toggleRecur() {
       var isRecur = cj('input[id="is_recur"]:checked');
       var allowAutoRenew = {/literal}'{$allowAutoRenewMembership}'{literal};
-      var quickConfig = {/literal}{$quickConfig}{literal};
+      var quickConfig = {/literal}'{$quickConfig}'{literal};
       if (allowAutoRenew && cj("#auto_renew") && quickConfig) {
         showHideAutoRenew(null);
       }

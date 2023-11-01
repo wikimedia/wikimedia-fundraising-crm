@@ -21,6 +21,11 @@
 class CRM_Utils_File {
 
   /**
+   * Used to remove md5 hash that was injected into uploaded file names.
+   */
+  const HASH_REMOVAL_PATTERN = '/_[a-f0-9]{32}\./';
+
+  /**
    * Given a file name, determine if the file contents make it an ascii file
    *
    * @param string $name
@@ -394,7 +399,10 @@ class CRM_Utils_File {
   }
 
   /**
-   * Remove the 32 bit md5 we add to the fileName also remove the unknown tag if we added it.
+   * Remove 32 bit md5 hash prepended to the file suffix.
+   *
+   * Note: if the filename was munged with an `.unknown` suffix, this removes
+   * the md5 but doesn't undo the munging or remove the `.unknown` suffix.
    *
    * @param $name
    *
@@ -402,7 +410,7 @@ class CRM_Utils_File {
    */
   public static function cleanFileName($name) {
     // replace the last 33 character before the '.' with null
-    $name = preg_replace('/(_[\w]{32})\./', '.', $name);
+    $name = preg_replace(self::HASH_REMOVAL_PATTERN, '.', $name);
     return $name;
   }
 
@@ -410,22 +418,29 @@ class CRM_Utils_File {
    * Make a valid file name.
    *
    * @param string $name
+   * @param bool $unicode
    *
    * @return string
    */
-  public static function makeFileName($name) {
+  public static function makeFileName($name, bool $unicode = FALSE) {
     $uniqID = md5(uniqid(rand(), TRUE));
     $info = pathinfo($name);
     $basename = substr($info['basename'],
       0, -(strlen($info['extension'] ?? '') + (($info['extension'] ?? '') == '' ? 0 : 1))
     );
     if (!self::isExtensionSafe($info['extension'] ?? '')) {
+      if ($unicode) {
+        return self::makeFilenameWithUnicode("{$basename}_" . ($info['extension'] ?? '') . "_{$uniqID}", '_', 240) . ".unknown";
+      }
       // munge extension so it cannot have an embbeded dot in it
       // The maximum length of a filename for most filesystems is 255 chars.
       // We'll truncate at 240 to give some room for the extension.
       return CRM_Utils_String::munge("{$basename}_" . ($info['extension'] ?? '') . "_{$uniqID}", '_', 240) . ".unknown";
     }
     else {
+      if ($unicode) {
+        return self::makeFilenameWithUnicode("{$basename}_{$uniqID}", '_', 240) . "." . ($info['extension'] ?? '');
+      }
       return CRM_Utils_String::munge("{$basename}_{$uniqID}", '_', 240) . "." . ($info['extension'] ?? '');
     }
   }

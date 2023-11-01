@@ -359,6 +359,15 @@ class CRM_Upgrade_Incremental_MessageTemplates {
           ['name' => 'petition_sign', 'type' => 'subject'],
         ],
       ],
+      [
+        'version' => '5.68.alpha1',
+        'upgrade_descriptor' => ts('Significant changes to the template and available variables. Text version is discontinued'),
+        'templates' => [
+          ['name' => 'event_offline_receipt', 'type' => 'text'],
+          ['name' => 'event_offline_receipt', 'type' => 'html'],
+          ['name' => 'event_offline_receipt', 'type' => 'subject'],
+        ],
+      ],
     ];
   }
 
@@ -572,7 +581,7 @@ class CRM_Upgrade_Incremental_MessageTemplates {
           continue;
         }
         $content = file_get_contents($filePath);
-        if ($content) {
+        if ($content !== FALSE) {
           CRM_Core_DAO::executeQuery(
             "UPDATE civicrm_msg_template SET msg_{$type} = %1 WHERE id = %2", [
               1 => [$content, 'String'],

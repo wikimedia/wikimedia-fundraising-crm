@@ -667,9 +667,9 @@ $event_summary_limit
    *
    * @return array
    */
-  public static function &getMapInfo(&$id) {
+  public static function getMapInfo($id): array {
 
-    $sql = "
+    $sql = '
 SELECT
    civicrm_event.id AS event_id,
    civicrm_event.title AS display_name,
@@ -691,10 +691,9 @@ FROM
    LEFT JOIN civicrm_location_type ON ( civicrm_location_type.id = civicrm_address.location_type_id )
 WHERE civicrm_address.geo_code_1 IS NOT NULL
   AND civicrm_address.geo_code_2 IS NOT NULL
-  AND civicrm_event.id = " . CRM_Utils_Type::escape($id, 'Integer');
+  AND civicrm_event.id = ' . CRM_Utils_Type::escape($id, 'Integer');
 
-    $dao = new CRM_Core_DAO();
-    $dao->query($sql);
+    $dao = CRM_Core_DAO::executeQuery($sql);
 
     $locations = [];
 
@@ -1147,8 +1146,6 @@ WHERE civicrm_event.is_active = 1
           $participantParams
         );
 
-        $sessions = CRM_Event_Cart_BAO_Conference::get_participant_sessions($participantId);
-
         // @todo - the goal is that all params available to the message template are explicitly defined here rather than
         // 'in a smattering of places'. Note that leakage can happen between mailings when not explicitly defined.
         if ($postProfileID) {
@@ -1164,15 +1161,12 @@ WHERE civicrm_event.is_active = 1
           'email' => $notifyEmail,
           'confirm_email_text' => $values['event']['confirm_email_text'] ?? NULL,
           'isShowLocation' => $values['event']['is_show_location'] ?? NULL,
-          // The concept of contributeMode is deprecated.
-          'contributeMode' => $template->_tpl_vars['contributeMode'] ?? NULL,
           'customPre' => $profilePre[0],
           'customPre_grouptitle' => empty($profilePre[1]) ? NULL : [CRM_Core_BAO_UFGroup::getFrontEndTitle((int) $preProfileID)],
           'customPost' => $profilePost[0],
           'customPost_grouptitle' => $customPostTitles,
           'participantID' => $participantId,
           'contactID' => $contactID,
-          'conference_sessions' => $sessions,
           'credit_card_number' => CRM_Utils_System::mungeCreditCard(CRM_Utils_Array::value('credit_card_number', $participantParams)),
           'credit_card_exp_date' => CRM_Utils_Date::mysqlToIso(CRM_Utils_Date::format(CRM_Utils_Array::value('credit_card_exp_date', $participantParams))),
           'selfcancelxfer_time' => abs($values['event']['selfcancelxfer_time']),
@@ -1207,8 +1201,6 @@ WHERE civicrm_event.is_active = 1
         $displayAddress = $values['address'] ?? NULL;
         if ($displayAddress) {
           $sendTemplateParams['tplParams']['address'] = $displayAddress;
-          // The concept of contributeMode is deprecated.
-          $sendTemplateParams['tplParams']['contributeMode'] = NULL;
         }
 
         // set lineItem details
@@ -2027,7 +2019,7 @@ WHERE  ce.loc_block_id = $locBlockId";
     $participant = new CRM_Event_DAO_Participant();
     $participant->copyValues($params);
 
-    $participant->is_test = CRM_Utils_Array::value('is_test', $params, 0);
+    $participant->is_test = $params['is_test'] ?? 0;
     $participant->selectAdd();
     $participant->selectAdd('status_id');
     if ($participant->find(TRUE) && array_key_exists($participant->status_id, $statusTypes)) {

@@ -22,14 +22,10 @@
 
 use Civi\Core\Event\SmartyErrorEvent;
 
-if (!class_exists('Smarty')) {
-  require_once 'Smarty/Smarty.class.php';
-}
-
 /**
  *
  */
-class CRM_Core_Smarty extends Smarty {
+class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
   const
     // use print.tpl and bypass the CMS. Civi prints a valid html file
     PRINT_PAGE = 1,
@@ -132,6 +128,15 @@ class CRM_Core_Smarty extends Smarty {
 
     $this->assign('config', $config);
     $this->assign('session', $session);
+    $this->assign('debugging', [
+      'smartyDebug' => CRM_Utils_Request::retrieveValue('smartyDebug', 'Integer'),
+      'sessionReset' => CRM_Utils_Request::retrieveValue('sessionReset', 'Integer'),
+      'sessionDebug' => CRM_Utils_Request::retrieveValue('sessionDebug', 'Integer'),
+      'directoryCleanup' => CRM_Utils_Request::retrieveValue('directoryCleanup', 'Integer'),
+      'cacheCleanup' => CRM_Utils_Request::retrieveValue('cacheCleanup', 'Integer'),
+      'configReset' => CRM_Utils_Request::retrieveValue('configReset', 'Integer'),
+    ]);
+    $this->assign('snippet_type', CRM_Utils_Request::retrieveValue('snippet', 'String'));
 
     $tsLocale = CRM_Core_I18n::getLocale();
     $this->assign('tsLocale', $tsLocale);
@@ -141,7 +146,12 @@ class CRM_Core_Smarty extends Smarty {
       $this->assign('langSwitch', CRM_Core_I18n::uiLanguages());
     }
 
-    if (CRM_Utils_Constant::value('CIVICRM_SMARTY_DEFAULT_ESCAPE')) {
+    if (CRM_Utils_Constant::value('CIVICRM_SMARTY_DEFAULT_ESCAPE')
+      && !CRM_Utils_Constant::value('CIVICRM_SMARTY3_AUTOLOAD_PATH')) {
+      // Currently DEFAULT escape does not work with Smarty3
+      // dunno why - thought it would be the default with Smarty3 - but
+      // getting onto Smarty 3 is higher priority.
+      // The include below loads the v2 version which is why id doesn't work.
       // When default escape is enabled if the core escape is called before
       // any custom escaping is done the modifier_escape function is not
       // found, so require_once straight away. Note this was hit on the basic
@@ -181,35 +191,6 @@ class CRM_Core_Smarty extends Smarty {
       self::registerStringResource();
     }
     return self::$_singleton;
-  }
-
-  /**
-   * Executes & returns or displays the template results
-   *
-   * @param string $resource_name
-   * @param string $cache_id
-   * @param string $compile_id
-   * @param bool $display
-   *
-   * @return bool|mixed|string
-   *
-   * @noinspection PhpDocMissingThrowsInspection
-   * @noinspection PhpUnhandledExceptionInspection
-   */
-  public function fetch($resource_name, $cache_id = NULL, $compile_id = NULL, $display = FALSE) {
-    if (preg_match('/^(\s+)?string:/', $resource_name)) {
-      $old_security = $this->security;
-      $this->security = TRUE;
-    }
-    try {
-      $output = parent::fetch($resource_name, $cache_id, $compile_id, $display);
-    }
-    finally {
-      if (isset($old_security)) {
-        $this->security = $old_security;
-      }
-    }
-    return $output;
   }
 
   /**

@@ -125,13 +125,19 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
    */
   public static function formRule($params, $files, $self) {
     $errors = [];
-    if (!empty($params['is_active'])) {
+    if (!empty($params['pcp_active'])) {
 
-      if (!empty($params['is_tellfriend_enabled']) &&
-        (CRM_Utils_Array::value('tellfriend_limit', $params) <= 0)
-      ) {
-        $errors['tellfriend_limit'] = ts('if Tell Friend is enable, Maximum recipients limit should be greater than zero.');
+      if (!empty($params['is_tellfriend_enabled']) && ($params['is_tellfriend_enabled'] <= 0)) {
+        $errors['tellfriend_limit'] = ts('If Tell a Friend is enabled, maximum recipients limit should be greater than zero.');
       }
+
+      if (empty($params['target_entity_type'])) {
+        $errors['target_entity_type'] = ts('Campaign Type is a required field.');
+      }
+      elseif (($params['target_entity_type'] === 'contribute') && (empty($params['target_entity_id']))) {
+        $errors['target_entity_id'] = ts('Online Contribution Page is a required field.');
+      }
+
       if (empty($params['supporter_profile_id'])) {
         $errors['supporter_profile_id'] = ts('Supporter profile is a required field.');
       }
@@ -181,9 +187,9 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
     $dao->entity_id = $this->_id;
     $dao->find(TRUE);
     $params['id'] = $dao->id;
-    $params['is_active'] = CRM_Utils_Array::value('pcp_active', $params, FALSE);
-    $params['is_approval_needed'] = CRM_Utils_Array::value('is_approval_needed', $params, FALSE);
-    $params['is_tellfriend_enabled'] = CRM_Utils_Array::value('is_tellfriend_enabled', $params, FALSE);
+    $params['is_active'] = $params['pcp_active'] ?? FALSE;
+    $params['is_approval_needed'] = $params['is_approval_needed'] ?? FALSE;
+    $params['is_tellfriend_enabled'] = $params['is_tellfriend_enabled'] ?? FALSE;
 
     CRM_PCP_BAO_PCPBlock::writeRecord($params);
 
