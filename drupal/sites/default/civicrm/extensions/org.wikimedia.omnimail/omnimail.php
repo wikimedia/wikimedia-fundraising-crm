@@ -31,48 +31,12 @@ function omnimail_civicrm_install() {
 }
 
 /**
- * Implements hook_civicrm_postInstall().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postInstall
- */
-function omnimail_civicrm_postInstall() {
-  _omnimail_civix_civicrm_postInstall();
-}
-
-/**
- * Implements hook_civicrm_uninstall().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
- */
-function omnimail_civicrm_uninstall() {
-  _omnimail_civix_civicrm_uninstall();
-}
-
-/**
  * Implements hook_civicrm_enable().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_enable
  */
 function omnimail_civicrm_enable() {
   _omnimail_civix_civicrm_enable();
-}
-
-/**
- * Implements hook_civicrm_disable().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_disable
- */
-function omnimail_civicrm_disable() {
-  _omnimail_civix_civicrm_disable();
-}
-
-/**
- * Implements hook_civicrm_upgrade().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_upgrade
- */
-function omnimail_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _omnimail_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
