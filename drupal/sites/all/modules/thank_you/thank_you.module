@@ -347,7 +347,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
   }
   // only send a Thank You email if we are within the specified window
   $ageInSeconds = UtcDate::getUtcTimestamp() - UtcDate::getUtcTimestamp($mailingData['receive_date']);
-  if (!$manualSend && $ageInSeconds > 86400 * variable_get('thank_you_days', 14)) {
+  if (!$manualSend && $ageInSeconds > 86400 * Civi::settings()->get('thank_you_days')) {
     \Civi::log('wmf')->info('thank_you: Contribution is older than limit, ignoring.');
     return FALSE;
   }
@@ -679,9 +679,9 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
   }
 
   $timeLimit = $timeLimit ?? \Civi::settings()->get('thank_you_batch_time');
-  $days = $days ?? variable_get('thank_you_days', FALSE);
+  $days = $days ?? \Civi::settings()->get('thank_you_days');
   $batch = $batch ?? \Civi::settings()->get('thank_you_batch');
-  $enabled = variable_get('thank_you_enabled', 'true');
+  $enabled = \Civi::settings()->get('thank_you_enabled');
 
   if ($enabled === 'false') {
     \Civi::log('wmf')->info('thank_you: Thank You send job is disabled');
@@ -701,8 +701,8 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
   // This code resets the thank_you_days variable in case it's been left in
   // a bad state by an aborted simulation run
   if ($days == DUMB_BIG_TY_DAYS) {
-    $days = variable_get('old_thank_you_days', FALSE);
-    variable_set('thank_you_days', $days);
+    $days = Civi::settings()->get('old_thank_you_days');
+    Civi::settings()->set('thank_you_days', $days);
   }
 
   \Civi::log('wmf')->info('thank_you: Attempting to send {batch_size} thank you mails for contributions from the last {number_of_days} days.', [
@@ -846,9 +846,9 @@ function thank_you_batch_test() {
   MailFactory::singleton()->setActiveMailer('test');
 
   // Don't want to skip anything due to age
-  $oldTyDays = variable_get('thank_you_days', 14);
-  variable_set('old_thank_you_days', $oldTyDays);
-  variable_set('thank_you_days', DUMB_BIG_TY_DAYS);
+  $oldTyDays = Civi::settings()->get('thank_you_days', 14);
+  Civi::settings()->set('old_thank_you_days', $oldTyDays);
+  Civi::settings()->set('thank_you_days', DUMB_BIG_TY_DAYS);
 
   \Civi::log('wmf')->info('thank_you: Simulating up to 1000 thank you mails.');
   \Civi::log('wmf')->info('thank_you: Civimail creation: {is_create_civimail}. Sample rate: {rate}', [
@@ -889,7 +889,7 @@ EOT;
   }
 
   $elapsed = time() - $start;
-  variable_set('thank_you_days', $oldTyDays);
+  Civi::settings()->set('thank_you_days', $oldTyDays);
   \Civi::log('wmf')->info('thank_you: Simulated sending {sent} emails in {elapsed} seconds.', [
     'sent' => $sent,
     'elapsed' => $elapsed
