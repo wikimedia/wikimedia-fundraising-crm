@@ -14,19 +14,19 @@
     <url desc="Support">https://github.com/eileenmcnaughton/deduper/issues</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2023-02-10</releaseDate>
-  <version>1.7</version>
+  <releaseDate>2023-11-02</releaseDate>
+  <version>1.8</version>
   <develStage>stable</develStage>
   <requires>
     <ext>org.civicrm.afform</ext>
   </requires>
   <compatibility>
-    <ver>5.58</ver>
+    <ver>5.67</ver>
   </compatibility>
   <comments>Tools to help with deduping</comments>
   <civix>
     <namespace>CRM/Deduper</namespace>
-    <format>22.05.2</format>
+    <format>23.02.1</format>
   </civix>
   <mixins>
     <mixin>afform-entity-php@1.0.0</mixin>
@@ -34,9 +34,12 @@
     <mixin>menu-xml@1.0.0</mixin>
     <mixin>mgd-php@1.0.0</mixin>
     <mixin>setting-php@1.0.0</mixin>
+    <mixin>smarty-v2@1.0.0</mixin>
+    <mixin>entity-types-php@1.0.0</mixin>
   </mixins>
   <classloader>
     <psr0 prefix="CRM_" path=""/>
     <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
+  <upgrader>CRM_Deduper_Upgrader</upgrader>
 </extension>
