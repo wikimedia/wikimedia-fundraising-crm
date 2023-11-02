@@ -26,7 +26,7 @@
   </classloader>
   <civix>
     <namespace>CRM/WmfAudit</namespace>
-    <format>22.05.2</format>
+    <format>23.02.1</format>
     <angularModule>crmWmfAudit</angularModule>
   </civix>
   <mixins>
