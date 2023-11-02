@@ -78,6 +78,18 @@ class CRM_Financial_BAO_Order {
    */
   protected $overridableFinancialTypeID;
 
+  private $isExcludeExpiredFields = FALSE;
+
+  /**
+   * @param bool $isExcludeExpiredFields
+   *
+   * @return CRM_Financial_BAO_Order
+   */
+  public function setIsExcludeExpiredFields(bool $isExcludeExpiredFields): CRM_Financial_BAO_Order {
+    $this->isExcludeExpiredFields = $isExcludeExpiredFields;
+    return $this;
+  }
+
   /**
    * Get overridable financial type id.
    *
@@ -658,8 +670,30 @@ class CRM_Financial_BAO_Order {
    *
    * @param array $metadata
    */
-  protected function setPriceFieldMetadata($metadata) {
+  protected function setPriceFieldMetadata(array $metadata): void {
+    foreach ($metadata as $index => $priceField) {
+      if ($this->isExcludeExpiredFields && !empty($priceField['active_on']) && time() < strtotime($priceField['active_on'])) {
+        unset($metadata[$index]);
+      }
+      elseif ($this->isExcludeExpiredFields && !empty($priceField['expire_on']) && strtotime($priceField['expire_on']) < time()) {
+        unset($metadata[$index]);
+      }
+      elseif (!empty($priceField['options'])) {
+        foreach ($priceField['options'] as $optionID => $option) {
+          if (!empty($option['membership_type_id'])) {
+            $membershipType = CRM_Member_BAO_MembershipType::getMembershipType((int) $option['membership_type_id']);
+            $metadata[$index]['options'][$optionID]['auto_renew'] = (int) $membershipType['auto_renew'];
+            if ($membershipType['auto_renew'] && empty($this->priceSetMetadata['auto_renew_membership_field'])) {
+              // Quick form layer supports one auto-renew membership type per price set. If we
+              // want more for any reason we can add another array property.
+              $this->priceSetMetadata['auto_renew_membership_field'] = (int) $option['price_field_id'];
+            }
+          }
+        }
+      }
+    }
     $this->priceFieldMetadata = $metadata;
+
     if ($this->getForm()) {
       CRM_Utils_Hook::buildAmount($this->form->getFormContext(), $this->form, $this->priceFieldMetadata);
     }
@@ -668,18 +702,18 @@ class CRM_Financial_BAO_Order {
   /**
    * Get the metadata for the fields in the price set.
    *
+   * @return array
+   * @throws \CRM_Core_Exception
    * @internal use in tested core code only.
    *
-   * @return array
    */
   public function getPriceSetMetadata(): array {
     if (empty($this->priceSetMetadata)) {
-      $priceSetMetadata = CRM_Price_BAO_PriceSet::getCachedPriceSetDetail($this->getPriceSetID());
-      // @todo - make sure this is an array - commented out for now as this PR is against the rc.
-      // $priceSetMetadata['extends'] = explode(CRM_Core_DAO::VALUE_SEPARATOR, $priceSetMetadata['extends']);
-      $this->setPriceFieldMetadata($priceSetMetadata['fields']);
-      unset($priceSetMetadata['fields']);
-      $this->priceSetMetadata = $priceSetMetadata;
+      $this->priceSetMetadata = CRM_Price_BAO_PriceSet::getCachedPriceSetDetail($this->getPriceSetID());
+      $this->priceSetMetadata['id'] = $this->getPriceSetID();
+      $this->priceSetMetadata['auto_renew_membership_field'] = NULL;
+      $this->setPriceFieldMetadata($this->priceSetMetadata['fields']);
+      unset($this->priceSetMetadata['fields']);
     }
     return $this->priceSetMetadata;
   }
@@ -688,8 +722,9 @@ class CRM_Financial_BAO_Order {
     if (!CRM_Core_Component::isEnabled('CiviMember')) {
       return FALSE;
     }
-    $extends = explode(CRM_Core_DAO::VALUE_SEPARATOR, $this->getPriceSetMetadata()['extends']);
-    return in_array(CRM_Core_Component::getComponentID('CiviMember'), $extends, FALSE);
+    // Access the property if set, to avoid a potential loop when the hook is called.
+    $priceSetMetadata = $this->priceSetMetadata ?: $this->getPriceSetMetadata();
+    return in_array(CRM_Core_Component::getComponentID('CiviMember'), $priceSetMetadata['extends'], FALSE);
   }
 
   /**
@@ -913,6 +948,7 @@ class CRM_Financial_BAO_Order {
         $lineItem['tax_amount'] = ($taxRate / 100) * $lineItem['line_total'];
       }
       $lineItem['title'] = $this->getLineItemTitle($lineItem);
+      $lineItem['line_total_inclusive'] = $lineItem['line_total'] + $lineItem['tax_amount'];
     }
     return $lineItems;
   }
@@ -1040,6 +1076,7 @@ class CRM_Financial_BAO_Order {
       }
       $lineItem['tax_rate'] = $this->getTaxRate($lineItem['financial_type_id']);
       $lineItem['tax_amount'] = ($lineItem['tax_rate'] / 100) * $lineItem['line_total'];
+      $lineItem['line_total_inclusive'] = $lineItem['tax_amount'] + $lineItem['line_total'];
     }
     if (!empty($lineItem['membership_type_id'])) {
       $lineItem['entity_table'] = 'civicrm_membership';

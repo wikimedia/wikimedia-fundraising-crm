@@ -19,18 +19,18 @@ class SpecFormatter {
 
   /**
    * @param array $data
-   * @param string $entity
+   * @param string $entityName
    *
    * @return FieldSpec
    */
-  public static function arrayToField(array $data, $entity) {
+  public static function arrayToField(array $data, string $entityName): FieldSpec {
     $dataTypeName = self::getDataType($data);
 
     $hasDefault = isset($data['default']) && $data['default'] !== '';
     // Custom field
     if (!empty($data['custom_group_id'])) {
-      $field = new CustomFieldSpec($data['name'], $entity, $dataTypeName);
-      if (strpos($entity, 'Custom_') !== 0) {
+      $field = new CustomFieldSpec($data['name'], $entityName, $dataTypeName);
+      if (strpos($entityName, 'Custom_') !== 0) {
         $field->setName($data['custom_group_id.name'] . '.' . $data['name']);
       }
       else {
@@ -62,7 +62,7 @@ class SpecFormatter {
     // Core field
     else {
       $name = $data['name'] ?? NULL;
-      $field = new FieldSpec($name, $entity, $dataTypeName);
+      $field = new FieldSpec($name, $entityName, $dataTypeName);
       $field->setType('Field');
       $field->setColumnName($name);
       $field->setNullable(empty($data['required']));
@@ -70,6 +70,9 @@ class SpecFormatter {
       $field->setTitle($data['title'] ?? NULL);
       $field->setLabel($data['html']['label'] ?? NULL);
       $field->setLocalizable($data['localizable'] ?? FALSE);
+      if (!empty($data['DFKEntities'])) {
+        $field->setDfkEntities(array_values($data['DFKEntities']));
+      }
       if (!empty($data['pseudoconstant'])) {
         // Do not load options if 'prefetch' is disabled
         if (($data['pseudoconstant']['prefetch'] ?? NULL) !== 'disabled') {
@@ -127,14 +130,15 @@ class SpecFormatter {
    * @return string
    */
   private static function getDataType(array $data) {
-    if (isset($data['data_type'])) {
-      return !empty($data['time_format']) ? 'Timestamp' : $data['data_type'];
+    $dataType = $data['data_type'] ?? $data['dataType'] ?? NULL;
+    if (isset($dataType)) {
+      return !empty($data['time_format']) ? 'Timestamp' : $dataType;
     }
 
     $dataTypeInt = $data['type'] ?? NULL;
     $dataTypeName = \CRM_Utils_Type::typeToString($dataTypeInt);
 
-    return $dataTypeName;
+    return $dataTypeName === 'Int' ? 'Integer' : $dataTypeName;
   }
 
   /**
@@ -160,12 +164,12 @@ class SpecFormatter {
     $bao = CoreUtil::getBAOFromApiName($spec->getEntity());
     $optionLabels = $bao::buildOptions($fieldName, NULL, $values);
 
-    if (!is_array($optionLabels) || !$optionLabels) {
+    if (!is_array($optionLabels)) {
       $options = FALSE;
     }
     else {
       $options = \CRM_Utils_Array::makeNonAssociative($optionLabels, 'id', 'label');
-      if (is_array($returnFormat)) {
+      if (is_array($returnFormat) && $options) {
         self::addOptionProps($options, $spec, $bao, $fieldName, $values, $returnFormat);
       }
     }
@@ -300,10 +304,10 @@ class SpecFormatter {
       self::setLegacyDateFormat($inputAttrs);
     }
     // Number input for numeric fields
-    if ($inputType === 'Text' && in_array($dataTypeName, ['Int', 'Float'], TRUE)) {
+    if ($inputType === 'Text' && in_array($dataTypeName, ['Integer', 'Float'], TRUE)) {
       $inputType = 'Number';
       // Todo: make 'step' configurable for the custom field
-      $inputAttrs['step'] = $dataTypeName === 'Int' ? 1 : .01;
+      $inputAttrs['step'] = $dataTypeName === 'Integer' ? 1 : .01;
     }
     // Date/time settings from custom fields
     if ($inputType == 'Date' && !empty($data['custom_group_id'])) {

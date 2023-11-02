@@ -539,8 +539,7 @@ AND    domain_id    = %4
   }
 
   /**
-   * Get the next unused uf_id value, since the standalone UF doesn't
-   * have id's (it uses OpenIDs, which go in a different field).
+   * Get the next unused uf_id value
    *
    * @deprecated
    * @return int
@@ -616,12 +615,15 @@ AND    domain_id    = %4
   }
 
   /**
+   * @param string|null $entityName
+   * @param int|null $userId
+   * @param array $conditions
    * @inheritDoc
    */
-  public function addSelectWhereClause() {
+  public function addSelectWhereClause(string $entityName = NULL, int $userId = NULL, array $conditions = []): array {
     // Prevent default behavior of joining ACLs onto the contact_id field.
     $clauses = [];
-    CRM_Utils_Hook::selectWhereClause($this, $clauses);
+    CRM_Utils_Hook::selectWhereClause($this, $clauses, $userId, $conditions);
     return $clauses;
   }
 

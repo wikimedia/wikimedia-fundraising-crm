@@ -69,7 +69,7 @@ class CRM_Contact_BAO_ContactType extends CRM_Contact_DAO_ContactType implements
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public static function basicTypes($all = FALSE) {
+  public static function basicTypes($all = FALSE): array {
     return array_keys(self::basicTypeInfo($all));
   }
 
@@ -849,13 +849,24 @@ WHERE ($subtypeClause)";
         $contactTypes[$name]['parent_label'] = $contactType['parent_id'] ? $parents[$contactType['parent_id']]['label'] : NULL;
         // Cast int/bool types.
         $contactTypes[$name]['id'] = (int) $contactType['id'];
-        $contactTypes[$name]['parent_id'] = $contactType['parent_id'] ? (int) $contactType['parent_id'] : NULL;
+        $contactTypes[$name]['parent_id'] = ((int) $contactType['parent_id']) ?: NULL;
         $contactTypes[$name]['is_active'] = (bool) $contactType['is_active'];
         $contactTypes[$name]['is_reserved'] = (bool) $contactType['is_reserved'];
+        $contactTypes[$name]['icon'] = $contactType['icon'] ?? $parents[$contactType['parent_id']]['icon'] ?? NULL;
       }
       $cache->set($cacheKey, $contactTypes);
     }
     return $contactTypes;
+  }
+
+  /**
+   * Get contact type by name
+   *
+   * @param string $name
+   * @return array|null
+   */
+  public static function getContactType(string $name): ?array {
+    return self::getAllContactTypes()[$name] ?? NULL;
   }
 
   /**

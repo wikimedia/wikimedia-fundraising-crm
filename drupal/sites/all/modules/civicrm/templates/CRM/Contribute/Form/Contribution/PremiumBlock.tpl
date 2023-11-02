@@ -69,7 +69,7 @@
               <div class="premium-full-description">
                 {$row.description}
               </div>
-              {if $showSelectOptions }
+              {if $showSelectOptions}
                 {assign var="pid" value="options_"|cat:$row.id}
                 {if $pid}
                   <div class="premium-full-options">
@@ -81,7 +81,7 @@
                   <p><strong>{$row.options}</strong></p>
                 </div>
               {/if}
-              {if ( ($premiumBlock.premiums_display_min_contribution AND $context EQ "makeContribution") OR $preview EQ 1) AND $row.min_contribution GT 0 }
+              {if (($premiumBlock.premiums_display_min_contribution AND $context EQ "makeContribution") OR $preview EQ 1) AND $row.min_contribution GT 0}
                 <div class="premium-full-min">{ts 1=$row.min_contribution|crmMoney}Minimum: %1{/ts}</div>
               {/if}
             <div style="clear:both"></div>
@@ -114,7 +114,7 @@
     {literal}
     <script>
       CRM.$(function($) {
-        var is_separate_payment = {/literal}{if $membershipBlock.is_separate_payment}{$membershipBlock.is_separate_payment}{else}0{/if}{literal};
+        var is_separate_payment = {/literal}{if $isShowMembershipBlock && $membershipBlock.is_separate_payment}{$membershipBlock.is_separate_payment}{else}0{/if}{literal};
 
         // select a new premium
         function select_premium(premium_id) {

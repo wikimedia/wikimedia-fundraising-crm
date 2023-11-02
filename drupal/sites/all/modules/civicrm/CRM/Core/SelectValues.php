@@ -219,6 +219,11 @@ class CRM_Core_SelectValues {
         'name' => 'Link',
         'label' => ts('Link'),
       ],
+      [
+        'id' => 'Hidden',
+        'name' => 'Hidden',
+        'label' => ts('Hidden'),
+      ],
     ];
   }
 
@@ -634,6 +639,7 @@ class CRM_Core_SelectValues {
    * @return array
    */
   public static function participantTokens(): array {
+    CRM_Core_Error::deprecatedFunctionWarning('user TokenProcessor');
     $tokenProcessor = new TokenProcessor(Civi::dispatcher(), ['schema' => ['participantId']]);
     $allTokens = $tokenProcessor->listTokens();
     foreach (array_keys($allTokens) as $token) {
@@ -1079,16 +1085,19 @@ class CRM_Core_SelectValues {
         'id' => CRM_Contact_BAO_Relationship::NONE,
         'name' => 'None',
         'label' => ts('None'),
+        'icon' => NULL,
       ],
       [
         'id' => CRM_Contact_BAO_Relationship::VIEW,
         'name' => 'View only',
         'label' => ts('View only'),
+        'icon' => 'fa-eye',
       ],
       [
         'id' => CRM_Contact_BAO_Relationship::EDIT,
         'name' => 'View and update',
         'label' => ts('View and update'),
+        'icon' => 'fa-pencil-square',
       ],
     ];
   }
@@ -1127,6 +1136,7 @@ class CRM_Core_SelectValues {
       'address_primary.street_address' => ts('Street Address'),
       'address_primary.city' => ts('City'),
       'address_primary.postal_code' => ts('Postal Code'),
+      'employer_id.sort_name' => ts('Current Employer'),
       'job_title' => ts('Job Title'),
     ];
     $custom = civicrm_api4('CustomField', 'get', [

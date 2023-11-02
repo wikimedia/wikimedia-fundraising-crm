@@ -7,8 +7,8 @@
 <body>
 
 {capture assign=headerStyle}colspan="2" style="text-align: left; padding: 4px; border-bottom: 1px solid #999; background-color: #eee;"{/capture}
-{capture assign=labelStyle }style="padding: 4px; border-bottom: 1px solid #999; background-color: #f7f7f7;"{/capture}
-{capture assign=valueStyle }style="padding: 4px; border-bottom: 1px solid #999;"{/capture}
+{capture assign=labelStyle}style="padding: 4px; border-bottom: 1px solid #999; background-color: #f7f7f7;"{/capture}
+{capture assign=valueStyle}style="padding: 4px; border-bottom: 1px solid #999;"{/capture}
 
 <table id="crm-event_receipt" style="font-family: Arial, Verdana, sans-serif; text-align: left; width:100%; max-width:700px; padding:0; margin:0; border:0px;">
 
@@ -71,7 +71,7 @@
                   {/if}
                 {/if}
                 <td>
-                  {$line.line_total+$line.tax_amount|crmMoney:$currency}
+                  {$line.line_total_inclusive|crmMoney:$currency}
                 </td>
               </tr>
             {/foreach}
@@ -277,10 +277,10 @@
       {/foreach}
      {/if}
 
-     {if !empty($isShare)}
+     {if {contribution.contribution_page_id.is_share|boolean}}
       <tr>
         <td colspan="2" {$valueStyle}>
-            {capture assign=contributionUrl}{crmURL p='civicrm/contribute/transact' q="reset=1&id=`$contributionPageId`" a=true fe=1 h=1}{/capture}
+            {capture assign=contributionUrl}{crmURL p='civicrm/contribute/transact' q="reset=1&id={contribution.contribution_page_id}" a=true fe=1 h=1}{/capture}
             {include file="CRM/common/SocialNetwork.tpl" emailMode=true url=$contributionUrl title=$title pageURL=$contributionUrl}
         </td>
       </tr>

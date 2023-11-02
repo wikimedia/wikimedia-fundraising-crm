@@ -137,6 +137,18 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
   public $_honorID = NULL;
 
   /**
+   * Array of payment related fields to potentially display on this form (generally credit card or debit card fields).
+   *
+   * Note that this is not accessed in core except in a function that could use
+   * a local variable but both IATS & TSys access it.
+   *
+   * This is rendered via billingBlock.tpl.
+   *
+   * @var array
+   */
+  public $_paymentFields = [];
+
+  /**
    * The contribution values if an existing contribution
    * @var array
    */
@@ -211,17 +223,6 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
    * @var string
    */
   protected $_component;
-
-  /**
-   * Array of fields to display on billingBlock.tpl - this is not fully implemented but basically intent is the panes/fieldsets on this page should
-   * be all in this array in order like
-   *  'credit_card' => array('credit_card_number' ...
-   *  'billing_details' => array('first_name' ...
-   *
-   * such that both the fields and the order can be more easily altered by payment processors & other extensions
-   * @var array
-   */
-  public $billingFieldSets = [];
 
   /**
    * Monetary fields that may be submitted.
@@ -528,7 +529,7 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
     }
 
     $tplParams['credit_card_exp_date'] = isset($params['credit_card_exp_date']) ? CRM_Utils_Date::mysqlToIso(CRM_Utils_Date::format($params['credit_card_exp_date'])) : NULL;
-    $tplParams['credit_card_type'] = CRM_Utils_Array::value('credit_card_type', $params);
+    $tplParams['credit_card_type'] = $params['credit_card_type'] ?? NULL;
     $tplParams['credit_card_number'] = CRM_Utils_System::mungeCreditCard(CRM_Utils_Array::value('credit_card_number', $params));
     return $tplParams;
   }
@@ -539,12 +540,18 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
    * Note that this function works based on the presence or otherwise of billing fields & can be called regardless of
    * whether they are 'expected' (due to assumptions about the payment processor type or the setting to collect billing
    * for pay later.
+   *
+   * @param int $contactID
+   * @param string $email
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  protected function processBillingAddress() {
+  protected function processBillingAddress(int $contactID, string $email): void {
     $fields = [];
 
     $fields['email-Primary'] = 1;
-    $this->_params['email-5'] = $this->_params['email-Primary'] = $this->_contributorEmail;
+    $this->_params['email-5'] = $this->_params['email-Primary'] = $email;
     // now set the values for the billing location.
     foreach (array_keys($this->_fields) as $name) {
       $fields[$name] = 1;
@@ -553,7 +560,7 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
     $fields["address_name-{$this->_bltID}"] = 1;
 
     //ensure we don't over-write the payer's email with the member's email
-    if ($this->_contributorContactID == $this->_contactID) {
+    if ($contactID == $this->_contactID) {
       $fields["email-{$this->_bltID}"] = 1;
     }
 
@@ -570,10 +577,10 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
       }
       //here we are setting up the billing contact - if different from the member they are already created
       // but they will get billing details assigned
-      $addressParams['contact_id'] = $this->_contributorContactID;
+      $addressParams['contact_id'] = $contactID;
       CRM_Contact_BAO_Contact::createProfileContact($addressParams, $fields,
-        $this->_contributorContactID, NULL, NULL,
-        CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $this->_contributorContactID, 'contact_type')
+        $contactID, NULL, NULL,
+        CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $contactID, 'contact_type')
       );
     }
 
@@ -673,7 +680,7 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
 
   protected function assignContactEmailDetails() {
     if ($this->getContactID()) {
-      [$displayName, $this->userEmail] = CRM_Contact_BAO_Contact_Location::getEmailDetails($this->getContactID());
+      [$displayName] = CRM_Contact_BAO_Contact_Location::getEmailDetails($this->getContactID());
       if (!$displayName) {
         $displayName = civicrm_api3('contact', 'getvalue', ['id' => $this->getContactID(), 'return' => 'display_name']);
       }

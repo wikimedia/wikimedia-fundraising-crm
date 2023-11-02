@@ -15,11 +15,14 @@
  * @copyright CiviCRM LLC https://civicrm.org/licensing
  */
 
+use Civi\Api4\PriceSet;
+
 /**
  * This class generates form components for processing a contribution.
  */
 class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
   use CRM_Financial_Form_FrontEndPaymentFormTrait;
+  use CRM_Contribute_Form_ContributeFormTrait;
 
   /**
    * The id of the contribution page that we are processing.
@@ -114,6 +117,8 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
    * Pcp id
    *
    * @var int
+   *
+   * @internal use getPcpID().
    */
   public $_pcpId;
 
@@ -268,9 +273,39 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       else {
         $this->_priceSetId = CRM_Price_BAO_PriceSet::getFor('civicrm_contribution_page', $this->_id);
       }
+      if (!$this->_priceSetId) {
+        if ($this->isShowMembershipBlock()) {
+          $this->_priceSetId = PriceSet::get(FALSE)
+            ->addWhere('name', '=', 'default_membership_type_amount')
+            ->execute()
+            ->first()['id'];
+        }
+      }
       $this->set('priceSetId', $this->_priceSetId);
     }
     return $this->_priceSetId ?: NULL;
+  }
+
+  /**
+   * Get id of contribution page being acted on.
+   *
+   * @api This function will not change in a minor release and is supported for
+   * use outside of core. This annotation / external support for properties
+   * is only given where there is specific test cover.
+   *
+   * @return int
+   */
+  public function getContributionPageID(): int {
+    if (!$this->_id) {
+      /** @noinspection PhpUnhandledExceptionInspection */
+      $this->_id = CRM_Utils_Request::retrieve('id', 'Positive', $this);
+      if (!$this->_id) {
+        // seems like the session is corrupted and/or we lost the id trail
+        // lets just bump this to a regular session error and redirect user to main page
+        $this->controller->invalidKeyRedirect();
+      }
+    }
+    return $this->_id;
   }
 
   /**
@@ -282,13 +317,8 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
   public function preProcess() {
 
     // current contribution page id
-    $this->_id = CRM_Utils_Request::retrieve('id', 'Positive', $this);
+    $this->getContributionPageID();
     $this->_ccid = CRM_Utils_Request::retrieve('ccid', 'Positive', $this);
-    if (!$this->_id) {
-      // seems like the session is corrupted and/or we lost the id trail
-      // lets just bump this to a regular session error and redirect user to main page
-      $this->controller->invalidKeyRedirect();
-    }
     $this->_emailExists = $this->get('emailExists');
 
     $this->_contactID = $this->_membershipContactID = $this->getContactID();
@@ -354,23 +384,19 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     if ($this->getPriceSetID()) {
       $this->order = new CRM_Financial_BAO_Order();
       $this->order->setPriceSetID($this->getPriceSetID());
+      $this->order->setIsExcludeExpiredFields(TRUE);
     }
     else {
       CRM_Core_Error::deprecatedFunctionWarning('forms require a price set ID');
     }
     $this->_priceSet = $this->get('priceSet');
-
+    $this->assign('quickConfig', $this->isQuickConfig());
     if (!$this->_values) {
       // get all the values from the dao object
       $this->_values = [];
       $this->_fields = [];
 
       CRM_Contribute_BAO_ContributionPage::setValues($this->_id, $this->_values);
-      if (CRM_Financial_BAO_FinancialType::isACLFinancialTypeStatus()
-        && !CRM_Core_Permission::check('add contributions of type ' . CRM_Contribute_PseudoConstant::financialType($this->_values['financial_type_id']))
-      ) {
-        CRM_Core_Error::statusBounce(ts('You do not have permission to access this page.'));
-      }
       if (empty($this->_values['is_active'])) {
         throw new CRM_Contribute_Exception_InactiveContributionPageException(ts('The page you requested is currently unavailable.'), $this->_id);
       }
@@ -410,7 +436,6 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       ));
 
       $this->assignPaymentProcessor($isPayLater);
-      $this->assign('quickConfig', $this->isQuickConfig());
       // get price info
       // CRM-5095
       $this->initSet($this);
@@ -456,10 +481,9 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     $this->set('membershipBlock', $this->getMembershipBlock());
 
     // Handle PCP
-    $pcpId = CRM_Utils_Request::retrieve('pcpId', 'Positive', $this);
-    if ($pcpId) {
+    $pcpId = $this->getPcpID();
+    if ($this->getPcpID()) {
       $pcp = CRM_PCP_BAO_PCP::handlePcp($pcpId, 'contribute', $this->_values);
-      $this->_pcpId = $pcp['pcpId'];
       $this->_pcpBlock = $pcp['pcpBlock'];
       $this->_pcpInfo = $pcp['pcpInfo'];
     }
@@ -474,10 +498,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       $this->assign('linkText', $linkText);
     }
 
-    //set pledge block if block id is set
-    if (!empty($this->_values['pledge_block_id'])) {
-      $this->assign('pledgeBlock', TRUE);
-    }
+    $this->assign('pledgeBlock', !empty($this->_values['pledge_block_id']));
 
     // @todo - move this check to `getMembershipBlock`
     if (!$this->isFormSupportsNonMembershipContributions() &&
@@ -491,7 +512,6 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     $this->set('amount_block_is_active', $this->isFormSupportsNonMembershipContributions());
 
     $this->_contributeMode = $this->get('contributeMode');
-    $this->assign('contributeMode', $this->_contributeMode);
 
     //assigning is_monetary and is_email_receipt to template
     $this->assign('is_monetary', $this->_values['is_monetary']);
@@ -500,7 +520,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
 
     //assign cancelSubscription URL to templates
     $this->assign('cancelSubscriptionUrl',
-      CRM_Utils_Array::value('cancelSubscriptionUrl', $this->_values)
+      $this->_values['cancelSubscriptionUrl'] ?? NULL
     );
 
     $title = $this->_values['frontend_title'];
@@ -544,17 +564,43 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     if ($priceSetId) {
       if ($form->_action & CRM_Core_Action::UPDATE) {
         $form->_values['line_items'] = CRM_Price_BAO_LineItem::getLineItems($form->_id, 'contribution');
-        $required = FALSE;
       }
-      else {
-        $required = TRUE;
-      }
-
-      $priceSet = CRM_Price_BAO_PriceSet::getSetDetail($priceSetId, $required);
-      $form->_priceSet = $priceSet[$priceSetId] ?? NULL;
-      $form->_values['fee'] = $form->_priceSet['fields'] ?? NULL;
+      $form->_priceSet = $this->order->getPriceSetMetadata();
+      $this->setPriceFieldMetaData($this->order->getPriceFieldsMetadata());
       $form->set('priceSet', $form->_priceSet);
     }
+  }
+
+  /**
+   * Set price field metadata.
+   *
+   * @param array $metadata
+   */
+  public function setPriceFieldMetaData(array $metadata): void {
+    $this->_values['fee'] = $this->_priceSet['fields'] = $metadata;
+  }
+
+  /**
+   * Get price field metadata.
+   *
+   * The returned value is an array of arrays where each array
+   * is an id-keyed price field and an 'options' key has been added to that
+   * arry for any options.
+   *
+   * @api This function will not change in a minor release and is supported for
+   * use outside of core. This annotation / external support for properties
+   * is only given where there is specific test cover.
+   *
+   * @return array
+   */
+  public function getPriceFieldMetaData(): array {
+    if (!empty($this->_values['fee'])) {
+      return $this->_values['fee'];
+    }
+    if (!empty($this->_priceSet['fields'])) {
+      return $this->_priceSet['fields'];
+    }
+    return $this->order->getPriceFieldsMetadata();
   }
 
   /**
@@ -792,8 +838,6 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
           }
         }
 
-        $this->assign($name, $fields);
-
         if ($profileContactType && count($viewOnlyFileValues[$profileContactType])) {
           $this->assign('viewOnlyPrefixFileValues', $viewOnlyFileValues);
         }
@@ -802,6 +846,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
         }
       }
     }
+    $this->assign($name, $fields ?? NULL);
   }
 
   /**
@@ -859,195 +904,6 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       $this->assign('paymentFields', $paymentFields);
 
     }
-  }
-
-  /**
-   * Add onbehalf/honoree profile fields and native module fields.
-   *
-   * @param int $id
-   * @param CRM_Core_Form $form
-   *
-   * @throws \CRM_Core_Exception
-   */
-  public function buildComponentForm($id, $form): void {
-    if (empty($id)) {
-      return;
-    }
-
-    $contactID = $this->getContactID();
-
-    foreach (['soft_credit', 'on_behalf'] as $module) {
-      if ($module === 'soft_credit') {
-        if (empty($form->_values['honoree_profile_id'])) {
-          continue;
-        }
-
-        if (!CRM_Core_DAO::getFieldValue('CRM_Core_DAO_UFGroup', $form->_values['honoree_profile_id'], 'is_active')) {
-          CRM_Core_Error::statusBounce(ts('This contribution page has been configured for contribution on behalf of honoree and the selected honoree profile is either disabled or not found.'));
-        }
-
-        $profileContactType = CRM_Core_BAO_UFGroup::getContactType($form->_values['honoree_profile_id']);
-        $requiredProfileFields = [
-          'Individual' => ['first_name', 'last_name'],
-          'Organization' => ['organization_name', 'email'],
-          'Household' => ['household_name', 'email'],
-        ];
-        $validProfile = CRM_Core_BAO_UFGroup::checkValidProfile($form->_values['honoree_profile_id'], $requiredProfileFields[$profileContactType]);
-        if (!$validProfile) {
-          CRM_Core_Error::statusBounce(ts('This contribution page has been configured for contribution on behalf of honoree and the required fields of the selected honoree profile are disabled or doesn\'t exist.'));
-        }
-
-        foreach (['honor_block_title', 'honor_block_text'] as $name) {
-          $form->assign($name, $form->_values[$name]);
-        }
-
-        $softCreditTypes = CRM_Core_OptionGroup::values("soft_credit_type", FALSE);
-
-        // radio button for Honor Type
-        foreach ($form->_values['soft_credit_types'] as $value) {
-          $honorTypes[$value] = $softCreditTypes[$value];
-        }
-        $form->addRadio('soft_credit_type_id', NULL, $honorTypes, ['allowClear' => TRUE]);
-
-        $honoreeProfileFields = CRM_Core_BAO_UFGroup::getFields(
-          $this->_values['honoree_profile_id'], FALSE,
-          NULL, NULL,
-          NULL, FALSE,
-          NULL, TRUE,
-          NULL, CRM_Core_Permission::CREATE
-        );
-        $form->assign('honoreeProfileFields', $honoreeProfileFields);
-
-        // add the form elements
-        foreach ($honoreeProfileFields as $name => $field) {
-          // If soft credit type is not chosen then make omit requiredness from honoree profile fields
-          if (count($form->_submitValues) &&
-            empty($form->_submitValues['soft_credit_type_id']) &&
-            !empty($field['is_required'])
-          ) {
-            $field['is_required'] = FALSE;
-          }
-          CRM_Core_BAO_UFGroup::buildProfile($form, $field, CRM_Profile_Form::MODE_CREATE, NULL, FALSE, FALSE, NULL, 'honor');
-        }
-      }
-      else {
-        if (empty($form->_values['onbehalf_profile_id'])) {
-          continue;
-        }
-
-        if (!CRM_Core_DAO::getFieldValue('CRM_Core_DAO_UFGroup', $form->_values['onbehalf_profile_id'], 'is_active')) {
-          CRM_Core_Error::statusBounce(ts('This contribution page has been configured for contribution on behalf of an organization and the selected onbehalf profile is either disabled or not found.'));
-        }
-
-        $member = CRM_Member_BAO_Membership::getMembershipBlock($form->_id);
-        if (empty($member['is_active'])) {
-          $msg = ts('Mixed profile not allowed for on behalf of registration/sign up.');
-          $onBehalfProfile = CRM_Core_BAO_UFGroup::profileGroups($form->_values['onbehalf_profile_id']);
-          foreach (
-            [
-              'Individual',
-              'Organization',
-              'Household',
-            ] as $contactType
-          ) {
-            if (in_array($contactType, $onBehalfProfile) &&
-              (in_array('Membership', $onBehalfProfile) ||
-                in_array('Contribution', $onBehalfProfile)
-              )
-            ) {
-              CRM_Core_Error::statusBounce($msg);
-            }
-          }
-        }
-
-        if ($contactID) {
-          // retrieve all permissioned organizations of contact $contactID
-          $organizations = CRM_Contact_BAO_Relationship::getPermissionedContacts($contactID, NULL, NULL, 'Organization');
-
-          if (count($organizations)) {
-            // Related org url - pass checksum if needed
-            $args = [
-              'ufID' => $form->_values['onbehalf_profile_id'],
-              'cid' => '',
-            ];
-            if (!empty($_GET['cs'])) {
-              $args = [
-                'ufID' => $form->_values['onbehalf_profile_id'],
-                'uid' => $this->_contactID,
-                'cs' => $_GET['cs'],
-                'cid' => '',
-              ];
-            }
-            $locDataURL = CRM_Utils_System::url('civicrm/ajax/permlocation', $args, FALSE, NULL, FALSE);
-            $form->assign('locDataURL', $locDataURL);
-          }
-          if (count($organizations) > 0) {
-            $form->add('select', 'onbehalfof_id', '', CRM_Utils_Array::collect('name', $organizations));
-
-            $orgOptions = [
-              0 => ts('Select an existing organization'),
-              1 => ts('Enter a new organization'),
-            ];
-            $form->addRadio('org_option', ts('options'), $orgOptions);
-            $form->setDefaults(['org_option' => 0]);
-          }
-        }
-
-        $form->assign('fieldSetTitle', CRM_Core_BAO_UFGroup::getFrontEndTitle($form->_values['onbehalf_profile_id']));
-
-        if (!empty($form->_values['is_for_organization'])) {
-          if ($form->_values['is_for_organization'] == 2) {
-            $form->assign('onBehalfRequired', TRUE);
-          }
-          else {
-            $form->addElement('checkbox', 'is_for_organization',
-              $form->_values['for_organization'],
-              NULL
-            );
-          }
-        }
-
-        $profileFields = CRM_Core_BAO_UFGroup::getFields(
-          $form->_values['onbehalf_profile_id'],
-          FALSE, CRM_Core_Action::VIEW, NULL,
-          NULL, FALSE, NULL, FALSE, NULL,
-          CRM_Core_Permission::CREATE, NULL
-        );
-
-        $form->assign('onBehalfOfFields', $profileFields);
-        if (!empty($form->_submitValues['onbehalf'])) {
-          if (!empty($form->_submitValues['onbehalfof_id'])) {
-            $form->assign('submittedOnBehalf', $form->_submitValues['onbehalfof_id']);
-          }
-          $form->assign('submittedOnBehalfInfo', json_encode(str_replace('"', '\"', $form->_submitValues['onbehalf']), JSON_HEX_APOS));
-        }
-
-        $fieldTypes = ['Contact', 'Organization'];
-        if (!empty($form->_membershipBlock)) {
-          $fieldTypes = array_merge($fieldTypes, ['Membership']);
-        }
-        $contactSubType = CRM_Contact_BAO_ContactType::subTypes('Organization');
-        $fieldTypes = array_merge($fieldTypes, $contactSubType);
-
-        foreach ($profileFields as $name => $field) {
-          if (in_array($field['field_type'], $fieldTypes)) {
-            [$prefixName, $index] = CRM_Utils_System::explode('-', $name, 2);
-            if (in_array($prefixName, ['organization_name', 'email']) && empty($field['is_required'])) {
-              $field['is_required'] = 1;
-            }
-            if (count($form->_submitValues) &&
-              empty($form->_submitValues['is_for_organization']) &&
-              $form->_values['is_for_organization'] == 1 &&
-              !empty($field['is_required'])
-            ) {
-              $field['is_required'] = FALSE;
-            }
-            CRM_Core_BAO_UFGroup::buildProfile($form, $field, NULL, NULL, FALSE, 'onbehalf', NULL, 'onbehalf');
-          }
-        }
-      }
-    }
-
   }
 
   /**
@@ -1246,10 +1102,9 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
    *   Params reflecting form input e.g with fields 'price_5' => 7, 'price_8' => array(7, 8)
    * @param $lineItems
    *   Line item array to be altered.
-   * @param int $priceSetID
    */
-  public function processAmountAndGetAutoRenew($fields, &$params, &$lineItems, $priceSetID = NULL) {
-    CRM_Price_BAO_PriceSet::processAmount($fields, $params, $lineItems, $priceSetID);
+  public function processAmountAndGetAutoRenew($fields, &$params, &$lineItems) {
+    CRM_Price_BAO_PriceSet::processAmount($fields, $params, $lineItems, $this->getPriceSetID());
     $autoRenew = [];
     $autoRenew[0] = $autoRenew[1] = $autoRenew[2] = 0;
     foreach ($lineItems as $lineItem) {
@@ -1396,6 +1251,39 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       $lineItems[$id]['id'] = $id;
     }
     return $lineItems;
+  }
+
+  /**
+   * Get the PCP ID being contributed to.
+   *
+   * @return int|null
+   */
+  protected function getPcpID(): ?int {
+    if ($this->_pcpId === NULL) {
+      $this->_pcpId = CRM_Utils_Request::retrieve('pcpId', 'Positive', $this);
+    }
+    return $this->_pcpId ? (int) $this->_pcpId : NULL;
+  }
+
+  /**
+   * Get the selected Contribution ID.
+   *
+   * @api This function will not change in a minor release and is supported for
+   * use outside of core. This annotation / external support for properties
+   * is only given where there is specific test cover.
+   *
+   * @noinspection PhpUnhandledExceptionInspection
+   */
+  public function getContributionID(): ?int {
+    if ($this->getExistingContributionID()) {
+      return $this->getExistingContributionID();
+    }
+    if (property_exists($this, '_contributionID')) {
+      // Available on Confirm form (which is tested), so this avoids
+      // accessing that directly & will work for ThankYou in time.
+      return $this->_contributionID;
+    }
+    return NULL;
   }
 
 }

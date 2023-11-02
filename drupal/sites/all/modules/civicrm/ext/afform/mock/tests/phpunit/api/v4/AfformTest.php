@@ -1,4 +1,6 @@
 <?php
+
+use Civi\Api4\Afform;
 use Civi\Api4\Dashboard;
 
 /**
@@ -31,8 +33,8 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
 
   public function getBasicDirectives() {
     return [
-      ['mockPage', ['title' => '', 'description' => '', 'server_route' => 'civicrm/mock-page', 'permission' => ['access Foobar'], 'is_dashlet' => TRUE, 'submit_enabled' => TRUE]],
-      ['mockBareFile', ['title' => '', 'description' => '', 'permission' => ['access CiviCRM'], 'is_dashlet' => FALSE, 'submit_enabled' => TRUE]],
+      ['mockPage', ['title' => '', 'description' => '', 'server_route' => 'civicrm/mock-page', 'permission' => ['access Foobar'], 'placement' => ['dashboard_dashlet'], 'submit_enabled' => TRUE]],
+      ['mockBareFile', ['title' => '', 'description' => '', 'permission' => ['access CiviCRM'], 'placement' => [], 'submit_enabled' => TRUE]],
       ['mockFoo', ['title' => '', 'description' => '', 'permission' => ['access CiviCRM']], 'submit_enabled' => TRUE],
       ['mock-weird-name', ['title' => 'Weird Name', 'description' => '', 'permission' => ['access CiviCRM']], 'submit_enabled' => TRUE],
     ];
@@ -55,7 +57,7 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
       $dashlet = Dashboard::get(FALSE)
         ->addWhere('name', '=', $formName)
         ->execute();
-      if (!empty($afform['is_dashlet'])) {
+      if (in_array('dashboard_dashlet', $afform['placement'] ?? [], TRUE)) {
         $this->assertCount(1, $dashlet);
       }
       else {
@@ -63,17 +65,17 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
       }
     };
 
-    Civi\Api4\Afform::revert()->addWhere('name', '=', $formName)->execute();
+    Afform::revert()->addWhere('name', '=', $formName)->execute();
 
     $message = 'The initial Afform.get should return default data';
-    $result = Civi\Api4\Afform::get()
+    $result = Afform::get()
       ->addSelect('*', 'has_base', 'has_local', 'base_module')
       ->addWhere('name', '=', $formName)->execute();
     $this->assertEquals($formName, $result[0]['name'], $message);
     $this->assertEquals($get($originalMetadata, 'title'), $get($result[0], 'title'), $message);
     $this->assertEquals($get($originalMetadata, 'description'), $get($result[0], 'description'), $message);
     $this->assertEquals($get($originalMetadata, 'server_route'), $get($result[0], 'server_route'), $message);
-    $this->assertEquals($get($originalMetadata, 'is_dashlet'), $get($result[0], 'is_dashlet'), $message);
+    $this->assertEquals($get($originalMetadata, 'placement') ?? [], $get($result[0], 'placement'), $message);
     $this->assertEquals($get($originalMetadata, 'permission'), $get($result[0], 'permission'), $message);
     $this->assertTrue(is_array($result[0]['layout']), $message);
     $this->assertEquals(TRUE, $get($result[0], 'has_base'), $message);
@@ -82,23 +84,23 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
     $checkDashlet($originalMetadata);
 
     $message = 'After updating with Afform.create, the revised data should be returned';
-    $result = Civi\Api4\Afform::update()
+    $result = Afform::update()
       ->addWhere('name', '=', $formName)
       ->addValue('description', 'The temporary description')
       ->addValue('permission', ['access foo', 'access bar'])
-      ->addValue('is_dashlet', empty($originalMetadata['is_dashlet']))
+      ->addValue('placement', empty($originalMetadata['placement']) ? ['dashboard_dashlet'] : [])
       ->execute();
     $this->assertEquals($formName, $result[0]['name'], $message);
     $this->assertEquals('The temporary description', $result[0]['description'], $message);
 
     $message = 'After updating, the Afform.get API should return blended data';
-    $result = Civi\Api4\Afform::get()
+    $result = Afform::get()
       ->addSelect('*', 'has_base', 'has_local', 'base_module')
       ->addWhere('name', '=', $formName)->execute();
     $this->assertEquals($formName, $result[0]['name'], $message);
     $this->assertEquals($get($originalMetadata, 'title'), $get($result[0], 'title'), $message);
     $this->assertEquals('The temporary description', $get($result[0], 'description'), $message);
-    $this->assertEquals(empty($originalMetadata['is_dashlet']), $get($result[0], 'is_dashlet'), $message);
+    $this->assertNotEquals($get($originalMetadata, 'placement'), $get($result[0], 'placement'), $message);
     $this->assertEquals($get($originalMetadata, 'server_route'), $get($result[0], 'server_route'), $message);
     $this->assertEquals(['access foo', 'access bar'], $get($result[0], 'permission'), $message);
     $this->assertTrue(is_array($result[0]['layout']), $message);
@@ -107,9 +109,9 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
     $this->assertEquals('org.civicrm.afform-mock', $get($result[0], 'base_module'), $message);
     $checkDashlet($result[0]);
 
-    Civi\Api4\Afform::revert()->addWhere('name', '=', $formName)->execute();
+    Afform::revert()->addWhere('name', '=', $formName)->execute();
     $message = 'After reverting, the final Afform.get should return default data';
-    $result = Civi\Api4\Afform::get()
+    $result = Afform::get()
       ->addSelect('*', 'has_base', 'has_local', 'base_module')
       ->addWhere('name', '=', $formName)->execute();
     $this->assertEquals($formName, $result[0]['name'], $message);
@@ -117,7 +119,7 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
     $this->assertEquals($get($originalMetadata, 'description'), $get($result[0], 'description'), $message);
     $this->assertEquals($get($originalMetadata, 'server_route'), $get($result[0], 'server_route'), $message);
     $this->assertEquals($get($originalMetadata, 'permission'), $get($result[0], 'permission'), $message);
-    $this->assertEquals($get($originalMetadata, 'is_dashlet'), $get($result[0], 'is_dashlet'), $message);
+    $this->assertEquals($get($originalMetadata, 'placement') ?? [], $get($result[0], 'placement'), $message);
     $this->assertTrue(is_array($result[0]['layout']), $message);
     $this->assertEquals(TRUE, $get($result[0], 'has_base'), $message);
     $this->assertEquals(FALSE, $get($result[0], 'has_local'), $message);
@@ -162,7 +164,7 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
    * @dataProvider getFormatExamples
    */
   public function testBasicConvert($formName, $updateFormat, $updateLayout, $readFormat, $readLayout, $exampleName): void {
-    $actual = Civi\Api4\Afform::convert()->setLayout($updateLayout)
+    $actual = Afform::convert()->setLayout($updateLayout)
       ->setFrom($updateFormat)
       ->setTo($readFormat)
       ->execute();
@@ -205,22 +207,22 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
    * @dataProvider getFormatExamples
    */
   public function testUpdateAndGetFormat($formName, $updateFormat, $updateLayout, $readFormat, $readLayout, $exampleName): void {
-    Civi\Api4\Afform::revert()->addWhere('name', '=', $formName)->execute();
+    Afform::revert()->addWhere('name', '=', $formName)->execute();
 
-    Civi\Api4\Afform::update()
+    Afform::update()
       ->addWhere('name', '=', $formName)
       ->setLayoutFormat($updateFormat)
       ->setValues(['layout' => $updateLayout])
       ->execute();
 
-    $result = Civi\Api4\Afform::get()
+    $result = Afform::get()
       ->addWhere('name', '=', $formName)
       ->setLayoutFormat($readFormat)
       ->execute();
 
     $this->assertEquals($readLayout, $this->fudgeMarkup($result[0]['layout']), "Based on \"$exampleName\", writing content as \"$updateFormat\" and reading back as \"$readFormat\".");
 
-    Civi\Api4\Afform::revert()->addWhere('name', '=', $formName)->execute();
+    Afform::revert()->addWhere('name', '=', $formName)->execute();
   }
 
   public function getWhitespaceExamples() {
@@ -241,12 +243,12 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
    * @dataProvider getWhitespaceExamples
    */
   public function testWhitespaceFormat($directiveName, $example, $exampleName): void {
-    Civi\Api4\Afform::save()
+    Afform::save()
       ->addRecord(['name' => $directiveName, 'layout' => $example['html']])
       ->setLayoutFormat('html')
       ->execute();
 
-    $result = Civi\Api4\Afform::get()
+    $result = Afform::get()
       ->addWhere('name', '=', $directiveName)
       ->setLayoutFormat('shallow')
       ->setFormatWhitespace(TRUE)
@@ -255,13 +257,13 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
 
     $this->assertEquals($example['stripped'] ?? $example['shallow'], $this->fudgeMarkup($result['layout']));
 
-    Civi\Api4\Afform::save()
+    Afform::save()
       ->addRecord(['name' => $directiveName, 'layout' => $result['layout']])
       ->setLayoutFormat('shallow')
       ->setFormatWhitespace(TRUE)
       ->execute();
 
-    $result = Civi\Api4\Afform::get()
+    $result = Afform::get()
       ->addWhere('name', '=', $directiveName)
       ->setLayoutFormat('html')
       ->execute()
@@ -275,25 +277,25 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
     $this->createLoggedInUser();
 
     // The default mockPage has 1 explicit requirement + 2 automatic requirements.
-    Civi\Api4\Afform::revert()->addWhere('name', '=', $formName)->execute();
+    Afform::revert()->addWhere('name', '=', $formName)->execute();
     $angModule = Civi::service('angular')->getModule($formName);
     $this->assertEquals(['afCore', 'mockBespoke', 'mockBareFile', 'mockFoo'], $angModule['requires']);
-    $storedRequires = Civi\Api4\Afform::get()->addWhere('name', '=', $formName)->addSelect('requires')->execute();
+    $storedRequires = Afform::get()->addWhere('name', '=', $formName)->addSelect('requires')->execute();
     $this->assertEquals(['mockBespoke'], $storedRequires[0]['requires']);
 
     // Knock down to 1 explicit + 1 automatic.
-    Civi\Api4\Afform::update()
+    Afform::update()
       ->addWhere('name', '=', $formName)
       ->setLayoutFormat('html')
       ->setValues(['layout' => '<div>The bare file says "<mock-bare-file/>"</div>'])
       ->execute();
     $angModule = Civi::service('angular')->getModule($formName);
     $this->assertEquals(['afCore', 'mockBespoke', 'mockBareFile'], $angModule['requires']);
-    $storedRequires = Civi\Api4\Afform::get()->addWhere('name', '=', $formName)->addSelect('requires')->execute();
+    $storedRequires = Afform::get()->addWhere('name', '=', $formName)->addSelect('requires')->execute();
     $this->assertEquals(['mockBespoke'], $storedRequires[0]['requires']);
 
     // Remove the last explict and implicit requirements.
-    Civi\Api4\Afform::update()
+    Afform::update()
       ->addWhere('name', '=', $formName)
       ->setLayoutFormat('html')
       ->setValues([
@@ -303,10 +305,10 @@ class api_v4_AfformTest extends api_v4_AfformTestCase {
       ->execute();
     $angModule = Civi::service('angular')->getModule($formName);
     $this->assertEquals(['afCore'], $angModule['requires']);
-    $storedRequires = Civi\Api4\Afform::get()->addWhere('name', '=', $formName)->addSelect('requires')->execute();
+    $storedRequires = Afform::get()->addWhere('name', '=', $formName)->addSelect('requires')->execute();
     $this->assertEquals([], $storedRequires[0]['requires']);
 
-    Civi\Api4\Afform::revert()->addWhere('name', '=', $formName)->execute();
+    Afform::revert()->addWhere('name', '=', $formName)->execute();
     $angModule = Civi::service('angular')->getModule($formName);
     $this->assertEquals(['afCore', 'mockBespoke', 'mockBareFile', 'mockFoo'], $angModule['requires']);
   }

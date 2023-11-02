@@ -190,7 +190,7 @@ class CRM_Utils_Mail {
       $htmlMessage = FALSE;
     }
     $attachments = $params['attachments'] ?? NULL;
-    if (!empty($params['text'])) {
+    if (!empty($params['text']) && trim($params['text'])) {
       $textMessage = $params['text'];
     }
     else {
@@ -276,7 +276,13 @@ class CRM_Utils_Mail {
           TRUE,
           'base64',
           'attachment',
-          (isset($attach['charset']) ? $attach['charset'] : '')
+          (isset($attach['charset']) ? $attach['charset'] : ''),
+          '',
+          '',
+          NULL,
+          NULL,
+          '',
+          'utf-8'
         );
       }
     }

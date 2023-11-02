@@ -247,6 +247,16 @@ return [
                   'condition' => ['is_active', '=', TRUE],
                 ],
                 [
+                  'icon' => 'fa-copy',
+                  'text' => E::ts('Copy'),
+                  'style' => 'default',
+                  'condition' => [],
+                  'entity' => 'UFGroup',
+                  'action' => 'copy',
+                  'join' => '',
+                  'target' => '',
+                ],
+                [
                   'icon' => 'fa-trash',
                   'text' => E::ts('Delete'),
                   'style' => 'danger',
@@ -262,10 +272,15 @@ return [
               'label' => '',
             ],
           ],
-          'addButton' => [
-            'path' => 'civicrm/admin/uf/group/add?action=add&reset=1',
-            'text' => E::ts('Add Profile'),
-            'icon' => 'fa-plus',
+          'toolbar' => [
+            [
+              'entity' => 'UFGroup',
+              'action' => 'add',
+              'target' => 'crm-popup',
+              'style' => 'primary',
+              'text' => E::ts('Add Profile'),
+              'icon' => 'fa-plus',
+            ],
           ],
           'cssRules' => [
             [

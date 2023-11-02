@@ -305,25 +305,11 @@ class CRM_Contact_Page_View_Summary extends CRM_Contact_Page_View {
         'icon' => 'crm-i fa-tasks',
       ],
       [
-        'id' => 'rel',
-        'title' => ts('Relationships'),
-        'class' => 'livePage',
-        'weight' => 80,
-        'icon' => 'crm-i fa-handshake-o',
-      ],
-      [
         'id' => 'group',
         'title' => ts('Groups'),
         'class' => 'ajaxForm',
         'weight' => 90,
         'icon' => 'crm-i fa-users',
-      ],
-      [
-        'id' => 'note',
-        'title' => ts('Notes'),
-        'class' => 'livePage',
-        'weight' => 100,
-        'icon' => 'crm-i fa-sticky-note-o',
       ],
       [
         'id' => 'tag',

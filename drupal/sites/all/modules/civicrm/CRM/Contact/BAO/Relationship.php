@@ -1807,14 +1807,9 @@ AND cc.sort_name LIKE '%$name%'";
   }
 
   /**
-   * Wrapper for contact relationship selector.
+   * @deprecated since 5.68. Will be removed around 5.74.
    *
-   * @param array $params
-   *   Associated array for params record id.
-   *
-   * @return array
-   *   associated array of contact relationships
-   * @throws \Exception
+   * Only-used-by-user-dashboard.
    */
   public static function getContactRelationshipSelector(&$params) {
     // format the params
@@ -1957,7 +1952,9 @@ AND cc.sort_name LIKE '%$name%'";
   }
 
   /**
-   * @return array
+   * @deprecated since 5.68. Will be removed around 5.74.
+   *
+   * Only-used-by-user-dashboard.
    */
   public static function getColumnHeaders() {
     return [

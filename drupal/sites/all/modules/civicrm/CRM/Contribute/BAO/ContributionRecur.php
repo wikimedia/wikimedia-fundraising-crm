@@ -38,14 +38,16 @@ class CRM_Contribute_BAO_ContributionRecur extends CRM_Contribute_DAO_Contributi
    * Takes an associative array and creates a contribution object.
    *
    * the function extract all the params it needs to initialize the create a
-   * contribution object. the params array could contain additional unused name/value
-   * pairs
+   * contribution object. the params array could contain additional unused
+   * name/value pairs
    *
    * @param array $params
    *   (reference ) an assoc array of name/value pairs.
    *
-   * @return \CRM_Contribute_BAO_ContributionRecur|\CRM_Core_Error
-   * @todo move hook calls / extended logic to create - requires changing calls to call create not add
+   * @return \CRM_Contribute_BAO_ContributionRecur
+   * @throws \CRM_Core_Exception
+   * @todo move hook calls / extended logic to create - requires changing calls
+   *   to call create not add
    */
   public static function add(&$params) {
     if (!empty($params['id'])) {

@@ -47,7 +47,7 @@ class CRM_Report_BAO_ReportInstance extends CRM_Report_DAO_ReportInstance implem
     }
 
     if (!$instanceID || !isset($params['id'])) {
-      $params['is_reserved'] = CRM_Utils_Array::value('is_reserved', $params, FALSE);
+      $params['is_reserved'] = $params['is_reserved'] ?? FALSE;
       $params['domain_id'] = CRM_Utils_Array::value('domain_id', $params, CRM_Core_Config::domainID());
       // CRM-17256 set created_id on report creation.
       $params['created_id'] = $params['created_id'] ?? CRM_Core_Session::getLoggedInContactID();
@@ -240,7 +240,7 @@ class CRM_Report_BAO_ReportInstance extends CRM_Report_DAO_ReportInstance implem
       // When deleting a report, also delete from navigation menu
       $navId = CRM_Core_DAO::getFieldValue('CRM_Report_DAO_ReportInstance', $event->id, 'navigation_id');
       if ($navId) {
-        CRM_Core_BAO_Navigation::processDelete($navId);
+        CRM_Core_BAO_Navigation::deleteRecord(['id' => $navId]);
         CRM_Core_BAO_Navigation::resetNavigation();
       }
     }

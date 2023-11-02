@@ -26,7 +26,7 @@
  * @method static mixed permissionDenied() Show access denied screen.
  * @method static mixed logout() Log out the current user.
  * @method static mixed updateCategories() Clear CMS caches related to the user registration/profile forms.
- * @method static void appendBreadCrumb(array $breadCrumbs) Append an additional breadcrumb tag to the existing breadcrumbs.
+ * @method static void appendBreadCrumb(array $breadCrumbs) Append an additional breadcrumb link to the existing breadcrumbs.
  * @method static void resetBreadCrumb() Reset an additional breadcrumb tag to the existing breadcrumb.
  * @method static void addHTMLHead(string $head) Append a string to the head of the HTML file.
  * @method static string postURL(int $action) Determine the post URL for a form.
@@ -452,12 +452,12 @@ class CRM_Utils_System {
 
     return self::url(
       $p,
-      CRM_Utils_Array::value('q', $params),
-      CRM_Utils_Array::value('a', $params, FALSE),
-      CRM_Utils_Array::value('f', $params),
-      CRM_Utils_Array::value('h', $params, TRUE),
-      CRM_Utils_Array::value('fe', $params, FALSE),
-      CRM_Utils_Array::value('fb', $params, FALSE)
+      $params['q'] ?? NULL,
+      $params['a'] ?? FALSE,
+      $params['f'] ?? NULL,
+      $params['h'] ?? TRUE,
+      $params['fe'] ?? FALSE,
+      $params['fb'] ?? FALSE
     );
   }
 

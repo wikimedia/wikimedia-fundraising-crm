@@ -177,10 +177,9 @@ class CRM_Event_Tokens extends CRM_Core_EntityTokens {
     if (!Civi::cache('metadata')->has($cacheKey)) {
       $event = Event::get($this->checkPermissions)->addWhere('id', '=', $eventID)
         ->setSelect(array_merge([
-          'loc_block_id.address_id.street_address',
-          'loc_block_id.address_id.city',
+          'loc_block_id.address_id.*',
           'loc_block_id.address_id.state_province_id:label',
-          'loc_block_id.address_id.postal_code',
+          'loc_block_id.address_id.country_id:label',
           'loc_block_id.email_id.email',
           'loc_block_id.email_2_id.email',
           'loc_block_id.phone_id.phone',
@@ -191,39 +190,36 @@ class CRM_Event_Tokens extends CRM_Core_EntityTokens {
           'loc_block_id.phone_2_id.phone_type_id',
           'loc_block_id.phone_2_id.phone_ext',
           'loc_block_id.phone_2_id.phone_type_id:label',
-          'confirm_email_text',
-          'is_show_location',
           'is_show_location:label',
-          'is_public',
+          'allow_selfcancelxfer',
+          'allow_selfcancelxfer:label',
+          'selfcancelxfer_time',
           'is_public:label',
           'is_share',
           'is_share:label',
           'requires_approval',
           'requires_approval:label',
           'is_monetary:label',
-          'event_type_id:label',
           'event_type_id:name',
           'pay_later_text',
           'pay_later_receipt',
+          'fee_label',
           'custom.*',
         ], $this->getExposedFields()))
         ->execute()->first();
-      $tokens['location']['text/plain'] = \CRM_Utils_Address::format([
-        'street_address' => $event['loc_block_id.address_id.street_address'],
-        'city' => $event['loc_block_id.address_id.city'],
-        'state_province' => $event['loc_block_id.address_id.state_province_id:label'],
-        'postal_code' => $event['loc_block_id.address_id.postal_code'],
-      ]);
-      $tokens['location']['text/html'] = nl2br(trim($tokens['location']['text/plain']));
+      $addressValues = ['address_name' => $event['loc_block_id.address_id.name']];
+      foreach ($event as $key => $value) {
+        if (strpos($key, 'loc_block_id.address_id.') === 0) {
+          $addressValues[str_replace('loc_block_id.address_id.', '', $key)] = $value;
+        }
+      }
+      $tokens['location']['text/plain'] = \CRM_Utils_Address::format($addressValues);
       $tokens['info_url']['text/html'] = \CRM_Utils_System::url('civicrm/event/info', 'reset=1&id=' . $eventID, TRUE, NULL, FALSE, TRUE);
       $tokens['registration_url']['text/html'] = \CRM_Utils_System::url('civicrm/event/register', 'reset=1&id=' . $eventID, TRUE, NULL, FALSE, TRUE);
       $tokens['start_date']['text/html'] = !empty($event['start_date']) ? new DateTime($event['start_date']) : '';
       $tokens['end_date']['text/html'] = !empty($event['end_date']) ? new DateTime($event['end_date']) : '';
       $tokens['contact_email']['text/html'] = $event['loc_block_id.email_id.email'];
       $tokens['contact_phone']['text/html'] = $event['loc_block_id.phone_id.phone'];
-      // We use text/plain for fields which should be converted to html when used in html content.
-      $tokens['confirm_email_text']['text/plain'] = $event['confirm_email_text'];
-      $tokens['pay_later_text']['text/plain'] = $event['pay_later_text'];
 
       foreach ($this->getTokenMetadata() as $fieldName => $fieldSpec) {
         if (!isset($tokens[$fieldName])) {
@@ -270,6 +266,8 @@ class CRM_Event_Tokens extends CRM_Core_EntityTokens {
       'description',
       'is_show_location',
       'is_public',
+      'allow_selfcancelxfer',
+      'selfcancelxfer_time',
       'confirm_email_text',
       'is_monetary',
       'fee_label',
@@ -292,6 +290,8 @@ class CRM_Event_Tokens extends CRM_Core_EntityTokens {
       'is_public' => ['audience' => 'sysadmin'],
       'is_show_location' => ['audience' => 'sysadmin'],
       'is_monetary' => ['audience' => 'sysadmin'],
+      'allow_selfcancelxfer' => ['audience' => 'sysadmin'],
+      'selfcancelxfer_time' => ['audience' => 'sysadmin'],
     ];
   }
 

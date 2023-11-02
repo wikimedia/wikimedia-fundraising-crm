@@ -50,8 +50,24 @@ class FormWrapper {
     return $this->mail ? (array) reset($this->mail) : [];
   }
 
+  /**
+   * Get the number of emails sent.
+   *
+   * @return int
+   */
+  public function getMailCount(): int {
+    return count((array) $this->mail);
+  }
+
   public function getFirstMailBody() : string {
     return $this->getFirstMail()['body'] ?? '';
+  }
+
+  /**
+   * @return array
+   */
+  public function getTemplateVariables(): array {
+    return $this->templateVariables;
   }
 
   private $redirects;
@@ -103,6 +119,7 @@ class FormWrapper {
     if ($state > self::VALIDATED) {
       $this->postProcess();
     }
+    $this->templateVariables = $this->form->get_template_vars();
     return $this;
   }
 
@@ -182,7 +199,7 @@ class FormWrapper {
     $_POST = $formValues;
     $this->form = new $class();
     $_SERVER['REQUEST_METHOD'] = 'GET';
-    $_REQUEST += $urlParameters;
+    $_REQUEST = array_merge($_REQUEST, $urlParameters);
     switch ($class) {
       case 'CRM_Event_Cart_Form_Checkout_Payment':
       case 'CRM_Event_Cart_Form_Checkout_ParticipantsAndPrices':
@@ -337,6 +354,27 @@ class FormWrapper {
       $this->mail[] = ['headers' => $dao->headers, 'body' => $dao->body];
     }
     \Civi::settings()->set('mailing_backend', $this->originalMailSetting);
+  }
+
+  /**
+   * Retrieve a deprecated property, ensuring a deprecation notice is thrown.
+   *
+   * @param string $property
+   *
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   */
+  public function getDeprecatedProperty(string $property) {
+    try {
+      $this->form->$property;
+    }
+    catch (\Exception $e) {
+      $oldErrorLevel = error_reporting(0);
+      $value = $this->form->$property;
+      error_reporting($oldErrorLevel);
+      return $value;
+    }
+    throw new \CRM_Core_Exception('Deprecation should have been triggered');
   }
 
 }
