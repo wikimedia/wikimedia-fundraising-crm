@@ -23,6 +23,9 @@
   <comments>This extensions does not stop people from exporting data, it only hides the action from the menu.</comments>
   <civix>
     <namespace>CRM/Exportpermission</namespace>
-    <format>22.05.2</format>
+    <format>23.02.1</format>
   </civix>
+  <classloader>
+    <psr4 prefix="Civi\" path="Civi"/>
+  </classloader>
 </extension>
