@@ -795,7 +795,7 @@ WHERE  id = %1";
       }
       $options = PriceFieldValue::get(FALSE)
         ->addWhere('price_field_id', 'IN', array_keys($data['fields']))
-        ->addSelect('*', 'membership_type_id.name', 'visibility_id:name')
+        ->addSelect('*', 'visibility_id:name')
         ->execute();
       foreach ($options as $option) {
         // Add in visibility because Smarty templates expect it and it is hard to adjust them to colon format.
