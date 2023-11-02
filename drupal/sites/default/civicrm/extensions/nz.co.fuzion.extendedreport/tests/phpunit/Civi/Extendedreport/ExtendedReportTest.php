@@ -1,7 +1,6 @@
 <?php
 
-use Civi\Core\HookInterface;
-use Civi\Extendedreport\BaseTestClass;
+namespace Civi\Extendedreport;
 
 /**
  * FIXME - Add test description.
@@ -17,43 +16,41 @@ use Civi\Extendedreport\BaseTestClass;
  *
  * @group headless
  */
-class ExtendedReportTest extends BaseTestClass implements HookInterface {
+class ExtendedReportTest extends BaseTestClass {
 
   public function setUp(): void {
     parent::setUp();
     $this->enableAllComponents();
   }
 
+  /**
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
   public function tearDown(): void {
-    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_pledge');
+    \CRM_Core_DAO::executeQuery('DELETE FROM civicrm_pledge');
     parent::tearDown();
-    CRM_Core_DAO::reenableFullGroupByMode();
+    \CRM_Core_DAO::reenableFullGroupByMode();
   }
 
   /**
    * Example: Test that a version is returned.
+   *
+   * @throws \Civi\Core\Exception\DBQueryException
    */
   public function testReportsRun(): void {
     foreach ($this->getAllReports() as $report) {
-      try {
-        if (!empty($report['is_require_logging'])) {
-          // Hack alert - there is a bug whereby the table is deleted but the row isn't after ActivityExtendedTest.
-          // So far I've failed to solve this properly - probably transaction rollback in some way.
-          CRM_Core_DAO::executeQuery("DELETE FROM civicrm_custom_group WHERE name = 'Contact'");
-          $this->callAPISuccess('Setting', 'create', ['logging' => TRUE]);
-        }
-        $this->callAPISuccess('ReportTemplate', 'getrows', [
-          'report_id' => $report['params']['report_url'],
-        ]);
-        if (!empty($report['is_require_logging'])) {
-          $this->callAPISuccess('Setting', 'create', ['logging' => FALSE]);
-        }
+      if (!empty($report['is_require_logging'])) {
+        // Hack alert - there is a bug whereby the table is deleted but the row isn't after ActivityExtendedTest.
+        // So far I've failed to solve this properly - probably transaction rollback in some way.
+        \CRM_Core_DAO::executeQuery("DELETE FROM civicrm_custom_group WHERE name = 'Contact'");
+        $this->callAPISuccess('Setting', 'create', ['logging' => TRUE]);
       }
-      catch (CiviCRM_API3_Exception $e) {
-        $extra = $e->getExtraParams();
-        $this->fail($report['params']['report_url'] . " " . $e->getMessage() . " \n" . CRM_Utils_Array::value('sql', $extra) . "\n" . $extra['trace']);
+      $this->callAPISuccess('ReportTemplate', 'getrows', [
+        'report_id' => $report['params']['report_url'],
+      ]);
+      if (!empty($report['is_require_logging'])) {
+        $this->callAPISuccess('Setting', 'create', ['logging' => FALSE]);
       }
-
     }
   }
 
@@ -102,10 +99,11 @@ class ExtendedReportTest extends BaseTestClass implements HookInterface {
           'name' => 'civicrm_contact_last_name',
         ],
       ],
-      'fields' => ['civicrm_contact_first_name' => 1, 'civicrm_contact_middle_name' => 1],
+      'fields' => ['civicrm_contact_first_name' => 1, 'civicrm_contact_middle_name' => 1, 'class' => ''],
       'group_bys' => $group_bys,
+      'class' => '',
     ]);
-    $this->assertEquals(['civicrm_contact_civicrm_contact_middle_name', 'civicrm_contact_civicrm_contact_last_name'], array_keys($rows[0]));
+    $this->assertEquals(['civicrm_contact_civicrm_contact_middle_name', 'civicrm_contact_civicrm_contact_last_name', 'class'], array_keys($rows[0]));
     $this->assertEquals('special name(First name)', $this->labels['civicrm_contact_civicrm_contact_middle_name']);
     $this->assertEquals('boring name', $this->labels['civicrm_contact_civicrm_contact_last_name']);
     $this->assertEquals('first', $rows[0]['civicrm_contact_civicrm_contact_middle_name']);
@@ -304,7 +302,7 @@ class ExtendedReportTest extends BaseTestClass implements HookInterface {
     $this->assertEquals(14285.74, $rows[0]['civicrm_pledge_payment_pledge_payment_scheduled_amount_sum']);
     $this->assertEquals(14285.74, $rows[0]['civicrm_pledge_payment_pledge_payment_scheduled_amount_cumulative']);
     $this->assertEquals(10000, $rows[1]['civicrm_pledge_payment_pledge_payment_scheduled_amount_sum']);
-    $this->assertEquals(24285.74, $rows[1]['civicrm_pledge_payment_pledge_payment_scheduled_amount_cumulative']);
+    $this->assertEquals(24285.74, round($rows[1]['civicrm_pledge_payment_pledge_payment_scheduled_amount_cumulative'], 2));
   }
 
   /**
@@ -351,10 +349,10 @@ class ExtendedReportTest extends BaseTestClass implements HookInterface {
     $this->assertEquals(14285.74, $rows[0]['civicrm_pledge_payment_pledge_payment_scheduled_amount_sum']);
     $this->assertEquals(14285.74, $rows[0]['civicrm_pledge_payment_pledge_payment_scheduled_amount_cumulative']);
     $this->assertEquals(10000, $rows[1]['civicrm_pledge_payment_pledge_payment_scheduled_amount_sum']);
-    $this->assertEquals(24285.74, $rows[1]['civicrm_pledge_payment_pledge_payment_scheduled_amount_cumulative']);
+    $this->assertEquals(24285.74, round($rows[1]['civicrm_pledge_payment_pledge_payment_scheduled_amount_cumulative'], 2));
     $this->assertEquals(10000, $rows[2]['civicrm_pledge_payment_pledge_payment_scheduled_amount_sum']);
     $this->assertEquals(34285.74, $rows[2]['civicrm_pledge_payment_pledge_payment_scheduled_amount_cumulative']);
-    $this->assertEquals(24285.74, $rows[1]['civicrm_pledge_payment_pledge_payment_scheduled_amount_cumulative']);
+    $this->assertEquals(24285.74, round($rows[1]['civicrm_pledge_payment_pledge_payment_scheduled_amount_cumulative'], 2));
     $this->assertEquals(85714.26, $rows[3]['civicrm_pledge_payment_pledge_payment_scheduled_amount_sum']);
   }
 

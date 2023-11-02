@@ -1,10 +1,6 @@
 <?php
 
-require_once __DIR__ . '../../BaseTestClass.php';
-
-use Civi\Test\HeadlessInterface;
-use Civi\Test\HookInterface;
-use Civi\Test\TransactionalInterface;
+namespace Civi\Extendedreport;
 
 /**
  * Test contribution DetailExtended class.
@@ -20,12 +16,11 @@ use Civi\Test\TransactionalInterface;
  *
  * @group headless
  */
-class Contact_BasicContactTest extends BaseTestClass implements HeadlessInterface, HookInterface, TransactionalInterface {
+class BasicContactTest extends BaseTestClass {
 
   protected $contacts = [];
 
   /**
-   * @throws \CRM_Core_Exception
    */
   public function setUp(): void {
     parent::setUp();
@@ -45,21 +40,15 @@ class Contact_BasicContactTest extends BaseTestClass implements HeadlessInterfac
   }
 
   /**
-   * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
-    parent::tearDown();
     $fields = $this->callAPISuccess('CustomField', 'get', ['custom_group_id' => $this->customGroupID])['values'];
     foreach ($fields as $field) {
       $this->callAPISuccess('CustomField', 'delete', ['id' => $field['id']]);
     }
 
     $this->callAPISuccess('CustomGroup', 'delete', ['id' => $this->customGroupID]);
-    foreach ($this->contacts as $contact) {
-      $this->callAPISuccess('Contact', 'delete', ['id' => $contact]);
-    }
-    CRM_Core_DAO::executeQuery('DELETE FROM civicrm_cache');
-    CRM_Core_PseudoConstant::flush();
+    parent::tearDown();
   }
 
   /**
@@ -78,6 +67,7 @@ class Contact_BasicContactTest extends BaseTestClass implements HeadlessInterfac
         'civicrm_contact_display_name' => '1',
         'civicrm_contact_contact_id' => '1',
         'custom_' . $customField['id'] => '1',
+        'class' => NULL,
       ],
     ];
     $rows = $this->getRows($params);
@@ -88,6 +78,7 @@ class Contact_BasicContactTest extends BaseTestClass implements HeadlessInterfac
           'civicrm_contact_civicrm_contact_contact_id' => $this->contacts[1],
           'contact_custom_' . $customField['id'] . '_civireport' => 'Amazons',
           'civicrm_contact_civicrm_contact_contact_id_link' => '/index.php?q=civicrm/contact/view&amp;reset=1&amp;cid=' . $this->contacts[1],
+          'class' => NULL,
         ],
     ], $rows);
     $params['custom_' . $customField['id'] . '_value'] = 'Wonder';
