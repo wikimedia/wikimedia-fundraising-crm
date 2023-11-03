@@ -315,13 +315,13 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         break;
       case "recurring_upgrade":
         if (!isset($msg['amount'])) {
-          throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid amount');
+          throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to upgrade recurring subscription but amount is not set');
         }
         $this->upgradeRecurAmount($msg);
         break;
       case "recurring_downgrade":
         if (!isset($msg['amount'])) {
-          throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid amount');
+          throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to downgrade recurring subscription but amount is not set');
         }
         $this->downgradeRecurAmount($msg);
         break;
@@ -381,7 +381,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       ->first();
 
     if($msg['amount'] < $recur_record['amount']) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid transaction type');
+      throw new WMFException(WMFException::INVALID_RECURRING, 'upgradeRecurAmount: New recurring amount is less than the original amount.');
     }
     [$amountDetails, $activityParams] = $this->getSubscrModificationParameters($msg, $recur_record);
     $amountAdded = $msg['amount'] - $recur_record['amount'];
@@ -408,7 +408,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       ->execute()
       ->first();
     if($msg['amount'] > $recur_record['amount']) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid transaction type');
+      throw new WMFException(WMFException::INVALID_RECURRING, 'downgradeRecurAmount: New recurring amount is greater than the original amount.');
     }
     [$amountDetails, $activityParams] = $this->getSubscrModificationParameters($msg, $recur_record);
     $amountRemoved = $recur_record['amount'] - $msg['amount'];
