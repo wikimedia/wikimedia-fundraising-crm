@@ -97,9 +97,58 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       ->execute()
       ->last();
     $this->assertEquals($testRecurring['amount'] + $additionalAmount, $updatedRecurring['amount']);
-    $this->assertEquals("Added ". $additionalAmount. " " . $msg['currency'], $activity['subject']);
-    $this->assertEquals(json_encode($amountDetails), $activity['details']);
+    $this->assertEquals($activity['subject'], "Added " . $additionalAmount . " " . $msg['currency']);
+    $this->assertEquals($activity['details'], json_encode($amountDetails));
     $this->ids['ContributionRecur'][$testRecurring['id']] = $testRecurring['id'];
+    $this->ids['Activity'][$activity['id']] = $activity['id'];
+  }
+
+  public function testRecurringDowngrade(): void {
+    $testRecurringContributionFor15Dollars = $this->getTestContributionRecurRecords([
+      'amount' => 15,
+    ]);
+
+    // The recurring donation has been reduced by 10 dollars
+    $newRecurringDonationAmount = 5;
+    $changeAmount = ($testRecurringContributionFor15Dollars['amount'] - $newRecurringDonationAmount);
+
+    $recurringQueueMessage = [
+      'txn_type' => "recurring_downgrade",
+      'contribution_recur_id' => $testRecurringContributionFor15Dollars['id'],
+      'amount' => $newRecurringDonationAmount,
+      'currency' => $testRecurringContributionFor15Dollars['currency'],
+    ];
+
+    $amountDetails = [
+      "native_currency" => $recurringQueueMessage['currency'],
+      "native_original_amount" => $testRecurringContributionFor15Dollars['amount'],
+      "usd_original_amount" => round(exchange_rate_convert($recurringQueueMessage['currency'], $testRecurringContributionFor15Dollars['amount']), 2),
+      "native_amount_removed" => $changeAmount,
+      "usd_amount_removed" => round(exchange_rate_convert($recurringQueueMessage['currency'], $changeAmount), 2),
+    ];
+
+    $this->consumer->processMessage($recurringQueueMessage);
+
+    $updatedRecurring = ContributionRecur::get(FALSE)
+      ->addSelect('id', 'amount')
+      ->addWhere('id', '=', $testRecurringContributionFor15Dollars['id'])
+      ->execute()
+      ->first();
+
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $testRecurringContributionFor15Dollars['id'])
+      ->addWhere('activity_type_id', '=', RecurringQueueConsumer::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID)
+      ->execute()
+      ->last();
+
+    $this->assertEquals($newRecurringDonationAmount, $updatedRecurring['amount']);
+
+    $this->assertEquals("Recurring amount reduced by " . abs($changeAmount) . " " . $recurringQueueMessage['currency'], $activity['subject']);
+
+    $this->assertEquals(json_encode($amountDetails), $activity['details']);
+
+    // clean up fixture data
+    $this->ids['ContributionRecur'][$testRecurringContributionFor15Dollars['id']] = $testRecurringContributionFor15Dollars['id'];
     $this->ids['Activity'][$activity['id']] = $activity['id'];
   }
 
