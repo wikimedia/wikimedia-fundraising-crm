@@ -561,6 +561,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
 
   /**
    * Test that a conflict on communication preferences is handled.
+   * Currently, is_opt_out have logic as if any contact opt out, then we mark it opt out, doesn't matter if it's a preferred contact.
    */
   public function testBatchMergeConflictCommunicationPreferences(): void {
     $this->callAPISuccess('Contact', 'create', ['id' => $this->contactID, 'do_not_email' => FALSE, 'is_opt_out' => TRUE]);
