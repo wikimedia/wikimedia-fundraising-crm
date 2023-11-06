@@ -18,14 +18,16 @@
   <version>1.0</version>
   <develStage>alpha</develStage>
   <compatibility>
-    <ver>5.0</ver>
+    <ver>5.38</ver>
   </compatibility>
   <comments>This is a new, undeveloped module. Our MVP should support pulling data from HEPData (now part of SSBInfo).</comments>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
+    <psr0 prefix="CRM_" path="."/>
   </classloader>
   <civix>
     <namespace>CRM/MatchingGifts</namespace>
-    <format>22.05.2</format>
+    <format>23.02.1</format>
   </civix>
+  <upgrader>CRM_MatchingGifts_Upgrader</upgrader>
 </extension>

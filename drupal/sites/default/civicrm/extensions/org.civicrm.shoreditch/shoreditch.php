@@ -22,46 +22,12 @@ function shoreditch_civicrm_install() {
 }
 
 /**
- * Implements hook_civicrm_uninstall().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
- */
-function shoreditch_civicrm_uninstall() {
-  _shoreditch_civix_civicrm_uninstall();
-}
-
-/**
  * Implements hook_civicrm_enable().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_enable
  */
 function shoreditch_civicrm_enable() {
   _shoreditch_civix_civicrm_enable();
-}
-
-/**
- * Implements hook_civicrm_disable().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_disable
- */
-function shoreditch_civicrm_disable() {
-  _shoreditch_civix_civicrm_disable();
-}
-
-/**
- * Implements hook_civicrm_upgrade().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_upgrade
- */
-function shoreditch_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _shoreditch_civix_civicrm_upgrade($op, $queue);
-}
-
-/**
- * Implements hook_civicrm_postInstall().
- */
-function shoreditch_civicrm_postInstall() {
-  _shoreditch_civix_civicrm_postInstall();
 }
 
 /**
@@ -131,13 +97,4 @@ function _shoreditch_isActive() {
   }
 
   return Civi::service('themes')->getActiveThemeKey() === 'shoreditch';
-}
-
-/**
- * Implements hook_civicrm_entityTypes().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
- */
-function shoreditch_civicrm_entityTypes(&$entityTypes) {
-  _shoreditch_civix_civicrm_entityTypes($entityTypes);
 }

@@ -19,37 +19,10 @@ function extendedreport_civicrm_install() {
 }
 
 /**
- * Implementation of hook_civicrm_uninstall
- */
-function extendedreport_civicrm_uninstall() {
-  return _extendedreport_civix_civicrm_uninstall();
-}
-
-/**
  * Implementation of hook_civicrm_enable
  */
 function extendedreport_civicrm_enable() {
   return _extendedreport_civix_civicrm_enable();
-}
-
-/**
- * Implementation of hook_civicrm_disable
- */
-function extendedreport_civicrm_disable() {
-  return _extendedreport_civix_civicrm_disable();
-}
-
-/**
- * Implements hook_civicrm_upgrade().
- *
- * @param $op string, the type of operation being performed; 'check' or 'enqueue'
- * @param \CRM_Queue_Queue|null $queue CRM_Queue_Queue, (for 'enqueue') the modifiable list of pending up upgrade tasks
- *
- * @return mixed  based on op. for 'check', returns array(boolean) (TRUE if upgrades are pending)
- *                for 'enqueue', returns void
- */
-function extendedreport_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _extendedreport_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
@@ -68,15 +41,16 @@ function extendedreport_version_at_least($version) {
 }
 
 function extendedreport_civicrm_tabset($tabsetName, &$tabs, $context) {
-  $reports = civicrm_api3('ReportInstance', 'get', ['form_values' => ['LIKE' => '%contact_dashboard_tab";s:1:"1";%']]);
-
-  if (!isset($context['contact_id'])) {
+  if ($tabsetName !== 'civicrm/contact/view') {
     return;
   }
+  $reports = civicrm_api3('ReportInstance', 'get', ['form_values' => ['LIKE' => '%contact_dashboard_tab";s:1:"1";%']]);
+
   foreach ($reports['values'] as $report) {
     $tabs['report_' . $report['id']] = [
       'title' => ts($report['title']),
       'id' => 'report_' . $report['id'],
+      'icon' => 'crm-i fa-table',
       'url' => CRM_Utils_System::url('civicrm/report/instance/' . $report['id'], [
           'log_civicrm_address_op' => 'in',
           'contact_id_value' => $context['contact_id'],
@@ -146,22 +120,4 @@ function extendedreport_civicrm_contactSummaryBlocks(&$blocks) {
     ];
   }
 
-}
-
-/**
- * Implements hook_civicrm_postInstall().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
- */
-function extendedreport_civicrm_postInstall() {
-  _extendedreport_civix_civicrm_postInstall();
-}
-
-/**
- * Implements hook_civicrm_entityTypes().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
- */
-function extendedreport_civicrm_entityTypes(&$entityTypes) {
-  _extendedreport_civix_civicrm_entityTypes($entityTypes);
 }

@@ -23,38 +23,10 @@ function exportpermission_civicrm_install() {
 }
 
 /**
- * Implements hook_civicrm_postInstall().
- */
-function exportpermission_civicrm_postInstall() {
-  _exportpermission_civix_civicrm_postInstall();
-}
-
-/**
- * Implements hook_civicrm_uninstall().
- */
-function exportpermission_civicrm_uninstall() {
-  _exportpermission_civix_civicrm_uninstall();
-}
-
-/**
  * Implements hook_civicrm_enable().
  */
 function exportpermission_civicrm_enable() {
   _exportpermission_civix_civicrm_enable();
-}
-
-/**
- * Implements hook_civicrm_disable().
- */
-function exportpermission_civicrm_disable() {
-  _exportpermission_civix_civicrm_disable();
-}
-
-/**
- * Implements hook_civicrm_upgrade().
- */
-function exportpermission_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
-  return _exportpermission_civix_civicrm_upgrade($op, $queue);
 }
 
 /**
@@ -154,13 +126,4 @@ function exportpermission_civicrm_buildForm($formName, &$form) {
   if ($bounce) {
     CRM_Core_Error::statusBounce(E::ts('You do not have permission to access this page.'));
   }
-}
-
-/**
- * Implements hook_civicrm_entityTypes().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
- */
-function exportpermission_civicrm_entityTypes(&$entityTypes) {
-  _exportpermission_civix_civicrm_entityTypes($entityTypes);
 }
