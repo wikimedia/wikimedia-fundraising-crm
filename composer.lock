@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "450c13428fe1d36397050cea8fea5747",
+    "content-hash": "0535f383e1920d855f8931d2abdd5f02",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -4890,16 +4890,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.8.8.7",
+            "version": "v0.8.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "4eabe2518acd1013588b4f23fa9da3de19c3634f"
+                "reference": "2b9dd05998c26b1b3d3a880fa89ff892301fff20"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/4eabe2518acd1013588b4f23fa9da3de19c3634f",
-                "reference": "4eabe2518acd1013588b4f23fa9da3de19c3634f",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/2b9dd05998c26b1b3d3a880fa89ff892301fff20",
+                "reference": "2b9dd05998c26b1b3d3a880fa89ff892301fff20",
                 "shasum": ""
             },
             "require": {
@@ -4974,9 +4974,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.8.7"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.9"
             },
-            "time": "2023-10-27T00:08:16+00:00"
+            "time": "2023-11-07T14:26:08+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -7100,5 +7100,5 @@
     "platform-overrides": {
         "php": "7.4.33"
     },
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.6.0"
 }
