@@ -7,7 +7,7 @@ use SmashPig\PaymentData\ErrorCode;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\FailureEmail;
-use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
+use SmashPig\PaymentProviders\Responses\CreatePaymentWithProcessorRetryResponse;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
 
@@ -361,23 +361,15 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    */
   protected function recordFailedPayment($recurringPayment, CiviCRM_API3_Exception $exception) {
     $cancelRecurringDonation = FALSE;
-    $isAutoRescueResponse = FALSE;
     $errorData = $exception->getErrorData();
-    $rawResponse = NULL;
     $errorResponse = $errorData['smashpig_processor_response'] ?? $exception->getMessage();
     $params = [
       'id' => $recurringPayment['id'],
     ];
-
     if (!empty($errorResponse) &&
-                $errorResponse instanceof PaymentProviderResponse
+                $errorResponse instanceof CreatePaymentWithProcessorRetryResponse
     ) {
-      $rawResponse = $errorResponse->getRawResponse();
-      $isAutoRescueResponse = !empty($rawResponse['additionalData']) && isset($rawResponse['additionalData']['retry.rescueScheduled']);
-    }
-
-    if ($isAutoRescueResponse) {
-      if ($rawResponse['additionalData']['retry.rescueScheduled'] === "true") {
+      if ($errorResponse->getIsProcessorRetryScheduled()) {
         $invoiceId = $recurringPayment['invoice_id'];
         $contribution = Contribution::get(FALSE)
           ->addSelect('payment_instrument_id')
@@ -389,7 +381,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         // Skip count failure_count if retry.rescueScheduled is true,
         // which indicating that Auto Rescue will attempt to rescue this payment.
         QueueWrapper::push('pending', [
-          'order_id' => $rawResponse['merchantReference'],
+          'order_id' => $invoiceId,
           'gateway' => 'adyen',
           'gateway_txn_id' => $errorResponse->getGatewayTxnId(),
           'date' => time(),
@@ -407,7 +399,12 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         // This happens when a payment cannot be rescued.
         // For example, because of account closure or fraud.
         $cancelRecurringDonation = TRUE;
-        $params['cancel_reason'] = 'payment cannot be rescued';
+        // retryWindowHasElapsed: The rescue window expired.
+        // maxRetryAttemptsReached: The maximum number of retry attempts was made.
+        // fraudDecline: The retry was rejected due to fraud.
+        // internalError: An internal error occurred while retrying the payment.
+        $params['cancel_reason'] = 'Payment cannot be rescued: ' . $errorResponse->getProcessorRetryRefusalReason();
+        Civi::log('wmf')->info($params['cancel_reason'] . ' with contribution_recur_id:' . $recurringPayment['id']. ', and order reference is ' .  $recurringPayment['invoice_id']);
       }
     }
     else {
