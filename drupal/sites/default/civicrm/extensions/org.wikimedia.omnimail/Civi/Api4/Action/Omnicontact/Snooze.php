@@ -14,6 +14,7 @@ use Civi\Api4\Generic\Result;
  *
  * @method string|null getEmail()
  * @method $this setEmail(?string $email)
+ * @method $this setContactID(?string $contactID)
  * @method string|null getSnoozeDate()
  * @method $this setSnoozeDate(?string $contactID)
  * @method $this setDatabaseID(int $databaseID)
@@ -23,6 +24,7 @@ use Civi\Api4\Generic\Result;
 class Snooze extends AbstractAction {
 
   protected $email;
+  protected $contactID;
   protected $databaseID;
   protected $snoozeDate;
 
@@ -47,9 +49,8 @@ class Snooze extends AbstractAction {
     if (!$email) {
       throw new \CRM_Core_Exception('Email required.');
     }
-    $contact = Contact::get(FALSE)->addWhere('email_primary.email', '=', $email)->addSelect('id')->execute()->first();
-    if (!empty($contact)) {
-      $contact_id = $contact['id'];
+    if ($this->contactID) {
+      $contact_id = $this->contactID;
       $activity_id = Activity::create(FALSE)
         ->addValue('activity_type_id:name', 'EmailSnoozed')
         ->addValue('status_id:name', 'Scheduled')

@@ -137,14 +137,17 @@ function omnimail_civicrm_custom($op, $groupID, $entityID, &$params) {
     if ($customFieldValue['column_name'] === 'snooze_date') {
       $snoozeDate = $customFieldValue['value'];
       if (!empty($snoozeDate)) {
-        $email = Email::get(FALSE)
+        $fields = Email::get(FALSE)
           ->addWhere('id', '=', $customFieldValue['entity_id'])
           ->addWhere('is_primary', '=', TRUE)
-          ->addSelect('email')
-          ->execute()->first()['email'];
+          ->addSelect('email', 'contact_id')
+          ->execute()->first();
+        $email = $fields['email'];
+        $contact_id = $fields['contact_id'];
         if ($email) {
           Omnicontact::snooze(FALSE)
             ->setEmail($email)
+            ->setContactID($contact_id)
             ->setSnoozeDate($snoozeDate)->execute();
         }
       }
