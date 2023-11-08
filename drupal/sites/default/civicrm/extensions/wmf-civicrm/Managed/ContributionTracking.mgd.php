@@ -175,6 +175,20 @@ return [
             ],
             [
               'type' => 'field',
+              'key' => 'landing_page',
+              'dataType' => 'String',
+              'label' => 'Landing Page',
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'appeal',
+              'dataType' => 'String',
+              'label' => 'Appeal',
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
               'key' => 'os',
               'dataType' => 'String',
               'label' => 'OS',
