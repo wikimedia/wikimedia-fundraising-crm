@@ -33,6 +33,11 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
   /**
    * @var int
    */
+  protected int $maxContributionID;
+
+  /**
+   * @var int
+   */
   protected $trackingCount = 0;
 
   /**
@@ -74,6 +79,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     Civi::settings()->set( 'logging_no_trigger_permission', FALSE);
     Civi::settings()->set( 'logging', TRUE);
     $this->maxContactID = $this->getHighestContactID();
+    $this->maxContributionID = $this->getHighestContributionID();
     $this->trackingCount = CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_contribution_tracking');
   }
 
@@ -91,6 +97,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
       ->addSelect('financial_type_id')
       ->addSelect('contribution_recur_id')
       ->addWhere('contribution_recur_id', 'IS NOT EMPTY')
+      ->addWhere('id', '>', $this->maxContributionID)
       ->addOrderBy('receive_date')
       ->execute();
     $recurringRecords = [];
@@ -168,6 +175,19 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    */
   protected function getHighestContactID(): int {
     return (int) $this->callAPISuccessGetValue('Contact', [
+      'return' => 'id',
+      'is_deleted' => '',
+      'options' => ['limit' => 1, 'sort' => 'id DESC'],
+    ]);
+  }
+
+  /**
+   * Get the highest contribution ID in the database.
+   *
+   * @return int
+   */
+  protected function getHighestContributionID(): int {
+    return (int) $this->callAPISuccessGetValue('Contribution', [
       'return' => 'id',
       'is_deleted' => '',
       'options' => ['limit' => 1, 'sort' => 'id DESC'],

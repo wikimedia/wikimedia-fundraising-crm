@@ -31,6 +31,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
 
   protected $maxContactID;
 
+  protected int $maxContributionID;
   /**
    * Stored version of failure template to restore.
    *
@@ -109,6 +110,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
       ->addWhere('status_id:name', '=', 'active')
       ->execute();
     $this->maxContactID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
+    $this->maxContributionID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution');
     parent::setUp();
   }
 
@@ -156,6 +158,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
       ->addSelect('financial_type_id')
       ->addSelect('contribution_recur_id')
       ->addWhere('contribution_recur_id', 'IS NOT EMPTY')
+      ->addWhere('id', '>', $this->maxContributionID)
       ->addOrderBy('receive_date')
       ->execute();
     $recurringRecords = [];
