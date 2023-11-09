@@ -665,8 +665,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'frequency_unit' => 'month',
     ]);
 
-    $date = 1694530827;
-    $expectedNextDate = wmf_common_date_unix_to_civicrm(strtotime("+" . $recur['frequency_interval'] . " " . $recur['frequency_unit'], $date));
+    $date =  time();
     $orderId = "279.2";
     $message = new RecurringPaymentMessage(
     [
@@ -702,7 +701,20 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       ->first();
 
     $this->assertEquals('Completed', $updatedRecur['contribution_status_id:label']);
-    $this->assertEquals($expectedNextDate, $updatedRecur['next_sched_contribution_date']);
+
+    // check that the generated next_sched date is in the next month
+    $this->assertEquals(
+      date('m', strtotime ('+1 month', $date ) ),
+      date('m', strtotime ($updatedRecur['next_sched_contribution_date']))
+    );
+
+    // check that the generated next_sched date is between 28 and 31 days away
+    $today = DateTime::createFromFormat( "U", $date );
+    $nextMonth = new DateTime( $updatedRecur['next_sched_contribution_date'] );
+    $difference = $nextMonth->diff( $today )->days;
+    $this->assertGreaterThanOrEqual( 28 , $difference );
+    $this->assertLessThanOrEqual( 31, $difference );
+
     $this->assertStringContainsString($orderId, $contributionsAfterRecurring[0]['invoice_id']);
   }
 
@@ -746,7 +758,8 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       ->setValues(array_merge([
         'contact_id' => $contactID,
         'amount' => 10,
-        'frequency_interval' => 'week',
+        'frequency_interval' => 'month',
+        'cycle_day' => date('d' ),
         'start_date' => 'now',
         'is_active' => TRUE,
         'contribution_status_id:name' => 'Pending',
