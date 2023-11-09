@@ -197,7 +197,7 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
  * @throws \Civi\WMFException\WMFException|\Statistics\Exception\StatisticsCollectorException
  */
 function wmf_civicrm_contribution_message_import(array &$msg): array {
-  // we need to know recurring status this early so we can decide on the timer naming
+  // we need to know recurring status this early, so we can decide on the timer naming
   $isRecurring = $msg['recurring'] ?? !empty($msg['contribution_recur_id']);
   $importTimerName = getImportTimerName($isRecurring);
   _get_import_timer()->startImportTimer($importTimerName);
@@ -799,12 +799,18 @@ function wmf_civicrm_verify_message_and_stage($msg) {
     'supplemental_address_1' => 96,
     'supplemental_address_2' => 96,
   ];
+  // Truncate address and name if exceed the max_lengths that civi allowed
+  // since they should not be a blocker to import contribution msg
   $truncate_tags = [
     'postal_code' => 'AddressTruncated',
     'street_address' => 'AddressTruncated',
     'supplemental_address_1' => 'AddressTruncated',
     'supplemental_address_2' => 'AddressTruncated',
     'city' => 'AddressTruncated',
+    'first_name' => 'NameTruncated',
+    'last_name' => 'NameTruncated',
+    'middle_name' => 'NameTruncated',
+    'organization_name' => 'NameTruncated',
   ];
   foreach ($max_lengths as $key => $limit) {
     if (mb_strlen($msg[$key]) > $limit) {
