@@ -14,6 +14,7 @@ use Civi\WMFHooks\ContributionRecurTrigger;
 use Civi\WMFHooks\ContributionSoft;
 use Civi\WMFHooks\Import;
 use Civi\WMFHooks\Permissions;
+use Civi\WMFHooks\ProfileDynamic;
 use Civi\WMFHooks\QuickForm;
 use Civi\WMFHooks\Data;
 use Civi\Api4\MessageTemplate;
@@ -488,7 +489,7 @@ function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
   if (in_array($pageClass, $ctPages)) {
       Civi::service('angularjs.loader')->addModules('afsearchContributionTracking');
   }
-
+  ProfileDynamic::pageRun($page);
   // Only add the markup to the contribution page
   if ($pageClass === 'CRM_Contribute_Page_Tab') {
     $id = $page->getVar('_id');
