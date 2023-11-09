@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\ContributionTracking;
+use SmashPig\Core\DataStores\QueueWrapper;
 
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
 
@@ -264,14 +265,13 @@ function wmf_audit_error_isfatal($error) {
 
 /**
  * Returns the contribution tracking data for $record, if we can find it.
- * Sometimes even if we can't find it: If we're running in fakedb mode, it'll
- * stuff in placeholders.
+ * If we can't find it: If we're running in fakedb mode, it'll
+ * stuff in placeholders, otherwise fabricate something and send it to the queue.
  *
  * @param array $record The re-fused and normal transaction that doesn't yet
  * exist in civicrm.
  *
- * @return array|false An array of relevant contribution tracking fields for
- * this transaction, or false if we couldn't find any.
+ * @return array
  */
 function wmf_audit_get_contribution_tracking_data($record) {
 
@@ -279,15 +279,33 @@ function wmf_audit_get_contribution_tracking_data($record) {
     return wmf_audit_make_contribution_tracking_data($record);
   }
 
-  $contribution_tracking_id = $record['contribution_tracking_id'];
-  $result = ContributionTracking::get(FALSE)->addWhere('id','=',$contribution_tracking_id)->execute()->first();
+  $contributionTrackingId = $record['contribution_tracking_id'];
+  $result = ContributionTracking::get(FALSE)->addWhere('id','=',$contributionTrackingId)->execute()->first();
 
   if (!$result) {
-    wmf_audit_log_error("Missing Contribution Tracking data. Supposed ID='$contribution_tracking_id'", 'DATA_INCOMPLETE');
-    return FALSE;
+    wmf_audit_log_error("Missing Contribution Tracking data. Supposed ID='$contributionTrackingId'", 'DATA_INCOMPLETE');
+    $paymentMethod = $record['payment_method'] ?? '';
+    $fallbackContributionTrackingData = [
+      'id' => $contributionTrackingId,
+      'utm_medium' => 'audit',
+      'utm_source' => "audit..$paymentMethod",
+      'payment_method' => $paymentMethod,
+      'ts' => wmf_common_date_unix_to_sql(
+        $record['date'] ?? time()
+      ),
+      'language' => $record['language'] ?? NULL,
+      'country' => $record['country'] ?? NULL,
+    ];
+    QueueWrapper::push('contribution-tracking', $fallbackContributionTrackingData);
+    $fallbackContributionTrackingData['date'] = $record['date'];
+    $fallbackContributionTrackingData['utm_payment_method'] = $paymentMethod;
+    foreach (['language', 'ts', 'id', 'payment_method'] as $unsetme) {
+      unset($fallbackContributionTrackingData[$unsetme]);
+    }
+    return $fallbackContributionTrackingData;
   }
 
-  wmf_audit_echo("Found Contribution Tracking data. ID='$contribution_tracking_id'", TRUE);
+  wmf_audit_echo("Found Contribution Tracking data. ID='$contributionTrackingId'", TRUE);
   // Some of the normalization below has been done in the civicrm contribution tracking table
   if (!is_null($result['utm_source'])) {
     $utm_payment_method = explode('.', $result['utm_source']);
