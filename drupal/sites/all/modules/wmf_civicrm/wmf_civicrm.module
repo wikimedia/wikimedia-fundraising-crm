@@ -198,8 +198,7 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
  * @throws \Civi\WMFException\WMFException|\Statistics\Exception\StatisticsCollectorException
  */
 function wmf_civicrm_contribution_message_import(array &$msg): array {
-  // we need to know recurring status this early, so we can decide on the timer naming
-  $isRecurring = $msg['recurring'] ?? !empty($msg['contribution_recur_id']);
+  $isRecurring = _is_recurring_contribution($msg);
   $importTimerName = getImportTimerName($isRecurring);
   _get_import_timer()->startImportTimer($importTimerName);
 
@@ -336,6 +335,15 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
     ->addStat("message_import_timers", _get_import_timer()->getTimerDiff($uniqueTimerName));
 
   return $contribution;
+}
+
+/**
+ * @param array $msg
+ *
+ * @return bool
+ */
+function _is_recurring_contribution(array $msg): bool {
+  return isset($msg['recurring']) ? (bool) $msg['recurring'] : !empty($msg['contribution_recur_id']);
 }
 
 /**
