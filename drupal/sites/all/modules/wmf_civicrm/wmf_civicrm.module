@@ -13,6 +13,8 @@ use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use SmashPig\Core\DataStores\QueueWrapper;
+use SmashPig\PaymentProviders\PaymentProviderFactory;
+use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
