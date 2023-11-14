@@ -1843,6 +1843,33 @@ AND q.id BETWEEN %1 AND %2"
   }
 
   /**
+   * Mop up mailing_event_queue records with no mailing_id.
+   *
+   * We added the new columns to civicrm_mailing_event_queue before
+   * we applied the full CiviCRM upgrade. During this window 4918
+   * civicrm_mailing_event_queue records were created. These records have
+   * no value in the mailing_id field.
+   *
+   * We can just run the query without queueing as it only affects < 5k rows.
+   *
+   * Bug: T350209
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4420() : bool {
+    CRM_Core_DAO::executeQuery('
+      UPDATE civicrm_mailing_event_queue
+      SET mailing_id = 1
+      -- this job_id = 1 does not actually further reduce the results
+      -- so it is mostly there for clarity that we are actually
+      -- only altering rows with job_id = 1
+      WHERE job_id = 1
+        AND mailing_id IS NULL');
+    return TRUE;
+  }
+
+  /**
    * Queue up an SQL update.
    *
    * @param string $sql
