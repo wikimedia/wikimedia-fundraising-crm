@@ -259,7 +259,7 @@ class MonologManager {
    * @noinspection PhpUnusedParameterInspection
    */
   protected function addStdOutLogger(string $channel, Logger $logger, string $minimumLevel, bool $isFinal): void {
-    if (PHP_SAPI === 'cli') {
+    if (PHP_SAPI === 'cli' && !defined('CIVICRM_TEST')) {
       global $argv;
       // The wordpress handler has this rather nice idea of respecting command
       // line efforts to increase or decrease logging levels.
