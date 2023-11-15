@@ -108,4 +108,18 @@ if (!empty($missing)) {
         'used_for' => 'civicrm_contact',
       ],
     ],
+    'NameTruncated' => [
+      // Tag applied in wmf import code
+      'name' => 'NameTruncated',
+      'entity' => 'Tag',
+      'cleanup' => 'never',
+      'params' => [
+        'version' => 3,
+        'name' => 'NameTruncated',
+        'description' => 'Tag applied to a contact when the name was truncated on import.',
+        'is_selectable' => TRUE,
+        'is_reserved' => TRUE,
+        'used_for' => 'civicrm_contact',
+      ],
+    ],
   ];
