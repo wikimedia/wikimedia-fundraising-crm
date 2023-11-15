@@ -620,5 +620,6 @@ function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$ou
       1 => [find_damaged_queue($queue)->getName(), 'String'],
       2 => [$item->id, 'Positive'],
     ]);
+    $outcome = 'retry';
   }
 }
