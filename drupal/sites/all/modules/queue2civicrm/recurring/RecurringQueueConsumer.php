@@ -6,6 +6,7 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\PaymentProcessor;
+use CRM_Core_Payment_Scheduler;
 use wmf_common\TransactionalWmfQueueConsumer;
 
 
@@ -239,7 +240,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       $date = $msg['payment_date'];
     }
     $update_params = [
-      'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm(strtotime("+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $date)),
+      'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextDateForMonth( (array) $recur_record),
       'id' => $recur_record->id,
     ];
     if (!empty($msg['is_auto_rescue_retry'])) {
