@@ -592,3 +592,33 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
     Activity::links($objectId, $links);
   }
 }
+
+/**
+  * Get a reference to the damaged queue.
+  *
+  * @param \CRM_Queue_Queue $original
+  * @return \CRM_Queue_Queue
+  */
+function find_damaged_queue(\CRM_Queue_Queue $original): \CRM_Queue_Queue {
+  $name = $original->getName() . '/damaged';
+  return \Civi::queue($name, [
+    'type' => 'SqlParallel',
+    'status' => 'aborted', // The queue never executes
+    'error' => 'abort',
+    'agent' => NULL,
+  ]);
+}
+
+function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$outcome, ?\Throwable $exception) {
+  if ($outcome === 'abort' && !empty($item)) {
+    Civi::log('wmf-queue-'.$queue->getName())->debug(
+      'Queue item with id={id} failed with exception="{exception}", moving to the dedicated damaged queue', [
+        'id' => $item->id,
+        'exception' => $exception->getMessage()
+      ]);
+    \CRM_Core_DAO::executeQuery('UPDATE civicrm_queue_item SET queue_name = %1 WHERE id = %2', [
+      1 => [find_damaged_queue($queue)->getName(), 'String'],
+      2 => [$item->id, 'Positive'],
+    ]);
+  }
+}
