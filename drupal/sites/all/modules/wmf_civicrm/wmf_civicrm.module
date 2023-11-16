@@ -198,8 +198,7 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
  * @throws \Civi\WMFException\WMFException|\Statistics\Exception\StatisticsCollectorException
  */
 function wmf_civicrm_contribution_message_import(array &$msg): array {
-  // we need to know recurring status this early so we can decide on the timer naming
-  $isRecurring = $msg['recurring'] ?? !empty($msg['contribution_recur_id']);
+  $isRecurring = _is_recurring_contribution($msg);
   $importTimerName = getImportTimerName($isRecurring);
   _get_import_timer()->startImportTimer($importTimerName);
 
@@ -336,6 +335,15 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
     ->addStat("message_import_timers", _get_import_timer()->getTimerDiff($uniqueTimerName));
 
   return $contribution;
+}
+
+/**
+ * @param array $msg
+ *
+ * @return bool
+ */
+function _is_recurring_contribution(array $msg): bool {
+  return isset($msg['recurring']) ? (bool) $msg['recurring'] : !empty($msg['contribution_recur_id']);
 }
 
 /**
@@ -825,12 +833,18 @@ function wmf_civicrm_verify_message_and_stage($msg) {
     'supplemental_address_1' => 96,
     'supplemental_address_2' => 96,
   ];
+  // Truncate address and name if exceed the max_lengths that civi allowed
+  // since they should not be a blocker to import contribution msg
   $truncate_tags = [
     'postal_code' => 'AddressTruncated',
     'street_address' => 'AddressTruncated',
     'supplemental_address_1' => 'AddressTruncated',
     'supplemental_address_2' => 'AddressTruncated',
     'city' => 'AddressTruncated',
+    'first_name' => 'NameTruncated',
+    'last_name' => 'NameTruncated',
+    'middle_name' => 'NameTruncated',
+    'organization_name' => 'NameTruncated',
   ];
   foreach ($max_lengths as $key => $limit) {
     if (mb_strlen($msg[$key]) > $limit) {
@@ -859,7 +873,7 @@ function wmf_civicrm_verify_message_and_stage($msg) {
 }
 
 function wmf_civicrm_remove_recurring_token(array $message) {
-  wmf_common_create_smashpig_context( 'decline-recurring', $message['gateway'] );
+  wmf_common_create_smashpig_context( 'donation_queue_process_message', $message['gateway'] );
   $provider = PaymentProviderFactory::getProviderForMethod(
     $message['payment_method']
   );

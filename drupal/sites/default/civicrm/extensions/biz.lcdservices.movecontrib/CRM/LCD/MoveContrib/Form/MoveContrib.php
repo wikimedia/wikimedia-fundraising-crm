@@ -34,7 +34,7 @@ class CRM_LCD_MoveContrib_Form_MoveContrib extends CRM_Core_Form {
     //get current contact name.
     $this->assign('currentContactName', CRM_Contact_BAO_Contact::displayName($contactID));
 
-    $this->addEntityRef('change_contact_id', ts('Select Contact'));
+    $this->addEntityRef('change_contact_id', ts('Select Contact'), [], TRUE);
     $this->add('hidden', 'contact_id', '', ['id' => 'contact_id']);
     $this->add('hidden', 'contribution_id', $contributionID, ['id' => 'contribution_id']);
     $this->add('hidden', 'current_contact_id', $contactID, ['id' => 'current_contact_id']);
@@ -48,6 +48,10 @@ class CRM_LCD_MoveContrib_Form_MoveContrib extends CRM_Core_Form {
         'type' => 'submit',
         'name' => ts('Submit'),
         'isDefault' => TRUE,
+      ],
+      [
+        'type' => 'cancel',
+        'name' => ts('Cancel'),
       ],
     ]);
 

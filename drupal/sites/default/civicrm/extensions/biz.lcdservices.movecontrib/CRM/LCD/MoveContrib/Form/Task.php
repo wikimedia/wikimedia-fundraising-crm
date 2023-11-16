@@ -53,7 +53,7 @@ class CRM_LCD_MoveContrib_Form_Task extends CRM_Contribute_Form_Task {
    * Build the form object.
    */
   public function buildQuickForm(): void {
-    $this->addEntityRef('change_contact_id', ts('Select Contact'));
+    $this->addEntityRef('change_contact_id', ts('Select Contact'), [], TRUE);
     $count = count($this->_contributionIds);
     $this->assign('count', $count);
 
@@ -65,6 +65,10 @@ class CRM_LCD_MoveContrib_Form_Task extends CRM_Contribute_Form_Task {
         'type' => 'submit',
         'name' => ts('Submit'),
         'isDefault' => TRUE,
+      ],
+      [
+        'type' => 'cancel',
+        'name' => ts('Cancel'),
       ],
     ]);
 

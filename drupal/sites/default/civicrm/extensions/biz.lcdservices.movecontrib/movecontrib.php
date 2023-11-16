@@ -30,49 +30,20 @@ function movecontrib_civicrm_enable() {
   _movecontrib_civix_civicrm_enable();
 }
 
-function movecontrib_civicrm_searchColumns($objectName, &$headers, &$rows, &$selector) {
-  /*Civi::log()->debug('movecontrib_civicrm_searchColumns', array(
-    'objectName' => $objectName,
-    '$headers' => $headers,
-    '$rows' => $rows,
-    //'$selector' => $selector,
-  ));*/
-
-  if ($objectName == 'contribution' && CRM_Core_Permission::check('allow Move Contribution')) {
-    foreach ($rows as &$row) {
-      //action column is either a series of links, or a series of links plus a subset
-      //unordered list (more button) -- all of which is enclosed in a span
-      //we want to inject our option at the end, regardless, so we look for the existence
-      //of a <ul> tag and adjust our injection accordingly
-      $url = CRM_Utils_System::url('civicrm/movecontrib', "reset=1&id={$row['contribution_id']}");
-      $urlLink = "<a href='{$url}' class='action-item crm-hover-button medium-popup move-contrib'>Move Contribution</a>";
-      if (strpos($row['action'], '</ul>') !== FALSE) {
-        $row['action'] = str_replace('</ul></span>', '<li>'.$urlLink.'</li></ul></span>', $row['action']);
-      }
-      else {
-        $row['action'] = str_replace('</span>', $urlLink.'</span>', $row['action']);
-      }
-    }
-  }
-}
-
 function movecontrib_civicrm_searchTasks($objectType, &$tasks) {
-  /*Civi::log()->debug('movecontrib_civicrm_searchTasks', array(
-    '$objectType' => $objectType,
-    '$tasks' => $tasks,
-  ));*/
 
   if ($objectType === 'contribution' && CRM_Core_Permission::check('allow Move Contribution')) {
     $tasks[] = [
-      'title' => E::ts('Move contributions'),
+      'title' => E::ts('Move Contribution'),
       'class' => 'CRM_LCD_MoveContrib_Form_Task',
       // Code suggests result key is likely meaningless.
       'result' => TRUE,
       'is_single_mode' => TRUE,
-      'title_single_mode' => E::ts('Move contribution'),
-      'name' => 'move_contribution',
+      'title_single_mode' => E::ts('Move Contribution'),
+      'name' => E::ts('Move Contribution'),
       'url' => 'civicrm/contribute/task?reset=1&task_item=move',
       'key' => 'move',
+      'weight' => 130,
     ];
   }
 }

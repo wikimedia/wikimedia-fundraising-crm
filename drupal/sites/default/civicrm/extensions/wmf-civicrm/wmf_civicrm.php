@@ -14,6 +14,7 @@ use Civi\WMFHooks\ContributionRecurTrigger;
 use Civi\WMFHooks\ContributionSoft;
 use Civi\WMFHooks\Import;
 use Civi\WMFHooks\Permissions;
+use Civi\WMFHooks\ProfileDynamic;
 use Civi\WMFHooks\QuickForm;
 use Civi\WMFHooks\Data;
 use Civi\Api4\MessageTemplate;
@@ -488,7 +489,7 @@ function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
   if (in_array($pageClass, $ctPages)) {
       Civi::service('angularjs.loader')->addModules('afsearchContributionTracking');
   }
-
+  ProfileDynamic::pageRun($page);
   // Only add the markup to the contribution page
   if ($pageClass === 'CRM_Contribute_Page_Tab') {
     $id = $page->getVar('_id');
@@ -590,5 +591,36 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
 
   if ($objectName === 'Activity') {
     Activity::links($objectId, $links);
+  }
+}
+
+/**
+  * Get a reference to the damaged queue.
+  *
+  * @param \CRM_Queue_Queue $original
+  * @return \CRM_Queue_Queue
+  */
+function find_damaged_queue(\CRM_Queue_Queue $original): \CRM_Queue_Queue {
+  $name = $original->getName() . '/damaged';
+  return \Civi::queue($name, [
+    'type' => 'SqlParallel',
+    'status' => 'aborted', // The queue never executes
+    'error' => 'abort',
+    'agent' => NULL,
+  ]);
+}
+
+function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$outcome, ?\Throwable $exception) {
+  if ($outcome === 'abort' && !empty($item)) {
+    Civi::log('wmf-queue-'.$queue->getName())->debug(
+      'Queue item with id={id} failed with exception="{exception}", moving to the dedicated damaged queue', [
+        'id' => $item->id,
+        'exception' => $exception->getMessage()
+      ]);
+    \CRM_Core_DAO::executeQuery('UPDATE civicrm_queue_item SET queue_name = %1 WHERE id = %2', [
+      1 => [find_damaged_queue($queue)->getName(), 'String'],
+      2 => [$item->id, 'Positive'],
+    ]);
+    $outcome = 'retry';
   }
 }
