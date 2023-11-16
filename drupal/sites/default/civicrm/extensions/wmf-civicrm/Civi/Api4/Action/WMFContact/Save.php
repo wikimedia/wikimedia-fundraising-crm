@@ -192,8 +192,9 @@ class Save extends AbstractAction {
       'Organization_Contact.Name' => 'Name',
     ];
     if (!empty($msg['gateway'])) {
-      // Save external platform contact id if venmo, then save user name
-      $custom_field_mangle['external_identifier'] = (!empty($msg['payment_method']) && $msg['payment_method'] === 'venmo') ? 'venmo_user_name': $msg['gateway'] . '_id';
+      // Save external platform contact id if braintree venmo, then save the user_name otherwise save to id
+      $isBraintreeVenmoPayment = !empty($msg['payment_method']) && $msg['payment_method'] === 'venmo' && $msg['gateway'] === 'braintree';
+      $custom_field_mangle['external_identifier'] = ($isBraintreeVenmoPayment) ? 'venmo_user_name' : $msg['gateway'] . '_id';
     }
     foreach ($custom_field_mangle as $msgField => $customField) {
       if (isset($msg[$msgField])) {
