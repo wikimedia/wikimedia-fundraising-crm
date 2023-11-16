@@ -28,6 +28,7 @@ class ProfileDynamic {
             ->addWhere('contact_id', '=', $contactId)
             ->addSelect('contribution_extra.original_amount')
             ->addSelect('contribution_extra.original_currency')
+            ->addOrderBy('receive_date', 'DESC')
             ->setLimit(1)
             ->execute()
             ->first();
