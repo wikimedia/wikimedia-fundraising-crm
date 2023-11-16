@@ -873,7 +873,7 @@ function wmf_civicrm_verify_message_and_stage($msg) {
 }
 
 function wmf_civicrm_remove_recurring_token(array $message) {
-  wmf_common_create_smashpig_context( 'decline-recurring', $message['gateway'] );
+  wmf_common_create_smashpig_context( 'donation_queue_process_message', $message['gateway'] );
   $provider = PaymentProviderFactory::getProviderForMethod(
     $message['payment_method']
   );
