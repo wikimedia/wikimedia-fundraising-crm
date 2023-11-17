@@ -87,7 +87,7 @@ class ContributionRecur {
   }
 
   /**
-   * If recur record is upgradable (non-upgradeable like PayPal, Dlocal India recurring )
+   * If recur record is upgradable (non-upgradeable recurrings include PayPal and India's UPI)
    * return contribution_recur.id, contact_id, currency, amount, donor_name and next_sched_contribution_date
    *
    * @param int $contact_id
@@ -101,9 +101,9 @@ class ContributionRecur {
     $result = [];
     // check if valid checksum
     if (\CRM_Contact_BAO_Contact_Utils::validChecksum($contact_id, $checksum)) {
-      \Civi::log('wmf')->info("Donor '$contact_id' has valid checksum");
+      \Civi::log('wmf')->debug("Donor '$contact_id' has valid checksum");
       $allContactIds = Contact::duplicateContactIds($contact_id);
-      \Civi::log('wmf')->info("Check if donor " . json_encode($allContactIds) . " upgradable");
+      \Civi::log('wmf')->debug("Check if donor " . json_encode($allContactIds) . " upgradable");
       $contribution_recurs = \Civi\Api4\ContributionRecur::get(FALSE)
         ->addSelect('id', 'currency', 'amount', 'next_sched_contribution_date', 'contact.display_name')
         ->addJoin('Contact AS contact', 'LEFT', ['contact.id', '=', $contact_id])
@@ -116,24 +116,14 @@ class ContributionRecur {
         ->execute();
       // Also filter out multi recurring e.g. contact 1925710.
       if (count($contribution_recurs) === 1) {
-        // also filter out declined recurring upgrade
-        $contribution_recurs_declined = \Civi\Api4\Activity::get(FALSE)
-          ->addSelect('id')
-          ->addWhere('source_record_id', '=', $contribution_recurs[0]['id']) // Decline recurring update
-          ->addWhere('activity_type_id', '=', 166)
-          ->execute();
-        if (count($contribution_recurs_declined) === 0) {
-          $result[] = [
-            'id' => $contribution_recurs[0]['id'],
-            'contact_id' => $contact_id,
-            'currency' => $contribution_recurs[0]['currency'],
-            'amount' => $contribution_recurs[0]['amount'],
-            'donor_name' => $contribution_recurs[0]['contact.display_name'],
-            'next_sched_contribution_date' => $contribution_recurs[0]['next_sched_contribution_date'],
-          ];
-        } else {
-          \Civi::log('wmf')->info("Donor '$contact_id' declined to upgrade recurring donation");
-        }
+        $result[] = [
+          'id' => $contribution_recurs[0]['id'],
+          'contact_id' => $contact_id,
+          'currency' => $contribution_recurs[0]['currency'],
+          'amount' => $contribution_recurs[0]['amount'],
+          'donor_name' => $contribution_recurs[0]['contact.display_name'],
+          'next_sched_contribution_date' => $contribution_recurs[0]['next_sched_contribution_date'],
+        ];
       }
       else {
         \Civi::log('wmf')->info("Donor '$contact_id' has " . count($contribution_recurs) . " valid recurring");
