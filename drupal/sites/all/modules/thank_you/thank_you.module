@@ -534,8 +534,8 @@ function thank_you_send_mail($params) {
     }
   }
 
+  $civi_queue_record = NULL;
   try {
-    $civi_queue_record = NULL;
     $create_civi_mail = \Civi::settings()->get('thank_you_add_civimail_records');
     $rate = \Civi::settings()->get('thank_you_civimail_rate');
     if ($create_civi_mail && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id']) && $params['contact_id'] > 0) {
@@ -546,7 +546,11 @@ function thank_you_send_mail($params) {
         $html
       );
     }
-
+  }
+  catch (Exception $ex) {
+    \Civi::log('wmf')->warning('Failed to create civimail record for TY message to ' . $params['recipient_address']);
+  }
+  try {
     $email = [
       'from_name' => From::getFromName($templateName),
       'from_address' => From::getFromAddress($templateName),
@@ -563,12 +567,6 @@ function thank_you_send_mail($params) {
       $email,
       ['List-Unsubscribe' => '<' . $params['unsubscribe_link'] . '>']
     );
-
-    if ($civi_queue_record) {
-      $civi_queue_record->markDelivered();
-    }
-
-    return $email_success;
   }
   catch (PHPMailer\PHPMailer\Exception $e) {
     //TODO: don't assume phpmailer
@@ -604,6 +602,16 @@ function thank_you_send_mail($params) {
 
     throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
   }
+
+  if ($civi_queue_record) {
+    try {
+      $civi_queue_record->markDelivered();
+    }
+    catch (Exception $ex) {
+      \Civi::log('wmf')->warning('Failed to mark civimail record delivered for TY message to ' . $params['recipient_address']);
+    }
+  }
+  return $email_success;
 }
 
 /**
