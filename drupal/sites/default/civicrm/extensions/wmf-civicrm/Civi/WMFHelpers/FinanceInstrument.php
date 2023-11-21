@@ -66,7 +66,7 @@ class FinanceInstrument {
     'jcb' => 'JCB',
     'laser' => 'Laser',
     'lider' => 'Lider',
-    'mach' => 'Mach', // Chili
+    'mach' => 'Mach', // Chile
     'maestro' => 'Maestro',
     'magna' => 'Magna',
     'mc' => 'MasterCard',

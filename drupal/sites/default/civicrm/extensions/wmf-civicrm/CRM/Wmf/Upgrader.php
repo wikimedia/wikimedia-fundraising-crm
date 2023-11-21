@@ -1870,6 +1870,25 @@ AND q.id BETWEEN %1 AND %2"
   }
 
   /**
+   * external data from fundraiseup's venmo should still fill to
+   * fundraiseup_id instead of venmo_user_name.
+   *
+   * Bug: T351345
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4425() : bool {
+    CRM_Core_DAO::executeQuery('
+    UPDATE wmf_external_contact_identifiers
+    SET fundraiseup_id = venmo_user_name, venmo_user_name = NULL
+    WHERE venmo_user_name <> ""
+     AND venmo_user_name NOT LIKE "@%"
+     AND LENGTH(venmo_user_name) = 8
+     ');
+    return TRUE;
+  }
+
+  /**
    * Queue up an SQL update.
    *
    * @param string $sql
