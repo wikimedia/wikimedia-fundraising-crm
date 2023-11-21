@@ -93,6 +93,7 @@ $instruments = [
   'Credit Card: Naranja' => 'Credit Card: Naranja',
   'Credit Card: Tarjeta Shopping' => 'Credit Card: Tarjeta Shopping',
   'Credit Card: Nativa' => 'Credit Card: Nativa',
+  'Credit Card: Mach' => 'Credit Card: Mach',
   'Credit Card: Cencosud' => 'Credit Card: Cencosud',
   'Credit Card: Lider' => 'Credit Card: Lider',
   'Credit Card: OCA' => 'Credit Card: OCA',
