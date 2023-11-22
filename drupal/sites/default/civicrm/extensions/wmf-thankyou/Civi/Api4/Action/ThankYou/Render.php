@@ -197,6 +197,8 @@ class Render extends AbstractAction {
       'contribution_extra.original_currency' => 'currency',
       'Stock_Information.Description_of_Stock' => 'description_of_stock',
       'Stock_Information.Stock Value' => 'stock_value',
+      'Stock_Information.Stock Ticker' => 'stock_ticker',
+      'Stock_Information.Stock Quantity' => 'stock_qty',
       'Gift_Data.Campaign' => 'gift_source',
     ];
   }
