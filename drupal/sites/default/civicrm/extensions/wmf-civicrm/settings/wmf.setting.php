@@ -38,7 +38,7 @@ return [
     'group_name' => 'wmf Settings',
     'group' => 'wmf',
     'name' => 'wmf_recurring_upgrade_url',
-    'default' => 'https://donorpreferences.wikimedia.org/wiki/index.php?title=Special:RecurUpgrade/recurUpgrade',
+    'default' => 'https://donorpreferences.wikimedia.org/index.php?title=Special:RecurUpgrade/recurUpgrade',
     'type' => 'String',
     'is_domain' => 1,
     'is_contact' => 0,
