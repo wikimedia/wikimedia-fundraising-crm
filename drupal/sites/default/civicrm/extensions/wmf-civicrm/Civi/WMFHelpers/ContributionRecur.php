@@ -135,4 +135,7 @@ class ContributionRecur {
     return $result;
   }
 
+  public static function cancelAutoRecur($op, $id, $entity) {
+
+  }
 }
