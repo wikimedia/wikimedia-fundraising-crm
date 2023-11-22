@@ -1911,6 +1911,7 @@ function wmf_civicrm_civicrm_post_Contribution($op, $id, &$contribution) {
           'Native txn rolled back before running post contribution hook'
         );
       }
+      // Update wmf_donor row for the associated contact
       $params = wmf_civicrm_getLastDonationParams($contribution);
       if (!empty($params)) {
         $params['id'] = $contribution->contact_id;
