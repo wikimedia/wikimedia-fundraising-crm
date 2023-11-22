@@ -22,6 +22,19 @@ class GetUpgradableRecur extends AbstractAction {
   protected $checksum;
 
   public function _run( Result $result ) {
-      $result[] = ContributionRecur::getUpgradeable($this->contact_id, $this->checksum);
+    if (!\CRM_Core_Permission::check('access CiviContribute') && !\CRM_Contact_BAO_Contact_Utils::validChecksum($this->contact_id,  $this->checksum)) {
+      throw new \CRM_Core_Exception('Authorization failed');
+    }
+
+    $result[] = ContributionRecur::getUpgradeable($this->contact_id, $this->checksum);
+  }
+
+  /**
+   * @return array
+   */
+  public function getPermissions() {
+    $permissions = parent::getPermissions();
+    $permissions[] = TRUE;
+    return $permissions;
   }
 }
