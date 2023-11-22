@@ -2,6 +2,8 @@
 
 namespace Civi\WMFHooks;
 
+use Civi\Api4\ContributionRecur;
+
 class PreferencesLink {
   public static function contactSummaryBlocks(array &$blocks) {
     // Provide our own group for this block to visually distinguish it on the contact summary editor palette.
@@ -28,32 +30,47 @@ class PreferencesLink {
   }
 
   public static function pageRun(\CRM_Core_Page $page) {
-    $contactID = $page->getVar('_contactId');
+    $contactID = intval($page->getVar('_contactId'));
     if (
       $page instanceof \CRM_Contact_Page_View_Summary &&
-      $contactID !== FALSE
+      $contactID !== 0
     ) {
-      $baseUrl = \Civi::settings()->get('wmf_email_preferences_url');
-      $parsed = \CRM_Utils_Url::parseUrl($baseUrl);
-
-      // Would be nice to have a Util that just let me add query bits and figured out if the URL already had a QS
-      $queryParts = [];
-      if ($parsed->getQuery() !== '') {
-        $queryParts[] = $parsed->getQuery();
-      }
-      $queryParts[] = "contact_id=$contactID";
-      $queryParts[] = 'checksum=' . \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
-      $url = \CRM_Utils_Url::unparseUrl(
-        $parsed->withQuery(implode('&', $queryParts))
-      );
-
-      $page->assign('preferencesLink', $url);
+      $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
       $page->assign('expiryDays', \Civi::settings()->get('checksum_timeout'));
 
+      $emailPrefsBaseUrl = (string) \Civi::settings()->get('wmf_email_preferences_url');
+      $page->assign('preferencesLink',
+        self::addContactAndChecksumToUrl($emailPrefsBaseUrl, $contactID, $checksum)
+      );
+
+      $upgradeableRecur = \Civi\WMFHelpers\ContributionRecur::getUpgradeable($contactID, $checksum);
+      if ($upgradeableRecur) {
+        $recurringUpgradeBaseUrl = (string) \Civi::settings()->get('wmf_recurring_upgrade_url');
+        $recurringUpgradeUrl = self::addContactAndChecksumToUrl($recurringUpgradeBaseUrl, $contactID, $checksum);
+      }
+      else {
+        $recurringUpgradeUrl = FALSE;
+      }
+      $page->assign('recurringUpgradeLink', $recurringUpgradeUrl);
       // FIXME: should be enough to have this path in tpl_file in the contactSummaryBlocks hook
       \CRM_Core_Region::instance('contact-basic-info-right')->add(array(
         'template' => 'CRM/Wmf/Page/Inline/PreferencesLink.tpl',
       ));
     }
+  }
+
+  protected static function addContactAndChecksumToUrl(string $url, int $contactID, string $checksum): string {
+    $parsed = \CRM_Utils_Url::parseUrl($url);
+
+    // Would be nice to have a Util that just let me add query bits and figured out if the URL already had a QS
+    $queryParts = [];
+    if ($parsed->getQuery() !== '') {
+      $queryParts[] = $parsed->getQuery();
+    }
+    $queryParts[] = "contact_id=$contactID";
+    $queryParts[] = "checksum=$checksum";
+    return \CRM_Utils_Url::unparseUrl(
+      $parsed->withQuery(implode('&', $queryParts))
+    );
   }
 }
