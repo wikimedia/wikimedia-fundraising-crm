@@ -35,8 +35,10 @@ class Import {
    */
   public static function alterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID): void {
     if ($context === 'import' && $importType === 'contribution_import') {
-      // At this stage all imports are matched gifts which are already thanked via the portal.
-      $mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal';
+      // Provide a default, allowing the import to be configured to override.
+      if (!array_key_exists('contribution_extra.no_thank_you', $mappedRow['Contribution'])) {
+        $mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal';
+      }
       // Assume matching gifts if there is a soft credit involved...
       if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
         $mappedRow['Contribution']['contribution_extra.gateway'] = !empty($mappedRow['SoftCreditContact']) ? 'Matching Gifts' : 'CiviCRM Import';
