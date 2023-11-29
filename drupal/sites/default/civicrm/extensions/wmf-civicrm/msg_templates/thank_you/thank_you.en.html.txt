@@ -66,4 +66,4 @@ CEO, Wikimedia Foundation
 
 <p>If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{$unsubscribe_link}">unsubscribe</a>. Please note we will still send you receipts, like this one, for future donations.</p>
 
-<!-- TI_BEGIN["name":"Thank you email 2021","revision":20210323,"currency":"{$currency}"]TI_END -->
+<!-- TI_BEGIN["name":"thank_you.en.html","revision":20210323,"currency":"{$currency}"]TI_END -->
