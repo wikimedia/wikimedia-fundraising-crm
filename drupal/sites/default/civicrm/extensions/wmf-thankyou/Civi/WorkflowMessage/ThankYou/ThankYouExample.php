@@ -134,6 +134,8 @@ class ThankYouExample extends WorkflowMessageExample {
     $messageTemplate->setReceiveDate(date('Y-m-d'), strtotime('One month ago'));
     if ($example === 'stock') {
       $messageTemplate->setStockValue(5200);
+      $messageTemplate->setStockQuantity(10);
+      $messageTemplate->setStockTicker('XXX');
       $messageTemplate->setDescriptionOfStock('Index fund stock');
     }
     if ($example === 'recurring') {

@@ -27,6 +27,8 @@ use Civi\Api4\EntityTag;
  * @method $this setIsRecurringRestarted(bool $isRecurringRestarted)
  * @method $this setIsDelayed(bool $isDelayed)
  * @method $this setStockValue(int|float|string $stockValue)
+ * @method $this setStockQuantity(int $stockQuantity)
+ * @method $this setStockTicker(string $stockTicker)
  * @method $this setDescriptionOfStock(string $descriptionOfStock)
  * @method string getDescriptionOfStock()
  * @method $this setGiftSource(string $giftSource)
@@ -145,6 +147,24 @@ class ThankYou extends GenericWorkflowMessage {
    * @scope tplParams as stock_value
    */
   public $stockValue;
+
+  /**
+   * Quantity of stock gifted.
+   *
+   * @var float|int|null
+   *
+   * @scope tplParams as stock_quantity
+   */
+  public $stockQuantity;
+
+  /**
+   * Ticker of stock gifted - eg. 'AAPL' for Apple stock.
+   *
+   * @var float|int|null
+   *
+   * @scope tplParams as stock_ticker
+   */
+  public $stockTicker;
 
   /**
    * Description of in kind stock donation.
@@ -268,6 +288,8 @@ class ThankYou extends GenericWorkflowMessage {
       'contribution_extra.original_amount' => 'amount',
       'Stock_Information.Description_of_Stock' => 'descriptionOfStock',
       'Stock_Information.Stock Value' => 'stockValue',
+      'Stock_Information.Stock Ticker' => 'stockTicker',
+      'Stock_Information.Stock Quantity' => 'stockQuantity',
       'Gift_Data.Campaign' => 'giftSource',
       'contribution_recur_id' => 'isRecurring',
     ];

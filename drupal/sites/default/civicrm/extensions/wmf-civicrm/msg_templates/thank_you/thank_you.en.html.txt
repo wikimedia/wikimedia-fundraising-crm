@@ -11,8 +11,8 @@ Dear donor,
 {/if}
 </p>
 
-{if $stock_value}
-<p>I'm so grateful to be the one who thanks you for the one-time gift of {$description_of_stock} received {$receive_date} at {if $currency === 'USD'}{$currency} {/if}{$stock_value} you made in support of Wikipedia. I want to take this opportunity to celebrate your generosity and your exceptional willingness to take part in creating a better future for the world.</p>
+{if $stock_ticker || $stock_value}
+<p>I'm so grateful to be the one who thanks you for the one-time gift of {if $stock_ticker}{$stock_quantity} shares of {$stock_ticker} stock{else}{$description_of_stock}{/if} received {$receive_date} valued at {if $currency === 'USD'}{$currency} {/if}{$stock_value} you made in support of Wikipedia. I want to take this opportunity to celebrate your generosity and your exceptional willingness to take part in creating a better future for the world.</p>
 {else}
  {if $recurring} </p>Thank you for committing to give {if $currency === 'USD'}{$currency} {/if}{$amount} to support Wikipedia every month - that is real dedication and I am endlessly grateful. You make a world where knowledge is free for everyone possible.</p>
 

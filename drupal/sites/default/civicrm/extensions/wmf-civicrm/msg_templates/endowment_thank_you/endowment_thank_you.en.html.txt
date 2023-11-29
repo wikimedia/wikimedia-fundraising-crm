@@ -12,6 +12,8 @@ Dear donor,
 <p>Thank you for
 {if $gift_source eq 'Retirement Fund - Endowment Specified' or  $gift_source eq 'Retirement Fund'}
   the qualified charitable distribution of {if $currency === 'USD'}{$currency} {/if}{$amount} that you gifted to Wikimedia from your Individual Retirement Account.
+{elseif $stock_ticker || $stock_value}
+  <p>the one-time gift of {if $stock_ticker}{$stock_quantity} shares of {$stock_ticker} stock{else}{$description_of_stock}{/if} received {$receive_date} valued at {if $currency === 'USD'}{$currency} {/if}{$stock_value} to support Wikipedia and a future where knowledge is free for everyone.</p>
 {else}
   donating {if $currency === 'USD'}{$currency} {/if}{$amount} to support Wikipedia and a future where knowledge is free for everyone.
 {/if}</p>
