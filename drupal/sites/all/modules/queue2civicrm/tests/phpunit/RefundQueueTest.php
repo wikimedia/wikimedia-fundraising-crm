@@ -56,6 +56,22 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->consumer->processMessage($refund_message->getBody());
   }
 
+  public function testRefundEmptyRequiredField() {
+    $donation_message = new TransactionMessage();
+    $this->expectException(WMFException::class);
+    $this->expectExceptionCode(WMFException::CIVI_REQ_FIELD);
+    $refund_message = new RefundMessage(
+      [
+        'gateway' => $donation_message->getGateway(),
+        'gateway_parent_id' => $donation_message->getGatewayTxnId(),
+        'gateway_refund_id' => mt_rand(),
+        'gross' => '',
+        'gross_currency' => 'USD',
+      ]
+    );
+    $this->consumer->processMessage($refund_message->getBody());
+  }
+
   /**
    * Test refunding a mismatched amount.
    *
