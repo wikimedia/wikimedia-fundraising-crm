@@ -18,7 +18,7 @@ class ContributionSoft {
    * @throws \CRM_Core_Exception
    */
   public static function pre(string $op, array $softCreditParams) {
-    if ($op === 'create' && in_array($softCreditParams['soft_credit_type_id'] ?? NULL, self::getEmploymentSoftCreditTypes(), TRUE)) {
+    if ($op === 'create' && in_array((int) ($softCreditParams['soft_credit_type_id'] ?? NULL), self::getEmploymentSoftCreditTypes(), TRUE)) {
       $contributionContact = Contribution::get(FALSE)
         ->addWhere('id', '=', $softCreditParams['contribution_id'])
         ->addSelect('contact_id', 'contact_id.contact_type', 'contact_id.organization_name', 'contact_id.employer_id', 'receive_date')
