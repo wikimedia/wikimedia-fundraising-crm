@@ -1889,6 +1889,33 @@ AND q.id BETWEEN %1 AND %2"
   }
 
   /**
+   * Update the value for the realized planned giving option to match the database.
+   *
+   * On 2023-11-29 22:44:57 Melanie did 'something' that altered the values in the
+   * database for the users with this option value from 'Realized PG Gift' to
+   * 'Realized Bequest'. However, the option value value was not updated.
+   *
+   * I don't feel like this should have been possible through the UI - so will ask
+   * more questions. However, in the meantime we can need to update
+   * one of the tables to get them back in sync & changing the option value table
+   * gets them to the preferred value.
+   *
+   * SELECT * FROM log_civicrm_value_1_gift_data_7 WHERE log_conn_id = '6567bee97431be0YY';
+   *
+   * Bug: TT352343
+   * Bug: T352574
+   *
+   * @return bool
+   *
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4430() : bool {
+    CRM_Core_DAO::executeQuery('
+    UPDATE civicrm_option_value SET value = "Realized Bequest", name = "Realized_Bequest" WHERE id = 7009');
+    return TRUE;
+  }
+
+  /**
    * Queue up an SQL update.
    *
    * @param string $sql
