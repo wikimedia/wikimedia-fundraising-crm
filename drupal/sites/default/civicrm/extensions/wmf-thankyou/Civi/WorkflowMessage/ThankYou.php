@@ -160,7 +160,7 @@ class ThankYou extends GenericWorkflowMessage {
   /**
    * Ticker of stock gifted - eg. 'AAPL' for Apple stock.
    *
-   * @var float|int|null
+   * @var string|null
    *
    * @scope tplParams as stock_ticker
    */
