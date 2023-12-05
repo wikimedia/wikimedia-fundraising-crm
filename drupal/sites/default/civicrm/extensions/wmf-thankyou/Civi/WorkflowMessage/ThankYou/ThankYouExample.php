@@ -55,6 +55,13 @@ class ThankYouExample extends WorkflowMessageExample {
       'example' =>'stock',
     ];
     yield [
+      'name' => 'workflow/endowment_thank_you/stock',
+      'title' => 'Thank you for stock',
+      'tags' => ['preview'],
+      'workflow' => 'endowment_thank_you',
+      'example' =>'stock',
+    ];
+    yield [
       'name' => 'workflow/thank_you/delayed',
       'title' => 'Thank you (delayed)',
       'tags' => ['preview'],

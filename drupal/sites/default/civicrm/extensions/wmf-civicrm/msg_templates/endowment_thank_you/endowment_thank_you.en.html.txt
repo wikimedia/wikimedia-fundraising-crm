@@ -13,7 +13,7 @@ Dear donor,
 {if $gift_source eq 'Retirement Fund - Endowment Specified' or  $gift_source eq 'Retirement Fund'}
   the qualified charitable distribution of {if $currency === 'USD'}{$currency} {/if}{$amount} that you gifted to Wikimedia from your Individual Retirement Account.
 {elseif $stock_ticker || $stock_value}
-  <p>the one-time gift of {if $stock_ticker}{$stock_quantity} shares of {$stock_ticker} stock{else}{$description_of_stock}{/if} received {$receive_date} valued at {if $currency === 'USD'}{$currency} {/if}{$stock_value} to support Wikipedia and a future where knowledge is free for everyone.</p>
+  the one-time gift of {if $stock_ticker}{$stock_quantity} shares of {$stock_ticker} stock{else}{$description_of_stock}{/if} received {$receive_date} valued at {if $currency === 'USD'}{$currency} {/if}{$stock_value} to support Wikipedia and a future where knowledge is free for everyone.
 {else}
   donating {if $currency === 'USD'}{$currency} {/if}{$amount} to support Wikipedia and a future where knowledge is free for everyone.
 {/if}</p>
@@ -35,7 +35,7 @@ President, Wikimedia Endowment
 
 <p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href="mailto:legacy@wikimedia.org">Contact us</a> to learn how to make a legacy gift. </p>
 
-<p>For your records: Your donation on {$receive_date} was {if $currency === 'USD'}{$currency} {/if}{$amount}. This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Endowment, P.O. Box 96887, Washington DC, USA 20090. U.S. tax-exempt number: 87-3024488.</p>
+<p>{if !$stock_ticker && !$stock_value}For your records: Your donation on {$receive_date} was {if $currency === 'USD'}{$currency} {/if}{$amount}.{/if} This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Endowment, P.O. Box 96887, Washington DC, USA 20090. U.S. tax-exempt number: 87-3024488.</p>
 
 <p>If you do not wish to receive any future fundraising emails from the Wikimedia Endowment or the Wikimedia Foundation, you can <a href="{$unsubscribe_link}">unsubscribe</a>.  Please note we will still send you receipts, like this one, for future donations.</p>
 
