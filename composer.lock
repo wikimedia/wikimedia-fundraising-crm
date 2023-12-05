@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bf78b3b6de78f29f0206302ac36027ab",
+    "content-hash": "a14981f863e0f8f69b07a5a1d5d61022",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -4890,16 +4890,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.8.9.5",
+            "version": "v0.8.9.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "6b26493e75ef43eaceb88b5421444276b3e67bc4"
+                "reference": "618d59ce5b601b0bac36b972d86d0be577c79c78"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/6b26493e75ef43eaceb88b5421444276b3e67bc4",
-                "reference": "6b26493e75ef43eaceb88b5421444276b3e67bc4",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/618d59ce5b601b0bac36b972d86d0be577c79c78",
+                "reference": "618d59ce5b601b0bac36b972d86d0be577c79c78",
                 "shasum": ""
             },
             "require": {
@@ -4974,9 +4974,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.9.5"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.9.7"
             },
-            "time": "2023-11-29T00:53:15+00:00"
+            "time": "2023-12-04T20:48:23+00:00"
         },
         {
             "name": "willdurand/geocoder",
