@@ -7,9 +7,9 @@ return [
     'entity' => 'UFField',
     'cleanup' => 'unused',
     'update' => 'unmodified',
-    'match' => ['uf_group_id', 'name'],
     'params' => [
       'version' => 4,
+      'match' => ['uf_group_id', 'field_name'],
       'values' => [
         'uf_group_id.name' => 'Summary_Overlay',
         'field_name:name' => 'wmf_donor.lifetime_including_endowment',
@@ -23,9 +23,9 @@ return [
     'entity' => 'UFField',
     'cleanup' => 'unused',
     'update' => 'unmodified',
-    'match' => ['uf_group_id', 'name'],
     'params' => [
       'version' => 4,
+      'match' => ['uf_group_id', 'field_name'],
       'values' => [
         'uf_group_id.name' => 'Summary_Overlay',
         'field_name:name' => 'wmf_donor.all_funds_last_donation_date',
@@ -39,9 +39,9 @@ return [
     'entity' => 'UFField',
     'cleanup' => 'unused',
     'update' => 'unmodified',
-    'match' => ['uf_group_id', 'name'],
     'params' => [
       'version' => 4,
+      'match' => ['uf_group_id', 'field_name'],
       'values' => [
         'uf_group_id.name' => 'Summary_Overlay',
         'field_name' => 'id',
