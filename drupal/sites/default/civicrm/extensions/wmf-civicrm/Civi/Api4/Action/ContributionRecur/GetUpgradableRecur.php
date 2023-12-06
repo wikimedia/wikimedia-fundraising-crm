@@ -23,6 +23,7 @@ class GetUpgradableRecur extends AbstractAction {
 
   public function _run( Result $result ) {
     if (!\CRM_Core_Permission::check('access CiviContribute') && !\CRM_Contact_BAO_Contact_Utils::validChecksum($this->contact_id,  $this->checksum)) {
+      \Civi::log('wmf')->warning('Preferences centre access denied {contact_id} {checksum}', ['contact_id' => $this->contact_id, 'checksum' => $this->checksum]);
       throw new \CRM_Core_Exception('Authorization failed');
     }
 
