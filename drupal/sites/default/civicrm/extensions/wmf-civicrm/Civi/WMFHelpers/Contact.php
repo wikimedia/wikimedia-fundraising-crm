@@ -283,7 +283,7 @@ class Contact {
   public static function duplicateContactIds(int $contact_id): array {
     $contactIds = [];
     // check multi contact share same email address (not merged yet)
-    $contacts = \Civi\Api4\Email::get()
+    $contacts = \Civi\Api4\Email::get(FALSE)
       ->addSelect('duplicateemail.contact_id')
       ->addJoin('Email AS duplicateemail', 'INNER', ['email', '=', 'duplicateemail.email'], ['id', '<>', 'duplicateemail.id'])
       ->addWhere('contact_id', '=', $contact_id)
