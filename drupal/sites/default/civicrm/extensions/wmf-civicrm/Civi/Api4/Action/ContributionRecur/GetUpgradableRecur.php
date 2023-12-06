@@ -33,9 +33,7 @@ class GetUpgradableRecur extends AbstractAction {
   /**
    * @return array
    */
-  public function getPermissions() {
-    $permissions = parent::getPermissions();
-    $permissions[] = TRUE;
-    return $permissions;
+  public function getPermissions(): array {
+    return ["*always allow*"];
   }
 }
