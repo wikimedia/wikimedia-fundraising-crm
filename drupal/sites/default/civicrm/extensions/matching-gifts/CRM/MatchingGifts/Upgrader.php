@@ -13,6 +13,10 @@ class CRM_MatchingGifts_Upgrader extends CRM_Extension_Upgrader_Base {
     return $this->executeSqlFile('sql/create_job_progress.sql');
   }
 
+  public function upgrade_1002() {
+    return $this->executeSqlFile('sql/update_existing_info_urls.sql');
+  }
+
   /**
    * Example: Run an external SQL script when the module is installed.
    */

@@ -148,8 +148,8 @@ class CRM_MatchingGifts_SsbinfoProvider implements CRM_MatchingGifts_ProviderInt
     $normalized = [
       'matching_gifts_provider_id' => $rawResponse['company_id'],
       // FIXME link has 'wikimedia' in it, use some kind of setting?
-      'matching_gifts_provider_info_url' =>
-      'https://javamatch.matchinggifts.com/search/companyprofile/wikimedia_iframe/' . $rawResponse['raw_id'],
+      // Also see this suggestion to host the page on our own domain: https://phabricator.wikimedia.org/T352898
+      'matching_gifts_provider_info_url' => 'https://matchinggifts.com/wikimedia_iframe',
       'name_from_matching_gift_db' => $rawResponse['name'],
       'minimum_gift_matched_usd' => $minAmount,
       'match_policy_last_updated' => $lastUpdated,
