@@ -22,8 +22,7 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
     '12340000' => [
       'matching_gifts_provider_id' => '12340000',
       'name_from_matching_gift_db' => 'Yoyodyne Corporation',
-      'matching_gifts_provider_info_url' =>
-        'https://javamatch.matchinggifts.com/search/companyprofile/wikimedia_iframe/2222',
+      'matching_gifts_provider_info_url' => 'https://matchinggifts.com/wikimedia_iframe',
       'guide_url' => 'https://example.com/yoyodyne/matchingpolicy.pdf',
       'online_form_url' => 'https://yoyodyne.yourcause.com/auth',
       'minimum_gift_matched_usd' => 25,
@@ -33,8 +32,7 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
     '56780404' => [
       'matching_gifts_provider_id' => '56780404',
       'name_from_matching_gift_db' => 'Advanced Idea Mechanics',
-      'matching_gifts_provider_info_url' =>
-        'https://javamatch.matchinggifts.com/search/companyprofile/wikimedia_iframe/5555',
+      'matching_gifts_provider_info_url' => 'https://matchinggifts.com/wikimedia_iframe',
       'guide_url' => 'https://example.com/advancedideamechanics/matchingpolicy.pdf',
       'online_form_url' => 'https://advideamech.benevity.com/',
       'minimum_gift_matched_usd' => 25,
@@ -44,8 +42,7 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
     '75751100' => [
       'matching_gifts_provider_id' => '75751100',
       'name_from_matching_gift_db' => 'Aperture Science, Inc.',
-      'matching_gifts_provider_info_url' =>
-        'https://javamatch.matchinggifts.com/search/companyprofile/wikimedia_iframe/7777',
+      'matching_gifts_provider_info_url' => 'https://matchinggifts.com/wikimedia_iframe',
       'guide_url' => 'https://example.com/aperturescience/matchingpolicy.pdf',
       'online_form_url' => 'https://aperture.benevity.com/',
       'minimum_gift_matched_usd' => 35,
