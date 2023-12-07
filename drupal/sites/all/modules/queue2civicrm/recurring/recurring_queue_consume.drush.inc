@@ -10,6 +10,9 @@ function recurring_queue_consume_drush_command() {
     'description' =>
       'Consumes items from a specified message queue and processes them into CiviCRM',
     'examples' => ['drush recurring-queue-consume' => '# Consume the queue'],
+    'options' => [
+      'queue' => 'Defaults to recurring, but can also read from recurring-upgrade',
+    ],
     'aliases' => ['rqc'],
   ];
   $items['recurring-process-messagefile'] = [
@@ -46,7 +49,8 @@ function recurring_queue_consume_drush_help($section) {
  * a queue.  All configurations happen in the module.
  */
 function drush_recurring_queue_consume() {
-  module_invoke('recurring', 'batch_process');
+  $queue = drush_get_option('queue', 'recurring');
+  module_invoke('recurring', 'batch_process', $queue);
 }
 
 function drush_recurring_queue_consume_recurring_process_messagefile($path) {
