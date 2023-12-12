@@ -1916,6 +1916,19 @@ AND q.id BETWEEN %1 AND %2"
   }
 
   /**
+   * Fix deprecation notices in our civi-log.
+   *
+   * Port https://github.com/civicrm/civicrm-core/pull/28491
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4435(): bool {
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_custom_field SET default_value = NULL WHERE default_value = '' AND data_type = 'Float'");
+    return TRUE;
+  }
+
+  /**
    * Queue up an SQL update.
    *
    * @param string $sql

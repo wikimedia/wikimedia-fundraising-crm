@@ -80,7 +80,7 @@ function recurring_settings() {
   return system_settings_form( $form );
 }
 
-function recurring_batch_process() {
+function recurring_batch_process($queue) {
   civicrm_initialize();
   wmf_common_create_smashpig_context( 'recurring' );
 
@@ -90,7 +90,7 @@ function recurring_batch_process() {
   }
 
   $consumer = new RecurringQueueConsumer(
-    'recurring',
+    $queue,
     variable_get( 'recurring_batch_time', 0 ),
     variable_get( 'recurring_batch', 0 )
   );
