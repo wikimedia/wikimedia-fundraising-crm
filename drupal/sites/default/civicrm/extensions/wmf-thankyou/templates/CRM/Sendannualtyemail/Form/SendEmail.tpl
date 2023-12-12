@@ -36,11 +36,9 @@ CRM.$(function($) {
       {ts}The name & language from the contact with the most recent donation will be used.{/ts}
   </div>
   <hr>
-  {if $subject}
-    <h2>Message preview</h2>
-    <div id="eoy_message_subject">{$subject}</div>
-    <div id="eoy_message_message">{$message}</div>
-  {/if}
+  <h2>Message preview</h2>
+  <div id="eoy_message_subject">{$subject}</div>
+  <div id="eoy_message_message">{$message}</div>
 
   {* FOOTER *}
   <div class="crm-submit-buttons">

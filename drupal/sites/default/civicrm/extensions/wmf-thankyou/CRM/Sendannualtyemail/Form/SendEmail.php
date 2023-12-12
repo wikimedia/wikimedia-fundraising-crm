@@ -33,7 +33,20 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
       'year', // field name
       'Year', // field label
       $this->getYearOptions(), // list of options
-      TRUE // is required
+      TRUE,
+      ['onChange' => "CRM.api4('EOYEmail', 'render', {
+  contactID: " . $this->getContactID() .",
+  year: this.value
+}).then(function(results) {
+  for (key in results) {
+     CRM.$('#eoy_message_message').html(results[key]['html']);
+     CRM.$('#eoy_message_subject').html(results[key]['subject']);
+     break;
+  }
+
+}, function(failure) {
+  CRM.$('#eoy_message_message').html(failure['error_message']);
+});"]
     );
     $this->addButtons(array(
       array(
@@ -75,6 +88,8 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
     catch (CRM_Core_Exception $e) {
       // No contributions for the contact last year - don't set the default
       // or do any pre-rendering.
+      $this->assign('subject', 'Preview unavailable for selected year');
+      $this->assign('message', $e->getMessage());
     }
   }
 
