@@ -169,6 +169,7 @@ class EOYThankYou extends GenericWorkflowMessage {
 
   /**
    * Get the array of contributions.
+   * Refunds are excluded.
    *
    * @return array
    * @throws \API_Exception
@@ -179,6 +180,7 @@ class EOYThankYou extends GenericWorkflowMessage {
       $this->contributions = (array) Contribution::get(FALSE)
         ->addWhere('contact_id', 'IN', $this->getContactIDs())
         ->addWhere('contribution_status_id:name', '=', 'Completed')
+        ->addWhere('financial_type_id:name', '!=', 'Refund')
         ->addWhere('contact_id.is_deleted', '=', FALSE)
         ->addWhere('receive_date', 'BETWEEN', [
           $this->getYear() . '-01-01 10:00:00',
