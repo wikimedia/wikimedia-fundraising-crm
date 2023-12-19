@@ -130,6 +130,10 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
   if (!empty($msg['processor_contact_id'])) {
     $extra_recurring_params['contribution_recur_smashpig.processor_contact_id'] = $msg['processor_contact_id'];
   }
+  // Using custom field to hold the rescue_reference for Adyen will be used for cancel auto rescue.
+  if (!empty($msg['rescue_reference'])) {
+    $extra_recurring_params['contribution_recur_smashpig.rescue_reference'] = $msg['rescue_reference'];
+  }
 
   if (!empty($msg['initial_scheme_transaction_id'])) {
     $extra_recurring_params['contribution_recur_smashpig.initial_scheme_transaction_id'] = $msg['initial_scheme_transaction_id'];
