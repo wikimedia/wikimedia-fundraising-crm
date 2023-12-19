@@ -75,7 +75,8 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
     $contributionRecur = $this->createContributionRecur($token, [
       'trxn_id' => 'RECURRING DLOCAL ' . $this->generateRandomOrderId(),
       'invoice_id' => $expectedOrderIdWithSequence,
-      'contribution_recur_smashpig.processor_contact_id' => '123456.1'
+      'contribution_recur_smashpig.processor_contact_id' => '123456.1',
+      'contribution_recur_smashpig.rescue_reference' => NULL
     ]);
     $this->createContribution($contributionRecur, [
       'payment_instrument_id:name' => 'Bank Transfer: UPI',

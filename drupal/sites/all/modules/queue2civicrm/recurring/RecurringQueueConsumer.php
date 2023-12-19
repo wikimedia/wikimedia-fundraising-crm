@@ -496,6 +496,10 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         $params['contribution_recur_smashpig.processor_contact_id'] = $msg['processor_contact_id'];
       }
 
+      if (isset($msg['rescue_reference'])) {
+        $params['contribution_recur_smashpig.rescue_reference'] = $msg['rescue_reference'];
+      }
+
       if (isset($msg['fiscal_number'])) {
         // TODO handle this in the create contact block above rather than creating and then updating
         $save = new Save('WMFContact', 'save');
