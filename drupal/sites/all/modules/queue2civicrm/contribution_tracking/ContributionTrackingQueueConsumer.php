@@ -4,6 +4,7 @@ namespace queue2civicrm\contribution_tracking;
 
 use Civi\Api4\ContributionTracking;
 use \Civi\WMFException\ContributionTrackingDataValidationException;
+use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\ContributionTracking as WMFHelper;
 use wmf_common\WmfQueueConsumer;
 
@@ -52,20 +53,30 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
       ]);
     }, ARRAY_FILTER_USE_KEY);
 
+    $hasContributionId = !empty($ctData['contribution_id']);
     [$existingContributionID, $existingRow] = $this->getExisting($ctData['id']);
     if ($existingContributionID
-      && !empty($ctData['contribution_id'])
+      && $hasContributionId
       && ($existingContributionID !== (int) $ctData['contribution_id'])
     ) {
       $this->rejectChangingContributionID($ctData, $existingContributionID);
     }
     else {
+      try {
+        ContributionTracking::save(FALSE)
+          ->addRecord(WMFHelper::getContributionTrackingParameters($message))
+          ->execute();
 
-      ContributionTracking::save(FALSE)
-        ->addRecord(WMFHelper::getContributionTrackingParameters($message))
-        ->execute();
-
-      $this->persistContributionTrackingData($ctData, $csData, $existingRow);
+        $this->persistContributionTrackingData($ctData, $csData, $existingRow);
+      }
+      catch(\CRM_Core_Exception $ex) {
+        // When setting a contribution ID, we can expect a few constraint violations
+        // from messages sent by the donations queue consumer after a contribution
+        // insert has been rolled back. Ignore those exceptions, rethrow the rest.
+        if (!$hasContributionId || $ex->getErrorCode() !== 'constraint violation') {
+          throw $ex;
+        }
+      }
     }
     $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
     $ContributionTrackingStatsCollector->recordContributionTrackingRecord();
