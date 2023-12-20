@@ -4,6 +4,8 @@ namespace Civi\WMFHelpers;
 
 use Civi\Api4\Contribution;
 use CRM_Core_PseudoConstant;
+use smashpig\PaymentProviders\ICancelAutoRescueProvider;
+use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 class ContributionRecur {
 
@@ -135,7 +137,37 @@ class ContributionRecur {
     return $result;
   }
 
-  public static function cancelAutoRecur($op, $id, $entity) {
-
+  /**
+   * @param $op
+   * @param $id
+   * @param \CRM_Contribute_BAO_ContributionRecur $contributionRecur
+   * @return bool
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public static function cancelRecurAutoRescue($op, $id, &$contributionRecur) {
+    if ( $op === 'edit' && !empty($contributionRecur->cancel_date) ) {
+      wmf_common_create_smashpig_context('cancelRecurContribution', 'adyen');
+      $provider = PaymentProviderFactory::getProviderForMethod('cc');
+      if ( $provider instanceof ICancelAutoRescueProvider ) {
+        $contributionRecurring = \Civi\Api4\ContributionRecur::get(FALSE)
+          ->addSelect('contribution_recur_smashpig.rescue_reference')
+          ->addWhere('id', '=', $id)
+          ->execute()
+          ->first();
+        // if recurring enabled auto rescue, will find rescue_reference and need to request adyen cancel it too
+        if ( $contributionRecurring['contribution_recur_smashpig.rescue_reference'] ) {
+          $response = $provider->cancelAutoRescue( $contributionRecurring['contribution_recur_smashpig.rescue_reference'] );
+          if ( $response->isSuccessful() ) {
+            \Civi::log('wmf')->info("Successfully send cancel auto rescue request for recurring id '$id'");
+            return true;
+          } else {
+            // Warn us that something wrong with sending request we need to cancel request again to avoid duplicate charge
+            \Civi::log('wmf')->error("Failed to send cancel auto rescue request for recurring id '$id'");
+          }
+        }
+      }
+    }
+    return false;
   }
 }

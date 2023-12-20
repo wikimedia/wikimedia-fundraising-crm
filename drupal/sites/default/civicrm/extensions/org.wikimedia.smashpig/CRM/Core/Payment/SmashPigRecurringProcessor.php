@@ -370,7 +370,12 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
                 $errorResponse instanceof CreatePaymentWithProcessorRetryResponse
     ) {
       if ($errorResponse->getIsProcessorRetryScheduled()) {
+        // save rescueReference for future if cancel rescue process
+        $rescueReference = $errorResponse->getProcessorRetryRescueReference();
+        Civi::log('wmf')->info('For recurring id:' . $recurringPayment['id']. ', save retry reference ' . $rescueReference);
+
         $invoiceId = $recurringPayment['invoice_id'];
+
         $contribution = Contribution::get(FALSE)
           ->addSelect('payment_instrument_id')
           ->addWhere('contribution_recur_id', '=', $recurringPayment['id'])
@@ -386,6 +391,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
           'gateway_txn_id' => $errorResponse->getGatewayTxnId(),
           'date' => time(),
           'is_auto_rescue_retry' => TRUE,
+          'rescue_reference' => $rescueReference,
           'currency' => $recurringPayment['currency'],
           'amount' => $recurringPayment['amount'],
           'contribution_recur_id' => $recurringPayment['id'],
@@ -596,6 +602,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'ip_address' => $ipAddress,
       'payment_instrument' => $previousContribution['payment_instrument'],
       'processor_contact_id' => $recurringPayment['contribution_recur_smashpig.processor_contact_id'] ?? NULL,
+      'rescue_reference' => $recurringPayment['contribution_recur_smashpig.rescue_reference'] ?? NULL,
       // FIXME: SmashPig should choose 'first' or 'recurring' based on seq #
       'installment' => 'recurring',
     ];

@@ -183,6 +183,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           'start_date' => $msg['date'],
           'date' => $msg['date'],
           'gateway' => $msg['gateway'],
+          'rescue_reference' => $msg['rescue_reference'], // adyen auto rescue
           'recurring' => TRUE,
         ];
         $startMessage = $this->normalizeMessage($startMessage);
@@ -494,10 +495,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
       if (isset($msg['processor_contact_id'])) {
         $params['contribution_recur_smashpig.processor_contact_id'] = $msg['processor_contact_id'];
-      }
-
-      if (isset($msg['rescue_reference'])) {
-        $params['contribution_recur_smashpig.rescue_reference'] = $msg['rescue_reference'];
       }
 
       if (isset($msg['fiscal_number'])) {
