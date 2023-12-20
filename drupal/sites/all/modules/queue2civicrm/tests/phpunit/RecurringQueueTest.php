@@ -221,7 +221,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Test function that cancels recurrings.
    */
-  public function testCancelContributions() {
+  public function testCancelContributions(): void {
     $subscr_id = mt_rand();
     $values = $this->processRecurringSignup($subscr_id);
     $this->importMessage(new RecurringCancelMessage($values));
