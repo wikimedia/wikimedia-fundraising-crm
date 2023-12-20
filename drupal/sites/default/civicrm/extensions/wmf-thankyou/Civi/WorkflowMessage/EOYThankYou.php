@@ -16,7 +16,8 @@ use Civi\Api4\Exception\EOYEmail\NoContributionException;
  * @support template-only
  * @method array getContact()
  * @method $this setContact(array $contact)
- * @method $this setActive_recurring(bool $active_recurring)
+ * @method $this setActiveRecurring(bool $activeRecurring)
+ * @method $this setCancelledRecurring(bool $cancelledRecurring)
  * @method $this setContactIDs(array $contactIDs)
  * @method $this setContributions(array $contributions)
  * @method array setTotals()
@@ -68,11 +69,21 @@ class EOYThankYou extends GenericWorkflowMessage {
    * Does this donor have active recurring contributions.
    *
    * @var bool
-   * @scope tplParams
+   * @scope tplParams as active_recurring
    *
    * @required
    */
-  public $active_recurring;
+  public $activeRecurring;
+
+  /**
+   * Does this donor have cancelled recurring contributions.
+   *
+   * @var bool
+   * @scope tplParams as cancelled_recurring
+   *
+   * @required
+   */
+  public $cancelledRecurring;
 
   /**
    * Does this donor have any endowment contributions in the period.
@@ -232,15 +243,36 @@ class EOYThankYou extends GenericWorkflowMessage {
    * @throws \API_Exception
    */
   protected function getActiveRecurring(): bool {
-    if (!isset($this->active_recurring)) {
+    if (!isset($this->activeRecurring)) {
       $recurringCount = ContributionRecur::get(FALSE)
         ->addSelect('count')
         ->addWhere('contact_id', 'IN', $this->getContactIDs())
         ->addWhere('contribution_status_id:name', 'IN', ['Pending', 'In Progress'])
         ->execute();
-      $this->active_recurring = count($recurringCount) > 0;
+      $this->activeRecurring = count($recurringCount) > 0;
     }
-    return $this->active_recurring;
+    return $this->activeRecurring;
+  }
+
+  /**
+   * Get bool for whether a recurring was cancelled this year
+   *
+   * @throws \API_Exception
+   */
+  protected function getCancelledRecurring(): bool {
+    if (!isset($this->cancelledRecurring)) {
+      $recurringCount = ContributionRecur::get(FALSE)
+        ->addSelect('count')
+        ->addWhere('contact_id', 'IN', $this->getContactIDs())
+        ->addWhere('contribution_status_id:name', 'IN', ['Cancelled'])
+        ->addWhere('cancel_date', 'BETWEEN', [
+          $this->getYear() . '-01-01 10:00:00',
+          'now',
+        ])
+        ->execute();
+      $this->cancelledRecurring = count($recurringCount) > 0;
+    }
+    return $this->cancelledRecurring;
   }
 
   /**

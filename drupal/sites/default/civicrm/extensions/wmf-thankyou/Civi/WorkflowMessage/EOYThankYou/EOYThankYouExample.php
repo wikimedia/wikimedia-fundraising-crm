@@ -40,7 +40,8 @@ class EOYThankYouExample extends WorkflowMessageExample {
     $message = new EOYThankYou();
     $message->setContact(DemoData::example('entity/Contact/Alex'));
     $message->setYear(date('Y') - 1);
-    $message->setActive_recurring(TRUE);
+    $message->setActiveRecurring(TRUE);
+    $message->setCancelledRecurring(TRUE);
     $message->setContributions($this->getContributions());
     $example['data'] = $this->toArray($message);
   }
