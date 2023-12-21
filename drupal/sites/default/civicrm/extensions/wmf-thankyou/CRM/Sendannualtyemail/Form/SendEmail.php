@@ -48,6 +48,7 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
   CRM.$('#eoy_message_message').html(failure['error_message']);
 });"]
     );
+    $this->setDefaults(['year' => date('Y') -1]);
     $this->addButtons(array(
       array(
         'type' => 'submit',
