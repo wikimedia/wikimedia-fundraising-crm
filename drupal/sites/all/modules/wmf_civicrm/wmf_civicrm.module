@@ -1892,6 +1892,9 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
     case 'Contribution':
       wmf_civicrm_civicrm_post_Contribution($op, $id, $entity);
       break;
+    case 'ContributionRecur':
+      \Civi\WMFHelpers\ContributionRecur::cancelRecurAutoRescue($op, $id, $entity);
+      break;
   }
 }
 
