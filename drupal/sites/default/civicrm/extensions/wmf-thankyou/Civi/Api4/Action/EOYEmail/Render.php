@@ -112,11 +112,9 @@ class Render extends AbstractAction {
    */
   protected function renderLetter(string $email): array {
     $contactDetails = $this->getContactDetailsForEmail($email);
-    $activeRecurring = $this->doContactsHaveActiveRecurring($contactDetails['ids']);
 
     $template_params = [
       'year' => $this->getYear(),
-      'active_recurring' => $activeRecurring,
       'contactIDs' => $contactDetails['ids'],
       'contactID' => end($contactDetails['ids']),
       'locale' => $contactDetails['language'],
@@ -173,30 +171,6 @@ class Render extends AbstractAction {
       throw new NoEmailException('email is not attached (anymore?) to a valid contact: ' . $email, 'eoy_fail', ['email' => $email]);
     }
     return $contactDetails;
-  }
-
-  /**
-   * Determine whether any of an array of contact IDs have an active recurring
-   * donation associated.
-   *
-   * @param array $contactIds
-   *
-   * @return bool
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected function doContactsHaveActiveRecurring(array $contactIds): bool {
-    if (empty($contactIds)) {
-      return FALSE;
-    }
-    $recurringCount = civicrm_api3('ContributionRecur', 'getCount', [
-      'contact_id' => [
-        'IN' => $contactIds
-      ],
-      'contribution_status_id' => [
-        'IN' => ['Completed', 'Pending', 'In Progress']
-      ],
-    ]);
-    return $recurringCount > 0;
   }
 
 }
