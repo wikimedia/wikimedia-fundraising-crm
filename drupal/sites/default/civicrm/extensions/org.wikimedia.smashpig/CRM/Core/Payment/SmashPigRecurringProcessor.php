@@ -95,10 +95,18 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       }
       try {
         $previousContribution = self::getPreviousContribution($recurringPayment);
-        // run a small query to double-check the fresh cancel status
-        $isCancelled = self::getRecurCancelStatus($recurringPayment['id']);
-        if ($isCancelled) {
-          throw new UnexpectedValueException('No need to charge this one since the update status for . recurring_id: '.$recurringPayment['id'] .' is cancelled on '. $isCancelled);
+        // run a small query to double-check the recurring status
+        $recurStatus = self::getRecurStatus($recurringPayment['id']);
+        if ($recurStatus === 'Cancelled') {
+          Civi::log('wmf')
+            ->info('No need to charge this one since recurring row '. $recurringPayment['id'] . ' is cancelled');
+          continue;
+        }
+        if ($recurStatus === 'Processing') {
+          throw new UnexpectedValueException(
+            'Recurring row '. $recurringPayment['id'] . ' has been set to Processing! Is there another recurring ' .
+            'charge job running at the same time? Bailing out to avoid double charges.'
+          );
         }
 
         // Catch for double recurring payments in one month (23 days of one another)
@@ -185,19 +193,21 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   }
 
   /**
-   * There is a possibility that after getPaymentsToCharge, we update recur cancel date
-   * so need double check if cancelled before we actually start to process the recharge.
+   * There is a possibility that a recur row is changed to a different status after we
+   * pick it up in getPaymentsToCharge, so we need to double-check the status before we
+   * actually charge the payment.
+   *
    * @param $contributionRecurId
    *
-   * @return mixed
+   * @return string|null
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  protected function getRecurCancelStatus($contributionRecurId) {
+  protected function getRecurStatus($contributionRecurId): ?string {
     $recurInfo = ContributionRecur::get(FALSE)
-      ->addSelect('cancel_date')
+      ->addSelect('contribution_status_id:name')
       ->addWhere('id', '=', $contributionRecurId)->execute()->first();
-    return $recurInfo['cancel_date'];
+    return $recurInfo['contribution_status_id:name'];
   }
 
   /**
