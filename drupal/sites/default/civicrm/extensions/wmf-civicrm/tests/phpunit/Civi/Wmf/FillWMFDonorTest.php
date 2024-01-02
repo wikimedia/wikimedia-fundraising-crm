@@ -14,7 +14,7 @@ use CRM_Core_DAO;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Test our thank you cleanup.
+ * Test our calculated fields.
  *
  * Tips:
  *  - With HookInterface, you may implement CiviCRM hooks directly in the test class.

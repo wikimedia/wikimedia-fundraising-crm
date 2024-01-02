@@ -12,7 +12,7 @@ use Civi\Test\HookInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Test our thank you cleanup.
+ * Test our calculated fields.
  *
  * Tips:
  *  - With HookInterface, you may implement CiviCRM hooks directly in the test class.
@@ -50,7 +50,13 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   public function setUp(): void {
-    $this->currentDate = date('Y') . '-08-01';
+    if (date('m') > 6) {
+      $this->currentDate = date('Y') . '-08-01';
+    }
+    else {
+      $this->currentDate = (date('Y') -1) . '-08-01';
+    }
+
     \CRM_Utils_Time::setTime($this->currentDate);
     parent::setUp();
   }
