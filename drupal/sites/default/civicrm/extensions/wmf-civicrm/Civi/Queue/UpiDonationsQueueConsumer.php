@@ -60,11 +60,24 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
     if (!$tokenRecord) {
       return NULL;
     }
-    return ContributionRecur::get(FALSE)
+    // Look up contribution recur row using token and recur amount
+    $recurs = ContributionRecur::get(FALSE)
+      ->addSelect('contribution_status_id:name', '*')
       ->addWhere('payment_token_id', '=', $tokenRecord['id'])
-      ->addWhere('contribution_status_id:name', '!=', 'Cancelled')
-      ->execute()
-      ->first();
+      ->addWhere('amount', '=', $message['gross'])
+      ->execute();
+
+    // For cases with multiple recur records for the payment_token and amount
+    // check for the row with the closest schedule date and is "In Progress" status.
+    if (count($recurs) > 1) {
+      foreach ($recurs as $recur_record) {
+        if ($recur_record['contribution_status_id:name'] === 'In Progress' ) {
+            return $recur_record;
+        }
+      }
+    }
+
+    return $recurs[0] ?? NULL;
   }
 
   /**

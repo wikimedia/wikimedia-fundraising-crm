@@ -11,6 +11,7 @@ use Civi\Test\TransactionalInterface;
 use PHPUnit\Framework\TestCase;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
+use SmashPig\Core\UtcDate;
 use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
@@ -113,6 +114,183 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     $this->assertEquals($contact['id'], $donationMessage['contact_id']);
   }
 
+  public function testInstallmentAfterCancelledRecurRecord(): void {
+    // set up test records to link queue message with
+    $contact = $this->createTestContactRecord();
+    $token = $this->createTestPaymentToken($contact['id']);
+    $recur = $this->createTestContributionRecurRecord($contact['id'], $token['id']);
+    $this->cancelTestContributionRecurRecord($recur['id']);
+
+    // Test that a donation IPN with a pre-existing token and recurring
+    // record will set the donation message IDs correctly even if cancelled
+    $message = json_decode(
+      file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
+    );
+    QueueWrapper::push('upi-donations', $message);
+
+    $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
+    $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
+    $donationMessage = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
+    $this->assertEquals($recur['id'], $donationMessage['contribution_recur_id']);
+    $this->assertEquals($contact['id'], $donationMessage['contact_id']);
+
+    // confirm that the subscription remains cancelled
+    $contributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $recur['id'])
+      ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
+    $this->assertEquals('Cancelled', $contributionRecur['contribution_status_id:name']);
+    $this->assertEquals('Subscription cancelled at gateway', $contributionRecur['cancel_reason']);
+
+    // Confirm no new subscription
+    $newContributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', 'LIKE', "%" . $message['gateway_txn_id'])
+      ->execute()->first();
+    $this->assertNull($newContributionRecur, 'It should not create a new contribution recur row');
+  }
+
+  public function testInstallmentAfterMultipleDifferentRecurRecord(): void {
+    // set up test records to link queue message with
+    $messageAmount = 1000;
+
+    // Test that a donation IPN with a pre-existing token and recurring
+    // record with the right amount will set the donation message IDs correctly
+    $message = json_decode(
+      file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
+    );
+    $message['gross'] = $messageAmount;
+    $contact = $this->createTestContactRecord();
+    $token = $this->createTestPaymentToken($contact['id']);
+    $recur1 = $this->createTestContributionRecurRecord($contact['id'], $token['id']);
+    $recur2 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount);
+    $recur3 = $this->createTestContributionRecurRecord($contact['id'], $token['id']);
+
+    $this->cancelTestContributionRecurRecord($recur3['id']);
+
+    QueueWrapper::push('upi-donations', $message);
+
+    $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
+    $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
+    $donationMessage = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
+    $this->assertEquals($recur2['id'], $donationMessage['contribution_recur_id']);
+
+        // confirm that the subscription remains pending
+    $contributionRecur1 = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $recur1['id'])
+      ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
+    $this->assertEquals('Pending', $contributionRecur1['contribution_status_id:name']);
+
+    // confirm that the subscription remains cancelled
+    $contributionRecur3 = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $recur3['id'])
+      ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
+    $this->assertEquals('Cancelled', $contributionRecur3['contribution_status_id:name']);
+
+    // Confirm no new subscription
+    $newContributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', 'LIKE', "%" . $message['gateway_txn_id'])
+      ->execute()->first();
+    $this->assertNull($newContributionRecur, 'It should not create a new contribution recur row');
+  }
+
+  public function testInstallmentAfterMultipleSimilarRecurRecord(): void {
+    // set up test records to link queue message with
+    $messageAmount = 1000;
+    $contact = $this->createTestContactRecord();
+    $token = $this->createTestPaymentToken($contact['id']);
+    // Test that a donation IPN with a pre-existing token and recurring
+    // record set to "In Progress" will set the donation message IDs correctly
+    $message = json_decode(
+      file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
+    );
+
+    $next_day_date = wmf_common_date_unix_to_civicrm(strtotime('+1 day', $message['date']));
+    $recur1 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount, $next_day_date);
+    $recur2 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount, $next_day_date);
+    $recur3 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount, $next_day_date);
+
+    $this->cancelTestContributionRecurRecord($recur3['id']);
+    $this->setContributionRecurRecordInProgress($recur2['id']);
+
+    $message['gross'] = $messageAmount;
+    QueueWrapper::push('upi-donations', $message);
+
+    $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
+    $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
+    $donationMessage = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
+    $this->assertEquals($recur2['id'], $donationMessage['contribution_recur_id']);
+
+    // confirm that the subscriptions remain cancelled
+    $contributionRecur1 = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $recur1['id'])
+      ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
+    $contributionRecur3 = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $recur3['id'])
+      ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
+    $this->assertEquals('Pending', $contributionRecur1['contribution_status_id:name']);
+    $this->assertEquals('Cancelled', $contributionRecur3['contribution_status_id:name']);
+
+    // Confirm no new subscription
+    $newContributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', 'LIKE', "%" . $message['gateway_txn_id'])
+      ->execute()->first();
+    $this->assertNull($newContributionRecur, 'It should not create a new contribution recur row');
+  }
+
+  public function testInstallmentAfterMultipleCancelledRecurRecord(): void {
+    // set up test records to link queue message with
+    $messageAmount = 1000;
+    // Test that a donation IPN with a pre-existing token and recurring
+    // record will set the donation message IDs correctly
+    $message = json_decode(
+      file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
+    );
+
+    $message['gross'] = $messageAmount;
+
+    $contact = $this->createTestContactRecord();
+    $token = $this->createTestPaymentToken($contact['id']);
+
+    $recur1 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount);
+    $recur2 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount);
+    $recur3 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount);
+
+    $this->cancelTestContributionRecurRecord($recur1['id']);
+    $this->cancelTestContributionRecurRecord($recur2['id']);
+    $this->cancelTestContributionRecurRecord($recur3['id']);
+
+    QueueWrapper::push('upi-donations', $message);
+
+    $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
+    $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
+    $donationMessage = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
+    $this->assertEquals($recur1['id'], $donationMessage['contribution_recur_id']);
+    // confirm that the subscription remains cancelled
+    $contributionRecur1 = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $recur1['id'])
+      ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
+    // confirm that the subscription remains cancelled
+    $contributionRecur2 = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $recur2['id'])
+      ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
+    // confirm that the subscription remains cancelled
+    $contributionRecur3 = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $recur3['id'])
+      ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
+    $this->assertEquals('Cancelled', $contributionRecur1['contribution_status_id:name']);
+    $this->assertEquals('Cancelled', $contributionRecur2['contribution_status_id:name']);
+    $this->assertEquals('Cancelled', $contributionRecur3['contribution_status_id:name']);
+
+    // Confirm no new subscription
+    $newContributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', 'LIKE', "%" . $message['gateway_txn_id'])
+      ->execute()->first();
+    $this->assertNull($newContributionRecur, 'It should not create a new contribution recur row');
+  }
+
   /**
    *
    * For dLocal 'Wallet disabled' rejections we need to cancel the recurring
@@ -125,12 +303,14 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     // set up test records to link queue message with
     $contact = $this->createTestContactRecord();
     $token = $this->createTestPaymentToken($contact['id']);
-    $recur = $this->createTestContributionRecurRecord($contact['id'], $token['id']);
 
-    // push a test rejection queue message to the upi donations queue
     $rejectionQueueMessage = json_decode(
       file_get_contents(__DIR__ . '/../../../data/upiRejectionWalletDisabled.json'), TRUE
     );
+
+    $recur = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $rejectionQueueMessage['gross']);
+
+    // push a test rejection queue message to the upi donations queue
     QueueWrapper::push('upi-donations', $rejectionQueueMessage);
 
     // process the message
@@ -213,17 +393,52 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
    * @param int $contactId
    * @param int $paymentTokenId
    */
-  protected function createTestContributionRecurRecord(int $contactId, int $paymentTokenId): ?array {
+  protected function createTestContributionRecurRecord(int $contactId, int $paymentTokenId, ?int $amount = 505, ?string $next_sched_date = null): ?array {
+    $params = [
+      'currency' => 'INR',
+      'amount' => $amount,
+      'cycle_day' => 5,
+      'contact_id' => $contactId,
+      'payment_token_id' => $paymentTokenId,
+    ];
+    if ($next_sched_date) {
+      $params['next_sched_contribution_date'] = $next_sched_date;
+    }
     return ContributionRecur::create(FALSE)
-      ->setValues([
-        'currency' => 'INR',
-        'amount' => 505,
-        'cycle_day' => 5,
-        'contact_id' => $contactId,
-        'payment_token_id' => $paymentTokenId,
-      ])
+      ->setValues($params)
       ->execute()
       ->first();
   }
 
-}
+  /**
+    * @param int $contactId
+    * @param int $paymentTokenId
+    */
+  protected function cancelTestContributionRecurRecord(int $id): ?array {
+    $params = [];
+    $params['id'] = $id;
+    $params['contribution_status_id:name'] = 'Cancelled';
+    $params['cancel_date'] = UtcDate::getUtcDatabaseString();
+    $params['cancel_reason'] = 'Subscription cancelled at gateway';
+    return ContributionRecur::update(FALSE)
+      ->setValues($params)
+      ->addWhere('id', '=', $id)
+      ->execute()
+      ->first();
+  }
+
+    /**
+      * @param int $contactId
+      * @param int $paymentTokenId
+      */
+    protected function setContributionRecurRecordInProgress(int $id): ?array {
+      $params = [];
+      $params['id'] = $id;
+      $params['contribution_status_id:name'] = 'In Progress';
+      return ContributionRecur::update(FALSE)
+        ->setValues($params)
+        ->addWhere('id', '=', $id)
+        ->execute()
+        ->first();
+    }
+  }

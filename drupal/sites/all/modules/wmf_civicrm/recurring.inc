@@ -509,10 +509,13 @@ function wmf_civicrm_get_recurring_payment_token($gateway, $token) {
   $payment_token_result = civicrm_api3('PaymentToken', 'get', [
     'payment_processor_id' => $processorId,
     'token' => $token,
+    // Return most recent value, without this the function returns null on multiple rows in values
+    'options' => ['sort' => "created_date desc", 'limit' => 1],
   ]);
   if (empty($payment_token_result['values'])) {
     return NULL;
   }
+
   return $payment_token_result['values'][$payment_token_result['id']];
 }
 
