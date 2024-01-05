@@ -460,7 +460,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'trxn_id' => $msg['subscr_id'],
         'financial_type_id:name' => 'Cash'
       ];
-
       if (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {
         // We could pass the gateway name to the api for resolution but it would reject
         // any gateway values with no valid processor mapping so we do this ourselves.
@@ -485,11 +484,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           ->get_unique_id();
         $params['processor_id'] = $msg['gateway_txn_id'];
         $params['invoice_id'] = $msg['order_id'];
+        $params['next_sched_contribution_date'] = wmf_common_date_unix_to_civicrm($msg['start_date']);
+        $params['cycle_day'] = date('j', strtotime($params['start_date']));
       }
-
-      // for PayPal, next_sched_contribution_date doesn't really matter - they schedule all the charges, but we do want to update
-      $params['next_sched_contribution_date'] = $params['start_date'];
-      $params['cycle_day'] = date('j', strtotime($params['start_date']));
 
       if (isset($msg['initial_scheme_transaction_id'])) {
         $params['contribution_recur_smashpig.initial_scheme_transaction_id'] = $msg['initial_scheme_transaction_id'];
