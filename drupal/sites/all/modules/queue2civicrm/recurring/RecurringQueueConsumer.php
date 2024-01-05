@@ -117,7 +117,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     // check for parent record in civicrm_contribution_recur and fetch its id
     $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
 
-    if ($recur_record) {
+    if ($recur_record && RecurHelper::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
       // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
       RecurHelper::reactivateIfInactive($recur_record);
     }

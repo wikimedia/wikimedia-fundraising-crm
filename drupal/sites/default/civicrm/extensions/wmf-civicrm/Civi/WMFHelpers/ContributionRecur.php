@@ -4,6 +4,7 @@ namespace Civi\WMFHelpers;
 
 use Civi\Api4\Contribution;
 use CRM_Core_PseudoConstant;
+use SmashPig\Core\Context;
 
 class ContributionRecur {
 
@@ -68,7 +69,7 @@ class ContributionRecur {
           'cancel_date' => NULL,
           'cancel_reason' => '',
           'end_date' => NULL,
-          'contribution_status_id.name' => 'In Progress'
+          'contribution_status_id' => 'In Progress'
         ])->execute();
     }
   }
@@ -135,4 +136,16 @@ class ContributionRecur {
     return $result;
   }
 
+  public static function gatewayManagesOwnRecurringSchedule($gateway) : bool {
+    wmf_common_create_smashpig_context('RecurHelper', $gateway);
+    $config = Context::get()->getProviderConfiguration();
+    $defaultMethod = $config->val('default-method');
+    if (!$config->nodeExists("payment-provider/$defaultMethod/class")) {
+      return FALSE;
+    }
+    return is_subclass_of(
+      $config->val("payment-provider/$defaultMethod/class"),
+      'SmashPig\PaymentProviders\IRecurringPaymentProfileProvider'
+    );
+  }
 }
