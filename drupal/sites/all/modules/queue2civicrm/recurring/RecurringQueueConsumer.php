@@ -458,7 +458,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
         'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
         'trxn_id' => $msg['subscr_id'],
-        'financial_type_id:name' => 'Cash'
+        'financial_type_id:name' => 'Cash',
+        'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
+        'cycle_day' => date('j', strtotime(wmf_common_date_unix_to_civicrm($msg['start_date'])))
       ];
       if (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {
         // We could pass the gateway name to the api for resolution but it would reject
@@ -484,8 +486,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           ->get_unique_id();
         $params['processor_id'] = $msg['gateway_txn_id'];
         $params['invoice_id'] = $msg['order_id'];
-        $params['next_sched_contribution_date'] = wmf_common_date_unix_to_civicrm($msg['start_date']);
-        $params['cycle_day'] = date('j', strtotime($params['start_date']));
       }
 
       if (isset($msg['initial_scheme_transaction_id'])) {

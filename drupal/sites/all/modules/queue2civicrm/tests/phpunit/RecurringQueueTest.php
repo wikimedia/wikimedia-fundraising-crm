@@ -233,7 +233,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('2013-11-01 23:07:05', $recur_record['end_date']);
     $this->assertNotEmpty($recur_record['payment_processor_id']);
     $this->assertTrue(empty($recur_record['failure_retry_date']));
-    $this->assertTrue(empty($recur_record['next_sched_contribution_date']));
     $this->assertEquals('Cancelled', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
   }
 
