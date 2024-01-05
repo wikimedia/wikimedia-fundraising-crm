@@ -115,7 +115,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg missing the subscr_id; cannot process.');
     }
     // check for parent record in civicrm_contribution_recur and fetch its id
-    $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
+    $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
 
     if ($recur_record) {
       // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
@@ -187,7 +187,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         ];
         $startMessage = $this->normalizeMessage($startMessage);
         $this->importSubscriptionSignup($startMessage);
-        $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
+        $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
         if (!$recur_record) {
           \Civi::log('wmf')->notice('recurring: Fallback contribution_recur record creation failed.');
           throw new WMFException(
@@ -594,7 +594,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    */
   protected function importSubscriptionCancel($msg) {
     // ensure we have a record of the subscription
-    if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
+    if (!$recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;
@@ -647,7 +647,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    */
   protected function importSubscriptionExpired($msg) {
     // ensure we have a record of the subscription
-    if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
+    if (!$recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;
@@ -679,7 +679,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    */
   protected function importSubscriptionPaymentFailed($msg) {
     // ensure we have a record of the subscription
-    if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
+    if (!$recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;

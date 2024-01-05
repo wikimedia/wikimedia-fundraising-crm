@@ -411,29 +411,6 @@ LIMIT 1";
 /**
  * Get recurring record in CiviCRM for the given subscriber id
  *
- * @deprecated Use wmf_civicrm_get_gateway_subscription instead.
- *
- * @param string $subscr_id
- *
- * @return object|false
- */
-function wmf_civicrm_get_recur_record($subscr_id) {
-  $query = "SELECT * FROM civicrm_contribution_recur WHERE trxn_id = %1";
-
-  $dao = CRM_Core_DAO::executeQuery($query, [
-    1 => [$subscr_id, 'String'],
-  ]);
-
-  if (!$dao->fetch()) {
-    return FALSE;
-  }
-
-  return $dao;
-}
-
-/**
- * Get recurring record in CiviCRM for the given subscriber id
- *
  * There is tension between trxn_id as searchable index and full gateway style
  * at the moment, so we search using either style: either bare gateway
  * subscription ID, or trxn-style full natural key.

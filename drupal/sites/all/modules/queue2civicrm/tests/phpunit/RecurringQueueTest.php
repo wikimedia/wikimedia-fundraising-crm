@@ -192,7 +192,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $contributions[0]['id'],
       $ctRecord2['contribution_id']
     );
-    $recur_record = wmf_civicrm_get_recur_record($subscr_id);
+    $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $subscr_id);
 
     $this->assertNotEquals(FALSE, $recur_record);
 
@@ -268,7 +268,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $contributions = $this->importMessage($message);
 
-    $recur_record = wmf_civicrm_get_recur_record($subscr_id);
+    $recur_record = wmf_civicrm_get_gateway_subscription($contributions[0]['gateway'], $subscr_id);
     $this->assertNotEquals(FALSE, $recur_record);
     $this->assertTrue(is_numeric($recur_record->payment_processor_id));
 
@@ -564,7 +564,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Create matching trxn_id
     $trxn_id = 'RECURRING ' . strtoupper(($overrides['gateway'])) . ' ' . $subscr_id;
-    $recur_record = wmf_civicrm_get_recur_record($trxn_id);
+    $recur_record = wmf_civicrm_get_gateway_subscription($overrides['gateway'], $trxn_id);
     // Check the record was created successfully
     $this->assertEquals($recur_record->trxn_id, $trxn_id);
     // The first contribution should be on the start_date
@@ -627,7 +627,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($firstContribution['contact_id'], $token['contact_id']);
     // Create matching trxn_id
     $trxn_id = 'RECURRING ' . strtoupper(($overrides['gateway'])) . ' ' . $subscr_id;
-    $recurRecord = wmf_civicrm_get_recur_record($trxn_id);
+    $recurRecord = wmf_civicrm_get_gateway_subscription($overrides['gateway'], $trxn_id);
     // Check that the recur record belongs to the same donor
     $this->assertEquals($firstContribution['contact_id'], $recurRecord->contact_id);
 
