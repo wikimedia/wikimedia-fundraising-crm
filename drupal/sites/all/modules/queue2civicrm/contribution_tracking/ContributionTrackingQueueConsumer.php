@@ -73,7 +73,11 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
         // When setting a contribution ID, we can expect a few constraint violations
         // from messages sent by the donations queue consumer after a contribution
         // insert has been rolled back. Ignore those exceptions, rethrow the rest.
-        if (!$hasContributionId || $ex->getErrorCode() !== 'constraint violation') {
+        $isConstraintViolation = (
+          $ex->getErrorCode() === 'constraint violation' ||
+          $ex->getErrorCode() === DB_ERROR_CONSTRAINT
+        );
+        if (!$hasContributionId || !$isConstraintViolation) {
           throw $ex;
         }
       }

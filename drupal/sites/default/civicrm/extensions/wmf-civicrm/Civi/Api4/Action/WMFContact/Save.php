@@ -63,7 +63,6 @@ class Save extends AbstractAction {
    * @param \Civi\Api4\Generic\Result $result
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    * @throws \Civi\WMFException\WMFException
    */
   public function _run(Result $result): void {
@@ -225,19 +224,19 @@ class Save extends AbstractAction {
     }
     // Soon we will only catch CRM_Core_Exception as the other exceptions are now aliased to it
     // preparatory to being phased out
-    catch (\CiviCRM_API3_Exception|\CRM_Core_Exception $ex) {
+    catch (\CRM_Core_Exception $ex) {
       if (in_array($ex->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) {
         throw new WMFException(
           WMFException::DATABASE_CONTENTION,
           'Contact could not be added due to database contention',
-          $ex->getExtraParams()
+          $ex->getErrorData()
         );
       }
       throw new WMFException(
         WMFException::IMPORT_CONTACT,
         'Contact could not be added. Aborting import. Contact data was ' . print_r($contact, TRUE) . ' Original error: ' . $ex->getMessage()
-        . ' Details: ' . print_r($ex->getExtraParams(), TRUE),
-        $ex->getExtraParams()
+        . ' Details: ' . print_r($ex->getErrorData(), TRUE),
+        $ex->getErrorData()
       );
     }
     $contact_id = (int) $contact_result['id'];
@@ -255,10 +254,10 @@ class Save extends AbstractAction {
           'debug' => TRUE,
         ]);
       }
-      catch (\CiviCRM_API3_Exception $ex) {
+      catch (\CRM_Core_Exception $ex) {
         throw new WMFException(
           WMFException::IMPORT_CONTACT,
-          "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()} " . print_r($ex->getExtraParams(), TRUE)
+          "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()} " . print_r($ex->getErrorData(), TRUE)
         );
       }
     }
@@ -276,7 +275,7 @@ class Save extends AbstractAction {
             'group_id' => $supported_groups[$group],
           ]);
         }
-        catch (\CiviCRM_API3_Exception $ex) {
+        catch (\CRM_Core_Exception $ex) {
           $stacked_ex[] = "Failed to add group {$group} to contact ID {$contact_id}. Error: " . $ex->getMessage();
         }
       }
@@ -296,13 +295,31 @@ class Save extends AbstractAction {
     if ($isCreate) {
       // Insert the location records if this is being called as a create.
       // For update it's handled in the update routing.
-      wmf_civicrm_message_address_insert($msg, $contact_id);
+      try {
+        wmf_civicrm_message_address_insert($msg, $contact_id);
+      }
+      catch (\CRM_Core_Exception $ex) {
+        $hasContact = Contact::get(FALSE)
+          ->addSelect('id')
+          ->addWhere('id', '=', $contact_id)->execute()->first();
+        // check contact_id exist in table
+        if (!$hasContact) {
+          // throw the DATABASE_CONTENTION exception will to trigger retry
+          throw new WmfException(
+            WmfException::DATABASE_CONTENTION,
+            'Contact could not be added due to database contention',
+            $ex->getExtraParams()
+          );
+        }
+        else {
+          throw $ex;
+        }
+      }
     }
     if (Database::isNativeTxnRolledBack()) {
       throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact auxiliary fields");
     }
     $result[] = $contact_result;
-
   }
 
 
@@ -350,7 +367,7 @@ class Save extends AbstractAction {
             'tag_id' => $supported_tags[$tag],
           ]);
         }
-        catch (\CiviCRM_API3_Exception $ex) {
+        catch (\CRM_Core_Exception $ex) {
           $stacked_ex[] = "Failed to add tag {$tag} to contact ID {$contact_id}. Error: " . $ex->getMessage();
         }
       }
