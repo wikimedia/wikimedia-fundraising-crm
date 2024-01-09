@@ -121,7 +121,6 @@ class Render extends AbstractAction {
       'recipient_address' => 'email',
       'recurring' => 'isRecurring',
       'transaction_id' => 'transactionID',
-      'unsubscribe_link' => 'unsubscribeLink',
     ];
     foreach ($this->getTemplateParameters() as $fieldName => $value) {
       if (isset($mapping[$fieldName])) {

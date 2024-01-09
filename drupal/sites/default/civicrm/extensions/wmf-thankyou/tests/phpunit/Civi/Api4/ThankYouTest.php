@@ -397,7 +397,6 @@ class ThankYouTest extends TestCase {
         'currency' => 'NZD',
         'recurring' => FALSE,
         'transaction_id' => 123,
-        'unsubscribe_link' => '',
         'receive_date' => '2022-08-09',
         'contact_id' =>  $this->ids['Contact'][0],
         'contribution_id' => $contributionID,
