@@ -5,6 +5,7 @@ namespace Civi\WorkflowMessage;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\EntityTag;
+use Civi\Api4\WMFLink;
 
 /**
  * This is the template class for previewing WMF end of year thank you emails.
@@ -465,13 +466,11 @@ class ThankYou extends GenericWorkflowMessage {
    * @return string
    */
   public function getUnsubscribeLink(): string {
-    return $this->unsubscribeLink ?: \Civi::settings()->get('wmf_unsubscribe_url') . '?' . http_build_query([
-      'p' => 'thankyou',
-      'c' => $this->getContributionID(),
-      'e' => $this->getEmail(),
-      'h' => sha1($this->getContributionID() . $this->getEmail() . \CRM_Utils_Constant::value('WMF_UNSUB_SALT')),
-      'uselang' => $this->getShortLocale(),
-    ]);
+    return WMFLink::getUnsubscribeURL(FALSE)
+      ->setContributionID($this->getContributionID())
+      ->setEmail($this->getEmail())
+      ->setMediawikiLocale($this->getShortLocale())
+      ->execute()->first()['unsubscribe_url'];
   }
 
   /**
