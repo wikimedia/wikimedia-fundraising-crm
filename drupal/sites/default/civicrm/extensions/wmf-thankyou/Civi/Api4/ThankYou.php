@@ -13,6 +13,7 @@
 namespace Civi\Api4;
 
 use Civi\Api4\Action\ThankYou\Render;
+use Civi\Api4\Action\ThankYou\Send;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
@@ -31,6 +32,16 @@ class ThankYou extends Generic\AbstractEntity {
    */
   public static function render(bool $checkPermissions = TRUE): Action\ThankYou\Render {
     return (new Render(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\ThankYou\Render
+   */
+  public static function send(bool $checkPermissions = TRUE): Action\ThankYou\Send {
+    return (new Send(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
