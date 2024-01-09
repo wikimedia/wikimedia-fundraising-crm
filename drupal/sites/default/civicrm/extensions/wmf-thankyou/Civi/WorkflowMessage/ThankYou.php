@@ -35,11 +35,12 @@ use Civi\Api4\WMFLink;
  * @method $this setGiftSource(string $giftSource)
  * @method string getGiftSource()
  * @method $this setTransactionID(string $transactionID)
- * @method $this setUnsubscribeLink(string $unsubscribeLink)
  * @method $this getEmailGreetingDisplay(string $emailGreetingDisplay)
  * @method $this setEmailGreetingDisplay(string $emailGreetingDisplay)
  */
 class ThankYou extends GenericWorkflowMessage {
+  use UnsubscribeTrait;
+
   public const WORKFLOW = 'thank_you';
 
   /**
@@ -218,13 +219,6 @@ class ThankYou extends GenericWorkflowMessage {
    * @scope tplParams
    */
   public $isDelayed;
-
-  /**
-   * @var string
-   *
-   * @scope tplParams as unsubscribe_link
-   */
-  public $unsubscribeLink;
 
   /**
    * @var float
@@ -453,24 +447,6 @@ class ThankYou extends GenericWorkflowMessage {
       return '';
     }
     return \Civi::format()->money($this->stockValue, $this->currency);
-  }
-
-  /**
-   * Get the unsubscribe link.
-   *
-   * Note this is likely to be passed in from thank-you
-   * at the moment but really it is enough to do it here & we can remove
-   * the other function. We might need to set up a WMFWorkflowTrait
-   * to share it though. However, will do that soon...
-   *
-   * @return string
-   */
-  public function getUnsubscribeLink(): string {
-    return WMFLink::getUnsubscribeURL(FALSE)
-      ->setContributionID($this->getContributionID())
-      ->setEmail($this->getEmail())
-      ->setMediawikiLocale($this->getShortLocale())
-      ->execute()->first()['unsubscribe_url'];
   }
 
   /**
