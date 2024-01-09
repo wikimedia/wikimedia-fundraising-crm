@@ -492,7 +492,6 @@ function thank_you_send_mail($params) {
     'recipient_address',
     'recurring',
     'transaction_id',
-    'unsubscribe_link',
   ];
 
   $missing = [];
