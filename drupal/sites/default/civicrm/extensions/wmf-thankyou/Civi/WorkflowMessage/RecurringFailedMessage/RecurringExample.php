@@ -10,25 +10,11 @@ class RecurringExample extends WorkflowMessageExample {
 
   public function getExamples(): iterable {
     yield [
-      'name' => implode('/', [
-        'workflow',
-        $this->getWorkflowName(),
-        $this->getExampleName()
-      ]),
+      'name' => 'workflow/recurring_failed_message/failed',
+      'workflow' => 'recurring_failed_message',
       'title' => ts('Recurring Failure'),
       'tags' => ['preview'],
     ];
-  }
-
-  /**
-   * Get the name of the workflow this is used in.
-   *
-   * (wrapper for confusing property name)
-   *
-   * @return string
-   */
-  protected function getWorkflowName(): string {
-    return $this->wfName;
   }
 
   /**

@@ -115,9 +115,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg missing the subscr_id; cannot process.');
     }
     // check for parent record in civicrm_contribution_recur and fetch its id
-    $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
+    $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
 
-    if ($recur_record) {
+    if ($recur_record && RecurHelper::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
       // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
       RecurHelper::reactivateIfInactive($recur_record);
     }
@@ -187,7 +187,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         ];
         $startMessage = $this->normalizeMessage($startMessage);
         $this->importSubscriptionSignup($startMessage);
-        $recur_record = wmf_civicrm_get_recur_record($msg['subscr_id']);
+        $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
         if (!$recur_record) {
           \Civi::log('wmf')->notice('recurring: Fallback contribution_recur record creation failed.');
           throw new WMFException(
@@ -458,7 +458,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
         'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
         'trxn_id' => $msg['subscr_id'],
-        'financial_type_id:name' => 'Cash'
+        'financial_type_id:name' => 'Cash',
+        'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
+        'cycle_day' => date('j', strtotime(wmf_common_date_unix_to_civicrm($msg['start_date'])))
       ];
       if (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {
         // We could pass the gateway name to the api for resolution but it would reject
@@ -484,8 +486,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           ->get_unique_id();
         $params['processor_id'] = $msg['gateway_txn_id'];
         $params['invoice_id'] = $msg['order_id'];
-        $params['next_sched_contribution_date'] = wmf_common_date_unix_to_civicrm($msg['start_date']);
-        $params['cycle_day'] = date('j', strtotime($params['start_date']));
       }
 
       if (isset($msg['initial_scheme_transaction_id'])) {
@@ -594,7 +594,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    */
   protected function importSubscriptionCancel($msg) {
     // ensure we have a record of the subscription
-    if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
+    if (!$recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;
@@ -647,7 +647,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    */
   protected function importSubscriptionExpired($msg) {
     // ensure we have a record of the subscription
-    if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
+    if (!$recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;
@@ -679,7 +679,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    */
   protected function importSubscriptionPaymentFailed($msg) {
     // ensure we have a record of the subscription
-    if (!$recur_record = wmf_civicrm_get_recur_record($msg['subscr_id'])) {
+    if (!$recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;

@@ -230,7 +230,9 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
         // Add financial type for susbequent installment
         $msg['financial_type_id'] = ContributionRecur::getFinancialType($msg['contribution_recur_id']);
         // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
-        ContributionRecur::reactivateIfInactive($recur_record);
+        if (ContributionRecur::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
+          ContributionRecur::reactivateIfInactive( $recur_record );
+        }
         check_recur_modification_and_queue( $recur_record, $msg );
       }
     }
