@@ -57,7 +57,7 @@ class RecurringFailedMessage extends GenericWorkflowMessage {
   public function setContact(array $contact): self {
     $contact['preferred_language'] = $this->getLocale();
     if (!$this->contactId) {
-      $this->setContactId($contact['id']);
+      $this->setContactID($contact['id']);
     }
     $this->contact = $contact;
     return $this;
