@@ -3,10 +3,13 @@
 use Civi\Payment\Exception\PaymentProcessorException;
 use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentData\FinalStatus;
+use SmashPig\PaymentProviders\IRefundablePaymentProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
 use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
 use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
+use SmashPig\PaymentProviders\Responses\RefundPaymentResponse;
+
 
 require_once "CRM/SmashPig/ContextWrapper.php";
 
@@ -284,4 +287,58 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
         return null;
     }
   }
+
+    public function supportsRefund() {
+      return $this->getPaymentProcessor()['name'] === 'dlocal';
+    }
+
+    public function doRefund(&$params): array {
+      $refundedStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Refunded');
+      $orderID = $params['order_id'] ?? null;
+      $trxnID = $params['gateway_txn_id'];
+      $amount = (float) $this->getAmount($params);
+      $gateway = $this->getPaymentProcessor()['name'];
+
+      if ($amount === 0.0) {
+        throw new RuntimeException("Invalid refund amount of $amount. Order id $orderID and transaction id $trxnID");
+      }
+      $this->setContext();
+
+      if (!empty($params['payment_method'])) {
+        $paymentMethod = $params['payment_method'];
+      } else {
+        $paymentMethod = self::getPaymentMethod($params);
+      }
+
+      $provider = PaymentProviderFactory::getProviderForMethod($paymentMethod);
+
+      if(!($provider instanceof IRefundablePaymentProvider)) {
+        throw new RuntimeException("Refund failed as Payment Provider for $gateway does not support refunds for payment method: $paymentMethod");
+      }
+
+      $request = [
+        'gateway_txn_id' => $trxnID,
+        'gross' => $amount,
+        'currency' => $params['currency']
+      ];
+
+      Civi::log('wmf')->debug('Refund request params: ' . print_r($request, true));
+
+      /** @var RefundPaymentResponse $refundPaymentResponse */
+      $refundPaymentResponse = $provider->refundPayment( $request );
+
+      Civi::log('wmf')->debug('Raw response: ' . print_r($refundPaymentResponse->getRawResponse(), true));
+
+      if (!$refundPaymentResponse->isSuccessful()) {
+        $this->throwException( 'Refund failed', $refundPaymentResponse );
+      }
+      $gatewayTxnId = $refundPaymentResponse->getGatewayTxnId();
+
+      return [
+        'processor_id' => $gatewayTxnId,
+        'invoice_id' => $params['invoice_id'] ?? $params['order_id'] ?? null,
+        'payment_status_id' => $refundedStatusID,
+        'payment_status' => 'Refunded',
+      ];
+    }
 }

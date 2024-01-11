@@ -3,22 +3,35 @@
 namespace Civi\Queue;
 
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\PaymentToken;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
 use PHPUnit\Framework\TestCase;
+use queue2civicrm\DonationQueueConsumer;
+use queue2civicrm\refund\RefundQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\CrmLink\Messages\SourceFields;
+use SmashPig\PaymentData\FinalStatus;
+use SmashPig\PaymentProviders\Responses\RefundPaymentResponse;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
 
 class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterface, TransactionalInterface {
+
+  /**
+   * @var PHPUnit_Framework_MockObject_MockObject
+   */
+  private $hostedPaymentProvider;
+
+  /** @var \SmashPig\PaymentProviders\Responses\RefundPaymentResponse */
+  private $refundPaymentResponse;
 
   public function setUp(): void {
     parent::setUp();
@@ -30,6 +43,12 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
       'dlocal', $globalConfig
     );
     $ctx->providerConfigurationOverride = $providerConfig;
+
+    $this->hostedPaymentProvider = $this->getMockBuilder(
+      'SmashPig\PaymentProviders\dlocal\BankTransferPaymentProvider'
+    )->disableOriginalConstructor()->getMock();
+
+    $providerConfig->overrideObjectInstance('payment-provider/bt', $this->hostedPaymentProvider);
   }
 
   public function tearDown(): void {
@@ -120,20 +139,47 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     $token = $this->createTestPaymentToken($contact['id']);
     $recur = $this->createTestContributionRecurRecord($contact['id'], $token['id']);
     $this->cancelTestContributionRecurRecord($recur['id']);
-
     // Test that a donation IPN with a pre-existing token and recurring
     // record will set the donation message IDs correctly even if cancelled
     $message = json_decode(
       file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
     );
+
+    $this->hostedPaymentProvider->expects($this->once())
+    ->method('refundPayment')
+    ->with([
+      'gross' => $message['gross'],
+      'currency' => $message['currency'],
+      'gateway_txn_id' => $message['gateway_txn_id'],
+    ])
+    ->willReturn(
+      (new RefundPaymentResponse())
+      ->setGatewayTxnId($message['gateway_txn_id'])
+      ->setStatus(FinalStatus::REFUNDED)
+      ->setSuccessful(TRUE)
+    );
+
     QueueWrapper::push('upi-donations', $message);
 
+    // Process UPI message
     $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
+
+    // Process donation
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
     $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
-    $this->assertEquals($recur['id'], $donationMessage['contribution_recur_id']);
-    $this->assertEquals($contact['id'], $donationMessage['contact_id']);
+    (new DonationQueueConsumer('test'))->processMessage($donationMessage);
+
+    // Process refund
+    $refundMessage = QueueWrapper::getQueue('refund')->pop();
+    $this->assertNotNull($refundMessage, 'Did not push a message to refund queue');
+    (new RefundQueueConsumer('refund'))->processMessage($refundMessage);
+
+    // confirm donation is refunded
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('trxn_id', 'LIKE', '%'.$message['gateway_txn_id'])
+      ->addSelect('contribution_status_id:name')->execute()->first();
+    $this->assertEquals('Refunded', $contribution['contribution_status_id:name']);
 
     // confirm that the subscription remains cancelled
     $contributionRecur = ContributionRecur::get(FALSE)
@@ -250,6 +296,20 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
 
     $message['gross'] = $messageAmount;
 
+    $this->hostedPaymentProvider->expects($this->once())
+    ->method('refundPayment')
+    ->with([
+      'gross' => $messageAmount,
+      'currency' => $message['currency'],
+      'gateway_txn_id' => $message['gateway_txn_id'],
+    ])
+    ->willReturn(
+      (new RefundPaymentResponse())
+      ->setGatewayTxnId($message['gateway_txn_id'])
+      ->setStatus(FinalStatus::REFUNDED)
+      ->setSuccessful(TRUE)
+    );
+
     $contact = $this->createTestContactRecord();
     $token = $this->createTestPaymentToken($contact['id']);
 
@@ -265,9 +325,23 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
 
     $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
+
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
     $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
     $this->assertEquals($recur1['id'], $donationMessage['contribution_recur_id']);
+    (new DonationQueueConsumer('test'))->processMessage($donationMessage);
+
+    // Process refund
+    $refundMessage = QueueWrapper::getQueue('refund')->pop();
+    $this->assertNotNull($refundMessage, 'Did not push a message to refund queue');
+    (new RefundQueueConsumer('refund'))->processMessage($refundMessage);
+
+    // confirm donation is refunded
+    $contribution = Contribution::get(FALSE)
+        ->addWhere('trxn_id', 'LIKE', '%'.$message['gateway_txn_id'])
+        ->addSelect('contribution_status_id:name')->execute()->first();
+    $this->assertEquals('Refunded', $contribution['contribution_status_id:name']);
+
     // confirm that the subscription remains cancelled
     $contributionRecur1 = ContributionRecur::get(FALSE)
       ->addWhere('id', '=', $recur1['id'])
@@ -346,6 +420,9 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
 
     if ($testContact) {
       ContributionRecur::delete(FALSE)
+        ->addWhere('contact_id', '=', $testContact['id'])
+        ->execute();
+      Contribution::delete(FALSE)
         ->addWhere('contact_id', '=', $testContact['id'])
         ->execute();
       PaymentToken::delete(FALSE)
