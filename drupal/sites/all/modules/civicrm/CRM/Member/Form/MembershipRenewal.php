@@ -93,6 +93,17 @@ class CRM_Member_Form_MembershipRenewal extends CRM_Member_Form {
   protected $membershipTypeName = '';
 
   /**
+   * Used in the wrangling of custom field data onto the form.
+   *
+   * There are known instances of extensions altering this array
+   * in order to affect the custom data displayed & there is no
+   * alternative recommendation.
+   *
+   * @var array
+   */
+  public $_groupTree;
+
+  /**
    * Set entity fields to be assigned to the form.
    */
   protected function setEntityFields() {
@@ -378,9 +389,7 @@ class CRM_Member_Form_MembershipRenewal extends CRM_Member_Form {
     $this->add('textarea', 'receipt_text', ts('Renewal Message'));
 
     // Retrieve the name and email of the contact - this will be the TO for receipt email
-    list($this->_contributorDisplayName,
-      $this->_contributorEmail
-      ) = CRM_Contact_BAO_Contact_Location::getEmailDetails($this->_contactID);
+    [$this->_contributorDisplayName, $this->_contributorEmail] = CRM_Contact_BAO_Contact_Location::getEmailDetails($this->_contactID);
     $this->assign('email', $this->_contributorEmail);
     // The member form uses emailExists. Assigning both while we transition / synchronise.
     $this->assign('emailExists', $this->_contributorEmail);
@@ -530,7 +539,7 @@ class CRM_Member_Form_MembershipRenewal extends CRM_Member_Form {
 
       $paymentParams['contactID'] = $this->_contributorContactID;
 
-      CRM_Core_Payment_Form::mapParams($this->_bltID, $this->_params, $paymentParams, TRUE);
+      CRM_Core_Payment_Form::mapParams(NULL, $this->_params, $paymentParams, TRUE);
 
       if (!empty($this->_params['auto_renew'])) {
 
@@ -691,7 +700,9 @@ class CRM_Member_Form_MembershipRenewal extends CRM_Member_Form {
       }
     }
 
-    list($this->isMailSent) = CRM_Core_BAO_MessageTemplate::sendTemplate(
+    // This is being replaced by userEnteredText.
+    $this->assign('receipt_text', $this->getSubmittedValue('receipt_text'));
+    [$this->isMailSent] = CRM_Core_BAO_MessageTemplate::sendTemplate(
       [
         'workflow' => 'membership_offline_receipt',
         'from' => $receiptFrom,
@@ -701,7 +712,7 @@ class CRM_Member_Form_MembershipRenewal extends CRM_Member_Form {
         'PDFFilename' => ts('receipt') . '.pdf',
         'isEmailPdf' => Civi::settings()->get('invoice_is_email_pdf'),
         'modelProps' => [
-          'receiptText' => $this->getSubmittedValue('receipt_text'),
+          'userEnteredText' => $this->getSubmittedValue('receipt_text'),
           'contactID' => $this->_receiptContactId,
           'contributionID' => $this->getContributionID(),
           'membershipID' => $this->getMembershipID(),

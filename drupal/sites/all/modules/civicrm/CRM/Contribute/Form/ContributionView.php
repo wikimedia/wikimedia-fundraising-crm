@@ -30,6 +30,8 @@ class CRM_Contribute_Form_ContributionView extends CRM_Core_Form {
    */
   public function preProcess() {
     $id = $this->getContributionID();
+    $this->assign('taxTerm', Civi::settings()->get('tax_term'));
+    $this->assign('getTaxDetails', \Civi::settings()->get('invoicing'));
 
     // Check permission for action.
     $actionMapping = [
@@ -203,7 +205,7 @@ class CRM_Contribute_Form_ContributionView extends CRM_Core_Form {
 
     // assign values to the template
     $this->assignVariables($values, array_keys($values));
-    $invoicing = CRM_Invoicing_Utils::isInvoicingEnabled();
+    $invoicing = \Civi::settings()->get('invoicing');
     $this->assign('invoicing', $invoicing);
     $this->assign('isDeferred', Civi::settings()->get('deferred_revenue_enabled'));
     if ($invoicing && isset($values['tax_amount'])) {

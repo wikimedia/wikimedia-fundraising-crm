@@ -6,7 +6,9 @@ require_once __DIR__ . '/../../../../../../../tests/phpunit/api/v4/Api4TestBase.
 
 use api\v4\Api4TestBase;
 use Civi\API\Exception\UnauthorizedException;
+use Civi\Api4\Action\GetLinks;
 use Civi\Api4\Activity;
+use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\ContactType;
 use Civi\Api4\Email;
@@ -413,9 +415,7 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
     // 1st link is to a quickform-based action
     $this->assertArrayNotHasKey('task', $result[0]['columns'][1]['links'][0]);
     $this->assertStringContainsString('id=' . $relationships[0]['id'], $result[0]['columns'][1]['links'][0]['url']);
-    // 2nd link is to the native SK bulk-delete task
-    $this->assertArrayNotHasKey('url', $result[0]['columns'][1]['links'][1]);
-    $this->assertEquals('delete', $result[0]['columns'][1]['links'][1]['task']);
+    // 2nd link is to delete
     $this->assertEquals('fa-trash', $result[0]['columns'][1]['links'][1]['icon']);
     // Ensure "empty" titles are still returned
     $this->assertEquals('0', $result[0]['columns'][1]['links'][1]['title']);
@@ -427,7 +427,7 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
     $this->assertStringContainsString('Enable', $result[3]['columns'][1]['links'][2]['title']);
     // 4th link is to the case, and only for the relevant entity
     $this->assertEquals('Manage Case', $result[2]['columns'][1]['links'][3]['text']);
-    $this->assertStringContainsString('civicrm', $result[3]['columns'][1]['links'][3]['url']);
+    $this->assertStringContainsString("id={$case['id']}", $result[3]['columns'][1]['links'][3]['url']);
   }
 
   /**
@@ -1435,6 +1435,66 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
     $this->assertEquals(1, $data['Household']);
   }
 
+  public function testGroupByAddress(): void {
+    $source = uniqid(__FUNCTION__);
+    $sampleData = [
+      ['contact_type' => 'Individual'],
+      ['contact_type' => 'Individual'],
+      ['contact_type' => 'Individual'],
+      ['contact_type' => 'Organization'],
+      ['contact_type' => 'Organization'],
+      ['contact_type' => 'Household'],
+    ];
+    Contact::save(FALSE)
+      ->addDefault('source', $source)
+      ->setRecords($sampleData)
+      ->addChain('address', Address::create()
+        ->addValue('contact_id', '$id')
+        ->addValue('street_address', '123')
+      )
+      ->execute();
+
+    $params = [
+      'checkPermissions' => FALSE,
+      'return' => 'page:1',
+      'savedSearch' => [
+        'api_entity' => 'Contact',
+        'api_params' => [
+          'version' => 4,
+          'select' => [
+            'COUNT(id) AS COUNT_id',
+            'Contact_Address_contact_id_01.street_address',
+            'GROUP_CONCAT(DISTINCT sort_name) AS GROUP_CONCAT_sort_name',
+            'GROUP_CONCAT(DISTINCT contact_type:label) AS GROUP_CONCAT_contact_type_label',
+            'GROUP_CONCAT(DISTINCT contact_sub_type:label) AS GROUP_CONCAT_contact_sub_type_label',
+          ],
+          'where' => [
+            ['source', '=', $source],
+          ],
+          'groupBy' => [
+            'Contact_Address_contact_id_01.street_address',
+          ],
+          'join' => [
+            [
+              'Address AS Contact_Address_contact_id_01',
+              'LEFT',
+              ['id', '=', 'Contact_Address_contact_id_01.contact_id'],
+              ['Contact_Address_contact_id_01.is_primary', '=', TRUE],
+            ],
+          ],
+        ],
+      ],
+      'display' => NULL,
+    ];
+
+    $result = civicrm_api4('SearchDisplay', 'run', $params);
+    $this->assertCount(1, $result);
+    $this->assertEquals(6, $result[0]['data']['COUNT_id']);
+    $this->assertEquals('123', $result[0]['data']['Contact_Address_contact_id_01.street_address']);
+    sort($result[0]['data']['GROUP_CONCAT_contact_type_label']);
+    $this->assertEquals(['Household', 'Individual', 'Organization'], $result[0]['data']['GROUP_CONCAT_contact_type_label']);
+  }
+
   public function testGroupByFunction(): void {
     $source = uniqid(__FUNCTION__);
     $sampleData = [
@@ -1988,13 +2048,17 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
     $this->assertCount(0, $result->toolbar);
     // With 'add contacts' permission the button will be shown
     \CRM_Core_Config::singleton()->userPermissionClass->permissions[] = 'add contacts';
+    // Clear getLinks cache after changing permissions
+    \Civi::$statics[GetLinks::class] = [];
+
     $result = civicrm_api4('SearchDisplay', 'run', $params);
     $this->assertCount(1, $result->toolbar);
-    $button = $result->toolbar[0];
-    $this->assertEquals('crm-popup', $button['target']);
-    $this->assertEquals('fa-plus', $button['icon']);
-    $this->assertEquals('primary', $button['style']);
-    $this->assertEquals('Add Contact', $button['text']);
+    $menu = $result->toolbar[0];
+    $this->assertEquals('Add Contact', $menu['text']);
+    $this->assertEquals('fa-plus', $menu['icon']);
+    $button = $menu['children'][0];
+    $this->assertEquals('fa-user', $button['icon']);
+    $this->assertEquals('Add Individual', $button['text']);
     $this->assertStringContainsString('=Individual', $button['url']);
 
     // Try with pseudoconstant (for proper test the label needs to be different from the name)
@@ -2003,9 +2067,14 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
       ->addWhere('name', '=', 'Organization')
       ->execute();
     $params['filters'] = ['contact_type:label' => 'Disorganization'];
+    // Use default label this time
+    unset($params['display']['settings']['toolbar'][0]['text']);
     $result = civicrm_api4('SearchDisplay', 'run', $params);
-    $button = $result->toolbar[0];
+    $menu = $result->toolbar[0];
+    $this->assertEquals('Add Disorganization', $menu['text']);
+    $button = $menu['children'][0];
     $this->assertStringContainsString('=Organization', $button['url']);
+    $this->assertEquals('Add Disorganization', $button['text']);
 
     // Test legacy 'addButton' setting
     $params['display']['settings']['toolbar'] = NULL;

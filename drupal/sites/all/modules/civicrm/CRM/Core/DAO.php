@@ -539,8 +539,29 @@ class CRM_Core_DAO extends DB_DataObject {
    */
   public static function getReferenceColumns() {
     if (!isset(Civi::$statics[static::class]['links'])) {
-      Civi::$statics[static::class]['links'] = static::createReferenceColumns(static::class);
-      CRM_Core_DAO_AllCoreTables::invoke(static::class, 'links_callback', Civi::$statics[static::class]['links']);
+      $links = static::createReferenceColumns(static::class);
+      // Add references based on field metadata
+      foreach (static::fields() as $field) {
+        if (!empty($field['FKClassName'])) {
+          $links[] = new CRM_Core_Reference_Basic(
+            static::getTableName(),
+            $field['name'],
+            CRM_Core_DAO_AllCoreTables::getTableForClass($field['FKClassName']),
+            $field['FKColumnName'] ?? 'id'
+          );
+        }
+        if (!empty($field['DFKEntityColumn'])) {
+          $links[] = new CRM_Core_Reference_Dynamic(
+            static::getTableName(),
+            $field['name'],
+            NULL,
+            $field['FKColumnName'] ?? 'id',
+            $field['DFKEntityColumn']
+          );
+        }
+      }
+      CRM_Core_DAO_AllCoreTables::invoke(static::class, 'links_callback', $links);
+      Civi::$statics[static::class]['links'] = $links;
     }
     return Civi::$statics[static::class]['links'];
   }
@@ -958,7 +979,11 @@ class CRM_Core_DAO extends DB_DataObject {
     if (empty($values[$idField]) && array_key_exists('frontend_title', $fields) && empty($values['frontend_title'])) {
       $instance->frontend_title = $instance->title;
     }
-    if (empty($values[$idField]) && array_key_exists('title', $fields) && empty($values['title']) && !empty($values['frontend_title'])) {
+    if (empty($values[$idField]) && array_key_exists('frontend_title', $fields) && !$instance->frontend_title) {
+      // Still empty? Fall back to name.
+      $instance->frontend_title = $instance->name;
+    }
+    if (empty($values[$idField]) && array_key_exists('title', $fields) && empty($values['title']) && array_key_exists('frontend_title', $fields) && $instance->frontend_title) {
       $instance->title = $instance->frontend_title;
     }
     $instance->save();
@@ -1428,7 +1453,7 @@ LIKE %1
       throw new CRM_Core_Exception('getFieldValue failed');
     }
 
-    self::$_dbColumnValueCache = self::$_dbColumnValueCache ?? [];
+    self::$_dbColumnValueCache ??= [];
 
     while (strpos($daoName, '_BAO_') !== FALSE) {
       $daoName = get_parent_class($daoName);
@@ -1515,6 +1540,8 @@ LIKE %1
 
   /**
    * Fetch object based on array of properties.
+   *
+   * @internal - extensions should always use the api
    *
    * @param string $daoName
    *   Name of the dao class.
@@ -2522,7 +2549,7 @@ SELECT contact_id
           $className::getTableName(),
           $field['name'],
           'civicrm_option_value',
-          CRM_Utils_Array::value('keyColumn', $field['pseudoconstant'], 'value'),
+          $field['pseudoconstant']['keyColumn'] ?? 'value',
           $field['pseudoconstant']['optionGroupName']
         );
       }
@@ -3182,8 +3209,8 @@ SELECT contact_id
    */
   public static function getSelectWhereClause($tableAlias = NULL, $entityName = NULL, $conditions = []) {
     $bao = new static();
-    $tableAlias = $tableAlias ?? $bao->tableName();
-    $entityName = $entityName ?? CRM_Core_DAO_AllCoreTables::getBriefName(get_class($bao));
+    $tableAlias ??= $bao->tableName();
+    $entityName ??= CRM_Core_DAO_AllCoreTables::getBriefName(get_class($bao));
     $finalClauses = [];
     $fields = static::getSupportedFields();
     $selectWhereClauses = $bao->addSelectWhereClause($entityName, NULL, $conditions);
@@ -3350,10 +3377,11 @@ SELECT contact_id
    * Return a mapping from field-name to the corresponding key (as used in fields()).
    *
    * @return array
-   *   Array(string $name => string $uniqueName).
+   *   [string $name => string $uniqueName]
    */
   public static function fieldKeys() {
-    return array_flip(CRM_Utils_Array::collect('name', static::fields()));
+    $fields = static::fields();
+    return array_combine(array_column($fields, 'name'), array_keys($fields));
   }
 
   /**
@@ -3412,27 +3440,76 @@ SELECT contact_id
       // No label supplied, do nothing
       return;
     }
-    $maxLen = static::getSupportedFields()['name']['maxlength'] ?? 255;
-    // Strip unsafe characters and trim to max length (-3 characters leaves room for a unique suffix)
-    $name = CRM_Utils_String::munge($label, '_', $maxLen - 3);
 
-    // Find existing records with the same name
-    $sql = new CRM_Utils_SQL_Select($this::getTableName());
-    $sql->select(['id', 'name']);
-    $sql->where('name LIKE @name', ['@name' => $name . '%']);
-    // Include all fields that are part of the index
-    foreach (array_diff($indexNameWith, ['name']) as $field) {
-      $sql->where("`$field` = @val", ['@val' => $this->$field]);
-    }
-    $query = $sql->toSQL();
-    $existing = self::executeQuery($query)->fetchMap('id', 'name');
-    $dupes = 0;
-    $suffix = '';
-    // Add unique suffix if existing records have the same name
-    while (in_array($name . $suffix, $existing)) {
-      $suffix = '_' . ++$dupes;
-    }
-    $this->name = $name . $suffix;
+    // Strip unsafe characters and trim to max length, allowing room for a
+    // unique suffix composed of an underscore + 4 alphanumeric chars,
+    // supporting up to 36^4=1,679,616 unique names for any given value of
+    // $label. Half that amount could be considered the working limit, as
+    // much above that the time to find a non-existent suffix becomes
+    // unacceptable.
+    $maxSuffixLen = 5;
+    $maxLen = static::getSupportedFields()['name']['maxlength'] ?? 255;
+    $name = CRM_Utils_String::munge($label, '_', $maxLen - $maxSuffixLen);
+
+    // Define an arbitrary limit on how many guesses we will perform before
+    // throwing an exception. This would occur only in some unanticipated use
+    // case.
+    $max_guesses = 36 ^ ($maxSuffixLen - 1);
+
+    $guesses_per_loop = 5;
+    $guess_count = 0;
+
+    do {
+      // Make an initial attempt to guess a unique name by searching for
+      // 5 candidates (the original $name plus $name with 4 random suffixes).
+      // If all of these happen to exist in the table, we'll keep trying,
+      // doubling the number of guesses each time through the loop.
+      for ($i = 0; $i < $guesses_per_loop; $i++, $guess_count++) {
+        $suffix = $guess_count == 0 ? '' :
+          '_' . CRM_Utils_String::createRandom($maxSuffixLen - 1, 'abcdefghijklmnopqrstuvwxyz0123456789');
+        $candidates[$i] = $name . $suffix;
+      }
+
+      $sql = new CRM_Utils_SQL_Select($this::getTableName());
+      $sql->select(['id', 'LOWER(name) name_lc']);
+      $sql->where('name IN (@candidates)', ['@candidates' => $candidates]);
+
+      // Narrow the search by specifying the value of any additional fields
+      // that may be part of the index.
+      foreach (array_diff($indexNameWith, ['name']) as $field) {
+        $sql->where("`$field` = @val", ['@val' => $this->$field]);
+      }
+      $query = $sql->toSQL();
+
+      // Search the table for our candidates using case-sensitivity determined
+      // by the collation of the name column -- case-insensitive by default.
+      // Array $existing_lc will contains all the candidates found in the table,
+      // converted to lower-case.
+      $existing_lc = self::executeQuery($query)->fetchMap('id', 'name_lc');
+
+      if (count($existing_lc) < $guesses_per_loop) {
+        // Not all of our candidates were found in the table, so we'll search
+        // for the first element of $candidates that wasn't found. This search
+        // is performed case-insensitive to ensure that the selected candidate
+        // is unique with both ci and cs collation of the name column. If the
+        // original (unsuffixed) value of $name doesn't exist in the table, then
+        // that value will be our selected candidate.
+        foreach ($candidates as $c) {
+          if (!in_array(strtolower($c), $existing_lc)) {
+            $this->name = $c;
+            return;
+          }
+        }
+      }
+      else {
+        // All candidates were found in the table. Try harder next time.
+        $guesses_per_loop = min(1000, $guesses_per_loop * 2);
+
+        if ($guess_count > $max_guesses) {
+          throw new CRM_Core_Exception("CRM_Core_DAO::makeNameFromLabel failed to generate a unique name for label $label.");
+        }
+      }
+    } while (1);
   }
 
   /**

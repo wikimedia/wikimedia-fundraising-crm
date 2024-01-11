@@ -61,7 +61,15 @@
     {{:: ts('Default value') }}
   </a>
 </li>
-<li ng-if="$ctrl.hasDefaultValue">
+<li ng-if="$ctrl.fieldDefn.input_type === 'Date' && $ctrl.hasDefaultValue">
+  <div ng-click="setDefaultDateType(); $event.stopPropagation(); $event.target.blur();" class="af-gui-field-select-in-dropdown form-inline">
+    <select class="form-control" ng-model="getSet('default_date_type')" ng-model-options="{getterSetter: true}">
+      <option value="fixed">{{:: ts('Pick Date') }}</option>
+      <option value="now">{{:: ts('Now') }}</option>
+    </select>
+  </div>
+</li>
+<li ng-if="$ctrl.hasDefaultValue && $ctrl.defaultDateType !== 'now'">
   <form ng-click="$event.stopPropagation()" class="af-gui-field-select-in-dropdown form-inline">
     <input class="form-control" af-gui-field-value="$ctrl.fieldDefn" ng-model="getSet('afform_default')" ng-model-options="{getterSetter: true}" >
   </form>
@@ -84,6 +92,7 @@
     {{:: ts('Post help text') }}
   </a>
 </li>
+
 <li role="separator" class="divider" ng-if="$ctrl.canBeRange() || $ctrl.canBeMultiple()"></li>
 <li ng-if="$ctrl.canBeMultiple()" ng-click="$event.stopPropagation()">
   <a href ng-click="toggleMultiple()" title="{{:: ts('Search multiple values') }}">
@@ -113,6 +122,9 @@
     </select>
   </div>
 </li>
+
+<li af-gui-conditional-menu="$ctrl.node" ng-if="$ctrl.editor.getEntities().length"></li>
+
 <li role="separator" class="divider" ng-if="hasOptions()"></li>
 <li ng-if="hasOptions()" ng-click="$event.stopPropagation()">
   <a href ng-click="resetOptions()" title="{{:: ts('Reset the option list for this field') }}">
@@ -126,6 +138,7 @@
     {{:: ts('Customize options') }}
   </a>
 </li>
+
 <li role="separator" class="divider"></li>
 <li>
   <a href ng-click="$ctrl.deleteThis()" title="{{:: ts('Remove field from form') }}">

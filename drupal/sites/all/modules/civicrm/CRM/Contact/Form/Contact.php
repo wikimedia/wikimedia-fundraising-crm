@@ -25,6 +25,8 @@
  */
 class CRM_Contact_Form_Contact extends CRM_Core_Form {
 
+  use CRM_Contact_Form_ContactFormTrait;
+
   /**
    * The contact type of the form.
    *
@@ -128,6 +130,8 @@ class CRM_Contact_Form_Contact extends CRM_Core_Form {
 
   /**
    * Build all the data structures needed to build the form.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function preProcess() {
     $this->_action = CRM_Utils_Request::retrieve('action', 'String', $this, FALSE, 'add');
@@ -183,14 +187,9 @@ class CRM_Contact_Form_Contact extends CRM_Core_Form {
       $this->_contactId = NULL;
     }
     else {
-      //update mode
-      if (!$this->_contactId) {
-        $this->_contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $this, TRUE);
-      }
-
-      if ($this->_contactId) {
+      if ($this->getContactID()) {
         $defaults = [];
-        $params = ['id' => $this->_contactId];
+        $params = ['id' => $this->getContactID()];
         $returnProperities = ['id', 'contact_type', 'contact_sub_type', 'modified_date', 'is_deceased'];
         CRM_Core_DAO::commonRetrieve('CRM_Contact_DAO_Contact', $params, $defaults, $returnProperities);
 
@@ -323,7 +322,6 @@ class CRM_Contact_Form_Contact extends CRM_Core_Form {
         $paramSubType = implode(',', $contactSubType);
       }
 
-      $this->_getCachedTree = FALSE;
       unset($customGroupCount[0]);
       foreach ($customGroupCount as $groupID => $groupCount) {
         if ($groupCount > 1) {
@@ -331,7 +329,7 @@ class CRM_Contact_Form_Contact extends CRM_Core_Form {
           //loop the group
           for ($i = 1; $i <= $groupCount; $i++) {
             CRM_Custom_Form_CustomData::preProcess($this, NULL, $contactSubType,
-              $i, $this->_contactType, $this->_contactId
+              $i, $this->_contactType, $this->_contactId, NULL, FALSE
             );
             CRM_Contact_Form_Edit_CustomData::buildQuickForm($this);
           }
@@ -359,14 +357,15 @@ class CRM_Contact_Form_Contact extends CRM_Core_Form {
         CRM_Contact_Form_Edit_CustomData::preProcess($this);
       }
       else {
-        $contactSubType = $this->_contactSubType;
-        // need contact sub type to build related grouptree array during post process
-        if (!empty($_POST['qfKey'])) {
-          $contactSubType = $_POST['contact_sub_type'] ?? NULL;
-        }
-        //only custom data has preprocess hence directly call it
-        CRM_Custom_Form_CustomData::preProcess($this, NULL, $contactSubType,
-          1, $this->_contactType, $this->_contactId
+        // The reason we call this here is that it sets the _groupTree property which is later used
+        // in setDefaultValues and buildForm. (Ideally instead we would have a trait with getCustomGroup & getCustomFields
+        // that can be called at appropriate times). In order for buildForm to add the right fields it needs
+        // to know any contact sub types that are being added in the submission. Since this runs before
+        // the buildForm adds the contact_sub_type to the form we need to look in _submitValues for it - submitValues
+        // is a un-sanitised version of what is in the form submission (_POST) whereas `getSubmittedValues()` retrieves
+        // 'allowed' POSTED values - ie values which match available fields, with some localization handling.
+        CRM_Custom_Form_CustomData::preProcess($this, NULL, $this->isSubmitted() ? ($this->_submitValues['contact_sub_type'] ?? []) : $this->getContactValue('contact_sub_type') ?? $this->_contactSubType,
+          1, $this->_contactType, $this->getContactID()
         );
         $this->assign('customValueCount', $this->_customValueCount);
       }
@@ -680,10 +679,8 @@ class CRM_Contact_Form_Contact extends CRM_Core_Form {
             if (!empty($blockValues['is_primary'])) {
               $hasPrimary[] = $instance;
               if (!$primaryID &&
-                in_array($name, [
-                  'email',
-                  'openid',
-                ]) && !empty($blockValues[$name])
+                in_array($name, ['email', 'openid']) &&
+                !empty($blockValues[$name])
               ) {
                 $primaryID = $blockValues[$name];
               }
@@ -990,14 +987,9 @@ class CRM_Contact_Form_Contact extends CRM_Core_Form {
       $params['preferred_communication_method'] = 'null';
     }
 
-    $group = $params['group'] ?? NULL;
-    $params['group'] = ($params['group'] == '') ? [] : $params['group'];
-    if (!empty($group)) {
-      $group = is_array($group) ? $group : explode(',', $group);
-      $params['group'] = [];
-      foreach ($group as $key => $value) {
-        $params['group'][$value] = 1;
-      }
+    if (array_key_exists('group', $params)) {
+      $group = is_array($params['group']) ? $params['group'] : explode(',', $params['group']);
+      $params['group'] = array_fill_keys($group, 1);
     }
 
     if (!empty($params['image_URL'])) {
@@ -1057,7 +1049,7 @@ class CRM_Contact_Form_Contact extends CRM_Core_Form {
 
     if (array_key_exists('CommunicationPreferences', $this->_editOptions)) {
       // this is a chekbox, so mark false if we dont get a POST value
-      $params['is_opt_out'] = $params['is_opt_out'] ?? FALSE;
+      $params['is_opt_out'] ??= FALSE;
 
       CRM_Utils_Array::formatArrayKeys($params['preferred_communication_method']);
     }
@@ -1397,10 +1389,7 @@ class CRM_Contact_Form_Contact extends CRM_Core_Form {
           'street_name',
           'street_unit',
         ] as $fld) {
-          if (in_array($fld, [
-            'street_name',
-            'street_unit',
-          ])) {
+          if (in_array($fld, ['street_name', 'street_unit'])) {
             $streetAddress .= ' ';
           }
           // CRM-17619 - if the street number suffix begins with a number, add a space
@@ -1508,6 +1497,20 @@ class CRM_Contact_Form_Contact extends CRM_Core_Form {
     }
 
     return "$number$str";
+  }
+
+  /**
+   * Get the contact ID being edited.
+   *
+   * @return int||null
+   *
+   * @noinspection PhpUnhandledExceptionInspection
+   */
+  public function getContactID(): ?int {
+    if (!$this->_contactId) {
+      $this->_contactId = CRM_Utils_Request::retrieve('cid', 'Positive', $this);
+    }
+    return $this->_contactId ? (int) $this->_contactId : NULL;
   }
 
 }

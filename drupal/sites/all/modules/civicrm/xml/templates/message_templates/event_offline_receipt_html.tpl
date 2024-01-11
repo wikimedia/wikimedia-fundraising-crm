@@ -25,8 +25,8 @@
    <td>
     {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
 
-    {if !empty($event.confirm_email_text) AND (empty($isOnWaitlist) AND empty($isRequireApproval))}
-     <p>{$event.confirm_email_text}</p>
+    {if $userText}
+     <p>{$userText}</p>
     {/if}
 
     {if !empty($isOnWaitlist)}
@@ -134,7 +134,7 @@
        {/if}
      {/if}
 
-     {if {event.is_public|boolean}}
+     {if {event.is_public|boolean} and {event.is_show_calendar_links|boolean}}
       <tr>
        <td colspan="2" {$valueStyle}>
         {capture assign=icalFeed}{crmURL p='civicrm/event/ical' q="reset=1&id={event.id}" h=0 a=1 fe=1}{/capture}
@@ -404,7 +404,6 @@
               <td colspan="2" {$valueStyle}>
                 {$credit_card_type}<br/>
                 {$credit_card_number}<br/>
-                {ts}Expires{/ts}: {$credit_card_exp_date|truncate:7:''|crmDate}
               </td>
             </tr>
           {/if}

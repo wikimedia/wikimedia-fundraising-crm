@@ -148,8 +148,7 @@ class Kernel {
     }
     catch (\Civi\API\Exception\UnauthorizedException $e) {
       // We catch and re-throw to log for visibility
-      \CRM_Core_Error::backtrace('API Request Authorization failed' . $apiRequest['action'] . " " . $apiRequest['entity'], TRUE);
-      \CRM_Core_Error::debug_var('backtrace', $e->getTraceAsString());
+      \CRM_Core_Error::backtrace('API Request Authorization failed', TRUE);
       throw $e;
     }
 

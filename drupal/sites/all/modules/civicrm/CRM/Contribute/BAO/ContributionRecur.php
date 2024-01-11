@@ -290,10 +290,10 @@ class CRM_Contribute_BAO_ContributionRecur extends CRM_Contribute_DAO_Contributi
         'contribution_status_id:name' => 'Cancelled',
         'cancel_reason' => $params['cancel_reason'] ?? NULL,
         'cancel_date' => $params['cancel_date'] ?? 'now',
-    ])->execute();
+      ])->execute();
 
     // @todo - all of this should be moved to the post hook.
-    // @fixme https://lab.civicrm.org/dev/core/issues/927 Cancelling membership etc is not desirable for all use-cases and we should be able to disable it
+    // It seems to just create activities.
     $dao = CRM_Contribute_BAO_ContributionRecur::getSubscriptionDetails($params['id']);
     if ($dao && $dao->recur_id) {
       $details = $params['processor_message'] ?? NULL;
@@ -307,10 +307,10 @@ class CRM_Contribute_BAO_ContributionRecur extends CRM_Contribute_DAO_Contributi
       }
       else {
         $details .= '<br/>' . ts('The recurring contribution of %1, every %2 %3 has been cancelled.', [
-            1 => $dao->amount,
-            2 => $dao->frequency_interval,
-            3 => $dao->frequency_unit,
-          ]);
+          1 => $dao->amount,
+          2 => $dao->frequency_interval,
+          3 => $dao->frequency_unit,
+        ]);
       }
       $activityParams = [
         'source_contact_id' => $dao->contact_id,
@@ -363,6 +363,7 @@ SELECT rec.id                   as recur_id,
        mp.membership_id";
 
     if ($entity == 'recur') {
+      // This should be always true now.
       $sql .= "
       FROM civicrm_contribution_recur rec
 LEFT JOIN civicrm_contribution       con ON ( con.contribution_recur_id = rec.id )
@@ -370,6 +371,7 @@ LEFT  JOIN civicrm_membership_payment mp  ON ( mp.contribution_id = con.id )
      WHERE rec.id = %1";
     }
     elseif ($entity == 'contribution') {
+      CRM_Core_Error::deprecatedWarning('no longer used');
       $sql .= "
       FROM civicrm_contribution       con
 INNER JOIN civicrm_contribution_recur rec ON ( con.contribution_recur_id = rec.id )
@@ -377,6 +379,7 @@ LEFT  JOIN civicrm_membership_payment mp  ON ( mp.contribution_id = con.id )
      WHERE con.id = %1";
     }
     elseif ($entity == 'membership') {
+      CRM_Core_Error::deprecatedWarning('no longer used');
       $sql .= "
       FROM civicrm_membership_payment mp
 INNER JOIN civicrm_membership         mem ON ( mp.membership_id = mem.id )
@@ -483,7 +486,7 @@ INNER JOIN civicrm_contribution       con ON ( con.id = mp.contribution_id )
       $templateContributionParams['on_behalf'] = TRUE;
       $templateContributionParams['source_contact_id'] = $relatedContact['individual_id'];
     }
-    $templateContributionParams['source'] = $templateContributionParams['source'] ?? ts('Recurring contribution');
+    $templateContributionParams['source'] ??= ts('Recurring contribution');
     $templateContribution = Contribution::create(FALSE)
       ->setValues($templateContributionParams)
       ->execute()

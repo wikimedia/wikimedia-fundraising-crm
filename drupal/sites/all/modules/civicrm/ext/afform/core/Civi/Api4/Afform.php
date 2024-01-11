@@ -100,6 +100,15 @@ class Afform extends Generic\AbstractEntity {
 
   /**
    * @param bool $checkPermissions
+   * @return Action\Afform\Process
+   */
+  public static function process($checkPermissions = TRUE) {
+    return (new Action\Afform\Process('Afform', __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * @param bool $checkPermissions
    * @return Action\Afform\SubmitFile
    */
   public static function submitFile($checkPermissions = TRUE) {
@@ -232,6 +241,18 @@ class Afform extends Generic\AbstractEntity {
           'data_type' => 'Boolean',
         ],
         [
+          'name' => 'manual_processing',
+          'data_type' => 'Boolean',
+        ],
+        [
+          'name' => 'allow_verification_by_email',
+          'data_type' => 'Boolean',
+        ],
+        [
+          'name' => 'email_confirmation_template_id',
+          'data_type' => 'Integer',
+        ],
+        [
           'name' => 'navigation',
           'title' => E::ts('Navigation Menu'),
           'data_type' => 'Array',
@@ -242,6 +263,12 @@ class Afform extends Generic\AbstractEntity {
           'title' => E::ts('Layout'),
           'data_type' => 'Array',
           'description' => 'HTML form layout; format is controlled by layoutFormat param',
+        ],
+        [
+          'name' => 'modified_date',
+          'title' => E::ts('Date Modified'),
+          'data_type' => 'Timestamp',
+          'readonly' => TRUE,
         ],
       ];
       // Calculated fields returned by get action
