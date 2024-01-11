@@ -7,8 +7,9 @@ use Civi\Api4\Contribution;
 use Civi\WMFHelpers\ContributionTracking as WMFHelper;
 use queue2civicrm\recurring\RecurringQueueConsumer;
 use Civi\WMFException\WMFException;
+use SmashPig\Core\DataStores\DamagedDatabase;
 use SmashPig\Core\SequenceGenerators\Factory;
-
+use SmashPig\Core\UtcDate;
 
 /**
  * @group Queue2Civicrm
@@ -22,11 +23,18 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $consumer;
 
+  /**
+   * @var DamagedDatabase
+   */
+  protected $damagedDb;
+
   public function setUp(): void {
     parent::setUp();
     $this->consumer = new RecurringQueueConsumer(
       'recurring'
     );
+
+    $this->damagedDb = DamagedDatabase::get();
 
     // Set up for TestMailer
     if ( !defined( 'WMF_UNSUB_SALT' ) ) {
@@ -50,6 +58,17 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $this->addToCleanup($contributions[0]);
     }
     return $contributions;
+  }
+
+  protected function importMessageProcessWithMockConsumer(TransactionMessage $message):void {
+    $payment_time = $message->get('date');
+    exchange_rate_cache_set('USD', $payment_time, 1);
+    $currency = $message->get('currency');
+    if ($currency !== 'USD') {
+      exchange_rate_cache_set($currency, $payment_time, 3);
+    }
+    $consumer = $this->getTestRecurringQueueConsumerWithContributionRecurExceptions();
+    $consumer->processMessageWithErrorHandling($message->getBody());
   }
 
   public function testDeclineRecurringUpgrade() {
@@ -237,6 +256,27 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test deadlock handling in function that cancels recurrings.
+   */
+  public function testHandleDeadlockDuringCancelContributions(): void {
+    $subscr_id = mt_rand();
+    $values = $this->processRecurringSignup($subscr_id);
+    $values['source_enqueued_time'] = UtcDate::getUtcTimestamp();
+    $message = new RecurringCancelMessage($values);
+    $this->importMessageProcessWithMockConsumer($message);
+
+    $damagedPDO = $this->damagedDb->getDatabase();
+
+    $result = $damagedPDO->query("
+    SELECT * FROM damaged
+    WHERE gateway = '{$message->getGateway()}'
+    AND gateway_txn_id = '{$message->getGatewayTxnId()}'");
+    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
+    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
+  }
+
+  /**
    * Test function that expires recurrings.
    */
   public function testExpireContributions(): void {
@@ -252,6 +292,27 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertTrue(empty($recur_record['failure_retry_date']));
     $this->assertTrue(empty($recur_record['next_sched_contribution_date']));
     $this->assertEquals('Completed', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
+  }
+
+  /**
+   * Test deadlock exception in function that expires recurrings.
+   */
+  public function testHandleDeadlocksInExpireContributions(): void {
+    $subscr_id = mt_rand();
+    $values = $this->processRecurringSignup($subscr_id);
+    $values['source_enqueued_time'] = UtcDate::getUtcTimestamp();
+    $message = new RecurringEOTMessage($values);
+    $this->importMessageProcessWithMockConsumer($message);
+
+    $damagedPDO = $this->damagedDb->getDatabase();
+
+    $result = $damagedPDO->query("
+    SELECT * FROM damaged
+    WHERE gateway = '{$message->getGateway()}'
+    AND gateway_txn_id = '{$message->getGatewayTxnId()}'");
+    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
+    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
   }
 
   public function testNormalizedMessages() {
@@ -635,6 +696,67 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test handling of deadlock exception in function that handles recurring signup
+   */
+  public function testHandleDeadlockDuringRecurringSignup() {
+    // Subscr_id is the same as gateway_txn_id
+    $subscr_id = mt_rand();
+    $ct_id = $this->addContributionTracking([
+      'form_amount' => 4,
+      'utm_source' => 'testytest',
+      'language' => 'en',
+      'country' => 'US'
+    ]);
+
+    $message = new TransactionMessage([
+        'gateway' => 'ingenico',
+        'gross' => 400,
+        'original_gross' => 400,
+        'original_currency' => 'USD',
+        'contribution_tracking_id' => $ct_id,
+      ]
+    );
+
+    $messageBody = $message->getBody();
+    exchange_rate_cache_set('USD', $messageBody['date'], 1);
+    $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
+    $this->addToCleanup($firstContribution);
+    $this->consumeCtQueue();
+
+    // Set up token specific values
+    $overrides['currency'] = 'USD';
+    $overrides['recurring_payment_token']= mt_rand();
+    $overrides['gateway_txn_id'] = $subscr_id;
+    $overrides['user_ip'] = '1.1.1.1';
+    $overrides['gateway'] = 'ingenico';
+    $overrides['payment_method'] = 'cc';
+    $overrides['payment_submethod'] = 'visa';
+    $overrides['create_date'] = 1564068649;
+    $overrides['start_date'] = 1566732720;
+    $overrides['source_enqueued_time'] = UtcDate::getUtcTimestamp();
+    $overrides['contribution_tracking_id'] = $ct_id;
+
+    $values = $overrides + ['subscr_id' => $subscr_id];
+    $signup_message = new RecurringSignupMessage($values);
+    $subscr_time = $signup_message->get('date');
+    exchange_rate_cache_set('USD', $subscr_time, 1);
+    exchange_rate_cache_set($signup_message->get('currency'), $subscr_time, 2);
+
+    // Consume the recurring signup with deadlock exception
+    $consumer = $this->getTestRecurringQueueConsumerWithContributionRecurExceptions();
+    $consumer->processMessageWithErrorHandling($signup_message->getBody());
+    $damagedPDO = $this->damagedDb->getDatabase();
+
+    $result = $damagedPDO->query("
+    SELECT * FROM damaged
+    WHERE gateway = '{$signup_message->getGateway()}'
+    AND gateway_txn_id = '{$subscr_id}'");
+    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
+    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
+  }
+
+  /**
    * Test that the notification email is sent when a updonate recurring subscription is started
    */
   public function testRecurringNotificationEmailSend(): void {
@@ -767,6 +889,52 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test handling of deadlock exception in function that imports subscription payment
+   */
+  public function testHandleDeadlockExceptionSubscriptionPayment() {
+    $recur = $this->getTestContributionRecurRecords([
+      'frequency_interval' => '1',
+      'frequency_unit' => 'month',
+    ]);
+
+    $date =  time();
+    $orderId = "279.2";
+    $message = new RecurringPaymentMessage(
+    [
+      'txn_type' => 'subscr_payment',
+      'subscr_id' => $recur['trxn_id'],
+      'order_id' => $orderId,
+      'contact_id' => $recur['contact_id'],
+      'gateway' => 'adyen',
+      'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
+      'date' => $date,
+      'is_auto_rescue_retry' => TRUE,
+      'currency' => 'USD',
+      'amount' => 10,
+      'contribution_recur_id' => 39,
+      'payment_instrument_id' => 1,
+      'source_name' => 'CiviCRM',
+      'source_type' => 'direct',
+      'source_host' => '051a7ac1b08d',
+      'source_run_id' => 10315,
+      'source_version' => 'unknown',
+      'source_enqueued_time' => UtcDate::getUtcTimestamp(),
+    ]
+    );
+    $this->importMessageProcessWithMockConsumer($message);
+
+    $damagedPDO = $this->damagedDb->getDatabase();
+
+    $result = $damagedPDO->query("
+    SELECT * FROM damaged
+    WHERE gateway = '{$message->getGateway()}'
+    AND gateway_txn_id = '{$message->getGatewayTxnId()}'");
+    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
+    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
+  }
+
+  /**
    * Process the original recurring sign up message.
    *
    * @param string $subscr_id
@@ -834,5 +1002,19 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'total_amount' => 60,
       'receive_date' => 'now'
     ], $recurParams))->execute()->first();
+  }
+
+  protected function getTestRecurringQueueConsumerWithContributionRecurExceptions(): RecurringQueueConsumer {
+    return new class extends RecurringQueueConsumer {
+      public function __construct() {
+        parent::__construct('recurring');
+      }
+      protected function createContributionRecur($params) {
+        throw new CRM_Core_Exception('DBException error',123, ['error_code' => 'deadlock']);
+      }
+      protected function updateContributionRecur($params) {
+        throw new CRM_Core_Exception('DBException error',123, ['error_code' => 'deadlock']);
+      }
+    };
   }
 }

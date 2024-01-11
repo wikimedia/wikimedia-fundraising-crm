@@ -248,11 +248,10 @@ class WMFException extends Exception {
       $flattened = print_r($this->extra, TRUE);
       if (
         preg_match('/\'12(05|13) \*\* /', $flattened) ||
-        preg_match('/Database lock encountered/', $flattened
+        preg_match('/Database lock encountered/', $flattened)
           // @todo not treating constraints as deadlocks here at this stage - doing that
           // more specifically but something to keep considering.
           || $this->extra['error_code'] === 'deadlock'
-        )
       ) {
         return TRUE;
       }
