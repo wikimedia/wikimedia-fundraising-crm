@@ -5,6 +5,7 @@ namespace Civi\WorkflowMessage;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\EntityTag;
+use Civi\Api4\WMFLink;
 
 /**
  * This is the template class for previewing WMF end of year thank you emails.
@@ -34,11 +35,12 @@ use Civi\Api4\EntityTag;
  * @method $this setGiftSource(string $giftSource)
  * @method string getGiftSource()
  * @method $this setTransactionID(string $transactionID)
- * @method $this setUnsubscribeLink(string $unsubscribeLink)
  * @method $this getEmailGreetingDisplay(string $emailGreetingDisplay)
  * @method $this setEmailGreetingDisplay(string $emailGreetingDisplay)
  */
 class ThankYou extends GenericWorkflowMessage {
+  use UnsubscribeTrait;
+
   public const WORKFLOW = 'thank_you';
 
   /**
@@ -217,13 +219,6 @@ class ThankYou extends GenericWorkflowMessage {
    * @scope tplParams
    */
   public $isDelayed;
-
-  /**
-   * @var string
-   *
-   * @scope tplParams as unsubscribe_link
-   */
-  public $unsubscribeLink;
 
   /**
    * @var float
@@ -452,26 +447,6 @@ class ThankYou extends GenericWorkflowMessage {
       return '';
     }
     return \Civi::format()->money($this->stockValue, $this->currency);
-  }
-
-  /**
-   * Get the unsubscribe link.
-   *
-   * Note this is likely to be passed in from thank-you
-   * at the moment but really it is enough to do it here & we can remove
-   * the other function. We might need to set up a WMFWorkflowTrait
-   * to share it though. However, will do that soon...
-   *
-   * @return string
-   */
-  public function getUnsubscribeLink(): string {
-    return $this->unsubscribeLink ?: \Civi::settings()->get('wmf_unsubscribe_url') . '?' . http_build_query([
-      'p' => 'thankyou',
-      'c' => $this->getContributionID(),
-      'e' => $this->getEmail(),
-      'h' => sha1($this->getContributionID() . $this->getEmail() . \CRM_Utils_Constant::value('WMF_UNSUB_SALT')),
-      'uselang' => $this->getShortLocale(),
-    ]);
   }
 
   /**

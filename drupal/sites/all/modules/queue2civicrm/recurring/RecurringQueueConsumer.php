@@ -244,9 +244,9 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       'id' => $recur_record->id,
     ];
     if (!empty($msg['is_auto_rescue_retry'])) {
-      $update_params['contribution_status_id'] = "Completed";
+      $update_params['contribution_status_id:name'] = "Completed";
     }
-    civicrm_api3('ContributionRecur', 'Create', $update_params);
+    $this->updateContributionRecurWithErrorHandling($update_params);
 
     // construct an array of useful info to invocations of queue2civicrm_import
     $contribution_info = [
@@ -428,6 +428,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionSignup($msg) {
+    $contact = null;
     // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
     if ($recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
       throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, 'Subscription account already exists');
@@ -505,84 +506,119 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         ]);
       }
 
-      $newContributionRecur = ContributionRecur::create(FALSE)
-        ->setValues($params)
-        ->execute()
-        ->first();
-
-      // Send an email that the recurring donation has been created
-      if (isset($msg['recurring_payment_token']) && isset($newContributionRecur['id'])) {
-        // Get the contact information if not already there
-        if (empty($contact)) {
-          $contact = civicrm_api3('Contact', 'getsingle', ['id' => $contactId]);
-        }
-        else {
-          $contact = $contact['values'][$contactId];
-          $contact['email'] = $msg['email'];
-        }
-
-        // Set up the language for the email
-        $locale = $contact['preferred_language'];
-        if (!$locale) {
-          \Civi::log('wmf')->info('monthly_convert: Donor language unknown.  Defaulting to English...');
-          $locale = 'en';
-        }
-        $locale = wmf_common_locale_civi_to_mediawiki($locale);
-
-        // Using the same params sent through in thank_you.module thank_you_for_contribution
-        $template = 'monthly_convert';
-        $start_date = $newContributionRecur['start_date'];
-
-        // Get the day of the month
-        $day_of_month = \DateTime::createFromFormat('YmdHis', $start_date, new \DateTimeZone('UTC'))
-          ->format('j');
-
-        // Format the day of month
-        // TODO: This should probably be in the TwigLocalization logic
-        $ordinal = new \NumberFormatter($locale, \NumberFormatter::ORDINAL);
-        $day_of_month = $ordinal->format($day_of_month);
-
-        $params = [
-          'template' => $template,
-          'amount' => $msg['original_gross'],
-          'contact_id' => $contactId,
-          'currency' => $msg['original_currency'],
-          'first_name' => $contact['first_name'],
-          'last_name' => $contact['last_name'],
-          // Locale is the mediawiki variant - either 'en' or 'en-US'.
-          // Where 'preferred_language' is known then locale should generally
-          // be ignored, except where required for constructing urls.
-          'locale' => $locale,
-          // Preferred language is as stored in the civicrm database - eg. 'en_US'.
-          'language' => $contact['preferred_language'],
-          'name' => $contact['display_name'],
-          'receive_date' => $start_date,
-          'day_of_month' => $day_of_month,
-          'recipient_address' => $contact['email'],
-          'recurring' => TRUE,
-          'transaction_id' => "CNTCT-{$contactId}",
-          // shown in the body of the text
-          'contribution_id' => $ctRecord['contribution_id'],
-          // used for the bounce header
-          'unsubscribe_link' => build_unsub_link($ctRecord['contribution_id'], $contact['email'], $locale),
-        ];
-
-        $success = thank_you_send_mail($params);
-        $context = [
-          'contribution_recur_id' => $newContributionRecur['id'],
-          'recipient_address' => $params['recipient_address'],
-        ];
-        if ($success) {
-          \Civi::log('wmf')->info('monthly_convert: Monthly convert sent successfully for recurring contribution id: {contribution_recur_id} to {recipient_address}', $context);
-        }
-        else {
-          \Civi::log('wmf')->error('monthly_convert: Monthly convert mail failed for recurring contribution id: {contribution_recur_id} to {recipient_address}', $context);
-        }
-      }
-    } catch (\CiviCRM_API3_Exception $e) {
+      $newContributionRecur = $this->createContributionRecurWithErrorHandling($params);
+    } catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
     }
+
+    $this->sendSuccessThankYouMail($newContributionRecur, $ctRecord, $msg, $contactId, $contact);
     \Civi::log('wmf')->notice('recurring: Successfully inserted subscription signup for subscriber id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
+  }
+
+  protected function createContributionRecurWithErrorHandling($params) {
+    try {
+      return $this->createContributionRecur($params);
+    } catch (\CRM_Core_Exception $e) {
+      if (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+        throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
+      }
+    }
+  }
+
+  protected function updateContributionRecurWithErrorHandling($params) {
+    try {
+      return $this->updateContributionRecur($params);
+    } catch (\CRM_Core_Exception $e) {
+      if (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+        throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
+      }
+    }
+  }
+
+  protected function createContributionRecur($params) {
+    return ContributionRecur::create(FALSE)
+    ->setValues($params)
+    ->execute()
+    ->first();
+  }
+
+  protected function updateContributionRecur($params) {
+    return ContributionRecur::update(FALSE)
+    ->setValues($params)
+    ->execute()
+    ->first();
+  }
+
+  protected function sendSuccessThankYouMail($contributionRecur, $ctRecord, $msg, $contactId, $contact) {
+    // Send an email that the recurring donation has been created
+    if (isset($msg['recurring_payment_token']) && isset($contributionRecur['id'])) {
+      // Get the contact information if not already there
+      if (empty($contact)) {
+        $contact = civicrm_api3('Contact', 'getsingle', ['id' => $contactId]);
+      }
+      else {
+        $contact = $contact['values'][$contactId];
+        $contact['email'] = $msg['email'];
+      }
+
+      // Set up the language for the email
+      $locale = $contact['preferred_language'];
+      if (!$locale) {
+        \Civi::log('wmf')->info('monthly_convert: Donor language unknown.  Defaulting to English...');
+        $locale = 'en';
+      }
+      $locale = wmf_common_locale_civi_to_mediawiki($locale);
+
+      // Using the same params sent through in thank_you.module thank_you_for_contribution
+      $template = 'monthly_convert';
+      $start_date = $contributionRecur['start_date'];
+
+      // Get the day of the month
+      $day_of_month = \DateTime::createFromFormat('YmdHis', $start_date, new \DateTimeZone('UTC'))
+        ->format('j');
+
+      // Format the day of month
+      // TODO: This should probably be in the TwigLocalization logic
+      $ordinal = new \NumberFormatter($locale, \NumberFormatter::ORDINAL);
+      $day_of_month = $ordinal->format($day_of_month);
+
+      $params = [
+        'template' => $template,
+        'amount' => $msg['original_gross'],
+        'contact_id' => $contactId,
+        'currency' => $msg['original_currency'],
+        'first_name' => $contact['first_name'],
+        'last_name' => $contact['last_name'],
+        // Locale is the mediawiki variant - either 'en' or 'en-US'.
+        // Where 'preferred_language' is known then locale should generally
+        // be ignored, except where required for constructing urls.
+        'locale' => $locale,
+        // Preferred language is as stored in the civicrm database - eg. 'en_US'.
+        'language' => $contact['preferred_language'],
+        'name' => $contact['display_name'],
+        'receive_date' => $start_date,
+        'day_of_month' => $day_of_month,
+        'recipient_address' => $contact['email'],
+        'recurring' => TRUE,
+        'transaction_id' => "CNTCT-{$contactId}",
+        // shown in the body of the text
+        'contribution_id' => $ctRecord['contribution_id'],
+         // used for the bounce header
+        'unsubscribe_link' => build_unsub_link($ctRecord['contribution_id'], $contact['email'], $locale),
+      ];
+
+      $success = thank_you_send_mail($params);
+      $context = [
+        'contribution_recur_id' => $contributionRecur['id'],
+        'recipient_address' => $params['recipient_address'],
+      ];
+      if ($success) {
+        \Civi::log('wmf')->info('monthly_convert: Monthly convert sent successfully for recurring contribution id: {contribution_recur_id} to {recipient_address}', $context);
+      }
+      else {
+        \Civi::log('wmf')->error('monthly_convert: Monthly convert mail failed for recurring contribution id: {contribution_recur_id} to {recipient_address}', $context);
+      }
+    }
   }
 
   /**
@@ -621,7 +657,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
           'cancel_date' => wmf_common_date_unix_to_civicrm($msg['cancel_date']),
           'end_date' => wmf_common_date_unix_to_civicrm($msg['cancel_date']),
         ];
-        civicrm_api3('ContributionRecur', 'create', $update_params);
+        $this->updateContributionRecurWithErrorHandling($update_params);
       }
       catch (\CRM_Core_Exception $e) {
         throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for cancellation for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
@@ -656,14 +692,16 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
     try {
       // See function comment block for discussion.
-      \civicrm_api3('ContributionRecur', 'create', [
+      $params = [
         'id' => $recur_record->id,
         'end_date' => 'now',
-        'contribution_status_id' => 'Completed',
+        'contribution_status_id:name' => 'Completed',
         'cancel_reason' => '(auto) Expiration notification',
-        'next_sched_contribution_date' => 'null',
-        'failure_retry_date' => 'null',
-      ]);
+        'next_sched_contribution_date' => null,
+        'failure_retry_date' => null,
+      ];
+
+      $this->updateContributionRecurWithErrorHandling($params);
     } catch (\CiviCRM_API3_Exception $e) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
     }
@@ -687,11 +725,12 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     }
 
     try {
-      civicrm_api3('ContributionRecur', 'create', [
+      $params = [
         'id' => $recur_record->id,
         'failure_count' => $msg['failure_count'],
         'failure_retry_date' => wmf_common_date_unix_to_civicrm($msg['failure_retry_date']),
-      ]);
+      ];
+      $this->createContributionRecurWithErrorHandling($params);
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for failed payment for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());

@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\WMFLink;
 use Civi\Token\Event\TokenRegisterEvent;
 use Civi\Token\Event\TokenValueEvent;
 
@@ -51,7 +52,10 @@ class CRM_Wmf_Tokens {
           . substr($language, 0, 2) . '#monthly';
 
       case 'unsubscribe' :
-        return build_unsub_link(-1, $email, substr($language, 0, 2));
+        return WMFLink::getUnsubscribeURL(FALSE)
+          ->setEmail($email)
+          ->setLanguage($language)
+          ->execute()->first()['unsubscribe_url'];
 
       case 'cancel' :
         return 'https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language='
