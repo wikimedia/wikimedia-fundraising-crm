@@ -132,6 +132,14 @@ class RecurringCancelMessage extends TransactionMessage {
   }
 }
 
+class RecurringCancelWithReasonMessage extends TransactionMessage {
+    function __construct( $values = array() ) {
+      $this->loadDefaults( "recurring_cancel_with_reason" );
+      $this->txn_id_key = 'gateway_txn_id';
+      parent::__construct( $values );
+    }
+  }
+
 class RecurringEOTMessage extends TransactionMessage {
   function __construct( $values = array() ) {
     $this->loadDefaults( "recurring_eot" );

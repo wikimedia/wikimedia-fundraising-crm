@@ -27,6 +27,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       $this->subscrModify($message);
       return;
     }
+
     $message = $this->normalizeMessage($message);
 
     // define the subscription txn type for an actual 'payment'
@@ -638,12 +639,17 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     }
 
     try {
-      civicrm_api3('ContributionRecur', 'cancel', [
+      $params = [
         'id' => $recur_record->id,
         // This line of code is only reachable if the txn type is 'subscr_cancel'
         // Which I believe always means the user has initiated the cancellation outside our process.
         'cancel_reason' => '(auto) User Cancelled via Gateway',
-      ]);
+      ];
+
+      if (!empty($msg['cancel_reason'])) {
+        $params['cancel_reason'] = $msg['cancel_reason'];
+      }
+      civicrm_api3('ContributionRecur', 'cancel', $params);
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem cancelling the subscription for subscriber id: ' . print_r($msg['subscr_id'], TRUE));

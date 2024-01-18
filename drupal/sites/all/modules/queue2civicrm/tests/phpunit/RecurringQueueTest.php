@@ -295,6 +295,20 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test function adds reason to the recur row.
+   */
+  public function testCancelPaymentWithReason(): void {
+    $subscr_id = mt_rand();
+    $values = $this->processRecurringSignup($subscr_id);
+    $this->importMessage(new RecurringCancelWithReasonMessage($values));
+
+    $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
+    $this->ids['Contact'][] = $recur_record['contact_id'];
+    $this->assertEquals('Failed: Card declined', $recur_record['cancel_reason']);
+    $this->assertEquals('Cancelled', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
+  }
+
+  /**
    * Test deadlock exception in function that expires recurrings.
    */
   public function testHandleDeadlocksInExpireContributions(): void {
