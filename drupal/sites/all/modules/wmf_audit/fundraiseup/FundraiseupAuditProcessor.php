@@ -109,10 +109,10 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
    * @return int|void
    */
   protected function get_recon_files_count($recon_files) {
-    //...Four, for new donations, new recurring, cancellations, and refunds.
+    //...Five, for new donations, new recurring, cancellations, failed recurring, and refunds.
     $count = count($recon_files);
-    if ($count > 4 && !$this->get_runtime_options('run_all')) {
-      $count = 4;
+    if ($count > 5 && !$this->get_runtime_options('run_all')) {
+      $count = 5;
     }
     return $count;
   }

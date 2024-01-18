@@ -191,8 +191,8 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
                           ],
                         ],
     ],
-                [
-                  __DIR__ . '/data/Fundraiseup/refunds',
+    [
+      __DIR__ . '/data/Fundraiseup/refunds',
                 [
                   'refund' => [
                         [
@@ -206,7 +206,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
                         ],
                   ],
                 ],
-                ],
+    ],
     [
       __DIR__ . '/data/Fundraiseup/recurring/cancelled',
                 [
@@ -233,7 +233,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
                           'txn_type' => 'subscr_cancel',
                           'start_date' => 1695063200,
                           'frequency_unit' => 'month',
-                          'date' => 1695063200,
+                          'date' => 1695140630,
                           'create_date' => 1695063200,
                           'frequency_interval' => 1,
                           'no_thank_you' => 'Fundraiseup import',
@@ -272,6 +272,42 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
                           'txn_type' => 'subscr_signup',
                           'no_thank_you' => 'Fundraiseup import',
                           'country' => 'GB'
+                        ],
+                  ],
+                ],
+    ],
+    [
+      __DIR__ . '/data/Fundraiseup/recurring/failed',
+                [
+                  'recurring' => [
+                        [
+                          'gateway' => 'fundraiseup',
+                          'gateway_account' => 'Wikimedia Foundation',
+                          'subscr_id' => 'RWRYRXYC',
+                          'first_name' => 'Jimmy',
+                          'last_name' => 'Wales',
+                          'employer' => 'Wikpedia',
+                          'email' => 'jwales@example.org',
+                          'external_identifier' => 'SUBJJCQA',
+                          'type' => 'recurring',
+                          'date' => 1695035319,
+                          'gross' => '10.00',
+                          'currency' => 'GBP',
+                          'payment_method' => 'apple',
+                          'payment_submethod' => 'mc',
+                          'utm_medium' => '',
+                          'utm_source' => 'portal',
+                          'utm_campaign' => 'portal',
+                          'next_sched_contribution_date' => '',
+                          'start_date' => 1695035319,
+                          'frequency_unit' => 'month',
+                          'txn_type' => 'subscr_cancel',
+                          'create_date' => 1695035319,
+                          'frequency_interval' => 1,
+                          'country' => 'GB',
+                          'cancel_date' => 1705359722,
+                          'cancel_reason' => 'Failed: Your card was declined.',
+                          'no_thank_you' => 'Fundraiseup import',
                         ],
                   ],
                 ],
@@ -538,12 +574,48 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     }
   }
 
+  public function testImportFailedRecurring() {
+    $audit = $this->auditTestProvider();
+    $newRecurringMsg = $audit[3][1]['recurring'][0];
+    $failedMsg = $audit[4][1]['recurring'][0];
+    $rqc = new RecurringQueueConsumer(
+    'recurring'
+    );
+    $rqc->processMessage($newRecurringMsg);
+    $rqc->processMessage($failedMsg);
+
+    $expected = array(
+      'contact_id.contact_type' => 'Individual',
+      'contact_id.sort_name' => 'Wales, Jimmy',
+      'contact_id.display_name' => 'Jimmy Wales',
+      'contact_id.first_name' => 'Jimmy',
+      'contact_id.last_name' => 'Wales',
+      'currency' => $newRecurringMsg['currency'],
+      'amount' => $newRecurringMsg['gross'],
+      'trxn_id' => $newRecurringMsg['subscr_id'],
+      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
+      'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Cancelled"),
+      'cancel_reason' => 'Failed: Your card was declined.',
+    );
+
+    $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('*', 'contact_id.*')
+      ->addWhere('trxn_id', '=', $newRecurringMsg['subscr_id'])
+      ->execute()->first();
+
+    $this->ids['Contact'][$recurRow['contact_id']] = $recurRow['contact_id'];
+
+    foreach ($expected as $key => $item) {
+      $this->assertEquals($item, $recurRow[$key]);
+    }
+  }
+
   public function testRecurringUpgradeImport() {
     variable_set('fundraiseup_audit_recon_files_dir', __DIR__ . '/data/Fundraiseup/recurring-upgrade/');
     $this->runAuditor();
     $dqc = new DonationQueueConsumer('test');
     $queue = QueueWrapper::getQueue('donations');
-      $rqc = new RecurringQueueConsumer(
+    $rqc = new RecurringQueueConsumer(
         'recurring'
       );
     $count = 0;
@@ -606,7 +678,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     }
     foreach ($invoiceIds as $invoiceId) {
       $contribution = \Civi\Api4\Contribution::get(FALSE)
-        ->addSelect('id', 'contact_id','contribution_recur_id')
+        ->addSelect('id', 'contact_id', 'contribution_recur_id')
         ->addWhere('invoice_id', 'LIKE', $invoiceId . "%")
         ->execute()->first();
 
