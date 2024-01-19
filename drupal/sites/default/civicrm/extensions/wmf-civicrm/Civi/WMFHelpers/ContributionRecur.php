@@ -186,4 +186,14 @@ class ContributionRecur {
     }
     return false;
   }
+
+  public static function getByGatewaySubscriptionId(string $gateway, string $subscrId): ?array {
+    $fullTrxnId = "RECURRING $gateway $subscrId";
+    return \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addClause(
+        'OR',
+        ['trxn_id', '=', $subscrId],
+        ['trxn_id', '=', $fullTrxnId]
+      )->execute()->first();
+  }
 }
