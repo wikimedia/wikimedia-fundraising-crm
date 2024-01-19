@@ -5,6 +5,7 @@ namespace Civi\WMFHelpers;
 use Civi\Api4\Contribution;
 use CRM_Core_PseudoConstant;
 use SmashPig\Core\Context;
+use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 class ContributionRecur {
 
@@ -147,5 +148,42 @@ class ContributionRecur {
       $config->val("payment-provider/$defaultMethod/class"),
       'SmashPig\PaymentProviders\IRecurringPaymentProfileProvider'
     );
+  }
+
+  /**
+   * @param $op
+   * @param $id
+   * @param $entity
+   * @return bool
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public static function cancelRecurAutoRescue($op, $id, $entity) {
+    if ($op === 'edit' && 'Cancelled' === CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur',
+        'contribution_status_id', $entity->contribution_status_id)) {
+      $contributionRecurring = \Civi\Api4\ContributionRecur::get(FALSE)
+        ->addSelect('contribution_recur_smashpig.rescue_reference')
+        ->addWhere('payment_processor_id:name', '=', 'adyen')
+        ->addWhere('contribution_status_id:name', '=', 'Cancelled')
+        ->addWhere('id', '=', $id)
+        ->execute()
+        ->first();
+      $rescueReference = $contributionRecurring['contribution_recur_smashpig.rescue_reference'] ?? '';
+      // if auto rescue is enabled for recur donations, rescue_reference needs to be used to request adyen to cancel it to avoid further charges
+      if (!empty($rescueReference)) {
+        wmf_common_create_smashpig_context('cancelRecurContribution', 'adyen');
+        $provider = PaymentProviderFactory::getProviderForMethod('cc');
+        $response = $provider->cancelAutoRescue($rescueReference);
+        if ($response->isSuccessful()) {
+          \Civi::log('wmf')->info("Successfully send cancel auto rescue request for recurring id $id with rescueReference: $rescueReference");
+          return true;
+        }
+        else {
+          // Warn us that something wrong with sending request we need to cancel request again to avoid duplicate charge
+          \Civi::log('wmf')->error("Failed to send cancel auto rescue request for recurring id $id with rescueReference: $rescueReference");
+        }
+      }
+    }
+    return false;
   }
 }
