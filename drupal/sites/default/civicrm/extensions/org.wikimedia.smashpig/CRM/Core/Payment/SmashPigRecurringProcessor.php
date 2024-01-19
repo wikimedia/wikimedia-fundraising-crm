@@ -379,6 +379,14 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     if (!empty($errorResponse) &&
                 $errorResponse instanceof CreatePaymentWithProcessorRetryResponse
     ) {
+      // if failed, also update the rescue_reference
+      if (!empty($errorResponse->getProcessorRetryRescueReference())) {
+        ContributionRecur::update(FALSE)
+          ->addWhere('id', '=', $recurringPayment['id'])
+          ->setValues([
+            'contribution_recur_smashpig.rescue_reference' => $errorResponse->getProcessorRetryRescueReference(),
+          ])->execute();
+      }
       if ($errorResponse->getIsProcessorRetryScheduled()) {
         $invoiceId = $recurringPayment['invoice_id'];
         $contribution = Contribution::get(FALSE)
@@ -609,7 +617,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       // FIXME: SmashPig should choose 'first' or 'recurring' based on seq #
       'installment' => 'recurring',
     ];
-
     if (isset($recurringPayment['contribution_recur_smashpig.initial_scheme_transaction_id'])) {
       $params['initial_scheme_transaction_id'] = $recurringPayment['contribution_recur_smashpig.initial_scheme_transaction_id'];
     }

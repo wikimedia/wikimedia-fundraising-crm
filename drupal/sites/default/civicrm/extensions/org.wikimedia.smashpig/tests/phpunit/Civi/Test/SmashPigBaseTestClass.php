@@ -303,6 +303,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
         'invoice_id' => $invoice_id,
         'contribution_status_id:name' => 'Pending',
         'contribution_recur_smashpig.processor_contact_id' => $invoice_id,
+        'contribution_recur_smashpig.rescue_reference' => NULL,
       ];
     return $this->createTestEntity('ContributionRecur', $params);
   }
