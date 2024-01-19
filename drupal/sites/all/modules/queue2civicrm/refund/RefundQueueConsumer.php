@@ -29,6 +29,7 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
       }
     }
 
+    $contributionStatus = $this->mapRefundTypeToContributionStatus($message['type']);
     $gateway = $message['gateway'];
     $parentTxn = $message['gateway_parent_id'];
     $refundTxn = isset($message['gateway_refund_id']) ? $message['gateway_refund_id'] : NULL;
@@ -79,7 +80,7 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
       // Perform the refund!
       try {
         \Civi::log('wmf')->info('refund {log_id}: Marking as refunded', $context);
-        wmf_civicrm_mark_refund($contributions[0]['id'], $message['type'], TRUE, $message['date'],
+        wmf_civicrm_mark_refund($contributions[0]['id'], $contributionStatus, TRUE, $message['date'],
           $refundTxn,
           $message['gross_currency'],
           $message['gross']
@@ -107,6 +108,21 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
 
   private function getAlternativePaypalGateway($gateway) {
     return ($gateway == static::PAYPAL_GATEWAY) ? static::PAYPAL_EXPRESS_CHECKOUT_GATEWAY : static::PAYPAL_GATEWAY;
+  }
+
+  private function mapRefundTypeToContributionStatus(string $type): string {
+    $validTypes = [
+      'refund' => 'Refunded',
+      'chargeback' => 'Chargeback',
+      'cancel' => 'Cancelled',
+      'reversal' => 'Chargeback', // from the audit processor
+      'admin_fraud_reversal' => 'Chargeback', // raw IPN code
+    ];
+
+    if (!array_key_exists($type, $validTypes)) {
+      throw new WMFException(WMFException::IMPORT_CONTRIB, "Unknown refund type '{$type}'");
+    }
+    return $validTypes[$type];
   }
 
 }
