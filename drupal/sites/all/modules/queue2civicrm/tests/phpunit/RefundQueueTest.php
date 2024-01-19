@@ -1,7 +1,11 @@
 <?php
 
+use Civi\WMFHelpers\FinanceInstrument;
+use queue2civicrm\recurring\RecurringQueueConsumer;
 use queue2civicrm\refund\RefundQueueConsumer;
 use Civi\WMFException\WMFException;
+use SmashPig\Core\DataStores\QueueWrapper;
+use SmashPig\CrmLink\Messages\SourceFields;
 
 /**
  * @group Queue2Civicrm
@@ -331,6 +335,45 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals(
       'Chargeback',
       CRM_Contribute_PseudoConstant::contributionStatus($contributions['values'][0]['contribution_status_id'])
+    );
+  }
+
+  public function testChargebackRecurring(): void {
+    $signupMessage = new RecurringSignupMessage(['subscr_id' => mt_rand()]);
+    $subscrTime = $signupMessage->get('date');
+    exchange_rate_cache_set('USD', $subscrTime, 1);
+    exchange_rate_cache_set($signupMessage->get('currency'), $subscrTime, 2);
+    (new RecurringQueueConsumer('recurring'))->processMessage($signupMessage->getBody());
+    $recurRecord = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $signupMessage->get('subscr_id')]);
+    $this->ids['ContributionRecur'][] = $recurRecord['id'];
+    $donationMessage = new TransactionMessage([
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'contribution_recur_id' => $recurRecord['id'],
+    ]);
+    $messageBody = $donationMessage->getBody();
+    $contribution = wmf_civicrm_contribution_message_import($messageBody);
+    $this->ids['Contribution'][] = $contribution['id'];
+    $refundMessage = new RefundMessage([
+      'gateway' => 'test_gateway',
+      'gateway_parent_id' => $donationMessage->getGatewayTxnId(),
+      'gateway_refund_id' => mt_rand(),
+      'type' => 'chargeback',
+      'gross' => $donationMessage->get('original_gross'),
+      'gross_currency' => $donationMessage->get('original_currency'),
+    ]);
+    $this->consumer->processMessage($refundMessage->getBody());
+    $cancelMessage = QueueWrapper::getQueue('recurring')->pop();
+    SourceFields::removeFromMessage($cancelMessage);
+    $this->assertArrayHasKey('payment_instrument_id', $cancelMessage);
+    unset($cancelMessage['payment_instrument_id']);
+    $this->assertEquals(
+      [
+        'contribution_recur_id' => $recurRecord['id'],
+        'txn_type' => 'subscr_cancel',
+        'cancel_reason' => 'Automatically cancelling because we received a chargeback',
+      ],
+      $cancelMessage
     );
   }
 }
