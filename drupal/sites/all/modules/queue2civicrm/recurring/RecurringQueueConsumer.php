@@ -80,7 +80,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     }
     else {
       if (!isset($msg['contribution_tracking_id'])) {
-        $msg_normalized['contribution_tracking_id'] = recurring_get_contribution_tracking_id($msg);
+        $msg['contribution_tracking_id'] = recurring_get_contribution_tracking_id($msg);
       }
     }
 
