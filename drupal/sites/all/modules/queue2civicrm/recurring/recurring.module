@@ -108,15 +108,6 @@ function recurring_batch_process($queue) {
 }
 
 /**
- * Import queued message contents to CiviCRM
- *
- * @param $msg
- */
-function recurring_import( $msg ) {
-
-}
-
-/**
  * Get the contribution tracking id for a given a recurring trxn
  *
  * If the 'custom' field is not set (from paypal, which would normally carry the tracking id),
