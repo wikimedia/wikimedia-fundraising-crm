@@ -4,6 +4,7 @@ use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\Contribution;
+use Civi\WMFHelpers\ContributionRecur as RecurHelper;
 use Civi\WMFHelpers\ContributionTracking as WMFHelper;
 use queue2civicrm\recurring\RecurringQueueConsumer;
 use Civi\WMFException\WMFException;
@@ -211,14 +212,14 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $contributions[0]['id'],
       $ctRecord2['contribution_id']
     );
-    $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $subscr_id);
+    $recur_record = RecurHelper::getByGatewaySubscriptionId($msg['gateway'], $subscr_id);
 
     $this->assertNotEquals(FALSE, $recur_record);
 
     $this->assertCount(1, $contributions);
-    $this->assertEquals($recur_record->id, $contributions[0]['contribution_recur_id']);
+    $this->assertEquals($recur_record['id'], $contributions[0]['contribution_recur_id']);
     $this->assertCount(1, $contributions2);
-    $this->assertEquals($recur_record->id, $contributions2[0]['contribution_recur_id']);
+    $this->assertEquals($recur_record['id'], $contributions2[0]['contribution_recur_id']);
 
     $this->assertEquals($contributions[0]['contact_id'], $contributions2[0]['contact_id']);
     $addresses = $this->callAPISuccess(
@@ -362,12 +363,12 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $contributions = $this->importMessage($message);
 
-    $recur_record = wmf_civicrm_get_gateway_subscription($contributions[0]['gateway'], $subscr_id);
+    $recur_record = RecurHelper::getByGatewaySubscriptionId($contributions[0]['gateway'], $subscr_id);
     $this->assertNotEquals(FALSE, $recur_record);
-    $this->assertTrue(is_numeric($recur_record->payment_processor_id));
+    $this->assertTrue(is_numeric($recur_record['payment_processor_id']));
 
     $this->assertEquals(1, count($contributions));
-    $this->assertEquals($recur_record->id, $contributions[0]['contribution_recur_id']);
+    $this->assertEquals($recur_record['id'], $contributions[0]['contribution_recur_id']);
 
     $addresses = $this->callAPISuccess(
       'Address',
@@ -658,18 +659,18 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Create matching trxn_id
     $trxn_id = 'RECURRING ' . strtoupper(($overrides['gateway'])) . ' ' . $subscr_id;
-    $recur_record = wmf_civicrm_get_gateway_subscription($overrides['gateway'], $trxn_id);
+    $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $trxn_id]);
     // Check the record was created successfully
-    $this->assertEquals($recur_record->trxn_id, $trxn_id);
+    $this->assertEquals($recur_record['trxn_id'], $trxn_id);
     // The first contribution should be on the start_date
-    $this->assertEquals($recur_record->next_sched_contribution_date,$recur_record->start_date);
+    $this->assertEquals($recur_record['next_sched_contribution_date'],$recur_record['start_date']);
 
     // Check cycle_day matches the start date
-    $this->assertEquals($recur_record->cycle_day, date('j',$overrides['start_date']));
+    $this->assertEquals($recur_record['cycle_day'], date('j',$overrides['start_date']));
 
     // Clean up
-    $this->ids['ContributionRecur'][$recur_record->id] = $recur_record->id;
-    $this->ids['Contact'][$recur_record->contact_id] = $recur_record->contact_id;
+    $this->ids['ContributionRecur'][$recur_record['id']] = $recur_record['id'];
+    $this->ids['Contact'][$recur_record['contact_id']] = $recur_record['contact_id'];
   }
 
   /**
@@ -721,12 +722,12 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($firstContribution['contact_id'], $token['contact_id']);
     // Create matching trxn_id
     $trxn_id = 'RECURRING ' . strtoupper(($overrides['gateway'])) . ' ' . $subscr_id;
-    $recurRecord = wmf_civicrm_get_gateway_subscription($overrides['gateway'], $trxn_id);
+    $recurRecord = RecurHelper::getByGatewaySubscriptionId($overrides['gateway'], $trxn_id);
     // Check that the recur record belongs to the same donor
-    $this->assertEquals($firstContribution['contact_id'], $recurRecord->contact_id);
+    $this->assertEquals($firstContribution['contact_id'], $recurRecord['contact_id']);
 
     // Clean up
-    $this->recurring_contributions[] = $recurRecord;
+    $this->ids['ContributionRecur'][] = $recurRecord['id'];
   }
 
   /**
@@ -1032,7 +1033,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected function getContribution(array $recurParams = []): array {
     return Contribution::create(FALSE)->setValues(array_merge([
-      'financial_type_id' => \Civi\WMFHelpers\ContributionRecur::getFinancialTypeForFirstContribution(),
+      'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
       'total_amount' => 60,
       'receive_date' => 'now'
     ], $recurParams))->execute()->first();
