@@ -1,7 +1,9 @@
 <?php namespace queue2civicrm\refund;
 
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Exception;
+use SmashPig\Core\DataStores\QueueWrapper;
 use wmf_common\TransactionalWmfQueueConsumer;
 use \Civi\WMFException\WMFException;
 
@@ -92,6 +94,7 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
         \Civi::log('wmf')->error('refund {log_id}: Could not refund due to internal error: {message}', array_merge($context, ['message' => $ex->getMessage()]));
         throw $ex;
       }
+      $this->cancelRecurringOnChargeback($contributionStatus, $contributions);
     }
     else {
       \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
@@ -123,6 +126,19 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
       throw new WMFException(WMFException::IMPORT_CONTRIB, "Unknown refund type '{$type}'");
     }
     return $validTypes[$type];
+  }
+
+  private function cancelRecurringOnChargeback(string $contributionStatus, array $contributions): void {
+    if ($contributionStatus === 'Chargeback' && !empty($contributions[0]['contribution_recur_id'])) {
+      $message = [
+        'txn_type' => 'subscr_cancel',
+        'contribution_recur_id' => $contributions[0]['contribution_recur_id'],
+        'cancel_reason' => 'Automatically cancelling because we received a chargeback',
+        // We add this to satisfy a check in the common message normalization function.
+        'payment_instrument_id' => $contributions[0]['payment_instrument_id']
+      ];
+      QueueWrapper::push('recurring', $message);
+    }
   }
 
 }
