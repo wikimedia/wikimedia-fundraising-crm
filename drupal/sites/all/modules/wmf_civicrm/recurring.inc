@@ -414,6 +414,7 @@ LIMIT 1";
  * There is tension between trxn_id as searchable index and full gateway style
  * at the moment, so we search using either style: either bare gateway
  * subscription ID, or trxn-style full natural key.
+ * @deprecated use WMFHelpers/ContributionRecur::getByGatewaySubscriptionId
  *
  * @param string $subscr_id
  *

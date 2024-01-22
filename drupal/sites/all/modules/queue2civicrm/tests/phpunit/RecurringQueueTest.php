@@ -309,6 +309,26 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test cancellation by the ID rather than by the subscr_id
+   */
+  public function testCancelWithRecurringContributionId(): void {
+    $subscr_id = mt_rand();
+    $this->processRecurringSignup($subscr_id);
+    $recurRecord = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
+    $this->ids['Contact'][] = $recurRecord['contact_id'];
+
+    $message = new RecurringCancelMessage(['contribution_recur_id' => $recurRecord['id']]);
+    $message->unset('subscr_id');
+    $this->importMessage($message);
+
+    $recurRecord = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
+    $this->assertEquals(
+      'Cancelled',
+      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recurRecord['contribution_status_id'])
+    );
+  }
+
+  /**
    * Test deadlock exception in function that expires recurrings.
    */
   public function testHandleDeadlocksInExpireContributions(): void {

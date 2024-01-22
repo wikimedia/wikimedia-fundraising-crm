@@ -20,6 +20,11 @@ class Message {
         $this->body = json_encode( $this->data );
     }
 
+    function unset($key) {
+      unset($this->data[$key]);
+      $this->body = json_encode($this->data);
+    }
+
     function getBody() {
         return $this->data;
     }

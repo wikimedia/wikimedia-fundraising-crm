@@ -633,17 +633,24 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionCancel($msg) {
-    // ensure we have a record of the subscription
-    if (!$recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
-      // PayPal has recently been sending lots of invalid cancel and fail notifications
-      // Revert this patch when that's resolved
-      return;
-      // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist');
+    // TODO: allow passing contribution_recur_id for any message type, not just subscr_cancel
+    if (empty($msg['contribution_recur_id'])) {
+      // ensure we have a record of the subscription
+      $contributionRecur = RecurHelper::getByGatewaySubscriptionId($msg['gateway'], $msg['subscr_id']);
+      if (!$contributionRecur) {
+        // PayPal has recently been sending lots of invalid cancel and fail notifications
+        // Revert this patch when that's resolved
+        return;
+        // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist');
+      }
+      $contributionRecurId = $contributionRecur['id'];
+    } else {
+      $contributionRecurId = $msg['contribution_recur_id'];
     }
 
     try {
       $params = [
-        'id' => $recur_record->id,
+        'id' => $contributionRecurId,
         // This line of code is only reachable if the txn type is 'subscr_cancel'
         // Which I believe always means the user has initiated the cancellation outside our process.
         'cancel_reason' => '(auto) User Cancelled via Gateway',
@@ -655,24 +662,24 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       civicrm_api3('ContributionRecur', 'cancel', $params);
     }
     catch (\CRM_Core_Exception $e) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem cancelling the subscription for subscriber id: ' . print_r($msg['subscr_id'], TRUE));
+      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem cancelling contribution recur ID: ' . $contributionRecurId);
     }
 
     if ($msg['cancel_date']) {
       try {
         // Set cancel and end dates to match those from message.
         $update_params = [
-          'id' => $recur_record->id,
+          'id' => $contributionRecurId,
           'cancel_date' => wmf_common_date_unix_to_civicrm($msg['cancel_date']),
           'end_date' => wmf_common_date_unix_to_civicrm($msg['cancel_date']),
         ];
         $this->updateContributionRecurWithErrorHandling($update_params);
       }
       catch (\CRM_Core_Exception $e) {
-        throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for cancellation for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
+        throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the cancellation for contribution recur ID: ' . $contributionRecurId . ": " . $e->getMessage());
       }
     }
-    \Civi::log('wmf')->notice('recurring: Successfully cancelled subscription for subscriber id {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
+    \Civi::log('wmf')->notice('recurring: Successfully cancelled contribution recur id {contributionRecurId}', ['contributionRecurId' => $contributionRecurId]);
   }
 
   /**
