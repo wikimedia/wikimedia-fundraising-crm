@@ -8,6 +8,7 @@
  | and copyright information, see https://civicrm.org/licensing       |
  +--------------------------------------------------------------------+
  */
+
 namespace Civi\Api4;
 
 /**
@@ -20,5 +21,6 @@ namespace Civi\Api4;
  * @package Civi\Api4
  */
 class UserJob extends Generic\DAOEntity {
+  use Generic\Traits\ManagedEntity;
 
 }
