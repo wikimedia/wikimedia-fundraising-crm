@@ -84,6 +84,13 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       }
     }
 
+    if (empty($msg['contribution_recur_id']) && !empty($msg['subscr_id'])) {
+      $recurRecord = RecurHelper::getByGatewaySubscriptionId($msg['gateway'], $msg['subscr_id']);
+      if ($recurRecord) {
+        $msg['contribution_recur_id'] = $recurRecord['id'];
+      }
+    }
+
     if (isset($msg['frequency_unit'])) {
       if (!in_array($msg['frequency_unit'], ['day', 'week', 'month', 'year'])) {
         throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency unit: {$msg['frequency_unit']}");
@@ -434,7 +441,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
   protected function importSubscriptionSignup($msg) {
     $contact = null;
     // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
-    if ($recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
+    if (!empty($msg['contribution_recur_id'])) {
       throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, 'Subscription account already exists');
     }
     $ctRecord = wmf_civicrm_get_contribution_tracking($msg);
@@ -636,24 +643,16 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionCancel($msg) {
-    // TODO: allow passing contribution_recur_id for any message type, not just subscr_cancel
     if (empty($msg['contribution_recur_id'])) {
-      // ensure we have a record of the subscription
-      $contributionRecur = RecurHelper::getByGatewaySubscriptionId($msg['gateway'], $msg['subscr_id']);
-      if (!$contributionRecur) {
-        // PayPal has recently been sending lots of invalid cancel and fail notifications
-        // Revert this patch when that's resolved
-        return;
-        // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist');
-      }
-      $contributionRecurId = $contributionRecur['id'];
-    } else {
-      $contributionRecurId = $msg['contribution_recur_id'];
+      // PayPal has recently been sending lots of invalid cancel and fail notifications
+      // Revert this patch when that's resolved
+      return;
+      // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist');
     }
 
     try {
       $params = [
-        'id' => $contributionRecurId,
+        'id' => $msg['contribution_recur_id'],
         // This line of code is only reachable if the txn type is 'subscr_cancel'
         // Which I believe always means the user has initiated the cancellation outside our process.
         'cancel_reason' => '(auto) User Cancelled via Gateway',
@@ -665,24 +664,24 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       civicrm_api3('ContributionRecur', 'cancel', $params);
     }
     catch (\CRM_Core_Exception $e) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem cancelling contribution recur ID: ' . $contributionRecurId);
+      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem cancelling contribution recur ID: ' . $msg['contribution_recur_id']);
     }
 
     if ($msg['cancel_date']) {
       try {
         // Set cancel and end dates to match those from message.
         $update_params = [
-          'id' => $contributionRecurId,
+          'id' => $msg['contribution_recur_id'],
           'cancel_date' => wmf_common_date_unix_to_civicrm($msg['cancel_date']),
           'end_date' => wmf_common_date_unix_to_civicrm($msg['cancel_date']),
         ];
         $this->updateContributionRecurWithErrorHandling($update_params);
       }
       catch (\CRM_Core_Exception $e) {
-        throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the cancellation for contribution recur ID: ' . $contributionRecurId . ": " . $e->getMessage());
+        throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the cancellation for contribution recur ID: ' . $msg['contribution_recur_id'] . ": " . $e->getMessage());
       }
     }
-    Civi::log('wmf')->notice('recurring: Successfully cancelled contribution recur id {contributionRecurId}', ['contributionRecurId' => $contributionRecurId]);
+    Civi::log('wmf')->notice('recurring: Successfully cancelled contribution recur id {contributionRecurId}', ['contributionRecurId' => $msg['contribution_recur_id']]);
   }
 
   /**
@@ -702,7 +701,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    */
   protected function importSubscriptionExpired($msg) {
     // ensure we have a record of the subscription
-    if (!$recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
+    if (empty($msg['contribution_recur_id'])) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;
@@ -712,7 +711,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
     try {
       // See function comment block for discussion.
       $params = [
-        'id' => $recur_record->id,
+        'id' => $msg['contribution_recur_id'],
         'end_date' => 'now',
         'contribution_status_id:name' => 'Completed',
         'cancel_reason' => '(auto) Expiration notification',
@@ -736,7 +735,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
    */
   protected function importSubscriptionPaymentFailed($msg) {
     // ensure we have a record of the subscription
-    if (!$recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id'])) {
+    if (empty($msg['contribution_recur_id'])) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;
@@ -745,7 +744,7 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
 
     try {
       $params = [
-        'id' => $recur_record->id,
+        'id' => $msg['contribution_recur_id'],
         'failure_count' => $msg['failure_count'],
         'failure_retry_date' => wmf_common_date_unix_to_civicrm($msg['failure_retry_date']),
       ];
