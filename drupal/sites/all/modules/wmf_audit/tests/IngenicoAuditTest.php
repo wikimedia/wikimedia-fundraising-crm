@@ -387,7 +387,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
       'gateway_txn_id' => '1111662247',
       'gross' => 1.00,
     ];
-    wmf_civicrm_mark_refund($this->idForRefundTest, 'refund', TRUE, $msg['date'],
+    wmf_civicrm_mark_refund($this->idForRefundTest, 'Refunded', TRUE, $msg['date'],
       $msg['gateway_txn_id'],
       $msg['currency'],
       $msg['gross']

@@ -194,7 +194,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2F4eG1yfff',
       'gross' => 1.00,
     ];
-    wmf_civicrm_mark_refund($this->ids['Contribution']['refund_test'], 'refund', TRUE, $msg['date'],
+    wmf_civicrm_mark_refund($this->ids['Contribution']['refund_test'], 'Refunded', TRUE, $msg['date'],
       $msg['gateway_txn_id'],
       $msg['currency'],
       $msg['gross']

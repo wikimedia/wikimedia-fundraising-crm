@@ -303,7 +303,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'gateway_txn_id' => '4522268860022701',
       'gross' => 1.00,
     ];
-    wmf_civicrm_mark_refund($this->idForRefundTest, 'refund', TRUE, $msg['date'],
+    wmf_civicrm_mark_refund($this->idForRefundTest, 'Refunded', TRUE, $msg['date'],
       $msg['gateway_txn_id'],
       $msg['currency'],
       $msg['gross']

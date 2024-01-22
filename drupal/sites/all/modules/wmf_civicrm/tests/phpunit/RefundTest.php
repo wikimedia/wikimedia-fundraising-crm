@@ -102,7 +102,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * Covers wmf_civicrm_mark_refund.
    */
   public function testMarkRefund() {
-    wmf_civicrm_mark_refund($this->original_contribution_id, 'refund', FALSE, '2015-09-09', 'my_special_ref');
+    wmf_civicrm_mark_refund($this->original_contribution_id, 'Refunded', FALSE, '2015-09-09', 'my_special_ref');
 
     $contribution = civicrm_api3('contribution', 'getsingle', ['id' => $this->original_contribution_id]);
 
@@ -164,7 +164,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_source' => 'USD -10',
       'receive_date' => '2025-12-01',
     ));
-    wmf_civicrm_mark_refund($this->original_contribution_id, 'refund', FALSE, '2025-09-09', 'my_special_ref');
+    wmf_civicrm_mark_refund($this->original_contribution_id, 'Refunded', FALSE, '2025-09-09', 'my_special_ref');
 
 
     $this->assertContactValues($this->contact_id, [
@@ -187,7 +187,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * Make a refund with type set to "chargeback"
    */
   public function testMarkRefundWithType() {
-    wmf_civicrm_mark_refund($this->original_contribution_id, 'chargeback');
+    wmf_civicrm_mark_refund($this->original_contribution_id, 'Chargeback');
 
     $contribution = civicrm_api3('contribution', 'getsingle', array(
       'id' => $this->original_contribution_id,
@@ -235,7 +235,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
 
     wmf_civicrm_mark_refund(
       $this->original_contribution_id,
-      'chargeback',
+      'Chargeback',
       TRUE, NULL, NULL,
       $this->original_currency, $lesser_amount
     );
@@ -274,7 +274,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $wrong_currency = 'GBP';
     $this->assertNotEquals($this->original_currency, $wrong_currency);
     wmf_civicrm_mark_refund(
-      $this->original_contribution_id, 'refund',
+      $this->original_contribution_id, 'Refunded',
       TRUE, NULL, NULL,
       $wrong_currency, $this->original_amount
     );
@@ -285,7 +285,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testMakeScammerRefund(): void {
     wmf_civicrm_mark_refund(
-      $this->original_contribution_id, 'refund',
+      $this->original_contribution_id, 'Refunded',
       TRUE, NULL, NULL,
       $this->original_currency, $this->original_amount + 100.00
     );
@@ -312,7 +312,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
 
     wmf_civicrm_mark_refund(
       $result['id'],
-      'refund',
+      'Refunded',
       TRUE,
       $dbtime,
       NULL,
