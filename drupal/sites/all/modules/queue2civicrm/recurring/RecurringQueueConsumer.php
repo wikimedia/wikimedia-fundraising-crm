@@ -512,7 +512,8 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       }
 
       $newContributionRecur = $this->createContributionRecurWithErrorHandling($params);
-    } catch (\CRM_Core_Exception $e) {
+    }
+    catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
     }
 
@@ -608,8 +609,6 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
         'transaction_id' => "CNTCT-{$contactId}",
         // shown in the body of the text
         'contribution_id' => $ctRecord['contribution_id'],
-         // used for the bounce header
-        'unsubscribe_link' => build_unsub_link($ctRecord['contribution_id'], $contact['email'], $locale),
       ];
 
       $success = thank_you_send_mail($params);
