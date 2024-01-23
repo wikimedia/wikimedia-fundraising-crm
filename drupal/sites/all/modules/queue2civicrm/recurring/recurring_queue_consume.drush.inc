@@ -15,17 +15,6 @@ function recurring_queue_consume_drush_command() {
     ],
     'aliases' => ['rqc'],
   ];
-  $items['recurring-process-messagefile'] = [
-    'description' =>
-      'Feeds a single message directly into the recurring import pipeline, bypassing the queue.',
-    'arguments' => [
-      'path' => 'The JSON file containing the message',
-    ],
-    'required-arguments' => TRUE,
-    'examples' => ['drush rpm /tmp/blurr.json' => '# process the file'],
-    'aliases' => ['rpm'],
-  ];
-
 
   return $items;
 }
@@ -37,8 +26,6 @@ function recurring_queue_consume_drush_help($section) {
   switch ($section) {
     case 'drush:recurring-queue-consume':
       return dt("Pulls recurring items from a message queue and processes them into CiviCRM");
-    case 'drush:recurring-process-messagefile':
-      return dt("Feeds a single message directly into the recurring import pipeline, bypassing the queue.");
   }
 }
 
@@ -51,15 +38,4 @@ function recurring_queue_consume_drush_help($section) {
 function drush_recurring_queue_consume() {
   $queue = drush_get_option('queue', 'recurring');
   module_invoke('recurring', 'batch_process', $queue);
-}
-
-function drush_recurring_queue_consume_recurring_process_messagefile($path) {
-  civicrm_initialize();
-  \Civi::log('wmf')
-    ->info('recurring: Processing input file {path} and feeding to recurring_import.',
-      ['path' => realpath($path)]
-    );
-  $contents = file_get_contents($path);
-  $msg = json_decode($contents, TRUE);
-  module_invoke('recurring', 'import', $msg);
 }

@@ -2,6 +2,7 @@
 
 namespace Civi\WorkflowMessage;
 
+use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Exception\EOYEmail\NoContributionException;
@@ -20,6 +21,7 @@ use Civi\Api4\Exception\EOYEmail\NoContributionException;
  * @method $this setCancelledRecurring(bool $cancelledRecurring)
  * @method $this setContactIDs(array $contactIDs)
  * @method $this setContributions(array $contributions)
+ * @method $this setIsValidDonorName(bool $isValidDonorName)
  * @method array setTotals()
  * @method int getYear()
  * @method $this setYear(int $year)
@@ -102,6 +104,14 @@ class EOYThankYou extends GenericWorkflowMessage {
   public $hasAnnualFund;
 
   /**
+   * Does this donor have valid first name and last name
+   *
+   * @var bool
+   * @scope tplParams
+   */
+  public $isValidDonorName;
+
+  /**
    * @var \DateTimeZone
    */
   private $britishTime;
@@ -143,6 +153,25 @@ class EOYThankYou extends GenericWorkflowMessage {
       }
     }
     return $this->hasAnnualFund;
+  }
+
+  /**
+   * if valid first and last name
+   *
+   * @return bool
+   */
+  public function getIsValidDonorName(): bool {
+    if ($this->isValidDonorName === NULL) {
+      $this->isValidDonorName = FALSE;
+      $contact = Contact::get(FALSE)
+        ->addSelect('first_name', 'last_name')
+        ->addWhere('id', '=', $this->contactID)
+        ->execute()->first();
+      if ($contact['first_name'] && $contact['last_name']) {
+        $this->isValidDonorName = TRUE;
+      }
+    }
+    return $this->isValidDonorName;
   }
 
   /**

@@ -1,7 +1,9 @@
 <?php namespace queue2civicrm\refund;
 
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Exception;
+use SmashPig\Core\DataStores\QueueWrapper;
 use wmf_common\TransactionalWmfQueueConsumer;
 use \Civi\WMFException\WMFException;
 
@@ -29,6 +31,7 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
       }
     }
 
+    $contributionStatus = $this->mapRefundTypeToContributionStatus($message['type']);
     $gateway = $message['gateway'];
     $parentTxn = $message['gateway_parent_id'];
     $refundTxn = isset($message['gateway_refund_id']) ? $message['gateway_refund_id'] : NULL;
@@ -79,7 +82,7 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
       // Perform the refund!
       try {
         \Civi::log('wmf')->info('refund {log_id}: Marking as refunded', $context);
-        wmf_civicrm_mark_refund($contributions[0]['id'], $message['type'], TRUE, $message['date'],
+        wmf_civicrm_mark_refund($contributions[0]['id'], $contributionStatus, TRUE, $message['date'],
           $refundTxn,
           $message['gross_currency'],
           $message['gross']
@@ -91,6 +94,7 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
         \Civi::log('wmf')->error('refund {log_id}: Could not refund due to internal error: {message}', array_merge($context, ['message' => $ex->getMessage()]));
         throw $ex;
       }
+      $this->cancelRecurringOnChargeback($contributionStatus, $contributions);
     }
     else {
       \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
@@ -107,6 +111,34 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
 
   private function getAlternativePaypalGateway($gateway) {
     return ($gateway == static::PAYPAL_GATEWAY) ? static::PAYPAL_EXPRESS_CHECKOUT_GATEWAY : static::PAYPAL_GATEWAY;
+  }
+
+  private function mapRefundTypeToContributionStatus(string $type): string {
+    $validTypes = [
+      'refund' => 'Refunded',
+      'chargeback' => 'Chargeback',
+      'cancel' => 'Cancelled',
+      'reversal' => 'Chargeback', // from the audit processor
+      'admin_fraud_reversal' => 'Chargeback', // raw IPN code
+    ];
+
+    if (!array_key_exists($type, $validTypes)) {
+      throw new WMFException(WMFException::IMPORT_CONTRIB, "Unknown refund type '{$type}'");
+    }
+    return $validTypes[$type];
+  }
+
+  private function cancelRecurringOnChargeback(string $contributionStatus, array $contributions): void {
+    if ($contributionStatus === 'Chargeback' && !empty($contributions[0]['contribution_recur_id'])) {
+      $message = [
+        'txn_type' => 'subscr_cancel',
+        'contribution_recur_id' => $contributions[0]['contribution_recur_id'],
+        'cancel_reason' => 'Automatically cancelling because we received a chargeback',
+        // We add this to satisfy a check in the common message normalization function.
+        'payment_instrument_id' => $contributions[0]['payment_instrument_id']
+      ];
+      QueueWrapper::push('recurring', $message);
+    }
   }
 
 }

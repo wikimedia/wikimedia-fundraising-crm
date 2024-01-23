@@ -7,6 +7,7 @@ use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\ThankYou;
+use Civi\Api4\WMFLink;
 use Civi\WMFException\WMFException;
 use Civi\Omnimail\MailFactory;
 use Civi\WMFThankYou\From;
@@ -22,6 +23,8 @@ use Civi\WMFThankYou\From;
  * @method string getDisplayName()
  * @method $this setTemplateName(string $templateName)
  * @method string getTemplateName()
+ * @method $this setEmail(string $email)
+ * @method $this setContributionID(int $contributionID)
  */
 class Send extends AbstractAction {
 
@@ -43,6 +46,38 @@ class Send extends AbstractAction {
    * @var string
    */
    public $templateName;
+
+  /**
+   * @var int
+   */
+   public $contributionID;
+
+  /**
+   * @var string
+   */
+   public $email;
+
+  /**
+   * Get the contribution ID.
+   *
+   * Transitionally look it up in params but later the calling function should set it.
+   *
+   * @return int
+   */
+  protected function getContributionID(): int {
+    return $this->contributionID ?: $this->getParameters()['contribution_id'];
+  }
+
+  /**
+   * Get the contribution ID.
+   *
+   * Transitionally look it up in params but later the calling function should set it.
+   *
+   * @return int
+   */
+  protected function getEmail(): string {
+    return $this->email ?: $this->getParameters()['recipient_address'];
+  }
 
   /**
    * @inheritDoc
@@ -91,7 +126,7 @@ class Send extends AbstractAction {
       $rate = \Civi::settings()->get('thank_you_civimail_rate');
       if ($create_civi_mail && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id']) && $params['contact_id'] > 0) {
         $civi_queue_record = thank_you_add_civi_queue(
-          $params['recipient_address'],
+          $this->getEmail(),
           $params['contact_id'],
           $subject,
           $html
@@ -116,7 +151,7 @@ class Send extends AbstractAction {
       \Civi::log('wmf')->info('thank_you: Sending ty email to: {to_address}', ['to_address' => $email['to_address']]);
       $email_success = MailFactory::singleton()->send(
         $email,
-        ['List-Unsubscribe' => '<' . $params['unsubscribe_link'] . '>']
+        $this->getHeaders()
       );
     }
     catch (\PHPMailer\PHPMailer\Exception $e) {
@@ -161,6 +196,28 @@ class Send extends AbstractAction {
       }
     }
     $result[] = ['is_success' => $email_success];
+  }
+
+  /**
+   * Get the email headers.
+   *
+   * This includes the one-click unsubscribe.
+   *
+   * @return string[]
+   */
+  public function getHeaders(): array {
+    $links = WMFLink::getUnsubscribeURL(FALSE)
+      ->setContributionID($this->getContributionID())
+      ->setEmail($this->getEmail())
+      ->setLanguage($this->getLanguage())
+      ->execute()->first();
+    // @todo - the one_click currently is the same as the user unsubscribe but
+    // we are working on changing that. For now the unsubscribe_url_one_click is
+    // the status quo.
+    return [
+      'List-Unsubscribe' => '<' . $links['unsubscribe_url_one_click'] . '>',
+      // 'List-Unsubscribe-Post'  => '<' . $links['unsubscribe_url_post'] . '>',
+    ];
   }
 
 }

@@ -1708,8 +1708,8 @@ function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
  * now.
  *
  * @param int $contribution_id
- * @param string $refund_type
- *   'refund'|'chargeback' - this will determine the new contribution status.
+ * @param string $contribution_status
+ *   'Refunded'|'Chargeback' - this will determine the new contribution status.
  * @param bool $refund_completed
  *   It turns out this is only passed in as anything other than true from the
  *   tests (based on grepping). The UI DOES allow for a status of 'Pending
@@ -1732,7 +1732,7 @@ function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
 
 function wmf_civicrm_mark_refund(
   $contribution_id,
-  $refund_type = 'refund',
+  $contribution_status = 'Refunded',
   $refund_completed = FALSE,
   $refund_date = NULL,
   $refund_gateway_txn_id = NULL,
@@ -1791,24 +1791,11 @@ function wmf_civicrm_mark_refund(
     $refund_date = wmf_common_date_parse_string($refund_date);
   }
 
-  // TODO: Normalize earlier.
-  $validTypes = [
-    'refund' => 'Refunded',
-    'chargeback' => 'Chargeback',
-    'cancel' => 'Cancelled',
-    'reversal' => 'Chargeback', // from the audit processor
-    'admin_fraud_reversal' => 'Chargeback', // raw IPN code
-  ];
-
-  if (!array_key_exists($refund_type, $validTypes)) {
-    throw new WMFException(WMFException::IMPORT_CONTRIB, "Unknown refund type '{$refund_type}'");
-  }
-
   try {
     civicrm_api3('Contribution', 'create', [
       'id' => $contribution_id,
       'debug' => 1,
-      'contribution_status_id' => $validTypes[$refund_type],
+      'contribution_status_id' => $contribution_status,
       'cancel_date' => wmf_common_date_unix_to_civicrm($refund_date),
       'refund_trxn_id' => $refund_gateway_txn_id,
     ]);
@@ -1891,6 +1878,9 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
   switch ($type) {
     case 'Contribution':
       wmf_civicrm_civicrm_post_Contribution($op, $id, $entity);
+      break;
+    case 'ContributionRecur':
+      \Civi\WMFHelpers\ContributionRecur::cancelRecurAutoRescue($op, $id, $entity);
       break;
   }
 }

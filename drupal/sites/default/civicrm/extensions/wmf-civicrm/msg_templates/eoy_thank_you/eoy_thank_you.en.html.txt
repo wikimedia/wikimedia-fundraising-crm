@@ -1,5 +1,5 @@
 <p>
-  {if '{contact.first_name}' && '{contact.last_name}'}
+  {if $isValidDonorName}
     Dear {contact.first_name},
   {else}
 
