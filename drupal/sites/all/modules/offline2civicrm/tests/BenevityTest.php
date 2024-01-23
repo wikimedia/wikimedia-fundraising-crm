@@ -59,14 +59,14 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that all imports fail if the organization has multiple matches.
    */
   public function testImportFailOrganizationContactAmbiguous(): void {
-    $this->callAPISuccess('Contact', 'create', array(
+    $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
-    ));
-    $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
-    ));
+    ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('0 out of 5 rows were imported.', $messages['Result']);
   }
@@ -83,10 +83,10 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that import passes for the contact if a single match is found.
    */
   public function testImportSucceedOrganizationSingleContactExists(): void {
-    $this->callAPISuccess('Contact', 'create', array(
+    $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
-    ));
+    ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
   }
@@ -96,24 +96,24 @@ class BenevityTest extends BaseChecksFileTest {
    * found.
    */
   public function testImportSucceedIndividualSingleContactExists(): void {
-    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
+    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
+    ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $minnie['id']]);
     $this->assertEquals(1, $contributions['count']);
-    $relationships = $this->callAPISuccess('Relationship', 'get', array(
+    $relationships = $this->callAPISuccess('Relationship', 'get', [
       'contact_id_a' => $minnie['id'],
       'contact_id_b' => $thaMouseMeister['id'],
-    ));
+    ]);
     $this->assertEquals(1, $relationships['count']);
     $email = $this->callAPISuccessGetSingle('Email', ['contact_id' => $minnie['id']]);
     $this->assertNotEmpty($email['location_type_id']);
@@ -128,24 +128,24 @@ class BenevityTest extends BaseChecksFileTest {
    * exist & should be created.
    */
   public function testImportSucceedIndividualNoExistingMatch(): void {
-    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
+    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
+    ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
-    $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-SQUEAK'));
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY TRXN-SQUEAK']);
     $this->assertEquals('Cash', $contribution['financial_type']);
-    $relationships = $this->callAPISuccess('Relationship', 'get', array(
+    $relationships = $this->callAPISuccess('Relationship', 'get', [
         'contact_id_a' => $contribution['contact_id'],
         'contact_id_b' => $thaMouseMeister['id'],
-      )
+      ]
     );
     $this->assertEquals(1, $relationships['count']);
-    $minnie = $this->callAPISuccessGetSingle('Contact', array(
+    $minnie = $this->callAPISuccessGetSingle('Contact', [
       'id' => $contribution['contact_id'],
       'return' => 'email',
-    ));
+    ]);
     $this->assertEquals('minnie@mouse.org', $minnie['email']);
     $email = $this->callAPISuccessGetSingle('Email', ['contact_id' => $minnie['id']]);
     $this->assertNotEmpty($email['location_type_id']);
@@ -161,13 +161,13 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualNoExistingMatchOnlyMatchingGift(): void {
-    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
+    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $relationships = $this->callAPISuccess('Relationship', 'get', array(
+    ]);
+    $relationships = $this->callAPISuccess('Relationship', 'get', [
         'contact_id_b' => $thaMouseMeister['id'],
-      )
+      ]
     );
     $this->assertEquals(0, $relationships['count']);
 
@@ -175,10 +175,10 @@ class BenevityTest extends BaseChecksFileTest {
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
-    $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED'));
-    $relationship = $this->callAPISuccessGetSingle('Relationship', array(
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED']);
+    $relationship = $this->callAPISuccessGetSingle('Relationship', [
         'contact_id_b' => $thaMouseMeister['id'],
-      )
+      ]
     );
     $this->assertEquals($relationship['contact_id_a'], $contribution['soft_credit_to']);
   }
@@ -200,32 +200,32 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualSofCreditMatchMatchingGiftNoDonorGift(): void {
-    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', array(
+    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse_home.org',
-    ));
+    ]);
     // Create a contribution on the organisation, soft credited to Better Minnie.
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'total_amount' => 4,
       'financial_type_id' => 'Donation',
       'soft_credit_to' => $minnie['id'],
       'contact_id' => $thaMouseMeister['id'],
-    ));
+    ]);
 
     $importer = new BenevityFile(__DIR__ . "/data/benevity_only_match.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
-    $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED'));
-    $relationship = $this->callAPISuccessGetSingle('Relationship', array(
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED']);
+    $relationship = $this->callAPISuccessGetSingle('Relationship', [
         'contact_id_b' => $thaMouseMeister['id'],
-      )
+      ]
     );
     $this->assertEquals($relationship['contact_id_a'], $contribution['soft_credit_to']);
   }
@@ -235,34 +235,34 @@ class BenevityTest extends BaseChecksFileTest {
    * employer.
    */
   public function testImportSucceedIndividualDisambiguateByEmployer(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
       'employer_id' => $organization['id'],
-    ));
+    ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $minnie['id']]);
     $this->assertEquals(0, $contributions['count']);
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $betterMinnie['id']]);
     $this->assertEquals(1, $contributions['count']);
-    $relationships = $this->callAPISuccess('Relationship', 'get', array(
+    $relationships = $this->callAPISuccess('Relationship', 'get', [
       'contact_id_a' => $betterMinnie['id'],
       'contact_id_b' => $organization['id'],
-    ));
+    ]);
     $this->assertEquals(1, $relationships['count']);
   }
 
@@ -271,34 +271,34 @@ class BenevityTest extends BaseChecksFileTest {
    * employer.
    */
   public function testImportSucceedIndividualDisambiguateByEmployerEmailAdded(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-    ));
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'employer_id' => $organization['id'],
-    ));
+    ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $minnie['id']]);
     $this->assertEquals(0, $contributions['count']);
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $betterMinnie['id']]);
     $this->assertEquals(1, $contributions['count']);
-    $relationships = $this->callAPISuccess('Relationship', 'get', array(
+    $relationships = $this->callAPISuccess('Relationship', 'get', [
       'contact_id_a' => $betterMinnie['id'],
       'contact_id_b' => $organization['id'],
-    ));
+    ]);
     $this->assertEquals(1, $relationships['count']);
-    $this->callAPISuccessGetSingle('Email', array('email' => 'minnie@mouse.org'));
+    $this->callAPISuccessGetSingle('Email', ['email' => 'minnie@mouse.org']);
   }
 
   /**
@@ -309,39 +309,39 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualTooManyChoicesCantDecideSpamTheDB(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
-    $doppelgangerMinnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $doppelgangerMinnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
+    ]);
     $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
 
     // All you Minnie's are not the real Minnie
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $minnie['id']]);
     $this->assertEquals(0, $contributions['count']);
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $doppelgangerMinnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $doppelgangerMinnie['id']]);
     $this->assertEquals(0, $contributions['count']);
 
     // Will the Real Minnie Mouse Please stand up.
-    $relationship = $this->callAPISuccessGetSingle('Relationship', array('contact_id_b' => $organization['id']));
+    $relationship = $this->callAPISuccessGetSingle('Relationship', ['contact_id_b' => $organization['id']]);
     $this->assertNotEquals($minnie['id'], $relationship['contact_id_a']);
     $this->assertNotEquals($doppelgangerMinnie['id'], $relationship['contact_id_a']);
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $relationship['contact_id_a']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $relationship['contact_id_a']]);
     $this->assertEquals(2, $contributions['count']);
   }
 
@@ -350,30 +350,30 @@ class BenevityTest extends BaseChecksFileTest {
    * employer where nick_name match in play.
    */
   public function testImportSucceedIndividualDisambiguateByEmployerNickName(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mice',
       'nick_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
       'employer_id' => $organization['id'],
-    ));
+    ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $minnie['id']]);
     $this->assertEquals(0, $contributions['count']);
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $betterMinnie['id']]);
     $this->assertEquals(1, $contributions['count']);
   }
 
@@ -388,40 +388,40 @@ class BenevityTest extends BaseChecksFileTest {
    * be redundant.
    */
   public function testImportSucceedIndividualDisambiguateByPreviousSoftCredit(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
+    ]);
     // Create a contribution on the organisation, soft credited to Better Minnie.
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'total_amount' => 4,
       'financial_type_id' => 'Donation',
       'soft_credit_to' => $betterMinnie['id'],
       'contact_id' => $organization['id'],
-    ));
+    ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $minnie['id']]);
     $this->assertEquals(0, $contributions['count']);
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $betterMinnie['id']]);
     $this->assertEquals(1, $contributions['count']);
-    $relationships = $this->callAPISuccess('Relationship', 'get', array(
+    $relationships = $this->callAPISuccess('Relationship', 'get', [
       'contact_id_a' => $betterMinnie['id'],
       'contact_id_b' => $organization['id'],
-    ));
+    ]);
     $this->assertEquals(1, $relationships['count']);
   }
 
@@ -434,55 +434,55 @@ class BenevityTest extends BaseChecksFileTest {
    * should get used as it will have an employee relationship.
    */
   public function testImportSucceedIndividualCreateIfAmbiguousPreviousSoftCredit(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
-    foreach (array($minnie, $betterMinnie) as $mouse) {
+    ]);
+    foreach ([$minnie, $betterMinnie] as $mouse) {
       // Create a contribution on the organisation, soft credited to each mouse..
-      $this->callAPISuccess('Contribution', 'create', array(
+      $this->callAPISuccess('Contribution', 'create', [
         'total_amount' => 4,
         'financial_type_id' => 'Donation',
         'soft_credit_to' => $mouse['id'],
         'contact_id' => $organization['id'],
-      ));
+      ]);
     }
 
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
-    $contributions = $this->callAPISuccess('Contribution', 'get', array(
-      'contact_id' => array(
-        'IN' => array(
+    $contributions = $this->callAPISuccess('Contribution', 'get', [
+      'contact_id' => [
+        'IN' => [
           $minnie['id'],
           $betterMinnie['id'],
-        ),
-      ),
-    ));
+        ],
+      ],
+    ]);
     $this->assertEquals(0, $contributions['count']);
 
-    $newestMouse = $this->callAPISuccessGetSingle('Contact', array(
-      'id' => array('NOT IN' => array($minnie['id'], $betterMinnie['id'])),
+    $newestMouse = $this->callAPISuccessGetSingle('Contact', [
+      'id' => ['NOT IN' => [$minnie['id'], $betterMinnie['id']]],
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
-    ));
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $newestMouse['id']));
+    ]);
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $newestMouse['id']]);
     $this->assertEquals(1, $contributions['count']);
-    $relationships = $this->callAPISuccess('Relationship', 'get', array(
+    $relationships = $this->callAPISuccess('Relationship', 'get', [
       'contact_id_a' => $newestMouse['id'],
       'contact_id_b' => $organization['id'],
-    ));
+    ]);
     $this->assertEquals(1, $relationships['count']);
   }
 
@@ -496,40 +496,40 @@ class BenevityTest extends BaseChecksFileTest {
    * employee relationship.
    */
   public function testImportSucceedIndividualPreferRelationshipOverPreviousSoftCredit(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
       'employer_id' => $organization['id'],
-    ));
+    ]);
 
     // Create a contribution on the organisation, soft credited to each minne.
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'total_amount' => 4,
       'financial_type_id' => 'Donation',
       'soft_credit_to' => $minnie['id'],
       'contact_id' => $organization['id'],
-    ));
+    ]);
 
     // But betterMinnie has a relationship, she wins.
 
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $minnie['id']]);
     $this->assertEquals(0, $contributions['count']);
 
-    $this->callAPISuccessGetSingle('Contribution', array('contact_id' => $betterMinnie['id']));
+    $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $betterMinnie['id']]);
   }
 
   /**
@@ -543,31 +543,31 @@ class BenevityTest extends BaseChecksFileTest {
    * previous soft credit) we should accept them.
    */
   public function testImportSucceedIndividualMatchToEmployerDisregardingEmail(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse_home.org',
       'employer_id' => $organization['id'],
-    ));
+    ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $betterMinnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $betterMinnie['id']]);
     $this->assertEquals(1, $contributions['count']);
-    $relationships = $this->callAPISuccess('Relationship', 'get', array(
+    $relationships = $this->callAPISuccess('Relationship', 'get', [
       'contact_id_a' => $betterMinnie['id'],
       'contact_id_b' => $organization['id'],
-    ));
+    ]);
     $this->assertEquals(1, $relationships['count']);
-    $emails = $this->callAPISuccess('Email', 'get', array(
+    $emails = $this->callAPISuccess('Email', 'get', [
       'contact_id' => $betterMinnie['id'],
       'sequential' => 1,
-    ));
+    ]);
     $this->assertEquals(2, $emails['count']);
     $this->assertEquals(1, $emails['values'][0]['is_primary']);
     $this->assertEquals('minnie@mouse_home.org', $emails['values'][0]['email']);
@@ -583,33 +583,33 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \League\Csv\Exception
    */
   public function testImportSucceedIndividualOneMatchNoEmailEmployerMatch(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
+    ]);
 
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', array(
+    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
       'employer_id' => $organization['id'],
-    ));
+    ]);
 
     $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $minnie['id']]);
     $this->assertEquals(0, $contributions['count']);
-    $contributions = $this->callAPISuccess('Contribution', 'get', array(
+    $contributions = $this->callAPISuccess('Contribution', 'get', [
       'contact_id' => $betterMinnie['id'],
       'sequential' => 1,
       'version' => 4,
@@ -617,8 +617,8 @@ class BenevityTest extends BaseChecksFileTest {
         'contribution_extra.no_thank_you',
         'Gift_Data.Fund',
         'Gift_Data.Campaign',
-      ]
-    ))['values'];
+      ],
+    ])['values'];
     $this->assertCount(2, $contributions);
     $contribution1 = $contributions[0];
     $this->assertEquals(1, $contribution1['contribution_extra.no_thank_you'], 'No thank you should be set');
@@ -631,7 +631,7 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals('Individual Gift', $contribution2['Gift_Data.Campaign']);
     $this->assertEquals('Unrestricted - General', $contribution2['Gift_Data.Fund']);
 
-    $organizationContributions = $this->callAPISuccess('Contribution', 'get', array(
+    $organizationContributions = $this->callAPISuccess('Contribution', 'get', [
       'contact_id' => $organization['id'],
       'sequential' => 1,
       'version' => 4,
@@ -640,7 +640,7 @@ class BenevityTest extends BaseChecksFileTest {
         'Gift_Data.Fund',
         'Gift_Data.Campaign',
       ],
-    ));
+    ]);
     foreach ($organizationContributions['values'] as $contribution) {
       $this->assertEquals(1, $contribution['contribution_extra.no_thank_you']);
       $this->assertEquals('Unrestricted - General', $contribution['Gift_Data.Fund']);
@@ -657,28 +657,28 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualOneMatchNoEmailNoEmployerMatch(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $minnie = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $minnie = $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
-    ));
+    ]);
 
     $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
 
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $minnie['id']));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $minnie['id']]);
     $this->assertEquals(0, $contributions['count']);
-    $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_b' => $organization['id']));
+    $relationships = $this->callAPISuccess('Relationship', 'get', ['contact_id_b' => $organization['id']]);
     $this->assertEquals(1, $relationships['count']);
     $individualID = $relationships['values'][$relationships['id']]['contact_id_a'];
-    $contributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $individualID));
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $individualID]);
     // Note that both imported records have been matched up. They are both legit matches based on our rules.
     // It feels weird because one has less data than the other. But single name contacts should be
     // very rare & single name contacts that match a different double-name contact in the same
@@ -694,26 +694,26 @@ class BenevityTest extends BaseChecksFileTest {
    * contribution have also been rolled back.
    */
   public function testImportDuplicateFullRollback(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', array(
+    $organization = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
+    ]);
     // This will clash with the second transaction causing it to fail.
 
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED',
       'financial_type_id' => 'Engage',
       'total_amount' => 5,
       'contact_id' => $organization['id'],
-    ));
+    ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('0 out of 5 rows were imported.', $messages['Result']);
-    $contribution = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-SQUEAK'));
+    $contribution = $this->callAPISuccess('Contribution', 'get', ['trxn_id' => 'BENEVITY TRXN-SQUEAK']);
     $this->assertEquals(0, $contribution['count'], 'This contribution should have been rolled back');
-    $minnie = $this->callAPISuccess('Contact', 'get', array(
+    $minnie = $this->callAPISuccess('Contact', 'get', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
-    ));
+    ]);
     $this->assertEquals(0, $minnie['count'], 'This contact should have been rolled back');
   }
 
@@ -734,9 +734,8 @@ class BenevityTest extends BaseChecksFileTest {
     $messages = $this->importBenevityFile();
     $this->assertEquals('0 out of 5 rows were imported.', $messages['Result']);
     $this->assertNotTrue(isset($messages['Error']));
-    $this->assertEquals(5, substr($messages['Duplicate'], 0,1));
+    $this->assertEquals(5, substr($messages['Duplicate'], 0, 1));
   }
-
 
   /**
    * Import a transaction where half the transaction has already been imported.
@@ -744,49 +743,47 @@ class BenevityTest extends BaseChecksFileTest {
    * This should throw an error rather be treated as a valid duplicate.
    */
   public function testDuplicateDetectionInvalidState(): void {
-    [$mouseOrg] =$this->createAllOrganizations();
+    [$mouseOrg] = $this->createAllOrganizations();
 
-    $existing = $this->callAPISuccess('Contribution', 'create', array(
+    $existing = $this->callAPISuccess('Contribution', 'create', [
       'trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED',
       'financial_type_id' => 'Engage',
       'total_amount' => 5,
       'source' => 'USD 5.00',
       'contact_id' => $mouseOrg['id'],
-    ));
-
+    ]);
 
     $messages = $this->importBenevityFile();
     $this->assertEquals('4 out of 5 rows were imported.', $messages['Result']);
-    $this->assertEquals(1, substr($messages['Error'], 0,1));
+    $this->assertEquals(1, substr($messages['Error'], 0, 1));
 
     // Update existing dupe to match the donor transaction instead of the matching one.
     // This should also result in an error as 1 out of 2 transactions for the row is imported.
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'trxn_id' => 'BENEVITY TRXN-SQUEAK',
       'financial_type_id' => 'Engage',
       'total_amount' => 5,
       'contact_id' => $mouseOrg['id'],
       'id' => $existing['id'],
-    ));
+    ]);
 
     $messages = $this->importBenevityFile();
     $this->assertEquals('0 out of 5 rows were imported.', $messages['Result']);
-    $this->assertEquals(4, substr($messages['Duplicate'], 0,1));
-    $this->assertEquals(1, substr($messages['Error'], 0,1));
+    $this->assertEquals(4, substr($messages['Duplicate'], 0, 1));
+    $this->assertEquals(1, substr($messages['Error'], 0, 1));
 
     // Create a second so they both match - should be a duplicate instead of an error now.
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED',
       'financial_type_id' => 'Engage',
       'total_amount' => 5,
       'contact_id' => $mouseOrg['id'],
-    ));
+    ]);
 
     $messages = $this->importBenevityFile();
     $this->assertEquals('0 out of 5 rows were imported.', $messages['Result']);
-    $this->assertEquals(5, substr($messages['Duplicate'], 0,1));
+    $this->assertEquals(5, substr($messages['Duplicate'], 0, 1));
     $this->assertNotTrue(isset($messages['Error']));
-
   }
 
   /**
@@ -797,37 +794,36 @@ class BenevityTest extends BaseChecksFileTest {
    * name as a name should not be a problem.
    */
   public function testImportSucceedOrganizationDisambiguatedBySingleNickName(): void {
-    $this->callAPISuccess('Contact', 'create', array(
+    $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
-    ));
-    $theRealDuck = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $theRealDuck = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Donald Duck',
       'nick_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
-    ));
-    $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
-    ));
+    ]);
 
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
-    $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY TRXN-QUACK'));
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY TRXN-QUACK']);
     $this->assertEquals(1200, $contribution['total_amount']);
 
-    $address = $this->callAPISuccess('Address', 'get', array(
+    $address = $this->callAPISuccess('Address', 'get', [
       'contact_id' => $contribution['contact_id'],
       'sequential' => TRUE,
-    ));
+    ]);
     $this->assertEquals('2 Quacker Road', $address['values'][0]['street_address']);
     $this->assertEquals('Duckville', $address['values'][0]['city']);
     $this->assertEquals(90210, $address['values'][0]['postal_code']);
 
-    $orgContributions = $this->callAPISuccess('Contribution', 'get', array('contact_id' => $theRealDuck['id']));
+    $orgContributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $theRealDuck['id']]);
     // The first row has no matching contribution.
     $this->assertEquals(0, $orgContributions['count']);
-
   }
 
   /**
@@ -836,22 +832,22 @@ class BenevityTest extends BaseChecksFileTest {
   public function testImportSucceedAll(): void {
     [$mouseOrg] = $this->createAllOrganizations();
 
-    $this->callAPISuccess('Contact', 'create', array(
+    $this->callAPISuccess('Contact', 'create', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
       'employer_id' => $mouseOrg['id'],
-    ));
+    ]);
 
     $messages = $this->importBenevityFile();
     $this->assertEquals('All rows were imported', $messages['Result']);
 
-    $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY trxn-QUACK'));
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY trxn-QUACK']);
     $this->assertEquals(11, $contribution['fee_amount']);
     $this->assertEquals(1189, $contribution['net_amount']);
 
-    $contribution = $this->callAPISuccessGetSingle('Contribution', array('trxn_id' => 'BENEVITY trxn-WOOF'));
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY trxn-WOOF']);
     $this->assertEquals(22, $contribution['total_amount']);
     $this->assertEquals(20.41, $contribution['net_amount']);
     $this->assertEquals(1.59, $contribution['fee_amount']);
@@ -870,7 +866,7 @@ class BenevityTest extends BaseChecksFileTest {
     $relationships = $this->callAPISuccess('Relationship', 'get', ['contact_id_a' => $dogContact['id']]);
     $this->assertEquals(1, $relationships['count']);
 
-    $orgContributions = $this->callAPISuccess('Contribution', 'get', array('trxn_id' => 'BENEVITY TRXN-WOOF_MATCHED'));
+    $orgContributions = $this->callAPISuccess('Contribution', 'get', ['trxn_id' => 'BENEVITY TRXN-WOOF_MATCHED']);
     $goofyIncContribution = $orgContributions['values'][$orgContributions['id']];
     // The first row has a matching contribution.
     $this->assertEquals(1, $orgContributions['count']);
@@ -892,13 +888,13 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals(.17, $mcScrougeGift['net_amount']);
 
     // No address should have been created for the organization.
-    $organizationAddress = $this->callAPISuccess('Address', 'get', array(
+    $organizationAddress = $this->callAPISuccess('Address', 'get', [
         'contact_id' => $mcScrougeGift['contact_id'],
-      )
+      ]
     );
     $this->assertEquals(0, $organizationAddress['count']);
 
-    $anonymousContact = $this->callAPISuccessGetSingle('Contact', array('email' => 'fakeemail@wikimedia.org'));
+    $anonymousContact = $this->callAPISuccessGetSingle('Contact', ['email' => 'fakeemail@wikimedia.org']);
     $this->assertEquals('Anonymous', $anonymousContact['first_name']);
     $this->assertEquals('Anonymous', $anonymousContact['last_name']);
     // Let's not soft credit anonymous.
@@ -913,7 +909,7 @@ class BenevityTest extends BaseChecksFileTest {
     $minnie = $mice['values'][$mice['id']];
     $this->assertEquals('2 Cheesy Place', $minnie['street_address']);
     $this->assertEquals('Mickey Mouse Inc', $minnie['current_employer']);
-    $relationships = $this->callAPISuccess('Relationship', 'get', array('contact_id_a' => $minnie['id']));
+    $relationships = $this->callAPISuccess('Relationship', 'get', ['contact_id_a' => $minnie['id']]);
     $this->assertEquals(1, $relationships['count']);
   }
 
@@ -925,11 +921,11 @@ class BenevityTest extends BaseChecksFileTest {
     $messages = $this->importBenevityFile(['date' => ['year' => 2019, 'month' => 9, 'day' => 12], 'original_currency' => 'EUR', 'original_currency_total' => 4, 'usd_total' => 8]);
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
 
-    $contribution = $this->callAPISuccessGetSingle('Contribution', array('contact_id' => $minnie['id']));
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $minnie['id']]);
     $this->assertEquals(200, $contribution['total_amount']);
     $this->assertEquals('EUR 100', $contribution['contribution_source']);
 
-    $contribution = $this->callAPISuccessGetSingle('Contribution', array('contact_id' => $mouseOrg['id']));
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $mouseOrg['id']]);
     $this->assertEquals(2000, $contribution['total_amount']);
     $this->assertEquals('EUR 1000', $contribution['contribution_source']);
   }
@@ -944,7 +940,7 @@ class BenevityTest extends BaseChecksFileTest {
     $messages = $this->importBenevityFile(['date' => ['year' => 2019, 'month' => 9, 'day' => 12], 'original_currency' => 'JPY', 'original_currency_total' => 4000, 'usd_total' => 40], 'benevity.jpy');
     global $user;
     $suffix = $user->uid . '.csv';
-    $this->assertEquals('All rows were imported', $messages['Result'], "\n" . print_r(file_get_contents(__DIR__ . '/data/benevity.jpy_errors.' . $suffix), TRUE)  . "\n" . print_r($_exchange_rate_cache, TRUE));
+    $this->assertEquals('All rows were imported', $messages['Result'], "\n" . print_r(file_get_contents(__DIR__ . '/data/benevity.jpy_errors.' . $suffix), TRUE) . "\n" . print_r($_exchange_rate_cache, TRUE));
     $contribution = $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $minnie['id']]);
     $this->assertEquals((464 + 254) / 100, $contribution['fee_amount']);
   }
@@ -953,23 +949,23 @@ class BenevityTest extends BaseChecksFileTest {
    * @return array
    */
   protected function createAllOrganizations(): array {
-    $mouseOrg = $this->callAPISuccess('Contact', 'create', array(
+    $mouseOrg = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
-    ));
-    $dogOrg = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $dogOrg = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Goofy Inc',
       'contact_type' => 'Organization',
-    ));
-    $duckOrg = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $duckOrg = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
-    ));
-    $stingyOrg = $this->callAPISuccess('Contact', 'create', array(
+    ]);
+    $stingyOrg = $this->callAPISuccess('Contact', 'create', [
       'organization_name' => 'Uncle Scrooge Inc',
       'contact_type' => 'Organization',
-    ));
-    return array($mouseOrg, $dogOrg, $duckOrg, $stingyOrg);
+    ]);
+    return [$mouseOrg, $dogOrg, $duckOrg, $stingyOrg];
   }
 
   /**
