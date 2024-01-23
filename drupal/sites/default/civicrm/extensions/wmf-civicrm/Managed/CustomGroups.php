@@ -256,6 +256,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         'Corporate Gift' => 'Corporate Gift',
         'Donor Advised Fund' => 'Donor Advised Fund',
         'Endowment Gift' => 'Endowment Gift',
+        'Employee Giving' => 'Employee Giving',
         'Fund-to-Fund Transfer' => 'Fund-to-Fund Transfer',
         'Foundation Gift' => 'Foundation Gift',
         'Legacy Gift' => 'Legacy Gift',
@@ -268,6 +269,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         'Retirement Fund' => 'Retirement Fund',
         'Retirement Fund - Endowment Specified' => 'Retirement Fund - Endowment Specified',
         'Retirement Fund - Annual Fund Specified' => 'Retirement Fund - Annual Fund Specified',
+        'Volunteer Match' => 'Volunteer Match',
       ],
     ],
     'Appeal' => [

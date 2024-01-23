@@ -1929,6 +1929,37 @@ AND q.id BETWEEN %1 AND %2"
   }
 
   /**
+   * Add options for Employee Giving Volunteer match.
+   *
+   * https://phabricator.wikimedia.org/T354911
+   *
+   * Bug: T354911
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_4440(): bool {
+    $optionGroupID = CustomField::get(FALSE)
+      ->addSelect('option_group_id')
+      ->addWhere('name', '=', 'Campaign')
+      ->execute()
+      ->first()['option_group_id'];
+    OptionValue::create(FALSE)->setValues([
+      'option_group_id' => $optionGroupID,
+      'label' => 'Employee Giving',
+      'value' => 'Employee Giving',
+      'name' => 'Employee_Giving',
+    ])->execute();
+    OptionValue::create(FALSE)->setValues([
+      'option_group_id' => $optionGroupID,
+      'label' => 'Volunteer Match',
+      'value' => 'Volunteer Match',
+      'name' => 'Volunteer_Match',
+    ])->execute();
+    return TRUE;
+  }
+
+  /**
    * Queue up an SQL update.
    *
    * @param string $sql
