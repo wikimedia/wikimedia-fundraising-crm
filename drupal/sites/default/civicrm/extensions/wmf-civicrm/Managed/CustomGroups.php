@@ -181,7 +181,7 @@ return [
     'fields' => _wmf_civicrm_get_assistant_fields(),
   ],
   'Major_Gifts_Year_End_Appeal' => [
-    'group' =>  [
+    'group' => [
       'name' => 'Major_Gifts_Year_End_Appeal',
       'title' => 'Major Gifts Year End Appeal',
       'extends' => 'Activity',
@@ -208,7 +208,6 @@ return [
   ],
 ];
 
-
 /**
  * Get fields for gift data custom group.
  *
@@ -231,7 +230,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         'Restricted - Foundation' => 'Restricted - Foundation',
         'Restricted - Program' => 'Restricted - Program',
         'Restricted - Fiscal Sponsorship' => 'Restricted - Fiscal Sponsorship',
-        'Endowment Fund' => 'Endowment Fund'
+        'Endowment Fund' => 'Endowment Fund',
       ],
     ],
     'Campaign' => [
@@ -298,9 +297,9 @@ function _wmf_civicrm_get_gift_data_fields(): array {
       'data_type' => 'String',
       'html_type' => 'CheckBox',
       'default_value' => NULL,
-      'is_required' => false,
-      'is_searchable' => true,
-      'is_search_range' => false,
+      'is_required' => FALSE,
+      'is_searchable' => TRUE,
+      'is_search_range' => FALSE,
       'option_values' => [
         'Endowment Fund' => 'Endowment Fund',
         'Unrestricted - Fund' => 'Unrestricted - Fund',
@@ -844,7 +843,7 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'help_pre' => 'iWave determined prospect insight',
       'column_name' => 'prospect_insight_280',
       'option_values' => [
-        '1' =>  'Hidden Gem',
+        '1' => 'Hidden Gem',
         '2' => 'Your Champion',
         'Distinguished Philanthropist' => 'Distinguished Philanthropist',
         'Not Now Prospect' => 'Not Now Prospect',
@@ -855,23 +854,23 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'label' => '(TS) Estimated Capacity',
       'data_type' => 'String',
       'html_type' => 'Text',
-      'is_searchable' => true,
-      'is_search_range' => false,
+      'is_searchable' => TRUE,
+      'is_search_range' => FALSE,
       'weight' => 295,
       'text_length' => 255,
       'note_columns' => 60,
       'note_rows' => 4,
-      'column_name' => 'estimated_capacity_281'
+      'column_name' => 'estimated_capacity_281',
     ],
     'Planned_Giving_Score' => [
       'name' => 'Planned_Giving_Score',
       'label' => 'Planned Giving Score',
       'data_type' => 'String',
       'html_type' => 'Select',
-      'is_searchable' => true,
-      'is_search_range' => false,
+      'is_searchable' => TRUE,
+      'is_search_range' => FALSE,
       'weight' => 312,
-      'is_active' => true,
+      'is_active' => TRUE,
       'text_length' => 255,
       'note_columns' => 60,
       'note_rows' => 4,
@@ -888,10 +887,10 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'label' => 'Planned Giving Segment',
       'data_type' => 'String',
       'html_type' => 'Select',
-      'is_searchable' => true,
-      'is_search_range' => false,
+      'is_searchable' => TRUE,
+      'is_search_range' => FALSE,
       'weight' => 313,
-      'is_active' => true,
+      'is_active' => TRUE,
       'text_length' => 255,
       'note_columns' => 60,
       'note_rows' => 4,
@@ -902,10 +901,9 @@ function _wmf_civicrm_get_prospect_fields(): array {
         'Not a Planned Giver' => 'Not a Planned Giver',
         'Strong Planned Giving Prospect' => 'Strong Planned Giving Prospect',
       ],
-    ]
+    ],
   ];
 }
-
 
 /**
  * Get fields from prospect custom group.
@@ -1095,6 +1093,7 @@ function _wmf_civicrm_get_partner_fields(): array {
  * field will be mapped to a custom field whose name is the gateway name
  * with '_id' appended. So for example if we start storing the PayPal
  * PAYERID we would add a field here called paypal_id.
+ *
  * @return array
  */
 function _wmf_civicrm_get_external_identifiers_fields(): array {
@@ -1516,7 +1515,7 @@ function _wmf_civicrm_get_stock_fields(): array {
       'is_active' => 1,
       'is_searchable' => 1,
       'is_view' => 0,
-    ]
+    ],
   ];
 }
 
@@ -1606,7 +1605,7 @@ function _wmf_civicrm_get_benefactor_fields(): array {
     'Benefactor_order_as' => [
       'name' => 'Benefactor_order_as',
       'label' => 'Benefactor order as',
-      'data_type' =>  'String',
+      'data_type' => 'String',
       'html_type' => 'Text',
       'is_searchable' => 1,
       'text_length' => 255,
@@ -1625,7 +1624,7 @@ function _wmf_civicrm_get_benefactor_fields(): array {
     ],
     'WLS_Listed_as' => [
       'name' => 'WLS_Listed_as',
-      'label' =>  'WLS Listed as',
+      'label' => 'WLS Listed as',
       'data_type' => 'String',
       'html_type' => 'Text',
       'is_searchable' => 1,
@@ -1671,12 +1670,12 @@ function _wmf_civicrm_get_benefactor_fields(): array {
       'note_columns' => 60,
       'note_rows' => 4,
       'option_values' => [
-        "1"=> "$5m+",
-        "2"=> "$1m+",
-        "3"=> "$100k+",
-        "4"=> "$50k+",
-        "5"=> "$5k+",
-        "6"=> "$1k+"
+        "1" => "$5m+",
+        "2" => "$1m+",
+        "3" => "$100k+",
+        "4" => "$50k+",
+        "5" => "$5k+",
+        "6" => "$1k+",
       ],
     ],
     'Benefactor_Level' => [
@@ -1689,10 +1688,10 @@ function _wmf_civicrm_get_benefactor_fields(): array {
       'note_columns' => 60,
       'note_rows' => 4,
       'option_values' => [
-        "1"=> "Major Benefactor ($50k+)",
-        "2"=> "Patron Donors ($15k-49,999)",
-        "3"=> "Leading Donors ($5k-$14,999)",
-        "4"=> "Sustaining Donor ($1k-$4,999)"
+        "1" => "Major Benefactor ($50k+)",
+        "2" => "Patron Donors ($15k-49,999)",
+        "3" => "Leading Donors ($5k-$14,999)",
+        "4" => "Sustaining Donor ($1k-$4,999)",
       ],
     ],
   ];
@@ -1778,7 +1777,7 @@ function _wmf_civicrm_get_mg_year_end_appeal_fields(): array {
       'weight' => 6,
       'text_length' => 255,
       'column_name' => 'solicitor_305',
-      'option_values' => _wmf_civicrm_get_solicitor_values()
+      'option_values' => _wmf_civicrm_get_solicitor_values(),
     ],
     'Appeal_Type' => [
       'name' => 'Appeal_Type',
@@ -1792,8 +1791,8 @@ function _wmf_civicrm_get_mg_year_end_appeal_fields(): array {
       'column_name' => 'appeal_type_309',
       'option_values' => [
         '1' => 'Letter',
-        '2' => 'Email'
-      ]
+        '2' => 'Email',
+      ],
     ],
   ];
 }
@@ -1835,7 +1834,7 @@ function _wmf_civicrm_get_endowment_year_end_appeal_fields(): array {
       'option_values' => [
         '1' => 'Letter',
         '2' => 'Email',
-      ]
+      ],
     ],
   ];
 }
