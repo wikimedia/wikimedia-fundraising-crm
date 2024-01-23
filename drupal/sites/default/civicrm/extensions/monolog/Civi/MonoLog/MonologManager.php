@@ -1,4 +1,5 @@
 <?php
+
 namespace Civi\MonoLog;
 
 use Civi\Api4\Entity;
@@ -265,7 +266,7 @@ class MonologManager {
       // line efforts to increase or decrease logging levels.
       $modifiers = [
         // Drush parameters https://groups.drupal.org/drush/commands
-        '-v' =>  'notice',
+        '-v' => 'notice',
         '--verbose' => 'notice',
         '--debug' => 'debug',
         '-d' => 'debug',
@@ -280,7 +281,7 @@ class MonologManager {
           $minimumLevel = $modifiers[$argument];
         }
       }
-      $formatter = new LineFormatter("%channel%.%level_name%: %message%\n", NULL, TRUE, TRUE);
+      $formatter = new LineFormatter("%channel%.%level_name%: %message% %context% %extra%\n", NULL, TRUE, TRUE);
       $handler = new StreamHandler('php://stdout', $minimumLevel, !$isFinal);
       $handler->setFormatter($formatter);
       $logger->pushHandler($handler);
@@ -317,7 +318,7 @@ class MonologManager {
     $syslog = new SyslogHandler($this->getChannelName($channel), LOG_USER, $minimumLevel, !$isFinal);
     // @todo Use the SyslogFormatter, requires Monolog 3.x
     //https://github.com/Seldaek/monolog/blob/main/src/Monolog/Formatter/SyslogFormatter.php
-    $formatter = new LineFormatter("%channel%.%level_name%: %message%");
+    $formatter = new LineFormatter("%channel%.%level_name%: %message% %context% %extra%");
     $syslog->setFormatter($formatter);
     $logger->pushHandler($syslog);
   }
