@@ -47,7 +47,7 @@ class Import {
         !empty($mappedRow['Contribution']['contact_id'])
         && (
           empty($mappedRow['Contact'])
-         || ($mappedRow['Contact']['contact_type'] === 'Organization' && empty($mappedRow['Contact']['organization_name']))
+          || ($mappedRow['Contact']['contact_type'] === 'Organization' && empty($mappedRow['Contact']['organization_name']))
         )
       ) {
         // We have just an ID so it is in ['Contribution']['contact_id']
@@ -162,6 +162,73 @@ class Import {
       \Civi::$statics[__CLASS__]['user_job'] = $userJob;
     }
     return \Civi::$statics[__CLASS__]['user_job']['gateway'];
+  }
+
+  /**
+   * Get the transformed field based on the relevant field transformation.
+   *
+   * This is a public static function for now as we we are calling it from
+   * Benevity import (as part of moving that into this extension/methodology).
+   * It should become private or protected on this class later on as we consolidate
+   * here.
+   *
+   * @param string $transformation
+   * @param string $originalValue
+   *   At time of writing only strings are valid for original & return value.
+   *   This could reasonably change - at which point we can loosen this type strictness.
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public static function getTransformedField(string $transformation, string $originalValue): string {
+    $mapping = self::getFieldTransformation($transformation);
+    if (array_key_exists($originalValue, $mapping)) {
+      return $mapping[$originalValue];
+    }
+    // What do we do if it doesn't exist. For now we don't transform but
+    // potentially the transform array could include a 'default' key (the value
+    // to use if originalValue is empty) and a 'not_found' key (the value to use
+    // if the original value is not mapped.
+    return $originalValue;
+  }
+
+  /**
+   *
+   * @param string $transformation
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private static function getFieldTransformation(string $transformation): array {
+    $mappings = self::getAvailableTransformations();
+    if (!array_key_exists($transformation, $mappings) || !is_array($mappings[$transformation])) {
+      throw new \CRM_Core_Exception('invalid transformation requested');
+    }
+    return $mappings[$transformation];
+  }
+
+  /**
+   * Get our available transformations.
+   *
+   * All this does at the moment is retrieve arrays from a json file.
+   * They could easily be declared as an array in place - but the direction I
+   * am experimenting with is the idea that they could be selected & applied
+   * to a field in the UI, in which case just maybe the user could edit them there.
+   *
+   * @return array
+   *
+   * @throws \CRM_Core_Exception
+   * @noinspection PhpMultipleClassDeclarationsInspection
+   */
+  private static function getAvailableTransformations(): array {
+    try {
+      // @todo - we only have one transformation right now but in future we can
+      // think about one big one vs multiple import specific ones.
+      return json_decode(file_get_contents(__DIR__ . '/Import/field_transformations.json'), TRUE, 512, JSON_THROW_ON_ERROR);
+    }
+    catch (\JsonException $e) {
+      throw new \CRM_Core_Exception('JSON is invalid');
+    }
   }
 
 }

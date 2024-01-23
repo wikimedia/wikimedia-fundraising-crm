@@ -622,13 +622,13 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertCount(2, $contributions);
     $contribution1 = $contributions[0];
     $this->assertEquals(1, $contribution1['contribution_extra.no_thank_you'], 'No thank you should be set');
-    $this->assertEquals('Payroll Deduction', $contribution1['Gift_Data.Campaign']);
+    $this->assertEquals('Individual Gift', $contribution1['Gift_Data.Campaign']);
     $this->assertEquals('Unrestricted - General', $contribution1['Gift_Data.Fund']);
 
     $contribution2 = $contributions[1];
     $this->assertEquals(1, $contribution2['contribution_extra.no_thank_you']);
-    // This contribution was over $1000 & hence is a benefactor gift.
-    $this->assertEquals('Payroll Deduction', $contribution2['Gift_Data.Campaign']);
+    // Bluesnap is matched to individual gift.
+    $this->assertEquals('Individual Gift', $contribution2['Gift_Data.Campaign']);
     $this->assertEquals('Unrestricted - General', $contribution2['Gift_Data.Fund']);
 
     $organizationContributions = $this->callAPISuccess('Contribution', 'get', array(
