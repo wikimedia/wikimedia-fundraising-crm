@@ -33,21 +33,21 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
     civicrm_api3('Navigation', 'reset', ['for' => 'report']);
 
     // Update es_MX display name to "Spanish (Latin America)"
-   OptionValue::update(FALSE)
+    OptionValue::update(FALSE)
       ->addWhere('option_group_id:name', '=', 'languages')
       ->addWhere('name', '=', 'es_MX')
       ->addValue('label', 'Spanish (Latin America)')
       ->addValue('value', 'es_MX')
       ->execute();
 
-   // Our name formatter likes to go dotless. Add this here so
-   // it runs for dev installs but not again on prod
-   OptionValue::update(FALSE)
-     ->addWhere('option_group_id:name', '=', 'individual_suffix')
-     ->addWhere('name', '=', 'Jr.')
-     ->addValue('label', 'Jr')
-     ->addValue('name', 'Jr')
-     ->execute();
+    // Our name formatter likes to go dotless. Add this here so
+    // it runs for dev installs but not again on prod
+    OptionValue::update(FALSE)
+      ->addWhere('option_group_id:name', '=', 'individual_suffix')
+      ->addWhere('name', '=', 'Jr.')
+      ->addValue('label', 'Jr')
+      ->addValue('name', 'Jr')
+      ->execute();
 
     $this->syncGeocoders();
     // Bug: T115044 Add index to nick_name column as we have decided to use it for Benevity imports.
@@ -55,7 +55,6 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
 
     // Bug: T228106 Add index to civicrm_activity.location.
     CRM_Core_BAO_SchemaHandler::createIndexes(['civicrm_activity' => ['location']]);
-
 
     /**
      * Add index to civicrm_country.iso_code.
@@ -98,7 +97,6 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
    * an index.
    */
   public function postInstall(): void {
-
     /* Add combined index on entity_id and lifetime_usd_total on wmf_donor table.
      *
      * In testing this made a significant difference when filtering for donors with
@@ -255,13 +253,13 @@ SET end_date = NULL WHERE id IN
   }
 
   /**
-  * Run sql to update the contribution_status of duplicated Adyen records to cancelled (3)
-  *
-  * Bug: T290177
-  *
-  * @return TRUE on success
-  * @throws Exception
-  */
+   * Run sql to update the contribution_status of duplicated Adyen records to cancelled (3)
+   *
+   * Bug: T290177
+   *
+   * @return TRUE on success
+   * @throws Exception
+   */
   public function upgrade_4205(): bool {
     // 144 expected updates
     CRM_Core_DAO::executeQuery("
@@ -391,7 +389,7 @@ SET end_date = NULL WHERE id IN
       'change_2018_2019',
       'change_2019_2020',
       'change_2020_2021',
-      'change_2021_2022'
+      'change_2021_2022',
     ];
 
     $this->dropIndexes($indexesToDrop, 'wmf_donor');
@@ -626,27 +624,26 @@ SET
   public function upgrade_4218(): bool {
     $oldOptionGroupId = CRM_Core_DAO::singleValueQuery(
       "SELECT option_group_id FROM civicrm_custom_field WHERE name = 'Endowment_Level'");
-      if(!$oldOptionGroupId){
-        CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_group ( `name`, `title`, `is_active` ) VALUES ('Benefactor_Page_Listing_Endowment_Level', 'Benefactor Page Listing :: Endowment Level', 1)");
-        $newOptionGroupId = CRM_Core_DAO::singleValueQuery(
-          "SELECT id FROM civicrm_option_group WHERE name = 'Benefactor_Page_Listing_Endowment_Level'");
-        if ($newOptionGroupId)
-        {
-          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+    if (!$oldOptionGroupId) {
+      CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_group ( `name`, `title`, `is_active` ) VALUES ('Benefactor_Page_Listing_Endowment_Level', 'Benefactor Page Listing :: Endowment Level', 1)");
+      $newOptionGroupId = CRM_Core_DAO::singleValueQuery(
+        "SELECT id FROM civicrm_option_group WHERE name = 'Benefactor_Page_Listing_Endowment_Level'");
+      if ($newOptionGroupId) {
+        CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
   VALUES ($newOptionGroupId, '$5m+', 1, '$5m+',  0,  0, 1, '', 0, 0, 1)");
-          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+        CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
   VALUES ($newOptionGroupId, '$1m+', 2, '$5m+',  0,  0, 2, '', 0, 0, 1)");
-          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+        CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
   VALUES ($newOptionGroupId, '$100k+', 3, '$5m+',  0,  0, 3, '', 0, 0, 1)");
-          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+        CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
   VALUES ($newOptionGroupId, '$50k+', 4, '$5m+',  0,  0, 4, '', 0, 0, 1)");
-          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+        CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
   VALUES ($newOptionGroupId, '$5k+', 5, '$5m+',  0,  0, 5, '', 0, 0, 1)");
-          CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
+        CRM_Core_DAO::executeQuery("INSERT INTO civicrm_option_value ( `option_group_id`, `label`, `value`, `name`, `filter`, `is_default`, `weight`, `description`, `is_optgroup`, `is_reserved`, `is_active` )
   VALUES ($newOptionGroupId, '$1k+', 6, '$5m+',  0,  0, 6, '', 0, 0, 1)");
-          CRM_Core_DAO::executeQuery( "UPDATE civicrm_custom_field SET option_group_id=$newOptionGroupId, html_type='Select' WHERE name = 'Endowment_Level'" );
-        }
+        CRM_Core_DAO::executeQuery("UPDATE civicrm_custom_field SET option_group_id=$newOptionGroupId, html_type='Select' WHERE name = 'Endowment_Level'");
       }
+    }
     return TRUE;
   }
 
@@ -656,9 +653,9 @@ SET
    */
   public function upgrade_4219(): bool {
     // replace c0m to com
-    CRM_Core_DAO::executeQuery( "update civicrm_email set email = replace(email,'c0m' , 'com'), on_hold=0, hold_date=NULL where email like ('%@%.c0m')" );
+    CRM_Core_DAO::executeQuery("update civicrm_email set email = replace(email,'c0m' , 'com'), on_hold=0, hold_date=NULL where email like ('%@%.c0m')");
     // remove trailing number from domain if email contains '@'
-    CRM_Core_DAO::executeQuery( "update civicrm_email set email = left( email, length(email) - length(REGEXP_SUBSTR(reverse(email),'[0-9]+'))), on_hold=0, hold_date=NULL where SUBSTRING(email, length(email), 1) REGEXP '[0-9]' and email LIKE '%@%.%'" );
+    CRM_Core_DAO::executeQuery("update civicrm_email set email = left( email, length(email) - length(REGEXP_SUBSTR(reverse(email),'[0-9]+'))), on_hold=0, hold_date=NULL where SUBSTRING(email, length(email), 1) REGEXP '[0-9]' and email LIKE '%@%.%'");
     return TRUE;
   }
 
@@ -670,20 +667,24 @@ SET
    */
   public function upgrade_4220(): bool {
     $optionGroups = OptionGroup::get(FALSE)
-      ->addWhere('name', 'IN', ['individual_prefix', 'individual_suffix', 'languages'])
+      ->addWhere('name', 'IN', [
+        'individual_prefix',
+        'individual_suffix',
+        'languages',
+      ])
       ->addSelect('id', 'name')->execute()->indexBy('name');
 
     $prefixOptions = $this->getInUseOptions('prefix_id');
     CRM_Core_DAO::executeQuery('
       DELETE FROM civicrm_option_value
       WHERE option_group_id = ' . $optionGroups['individual_prefix']['id'] . '
-        AND value NOT IN (' . implode(',', $prefixOptions) .')');
+        AND value NOT IN (' . implode(',', $prefixOptions) . ')');
 
     $suffixOptions = $this->getInUseOptions('suffix_id');
     CRM_Core_DAO::executeQuery('
       DELETE FROM civicrm_option_value
       WHERE option_group_id = ' . $optionGroups['individual_suffix']['id'] . '
-        AND value NOT IN (' . implode(',', $suffixOptions) .')');
+        AND value NOT IN (' . implode(',', $suffixOptions) . ')');
 
     $languages = $this->getInUseOptions('preferred_language');
     CRM_Core_DAO::executeQuery("
@@ -691,7 +692,7 @@ SET
       WHERE option_group_id = {$optionGroups['languages']['id']}
         -- extra cautionary check - only ones with cruft-for-labels
         AND label = name
-        AND name NOT IN ('" . implode("', '", $languages) ."')");
+        AND name NOT IN ('" . implode("', '", $languages) . "')");
 
     return TRUE;
   }
@@ -724,7 +725,7 @@ SET
    */
   public function upgrade_4230(): bool {
     CRM_Core_DAO::executeQuery(
-     "UPDATE civicrm_address
+      "UPDATE civicrm_address
       SET street_address = NULL
       WHERE street_address IN
       ('" . implode("','", $this->getBadStrings()) . "')"
@@ -761,7 +762,7 @@ SET
    * @return bool
    * @throws \Civi\Core\Exception\DBQueryException
    */
-  public function upgrade_4250() : bool {
+  public function upgrade_4250(): bool {
     CRM_Core_DAO::executeQuery('
       UPDATE civicrm_address a
       LEFT JOIN civicrm_geocoder_zip_dataset z
@@ -806,7 +807,7 @@ SET
    * @return bool
    * @throws \Civi\Core\Exception\DBQueryException
    */
-  public function upgrade_4253() : bool {
+  public function upgrade_4253(): bool {
     CRM_Core_DAO::executeQuery('
       UPDATE civicrm_contribution
       SET thankyou_date="2023-04-22"
@@ -828,7 +829,7 @@ SET
    * @return bool
    * @throws \Civi\Core\Exception\DBQueryException
    */
-  public function upgrade_4260() : bool {
+  public function upgrade_4260(): bool {
     CRM_Core_DAO::executeQuery("CREATE TEMPORARY TABLE rosie
      Select entity_id as contribution_id
       FROM log_civicrm_value_1_gift_data_7
@@ -848,27 +849,27 @@ SET
    *
    * Segment 1 (GROUP ID: 1685 Gift of $50+ cumulatively in the last 5 years (Jan 1, 2018 - today)
    * Segment 6 (GROUP ID: 1686) Given at least $20+ each year for the last 3 years
-  */
-  public function upgrade_4284() : bool {
+   */
+  public function upgrade_4284(): bool {
     // Segment 1 (GROUP ID: 1685 Gift of $50+ cumulatively in the last 5 years (Jan 1, 2018 - today)
     $segmentOneGroupId = CRM_Core_DAO::singleValueQuery(
-        "SELECT id FROM civicrm_group WHERE title = 'Data Axle $50+ cumulative gift since 2018 T336891'");
+      "SELECT id FROM civicrm_group WHERE title = 'Data Axle $50+ cumulative gift since 2018 T336891'");
     // below for local test, otherwise civicrm production already have this id as 1685 created
-    if(!$segmentOneGroupId) {
-        CRM_Core_DAO::executeQuery(
-          "INSERT INTO civicrm_group (`name`, `title`, `description`, `is_active`, `visibility`, `group_type`) VALUES ('Data_Axle_50_cumulative_gift_si_1685' ,'Data Axle $50+ cumulative gift since 2018 T336891', 'Gift of $50+ cumulatively in the last 5 years (Jan 1, 2018 - today)', 1, 'User and User Admin Only', '1')");
-        $segmentOneGroupId = CRM_Core_DAO::singleValueQuery(
-          "SELECT id FROM civicrm_group WHERE title = 'Data Axle $50+ cumulative gift since 2018 T336891'");
+    if (!$segmentOneGroupId) {
+      CRM_Core_DAO::executeQuery(
+        "INSERT INTO civicrm_group (`name`, `title`, `description`, `is_active`, `visibility`, `group_type`) VALUES ('Data_Axle_50_cumulative_gift_si_1685' ,'Data Axle $50+ cumulative gift since 2018 T336891', 'Gift of $50+ cumulatively in the last 5 years (Jan 1, 2018 - today)', 1, 'User and User Admin Only', '1')");
+      $segmentOneGroupId = CRM_Core_DAO::singleValueQuery(
+        "SELECT id FROM civicrm_group WHERE title = 'Data Axle $50+ cumulative gift since 2018 T336891'");
     }
     $segmentOneContacts = CRM_Core_DAO::executeQuery(
-        "SELECT a.id FROM civicrm_contact a JOIN (SELECT contact_id FROM civicrm_contribution WHERE receive_date > '2018-01-01' GROUP BY contact_id HAVING sum(total_amount) >= 50) b ON a.id = b.contact_id
+      "SELECT a.id FROM civicrm_contact a JOIN (SELECT contact_id FROM civicrm_contribution WHERE receive_date > '2018-01-01' GROUP BY contact_id HAVING sum(total_amount) >= 50) b ON a.id = b.contact_id
     JOIN civicrm_address ca ON a.id = ca.id AND ca.is_primary = 1
     AND ca.country_id = 1228 AND ca.street_address <> ''
     WHERE a.contact_type = 'Individual' AND a.is_deceased = 0 AND a.is_deleted = 0
-    AND a.is_opt_out = 0;") ;
+    AND a.is_opt_out = 0;");
     $segmentOneContactIds = [];
     while ($segmentOneContacts->fetch()) {
-      if( isset($segmentOneContacts->id) ) {
+      if (isset($segmentOneContacts->id)) {
         $segmentOneContactIds[] = $segmentOneContacts->id;
       }
     }
@@ -878,14 +879,14 @@ SET
     $segmentSixGroupId = CRM_Core_DAO::singleValueQuery(
       "SELECT id FROM civicrm_group WHERE title = 'Data Axle $20+ each year since 2020 T336891'");
     // below for local test, otherwise civicrm production already have this id as 1686 created
-    if(!$segmentSixGroupId) {
+    if (!$segmentSixGroupId) {
       CRM_Core_DAO::executeQuery(
         "INSERT INTO civicrm_group (`name`, `title`, `description`, `is_active`, `visibility`, `group_type`) VALUES ('Data_Axle_20_each_year_since_20_1686', 'Data Axle $20+ each year since 2020 T336891', 'Given at least $20+ each year for the last 3 years', 1, 'User and User Admin Only', '1')");
       $segmentSixGroupId = CRM_Core_DAO::singleValueQuery(
         "SELECT id FROM civicrm_group WHERE title = 'Data Axle $20+ each year since 2020 T336891'");
     }
     $segmentSixContacts = CRM_Core_DAO::executeQuery(
-        "SELECT a.id FROM civicrm_contact a JOIN (SELECT contact_id as contact2223, sum(total_amount) AS amount2223 FROM civicrm_contribution WHERE receive_date BETWEEN '2022-06-08' AND '2023-06-07' GROUP BY contact_id HAVING amount2223 >= 20) b ON b.contact2223 = a.id
+      "SELECT a.id FROM civicrm_contact a JOIN (SELECT contact_id as contact2223, sum(total_amount) AS amount2223 FROM civicrm_contribution WHERE receive_date BETWEEN '2022-06-08' AND '2023-06-07' GROUP BY contact_id HAVING amount2223 >= 20) b ON b.contact2223 = a.id
     JOIN (SELECT contact_id AS contact2122, sum(total_amount) AS amount2122 FROM civicrm_contribution WHERE receive_date BETWEEN '2021-06-08' AND '2022-06-07' GROUP BY contact_id HAVING amount2122 >= 20) c ON c.contact2122 = a.id
     JOIN (SELECT contact_id AS contact2021, sum(total_amount) AS amount2021 FROM civicrm_contribution WHERE receive_date BETWEEN '2020-06-08' AND '2021-06-07' GROUP BY contact_id HAVING amount2021 >= 20) d ON d.contact2021 = a.id
     JOIN civicrm_address ca ON a.id = ca.id AND ca.is_primary = 1
@@ -894,7 +895,7 @@ SET
     AND a.is_opt_out = 0");
     $segmentSixContactIds = [];
     while ($segmentSixContacts->fetch()) {
-      if( isset($segmentSixContacts->id) ) {
+      if (isset($segmentSixContacts->id)) {
         $segmentSixContactIds[] = $segmentSixContacts->id;
       }
     }
@@ -906,14 +907,15 @@ SET
    * T336891 Data Axle project
    *
    * NEW Segment 1 (GROUP ID: 1685 Gift at least $50+ each year in the last 5 years (Jan 1, 2018 - today)
+   *
    * @return bool
    */
-  public function upgrade_4286() : bool {
+  public function upgrade_4286(): bool {
     // NEW Segment 1 (GROUP ID: 1685 Gift at least $50+ each year in the last 5 years (Jan 1, 2018 - today)
     $segmentOneGroupId = CRM_Core_DAO::singleValueQuery(
       "SELECT id FROM civicrm_group WHERE title = 'Data Axle $50+ each year since 2018 T336891'");
     // below for local test, otherwise civicrm production already have this id as 1685 created
-    if(!$segmentOneGroupId) {
+    if (!$segmentOneGroupId) {
       CRM_Core_DAO::executeQuery(
         "INSERT INTO civicrm_group (`name`, `title`, `description`, `is_active`, `visibility`, `group_type`) VALUES ('Data_Axle_50_each_year_since_20_1703' ,'Data Axle $50+ each year since 2018 T336891', 'Given at least $50+ each year for the last 5 years (Jan 1, 2018 - today)', 1, 'User and User Admin Only', '1')");
       $segmentOneGroupId = CRM_Core_DAO::singleValueQuery(
@@ -932,13 +934,14 @@ SET
     AND a.is_opt_out = 0");
     $segmentOneContactIds = [];
     while ($segmentOneContacts->fetch()) {
-      if( isset($segmentOneContacts->id) ) {
+      if (isset($segmentOneContacts->id)) {
         $segmentOneContactIds[] = $segmentOneContacts->id;
       }
     }
     $this->insertContacts($segmentOneContactIds, $segmentOneGroupId);
     return TRUE;
   }
+
   /**
    * Add Contacts to Group
    *
@@ -946,12 +949,12 @@ SET
    * @param int $groupId
    */
   protected function insertContacts(array $contacts, int $groupId): void {
-    if( count($contacts) > 0 ) {
+    if (count($contacts) > 0) {
       $sql = 'INSERT INTO civicrm_group_contact (`group_id`, `contact_id`, `status`) VALUES ';
       foreach ($contacts as $contact_id) {
-        $sql .= '(' .$groupId .','. $contact_id. ', "Added"),';
+        $sql .= '(' . $groupId . ',' . $contact_id . ', "Added"),';
       }
-      $sql = substr_replace($sql ,';', -1);
+      $sql = substr_replace($sql, ';', -1);
       CRM_Core_DAO::executeQuery($sql);
     }
   }
@@ -963,7 +966,7 @@ SET
    *
    * @return bool
    */
-  public function upgrade_4300() : bool {
+  public function upgrade_4300(): bool {
     $this->dropIndexes([
       'total_2015_2016',
       'total_2016',
@@ -1000,7 +1003,7 @@ SET
    * @return bool
    * @throws \API_Exception
    */
-  public function upgrade_4305() : bool {
+  public function upgrade_4305(): bool {
     // This is a temporary static which forces the new segment fields to be included.
     // In theory we can remove the whole isSegmentReady() function once this upgrade
     // has run - although it might be nice to see the requirements settle down
@@ -1020,10 +1023,10 @@ SET
    * @return bool
    * @throws \API_Exception
    */
-  public function upgrade_4310() : bool {
+  public function upgrade_4310(): bool {
     $fieldFinder = new CalculatedData();
     $fields = $fieldFinder->getWMFDonorFields();
-    foreach(['donor_segment_id', 'donor_status_id'] as $fieldName) {
+    foreach (['donor_segment_id', 'donor_status_id'] as $fieldName) {
       $optionGroupID = CustomField::get(FALSE)
         ->addWhere('name', '=', $fieldName)
         ->addSelect('option_group_id')
@@ -1112,7 +1115,6 @@ SET
     ];
   }
 
-
   /**
    * Queue updates to change tax amount to 0 where it is NULL.
    *
@@ -1131,7 +1133,7 @@ SET
    *
    * @return bool
    */
-  public function upgrade_4325() : bool {
+  public function upgrade_4325(): bool {
     $sql = 'UPDATE civicrm_contribution SET tax_amount = 0
       WHERE tax_amount IS NULL
       -- limit to 10k records for now as we actually want to deploy this live in a measured fashion
@@ -1161,7 +1163,7 @@ SET
    *
    * @return bool
    */
-  public function upgrade_4330() : bool {
+  public function upgrade_4330(): bool {
     $recurringGiftTypeID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Recurring Gift');
     $recurringCashTypeID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Recurring Gift - Cash');
     // To see what is found swap the first part with
@@ -1215,7 +1217,7 @@ SET
    *
    * @return bool
    */
-  public function upgrade_4335() : bool {
+  public function upgrade_4335(): bool {
     $sql = "
      UPDATE
      civicrm_contribution a
@@ -1318,7 +1320,7 @@ SET
    *
    * @return bool
    */
-  public function upgrade_4340() : bool {
+  public function upgrade_4340(): bool {
     $sql = "
      INSERT INTO
       `civicrm_value_1_gift_data_7` (entity_id, fund, campaign, appeal)
@@ -1352,7 +1354,7 @@ SET
    *
    * @return bool
    */
-  public function upgrade_4350() : bool {
+  public function upgrade_4350(): bool {
     // First change the name of the mailing that is operating as our main mailing to something pattern-similar to the others.
     CRM_Core_DAO::executeQuery('UPDATE civicrm_mailing SET NAME = "thank_you|thank_you.en.html|123456" WHERE id = 102297');
     CRM_Core_DAO::executeQuery("INSERT INTO civicrm_mailing
@@ -1375,7 +1377,7 @@ SET
    *
    * @return bool
    */
-  public function upgrade_4355() : bool {
+  public function upgrade_4355(): bool {
     $sql = 'UPDATE  civicrm_mailing_event_queue queue
 INNER JOIN civicrm_mailing_job j ON j.id = queue.job_id
   SET job_id = 1
@@ -1437,7 +1439,7 @@ LIMIT 2000';
    *
    * @return bool
    */
-  public function upgrade_4375() : bool {
+  public function upgrade_4375(): bool {
     $sql = 'UPDATE civicrm_contribution SET tax_amount = 0
       WHERE tax_amount IS NULL
       -- limit to the next 10k records for now as we actually want to deploy this live in a measured fashion
@@ -1458,7 +1460,7 @@ LIMIT 2000';
       [
         'sql_returns_none' => '
         SELECT id FROM civicrm_contribution
-      WHERE tax_amount IS NULL AND id < 11000 LIMIT 1'
+      WHERE tax_amount IS NULL AND id < 11000 LIMIT 1',
       ]);
     return TRUE;
   }
@@ -1474,7 +1476,7 @@ LIMIT 2000';
    *
    * @return bool
    */
-  public function upgrade_4380() : bool {
+  public function upgrade_4380(): bool {
     $sql = 'UPDATE  civicrm_mailing_event_queue queue
 INNER JOIN civicrm_mailing_job j ON j.id = queue.job_id
 INNER JOIN civicrm_mailing m ON j.mailing_id = m.id
@@ -1485,9 +1487,9 @@ WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1
 AND queue.id BETWEEN %1 AND %2';
     $this->queueSQL($sql, [
       1 => [
-      'value' => 0,
-      'type' => 'Integer',
-      'increment' => 2000,
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 2000,
       ],
       2 => [
         'value' => 2000,
@@ -1495,12 +1497,12 @@ AND queue.id BETWEEN %1 AND %2';
         'increment' => 2000,
       ],
     ],
-    [
-      'sql_returns_none' => 'SELECT queue.id FROM civicrm_mailing_event_queue queue
+      [
+        'sql_returns_none' => 'SELECT queue.id FROM civicrm_mailing_event_queue queue
 INNER JOIN civicrm_mailing_job j ON j.id = queue.job_id
 INNER JOIN civicrm_mailing m ON j.mailing_id = m.id
-WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1 LIMIT 1'
-    ], 2);
+WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1 LIMIT 1',
+      ], 2);
     return TRUE;
   }
 
@@ -1509,7 +1511,7 @@ WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1 LIMIT 1'
    *
    * @return bool
    */
-  public function upgrade_4385() : bool {
+  public function upgrade_4385(): bool {
     $sql = 'DELETE j
       FROM civicrm_mailing_job j
       LEFT JOIN civicrm_mailing_event_queue q ON q.job_id = j.id
@@ -1532,7 +1534,7 @@ WHERE m.name LIKE "thank_you|thank_you%" AND job_id <> 1 LIMIT 1'
            SELECT j.id
            FROM civicrm_mailing_job j
            LEFT JOIN civicrm_mailing_event_queue q ON q.job_id = j.id
-           WHERE q.id IS NULL LIMIT 1'
+           WHERE q.id IS NULL LIMIT 1',
       ], 20);
     return TRUE;
   }
@@ -1576,8 +1578,7 @@ LEFT JOIN civicrm_mailing_event_delivered d ON d.event_queue_id = q.id
 
 WHERE
 d.time_stamp < DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
-AND q.id BETWEEN %1 AND %2"
-    ;
+AND q.id BETWEEN %1 AND %2";
     $this->queueSQL($sql, [
       1 => [
         'value' => 0,
@@ -1590,17 +1591,17 @@ AND q.id BETWEEN %1 AND %2"
         'increment' => 2000,
       ],
     ],
-    [
-      'sql_returns_none' => '
+      [
+        'sql_returns_none' => '
          SELECT q.id
          FROM civicrm_mailing_event_queue q
            LEFT JOIN civicrm_mailing_event_delivered d ON d.event_queue_id = q.id
-         WHERE d.time_stamp < DATE_SUB(CURDATE(), INTERVAL 1 YEAR) LIMIT 1'
-    ],
-    -5);
+         WHERE d.time_stamp < DATE_SUB(CURDATE(), INTERVAL 1 YEAR) LIMIT 1',
+      ],
+      -5);
     return TRUE;
-
   }
+
   public function upgrade_4391(): bool {
     return $this->upgrade_4390();
   }
@@ -1667,6 +1668,7 @@ AND q.id BETWEEN %1 AND %2"
   /**
    * Add an index for lookup up payment tokens. This should speed up donations queue processing
    * for initial recurring donations.
+   *
    * @return bool
    */
   public function upgrade_4400(): bool {
@@ -1738,6 +1740,7 @@ AND q.id BETWEEN %1 AND %2"
 
   /**
    * Rename External_Identifiers table to wmf_external_contact_identifiers
+   *
    * @return bool
    * @throws CRM_Core_Exception
    * @throws \Civi\Core\Exception\DBQueryException
@@ -1793,6 +1796,7 @@ AND q.id BETWEEN %1 AND %2"
 
   /**
    * Clean up some unused tables
+   *
    * @return bool
    * @throws \Civi\Core\Exception\DBQueryException
    */
@@ -1838,7 +1842,7 @@ AND q.id BETWEEN %1 AND %2"
    *
    * @return bool
    */
-  public function upgrade_4415() : bool {
+  public function upgrade_4415(): bool {
     return $this->upgrade_4405();
   }
 
@@ -1857,7 +1861,7 @@ AND q.id BETWEEN %1 AND %2"
    * @return bool
    * @throws \Civi\Core\Exception\DBQueryException
    */
-  public function upgrade_4420() : bool {
+  public function upgrade_4420(): bool {
     CRM_Core_DAO::executeQuery('
       UPDATE civicrm_mailing_event_queue
       SET mailing_id = 1
@@ -1874,10 +1878,11 @@ AND q.id BETWEEN %1 AND %2"
    * fundraiseup_id instead of venmo_user_name.
    *
    * Bug: T351345
+   *
    * @return bool
    * @throws \Civi\Core\Exception\DBQueryException
    */
-  public function upgrade_4425() : bool {
+  public function upgrade_4425(): bool {
     CRM_Core_DAO::executeQuery('
     UPDATE wmf_external_contact_identifiers
     SET fundraiseup_id = venmo_user_name, venmo_user_name = NULL
@@ -1909,7 +1914,7 @@ AND q.id BETWEEN %1 AND %2"
    *
    * @throws \Civi\Core\Exception\DBQueryException
    */
-  public function upgrade_4430() : bool {
+  public function upgrade_4430(): bool {
     CRM_Core_DAO::executeQuery('
     UPDATE civicrm_option_value SET value = "Realized Bequest", name = "Realized_Bequest" WHERE id = 7009');
     return TRUE;
