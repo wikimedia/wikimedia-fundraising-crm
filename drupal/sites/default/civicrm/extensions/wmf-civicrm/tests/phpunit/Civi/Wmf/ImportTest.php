@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  */
 class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
 
+  use Test\EntityTrait;
   use Test\Api3TestTrait;
 
   /**
@@ -97,6 +98,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * 1) the organization can be found based on a nick_name look up
    * 2) the contact can be found based on first name & last name match + relationship
    * 3) the contribution source is populated.
+   *
    * @throws \CRM_Core_Exception
    */
   public function testImportOrganizationWithRelated(): void {
@@ -131,6 +133,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * 1) the organization can be found based on an organization_name look up
    * 2) the contact can be found based on first name & last name match + soft credit
    * 3) the relationship is created.
+   *
    * @throws \CRM_Core_Exception
    */
   public function testImportOrganizationWithSoftCredit(): void {
@@ -142,18 +145,17 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $contribution = Contribution::get()->addWhere('contact_id', '=', $this->ids['Organization'])
       ->addWhere('id', '>', $contributionID)
       ->addSelect(
-      'contribution_extra.gateway',
-      'source'
-    )->execute()->first();
+        'contribution_extra.gateway',
+        'source'
+      )->execute()->first();
 
     $softCredits = ContributionSoft::get()->addWhere('contribution_id', '=', $contribution['id'])->execute();
     $this->assertCount(1, $softCredits);
     $softCredit = $softCredits->first();
-    $this->assertEquals($this->ids['Individual'], $softCredit['contact_id']);
+    $this->assertEquals($this->ids['Contact']['has_soft_credit'], $softCredit['contact_id']);
     // Creating the soft credit should have created a relationship.
-    $relationship = Relationship::get()->addWhere('contact_id_a', '=', $this->ids['Individual'])->execute()->first();
+    $relationship = Relationship::get()->addWhere('contact_id_a', '=', $this->ids['Contact']['has_soft_credit'])->execute()->first();
     $this->assertEquals($this->ids['Organization'], $relationship['contact_id_b']);
-
   }
 
   /**
@@ -239,6 +241,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * 1) the organization can be found based on an organization_name look up
    * 2) the contact can be found based on first name & last name match + soft credit
    * 3) the relationship is created.
+   *
    * @throws \CRM_Core_Exception
    */
   public function testImportIndividualWithSoftCredit(): void {
@@ -249,7 +252,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->runImport($data, 'Individual');
     // The contacts have 2 contributions with soft credits - use greater than filter
     // to exclude the one that already existed.
-    $contribution = Contribution::get()->addWhere('contact_id', '=', $this->ids['Individual'])
+    $contribution = Contribution::get()->addWhere('contact_id', '=', $this->ids['Contact']['has_soft_credit'])
       ->addWhere('id', '>', $contributionID)
       ->addSelect(
         'contribution_extra.gateway',
@@ -261,9 +264,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $softCredit = $softCredits->first();
     $this->assertEquals($this->ids['Organization'], $softCredit['contact_id']);
     // Creating the soft credit should have created a relationship.
-    $relationship = Relationship::get()->addWhere('contact_id_a', '=', $this->ids['Individual'])->execute()->first();
+    $relationship = Relationship::get()->addWhere('contact_id_a', '=', $this->ids['Contact']['has_soft_credit'])->execute()->first();
     $this->assertEquals($this->ids['Organization'], $relationship['contact_id_b']);
-
   }
 
   /**
@@ -326,6 +328,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     }
     return "SELECT " . implode(',', $columnSQL) . " FROM civicrm_contact LIMIT 1";
   }
+
   /**
    * Create the table that would be created on submitting the first (DataSource) form.
    *
@@ -492,7 +495,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
           ],
         ],
         'import_mappings' => $importMappings,
-    ]])->execute()->first()['id'];
+      ],
+    ])->execute()->first()['id'];
     Import::import($this->userJobID)->execute();
   }
 
@@ -504,30 +508,24 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   private function createSoftCreditConnectedContacts() {
     $this->createOrganization();
     // Create 2 'Jane Doe' contacts - we test it finds the second one, who has an employer relationship.
-    Contact::create()->setValues([
+    $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Jane',
-      'last_name' => 'Doe'
-    ])->execute()->first()['id'];
-    $this->ids['Individual'] = Contact::create()
-      ->setValues([
-        'contact_type' => 'Individual',
-        'first_name' => 'Jane',
-        'last_name' => 'Doe'
-      ])
-      ->execute()
-      ->first()['id'];
-    return $this->createSoftCreditLink($this->ids['Organization'], $this->ids['Individual']);
+      'last_name' => 'Doe',
+    ], 'no_soft_credit');
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+    ], 'has_soft_credit');
+    return $this->createSoftCreditLink($this->ids['Contact']['organization'], $this->ids['Contact']['has_soft_credit']);
   }
 
   private function createOrganization(): void {
-    $this->ids['Organization'] = Contact::create()
-      ->setValues([
-        'contact_type' => 'Organization',
-        'organization_name' => 'Trading Name'
-      ])
-      ->execute()
-      ->first()['id'];
+    $this->ids['Organization'] = $this->createTestEntity('Contact', [
+      'contact_type' => 'Organization',
+      'organization_name' => 'Trading Name',
+    ], 'organization')['id'];
   }
 
   /**
