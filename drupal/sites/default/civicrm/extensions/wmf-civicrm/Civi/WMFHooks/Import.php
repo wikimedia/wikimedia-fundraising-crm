@@ -79,12 +79,14 @@ class Import {
         $organizationName = self::resolveOrganization($mappedRow['Contact']);
         $mappedRow['Contribution']['contact_id'] = $mappedRow['Contact']['id'];
         foreach ($mappedRow['SoftCreditContact'] ?? [] as $index => $softCreditContact) {
-          $mappedRow['SoftCreditContact'][$index]['Contact']['id'] = Contact::getIndividualID(
-            $softCreditContact['Contact']['email_primary.email'] ?? NULL,
-            $softCreditContact['Contact']['first_name'] ?? NULL,
-            $softCreditContact['Contact']['last_name'] ?? NULL,
-            $organizationName
-          );
+          if (empty($mappedRow['SoftCreditContact'][$index]['Contact']['id'])) {
+            $mappedRow['SoftCreditContact'][$index]['Contact']['id'] = Contact::getIndividualID(
+              $softCreditContact['Contact']['email_primary.email'] ?? NULL,
+              $softCreditContact['Contact']['first_name'] ?? NULL,
+              $softCreditContact['Contact']['last_name'] ?? NULL,
+              $organizationName
+            );
+          }
         }
       }
       elseif ($mappedRow['Contact']['contact_type'] === 'Individual') {
@@ -117,11 +119,11 @@ class Import {
   }
 
   /**
- * @param array $mappedRow
- *
- * @return array
- * @throws \CRM_Core_Exception
- */
+   * @param array $mappedRow
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
   private static function resolveOrganization(array &$organizationContact): string {
     if (empty($organizationContact['id'])) {
       $organizationName = Contact::resolveOrganizationName((string) $organizationContact['organization_name']);
