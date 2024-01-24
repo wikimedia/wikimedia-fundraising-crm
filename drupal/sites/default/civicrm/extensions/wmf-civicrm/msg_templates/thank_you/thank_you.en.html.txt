@@ -63,6 +63,9 @@ CEO, Wikimedia Foundation
   {/if}
   <p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
 {/if}
+{if $venmo_user_name}
+  <p>Donated with venmo username: {$venmo_user_name}.</p>
+{/if}
 
 <p>If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{$unsubscribe_link}">unsubscribe</a>. Please note we will still send you receipts, like this one, for future donations.</p>
 

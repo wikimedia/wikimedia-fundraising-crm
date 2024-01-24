@@ -138,6 +138,9 @@ class ThankYouExample extends WorkflowMessageExample {
     $messageTemplate->setCurrency(in_array($example, ['CAD', 'EUR'], TRUE) ? $example : 'USD');
     $messageTemplate->setAmount(4000.99);
     $messageTemplate->setTransactionID('CNTCT-567');
+    $messageTemplate->setGateway('braintree');
+    $messageTemplate->setPaymentInstrumentID(107);
+    $messageTemplate->setVenmoUserName('venmojoe');
     $messageTemplate->setReceiveDate(date('Y-m-d'), strtotime('One month ago'));
     if ($example === 'stock') {
       $messageTemplate->setStockValue(5200);

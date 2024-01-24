@@ -400,6 +400,9 @@ class ThankYouTest extends TestCase {
         'receive_date' => '2022-08-09',
         'contact_id' =>  $this->ids['Contact'][0],
         'contribution_id' => $contributionID,
+        'gateway' => 'braintree',
+        'payment_instrument_id' => '107',
+        'venmo_user_name' => 'venmojoe',
       ], $parameters))
       ->setTemplateName('thank_you')->execute()->first();
     return $result;
@@ -428,6 +431,7 @@ class ThankYouTest extends TestCase {
     $this->assertEquals('Mickey, your  donation is one more reason to celebrate.', $result['subject']);
     $this->assertStringContainsString('Dear Mickey,', $result['html']);
     $this->assertStringContainsString('Your donation, number 123', $result['html']);
+    $this->assertStringContainsString('Donated with venmo username: venmojoe.', $result['html']);
     $this->assertStringNotContainsString('We recently resolved a small technical issue', $result['html']);
     $this->assertCurrencyString($result['html'], $firstCurrencyString, $secondCurrencyString);
     return $result;
