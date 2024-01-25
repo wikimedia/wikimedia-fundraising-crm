@@ -1150,16 +1150,16 @@ class CalculatedData extends TriggerHook {
         'static_description' => 'gave recurring more than 3 months & less than 7 months ago',
         'value' => 90,
         'name' => 'recurring_lapsed_recent',
-        'multiple_range' => array_merge([
-          'range' => [
+        'criteria' => [
+          'multiple_range' => array_merge([
             [
               'from' => '6 months ago',
               'to' => '3 months ago',
               'total' => 0.01,
               'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
             ],
-          ],
-        ], $midTierAndMajorGiftsExclusionRange),
+          ], $midTierAndMajorGiftsExclusionRange),
+        ],
       ],
       95 => [
         'label' => 'Deep lapsed Recurring',
