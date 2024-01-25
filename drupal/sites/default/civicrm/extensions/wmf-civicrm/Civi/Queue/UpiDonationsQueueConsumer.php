@@ -41,9 +41,41 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
       // This is the first donation. Set up the subscription.
       $message['contribution_recur_id'] = $this->insertContributionRecur($message);
     }
+
     QueueWrapper::push('donations', $message);
+
+    // Refund donation received after cancelled recurring
+    if (!empty($contributionRecur) && $contributionRecur['contribution_status_id:name'] === 'Cancelled'
+    && $message['gateway_status'] === 'PAID') {
+      Civi::log('wmf')->info(
+        "Refunding UPI payment from cancelled recurring with order ID: "
+        . $message['order_id']
+      );
+      $refundMessage = array_merge([
+        "amount" => $message['gross'],
+        "payment_processor_id" => PaymentProcessor::getPaymentProcessorID($message['gateway']),
+      ], $message);
+      $refundResponse = $this->refundPayment($refundMessage);
+      if ($refundResponse['payment_status'] === 'Refunded') {
+        // Mark donation as refund
+        $refundMessage = [
+          "gateway_parent_id" => $message['gateway_txn_id'],
+          "gross_currency" => $message['currency'],
+          "gross" => $message['gross'],
+          "date" => $message['date'],
+          "gateway" => $message['gateway'],
+          'gateway_refund_id' => $refundResponse['processor_id'],
+          "type" => 'refund',
+        ];
+        QueueWrapper::push('refund', $refundMessage);
+      }
+    }
   }
 
+  protected function refundPayment($refundMessage): array{
+    $result = civicrm_api3('PaymentProcessor', 'refund', $refundMessage);
+    return $result['values'][0];
+  }
   /**
    * Finds an active contribution_recur record using a particular payment_token value
    *
