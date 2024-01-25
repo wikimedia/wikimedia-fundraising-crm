@@ -173,6 +173,34 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals('ERROR', $import[1]['_status']);
   }
 
+  public function testIDUsedIfPresent() {
+    $this->createOrganization();
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'employer_id' => $this->ids['Contact']['organization'],
+    ], 'individual_1');
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'employer_id' => $this->ids['Contact']['organization'],
+    ], 'individual_2');
+    $data = $this->setupImport(['contact_id' => ""]);
+    $this->fillImportRow($data);
+    $this->runImport($data);
+    $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
+    $this->assertEquals('ERROR', $import[0]['_status']);
+    $this->assertStringContainsString('Multiple contact matches with employer connection: ', $import[0]['_status_message']);
+
+    // Re-run with the contact ID specified
+    Import::update($this->userJobID)->setValues(['contact_id' => $this->ids['Contact']['individual_2']])->addWhere('_id', '=', 1)->execute();
+    $this->runImport($data);
+    $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
+    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
+  }
+
   /**
    * Test duplicates are imported for organizations.
    *
@@ -444,6 +472,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
           ];
           break;
 
+        case 'contact_id':
+          $columnName = 'id';
         case 'first_name':
         case 'last_name':
           $importMappings[] = [
