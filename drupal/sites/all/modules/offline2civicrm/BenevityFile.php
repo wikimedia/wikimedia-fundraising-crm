@@ -4,6 +4,7 @@ use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\Contact;
 use Civi\WMFHelpers\Contribution;
+use Civi\WMFHooks\Import;
 
 class BenevityFile extends ChecksFile {
 
@@ -65,7 +66,8 @@ class BenevityFile extends ChecksFile {
     foreach ($moneyFields as $moneyField) {
       $msg[$moneyField] = isset($msg[$moneyField]) ? (str_replace(',', '', $msg[$moneyField])) : 0;
     }
-    $msg['gift_source'] = 'Payroll Deduction';
+
+    $msg['gift_source'] = Import::getTransformedField('gift_source', $msg['gift_source'] ?? '');
     foreach ($msg as $field => $value) {
       if ($value === 'Not shared by donor') {
         $msg[$field] = '';
@@ -101,7 +103,6 @@ class BenevityFile extends ChecksFile {
       throw new WMFException(WMFException::INVALID_MESSAGE, $e->getMessage());
     }
     $msg['date'] = $this->additionalFields['date']['year'] . '-' . $this->additionalFields['date']['month'] . '-' . $this->additionalFields['date']['day'];
-
   }
 
   /**
@@ -151,9 +152,8 @@ class BenevityFile extends ChecksFile {
     }
   }
 
-  protected function getDefaultValues() {
+  protected function getDefaultValues(): array {
     return [
-      'source' => 'Matched gift',
       'payment_method' => 'EFT',
       'contact_type' => 'Individual',
       'country' => 'US',
@@ -165,7 +165,7 @@ class BenevityFile extends ChecksFile {
       // but we don't actually know what date they did that on,
       // and recording it in our system would seem to imply we know for
       // sure it happened (as opposed to Benevity says it happens).
-      'no_thank_you' => 1
+      'no_thank_you' => 1,
     ];
   }
 
@@ -174,7 +174,7 @@ class BenevityFile extends ChecksFile {
    *
    * @return array
    */
-  protected function getFieldMapping() {
+  protected function getFieldMapping(): array {
     $mapping = parent::getFieldMapping();
     $mapping['Company'] = 'matching_organization_name';
     // $mapping['Project'] = field just contains 'Wikimedia' intermittantly. Ignore.
@@ -195,9 +195,7 @@ class BenevityFile extends ChecksFile {
     $mapping['Currency'] = 'original_currency';
     $mapping['Cause Support Fee'] = 'fee';
     $mapping['Merchant Fee'] = 'merchant_fee_amount';
-    // The parent sets this mapping - but it's expected to be in the format USD 15.15 - which it isn't.
-    // We should find & rework the reason for this source-handling (if any). But for now just handle in Benevity.
-    unset($mapping['Source']);
+    $mapping['Source'] = 'gift_source';
     return $mapping;
   }
 

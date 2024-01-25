@@ -5,7 +5,7 @@ namespace Civi\WorkflowMessage;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\EntityTag;
-use Civi\Api4\WMFLink;
+use CRM_Core_PseudoConstant;
 
 /**
  * This is the template class for previewing WMF end of year thank you emails.
@@ -35,13 +35,32 @@ use Civi\Api4\WMFLink;
  * @method $this setGiftSource(string $giftSource)
  * @method string getGiftSource()
  * @method $this setTransactionID(string $transactionID)
- * @method $this getEmailGreetingDisplay(string $emailGreetingDisplay)
+ * @method $this setVenmoUserName(?string $venmoUserName)
+ * @method int getPaymentInstrumentID()
+ * @method int setPaymentInstrumentID(int $paymentInstrumentID)
+ * @method string getGateway()
+ * @method $this setGateway(string $gateway)
+ * @method $this getEmailGreetingDisplay()
  * @method $this setEmailGreetingDisplay(string $emailGreetingDisplay)
  */
 class ThankYou extends GenericWorkflowMessage {
   use UnsubscribeTrait;
 
   public const WORKFLOW = 'thank_you';
+
+  /**
+   * Contribution gateway.
+   *
+   * @var string
+   */
+  public $gateway;
+
+  /**
+   * Contribution Payment Instrument ID for payment method.
+   *
+   * @var int
+   */
+  public $paymentInstrumentID;
 
   /**
    * Contribution ID.
@@ -203,6 +222,15 @@ class ThankYou extends GenericWorkflowMessage {
   public $transactionID;
 
   /**
+   * If donate with venmo, retrieve username for additional info
+   *
+   * @var string
+   *
+   * @scope tplParams as venmo_user_name
+   */
+  public $venmoUserName;
+
+  /**
    * Have we restarted the recurring due to a technical issue.
    *
    * @var bool
@@ -279,6 +307,8 @@ class ThankYou extends GenericWorkflowMessage {
       'id' => 'contributionID',
       'contact_id' => 'contactID',
       'receive_date' => 'receiveDate',
+      'payment_instrument_id' => 'paymentInstrumentID',
+      'contribution_extra.gateway' => 'gateway',
       'contribution_extra.original_currency' => 'currency',
       'contribution_extra.original_amount' => 'amount',
       'Stock_Information.Description_of_Stock' => 'descriptionOfStock',
@@ -320,6 +350,7 @@ class ThankYou extends GenericWorkflowMessage {
       'email_primary.email' => 'email',
       'preferred_language' => 'locale',
       'organization_name' => 'organizationName',
+      'External_Identifiers.venmo_user_name' => 'venmoUserName',
     ];
   }
 
@@ -392,6 +423,23 @@ class ThankYou extends GenericWorkflowMessage {
    */
   public function getTransactionID(): string {
     return $this->transactionID ?? 'CNTCT-' . $this->contactID;
+  }
+
+  /**
+   * if current donation is venmo, which via braintree not fundraiseUp will return username
+   *
+   * @return ?string
+   */
+  public function getVenmoUserName(): ?string {
+    if (($this->gateway == 'braintree' && CRM_Core_PseudoConstant::getName(
+      'CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $this->paymentInstrumentID) === 'Venmo')
+    || (!$this->gateway && !$this->paymentInstrumentID))
+    {
+      return $this->venmoUserName;
+    }
+    else {
+      return null;
+    }
   }
 
   /**

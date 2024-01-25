@@ -181,6 +181,7 @@ class Render extends AbstractAction {
       'email_greeting_display' => 'email_greeting_display',
       'id' => 'contact_id',
       'organization_name' => 'organization_name',
+      'External_Identifiers.venmo_user_name' => 'venmo_user_name',
     ];
   }
 
@@ -192,6 +193,8 @@ class Render extends AbstractAction {
       'receive_date' => 'receive_date',
       'trxn_id' => 'trxn_id',
       'id' => 'contribution_id',
+      'payment_instrument_id' => 'payment_instrument_id',
+      'contribution_extra.gateway' => 'gateway',
       'contribution_extra.original_amount' => 'amount',
       'contribution_extra.original_currency' => 'currency',
       'Stock_Information.Description_of_Stock' => 'description_of_stock',
