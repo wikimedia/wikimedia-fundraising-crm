@@ -254,6 +254,13 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextDateForMonth( (array) $recur_record),
       'id' => $recur_record->id,
     ];
+    // instead of use CRM_Core_Payment_Scheduler::getNextDateForMonth( (array) $recur_record),
+    // use original data since old paypal donations has a wrong cycle_day
+    if ( strpos($msg['gateway'], 'paypal') === 0 && date('j', strtotime(wmf_common_date_unix_to_civicrm($date))) !== $recur_record->cycle_day ) {
+      $update_params['cycle_day'] = date('j', strtotime(wmf_common_date_unix_to_civicrm($date)));
+      $update_params['next_sched_contribution_date'] = wmf_common_date_unix_to_civicrm(strtotime("+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $date));
+    }
+
     if (!empty($msg['is_auto_rescue_retry'])) {
       $update_params['contribution_status_id:name'] = "Completed";
     }
