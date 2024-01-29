@@ -1602,8 +1602,15 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     $updatedRecur = ContributionRecur::get(FALSE)
       ->addWhere('id', '=', $contributionRecur['id'])
-      ->addSelect('contribution_status_id:name')->execute()->first();
+      ->setSelect([
+        'contribution_status_id:name',
+        'next_sched_contribution_date'
+      ])->execute()->first();
     $this->assertEquals('Pending', $updatedRecur['contribution_status_id:name']);
+    $this->assertGreaterThanOrEqual(
+      new \DateTime('+10 days'),
+      new \DateTime($updatedRecur['next_sched_contribution_date'])
+    );
   }
 
 }
