@@ -31,6 +31,7 @@ $instruments = [
   'Boleto' => 'Boleto',
   'Bpay' => 'Bpay',
   'Cash' => 'Cash',
+  'Stock' => 'Stock',
   // Cashu exists on live but has no contributions.
   'Cashu' =>  'Cashu',
   'Check' => 'Check',

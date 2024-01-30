@@ -349,6 +349,31 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals('soft_credit_imported', $import['_status']);
   }
 
+  public function testStockSetsTimeToNoon() {
+    $this->imitateAdminUser();
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+    ], 'jane_doe');
+    $data = [
+      'financial_type_id' => 'Stock',
+      'total_amount' => 50,
+      'contribution_contact_id' => $this->ids['Contact']['jane_doe'],
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email' => 'jane@example.com',
+      'receive_date' => '2024-01-31 00:00:00',
+    ];
+    $this->createImportTable($data);
+    $this->runImport($data, 'Individual');
+    $contributions = Contribution::get()->addWhere(
+      'contact_id', '=', $this->ids['Contact']['jane_doe']
+    )->execute();
+    $this->assertCount(1, $contributions);
+    $this->assertEquals('2024-01-31 12:00:00', $contributions[0]['receive_date']);
+  }
+
   private function getSelectQuery($columns): string {
     $columnSQL = [];
     foreach ($columns as $column => $data) {
@@ -449,7 +474,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    *
    * @throws \CRM_Core_Exception
    */
-  private function runImport(array $data, string $mainContactType = 'Organization'): void {
+  private function runImport(array $data, string $mainContactType = 'Organization', bool $useSoftCredit = TRUE): void {
     $softCreditTypeID = $this->getEmploymentSoftCreditType();
     $importMappings = [];
     foreach (array_keys($data) as $index => $columnName) {
