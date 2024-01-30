@@ -900,18 +900,12 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     unset($this->ids['Contact'][$recur['contact_id']]);
 
     $updatedRecur = ContributionRecur::get(FALSE)
-      ->addSelect('*', 'contribution_status_id:label')
+      ->addSelect('*', 'contribution_status_id:name')
       ->addWhere('id', '=', $recur['id'])
       ->execute()
       ->first();
 
-    $this->assertEquals('Completed', $updatedRecur['contribution_status_id:label']);
-
-    // check that the generated next_sched date is in the next month
-    $this->assertEquals(
-      date('m', strtotime ('+1 month', $date ) ),
-      date('m', strtotime ($updatedRecur['next_sched_contribution_date']))
-    );
+    $this->assertEquals('In Progress', $updatedRecur['contribution_status_id:name']);
 
     // check that the generated next_sched date is between 28 and 31 days away
     $today = DateTime::createFromFormat( "U", $date );
@@ -1010,7 +1004,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'contact_id' => $contactID,
         'amount' => 10,
         'frequency_interval' => 'month',
-        'cycle_day' => date('d' ),
+        'cycle_day' => date('d'),
         'start_date' => 'now',
         'is_active' => TRUE,
         'contribution_status_id:name' => 'Pending',

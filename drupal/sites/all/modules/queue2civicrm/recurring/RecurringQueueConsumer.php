@@ -250,19 +250,30 @@ class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
       // TODO: Remove this when audit and IPN are sending normalized messages
       $date = $msg['payment_date'];
     }
+
     $update_params = [
-      'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextDateForMonth( (array) $recur_record),
       'id' => $recur_record->id,
     ];
-    // instead of use CRM_Core_Payment_Scheduler::getNextDateForMonth( (array) $recur_record),
-    // use original data since old paypal donations has a wrong cycle_day
-    if ( strpos($msg['gateway'], 'paypal') === 0 && date('j', strtotime(wmf_common_date_unix_to_civicrm($date))) !== $recur_record->cycle_day ) {
+    $scheduleCalculationParams = [
+      'cycle_day' => $recur_record->cycle_day,
+      'frequency_interval' => $recur_record->frequency_interval,
+    ];
+    // Old PayPal donations didn't record the cycle_day, so use the donation's day and update the
+    // old record. Should be able to remove this code in March or April 2024 once all old records
+    // are updated.
+    if (
+      strpos($msg['gateway'], 'paypal') === 0 &&
+      date('j', strtotime(wmf_common_date_unix_to_civicrm($date))) !== $recur_record->cycle_day
+    ) {
       $update_params['cycle_day'] = date('j', strtotime(wmf_common_date_unix_to_civicrm($date)));
-      $update_params['next_sched_contribution_date'] = wmf_common_date_unix_to_civicrm(strtotime("+" . $recur_record->frequency_interval . " " . $recur_record->frequency_unit, $date));
+      $scheduleCalculationParams['cycle_day'] = $update_params['cycle_day'];
     }
+    $update_params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextDateForMonth(
+      $scheduleCalculationParams
+    );
 
     if (!empty($msg['is_auto_rescue_retry'])) {
-      $update_params['contribution_status_id:name'] = "Completed";
+      $update_params['contribution_status_id:name'] = 'In Progress';
     }
     $this->updateContributionRecurWithErrorHandling($update_params);
 
