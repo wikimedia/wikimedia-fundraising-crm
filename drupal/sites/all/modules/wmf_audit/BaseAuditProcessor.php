@@ -704,7 +704,7 @@ abstract class BaseAuditProcessor {
     $earliest -= 1;
 
     //get the array of all the logs we want to check
-    $logs_to_grab = wmf_common_date_get_date_gap($earliest, $latest);
+    $logs_to_grab = $this->wmf_common_date_get_date_gap($earliest, $latest);
 
     if (empty($logs_to_grab)) {
       wmf_audit_log_error(__FUNCTION__ . ': No logs identified as grabbable. Aborting.', 'RUNTIME_ERROR');
@@ -1480,6 +1480,29 @@ abstract class BaseAuditProcessor {
   private function wmf_common_date_get_today_string() {
     $timestamp = time();
     return wmf_common_date_format_string($timestamp);
+  }
+
+  /**
+   * Get an array of all the valid dates between $start(exclusive) and
+   * $end(inclusive)
+   *
+   * @param int $start Date string in the format yyyymmdd
+   * @param int $end Date string in the format yyyymmdd
+   *
+   * @return array all date strings between the $start and $end values
+   */
+  private function wmf_common_date_get_date_gap($start, $end) {
+    $startdate = date_create_from_format(WMF_DATEFORMAT, (string) $start);
+    $enddate = date_create_from_format(WMF_DATEFORMAT, (string) $end);
+
+    $next = $startdate;
+    $interval = new DateInterval('P1D');
+    $ret = [];
+    while ($next < $enddate) {
+      $next = date_add($next, $interval);
+      $ret[] = wmf_common_date_format_string($next);
+    }
+    return $ret;
   }
 
 }
