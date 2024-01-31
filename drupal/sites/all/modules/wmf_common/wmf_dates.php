@@ -22,21 +22,6 @@ function wmf_common_date_parse_string($date) {
 }
 
 /**
- * Adds a number of days to a specified date
- *
- * @param string $date Date in a format that date_create recognizes.
- * @param int $add Number of days to add
- *
- * @return integer Date in WMF_DATEFORMAT
- */
-function wmf_common_date_add_days($date, $add) {
-  $date = date_create($date);
-  date_add($date, date_interval_create_from_date_string("$add days"));
-
-  return date_format($date, WMF_DATEFORMAT);
-}
-
-/**
  * Convert a unix timestamp to formatted date, in UTC.
  *
  * Ordinarily, you will want to use the pre-formatted functions below to ensure
@@ -93,16 +78,4 @@ function wmf_common_date_unix_to_civicrm($unixtime) {
  */
 function wmf_common_date_unix_to_sql($unixtime) {
   return wmf_common_date_format_using_utc("YmdHis", $unixtime);
-}
-
-/**
- * Convert civi api Y-m-d H:i:s to unix seconds
- *
- * @param string $date as Civi timestamp, returned by an api call
- *
- * @return int unix epoch seconds
- */
-function wmf_common_date_civicrm_to_unix($date) {
-  return DateTime::createFromFormat('Y-m-d H:i:s', $date, new DateTimeZone('UTC'))
-    ->getTimestamp();
 }
