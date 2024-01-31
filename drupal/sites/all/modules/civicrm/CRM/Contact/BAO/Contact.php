@@ -1272,12 +1272,7 @@ WHERE     civicrm_contact.id = " . CRM_Utils_Type::escape($id, 'Integer');
       $fields = CRM_Contact_DAO_Contact::import();
 
       // get the fields thar are meant for contact types
-      if (in_array($contactType, [
-        'Individual',
-        'Household',
-        'Organization',
-        'All',
-      ])) {
+      if (in_array($contactType, ['Individual', 'Household', 'Organization', 'All'])) {
         $fields = array_merge($fields, CRM_Core_OptionValue::getFields('', $contactType));
       }
 
@@ -1431,12 +1426,7 @@ WHERE     civicrm_contact.id = " . CRM_Utils_Type::escape($id, 'Integer');
         $fields = CRM_Contact_DAO_Contact::export();
 
         // The fields are meant for contact types.
-        if (in_array($contactType, [
-          'Individual',
-          'Household',
-          'Organization',
-          'All',
-        ])) {
+        if (in_array($contactType, ['Individual', 'Household', 'Organization', 'All'])) {
           $fields = array_merge($fields, CRM_Core_OptionValue::getFields('', $contactType));
         }
         // add current employer for individuals
@@ -2642,13 +2632,17 @@ LEFT JOIN civicrm_email    ON ( civicrm_contact.id = civicrm_email.contact_id )
         return CRM_Case_BAO_Case::caseCount($contactId);
 
       case 'activity':
-        $input = [
-          'contact_id' => $contactId,
-          'admin' => FALSE,
-          'caseId' => NULL,
-          'context' => 'activity',
-        ];
-        return CRM_Activity_BAO_Activity::getActivitiesCount($input);
+        $excludeCaseActivities = (CRM_Core_Component::isEnabled('CiviCase') && !\Civi::settings()->get('civicaseShowCaseActivities'));
+        $activityApi = \Civi\Api4\Activity::get(TRUE)
+          ->selectRowCount()
+          ->addJoin('ActivityContact AS activity_contact', 'INNER')
+          ->addWhere('activity_contact.contact_id', '=', $contactId)
+          ->addWhere('is_test', '=', FALSE)
+          ->addGroupBy('id');
+        if ($excludeCaseActivities) {
+          $activityApi->addWhere('case_id', 'IS EMPTY');
+        }
+        return $activityApi->execute()->count();
 
       case 'mailing':
         $params = ['contact_id' => $contactId];
@@ -3057,10 +3051,7 @@ LEFT JOIN civicrm_email    ON ( civicrm_contact.id = civicrm_email.contact_id )
           continue;
         }
         // build directly accessible action menu.
-        if (in_array($values['ref'], [
-          'view-contact',
-          'edit-contact',
-        ])) {
+        if (in_array($values['ref'], ['view-contact', 'edit-contact'])) {
           $contextMenu['primaryActions'][$key] = [
             'title' => $values['title'],
             'ref' => $values['ref'],
@@ -3169,9 +3160,7 @@ LEFT JOIN civicrm_email    ON ( civicrm_contact.id = civicrm_email.contact_id )
         ) {
           $hasAllPermissions = TRUE;
         }
-        elseif (in_array($menuOptions['ref'], [
-          'new-email',
-        ])) {
+        elseif (in_array($menuOptions['ref'], ['new-email'])) {
           // grant permissions for these tasks.
           $hasAllPermissions = TRUE;
         }
@@ -3608,7 +3597,7 @@ LEFT JOIN civicrm_address ON ( civicrm_address.contact_id = civicrm_contact.id )
    * @param array $record
    * @param $userID
    * @return bool
-   * @see CRM_Core_DAO::checkAccess
+   * @see \Civi\Api4\Utils\CoreUtil::checkAccessRecord
    */
   public static function _checkAccess(string $entityName, string $action, array $record, $userID): bool {
     switch ($action) {

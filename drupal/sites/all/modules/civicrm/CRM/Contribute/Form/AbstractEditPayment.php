@@ -37,6 +37,11 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
 
   public $_action;
 
+  /**
+   * @var int
+   *
+   * @deprecated
+   */
   public $_bltID;
 
   public $_fields = [];
@@ -69,13 +74,6 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
    * @var array
    */
   protected $_paymentProcessors = [];
-
-  /**
-   * Instance of the payment processor object.
-   *
-   * @var CRM_Core_Payment
-   */
-  protected $_paymentObject;
 
   /**
    * Entity that $this->_id relates to.
@@ -160,8 +158,6 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
    */
   public $_pledgeValues;
 
-  public $_contributeMode = 'direct';
-
   public $_context;
 
   public $_compId;
@@ -242,6 +238,24 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
    * @var string
    */
   protected $invoiceID;
+
+  /**
+   * Provide support for extensions that are used to being able to retrieve _lineItem
+   *
+   * Note extension should call getPriceSetID() and getLineItems() directly.
+   * They are supported for external use per the api annotation.
+   *
+   * @param string $name
+   *
+   * @noinspection PhpUnhandledExceptionInspection
+   */
+  public function __get($name) {
+    if ($name === '_params') {
+      CRM_Core_Error::deprecatedWarning('attempt to access undefined property _params - use externally supported function getSubmittedValues()');
+      return $this->getSubmittedValues();
+    }
+    CRM_Core_Error::deprecatedWarning('attempt to access invalid property :' . $name);
+  }
 
   /**
    * Get the unique invoice ID.
@@ -414,36 +428,26 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
   }
 
   /**
-   * Get current currency from DB or use default currency.
-   *
-   * @param array $submittedValues
-   *
-   * @return string
-   */
-  public function getCurrency($submittedValues = []) {
-    return $submittedValues['currency'] ?? $this->_values['currency'] ?? CRM_Core_Config::singleton()->defaultCurrency;
-  }
-
-  /**
    * @param array $submittedValues
    *
    * @return mixed
    */
   public function unsetCreditCardFields($submittedValues) {
     //Offline Contribution.
+    $billingLocationTypeID = CRM_Core_BAO_LocationType::getBilling();
     $unsetParams = [
       'payment_processor_id',
-      "email-{$this->_bltID}",
+      "email-{$billingLocationTypeID}",
       'hidden_buildCreditCard',
       'hidden_buildDirectDebit',
       'billing_first_name',
       'billing_middle_name',
       'billing_last_name',
       'street_address-5',
-      "city-{$this->_bltID}",
-      "state_province_id-{$this->_bltID}",
-      "postal_code-{$this->_bltID}",
-      "country_id-{$this->_bltID}",
+      "city-{$billingLocationTypeID}",
+      "state_province_id-{$billingLocationTypeID}",
+      "postal_code-{$billingLocationTypeID}",
+      "country_id-{$billingLocationTypeID}",
       'credit_card_number',
       'cvv2',
       'credit_card_exp_date',
@@ -556,15 +560,15 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
     foreach (array_keys($this->_fields) as $name) {
       $fields[$name] = 1;
     }
-
-    $fields["address_name-{$this->_bltID}"] = 1;
+    $billingLocationID = CRM_Core_BAO_LocationType::getBilling();
+    $fields["address_name-{$billingLocationID}"] = 1;
 
     //ensure we don't over-write the payer's email with the member's email
     if ($contactID == $this->_contactID) {
-      $fields["email-{$this->_bltID}"] = 1;
+      $fields["email-{$billingLocationID}"] = 1;
     }
 
-    [$hasBillingField, $addressParams] = CRM_Contribute_BAO_Contribution::getPaymentProcessorReadyAddressParams($this->_params, $this->_bltID);
+    [$hasBillingField, $addressParams] = CRM_Contribute_BAO_Contribution::getPaymentProcessorReadyAddressParams($this->_params);
     $fields = $this->formatParamsForPaymentProcessor($fields);
 
     if ($hasBillingField) {
@@ -601,12 +605,13 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
   protected function getBillingDefaults($defaults) {
     // set default country from config if no country set
     $config = CRM_Core_Config::singleton();
-    if (empty($defaults["billing_country_id-{$this->_bltID}"])) {
-      $defaults["billing_country_id-{$this->_bltID}"] = $config->defaultContactCountry;
+    $billingLocationTypeID = CRM_Core_BAO_LocationType::getBilling();
+    if (empty($defaults["billing_country_id-{$billingLocationTypeID}"])) {
+      $defaults["billing_country_id-{$billingLocationTypeID}"] = \Civi::settings()->get('defaultContactCountry');
     }
 
-    if (empty($defaults["billing_state_province_id-{$this->_bltID}"])) {
-      $defaults["billing_state_province_id-{$this->_bltID}"] = $config->defaultContactStateProvince;
+    if (empty($defaults["billing_state_province_id-{$billingLocationTypeID}"])) {
+      $defaults["billing_state_province_id-{$billingLocationTypeID}"] = \Civi::settings()->get('defaultContactStateProvince');
     }
 
     $billingDefaults = $this->getProfileDefaults('Billing', $this->_contactID);
@@ -678,14 +683,14 @@ class CRM_Contribute_Form_AbstractEditPayment extends CRM_Contact_Form_Task {
     return $title;
   }
 
-  protected function assignContactEmailDetails() {
+  protected function assignContactEmailDetails(): void {
     if ($this->getContactID()) {
       [$displayName] = CRM_Contact_BAO_Contact_Location::getEmailDetails($this->getContactID());
       if (!$displayName) {
         $displayName = civicrm_api3('contact', 'getvalue', ['id' => $this->getContactID(), 'return' => 'display_name']);
       }
-      $this->assign('displayName', $displayName);
     }
+    $this->assign('displayName', $displayName ?? NULL);
   }
 
   protected function assignContactID(): void {

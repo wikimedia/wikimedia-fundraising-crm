@@ -1590,13 +1590,7 @@ contact_id_a IN ( %1 ) OR contact_id_b IN ( %1 ) AND id IN (" . implode(',', $re
       return TRUE;
     }
 
-    $recordsFound = (int) CRM_Core_DAO::singleValueQuery("SELECT COUNT(*) FROM civicrm_relationship WHERE relationship_type_id IN ( " . implode(',', $membershipTypeRelationshipTypeIDs) . " ) AND contact_id_a IN ( %1, %2 ) AND contact_id_b IN ( %1, %2 ) AND id NOT IN (" . implode(',', $relIds) . ")", $relParamas);
-
-    if ($recordsFound) {
-      return FALSE;
-    }
-
-    return TRUE;
+    return !CRM_Core_DAO::singleValueQuery("SELECT COUNT(*) FROM civicrm_relationship WHERE relationship_type_id IN ( " . implode(',', $membershipTypeRelationshipTypeIDs) . " ) AND contact_id_a IN ( %1, %2 ) AND contact_id_b IN ( %1, %2 ) AND id NOT IN (" . implode(',', $relIds) . ")", $relParamas);
   }
 
   /**
@@ -2277,7 +2271,7 @@ SELECT count(*)
    * @param array $record
    * @param int $userID
    * @return bool
-   * @see CRM_Core_DAO::checkAccess
+   * @see \Civi\Api4\Utils\CoreUtil::checkAccessRecord
    */
   public static function _checkAccess(string $entityName, string $action, array $record, int $userID): bool {
     // Delegate relationship permissions to contacts a & b
@@ -2285,7 +2279,7 @@ SELECT count(*)
       if (empty($record["contact_id_$ab"]) && !empty($record['id'])) {
         $record["contact_id_$ab"] = CRM_Core_DAO::getFieldValue(__CLASS__, $record['id'], "contact_id_$ab");
       }
-      if (!\Civi\Api4\Utils\CoreUtil::checkAccessDelegated('Contact', 'update', ['id' => $record["contact_id_$ab"]], $userID)) {
+      if (!empty($record["contact_id_$ab"]) && !\Civi\Api4\Utils\CoreUtil::checkAccessDelegated('Contact', 'update', ['id' => $record["contact_id_$ab"]], $userID)) {
         return FALSE;
       }
     }

@@ -18,7 +18,7 @@
       mode: '@'
     },
     controllerAs: 'editor',
-    controller: function($scope, crmApi4, afGui, $parse, $timeout, $location) {
+    controller: function($scope, crmApi4, afGui, $parse, $timeout) {
       var ts = $scope.ts = CRM.ts('org.civicrm.afform_admin');
 
       this.afform = null;
@@ -328,6 +328,7 @@
         return editor.afform;
       };
 
+      // Get all entities or a filtered list
       this.getEntities = function(filter) {
         return filter ? _.filter($scope.entities, filter) : _.toArray($scope.entities);
       };
@@ -351,6 +352,44 @@
         }
       };
 
+      // Gets complete field defn, merging values from the field with default values
+      function fillFieldDefn(entityType, field) {
+        var spec = _.cloneDeep(afGui.getField(entityType, field.name));
+        return _.merge(spec, field.defn || {});
+      }
+
+      // Get all fields on the form for a particular entity
+      this.getEntityFields = function(entityName) {
+        var fieldsets = afGui.findRecursive(editor.layout['#children'], {'af-fieldset': entityName}),
+          entityType = editor.getEntity(entityName).type,
+          entityFields = {fields: [], joins: []},
+          isJoin = function(item) {
+            return _.isPlainObject(item) && ('af-join' in item);
+          };
+        _.each(fieldsets, function(fieldset) {
+          _.each(afGui.getFormElements(fieldset['#children'], {'#tag': 'af-field'}, isJoin), function(field) {
+            if (field.name) {
+              entityFields.fields.push(fillFieldDefn(entityType, field));
+            }
+          });
+          _.each(afGui.getFormElements(fieldset['#children'], isJoin), function(join) {
+            var joinFields = [];
+            _.each(afGui.getFormElements(join['#children'], {'#tag': 'af-field'}), function(field) {
+              if (field.name) {
+                joinFields.push(fillFieldDefn(join['af-join'], field));
+              }
+            });
+            if (joinFields.length) {
+              entityFields.joins.push({
+                entity: join['af-join'],
+                fields: joinFields
+              });
+            }
+          });
+        });
+        return entityFields;
+      };
+
       this.toggleNavigation = function() {
         if (editor.afform.navigation) {
           editor.afform.navigation = null;
@@ -361,6 +400,23 @@
             label: editor.afform.title,
             weight: 0
           };
+        }
+      };
+
+      this.toggleManualProcessing = function() {
+        if (editor.afform.manual_processing) {
+          editor.afform.manual_processing = null;
+        } else {
+          editor.afform.create_submission = true;
+        }
+      };
+
+      this.toggleEmailVerification = function() {
+        if (editor.afform.allow_verification_by_email) {
+          editor.afform.allow_verification_by_email = null;
+        } else {
+          editor.afform.create_submission = true;
+          editor.afform.manual_processing = true;
         }
       };
 
@@ -576,6 +632,10 @@
         var afform = JSON.parse(angular.toJson(editor.afform));
         // This might be set to undefined by validation
         afform.server_route = afform.server_route || '';
+        // create submission is required if email confirmation is selected.
+        if (afform.manual_processing || afform.allow_verification_by_email) {
+          afform.create_submission = true;
+        }
         $scope.saving = true;
         crmApi4('Afform', 'save', {formatWhitespace: true, records: [afform]})
           .then(function (data) {

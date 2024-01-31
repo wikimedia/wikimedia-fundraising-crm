@@ -167,7 +167,7 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
 
     $this->assign('crmPermissions', new CRM_Core_Smarty_Permissions());
 
-    if ($config->debug) {
+    if ($config->debug || str_contains(CIVICRM_UF_BASEURL, 'localhost')) {
       $this->error_reporting = E_ALL;
     }
   }
@@ -215,7 +215,7 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
    */
   public function ensureVariablesAreAssigned(array $variables): void {
     foreach ($variables as $variable) {
-      if (!isset($this->get_template_vars()[$variable])) {
+      if (!isset($this->getTemplateVars()[$variable])) {
         $this->assign($variable);
       }
     }
@@ -234,7 +234,7 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
       'template' => FALSE,
     ];
 
-    $tabs = $this->get_template_vars('tabHeader');
+    $tabs = $this->getTemplateVars('tabHeader');
     foreach ((array) $tabs as $i => $tab) {
       $tabs[$i] = array_merge($defaults, $tab);
     }
@@ -269,7 +269,7 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
    * @param $value
    */
   public function appendValue($name, $value) {
-    $currentValue = $this->get_template_vars($name);
+    $currentValue = $this->getTemplateVars($name);
     if (!$currentValue) {
       $this->assign($name, $value);
     }
@@ -337,7 +337,7 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
    * @see popScope
    */
   public function pushScope($vars) {
-    $oldVars = $this->get_template_vars();
+    $oldVars = $this->getTemplateVars();
     $backupFrame = [];
     foreach ($vars as $key => $value) {
       $backupFrame[$key] = array_key_exists($key, $oldVars) ? $oldVars[$key] : static::$UNDEFINED_VALUE;

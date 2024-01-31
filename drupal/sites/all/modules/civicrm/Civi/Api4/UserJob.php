@@ -10,6 +10,8 @@
  */
 namespace Civi\Api4;
 
+use Civi\Api4\Generic\ExportAction;
+
 /**
  * UserJob entity.
  *
@@ -20,5 +22,6 @@ namespace Civi\Api4;
  * @package Civi\Api4
  */
 class UserJob extends Generic\DAOEntity {
+  use Generic\Traits\ManagedEntity;
 
 }

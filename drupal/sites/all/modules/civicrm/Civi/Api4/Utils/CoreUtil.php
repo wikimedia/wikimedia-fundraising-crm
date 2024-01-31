@@ -239,18 +239,14 @@ class CoreUtil {
    * @throws \CRM_Core_Exception
    */
   public static function checkAccessRecord(AbstractAction $apiRequest, array $record, int $userID = NULL): ?bool {
-    $userID = $userID ?? \CRM_Core_Session::getLoggedInContactID() ?? 0;
-
-    // Super-admins always have access to everything
-    if (\CRM_Core_Permission::check('all CiviCRM permissions and ACLs', $userID)) {
-      return TRUE;
-    }
+    $userID ??= \CRM_Core_Session::getLoggedInContactID() ?? 0;
+    $idField = self::getIdFieldName($apiRequest->getEntityName());
 
     // For get actions, just run a get and ACLs will be applied to the query.
     // It's a cheap trick and not as efficient as not running the query at all,
     // but BAO::checkAccess doesn't consistently check permissions for the "get" action.
     if (is_a($apiRequest, '\Civi\Api4\Generic\AbstractGetAction')) {
-      return (bool) $apiRequest->addSelect('id')->addWhere('id', '=', $record['id'])->execute()->count();
+      return (bool) $apiRequest->addSelect($idField)->addWhere($idField, '=', $record[$idField])->execute()->count();
     }
 
     $event = new \Civi\Api4\Event\AuthorizeRecordEvent($apiRequest, $record, $userID);

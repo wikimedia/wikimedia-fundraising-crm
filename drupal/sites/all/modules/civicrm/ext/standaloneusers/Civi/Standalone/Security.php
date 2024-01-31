@@ -29,21 +29,25 @@ class Security {
   /**
    * CRM_Core_Permission_Standalone::check() delegates here.
    *
-   * @param \CRM_Core_Permission_Standalone $permissionObject
-   *
    * @param string $permissionName
    *   The permission to check.
    *
-   * @param int $userID
-   *   It is unclear if this typehint is true: The Drupal version has a default NULL!
+   * @param ?int $userID
+   *   The User ID (not ContactID) to check. If NULL, current logged in user.
    *
    * @return bool
    *   true if yes, else false
    */
-  public function checkPermission(\CRM_Core_Permission_Standalone $permissionObject, string $permissionName, $userID) {
+  public function checkPermission(string $permissionName, ?int $userID = NULL) {
+    if ($permissionName == \CRM_Core_Permission::ALWAYS_DENY_PERMISSION) {
+      return FALSE;
+    }
+    if ($permissionName == \CRM_Core_Permission::ALWAYS_ALLOW_PERMISSION) {
+      return TRUE;
+    }
 
-    // I think null means the current logged-in user
-    $userID = $userID ?? $this->getLoggedInUfID() ?? 0;
+    // NULL means the current logged-in user
+    $userID ??= $this->getLoggedInUfID() ?? 0;
 
     if (!isset(\Civi::$statics[__METHOD__][$userID])) {
 
@@ -67,6 +71,8 @@ class Security {
       else {
         $permissionsPerRoleApiCall->addWhere('name', '=', 'everyone');
       }
+
+      // Get and cache an array of permission names for this user.
       $permissions = array_unique(array_merge(...$permissionsPerRoleApiCall->execute()->column('permissions')));
       \Civi::$statics[__METHOD__][$userID] = $permissions;
     }
@@ -81,7 +87,7 @@ class Security {
     return \Civi\Api4\User::get(FALSE)
       ->addWhere('username', '=', $username)
       ->execute()
-      ->single()['id'] ?? NULL;
+      ->first()['id'] ?? NULL;
   }
 
   /**
@@ -210,6 +216,8 @@ class Security {
       return FALSE;
     }
 
+    $this->applyLocaleFromUser($user);
+
     // Note: random_int is more appropriate for cryptographical use than mt_rand
     // The long number is the max 32 bit value.
     return [$user['contact_id'], $user['id'], random_int(0, 2147483647)];
@@ -235,6 +243,7 @@ class Security {
       ])['values'][0]['contact_id'] ?? NULL;
       // Confusingly, Civi stores it's *Contact* ID as *userID* on the session.
       $session->set('userID', $contactID);
+      $this->applyLocaleFromUser($user);
     }
   }
 
@@ -243,12 +252,6 @@ class Security {
    */
   public function isUserLoggedIn(): bool {
     return !empty($this->getLoggedInUfID());
-  }
-
-  public function getCurrentLanguage() {
-    // @todo
-    \Civi::log()->debug('CRM_Utils_System_Standalone::getCurrentLanguage: not implemented');
-    return NULL;
   }
 
   /**
@@ -450,6 +453,19 @@ class Security {
       ->setFrom("\"$domainFromName\" <$domainFromEmail>");
 
     return $workflowMessage;
+  }
+
+  /**
+   * Applies the locale from the user record.
+   *
+   * @param array $user
+   * @return void
+   */
+  private function applyLocaleFromUser(array $user) {
+    $session = CRM_Core_Session::singleton();
+    if (!empty($user['language'])) {
+      $session->set('lcMessages', $user['language']);
+    }
   }
 
 }

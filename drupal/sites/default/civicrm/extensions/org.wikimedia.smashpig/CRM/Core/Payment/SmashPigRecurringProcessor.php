@@ -8,6 +8,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\FailureEmail;
 use SmashPig\PaymentProviders\Responses\CreatePaymentWithProcessorRetryResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
 
@@ -411,8 +412,9 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
           'payment_instrument_id' => $contribution['payment_instrument_id'],
         ]);
 
-        // Keep status at processing
+        // Set status to Pending but advance the next charge date a month so we don't try to charge again
         $params['contribution_status_id'] = 'Pending';
+        $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextDateForMonth($recurringPayment);
       } else {
         // This happens when a payment cannot be rescued.
         // For example, because of account closure or fraud.

@@ -616,11 +616,7 @@ class CRM_Mailing_BAO_Mailing extends CRM_Mailing_DAO_Mailing implements \Civi\C
 
       $this->preparedTemplates = [];
 
-      foreach ([
-        'html',
-        'text',
-        'subject',
-      ] as $key) {
+      foreach (['html', 'text', 'subject'] as $key) {
         if (!isset($templates[$key])) {
           continue;
         }
@@ -1476,7 +1472,7 @@ ORDER BY   civicrm_email.is_bulkmail DESC
       $params = self::processWorkflowPermissions($params);
     }
     if (!$id) {
-      $params['domain_id'] = $params['domain_id'] ?? CRM_Core_Config::domainID();
+      $params['domain_id'] ??= CRM_Core_Config::domainID();
     }
     if (
       ((!$id && empty($params['replyto_email'])) || !isset($params['replyto_email'])) &&
@@ -1565,8 +1561,8 @@ ORDER BY   civicrm_email.is_bulkmail DESC
         'url_tracking' => Civi::settings()->get('url_tracking_default'),
         'visibility' => 'Public Pages',
         'replyto_email' => $domain_email,
-        'header_id' => CRM_Mailing_PseudoConstant::defaultComponent('header_id', ''),
-        'footer_id' => CRM_Mailing_PseudoConstant::defaultComponent('footer_id', ''),
+        'header_id' => CRM_Mailing_PseudoConstant::defaultComponent('Header', ''),
+        'footer_id' => CRM_Mailing_PseudoConstant::defaultComponent('Footer', ''),
         'from_email' => $domain_email,
         'from_name' => $domain_name,
         'msg_template_id' => NULL,
@@ -2441,6 +2437,22 @@ LEFT JOIN civicrm_mailing_group g ON g.mailing_id   = m.id
    * @throws CRM_Core_Exception
    */
   public static function self_hook_civicrm_pre(\Civi\Core\Event\PreEvent $event) {
+    if ($event->action === 'create') {
+      $params = &$event->params;
+      $params['created_id'] ??= CRM_Core_Session::singleton()->getLoggedInContactID();
+      $params['override_verp'] ??= !Civi::settings()->get('track_civimail_replies');
+      $params['visibility'] ??= 'Public Pages';
+      $params['dedupe_email'] ??= Civi::settings()->get('dedupe_email_default');
+      $params['open_tracking'] ??= Civi::settings()->get('open_tracking_default');
+      $params['url_tracking'] ??= Civi::settings()->get('url_tracking_default');
+      $params['header_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Header', '');
+      $params['footer_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Footer', '');
+      $params['optout_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('OptOut', '');
+      $params['reply_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Reply', '');
+      $params['resubscribe_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Resubscribe', '');
+      $params['unsubscribe_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Unsubscribe', '');
+      $params['mailing_type'] ??= 'standalone';
+    }
     if ($event->action === 'delete' && $event->id) {
       // Delete all file attachments
       CRM_Core_BAO_File::deleteEntityFile('civicrm_mailing', $event->id);

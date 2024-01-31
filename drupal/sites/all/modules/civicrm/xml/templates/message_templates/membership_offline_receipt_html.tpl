@@ -23,8 +23,8 @@
     <tr>
       <td>
         {assign var="greeting" value="{contact.email_greeting_display}"}{if $greeting}<p>{$greeting},</p>{/if}
-        {if $receipt_text}
-          <p>{$receipt_text|htmlize}</p>
+        {if $userText}
+          <p>{$userText}</p>
         {else}
           <p>{ts}Thank you for this contribution.{/ts}</p>
         {/if}
@@ -108,7 +108,7 @@
                             </td>
                             {if $isShowTax && {contribution.tax_amount|boolean}}
                               <td>
-                                {$line.unit_price*$line.qty|crmMoney:'{contribution.currency}'}
+                                {$line.line_total|crmMoney:'{contribution.currency}'}
                               </td>
                               {if $line.tax_rate || $line.tax_amount != ""}
                                 <td>

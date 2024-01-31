@@ -301,7 +301,6 @@ class CRM_Core_BAO_Address extends CRM_Core_DAO_Address implements Civi\Core\Hoo
         'contact_id',
         'is_billing',
         'display',
-        'master_id',
       ])) {
         continue;
       }
@@ -394,7 +393,7 @@ class CRM_Core_BAO_Address extends CRM_Core_DAO_Address implements Civi\Core\Hoo
           }
         }
       }
-      $stree = $address->street_address;
+
       $values = [];
       CRM_Core_DAO::storeValues($address, $values);
 
@@ -472,9 +471,13 @@ class CRM_Core_BAO_Address extends CRM_Core_DAO_Address implements Civi\Core\Hoo
     else {
       $fields['county'] = NULL;
     }
-
-    $this->display = CRM_Utils_Address::format($fields, NULL, $microformat);
-    $this->display_text = CRM_Utils_Address::format($fields);
+    if ($microformat) {
+      $this->display = CRM_Utils_Address::formatVCard($fields);
+      $this->display_text = CRM_Utils_Address::format($fields);
+    }
+    else {
+      $this->display = $this->display_text = CRM_Utils_Address::format($fields);
+    }
   }
 
   /**
@@ -720,10 +723,7 @@ ORDER BY civicrm_address.is_primary DESC, civicrm_address.location_type_id DESC,
     ];
 
     // overwriting $streetUnitFormats for 'en_CA' and 'fr_CA' locale
-    if (in_array($locale, [
-      'en_CA',
-      'fr_CA',
-    ])) {
+    if (in_array($locale, ['en_CA', 'fr_CA'])) {
       $streetUnitFormats = ['APT', 'APP', 'SUITE', 'BUREAU', 'UNIT'];
     }
     //@todo per CRM-14459 this regex picks up words with the string in them - e.g APT picks up
@@ -780,11 +780,7 @@ ORDER BY civicrm_address.is_primary DESC, civicrm_address.location_type_id DESC,
 
     $parsingSupportedLocales = ['en_US', 'en_CA', 'fr_CA'];
 
-    if (in_array($locale, $parsingSupportedLocales)) {
-      return TRUE;
-    }
-
-    return FALSE;
+    return in_array($locale, $parsingSupportedLocales);
   }
 
   /**
@@ -906,6 +902,8 @@ SELECT is_primary,
    * Fix the shared address if address is already shared
    * or if address will be shared with itself.
    *
+   * Add in the details from the master address.
+   *
    * @param array $params
    *   Associated array of address params.
    */
@@ -920,6 +918,12 @@ SELECT is_primary,
     if (($params['id'] ?? NULL) == $params['master_id']) {
       $params['master_id'] = NULL;
       CRM_Core_Session::setStatus(ts("You can't connect an address to itself"), '', 'warning');
+    }
+    if ($params['master_id']) {
+      $masterAddressParams = Address::get(FALSE)
+        ->addWhere('id', '=', $params['master_id'])->execute()->first();
+      unset($masterAddressParams['id'], $masterAddressParams['is_primary'], $masterAddressParams['is_billing'], $masterAddressParams['contact_id']);
+      $params += $masterAddressParams;
     }
   }
 

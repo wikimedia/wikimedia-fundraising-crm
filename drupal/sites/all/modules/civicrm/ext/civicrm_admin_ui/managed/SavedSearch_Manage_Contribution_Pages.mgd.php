@@ -51,7 +51,7 @@ return [
         'saved_search_id.name' => 'Manage_Contribution_Pages',
         'type' => 'table',
         'settings' => [
-          'actions' => FALSE,
+          'actions' => TRUE,
           'limit' => 50,
           'classes' => [
             'table',
@@ -145,7 +145,7 @@ return [
                   'entity' => '',
                   'action' => '',
                   'join' => '',
-                  'target' => '',
+                  'target' => '_blank',
                   'icon' => 'fa-external-link',
                   'text' => E::ts('Live Page'),
                   'style' => 'default',
@@ -156,7 +156,7 @@ return [
                   'entity' => '',
                   'action' => '',
                   'join' => '',
-                  'target' => '',
+                  'target' => '_blank',
                   'icon' => 'fa-external-link',
                   'text' => E::ts('Test-drive'),
                   'style' => 'default',

@@ -45,7 +45,9 @@ return [
             'is_active',
           ],
           'orderBy' => [],
-          'where' => [],
+          'where' => [
+            ['RelationshipCache_Contact_far_contact_id_01.is_deleted', '=', FALSE],
+          ],
           'groupBy' => [],
           'join' => $joins,
           'having' => [],
@@ -116,7 +118,7 @@ return [
                 'entity' => 'Contact',
                 'action' => 'view',
                 'join' => 'RelationshipCache_Contact_far_contact_id_01',
-                'target' => '_blank',
+                'target' => '',
               ],
               'title' => ts('View Related Contact'),
             ],
@@ -291,7 +293,7 @@ return [
         'saved_search_id.name' => 'Contact_Summary_Relationships',
         'type' => 'table',
         'settings' => [
-          'description' => ts('These relationships are Disabled OR have a past End Date.'),
+          'description' => '',
           'sort' => [],
           'limit' => 50,
           'pager' => [
@@ -338,7 +340,7 @@ return [
                 'entity' => 'Contact',
                 'action' => 'view',
                 'join' => 'RelationshipCache_Contact_far_contact_id_01',
-                'target' => '_blank',
+                'target' => '',
               ],
               'title' => ts('View Related Contact'),
             ],

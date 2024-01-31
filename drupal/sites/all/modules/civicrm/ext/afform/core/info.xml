@@ -12,10 +12,10 @@
     <url desc="Chat">https://chat.civicrm.org/civicrm/channels/dev-afform</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2023-11-02</releaseDate>
-  <version>5.68.beta1</version>
+  <releaseDate>2024-01-05</releaseDate>
+  <version>5.70.beta1</version>
   <compatibility>
-    <ver>5.68</ver>
+    <ver>5.70</ver>
   </compatibility>
   <develStage>stable</develStage>
   <tags>
@@ -39,6 +39,7 @@
     <mixin>scan-classes@1.0.0</mixin>
     <mixin>smarty-v2@1.0.1</mixin>
     <mixin>entity-types-php@1.0.0</mixin>
+    <mixin>menu-xml@1.0.0</mixin>
   </mixins>
   <upgrader>CRM_Afform_Upgrader</upgrader>
 </extension>

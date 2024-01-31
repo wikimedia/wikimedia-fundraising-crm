@@ -641,7 +641,7 @@ class CRM_Core_EntityTokens extends AbstractTokenSubscriber {
     if ($field['type'] !== 'Custom' && !$isExposed) {
       return;
     }
-    $field['audience'] = $field['audience'] ?? 'user';
+    $field['audience'] ??= 'user';
     if ($field['name'] === 'contact_id') {
       // Since {contact.id} is almost always present don't confuse users
       // by also adding (e.g {participant.contact_id)
@@ -713,6 +713,9 @@ class CRM_Core_EntityTokens extends AbstractTokenSubscriber {
    * @throws \CRM_Core_Exception
    */
   protected function getRelatedTokensForEntity(string $entity, string $joinField, array $tokenList, $hiddenTokens = []): array {
+    if (!array_key_exists($entity, \Civi::service('action_object_provider')->getEntities())) {
+      return [];
+    }
     $apiParams = ['checkPermissions' => FALSE];
     if ($tokenList !== ['*']) {
       $apiParams['where'] = [['name', 'IN', $tokenList]];

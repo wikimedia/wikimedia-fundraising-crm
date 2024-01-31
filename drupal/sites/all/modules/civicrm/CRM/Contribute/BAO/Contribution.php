@@ -106,7 +106,7 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution im
     //set defaults in create mode
     if (!$contributionID) {
       CRM_Core_DAO::setCreateDefaults($params, self::getDefaults());
-      if (empty($params['invoice_number']) && CRM_Invoicing_Utils::isInvoicingEnabled()) {
+      if (empty($params['invoice_number']) && \Civi::settings()->get('invoicing')) {
         $nextContributionID = CRM_Core_DAO::singleValueQuery("SELECT COALESCE(MAX(id) + 1, 1) FROM civicrm_contribution");
         $params['invoice_number'] = self::getInvoiceNumber($nextContributionID);
       }
@@ -429,11 +429,11 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution im
    * To create an address we need state_province_id.
    *
    * @param array $params
-   * @param int $billingLocationTypeID
    *
    * @return array
    */
-  public static function getPaymentProcessorReadyAddressParams($params, $billingLocationTypeID) {
+  public static function getPaymentProcessorReadyAddressParams($params) {
+    $billingLocationTypeID = CRM_Core_BAO_LocationType::getBilling();
     [$hasBillingField, $addressParams] = self::getBillingAddressParams($params, $billingLocationTypeID);
     foreach ($addressParams as $name => $field) {
       if (substr($name, 0, 8) == 'billing_') {
@@ -1063,6 +1063,9 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution im
       ];
       if ($paidByName === 'Check') {
         $val['check_number'] = $resultDAO->check_number;
+      }
+      else {
+        $val['check_number'] = NULL;
       }
       $rows[] = $val;
     }
@@ -1775,11 +1778,14 @@ LEFT JOIN  civicrm_contribution contribution ON ( componentPayment.contribution_
    * Use api contribute.completetransaction
    * For failures use failPayment (preferably exposing by api in the process).
    *
+   * @deprecated since 5.69 Will be remvoed ASAP since this is old & crufty &
+   * should never have been used outside core.
    */
   public static function transitionComponents($params) {
     // @todo fix the one place that calls this function to use Payment.create
     // remove this.
     // get minimum required values.
+    CRM_Core_Error::deprecatedFunctionWarning('use Payment.create api');
     $contributionId = $params['contribution_id'];
 
     // we process only ( Completed, Cancelled, or Failed ) contributions.
@@ -2238,7 +2244,7 @@ LEFT JOIN  civicrm_contribution contribution ON ( componentPayment.contribution_
       }
     }
 
-    $contributionParams['source'] = $contributionParams['source'] ?? ts('Recurring contribution');
+    $contributionParams['source'] ??= ts('Recurring contribution');
 
     $createContribution = civicrm_api3('Contribution', 'create', $contributionParams);
     $temporaryObject = new CRM_Contribute_BAO_Contribution();
@@ -2629,16 +2635,10 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
         foreach ($this->_relatedObjects['membership'] as $membership) {
           if ($membership->id) {
             $values['membership_id'] = $membership->id;
-            $values['isMembership'] = TRUE;
-            $values['membership_assign'] = TRUE;
-
             // need to set the membership values here
             $template->assign('membership_name',
               CRM_Member_PseudoConstant::membershipType($membership->membership_type_id)
             );
-            $template->assign('mem_start_date', $membership->start_date);
-            $template->assign('mem_join_date', $membership->join_date);
-            $template->assign('mem_end_date', $membership->end_date);
             $membership_status = CRM_Member_PseudoConstant::membershipStatus($membership->status_id, NULL, 'label');
             $template->assign('mem_status', $membership_status);
             if ($membership_status === 'Pending' && $membership->is_pay_later == 1) {
@@ -3506,6 +3506,13 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
         if ($context !== 'validate') {
           $params['condition'] = "v.name <> 'Template'";
         }
+        break;
+
+      case 'payment_instrument_id':
+        if (isset($props['filter'])) {
+          $params['condition'] = "v.filter = " . $props['filter'];
+        }
+        break;
     }
     return CRM_Core_PseudoConstant::get($className, $fieldName, $params, $context);
   }
@@ -4135,13 +4142,14 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
    * settings we will live with an inconsistency because it's too hard to change for now.
    * https://github.com/civicrm/civicrm-core/pull/8562#issuecomment-227874245
    *
-   *
    * @param string $name
    *
    * @return string
    *
+   * @deprecated since 5.68 will be removed around 5.74.
    */
   public static function checkContributeSettings($name) {
+    CRM_Core_Error::deprecatedFunctionWarning('Use \Civi::settings()->get() with the actual setting name');
     $contributeSettings = Civi::settings()->get('contribution_invoice_settings');
     return $contributeSettings[$name] ?? NULL;
   }
@@ -4214,11 +4222,7 @@ LIMIT 1;";
       }
       // @todo remove all this stuff in favour of letting the api call further down handle in
       // (it is a duplication of what the api does).
-      $dates = array_fill_keys([
-        'join_date',
-        'start_date',
-        'end_date',
-      ], NULL);
+      $dates = [];
       if ($currentMembership) {
         /*
          * Fixed FOR CRM-4433
@@ -4241,9 +4245,9 @@ LIMIT 1;";
       }
       else {
         //get the status for membership.
-        $calcStatus = CRM_Member_BAO_MembershipStatus::getMembershipStatusByDate($dates['start_date'],
-          $dates['end_date'],
-          $dates['join_date'],
+        $calcStatus = CRM_Member_BAO_MembershipStatus::getMembershipStatusByDate($dates['start_date'] ?? NULL,
+          $dates['end_date'] ?? NULL,
+          $dates['join_date'] ?? NULL,
           'now',
          TRUE,
           $membershipParams['membership_type_id'],
@@ -4257,7 +4261,23 @@ LIMIT 1;";
       //so make status override false.
       $membershipParams['is_override'] = FALSE;
       $membershipParams['status_override_end_date'] = 'null';
-      civicrm_api3('Membership', 'create', $membershipParams);
+      $membership = civicrm_api3('Membership', 'create', $membershipParams);
+      $membership = $membership['values'][$membership['id']];
+      // Update activity to Completed.
+      // Perhaps this should be in Membership::create? Test cover in
+      // api_v3_ContributionTest.testPendingToCompleteContribution.
+      $priorMembershipStatus = $memberships[$membership['id']]['status_id'] ?? NULL;
+      Activity::update(FALSE)->setValues([
+        'status_id:name' => 'Completed',
+        'subject' => ts('Status changed from %1 to %2'), [
+          1 => CRM_Core_PseudoConstant::getLabel('CRM_Member_BAO_Membership', 'status_id', $priorMembershipStatus),
+          2 => CRM_Core_PseudoConstant::getLabel('CRM_Member_BAO_Membership', 'status_id', $membership['status_id']),
+        ],
+
+      ])->addWhere('source_record_id', '=', $membership['id'])
+        ->addWhere('status_id:name', '=', 'Scheduled')
+        ->addWhere('activity_type_id:name', 'IN', ['Membership Signup', 'Membership Renewal'])
+        ->execute();
     }
   }
 

@@ -21,6 +21,7 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
 
   use CRM_Financial_Form_FrontEndPaymentFormTrait;
   use CRM_Event_Form_EventFormTrait;
+  use CRM_Financial_Form_PaymentProcessorFormTrait;
 
   /**
    * The id of the event we are processing.
@@ -249,13 +250,6 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
 
       // check for is_monetary status
       $isMonetary = $this->getEventValue('is_monetary');
-      // check for ability to add contributions of type
-      if ($isMonetary
-        && CRM_Financial_BAO_FinancialType::isACLFinancialTypeStatus()
-        && !CRM_Core_Permission::check('add contributions of type ' . CRM_Contribute_PseudoConstant::financialType($this->_values['event']['financial_type_id']))
-      ) {
-        CRM_Core_Error::statusBounce(ts('You do not have permission to access this page.'));
-      }
 
       $this->checkValidEvent();
       // get the participant values, CRM-4320
@@ -314,7 +308,19 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
 
       $priceSetID = $this->getPriceSetID();
       if ($priceSetID) {
+        $this->_values['line_items'] = CRM_Price_BAO_LineItem::getLineItems($this->_participantId, 'participant');
         self::initEventFee($this, TRUE, $priceSetID);
+
+        //fix for non-upgraded price sets.CRM-4256.
+        if (isset($this->_isPaidEvent)) {
+          $isPaidEvent = $this->_isPaidEvent;
+        }
+        else {
+          $isPaidEvent = $this->_values['event']['is_monetary'] ?? NULL;
+        }
+        if ($isPaidEvent && empty($this->_values['fee'])) {
+          CRM_Core_Error::statusBounce(ts('No Fee Level(s) or Price Set is configured for this event.<br />Click <a href=\'%1\'>CiviEvent >> Manage Event >> Configure >> Event Fees</a> to configure the Fee Level(s) or Price Set for this event.', [1 => CRM_Utils_System::url('civicrm/event/manage/fee', 'reset=1&action=update&id=' . $this->_eventId)]));
+        }
         $this->assign('quickConfig', $this->isQuickConfig());
       }
 
@@ -379,12 +385,8 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
       );
       CRM_Utils_System::redirect($url);
     }
-    // The concept of contributeMode is deprecated.
-    $this->_contributeMode = $this->get('contributeMode');
-    $this->assign('contributeMode', $this->_contributeMode);
 
-    $this->assign('paidEvent', $this->_values['event']['is_monetary']);
-
+    $this->assign('paidEvent', $this->getEventValue('is_monetary'));
     // we do not want to display recently viewed items on Registration pages
     $this->assign('displayRecent', FALSE);
 
@@ -471,7 +473,7 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
       }
     }
 
-    $this->assign('address', CRM_Utils_Address::getFormattedBillingAddressFieldsFromParameters($params, $this->_bltID));
+    $this->assign('address', CRM_Utils_Address::getFormattedBillingAddressFieldsFromParameters($params));
 
     if ($this->getSubmittedValue('credit_card_number')) {
       if (isset($params['credit_card_exp_date'])) {
@@ -486,7 +488,7 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
 
     $this->assign('is_email_confirm', $this->_values['event']['is_email_confirm'] ?? NULL);
     // assign pay later stuff
-    $params['is_pay_later'] = $params['is_pay_later'] ?? FALSE;
+    $params['is_pay_later'] ??= FALSE;
     $this->assign('is_pay_later', $params['is_pay_later']);
     $this->assign('pay_later_text', $params['is_pay_later'] ? $this->getPayLaterLabel() : FALSE);
     $this->assign('pay_later_receipt', $params['is_pay_later'] ? $this->_values['event']['pay_later_receipt'] : NULL);
@@ -595,7 +597,7 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
   /**
    * Initiate event fee.
    *
-   * @param \CRM_Event_Form_Participant|\CRM_Event_Form_Registration|\CRM_Event_Form_ParticipantFeeSelection|\CRM_Event_Form_Task_Register $form
+   * @param \CRM_Event_Form_Registration|\CRM_Event_Form_ParticipantFeeSelection $form
    * @param bool $doNotIncludeExpiredFields
    *   See CRM-16456.
    * @param int|null $priceSetId
@@ -609,15 +611,6 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
       return;
     }
 
-    // get price info
-    if ($form->_action & CRM_Core_Action::UPDATE) {
-      if (in_array(CRM_Utils_System::getClassName($form), ['CRM_Event_Form_Participant', 'CRM_Event_Form_Task_Register'])) {
-        $form->_values['line_items'] = CRM_Price_BAO_LineItem::getLineItems($form->_id, 'participant');
-      }
-      else {
-        $form->_values['line_items'] = CRM_Price_BAO_LineItem::getLineItems($form->_participantId, 'participant');
-      }
-    }
     $priceSet = CRM_Price_BAO_PriceSet::getSetDetail($priceSetId, NULL, $doNotIncludeExpiredFields);
     $form->_priceSet = $priceSet[$priceSetId] ?? NULL;
     $form->_values['fee'] = $form->_priceSet['fields'] ?? NULL;
@@ -661,30 +654,6 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
     $eventFee = $form->_values['fee'] ?? NULL;
     if (!is_array($eventFee) || empty($eventFee)) {
       $form->_values['fee'] = [];
-    }
-
-    //fix for non-upgraded price sets.CRM-4256.
-    if (isset($form->_isPaidEvent)) {
-      $isPaidEvent = $form->_isPaidEvent;
-    }
-    else {
-      $isPaidEvent = $form->_values['event']['is_monetary'] ?? NULL;
-    }
-    if (CRM_Financial_BAO_FinancialType::isACLFinancialTypeStatus()
-      && !empty($form->_values['fee'])
-    ) {
-      foreach ($form->_values['fee'] as $k => $fees) {
-        foreach ($fees['options'] as $options) {
-          if (!CRM_Core_Permission::check('add contributions of type ' . CRM_Contribute_PseudoConstant::financialType($options['financial_type_id']))) {
-            unset($form->_values['fee'][$k]);
-          }
-        }
-      }
-    }
-    if ($isPaidEvent && empty($form->_values['fee'])) {
-      if (!in_array(CRM_Utils_System::getClassName($form), ['CRM_Event_Form_Participant', 'CRM_Event_Form_Task_Register'])) {
-        CRM_Core_Error::statusBounce(ts('No Fee Level(s) or Price Set is configured for this event.<br />Click <a href=\'%1\'>CiviEvent >> Manage Event >> Configure >> Event Fees</a> to configure the Fee Level(s) or Price Set for this event.', [1 => CRM_Utils_System::url('civicrm/event/manage/fee', 'reset=1&action=update&id=' . $form->_eventId)]));
-      }
     }
   }
 
@@ -963,6 +932,17 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
     }
 
     return $totalCount;
+  }
+
+  /**
+   * Get id of participant being acted on.
+   *
+   * @api This function will not change in a minor release and is supported for
+   * use outside of core. This annotation / external support for properties
+   * is only given where there is specific test cover.
+   */
+  public function getParticipantID(): ?int {
+    return $this->_participantId;
   }
 
   /**
@@ -1491,7 +1471,7 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
    */
   public function processRegistration($params, $contactID = NULL) {
     $session = CRM_Core_Session::singleton();
-    $this->_participantInfo = [];
+    $participantInfo = [];
 
     // CRM-4320, lets build array of cancelled additional participant ids
     // those are drop or skip by primary at the time of confirmation.
@@ -1528,10 +1508,10 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
             }
           }
           if ($participantEmail) {
-            $this->_participantInfo[] = $participantEmail;
+            $participantInfo[] = $participantEmail;
           }
           else {
-            $this->_participantInfo[] = $value['first_name'] . ' ' . $value['last_name'];
+            $participantInfo[] = $value['first_name'] . ' ' . $value['last_name'];
           }
         }
         elseif (!empty($value['contact_id'])) {
@@ -1589,14 +1569,13 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
     }
 
     //set information about additional participants if exists
-    if (count($this->_participantInfo)) {
-      $this->set('participantInfo', $this->_participantInfo);
+    if (count($participantInfo)) {
+      $this->set('participantInfo', $participantInfo);
     }
 
-    //send mail Confirmation/Receipt
-    if ($this->_contributeMode != 'checkout' ||
-      $this->_contributeMode != 'notify'
+    if (!$this->getEventValue('is_monetary') || $this->getPaymentProcessorObject()->supports('noReturn')
     ) {
+      // Send mail Confirmation/Receipt.
       $this->sendMails($params, $registerByID, $participantCount);
     }
   }
@@ -1729,6 +1708,27 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
    */
   public function isQuickConfig(): bool {
     return $this->getPriceSetID() && CRM_Price_BAO_PriceSet::isQuickConfig($this->getPriceSetID());
+  }
+
+  /**
+   * Get the currency for the form.
+   *
+   * Rather historic - might have unneeded stuff
+   *
+   * @return string
+   */
+  public function getCurrency() {
+    $currency = $this->_values['currency'] ?? NULL;
+    // For event forms, currency is in a different spot
+    if (empty($currency)) {
+      $currency = CRM_Utils_Array::value('currency', CRM_Utils_Array::value('event', $this->_values));
+    }
+    if (empty($currency)) {
+      $currency = CRM_Utils_Request::retrieveValue('currency', 'String');
+    }
+    // @todo If empty there is a problem - we should probably put in a deprecation notice
+    // to warn if that seems to be happening.
+    return $currency;
   }
 
 }

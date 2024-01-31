@@ -8,7 +8,7 @@
  +--------------------------------------------------------------------+
 *}
 {* Callback snippet: On-behalf profile *}
-{if $snippet and !empty($isOnBehalfCallback) and !$ccid}
+{if $snippet and !empty($isOnBehalfCallback) and !$isPaymentOnExistingContribution}
   <div class="crm-public-form-item crm-section">
     {include file="CRM/Contribute/Form/Contribution/OnBehalfOf.tpl" context="front-end"}
   </div>
@@ -16,26 +16,29 @@
 {literal}
   <script type="text/javascript">
 
-    // Putting these functions directly in template so they are available for standalone forms
+    // Putting these functions directly in template for historical reasons.
     function useAmountOther(mainPriceFieldName) {
-     for( i=0; i < document.Main.elements.length; i++ ) {
-        element = document.Main.elements[i];
-        if ( element.type == 'radio' && element.name === mainPriceFieldName ) {
-          if (element.value == '0' ) {
-            element.click();
-          }
-          else {
-            element.checked = false;
+      var currentFocus = CRM.$(':focus');
+      CRM.$('input[name=' + mainPriceFieldName + ']:radio:unchecked').each(
+        function () {
+          if (CRM.$(this).data('is-null-option') !== undefined) {
+            // Triggering this click here because over in Calculate.tpl
+            // a blur action is attached
+            CRM.$(this).prop('checked', true).trigger('click');
           }
         }
-      }
+      );
+      // Copied from `updatePriceSetHighlight()` below which isn't available here.
+      // @todo - consider adding this to the actions assigned in Calculate.tpl
+      CRM.$('#priceset .price-set-row span').removeClass('highlight');
+      CRM.$('#priceset .price-set-row input:checked').parent().addClass('highlight');
+      // Return the focus we blurred earlier.
+      currentFocus.trigger('focus');
+
     }
 
     function clearAmountOther(otherPriceFieldName) {
-      cj('#' + otherPriceFieldName).val('');
-      cj('#' + otherPriceFieldName).blur();
-      if (document.Main.amount_other == null) return; // other_amt field not present; do nothing
-      document.Main.amount_other.value = "";
+      cj('#' + otherPriceFieldName).val('').trigger('blur');
     }
 
   </script>
@@ -54,7 +57,7 @@
   <div class="crm-contribution-page-id-{$contributionPageID} crm-block crm-contribution-main-form-block" data-page-id="{$contributionPageID}" data-page-template="main">
 
     {crmRegion name='contribution-main-not-you-block'}
-    {if $contact_id && !$ccid}
+    {if $contact_id && !$isPaymentOnExistingContribution}
       <div class="messages status no-popup crm-not-you-message">
         {ts 1=$display_name}Welcome %1{/ts}. (<a href="{crmURL p='civicrm/contribute/transact' q="cid=0&reset=1&id=`$contributionPageID`"}" title="{ts}Click here to do this for a different person.{/ts}">{ts 1=$display_name}Not %1, or want to do this for a different person{/ts}</a>?)
       </div>
@@ -62,7 +65,7 @@
     {/crmRegion}
 
     <div id="intro_text" class="crm-public-form-item crm-section intro_text-section">
-      {$intro_text}
+      {$intro_text|purify}
     </div>
     {include file="CRM/common/cidzero.tpl"}
 
@@ -70,11 +73,11 @@
       <div class="help">{ts}You have a current Lifetime Membership which does not need to be renewed.{/ts}</div>
     {/if}
 
-    {if $isShowMembershipBlock && !$ccid}
+    {if $isShowMembershipBlock && !$isPaymentOnExistingContribution}
       <div class="crm-public-form-item crm-section">
         {include file="CRM/Contribute/Form/Contribution/MainMembershipBlock.tpl"}
       </div>
-    {elseif !empty($ccid)}
+    {elseif $isPaymentOnExistingContribution}
       {if $lineItem && $priceSetID && !$is_quick_config}
         <div class="header-dark">
           {ts}Contribution Information{/ts}{if $display_name} &ndash; {$display_name}{/if}
@@ -93,7 +96,7 @@
       </div>
     {/if}
 
-    {if !$ccid}
+    {if !$isPaymentOnExistingContribution}
       {crmRegion name='contribution-main-pledge-block'}
       {if $pledgeBlock}
         {if array_key_exists('pledge_amount', $form)}
@@ -183,7 +186,7 @@
         {include file="CRM/common/CMSUser.tpl"}
       </div>
       <div class="crm-public-form-item crm-section premium_block-section">
-        {include file="CRM/Contribute/Form/Contribution/PremiumBlock.tpl" context="makeContribution" preview=false}
+        {include file="CRM/Contribute/Form/Contribution/PremiumBlock.tpl" context="makeContribution" preview=false showPremiumSelectionFields=true}
       </div>
 
       {if $honoreeProfileFields && $honoreeProfileFields|@count}
@@ -317,9 +320,9 @@
 
     function toggleRecur() {
       var isRecur = cj('input[id="is_recur"]:checked');
-      var allowAutoRenew = {/literal}'{$allowAutoRenewMembership}'{literal};
+
       var quickConfig = {/literal}'{$quickConfig}'{literal};
-      if (allowAutoRenew && cj("#auto_renew") && quickConfig) {
+      if (cj("#auto_renew").length && quickConfig) {
         showHideAutoRenew(null);
       }
 
