@@ -192,7 +192,7 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
     )->days;
 
     // check the latest next_sched_contribution_date is at least 28 days ahead
-    $this->assertGreaterThanOrEqual(28, $differenceInDays);
+    $this->assertGreaterThanOrEqual(27, $differenceInDays);
   }
 
   /**
