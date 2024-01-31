@@ -1,4 +1,5 @@
 <?php
+
 use CRM_Monolog_ExtensionUtil as E;
 
 class CRM_Monolog_BAO_Monolog extends CRM_Monolog_DAO_Monolog {
@@ -25,7 +26,6 @@ class CRM_Monolog_BAO_Monolog extends CRM_Monolog_DAO_Monolog {
           unset($params['configuration_options'][$key]);
         }
       }
-
     }
     return self::writeRecord($params);
   }
@@ -40,7 +40,8 @@ class CRM_Monolog_BAO_Monolog extends CRM_Monolog_DAO_Monolog {
       'syslog' => 'Syslog',
       'phpmailer' => E::ts('Email'),
       'firephp' => 'FirePhp',
-      'std_out' => E::ts('Command line (where in use)'),
+      'std_out' => E::ts('Command line Standard Out (where in use)'),
+      'std_err' => E::ts('Command line Standard Err (where in use)'),
     ];
   }
 
