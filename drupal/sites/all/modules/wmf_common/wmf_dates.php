@@ -39,29 +39,6 @@ function wmf_common_date_parse_string($date) {
 }
 
 /**
- * Get an array of all the valid dates between $start(exclusive) and
- * $end(inclusive)
- *
- * @param int $start Date string in the format yyyymmdd
- * @param int $end Date string in the format yyyymmdd
- *
- * @return array all date strings between the $start and $end values
- */
-function wmf_common_date_get_date_gap($start, $end) {
-  $startdate = date_create_from_format(WMF_DATEFORMAT, (string) $start);
-  $enddate = date_create_from_format(WMF_DATEFORMAT, (string) $end);
-
-  $next = $startdate;
-  $interval = new DateInterval('P1D');
-  $ret = array();
-  while ($next < $enddate) {
-    $next = date_add($next, $interval);
-    $ret[] = wmf_common_date_format_string($next);
-  }
-  return $ret;
-}
-
-/**
  * Adds a number of days to a specified date
  *
  * @param string $date Date in a format that date_create recognizes.
