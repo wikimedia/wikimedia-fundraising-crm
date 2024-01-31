@@ -89,8 +89,8 @@ class Import {
           }
         }
       }
-      elseif ($mappedRow['Contact']['contact_type'] === 'Individual') {
-        foreach ($mappedRow['SoftCreditContact'] ?? [] as $index => $softCreditContact) {
+      elseif ($mappedRow['Contact']['contact_type'] === 'Individual' && !empty($mappedRow['SoftCreditContact'])) {
+        foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
           if ($softCreditContact['Contact']['contact_type'] === 'Organization') {
             if (!empty($softCreditContact['Contact']['id'])) {
               $organizationID = $softCreditContact['Contact']['id'];
