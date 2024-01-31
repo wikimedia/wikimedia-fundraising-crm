@@ -22,7 +22,7 @@ class QuickForm {
 
           $no_thank_you_toggle_form_elements = [
             $giftSourceField,
-            'financial_type_id'
+            'financial_type_id',
           ];
 
           if ($no_thank_you_reason_field_name && $form->elementExists($no_thank_you_reason_field_name)) {
@@ -57,30 +57,35 @@ class QuickForm {
       case 'CRM_Contact_Form_Merge':
         $template = \CRM_Core_Form::getTemplate();
         $groupId = CalculatedData::getCalculatedCustomFieldGroupID();
-        if (isset($template->_tpl_vars['rows']["custom_group_$groupId"])) {
-          unset($template->_tpl_vars['rows']["custom_group_$groupId"]);
+        $rows = $template->getTemplateVars('rows');
+        if (isset($rows["custom_group_$groupId"])) {
+          unset($rows["custom_group_$groupId"]);
+          $form->assign('rows', $rows);
         }
-        foreach(CalculatedData::getCalculatedCustomFields() as $field) {
+        foreach (CalculatedData::getCalculatedCustomFields() as $field) {
           $id = $field['id'];
           $elementName = "move_custom_$id";
-          $rowExists = isset($template->_tpl_vars['rows'][$elementName]);
+          $rowExists = isset($rows[$elementName]);
           if ($field['name'] === 'all_funds_last_donation_date' && $rowExists) {
             // Add the last donation date to the summary fields that show at the
             // top of the merge screen - this makes it easier for Donor relations.
             // See https://phabricator.wikimedia.org/T256314#8385450
-            $lastDonationValues = $template->_tpl_vars['rows'][$elementName];
-            $template->_tpl_vars['summary_rows'][] = [
+            $lastDonationValues = $rows[$elementName];
+            $summaryRows = $form->getTemplateVars('summary_rows');
+            $summaryRows[] = [
               'name' => 'all_funds_last_donation_date',
               'label' => $field['label'],
               'main_contact_value' => $lastDonationValues['main'] ?? '',
               'other_contact_value' => $lastDonationValues['other'] ?? '',
             ];
+            $form->assign('summary_rows', $summaryRows);
           }
           if ($form->elementExists($elementName)) {
             $form->removeElement($elementName);
           }
           if ($rowExists) {
-            unset($template->_tpl_vars['rows'][$elementName]);
+            unset($rows[$elementName]);
+            $form->assign('rows', $rows);
           }
         }
         break;
