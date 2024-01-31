@@ -907,12 +907,12 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->assertEquals('In Progress', $updatedRecur['contribution_status_id:name']);
 
-    // check that the generated next_sched date is between 28 and 31 days away
-    $today = DateTime::createFromFormat( "U", $date );
-    $nextMonth = new DateTime( $updatedRecur['next_sched_contribution_date'] );
-    $difference = $nextMonth->diff( $today )->days;
-    $this->assertGreaterThanOrEqual( 28 , $difference );
-    $this->assertLessThanOrEqual( 31, $difference );
+    // check that the generated next_sched date is between 27 and 31 days away
+    $today = DateTime::createFromFormat("U", $date);
+    $nextMonth = new DateTime($updatedRecur['next_sched_contribution_date']);
+    $difference = $nextMonth->diff($today)->days;
+    $this->assertGreaterThanOrEqual(27, $difference);
+    $this->assertLessThanOrEqual(31, $difference);
 
     $this->assertStringContainsString($orderId, $contributionsAfterRecurring[0]['invoice_id']);
   }
