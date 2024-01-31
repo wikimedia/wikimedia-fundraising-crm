@@ -129,7 +129,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     }
     $this->assertEquals(ip2long($common['user_ip']), $dbEntries[0]['user_ip']);
     $this->assertEquals(
-      $common['date'], wmf_common_date_civicrm_to_unix($dbEntries[0]['date'])
+      $common['date'], $this->wmf_common_date_civicrm_to_unix($dbEntries[0]['date'])
     );
     foreach ($dbEntries as $score) {
       $name = $score['filter_name'];
@@ -164,4 +164,5 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       ->execute()
       ->fetchAll(PDO::FETCH_ASSOC);
   }
+
 }

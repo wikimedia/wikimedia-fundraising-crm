@@ -82,7 +82,7 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     }
     $this->assertEquals($message['currency'], $dbEntries[0]['currency_code']);
     $this->assertEquals(
-      $message['date'], wmf_common_date_civicrm_to_unix($dbEntries[0]['date'])
+      $message['date'], $this->wmf_common_date_civicrm_to_unix($dbEntries[0]['date'])
     );
   }
 
@@ -125,4 +125,5 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $message['amount'] = (float) $message['amount'];
     return $message;
   }
+
 }

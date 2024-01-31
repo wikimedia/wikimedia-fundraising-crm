@@ -67,17 +67,17 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     }
 
     global $user, $_exchange_rate_cache;
-    $_exchange_rate_cache = array();
+    $_exchange_rate_cache = [];
 
     $user = new stdClass();
     $user->name = "foo_who";
     $user->uid = "321";
-    $user->roles = array(DRUPAL_AUTHENTICATED_RID => 'authenticated user');
+    $user->roles = [DRUPAL_AUTHENTICATED_RID => 'authenticated user'];
     $this->startTimestamp = time();
     civicrm_initialize();
     MailFactory::singleton()->setActiveMailer('test');
-    Civi::settings()->set( 'logging_no_trigger_permission', FALSE);
-    Civi::settings()->set( 'logging', TRUE);
+    Civi::settings()->set('logging_no_trigger_permission', FALSE);
+    Civi::settings()->set('logging', TRUE);
     $this->maxContactID = $this->getHighestContactID();
     $this->maxContributionID = $this->getHighestContributionID();
     $this->trackingCount = CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_contribution_tracking');
@@ -212,6 +212,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    * Create an contact of type Individual.
    *
    * @params array $params
+   *
    * @return int
    */
   public function createIndividual($params = []): int {
@@ -251,9 +252,9 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
   }
 
   public function cleanUpContact($contactId) {
-    $contributions = $this->callAPISuccess('Contribution', 'get', array(
+    $contributions = $this->callAPISuccess('Contribution', 'get', [
       'contact_id' => $contactId,
-    ));
+    ]);
     if (!empty($contributions['values'])) {
       foreach ($contributions['values'] as $id => $details) {
         $this->cleanupContribution($id);
@@ -397,7 +398,7 @@ WHERE contribution_id = :contribution_id', [
    *
    * @return array
    */
-  protected function messageImport($msg) : array {
+  protected function messageImport($msg): array {
     try {
       $contribution = wmf_civicrm_contribution_message_import($msg);
       $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
@@ -432,6 +433,18 @@ WHERE contribution_id = :contribution_id', [
    */
   public function getMailing(int $index): array {
     return MailFactory::singleton()->getMailer()->getMailing($index);
+  }
+
+  /**
+   * Convert civi api Y-m-d H:i:s to unix seconds
+   *
+   * @param string $date as Civi timestamp, returned by an api call
+   *
+   * @return int unix epoch seconds
+   */
+  protected function wmf_common_date_civicrm_to_unix($date) {
+    return DateTime::createFromFormat('Y-m-d H:i:s', $date, new DateTimeZone('UTC'))
+      ->getTimestamp();
   }
 
 }
