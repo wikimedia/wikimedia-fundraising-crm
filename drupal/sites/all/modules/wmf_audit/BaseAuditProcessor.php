@@ -398,7 +398,7 @@ abstract class BaseAuditProcessor {
 
     //get missing transactions from one or more recon files
     //let's just assume that the default mode will be to pop off the top three (most recent) at this point. :)
-    $count = $this->get_recon_files_count( $recon_files );
+    $count = $this->get_recon_files_count($recon_files);
 
     $total_missing = [];
     $recon_file_stats = [];
@@ -415,7 +415,8 @@ abstract class BaseAuditProcessor {
       $time = microtime(TRUE) - $start_time;
       if ($parsed !== FALSE) {
         $parse_count = count($parsed);
-      } else {
+      }
+      else {
         $parse_count = 0;
       }
       wmf_audit_echo($parse_count . " results found in $time seconds\n");
@@ -467,7 +468,6 @@ abstract class BaseAuditProcessor {
         $missing_by_date[$this->get_record_human_date($record)][] = $record;
       }
     }
-
 
     $remaining = NULL;
     if (!empty($missing_by_date)) {
@@ -662,7 +662,6 @@ abstract class BaseAuditProcessor {
    * date), or false on error
    */
   protected function log_hunt_and_send($missing_by_date) {
-
     if (empty($missing_by_date)) {
       wmf_audit_echo(__FUNCTION__ . ': No missing transactions sent to this function. Aborting.');
       return FALSE;
@@ -694,7 +693,7 @@ abstract class BaseAuditProcessor {
     $earliest = wmf_common_date_add_days($earliest, -1 * $this->get_log_days_in_past());
 
     //and add one to the latest to compensate for logrotate... unless that's the future.
-    $today = wmf_common_date_get_today_string();
+    $today = $this->wmf_common_date_get_today_string();
     $latest = wmf_common_date_add_days($latest, 1);
     if ($today < $latest) {
       $latest = $today;
@@ -828,7 +827,6 @@ abstract class BaseAuditProcessor {
                   }
                   if ((!empty($contribution_tracking_data['utm_payment_method'])) &&
                     ($contribution_tracking_data['utm_payment_method'] !== $method)) {
-
                     $message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
                     $message .= ') and normalized log and recon data(' . $method . '). Investigation required.';
                     throw new WMFException(
@@ -848,7 +846,8 @@ abstract class BaseAuditProcessor {
                 $this->send_queue_message($all_data, 'main');
                 unset($tryme[$audit_date][$id]);
                 wmf_audit_echo('!');
-              } catch (WMFException $ex) {
+              }
+              catch (WMFException $ex) {
                 // End of the transaction search/destroy loop. If we're here and have
                 // an error, we found something and the re-fusion didn't work.
                 // Handle consistently, and definitely don't try looking in other
@@ -859,7 +858,6 @@ abstract class BaseAuditProcessor {
               }
             }
             wmf_audit_echo("Log Date: $log_date: Checked $checked missing transactions from $audit_date, and found $found\n");
-
           }
         }
       }
@@ -878,7 +876,7 @@ abstract class BaseAuditProcessor {
         //today minus three. Again: The three is because Shut Up.
         wmf_audit_echo("Making up to $missing_count missing transactions:");
         $made = 0;
-        $cutoff = wmf_common_date_add_days(wmf_common_date_get_today_string(), $this->cutoff);
+        $cutoff = wmf_common_date_add_days($this->wmf_common_date_get_today_string(), $this->cutoff);
         foreach ($tryme as $audit_date => $missing) {
           if ((int) $audit_date <= (int) $cutoff) {
             foreach ($missing as $id => $message) {
@@ -915,6 +913,7 @@ abstract class BaseAuditProcessor {
    * for missing transaction data
    *
    * @param string $date The date of the log we want to grab
+   *
    * @return string[]|false Full paths to all logs for the given date, or false
    *  if something went wrong.
    */
@@ -957,7 +956,7 @@ abstract class BaseAuditProcessor {
     // This date is not ready yet. Get the zipped versions from the archive,
     // unzip to the working directory, and distill.
     $full_distilled_paths = [];
-    for($i = 0; $i < $count; $i++) {
+    for ($i = 0; $i < $count; $i++) {
       $compressed_filename = $compressed_filenames[$i];
       $full_archive_path = wmf_audit_get_log_archive_dir() . '/' . $compressed_filename;
       $working_directory = $this->get_working_log_dir();
@@ -1009,7 +1008,8 @@ abstract class BaseAuditProcessor {
           }
         }
         $full_distilled_paths[] = $full_distilled_path;
-      } else {
+      }
+      else {
         //this happens if the archive file doesn't exist. Definitely not the end of the world, but we should probably log about it.
         wmf_audit_log_error("Archive file $full_archive_path seems not to exist\n", 'MISSING_PAYMENTS_LOG');
       }
@@ -1168,7 +1168,6 @@ abstract class BaseAuditProcessor {
    * @return string A single char to display in the char block.
    */
   protected function audit_echochar($record) {
-
     if ($this->record_is_refund($record)) {
       return 'r';
     }
@@ -1249,7 +1248,6 @@ abstract class BaseAuditProcessor {
     exec($cmd, $ret, $errorlevel);
 
     if (count($ret) > 0) {
-
       //In this wonderful new world, we only expect one line.
       if (count($ret) > 1) {
         wmf_audit_echo("Odd: More than one logline returned for $order_id. Investigation Required.");
@@ -1382,14 +1380,15 @@ abstract class BaseAuditProcessor {
   protected function parse_recon_file($file) {
     $recon_data = [];
     // Send the file through to the processor if needed
-    if($this instanceof MultipleFileTypeParser) {
+    if ($this instanceof MultipleFileTypeParser) {
       $this->setFilePath($file);
     }
     $recon_parser = $this->get_audit_parser();
 
     try {
       $recon_data = $recon_parser->parseFile($file);
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       wmf_audit_log_error(
         "Something went amiss with the recon parser while "
         . "processing $file: \"{$e->getMessage()}\""
@@ -1456,20 +1455,31 @@ abstract class BaseAuditProcessor {
       throw new Exception(__FUNCTION__ . ": Unhandled message type '$type'");
     }
 
-    QueueWrapper::push($queueNames[$type], $body, true);
+    QueueWrapper::push($queueNames[$type], $body, TRUE);
   }
 
   /**
-    * @param $recon_files
-    * @return int|void
-    */
-  protected function get_recon_files_count( $recon_files ) {
+   * @param $recon_files
+   *
+   * @return int|void
+   */
+  protected function get_recon_files_count($recon_files) {
     //...Three, because Shut Up.
-    $count = count( $recon_files );
-    if ( $count > 3 && !$this->get_runtime_options( 'run_all' ) ) {
+    $count = count($recon_files);
+    if ($count > 3 && !$this->get_runtime_options('run_all')) {
       $count = 3;
     }
     return $count;
+  }
+
+  /**
+   * Returns today's date string value
+   *
+   * @return int Today's date in the format yyyymmdd.
+   */
+  private function wmf_common_date_get_today_string() {
+    $timestamp = time();
+    return wmf_common_date_format_string($timestamp);
   }
 
 }

@@ -33,19 +33,9 @@ function wmf_common_date_parse_string($date) {
     return $obj->getTimestamp();
   }
   catch (Exception $ex) {
-    \Civi::log('wmf')->error('wmf_common: Caught date exception in ' . __METHOD__ . ': '. $ex->getMessage());
+    \Civi::log('wmf')->error('wmf_common: Caught date exception in ' . __METHOD__ . ': ' . $ex->getMessage());
     return NULL;
   }
-}
-
-/**
- * Returns today's date string value
- *
- * @return int Today's date in the format yyyymmdd.
- */
-function wmf_common_date_get_today_string() {
-  $timestamp = time();
-  return wmf_common_date_format_string($timestamp);
 }
 
 /**

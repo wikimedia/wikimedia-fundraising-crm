@@ -17,34 +17,34 @@ require_once 'wmf_dates.php';
  * @return array Menu entries
  */
 function wmf_common_menu() {
-  $items = array();
+  $items = [];
 
-  $items['admin/config/wmf_common'] = array(
-    'title'            => 'WMF Common',
-    'access arguments' => array( 'administer wmf_common' ),
+  $items['admin/config/wmf_common'] = [
+    'title' => 'WMF Common',
+    'access arguments' => ['administer wmf_common'],
     'page callback' => 'system_admin_menu_block_page',
     'file' => 'system.admin.inc',
     'file path' => drupal_get_path('module', 'system'),
-  );
+  ];
 
-  $items[ 'admin/config/wmf_common/configure' ] = array(
-    'title'            => 'Common Settings',
-    'access arguments' => array( 'administer wmf_common' ),
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array( 'wmf_common_settings' ),
-  );
-	$items['damaged/%'] = array(
-		'title' => 'Examine damaged message',
-		'access arguments' => array( 'manipulate queues' ),
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'wmf_common_damaged_item_form', 1 ),
-	);
-	$items['damaged'] = array(
-		'title' => 'Search damaged messages',
-		'access arguments' => array( 'manipulate queues' ),
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array( 'wmf_common_damaged_search_form' ),
-	);
+  $items['admin/config/wmf_common/configure'] = [
+    'title' => 'Common Settings',
+    'access arguments' => ['administer wmf_common'],
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['wmf_common_settings'],
+  ];
+  $items['damaged/%'] = [
+    'title' => 'Examine damaged message',
+    'access arguments' => ['manipulate queues'],
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['wmf_common_damaged_item_form', 1],
+  ];
+  $items['damaged'] = [
+    'title' => 'Search damaged messages',
+    'access arguments' => ['manipulate queues'],
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['wmf_common_damaged_search_form'],
+  ];
 
   return $items;
 }
@@ -59,50 +59,50 @@ function wmf_common_menu() {
  * @return array of exported permissions.
  */
 function wmf_common_permission() {
-  return array(
-    'administer wmf_common' => array(
-        'title' => 'Configure the wmf_common module',
-    ),
-    'manipulate queues' => array(
-        'title' => 'Edit and resend queue items',
-    ),
-  );
+  return [
+    'administer wmf_common' => [
+      'title' => 'Configure the wmf_common module',
+    ],
+    'manipulate queues' => [
+      'title' => 'Edit and resend queue items',
+    ],
+  ];
 }
 
 function wmf_common_settings() {
-  $form = array();
+  $form = [];
 
-  $form[ 'wmf_common_failmail' ] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('Failmail Recipient Address'),
-    '#required'      => TRUE,
+  $form['wmf_common_failmail'] = [
+    '#type' => 'textfield',
+    '#title' => t('Failmail Recipient Address'),
+    '#required' => TRUE,
     '#default_value' => variable_get('wmf_common_failmail', 'fr-tech@wikimedia.org'),
-    '#description'   => t('Enter the failmail contact address.'),
-  );
+    '#description' => t('Enter the failmail contact address.'),
+  ];
 
-  $form[ 'wmf_common_no_failmail' ] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('Failmail Message Exceptions for Email'),
-    '#required'      => FALSE,
+  $form['wmf_common_no_failmail'] = [
+    '#type' => 'textfield',
+    '#title' => t('Failmail Message Exceptions for Email'),
+    '#required' => FALSE,
     '#default_value' => variable_get('wmf_common_no_failmail', ''),
-    '#description'   => t('Comma-delimited (no spaces) list of donor email addresses that will never trigger failmail'),
-  );
+    '#description' => t('Comma-delimited (no spaces) list of donor email addresses that will never trigger failmail'),
+  ];
 
-  $form['wmf_common_requeue_delay'] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('Requeue Delay Time'),
-    '#default_value' => variable_get( 'wmf_common_requeue_delay', 20 * 60 ),
-    '#required'      => TRUE,
-    '#description'   => t('Seconds to wait before retrying a failed queue message.'),
-  );
+  $form['wmf_common_requeue_delay'] = [
+    '#type' => 'textfield',
+    '#title' => t('Requeue Delay Time'),
+    '#default_value' => variable_get('wmf_common_requeue_delay', 20 * 60),
+    '#required' => TRUE,
+    '#description' => t('Seconds to wait before retrying a failed queue message.'),
+  ];
 
-  $form['wmf_common_requeue_max'] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('Maximum Requeue Attempts'),
-    '#default_value' => variable_get( 'wmf_common_requeue_max', 10 ),
-    '#required'      => TRUE,
-    '#description'   => t('Number of allowed message requeue attempts before the message is moved to the "badmsg" queue.'),
-  );
+  $form['wmf_common_requeue_max'] = [
+    '#type' => 'textfield',
+    '#title' => t('Maximum Requeue Attempts'),
+    '#default_value' => variable_get('wmf_common_requeue_max', 10),
+    '#required' => TRUE,
+    '#description' => t('Number of allowed message requeue attempts before the message is moved to the "badmsg" queue.'),
+  ];
 
   return system_settings_form($form);
 }
@@ -116,338 +116,361 @@ function wmf_common_settings() {
  * set a variable in settings_local.php
  */
 function wmf_common_get_my_revision() {
-    static $sourceRevision;
+  static $sourceRevision;
 
-    if ( defined( 'WMF_SOURCE_REVISION' ) ) {
-        return WMF_SOURCE_REVISION;
-    } else if ( !$sourceRevision ) {
-        $versionStampPath = DRUPAL_ROOT . "/.version-stamp";
-        if ( file_exists( $versionStampPath ) ) {
-            $versionId = file_get_contents( $versionStampPath );
-            $sourceRevision = trim( $versionId );
-        } else {
-            $sourceRevision = 'unknown';
-        }
+  if (defined('WMF_SOURCE_REVISION')) {
+    return WMF_SOURCE_REVISION;
+  }
+  else {
+    if (!$sourceRevision) {
+      $versionStampPath = DRUPAL_ROOT . "/.version-stamp";
+      if (file_exists($versionStampPath)) {
+        $versionId = file_get_contents($versionStampPath);
+        $sourceRevision = trim($versionId);
+      }
+      else {
+        $sourceRevision = 'unknown';
+      }
     }
-    return $sourceRevision;
+  }
+  return $sourceRevision;
 }
 
-function wmf_common_locale_civi_to_mediawiki( $locale ) {
-    // FIXME: This may prevent some localization but will allow more donors
-	// to see translated pages
-    return strtolower( substr( $locale, 0, 2 ) );
+function wmf_common_locale_civi_to_mediawiki($locale) {
+  // FIXME: This may prevent some localization but will allow more donors
+  // to see translated pages
+  return strtolower(substr($locale, 0, 2));
 }
 
-function wmf_common_damaged_search_form( $form, &$form_state ) {
-	if ( isset( $form_state['confirm_delete'] ) ) {
-		// WTF. If you try to do a bulk operation after loading the form
-		// once, the selected IDs go in $form_state['input']['table']. If
-		// you do the bulk operation after submitting a search, they go in
-		// $form_state['values']['table']
-		if ( isset( $form_state['values']['table'] ) ) {
-			return wmf_common_damaged_confirm_delete(
-				$form, $form_state['values']['table']
-			);
-		} else if ( isset( $form_state['input']['table'] ) ) {
-			return wmf_common_damaged_confirm_delete(
-				$form, $form_state['input']['table']
-			);
-		}
-	}
+function wmf_common_damaged_search_form($form, &$form_state) {
+  if (isset($form_state['confirm_delete'])) {
+    // WTF. If you try to do a bulk operation after loading the form
+    // once, the selected IDs go in $form_state['input']['table']. If
+    // you do the bulk operation after submitting a search, they go in
+    // $form_state['values']['table']
+    if (isset($form_state['values']['table'])) {
+      return wmf_common_damaged_confirm_delete(
+        $form, $form_state['values']['table']
+      );
+    }
+    else {
+      if (isset($form_state['input']['table'])) {
+        return wmf_common_damaged_confirm_delete(
+          $form, $form_state['input']['table']
+        );
+      }
+    }
+  }
 
-	$form['gateway'] = array(
-		'#type' => 'textfield',
-		'#title' => 'Gateway',
-		'#maxlength' => 256,
-	);
+  $form['gateway'] = [
+    '#type' => 'textfield',
+    '#title' => 'Gateway',
+    '#maxlength' => 256,
+  ];
 
-	$form['original_queue'] = array(
-		'#type' => 'textfield',
-		'#title' => 'Queue',
-		'#maxlength' => 256,
-	);
+  $form['original_queue'] = [
+    '#type' => 'textfield',
+    '#title' => 'Queue',
+    '#maxlength' => 256,
+  ];
 
-	$form['search'] = array(
-		'#type' => 'submit',
-		'#value' => t( 'Search' ),
-	);
+  $form['search'] = [
+    '#type' => 'submit',
+    '#value' => t('Search'),
+  ];
 
-	$form['#submit'] = array( 'wmf_common_damaged_search_submit' );
+  $form['#submit'] = ['wmf_common_damaged_search_submit'];
 
-	if (
-		isset( $form_state['perform_query'] ) ||
-		empty( $form_state['input']['op'] ) // Run query on first load
-	) {
-		return wmf_common_damaged_perform_query( $form, $form_state );
-	} else {
-		// Terrible hack. If these buttons are not added here, drupal
-		// assumes that the triggering button is always search.
-		$form['resend'] = array(
-			'#type' => 'submit',
-			'#value' => t( 'Resend' ),
-			'#disabled' => 'disabled',
-			'#hidden' => 'true',
-		);
-		$form['delete'] = array(
-			'#type' => 'submit',
-			'#value' => t( 'Delete' ),
-			'#hidden' => 'true',
-		);
-	}
+  if (
+    isset($form_state['perform_query']) ||
+    empty($form_state['input']['op']) // Run query on first load
+  ) {
+    return wmf_common_damaged_perform_query($form, $form_state);
+  }
+  else {
+    // Terrible hack. If these buttons are not added here, drupal
+    // assumes that the triggering button is always search.
+    $form['resend'] = [
+      '#type' => 'submit',
+      '#value' => t('Resend'),
+      '#disabled' => 'disabled',
+      '#hidden' => 'true',
+    ];
+    $form['delete'] = [
+      '#type' => 'submit',
+      '#value' => t('Delete'),
+      '#hidden' => 'true',
+    ];
+  }
 
-	return $form;
+  return $form;
 }
 
-function wmf_common_damaged_search_submit( $form, &$form_state ) {
-	switch( $form_state['values']['op'] ) {
-		case $form_state['values']['search']:
-			$form_state['rebuild'] = true;
-			$form_state['perform_query'] = true;
-			break;
-		case $form_state['values']['delete']:
-			// Rebuild the form to confirm message deletion.
-			$form_state['rebuild'] = true;
-			$form_state['confirm_delete'] = true;
-			break;
-	}
+function wmf_common_damaged_search_submit($form, &$form_state) {
+  switch ($form_state['values']['op']) {
+    case $form_state['values']['search']:
+      $form_state['rebuild'] = TRUE;
+      $form_state['perform_query'] = TRUE;
+      break;
+    case $form_state['values']['delete']:
+      // Rebuild the form to confirm message deletion.
+      $form_state['rebuild'] = TRUE;
+      $form_state['confirm_delete'] = TRUE;
+      break;
+  }
 }
 
-function wmf_common_damaged_perform_query( $form, &$form_state ) {
-	$query = Database::getConnection( 'default', 'smashpig' )
-		->select( 'damaged', 'd' )
-		->extend( 'PagerDefault' );
+function wmf_common_damaged_perform_query($form, &$form_state) {
+  $query = Database::getConnection('default', 'smashpig')
+    ->select('damaged', 'd')
+    ->extend('PagerDefault');
 
-	$query->fields( 'd', array(
-			'id', 'original_date', 'damaged_date', 'original_queue',
-			'gateway', 'order_id', 'gateway_txn_id', 'error'
-		) )
-		->orderBy( 'damaged_date', 'DESC' )
-		->condition( 'retry_date', null );
+  $query->fields('d', [
+    'id',
+    'original_date',
+    'damaged_date',
+    'original_queue',
+    'gateway',
+    'order_id',
+    'gateway_txn_id',
+    'error',
+  ])
+    ->orderBy('damaged_date', 'DESC')
+    ->condition('retry_date', NULL);
 
-	$allowedFields = array( 'gateway', 'original_queue' );
-	$parameters = array();
+  $allowedFields = ['gateway', 'original_queue'];
+  $parameters = [];
 
-	foreach( $allowedFields as $field ) {
-		if ( !empty( $form_state['input'][$field] ) ) {
-			$query->condition( $field, $form_state['input'][$field] );
-			$parameters[$field] = $form_state['input'][$field];
-		}
-	}
+  foreach ($allowedFields as $field) {
+    if (!empty($form_state['input'][$field])) {
+      $query->condition($field, $form_state['input'][$field]);
+      $parameters[$field] = $form_state['input'][$field];
+    }
+  }
 
-	$query->limit( 10 );
-	$rows = $query
-		->execute()
-		->fetchAllAssoc( 'id', PDO::FETCH_ASSOC );
+  $query->limit(10);
+  $rows = $query
+    ->execute()
+    ->fetchAllAssoc('id', PDO::FETCH_ASSOC);
 
-	foreach ( $rows as $id => &$row ) {
-		$err = empty( $row['error'] ) ? 'View details' : $row['error'];
-		$row['error'] = l( $err, WmfQueueConsumer::itemUrl( $id ) );
-	}
+  foreach ($rows as $id => &$row) {
+    $err = empty($row['error']) ? 'View details' : $row['error'];
+    $row['error'] = l($err, WmfQueueConsumer::itemUrl($id));
+  }
 
-	$form['table'] = array(
-		'#type' => 'tableselect',
-		'#header' => array(
-			'id' => t( 'ID' ),
-			'original_date' => t( 'Original Date' ),
-			'damaged_date' => t( 'Damaged Date' ),
-			'original_queue' => t( 'Original Queue' ),
-			'gateway' => t( 'Gateway' ),
-			'order_id' => t( 'Order ID' ),
-			'gateway_txn_id' => t( 'Gateway txn ID' ),
-			'error' => t( 'Error' )
-		),
-		'#options' => $rows,
-		'#empty' => 'Nothing in the damaged message table!  Be very suspicious...',
-	);
-	$form['pager'] = array(
-		'#theme' => 'pager',
-		'#parameters' => $parameters
-	);
+  $form['table'] = [
+    '#type' => 'tableselect',
+    '#header' => [
+      'id' => t('ID'),
+      'original_date' => t('Original Date'),
+      'damaged_date' => t('Damaged Date'),
+      'original_queue' => t('Original Queue'),
+      'gateway' => t('Gateway'),
+      'order_id' => t('Order ID'),
+      'gateway_txn_id' => t('Gateway txn ID'),
+      'error' => t('Error'),
+    ],
+    '#options' => $rows,
+    '#empty' => 'Nothing in the damaged message table!  Be very suspicious...',
+  ];
+  $form['pager'] = [
+    '#theme' => 'pager',
+    '#parameters' => $parameters,
+  ];
 
-	$form['resend'] = array(
-		'#type' => 'submit',
-		'#value' => t( 'Resend' ),
-        '#disabled' => 'disabled',
-	);
-	$form['delete'] = array(
-		'#type' => 'submit',
-		'#value' => t( 'Delete' ),
-	);
-	return $form;
+  $form['resend'] = [
+    '#type' => 'submit',
+    '#value' => t('Resend'),
+    '#disabled' => 'disabled',
+  ];
+  $form['delete'] = [
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+  ];
+  return $form;
 }
 
 /**
  * Takes a list of selected and unselected ids provided by tableselect
  * and returns just those which are selected.
+ *
  * @param array $ids
+ *
  * @return array
  */
-function wmf_common_get_selected( $ids ) {
-	$selected = array_filter( $ids, function( $n ) { return $n; } );
-	return array_keys( $selected );
+function wmf_common_get_selected($ids) {
+  $selected = array_filter($ids, function($n) {
+    return $n;
+  });
+  return array_keys($selected);
 }
 
-function wmf_common_damaged_confirm_delete( $form, $ids ) {
-	$ids = wmf_common_get_selected( $ids );
-	$form['#submit'] = array( 'wmf_common_damaged_confirm_delete_submit' );
-	$form['#ids'] = implode( ',', $ids );
-	return confirm_form(
-		$form,
-		t( 'Really delete %n damaged messages?', array( '%n' => count( $ids ) ) ),
-		'damaged'
-	);
+function wmf_common_damaged_confirm_delete($form, $ids) {
+  $ids = wmf_common_get_selected($ids);
+  $form['#submit'] = ['wmf_common_damaged_confirm_delete_submit'];
+  $form['#ids'] = implode(',', $ids);
+  return confirm_form(
+    $form,
+    t('Really delete %n damaged messages?', ['%n' => count($ids)]),
+    'damaged'
+  );
 }
 
-function wmf_common_damaged_confirm_delete_submit( $form, &$form_state ) {
-	wmf_common_create_smashpig_context( 'damaged_message_form' );
-	$ids = explode( ',', $form['#ids'] );
-	$ddb = DamagedDatabase::get();
-	foreach( $ids as $id ) {
-		$ddb->deleteMessage( array(
-			'damaged_id' => $id
-		) );
-	}
-	drupal_set_message( t(
-		'Deleted %n messages', array( '%n' => count( $ids ) )
-	) );
+function wmf_common_damaged_confirm_delete_submit($form, &$form_state) {
+  wmf_common_create_smashpig_context('damaged_message_form');
+  $ids = explode(',', $form['#ids']);
+  $ddb = DamagedDatabase::get();
+  foreach ($ids as $id) {
+    $ddb->deleteMessage([
+      'damaged_id' => $id,
+    ]);
+  }
+  drupal_set_message(t(
+    'Deleted %n messages', ['%n' => count($ids)]
+  ));
 }
 
-function wmf_common_damaged_item_form( $form, &$form_state, $id ) {
-	$dbEntry = Database::getConnection( 'default', 'smashpig' )
-		->select( 'damaged', 'd' )
-		->fields( 'd', array(
-			'original_date', 'damaged_date', 'original_queue',
-			'error', 'trace', 'message'
-		) )
-		->condition( 'id', $id )
-		->execute()
-		->fetchAssoc();
+function wmf_common_damaged_item_form($form, &$form_state, $id) {
+  $dbEntry = Database::getConnection('default', 'smashpig')
+    ->select('damaged', 'd')
+    ->fields('d', [
+      'original_date',
+      'damaged_date',
+      'original_queue',
+      'error',
+      'trace',
+      'message',
+    ])
+    ->condition('id', $id)
+    ->execute()
+    ->fetchAssoc();
 
-	if ( !$dbEntry ) {
-		drupal_set_message( t( 'Message %id not found.', array( '%id' => $id ) ) );
-		return $form;
-	}
+  if (!$dbEntry) {
+    drupal_set_message(t('Message %id not found.', ['%id' => $id]));
+    return $form;
+  }
 
-	if ( !empty( $dbEntry['error'] ) ) {
-		$form['error'] = array(
-			'#title' => 'Error',
-			'#markup' => "<div>Failure reason:<br>" . check_plain( $dbEntry['error'] ) . "</div>",
-		);
-	}
+  if (!empty($dbEntry['error'])) {
+    $form['error'] = [
+      '#title' => 'Error',
+      '#markup' => "<div>Failure reason:<br>" . check_plain($dbEntry['error']) . "</div>",
+    ];
+  }
 
-	if ( !empty( $dbEntry['trace'] ) ) {
-		$form['trace'] = array(
-			'#type' => 'fieldset',
-			'#title' => t('Stack trace'),
-			'#collapsible' => TRUE,
-			'#collapsed' => TRUE,
-		);
-		$form['trace']['details'] = array(
-			'#markup' => str_replace(
-				"\n", '<br/>', check_plain( $dbEntry['trace'] )
-			)
-		);
-	}
+  if (!empty($dbEntry['trace'])) {
+    $form['trace'] = [
+      '#type' => 'fieldset',
+      '#title' => t('Stack trace'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    ];
+    $form['trace']['details'] = [
+      '#markup' => str_replace(
+        "\n", '<br/>', check_plain($dbEntry['trace'])
+      ),
+    ];
+  }
 
-	$form['original_queue'] = array(
-		'#type' => 'hidden',
-		'#value' => $dbEntry['original_queue']
-	);
+  $form['original_queue'] = [
+    '#type' => 'hidden',
+    '#value' => $dbEntry['original_queue'],
+  ];
 
-	$form['damaged_id'] = array(
-		'#type' => 'hidden',
-		'#value' => $id
-	);
+  $form['damaged_id'] = [
+    '#type' => 'hidden',
+    '#value' => $id,
+  ];
 
-	$message = json_decode( $dbEntry['message'], true );
+  $message = json_decode($dbEntry['message'], TRUE);
 
-	$form['msg_fields'] = array(
-		'#type' => 'fieldset',
-		'#title' => 'Message',
-	);
-	foreach ( $message as $key => $value ) {
-		$form['msg_fields']['field-' . $key] = array(
-			'#type' => 'textfield',
-			'#title' => $key,
-			'#default_value' => $value,
-			'#maxlength' => 1024,
-		);
-	}
-	$form['resend'] = array(
-		'#type' => 'submit',
-		'#value' => t( 'Resend' ),
-	);
-	$form['download'] = array(
-		'#type' => 'submit',
-		'#value' => t( 'Download' ),
-	);
-	$form['delete'] = array(
-		'#type' => 'submit',
-		'#value' => t( 'Delete' ),
-	);
-	$form['#submit'] = array( 'wmf_common_damaged_item_submit' );
-	return $form;
+  $form['msg_fields'] = [
+    '#type' => 'fieldset',
+    '#title' => 'Message',
+  ];
+  foreach ($message as $key => $value) {
+    $form['msg_fields']['field-' . $key] = [
+      '#type' => 'textfield',
+      '#title' => $key,
+      '#default_value' => $value,
+      '#maxlength' => 1024,
+    ];
+  }
+  $form['resend'] = [
+    '#type' => 'submit',
+    '#value' => t('Resend'),
+  ];
+  $form['download'] = [
+    '#type' => 'submit',
+    '#value' => t('Download'),
+  ];
+  $form['delete'] = [
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+  ];
+  $form['#submit'] = ['wmf_common_damaged_item_submit'];
+  return $form;
 }
 
-function wmf_common_damaged_item_submit( $form, &$form_state ) {
-	$delete = false;
-	$id = $form_state['values']['damaged_id'];
-	wmf_common_create_smashpig_context( 'damaged_message_form' );
-	wmf_common_set_smashpig_message_source( 'direct', 'Damaged message UI' );
+function wmf_common_damaged_item_submit($form, &$form_state) {
+  $delete = FALSE;
+  $id = $form_state['values']['damaged_id'];
+  wmf_common_create_smashpig_context('damaged_message_form');
+  wmf_common_set_smashpig_message_source('direct', 'Damaged message UI');
 
-	switch ( $form_state['values']['op'] ) {
-		case $form_state['values']['resend']:
-			// TODO: resend by id only for shortcut
-			$message = array();
-			foreach ( $form_state['values'] as $key => $value ) {
-				if ( preg_match( '/field-(.*)/', $key, $matches ) ) {
-					$message[$matches[1]] = $value;
-				}
-			}
-			$queueName = $form_state['values']['original_queue'];
-			QueueWrapper::push( $queueName, $message );
-			drupal_set_message(
-				t( 'Message %id resent for processing.', array( '%id' => $id ) )
-			);
-			$delete = true;
-			break;
-		case $form_state['values']['delete']:
-			$delete = true;
-			drupal_set_message(
-				t( 'Message %id deleted.', array( '%id' => $id ) )
-			);
-			break;
-		default:
-			drupal_set_message( t( 'Not implemented!' ) );
-			break;
-	}
-	if ( $delete ) {
-		DamagedDatabase::get()->deleteMessage( array(
-			'damaged_id' => $id
-		) );
-		$form_state['redirect'] = 'damaged';
-	}
+  switch ($form_state['values']['op']) {
+    case $form_state['values']['resend']:
+      // TODO: resend by id only for shortcut
+      $message = [];
+      foreach ($form_state['values'] as $key => $value) {
+        if (preg_match('/field-(.*)/', $key, $matches)) {
+          $message[$matches[1]] = $value;
+        }
+      }
+      $queueName = $form_state['values']['original_queue'];
+      QueueWrapper::push($queueName, $message);
+      drupal_set_message(
+        t('Message %id resent for processing.', ['%id' => $id])
+      );
+      $delete = TRUE;
+      break;
+    case $form_state['values']['delete']:
+      $delete = TRUE;
+      drupal_set_message(
+        t('Message %id deleted.', ['%id' => $id])
+      );
+      break;
+    default:
+      drupal_set_message(t('Not implemented!'));
+      break;
+  }
+  if ($delete) {
+    DamagedDatabase::get()->deleteMessage([
+      'damaged_id' => $id,
+    ]);
+    $form_state['redirect'] = 'damaged';
+  }
 }
 
-function wmf_common_create_smashpig_context( $logPrefix, $provider = ProviderConfiguration::NO_PROVIDER ) {
-	// Initialize SmashPig, or set provider configuration if already initialized
-	$ctx = Context::get();
-	if ( $ctx ) {
-		$globalConfig = $ctx->getGlobalConfiguration();
-		$config = ProviderConfiguration::createForProvider( $provider, $globalConfig );
-		$ctx->setProviderConfiguration( $config );
-	} else {
-		$globalConfig = GlobalConfiguration::create();
-		$config = ProviderConfiguration::createForProvider( $provider, $globalConfig );
-		Context::init( $globalConfig, $config );
-		wmf_common_set_smashpig_message_source( 'direct', 'CiviCRM' );
-	}
-	Logger::setPrefix( $logPrefix );
+function wmf_common_create_smashpig_context($logPrefix, $provider = ProviderConfiguration::NO_PROVIDER) {
+  // Initialize SmashPig, or set provider configuration if already initialized
+  $ctx = Context::get();
+  if ($ctx) {
+    $globalConfig = $ctx->getGlobalConfiguration();
+    $config = ProviderConfiguration::createForProvider($provider, $globalConfig);
+    $ctx->setProviderConfiguration($config);
+  }
+  else {
+    $globalConfig = GlobalConfiguration::create();
+    $config = ProviderConfiguration::createForProvider($provider, $globalConfig);
+    Context::init($globalConfig, $config);
+    wmf_common_set_smashpig_message_source('direct', 'CiviCRM');
+  }
+  Logger::setPrefix($logPrefix);
 }
 
-function wmf_common_set_smashpig_message_source( $type, $name ) {
-	$ctx = Context::get();
-	$ctx->setSourceType( $type );
-	$ctx->setSourceName( $name );
-	$ctx->setVersionFromFile( DRUPAL_ROOT . "/.version-stamp" );
+function wmf_common_set_smashpig_message_source($type, $name) {
+  $ctx = Context::get();
+  $ctx->setSourceType($type);
+  $ctx->setSourceName($name);
+  $ctx->setVersionFromFile(DRUPAL_ROOT . "/.version-stamp");
 }
