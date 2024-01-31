@@ -1254,14 +1254,14 @@ class CalculatedData extends TriggerHook {
       ],
       60 => [
         'label' => 'Deep Lapsed',
-        'static_description' => 'last gave between 3 & 5 financial years ago',
+        'static_description' => 'last gave between 2 & 5 financial years ago',
         'value' => 60,
         'name' => 'deep_lapsed',
         'criteria' => [
           'range' => [
             [
               'from' => $this->getFinancialYearStartDateTime(-5),
-              'to' => $this->getFinancialYearStartDateTime(-3),
+              'to' => $this->getFinancialYearStartDateTime(-2),
               'total' => 0.01,
             ],
           ],
