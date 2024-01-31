@@ -1479,7 +1479,7 @@ abstract class BaseAuditProcessor {
    */
   private function wmf_common_date_get_today_string() {
     $timestamp = time();
-    return wmf_common_date_format_string($timestamp);
+    return $this->wmf_common_date_format_string($timestamp);
   }
 
   /**
@@ -1500,9 +1500,26 @@ abstract class BaseAuditProcessor {
     $ret = [];
     while ($next < $enddate) {
       $next = date_add($next, $interval);
-      $ret[] = wmf_common_date_format_string($next);
+      $ret[] = $this->wmf_common_date_format_string($next);
     }
     return $ret;
+  }
+
+  /**
+   * Converts various kinds of dates to our favorite string format.
+   *
+   * @param mixed $date An integer in ***timestamp*** format, or a DateTime
+   *   object.
+   *
+   * @return string The date in the format yyyymmdd.
+   */
+  private function wmf_common_date_format_string($date) {
+    if (is_numeric($date)) {
+      return date(WMF_DATEFORMAT, $date);
+    }
+    elseif (is_object($date)) {
+      return date_format($date, WMF_DATEFORMAT);
+    }
   }
 
 }

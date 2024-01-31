@@ -3,23 +3,6 @@
 define('WMF_DATEFORMAT', 'Ymd');
 
 /**
- * Converts various kinds of dates to our favorite string format.
- *
- * @param mixed $date An integer in ***timestamp*** format, or a DateTime
- *   object.
- *
- * @return string The date in the format yyyymmdd.
- */
-function wmf_common_date_format_string($date) {
-  if (is_numeric($date)) {
-    return date(WMF_DATEFORMAT, $date);
-  }
-  elseif (is_object($date)) {
-    return date_format($date, WMF_DATEFORMAT);
-  }
-}
-
-/**
  * Run strtotime in UTC
  *
  * @param string $date Random date format you hope is parseable by PHP, and is
@@ -80,8 +63,8 @@ function wmf_common_date_format_using_utc($format, $unixtime) {
 /**
  * Normalize a date string and attempt to parse into a DateTime object.
  *
- * @throws Exception when the string is unparsable.
  * @return DateTime
+ * @throws Exception when the string is unparsable.
  */
 function wmf_common_make_datetime($text) {
   // Funky hack to trim decimal timestamp.  More normalizations may follow.
