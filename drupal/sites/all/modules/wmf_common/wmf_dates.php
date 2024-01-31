@@ -3,23 +3,6 @@
 define('WMF_DATEFORMAT', 'Ymd');
 
 /**
- * Converts various kinds of dates to our favorite string format.
- *
- * @param mixed $date An integer in ***timestamp*** format, or a DateTime
- *   object.
- *
- * @return string The date in the format yyyymmdd.
- */
-function wmf_common_date_format_string($date) {
-  if (is_numeric($date)) {
-    return date(WMF_DATEFORMAT, $date);
-  }
-  elseif (is_object($date)) {
-    return date_format($date, WMF_DATEFORMAT);
-  }
-}
-
-/**
  * Run strtotime in UTC
  *
  * @param string $date Random date format you hope is parseable by PHP, and is
@@ -36,29 +19,6 @@ function wmf_common_date_parse_string($date) {
     \Civi::log('wmf')->error('wmf_common: Caught date exception in ' . __METHOD__ . ': ' . $ex->getMessage());
     return NULL;
   }
-}
-
-/**
- * Get an array of all the valid dates between $start(exclusive) and
- * $end(inclusive)
- *
- * @param int $start Date string in the format yyyymmdd
- * @param int $end Date string in the format yyyymmdd
- *
- * @return array all date strings between the $start and $end values
- */
-function wmf_common_date_get_date_gap($start, $end) {
-  $startdate = date_create_from_format(WMF_DATEFORMAT, (string) $start);
-  $enddate = date_create_from_format(WMF_DATEFORMAT, (string) $end);
-
-  $next = $startdate;
-  $interval = new DateInterval('P1D');
-  $ret = array();
-  while ($next < $enddate) {
-    $next = date_add($next, $interval);
-    $ret[] = wmf_common_date_format_string($next);
-  }
-  return $ret;
 }
 
 /**
@@ -103,8 +63,8 @@ function wmf_common_date_format_using_utc($format, $unixtime) {
 /**
  * Normalize a date string and attempt to parse into a DateTime object.
  *
- * @throws Exception when the string is unparsable.
  * @return DateTime
+ * @throws Exception when the string is unparsable.
  */
 function wmf_common_make_datetime($text) {
   // Funky hack to trim decimal timestamp.  More normalizations may follow.

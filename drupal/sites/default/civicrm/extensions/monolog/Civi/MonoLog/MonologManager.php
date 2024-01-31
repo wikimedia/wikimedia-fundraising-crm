@@ -95,6 +95,9 @@ class MonologManager {
           if ($monolog['type'] === 'std_out') {
             $this->addStdOutLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final']);
           }
+          if ($monolog['type'] === 'std_err') {
+            $this->addStdErrLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final']);
+          }
         }
       }
       return $this->channels[$channel];
@@ -261,28 +264,44 @@ class MonologManager {
    */
   protected function addStdOutLogger(string $channel, Logger $logger, string $minimumLevel, bool $isFinal): void {
     if (PHP_SAPI === 'cli' && !defined('CIVICRM_TEST')) {
-      global $argv;
-      // The wordpress handler has this rather nice idea of respecting command
-      // line efforts to increase or decrease logging levels.
-      $modifiers = [
-        // Drush parameters https://groups.drupal.org/drush/commands
-        '-v' => 'notice',
-        '--verbose' => 'notice',
-        '--debug' => 'debug',
-        '-d' => 'debug',
-        '-q' => 'error',
-        '--quiet' => 'error',
-        // https://symfony.com/doc/current/logging/monolog_console.html
-        '-vv' => 'info',
-        '-vvv' => 'debug',
-      ];
-      foreach ($argv as $argument) {
-        if (isset($modifiers[$argument])) {
-          $minimumLevel = $modifiers[$argument];
-        }
-      }
+      $minimumLevel = $this->adjustCommandLineMinimumLevel($minimumLevel);
       $formatter = new LineFormatter("%channel%.%level_name%: %message% %context% %extra%\n", NULL, TRUE, TRUE);
       $handler = new StreamHandler('php://stdout', $minimumLevel, !$isFinal);
+      $handler->setFormatter($formatter);
+      $logger->pushHandler($handler);
+    }
+  }
+
+  /**
+   * Add Standard err Logger.
+   *
+   * This logs to standard err when run from the command line.
+   *
+   * Note that is supports verbosity flags :
+   *
+   *  // Drush parameters https://groups.drupal.org/drush/commands
+   *  -v  =>  'notice',
+   * --verbose' => 'notice',
+   * --debug' => 'debug',
+   * -d' => 'debug',
+   * -q' => 'error',
+   * --quiet' => 'error',
+   * // https://symfony.com/doc/current/logging/monolog_console.html
+   * -vv' => 'info',
+   * -vvv' => 'debug',
+   *
+   * @param string $channel
+   * @param \Monolog\Logger $logger
+   * @param string $minimumLevel
+   * @param bool $isFinal
+   *
+   * @noinspection PhpUnusedParameterInspection
+   */
+  protected function addStdErrLogger(string $channel, Logger $logger, string $minimumLevel, bool $isFinal): void {
+    if (PHP_SAPI === 'cli' && !defined('CIVICRM_TEST')) {
+      $minimumLevel = $this->adjustCommandLineMinimumLevel($minimumLevel);
+      $formatter = new LineFormatter("%channel%.%level_name%: %message% %context% %extra%\n", NULL, TRUE, TRUE);
+      $handler = new StreamHandler('php://stderr', $minimumLevel, !$isFinal);
       $handler->setFormatter($formatter);
       $logger->pushHandler($handler);
     }
@@ -331,6 +350,38 @@ class MonologManager {
   protected function getBuiltInLogger($channel): LoggerInterface {
     $manager = new LogManager();
     return $manager->getLog($channel);
+  }
+
+  /**
+   * Adjust the minimum alert level based on command line arguments.
+   *
+   * The wordpress handler has this rather nice idea of respecting command
+   * line efforts to increase or decrease logging levels.
+   *
+   * @param string $minimumLevel
+   *
+   * @return string
+   */
+  private function adjustCommandLineMinimumLevel(string $minimumLevel): string {
+    global $argv;
+    $modifiers = [
+      // Drush parameters https://groups.drupal.org/drush/commands
+      '-v' => 'notice',
+      '--verbose' => 'notice',
+      '--debug' => 'debug',
+      '-d' => 'debug',
+      '-q' => 'error',
+      '--quiet' => 'error',
+      // https://symfony.com/doc/current/logging/monolog_console.html
+      '-vv' => 'info',
+      '-vvv' => 'debug',
+    ];
+    foreach ($argv as $argument) {
+      if (isset($modifiers[$argument])) {
+        $minimumLevel = $modifiers[$argument];
+      }
+    }
+    return $minimumLevel;
   }
 
 }
