@@ -1,7 +1,7 @@
 <?php
 
 use queue2civicrm\DonationQueueConsumer;
-use Civi\WMFStatistics\ImportStatsCollector;
+use Civi\WMFStatistic\ImportStatsCollector;
 
 /**
  * Implementation of hook_menu().

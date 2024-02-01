@@ -7,7 +7,7 @@ use Civi\ExchangeException\ExchangeRatesException;
 use Civi\WMFHelpers\ContributionRecur;
 use Civi\WMFHelpers\FinanceInstrument;
 use Civi\WMFQueueMessage\DonationMessage;
-use Civi\WMFStatistics\ImportStatsCollector;
+use Civi\WMFStatistic\ImportStatsCollector;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\Database;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;

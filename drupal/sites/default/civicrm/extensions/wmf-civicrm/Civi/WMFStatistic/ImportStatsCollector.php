@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\WMFStatistics;
+namespace Civi\WMFStatistic;
 
 use Statistics\Collector\AbstractCollector;
 use Statistics\Exporter\Prometheus as PrometheusStatsExporter;
