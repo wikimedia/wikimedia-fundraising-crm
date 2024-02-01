@@ -4,7 +4,7 @@ use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\Contact;
 use Civi\WMFHelpers\Contribution;
-use Civi\WMFHooks\Import;
+use Civi\WMFHook\Import;
 
 class BenevityFile extends ChecksFile {
 
@@ -226,7 +226,6 @@ class BenevityFile extends ChecksFile {
       // This is done in the import but if we have no donation let's still do this update.
       civicrm_api3('Contact', 'create', ['contact_id' => $msg['contact_id'], 'employer_id' => $msg['employer_id']]);
     }
-
 
     if (!empty($msg['original_matching_amount']) && $msg['original_matching_amount'] > 0) {
       $msg['matching_amount'] = $this->getUSDAmount($msg['original_matching_amount']);

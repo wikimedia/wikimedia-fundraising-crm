@@ -1,7 +1,7 @@
 <?php
 // Class to hold wmf functionality that alters permissions.
 
-namespace Civi\WMFHooks;
+namespace Civi\WMFHook;
 
 use Civi\Api4\CustomField;
 use Civi\Api4\CustomGroup;
@@ -60,7 +60,7 @@ class CalculatedData extends TriggerHook {
   /**
    * @param bool $isForceSegment
    *
-   * @return \Civi\WMFHooks\CalculatedData
+   * @return \Civi\WMFHook\CalculatedData
    */
   public function setIsForceSegment(bool $isForceSegment): self {
     $this->isForceSegment = $isForceSegment;
@@ -70,7 +70,7 @@ class CalculatedData extends TriggerHook {
   /**
    * @param bool $triggerContext
    *
-   * @return \Civi\WMFHooks\CalculatedData
+   * @return \Civi\WMFHook\CalculatedData
    */
   public function setTriggerContext(bool $triggerContext): self {
     $this->triggerContext = $triggerContext;

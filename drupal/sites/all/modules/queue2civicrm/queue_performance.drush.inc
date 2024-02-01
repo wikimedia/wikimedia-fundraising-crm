@@ -6,13 +6,13 @@
  * This is intended to be run before and after changes anticipated to affect performance.
  */
 
-use Civi\WMFStatistics\ImportStatsCollector;
+use Civi\WMFStatistic\ImportStatsCollector;
 
 /**
  * Implementation of hook_drush_command()
  */
 function queue_performance_drush_command() {
-  $items = array();
+  $items = [];
 
   $items['profile_donation'] = array(
     'description' =>

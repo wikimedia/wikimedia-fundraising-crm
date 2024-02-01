@@ -12,7 +12,7 @@
 // To sync the database with fields defined in this file use:
 // drush @wmff cvapi WMFConfig.SyncCustomFields version=4
 // ******
-use Civi\WMFHooks\CalculatedData;
+use Civi\WMFHook\CalculatedData;
 
 $calculatedData = new CalculatedData();
 // The option value for relationship is also ensured in the relationship
@@ -984,16 +984,21 @@ function _wmf_civicrm_get_data_axle_fields(): array {
       'note_columns' => 60,
       'note_rows' => 4,
     ],
-    'data_axle_is_single' => [
-      'name' => 'data_axle_is_single',
-      'label' => '(DA) Is Single',
-      'column_name' => 'data_axle_is_single',
-      'help_pre' => 'CE Selected Individual Single Flag (Marital Status Of Individual Based On Household Married Score And Other Business Rules (Such As Spouse Indicator).)',
-      'data_type' => 'Boolean',
-      'html_type' => 'YesNo',
+    'data_axle_marital_status' => [
+      'name' => 'data_axle_marital_status',
+      'label' => '(DA) Marital Status',
+      'column_name' => 'data_axle_marital_status',
+      'help_pre' => 'CE Selected Individual Marital Status',
+      'data_type' => 'String',
+      'html_type' => 'Select',
       'text_length' => 255,
       'note_columns' => 60,
       'note_rows' => 4,
+      'option_values' => [
+        'S' => 'Single',
+        'M' => 'Married',
+        'U' => 'Unknown',
+      ],
     ],
     'data_axle_is_grandparent' => [
       'name' => 'data_axle_is_grandparent',

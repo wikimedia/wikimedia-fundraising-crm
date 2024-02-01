@@ -5,7 +5,7 @@ use Civi\Api4\OptionGroup;
 use Civi\Api4\WMFConfig;
 use Civi\Api4\OptionValue;
 use Civi\Queue\QueueHelper;
-use Civi\WMFHooks\CalculatedData;
+use Civi\WMFHook\CalculatedData;
 
 /**
  * Collection of upgrade steps.

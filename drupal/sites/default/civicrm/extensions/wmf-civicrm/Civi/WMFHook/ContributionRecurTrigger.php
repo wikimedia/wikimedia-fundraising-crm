@@ -1,8 +1,9 @@
 <?php
 
-namespace Civi\WMFHooks;
+namespace Civi\WMFHook;
 
 class ContributionRecurTrigger extends TriggerHook {
+
   /**
    * Add a trigger to contribution_recur
    *

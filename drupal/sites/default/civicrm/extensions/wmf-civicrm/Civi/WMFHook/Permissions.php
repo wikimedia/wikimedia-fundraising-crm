@@ -1,7 +1,7 @@
 <?php
 // Class to hold wmf functionality that alters permissions.
 
-namespace Civi\WMFHooks;
+namespace Civi\WMFHook;
 
 use CRM_Wmf_ExtensionUtil as E;
 

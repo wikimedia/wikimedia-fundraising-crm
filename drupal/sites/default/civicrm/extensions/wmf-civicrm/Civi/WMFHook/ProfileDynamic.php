@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\WMFHooks;
+namespace Civi\WMFHook;
 
 use CRM_Core_BAO_CustomField;
 

@@ -1,10 +1,11 @@
 <?php
 
-namespace Civi\WMFHooks;
+namespace Civi\WMFHook;
 
 use Civi\Api4\ContributionRecur;
 
 class PreferencesLink {
+
   public static function contactSummaryBlocks(array &$blocks) {
     // Provide our own group for this block to visually distinguish it on the contact summary editor palette.
     $blocks += [

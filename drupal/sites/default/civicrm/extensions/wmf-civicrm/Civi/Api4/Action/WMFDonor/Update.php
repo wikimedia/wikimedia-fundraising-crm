@@ -18,7 +18,7 @@ use Civi\Api4\Generic\DAOUpdateAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Query\Api4SelectQuery;
 use Civi\Api4\Utils\CoreUtil;
-use Civi\WMFHooks\CalculatedData;
+use Civi\WMFHook\CalculatedData;
 
 /**
  * Update WMF Donor fields based on calculated data.
