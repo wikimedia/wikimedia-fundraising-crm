@@ -1,8 +1,8 @@
 <?php
 
-namespace Civi;
+namespace Civi\WMFQueueMessage;
 
-class WMFDonationQueueMessage {
+class DonationMessage {
 
   /**
    * @var array WMF message with keys (incomplete list)
@@ -51,10 +51,10 @@ class WMFDonationQueueMessage {
 
   public static function getWMFMessage($message) {
     if (!empty($message['recurring']) || !empty($message['contribution_recur_id'])) {
-      $messageObject = new WMFDonationQueueRecurMessage($message);
+      $messageObject = new RecurDonationMessage($message);
     }
     else {
-      $messageObject = new WMFDonationQueueMessage($message);
+      $messageObject = new DonationMessage($message);
     }
     return $messageObject;
   }

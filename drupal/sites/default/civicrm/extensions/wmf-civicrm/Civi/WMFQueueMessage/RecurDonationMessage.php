@@ -1,8 +1,8 @@
 <?php
 
-namespace Civi;
+namespace Civi\WMFQueueMessage;
 
-class WMFDonationQueueRecurMessage extends WMFDonationQueueMessage {
+class RecurDonationMessage extends DonationMessage {
 
   /**
    * True if recurring is in the incoming array or a contribution_recur_id is present.

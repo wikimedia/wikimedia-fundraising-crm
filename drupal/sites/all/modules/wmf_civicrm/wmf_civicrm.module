@@ -6,7 +6,7 @@ use Civi\Api4\WMFContact;
 use Civi\ExchangeException\ExchangeRatesException;
 use Civi\WMFHelpers\ContributionRecur;
 use Civi\WMFHelpers\FinanceInstrument;
-use Civi\WMFDonationQueueMessage;
+use Civi\WMFQueueMessage\DonationMessage;
 use Civi\WMFStatistics\ImportStatsCollector;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelpers\Database;
@@ -198,7 +198,7 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
  * @throws \Civi\WMFException\WMFException|\Statistics\Exception\StatisticsCollectorException
  */
 function wmf_civicrm_contribution_message_import(array &$msg): array {
-  $message = WMFDonationQueueMessage::getWMFMessage($msg);
+  $message = DonationMessage::getWMFMessage($msg);
   $isRecurring = $message->isRecurring();
   $importTimerName = getImportTimerName($isRecurring);
   _get_import_timer()->startImportTimer($importTimerName);
