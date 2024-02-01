@@ -634,7 +634,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   protected function ensureAnonymousUserExists(): void {
-    if (!\Civi\WMFHelpers\Contact::getAnonymousContactID()) {
+    if (!\Civi\WMFHelper\Contact::getAnonymousContactID()) {
       $this->ids['Contact']['anonyous'] = Contact::create([
         'first_name' => 'Anonymous',
         'last_name' => 'Anonymous',

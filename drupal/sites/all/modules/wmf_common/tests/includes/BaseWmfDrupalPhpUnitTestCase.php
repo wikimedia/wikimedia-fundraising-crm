@@ -8,7 +8,7 @@ require_once __DIR__ . '/../../../civicrm/Civi/Test/Api3TestTrait.php';
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Test\Api3TestTrait;
-use Civi\WMFHelpers\ContributionRecur;
+use Civi\WMFHelper\ContributionRecur;
 use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\SequenceGenerators\Factory;

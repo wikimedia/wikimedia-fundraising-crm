@@ -4,7 +4,7 @@ namespace Civi\WMFHook;
 
 use Civi;
 use Civi\WMFException\WMFException;
-use Civi\WMFHelpers\Database;
+use Civi\WMFHelper\Database;
 
 class Contribution {
 

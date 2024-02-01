@@ -2,7 +2,7 @@
 
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
-use Civi\WMFHelpers\FinanceInstrument;
+use Civi\WMFHelper\FinanceInstrument;
 use PhpUnit\Framework\TestCase;
 
 class FinanceInstrumentTest extends TestCase implements HeadlessInterface {

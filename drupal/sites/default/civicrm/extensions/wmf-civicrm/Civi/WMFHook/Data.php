@@ -7,7 +7,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\CustomField;
 use Civi\Api4\CustomGroup;
 use Civi\Api4\CustomValue;
-use Civi\WMFHelpers\CustomData;
+use Civi\WMFHelper\CustomData;
 use CRM_Wmf_ExtensionUtil as E;
 
 class Data {

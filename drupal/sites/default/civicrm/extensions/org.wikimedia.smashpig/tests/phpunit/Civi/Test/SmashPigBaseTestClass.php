@@ -4,7 +4,7 @@ namespace Civi\Test;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
-use Civi\WMFHelpers\ContributionRecur as RecurHelper;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\Api4\Translation;
 use \Civi\Api4\MessageTemplate;
 use Civi\Api4\Activity;

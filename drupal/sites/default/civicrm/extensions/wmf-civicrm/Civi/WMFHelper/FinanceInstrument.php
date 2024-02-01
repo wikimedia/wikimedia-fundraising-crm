@@ -1,11 +1,12 @@
 <?php
 
-namespace Civi\WMFHelpers;
+namespace Civi\WMFHelper;
 
 use Civi;
 use Civi\WMFException\WMFException;
 
 class FinanceInstrument {
+
   public const APPLE_PAY_SUBMETHOD_LIST = [
     'apple' => 'Apple',
     'visa' => 'Visa',

@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Civi\Api4\Action\ThankYou;
 
 use Civi;
@@ -89,13 +88,13 @@ class Send extends AbstractAction {
   public function _run(Result $result): void {
     $params = $this->getParameters();
     if (empty($params['language'])) {
-      $params['language'] = Civi\WMFHelpers\Language::getLanguageCode($params['locale'] ?? 'en_US');
+      $params['language'] = Civi\WMFHelper\Language::getLanguageCode($params['locale'] ?? 'en_US');
     }
     $renderAttempts = 0;
     $email_success = FALSE;
 
     // Loop ends with 'break' or 'throw'
-    while(true) {
+    while (TRUE) {
       try {
         $rendered = ThankYou::render(FALSE)
           // @todo switch to passing in 'raw' contact language.

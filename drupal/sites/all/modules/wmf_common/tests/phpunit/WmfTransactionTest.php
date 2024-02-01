@@ -183,8 +183,9 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     CRM_Core_DAO::executeQuery("UPDATE civicrm_domain SET description = 'WMF'");
 
     try {
-      \Civi\WMFHelpers\Database::transactionalCall([$this, 'callbackFunction'], []);
-    } catch (RuntimeException $e) {
+      \Civi\WMFHelper\Database::transactionalCall([$this, 'callbackFunction'], []);
+    }
+    catch (RuntimeException $e) {
       // We were expecting this :-)
       unset($this->ids['Contact']);
     }

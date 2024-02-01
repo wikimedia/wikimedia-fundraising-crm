@@ -4,12 +4,12 @@ use Civi\Api4\CustomField;
 use Civi\Api4\Name;
 use Civi\Api4\WMFContact;
 use Civi\ExchangeException\ExchangeRatesException;
-use Civi\WMFHelpers\ContributionRecur;
-use Civi\WMFHelpers\FinanceInstrument;
+use Civi\WMFHelper\ContributionRecur;
+use Civi\WMFHelper\FinanceInstrument;
 use Civi\WMFQueueMessage\DonationMessage;
 use Civi\WMFStatistic\ImportStatsCollector;
 use Civi\WMFException\WMFException;
-use Civi\WMFHelpers\Database;
+use Civi\WMFHelper\Database;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
@@ -1583,8 +1583,8 @@ function wmf_civicrm_get_direct_mail_field_option_id() {
  * @throws \Civi\WMFException\WMFException
  */
 function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id) {
-  // If you only want to know if it exists then call \Civi\WMFHelpers\Contribution::exists()
-  // @todo, move this function to \Civi\WMFHelpers\Contribution, use apiv4
+  // If you only want to know if it exists then call \Civi\WMFHelper\Contribution::exists()
+  // @todo, move this function to \Civi\WMFHelper\Contribution, use apiv4
   $gateway = strtolower($gateway);
   $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
 		ON cc.id = cx.entity_id
@@ -1874,7 +1874,7 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
       wmf_civicrm_civicrm_post_Contribution($op, $id, $entity);
       break;
     case 'ContributionRecur':
-      \Civi\WMFHelpers\ContributionRecur::cancelRecurAutoRescue($op, $id, $entity);
+      \Civi\WMFHelper\ContributionRecur::cancelRecurAutoRescue($op, $id, $entity);
       break;
   }
 }

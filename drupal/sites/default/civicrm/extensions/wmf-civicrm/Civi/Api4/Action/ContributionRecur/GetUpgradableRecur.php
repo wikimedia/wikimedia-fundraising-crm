@@ -1,7 +1,8 @@
 <?php
+
 namespace Civi\Api4\Action\ContributionRecur;
 
-use Civi\WMFHelpers\ContributionRecur;
+use Civi\WMFHelper\ContributionRecur;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 

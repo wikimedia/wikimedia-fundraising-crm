@@ -1,6 +1,6 @@
 <?php namespace wmf_common;
 
-use Civi\WMFHelpers\Database;
+use Civi\WMFHelper\Database;
 use Exception;
 
 /**

@@ -1,12 +1,14 @@
 <?php
 
 use Civi\Api4\ContributionTracking;
-use Civi\WMFHelpers\ContributionTracking as WMFHelper;
+use Civi\WMFHelper\ContributionTracking as WMFHelper;
 use SmashPig\Core\SequenceGenerators\Factory;
 use queue2civicrm\fredge\AntifraudQueueConsumer;
 
 class GetTest extends BaseWmfDrupalPhpUnitTestCase {
+
   use \Civi\Test\ContactTestTrait;
+
   public function testGetRequest() {
     $contactID = $this->individualCreate();
     $this->createContributionEntriesWithFredge(['contact_id' => $contactID, 'order_id' => 'your-order']);

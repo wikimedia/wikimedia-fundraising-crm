@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\WMFHelpers;
+namespace Civi\WMFHelper;
 
 use Civi;
 

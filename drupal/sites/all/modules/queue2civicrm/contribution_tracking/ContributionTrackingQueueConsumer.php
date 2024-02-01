@@ -5,7 +5,7 @@ namespace queue2civicrm\contribution_tracking;
 use Civi\Api4\ContributionTracking;
 use \Civi\WMFException\ContributionTrackingDataValidationException;
 use Civi\WMFException\WMFException;
-use Civi\WMFHelpers\ContributionTracking as WMFHelper;
+use Civi\WMFHelper\ContributionTracking as WMFHelper;
 use wmf_common\WmfQueueConsumer;
 
 class ContributionTrackingQueueConsumer extends WmfQueueConsumer {

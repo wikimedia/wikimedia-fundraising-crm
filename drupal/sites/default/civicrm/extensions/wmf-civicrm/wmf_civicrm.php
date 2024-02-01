@@ -1,7 +1,7 @@
 <?php
 
 use Civi\Api4\CustomField;
-use Civi\WMFHelpers\Queue;
+use Civi\WMFHelper\Queue;
 
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
@@ -18,7 +18,7 @@ use Civi\WMFHook\ProfileDynamic;
 use Civi\WMFHook\QuickForm;
 use Civi\WMFHook\Data;
 use Civi\Api4\MessageTemplate;
-use Civi\WMFHelpers\Language;
+use Civi\WMFHelper\Language;
 use Civi\WMFHook\PreferencesLink;
 use CRM_WmfCivicrm_ExtensionUtil as E;
 

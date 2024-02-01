@@ -1,6 +1,6 @@
 <?php
 
-use Civi\WMFHelpers\FinanceInstrument;
+use Civi\WMFHelper\FinanceInstrument;
 use queue2civicrm\recurring\RecurringQueueConsumer;
 use queue2civicrm\refund\RefundQueueConsumer;
 use Civi\WMFException\WMFException;
@@ -260,11 +260,11 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => 'DB44P92T43M84H82',
       'processor_contact_id' => '13.1',
       'date' => 1669082766,
-      'financial_type_id' => \Civi\WMFHelpers\ContributionRecur::getFinancialTypeForFirstContribution(),
+      'financial_type_id' => \Civi\WMFHelper\ContributionRecur::getFinancialTypeForFirstContribution(),
     ];
     $this->setExchangeRates(1669082766, [
       'USD' => 1,
-      'EUR' => 1.1
+      'EUR' => 1.1,
     ]);
 
     $contribution = wmf_civicrm_contribution_message_import($initialDonation);

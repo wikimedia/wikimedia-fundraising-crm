@@ -44,7 +44,7 @@ class PreferencesLink {
         self::addContactAndChecksumToUrl($emailPrefsBaseUrl, $contactID, $checksum)
       );
 
-      $upgradeableRecur = \Civi\WMFHelpers\ContributionRecur::getUpgradeable($contactID, $checksum);
+      $upgradeableRecur = \Civi\WMFHelper\ContributionRecur::getUpgradeable($contactID, $checksum);
       if ($upgradeableRecur) {
         $recurringUpgradeBaseUrl = (string) \Civi::settings()->get('wmf_recurring_upgrade_url');
         $recurringUpgradeUrl = self::addContactAndChecksumToUrl($recurringUpgradeBaseUrl, $contactID, $checksum);

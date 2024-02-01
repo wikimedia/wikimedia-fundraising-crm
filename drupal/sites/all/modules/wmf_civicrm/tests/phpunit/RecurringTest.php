@@ -1,7 +1,7 @@
 <?php
 
-use Civi\WMFHelpers\ContributionRecur;
-use Civi\WMFHelpers\ContributionRecur as RecurHelper;
+use Civi\WMFHelper\ContributionRecur;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
 
 /**
  * @group Pipeline

@@ -2,19 +2,22 @@
 
 use Civi;
 use Civi\Api4\Action\WMFContact\Save;
-use Civi\WMFHelpers\ContributionRecur as RecurHelper;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
-use Civi\WMFHelpers\PaymentProcessor;
+use Civi\WMFHelper\PaymentProcessor;
 use CRM_Core_Payment_Scheduler;
 use wmf_common\TransactionalWmfQueueConsumer;
 
-
 class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
+
   const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID = 165;
+
   const RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID = 166;
+
   const RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID = 168;
+
   /**
    * Import messages about recurring payments
    *

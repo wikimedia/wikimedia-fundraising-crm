@@ -1,7 +1,7 @@
 <?php
 // Class to hold wmf helper functions.
 
-namespace Civi\WMFHelpers;
+namespace Civi\WMFHelper;
 
 use Civi\Api4\Contact;
 use Civi\Api4\OptionValue;
