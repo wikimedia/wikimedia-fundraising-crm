@@ -20,7 +20,9 @@
   <compatibility>
     <ver>5.45</ver>
   </compatibility>
-  <comments>This is a intended as something of a catchall for wmf functionality. It is intended to replace the wmf_civicrm module over time</comments>
+  <comments>This is a intended as something of a catchall for wmf functionality.
+    It is intended to replace the wmf_civicrm module over time
+  </comments>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
     <psr0 prefix="CRM_" path="."/>
@@ -42,7 +44,6 @@
     <ext>org.wikimedia.datachecks</ext>
     <ext>org.wikimedia.forgetme</ext>
     <ext>org.wikimedia.relationshipblock</ext>
-    <ext>org.civicrm.shoreditch</ext>
     <ext>org.civicrm.contactlayout</ext>
     <ext>org.wikimedia.thethe</ext>
     <ext>uk.org.futurefirst.networks.emailamender</ext>

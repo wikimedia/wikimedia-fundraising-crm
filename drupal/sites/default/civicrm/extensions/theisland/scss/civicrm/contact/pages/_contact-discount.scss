@@ -1,0 +1,9 @@
+#{civi-page('contact-view')} {
+  .crm-container {
+    .crm-discount-view-form-block {
+      .crm-info-panel {
+        @include expandable-table;
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+&#{civi-page('admin-mailsettings')} {
+  #mSettings {
+    @include civicrm-table;
+    overflow: hidden;
+
+    p {
+      display: none;
+    }
+
+    .form-item {
+      padding: 0;
+    }
+  }
+}

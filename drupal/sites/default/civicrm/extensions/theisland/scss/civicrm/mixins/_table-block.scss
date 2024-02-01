@@ -1,0 +1,13 @@
+@mixin table-block() {
+  @include civicrm-panel;
+  @include civicrm-table;
+
+  .action-link,
+  .crm-submit-buttons {
+    padding: 20px;
+
+    a {
+      float: none;
+    }
+  }
+}
