@@ -1,8 +1,9 @@
 <?php
 
-namespace Civi\WMFHooks;
+namespace Civi\WMFHook;
 
 abstract class TriggerHook {
+
   /**
    * @var string
    */

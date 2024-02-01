@@ -6,7 +6,7 @@ use API_Exception;
 use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\WMFHooks\CalculatedData;
+use Civi\WMFHook\CalculatedData;
 
 /**
  * Fill WMF Donor.
@@ -17,7 +17,6 @@ use Civi\WMFHooks\CalculatedData;
  * @method getMinimumReceiveDate(): string Get the earliest date to include contributions for
  * @method setMaximumReceiveDate(string $maximumReceiveDate) Set the latest date to include contributions for.
  * @method getMaximumReceiveDate(): string Get the latest date to include contributions for
-
  *
  * @package Civi\Api4
  */

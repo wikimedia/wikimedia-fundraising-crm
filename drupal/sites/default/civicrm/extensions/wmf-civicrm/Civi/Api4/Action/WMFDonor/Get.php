@@ -9,13 +9,14 @@
  | and copyright information, see https://civicrm.org/licensing       |
  +--------------------------------------------------------------------+
  */
+
 namespace Civi\Api4\Action\WMFDonor;
 
 use Civi\API\Request;
 use Civi\Api4\Generic\DAOGetAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Query\Api4SelectQuery;
-use Civi\WMFHooks\CalculatedData;
+use Civi\WMFHook\CalculatedData;
 
 /**
  * The WMF Donor class gets calculated WMF Donor fields.

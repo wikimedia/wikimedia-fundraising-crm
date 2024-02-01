@@ -6,21 +6,22 @@ use Civi\WMFHelpers\Queue;
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
 use Civi\Api4\WMFDonor;
-use Civi\WMFHooks\Activity;
-use Civi\WMFHooks\CalculatedData;
-use Civi\WMFHooks\Contribution;
-use Civi\WMFHooks\ContributionRecur;
-use Civi\WMFHooks\ContributionRecurTrigger;
-use Civi\WMFHooks\ContributionSoft;
-use Civi\WMFHooks\Import;
-use Civi\WMFHooks\Permissions;
-use Civi\WMFHooks\ProfileDynamic;
-use Civi\WMFHooks\QuickForm;
-use Civi\WMFHooks\Data;
+use Civi\WMFHook\Activity;
+use Civi\WMFHook\CalculatedData;
+use Civi\WMFHook\Contribution;
+use Civi\WMFHook\ContributionRecur;
+use Civi\WMFHook\ContributionRecurTrigger;
+use Civi\WMFHook\ContributionSoft;
+use Civi\WMFHook\Import;
+use Civi\WMFHook\Permissions;
+use Civi\WMFHook\ProfileDynamic;
+use Civi\WMFHook\QuickForm;
+use Civi\WMFHook\Data;
 use Civi\Api4\MessageTemplate;
 use Civi\WMFHelpers\Language;
-use Civi\WMFHooks\PreferencesLink;
+use Civi\WMFHook\PreferencesLink;
 use CRM_WmfCivicrm_ExtensionUtil as E;
+
 // phpcs:enable
 
 /**

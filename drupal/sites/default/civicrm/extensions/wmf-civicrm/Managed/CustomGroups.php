@@ -12,7 +12,7 @@
 // To sync the database with fields defined in this file use:
 // drush @wmff cvapi WMFConfig.SyncCustomFields version=4
 // ******
-use Civi\WMFHooks\CalculatedData;
+use Civi\WMFHook\CalculatedData;
 
 $calculatedData = new CalculatedData();
 // The option value for relationship is also ensured in the relationship

@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\WMFHooks;
+namespace Civi\WMFHook;
 
 use Civi;
 use Civi\WMFException\WMFException;

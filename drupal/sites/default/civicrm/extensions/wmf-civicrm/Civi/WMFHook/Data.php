@@ -1,7 +1,7 @@
 <?php
 // Class to hold wmf functionality that alters data.
 
-namespace Civi\WMFHooks;
+namespace Civi\WMFHook;
 
 use Civi\Api4\Contact;
 use Civi\Api4\CustomField;

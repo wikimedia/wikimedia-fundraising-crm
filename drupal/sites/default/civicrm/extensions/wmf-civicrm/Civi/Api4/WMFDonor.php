@@ -1,10 +1,11 @@
 <?php
+
 namespace Civi\Api4;
 
 use Civi\Api4\Action\WMFDonor\Get;
 use Civi\Api4\Action\WMFDonor\Update;
 use Civi\Api4\Generic\BasicGetFieldsAction;
-use Civi\WMFHooks\CalculatedData;
+use Civi\WMFHook\CalculatedData;
 
 /**
  * Class WMF Donor.

@@ -1,7 +1,7 @@
 <?php
 // Class to hold wmf functionality that alters core quickforms.
 
-namespace Civi\WMFHooks;
+namespace Civi\WMFHook;
 
 class QuickForm {
 
