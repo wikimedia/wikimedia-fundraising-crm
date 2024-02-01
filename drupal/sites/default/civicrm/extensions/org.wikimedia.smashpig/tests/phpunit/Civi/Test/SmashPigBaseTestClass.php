@@ -32,6 +32,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
   protected $maxContactID;
 
   protected int $maxContributionID;
+
   /**
    * Stored version of failure template to restore.
    *
@@ -111,6 +112,10 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
       ->execute();
     $this->maxContactID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
     $this->maxContributionID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution');
+    // Try reseting the time limit here to give us the full 180.
+    // It this works we should investigate https://smaine-milianni.medium.com/set-a-max-timeout-for-your-phpunit-tests-ba160c7f53a5
+    // https://www.php.net/manual/en/function.set-time-limit.php
+    set_time_limit(180);
     parent::setUp();
   }
 
@@ -140,7 +145,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
       }
     }
     // Ensure cleanup has been done!
-    $this->assertEquals($this->maxContactID,  $this->maxContactID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact'));
+    $this->assertEquals($this->maxContactID, $this->maxContactID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact'));
     parent::tearDown();
   }
 
@@ -178,7 +183,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
    *
    * @return array
    */
-  protected function createContact():array {
+  protected function createContact(): array {
     $result = $this->callApiSuccess('Contact', 'create', [
       'contact_type' => 'Individual',
       'first_name' => 'Harry',
@@ -261,7 +266,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
    * @return array
    * @throws \CRM_Core_Exception
    */
-  protected function createToken(int $contactId):array {
+  protected function createToken(int $contactId): array {
     $result = $this->callAPISuccess('PaymentToken', 'create', [
       'contact_id' => $contactId,
       'payment_processor_id' => $this->processorId,
@@ -280,7 +285,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
    *
    * @return array
    */
-  protected function createContributionRecur(array $token, array $overrides = []):array {
+  protected function createContributionRecur(array $token, array $overrides = []): array {
     $trxn_id = ($overrides['trxn_id'] ?? NULL) ?: $this->trxn_id;
     $invoice_id = 678000 . '.' . $trxn_id;
     $params = $overrides + [
@@ -376,7 +381,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
       ->addWhere('source_record_id', '=', $contributionRecurID)
       ->addOrderBy('activity_date_time', 'DESC')
       ->execute()->first();
-    if($activity) {
+    if ($activity) {
       $this->deleteThings['Activity'][] = $activity['id'];
     }
     return $activity;
