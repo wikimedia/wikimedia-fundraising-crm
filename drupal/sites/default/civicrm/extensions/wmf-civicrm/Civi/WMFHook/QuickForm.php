@@ -81,55 +81,6 @@ class QuickForm {
    */
   protected static function buildFormContributionForm(\CRM_Core_Form $form): void {
     \CRM_Core_Resources::singleton()->addScript(self::getSourceJS());
-
-    // Only run this validation for users having the Engage role.
-    // @todo - move the user_has_role out of the extension. In order
-    // to ready this for drupal we can switch to using a permission
-    // for engage 'engage role'.
-    // Once the addition of this permission is deployed we need to
-    // add it to the engage user role and then we can replace this with
-    // \CRM_Core_Permission::check('engage_role')
-    if (wmf_civicrm_user_has_role('Engage Direct Mail')) {
-      self::addEngageUIFeatures($form);
-    }
-  }
-
-  /**
-   * Get the name of the custom field as it would be shown on the form.
-   *
-   * This is basically 'custom_x_-1' for us. The -1 will always be 1
-   * except for multi-value custom groups which we don't really use.
-   *
-   * @param string $fieldName
-   *
-   * @return string
-   * @throws \CiviCRM_API3_Exception
-   */
-  public static function getFormCustomFieldName(string $fieldName): string {
-    // @todo - make this protected once further consolidation is done.
-    return 'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID($fieldName) . '_-1';
-  }
-
-  /**
-   * @param \CRM_Core_Form $form
-   *
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected static function addEngageUIFeatures(\CRM_Core_Form $form): void {
-    // Default to the Engage contribution type, if this is a new contribution.
-    if ($form->_action & \CRM_Core_Action::ADD) {
-      $engage_contribution_type_id = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Engage');
-      $form->setDefaults([
-        'financial_type_id' => $engage_contribution_type_id,
-      ]);
-      $form->assign('customDataSubType', $engage_contribution_type_id);
-    }
-
-    // Make Batch Number required, if the field exists.
-    $batch_num_field_name = self::getFormCustomFieldName('import_batch_number');
-    if ($batch_num_field_name && $form->elementExists($batch_num_field_name)) {
-      $form->addRule($batch_num_field_name, t('Batch number is required'), 'required');
-    }
   }
 
 }

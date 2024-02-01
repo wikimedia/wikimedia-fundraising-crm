@@ -69,9 +69,9 @@ function wmf_civicrm_civicrm_managed(&$entities) {
   // they already exist. Hopefully this is temporary and can
   // go once the module installs are transitioned.
   $tempEntities = [];
-  foreach ($tempEntities as $index =>  $tempEntity) {
+  foreach ($tempEntities as $index => $tempEntity) {
     // WMF only uses our own geocoder ...
-    if ($tempEntity['entity'] === 'Geocoder' &&  $tempEntity['name'] !== 'uk_postcode') {
+    if ($tempEntity['entity'] === 'Geocoder' && $tempEntity['name'] !== 'uk_postcode') {
       $tempEntities[$index]['params']['is_active'] = 0;
     }
     if ($tempEntity['entity'] === 'Monolog' || $tempEntity['entity'] === 'MessageTemplate' || $tempEntity['entity'] === 'Translation') {
@@ -157,7 +157,7 @@ function wmf_civicrm_civicrm_alterSettingsMetaData(&$settingsMetaData, $domainID
  * @noinspection PhpUnused
  */
 function wmf_civicrm_civicrm_buildForm(string $formName, $form) {
- QuickForm::buildForm($formName, $form);
+  QuickForm::buildForm($formName, $form);
 }
 
 /**
@@ -173,10 +173,10 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
   if (in_array($type, ['form', 'batch'])) {
     Civi::log('wmf')->debug(
       'Deduping contacts {contactKeptID} and {contactDeletedID}. Mode = {mode}', [
-        'contactKeptID' => $mainId,
-        'contactDeletedID' => $otherId,
-        'mode' => $type,
-      ]);
+      'contactKeptID' => $mainId,
+      'contactDeletedID' => $otherId,
+      'mode' => $type,
+    ]);
   }
 }
 
@@ -300,12 +300,11 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
     // wmf_donor contains calculated data only.
     'wmf_donor',
   ];
-  foreach ($tablesNotToLog  as $noLoggingTable) {
+  foreach ($tablesNotToLog as $noLoggingTable) {
     if (isset($logTableSpec[$noLoggingTable])) {
       unset($logTableSpec[$noLoggingTable]);
     }
   }
-
 }
 
 /**
@@ -343,7 +342,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
         // the field appears twice in the sql, once with NEW. prepended, replace that on first
         $tableSpecification['sql'] = str_replace(
           'OR IFNULL(OLD.`' . $disabledField . '`,\'\') <> IFNULL(NEW.`' . $disabledField . '`,\'\')',
-        '', $tableSpecification['sql']);
+          '', $tableSpecification['sql']);
         $tableSpecification['sql'] = str_replace(
           'NEW.`' . $disabledField . '`,', '', $tableSpecification['sql']);
         $tableSpecification['sql'] = str_replace(
@@ -421,29 +420,6 @@ function wmf_civicrm_validate_contribution($fields, $form): array {
     $errors['source'] = t('Source must be in the format USD 15.25');
   }
 
-  // Only run the following validation for users having the Engage role.
-  if (!wmf_civicrm_user_has_role('Engage Direct Mail')) {
-    return $errors;
-  }
-
-  if (CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $fields['financial_type_id']) !== 'Engage') {
-    $errors['financial_type_id'] = t("Must use the \"Engage\" contribution type.");
-  }
-
-  if (wmf_civicrm_tomorrows_month() === '01') {
-    $postmark_field_name = QuickForm::getFormCustomFieldName('postmark_date');
-    // If the receive_date is in Dec or Jan, make sure we have a postmark date,
-    // to be generous to donors' tax stuff.
-    $date = strptime($fields['receive_date'], "%m/%d/%Y");
-    // n.b.: 0-based date spoiler.
-    if ($date['tm_mon'] == (12 - 1) || $date['tm_mon'] == (1 - 1)) {
-      // And the postmark date is missing
-      if ($form->elementExists($postmark_field_name) && !$fields[$postmark_field_name]) {
-        $errors[$postmark_field_name] = t("You forgot the postmark date!");
-      }
-    }
-  }
-
   return $errors;
 }
 
@@ -472,6 +448,7 @@ function wmf_civicrm_civicrm_customPre(string $op, int $groupID, int $entityID, 
 
 /**
  * Add Email Preferences Center link to contact summary block list
+ *
  * @param array $blocks
  */
 function wmf_civicrm_civicrm_contactSummaryBlocks(array &$blocks) {
@@ -480,6 +457,7 @@ function wmf_civicrm_civicrm_contactSummaryBlocks(array &$blocks) {
 
 /**
  * Assign template parameters for email preference link contact summary block
+ *
  * @param CRM_Core_Page $page
  */
 function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
@@ -488,18 +466,18 @@ function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
   // Pages to load the ContributionTracking Module into - loading into the summary page because of the contribution view popup
   $ctPages = ['CRM_Contact_Page_View_Summary', 'CRM_Contribute_Page_Tab'];
   if (in_array($pageClass, $ctPages)) {
-      Civi::service('angularjs.loader')->addModules('afsearchContributionTracking');
+    Civi::service('angularjs.loader')->addModules('afsearchContributionTracking');
   }
   ProfileDynamic::pageRun($page);
   // Only add the markup to the contribution page
   if ($pageClass === 'CRM_Contribute_Page_Tab') {
     $id = $page->getVar('_id');
-    if ($id != null) {
-        CRM_Core_Region::instance('page-body')->add([
-          'markup' => '<crm-angular-js modules="afsearchContributionTracking">
+    if ($id != NULL) {
+      CRM_Core_Region::instance('page-body')->add([
+        'markup' => '<crm-angular-js modules="afsearchContributionTracking">
           <div class="spacer" style="height: 20px;"></div>
-          <h3>Contribution Tracking</h3><form id="bootstrap-theme"><afsearch-contribution-tracking options="{contribution_id:'. $id .'}"></afsearch-contribution-tracking></form></crm-angular-js>',
-        ]);
+          <h3>Contribution Tracking</h3><form id="bootstrap-theme"><afsearch-contribution-tracking options="{contribution_id:' . $id . '}"></afsearch-contribution-tracking></form></crm-angular-js>',
+      ]);
     }
   }
 }
@@ -511,7 +489,7 @@ function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
  * @throws \API_Exception
  * @throws \Civi\API\Exception\UnauthorizedException
  */
-function  _wmf_civicrm_managed_get_translations(string $workflowName): array {
+function _wmf_civicrm_managed_get_translations(string $workflowName): array {
   $template = MessageTemplate::get(FALSE)
     ->addWhere('workflow_name', '=', $workflowName)
     ->addWhere('is_reserved', '=', 0)
@@ -561,7 +539,6 @@ function  _wmf_civicrm_managed_get_translations(string $workflowName): array {
         ],
       ],
     ];
-
   }
   return $translations;
 }
@@ -580,10 +557,10 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
       'View',
       'Cancel',
       'Edit',
-      'View Template'
+      'View Template',
     ];
 
-    usort ($links, function ($a, $b) use ($order) {
+    usort($links, function($a, $b) use ($order) {
       $pos_a = array_search($a['name'], $order);
       $pos_b = array_search($b['name'], $order);
       return $pos_a - $pos_b;
@@ -596,11 +573,12 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
 }
 
 /**
-  * Get a reference to the damaged queue.
-  *
-  * @param \CRM_Queue_Queue $original
-  * @return \CRM_Queue_Queue
-  */
+ * Get a reference to the damaged queue.
+ *
+ * @param \CRM_Queue_Queue $original
+ *
+ * @return \CRM_Queue_Queue
+ */
 function find_damaged_queue(\CRM_Queue_Queue $original): \CRM_Queue_Queue {
   $name = $original->getName() . '/damaged';
   return \Civi::queue($name, [
@@ -613,11 +591,11 @@ function find_damaged_queue(\CRM_Queue_Queue $original): \CRM_Queue_Queue {
 
 function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$outcome, ?\Throwable $exception) {
   if ($outcome === 'abort' && !empty($item)) {
-    Civi::log('wmf-queue-'.$queue->getName())->debug(
+    Civi::log('wmf-queue-' . $queue->getName())->debug(
       'Queue item with id={id} failed with exception="{exception}", moving to the dedicated damaged queue', [
-        'id' => $item->id,
-        'exception' => $exception->getMessage()
-      ]);
+      'id' => $item->id,
+      'exception' => $exception->getMessage(),
+    ]);
     \CRM_Core_DAO::executeQuery('UPDATE civicrm_queue_item SET queue_name = %1 WHERE id = %2', [
       1 => [find_damaged_queue($queue)->getName(), 'String'],
       2 => [$item->id, 'Positive'],
