@@ -1,12 +1,10 @@
 <?php
 
 use Civi\Api4\CustomField;
+
 // Import is based on Wiki7808037.csv - one of 2 files to import.
 
 $customFields = CustomField::get(FALSE)->addWhere('name', 'LIKE', 'data%')->addSelect('id', 'name')->execute()->indexBy('name');
-// This field : 'custom_' . $customFields['data_axle_is_single']['id']
-// should map to "CE Selected Individual Single Flag (Marital Status Of Individual Based On Household Married Score And Other Business Rules (Such As Spouse Indicator).)
-// but I can't find the field
 
 // Add the Data-axle mapping - all the fields are listed for visibility
 $mappedFields = [
@@ -218,7 +216,7 @@ $mappedFields = [
   'CE_Homeowner_Source_Code' => 'do_not_import',
   'CE_Income_Producing_Assets' => 'do_not_import',
   'CE_Income_Producing_Assets_Desc' => 'do_not_import',
-  'CE_Selected_Individual_Marital_Status_Code' => 'do_not_import',
+  'CE_Selected_Individual_Marital_Status_Code' => $customFields['data_axle_marital_status'],
   'CE_County_Nielsen_Rank_Code' => 'do_not_import',
   'CE_County_Nielsen_Region_Code' => 'do_not_import',
   'CE_Purchasing_Power_Income_Detector' => 'do_not_import',
