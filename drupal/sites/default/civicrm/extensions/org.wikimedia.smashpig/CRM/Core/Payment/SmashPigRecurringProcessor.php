@@ -389,29 +389,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
           ])->execute();
       }
       if ($errorResponse->getIsProcessorRetryScheduled()) {
-        $invoiceId = $recurringPayment['invoice_id'];
-        $contribution = Contribution::get(FALSE)
-          ->addSelect('payment_instrument_id')
-          ->addWhere('contribution_recur_id', '=', $recurringPayment['id'])
-          ->addClause('OR', ['invoice_id', 'LIKE', "$invoiceId%"])
-          ->execute()
-          ->first();
-
-        // Skip count failure_count if retry.rescueScheduled is true,
-        // which indicating that Auto Rescue will attempt to rescue this payment.
-        QueueWrapper::push('pending', [
-          'order_id' => $invoiceId,
-          'gateway' => 'adyen',
-          'gateway_txn_id' => $errorResponse->getGatewayTxnId(),
-          'date' => time(),
-          'is_auto_rescue_retry' => TRUE,
-          'currency' => $recurringPayment['currency'],
-          'amount' => $recurringPayment['amount'],
-          'contribution_recur_id' => $recurringPayment['id'],
-          'contact_id' => $recurringPayment['contact_id'],
-          'payment_instrument_id' => $contribution['payment_instrument_id'],
-        ]);
-
         // Set status to Pending but advance the next charge date a month so we don't try to charge again
         $params['contribution_status_id'] = 'Pending';
         $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextDateForMonth($recurringPayment);

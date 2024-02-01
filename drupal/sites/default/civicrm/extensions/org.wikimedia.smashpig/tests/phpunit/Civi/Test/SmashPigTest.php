@@ -1593,12 +1593,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
-    $pendingMessage = QueueWrapper::getQueue('pending')->pop();
-    $this->assertEquals($pendingMessage['contribution_recur_id'], $contributionRecur['id']);
-    $this->assertTrue($pendingMessage['is_auto_rescue_retry']);
-    $this->assertEquals($pendingMessage['order_id'], $orderId);
-    $this->assertEquals($pendingMessage['gateway_txn_id'], $pspReference);
-    $this->assertEquals('adyen', $pendingMessage['gateway']);
 
     $updatedRecur = ContributionRecur::get(FALSE)
       ->addWhere('id', '=', $contributionRecur['id'])
