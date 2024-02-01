@@ -6,6 +6,7 @@ namespace Civi\WMFHooks;
 use Civi\Api4\UserJob;
 use Civi\WMFHelpers\Contact;
 use Civi\WMFHelpers\Contribution as WMFContribution;
+use CRM_Contribute_BAO_Contribution;
 
 class Import {
 
@@ -89,8 +90,8 @@ class Import {
           }
         }
       }
-      elseif ($mappedRow['Contact']['contact_type'] === 'Individual') {
-        foreach ($mappedRow['SoftCreditContact'] ?? [] as $index => $softCreditContact) {
+      elseif ($mappedRow['Contact']['contact_type'] === 'Individual' && !empty($mappedRow['SoftCreditContact'])) {
+        foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
           if ($softCreditContact['Contact']['contact_type'] === 'Organization') {
             if (!empty($softCreditContact['Contact']['id'])) {
               $organizationID = $softCreditContact['Contact']['id'];
@@ -115,6 +116,7 @@ class Import {
       // Question - should we map the custom currency field or the currency field?
       // Also, can we move this to the Contribution pre hook.
       $mappedRow['Contribution']['source'] = $originalCurrency . ' ' . \Civi::format()->machineMoney($mappedRow['Contribution']['total_amount']);
+      self::setTimeOfDayIfStockDonation($mappedRow);
     }
   }
 
@@ -228,6 +230,29 @@ class Import {
     }
     catch (\JsonException $e) {
       throw new \CRM_Core_Exception('JSON is invalid');
+    }
+  }
+
+  /**
+   * For stock donations, we want to make sure the date on the import spreadsheet is the same as
+   * the date on the thank you mail. Since our mailing process uses Hawaii time (UTC-10) we have
+   * to set the hour to something later than that.
+   * @param array $mappedRow
+   * @return void
+   * @throws \Exception
+   */
+  private static function setTimeOfDayIfStockDonation(array &$mappedRow): void {
+    static $stockType;
+    if (!$stockType) {
+      $stockType = array_search('Stock', CRM_Contribute_BAO_Contribution::buildOptions('financial_type_id', 'get'));
+    }
+    if (
+      $mappedRow['Contribution']['financial_type_id'] == $stockType &&
+      !empty($mappedRow['Contribution']['receive_date'])
+    ) {
+      $date = new \DateTime($mappedRow['Contribution']['receive_date']);
+      $date->setTime(12, 0);
+      $mappedRow['Contribution']['receive_date'] = date_format($date, 'YmdHis');
     }
   }
 
