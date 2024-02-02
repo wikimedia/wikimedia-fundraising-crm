@@ -129,7 +129,7 @@ class DonationMessage {
     ];
     $msg = $msg + $defaults;
 
-    wmf_civicrm_removeKnownBadStringsFromAddressFields($msg);
+    $this->removeKnownBadStringsFromAddressFields($msg);
 
     if (empty($msg['financial_type_id'])) {
       if (!empty($msg['contribution_recur_id'])) {
@@ -355,6 +355,39 @@ class DonationMessage {
       }
     }
     return $values;
+  }
+
+  /**
+   * Remove known bad strings from address.
+   *
+   * This function focuses on specific forms of bad data with high
+   * prevalence in the fields we see them in.
+   *
+   * @param array $msg
+   */
+  private function removeKnownBadStringsFromAddressFields(&$msg) {
+    // Remove known dummy data.
+    if ($msg['street_address'] === 'N0NE PROVIDED') {
+      $msg['street_address'] = '';
+    }
+
+    $invalidAddressStrings = ['0', 'City/Town', 'NoCity', 'City'];
+    foreach (['postal_code', 'city'] as $fieldName) {
+      if (in_array($msg[$fieldName], $invalidAddressStrings)) {
+        $msg[$fieldName] = '';
+      }
+    }
+
+    // Filter out unexpected characters from postal codes.
+    // This filter should allow through all postal code formats
+    // listed here https://github.com/unicode-org/cldr/blob/release-26-0-1/common/supplemental/postalCodeData.xml
+    if (isset($msg['postal_code'])) {
+      $msg['postal_code'] = preg_replace(
+        '/[^a-z0-9\s\-]+/i',
+        '',
+        $msg['postal_code']
+      );
+    }
   }
 
 }
