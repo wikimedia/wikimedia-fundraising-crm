@@ -12,9 +12,13 @@ use Civi\Core\Exception\DBQueryException;
  * & will hopefully be moved to core.
  */
 class QueueHelper {
+
   protected $queue;
+
   public const ITERATE_UNTIL_DONE = 1;
+
   public const ITERATE_RUN_ONCE = 0;
+
   public const ITERATE_UNTIL_TRUE = 2;
 
   /**
@@ -40,17 +44,19 @@ class QueueHelper {
    * @param string $sql
    * @param array $params
    * @param int $iterate
-   * @params array $doneParameters
+   * @param array $doneCondition
    * @param int $weight
    *
    * @return $this
+   *
+   * @params array $doneParameters
    */
   public function sql(string $sql, array $params = [], int $iterate = self::ITERATE_RUN_ONCE, $doneCondition = [], $weight = 0): QueueHelper {
     $task = new \CRM_Queue_Task([self::class, 'doSql'], [
       $sql,
       $params,
       $iterate,
-      $doneCondition
+      $doneCondition,
     ]);
     $task->runAs = $this->runAs;
     $this->queue->createItem($task, ['weight' => $weight]);
@@ -66,15 +72,15 @@ class QueueHelper {
    *
    * @return $this
    *
-  public function api4(string $entity, string $action, array $params = []) {
-    $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi4'], [$entity, $action, $params]));
-    return $this;
-  }
-
-  public function api3(string $entity, string $action, array $params = []) {
-    $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi3'], [$entity, $action, $params]));
-    return $this;
-  }
+   * public function api4(string $entity, string $action, array $params = []) {
+   * $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi4'], [$entity, $action, $params]));
+   * return $this;
+   * }
+   *
+   * public function api3(string $entity, string $action, array $params = []) {
+   * $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi3'], [$entity, $action, $params]));
+   * return $this;
+   * }
    */
 
   /**
@@ -137,7 +143,7 @@ class QueueHelper {
           $sql,
           $queryParameters,
           $iterate,
-          $doneCondition
+          $doneCondition,
         ]);
 
         $taskContext->queue->createItem($task);
@@ -171,54 +177,54 @@ class QueueHelper {
    * @param string $action
    * @param array $params
    *
-   * @return bool
-   * @internal only use from this class.
-   *
-  public static function doApi4(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params): bool {
-    try {
-      civicrm_api4($entity, $action, $params);
-    }
-    catch (\CRM_Core_Exception $e) {
-      \Civi::log('queue')->error('queued action failed {entity} {action} {params} {message} {exception}', [
-        'entity' => $entity,
-        'action' => $action,
-        'params' => $params,
-        'message' => $e->getMessage(),
-        'exception' => $e,
-      ]);
-      return FALSE;
-    }
-    return TRUE;
-  }
-
-  /**
-   * Do apiv3 call in a queue context.
-   *
    * @param \CRM_Queue_TaskContext $taskContext
    * @param string $entity
    * @params string $action
    * @param array $params
    *
    * @return bool
-   *@internal only use from this class.
+   * @return bool
+   * @internal only use from this class.
+   *
+   * public static function doApi4(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params): bool {
+   * try {
+   * civicrm_api4($entity, $action, $params);
+   * }
+   * catch (\CRM_Core_Exception $e) {
+   * \Civi::log('queue')->error('queued action failed {entity} {action} {params} {message} {exception}', [
+   * 'entity' => $entity,
+   * 'action' => $action,
+   * 'params' => $params,
+   * 'message' => $e->getMessage(),
+   * 'exception' => $e,
+   * ]);
+   * return FALSE;
+   * }
+   * return TRUE;
+   * }
+   *
+   * /**
+   * Do apiv3 call in a queue context.
+   *
+   * @internal only use from this class.
    *
    *
-  public static function doApi3(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params): bool {
-    try {
-      civicrm_api3($entity, $action, $params);
-    }
-    catch (\CRM_Core_Exception $e) {
-        \Civi::log('queue')->error('queued action failed {entity} {action} {params} {message} {exception}', [
-          'entity' => $entity,
-          'action' => $action,
-          'params' => $params,
-          'message' => $e->getMessage(),
-          'exception' => $e,
-        ]);
-        return FALSE;
-      }
-    return TRUE;
-  }
-  */
+   * public static function doApi3(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params): bool {
+   * try {
+   * civicrm_api3($entity, $action, $params);
+   * }
+   * catch (\CRM_Core_Exception $e) {
+   * \Civi::log('queue')->error('queued action failed {entity} {action} {params} {message} {exception}', [
+   * 'entity' => $entity,
+   * 'action' => $action,
+   * 'params' => $params,
+   * 'message' => $e->getMessage(),
+   * 'exception' => $e,
+   * ]);
+   * return FALSE;
+   * }
+   * return TRUE;
+   * }
+   */
 
 }
