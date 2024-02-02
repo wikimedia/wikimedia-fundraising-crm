@@ -80,8 +80,18 @@ class DonationMessage {
       // Fall back to now.
       return time();
     }
-    // Convert strings to Unix timestamps.
-    return $this->parseDateString($date);
+    try {
+      // Convert strings to Unix timestamps.
+      return $this->parseDateString($date);
+    }
+    catch (\Exception $e) {
+      \Civi::log('wmf')->debug('wmf_civicrm: Could not parse date: {date} from {id}', [
+        'date' => $this->message['date'],
+        'id' => $this->message['contribution_tracking_id'],
+      ]);
+      // Fall back to now.
+      return time();
+    }
   }
 
   /**
@@ -128,7 +138,6 @@ class DonationMessage {
       'postal_code' => '',
       'postmark_date' => NULL,
       'check_number' => NULL,
-      'thankyou_date' => NULL,
       'recurring' => NULL,
       'utm_campaign' => NULL,
       'contact_id' => NULL,
@@ -187,21 +196,7 @@ class DonationMessage {
       }
     }
 
-    if (!empty($msg['thankyou_date'])) {
-      if (!is_numeric($msg['thankyou_date'])) {
-        $unix_time = wmf_common_date_parse_string($msg['thankyou_date']);
-        if ($unix_time !== FALSE) {
-          $msg['thankyou_date'] = $unix_time;
-        }
-        else {
-          \Civi::log('wmf')->debug('wmf_civicrm: Could not parse thankyou date: {date} from {id}', [
-            'date' => $msg['thankyou_date'],
-            'id' => $msg['contribution_tracking_id'],
-          ]);
-          unset($msg['thankyou_date']);
-        }
-      }
-    }
+    $msg['thankyou_date'] = $this->getThankYouDate();
 
     if (!empty($msg['full_name']) && (empty($msg['first_name']) || empty($msg['last_name']))) {
       // Parse name parts into fields if we have the full name and the name parts are
@@ -412,18 +407,35 @@ class DonationMessage {
    * in UTC.
    *
    * @return int Seconds since Unix epoch
+   * @throws \Exception
    */
   private function parseDateString(string $date): ?int {
-    try {
-      // Funky hack to trim decimal timestamp.  More normalizations may follow.
-      $text = preg_replace('/^(@\d+)\.\d+$/', '$1', $date);
+    // Funky hack to trim decimal timestamp.  More normalizations may follow.
+    $text = preg_replace('/^(@\d+)\.\d+$/', '$1', $date);
+    return (new \DateTime($text, new \DateTimeZone('UTC')))->getTimestamp();
+  }
 
-      return (new \DateTime($text, new \DateTimeZone('UTC')))->getTimestamp();
-    }
-    catch (\Exception $ex) {
-      \Civi::log('wmf')->error('wmf_message: Caught date exception in ' . __METHOD__ . ': ' . $ex->getMessage());
+  /**
+   *
+   * @return array
+   */
+  public function getThankYouDate(): ?int {
+    if (empty($this->message['thankyou_date'])) {
       return NULL;
     }
+    if (is_numeric($this->message['thankyou_date'])) {
+      return $this->message['thankyou_date'];
+    }
+    try {
+      return $this->parseDateString($this->message['thankyou_date']);
+    }
+    catch (\Exception $e) {
+      \Civi::log('wmf')->debug('wmf_civicrm: Could not parse thankyou date: {date} from {id}', [
+        'date' => $this->message['thankyou_date'],
+        'id' => $this->message['contribution_tracking_id'],
+      ]);
+    }
+    return NULL;
   }
 
 }
