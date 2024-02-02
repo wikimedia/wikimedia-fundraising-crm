@@ -6,6 +6,8 @@ use Civi\Api4\Name;
 use Civi\WMFHelper\FinanceInstrument;
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFException\WMFException;
+use Civi\ExchangeException\ExchangeRatesException;
+use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class DonationMessage {
 
@@ -251,9 +253,108 @@ class DonationMessage {
     }
 
     // set the correct amount fields/data and do exchange rate conversions.
-    $msg = wmf_civicrm_normalize_contribution_amounts($msg);
+    $msg = $this->normalizeContributionAmounts($msg);
 
     return $msg;
+  }
+
+  /**
+   * Normalize contribution amounts
+   *
+   * Do exchange rate conversions and set appropriate fields for CiviCRM
+   * based on information contained in the message.
+   *
+   * Upon exiting this function, the message is guaranteed to have these fields:
+   *    currency - settlement currency
+   *    original_currency - currency remitted by the donor
+   *    gross - settled total amount
+   *    original_gross - remitted amount in original currency
+   *    fee - processor fees, when available
+   *    net - gross less fees
+   *
+   * @param $msg
+   *
+   * @return array
+   * @throws \Civi\WMFException\WMFException
+   */
+  private function normalizeContributionAmounts($msg) {
+    $msg = $this->formatCurrencyFields($msg);
+
+    // If there is anything fishy about the amount...
+    if ((empty($msg['gross']) or empty($msg['currency']))
+      and (empty($msg['original_gross']) or empty($msg['original_currency']))
+    ) {
+      // just... don't
+      \Civi::log('wmf')->info('wmf_civicrm: Not freaking out about non-monetary message.');
+      return $msg;
+    }
+
+    if (empty($msg['original_currency']) && empty($msg['original_gross'])) {
+      $msg['original_currency'] = $msg['currency'];
+      $msg['original_gross'] = $msg['gross'];
+    }
+
+    $validFee = array_key_exists('fee', $msg) && is_numeric($msg['fee']);
+    $validNet = array_key_exists('net', $msg) && is_numeric($msg['net']);
+    if (!$validFee && !$validNet) {
+      $msg['fee'] = '0.00';
+      $msg['net'] = $msg['gross'];
+    }
+    elseif ($validNet && !$validFee) {
+      $msg['fee'] = $msg['gross'] - $msg['net'];
+    }
+    elseif ($validFee && !$validNet) {
+      $msg['net'] = $msg['gross'] - $msg['fee'];
+    }
+
+    $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
+    if ($msg['currency'] !== $settlement_currency) {
+      \Civi::log('wmf')->info('wmf_civicrm: Converting to settlement currency: {old} -> {new}',
+        ['old' => $msg['currency'], 'new' => $settlement_currency]);
+      try {
+        $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
+      }
+      catch (ExchangeRatesException $ex) {
+        throw new WMFException(WMFException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$msg['original_currency']}': " . $ex->getMessage());
+      }
+
+      // Do exchange rate conversion
+      $msg['currency'] = $settlement_currency;
+      $msg['fee'] = $msg['fee'] * $settlement_convert;
+      $msg['gross'] = $msg['gross'] * $settlement_convert;
+      $msg['net'] = $msg['net'] * $settlement_convert;
+    }
+
+    $msg['fee'] = CurrencyRoundingHelper::round($msg['fee'], $msg['currency']);
+    $msg['gross'] = CurrencyRoundingHelper::round($msg['gross'], $msg['currency']);
+    $msg['net'] = CurrencyRoundingHelper::round($msg['net'], $msg['currency']);
+
+    return $msg;
+  }
+
+  /**
+   * Format currency fields in passed array.
+   *
+   * Currently we are just stripping out commas on the assumption they are a
+   * thousand separator and unhelpful.
+   *
+   * @param array $values
+   * @param array $currencyFields
+   *
+   * @return array
+   */
+  private function formatCurrencyFields($values, $currencyFields = [
+    'gross',
+    'fee',
+    'net',
+  ]
+  ) {
+    foreach ($currencyFields as $field) {
+      if (isset($values[$field])) {
+        $values[$field] = str_replace(',', '', $values[$field]);
+      }
+    }
+    return $values;
   }
 
 }
