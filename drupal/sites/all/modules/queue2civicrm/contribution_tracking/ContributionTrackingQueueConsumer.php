@@ -34,7 +34,7 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
     // For the legacy table insert, pick out the fields we want and ignore
     // anything else (e.g. source_* fields). The data array to insert into
     // the new table is built in WMFHelper::getContributionTrackingParameters
-    $ctData = array_filter($message, function ($key) {
+    $ctData = array_filter($message, function($key) {
       return in_array($key, [
         'id',
         'contribution_id',
@@ -69,7 +69,7 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
 
         $this->persistContributionTrackingData($ctData, $csData, $existingRow);
       }
-      catch(\CRM_Core_Exception $ex) {
+      catch (\CRM_Core_Exception $ex) {
         // When setting a contribution ID, we can expect a few constraint violations
         // from messages sent by the donations queue consumer after a contribution
         // insert has been rolled back. Ignore those exceptions, rethrow the rest.
@@ -98,7 +98,6 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
   protected function persistContributionTrackingData(array $ctData, ?array $csData, ?array $existingRow): void {
     // @todo - move all the below to a hook to run from the ContributionTracking save.
     if ($existingRow) {
-
       db_update('contribution_tracking')
         ->fields($ctData)
         ->condition('id', $ctData['id'])
@@ -142,26 +141,27 @@ class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
 
   /**
    * @param array $msg Original (untruncated) contribution-tracking queue message
+   *
    * @return array|null data for contribution_source table, or null if no good data found
    */
   protected function getContributionSourceData(array $msg): ?array {
     if (empty($msg['utm_source'])) {
-      return null;
+      return NULL;
     }
     $source = $msg['utm_source'];
     // Sometimes it's just dots. Skip it instead of writing an empty row
     if (empty(str_replace('.', '', $source))) {
-      return null;
+      return NULL;
     }
     // Usually just 3 segments, 4 when payment_submethod is specified, e.g. for iDEAL
     $exploded = explode('.', $source);
     if (count($exploded) > 4 || count($exploded) < 3) {
-      return null;
+      return NULL;
     }
     return [
       'banner' => mb_substr($exploded[0], 0, 128),
       'landing_page' => mb_substr($exploded[1], 0, 128),
-      'payment_method' => mb_substr($exploded[2], 0, 128)
+      'payment_method' => mb_substr($exploded[2], 0, 128),
     ];
   }
 
