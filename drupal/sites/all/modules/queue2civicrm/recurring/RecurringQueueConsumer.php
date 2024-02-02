@@ -33,6 +33,22 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       return;
     }
 
+    if (!empty($message['is_successful_autorescue']) && $message['is_successful_autorescue'] === TRUE) {
+      $recur_record = ContributionRecur::get(FALSE)
+        ->addWhere('contribution_recur_smashpig.rescue_reference', '=', $message['rescue_reference'])
+        ->addSelect('*', 'contribution.payment_instrument_id')
+        ->addJoin('Contribution AS contribution', 'LEFT', ['contribution.contribution_recur_id', '=', 'id'])
+        ->execute()
+        ->first();
+      if (!empty($recur_record)) {
+        $message['payment_instrument_id'] = $recur_record['contribution.payment_instrument_id'];
+        $message['contribution_recur_id'] = $recur_record['id'];
+        $message['subscr_id'] = $recur_record['trxn_id'];
+      } else {
+        throw new WMFException(WMFException::INVALID_RECURRING, "Error finding rescued recurring payment with recurring reference {$msg['rescue_reference']}");
+      }
+    }
+
     $message = $this->normalizeMessage($message);
 
     // define the subscription txn type for an actual 'payment'
@@ -78,13 +94,11 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   protected function normalizeMessage($msg) {
-    if (isset($msg['gateway']) && $msg['gateway'] === 'amazon') {
-      // should not require special normalization
-    }
-    else {
-      if (!isset($msg['contribution_tracking_id'])) {
-        $msg['contribution_tracking_id'] = recurring_get_contribution_tracking_id($msg);
-      }
+    $skipContributionTracking = (isset($msg['gateway']) && $msg['gateway'] === 'amazon')
+    || (isset($msg['is_successful_autorescue']) && $msg['is_successful_autorescue']);
+
+    if (!$skipContributionTracking && !isset($msg['contribution_tracking_id'])) {
+      $msg['contribution_tracking_id'] = recurring_get_contribution_tracking_id($msg);
     }
 
     if (empty($msg['contribution_recur_id']) && !empty($msg['subscr_id'])) {
