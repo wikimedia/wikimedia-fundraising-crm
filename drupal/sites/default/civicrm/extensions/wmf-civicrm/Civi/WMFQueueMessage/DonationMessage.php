@@ -228,7 +228,7 @@ class DonationMessage {
       $msg['direct_mail_appeal'] = $msg['utm_campaign'];
     }
 
-    if (wmf_civicrm_is_endowment_gift($msg)) {
+    if ($this->isEndowmentGift()) {
       $msg['financial_type_id'] = 'Endowment Gift';
       $msg['restrictions'] = 'Endowment Fund';
       $msg['gift_source'] = 'Online Gift';
@@ -256,6 +256,15 @@ class DonationMessage {
     $msg = $this->normalizeContributionAmounts($msg);
 
     return $msg;
+  }
+
+  /**
+   * Is the donation an endowment gift.
+   *
+   * @return bool
+   */
+  public function isEndowmentGift(): bool {
+    return isset($this->message['utm_medium']) && $this->message['utm_medium'] === 'endowment';
   }
 
   /**

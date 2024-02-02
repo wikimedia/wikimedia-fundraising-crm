@@ -1894,15 +1894,6 @@ function wmf_civicrm_flush_cached_options() {
 }
 
 /**
- * @param array $msg
- *
- * @return bool
- */
-function wmf_civicrm_is_endowment_gift($msg) {
-  return isset($msg['utm_medium']) && $msg['utm_medium'] === 'endowment';
-}
-
-/**
  * @param string $language
  *
  * @throws \API_Exception
