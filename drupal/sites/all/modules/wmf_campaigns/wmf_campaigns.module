@@ -77,7 +77,7 @@ function wmf_campaigns_index_form() {
     ];
   }
 
-  usort($rows, function ($campaign1, $campaign2) {
+  usort($rows, function($campaign1, $campaign2) {
     // Sort by active first
     if ($campaign1[2] != $campaign2[2]) {
       if ($campaign1[2] === t('No')) {
@@ -120,8 +120,12 @@ function wmf_campaigns_edit_form($form, $formState, $campaignValue) {
 
   $form = [];
   civicrm_initialize();
+  $optionGroupID = \Civi\Api4\CustomField::get(FALSE)
+    ->addWhere('name', '=', 'Appeal')
+    ->setSelect(['option_group_id'])
+    ->execute()->first()['option_group_id'];
   $optionValues = civicrm_api3('OptionValue', 'get', [
-    'option_group_id' => wmf_civicrm_get_direct_mail_field_option_id(),
+    'option_group_id' => $optionGroupID,
     'value' => $campaignValue,
     'sequential' => TRUE,
   ])['values'];
@@ -265,7 +269,6 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
 
       $mailer = MailFactory::singleton();
       foreach ($notificationEmail as $toAddress) {
-
         //TODO: addresses should come from GUI config.
         $letter = [
           'from_address' => "fr-tech+wmf_campaigns@wikimedia.org",
@@ -293,5 +296,4 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
         $mailer->send($letter, []);
       }
   }
-
 }
