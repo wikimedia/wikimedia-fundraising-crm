@@ -12,18 +12,23 @@ use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 class DonationMessage {
 
   /**
-   * @var array WMF message with keys (incomplete list)
+   * WMF message with keys (incomplete list)
    *  - recurring
    *  - contribution_recur_id
    *  - subscr_id
    *  - recurring_payment_token
+   *  - date
+   *  - thankyou_date
+   *  - utm_medium
+   *
+   * @var array
    */
-  protected $message;
+  protected array $message;
 
   /**
-   * @param $message
+   * Constructor.
    */
-  public function __construct($message) {
+  public function __construct(array $message) {
     $this->message = $message;
   }
 
@@ -107,11 +112,6 @@ class DonationMessage {
    */
   public function normalize(): array {
     $msg = $this->message;
-    // Decode the message body.
-    if (!is_array($msg)) {
-      $msg = json_decode($msg->body, TRUE);
-    }
-
     $trim_strings = function($input) {
       if (!is_string($input)) {
         return $input;
