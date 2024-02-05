@@ -5,7 +5,7 @@ namespace Civi\Api4\Action\UpiDonationsQueue;
 use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\Queue\UpiDonationsQueueConsumer;
+use Civi\WMFQueue\UpiDonationsQueueConsumer;
 use CRM_SmashPig_ContextWrapper;
 
 /**

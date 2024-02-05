@@ -22,6 +22,7 @@ use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
+use Civi\WMFQueue\UpiDonationsQueueConsumer;
 
 class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterface, TransactionalInterface {
 
@@ -146,18 +147,18 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     );
 
     $this->hostedPaymentProvider->expects($this->once())
-    ->method('refundPayment')
-    ->with([
-      'gross' => $message['gross'],
-      'currency' => $message['currency'],
-      'gateway_txn_id' => $message['gateway_txn_id'],
-    ])
-    ->willReturn(
-      (new RefundPaymentResponse())
-      ->setGatewayTxnId($message['gateway_txn_id'])
-      ->setStatus(FinalStatus::REFUNDED)
-      ->setSuccessful(TRUE)
-    );
+      ->method('refundPayment')
+      ->with([
+        'gross' => $message['gross'],
+        'currency' => $message['currency'],
+        'gateway_txn_id' => $message['gateway_txn_id'],
+      ])
+      ->willReturn(
+        (new RefundPaymentResponse())
+          ->setGatewayTxnId($message['gateway_txn_id'])
+          ->setStatus(FinalStatus::REFUNDED)
+          ->setSuccessful(TRUE)
+      );
 
     QueueWrapper::push('upi-donations', $message);
 
@@ -177,7 +178,7 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
 
     // confirm donation is refunded
     $contribution = Contribution::get(FALSE)
-      ->addWhere('trxn_id', 'LIKE', '%'.$message['gateway_txn_id'])
+      ->addWhere('trxn_id', 'LIKE', '%' . $message['gateway_txn_id'])
       ->addSelect('contribution_status_id:name')->execute()->first();
     $this->assertEquals('Refunded', $contribution['contribution_status_id:name']);
 
@@ -221,7 +222,7 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
     $this->assertEquals($recur2['id'], $donationMessage['contribution_recur_id']);
 
-        // confirm that the subscription remains pending
+    // confirm that the subscription remains pending
     $contributionRecur1 = ContributionRecur::get(FALSE)
       ->addWhere('id', '=', $recur1['id'])
       ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
@@ -297,18 +298,18 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     $message['gross'] = $messageAmount;
 
     $this->hostedPaymentProvider->expects($this->once())
-    ->method('refundPayment')
-    ->with([
-      'gross' => $messageAmount,
-      'currency' => $message['currency'],
-      'gateway_txn_id' => $message['gateway_txn_id'],
-    ])
-    ->willReturn(
-      (new RefundPaymentResponse())
-      ->setGatewayTxnId($message['gateway_txn_id'])
-      ->setStatus(FinalStatus::REFUNDED)
-      ->setSuccessful(TRUE)
-    );
+      ->method('refundPayment')
+      ->with([
+        'gross' => $messageAmount,
+        'currency' => $message['currency'],
+        'gateway_txn_id' => $message['gateway_txn_id'],
+      ])
+      ->willReturn(
+        (new RefundPaymentResponse())
+          ->setGatewayTxnId($message['gateway_txn_id'])
+          ->setStatus(FinalStatus::REFUNDED)
+          ->setSuccessful(TRUE)
+      );
 
     $contact = $this->createTestContactRecord();
     $token = $this->createTestPaymentToken($contact['id']);
@@ -338,8 +339,8 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
 
     // confirm donation is refunded
     $contribution = Contribution::get(FALSE)
-        ->addWhere('trxn_id', 'LIKE', '%'.$message['gateway_txn_id'])
-        ->addSelect('contribution_status_id:name')->execute()->first();
+      ->addWhere('trxn_id', 'LIKE', '%' . $message['gateway_txn_id'])
+      ->addSelect('contribution_status_id:name')->execute()->first();
     $this->assertEquals('Refunded', $contribution['contribution_status_id:name']);
 
     // confirm that the subscription remains cancelled
@@ -411,7 +412,7 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  private function deleteTestData() : void {
+  private function deleteTestData(): void {
     $testContact = Contact::get(FALSE)
       ->addWhere('display_name', '=', 'Testy McTest')
       ->setSelect(['id'])
@@ -470,7 +471,7 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
    * @param int $contactId
    * @param int $paymentTokenId
    */
-  protected function createTestContributionRecurRecord(int $contactId, int $paymentTokenId, ?int $amount = 505, ?string $next_sched_date = null): ?array {
+  protected function createTestContributionRecurRecord(int $contactId, int $paymentTokenId, ?int $amount = 505, ?string $next_sched_date = NULL): ?array {
     $params = [
       'currency' => 'INR',
       'amount' => $amount,
@@ -488,9 +489,9 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
   }
 
   /**
-    * @param int $contactId
-    * @param int $paymentTokenId
-    */
+   * @param int $contactId
+   * @param int $paymentTokenId
+   */
   protected function cancelTestContributionRecurRecord(int $id): ?array {
     $params = [];
     $params['id'] = $id;
@@ -504,18 +505,19 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
       ->first();
   }
 
-    /**
-      * @param int $contactId
-      * @param int $paymentTokenId
-      */
-    protected function setContributionRecurRecordInProgress(int $id): ?array {
-      $params = [];
-      $params['id'] = $id;
-      $params['contribution_status_id:name'] = 'In Progress';
-      return ContributionRecur::update(FALSE)
-        ->setValues($params)
-        ->addWhere('id', '=', $id)
-        ->execute()
-        ->first();
-    }
+  /**
+   * @param int $contactId
+   * @param int $paymentTokenId
+   */
+  protected function setContributionRecurRecordInProgress(int $id): ?array {
+    $params = [];
+    $params['id'] = $id;
+    $params['contribution_status_id:name'] = 'In Progress';
+    return ContributionRecur::update(FALSE)
+      ->setValues($params)
+      ->addWhere('id', '=', $id)
+      ->execute()
+      ->first();
   }
+
+}
