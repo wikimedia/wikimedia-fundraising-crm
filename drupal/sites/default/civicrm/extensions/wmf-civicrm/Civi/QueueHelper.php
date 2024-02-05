@@ -1,8 +1,7 @@
 <?php
 
-namespace Civi\Queue;
+namespace Civi;
 
-use Civi\Api4\Queue;
 use Civi\Core\Exception\DBQueryException;
 
 /**
