@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\Queue;
+namespace Civi\WMFQueue;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
@@ -10,8 +10,6 @@ use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
 use PHPUnit\Framework\TestCase;
-use Civi\WMFQueue\DonationQueueConsumer;
-use Civi\WMFQueue\RefundQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
@@ -22,7 +20,6 @@ use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
-use Civi\WMFQueue\UpiDonationsQueueConsumer;
 
 class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterface, TransactionalInterface {
 
