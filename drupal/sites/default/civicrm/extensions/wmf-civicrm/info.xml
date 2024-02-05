@@ -60,6 +60,7 @@
     <ext>civiimport</ext>
     <ext>civicrm_admin_ui</ext>
     <ext>biz.lcdservices.movecontrib</ext>
+    <ext>theisland</ext>
   </requires>
   <civix>
     <namespace>CRM/Wmf</namespace>
