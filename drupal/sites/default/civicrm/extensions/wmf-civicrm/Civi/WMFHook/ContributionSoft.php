@@ -31,7 +31,7 @@ class ContributionSoft {
         return;
       }
 
-      $anonymousContactID = \Civi\WMFHelpers\Contact::getAnonymousContactID();
+      $anonymousContactID = \Civi\WMFHelper\Contact::getAnonymousContactID();
 
       $creditContact = Contact::get(FALSE)
         ->addWhere('id', '=', $softCreditParams['contact_id'])

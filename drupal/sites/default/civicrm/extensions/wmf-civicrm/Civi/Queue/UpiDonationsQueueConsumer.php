@@ -1,9 +1,10 @@
 <?php
+
 namespace Civi\Queue;
 
 use Civi;
 use Civi\Api4\ContributionRecur;
-use Civi\WMFHelpers\PaymentProcessor;
+use Civi\WMFHelper\PaymentProcessor;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;

@@ -7,10 +7,10 @@ use Civi\Api4\Generic\Result;
 use Civi\Api4\Relationship;
 use Civi\WMFException\WMFException;
 use Civi\Api4\Email;
-use Civi\WMFHelpers\Database;
+use Civi\WMFHelper\Database;
 use Civi\Api4\Contact;
 use Civi\WMFStatistic\ImportStatsCollector;
-use Civi\WMFHelpers\Language;
+use Civi\WMFHelper\Language;
 
 /**
  * Class Create.
@@ -387,7 +387,7 @@ class Save extends AbstractAction {
    * language string. It often creates nasty variants like 'es_NO' - Norwegian
    * Spanish - for spanish speakers who filled in the form while in Norway.
    *
-   * Note that the function Civi\WMFHelpers\Language::getLanguageCode is likely useful.
+   * Note that the function Civi\WMFHelper\Language::getLanguageCode is likely useful.
    *
    * We hateses it my precious.
    *

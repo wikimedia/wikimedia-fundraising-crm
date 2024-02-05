@@ -1,7 +1,7 @@
 <?php
 
 use Civi\Api4\ContributionRecur;
-use Civi\WMFHelpers\PaymentProcessor;
+use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFException\WMFException;
 
 /**
@@ -414,11 +414,12 @@ LIMIT 1";
  * There is tension between trxn_id as searchable index and full gateway style
  * at the moment, so we search using either style: either bare gateway
  * subscription ID, or trxn-style full natural key.
- * @deprecated use WMFHelpers/ContributionRecur::getByGatewaySubscriptionId
  *
  * @param string $subscr_id
  *
  * @return object|false
+ * @deprecated use WMFHelper/ContributionRecur::getByGatewaySubscriptionId
+ *
  */
 function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
   $full_trxn_id = "RECURRING {$gateway} {$subscr_id}";

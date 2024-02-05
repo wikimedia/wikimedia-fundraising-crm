@@ -2,9 +2,9 @@
 
 use Civi\Api4\Relationship;
 use Civi\Api4\RelationshipType;
-use Civi\WMFHelpers\Contact;
-use Civi\WMFHelpers\Contribution;
-use Civi\WMFHelpers\Database;
+use Civi\WMFHelper\Contact;
+use Civi\WMFHelper\Contribution;
+use Civi\WMFHelper\Database;
 use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
 use SmashPig\Core\Context;

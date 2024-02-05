@@ -2,8 +2,8 @@
 
 use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
-use Civi\WMFHelpers\Contact;
-use Civi\WMFHelpers\Contribution;
+use Civi\WMFHelper\Contact;
+use Civi\WMFHelper\Contribution;
 use Civi\WMFHook\Import;
 
 class BenevityFile extends ChecksFile {

@@ -4,8 +4,8 @@
 namespace Civi\WMFHook;
 
 use Civi\Api4\UserJob;
-use Civi\WMFHelpers\Contact;
-use Civi\WMFHelpers\Contribution as WMFContribution;
+use Civi\WMFHelper\Contact;
+use Civi\WMFHelper\Contribution as WMFContribution;
 use CRM_Contribute_BAO_Contribution;
 
 class Import {
