@@ -39,13 +39,13 @@
     "gulp-strip-css-comments": "^2.0.0",
     "gulp-transform-selectors": "^0.0.2",
     "husky": "^8.0.3",
-    "lint-staged": "^13.1.0",
+    "lint-staged": "^15.2.2",
     "npm-force-resolutions": "^0.0.10",
     "path": "^0.12.7",
     "plugin-error": "^2.0.1",
-    "postcss-discard-duplicates": "^5.1.0",
+    "postcss-discard-duplicates": "^6.0.1",
     "postcss-prefix-selector": "^1.16.0",
-    "sass": "^1.57.1",
+    "sass": "^1.70.0",
     "semistandard": "^16.0.1",
     "simple-git": "^3.16.0",
     "stylelint": "^14.16.1",
@@ -53,5 +53,8 @@
     "stylelint-order": "^6.0.1",
     "stylelint-scss": "^4.3.0",
     "yargs": "^17.6.2"
+  },
+  "overrides": {
+    "glob-parent": "6.0.2"
   }
 }
