@@ -1,14 +1,15 @@
-<?php namespace wmf_common;
+<?php
+
+namespace Civi\WMFQueue;
 
 use Civi\WMFHelper\Database;
-use Civi\WMFQueue\QueueConsumer;
 use Exception;
 
 /**
  * OK, this inheritance is getting Inception-level silly, but half our
  * queue consumers don't need to lock all the databases.
  */
-abstract class TransactionalWmfQueueConsumer extends QueueConsumer {
+abstract class TransactionalQueueConsumer extends QueueConsumer {
 
   /**
    * We override the base callback wrapper to run processMessage inside

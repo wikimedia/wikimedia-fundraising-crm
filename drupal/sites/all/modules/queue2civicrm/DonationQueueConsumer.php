@@ -3,17 +3,18 @@
 use SmashPig\Core\DataStores\PendingDatabase;
 use Queue2civicrmTrxnCounter;
 use SmashPig\Core\UtcDate;
-use wmf_common\TransactionalWmfQueueConsumer;
+use Civi\WMFQueue\TransactionalQueueConsumer;
 use Civi\WMFException\WMFException;
 use DonationStatsCollector;
 
-class DonationQueueConsumer extends TransactionalWmfQueueConsumer {
+class DonationQueueConsumer extends TransactionalQueueConsumer {
 
   /**
    * Feed queue messages to wmf_civicrm_contribution_message_import,
    * logging and merging any extra info from the pending db.
    *
    * @param array $message
+   *
    * @throws \Civi\WMFException\WMFException
    */
   public function processMessage($message) {
