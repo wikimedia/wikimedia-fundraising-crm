@@ -4,11 +4,10 @@ namespace queue2civicrm\contribution_tracking;
 
 use Civi\Api4\ContributionTracking;
 use \Civi\WMFException\ContributionTrackingDataValidationException;
-use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionTracking as WMFHelper;
-use wmf_common\WmfQueueConsumer;
+use Civi\WMFQueue\QueueConsumer;
 
-class ContributionTrackingQueueConsumer extends WmfQueueConsumer {
+class ContributionTrackingQueueConsumer extends QueueConsumer {
 
   /**
    * Normalise the queue message and insert into the contribution_tracking

@@ -1,10 +1,10 @@
 <?php namespace queue2civicrm\opt_in;
 
 use Civi\Api4\WMFContact;
-use wmf_common\WmfQueueConsumer;
+use Civi\WMFQueue\QueueConsumer;
 use \Civi\WMFException\WMFException;
 
-class OptInQueueConsumer extends WmfQueueConsumer {
+class OptInQueueConsumer extends QueueConsumer {
 
   protected $commsMap;
 

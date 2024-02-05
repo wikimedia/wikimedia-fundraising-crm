@@ -1,9 +1,9 @@
 <?php
 
 use Civi\WMFException\WMFException;
-use wmf_common\WmfQueueConsumer;
+use Civi\WMFQueue\QueueConsumer;
 
-class CRM_Queue_PreferencesQueueConsumer extends WmfQueueConsumer {
+class CRM_Queue_PreferencesQueueConsumer extends QueueConsumer {
 
   /**
    * Validate and store messages from the e-mail preferences queue

@@ -1,10 +1,10 @@
 <?php namespace queue2civicrm\fredge;
 
 use \Civi\WMFException\FredgeDataValidationException;
-use wmf_common\WmfQueueConsumer;
+use Civi\WMFQueue\QueueConsumer;
 use \Civi\WMFException\WMFException;
 
-class AntifraudQueueConsumer extends WmfQueueConsumer {
+class AntifraudQueueConsumer extends QueueConsumer {
 
   /**
    * Validate and store messages from the payments-antifraud queue

@@ -8,10 +8,10 @@ use Civi\WMFHelper\PaymentProcessor;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
-use wmf_common\WmfQueueConsumer;
+use Civi\WMFQueue\QueueConsumer;
 use WmfTransaction;
 
-class UpiDonationsQueueConsumer extends WmfQueueConsumer {
+class UpiDonationsQueueConsumer extends QueueConsumer {
 
   public function processMessage(array $message) {
     // Look up contribution_recur record

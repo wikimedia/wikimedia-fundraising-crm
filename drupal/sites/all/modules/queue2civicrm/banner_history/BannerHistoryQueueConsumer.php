@@ -1,9 +1,9 @@
 <?php namespace queue2civicrm\banner_history;
 
-use wmf_common\WmfQueueConsumer;
+use Civi\WMFQueue\QueueConsumer;
 use Civi\WMFException\WMFException;
 
-class BannerHistoryQueueConsumer extends WmfQueueConsumer {
+class BannerHistoryQueueConsumer extends QueueConsumer {
 
   /**
    * Validate and store messages from the banner history queue
