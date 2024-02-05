@@ -61,7 +61,6 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
    * @throws FredgeDataValidationException|\InvalidMergeQueryException
    */
   protected function insertAntifraudData($msg, $logIdentifier) {
-
     if (empty($msg) || empty($msg['contribution_tracking_id']) || empty($msg['order_id'])) {
       $error = "$logIdentifier: missing essential payments_fraud IDs. Dropping message on floor.";
       throw new FredgeDataValidationException($error);
@@ -73,10 +72,10 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
     $dbs = wmf_civicrm_get_dbs();
     $dbs->push('fredge');
     $query = 'SELECT id FROM payments_fraud WHERE contribution_tracking_id = :ct_id AND order_id = :order_id LIMIT 1';
-    $result = db_query($query, array(
+    $result = db_query($query, [
       ':ct_id' => $msg['contribution_tracking_id'],
       ':order_id' => $msg['order_id'],
-    ));
+    ]);
     if ($result->rowCount() === 1) {
       $res = $result->fetch();
       $id = $res->id;
@@ -100,21 +99,22 @@ class AntifraudQueueConsumer extends WmfQueueConsumer {
         if ($score > 100000000) {
           $score = 100000000;
         }
-        $breakdown = array(
+        $breakdown = [
           'payments_fraud_id' => $id,
           'filter_name' => $test,
           'risk_score' => $score,
-        );
+        ];
         // validate the data. none of these fields would be converted, so no need
         // to store the output
         fredge_prep_data($breakdown, 'payments_fraud_breakdown', $logIdentifier, TRUE);
-        db_merge('payments_fraud_breakdown')->key(array(
+        db_merge('payments_fraud_breakdown')->key([
           'payments_fraud_id' => $id,
           'filter_name' => $test,
-        ))->fields(array(
+        ])->fields([
           'risk_score' => $score,
-        ))->execute();
+        ])->execute();
       }
     }
   }
+
 }

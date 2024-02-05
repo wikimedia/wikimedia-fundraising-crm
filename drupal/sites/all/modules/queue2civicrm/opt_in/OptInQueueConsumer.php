@@ -6,14 +6,13 @@ use \Civi\WMFException\WMFException;
 
 class OptInQueueConsumer extends WmfQueueConsumer {
 
-   protected $commsMap;
+  protected $commsMap;
 
   function __construct($queueName, $timeLimit = 0, $messageLimit = 0) {
     parent::__construct($queueName, $timeLimit, $messageLimit);
     $this->commsMap = wmf_civicrm_get_custom_field_map(
       ['opt_in', 'do_not_solicit', 'optin_source', 'optin_medium', 'optin_campaign'], 'Communication'
     );
-
   }
 
   /**
@@ -33,22 +32,22 @@ class OptInQueueConsumer extends WmfQueueConsumer {
       throw new WMFException(WMFException::UNSUBSCRIBE, $error);
     }
 
-    if ( isset( $message['contact_id'] ) && isset($message['contact_hash'] ) ) {
-      wmf_civicrm_set_null_id_on_hash_mismatch( $message );
+    if (isset($message['contact_id']) && isset($message['contact_hash'])) {
+      wmf_civicrm_set_null_id_on_hash_mismatch($message);
     }
 
     $email = $message['email'];
 
-    if ( isset( $message['contact_id'] ) ){
-      $this->updateContactById( $message['contact_id'], $email, $message );
+    if (isset($message['contact_id'])) {
+      $this->updateContactById($message['contact_id'], $email, $message);
       return;
-    } else {
+    }
+    else {
       $contacts = $this->getContactsFromEmail($email);
     }
 
     $new_contact = count($contacts) === 0;
     if ($new_contact) {
-
       if (!empty($message['last_name'])) {
         $message['opt_in'] = TRUE;
         $contact_id = $message['contact_id'] = WMFContact::save(FALSE)
@@ -130,12 +129,11 @@ class OptInQueueConsumer extends WmfQueueConsumer {
    *
    * @throws \CiviCRM_API3_Exception
    */
-  function updateContactById( $id, $email, $message ) {
-
+  function updateContactById($id, $email, $message) {
     $contactParams = [
       'id' => $id,
       $this->commsMap['opt_in'] => TRUE,
-      ];
+    ];
 
     $contactParams = array_merge($contactParams, $this->getTrackingFields($message));
 
@@ -143,30 +141,30 @@ class OptInQueueConsumer extends WmfQueueConsumer {
 
     $existingEmails = civicrm_api3('Email', 'get', ['contact_id' => $id])['values'];
     $isFound = FALSE;
-    foreach($existingEmails as $existingEmail) {
+    foreach ($existingEmails as $existingEmail) {
       if ($existingEmail['email'] === $email) {
         $isFound = TRUE;
         break;
       }
     }
 
-    if (!$isFound){
+    if (!$isFound) {
       $existingEmails += [
         '0' => [
           'location_type_id' => 4,
           'email' => $email,
           'is_primary' => 1,
-          ],
-        ];
+        ],
+      ];
 
       $params = [
         'contact_id' => $id,
         'values' => $existingEmails,
       ];
-      civicrm_api3('Email', 'replace', $params );
+      civicrm_api3('Email', 'replace', $params);
     }
 
-   \Civi::log('wmf')->info('opt_in: Contact updated for opt-in: {id}', ['id' => $id]);
+    \Civi::log('wmf')->info('opt_in: Contact updated for opt-in: {id}', ['id' => $id]);
   }
 
   /**
@@ -184,7 +182,7 @@ class OptInQueueConsumer extends WmfQueueConsumer {
         $this->commsMap['do_not_solicit'] => FALSE,
         'do_not_email' => FALSE,
         'is_opt_out' => FALSE,
-        ];
+      ];
 
       $contactParams = array_merge($contactParams, $this->getTrackingFields($message));
       civicrm_api3('Contact', 'create', $contactParams);
@@ -199,7 +197,6 @@ class OptInQueueConsumer extends WmfQueueConsumer {
    * @return array
    */
   function getTrackingFields($message) {
-
     $trackingFields = [];
 
     if (array_key_exists('utm_source', $message)) {
@@ -218,6 +215,3 @@ class OptInQueueConsumer extends WmfQueueConsumer {
   }
 
 }
-
-
-

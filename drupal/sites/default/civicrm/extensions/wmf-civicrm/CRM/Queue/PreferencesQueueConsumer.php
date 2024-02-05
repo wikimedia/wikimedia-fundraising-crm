@@ -13,7 +13,6 @@ class CRM_Queue_PreferencesQueueConsumer extends WmfQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   function processMessage($message) {
-
     try {
       $result = civicrm_api3('Preferences', 'create', $message);
       if ($result['count'] !== 1) {

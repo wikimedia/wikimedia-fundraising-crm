@@ -14,7 +14,6 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
   const PAYPAL_EXPRESS_CHECKOUT_GATEWAY = 'paypal_ec';
 
   public function processMessage($message) {
-
     // Sanity checking :)
     $required_fields = [
       "gateway_parent_id",
@@ -41,7 +40,6 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
     else {
       $logId = $refundTxn;
     }
-
 
     if ($message['gross'] < 0) {
       $message['gross'] = abs($message['gross']);
@@ -135,7 +133,7 @@ class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
         'contribution_recur_id' => $contributions[0]['contribution_recur_id'],
         'cancel_reason' => 'Automatically cancelling because we received a chargeback',
         // We add this to satisfy a check in the common message normalization function.
-        'payment_instrument_id' => $contributions[0]['payment_instrument_id']
+        'payment_instrument_id' => $contributions[0]['payment_instrument_id'],
       ];
       QueueWrapper::push('recurring', $message);
     }

@@ -26,7 +26,7 @@ class Consume extends AbstractAction {
    */
   protected $timeLimit = 0;
 
-  public function _run( Result $result ) {
+  public function _run(Result $result) {
     CRM_SmashPig_ContextWrapper::createContext('civicrm');
     Civi::log('wmf')->info('Executing: UpiDonationsQueue.consume');
 
@@ -38,4 +38,5 @@ class Consume extends AbstractAction {
     $dequeued = $consumer->dequeueMessages();
     $result['dequeued'] = $dequeued;
   }
+
 }

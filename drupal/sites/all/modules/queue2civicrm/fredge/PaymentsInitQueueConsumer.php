@@ -71,4 +71,5 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
         ->execute();
     }
   }
+
 }
