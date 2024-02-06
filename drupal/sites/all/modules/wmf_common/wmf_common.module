@@ -6,7 +6,7 @@ use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\GlobalConfiguration;
 use SmashPig\Core\Logging\Logger;
 use SmashPig\Core\ProviderConfiguration;
-use wmf_common\WmfQueueConsumer;
+use Civi\WMFQueue\QueueConsumer;
 
 require_once 'failmail.php';
 require_once 'wmf_dates.php';
@@ -255,7 +255,7 @@ function wmf_common_damaged_perform_query($form, &$form_state) {
 
   foreach ($rows as $id => &$row) {
     $err = empty($row['error']) ? 'View details' : $row['error'];
-    $row['error'] = l($err, WmfQueueConsumer::itemUrl($id));
+    $row['error'] = l($err, QueueConsumer::itemUrl($id));
   }
 
   $form['table'] = [

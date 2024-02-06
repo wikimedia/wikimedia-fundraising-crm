@@ -29,12 +29,12 @@ summary.crm-accordion-header,
   }
 
   .helpicon {
-    color: $crm-white;
+    color: $brand-primary;
     opacity: 1;
-    padding-left: 15px;
+    float: right;
 
     &:hover {
-      color: $crm-white;
+      color: $brand-primary;
       opacity: 0.8;
     }
   }

@@ -2,9 +2,9 @@
 
 use Civi\Api4\CustomField;
 use Civi\Api4\OptionGroup;
-use Civi\Api4\WMFConfig;
 use Civi\Api4\OptionValue;
-use Civi\Queue\QueueHelper;
+use Civi\Api4\WMFConfig;
+use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
 
 /**

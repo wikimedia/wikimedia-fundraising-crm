@@ -24,7 +24,6 @@ class UnsubscribeQueueConsumer extends TransactionalWmfQueueConsumer {
    *
    */
   function processMessage($message) {
-
     // Sanity checking :)
     if (empty($message['email']) or empty($message['contribution-id'])) {
       $error = "Required field not present! Dropping message on floor. Message: " . json_encode($message);
@@ -118,12 +117,9 @@ EOS;
       $result = CRM_Core_DAO::executeQuery($query);
       return $result->N;
     }
-    catch(\Exception $ex) {
+    catch (\Exception $ex) {
       throw new WMFException(WMFException::UNSUBSCRIBE, $ex->getMessage());
     }
   }
 
 }
-
-
-

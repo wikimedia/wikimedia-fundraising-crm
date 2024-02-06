@@ -2,10 +2,10 @@
 
 use SmashPig\Core\DataStores\PaymentsInitialDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
-use wmf_common\WmfQueueConsumer;
-use \Civi\WMFException\WMFException;
+use Civi\WMFQueue\QueueConsumer;
+use Civi\WMFException\WMFException;
 
-class PaymentsInitQueueConsumer extends WmfQueueConsumer {
+class PaymentsInitQueueConsumer extends QueueConsumer {
 
   /**
    * Validate and store messages from the payments-init queue
@@ -71,4 +71,5 @@ class PaymentsInitQueueConsumer extends WmfQueueConsumer {
         ->execute();
     }
   }
+
 }

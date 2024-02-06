@@ -67,6 +67,34 @@ class DonationMessage {
   }
 
   /**
+   * Get the time stamp for the message.
+   *
+   * @return int
+   */
+  public function getTimestamp(): int {
+    $date = $this->message['date'] ?? NULL;
+    if (is_numeric($date)) {
+      return $date;
+    }
+    if (!$date) {
+      // Fall back to now.
+      return time();
+    }
+    try {
+      // Convert strings to Unix timestamps.
+      return $this->parseDateString($date);
+    }
+    catch (\Exception $e) {
+      \Civi::log('wmf')->debug('wmf_civicrm: Could not parse date: {date} from {id}', [
+        'date' => $this->message['date'],
+        'id' => $this->message['contribution_tracking_id'],
+      ]);
+      // Fall back to now.
+      return time();
+    }
+  }
+
+  /**
    * Normalize the queued message
    *
    * The goal is to break this up into multiple functions (mostly of the
@@ -99,10 +127,6 @@ class DonationMessage {
     // after any full_name is parsed
     // FIXME: don't use defaults.  Access msg properties using a functional interface.
     $defaults = [
-      // FIXME: Default to now. If you can think of a better thing to do in
-      // the name of historical exchange rates.  Searching ts and
-      // source_enqueued_time is a good start.
-      'date' => time(),
       'organization_name' => '',
       'email' => '',
       'street_address' => '',
@@ -114,7 +138,6 @@ class DonationMessage {
       'postal_code' => '',
       'postmark_date' => NULL,
       'check_number' => NULL,
-      'thankyou_date' => NULL,
       'recurring' => NULL,
       'utm_campaign' => NULL,
       'contact_id' => NULL,
@@ -152,15 +175,7 @@ class DonationMessage {
     if (!$msg['payment_instrument_id']) {
       throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
     }
-
-    // Convert times to Unix timestamps.
-    if (!is_numeric($msg['date'])) {
-      $msg['date'] = wmf_common_date_parse_string($msg['date']);
-    }
-    // if all else fails, fall back to now.
-    if (empty($msg['date'])) {
-      $msg['date'] = time();
-    }
+    $msg['date'] = $this->getTimestamp();
 
     if ($msg['recurring'] and !isset($msg['start_date'])) {
       $msg['start_date'] = $msg['date'];
@@ -181,21 +196,7 @@ class DonationMessage {
       }
     }
 
-    if (!empty($msg['thankyou_date'])) {
-      if (!is_numeric($msg['thankyou_date'])) {
-        $unix_time = wmf_common_date_parse_string($msg['thankyou_date']);
-        if ($unix_time !== FALSE) {
-          $msg['thankyou_date'] = $unix_time;
-        }
-        else {
-          \Civi::log('wmf')->debug('wmf_civicrm: Could not parse thankyou date: {date} from {id}', [
-            'date' => $msg['thankyou_date'],
-            'id' => $msg['contribution_tracking_id'],
-          ]);
-          unset($msg['thankyou_date']);
-        }
-      }
-    }
+    $msg['thankyou_date'] = $this->getThankYouDate();
 
     if (!empty($msg['full_name']) && (empty($msg['first_name']) || empty($msg['last_name']))) {
       // Parse name parts into fields if we have the full name and the name parts are
@@ -397,6 +398,44 @@ class DonationMessage {
         $msg['postal_code']
       );
     }
+  }
+
+  /**
+   * Run strtotime in UTC
+   *
+   * @param string $date Random date format you hope is parseable by PHP, and is
+   * in UTC.
+   *
+   * @return int Seconds since Unix epoch
+   * @throws \Exception
+   */
+  private function parseDateString(string $date): ?int {
+    // Funky hack to trim decimal timestamp.  More normalizations may follow.
+    $text = preg_replace('/^(@\d+)\.\d+$/', '$1', $date);
+    return (new \DateTime($text, new \DateTimeZone('UTC')))->getTimestamp();
+  }
+
+  /**
+   *
+   * @return array
+   */
+  public function getThankYouDate(): ?int {
+    if (empty($this->message['thankyou_date'])) {
+      return NULL;
+    }
+    if (is_numeric($this->message['thankyou_date'])) {
+      return $this->message['thankyou_date'];
+    }
+    try {
+      return $this->parseDateString($this->message['thankyou_date']);
+    }
+    catch (\Exception $e) {
+      \Civi::log('wmf')->debug('wmf_civicrm: Could not parse thankyou date: {date} from {id}', [
+        'date' => $this->message['thankyou_date'],
+        'id' => $this->message['contribution_tracking_id'],
+      ]);
+    }
+    return NULL;
   }
 
 }

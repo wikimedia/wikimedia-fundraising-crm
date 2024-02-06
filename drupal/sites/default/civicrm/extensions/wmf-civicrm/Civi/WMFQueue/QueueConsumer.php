@@ -1,4 +1,6 @@
-<?php namespace wmf_common;
+<?php
+
+namespace Civi\WMFQueue;
 
 use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 use Exception;
@@ -9,13 +11,14 @@ use \Civi\WMFException\WMFException;
 /**
  * Queue consumer that knows what to do with WMFExceptions
  */
-abstract class WmfQueueConsumer extends BaseQueueConsumer {
+abstract class QueueConsumer extends BaseQueueConsumer {
 
   protected function handleError($message, Exception $ex) {
     if (isset($message['gateway']) && isset($message['order_id'])) {
       $logId = "{$message['gateway']}-{$message['order_id']}";
-    } else {
-      foreach($message as $key => $value) {
+    }
+    else {
+      foreach ($message as $key => $value) {
         if (substr($key, -2, 2) === 'id') {
           $logId = "$key-$value";
           break;
@@ -28,7 +31,7 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
     if ($ex instanceof WMFException) {
       \Civi::log('wmf')->error(
         'wmf_common: Failure while processing message: {message}',
-      ['message' => $ex->getMessage()]
+        ['message' => $ex->getMessage()]
       );
 
       $this->handleWMFException($message, $ex, $logId);
@@ -159,4 +162,5 @@ abstract class WmfQueueConsumer extends BaseQueueConsumer {
     $message['contribution_tags'][] = 'DuplicateInvoiceId';
     return $message;
   }
+
 }

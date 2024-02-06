@@ -5,7 +5,7 @@ namespace Civi\Api4\Action\UpiDonationsQueue;
 use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\Queue\UpiDonationsQueueConsumer;
+use Civi\WMFQueue\UpiDonationsQueueConsumer;
 use CRM_SmashPig_ContextWrapper;
 
 /**
@@ -26,7 +26,7 @@ class Consume extends AbstractAction {
    */
   protected $timeLimit = 0;
 
-  public function _run( Result $result ) {
+  public function _run(Result $result) {
     CRM_SmashPig_ContextWrapper::createContext('civicrm');
     Civi::log('wmf')->info('Executing: UpiDonationsQueue.consume');
 
@@ -38,4 +38,5 @@ class Consume extends AbstractAction {
     $dequeued = $consumer->dequeueMessages();
     $result['dequeued'] = $dequeued;
   }
+
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\Queue;
+namespace Civi\WMFQueue;
 
 use Civi;
 use Civi\Api4\ContributionRecur;
@@ -8,10 +8,9 @@ use Civi\WMFHelper\PaymentProcessor;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
-use wmf_common\WmfQueueConsumer;
 use WmfTransaction;
 
-class UpiDonationsQueueConsumer extends WmfQueueConsumer {
+class UpiDonationsQueueConsumer extends QueueConsumer {
 
   public function processMessage(array $message) {
     // Look up contribution_recur record
@@ -47,7 +46,7 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
 
     // Refund donation received after cancelled recurring
     if (!empty($contributionRecur) && $contributionRecur['contribution_status_id:name'] === 'Cancelled'
-    && $message['gateway_status'] === 'PAID') {
+      && $message['gateway_status'] === 'PAID') {
       Civi::log('wmf')->info(
         "Refunding UPI payment from cancelled recurring with order ID: "
         . $message['order_id']
@@ -73,14 +72,16 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
     }
   }
 
-  protected function refundPayment($refundMessage): array{
+  protected function refundPayment($refundMessage): array {
     $result = civicrm_api3('PaymentProcessor', 'refund', $refundMessage);
     return $result['values'][0];
   }
+
   /**
    * Finds an active contribution_recur record using a particular payment_token value
    *
    * @param array $message with at least 'gateway' and 'recurring_payment_token' set
+   *
    * @return array|null The contribution_recur record if it exists, otherwise null
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
@@ -104,8 +105,8 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
     // check for the row with the closest schedule date and is "In Progress" status.
     if (count($recurs) > 1) {
       foreach ($recurs as $recur_record) {
-        if ($recur_record['contribution_status_id:name'] === 'In Progress' ) {
-            return $recur_record;
+        if ($recur_record['contribution_status_id:name'] === 'In Progress') {
+          return $recur_record;
         }
       }
     }
@@ -118,6 +119,7 @@ class UpiDonationsQueueConsumer extends WmfQueueConsumer {
    * necessary a new contact record.
    *
    * @param array $message
+   *
    * @return int the resulting contribution_recur record's ID
    * @throws \API_Exception
    * @throws \CRM_Core_Exception
