@@ -3,7 +3,7 @@
 use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\Fundraiseup\Tests\FundraiseupTestConfiguration;
 use SmashPig\Core\DataStores\QueueWrapper;
-use queue2civicrm\DonationQueueConsumer;
+use Civi\WMFQueue\DonationQueueConsumer;
 use queue2civicrm\refund\RefundQueueConsumer;
 use queue2civicrm\recurring\RecurringQueueConsumer;
 
@@ -34,284 +34,284 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
 
   public function auditTestProvider() {
     return [
-    [
-      __DIR__ . '/data/Fundraiseup/donations/',
-                        [
-                          'donations' => [
-                        [
-                          'gateway' => 'fundraiseup',
-                          'gross' => '5.64',
-                          'currency' => 'USD',
-                          'order_id' => 'DQZQFCJS',
-                          'gateway_txn_id' => 'ch_3NrmZLJaRQOHTfEW0zGlJw1Z',
-                          'payment_method' => 'cc',
-                          'payment_submethod' => 'visa',
-                          'date' => 1695063200,
-                          'user_ip' => '127.0.0.1',
-                          'first_name' => 'Jimmy',
-                          'last_name' => 'Wales',
-                          'street_address' => '',
-                          'city' => '',
-                          'country' => 'GB',
-                          'email' => 'jwales@example.org',
-                          'external_identifier' => 'SUBJJCQA',
-                          'invoice_id' => 'DQZQFCJS',
-                          'gateway_account' => 'Wikimedia Foundation',
-                          'frequency_unit' => 'month',
-                          'frequency_interval' => 1,
-                          'original_currency' => 'GBP',
-                          'original_gross' => '4.60',
-                          'fee' => 0.61,
-                          'recurring' => '1',
-                          'subscr_id' => 'RCGCEFBA',
-                          'start_date' => '2023-09-18T18:53:20.676Z',
-                          'employer' => '',
-                          'street_number' => '',
-                          'postal_code' => '',
-                          'state_province' => '',
-                          'language' => 'en-US',
-                          'utm_medium' => 'spontaneous',
-                          'utm_source' => 'fr-redir',
-                          'utm_campaign' => 'spontaneous',
-                          'no_thank_you' => 'Fundraiseup import',
-                          'type' => 'donations',
-                        ],
-                        [
-                          'gateway' => 'fundraiseup',
-                          'gross' => '12.26',
-                          'currency' => 'USD',
-                          'order_id' => 'DVSCKVLS',
-                          'gateway_txn_id' => 'ch_3NrmYWJaRQOHTfEW0IQMgfTB',
-                          'payment_method' => 'google',
-                          'payment_submethod' => 'visa',
-                          'date' => 1695063150,
-                          'user_ip' => '127.0.0.1',
-                          'first_name' => 'Jimmy',
-                          'last_name' => 'Wales',
-                          'street_address' => '',
-                          'city' => '',
-                          'country' => 'GB',
-                          'email' => 'jwales@example.org',
-                          'external_identifier' => 'SUBJJCQA',
-                          'invoice_id' => 'DVSCKVLS',
-                          'gateway_account' => 'Wikimedia Foundation',
-                          'frequency_unit' => 'month',
-                          'frequency_interval' => 1,
-                          'original_currency' => 'GBP',
-                          'original_gross' => '10.00',
-                          'fee' => 0.97,
-                          'recurring' => '1',
-                          'subscr_id' => 'REZZBWQF',
-                          'start_date' => '2023-09-18T18:52:30.273Z',
-                          'employer' => '',
-                          'street_number' => '',
-                          'postal_code' => '',
-                          'state_province' => '',
-                          'language' => 'en-US',
-                          'utm_medium' => 'spontaneous',
-                          'utm_source' => 'fr-redir',
-                          'utm_campaign' => 'spontaneous',
-                          'no_thank_you' => 'Fundraiseup import',
-                          'type' => 'donations',
-                        ],
-                        [
-                          'gateway' => 'fundraiseup',
-                          'gross' => '13.49',
-                          'currency' => 'USD',
-                          'order_id' => 'DGVYEEWH',
-                          'gateway_txn_id' => 'ch_3NrmWyJaRQOHTfEW1KdRmJIX',
-                          'payment_method' => 'bt',
-                          'payment_submethod' => 'ACH',
-                          'date' => 1695063056,
-                          'user_ip' => '127.0.0.1',
-                          'first_name' => 'Jimmy',
-                          'last_name' => 'Wales',
-                          'street_address' => '',
-                          'city' => '',
-                          'country' => 'GB',
-                          'email' => 'jwales@example.org',
-                          'external_identifier' => 'SCHNECUN',
-                          'invoice_id' => 'DGVYEEWH',
-                          'gateway_account' => 'Wikimedia Foundation',
-                          'frequency_unit' => 'One time',
-                          'original_currency' => 'GBP',
-                          'original_gross' => '11.00',
-                          'fee' => 1.03,
-                          'recurring' => '0',
-                          'subscr_id' => '',
-                          'start_date' => '',
-                          'employer' => '',
-                          'street_number' => '',
-                          'postal_code' => '',
-                          'state_province' => '',
-                          'language' => 'en-US',
-                          'utm_medium' => 'spontaneous',
-                          'utm_source' => 'fr-redir',
-                          'utm_campaign' => 'spontaneous',
-                          'no_thank_you' => 'Fundraiseup import',
-                          'type' => 'donations',
-                        ],
-                        [
-                          'gateway' => 'fundraiseup',
-                          'gross' => '65.91',
-                          'currency' => 'USD',
-                          'order_id' => 'DXLKVGQU',
-                          'gateway_txn_id' => 'ch_3NrfJTJaRQOHTfEW0mf8ewoL',
-                          'payment_method' => 'cc',
-                          'payment_submethod' => 'visa',
-                          'date' => 1695035313,
-                          'user_ip' => '127.0.0.1',
-                          'first_name' => 'Jimmy',
-                          'last_name' => 'Wales',
-                          'street_address' => '',
-                          'city' => '',
-                          'country' => 'GB',
-                          'email' => 'jwales@example.org',
-                          'external_identifier' => 'SUBJJCQA',
-                          'invoice_id' => 'DXLKVGQU',
-                          'gateway_account' => 'Wikimedia Foundation',
-                          'frequency_unit' => 'One time',
-                          'original_currency' => 'GBP',
-                          'original_gross' => '53.70',
-                          'fee' => 3.87,
-                          'recurring' => '0',
-                          'subscr_id' => '',
-                          'start_date' => '',
-                          'employer' => '',
-                          'street_number' => '',
-                          'postal_code' => '',
-                          'state_province' => '',
-                          'language' => 'en-US',
-                          'utm_medium' => 'spontaneous',
-                          'utm_source' => 'fr-redir',
-                          'utm_campaign' => 'spontaneous',
-                          'no_thank_you' => 'Fundraiseup import',
-                          'type' => 'donations',
-                        ],
-                          ],
-                        ],
-    ],
-    [
-      __DIR__ . '/data/Fundraiseup/refunds',
-                [
-                  'refund' => [
-                        [
-                          'gateway' => 'fundraiseup',
-                          'gross' => '53.70',
-                          'gross_currency' => 'GBP',
-                          'gateway_parent_id' => 'ch_3NrfJTJaRQOHTfEW0mf8ewoL',
-                          'gateway_refund_id' => 'ch_3NrfJTJaRQOHTfEW0mf8ewoL',
-                          'type' => 'refund',
-                          'date' => 1695047409,
-                        ],
-                  ],
-                ],
-    ],
-    [
-      __DIR__ . '/data/Fundraiseup/recurring/cancelled',
-                [
-                  'recurring' => [
-                        [
-                          'gateway' => 'fundraiseup',
-                          'gateway_account' => 'Wikimedia Foundation',
-                          'subscr_id' => 'RWRYRXYC',
-                          'first_name' => 'Jimmy',
-                          'last_name' => 'Wales',
-                          'employer' => '',
-                          'gross' => '4.60',
-                          'currency' => 'GBP',
-                          'cancel_date' => 1695140630,
-                          'email' => 'jwales@example.org',
-                          'external_identifier' => 'SUBJJCQA',
-                          'payment_method' => 'cc',
-                          'payment_submethod' => 'visa',
-                          'next_sched_contribution_date' => '',
-                          'utm_medium' => 'spontaneous',
-                          'utm_source' => 'fr-redir',
-                          'utm_campaign' => 'spontaneous',
-                          'type' => 'recurring',
-                          'txn_type' => 'subscr_cancel',
-                          'start_date' => 1695063200,
-                          'frequency_unit' => 'month',
-                          'date' => 1695140630,
-                          'create_date' => 1695063200,
-                          'frequency_interval' => 1,
-                          'no_thank_you' => 'Fundraiseup import',
-                          'country' => 'GB'
-                        ],
-                  ],
-                ],
-    ],
-    [
-      __DIR__ . '/data/Fundraiseup/recurring/new',
-                [
-                  'recurring' => [
-                        [
-                          'gateway' => 'fundraiseup',
-                          'gateway_account' => 'Wikimedia Foundation',
-                          'subscr_id' => 'RWRYRXYC',
-                          'first_name' => 'Jimmy',
-                          'last_name' => 'Wales',
-                          'employer' => '',
-                          'gross' => '10.00',
-                          'currency' => 'GBP',
-                          'frequency_unit' => 'month',
-                          'frequency_interval' => 1,
-                          'start_date' => 1695035319,
-                          'create_date' => 1695035319,
-                          'email' => 'jwales@example.org',
-                          'external_identifier' => 'SUBJJCQA',
-                          'payment_method' => 'cc',
-                          'payment_submethod' => 'visa',
-                          'next_sched_contribution_date' => 1697627269,
-                          'utm_medium' => 'spontaneous',
-                          'utm_source' => 'fr-redir',
-                          'utm_campaign' => 'spontaneous',
-                          'type' => 'recurring',
-                          'date' => 1695035319,
-                          'txn_type' => 'subscr_signup',
-                          'no_thank_you' => 'Fundraiseup import',
-                          'country' => 'GB'
-                        ],
-                  ],
-                ],
-    ],
-    [
-      __DIR__ . '/data/Fundraiseup/recurring/failed',
-                [
-                  'recurring' => [
-                        [
-                          'gateway' => 'fundraiseup',
-                          'gateway_account' => 'Wikimedia Foundation',
-                          'subscr_id' => 'RWRYRXYC',
-                          'first_name' => 'Jimmy',
-                          'last_name' => 'Wales',
-                          'employer' => 'Wikpedia',
-                          'email' => 'jwales@example.org',
-                          'external_identifier' => 'SUBJJCQA',
-                          'type' => 'recurring',
-                          'date' => 1695035319,
-                          'gross' => '10.00',
-                          'currency' => 'GBP',
-                          'payment_method' => 'apple',
-                          'payment_submethod' => 'mc',
-                          'utm_medium' => '',
-                          'utm_source' => 'portal',
-                          'utm_campaign' => 'portal',
-                          'next_sched_contribution_date' => '',
-                          'start_date' => 1695035319,
-                          'frequency_unit' => 'month',
-                          'txn_type' => 'subscr_cancel',
-                          'create_date' => 1695035319,
-                          'frequency_interval' => 1,
-                          'country' => 'GB',
-                          'cancel_date' => 1705359722,
-                          'cancel_reason' => 'Failed: Your card was declined.',
-                          'no_thank_you' => 'Fundraiseup import',
-                        ],
-                  ],
-                ],
-    ],
+      [
+        __DIR__ . '/data/Fundraiseup/donations/',
+        [
+          'donations' => [
+            [
+              'gateway' => 'fundraiseup',
+              'gross' => '5.64',
+              'currency' => 'USD',
+              'order_id' => 'DQZQFCJS',
+              'gateway_txn_id' => 'ch_3NrmZLJaRQOHTfEW0zGlJw1Z',
+              'payment_method' => 'cc',
+              'payment_submethod' => 'visa',
+              'date' => 1695063200,
+              'user_ip' => '127.0.0.1',
+              'first_name' => 'Jimmy',
+              'last_name' => 'Wales',
+              'street_address' => '',
+              'city' => '',
+              'country' => 'GB',
+              'email' => 'jwales@example.org',
+              'external_identifier' => 'SUBJJCQA',
+              'invoice_id' => 'DQZQFCJS',
+              'gateway_account' => 'Wikimedia Foundation',
+              'frequency_unit' => 'month',
+              'frequency_interval' => 1,
+              'original_currency' => 'GBP',
+              'original_gross' => '4.60',
+              'fee' => 0.61,
+              'recurring' => '1',
+              'subscr_id' => 'RCGCEFBA',
+              'start_date' => '2023-09-18T18:53:20.676Z',
+              'employer' => '',
+              'street_number' => '',
+              'postal_code' => '',
+              'state_province' => '',
+              'language' => 'en-US',
+              'utm_medium' => 'spontaneous',
+              'utm_source' => 'fr-redir',
+              'utm_campaign' => 'spontaneous',
+              'no_thank_you' => 'Fundraiseup import',
+              'type' => 'donations',
+            ],
+            [
+              'gateway' => 'fundraiseup',
+              'gross' => '12.26',
+              'currency' => 'USD',
+              'order_id' => 'DVSCKVLS',
+              'gateway_txn_id' => 'ch_3NrmYWJaRQOHTfEW0IQMgfTB',
+              'payment_method' => 'google',
+              'payment_submethod' => 'visa',
+              'date' => 1695063150,
+              'user_ip' => '127.0.0.1',
+              'first_name' => 'Jimmy',
+              'last_name' => 'Wales',
+              'street_address' => '',
+              'city' => '',
+              'country' => 'GB',
+              'email' => 'jwales@example.org',
+              'external_identifier' => 'SUBJJCQA',
+              'invoice_id' => 'DVSCKVLS',
+              'gateway_account' => 'Wikimedia Foundation',
+              'frequency_unit' => 'month',
+              'frequency_interval' => 1,
+              'original_currency' => 'GBP',
+              'original_gross' => '10.00',
+              'fee' => 0.97,
+              'recurring' => '1',
+              'subscr_id' => 'REZZBWQF',
+              'start_date' => '2023-09-18T18:52:30.273Z',
+              'employer' => '',
+              'street_number' => '',
+              'postal_code' => '',
+              'state_province' => '',
+              'language' => 'en-US',
+              'utm_medium' => 'spontaneous',
+              'utm_source' => 'fr-redir',
+              'utm_campaign' => 'spontaneous',
+              'no_thank_you' => 'Fundraiseup import',
+              'type' => 'donations',
+            ],
+            [
+              'gateway' => 'fundraiseup',
+              'gross' => '13.49',
+              'currency' => 'USD',
+              'order_id' => 'DGVYEEWH',
+              'gateway_txn_id' => 'ch_3NrmWyJaRQOHTfEW1KdRmJIX',
+              'payment_method' => 'bt',
+              'payment_submethod' => 'ACH',
+              'date' => 1695063056,
+              'user_ip' => '127.0.0.1',
+              'first_name' => 'Jimmy',
+              'last_name' => 'Wales',
+              'street_address' => '',
+              'city' => '',
+              'country' => 'GB',
+              'email' => 'jwales@example.org',
+              'external_identifier' => 'SCHNECUN',
+              'invoice_id' => 'DGVYEEWH',
+              'gateway_account' => 'Wikimedia Foundation',
+              'frequency_unit' => 'One time',
+              'original_currency' => 'GBP',
+              'original_gross' => '11.00',
+              'fee' => 1.03,
+              'recurring' => '0',
+              'subscr_id' => '',
+              'start_date' => '',
+              'employer' => '',
+              'street_number' => '',
+              'postal_code' => '',
+              'state_province' => '',
+              'language' => 'en-US',
+              'utm_medium' => 'spontaneous',
+              'utm_source' => 'fr-redir',
+              'utm_campaign' => 'spontaneous',
+              'no_thank_you' => 'Fundraiseup import',
+              'type' => 'donations',
+            ],
+            [
+              'gateway' => 'fundraiseup',
+              'gross' => '65.91',
+              'currency' => 'USD',
+              'order_id' => 'DXLKVGQU',
+              'gateway_txn_id' => 'ch_3NrfJTJaRQOHTfEW0mf8ewoL',
+              'payment_method' => 'cc',
+              'payment_submethod' => 'visa',
+              'date' => 1695035313,
+              'user_ip' => '127.0.0.1',
+              'first_name' => 'Jimmy',
+              'last_name' => 'Wales',
+              'street_address' => '',
+              'city' => '',
+              'country' => 'GB',
+              'email' => 'jwales@example.org',
+              'external_identifier' => 'SUBJJCQA',
+              'invoice_id' => 'DXLKVGQU',
+              'gateway_account' => 'Wikimedia Foundation',
+              'frequency_unit' => 'One time',
+              'original_currency' => 'GBP',
+              'original_gross' => '53.70',
+              'fee' => 3.87,
+              'recurring' => '0',
+              'subscr_id' => '',
+              'start_date' => '',
+              'employer' => '',
+              'street_number' => '',
+              'postal_code' => '',
+              'state_province' => '',
+              'language' => 'en-US',
+              'utm_medium' => 'spontaneous',
+              'utm_source' => 'fr-redir',
+              'utm_campaign' => 'spontaneous',
+              'no_thank_you' => 'Fundraiseup import',
+              'type' => 'donations',
+            ],
+          ],
+        ],
+      ],
+      [
+        __DIR__ . '/data/Fundraiseup/refunds',
+        [
+          'refund' => [
+            [
+              'gateway' => 'fundraiseup',
+              'gross' => '53.70',
+              'gross_currency' => 'GBP',
+              'gateway_parent_id' => 'ch_3NrfJTJaRQOHTfEW0mf8ewoL',
+              'gateway_refund_id' => 'ch_3NrfJTJaRQOHTfEW0mf8ewoL',
+              'type' => 'refund',
+              'date' => 1695047409,
+            ],
+          ],
+        ],
+      ],
+      [
+        __DIR__ . '/data/Fundraiseup/recurring/cancelled',
+        [
+          'recurring' => [
+            [
+              'gateway' => 'fundraiseup',
+              'gateway_account' => 'Wikimedia Foundation',
+              'subscr_id' => 'RWRYRXYC',
+              'first_name' => 'Jimmy',
+              'last_name' => 'Wales',
+              'employer' => '',
+              'gross' => '4.60',
+              'currency' => 'GBP',
+              'cancel_date' => 1695140630,
+              'email' => 'jwales@example.org',
+              'external_identifier' => 'SUBJJCQA',
+              'payment_method' => 'cc',
+              'payment_submethod' => 'visa',
+              'next_sched_contribution_date' => '',
+              'utm_medium' => 'spontaneous',
+              'utm_source' => 'fr-redir',
+              'utm_campaign' => 'spontaneous',
+              'type' => 'recurring',
+              'txn_type' => 'subscr_cancel',
+              'start_date' => 1695063200,
+              'frequency_unit' => 'month',
+              'date' => 1695140630,
+              'create_date' => 1695063200,
+              'frequency_interval' => 1,
+              'no_thank_you' => 'Fundraiseup import',
+              'country' => 'GB',
+            ],
+          ],
+        ],
+      ],
+      [
+        __DIR__ . '/data/Fundraiseup/recurring/new',
+        [
+          'recurring' => [
+            [
+              'gateway' => 'fundraiseup',
+              'gateway_account' => 'Wikimedia Foundation',
+              'subscr_id' => 'RWRYRXYC',
+              'first_name' => 'Jimmy',
+              'last_name' => 'Wales',
+              'employer' => '',
+              'gross' => '10.00',
+              'currency' => 'GBP',
+              'frequency_unit' => 'month',
+              'frequency_interval' => 1,
+              'start_date' => 1695035319,
+              'create_date' => 1695035319,
+              'email' => 'jwales@example.org',
+              'external_identifier' => 'SUBJJCQA',
+              'payment_method' => 'cc',
+              'payment_submethod' => 'visa',
+              'next_sched_contribution_date' => 1697627269,
+              'utm_medium' => 'spontaneous',
+              'utm_source' => 'fr-redir',
+              'utm_campaign' => 'spontaneous',
+              'type' => 'recurring',
+              'date' => 1695035319,
+              'txn_type' => 'subscr_signup',
+              'no_thank_you' => 'Fundraiseup import',
+              'country' => 'GB',
+            ],
+          ],
+        ],
+      ],
+      [
+        __DIR__ . '/data/Fundraiseup/recurring/failed',
+        [
+          'recurring' => [
+            [
+              'gateway' => 'fundraiseup',
+              'gateway_account' => 'Wikimedia Foundation',
+              'subscr_id' => 'RWRYRXYC',
+              'first_name' => 'Jimmy',
+              'last_name' => 'Wales',
+              'employer' => 'Wikpedia',
+              'email' => 'jwales@example.org',
+              'external_identifier' => 'SUBJJCQA',
+              'type' => 'recurring',
+              'date' => 1695035319,
+              'gross' => '10.00',
+              'currency' => 'GBP',
+              'payment_method' => 'apple',
+              'payment_submethod' => 'mc',
+              'utm_medium' => '',
+              'utm_source' => 'portal',
+              'utm_campaign' => 'portal',
+              'next_sched_contribution_date' => '',
+              'start_date' => 1695035319,
+              'frequency_unit' => 'month',
+              'txn_type' => 'subscr_cancel',
+              'create_date' => 1695035319,
+              'frequency_interval' => 1,
+              'country' => 'GB',
+              'cancel_date' => 1705359722,
+              'cancel_reason' => 'Failed: Your card was declined.',
+              'no_thank_you' => 'Fundraiseup import',
+            ],
+          ],
+        ],
+      ],
     ];
   }
 
@@ -334,7 +334,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $dqc->processMessage($message->getBody());
     $this->consumeCtQueue();
 
-    $expected = array(
+    $expected = [
       'contact_id.contact_type' => 'Individual',
       'contact_id.sort_name' => 'Wales, Jimmy',
       'contact_id.display_name' => 'Jimmy Wales',
@@ -349,7 +349,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift"),
       'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Completed"),
       'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Credit Card: Visa"),
-    );
+    ];
 
     $contribution = \Civi\Api4\Contribution::get(FALSE)
       ->addSelect('*', 'contact_id.*',)
@@ -368,7 +368,6 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $contribution[$key]);
     }
-
   }
 
   public function testImportGooglePayDonationMessages() {
@@ -379,7 +378,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $dqc->processMessage($message->getBody());
     $this->consumeCtQueue();
 
-    $expected = array(
+    $expected = [
       'contact_id.contact_type' => 'Individual',
       'contact_id.sort_name' => 'Wales, Jimmy',
       'contact_id.display_name' => 'Jimmy Wales',
@@ -394,7 +393,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift"),
       'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Completed"),
       'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Google Pay: Visa"),
-    );
+    ];
 
     $contribution = \Civi\Api4\Contribution::get(FALSE)
       ->addSelect('*', 'contact_id.*',)
@@ -423,7 +422,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $dqc->processMessage($message->getBody());
     $this->consumeCtQueue();
 
-    $expected = array(
+    $expected = [
       'contact_id.contact_type' => 'Individual',
       'contact_id.sort_name' => 'Wales, Jimmy',
       'contact_id.display_name' => 'Jimmy Wales',
@@ -438,7 +437,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
       'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Completed"),
       'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Bank Transfer: ACH"),
-    );
+    ];
 
     $contribution = \Civi\Api4\Contribution::get(FALSE)
       ->addSelect('*', 'contact_id.*',)
@@ -465,7 +464,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $refund = $audit[1][1]['refund'][0];
     $dqc = new DonationQueueConsumer('test');
     $rfqc = new RefundQueueConsumer(
-    'refund'
+      'refund'
     );
     $message = new TransactionMessage($donation);
     $dqc->processMessage($message->getBody());
@@ -474,7 +473,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $refundMessage = new TransactionMessage($refund);
     $rfqc->processMessage($refundMessage->getBody());
 
-    $expected = array(
+    $expected = [
       'contact_id.contact_type' => 'Individual',
       'contact_id.sort_name' => 'Wales, Jimmy',
       'contact_id.display_name' => 'Jimmy Wales',
@@ -489,7 +488,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
       'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Refunded"),
       'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Credit Card: Visa"),
-    );
+    ];
 
     $contribution = \Civi\Api4\Contribution::get(FALSE)
       ->addSelect('*', 'contact_id.*',)
@@ -508,11 +507,11 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $audit = $this->auditTestProvider();
     $recurring = $audit[3][1]['recurring'][0];
     $rqc = new RecurringQueueConsumer(
-    'recurring'
+      'recurring'
     );
     $rqc->processMessage($recurring);
 
-    $expected = array(
+    $expected = [
       'contact_id.contact_type' => 'Individual',
       'contact_id.sort_name' => 'Wales, Jimmy',
       'contact_id.display_name' => 'Jimmy Wales',
@@ -523,7 +522,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'trxn_id' => $recurring['subscr_id'],
       'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
       'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Pending"),
-    );
+    ];
 
     $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
       ->addSelect('*', 'contact_id.*')
@@ -543,12 +542,12 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $cancelMsg = $audit[2][1]['recurring'][0];
     $rqc = new RecurringQueueConsumer(
-    'recurring'
+      'recurring'
     );
     $rqc->processMessage($newRecurringMsg);
     $rqc->processMessage($cancelMsg);
 
-    $expected = array(
+    $expected = [
       'contact_id.contact_type' => 'Individual',
       'contact_id.sort_name' => 'Wales, Jimmy',
       'contact_id.display_name' => 'Jimmy Wales',
@@ -559,7 +558,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'trxn_id' => $newRecurringMsg['subscr_id'],
       'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
       'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Cancelled"),
-    );
+    ];
 
     $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
       ->addSelect('*', 'contact_id.*')
@@ -579,12 +578,12 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $failedMsg = $audit[4][1]['recurring'][0];
     $rqc = new RecurringQueueConsumer(
-    'recurring'
+      'recurring'
     );
     $rqc->processMessage($newRecurringMsg);
     $rqc->processMessage($failedMsg);
 
-    $expected = array(
+    $expected = [
       'contact_id.contact_type' => 'Individual',
       'contact_id.sort_name' => 'Wales, Jimmy',
       'contact_id.display_name' => 'Jimmy Wales',
@@ -596,7 +595,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
       'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Cancelled"),
       'cancel_reason' => 'Failed: Your card was declined.',
-    );
+    ];
 
     $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
       ->addSelect('*', 'contact_id.*')
@@ -616,8 +615,8 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $dqc = new DonationQueueConsumer('test');
     $queue = QueueWrapper::getQueue('donations');
     $rqc = new RecurringQueueConsumer(
-        'recurring'
-      );
+      'recurring'
+    );
     $count = 0;
     $messages = [];
     $message = $queue->pop();
@@ -708,7 +707,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
-    #'verbose' => 'true', # Uncomment to debug.
+      #'verbose' => 'true', # Uncomment to debug.
     ];
     $audit = new FundraiseupAuditProcessor($options);
     $audit->run();

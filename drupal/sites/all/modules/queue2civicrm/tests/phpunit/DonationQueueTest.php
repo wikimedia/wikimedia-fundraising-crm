@@ -1,6 +1,6 @@
 <?php
 
-use queue2civicrm\DonationQueueConsumer;
+use Civi\WMFQueue\DonationQueueConsumer;
 use SmashPig\Core\DataStores\DamagedDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\DataStores\QueueWrapper;
@@ -42,11 +42,11 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testDonation() {
     $message = new TransactionMessage(
-      array(
+      [
         'gross' => 400,
         'original_gross' => 400,
         'original_currency' => 'USD',
-      )
+      ]
     );
     $message2 = new TransactionMessage();
 
@@ -59,7 +59,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $campaignField = wmf_civicrm_get_custom_field_name('campaign');
 
-    $expected = array(
+    $expected = [
       'contact_type' => 'Individual',
       'sort_name' => 'Mouse, Mickey',
       'display_name' => 'Mickey Mouse',
@@ -76,17 +76,17 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_instrument' => 'Credit Card: Visa',
       'invoice_id' => $message->get('order_id'),
       $campaignField => 'Online Gift',
-    );
+    ];
     $returnFields = array_keys($expected);
     $returnFields[] = 'id';
 
     $contribution = civicrm_api3(
       'Contribution',
       'getsingle',
-      array(
+      [
         wmf_civicrm_get_custom_field_name('gateway_txn_id') => $message->getGatewayTxnId(),
         'return' => $returnFields,
-      )
+      ]
     );
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
 
@@ -97,14 +97,14 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $contribution2 = civicrm_api3(
       'Contribution',
       'getsingle',
-      array(
+      [
         wmf_civicrm_get_custom_field_name('gateway_txn_id') => $message2->getGatewayTxnId(),
         'return' => $returnFields,
-      )
+      ]
     );
     $this->ids['Contact'][$contribution2['contact_id']] = $contribution2['contact_id'];
 
-    $expected = array(
+    $expected = [
       'contact_type' => 'Individual',
       'sort_name' => 'Mouse, Mickey',
       'display_name' => 'Mickey Mouse',
@@ -121,7 +121,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_instrument' => 'Credit Card: Visa',
       'invoice_id' => $message2->get('order_id'),
       $campaignField => 'Online Gift',
-    );
+    ];
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $contribution2[$key]);
     }
@@ -141,7 +141,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testDonationInvoiceId() {
     $message = new TransactionMessage(
-      array('invoice_id' => mt_rand())
+      ['invoice_id' => mt_rand()]
     );
 
     exchange_rate_cache_set('USD', $message->get('date'), 1);
@@ -151,7 +151,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $campaignField = wmf_civicrm_get_custom_field_name('campaign');
 
-    $expected = array(
+    $expected = [
       'contact_type' => 'Individual',
       'sort_name' => 'Mouse, Mickey',
       'display_name' => 'Mickey Mouse',
@@ -168,16 +168,16 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_instrument' => 'Credit Card: Visa',
       'invoice_id' => $message->get('invoice_id'),
       $campaignField => 'Online Gift',
-    );
+    ];
     $returnFields = array_keys($expected);
 
     $contribution = civicrm_api3(
       'Contribution',
       'getsingle',
-      array(
+      [
         wmf_civicrm_get_custom_field_name('gateway_txn_id') => $message->getGatewayTxnId(),
         'return' => $returnFields,
-      )
+      ]
     );
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     foreach ($expected as $key => $item) {
@@ -192,7 +192,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \Civi\WMFException\WMFException
    */
   public function testDonationWithUTFCampaignOption() {
-    $message = new TransactionMessage(array('utm_campaign' => 'EmailCampaign1'));
+    $message = new TransactionMessage(['utm_campaign' => 'EmailCampaign1']);
     $appealFieldID = $this->createCustomOption('Appeal', 'EmailCampaign1');
 
     exchange_rate_cache_set('USD', $message->get('date'), 1);
@@ -207,10 +207,10 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $contribution = civicrm_api3(
       'Contribution',
       'getsingle',
-      array(
+      [
         'id' => $contributions[0]['id'],
         'return' => 'custom_' . $appealFieldID,
-      )
+      ]
     );
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->assertEquals('EmailCampaign1', $contribution['custom_' . $appealFieldID]);
@@ -227,8 +227,8 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testDonationWithInvalidUTFCampaignOption() {
     civicrm_initialize();
     $optionValue = uniqid();
-    $message = new TransactionMessage(array('utm_campaign' => $optionValue));
-    $appealField = civicrm_api3('custom_field', 'getsingle', array('name' => 'Appeal'));
+    $message = new TransactionMessage(['utm_campaign' => $optionValue]);
+    $appealField = civicrm_api3('custom_field', 'getsingle', ['name' => 'Appeal']);
 
     exchange_rate_cache_set('USD', $message->get('date'), 1);
     exchange_rate_cache_set($message->get('currency'), $message->get('date'), 3);
@@ -242,10 +242,10 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $contribution = civicrm_api3(
       'Contribution',
       'getsingle',
-      array(
+      [
         'id' => $contributions[0]['id'],
         'return' => 'custom_' . $appealField['id'],
-      )
+      ]
     );
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->assertEquals($optionValue, $contribution['custom_' . $appealField['id']]);
@@ -262,7 +262,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testDonationWithDisabledUTFCampaignOption() {
     civicrm_initialize();
     $optionValue = uniqid();
-    $message = new TransactionMessage(array('utm_campaign' => $optionValue));
+    $message = new TransactionMessage(['utm_campaign' => $optionValue]);
     $appealFieldID = $this->createCustomOption('Appeal', $optionValue);
 
     exchange_rate_cache_set('USD', $message->get('date'), 1);
@@ -277,10 +277,10 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $contribution = civicrm_api3(
       'Contribution',
       'getsingle',
-      array(
+      [
         'id' => $contributions[0]['id'],
         'return' => 'custom_' . $appealFieldID,
-      )
+      ]
     );
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->assertEquals($optionValue, $contribution['custom_' . $appealFieldID]);
@@ -297,7 +297,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testDonationWithDifferentLabelUTFCampaignOption() {
     civicrm_initialize();
     $optionValue = uniqid();
-    $message = new TransactionMessage(array('utm_campaign' => $optionValue));
+    $message = new TransactionMessage(['utm_campaign' => $optionValue]);
     $appealFieldID = $this->createCustomOption('Appeal', $optionValue, uniqid());
 
     exchange_rate_cache_set('USD', $message->get('date'), 1);
@@ -312,14 +312,14 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $contribution = civicrm_api3(
       'Contribution',
       'getsingle',
-      array(
+      [
         'id' => $contributions[0]['id'],
         'return' => 'custom_' . $appealFieldID,
-      )
+      ]
     );
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $this->assertEquals($optionValue, $contribution['custom_' . $appealFieldID]);
-    $values = $this->callAPISuccess('OptionValue', 'get', array('value' => $optionValue));
+    $values = $this->callAPISuccess('OptionValue', 'get', ['value' => $optionValue]);
     $this->assertEquals(1, $values['count']);
     $this->deleteCustomOption('Appeal', $optionValue);
   }
@@ -338,7 +338,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CiviCRM_API3_Exception
    */
   public function createCustomOption($fieldName, $optionValue, $label = '') {
-    $appealField = civicrm_api3('custom_field', 'getsingle', array('name' => $fieldName));
+    $appealField = civicrm_api3('custom_field', 'getsingle', ['name' => $fieldName]);
     wmf_civicrm_ensure_option_value_exists($appealField['option_group_id'], $optionValue);
     if ($label) {
       // This is a test specific scenario not handled by ensure_option_value_exists.
@@ -346,7 +346,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'return' => 'id',
         'option_group_id' => $appealField['option_group_id'],
         'value' => $optionValue,
-        'api.OptionValue.create' => ['label' => $label]
+        'api.OptionValue.create' => ['label' => $label],
       ]);
     }
     return $appealField['id'];
@@ -363,7 +363,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CiviCRM_API3_Exception
    */
   public function deleteCustomOption($fieldName, $optionValue) {
-    $appealField = civicrm_api3('custom_field', 'getsingle', array('name' => $fieldName));
+    $appealField = civicrm_api3('custom_field', 'getsingle', ['name' => $fieldName]);
     return $appealField['id'];
   }
 
@@ -395,10 +395,10 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $contribution = civicrm_api3(
       'Contribution',
       'getsingle',
-      array(
+      [
         'id' => $contributions[0]['id'],
         'return' => 'custom_' . $appealFieldID,
-      )
+      ]
     );
     $this->assertEquals($pendingMessage['utm_campaign'], $contribution['custom_' . $appealFieldID]);
     $this->deleteCustomOption('Appeal', $pendingMessage['utm_campaign']);
@@ -413,22 +413,22 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function getSparseMessages() {
     module_load_include('php', 'queue2civicrm', 'tests/includes/Message');
-    return array(
-      array(
+    return [
+      [
         new AmazonDonationMessage(),
         json_decode(
           file_get_contents(__DIR__ . '/../data/pending_amazon.json'),
           TRUE
         ),
-      ),
-      array(
+      ],
+      [
         new AstroPayDonationMessage(),
         json_decode(
           file_get_contents(__DIR__ . '/../data/pending_astropay.json'),
           TRUE
         ),
-      ),
-    );
+      ],
+    ];
   }
 
   /**
@@ -437,11 +437,11 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testDuplicateHandling() {
     $message = new TransactionMessage();
     $message2 = new TransactionMessage(
-      array(
+      [
         'contribution_tracking_id' => $message->get('contribution_tracking_id'),
         'order_id' => $message->get('order_id'),
         'date' => time(),
-      )
+      ]
     );
 
     exchange_rate_cache_set('USD', $message->get('date'), 1);
@@ -454,9 +454,9 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->queueConsumer->dequeueMessages();
 
-    $contribution = $this->callAPISuccessGetSingle('Contribution', array(
+    $contribution = $this->callAPISuccessGetSingle('Contribution', [
       'invoice_id' => $message->get('order_id'),
-    ));
+    ]);
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     $originalOrderId = $message2->get('order_id');
     $damagedPDO = $this->damagedDb->getDatabase();
@@ -467,7 +467,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $rows = $result->fetchAll(PDO::FETCH_ASSOC);
     $this->assertEquals(1, count($rows),
       'One row stored and retrieved.');
-    $expected = array(
+    $expected = [
       // NOTE: This is a db-specific string, sqlite3 in this case, and
       // you'll have different formatting if using any other database.
       'original_date' => wmf_common_date_unix_to_sql($message2->get('date')),
@@ -475,7 +475,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'order_id' => $originalOrderId,
       'gateway_txn_id' => "{$message2->get('gateway_txn_id')}",
       'original_queue' => 'test',
-    );
+    ];
     foreach ($expected as $key => $value) {
       $this->assertEquals($value, $rows[0][$key], 'Stored message had expected contents');
     }
@@ -493,7 +493,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       "$originalOrderId|dup-",
       substr($storedInvoiceId, 0, $invoiceIdLen + 5)
     );
-    $this->assertEquals(array('DuplicateInvoiceId'), $storedTags);
+    $this->assertEquals(['DuplicateInvoiceId'], $storedTags);
   }
 
 }

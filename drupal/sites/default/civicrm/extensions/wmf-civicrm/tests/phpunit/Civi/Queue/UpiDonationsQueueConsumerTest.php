@@ -10,7 +10,7 @@ use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
 use PHPUnit\Framework\TestCase;
-use queue2civicrm\DonationQueueConsumer;
+use Civi\WMFQueue\DonationQueueConsumer;
 use queue2civicrm\refund\RefundQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
