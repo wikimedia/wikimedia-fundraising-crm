@@ -1,8 +1,9 @@
-<?php namespace queue2civicrm\unsubscribe;
+<?php
 
-use Civi\WMFQueue\TransactionalQueueConsumer;
+namespace Civi\WMFQueue;
+
 use CRM_Core_DAO;
-use \Civi\WMFException\WMFException;
+use Civi\WMFException\WMFException;
 
 class UnsubscribeQueueConsumer extends TransactionalQueueConsumer {
 

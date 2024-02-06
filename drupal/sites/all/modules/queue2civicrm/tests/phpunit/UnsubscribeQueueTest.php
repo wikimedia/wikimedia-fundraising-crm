@@ -1,6 +1,6 @@
 <?php
 
-use queue2civicrm\unsubscribe\UnsubscribeQueueConsumer;
+use Civi\WMFQueue\UnsubscribeQueueConsumer;
 
 /**
  * @group Queue2Civicrm
@@ -55,13 +55,13 @@ class UnsubscribeTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function tearDown(): void {
     parent::tearDown();
-    $this->fixtures = null;
+    $this->fixtures = NULL;
   }
 
   protected function getMessage() {
     $message = json_decode(
-      file_get_contents( __DIR__ . '/../data/unsubscribe.json' ),
-      true
+      file_get_contents(__DIR__ . '/../data/unsubscribe.json'),
+      TRUE
     );
     $message['contribution-id'] = $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contactId,
