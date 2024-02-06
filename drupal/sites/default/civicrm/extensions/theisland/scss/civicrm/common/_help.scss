@@ -2,11 +2,11 @@
 
 .help,
 #help {
-  background: $alert-success-bg;
-  border: solid 1px $brand-success;
-  border-radius: $border-radius-base;
+  background: initial;
+  border: none;
   color: $text-color;
-  padding: 10px;
+  padding: 10px 0;
+  font-size: 1em;
 
   a {
     color: darken($brand-primary, $crm-darken-percentage);

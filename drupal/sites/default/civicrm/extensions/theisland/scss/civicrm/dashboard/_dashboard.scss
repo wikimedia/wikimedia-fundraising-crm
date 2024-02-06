@@ -64,3 +64,22 @@ $dashboard-dashlets-margin: 10px;
     opacity: 1;
   }
 }
+
+// Shown above the CiviCRM Dashboard, when civicrm.org runs marketing campaigns
+.civicrm-community-messages {
+  // Same orange as the Status Check warnings
+  background: #e6ab5e;
+  color: #464354;
+  // Avoid orange at the bottom when the fieldset is uncollapsed
+  padding: 0;
+
+  > details > .crm-accordion-body {
+    padding: 1rem;
+  }
+
+  .fa-times {
+    // grey-ish, not blue
+    color: #464354;
+    margin-right: 0.5rem;
+  }
+}
