@@ -1,11 +1,10 @@
 <?php namespace queue2civicrm\unsubscribe;
 
-use wmf_common\TransactionalWmfQueueConsumer;
+use Civi\WMFQueue\TransactionalQueueConsumer;
 use CRM_Core_DAO;
 use \Civi\WMFException\WMFException;
 
-
-class UnsubscribeQueueConsumer extends TransactionalWmfQueueConsumer {
+class UnsubscribeQueueConsumer extends TransactionalQueueConsumer {
 
   /**
    * Processes an individual unsubscribe message. The message must contain the
