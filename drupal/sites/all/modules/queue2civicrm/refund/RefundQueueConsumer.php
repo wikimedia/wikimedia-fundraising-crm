@@ -4,10 +4,10 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Exception;
 use SmashPig\Core\DataStores\QueueWrapper;
-use wmf_common\TransactionalWmfQueueConsumer;
+use Civi\WMFQueue\TransactionalQueueConsumer;
 use \Civi\WMFException\WMFException;
 
-class RefundQueueConsumer extends TransactionalWmfQueueConsumer {
+class RefundQueueConsumer extends TransactionalQueueConsumer {
 
   const PAYPAL_GATEWAY = 'paypal';
 

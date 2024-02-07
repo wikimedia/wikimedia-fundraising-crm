@@ -8,9 +8,9 @@ use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\PaymentProcessor;
 use CRM_Core_Payment_Scheduler;
-use wmf_common\TransactionalWmfQueueConsumer;
+use Civi\WMFQueue\TransactionalQueueConsumer;
 
-class RecurringQueueConsumer extends TransactionalWmfQueueConsumer {
+class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
   public const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID = 165;
 
