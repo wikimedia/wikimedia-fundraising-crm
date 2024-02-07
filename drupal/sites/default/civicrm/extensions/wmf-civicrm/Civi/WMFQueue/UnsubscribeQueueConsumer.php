@@ -1,8 +1,9 @@
-<?php namespace queue2civicrm\unsubscribe;
+<?php
 
-use Civi\WMFQueue\TransactionalQueueConsumer;
+namespace Civi\WMFQueue;
+
 use CRM_Core_DAO;
-use \Civi\WMFException\WMFException;
+use Civi\WMFException\WMFException;
 
 class UnsubscribeQueueConsumer extends TransactionalQueueConsumer {
 
@@ -21,8 +22,9 @@ class UnsubscribeQueueConsumer extends TransactionalQueueConsumer {
    *
    * @param array $message .
    *
+   * @throws \Civi\WMFException\WMFException|\Civi\Core\Exception\DBQueryException
    */
-  function processMessage($message) {
+  public function processMessage(array $message): void {
     // Sanity checking :)
     if (empty($message['email']) or empty($message['contribution-id'])) {
       $error = "Required field not present! Dropping message on floor. Message: " . json_encode($message);
@@ -67,8 +69,9 @@ class UnsubscribeQueueConsumer extends TransactionalQueueConsumer {
    * @param int $contributionId The Civi contribution ID
    *
    * @return array
+   * @throws \Civi\Core\Exception\DBQueryException
    */
-  function getEmailsFromContribution($contributionId) {
+  protected function getEmailsFromContribution($contributionId): array {
     $query = "
 			SELECT con.id, con.is_opt_out, e.email
 			FROM civicrm_contribution ct, civicrm_contact con
@@ -98,8 +101,9 @@ class UnsubscribeQueueConsumer extends TransactionalQueueConsumer {
    * @param array $emails Email addresses to unsubscribe
    *
    * @returns Number of affected rows
+   * @throws \Civi\WMFException\WMFException
    */
-  function optOutEmails($emails) {
+  protected function optOutEmails(array $emails): int {
     $escaped = [];
     foreach ($emails as $email) {
       $escaped[] = "'" . addslashes($email) . "'";
@@ -113,8 +117,7 @@ UPDATE civicrm_contact con, civicrm_email e
 EOS;
 
     try {
-      $result = CRM_Core_DAO::executeQuery($query);
-      return $result->N;
+      return CRM_Core_DAO::executeQuery($query)->N;
     }
     catch (\Exception $ex) {
       throw new WMFException(WMFException::UNSUBSCRIBE, $ex->getMessage());

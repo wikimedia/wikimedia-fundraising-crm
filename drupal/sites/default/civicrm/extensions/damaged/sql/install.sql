@@ -15,5 +15,5 @@
 -- *
 -- *******************************************************/
 
-create view damaged_view as select * from smashpig.damaged;
+create view damaged_view as select * from smashpig.damaged where retry_date is null;
 

@@ -1,9 +1,10 @@
-<?php namespace queue2civicrm;
+<?php
+
+namespace Civi\WMFQueue;
 
 use SmashPig\Core\DataStores\PendingDatabase;
 use Queue2civicrmTrxnCounter;
 use SmashPig\Core\UtcDate;
-use Civi\WMFQueue\TransactionalQueueConsumer;
 use Civi\WMFException\WMFException;
 use DonationStatsCollector;
 
@@ -15,9 +16,12 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    *
    * @param array $message
    *
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
-  public function processMessage($message) {
+  public function processMessage(array $message): void {
     // no need to insert contribution, return empty array is enough
     if (isset($message['monthly_convert_decline']) && $message['monthly_convert_decline']) {
       wmf_civicrm_remove_recurring_token($message);

@@ -7,5 +7,3 @@ dependencies[] = wmf_civicrm
 package = queue2civicrm
 files[] = Queue2civicrmTrxnCounter.php
 files[] = DonationStatsCollector.php
-files[] = DonationQueueConsumer.php
-
