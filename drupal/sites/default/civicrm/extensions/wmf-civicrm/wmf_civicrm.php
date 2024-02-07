@@ -181,39 +181,6 @@ function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 }
 
 /**
- * Implements hook_civicrm_navigationMenu().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu
- */
-function wmf_civicrm_civicrm_navigationMenu(&$menu) {
-  _wmf_civicrm_civix_insert_navigation_menu(
-    $menu,
-    'Administer/Customize Data and Screens', [
-    'label' => 'WMF configuration',
-    'name' => 'wmf_configuration',
-    'url' => 'civicrm/admin/setting/wmf-civicrm',
-    'permission' => 'administer CiviCRM',
-    'operator' => 'OR',
-    'separator' => 0,
-  ]);
-  if (Civi::settings()->get('environment') === 'Development') {
-    // This assumes we are using the default port - since it's only
-    // here to help us devs it's probably OK for it to be a bit brittle.
-    _wmf_thankyou_civix_insert_navigation_menu($menu,
-      'Administer', [
-        'label' => 'Mail catcher',
-        'name' => 'wmf_dev_mail_catcher',
-        'url' => 'http://wmff.localhost:1080/',
-        'permission' => 'administer CiviCRM',
-        'operator' => 'OR',
-        'separator' => 0,
-      ]
-    );
-  }
-  _wmf_civicrm_civix_navigationMenu($menu);
-}
-
-/**
  * Implementation of hook_civicrm_pre
  *
  * @param string $op

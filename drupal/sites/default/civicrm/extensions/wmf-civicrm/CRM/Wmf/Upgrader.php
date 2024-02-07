@@ -1967,6 +1967,7 @@ AND q.id BETWEEN %1 AND %2";
   /**
    * Set Financial Type to Cash for contribution recur records with NULL
    * Should update 1512116 rows.
+   *
    * @return bool
    */
   public function upgrade_4450(): bool {
@@ -1976,10 +1977,37 @@ AND q.id BETWEEN %1 AND %2";
       LIMIT 2000";
 
     $this->queueSQL($sql);
+  }
+
+  /**
+   * Convert drupal variables to CiviCRM settings.
+   *
+   * Bug: T356115
+   *
+   * @return bool
+   */
+  public function upgrade_4455(): bool {
+    $this->convertDrupalVariableToCiviCRMSetting([
+      'wmf_common_failmail' => 'wmf_failmail_recipient',
+      'wmf_common_no_failmail' => 'wmf_failmail_exclude_list',
+      'sendmail_from' => 'wmf_failmail_from',
+    ]);
     return TRUE;
   }
 
   /**
+   * @param array $conversions
+   *
+   * @return void
+   */
+  private function convertDrupalVariableToCiviCRMSetting(array $conversions) {
+    foreach ($conversions as $variableName => $settingName) {
+      Civi::settings()->set($settingName, variable_get($variableName));
+    }
+  }
+
+  /**
+   * >>>>>>> 5ad732cc6 (Add Queue Settings + navigation entries)
    * Queue up an SQL update.
    *
    * @param string $sql
