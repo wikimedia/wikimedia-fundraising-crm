@@ -1,13 +1,14 @@
 <?php
-use CRM_Wmffraud_ExtensionUtil as E;
+
+use CRM_WMFFraud_ExtensionUtil as E;
 
 /**
- * Class CRM_Wmffraud_Form_Report_PaymentAttempts
+ * Class CRM_WMFFraud_Form_Report_PaymentAttempts
  *
  * The payment attempts reports shows all payment attempts, regardless of whether
  * they resulted in a contribution.
  */
-class CRM_Wmffraud_Form_Report_PaymentAttempts extends CRM_Wmffraud_Form_Report_FraudReportsBase {
+class CRM_WMFFraud_Form_Report_PaymentAttempts extends CRM_WMFFraud_Form_Report_FraudReportsBase {
 
   function __construct() {
     parent::__construct();

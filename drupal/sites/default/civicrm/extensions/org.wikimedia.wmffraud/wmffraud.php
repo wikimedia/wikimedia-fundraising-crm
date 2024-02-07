@@ -1,7 +1,7 @@
 <?php
 
 require_once 'wmffraud.civix.php';
-use CRM_Wmffraud_ExtensionUtil as E;
+use CRM_WMFFraud_ExtensionUtil as E;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingContext;
 
@@ -37,30 +37,3 @@ function wmffraud_civicrm_testSetup(): void {
 function wmffraud_civicrm_enable() {
   _wmffraud_civix_civicrm_enable();
 }
-
-// --- Functions below this ship commented out. Uncomment as required. ---
-
-/**
- * Implements hook_civicrm_preProcess().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
-
- // */
-
-/**
- * Implements hook_civicrm_navigationMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
- *
-function wmffraud_civicrm_navigationMenu(&$menu) {
-  _wmffraud_civix_insert_navigation_menu($menu, NULL, array(
-    'label' => E::ts('The Page'),
-    'name' => 'the_page',
-    'url' => 'civicrm/the-page',
-    'permission' => 'access CiviReport,access CiviContribute',
-    'operator' => 'OR',
-    'separator' => 0,
-  ));
-  _wmffraud_civix_navigationMenu($menu);
-} // */

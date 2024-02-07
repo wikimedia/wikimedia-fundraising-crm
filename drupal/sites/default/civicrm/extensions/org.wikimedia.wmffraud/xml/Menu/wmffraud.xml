@@ -2,7 +2,7 @@
 <menu>
   <item>
     <path>civicrm/fredge</path>
-    <page_callback>CRM_Wmffraud_Form_Fredge</page_callback>
+    <page_callback>CRM_WMFFraud_Form_Fredge</page_callback>
     <title>Fredge</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>

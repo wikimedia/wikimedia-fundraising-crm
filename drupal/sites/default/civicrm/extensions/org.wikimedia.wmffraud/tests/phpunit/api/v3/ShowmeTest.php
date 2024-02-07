@@ -1,6 +1,6 @@
 <?php
 
-use CRM_Wmffraud_ExtensionUtil as E;
+use CRM_WMFFraud_ExtensionUtil as E;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;

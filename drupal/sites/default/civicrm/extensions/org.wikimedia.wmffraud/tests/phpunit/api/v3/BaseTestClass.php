@@ -1,6 +1,6 @@
 <?php
 
-use CRM_Wmffraud_ExtensionUtil as E;
+use CRM_WMFFraud_ExtensionUtil as E;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
@@ -26,6 +26,7 @@ class api_v3_BaseTestClass extends \PHPUnit\Framework\TestCase implements Headle
   use \Civi\Test\Api3TestTrait;
 
   protected $createdValues = [];
+
   /**
    * The setup() method is executed before the test is executed (optional).
    */

@@ -1,8 +1,8 @@
 <?php
 
-use CRM_Wmffraud_ExtensionUtil as E;
+use CRM_WMFFraud_ExtensionUtil as E;
 
-class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudReportsBase {
+class CRM_WMFFraud_Form_Report_Fredge extends CRM_WMFFraud_Form_Report_FraudReportsBase {
 
   const FRAUD_FILTERS = [
     'AVS' => 'getAVSResult',
@@ -111,7 +111,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
       'civicrm_contribution_tracking',
       'civicrm_contribution',
       'civicrm_contact',
-      'civicrm_email'
+      'civicrm_email',
     ], TRUE));
 
     // Add report-appropriate defaults.
@@ -121,7 +121,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
           'fredge_date' => TRUE,
           'gateway' => TRUE,
           'order_id' => TRUE,
-          'risk_score' => TRUE
+          'risk_score' => TRUE,
         ],
         'order_bys' => ['fredge_date' => 'DESC'],
       ],
@@ -129,8 +129,8 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
         'fields' => [
           'amount' => TRUE,
           'currency' => TRUE,
-          'country' => TRUE
-        ]
+          'country' => TRUE,
+        ],
       ],
     ]);
 
@@ -139,7 +139,7 @@ class CRM_Wmffraud_Form_Report_Fredge extends CRM_Wmffraud_Form_Report_FraudRepo
     $this->doNotRequireFieldsFrom([
       'civicrm_contribution',
       'civicrm_contact',
-      'civicrm_email'
+      'civicrm_email',
     ]);
     $this->_columns['civicrm_contribution']['grouping'] = 'on_success';
     $this->_columns['civicrm_email']['grouping'] = 'on_success';

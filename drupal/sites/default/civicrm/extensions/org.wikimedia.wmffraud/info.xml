@@ -18,14 +18,15 @@
   <version>1.0</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.61</ver>
+    <ver>5.70</ver>
   </compatibility>
   <comments>WMF Fraud utilities</comments>
   <civix>
-    <namespace>CRM/Wmffraud</namespace>
+    <namespace>CRM/WMFFraud</namespace>
     <format>23.02.1</format>
   </civix>
   <mixins>
+    <mixin>scan-classes@1.0.0</mixin>
     <mixin>menu-xml@1.0.0</mixin>
     <mixin>mgd-php@1.0.0</mixin>
     <mixin>smarty-v2@1.0.0</mixin>
@@ -35,4 +36,5 @@
     <psr0 prefix="CRM_" path="."/>
     <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
+  <upgrader>CRM_WMFFraud_Upgrader</upgrader>
 </extension>

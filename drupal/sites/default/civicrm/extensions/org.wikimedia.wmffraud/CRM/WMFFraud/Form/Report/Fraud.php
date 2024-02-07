@@ -1,14 +1,15 @@
 <?php
-use CRM_Wmffraud_ExtensionUtil as E;
+
+use CRM_WMFFraud_ExtensionUtil as E;
 
 /**
- * Class CRM_Wmffraud_Form_Report_Fraud
+ * Class CRM_WMFFraud_Form_Report_Fraud
  *
  * Report for identifying possibly fraudulent contributions.
  *
  * This reports is contribution-based & links in fraud data relating to those contributions.
  */
-class CRM_Wmffraud_Form_Report_Fraud extends CRM_Wmffraud_Form_Report_FraudReportsBase {
+class CRM_WMFFraud_Form_Report_Fraud extends CRM_WMFFraud_Form_Report_FraudReportsBase {
 
   function __construct() {
     parent::__construct();
