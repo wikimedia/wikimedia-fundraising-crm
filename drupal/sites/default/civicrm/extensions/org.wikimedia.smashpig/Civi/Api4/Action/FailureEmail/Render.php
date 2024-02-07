@@ -62,7 +62,6 @@ class Render extends AbstractAction {
     $email = Email::get()
       ->setCheckPermissions(FALSE)
       ->addWhere('contact_id', '=', $this->getContactID())
-      ->addWhere('on_hold', '=', 0)
       ->addWhere('email', '<>', '')
       ->setSelect(['contact_id.preferred_language', 'email', 'contact_id.display_name'])
       ->addOrderBy('is_primary', 'DESC')
