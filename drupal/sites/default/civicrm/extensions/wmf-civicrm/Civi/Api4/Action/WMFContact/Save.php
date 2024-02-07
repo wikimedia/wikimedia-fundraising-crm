@@ -190,10 +190,8 @@ class Save extends AbstractAction {
       'Organization_Contact.Title' => 'Title',
       'Organization_Contact.Name' => 'Name',
     ];
-    if (!empty($msg['gateway'])) {
-      // Save external platform contact id if braintree venmo, then save the user_name otherwise save to id
-      $isBraintreeVenmoPayment = !empty($msg['payment_method']) && $msg['payment_method'] === 'venmo' && $msg['gateway'] === 'braintree';
-      $custom_field_mangle['external_identifier'] = ($isBraintreeVenmoPayment) ? 'venmo_user_name' : $msg['gateway'] . '_id';
+    if (!empty($this->getExternalIdentifierField($msg))) {
+      $custom_field_mangle['external_identifier'] = $this->getExternalIdentifierField($msg);
     }
     foreach ($custom_field_mangle as $msgField => $customField) {
       if (isset($msg[$msgField])) {
@@ -596,6 +594,15 @@ class Save extends AbstractAction {
     }
   }
 
+  protected function getExternalIdentifierField(array $msg): ?string {
+    if (empty($msg['gateway'])) {
+      return null;
+    }
+    // Save external platform contact id if braintree venmo, then save the user_name otherwise save to id
+    $isBraintreeVenmoPayment = !empty($msg['payment_method']) && $msg['payment_method'] === 'venmo' && $msg['gateway'] === 'braintree';
+    return ($isBraintreeVenmoPayment) ? 'venmo_user_name' : $msg['gateway'] . '_id';
+  }
+
 
   /**
    * Look for existing exact-match contact in the database.
@@ -613,6 +620,20 @@ class Save extends AbstractAction {
     if (empty($msg['first_name']) || empty($msg['last_name'])) {
       return NULL;
     }
+    if (!empty($this->getExternalIdentifierField($msg))) {
+      $external_identifier_field = $this->getExternalIdentifierField($msg);
+      if (!empty($msg['external_identifier'])) {
+        $matches = Contact::get(FALSE)
+          ->addWhere('External_Identifiers.'.$external_identifier_field, '=', $msg['external_identifier'])
+          ->execute()
+          ->first();
+        if(!empty($matches)) {
+          $matches['contact_id'] = $matches['id'];
+          return $matches;
+        }
+      }
+    }
+
     if (!empty($msg['email'])) {
       // Check for existing....
       $email = Email::get(FALSE)
