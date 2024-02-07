@@ -23,7 +23,7 @@
   <comments>Tools to help analyse queries</comments>
   <civix>
     <namespace>CRM/Systemtools</namespace>
-    <format>22.05.2</format>
+    <format>23.02.1</format>
   </civix>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
