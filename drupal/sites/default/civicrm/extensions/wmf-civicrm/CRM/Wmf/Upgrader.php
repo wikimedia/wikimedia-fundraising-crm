@@ -1965,6 +1965,21 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
+   * Set Financial Type to Cash for contribution recur records with NULL
+   * Should update 1512116 rows.
+   * @return bool
+   */
+  public function upgrade_4450(): bool {
+    $cashId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
+    $sql = "UPDATE civicrm_contribution_recur SET financial_type_id = $cashId
+      WHERE financial_type_id IS NULL
+      LIMIT 2000";
+
+    $this->queueSQL($sql);
+    return TRUE;
+  }
+
+  /**
    * Queue up an SQL update.
    *
    * @param string $sql
