@@ -12,9 +12,9 @@ function thank_you_drush_command() {
     'examples' => ['drush thank-you' => '# Send thank you emails'],
     'aliases' => ['ty'],
     'options' => [
-      'batch' => 'Batch size',
+      'message-limit' => 'Number of messages to attempt to send',
       'days' => 'Number of days to parse',
-      'time_limit' => 'Time limit for job',
+      'time-limit' => 'Time limit for job',
     ],
   ];
 
@@ -44,9 +44,9 @@ function thank_you_drush_help($section) {
  */
 function drush_thank_you_send() {
   module_invoke('thank_you', 'batch_process',
-    drush_get_option('batch'),
+    drush_get_option('message-limit'),
     drush_get_option('days'),
-    drush_get_option('time_limit')
+    drush_get_option('time-limit')
   );
   $errors = drush_get_error_log();
   if (!empty($errors)) {
