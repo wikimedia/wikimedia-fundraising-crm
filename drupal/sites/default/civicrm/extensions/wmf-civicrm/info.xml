@@ -58,6 +58,7 @@
     <ext>message_admin</ext>
     <ext>exchange_rates</ext>
     <ext>civiimport</ext>
+    <ext>import_extensions</ext>
     <ext>civicrm_admin_ui</ext>
     <ext>biz.lcdservices.movecontrib</ext>
     <ext>theisland</ext>
