@@ -105,7 +105,7 @@ function queue2civicrm_settings() {
   return system_settings_form($form);
 }
 
-function queue2civicrm_batch_process($batch = NULL, $time_limit = NULL, $wait = FALSE) {
+function queue2civicrm_batch_process($messageLimit = NULL, $timeLimit = NULL, $wait = FALSE) {
   // We only want to initialize the SmashPig stuff once, so we use the default
   // config section rather than a processor-specific section. This means all
   // processors have to use the same database for pending donation info.
@@ -117,26 +117,26 @@ function queue2civicrm_batch_process($batch = NULL, $time_limit = NULL, $wait = 
     return;
   }
 
-  if (!isset($time_limit)) {
-    $time_limit = variable_get('queue2civicrm_batch_time', 0);
+  if (!isset($timeLimit)) {
+    $timeLimit = variable_get('queue2civicrm_batch_time', 0);
   }
 
   // If we're running on a time limit, try to account for drush's startup time.
-  if ($time_limit > 0 && isset($_SERVER['REQUEST_TIME'])) {
+  if ($timeLimit > 0 && isset($_SERVER['REQUEST_TIME'])) {
     $already_elapsed = time() - $_SERVER['REQUEST_TIME'];
-    if ($already_elapsed < $time_limit) {
-      $time_limit = $time_limit - $already_elapsed;
+    if ($already_elapsed < $timeLimit) {
+      $timeLimit = $timeLimit - $already_elapsed;
     }
   }
 
   // The number of contributions to process
-  if (!$batch) {
-    $batch = variable_get('queue2civicrm_batch', 0);
+  if (!$messageLimit) {
+    $messageLimit = variable_get('queue2civicrm_batch', 0);
   }
   $consumer = new DonationQueueConsumer(
     'donations',
-    $time_limit,
-    $batch,
+    $timeLimit,
+    $messageLimit,
     (bool) $wait
   );
 

@@ -6,8 +6,6 @@
  * @TODO print some useful info to STDOUT
  */
 
-use SmashPig\Core\UtcDate;
-
 /**
  * Implementation of hook_drush_command()
  */
@@ -19,12 +17,12 @@ function queue_consume_drush_command() {
       'Consumes items from a specified queue and processes them into CiviCRM',
     'examples' => [
       'drush queue-consume' => '# Consume the queue',
-      'drush qc --batch=10' => '# Process up to 10 contributions',
-      'drush qc --time_limit=59 --wait=1' => '# Wait for new messages, till 59 seconds have passed',
+      'drush qc --message-limit=10' => '# Process up to 10 contributions',
+      'drush qc --time-limit=59 --wait=1' => '# Wait for new messages, till 59 seconds have passed',
     ],
     'options' => [
-      'batch' => 'Number of contributions to process. If set to zero, it will be treated as unlimited',
-      'time_limit' => 'Time limit in seconds for job',
+      'message-limit' => 'Number of contributions to process. If set to zero, it will be treated as unlimited',
+      'time-limit' => 'Time limit in seconds for job',
       'wait' => 'When true, wait for new messages rather than exiting when the queue is empty'
     ],
     'aliases' => ['qc'],
@@ -56,23 +54,23 @@ function queue_consume_drush_help($section) {
 
 
 function drush_queue_consume_validate() {
-  $batch = drush_get_option('batch');
-  if (!empty ($batch)) {
-    if (!is_numeric($batch)) {
-      $message = '--batch must be a number';
-      drush_set_error('QUEUE_CONSUMER_BATCH', dt($message));
+  $messageLimit = drush_get_option('message-limit');
+  if (!empty ($messageLimit)) {
+    if (!is_numeric($messageLimit)) {
+      $message = '--message-limit must be a number';
+      drush_set_error('QUEUE_CONSUMER_MESSAGE_LIMIT', dt($message));
       return FALSE;
     }
-    if ($batch < 0) {
-      $message = 'You specified a negative batch number, please use 0 or above';
-      drush_set_error('QUEUE_CONSUMER_BATCH', dt($message));
+    if ($messageLimit < 0) {
+      $message = 'You specified a negative message limit, please use 0 or above';
+      drush_set_error('QUEUE_CONSUMER_MESSAGE_LIMIT', dt($message));
       return FALSE;
     }
   }
   if (drush_get_option('wait')) {
-    if (empty($batch) && empty(drush_get_option('time_limit'))) {
-      $message = 'You need to specify --batch or --time_limit to use --wait';
-      drush_set_error('QUEUE_CONSUMER_BATCH', dt($message));
+    if (empty($messageLimit) && empty(drush_get_option('time-limit'))) {
+      $message = 'You need to specify --message-limit or --time-limit to use --wait';
+      drush_set_error('QUEUE_CONSUMER_MESSAGE_LIMIT', dt($message));
       return FALSE;
     }
   }
@@ -87,11 +85,11 @@ function drush_queue_consume_validate() {
  */
 function drush_queue_consume() {
   // Set the number of contributions to batch
-  $batch = drush_get_option('batch');
-  $time_limit = drush_get_option('time_limit');
+  $messageLimit = drush_get_option('message-limit');
+  $timeLimit = drush_get_option('time-limit');
   $wait = drush_get_option('wait', FALSE);
 
-  module_invoke('queue2civicrm', 'batch_process', $batch, $time_limit, $wait);
+  module_invoke('queue2civicrm', 'batch_process', $messageLimit, $timeLimit, $wait);
   $errors = drush_get_error_log();
   if (!empty($errors)) {
     echo "\n***ERRORS***";
