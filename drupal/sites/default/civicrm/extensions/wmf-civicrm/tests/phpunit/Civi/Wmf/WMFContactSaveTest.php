@@ -33,6 +33,46 @@ class WMFContactSaveTest extends TestCase {
     unset(\Civi::$statics['wmf_contact']);
   }
 
+  public function testExternalIdentifierUpdate(): void {
+    $newVenmoUserName = 'test';
+    $unique = uniqid(__FUNCTION__);
+    $initialDetails = [
+        'first_name' => $unique,
+        'last_name' => 'bb',
+        'nick_name' => '',
+        'email' => $unique . '@bb.org',
+        'gateway' => 'braintree',
+        'payment_method' => 'venmo',
+        'external_identifier' => 'old',
+        'country' => 'US',
+        'street_address' => '',
+        'city' => '',
+        'street_number' => '',
+        'postal_code' => '',
+        'state_province' => '',
+    ];
+    $oldContactId = WMFContact::save(FALSE)->setMessage($initialDetails)->execute()->first()['id'];
+    $oldContact = Contact::get(FALSE)
+      ->addSelect('External_Identifiers.venmo_user_name')
+      ->addWhere('id', '=', $oldContactId)
+      ->execute()->first();
+    $this->assertEquals('old', $oldContact['External_Identifiers.venmo_user_name']);
+
+    $newDetails = array_merge($initialDetails, [
+      'id' => $oldContactId,
+      'contact_id' => $oldContactId,
+      'external_identifier' => $newVenmoUserName
+    ]);
+
+    WMFContact::save(FALSE)->setMessage($newDetails)->execute();
+    $updatedContact = Contact::get(FALSE)
+        ->addSelect('External_Identifiers.venmo_user_name')
+        ->addWhere('id', '=', $oldContactId)
+        ->execute()->first();
+
+    $this->assertEquals($newVenmoUserName, $updatedContact['External_Identifiers.venmo_user_name']);
+  }
+
   public function testExternalIdentifierIdDedupe(): void {
     $lastName = uniqid(__FUNCTION__);
     $fundraiseup_id = rand(10000,11200);
