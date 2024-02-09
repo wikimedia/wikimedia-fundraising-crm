@@ -608,7 +608,11 @@ class Save extends AbstractAction {
     }
     // Save external platform contact id if braintree venmo, then save the user_name otherwise save to id
     $isBraintreeVenmoPayment = !empty($msg['payment_method']) && $msg['payment_method'] === 'venmo' && $msg['gateway'] === 'braintree';
-    return ($isBraintreeVenmoPayment) ? 'venmo_user_name' : $msg['gateway'] . '_id';
+    $externalIdentifier = ($isBraintreeVenmoPayment) ? 'venmo_user_name' : $msg['gateway'] . '_id';
+    if (\CRM_Core_BAO_CustomField::getCustomFieldID($externalIdentifier, null)) {
+      return $externalIdentifier;
+    }
+    return null;
   }
 
 
