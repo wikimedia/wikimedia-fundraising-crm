@@ -73,6 +73,44 @@ class WMFContactSaveTest extends TestCase {
     $this->assertEquals($newVenmoUserName, $updatedContact['External_Identifiers.venmo_user_name']);
   }
 
+  public function testExternalIdentifierFundraiseupIdUpdate(): void {
+    $fundraiseup_id = rand(10000,11200);
+    $unique = uniqid(__FUNCTION__);
+    $initialDetails = [
+        'first_name' => $unique,
+        'last_name' => 'bb',
+        'nick_name' => '',
+        'email' => $unique . '@bb.org',
+        'gateway' => 'adyen',
+        'payment_method' => 'cc',
+        'external_identifier' => '',
+        'country' => 'US',
+        'street_address' => '',
+        'city' => '',
+        'street_number' => '',
+        'postal_code' => '',
+        'state_province' => '',
+    ];
+    $oldContactId = WMFContact::save(FALSE)->setMessage($initialDetails)->execute()->first()['id'];
+
+    $newDetails = array_merge($initialDetails, [
+      'id' => $oldContactId,
+      'contact_id' => $oldContactId,
+      'gateway' => 'fundraiseup',
+      'external_identifier' => $fundraiseup_id,
+    ]);
+
+    WMFContact::save(FALSE)->setMessage($newDetails)->execute();
+    $updatedContact = Contact::get(FALSE)
+        ->addSelect('External_Identifiers.fundraiseup_id', 'email_primary.email')
+        ->addWhere('id', '=', $oldContactId)
+        ->execute()->first();
+
+    $this->assertNotNull($updatedContact);
+    $this->assertEquals(strtolower($initialDetails['email']), $updatedContact['email_primary.email']);
+    $this->assertEquals($fundraiseup_id, $updatedContact['External_Identifiers.fundraiseup_id']);
+  }
+
   public function testExternalIdentifierIdDedupe(): void {
     $lastName = uniqid(__FUNCTION__);
     $fundraiseup_id = rand(10000,11200);
