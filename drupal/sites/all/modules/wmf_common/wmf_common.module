@@ -143,6 +143,7 @@ function wmf_common_locale_civi_to_mediawiki($locale) {
 }
 
 function wmf_common_damaged_search_form($form, &$form_state) {
+  civicrm_initialize();
   if (isset($form_state['confirm_delete'])) {
     // WTF. If you try to do a bulk operation after loading the form
     // once, the selected IDs go in $form_state['input']['table']. If

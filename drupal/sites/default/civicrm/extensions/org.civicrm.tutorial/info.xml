@@ -23,9 +23,10 @@
   <comments>Support this extension by donating to CiviCRM!</comments>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
+    <psr0 prefix="CRM_" path="."/>
   </classloader>
   <civix>
     <namespace>CRM/Tutorial</namespace>
-    <format>22.05.2</format>
+    <format>23.02.1</format>
   </civix>
 </extension>

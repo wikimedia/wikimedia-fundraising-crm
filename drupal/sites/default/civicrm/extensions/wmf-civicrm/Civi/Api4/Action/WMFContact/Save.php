@@ -69,11 +69,13 @@ class Save extends AbstractAction {
     $contact_id = $this->getContactID();
     $isCreate = !$contact_id;
     $msg = $this->getMessage();
+
     if ($isCreate) {
       $existingContact = $this->getExistingContact($msg);
       if ($existingContact) {
         $contact_id = $existingContact['contact_id'];
         $msg['contact_id'] = $contact_id;
+
         $replaceNames = (
           empty($existingContact['contact_id.first_name']) &&
           empty($existingContact['contact_id.last_name'])
@@ -517,11 +519,17 @@ class Save extends AbstractAction {
       'do_not_sms',
       'Partner.Partner',
     ];
+    if (!empty($this->getExternalIdentifierField($msg))) {
+      $updateFields[] = 'External_Identifiers.'. $this->getExternalIdentifierField($msg);
+    }
     if ($replaceNames) {
       $updateFields[] = 'first_name';
       $updateFields[] = 'last_name';
     }
     $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
+    if (!empty($msg['external_identifier'])) {
+      $updateParams['External_Identifiers.'. $this->getExternalIdentifierField($msg)] = $this->cleanString($msg['external_identifier'], 32);
+    }
     if (!empty($msg['fiscal_number'])) {
       $updateParams['legal_identifier'] = $this->cleanString($msg['fiscal_number'], 32);
     }
@@ -600,7 +608,11 @@ class Save extends AbstractAction {
     }
     // Save external platform contact id if braintree venmo, then save the user_name otherwise save to id
     $isBraintreeVenmoPayment = !empty($msg['payment_method']) && $msg['payment_method'] === 'venmo' && $msg['gateway'] === 'braintree';
-    return ($isBraintreeVenmoPayment) ? 'venmo_user_name' : $msg['gateway'] . '_id';
+    $externalIdentifier = ($isBraintreeVenmoPayment) ? 'venmo_user_name' : $msg['gateway'] . '_id';
+    if (\CRM_Core_BAO_CustomField::getCustomFieldID($externalIdentifier, null)) {
+      return $externalIdentifier;
+    }
+    return null;
   }
 
 
@@ -621,18 +633,20 @@ class Save extends AbstractAction {
       return NULL;
     }
     if (!empty($this->getExternalIdentifierField($msg))) {
-      $external_identifier_field = $this->getExternalIdentifierField($msg);
-      if (!empty($msg['external_identifier'])) {
-        $matches = Contact::get(FALSE)
-          ->addWhere('External_Identifiers.'.$external_identifier_field, '=', $msg['external_identifier'])
-          ->execute()
-          ->first();
-        if(!empty($matches)) {
-          $matches['contact_id'] = $matches['id'];
-          return $matches;
+        $external_identifier_field = $this->getExternalIdentifierField($msg);
+        // since venmo allow user to update their user_name, we can not use this as single select param,
+        // we can probably use venmo_user_id in the future for this dedupe function works for venmo
+        if (!empty($msg['external_identifier']) && $external_identifier_field !== 'venmo_user_name') {
+          $matches = Contact::get(FALSE)
+            ->addWhere('External_Identifiers.'.$external_identifier_field, '=', $msg['external_identifier'])
+            ->execute()
+            ->first();
+          if(!empty($matches)) {
+            $matches['contact_id'] = $matches['id'];
+            return $matches;
+          }
         }
       }
-    }
 
     if (!empty($msg['email'])) {
       // Check for existing....

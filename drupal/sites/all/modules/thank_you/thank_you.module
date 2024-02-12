@@ -570,7 +570,7 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
 /**
  * Main thank you batch processing function.
  *
- * @param int|null $batch
+ * @param int|null $messageLimit
  *   Number of contributions to process
  * @param int|null $days
  *   Number of days to go back in selecting contributions
@@ -579,7 +579,7 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
  *
  * @throws \CiviCRM_API3_Exception
  */
-function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL) {
+function thank_you_batch_process($messageLimit = NULL, $days = NULL, $timeLimit = NULL) {
   civicrm_initialize();
   // If available, use the time the drush script started as the start time
   // This way we're less likely to run past the start of the next run.
@@ -592,7 +592,7 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
 
   $timeLimit = $timeLimit ?? \Civi::settings()->get('thank_you_batch_time');
   $days = $days ?? \Civi::settings()->get('thank_you_days');
-  $batch = $batch ?? \Civi::settings()->get('thank_you_batch');
+  $messageLimit = $messageLimit ?? \Civi::settings()->get('thank_you_batch');
   $enabled = \Civi::settings()->get('thank_you_enabled');
 
   if ($enabled === 'false') {
@@ -603,8 +603,8 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
     \Civi::log('wmf')->error('thank_you: Number of days to send thank you mails not configured');
     return;
   }
-  if (!is_numeric($batch)) {
-    \Civi::log('wmf')->error('thank_you: Thank you mail batch size not configured');
+  if (!is_numeric($messageLimit)) {
+    \Civi::log('wmf')->error('thank_you: Thank you mail message limit not configured');
     return;
   }
 
@@ -617,9 +617,9 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
     Civi::settings()->set('thank_you_days', $days);
   }
 
-  \Civi::log('wmf')->info('thank_you: Attempting to send {batch_size} thank you mails for contributions from the last {number_of_days} days.', [
+  \Civi::log('wmf')->info('thank_you: Attempting to send {message_limit} thank you mails for contributions from the last {number_of_days} days.', [
     'number_of_days' => $days,
-    'batch_size' => $batch,
+    'message_limit' => $messageLimit,
   ]);
 
   $earliest = UtcDate::getUtcDatabaseString("-$days days");
@@ -635,7 +635,7 @@ function thank_you_batch_process($batch = NULL, $days = NULL, $timeLimit = NULL)
 			  no_thank_you IS NULL OR
 			  no_thank_you IN ('', '0')
 			)
-		ORDER BY receive_date ASC LIMIT {$batch};
+		ORDER BY receive_date ASC LIMIT {$messageLimit};
 EOT;
 
   $contribution = CRM_Core_DAO::executeQuery($ty_query, [
