@@ -1,8 +1,9 @@
-<?php namespace queue2civicrm\opt_in;
+<?php
+
+namespace Civi\WMFQueue;
 
 use Civi\Api4\WMFContact;
-use Civi\WMFQueue\QueueConsumer;
-use \Civi\WMFException\WMFException;
+use Civi\WMFException\WMFException;
 
 class OptInQueueConsumer extends QueueConsumer {
 

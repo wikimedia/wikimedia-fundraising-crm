@@ -1,6 +1,6 @@
 <?php
 
-use queue2civicrm\opt_in\OptInQueueConsumer;
+use Civi\WMFQueue\OptInQueueConsumer;
 use Civi\WMFException\WMFException;
 
 /**
@@ -60,8 +60,8 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
 
   protected function getMessage() {
     $message = json_decode(
-      file_get_contents( __DIR__ . '/../data/optin.json' ),
-      true
+      file_get_contents(__DIR__ . '/../data/optin.json'),
+      TRUE
     );
 
     $message['email'] = $this->email;
@@ -74,7 +74,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
       'first_name' => 'Christine',
       'last_name' => 'Test',
       'street_address' => '1 Test Street',
-      'city'=> 'Testland',
+      'city' => 'Testland',
       'postal_code' => '13126',
       'country' => 'US',
     ];
@@ -96,7 +96,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
         $this->doNotSolicitCustomFieldName,
         'is_opt_out',
         'do_not_email',
-        ],
+      ],
     ]);
   }
 
@@ -134,7 +134,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     $custom = $this->getContact();
 
     //check that there is a new contact id
-    $this->assertNotEquals($contact['id'],$newContactCheck['id']);
+    $this->assertNotEquals($contact['id'], $newContactCheck['id']);
 
     //check that the opt_in field was set
     $this->assertEquals('1', $custom[$this->optInCustomFieldName]);
@@ -143,10 +143,10 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testNonPrimaryEmail() {
     $this->createEmail([
       'email' => 'aDifferentEmail@example.net',
-      'is_primary' => 1
+      'is_primary' => 1,
     ]);
     $this->createEmail([
-      'is_primary' => 0
+      'is_primary' => 0,
     ]);
     $this->consumer->processMessage($this->getMessage());
     $contact = $this->getContact();
