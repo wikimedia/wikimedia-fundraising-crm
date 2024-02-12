@@ -166,12 +166,11 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
   }
 
   protected function truncateFields(array $msg) {
-    include_once(__DIR__ . '/../../contribution_tracking/contribution_tracking.install');
-    $schema = contribution_tracking_schema();
+    $fields = ContributionTracking::getFields(FALSE)->execute()->indexBy('name');
     $truncated = $msg;
-    foreach ($schema['contribution_tracking']['fields'] as $name => $field) {
-      if (isset($field['length']) && isset($msg[$name])) {
-        $truncated[$name] = substr($msg[$name], 0, $field['length']);
+    foreach ($fields as $name => $field) {
+      if (isset($field['input_attrs']['maxlength']) && isset($msg[$name])) {
+        $truncated[$name] = substr($msg[$name], 0, $field['input_attrs']['maxlength']);
       }
     }
     return $truncated;
