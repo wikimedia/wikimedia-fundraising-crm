@@ -1,8 +1,7 @@
 <?php
 
-use Civi\WMFHelper\FinanceInstrument;
 use queue2civicrm\recurring\RecurringQueueConsumer;
-use queue2civicrm\refund\RefundQueueConsumer;
+use Civi\WMFQueue\RefundQueueConsumer;
 use Civi\WMFException\WMFException;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\CrmLink\Messages\SourceFields;
@@ -181,7 +180,6 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'id' => $contributions[0]['id'],
       'contribution_status_id' => 'Chargeback',
     ]);
-
   }
 
   /**
@@ -228,7 +226,6 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'id' => $contributions[0]['id'],
       'contribution_status_id' => 'Chargeback',
     ]);
-
   }
 
   /**
@@ -292,12 +289,12 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-    * Test refunding a mismatched refund currency.
-    *
-    *
-    * @throws \Civi\WMFException\WMFException
-    * @throws \CRM_Core_Exception
-    */
+   * Test refunding a mismatched refund currency.
+   *
+   *
+   * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
+   */
   public function testRefundMismatchedRefundCurrency() {
     $this->setExchangeRates(1234567, ['USD' => 1, 'PLN' => 0.5]);
     $donation_message = new TransactionMessage(
@@ -311,7 +308,7 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'gateway' => 'test_gateway',
         'gateway_parent_id' => $donation_message->getGatewayTxnId(),
         'gateway_refund_id' => mt_rand(),
-        'gross' => $donation_message->get('original_gross')*0.5,
+        'gross' => $donation_message->get('original_gross') * 0.5,
         'gross_currency' => 'USD',
       ]
     );
@@ -376,4 +373,5 @@ class RefundQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       $cancelMessage
     );
   }
+
 }
