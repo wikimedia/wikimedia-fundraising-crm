@@ -46,7 +46,6 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'browser' => 'Mosaic',
       'browser_version' => '4',
     ]);
-
   }
 
   public function testTruncatesOverlongFields(): void {
@@ -73,7 +72,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'id' => $message['id'],
       'contribution_id' => $contributionID,
       'form_amount' => 'GBP 10.00', // updated from 35
-      'amount' => '10.00'
+      'amount' => '10.00',
     ];
     $this->consumer->processMessage($updateMessage);
     $this->validateContributionTracking((int) $message['id'], [
@@ -100,16 +99,16 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $contributionID2 = $this->createContribution();
 
     $firstMessage = [
-      'id' => '12345',
-      'contribution_id' => $contributionID1,
-    ] + $this->getMessage();
+        'id' => '12345',
+        'contribution_id' => $contributionID1,
+      ] + $this->getMessage();
 
     $this->consumer->processMessage($firstMessage);
 
     $secondMessage = [
-      'id' => '12345',
-      'contribution_id' => $contributionID2,
-    ] + $firstMessage;
+        'id' => '12345',
+        'contribution_id' => $contributionID2,
+      ] + $firstMessage;
 
     $this->consumer->processMessage($secondMessage);
 
@@ -173,7 +172,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $expectedStatsOutput = [
       'contribution_tracking_change_cid_errors' => 1,
-      'contribution_tracking_count' => 2 // count of records processed
+      'contribution_tracking_count' => 2, // count of records processed
     ];
 
     $statsWrittenAssocArray = $this->buildArrayFromPrometheusOutputFile(
@@ -182,8 +181,8 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     //compare written stats data with expected
     $this->assertEquals($expectedStatsOutput, $statsWrittenAssocArray);
-
   }
+
   /**
    * build a queue message from our fixture file and drop in a random
    * contribution tracking id
@@ -213,55 +212,35 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $fields = [
       'id',
       'contribution_id',
-      'note',
       'referrer',
-      'form_amount',
-      'payments_form',
-      'anonymous',
+      'amount',
+      'gateway',
+      'appeal',
       'utm_source',
       'utm_medium',
       'utm_campaign',
       'utm_key',
       'language',
       'country',
-      'ts',
     ];
     foreach ($fields as $field) {
       if (array_key_exists($field, $message)) {
         $this->assertEquals($message[$field], $dbEntries[0][$field]);
       }
+      $this->assertEquals(strtotime($message['ts']), strtotime($dbEntries[0]['tracking_date']));
     }
   }
 
   /**
    * Fetch the contribution tracking row from the db
    *
-   * @param $cId
+   * @param int $contributionTrackingID
    *
-   * @return mixed
+   * @return \Civi\Api4\Generic\Result
+   * @throws \CRM_Core_Exception
    */
-  protected function getDbEntries($cId) {
-    return Database::getConnection('default', 'default')
-      ->select('contribution_tracking', 'ct')
-      ->fields('ct', [
-        'id',
-        'contribution_id',
-        'note',
-        'referrer',
-        'form_amount',
-        'payments_form',
-        'anonymous',
-        'utm_source',
-        'utm_medium',
-        'utm_campaign',
-        'utm_key',
-        'language',
-        'country',
-        'ts',
-      ])
-      ->condition('id', $cId)
-      ->execute()
-      ->fetchAll(PDO::FETCH_ASSOC);
+  protected function getDbEntries(int $contributionTrackingID): \Civi\Api4\Generic\Result {
+    return ContributionTracking::get(FALSE)->addWhere('id', '=', $contributionTrackingID)->execute();
   }
 
   /**
@@ -333,7 +312,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  private function getExpectedTracking(int $id, array $overrides =[]): array {
+  private function getExpectedTracking(int $id, array $overrides = []): array {
     return array_merge([
       'id' => $id,
       'contribution_id' => NULL,
@@ -373,6 +352,5 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     ])->execute()->first()['id'];
     return $contributionID2;
   }
-
 
 }
