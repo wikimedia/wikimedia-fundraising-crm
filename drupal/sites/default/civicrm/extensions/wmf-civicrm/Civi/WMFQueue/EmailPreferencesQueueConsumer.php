@@ -1,9 +1,12 @@
 <?php
 
-use Civi\WMFException\WMFException;
-use Civi\WMFQueue\QueueConsumer;
+namespace Civi\WMFQueue;
 
-class CRM_Queue_PreferencesQueueConsumer extends QueueConsumer {
+use Civi;
+use Civi\WMFException\WMFException;
+use CiviCRM_API3_Exception;
+
+class EmailPreferencesQueueConsumer extends QueueConsumer {
 
   /**
    * Validate and store messages from the e-mail preferences queue
@@ -12,7 +15,7 @@ class CRM_Queue_PreferencesQueueConsumer extends QueueConsumer {
    *
    * @throws \Civi\WMFException\WMFException
    */
-  function processMessage($message) {
+  function processMessage(array $message) {
     try {
       $result = civicrm_api3('Preferences', 'create', $message);
       if ($result['count'] !== 1) {
