@@ -15,9 +15,10 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
    *
    * @param array $message contribution-tracking queue message
    *
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\ContributionTrackingDataValidationException
    */
-  public function processMessage($message) {
+  public function processMessage(array $message): void {
     if (empty($message['id'])) {
       $error = "missing essential contribution tracking ID. Dropping message on floor." . json_encode($message);
       throw new ContributionTrackingDataValidationException($error);
@@ -164,7 +165,7 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
     ];
   }
 
-  protected function truncateFields($msg) {
+  protected function truncateFields(array $msg) {
     include_once(__DIR__ . '/../../contribution_tracking/contribution_tracking.install');
     $schema = contribution_tracking_schema();
     $truncated = $msg;
