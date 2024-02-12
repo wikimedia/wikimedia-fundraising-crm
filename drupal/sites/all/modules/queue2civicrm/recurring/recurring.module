@@ -20,13 +20,13 @@ use queue2civicrm\recurring\RecurringQueueConsumer;
  * Implementation of hook_menu
  */
 function recurring_menu() {
-  $items['admin/config/queue2civicrm/recurring'] = array(
-      'title' => 'Recurring payments',
-      'description' => t( 'Configure the recurring payments queue' ),
-      'access arguments' => array( 'administer queue2civicrm' ),
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array( 'recurring_settings' ),
-  );
+  $items['admin/config/queue2civicrm/recurring'] = [
+    'title' => 'Recurring payments',
+    'description' => t('Configure the recurring payments queue'),
+    'access arguments' => ['administer queue2civicrm'],
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['recurring_settings'],
+  ];
   return $items;
 }
 
@@ -34,26 +34,26 @@ function recurring_menu() {
  * Settings form for recurring payments configuration
  */
 function recurring_settings() {
-  $form = array();
+  $form = [];
 
-  $form['recurring_disable'] = array(
+  $form['recurring_disable'] = [
     '#type' => 'checkbox',
     '#title' => t('Disable job'),
     '#description' => t('If checked, no message processing will be performed.'),
-    '#default_value' => variable_get('recurring_disable', false),
-  );
+    '#default_value' => variable_get('recurring_disable', FALSE),
+  ];
 
-  $form['recurring_description'] = array(
+  $form['recurring_description'] = [
     '#type' => 'markup',
     '#markup' => t('<p>The recurring queue contains notifications pertaining to subscription donations, such as monthly payments, cancellation,and expiration.</p>'),
-  );
+  ];
 
-  $form['recurring_batch'] = array(
+  $form['recurring_batch'] = [
     '#type' => 'select',
     '#title' => t('Cron batch size'),
     '#description' => t('Maximum number of items processed by the recurring job'),
     '#default_value' => variable_get('recurring_batch', 0),
-    '#options' => array(
+    '#options' => [
       0 => 'Unlimited',
       1 => 1,
       5 => 5,
@@ -66,33 +66,33 @@ function recurring_settings() {
       100 => 100,
       120 => 120,
       150 => 150,
-    ),
-  );
+    ],
+  ];
 
-  $form['recurring_batch_time'] = array(
+  $form['recurring_batch_time'] = [
     '#type' => 'textfield',
     '#title' => t('Job time limit (in seconds)'),
     '#description' => t('Maximum elapsed duration of a recurring job, after which we will abort from the loop.  This can be used to set a reliable duty cycle for the job.  Either a time limit or batch size limit is required.'),
     '#required' => TRUE,
     '#default_value' => variable_get('recurring_batch_time', 90),
-  );
+  ];
 
-  return system_settings_form( $form );
+  return system_settings_form($form);
 }
 
 function recurring_batch_process($queue) {
   civicrm_initialize();
-  wmf_common_create_smashpig_context( 'recurring' );
+  wmf_common_create_smashpig_context('recurring');
 
-  if (variable_get( "recurring_disable", false )){
+  if (variable_get("recurring_disable", FALSE)) {
     \Civi::log('wmf')->notice('recurring: Recurring is disabled. No contributions processed.');
     return 0;
   }
 
   $consumer = new RecurringQueueConsumer(
     $queue,
-    variable_get( 'recurring_batch_time', 0 ),
-    variable_get( 'recurring_batch', 0 )
+    variable_get('recurring_batch_time', 0),
+    variable_get('recurring_batch', 0)
   );
 
   $recurring_processed = $consumer->dequeueMessages();
@@ -115,14 +115,17 @@ function recurring_batch_process($queue) {
  *
  * If they do, we'll use that contrib tracking id, otherwise we'll generate a new row in the
  * contrib tracking table.
+ *
  * @param array $msg
+ *
  * @return int contribution tracking id
  */
-function recurring_get_contribution_tracking_id( $msg ) {
-  if ( array_key_exists( 'custom', $msg ) && strlen( $msg[ 'custom' ] )) {
+function recurring_get_contribution_tracking_id($msg) {
+  if (array_key_exists('custom', $msg) && strlen($msg['custom'])) {
     \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Using $msg["custom"], {contribution_tracking_id}', ['contribution_tracking_id' => $msg['custom']]);
-    return $msg[ 'custom' ];
-  } elseif ( $msg[ 'txn_type' ] == 'subscr_payment' ) {
+    return $msg['custom'];
+  }
+  elseif ($msg['txn_type'] == 'subscr_payment') {
     $queryResult = ContributionRecur::get(FALSE)
       ->addSelect('MIN(contribution_tracking.id) AS ctid', 'MIN(contribution.id) AS contribution_id')
       ->addJoin('Contribution AS contribution', 'INNER')
@@ -132,8 +135,8 @@ function recurring_get_contribution_tracking_id( $msg ) {
       ->setLimit(1)
       ->execute()
       ->first();
-    $contribution_tracking_id = $queryResult['ctid'] ?? null;
-    $contribution_id = $queryResult['contribution_id'] ?? null;
+    $contribution_tracking_id = $queryResult['ctid'] ?? NULL;
+    $contribution_id = $queryResult['contribution_id'] ?? NULL;
 
     if (!empty($contribution_tracking_id)) {
       \Civi::log('wmf')->debug(
@@ -144,21 +147,21 @@ function recurring_get_contribution_tracking_id( $msg ) {
     // if we still don't have a contribution tracking id (but we do have previous contributions),
     // we're gonna have to add new contribution tracking.
     if ($contribution_id && !$contribution_tracking_id) {
-      $rawDate = empty( $msg['payment_date'] ) ? $msg['date'] : $msg['payment_date'];
-      $date = wmf_common_date_unix_to_sql( strtotime( $rawDate ));
-      $tracking = array(
+      $rawDate = empty($msg['payment_date']) ? $msg['date'] : $msg['payment_date'];
+      $date = wmf_common_date_unix_to_sql(strtotime($rawDate));
+      $tracking = [
         'utm_source' => '..rpp', // FIXME: recurring donations are not all paypal
         'utm_medium' => 'civicrm',
         'ts' => $date,
-        'contribution_id' => $contribution_id
-      );
-      $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking( $tracking );
+        'contribution_id' => $contribution_id,
+      ];
+      $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking($tracking);
       \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Got new contribution tracking id, {contribution_tracking_id}', ['contribution_tracking_id' => $contribution_tracking_id]);
     }
     return $contribution_tracking_id;
   }
   else {
     \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: No contribution_tracking_id returned.');
-    return null;
+    return NULL;
   }
 }
