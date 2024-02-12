@@ -25,7 +25,7 @@ class OptInQueueConsumer extends QueueConsumer {
    * @throws \Civi\WMFException\WMFException
    * @throws \CiviCRM_API3_Exception
    */
-  function processMessage($message) {
+  public function processMessage(array $message) {
     // Sanity checking :)
     if (empty($message['email'])) {
       $error = "Required field not present! Dropping message on floor. Message: " . json_encode($message);
@@ -39,7 +39,7 @@ class OptInQueueConsumer extends QueueConsumer {
     $email = $message['email'];
 
     if (isset($message['contact_id'])) {
-      $this->updateContactById($message['contact_id'], $email, $message);
+      $this->updateContactById((int) $message['contact_id'], $email, $message);
       return;
     }
     else {
@@ -109,7 +109,7 @@ class OptInQueueConsumer extends QueueConsumer {
    * @return array
    * @throws \CiviCRM_API3_Exception
    */
-  function getContactsFromEmail($email) {
+  private function getContactsFromEmail(string $email): array {
     $result = civicrm_api3('Contact', 'get', [
       'email' => $email,
       'return' => ['id', $this->commsMap['opt_in']],
@@ -129,7 +129,7 @@ class OptInQueueConsumer extends QueueConsumer {
    *
    * @throws \CiviCRM_API3_Exception
    */
-  function updateContactById($id, $email, $message) {
+  private function updateContactById(int $id, string $email, array $message) {
     $contactParams = [
       'id' => $id,
       $this->commsMap['opt_in'] => TRUE,
@@ -171,10 +171,11 @@ class OptInQueueConsumer extends QueueConsumer {
    * Updates the Civi database with an opt in record for the specified contacts
    *
    * @param array $contacts Contacts to opt in
+   * @param array $message
    *
    * @throws \CiviCRM_API3_Exception
    */
-  function optInContacts($contacts, $message) {
+  private function optInContacts(array $contacts, array $message): void {
     foreach ($contacts as $contact) {
       $contactParams = [
         'id' => $contact['id'],
@@ -196,7 +197,7 @@ class OptInQueueConsumer extends QueueConsumer {
    *
    * @return array
    */
-  function getTrackingFields($message) {
+  private function getTrackingFields(array $message): array {
     $trackingFields = [];
 
     if (array_key_exists('utm_source', $message)) {
