@@ -865,27 +865,41 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test use of Auto Rescue message consumption
    */
   public function testRecurringQueueConsumeAutoRescueMessage() {
+    $rescueReference = 'MT6S49RV4HNG5S82';
+    $orderId = "279.2";
     $recur = $this->getTestContributionRecurRecords([
       'frequency_interval' => '1',
       'frequency_unit' => 'month',
+      'contribution_recur_smashpig.rescue_reference' => $rescueReference,
+      'invoice_id' => $orderId
+    ]);
+    $this->ids['ContributionRecur'][$recur['id']] = $recur['id'];
+
+    $this->getContribution([
+      'total_amount' => $recur['amount'],
+      'payment_instrument_id:name' => "Credit Card: Visa",
+      'contribution_recur_id' => $recur['id'],
+      'amount' => $recur['amount'],
+      'currency' => $recur['currency'],
+      'contact_id' => $recur['contact_id'],
+      'receive_date' => date('Y-m-d H:i:s', strtotime('-1 month')),
+      'gateway' => 'adyen',
+      'trxn_id' => $recur['trxn_id'],
+      'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
     ]);
 
     $date =  time();
-    $orderId = "279.2";
     $message = new RecurringPaymentMessage(
     [
       'txn_type' => 'subscr_payment',
-      'subscr_id' => $recur['trxn_id'],
-      'order_id' => $orderId,
-      'contact_id' => $recur['contact_id'],
       'gateway' => 'adyen',
       'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
       'date' => $date,
-      'is_auto_rescue_retry' => TRUE,
+      'is_successful_autorescue' => TRUE,
+      'rescue_reference' => $rescueReference,
       'currency' => 'USD',
       'amount' => 10,
-      'contribution_recur_id' => 39,
-      'payment_instrument_id' => 1,
+      'order_id' => $orderId,
       'source_name' => 'CiviCRM',
       'source_type' => 'direct',
       'source_host' => '051a7ac1b08d',
