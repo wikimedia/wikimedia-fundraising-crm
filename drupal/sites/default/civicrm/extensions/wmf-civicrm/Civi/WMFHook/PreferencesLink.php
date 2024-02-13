@@ -10,7 +10,7 @@ class PreferencesLink {
     // Provide our own group for this block to visually distinguish it on the contact summary editor palette.
     $blocks += [
       'preferenceslink' => [
-        'title' => ts('Email Prefs Link'),
+        'title' => ts('Email Preferences Link'),
         'icon' => 'fa-at',
         'blocks' => [],
       ]
@@ -22,7 +22,7 @@ class PreferencesLink {
       'tpl_file' => 'CRM/Wmf/Page/Inline/PreferencesLink.tpl',
       'sample' => [
         ts('Email Prefs Link') . ' ' . ts('(expires in %1 days)', [1 => 7]),
-        'https://example.com/emailprefs'
+        'https://example.com/emailpreferences'
       ],
       'edit' => FALSE,
       'system_default' => [3, 1], // Add to default layout under demographics block
@@ -39,9 +39,9 @@ class PreferencesLink {
       $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
       $page->assign('expiryDays', \Civi::settings()->get('checksum_timeout'));
 
-      $emailPrefsBaseUrl = (string) \Civi::settings()->get('wmf_email_preferences_url');
+      $emailPreferencesBaseUrl = (string) \Civi::settings()->get('wmf_email_preferences_url');
       $page->assign('preferencesLink',
-        self::addContactAndChecksumToUrl($emailPrefsBaseUrl, $contactID, $checksum)
+        self::addContactAndChecksumToUrl($emailPreferencesBaseUrl, $contactID, $checksum)
       );
 
       $upgradeableRecur = \Civi\WMFHelper\ContributionRecur::getUpgradeable($contactID, $checksum);

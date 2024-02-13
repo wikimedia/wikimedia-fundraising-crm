@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/WMFFraud</base>
+  <class>PaymentsFraudBreakdown</class>
+  <name>payments_fraud_breakdown</name>
+  <comment>Breakdown of donation fraud scores for all donations</comment>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique Payments Fraud Breakdown ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>payments_fraud_id</name>
+    <title>Payments Fraud ID</title>
+    <type>int unsigned</type>
+    <html>
+      <type>EntityRef</type>
+      <label>PaymentsFraud</label>
+    </html>
+  </field>
+  <foreignKey>
+    <name>payments_fraud_id</name>
+    <table>payments_fraud</table>
+    <key>id</key>
+    <onDelete>SET NULL</onDelete>
+  </foreignKey>
+  <field>
+    <name>filter_name</name>
+    <type>varchar</type>
+    <required>false</required>
+    <title>Filter Name</title>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>risk_score</name>
+    <type>decimal</type>
+    <required>false</required>
+    <title>risk_score</title>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+</table>

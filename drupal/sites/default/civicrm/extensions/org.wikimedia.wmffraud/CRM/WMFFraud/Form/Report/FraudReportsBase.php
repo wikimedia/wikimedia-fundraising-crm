@@ -1,7 +1,8 @@
 <?php
-use CRM_Wmffraud_ExtensionUtil as E;
 
-class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
+use CRM_WMFFraud_ExtensionUtil as E;
+
+class CRM_WMFFraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
 
   protected $_customGroupExtends = [];
 
@@ -16,7 +17,6 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
   protected $drupal;
 
   function __construct() {
-
     global $databases;
     $this->fredge = substr($databases['default']['default']['database'], 0,
       3) === 'dev' ? 'dev_fredge' : 'fredge';
@@ -130,7 +130,6 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
             $this->$function($row[$field], $row, $field);
           }
         }
-
       }
     }
   }
@@ -154,7 +153,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
         'reset' => 1,
         'cid' => $row['civicrm_contact_id'],
         'force' => 1,
-        'selectedChild' => 'contribute'
+        'selectedChild' => 'contribute',
       ]
     );
 
@@ -208,11 +207,10 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
         'neq' => ts('Is not equal to'),
         'nll' => ts('Is4 empty (Null)'),
         'nnll' => ts('Is not empty (Null)'),
-        'in' => ts('Is one of') // add 'in' support for string filters
+        'in' => ts('Is one of'), // add 'in' support for string filters
       ];
       return $result;
     }
-
 
     return parent::getOperationPair($type, $fieldName);
   }
@@ -243,7 +241,6 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
       HAVING ip_fails_count > $threshold
     ) as {$this->_aliases['ip_failure_stats']}
     ON {$this->_aliases['ip_failure_stats']}.user_ip = {$this->_aliases['payments_fraud']}.user_ip ";
-
   }
 
   /**
@@ -287,7 +284,6 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
       HAVING email_fails_count > $threshold
     ) as {$this->_aliases['email_failure_stats']}
     ON {$this->_aliases['email_failure_stats']}.email = {$this->_aliases['civicrm_email']}.email";
-
   }
 
   protected function addJoinToContactAndEmail() {
@@ -334,7 +330,6 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
     );
     return [$from, $to];
   }
-
 
   /**
    * Override the defaults set for the columns.
@@ -412,7 +407,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
           'operator' => 'like',
         ],
         'id' => [
-          'title' => E::ts('Contact ID')
+          'title' => E::ts('Contact ID'),
         ],
       ],
     ];
@@ -502,7 +497,7 @@ class CRM_Wmffraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
         'filter_name' => [
           'name' => 'filter_name',
           'title' => ts('Fraud filter'),
-          'type' => CRM_Utils_Type::T_STRING
+          'type' => CRM_Utils_Type::T_STRING,
         ],
       ],
     ];

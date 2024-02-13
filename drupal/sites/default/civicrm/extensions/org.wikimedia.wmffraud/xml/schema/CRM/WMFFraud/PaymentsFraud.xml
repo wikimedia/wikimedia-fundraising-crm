@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="iso-8859-1" ?>
 
 <table>
-  <base>CRM/Wmffraud</base>
+  <base>CRM/WMFFraud</base>
   <class>PaymentsFraud</class>
-  <name>fredge.payments_fraud</name>
-  <comment>Record of payments fraud. Note this table is not created via the extension and has no install script. Extension adds api access</comment>
-  <log>true</log>
+  <name>payments_fraud</name>
+  <comment>Record of payments fraud</comment>
 
   <field>
     <name>id</name>
@@ -70,7 +69,9 @@
     <name>user_ip</name>
     <type>varchar</type>
     <required>false</required>
-    <comment>User IP Address. The actual field type is varbinary but not sure if this is supported here</comment>
+    <comment>User IP Address. The actual field type is varbinary but not sure if
+      this is supported here
+    </comment>
     <html>
       <type>Text</type>
     </html>

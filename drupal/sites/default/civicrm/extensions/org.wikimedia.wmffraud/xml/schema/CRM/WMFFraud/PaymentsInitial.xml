@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/WMFFraud</base>
+  <class>PaymentsInitial</class>
+  <name>payments_initial</name>
+  <comment>Tracks user experience through donation pipeline</comment>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique PaymentsFraud ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>contribution_tracking_id</name>
+    <title>Contact Tracking ID</title>
+    <type>int unsigned</type>
+    <comment>Contact Contribution Tracking</comment>
+    <html>
+      <type>EntityRef</type>
+      <label>Contribution Tracking</label>
+    </html>
+  </field>
+  <foreignKey>
+    <name>contribution_tracking_id</name>
+    <table>civicrm_contribution_tracking</table>
+    <key>id</key>
+    <onDelete>SET NULL</onDelete>
+  </foreignKey>
+  <field>
+    <name>gateway</name>
+    <type>varchar</type>
+    <required>false</required>
+    <comment>Gateway</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>order_id</name>
+    <type>varchar</type>
+    <required>false</required>
+    <comment>Order ID</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>validation_action</name>
+    <type>varchar</type>
+    <length>16</length>
+    <required>false</required>
+    <comment>Validation Action</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>payments_final_status</name>
+    <type>varchar</type>
+    <length>16</length>
+    <required>false</required>
+    <comment>Payment Final Status</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>payment_method</name>
+    <type>varchar</type>
+    <length>16</length>
+    <required>false</required>
+    <comment>Payment Method</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>payment_submethod</name>
+    <type>varchar</type>
+    <length>16</length>
+    <required>false</required>
+    <comment>Payment SubMethod</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>country</name>
+    <type>varchar</type>
+    <length>2</length>
+    <required>false</required>
+    <comment>Country</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>amount</name>
+    <type>decimal</type>
+    <required>false</required>
+    <comment>Amount</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>currency_code</name>
+    <type>varchar</type>
+    <length>3</length>
+    <required>false</required>
+    <comment>Currency Code</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>server</name>
+    <type>decimal</type>
+    <length>64</length>
+    <required>false</required>
+    <comment>Server</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+
+  <field>
+    <name>date</name>
+    <type>datetime</type>
+    <required>false</required>
+    <comment>Date</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+</table>

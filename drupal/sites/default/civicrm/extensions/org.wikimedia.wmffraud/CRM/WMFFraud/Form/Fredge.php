@@ -1,16 +1,15 @@
 <?php
 
-use CRM_Wmffraud_ExtensionUtil as E;
+use CRM_WMFFraud_ExtensionUtil as E;
 
 /**
  * Form controller class
  *
  * @see https://wiki.civicrm.org/confluence/display/CRMDOC/QuickForm+Reference
  */
-class CRM_Wmffraud_Form_Fredge extends CRM_Core_Form {
+class CRM_WMFFraud_Form_Fredge extends CRM_Core_Form {
 
   public function buildQuickForm() {
-
     $this->add('File', 'file', ts('OrderId CSV File'),
       ['size' => 30, 'maxlength' => 255], TRUE);
 
@@ -33,7 +32,6 @@ class CRM_Wmffraud_Form_Fredge extends CRM_Core_Form {
 
     // check that the element is an uploaded file
     if ('file' == $element->getType() && $element->isUploadedFile()) {
-
       // check we have a csv file
       if ($this->isValidCsvFileType($element->getValue()['type']) !== TRUE) {
         $this->validationFailFlashMessage();

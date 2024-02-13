@@ -185,8 +185,8 @@ function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) 
 
   static $schemata = null;
   if (is_null($schemata)) {
-    require_once('wmf_fredge_qc.install'); //annoyed I have to do this, but this seems the cleanest way from here
-    $schemata = wmf_fredge_qc_schema();
+    //annoyed I have to do this, but this seems the cleanest way from here
+    $schemata = wmf_fredge_qc_tables();
     //and then, because we only care about the stuff we're inserting, remove the 'type' => 'serial' fields, because autonumber
     foreach ($schemata as $schema_table => $schema) {
       foreach ($schema['fields'] as $field => $definition) {
@@ -235,3 +235,199 @@ function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) 
   return $data;
 }
 
+/**
+ * Function used to be used for the install hook & overloaded here
+ * - now it just needs to be eased into the void.
+ */
+function wmf_fredge_qc_tables() {
+  return [
+    /**
+     * payments_initial table
+     **/
+    'payments_initial' => [
+      'description' => t('Tracks user experience through donation pipeline.'),
+      'fields' => [
+        'id' => [
+          'type' => 'serial',
+          'size' => 'big',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'contribution_tracking_id' => [
+          'type' => 'int',
+          'size' => 'normal',
+          'not null' => FALSE,
+        ],
+        'gateway' => [
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => FALSE,
+        ],
+        'order_id' => [
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => FALSE,
+        ],
+        'gateway_txn_id' => [
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => FALSE,
+        ],
+        'validation_action' => [
+          'type' => 'varchar',
+          'length' => 16,
+          'not null' => FALSE,
+        ],
+        'payments_final_status' => [
+          'type' => 'varchar',
+          'length' => 16,
+          'not null' => FALSE,
+        ],
+        'payment_method' => [
+          'type' => 'varchar',
+          'length' => 16,
+          'not null' => FALSE,
+        ],
+        'payment_submethod' => [
+          'type' => 'varchar',
+          'length' => 32,
+          'not null' => FALSE,
+        ],
+        'country' => [
+          'type' => 'varchar',
+          'length' => 2,
+          'not null' => FALSE,
+        ],
+        'amount' => [
+          'type' => 'float',
+          'not null' => FALSE,
+        ],
+        'currency_code' => [
+          'type' => 'varchar',
+          'length' => 3,
+          'not null' => FALSE,
+        ],
+        'server' => [
+          'type' => 'varchar',
+          'length' => 64,
+          'not null' => FALSE,
+        ],
+        'date' => [
+          'mysql_type' => 'DATETIME',
+          'not null' => FALSE,
+        ],
+      ],
+      'indexes' => [
+        'contribution_tracking_id' => ['contribution_tracking_id'],
+        'order_id' => ['order_id'],
+        'gateway' => ['gateway'],
+        'date' => ['date'],
+      ],
+      'primary key' => ['id'],
+    ],
+    /**
+     * payments_fraud table
+     **/
+    'payments_fraud' => [
+      'description' => t('Tracks donation fraud scores for all donations.'),
+      'fields' => [
+        'id' => [
+          'type' => 'serial',
+          'size' => 'big',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'contribution_tracking_id' => [
+          'type' => 'int',
+          'size' => 'normal',
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+        ],
+        'gateway' => [
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => FALSE,
+        ],
+        'order_id' => [
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => FALSE,
+        ],
+        'validation_action' => [
+          'type' => 'varchar',
+          'length' => 16,
+          'not null' => FALSE,
+        ],
+
+        //try varbinary 16
+        'user_ip' => [
+          'mysql_type' => 'VARBINARY(16)',
+          //          'length' => 16,
+          //          'not null' => false,
+        ],
+        'payment_method' => [
+          'type' => 'varchar',
+          'length' => 16,
+          'not null' => FALSE,
+        ],
+        'risk_score' => [
+          'type' => 'float',
+          'not null' => FALSE,
+        ],
+        'server' => [
+          'type' => 'varchar',
+          'length' => 64,
+          'not null' => FALSE,
+        ],
+        'date' => [
+          'mysql_type' => 'DATETIME',
+          'not null' => FALSE,
+        ],
+      ],
+      'indexes' => [
+        'contribution_tracking_id' => ['contribution_tracking_id'],
+        'order_id' => ['order_id'],
+        'gateway' => ['gateway'],
+        'date' => ['date'],
+        'user_ip' => ['user_ip'],
+        'risk_score' => ['risk_score'],
+        'payment_method' => ['payment_method'],
+      ],
+      'primary key' => ['id'],
+    ],
+    /**
+     * payments_fraud_breakdown table
+     **/
+    'payments_fraud_breakdown' => [
+      'description' => t('Tracks breakdown of donation fraud scores for all donations.'),
+      'fields' => [
+        'id' => [
+          'type' => 'serial',
+          'size' => 'big',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'payments_fraud_id' => [
+          'type' => 'int',
+          'size' => 'big',
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+        ],
+        'filter_name' => [
+          'type' => 'varchar',
+          'length' => 64,
+          'not null' => FALSE,
+        ],
+        'risk_score' => [
+          'type' => 'float',
+          'not null' => FALSE,
+        ],
+      ],
+      'indexes' => [
+        'payments_fraud_id' => ['payments_fraud_id'],
+        'filter_name' => ['filter_name'],
+      ],
+      'primary key' => ['id'],
+    ],
+  ];
+}

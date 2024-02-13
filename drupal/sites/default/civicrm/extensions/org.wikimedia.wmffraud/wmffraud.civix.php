@@ -6,10 +6,10 @@
  * The ExtensionUtil class provides small stubs for accessing resources of this
  * extension.
  */
-class CRM_Wmffraud_ExtensionUtil {
+class CRM_WMFFraud_ExtensionUtil {
   const SHORT_NAME = 'wmffraud';
   const LONG_NAME = 'org.wikimedia.wmffraud';
-  const CLASS_PREFIX = 'CRM_Wmffraud';
+  const CLASS_PREFIX = 'CRM_WMFFraud';
 
   /**
    * Translate a string using the extension's domain.
@@ -77,7 +77,7 @@ class CRM_Wmffraud_ExtensionUtil {
 
 }
 
-use CRM_Wmffraud_ExtensionUtil as E;
+use CRM_WMFFraud_ExtensionUtil as E;
 
 /**
  * (Delegated) Implements hook_civicrm_config().
