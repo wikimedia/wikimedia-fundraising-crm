@@ -17,6 +17,7 @@ use SmashPig\Core\UtcDate;
  * @group Recurring
  */
 class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
+
   use \Civi\Test\ContactTestTrait;
 
   /**
@@ -38,8 +39,8 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->damagedDb = DamagedDatabase::get();
 
     // Set up for TestMailer
-    if ( !defined( 'WMF_UNSUB_SALT' ) ) {
-      define( 'WMF_UNSUB_SALT', 'abc123' );
+    if (!defined('WMF_UNSUB_SALT')) {
+      define('WMF_UNSUB_SALT', 'abc123');
     }
   }
 
@@ -61,7 +62,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     return $contributions;
   }
 
-  protected function importMessageProcessWithMockConsumer(TransactionMessage $message):void {
+  protected function importMessageProcessWithMockConsumer(TransactionMessage $message): void {
     $payment_time = $message->get('date');
     exchange_rate_cache_set('USD', $payment_time, 1);
     $currency = $message->get('currency');
@@ -77,7 +78,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $msg = [
       'txn_type' => "recurring_upgrade_decline",
       'contribution_recur_id' => $testRecurring['id'],
-      'contact_id' => $testRecurring['contact_id']
+      'contact_id' => $testRecurring['contact_id'],
     ];
     $this->consumer->processMessage($msg);
     $activity = Activity::get(FALSE)
@@ -95,14 +96,14 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'txn_type' => "recurring_upgrade",
       'contribution_recur_id' => $testRecurring['id'],
       'amount' => $testRecurring['amount'] + $additionalAmount,
-      'currency' => $testRecurring['currency']
+      'currency' => $testRecurring['currency'],
     ];
     $amountDetails = [
       "native_currency" => $msg['currency'],
       "native_original_amount" => $testRecurring['amount'],
       "usd_original_amount" => round(exchange_rate_convert($msg['currency'], $testRecurring['amount']), 2),
       "native_amount_added" => $additionalAmount,
-      "usd_amount_added" => round(exchange_rate_convert($msg['currency'], $additionalAmount), 2)
+      "usd_amount_added" => round(exchange_rate_convert($msg['currency'], $additionalAmount), 2),
     ];
 
     $this->consumer->processMessage($msg);
@@ -443,11 +444,11 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * data to insert the recur record.
    */
   public function testPayPalMissingPredecessor() {
-    $email = 'notinthedb' . (string)mt_rand() . '@example.com';
+    $email = 'notinthedb' . (string) mt_rand() . '@example.com';
     $message = new RecurringPaymentMessage(
       [
         'gateway' => 'paypal_ec',
-        'subscr_id' => 'I-' . (string)mt_rand(),
+        'subscr_id' => 'I-' . (string) mt_rand(),
         'email' => $email,
       ]
     );
@@ -476,13 +477,13 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * currency imported
    */
   public function testPayPalMissingPredecessorNonUSD() {
-    $email = 'notinthedb' . (string)mt_rand() . '@example.com';
+    $email = 'notinthedb' . (string) mt_rand() . '@example.com';
     $message = new RecurringPaymentMessage(
       [
         'currency' => 'CAD',
         'amount' => 10.00,
         'gateway' => 'paypal_ec',
-        'subscr_id' => 'I-' . (string)mt_rand(),
+        'subscr_id' => 'I-' . (string) mt_rand(),
         'email' => $email,
       ]
     );
@@ -515,7 +516,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $values = $this->processRecurringSignup($subscr_id, [
       'gateway' => 'paypal',
       'email' => $email,
-      'contribution_tracking_id' => $ctId
+      'contribution_tracking_id' => $ctId,
     ]);
 
     // Import an initial payment with consistent gateway and subscr_id
@@ -570,7 +571,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $contribution = $this->getContribution([
       'contribution_recur_id' => $recur['id'],
       'contact_id' => $recur['contact_id'],
-      'trxn_id' => $recur['trxn_id']
+      'trxn_id' => $recur['trxn_id'],
     ]);
     $generator = Factory::getSequenceGenerator('contribution-tracking');
     $contribution_tracking_id = $generator->getNext();
@@ -579,15 +580,15 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'utm_medium' => 'civicrm',
       'ts' => '',
       'contribution_id' => $contribution['id'],
-      'id' => $contribution_tracking_id
+      'id' => $contribution_tracking_id,
     ]))->execute()->first();
     $ctFromResponse = recurring_get_contribution_tracking_id([
       'txn_type' => 'subscr_payment',
       'subscr_id' => $recur['trxn_id'],
       'gateway' => 'paypal',
       'email' => $email,
-      'contribution_tracking_id' => null,
-      'date' => 1564068649
+      'contribution_tracking_id' => NULL,
+      'date' => 1564068649,
     ]);
 
     $this->assertEquals($createTestCT['id'], $ctFromResponse);
@@ -618,19 +619,19 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Create the first donation
     $ct_id = $this->addContributionTracking([
-        'form_amount' => 4,
-        'utm_source' => 'testytest',
-        'language' => 'en',
-        'country' => 'US'
+      'form_amount' => 4,
+      'utm_source' => 'testytest',
+      'language' => 'en',
+      'country' => 'US',
     ]);
 
     $message = new TransactionMessage([
-            'gateway' => 'ingenico',
-            'gross' => 400,
-            'original_gross' => 400,
-            'original_currency' => 'USD',
-            'contribution_tracking_id' => $ct_id,
-        ]
+        'gateway' => 'ingenico',
+        'gross' => 400,
+        'original_gross' => 400,
+        'original_currency' => 'USD',
+        'contribution_tracking_id' => $ct_id,
+      ]
     );
 
     $messageBody = $message->getBody();
@@ -640,7 +641,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->consumeCtQueue();
 
     // Set up token specific values
-    $overrides['recurring_payment_token']= mt_rand();
+    $overrides['recurring_payment_token'] = mt_rand();
     $overrides['gateway_txn_id'] = $subscr_id;
     $overrides['user_ip'] = '1.1.1.1';
     $overrides['gateway'] = 'ingenico';
@@ -650,10 +651,10 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $overrides['start_date'] = 1566732720;
     $overrides['contribution_tracking_id'] = $ct_id;
 
-    $this->processRecurringSignup($subscr_id,$overrides);
+    $this->processRecurringSignup($subscr_id, $overrides);
 
     // Get the new token
-    $token = wmf_civicrm_get_recurring_payment_token($overrides['gateway'],$overrides['recurring_payment_token']);
+    $token = wmf_civicrm_get_recurring_payment_token($overrides['gateway'], $overrides['recurring_payment_token']);
     // Check the token was created successfully
     $this->assertEquals($token['token'], $overrides['recurring_payment_token']);
 
@@ -663,10 +664,10 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     // Check the record was created successfully
     $this->assertEquals($recur_record['trxn_id'], $trxn_id);
     // The first contribution should be on the start_date
-    $this->assertEquals($recur_record['next_sched_contribution_date'],$recur_record['start_date']);
+    $this->assertEquals($recur_record['next_sched_contribution_date'], $recur_record['start_date']);
 
     // Check cycle_day matches the start date
-    $this->assertEquals($recur_record['cycle_day'], date('j',$overrides['start_date']));
+    $this->assertEquals($recur_record['cycle_day'], date('j', $overrides['start_date']));
 
     // Clean up
     $this->ids['ContributionRecur'][$recur_record['id']] = $recur_record['id'];
@@ -684,7 +685,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'form_amount' => 4,
       'utm_source' => 'testytest',
       'language' => 'en',
-      'country' => 'US'
+      'country' => 'US',
     ]);
 
     $message = new TransactionMessage([
@@ -704,7 +705,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Set up token specific values
     $overrides['currency'] = 'USD';
-    $overrides['recurring_payment_token']= mt_rand();
+    $overrides['recurring_payment_token'] = mt_rand();
     $overrides['gateway_txn_id'] = $subscr_id;
     $overrides['user_ip'] = '1.1.1.1';
     $overrides['gateway'] = 'ingenico';
@@ -714,10 +715,10 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $overrides['start_date'] = 1566732720;
     $overrides['contribution_tracking_id'] = $ct_id;
 
-    $this->processRecurringSignup($subscr_id,$overrides);
+    $this->processRecurringSignup($subscr_id, $overrides);
 
     // Get the new token
-    $token = wmf_civicrm_get_recurring_payment_token($overrides['gateway'],$overrides['recurring_payment_token']);
+    $token = wmf_civicrm_get_recurring_payment_token($overrides['gateway'], $overrides['recurring_payment_token']);
     // Check that the token belongs to the same donor as the first donation
     $this->assertEquals($firstContribution['contact_id'], $token['contact_id']);
     // Create matching trxn_id
@@ -740,7 +741,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'form_amount' => 4,
       'utm_source' => 'testytest',
       'language' => 'en',
-      'country' => 'US'
+      'country' => 'US',
     ]);
 
     $message = new TransactionMessage([
@@ -760,7 +761,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Set up token specific values
     $overrides['currency'] = 'USD';
-    $overrides['recurring_payment_token']= mt_rand();
+    $overrides['recurring_payment_token'] = mt_rand();
     $overrides['gateway_txn_id'] = $subscr_id;
     $overrides['user_ip'] = '1.1.1.1';
     $overrides['gateway'] = 'ingenico';
@@ -795,26 +796,26 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test that the notification email is sent when a updonate recurring subscription is started
    */
   public function testRecurringNotificationEmailSend(): void {
-    \Civi::settings()->set('thank_you_add_civimail_records', false);
+    \Civi::settings()->set('thank_you_add_civimail_records', FALSE);
 
     // Subscr_id is the same as gateway_txn_id
     $subscr_id = mt_rand();
 
     // Create the first donation
     $ct_id = $this->addContributionTracking([
-        'form_amount' => 4,
-        'utm_source' => 'testytest',
-        'language' => 'en',
-        'country' => 'US'
+      'form_amount' => 4,
+      'utm_source' => 'testytest',
+      'language' => 'en',
+      'country' => 'US',
     ]);
 
     $message = new TransactionMessage([
-            'gateway' => 'ingenico',
-            'gross' => 400,
-            'original_gross' => 400,
-            'original_currency' => 'CAD',
-            'contribution_tracking_id' => $ct_id,
-        ]
+        'gateway' => 'ingenico',
+        'gross' => 400,
+        'original_gross' => 400,
+        'original_currency' => 'CAD',
+        'contribution_tracking_id' => $ct_id,
+      ]
     );
 
     $messageBody = $message->getBody();
@@ -825,7 +826,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->consumeCtQueue();
 
     // Set up token specific values
-    $overrides['recurring_payment_token']= mt_rand();
+    $overrides['recurring_payment_token'] = mt_rand();
     $overrides['currency'] = 'CAD';
     $overrides['gateway_txn_id'] = $subscr_id;
     $overrides['user_ip'] = '1.1.1.1';
@@ -836,22 +837,22 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $overrides['start_date'] = 1566732720;
     $overrides['contribution_tracking_id'] = $ct_id;
 
-    $this->processRecurringSignup($subscr_id,$overrides);
+    $this->processRecurringSignup($subscr_id, $overrides);
 
     $this->assertEquals(1, $this->getMailingCount());
-    $sent = $this->getMailing( 0 );
+    $sent = $this->getMailing(0);
 
     // Check the right email
-    $this->assertEquals( $messageBody['email'], $sent['to_address'] );
+    $this->assertEquals($messageBody['email'], $sent['to_address']);
 
     // Check right email content
-    $this->assertMatchesRegularExpression( '/you donated, and then decided to set up an additional/', $sent['html'] );
+    $this->assertMatchesRegularExpression('/you donated, and then decided to set up an additional/', $sent['html']);
 
     // Check the right donation amount
-    $this->assertMatchesRegularExpression( '/3.00/', $sent['html'] );
+    $this->assertMatchesRegularExpression('/3.00/', $sent['html']);
 
     // Check the right donation currency, original currency is CAD
-    $this->assertMatchesRegularExpression('/CA\$/',$sent['html']);
+    $this->assertMatchesRegularExpression('/CA\$/', $sent['html']);
     // Check the subject.
     // Note this test will move to an extension, at which point this relative path will change.
     $expectedSubject = trim(file_get_contents(
@@ -871,7 +872,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'frequency_interval' => '1',
       'frequency_unit' => 'month',
       'contribution_recur_smashpig.rescue_reference' => $rescueReference,
-      'invoice_id' => $orderId
+      'invoice_id' => $orderId,
     ]);
     $this->ids['ContributionRecur'][$recur['id']] = $recur['id'];
 
@@ -888,25 +889,25 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
     ]);
 
-    $date =  time();
+    $date = time();
     $message = new RecurringPaymentMessage(
-    [
-      'txn_type' => 'subscr_payment',
-      'gateway' => 'adyen',
-      'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
-      'date' => $date,
-      'is_successful_autorescue' => TRUE,
-      'rescue_reference' => $rescueReference,
-      'currency' => 'USD',
-      'amount' => 10,
-      'order_id' => $orderId,
-      'source_name' => 'CiviCRM',
-      'source_type' => 'direct',
-      'source_host' => '051a7ac1b08d',
-      'source_run_id' => 10315,
-      'source_version' => 'unknown',
-      'source_enqueued_time' => 1694530827,
-    ]
+      [
+        'txn_type' => 'subscr_payment',
+        'gateway' => 'adyen',
+        'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
+        'date' => $date,
+        'is_successful_autorescue' => TRUE,
+        'rescue_reference' => $rescueReference,
+        'currency' => 'USD',
+        'amount' => 10,
+        'order_id' => $orderId,
+        'source_name' => 'CiviCRM',
+        'source_type' => 'direct',
+        'source_host' => '051a7ac1b08d',
+        'source_run_id' => 10315,
+        'source_version' => 'unknown',
+        'source_enqueued_time' => 1694530827,
+      ]
     );
     $contributionsAfterRecurring = $this->importMessage($message);
 
@@ -940,29 +941,29 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'frequency_unit' => 'month',
     ]);
 
-    $date =  time();
+    $date = time();
     $orderId = "279.2";
     $message = new RecurringPaymentMessage(
-    [
-      'txn_type' => 'subscr_payment',
-      'subscr_id' => $recur['trxn_id'],
-      'order_id' => $orderId,
-      'contact_id' => $recur['contact_id'],
-      'gateway' => 'adyen',
-      'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
-      'date' => $date,
-      'is_auto_rescue_retry' => TRUE,
-      'currency' => 'USD',
-      'amount' => 10,
-      'contribution_recur_id' => 39,
-      'payment_instrument_id' => 1,
-      'source_name' => 'CiviCRM',
-      'source_type' => 'direct',
-      'source_host' => '051a7ac1b08d',
-      'source_run_id' => 10315,
-      'source_version' => 'unknown',
-      'source_enqueued_time' => UtcDate::getUtcTimestamp(),
-    ]
+      [
+        'txn_type' => 'subscr_payment',
+        'subscr_id' => $recur['trxn_id'],
+        'order_id' => $orderId,
+        'contact_id' => $recur['contact_id'],
+        'gateway' => 'adyen',
+        'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
+        'date' => $date,
+        'is_auto_rescue_retry' => TRUE,
+        'currency' => 'USD',
+        'amount' => 10,
+        'contribution_recur_id' => 39,
+        'payment_instrument_id' => 1,
+        'source_name' => 'CiviCRM',
+        'source_type' => 'direct',
+        'source_host' => '051a7ac1b08d',
+        'source_run_id' => 10315,
+        'source_version' => 'unknown',
+        'source_enqueued_time' => UtcDate::getUtcTimestamp(),
+      ]
     );
     $this->importMessageProcessWithMockConsumer($message);
 
@@ -1022,13 +1023,12 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'start_date' => 'now',
         'is_active' => TRUE,
         'contribution_status_id:name' => 'Pending',
-        'trxn_id' => 1234
+        'trxn_id' => 1234,
       ], $recurParams))
       ->execute()
       ->first();
     return $recur;
   }
-
 
   /**
    * Create a contribution_recur table row for a test
@@ -1043,21 +1043,26 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     return Contribution::create(FALSE)->setValues(array_merge([
       'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
       'total_amount' => 60,
-      'receive_date' => 'now'
+      'receive_date' => 'now',
     ], $recurParams))->execute()->first();
   }
 
   protected function getTestRecurringQueueConsumerWithContributionRecurExceptions(): RecurringQueueConsumer {
     return new class extends RecurringQueueConsumer {
+
       public function __construct() {
         parent::__construct('recurring');
       }
+
       protected function createContributionRecur($params) {
-        throw new CRM_Core_Exception('DBException error',123, ['error_code' => 'deadlock']);
+        throw new CRM_Core_Exception('DBException error', 123, ['error_code' => 'deadlock']);
       }
+
       protected function updateContributionRecur($params) {
-        throw new CRM_Core_Exception('DBException error',123, ['error_code' => 'deadlock']);
+        throw new CRM_Core_Exception('DBException error', 123, ['error_code' => 'deadlock']);
       }
+
     };
   }
+
 }
