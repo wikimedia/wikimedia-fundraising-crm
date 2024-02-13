@@ -5,7 +5,7 @@ use SmashPig\PaymentProviders\Fundraiseup\Tests\FundraiseupTestConfiguration;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFQueue\DonationQueueConsumer;
 use Civi\WMFQueue\RefundQueueConsumer;
-use queue2civicrm\recurring\RecurringQueueConsumer;
+use Civi\WMFQueue\RecurringQueueConsumer;
 
 /**
  * @group Fundraiseup

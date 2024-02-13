@@ -1,6 +1,6 @@
 <?php
 
-use queue2civicrm\recurring\RecurringQueueConsumer;
+use Civi\WMFQueue\RecurringQueueConsumer;
 use Civi\WMFQueue\RefundQueueConsumer;
 use Civi\WMFException\WMFException;
 use SmashPig\Core\DataStores\QueueWrapper;
