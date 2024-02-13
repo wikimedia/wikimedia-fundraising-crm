@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\ContributionTracking;
 use Wikimedia\TestingAccessWrapper;
 
 /**
@@ -16,7 +17,7 @@ class WmfImportTest extends BaseChecksFileTest {
       'utm_source' => 'Blah_source',
       'utm_medium' => 'civicrm',
       'utm_campaign' => 'test_campaign',
-      'ts' => wmf_common_date_unix_to_sql(time()),
+      'ts' => 'now',
     ]);
 
     $this->trxn_id = mt_rand();
@@ -53,13 +54,12 @@ class WmfImportTest extends BaseChecksFileTest {
     $this->assertEquals(1, count($contributions));
     $contribution = $contributions[0];
     $this->assertEquals($this->gateway, $contribution['gateway']);
-    $ct = db_select('contribution_tracking', 'contribution_tracking')
-      ->fields('contribution_tracking')
-      ->condition('id', $contribution_tracking_id)
-      ->execute()
-      ->fetchAssoc();
+    $ct = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $contribution_tracking_id)
+      ->execute()->first();
     $this->assertEquals($contribution['id'], $ct['contribution_id']);
     // TODO: should update existing c_t row with country!
-    // $this->assertEquals( 'AR', $ct['country'] );
+    // $this->assertEquals('AR', $ct['country']);
   }
+
 }
