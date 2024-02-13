@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contribution;
+use Civi\Api4\ContributionTracking;
 use Civi\WMFQueue\DonationQueueConsumer;
 use SmashPig\Core\DataStores\DamagedDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
@@ -37,10 +39,12 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Process an ordinary (one-time) donation message
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
-  public function testDonation() {
+  public function testDonation(): void {
     $message = new TransactionMessage(
       [
         'gross' => 400,
@@ -57,89 +61,79 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->queueConsumer->processMessage($message2->getBody());
     $this->consumeCtQueue();
 
-    $campaignField = wmf_civicrm_get_custom_field_name('campaign');
-
     $expected = [
-      'contact_type' => 'Individual',
-      'sort_name' => 'Mouse, Mickey',
-      'display_name' => 'Mickey Mouse',
-      'first_name' => 'Mickey',
-      'last_name' => 'Mouse',
+      'contact_id.contact_type' => 'Individual',
+      'contact_id.sort_name' => 'Mouse, Mickey',
+      'contact_id.display_name' => 'Mickey Mouse',
+      'contact_id.first_name' => 'Mickey',
+      'contact_id.last_name' => 'Mouse',
       'currency' => 'USD',
       'total_amount' => '400.00',
       'fee_amount' => '0.00',
       'net_amount' => '400.00',
       'trxn_id' => 'GLOBALCOLLECT ' . $message->getGatewayTxnId(),
-      'contribution_source' => 'USD 400',
-      'financial_type' => 'Cash',
-      'contribution_status' => 'Completed',
-      'payment_instrument' => 'Credit Card: Visa',
+      'source' => 'USD 400',
+      'financial_type_id:label' => 'Cash',
+      'contribution_status_id:label' => 'Completed',
+      'payment_instrument_id:label' => 'Credit Card: Visa',
       'invoice_id' => $message->get('order_id'),
-      $campaignField => 'Online Gift',
+      'Gift_Data.Campaign' => 'Online Gift',
     ];
     $returnFields = array_keys($expected);
-    $returnFields[] = 'id';
+    $returnFields[] = 'contact_id';
 
-    $contribution = civicrm_api3(
-      'Contribution',
-      'getsingle',
-      [
-        wmf_civicrm_get_custom_field_name('gateway_txn_id') => $message->getGatewayTxnId(),
-        'return' => $returnFields,
-      ]
-    );
+    $contribution = Contribution::get(FALSE)
+      ->setSelect($returnFields)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', $message->getGatewayTxnId())
+      ->execute()->first();
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
 
     foreach ($expected as $key => $item) {
-      $this->assertEquals($item, $contribution[$key]);
+      $this->assertEquals($item, $contribution[$key], 'mismatch on key ' . $key);
     }
 
-    $contribution2 = civicrm_api3(
-      'Contribution',
-      'getsingle',
-      [
-        wmf_civicrm_get_custom_field_name('gateway_txn_id') => $message2->getGatewayTxnId(),
-        'return' => $returnFields,
-      ]
-    );
+    $contribution2 = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', $message2->getGatewayTxnId())
+      ->setSelect($returnFields)
+      ->execute()->first();
     $this->ids['Contact'][$contribution2['contact_id']] = $contribution2['contact_id'];
 
     $expected = [
-      'contact_type' => 'Individual',
-      'sort_name' => 'Mouse, Mickey',
-      'display_name' => 'Mickey Mouse',
-      'first_name' => 'Mickey',
-      'last_name' => 'Mouse',
+      'contact_id.contact_type' => 'Individual',
+      'contact_id.sort_name' => 'Mouse, Mickey',
+      'contact_id.display_name' => 'Mickey Mouse',
+      'contact_id.first_name' => 'Mickey',
+      'contact_id.last_name' => 'Mouse',
       'currency' => 'USD',
       'total_amount' => '2857.02',
       'fee_amount' => '0.00',
       'net_amount' => '2857.02',
       'trxn_id' => 'GLOBALCOLLECT ' . $message2->getGatewayTxnId(),
-      'contribution_source' => 'PLN 952.34',
-      'financial_type' => 'Cash',
-      'contribution_status' => 'Completed',
-      'payment_instrument' => 'Credit Card: Visa',
+      'source' => 'PLN 952.34',
+      'financial_type_id:label' => 'Cash',
+      'contribution_status_id:label' => 'Completed',
+      'payment_instrument_id:label' => 'Credit Card: Visa',
       'invoice_id' => $message2->get('order_id'),
-      $campaignField => 'Online Gift',
+      'Gift_Data.Campaign' => 'Online Gift',
     ];
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $contribution2[$key]);
     }
-    $tracking = db_select('contribution_tracking', 'contribution_tracking')
-      ->fields('contribution_tracking')
-      ->condition('contribution_id', $contribution['id'])
-      ->execute()
-      ->fetchAssoc();
+    $tracking = ContributionTracking::get(FALSE)
+      ->addWhere('contribution_id', '=', $contribution['id'])
+      ->execute()->first();
     $this->assertEquals($tracking['id'], $message->get('contribution_tracking_id'));
   }
 
   /**
    * If 'invoice_id' is in the message, don't stuff that field with order_id
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
-  public function testDonationInvoiceId() {
+  public function testDonationInvoiceId(): void {
     $message = new TransactionMessage(
       ['invoice_id' => mt_rand()]
     );
@@ -149,36 +143,32 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->queueConsumer->processMessage($message->getBody());
 
-    $campaignField = wmf_civicrm_get_custom_field_name('campaign');
-
     $expected = [
-      'contact_type' => 'Individual',
-      'sort_name' => 'Mouse, Mickey',
-      'display_name' => 'Mickey Mouse',
-      'first_name' => 'Mickey',
-      'last_name' => 'Mouse',
+      'contact_id.contact_type' => 'Individual',
+      'contact_id.sort_name' => 'Mouse, Mickey',
+      'contact_id.display_name' => 'Mickey Mouse',
+      'contact_id.first_name' => 'Mickey',
+      'contact_id.last_name' => 'Mouse',
       'currency' => 'USD',
       'total_amount' => '2857.02',
       'fee_amount' => '0.00',
       'net_amount' => '2857.02',
       'trxn_id' => 'GLOBALCOLLECT ' . $message->getGatewayTxnId(),
-      'contribution_source' => 'PLN 952.34',
-      'financial_type' => 'Cash',
-      'contribution_status' => 'Completed',
-      'payment_instrument' => 'Credit Card: Visa',
+      'source' => 'PLN 952.34',
+      'financial_type_id:label' => 'Cash',
+      'contribution_status_id:label' => 'Completed',
+      'payment_instrument_id:label' => 'Credit Card: Visa',
       'invoice_id' => $message->get('invoice_id'),
-      $campaignField => 'Online Gift',
+      'Gift_Data.Campaign' => 'Online Gift',
     ];
     $returnFields = array_keys($expected);
+    $returnFields[] = 'contact_id';
 
-    $contribution = civicrm_api3(
-      'Contribution',
-      'getsingle',
-      [
-        wmf_civicrm_get_custom_field_name('gateway_txn_id') => $message->getGatewayTxnId(),
-        'return' => $returnFields,
-      ]
-    );
+    $contribution = Contribution::get(FALSE)
+      ->setSelect($returnFields)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', $message->getGatewayTxnId())
+      ->execute()->first();
+
     $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $contribution[$key]);
@@ -188,10 +178,13 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Process an ordinary (one-time) donation message with an UTF campaign.
    *
+   * @throws \CRM_Core_Exception
    * @throws \CiviCRM_API3_Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
-  public function testDonationWithUTFCampaignOption() {
+  public function testDonationWithUTFCampaignOption(): void {
     $message = new TransactionMessage(['utm_campaign' => 'EmailCampaign1']);
     $appealFieldID = $this->createCustomOption('Appeal', 'EmailCampaign1');
 
