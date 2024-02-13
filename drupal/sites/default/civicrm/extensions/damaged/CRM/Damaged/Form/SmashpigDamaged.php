@@ -49,6 +49,18 @@ class CRM_Damaged_Form_SmashpigDamaged extends CRM_Core_Form {
     CRM_Core_Resources::singleton()->addStyleFile('civicrm', 'css/damaged.css', 1, 'html-header');
     try {
       $this->_id = CRM_Utils_Request::retrieve('id', 'String');
+      if (empty($this->_id) && !empty($this->_submitValues) && !empty($this->_submitValues["entryURL"])) {
+        $query = [];
+        $parts = parse_url($this->_submitValues["entryURL"]);
+        if ( isset( $parts['query'] ) ) {
+          parse_str( htmlspecialchars_decode($parts['query']), $query );
+          if (isset($query['id'])) {
+            $this->_id = $query['id'];
+          } else if (isset($query['amp;id'])) {
+            $this->_id = $query['amp;id'];
+          }
+        }
+      }
     } catch (CRM_Core_Exception $exception ) {
       CRM_Core_Session::setStatus($exception->getMessage(), ts('Error'), 'error');
     }
