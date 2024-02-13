@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\PaymentsFraud;
+use Civi\Api4\PaymentsFraudBreakdown;
 use queue2civicrm\fredge\AntifraudQueueConsumer;
 use Civi\WMFException\FredgeDataValidationException;
 
@@ -18,6 +20,12 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->consumer = new AntifraudQueueConsumer(
       'payments-antifraud'
     );
+  }
+
+  public function tearDown(): void {
+    PaymentsFraud::delete(FALSE)->addWhere('user_ip', '=', 16909060)->execute();
+    PaymentsFraudBreakdown::delete(FALSE)->addWhere('payments_fraud_id.user_ip', 'IS NULL')->execute();
+    parent::tearDown();
   }
 
   /**

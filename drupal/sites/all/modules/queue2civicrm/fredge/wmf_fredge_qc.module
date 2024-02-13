@@ -175,18 +175,17 @@ function fredge_paymentsinit_batch_process() {
  * @param string $table the table you're trying to put $msg into
  * @param string $log_identifier Some small string for the log that will help id
  * the message if something goes amiss and we have to log about it.
- * @param bool $require_all if true, throw an exception on missing fields
  *
  * @return array an array of the relevant fields, with dates in the right format
  * @throws FredgeDataValidationException
  */
-function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) {
-  if ( !is_array($msg) || empty($msg) ){
+function fredge_prep_data($msg, $table, $log_identifier) {
+  if (!is_array($msg) || empty($msg)) {
     $error = "$log_identifier: Trying to insert nothing into $table. Dropping message on floor.";
-    throw new FredgeDataValidationException( $error );
+    throw new FredgeDataValidationException($error);
   }
 
-  static $schemata = null;
+  static $schemata = NULL;
   if (is_null($schemata)) {
     //annoyed I have to do this, but this seems the cleanest way from here
     $schemata = wmf_fredge_qc_tables();
@@ -205,16 +204,9 @@ function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) 
     $msg['currency_code'] = $msg['currency'];
     unset($msg['currency']);
   }
-  $data = array();
+  $data = [];
   foreach ($schemata[$table]['fields'] as $field => $definition) {
-    if (!array_key_exists($field, $msg)) {
-      if ($require_all) {
-        $error = "$log_identifier: Expected field $field bound for table $table not present! Dropping message on floor.";
-        throw new FredgeDataValidationException($error);
-        //so... add fields to DI first when you do schema changes.
-      }
-    }
-    else {
+    if (array_key_exists($field, $msg)) {
       //the field exists. Woot.
 
       // Convert timestamps to native SQL format datetime.

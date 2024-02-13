@@ -1,5 +1,7 @@
 <?php namespace queue2civicrm\fredge;
 
+use Civi\Api4\PaymentsInitial;
+use Civi\WMFException\FredgeDataValidationException;
 use SmashPig\Core\DataStores\PaymentsInitialDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use Civi\WMFQueue\QueueConsumer;
@@ -21,9 +23,6 @@ class PaymentsInitQueueConsumer extends QueueConsumer {
       ['log_id' => $logId]
     );
 
-    $id = 0;
-    $inserting = TRUE;
-
     // Delete corresponding pending rows if this contribution failed.
     // The DonationQueueConsumer will delete pending rows for successful
     // contributions, and we don't want to be too hasty.
@@ -42,33 +41,26 @@ class PaymentsInitQueueConsumer extends QueueConsumer {
       ]);
       PendingDatabase::get()->deleteMessage($message);
     }
-    // @todo create PaymentsInitial api, PaymentsFraud api. Use.
-    $dbs = wmf_civicrm_get_dbs();
-    $dbs->push('fredge');
-    $query = 'SELECT id FROM payments_initial
-                  WHERE contribution_tracking_id = :ct_id
-                  AND order_id = :order_id LIMIT 1';
-    $result = db_query($query, [
-      ':ct_id' => $message['contribution_tracking_id'],
-      ':order_id' => $message['order_id'],
-    ]);
-    if ($result->rowCount() === 1) {
-      $id = $result->fetch()->id;
-      $inserting = FALSE;
-    }
 
-    $data = fredge_prep_data($message, 'payments_initial', $logId, $inserting);
+    $result = PaymentsInitial::get(FALSE)
+      ->addWhere('contribution_tracking_id', '=', $message['contribution_tracking_id'])
+      ->addWhere('order_id', '=', $message['order_id'])
+      ->execute()->first();
 
-    if ($inserting) {
-      db_insert('payments_initial')
-        ->fields($data)
-        ->execute();
+    $data = fredge_prep_data($message, 'payments_initial', $logId, FALSE);
+
+    if ($result) {
+      $data['id'] = $result['id'];
     }
-    else {
-      db_update('payments_initial')
-        ->fields($data)
-        ->condition('id', $id)
-        ->execute();
+    try {
+      PaymentsInitial::save(FALSE)->setRecords([$data])->execute();
+    }
+    catch (\CRM_Core_Exception $e) {
+      if ($e->getErrorCode() === 'mandatory_missing') {
+        $error = $logId . ": Expected field " . implode($e->getErrorData()['fields']) . " bound for table payments_fraud not present! Dropping message on floor.";
+        throw new FredgeDataValidationException($error);
+      }
+      throw $e;
     }
   }
 

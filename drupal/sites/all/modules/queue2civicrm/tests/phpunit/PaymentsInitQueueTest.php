@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\PaymentsInitial;
 use queue2civicrm\fredge\PaymentsInitQueueConsumer;
 use Civi\WMFException\FredgeDataValidationException;
 
@@ -20,6 +21,11 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     );
   }
 
+  public function tearDown(): void {
+    PaymentsInitial::delete(FALSE)->addWhere('server', '=', 'testpayments1002')->execute();
+    parent::tearDown();
+  }
+
   public function testValidMessage() {
     $message = $this->getMessage();
     $this->consumer->processMessage($message);
@@ -33,7 +39,7 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testIncompleteMessage(): void {
     $this->expectException(FredgeDataValidationException::class);
     $message = $this->getMessage();
-    unset($message['payment_method']);
+    unset($message['server']);
     $this->consumer->processMessage($message);
   }
 
@@ -78,7 +84,7 @@ class PaymentsInitQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'server',
     ];
     foreach ($fields as $field) {
-      $this->assertEquals($message[$field], $dbEntries[0][$field]);
+      $this->assertEquals($message[$field], $dbEntries[0][$field], $field);
     }
     $this->assertEquals($message['currency'], $dbEntries[0]['currency_code']);
     $this->assertEquals(
