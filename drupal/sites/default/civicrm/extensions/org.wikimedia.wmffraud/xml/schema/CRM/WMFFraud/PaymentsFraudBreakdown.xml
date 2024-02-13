@@ -24,6 +24,7 @@
     <name>payments_fraud_id</name>
     <title>Payments Fraud ID</title>
     <type>int unsigned</type>
+    <required>true</required>
     <html>
       <type>EntityRef</type>
       <label>PaymentsFraud</label>
@@ -38,7 +39,8 @@
   <field>
     <name>filter_name</name>
     <type>varchar</type>
-    <required>false</required>
+    <required>true</required>
+    <length>64</length>
     <title>Filter Name</title>
     <html>
       <type>Text</type>
@@ -47,7 +49,7 @@
   <field>
     <name>risk_score</name>
     <type>decimal</type>
-    <required>false</required>
+    <required>true</required>
     <title>risk_score</title>
     <html>
       <type>Text</type>

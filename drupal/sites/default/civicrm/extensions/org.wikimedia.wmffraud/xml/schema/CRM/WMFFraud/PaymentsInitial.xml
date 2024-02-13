@@ -25,6 +25,7 @@
     <title>Contact Tracking ID</title>
     <type>int unsigned</type>
     <comment>Contact Contribution Tracking</comment>
+    <required>true</required>
     <html>
       <type>EntityRef</type>
       <label>Contribution Tracking</label>
@@ -39,7 +40,8 @@
   <field>
     <name>gateway</name>
     <type>varchar</type>
-    <required>false</required>
+    <required>true</required>
+    <length>255</length>
     <comment>Gateway</comment>
     <html>
       <type>Text</type>
@@ -48,8 +50,19 @@
   <field>
     <name>order_id</name>
     <type>varchar</type>
-    <required>false</required>
+    <required>true</required>
+    <length>255</length>
     <comment>Order ID</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
+  <field>
+    <name>gateway_txn_id</name>
+    <type>varchar</type>
+    <required>true</required>
+    <length>255</length>
+    <comment>Gateway Transaction ID</comment>
     <html>
       <type>Text</type>
     </html>
@@ -58,7 +71,8 @@
     <name>validation_action</name>
     <type>varchar</type>
     <length>16</length>
-    <required>false</required>
+    <required>true</required>
+    <length>16</length>
     <comment>Validation Action</comment>
     <html>
       <type>Text</type>
@@ -68,7 +82,8 @@
     <name>payments_final_status</name>
     <type>varchar</type>
     <length>16</length>
-    <required>false</required>
+    <required>true</required>
+    <length>16</length>
     <comment>Payment Final Status</comment>
     <html>
       <type>Text</type>
@@ -78,7 +93,7 @@
     <name>payment_method</name>
     <type>varchar</type>
     <length>16</length>
-    <required>false</required>
+    <required>true</required>
     <comment>Payment Method</comment>
     <html>
       <type>Text</type>
@@ -88,8 +103,8 @@
   <field>
     <name>payment_submethod</name>
     <type>varchar</type>
-    <length>16</length>
-    <required>false</required>
+    <length>32</length>
+    <required>true</required>
     <comment>Payment SubMethod</comment>
     <html>
       <type>Text</type>
@@ -100,7 +115,7 @@
     <name>country</name>
     <type>varchar</type>
     <length>2</length>
-    <required>false</required>
+    <required>true</required>
     <comment>Country</comment>
     <html>
       <type>Text</type>
@@ -110,7 +125,7 @@
   <field>
     <name>amount</name>
     <type>decimal</type>
-    <required>false</required>
+    <required>true</required>
     <comment>Amount</comment>
     <html>
       <type>Text</type>
@@ -121,7 +136,7 @@
     <name>currency_code</name>
     <type>varchar</type>
     <length>3</length>
-    <required>false</required>
+    <required>true</required>
     <comment>Currency Code</comment>
     <html>
       <type>Text</type>
@@ -131,7 +146,7 @@
     <name>server</name>
     <type>decimal</type>
     <length>64</length>
-    <required>false</required>
+    <required>true</required>
     <comment>Server</comment>
     <html>
       <type>Text</type>
@@ -141,7 +156,7 @@
   <field>
     <name>date</name>
     <type>datetime</type>
-    <required>false</required>
+    <required>true</required>
     <comment>Date</comment>
     <html>
       <type>Text</type>
