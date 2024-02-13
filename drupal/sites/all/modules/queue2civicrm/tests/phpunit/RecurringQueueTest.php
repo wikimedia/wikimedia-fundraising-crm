@@ -189,29 +189,24 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $contributions = $this->importMessage($message);
     $this->consumeCtQueue();
-    $ctRecord = db_select('contribution_tracking', 'ct')
-      ->fields('ct')
-      ->condition('id', $msg['contribution_tracking_id'], '=')
-      ->execute()
-      ->fetchAssoc();
-
+    $contributionTracking = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $msg['contribution_tracking_id'])
+      ->execute()->first();
     $this->assertEquals(
       $contributions[0]['id'],
-      $ctRecord['contribution_id']
+      $contributionTracking['contribution_id']
     );
     $contributions2 = $this->importMessage($message2);
     $this->consumeCtQueue();
 
-    $ctRecord2 = db_select('contribution_tracking', 'ct')
-      ->fields('ct')
-      ->condition('id', $msg['contribution_tracking_id'], '=')
-      ->execute()
-      ->fetchAssoc();
+    $contributionTracking = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $msg['contribution_tracking_id'])
+      ->execute()->first();
 
     // The ct_id record should still link to the first contribution
     $this->assertEquals(
       $contributions[0]['id'],
-      $ctRecord2['contribution_id']
+      $contributionTracking['contribution_id']
     );
     $recur_record = RecurHelper::getByGatewaySubscriptionId($msg['gateway'], $subscr_id);
 
@@ -235,7 +230,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('1211122 132 st', $addresses['values'][$addresses['id']]['street_address']);
 
     $emails = $this->callAPISuccess('Email', 'get', ['contact_id' => $contributions2[0]['contact_id']]);
-    $this->assertEquals(1, $addresses['count']);
+    $this->assertEquals(1, $emails['count']);
     $this->assertEquals('test+fr@wikimedia.org', $emails['values'][$emails['id']]['email']);
   }
 
