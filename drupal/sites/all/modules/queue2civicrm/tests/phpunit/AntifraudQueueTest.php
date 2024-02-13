@@ -45,7 +45,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * This is effectively 'infinite risk' and our db can't cope with
    * real value! '3.5848273556811E+38'
    */
-  public function testFraudMessageWithOutOfRangeScore() {
+  public function testFraudMessageWithOutOfRangeScore(): void {
     $message = json_decode(
       file_get_contents(__DIR__ . '/../data/payments-antifraud-high.json'),
       TRUE
@@ -77,7 +77,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->consumer->processMessage($message);
   }
 
-  public function testCombinedMessage() {
+  public function testCombinedMessage(): void {
     $message1 = json_decode(
       file_get_contents(__DIR__ . '/../data/payments-antifraud.json'),
       TRUE
@@ -112,7 +112,7 @@ class AntifraudQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->compareMessageWithDb($message1, $breakdown);
   }
 
-  protected function compareMessageWithDb($common, $breakdown) {
+  protected function compareMessageWithDb($common, $breakdown): void {
     $dbEntries = $this->getDbEntries(
       $common['contribution_tracking_id'], $common['order_id']
     );
