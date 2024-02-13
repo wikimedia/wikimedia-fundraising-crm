@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFQueue\EmailPreferencesQueueConsumer;
+
 /**
  * PreferencesQueue.consume API specification (optional)
  * This is used for documentation and validation.
@@ -41,7 +43,7 @@ function civicrm_api3_preferencesqueue_consume(array $params): array {
 
   // FIXME Settings in UI for default values for max_batch_size and time_limit.
 
-  $qConsumer = new CRM_Queue_PreferencesQueueConsumer(
+  $qConsumer = new EmailPreferencesQueueConsumer(
     'email-preferences',
     (int) $params['time_limit'],
     (int) $params['max_batch_size']
