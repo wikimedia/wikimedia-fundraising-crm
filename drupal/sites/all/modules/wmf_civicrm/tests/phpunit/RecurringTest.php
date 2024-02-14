@@ -2,6 +2,7 @@
 
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use Civi\WMFQueueMessage\RecurDonationMessage;
 
 /**
  * @group Pipeline
@@ -385,7 +386,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'gross' => '1.23',
       'payment_method' => 'cc',
       'payment_submethod' => 'visa',
-    // recurring contribution payment token fields below
+      // recurring contribution payment token fields below
       'recurring_payment_token' => $token,
       'recurring' => 1,
       'user_ip' => '12.34.56.78',
@@ -393,7 +394,8 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Normalize a recurring payment initiation message, this should lead to the resulting message
     // having a Financial Type of "Recurring Gift"
-    $msg = wmf_civicrm_normalize_msg($firstMessage);
+    $message = new RecurDonationMessage($firstMessage);
+    $msg = $message->normalize();
 
     $this->assertEquals($msg['financial_type_id'], CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift"));
   }
