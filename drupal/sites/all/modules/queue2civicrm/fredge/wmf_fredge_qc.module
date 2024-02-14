@@ -213,15 +213,9 @@ function fredge_prep_data( $msg, $table, $log_identifier, $require_all = true ) 
         throw new FredgeDataValidationException($error);
         //so... add fields to DI first when you do schema changes.
       }
-    } else {
+    }
+    else {
       //the field exists. Woot.
-      // Check data length.
-      if ( array_key_exists( 'length', $definition )
-        && $definition['length'] < strlen( $msg[$field] )
-      ) {
-        $error = "$log_identifier: Data in field $field is too long! Dropping message on floor.";
-        throw new FredgeDataValidationException($error);
-      }
 
       // Convert timestamps to native SQL format datetime.
       if (array_key_exists('mysql_type', $definition) && $definition['mysql_type'] === 'DATETIME') {
