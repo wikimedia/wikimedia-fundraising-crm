@@ -58,7 +58,7 @@ class EngageChecksFile extends ChecksFile {
    * @param array $msg
    *
    * @throws \Civi\WMFException\WMFException
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function mungeMessage(&$msg) {
     parent::mungeMessage($msg);
@@ -79,7 +79,7 @@ class EngageChecksFile extends ChecksFile {
    *   Contact ID to use, if no integer is returned a new contact will be created
    *
    * @throws \Civi\WMFException\WMFException
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getContactID($msg) {
     if ($msg['contact_type'] === 'Individual' &&

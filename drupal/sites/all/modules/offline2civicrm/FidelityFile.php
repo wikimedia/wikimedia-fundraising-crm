@@ -94,8 +94,7 @@ class FidelityFile extends ChecksFile {
    *   The normalized import parameters.
    *
    * @throws \Civi\WMFException\WMFException
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function mungeMessage(&$msg): void {
     $msg['gateway'] = 'fidelity';

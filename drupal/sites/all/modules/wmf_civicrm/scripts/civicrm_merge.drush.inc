@@ -22,16 +22,16 @@ function civicrm_merge_drush_command() {
  * Implementation of hook_drush_help().
  */
 function civicrm_merge_drush_help($section) {
-  switch ( $section ) {
-  case 'drush:civicrm-merge':
-    return dt( 'Merge a bunch of CiviCRM contacts' );
+  switch ($section) {
+    case 'drush:civicrm-merge':
+      return dt('Merge a bunch of CiviCRM contacts');
   }
 }
 
 /**
  * Merge a batch of contacts.
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function drush_civicrm_merge() {
   module_invoke('civicrm', 'initialize');

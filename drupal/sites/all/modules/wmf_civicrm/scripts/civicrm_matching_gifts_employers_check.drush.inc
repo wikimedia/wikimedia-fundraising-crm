@@ -39,7 +39,7 @@ function civicrm_matching_gifts_employers_check_drush_help($section) {
 /**
  * @param int $syncBatchSize
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  * @throws \Civi\WMFException\WMFException
  */
 function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
@@ -90,7 +90,7 @@ function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
  * @param int $syncBatchSize sync api call batch size
  *
  * @return array $syncResult
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  * @throws \Civi\WMFException\WMFException
  * @see sites/default/civicrm/extensions/matching-gifts/api/v3/MatchingGiftPolicies/Sync.php
  */
@@ -131,7 +131,7 @@ function sync_matching_gifts_employer_data($syncBatchSize) {
  *
  * @param string $exportFilePath file path to write export to
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  * @throws \Civi\WMFException\WMFException
  */
 function generate_new_export($exportFilePath) {

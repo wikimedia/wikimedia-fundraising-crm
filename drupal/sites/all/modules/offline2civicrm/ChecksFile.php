@@ -147,7 +147,6 @@ abstract class ChecksFile {
    */
   protected $errorStreakStart = 0;
 
-
   protected $messages = [];
 
   protected $file_uri = '';
@@ -562,7 +561,6 @@ abstract class ChecksFile {
         }
       }
     }
-
   }
 
   /**
@@ -760,8 +758,7 @@ abstract class ChecksFile {
    *
    * @return array
    * @throws \Civi\WMFException\WMFException
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function doImport($msg) {
     $contribution = wmf_civicrm_contribution_message_import($msg);
