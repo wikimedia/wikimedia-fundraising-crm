@@ -7,6 +7,7 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\PaymentProcessor;
+use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
 use Civi\WMFQueue\TransactionalQueueConsumer;
 
@@ -44,7 +45,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         $message['payment_instrument_id'] = $recur_record['contribution.payment_instrument_id'];
         $message['contribution_recur_id'] = $recur_record['id'];
         $message['subscr_id'] = $recur_record['trxn_id'];
-      } else {
+      }
+      else {
         throw new WMFException(WMFException::INVALID_RECURRING, "Error finding rescued recurring payment with recurring reference {$msg['rescue_reference']}");
       }
     }
@@ -95,7 +97,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    */
   protected function normalizeMessage($msg) {
     $skipContributionTracking = (isset($msg['gateway']) && $msg['gateway'] === 'amazon')
-    || (isset($msg['is_successful_autorescue']) && $msg['is_successful_autorescue']);
+      || (isset($msg['is_successful_autorescue']) && $msg['is_successful_autorescue']);
 
     if (!$skipContributionTracking && !isset($msg['contribution_tracking_id'])) {
       $msg['contribution_tracking_id'] = recurring_get_contribution_tracking_id($msg);
@@ -116,8 +118,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
     //Seeing as we're in the recurring module...
     $msg['recurring'] = TRUE;
-
-    $msg = wmf_civicrm_normalize_msg($msg);
+    $message = new RecurDonationMessage($msg);
+    $msg = $message->normalize();
     return $msg;
   }
 
