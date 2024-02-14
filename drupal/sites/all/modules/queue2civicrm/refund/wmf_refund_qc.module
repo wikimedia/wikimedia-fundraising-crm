@@ -1,6 +1,6 @@
 <?php
 
-use queue2civicrm\refund\RefundQueueConsumer;
+use Civi\WMFQueue\RefundQueueConsumer;
 
 /**
  * Implements hook_menu
@@ -105,4 +105,3 @@ function refund_batch_process() {
     \Civi::log('wmf')->info('refund: No refunds processed.');
   }
 }
-

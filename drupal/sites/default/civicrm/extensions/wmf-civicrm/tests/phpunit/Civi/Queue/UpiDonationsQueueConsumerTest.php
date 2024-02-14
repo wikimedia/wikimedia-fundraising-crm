@@ -11,7 +11,7 @@ use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
 use PHPUnit\Framework\TestCase;
 use Civi\WMFQueue\DonationQueueConsumer;
-use queue2civicrm\refund\RefundQueueConsumer;
+use Civi\WMFQueue\RefundQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;

@@ -5,4 +5,3 @@ package = queue2civicrm
 configure = admin/config/queue2civicrm/refund_qc
 dependencies[] = queue2civicrm
 dependencies[] = civicrm
-files[] = RefundQueueConsumer.php
