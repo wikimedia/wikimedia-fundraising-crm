@@ -125,4 +125,10 @@ class CRM_WMFFraud_Upgrader extends CRM_Extension_Upgrader_Base {
     return TRUE;
   }
 
+  public function upgrade_4205(): bool {
+    $this->ctx->log->info('Applying update 4205');
+    $this->createFredgeViews();
+    return TRUE;
+  }
+
 }

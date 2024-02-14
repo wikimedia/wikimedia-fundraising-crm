@@ -1,4 +1,6 @@
-<?php namespace queue2civicrm\refund;
+<?php
+
+namespace Civi\WMFQueue;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;

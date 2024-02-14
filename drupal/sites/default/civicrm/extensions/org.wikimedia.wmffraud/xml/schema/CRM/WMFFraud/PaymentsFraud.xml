@@ -24,6 +24,7 @@
     <name>contribution_tracking_id</name>
     <title>Contact Tracking ID</title>
     <type>int unsigned</type>
+    <required>true</required>
     <comment>Contact Contribution Tracking</comment>
     <html>
       <type>EntityRef</type>
@@ -39,7 +40,8 @@
   <field>
     <name>gateway</name>
     <type>varchar</type>
-    <required>false</required>
+    <required>true</required>
+    <length>255</length>
     <comment>Gateway</comment>
     <html>
       <type>Text</type>
@@ -48,7 +50,8 @@
   <field>
     <name>order_id</name>
     <type>varchar</type>
-    <required>false</required>
+    <length>255</length>
+    <required>true</required>
     <comment>Order ID</comment>
     <html>
       <type>Text</type>
@@ -58,7 +61,7 @@
     <name>validation_action</name>
     <type>varchar</type>
     <length>16</length>
-    <required>false</required>
+    <required>true</required>
     <comment>Validation Action</comment>
     <html>
       <type>Text</type>
@@ -68,7 +71,7 @@
   <field>
     <name>user_ip</name>
     <type>varchar</type>
-    <required>false</required>
+    <required>true</required>
     <comment>User IP Address. The actual field type is varbinary but not sure if
       this is supported here
     </comment>
@@ -81,7 +84,7 @@
     <name>payment_method</name>
     <type>varchar</type>
     <length>16</length>
-    <required>false</required>
+    <required>true</required>
     <comment>Payment Method</comment>
     <html>
       <type>Text</type>
@@ -91,7 +94,7 @@
   <field>
     <name>risk_score</name>
     <type>decimal</type>
-    <required>false</required>
+    <required>true</required>
     <comment>Risk Score</comment>
     <html>
       <type>Text</type>
@@ -99,9 +102,9 @@
   </field>
   <field>
     <name>server</name>
-    <type>decimal</type>
+    <type>varchar</type>
     <length>64</length>
-    <required>false</required>
+    <required>true</required>
     <comment>Server</comment>
     <html>
       <type>Text</type>
@@ -111,7 +114,7 @@
   <field>
     <name>date</name>
     <type>datetime</type>
-    <required>false</required>
+    <required>true</required>
     <comment>Date</comment>
     <html>
       <type>Text</type>
