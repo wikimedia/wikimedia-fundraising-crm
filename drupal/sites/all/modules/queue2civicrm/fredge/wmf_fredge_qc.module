@@ -1,4 +1,5 @@
 <?php
+
 use queue2civicrm\fredge\AntifraudQueueConsumer;
 use queue2civicrm\fredge\PaymentsInitQueueConsumer;
 use Civi\WMFException\FredgeDataValidationException;
