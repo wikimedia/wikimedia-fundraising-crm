@@ -143,7 +143,6 @@ class DonationMessage {
       'contact_id' => NULL,
       'contribution_recur_id' => NULL,
       'effort_id' => NULL,
-      'subscr_id' => NULL,
       'contact_groups' => [],
       'contact_tags' => [],
       'contribution_tags' => [],
@@ -164,25 +163,6 @@ class DonationMessage {
       throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
     }
     $msg['date'] = $this->getTimestamp();
-
-    if ($msg['recurring'] and !isset($msg['start_date'])) {
-      $msg['start_date'] = $msg['date'];
-      $msg['create_date'] = $msg['date'];
-    }
-
-    if ($msg['recurring'] and !$msg['subscr_id']) {
-      if ($msg['gateway'] === 'globalcollect') {
-        // Well randomly grab an ID, of course :-/
-        $msg['subscr_id'] = $msg['gateway_txn_id'];
-      }
-      else {
-        if ($msg['gateway'] === 'amazon') {
-          // Amazon 'subscription id' is the Billing Agreement ID, which
-          // is a substring of the Capture ID we record as 'gateway_txn_id'
-          $msg['subscr_id'] = substr($msg['gateway_txn_id'], 0, 19);
-        }
-      }
-    }
 
     $msg['thankyou_date'] = $this->getThankYouDate();
 
@@ -450,6 +430,18 @@ class DonationMessage {
       return ContributionRecur::getFinancialTypeForFirstContribution();
     }
     return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
+  }
+
+  public function isAmazon(): bool {
+    return $this->isGateway('amazon');
+  }
+
+  public function isGateway(string $gateway): bool {
+    return $this->getGateway() === $gateway;
+  }
+
+  public function getGateway(): string {
+    return trim($this->message['gateway']);
   }
 
 }
