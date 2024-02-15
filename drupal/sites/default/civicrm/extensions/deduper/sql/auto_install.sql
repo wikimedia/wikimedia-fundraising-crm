@@ -47,7 +47,7 @@ CREATE TABLE `civicrm_contact_name_pair` (
   INDEX `is_name_b_nickname`(is_name_b_nickname),
   INDEX `is_name_b_inferior`(is_name_b_inferior)
 )
-ENGINE=InnoDB;
+ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- /*******************************************************
 -- *
@@ -66,7 +66,7 @@ CREATE TABLE `civicrm_contact_name_pair_family` (
   INDEX `name_a`(name_a),
   INDEX `name_b`(name_b)
 )
-ENGINE=InnoDB;
+ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- /*******************************************************
 -- *
@@ -86,4 +86,4 @@ CREATE TABLE `civicrm_mergeconflict` (
   `analysis` varchar(255),
   PRIMARY KEY (`id`)
 )
-ENGINE=InnoDB;
+ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
