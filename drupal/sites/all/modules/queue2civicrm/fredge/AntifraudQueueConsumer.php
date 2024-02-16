@@ -63,8 +63,8 @@ class AntifraudQueueConsumer extends QueueConsumer {
    * @throws \Civi\WMFException\FredgeDataValidationException
    * @throws \InvalidMergeQueryException
    */
-  protected function insertAntifraudData($msg, $logIdentifier) {
-    if (empty($msg) || empty($msg['contribution_tracking_id']) || empty($msg['order_id'])) {
+  protected function insertAntifraudData(array $msg, string $logIdentifier) {
+    if (empty($msg['contribution_tracking_id']) || empty($msg['order_id'])) {
       $error = "$logIdentifier: missing essential payments_fraud IDs. Dropping message on floor.";
       throw new FredgeDataValidationException($error);
     }
