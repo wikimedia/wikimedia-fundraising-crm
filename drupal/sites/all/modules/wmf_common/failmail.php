@@ -24,7 +24,7 @@ function wmf_common_failmail($module, $message, $error = NULL, $source = NULL) {
     'html' => wmf_common_get_body($message, $error, $source, $isRemoved),
     'reply_to' => '',
     'subject' => _wmf_common_get_subject($error, $module, $isRemoved),
-    'to' => variable_get('wmf_common_failmail', 'fr-tech@wikimedia.org'),
+    'to' => \Civi::settings()->get('wmf_failmail_recipient'),
   ]);
 }
 
