@@ -10,23 +10,22 @@ use Civi\Omnimail\MailFactory;
  * @param Exception $error
  * @param string $source
  */
-function wmf_common_failmail( $module, $message, $error = null, $source = null )
-{
-    \Civi::log('wmf')->error(
-        'failmail: What\'s that? Something wrong: {message}',
-        ['message' => $message]
-    );
+function wmf_common_failmail($module, $message, $error = NULL, $source = NULL) {
+  \Civi::log('wmf')->error(
+    'failmail: What\'s that? Something wrong: {message}',
+    ['message' => $message]
+  );
 
-    $isRemoved = (is_callable(array($error, 'isRejectMessage'))) ? $error->isRejectMessage() : FALSE;
-    $mailer = MailFactory::singleton()->getMailer();
-    $mailer->send(array(
-      'from_address' => variable_get('site_mail', ini_get('sendmail_from')),
-      'from_name' => 'Fail Mail',
-      'html' => wmf_common_get_body($message, $error, $source, $isRemoved),
-      'reply_to' => '',
-      'subject' => _wmf_common_get_subject($error, $module, $isRemoved),
-      'to' => variable_get('wmf_common_failmail', 'fr-tech@wikimedia.org'),
-    ));
+  $isRemoved = (is_callable([$error, 'isRejectMessage'])) ? $error->isRejectMessage() : FALSE;
+  $mailer = MailFactory::singleton()->getMailer();
+  $mailer->send([
+    'from_address' => variable_get('site_mail', ini_get('sendmail_from')),
+    'from_name' => 'Fail Mail',
+    'html' => wmf_common_get_body($message, $error, $source, $isRemoved),
+    'reply_to' => '',
+    'subject' => _wmf_common_get_subject($error, $module, $isRemoved),
+    'to' => variable_get('wmf_common_failmail', 'fr-tech@wikimedia.org'),
+  ]);
 }
 
 /**
@@ -40,19 +39,20 @@ function wmf_common_failmail( $module, $message, $error = null, $source = null )
  */
 function _wmf_common_get_subject($error, $module, $isRemoved) {
   $subject = t('Fail Mail');
-  if ($isRemoved === true){
-      $subject = t('Fail Mail : REMOVAL');
-  } elseif ($error === null) {
-      $subject = t('Fail Mail : UNKNOWN ERROR');
-  } else {
-      if (property_exists($error, 'type')) {
-          $subject .= ' : ' . $error->type;
-      }
+  if ($isRemoved === TRUE) {
+    $subject = t('Fail Mail : REMOVAL');
+  }
+  elseif ($error === NULL) {
+    $subject = t('Fail Mail : UNKNOWN ERROR');
+  }
+  else {
+    if (property_exists($error, 'type')) {
+      $subject .= ' : ' . $error->type;
+    }
   }
   $subject .= ': ' . gethostname();
   $subject .= $module ? " ({$module})" : '';
   return $subject;
-
 }
 
 /**
@@ -65,31 +65,33 @@ function _wmf_common_get_subject($error, $module, $isRemoved) {
  *
  * @return string
  */
-function wmf_common_get_body($message, $error, $source, $isRemoved)
-{
-    $body = array();
+function wmf_common_get_body($message, $error, $source, $isRemoved) {
+  $body = [];
 
-    if ($isRemoved === true){
-        $body[] = t("A message was removed from the queue due to the following error(s):");
-    } elseif($error === null && !$message){
-        $body[] = t("A message failed for reasons unknown, while being processed:");
-    } else {
-        $body[] = t("A message generated the following error(s) while being processed:");
-    }
-    if ($message) {
-      $body[] = $message;
-    }
+  if ($isRemoved === TRUE) {
+    $body[] = t("A message was removed from the queue due to the following error(s):");
+  }
+  elseif ($error === NULL && !$message) {
+    $body[] = t("A message failed for reasons unknown, while being processed:");
+  }
+  else {
+    $body[] = t("A message generated the following error(s) while being processed:");
+  }
+  if ($message) {
+    $body[] = $message;
+  }
 
-    if (is_callable(array($error, 'getMessage'))) {
-        $body[] = t("Error: ") . $error->getMessage();
-    }
+  if (is_callable([$error, 'getMessage'])) {
+    $body[] = t("Error: ") . $error->getMessage();
+  }
 
-    if(!empty($source)){
-        $body[] = "---" . t("Source") . "---";
-        $body[] = print_r($source, true);
-        $body[] = "---" . t("End") . "---";
-    } elseif (empty($message)) {
-        $body[] = t("The exact message was deemed irrelevant.");
-    }
-    return '<p>' . implode('</p><p>', $body) . '</p>';
+  if (!empty($source)) {
+    $body[] = "---" . t("Source") . "---";
+    $body[] = print_r($source, TRUE);
+    $body[] = "---" . t("End") . "---";
+  }
+  elseif (empty($message)) {
+    $body[] = t("The exact message was deemed irrelevant.");
+  }
+  return '<p>' . implode('</p><p>', $body) . '</p>';
 }
