@@ -237,7 +237,10 @@
     <name>os</name>
     <type>varchar</type>
     <length>255</length>
-    <comment>Data pending - see pending T182039. Operating System</comment>
+    <html>
+      <type>Text</type>
+    </html>
+    <comment>Operating System</comment>
   </field>
   <field>
     <name>os_version</name>
@@ -246,7 +249,7 @@
     <html>
       <type>Text</type>
     </html>
-    <comment>Data pending - see pending T182039. Operating System - Major Version</comment>
+    <comment>Operating System - Major Version</comment>
   </field>
   <field>
     <name>browser</name>
@@ -255,7 +258,7 @@
     <html>
       <type>Text</type>
     </html>
-    <comment>Data pending - see pending T182039. Browser</comment>
+    <comment>Browser</comment>
   </field>
   <field>
     <name>browser_version</name>
@@ -264,7 +267,7 @@
     <html>
       <type>Text</type>
     </html>
-    <comment>Data pending - see pending T182039. Browser Version</comment>
+    <comment>Browser Version</comment>
   </field>
   <field>
     <name>recurring_choice_id</name>
@@ -319,6 +322,9 @@
       <type>Text</type>
     </html>
     <length>128</length>
+    <html>
+      <type>Text</type>
+    </html>
     <comment>The name of the tested variant (if not control)</comment>
     <readonly>true</readonly>
   </field>
@@ -333,6 +339,9 @@
     <title>Mailing Identifier</title>
     <type>varchar</type>
     <length>32</length>
+    <html>
+      <type>Text</type>
+    </html>
     <comment>External mailing identifier</comment>
   </field>
   <field>
@@ -340,7 +349,10 @@
     <title>UTM Source</title>
     <type>varchar</type>
     <length>128</length>
-    <comment>UTM Source. This is the original text but is separately broken out into banner etc. We aspire to drop this field if we can be sure the data in it is clean enough to always capture in sub-fields</comment>
+    <html>
+      <type>Text</type>
+    </html>
+    <comment>UTM Source. This is the original text but is separately broken out into banner etc. We aspire to drop this field but per T354708 Peter Coombe is still reliant on it</comment>
   </field>
   <index>
     <name>index_mailing_identifier</name>

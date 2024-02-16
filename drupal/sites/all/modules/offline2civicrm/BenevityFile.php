@@ -206,7 +206,7 @@ class BenevityFile extends ChecksFile {
    *
    * @return array
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
   public function doImport($msg) {
@@ -279,7 +279,7 @@ class BenevityFile extends ChecksFile {
    *
    * @return bool
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function isContactEmployedByOrganization(string $organization_name, array $contact): bool {
     $currentEmployer = $contact['current_employer'];
@@ -299,7 +299,7 @@ class BenevityFile extends ChecksFile {
    *   The name of an organization that matches the nick_name if one exists, otherwise the
    *   passed in name.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getOrganizationResolvedName($organizationName) {
     return Contact::resolveOrganizationName($organizationName);
@@ -315,7 +315,7 @@ class BenevityFile extends ChecksFile {
    *
    * @return mixed
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
   protected function getNameMatchedEmployedIndividualID($msg) {

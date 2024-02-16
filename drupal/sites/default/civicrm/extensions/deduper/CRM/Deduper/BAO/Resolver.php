@@ -289,7 +289,6 @@ abstract class CRM_Deduper_BAO_Resolver {
    * @return mixed
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   protected function getPreferredContactValue($fieldName) {
     return $this->mergeHandler->getPreferredContactValue($fieldName);
@@ -301,7 +300,6 @@ abstract class CRM_Deduper_BAO_Resolver {
    * @return bool
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   protected function isContactToKeepPreferred(): bool {
     return $this->mergeHandler->isContactToKeepPreferred();

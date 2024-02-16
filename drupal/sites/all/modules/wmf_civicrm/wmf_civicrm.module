@@ -1245,7 +1245,7 @@ function wmf_civicrm_add_contribution_tracking_if_missing($msg) {
  * ->execute();
  *}
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function wmf_civicrm_get_direct_mail_field_option_id() {
   if (!isset(\Civi::$statics['wmf-civicrm']['appeal_field_id'])) {

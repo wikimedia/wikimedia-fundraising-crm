@@ -270,7 +270,7 @@ function thank_you_send_test($params) {
  *   Manual send functions as an override -ignoring the time limit, previous thank yous and no_thankyou reason.
  *
  * @return bool
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  * @throws \Civi\WMFException\WMFException
  */
 function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $template = NULL) {
@@ -577,7 +577,7 @@ function thank_you_add_civi_queue($email, $contact_id, $subject, $html) {
  * @param int|null $timeLimit
  *   Time in seconds after which to end the job.
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function thank_you_batch_process($messageLimit = NULL, $days = NULL, $timeLimit = NULL) {
   civicrm_initialize();
