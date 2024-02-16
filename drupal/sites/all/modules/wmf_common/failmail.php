@@ -19,7 +19,7 @@ function wmf_common_failmail($module, $message, $error = NULL, $source = NULL) {
   $isRemoved = (is_callable([$error, 'isRejectMessage'])) ? $error->isRejectMessage() : FALSE;
   $mailer = MailFactory::singleton()->getMailer();
   $mailer->send([
-    'from_address' => variable_get('site_mail', ini_get('sendmail_from')),
+    'from_address' => \Civi::settings()->get('wmf_failmail_from'),
     'from_name' => 'Fail Mail',
     'html' => wmf_common_get_body($message, $error, $source, $isRemoved),
     'reply_to' => '',
