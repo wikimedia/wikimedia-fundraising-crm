@@ -336,7 +336,7 @@
       }).then(function (data) {
         $scope.isRowMerging = false;
         if (data['values']['merged'].length === 1) {
-          removeMergedContact(to_remove_id);
+          removeMergedContact(to_remove_id, to_keep_id);
           $scope.mergedCount++;
         }
         else {
@@ -357,9 +357,68 @@
       });
     }
 
-    function removeMergedContact(id) {
-      $scope.duplicatePairs = $.grep($scope.duplicatePairs, function (pair) {
-        return typeof(pair) !== 'undefined' && pair.dstID !== id && pair.srcID !== id;
+    /**
+     * Remove or update merge pairs that are related to the merged contact.
+     *
+     * Once a contact is deleted it's merge pairs should be removed. However,
+     * some may need to be transferred to the contact it has been merged into
+     * to ensure mergers can still merge that pair.
+     *
+     * @param id
+     * @param id2
+     */
+    function removeMergedContact(id, id2) {
+      // Compile a list of all the contacts who have match pairs with the contact
+      // ID that exists post-merge.
+      var contactMatches = [];
+      // This will get overwritten a few times -but
+      // always with the same value.
+      var keptContactDisplayName = '';
+      var indexToRemove = null;
+      _.each($scope.duplicatePairs, function (pair, index) {
+        if (typeof (pair) !== 'undefined') {
+          if (pair['dstID'] === id2) {
+            contactMatches.push(pair['srcID']);
+            keptContactDisplayName = pair['dstName'];
+          }
+          if (pair['srcID'] === id2) {
+            contactMatches.push(pair['dstID']);
+            keptContactDisplayName = pair['srcName'];
+          }
+          if ((pair['srcID'] === id && pair['dstID'] === id2)
+            || (pair['dstID'] === id && pair['srcID'] === id2)
+          ) {
+            indexToRemove = index;
+          }
+        }
+      });
+      $scope.duplicatePairs.splice(indexToRemove, 1);
+      indicesToRemove = [];
+      _.each($scope.duplicatePairs, function (pair, index) {
+        if (typeof (pair) !== 'undefined') {
+          // This is the pair we just merged, remove.
+          if (pair.dstID === id) {
+            if (contactMatches.includes(pair.srcID)) {
+              // We already have a pair between this contact and the contact we have merged to.
+              $scope.duplicatePairs.splice(index, 1);
+              indicesToRemove.push(index);
+            } else {
+              $scope.duplicatePairs[index]['dstID'] = id2;
+              $scope.duplicatePairs[index]['dstName'] = keptContactDisplayName;
+            }
+          }
+          if (pair.srcID === id) {
+            if (contactMatches.includes(pair.dstID)) {
+              // We already have a pair between this contact and the contact we have merged to.
+              indicesToRemove.push(index);
+              $scope.duplicatePairs[index]['srcID'] = id2;
+              $scope.duplicatePairs[index]['srcName'] = keptContactDisplayName;
+            }
+          }
+        }
+      });
+      _.each(indexToRemove, function (index) {
+        $scope.duplicatePairs.splice(index, 1);
       });
       updateFoundCount();
     }

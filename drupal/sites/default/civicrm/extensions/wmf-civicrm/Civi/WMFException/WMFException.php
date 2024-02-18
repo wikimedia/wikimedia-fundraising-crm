@@ -1,6 +1,7 @@
 <?php
 
 namespace Civi\WMFException;
+
 use Exception;
 use ReflectionClass;
 use Twig\Error\RuntimeError;
@@ -249,9 +250,9 @@ class WMFException extends Exception {
       if (
         preg_match('/\'12(05|13) \*\* /', $flattened) ||
         preg_match('/Database lock encountered/', $flattened)
-          // @todo not treating constraints as deadlocks here at this stage - doing that
-          // more specifically but something to keep considering.
-          || $this->extra['error_code'] === 'deadlock'
+        // @todo not treating constraints as deadlocks here at this stage - doing that
+        // more specifically but something to keep considering.
+        || $this->extra['error_code'] === 'deadlock'
       ) {
         return TRUE;
       }
@@ -266,7 +267,7 @@ class WMFException extends Exception {
   function isNoEmail() {
     //start hack
     if (is_array($this->extra) && array_key_exists('email', $this->extra)) {
-      $no_failmail = explode(',', variable_get('wmf_common_no_failmail', ''));
+      $no_failmail = explode(',', (string) \Civi::settings()->get('wmf_failmail_exclude_list'));
       if (in_array($this->extra['email'], $no_failmail)) {
         echo "Failmail suppressed - email on suppression list";
         return TRUE;
@@ -283,4 +284,5 @@ class WMFException extends Exception {
     }
     return $default;
   }
+
 }

@@ -154,19 +154,7 @@ class DonationMessage {
 
     $this->removeKnownBadStringsFromAddressFields($msg);
 
-    if (empty($msg['financial_type_id'])) {
-      if (!empty($msg['contribution_recur_id'])) {
-        $msg['financial_type_id'] = ContributionRecur::getFinancialType($msg['contribution_recur_id']);
-      }
-      elseif (!empty($msg['recurring'])) {
-        // Can we remove this - seems to be set elsewhere.
-        // Recurring Gift is used for the first in the series, Recurring Gift - Cash thereafter.
-        $msg['financial_type_id'] = ContributionRecur::getFinancialTypeForFirstContribution();
-      }
-      else {
-        $msg['financial_type_id'] = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
-      }
-    }
+    $msg['financial_type_id'] = $this->getFinancialTypeID();
 
     if (empty($msg['payment_instrument_id'])) {
       $paymentInstrument = $msg['payment_instrument'] ?? FinanceInstrument::getPaymentInstrument($msg);
@@ -230,7 +218,6 @@ class DonationMessage {
     }
 
     if ($this->isEndowmentGift()) {
-      $msg['financial_type_id'] = 'Endowment Gift';
       $msg['restrictions'] = 'Endowment Fund';
       $msg['gift_source'] = 'Online Gift';
     }
@@ -436,6 +423,33 @@ class DonationMessage {
       ]);
     }
     return NULL;
+  }
+
+  /**
+   * Get the financial Type ID.
+   *
+   * @return int
+   */
+  public function getFinancialTypeID(): int {
+    if ($this->isEndowmentGift()) {
+      return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+    }
+    if (!empty($this->message['financial_type_id'])) {
+      if (is_numeric($this->message['financial_type_id'])) {
+        return (int) $this->message['financial_type_id'];
+      }
+      return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', $this->message['financial_type_id']);
+    }
+    // @todo - can these first 2 be safely moved to the RecurringMessage child class?
+    if (!empty($this->message['contribution_recur_id'])) {
+      return ContributionRecur::getFinancialType($this->message['contribution_recur_id']);
+    }
+    if ($this->isRecurring()) {
+      // Can we remove this - seems to be set elsewhere.
+      // Recurring Gift is used for the first in the series, Recurring Gift - Cash thereafter.
+      return ContributionRecur::getFinancialTypeForFirstContribution();
+    }
+    return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
   }
 
 }
