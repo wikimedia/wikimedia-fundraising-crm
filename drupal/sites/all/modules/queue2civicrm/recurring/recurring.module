@@ -14,7 +14,7 @@
  */
 
 use Civi\Api4\ContributionRecur;
-use queue2civicrm\recurring\RecurringQueueConsumer;
+use Civi\WMFQueue\RecurringQueueConsumer;
 
 /**
  * Implementation of hook_menu

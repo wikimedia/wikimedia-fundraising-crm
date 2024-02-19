@@ -6,7 +6,7 @@ use Civi\Api4\ContributionTracking;
 use Civi\Api4\Contribution;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFHelper\ContributionTracking as WMFHelper;
-use queue2civicrm\recurring\RecurringQueueConsumer;
+use Civi\WMFQueue\RecurringQueueConsumer;
 use Civi\WMFException\WMFException;
 use SmashPig\Core\DataStores\DamagedDatabase;
 use SmashPig\Core\SequenceGenerators\Factory;
