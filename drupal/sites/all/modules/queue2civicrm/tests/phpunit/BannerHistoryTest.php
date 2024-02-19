@@ -1,6 +1,6 @@
 <?php
 
-use queue2civicrm\banner_history\BannerHistoryQueueConsumer;
+use Civi\WMFQueue\BannerHistoryQueueConsumer;
 use Civi\WMFException\WMFException;
 
 /**
@@ -54,4 +54,5 @@ class BannerHistoryTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
     $this->consumer->processMessage($msg);
   }
+
 }

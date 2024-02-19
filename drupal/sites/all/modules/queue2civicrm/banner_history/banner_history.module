@@ -1,6 +1,6 @@
 <?php
 
-use queue2civicrm\banner_history\BannerHistoryQueueConsumer;
+use Civi\WMFQueue\BannerHistoryQueueConsumer;
 
 /**
  * Implements hook_menu
