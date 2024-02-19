@@ -577,14 +577,16 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_id' => $contribution['id'],
       'id' => $contribution_tracking_id,
     ]))->execute()->first();
-    $ctFromResponse = recurring_get_contribution_tracking_id([
-      'txn_type' => 'subscr_payment',
-      'subscr_id' => $recur['trxn_id'],
-      'gateway' => 'paypal',
-      'email' => $email,
-      'contribution_tracking_id' => NULL,
-      'date' => 1564068649,
-    ]);
+
+    $ctFromResponse = ContributionRecur::get(FALSE)
+      ->addSelect('MIN(contribution_tracking.id) AS ctid', 'MIN(contribution.id) AS contribution_id')
+      ->addJoin('Contribution AS contribution', 'INNER')
+      ->addJoin('ContributionTracking AS contribution_tracking', 'LEFT', ['contribution_tracking.contribution_id', '=', 'contribution.id'])
+      ->addGroupBy('id')
+      ->addWhere('trxn_id', '=', $recur['trxn_id'],)
+      ->setLimit(1)
+      ->execute()
+      ->first()['ctid'];
 
     $this->assertEquals($createTestCT['id'], $ctFromResponse);
     $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
