@@ -2,6 +2,8 @@
 
 namespace Civi\WMFQueueMessage;
 
+use Civi\WMFException\WMFException;
+
 class RecurDonationMessage extends DonationMessage {
 
   /**
@@ -34,6 +36,22 @@ class RecurDonationMessage extends DonationMessage {
 
     $message['subscr_id'] = $this->getSubscriptionID();
     return $message;
+  }
+
+  /**
+   * Validate the message
+   * @return void
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function validate(): void {
+    if ($this->getFrequencyUnit()
+      && !in_array($this->getFrequencyUnit(), ['day', 'week', 'month', 'year'])) {
+      throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency unit: " . $this->getFrequencyUnit());
+    }
+  }
+
+  public function getFrequencyUnit() {
+    return $this->message['frequency_unit'] ?? NULL;
   }
 
   public function isInvalidRecurring(): bool {
