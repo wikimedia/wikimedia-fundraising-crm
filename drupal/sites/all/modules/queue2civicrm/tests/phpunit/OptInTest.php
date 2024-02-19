@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contact;
+use Civi\Test\EntityTrait;
 use Civi\WMFQueue\OptInQueueConsumer;
 use Civi\WMFException\WMFException;
 
@@ -7,6 +9,8 @@ use Civi\WMFException\WMFException;
  * @group Queue2Civicrm
  */
 class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
+
+  use EntityTrait;
 
   /**
    * @var OptInQueueConsumer
@@ -41,7 +45,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
   public function setUp(): void {
     parent::setUp();
     $this->contactId = $this->createIndividual();
-    $this->email = 'testOptIn' . mt_rand(1000, 10000000) . '@example.net';
+    $this->email = 'testOptIn' . random_int(1000, 10000000) . '@example.net';
 
     $this->consumer = new OptInQueueConsumer(
       'opt-in'
@@ -68,7 +72,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     return $message;
   }
 
-  protected function getContactMessage() {
+  protected function getContactMessage(): array {
     return [
       'email' => $this->email,
       'first_name' => 'Christine',
@@ -80,12 +84,12 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
   }
 
-  protected function createEmail($params = []) {
+  protected function createEmail($params = []): void {
     $params += [
       'email' => $this->email,
       'contact_id' => $this->contactId,
     ];
-    civicrm_api3('Email', 'create', $params);
+    $this->createTestEntity('Email', $params);
   }
 
   protected function getContact() {
@@ -100,21 +104,21 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
   }
 
-  public function testValidMessage() {
+  public function testValidMessage(): void {
     $this->createEmail(['is_primary' => '1']);
     $this->consumer->processMessage($this->getMessage());
     $contact = $this->getContact();
     $this->assertEquals('1', $contact[$this->optInCustomFieldName]);
   }
 
-  public function testOptedOutContact() {
+  public function testOptedOutContact(): void {
     $this->createEmail(['is_primary' => '1']);
-    civicrm_api3('Contact', 'create', [
+    Contact::update(FALSE)->setValues([
       'id' => $this->contactId,
       'is_opt_out' => TRUE,
       'do_not_email' => TRUE,
-      $this->doNotSolicitCustomFieldName => TRUE,
-    ]);
+      'Communication.do_not_solicit' => TRUE,
+    ])->execute();
     $this->consumer->processMessage($this->getMessage());
     $contact = $this->getContact();
     $this->assertEquals('1', $contact[$this->optInCustomFieldName]);
@@ -123,7 +127,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('', $contact[$this->doNotSolicitCustomFieldName]);
   }
 
-  public function testNonExistantEmail() {
+  public function testNonExistantEmail(): void {
     $this->consumer->processMessage($this->getContactMessage());
     $contact = $this->getContact();
     $this->assertEquals('', $contact[$this->optInCustomFieldName]);
@@ -140,7 +144,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('1', $custom[$this->optInCustomFieldName]);
   }
 
-  public function testNonPrimaryEmail() {
+  public function testNonPrimaryEmail(): void {
     $this->createEmail([
       'email' => 'aDifferentEmail@example.net',
       'is_primary' => 1,
@@ -153,7 +157,7 @@ class OptInTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('', $contact[$this->optInCustomFieldName]);
   }
 
-  public function testMalformedMessage() {
+  public function testMalformedMessage(): void {
     $this->expectException(WMFException::class);
     $msg = [
       'hither' => 'thither',
