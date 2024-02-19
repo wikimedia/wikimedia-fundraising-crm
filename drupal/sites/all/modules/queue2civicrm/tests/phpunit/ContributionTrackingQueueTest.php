@@ -2,8 +2,8 @@
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
-use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
-use queue2civicrm\contribution_tracking\ContributionTrackingStatsCollector;
+use Civi\WMFQueue\ContributionTrackingQueueConsumer;
+use Civi\WMFStatistic\ContributionTrackingStatsCollector;
 use SmashPig\Core\SequenceGenerators\Factory;
 use Civi\WMFException\ContributionTrackingDataValidationException;
 

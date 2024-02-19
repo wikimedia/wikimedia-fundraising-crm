@@ -1,6 +1,6 @@
 <?php
 
-namespace queue2civicrm\contribution_tracking;
+namespace Civi\WMFStatistic;
 
 use Statistics\Collector\AbstractCollector;
 use Statistics\Exporter\Prometheus as PrometheusStatsExporter;

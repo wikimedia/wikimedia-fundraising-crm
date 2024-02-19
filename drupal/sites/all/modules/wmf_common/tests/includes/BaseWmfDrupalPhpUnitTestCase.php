@@ -9,7 +9,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Test\Api3TestTrait;
 use Civi\WMFHelper\ContributionRecur;
-use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
+use Civi\WMFQueue\ContributionTrackingQueueConsumer;
 use SmashPig\Core\Context;
 use SmashPig\Core\SequenceGenerators\Factory;
 use SmashPig\Tests\TestingContext;

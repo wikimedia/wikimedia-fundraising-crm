@@ -1,11 +1,11 @@
 <?php
 
-namespace queue2civicrm\contribution_tracking;
+namespace Civi\WMFQueue;
 
 use Civi\Api4\ContributionTracking;
-use \Civi\WMFException\ContributionTrackingDataValidationException;
+use Civi\WMFException\ContributionTrackingDataValidationException;
 use Civi\WMFHelper\ContributionTracking as WMFHelper;
-use Civi\WMFQueue\QueueConsumer;
+use Civi\WMFStatistic\ContributionTrackingStatsCollector;
 
 class ContributionTrackingQueueConsumer extends QueueConsumer {
 
