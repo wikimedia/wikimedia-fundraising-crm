@@ -24,6 +24,7 @@ class ContributionRecur {
    * Is this the first contribution against the recurring contribution.
    *
    * ie are there no contributions .. yet
+   *
    * @param int $contributionRecurID
    *
    * @return bool
@@ -58,19 +59,20 @@ class ContributionRecur {
    * Cancelled, or Failed), reactivate it.
    *
    * @param object $recur_record
+   *
    * @throws \API_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public static function reactivateIfInactive(object $recur_record): void {
-    if (in_array($recur_record->contribution_status_id, self::getInactiveStatusIds())) {
-      \Civi::log('wmf')->info("Reactivating contribution_recur with id '$recur_record->id'");
+  public static function reactivateIfInactive(array $recur_record): void {
+    if (in_array($recur_record['contribution_status_id'], self::getInactiveStatusIds())) {
+      \Civi::log('wmf')->info("Reactivating contribution_recur with id " . $recur_record['id']);
       \Civi\Api4\ContributionRecur::update(FALSE)
-        ->addWhere('id', '=', $recur_record->id)
+        ->addWhere('id', '=', $recur_record['id'])
         ->setValues([
           'cancel_date' => NULL,
           'cancel_reason' => '',
           'end_date' => NULL,
-          'contribution_status_id' => 'In Progress'
+          'contribution_status_id' => 'In Progress',
         ])->execute();
     }
   }
@@ -78,7 +80,7 @@ class ContributionRecur {
   protected static function getInactiveStatusIds(): array {
     if (self::$inactiveStatuses === NULL) {
       $statuses = [];
-      foreach ( \CRM_Contribute_BAO_ContributionRecur::getInactiveStatuses() as $status) {
+      foreach (\CRM_Contribute_BAO_ContributionRecur::getInactiveStatuses() as $status) {
         $statuses[] = CRM_Core_PseudoConstant::getKey(
           'CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $status
         );
@@ -137,7 +139,7 @@ class ContributionRecur {
     return $result;
   }
 
-  public static function gatewayManagesOwnRecurringSchedule($gateway) : bool {
+  public static function gatewayManagesOwnRecurringSchedule($gateway): bool {
     wmf_common_create_smashpig_context('RecurHelper', $gateway);
     $config = Context::get()->getProviderConfiguration();
     $defaultMethod = $config->val('default-method');
@@ -154,6 +156,7 @@ class ContributionRecur {
    * @param $op
    * @param $id
    * @param $entity
+   *
    * @return bool
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
@@ -176,7 +179,7 @@ class ContributionRecur {
         $response = $provider->cancelAutoRescue($rescueReference);
         if ($response->isSuccessful()) {
           \Civi::log('wmf')->info("Successfully send cancel auto rescue request for recurring id $id with rescueReference: $rescueReference");
-          return true;
+          return TRUE;
         }
         else {
           // Warn us that something wrong with sending request we need to cancel request again to avoid duplicate charge

@@ -2,9 +2,24 @@
 
 namespace Civi\WMFQueueMessage;
 
+use Civi\API\EntityLookupTrait;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
 
 class RecurDonationMessage extends DonationMessage {
+
+  use EntityLookupTrait;
+
+  /**
+   * Contribution recur ID.
+   *
+   * This contains the ID of the contribution Recur record if it was looked up
+   * rather than passed in. We keep the original $message array unchanged but
+   * track the value here to avoid duplicate lookups.
+   *
+   * @var int|null
+   */
+  private ?int $contributionRecurID;
 
   /**
    * True if recurring is in the incoming array or a contribution_recur_id is present.
@@ -33,7 +48,6 @@ class RecurDonationMessage extends DonationMessage {
       $message['start_date'] = $message['date'];
       $message['create_date'] = $message['date'];
     }
-
     $message['subscr_id'] = $this->getSubscriptionID();
     return $message;
   }
@@ -52,6 +66,23 @@ class RecurDonationMessage extends DonationMessage {
     if (!$this->getSubscriptionID() && !$this->getContributionRecurID() && !$this->getRecurringPaymentToken()) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Recurring donation, but no subscription ID or recurring payment token found.');
     }
+    if ($this->getContributionRecurID() && !$this->isRecurringFound()) {
+      throw new WMFException(WMFException::INVALID_RECURRING, 'Contribution recur ID passed in but could not be loaded');
+    }
+  }
+
+  /**
+   * Is the requested recurring contribution to be found in the database.
+   *
+   * @return bool
+   */
+  private function isRecurringFound(): bool {
+    try {
+      return (bool) $this->getContributionRecurValue('contribution_status_id');
+    }
+    catch (\CRM_Core_Exception $e) {
+      return FALSE;
+    }
   }
 
   /**
@@ -62,10 +93,29 @@ class RecurDonationMessage extends DonationMessage {
   }
 
   /**
+   * Get the recurring contribution ID if it already exists.
+   *
    * @return int|null
    */
   public function getContributionRecurID(): ?int {
-    return $this->message['contribution_recur_id'] ?? NULL;
+    if (isset($this->contributionRecurID)) {
+      return $this->contributionRecurID;
+    }
+    if (!empty($this->message['contribution_recur_id'])) {
+      return (int) $this->message['contribution_recur_id'];
+    }
+    if (!empty($this->getSubscriptionID())) {
+      $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->getSubscriptionID());
+      if ($recurRecord) {
+        \Civi::log('wmf')->info('recur_donation_import: Found matching recurring record for subscr_id: {subscriber_id}', ['subscriber_id' => $this->getSubscriptionID()]);
+        // Since we have loaded this we should register it so we can lazy access it.
+        $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
+        $this->contributionRecurID = $recurRecord['id'];
+        return $this->contributionRecurID;
+      }
+    }
+    $this->contributionRecurID = NULL;
+    return $this->contributionRecurID;
   }
 
   public function getFrequencyUnit() {
@@ -93,6 +143,13 @@ class RecurDonationMessage extends DonationMessage {
   }
 
   /**
+   * @throws \CRM_Core_Exception
+   */
+  public function getContactID(): ?int {
+    return $this->getContributionRecurValue('contact_id') ?: parent::getContactID();
+  }
+
+  /**
    * Get the subscriber ID.
    *
    * @return string|null
@@ -109,6 +166,24 @@ class RecurDonationMessage extends DonationMessage {
     }
 
     return $subscriberID ?: NULL;
+  }
+
+  /**
+   * @param string $value
+   *   The value to fetch, in api v4 format (e.g supports contribution_status_id:name).
+   *
+   * @return mixed|null
+   * @throws \CRM_Core_Exception
+   *   Exception is thrown when the contact is not found.
+   */
+  public function getContributionRecurValue(string $value) {
+    if (!$this->getContributionRecurID()) {
+      return NULL;
+    }
+    if (!$this->isDefined('ContributionRecur')) {
+      $this->define('ContributionRecur', 'ContributionRecur', ['id' => $this->getContributionRecurID()]);
+    }
+    return $this->lookup('ContributionRecur', $value);
   }
 
 }

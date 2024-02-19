@@ -142,8 +142,6 @@ class DonationMessage {
       'check_number' => NULL,
       'recurring' => NULL,
       'utm_campaign' => NULL,
-      'contact_id' => NULL,
-      'contribution_recur_id' => NULL,
       'effort_id' => NULL,
       'contact_groups' => [],
       'contact_tags' => [],
@@ -156,7 +154,8 @@ class DonationMessage {
     $this->removeKnownBadStringsFromAddressFields($msg);
 
     $msg['financial_type_id'] = $this->getFinancialTypeID();
-
+    $msg['contribution_recur_id'] = $this->getContributionRecurID();
+    $msg['contact_id'] = $this->getContactID();
     if (empty($msg['payment_instrument_id'])) {
       $paymentInstrument = $msg['payment_instrument'] ?? FinanceInstrument::getPaymentInstrument($msg);
       $msg['payment_instrument_id'] = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $paymentInstrument);
@@ -329,6 +328,10 @@ class DonationMessage {
     return (float) str_replace(',', '', $value);
   }
 
+  public function getContactID(): ?int {
+    return !empty($this->message['contact_id']) ? (int) $this->message['contact_id'] : NULL;
+  }
+
   /**
    * Remove known bad strings from address.
    *
@@ -416,12 +419,12 @@ class DonationMessage {
       return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', $this->message['financial_type_id']);
     }
     // @todo - can these first 2 be safely moved to the RecurringMessage child class?
-    if (!empty($this->message['contribution_recur_id'])) {
-      return ContributionRecur::getFinancialType($this->message['contribution_recur_id']);
+    if ($this->getContributionRecurID()) {
+      return ContributionRecur::getFinancialType($this->getContributionRecurID());
     }
     if ($this->isRecurring()) {
-      // Can we remove this - seems to be set elsewhere.
-      // Recurring Gift is used for the first in the series, Recurring Gift - Cash thereafter.
+      // No contribution recur record yet -> Recurring Gift is used for the first in the series,
+      // Recurring Gift - Cash thereafter.
       return ContributionRecur::getFinancialTypeForFirstContribution();
     }
     return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
@@ -433,6 +436,15 @@ class DonationMessage {
 
   public function isGateway(string $gateway): bool {
     return $this->getGateway() === $gateway;
+  }
+
+  /**
+   * Get the recurring contribution ID if it already exists.
+   *
+   * @return int|null
+   */
+  public function getContributionRecurID(): ?int {
+    return !empty($this->message['contribution_recur_id']) ? (int) $this->message['contribution_recur_id'] : NULL;
   }
 
   public function getGateway(): string {

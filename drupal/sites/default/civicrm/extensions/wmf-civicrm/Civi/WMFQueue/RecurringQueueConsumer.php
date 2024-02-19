@@ -104,13 +104,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $msg['contribution_tracking_id'] = recurring_get_contribution_tracking_id($msg);
     }
 
-    if (empty($msg['contribution_recur_id']) && !empty($msg['subscr_id'])) {
-      $recurRecord = RecurHelper::getByGatewaySubscriptionId($msg['gateway'], $msg['subscr_id']);
-      if ($recurRecord) {
-        $msg['contribution_recur_id'] = $recurRecord['id'];
-      }
-    }
-
     //Seeing as we're in the recurring module...
     $msg['recurring'] = TRUE;
     $message = new RecurDonationMessage($msg);
@@ -143,7 +136,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
     if ($recur_record && RecurHelper::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
       // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
-      RecurHelper::reactivateIfInactive($recur_record);
+      RecurHelper::reactivateIfInactive((array) $recur_record);
     }
 
     // Since October 2018 or so, PayPal has been doing two things that really

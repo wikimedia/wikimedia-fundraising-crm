@@ -952,7 +952,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         'is_auto_rescue_retry' => TRUE,
         'currency' => 'USD',
         'amount' => 10,
-        'contribution_recur_id' => 39,
+        'contribution_recur_id' => $recur['id'],
         'payment_instrument_id' => 1,
         'source_name' => 'CiviCRM',
         'source_type' => 'direct',
