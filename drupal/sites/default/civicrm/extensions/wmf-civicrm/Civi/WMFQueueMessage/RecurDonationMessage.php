@@ -13,6 +13,29 @@ class RecurDonationMessage extends DonationMessage {
     return TRUE;
   }
 
+  /**
+   * Normalize the queued message
+   *
+   * The goal is to break this up into multiple functions (mostly of the
+   * getFinancialTypeID() nature)  now that it has been moved.
+   *
+   * @return array
+   *
+   * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
+   */
+  public function normalize(): array {
+    $message = parent::normalize();
+
+    if (!isset($message['start_date'])) {
+      $message['start_date'] = $message['date'];
+      $message['create_date'] = $message['date'];
+    }
+
+    $message['subscr_id'] = $this->getSubscriptionID();
+    return $message;
+  }
+
   public function isInvalidRecurring(): bool {
     return empty($this->message['recurring_payment_token']) && empty($this->message['subscr_id']);
   }
@@ -31,6 +54,25 @@ class RecurDonationMessage extends DonationMessage {
    */
   public function isRecurringWithPaymentToken(): bool {
     return !empty($this->message['recurring_payment_token']);
+  }
+
+  /**
+   * Get the subscriber ID.
+   *
+   * @return string|null
+   */
+  public function getSubscriptionID(): ?string {
+    $subscriberID = trim($this->message['subscr_id'] ?? '');
+    if ($subscriberID) {
+      return $subscriberID;
+    }
+    if ($this->isAmazon()) {
+      // Amazon 'subscription id' is the Billing Agreement ID, which
+      // is a substring of the Capture ID we record as 'gateway_txn_id'
+      $subscriberID = substr((string) $this->message['gateway_txn_id'], 0, 19);
+    }
+
+    return $subscriberID ?: NULL;
   }
 
 }
