@@ -10,8 +10,6 @@ use Civi\WMFHelper\Database;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\PaymentProviders\PaymentProviderFactory;
-use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
@@ -768,21 +766,6 @@ function wmf_civicrm_verify_message_and_stage($msg) {
   //Now check to make sure this isn't going to be a duplicate message for this gateway.
   wmf_civicrm_check_for_duplicates($msg);
   return $msg;
-}
-
-function wmf_civicrm_remove_recurring_token(array $message) {
-  wmf_common_create_smashpig_context('donation_queue_process_message', $message['gateway']);
-  $provider = PaymentProviderFactory::getProviderForMethod(
-    $message['payment_method']
-  );
-  // todo: need to add this deleteRecurringPaymentToken function for other payment gateways if we pre tokenized for recurring
-  if ($provider instanceof IDeleteRecurringPaymentTokenProvider) {
-    // handle remove recurring token for on-time donor with post monthly convert
-    \Civi::log('wmf')->notice('decline-recurring:' . $message['gateway'] . ' ' . $message['payment_method'] . ': decline recurring with order id ' . $message['order_id']);
-    $result = $provider->deleteRecurringPaymentToken($message);
-    $logMessage = "decline-recurring: For order id: {$message['order_id']}, delete recurring payment token with status " . ($result ? 'success' : 'failed');
-    \Civi::log('wmf')->info($logMessage);
-  }
 }
 
 /**

@@ -7,6 +7,8 @@ use Queue2civicrmTrxnCounter;
 use SmashPig\Core\UtcDate;
 use Civi\WMFException\WMFException;
 use DonationStatsCollector;
+use SmashPig\PaymentProviders\PaymentProviderFactory;
+use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
 
 class DonationQueueConsumer extends TransactionalQueueConsumer {
 
@@ -24,7 +26,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   public function processMessage(array $message): void {
     // no need to insert contribution, return empty array is enough
     if (isset($message['monthly_convert_decline']) && $message['monthly_convert_decline']) {
-      wmf_civicrm_remove_recurring_token($message);
+      $this->removeRecurringToken($message);
       return;
     }
     // If the contribution has already been imported, this check will
@@ -80,6 +82,21 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     if (!empty($message['order_id'])) {
       // Delete any pending db entries with matching gateway and order_id
       PendingDatabase::get()->deleteMessage($message);
+    }
+  }
+
+  private function removeRecurringToken(array $message): void {
+    wmf_common_create_smashpig_context('donation_queue_process_message', $message['gateway']);
+    $provider = PaymentProviderFactory::getProviderForMethod(
+      $message['payment_method']
+    );
+    // todo: need to add this deleteRecurringPaymentToken function for other payment gateways if we pre tokenized for recurring
+    if ($provider instanceof IDeleteRecurringPaymentTokenProvider) {
+      // handle remove recurring token for on-time donor with post monthly convert
+      \Civi::log('wmf')->notice('decline-recurring:' . $message['gateway'] . ' ' . $message['payment_method'] . ': decline recurring with order id ' . $message['order_id']);
+      $result = $provider->deleteRecurringPaymentToken($message);
+      $logMessage = "decline-recurring: For order id: {$message['order_id']}, delete recurring payment token with status " . ($result ? 'success' : 'failed');
+      \Civi::log('wmf')->info($logMessage);
     }
   }
 
