@@ -226,6 +226,12 @@ class DonationMessage {
     }
 
     // set the correct amount fields/data and do exchange rate conversions.
+    // If there is anything fishy about the amount...
+    if (!$this->getOriginalAmount() || !$this->getOriginalCurrency()) {
+      // just... don't
+      \Civi::log('wmf')->info('wmf_civicrm: Not freaking out about non-monetary message.');
+      return $msg;
+    }
     $msg = $this->normalizeContributionAmounts($msg);
 
     return $msg;
@@ -260,14 +266,6 @@ class DonationMessage {
    * @throws \Civi\WMFException\WMFException
    */
   private function normalizeContributionAmounts($msg): array {
-    // If there is anything fishy about the amount...
-    if ((empty($this->getAmount()) or empty($msg['currency']))
-      and (empty($msg['original_gross']) or empty($msg['original_currency']))
-    ) {
-      // just... don't
-      \Civi::log('wmf')->info('wmf_civicrm: Not freaking out about non-monetary message.');
-      return $msg;
-    }
     $msg['original_gross'] = $this->getOriginalAmount();
     $msg['original_currency'] = $this->getOriginalCurrency();;
     if ($this->isExchangeRateConversionRequired()) {
