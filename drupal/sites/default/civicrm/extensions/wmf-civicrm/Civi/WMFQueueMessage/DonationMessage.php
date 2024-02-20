@@ -232,7 +232,17 @@ class DonationMessage {
       \Civi::log('wmf')->info('wmf_civicrm: Not freaking out about non-monetary message.');
       return $msg;
     }
-    $msg = $this->normalizeContributionAmounts($msg);
+    if ($this->isExchangeRateConversionRequired()) {
+      \Civi::log('wmf')->info('wmf_civicrm: Converting to settlement currency: {old} -> {new}',
+        ['old' => $msg['currency'], 'new' => $this->getSettlementCurrency()]);
+    }
+
+    $msg['original_gross'] = $this->getOriginalAmount();
+    $msg['original_currency'] = $this->getOriginalCurrency();;
+    $msg['currency'] = $this->getSettlementCurrency();
+    $msg['fee'] = $this->getFeeAmountRounded();
+    $msg['gross'] = $this->getAmountRounded();
+    $msg['net'] = $this->getNetAmountRounded();
 
     return $msg;
   }
@@ -247,40 +257,10 @@ class DonationMessage {
   }
 
   /**
-   * Normalize contribution amounts
+   * Get the currency remitted by the donor.
    *
-   * Do exchange rate conversions and set appropriate fields for CiviCRM
-   * based on information contained in the message.
-   *
-   * Upon exiting this function, the message is guaranteed to have these fields:
-   *    currency - settlement currency
-   *    original_currency - currency remitted by the donor
-   *    gross - settled total amount
-   *    original_gross - remitted amount in original currency
-   *    fee - processor fees, when available
-   *    net - gross less fees
-   *
-   * @param $msg
-   *
-   * @return array
-   * @throws \Civi\WMFException\WMFException
+   * @return string
    */
-  private function normalizeContributionAmounts($msg): array {
-    $msg['original_gross'] = $this->getOriginalAmount();
-    $msg['original_currency'] = $this->getOriginalCurrency();;
-    if ($this->isExchangeRateConversionRequired()) {
-      \Civi::log('wmf')->info('wmf_civicrm: Converting to settlement currency: {old} -> {new}',
-        ['old' => $msg['currency'], 'new' => $this->getSettlementCurrency()]);
-    }
-    $msg['currency'] = $this->getSettlementCurrency();
-
-    $msg['fee'] = $this->getFeeAmountRounded();
-    $msg['gross'] = $this->getAmountRounded();
-    $msg['net'] = $this->getNetAmountRounded();
-
-    return $msg;
-  }
-
   public function getOriginalCurrency(): string {
     return $this->message['original_currency'] ?? $this->message['currency'];
   }
@@ -315,7 +295,7 @@ class DonationMessage {
   }
 
   /**
-   * Get the fee amount charged.
+   * Get the fee amount charged by the processing gateway, when available
    */
   public function getFeeAmount(): float {
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
