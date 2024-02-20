@@ -43,7 +43,7 @@ class CitibankIndividualsFileTest extends BaseChecksFileTest {
     $this->assertEquals('All rows were imported', $messages['Result']);
     $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'CITIBANK 5739498974']);
     $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
-    $this->assertEquals('EUR 3000', $contribution['contribution_source']);
+    $this->assertEquals('EUR 3000.00', $contribution['contribution_source']);
     $this->assertEquals('Citibank International', $contribution['payment_instrument']);
     $this->assertEquals(9000, $contribution['total_amount']);
   }

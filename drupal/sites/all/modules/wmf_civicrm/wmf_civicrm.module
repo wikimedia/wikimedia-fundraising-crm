@@ -7,6 +7,7 @@ use Civi\WMFStatistic\ImportStatsCollector;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFHelper\Database;
+use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use SmashPig\Core\DataStores\QueueWrapper;
@@ -499,7 +500,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     'trxn_id' => $trxn_id,
     'receive_date' => wmf_common_date_unix_to_civicrm($msg['date']),
     'currency' => $msg['currency'],
-    'source' => $msg['original_currency'] . ' ' . $msg['original_gross'],
+    'source' => $msg['original_currency'] . ' ' . CurrencyRoundingHelper::round($msg['original_gross'], $msg['original_currency']),
     'contribution_recur_id' => $msg['contribution_recur_id'],
     'check_number' => $msg['check_number'],
     'soft_credit_to' => $msg['soft_credit_to_id'],

@@ -35,11 +35,14 @@ class StripeTest extends BaseChecksFileTest {
     // campaign with the next, without it.
     // $this->assertEquals('big campaign', db_query("SELECT {utm_campaign} from {contribution_tracking} WHERE contribution_id = {$contribution[0]['id']}")->fetchField());
 
-    $contact = $this->callAPISuccessGetSingle('Contact', array('id' => $contribution[0]['contact_id'], 'return' => array(
-      'first_name',
-      'last_name',
-      'contact_source',
-    )));
+    $contact = $this->callAPISuccessGetSingle('Contact', [
+      'id' => $contribution[0]['contact_id'],
+      'return' => [
+        'first_name',
+        'last_name',
+        'contact_source',
+      ],
+    ]);
     $this->assertEquals('Charles', $contact['first_name']);
     $this->assertEquals('Darwin', $contact['last_name']);
     $this->assertEquals('Stripe import', $contact['contact_source']);
@@ -49,7 +52,7 @@ class StripeTest extends BaseChecksFileTest {
     $this->assertEquals('GBP', $this->ids['contribution'][2]['original_currency']);
     $this->assertEquals('USD', $this->ids['contribution'][2]['currency']);
     $this->assertEquals(1500, $this->ids['contribution'][2]['total_amount']);
-    $this->assertEquals('GBP 1000', $this->ids['contribution'][2]['source']);
+    $this->assertEquals('GBP 1000.00', $this->ids['contribution'][2]['source']);
   }
 
 }

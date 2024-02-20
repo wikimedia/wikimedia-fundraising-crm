@@ -42,7 +42,7 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'order_id' => mt_rand(),
       'organization_name' => '',
       'original_currency' => 'ILS',
-      'original_gross' => '20.00',
+      'original_gross' => 20.00,
       'payment_date' => time(),
       'payment_instrument_id' => '25',
       'payment_instrument' => 'Paypal',

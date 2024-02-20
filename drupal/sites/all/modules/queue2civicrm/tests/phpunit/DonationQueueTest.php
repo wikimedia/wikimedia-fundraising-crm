@@ -72,7 +72,7 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'fee_amount' => '0.00',
       'net_amount' => '400.00',
       'trxn_id' => 'GLOBALCOLLECT ' . $message->getGatewayTxnId(),
-      'source' => 'USD 400',
+      'source' => 'USD 400.00',
       'financial_type_id:label' => 'Cash',
       'contribution_status_id:label' => 'Completed',
       'payment_instrument_id:label' => 'Credit Card: Visa',

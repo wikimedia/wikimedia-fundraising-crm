@@ -259,7 +259,7 @@ class DonationMessage {
    * @return array
    * @throws \Civi\WMFException\WMFException
    */
-  private function normalizeContributionAmounts($msg) {
+  private function normalizeContributionAmounts($msg): array {
     $msg['gross'] = $this->getAmount();
     $msg['net'] = $this->getNetAmount();
     $msg['fee'] = $this->getFeeAmount();
@@ -272,21 +272,11 @@ class DonationMessage {
       \Civi::log('wmf')->info('wmf_civicrm: Not freaking out about non-monetary message.');
       return $msg;
     }
-
-    if (empty($msg['original_currency']) && empty($msg['original_gross'])) {
-      $msg['original_gross'] = $msg['gross'];
-    }
-    $msg['original_currency'] = $this->getOriginalCurrency();
-
-    if ($msg['currency'] !== $this->getSettlementCurrency()) {
+    $msg['original_gross'] = $this->getOriginalAmount();
+    $msg['original_currency'] = $this->getOriginalCurrency();;
+    if ($this->isExchangeRateConversionRequired()) {
       \Civi::log('wmf')->info('wmf_civicrm: Converting to settlement currency: {old} -> {new}',
         ['old' => $msg['currency'], 'new' => $this->getSettlementCurrency()]);
-      $settlement_convert = $this->getConversionRate();
-
-      // Do exchange rate conversion
-      $msg['fee'] = $msg['fee'] * $settlement_convert;
-      $msg['gross'] = $msg['gross'] * $settlement_convert;
-      $msg['net'] = $msg['net'] * $settlement_convert;
     }
     $msg['currency'] = $this->getSettlementCurrency();
 
@@ -301,15 +291,29 @@ class DonationMessage {
     return $this->message['original_currency'] ?? $this->message['currency'];
   }
 
+  /**
+   * Get the original remitted amount in original currency.
+   *
+   * @return string
+   */
+  public function getOriginalAmount(): string {
+    return !empty($this->message['original_gross']) ? $this->cleanMoney($this->message['original_gross']) : $this->cleanMoney($this->message['gross'] ?? 0);
+  }
+
+  /**
+   * Get the currency the donation is settled in.
+   *
+   * Currency it is always converted to USD.
+   */
   public function getSettlementCurrency(): string {
     return 'USD';
   }
 
   /**
-   * Get the donation amount.
+   * Get the donation amount as we receive it in the settled currency.
    */
   public function getAmount(): float {
-    return $this->cleanMoney($this->message['gross'] ?? 0);
+    return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
   }
 
   /**
@@ -317,7 +321,7 @@ class DonationMessage {
    */
   public function getFeeAmount(): float {
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
-      return $this->cleanMoney($this->message['fee']);
+      return $this->cleanMoney($this->message['fee']) * $this->getConversionRate();
     }
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
       return $this->getAmount() - $this->getNetAmount();
@@ -330,7 +334,7 @@ class DonationMessage {
    */
   public function getNetAmount(): float {
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
-      return $this->cleanMoney($this->message['net']);
+      return $this->cleanMoney($this->message['net']) * $this->getConversionRate();
     }
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
       return $this->getAmount() - $this->getFeeAmount();
@@ -466,12 +470,22 @@ class DonationMessage {
    * @throws \Civi\WMFException\WMFException
    */
   public function getConversionRate(): float {
+    if (!$this->isExchangeRateConversionRequired()) {
+      return 1;
+    }
     try {
       return (float) exchange_rate_convert($this->getOriginalCurrency(), 1, $this->getTimestamp()) / exchange_rate_convert($this->getSettlementCurrency(), 1, $this->getTimestamp());
     }
     catch (ExchangeRatesException $e) {
       throw new WMFException(WMFException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$this->message['original_currency']}': " . $e->getMessage());
     }
+  }
+
+  /**
+   * Are we dealing with a message that had a currency other than our settlement currency.
+   */
+  public function isExchangeRateConversionRequired(): bool {
+    return $this->message['currency'] !== $this->getSettlementCurrency();
   }
 
 }
