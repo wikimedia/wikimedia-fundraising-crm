@@ -692,7 +692,8 @@ function _wmf_civicrm_message_contribution_insert($msg) {
 }
 
 function wmf_civicrm_verify_message_and_stage($msg) {
-  $msg = wmf_civicrm_normalize_msg($msg);
+  $message = DonationMessage::getWMFMessage($msg);
+  $msg = $message->normalize();
   $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
 
   $required = [
@@ -1159,25 +1160,6 @@ WHERE
   \Civi::log('wmf')->notice('wmf_civicrm: Cannot find state: {state} (country {country})',
     ['state' => $state, 'country' => $country_id]
   );
-}
-
-/**
- * Normalize the queued message
- *
- * @param mixed $msg
- *
- * @return array
- *
- * @throws \Civi\WMFException\WMFException
- * @throws \CRM_Core_Exception
- * @deprecated
- *
- * TODO: Split this into a transformation chain.
- *
- */
-function wmf_civicrm_normalize_msg($msg): array {
-  $message = DonationMessage::getWMFMessage($msg);
-  return $message->normalize();
 }
 
 /**
