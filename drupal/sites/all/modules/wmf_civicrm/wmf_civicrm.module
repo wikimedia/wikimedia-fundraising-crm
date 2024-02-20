@@ -199,10 +199,11 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
 
   civicrm_initialize();
   $msg = _verify_message_and_stage($message);
+  $message->validate();
 
   $createRecurringToken = FALSE;
   // Associate with existing recurring records
-  if ($msg['recurring'] && !$msg['contribution_recur_id']) {
+  if ($message->isRecurring() && !$msg['contribution_recur_id']) {
     if (!empty($msg['recurring_payment_token'])) {
       $token_record = _get_recurring_payment_token($msg);
       if ($token_record) {
@@ -230,9 +231,6 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
         }
         check_recur_modification_and_queue($recur_record, $msg);
       }
-    }
-    else {
-      throw new WMFException(WMFException::INVALID_MESSAGE, 'Recurring donation, but no subscription ID or recurring payment token found.');
     }
   }
   if ($msg['contact_id'] && isset($msg['contact_hash'])) {

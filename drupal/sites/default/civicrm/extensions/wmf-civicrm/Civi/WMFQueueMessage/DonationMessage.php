@@ -449,4 +449,12 @@ class DonationMessage {
     return trim($this->message['gateway']);
   }
 
+  /**
+   * Validate the message
+   *
+   * @return void
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function validate(): void {}
+
 }
