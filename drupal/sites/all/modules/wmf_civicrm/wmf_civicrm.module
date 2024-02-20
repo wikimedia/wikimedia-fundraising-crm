@@ -92,15 +92,6 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
   }
 }
 
-/**
- * Determines the settlement currency for a given donation.
- * Argument is a queue message or a civicrm contribution array.
- * TODO: implement hook to determine our actual settlement currency.
- */
-function wmf_civicrm_get_settlement_currency($transaction) {
-  return 'USD';
-}
-
 function wmf_civicrm_get_custom_values($entity_id, $names, $group_name = NULL) {
   $names = (array) $names;
   $params['entityID'] = $entity_id;

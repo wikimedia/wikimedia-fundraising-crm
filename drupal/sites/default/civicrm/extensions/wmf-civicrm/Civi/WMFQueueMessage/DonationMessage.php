@@ -274,33 +274,35 @@ class DonationMessage {
     }
 
     if (empty($msg['original_currency']) && empty($msg['original_gross'])) {
-      $msg['original_currency'] = $msg['currency'];
       $msg['original_gross'] = $msg['gross'];
     }
+    $msg['original_currency'] = $this->getOriginalCurrency();
 
-    $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
-    if ($msg['currency'] !== $settlement_currency) {
+    if ($msg['currency'] !== $this->getSettlementCurrency()) {
       \Civi::log('wmf')->info('wmf_civicrm: Converting to settlement currency: {old} -> {new}',
-        ['old' => $msg['currency'], 'new' => $settlement_currency]);
-      try {
-        $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
-      }
-      catch (ExchangeRatesException $ex) {
-        throw new WMFException(WMFException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$msg['original_currency']}': " . $ex->getMessage());
-      }
+        ['old' => $msg['currency'], 'new' => $this->getSettlementCurrency()]);
+      $settlement_convert = $this->getConversionRate();
 
       // Do exchange rate conversion
-      $msg['currency'] = $settlement_currency;
       $msg['fee'] = $msg['fee'] * $settlement_convert;
       $msg['gross'] = $msg['gross'] * $settlement_convert;
       $msg['net'] = $msg['net'] * $settlement_convert;
     }
+    $msg['currency'] = $this->getSettlementCurrency();
 
     $msg['fee'] = CurrencyRoundingHelper::round($msg['fee'], $msg['currency']);
     $msg['gross'] = CurrencyRoundingHelper::round($msg['gross'], $msg['currency']);
     $msg['net'] = CurrencyRoundingHelper::round($msg['net'], $msg['currency']);
 
     return $msg;
+  }
+
+  public function getOriginalCurrency(): string {
+    return $this->message['original_currency'] ?? $this->message['currency'];
+  }
+
+  public function getSettlementCurrency(): string {
+    return 'USD';
   }
 
   /**
@@ -457,5 +459,19 @@ class DonationMessage {
    * @throws \Civi\WMFException\WMFException
    */
   public function validate(): void {}
+
+  /**
+   * Get the rate to convert the currency using.
+   *
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function getConversionRate(): float {
+    try {
+      return (float) exchange_rate_convert($this->getOriginalCurrency(), 1, $this->getTimestamp()) / exchange_rate_convert($this->getSettlementCurrency(), 1, $this->getTimestamp());
+    }
+    catch (ExchangeRatesException $e) {
+      throw new WMFException(WMFException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$this->message['original_currency']}': " . $e->getMessage());
+    }
+  }
 
 }
