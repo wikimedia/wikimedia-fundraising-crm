@@ -260,12 +260,8 @@ class DonationMessage {
    * @throws \Civi\WMFException\WMFException
    */
   private function normalizeContributionAmounts($msg): array {
-    $msg['gross'] = $this->getAmount();
-    $msg['net'] = $this->getNetAmount();
-    $msg['fee'] = $this->getFeeAmount();
-
     // If there is anything fishy about the amount...
-    if ((empty($msg['gross']) or empty($msg['currency']))
+    if ((empty($this->getAmount()) or empty($msg['currency']))
       and (empty($msg['original_gross']) or empty($msg['original_currency']))
     ) {
       // just... don't
@@ -280,9 +276,9 @@ class DonationMessage {
     }
     $msg['currency'] = $this->getSettlementCurrency();
 
-    $msg['fee'] = CurrencyRoundingHelper::round($msg['fee'], $msg['currency']);
-    $msg['gross'] = CurrencyRoundingHelper::round($msg['gross'], $msg['currency']);
-    $msg['net'] = CurrencyRoundingHelper::round($msg['net'], $msg['currency']);
+    $msg['fee'] = $this->getFeeAmountRounded();
+    $msg['gross'] = $this->getAmountRounded();
+    $msg['net'] = $this->getNetAmountRounded();
 
     return $msg;
   }
@@ -316,6 +312,10 @@ class DonationMessage {
     return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
   }
 
+  public function getAmountRounded(): string {
+    return CurrencyRoundingHelper::round($this->getAmount(), $this->getSettlementCurrency());
+  }
+
   /**
    * Get the fee amount charged.
    */
@@ -329,6 +329,10 @@ class DonationMessage {
     return 0.00;
   }
 
+  public function getFeeAmountRounded(): string {
+    return CurrencyRoundingHelper::round($this->getFeeAmount(), $this->getSettlementCurrency());
+  }
+
   /**
    * Get amount less any fee charged by the processor.
    */
@@ -340,6 +344,10 @@ class DonationMessage {
       return $this->getAmount() - $this->getFeeAmount();
     }
     return $this->getAmount();
+  }
+
+  public function getNetAmountRounded(): string {
+    return CurrencyRoundingHelper::round($this->getNetAmount(), $this->getSettlementCurrency());
   }
 
   protected function cleanMoney($value): float {
