@@ -247,7 +247,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       wmf_civicrm_message_update_contribution_tracking($msg, $contribution);
 
       // update the contact
-      wmf_civicrm_message_contact_update($msg, $recur_record->contact_id);
+      $this->updateContact($msg, $recur_record->contact_id);
     }
 
     // update subscription record with next payment date
@@ -366,6 +366,27 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       default:
         throw new WMFException(WMFException::INVALID_RECURRING, 'Unknown transaction type');
     }
+  }
+
+  /**
+   * Update the contact record
+   *
+   * Serves as a standard way for message processors to handle contact
+   * updates.
+   *
+   * @param array $msg
+   * @param int $contact_id
+   *
+   * @return array
+   */
+  private function updateContact($msg, $contact_id) {
+    //FIXME: reverse the way these functions delegate.  Or eliminate -_insert.
+    $contact = wmf_civicrm_message_contact_insert($msg, $contact_id);
+    // Insert the location record
+    // This will be duplicated in some cases in the main message_import, but should
+    // not have a negative impact. Longer term it should be removed from here in favour of there.
+    wmf_civicrm_message_location_update($msg, $contact);
+    return $contact;
   }
 
   /**
