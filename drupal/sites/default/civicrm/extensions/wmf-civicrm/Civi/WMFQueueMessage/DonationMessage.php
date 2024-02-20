@@ -61,6 +61,11 @@ class DonationMessage {
     return FALSE;
   }
 
+  /**
+   * @param array $message
+   *
+   * @return \Civi\WMFQueueMessage\DonationMessage|\Civi\WMFQueueMessage\RecurDonationMessage
+   */
   public static function getWMFMessage($message) {
     if (!empty($message['recurring']) || !empty($message['contribution_recur_id'])) {
       $messageObject = new RecurDonationMessage($message);

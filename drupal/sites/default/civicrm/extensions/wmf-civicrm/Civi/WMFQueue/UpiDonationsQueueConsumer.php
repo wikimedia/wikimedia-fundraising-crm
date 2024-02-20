@@ -5,6 +5,7 @@ namespace Civi\WMFQueue;
 use Civi;
 use Civi\Api4\ContributionRecur;
 use Civi\WMFHelper\PaymentProcessor;
+use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
@@ -126,8 +127,9 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   protected function insertContributionRecur(array $message): int {
+    $recurMessage = new RecurDonationMessage($message);
     // Cribbed and compacted from RecurringQueueConsumer::importSubscriptionSignup
-    $normalized = wmf_civicrm_verify_message_and_stage($message);
+    $normalized = wmf_civicrm_verify_message_and_stage($recurMessage);
 
     // Create (or update) the contact
     $contact = wmf_civicrm_message_contact_insert($normalized);

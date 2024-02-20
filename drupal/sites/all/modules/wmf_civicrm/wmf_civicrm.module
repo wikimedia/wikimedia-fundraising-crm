@@ -198,8 +198,7 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   _get_import_timer()->startImportTimer($importTimerName);
 
   civicrm_initialize();
-
-  $msg = _verify_message_and_stage($msg);
+  $msg = _verify_message_and_stage($message);
 
   $createRecurringToken = FALSE;
   // Associate with existing recurring records
@@ -391,14 +390,14 @@ function _get_gateway_subscription(array $msg) {
 }
 
 /**
- * @param array $msg
+ * @param DonationMessage $msg
  *
  * @return array
  * @throws \Civi\WMFException\WMFException
  */
-function _verify_message_and_stage(array $msg): array {
+function _verify_message_and_stage(DonationMessage $message): array {
   _get_import_timer()->startImportTimer("verify_and_stage");
-  $msg = wmf_civicrm_verify_message_and_stage($msg);
+  $msg = wmf_civicrm_verify_message_and_stage($message);
   _get_import_timer()->endImportTimer("verify_and_stage");
   return $msg;
 }
@@ -689,8 +688,14 @@ function _wmf_civicrm_message_contribution_insert($msg) {
   return $contribution_result['values'][$contribution_result['id']];
 }
 
-function wmf_civicrm_verify_message_and_stage($msg) {
-  $message = DonationMessage::getWMFMessage($msg);
+/**
+ * @param \Civi\WMFQueueMessage\DonationMessage $message
+ *
+ * @return array
+ * @throws \CRM_Core_Exception
+ * @throws \Civi\WMFException\WMFException
+ */
+function wmf_civicrm_verify_message_and_stage(DonationMessage $message) {
   $msg = $message->normalize();
   $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
 
