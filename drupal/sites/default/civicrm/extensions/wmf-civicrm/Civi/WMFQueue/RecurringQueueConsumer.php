@@ -111,15 +111,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       }
     }
 
-    if (isset($msg['frequency_unit'])) {
-      if (!in_array($msg['frequency_unit'], ['day', 'week', 'month', 'year'])) {
-        throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency unit: {$msg['frequency_unit']}");
-      }
-    }
-
     //Seeing as we're in the recurring module...
     $msg['recurring'] = TRUE;
     $message = new RecurDonationMessage($msg);
+    $message->validate();
     $msg = $message->normalize();
     return $msg;
   }
