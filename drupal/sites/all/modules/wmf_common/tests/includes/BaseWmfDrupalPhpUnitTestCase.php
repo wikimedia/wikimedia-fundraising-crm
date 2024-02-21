@@ -123,12 +123,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
             $this->cleanupPaymentProcessor($entityID);
           }
           elseif ($entity === 'ContributionTracking') {
-            db_delete('contribution_tracking')
-              ->condition('id', $entityID)
-              ->execute();
-            db_delete('contribution_source')
-              ->condition('contribution_tracking_id', $entityID)
-              ->execute();
             ContributionTracking::delete(FALSE)->addWhere('id', '=', $entityID)->execute();
           }
           elseif ($entity === 'Contribution') {
