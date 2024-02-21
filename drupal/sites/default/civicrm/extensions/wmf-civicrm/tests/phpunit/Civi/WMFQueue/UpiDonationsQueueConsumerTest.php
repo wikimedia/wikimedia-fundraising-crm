@@ -6,10 +6,6 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\PaymentToken;
-use Civi\Test;
-use Civi\Test\HeadlessInterface;
-use Civi\Test\TransactionalInterface;
-use PHPUnit\Framework\TestCase;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
@@ -21,7 +17,10 @@ use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
 
-class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterface, TransactionalInterface {
+/**
+ * @group WMFQueue
+ */
+class UpiDonationsQueueConsumerTest extends BaseQueueTest {
 
   /**
    * @var PHPUnit_Framework_MockObject_MockObject
@@ -58,26 +57,12 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     parent::tearDown();
   }
 
-  /**
-   * @return \Civi\Test\CiviEnvBuilder
-   * @throws \CRM_Extension_Exception_ParseException
-   */
-  public function setUpHeadless(): Test\CiviEnvBuilder {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://docs.civicrm.org/dev/en/latest/testing/phpunit/#civitest
-    return Test::headless()
-      ->installMe(__DIR__)
-      ->apply();
-  }
-
   public function testInitialDonation(): void {
     // Test that an initial donation IPN correctly sets up contact,
     // token, and contribution_recur record, and passes message along
     // to donation queue.
     // Initial message has info from pending table plus info from IPN
-    $message = json_decode(
-      file_get_contents(__DIR__ . '/../../../data/upiInitialDonation.json'), TRUE
-    );
+    $message = $this->loadMessage('upiInitialDonation');
     QueueWrapper::push('upi-donations', $message);
     $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
@@ -118,9 +103,7 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
 
     // Test that a donation IPN with a pre-existing token and recurring
     // record will set the donation message IDs correctly
-    $message = json_decode(
-      file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
-    );
+    $message = $this->loadMessage('upiSubsequentDonation');
     QueueWrapper::push('upi-donations', $message);
 
     $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
@@ -139,9 +122,7 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     $this->cancelTestContributionRecurRecord($recur['id']);
     // Test that a donation IPN with a pre-existing token and recurring
     // record will set the donation message IDs correctly even if cancelled
-    $message = json_decode(
-      file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
-    );
+    $message = $this->loadMessage('upiSubsequentDonation');
 
     $this->hostedPaymentProvider->expects($this->once())
       ->method('refundPayment')
@@ -199,9 +180,7 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
 
     // Test that a donation IPN with a pre-existing token and recurring
     // record with the right amount will set the donation message IDs correctly
-    $message = json_decode(
-      file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
-    );
+    $message = $this->loadMessage('upiSubsequentDonation');
     $message['gross'] = $messageAmount;
     $contact = $this->createTestContactRecord();
     $token = $this->createTestPaymentToken($contact['id']);
@@ -245,9 +224,7 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     $token = $this->createTestPaymentToken($contact['id']);
     // Test that a donation IPN with a pre-existing token and recurring
     // record set to "In Progress" will set the donation message IDs correctly
-    $message = json_decode(
-      file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
-    );
+    $message = $this->loadMessage('upiSubsequentDonation');
 
     $next_day_date = wmf_common_date_unix_to_civicrm(strtotime('+1 day', $message['date']));
     $recur1 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount, $next_day_date);
@@ -288,9 +265,7 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     $messageAmount = 1000;
     // Test that a donation IPN with a pre-existing token and recurring
     // record will set the donation message IDs correctly
-    $message = json_decode(
-      file_get_contents(__DIR__ . '/../../../data/upiSubsequentDonation.json'), TRUE
-    );
+    $message = $this->loadMessage('upiSubsequentDonation');
 
     $message['gross'] = $messageAmount;
 
@@ -376,9 +351,7 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     $contact = $this->createTestContactRecord();
     $token = $this->createTestPaymentToken($contact['id']);
 
-    $rejectionQueueMessage = json_decode(
-      file_get_contents(__DIR__ . '/../../../data/upiRejectionWalletDisabled.json'), TRUE
-    );
+    $rejectionQueueMessage = $this->loadMessage('upiRejectionWalletDisabled');
 
     $recur = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $rejectionQueueMessage['gross']);
 
