@@ -3,6 +3,7 @@
 namespace Civi\Api4\Action\PendingTransaction;
 
 use Civi\Api4\Contact;
+use Civi\Api4\ContributionTracking;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Name;
@@ -239,11 +240,9 @@ class Resolve extends AbstractAction {
    * @return bool
    */
   protected function contributionTrackingRecordHasContributionId(): bool {
-    $existingContributionTrackingRecord = db_select('contribution_tracking', 'ct')
-      ->fields('ct')
-      ->condition('id', $this->message['contribution_tracking_id'], '=')
-      ->execute()
-      ->fetchAssoc();
+    $existingContributionTrackingRecord = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $this->message['contribution_tracking_id'])
+      ->execute()->first();
     $hasId = !empty($existingContributionTrackingRecord['contribution_id']);
     if ($hasId) {
       // contribution_id is set on the contribution_tracking table when we
