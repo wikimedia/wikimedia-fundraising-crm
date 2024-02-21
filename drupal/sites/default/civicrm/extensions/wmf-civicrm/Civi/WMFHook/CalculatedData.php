@@ -1276,7 +1276,7 @@ class CalculatedData extends TriggerHook {
           'range' => [
             [
               'from' => $this->getFinancialYearEndDateTime(-25),
-              'to' => $this->getFinancialYearEndDateTime(-5),
+              'to' => $this->getFinancialYearEndDateTime(-6),
               'total' => 0.01,
             ],
           ],
