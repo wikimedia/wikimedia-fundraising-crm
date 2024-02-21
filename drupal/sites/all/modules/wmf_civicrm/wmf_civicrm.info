@@ -4,7 +4,6 @@ core = 7.x
 package = Wikimedia
 dependencies[] = civicrm
 dependencies[] = exchange_rates
-dependencies[] = contribution_tracking
 dependencies[] = metrics_reporting
 dependencies[] = wmf_common
 files[] = db_switcher.inc
