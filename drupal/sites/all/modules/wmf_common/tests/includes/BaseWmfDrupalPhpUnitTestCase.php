@@ -373,8 +373,11 @@ WHERE contribution_id = :contribution_id', [
     Contribution::delete(FALSE)->addWhere('id', '=', $id)->execute();
   }
 
-  protected function setUpCtSequence() {
-    $ctInitial = db_query('SELECT MAX(id) as maxId from contribution_tracking')->fetchField();
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  protected function setUpCtSequence(): void {
+    $ctInitial = CRM_Core_DAO::singleValueQuery('SELECT MAX(id) as maxId from civicrm_contribution_tracking');
     $generator = Factory::getSequenceGenerator('contribution-tracking');
     $generator->initializeSequence($ctInitial);
   }
