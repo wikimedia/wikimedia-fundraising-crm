@@ -1,4 +1,5 @@
 <?php
+
 namespace Civi\Api4\Action\PendingTransaction;
 
 use Civi\Api4\Contact;
@@ -45,6 +46,7 @@ class Resolve extends AbstractAction {
    * We don't want to approve multiple transactions for the same email in
    * a single run, as they might not have been consumed into the database
    * yet and so not be caught by the hasDonationsInPastDay check.
+   *
    * @var array
    */
   protected $alreadyResolved = [];
@@ -54,16 +56,18 @@ class Resolve extends AbstractAction {
    * fraudiness. This is calculated based on risk scores from fredge and
    * from the status lookup call to the processor, and action thresholds
    * set in the SmashPig processor-specific configuration.
+   *
    * @var ?string
    */
-  protected $validationAction = null;
+  protected $validationAction = NULL;
 
   /**
    * Array of name fields that may have been parsed out of a full_name
    * field, cached here to avoid an extra API call to Name::parse
+   *
    * @var ?array
    */
-  protected $firstAndLastName = null;
+  protected $firstAndLastName = NULL;
 
   /**
    * Some constants to represent what action to take on any payment method,
@@ -71,7 +75,9 @@ class Resolve extends AbstractAction {
    * duplicate status or donor trustworthiness.
    */
   private const CAPTURE = 'capture';
+
   private const CANCEL = 'cancel';
+
   private const LEAVE_AT_CONSOLE = 'leave at console';
 
   public function _run(Result $result) {
@@ -141,9 +147,9 @@ class Resolve extends AbstractAction {
           $newStatus = $cancelResult->getStatus();
           break;
         }
-        // If the provider doesn't support cancelling a payment in
-        // pending-poke status, just fall through to the next case
-        // and leave the payment at the console.
+      // If the provider doesn't support cancelling a payment in
+      // pending-poke status, just fall through to the next case
+      // and leave the payment at the console.
 
       case self::LEAVE_AT_CONSOLE:
         // Just delete the pending message and leave the transaction at the
@@ -163,17 +169,17 @@ class Resolve extends AbstractAction {
     // payment method checks
     // should never be empty, and should already filter out non resolvable methods, that's just a sanity check
     if (empty($this->message['payment_method']) ||
-        !in_array(
-          $this->message['payment_method'],
-          PendingTransaction::getResolvableMethods()
-        )) {
+      !in_array(
+        $this->message['payment_method'],
+        PendingTransaction::getResolvableMethods()
+      )) {
       return FALSE;
     }
     // gateway_txn_id check, Adyen needs this but it can be set to false if its from a redirect
     if ((empty($this->message['gateway_txn_id']) ||
         $this->message['gateway_txn_id'] == "false") &&
-        ($this->message['gateway'] == 'adyen')
-      ) {
+      ($this->message['gateway'] == 'adyen')
+    ) {
       return FALSE;
     }
 
@@ -193,18 +199,20 @@ class Resolve extends AbstractAction {
 
   /**
    * Fill in any missing donor information that has come in on the status lookup call.
+   *
    * @param PaymentDetailResponse $latestPaymentDetailResult
    */
   protected function addNewInfoFromPaymentDetailToMessage(PaymentDetailResponse $latestPaymentDetailResult): void {
     $donorDetails = $latestPaymentDetailResult->getDonorDetails();
-    if ($donorDetails !== null) {
+    if ($donorDetails !== NULL) {
       $infoToAddToMessage = [
         'first_name' => $donorDetails->getFirstName(),
         'last_name' => $donorDetails->getLastName(),
         'full_name' => $donorDetails->getFullName(),
         'email' => $donorDetails->getEmail(),
       ];
-    } else {
+    }
+    else {
       $infoToAddToMessage = [];
     }
     $infoToAddToMessage['processor_contact_id'] = $latestPaymentDetailResult->getProcessorContactID();
@@ -214,7 +222,7 @@ class Resolve extends AbstractAction {
     $infoToAddToMessage = array_filter($infoToAddToMessage);
 
     // Don't overwrite fields where the message had info already, but DO overwrite blank values
-    foreach($infoToAddToMessage as $field => $value) {
+    foreach ($infoToAddToMessage as $field => $value) {
       if (empty($this->message[$field])) {
         $this->message[$field] = $value;
       }
@@ -254,7 +262,7 @@ class Resolve extends AbstractAction {
    * same email address.
    */
   protected function approvedDonationForSameDonorInThisRun(): bool {
-    foreach($this->alreadyResolved as $orderId => $alreadyResolved) {
+    foreach ($this->alreadyResolved as $orderId => $alreadyResolved) {
       if (empty($alreadyResolved['email']) || empty($this->message['email'])) {
         continue;
       }
@@ -262,10 +270,10 @@ class Resolve extends AbstractAction {
         $alreadyResolved['email'] === $this->message['email'] &&
         $alreadyResolved['status'] === FinalStatus::COMPLETE
       ) {
-        return true;
+        return TRUE;
       }
     }
-    return false;
+    return FALSE;
   }
 
   /**
@@ -275,9 +283,9 @@ class Resolve extends AbstractAction {
    * donation from the donor in the past day.
    *
    * @param array $riskScores
+   *
    * @return string
-   * @throws \API_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \CRM_Core_Exception
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
@@ -288,21 +296,24 @@ class Resolve extends AbstractAction {
         // If score less than review threshold and no donation in past day, approve the transaction.
         if ($this->hasDonationsInPastDay()) {
           return self::CANCEL;
-        } else {
+        }
+        else {
           return self::CAPTURE;
         }
 
       case ValidationAction::REJECT:
         if ($this->matchesUnrefundedDonor()) {
           return self::CAPTURE;
-        } else {
+        }
+        else {
           return self::CANCEL;
         }
 
       case ValidationAction::REVIEW:
         if ($this->matchesUnrefundedDonor()) {
           return self::CAPTURE;
-        } else {
+        }
+        else {
           // Just delete the pending message and leave the transaction at the
           // merchant console for review.
           return self::LEAVE_AT_CONSOLE;
@@ -318,15 +329,16 @@ class Resolve extends AbstractAction {
    * status call combined with risk scores from the payments_fraud table.
    *
    * @param array $riskScoresFromStatus 'cvv' and 'avs' keys are examined
+   *
    * @return string one of the ValidationAction constants
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
   protected function getValidationAction(array $riskScoresFromStatus): string {
     $totalRiskScore = 0;
-    $fredgeHadCvvScore = false;
-    $fredgeHadAvsScore = false;
-    $statusHasNewFraudScores = false;
+    $fredgeHadCvvScore = FALSE;
+    $fredgeHadAvsScore = FALSE;
+    $statusHasNewFraudScores = FALSE;
 
     $paymentsFraudRowWithBreakdown = PaymentsFraudDatabase::get()->fetchMessageByGatewayOrderId(
       $this->message['gateway'], $this->message['order_id'], TRUE
@@ -336,11 +348,12 @@ class Resolve extends AbstractAction {
     //    'getCVVResult' => 80,
     //    'minfraud_filter' => 0.25,
     // ]
-    foreach($scoreBreakdownFromFredge as $filterName => $score) {
+    foreach ($scoreBreakdownFromFredge as $filterName => $score) {
       if ($filterName === 'getCVVResult') {
-        $fredgeHadCvvScore = true;
-      } elseif ($filterName === 'getAVSResult') {
-        $fredgeHadAvsScore = true;
+        $fredgeHadCvvScore = TRUE;
+      }
+      elseif ($filterName === 'getAVSResult') {
+        $fredgeHadAvsScore = TRUE;
       }
       $totalRiskScore += $score;
     }
@@ -366,7 +379,8 @@ class Resolve extends AbstractAction {
             "Please check that cvv_map settings are consistent."
           );
         }
-      } else {
+      }
+      else {
         $antifraudMessage['score_breakdown']['getCVVResult'] = $riskScoresFromStatus['cvv'];
         $totalRiskScore += $riskScoresFromStatus['cvv'];
         $statusHasNewFraudScores = TRUE;
@@ -385,7 +399,8 @@ class Resolve extends AbstractAction {
             "Please check that avs_map settings are consistent."
           );
         }
-      } else {
+      }
+      else {
         $antifraudMessage['score_breakdown']['getAVSResult'] = $riskScoresFromStatus['avs'];
         $totalRiskScore += $riskScoresFromStatus['avs'];
         $statusHasNewFraudScores = TRUE;
@@ -422,13 +437,14 @@ class Resolve extends AbstractAction {
    * and send it.
    *
    * @param string $newStatus
+   *
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
   protected function sendInitMessageIfNeeded(string $newStatus) {
     // If we haven't set a validationAction, there's no new information to send to the
     // payments-init queue.
-    if ($this->validationAction !== null) {
+    if ($this->validationAction !== NULL) {
       // Drop a message off on the payments-init queue. This is usually done at the end
       // of a donation attempt at payments-wiki, but for orphan messages we often haven't
       // gotten that far at the front end. I think some reports assume payments-init
@@ -456,8 +472,8 @@ class Resolve extends AbstractAction {
     array $pendingMessage,
     string $validationAction,
     string $finalStatus
-  ) : array {
-    $filteredPendingMessage = array_filter($pendingMessage, function ($key) {
+  ): array {
+    $filteredPendingMessage = array_filter($pendingMessage, function($key) {
       return in_array($key, [
         'payment_method',
         'payment_submethod',
@@ -466,7 +482,7 @@ class Resolve extends AbstractAction {
         'gateway',
         'contribution_tracking_id',
         'order_id',
-        'gateway_txn_id'
+        'gateway_txn_id',
       ]);
     }, ARRAY_FILTER_USE_KEY);
 
@@ -524,7 +540,7 @@ class Resolve extends AbstractAction {
       return FALSE;
     }
     $statusCountsByDonor = $this->getDonationStatistics(FALSE);
-    foreach($statusCountsByDonor as $counts) {
+    foreach ($statusCountsByDonor as $counts) {
       if ((new DateTime($counts['latestCompleted'])) > (new DateTime("-1 day"))) {
         return TRUE;
       }
@@ -534,6 +550,7 @@ class Resolve extends AbstractAction {
 
   /**
    * Return true if we have enough info to look for a matching donor
+   *
    * @return bool
    */
   protected function messageHasMatchableFields(): bool {
@@ -547,6 +564,7 @@ class Resolve extends AbstractAction {
    * Get statistics on donations for all donor records matching the name & email.
    *
    * @param bool $includeNonCompleteDonation pass FALSE to skip a join to contribution
+   *
    * @return Result
    * @throws \API_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
@@ -595,7 +613,7 @@ class Resolve extends AbstractAction {
    * handles many more components than first and last name.
    */
   protected function getFirstAndLastName(): array {
-    if ($this->firstAndLastName === null) {
+    if ($this->firstAndLastName === NULL) {
       $hasFullName = !empty($this->message['full_name']);
       $missingAtLeastOneSplitName = empty($this->message['first_name']) || empty($this->message['last_name']);
       if ($hasFullName && $missingAtLeastOneSplitName) {
@@ -603,13 +621,14 @@ class Resolve extends AbstractAction {
           ->setNames([$this->message['full_name']])
           ->execute()->first();
         $sourceData = $parsed;
-      } else {
+      }
+      else {
         $sourceData = $this->message;
       }
       $this->firstAndLastName = [];
       // Either the original message or the parsed field could still be missing
       // first_name or last_name. Just return as much as we have.
-      foreach(['first_name', 'last_name'] as $fieldName) {
+      foreach (['first_name', 'last_name'] as $fieldName) {
         if (!empty($sourceData[$fieldName])) {
           $this->firstAndLastName[$fieldName] = $sourceData[$fieldName];
         }
@@ -633,7 +652,8 @@ class Resolve extends AbstractAction {
       // notifications of recurring payment start and of the successful first
       // charge from the payment processor.
       return $this->startRecurringPaymentAndReturnStatus($provider);
-    } else {
+    }
+    else {
       // This flow approves a one-time payment and may also save a recurring
       // payment token for use in future recurring payments managed by the merchant
       return $this->approveOneTimePaymentAndReturnStatus($provider, $statusResult);
@@ -664,9 +684,9 @@ class Resolve extends AbstractAction {
       'amount' => $this->message['gross'],
       'currency' => $this->message['currency'],
       'order_id' => $this->message['order_id'],
-      'gateway_session_id' => $this->message['gateway_session_id'] ?? null,
-      'processor_contact_id' => $this->message['processor_contact_id'] ?? null,
-      'gateway_txn_id' => $this->message['gateway_txn_id'] ?? null,
+      'gateway_session_id' => $this->message['gateway_session_id'] ?? NULL,
+      'processor_contact_id' => $this->message['processor_contact_id'] ?? NULL,
+      'gateway_txn_id' => $this->message['gateway_txn_id'] ?? NULL,
     ]);
     if ($approveResult->isSuccessful()) {
       $newStatus = FinalStatus::COMPLETE;
@@ -695,4 +715,5 @@ class Resolve extends AbstractAction {
     }
     QueueWrapper::push('donations', $donationsMessage);
   }
+
 }

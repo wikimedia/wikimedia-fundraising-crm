@@ -1,10 +1,11 @@
 <?php
 
-namespace Civi\Api4\Action\PendingTransaction;
+namespace Civi\Api4\Action\PendingTransaction\Adyen;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
-use Civi\Api4\Email;
+use Civi\Api4\ContributionTracking;
+use Civi\Test\EntityTrait;
 use PHPUnit\Framework\TestCase;
 use Civi\Api4\PendingTransaction;
 use SmashPig\Core\DataStores\PaymentsFraudDatabase;
@@ -24,9 +25,10 @@ use SmashPig\PaymentProviders\Responses\CancelPaymentResponse;
  * @group PendingTransactionResolver
  */
 class AdyenResolveTest extends TestCase {
-  protected $hostedCheckoutProvider;
 
-  protected $contactId;
+  use EntityTrait;
+
+  protected $hostedCheckoutProvider;
 
   public function setUp(): void {
     parent::setUp();
@@ -59,14 +61,24 @@ class AdyenResolveTest extends TestCase {
    */
   public function tearDown(): void {
     TestingDatabase::clearStatics();
-    if ($this->contactId) {
+    Contribution::delete(FALSE)
+      ->addWhere('contact_id.first_name', 'IN', ['Testy', 'Donald'])
+      ->execute();
+    Contact::delete(FALSE)
+      ->addWhere('first_name', 'IN', ['Testy', 'Donald'])
+      ->setUseTrash(FALSE)
+      ->execute();
+    if (!empty($this->ids['Contact'])) {
       Contribution::delete(FALSE)
-        ->addWhere('contact_id', '=', $this->contactId)
+        ->addWhere('contact_id', 'IN', $this->ids['Contact'])
         ->execute();
       Contact::delete(FALSE)
-        ->addWhere('id', '=', $this->contactId)
+        ->addWhere('id', '=', $this->ids['Contact'])
         ->setUseTrash(FALSE)
         ->execute();
+    }
+    if (!empty($this->ids['ContributionTracking'])) {
+      ContributionTracking::delete(FALSE)->addWhere('id', 'IN', $this->ids['ContributionTracking'])->execute();
     }
   }
 
@@ -75,6 +87,10 @@ class AdyenResolveTest extends TestCase {
    * Expectation is that the resolve method proceeds to move the transaction to
    * a "cancelled" status.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
    */
   public function testResolveOnFailedTransaction(): void {
     $pending_message = $this->createTestPendingRecord('adyen');
@@ -104,14 +120,14 @@ class AdyenResolveTest extends TestCase {
    * Database is in PENDING_POKE status. Expectation is that the transaction
    * would be cancelled when resolved is called on the transaction.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
    */
   public function testContributionIdSetAndPendingPokeDuplicateInPendingDatabase(): void {
     $gateway = 'adyen';
     $pending_message = $this->createTestPendingRecord($gateway);
-    $this->createTestContributionTrackingRecord(
-      $pending_message['contribution_tracking_id'],
-      ['contribution_id' => mt_rand()]
-    );
+    $this->createContributionWithTrackingRecord($pending_message['contribution_tracking_id']);
     $this->createTestPaymentFraudRecordProcess($pending_message['contribution_tracking_id'],
       $pending_message['order_id'],
       $gateway,
@@ -144,9 +160,6 @@ class AdyenResolveTest extends TestCase {
 
     // confirm status is now cancelled
     $this->assertEquals(FinalStatus::CANCELLED, $result[$pending_message['order_id']]['status']);
-
-    //clean up
-    $this->deleteContributionIDRecord($pending_message['contribution_tracking_id']);
   }
 
   /**
@@ -154,14 +167,14 @@ class AdyenResolveTest extends TestCase {
    * Database is in FAILED status expectation is that the resolver would do
    * nothing to the transaction and the row is deleted afterwards.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
    */
   public function testContributionIdSetAndFailedDuplicateInPendingDatabase(): void {
     $gateway = 'adyen';
     $pending_message = $this->createTestPendingRecord($gateway);
-    $this->createTestContributionTrackingRecord(
-      $pending_message['contribution_tracking_id'],
-      ['contribution_id' => mt_rand()]
-    );
+    $this->createContributionWithTrackingRecord($pending_message['contribution_tracking_id']);
     $this->createTestPaymentFraudRecordProcess($pending_message['contribution_tracking_id'],
       $pending_message['order_id'],
       $gateway,
@@ -183,14 +196,17 @@ class AdyenResolveTest extends TestCase {
 
     // confirm status is now failed
     $this->assertEquals(FinalStatus::FAILED, $result[$pending_message['order_id']]['status']);
-
-    //clean up
-    $this->deleteContributionIDRecord($pending_message['contribution_tracking_id']);
   }
 
   /**
    * Test moving Adyen PendingPoke to Completed path.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
    */
   public function testResolveAdyenPendingPokeToComplete(): void {
     // generate a pending message to test
@@ -278,14 +294,14 @@ class AdyenResolveTest extends TestCase {
    * Database is in Completed status expectation is that the resolver would do
    * nothing to the transaction and the row is deleted afterwards.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
    */
   public function testContributionIdSetAndCompletedDuplicateInPendingDatabase(): void {
     $gateway = 'adyen';
     $pending_message = $this->createTestPendingRecord($gateway);
-    $this->createTestContributionTrackingRecord(
-      $pending_message['contribution_tracking_id'],
-      ['contribution_id' => mt_rand()]
-    );
+    $this->createContributionWithTrackingRecord($pending_message['contribution_tracking_id']);
     $this->createTestPaymentFraudRecordProcess($pending_message['contribution_tracking_id'],
       $pending_message['order_id'],
       $gateway,
@@ -307,14 +323,16 @@ class AdyenResolveTest extends TestCase {
 
     // confirm status is now complete
     $this->assertEquals(FinalStatus::COMPLETE, $result[$pending_message['order_id']]['status']);
-
-    //clean up
-    $this->deleteContributionIDRecord($pending_message['contribution_tracking_id']);
   }
 
   /**
    * Test moving Adyen PendingPoke(600) to Completed(800) path.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
    */
   public function testResolveAdyenPendingPokeToCompleteWithFraudScoresInReviewAction(): void {
     // generate a pending message to test
@@ -325,28 +343,7 @@ class AdyenResolveTest extends TestCase {
       $gateway,
     );
 
-    $contact = Contact::create(FALSE)
-      ->setValues([
-        'first_name' => $pending_message['first_name'],
-        'last_name' => $pending_message['last_name'],
-      ])->execute()->first();
-    $this->contactId = $contact['id'];
-    Email::create(FALSE)
-      ->setValues([
-        'contact_id' => $contact['id'],
-        'email' => $pending_message['email'],
-      ])
-      ->execute();
-    Contribution::create(FALSE)
-      ->setValues([
-        'contact_id' => $contact['id'],
-        'total_amount' => '2.34',
-        'currency' => 'USD',
-        'receive_date' => '2018-06-20',
-        'financial_type_id' => 1,
-        'contribution_status_id:name' => 'Completed',
-      ])
-      ->execute();
+    $this->createContactWithContribution($pending_message);
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
@@ -423,6 +420,10 @@ class AdyenResolveTest extends TestCase {
   /**
    * Test moving Adyen PendingPoke(600) to Failed path.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
    */
   public function testResolveAdyenPendingPokeToFailedWithFraudScoresInReviewAction(): void {
     // generate a pending message to test
@@ -460,6 +461,10 @@ class AdyenResolveTest extends TestCase {
   /**
    * Test moving Adyen PendingPoke(600) to Failed path.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
    */
   public function testResolveAdyenPendingPokeToFailedWithFraudScoresInRejectAction(): void {
     // generate a pending message to test
@@ -506,6 +511,9 @@ class AdyenResolveTest extends TestCase {
   /**
    * Test moving Adyen PendingPoke(600) to Complete path.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
    */
   public function testResolveAdyenPendingPokeToCompleteWithFraudScoresInRejectAction(): void {
     // generate a pending message to test
@@ -515,28 +523,7 @@ class AdyenResolveTest extends TestCase {
       $pending_message['order_id'],
       $gateway,
     );
-    $contact = Contact::create(FALSE)
-      ->setValues([
-        'first_name' => $pending_message['first_name'],
-        'last_name' => $pending_message['last_name'],
-      ])->execute()->first();
-    $this->contactId = $contact['id'];
-    Email::create(FALSE)
-      ->setValues([
-        'contact_id' => $contact['id'],
-        'email' => $pending_message['email'],
-      ])
-      ->execute();
-    Contribution::create(FALSE)
-      ->setValues([
-        'contact_id' => $contact['id'],
-        'total_amount' => '2.34',
-        'currency' => 'USD',
-        'receive_date' => '2018-06-20',
-        'financial_type_id' => 1,
-        'contribution_status_id:name' => 'Completed',
-      ])
-      ->execute();
+    $this->createContactWithContribution($pending_message);
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
@@ -573,7 +560,14 @@ class AdyenResolveTest extends TestCase {
     );
   }
 
-  public function testResolveCreatesValidPaymentsInitMessage() {
+  /**
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\SmashPigException
+   * @throws \CRM_Core_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  public function testResolveCreatesValidPaymentsInitMessage(): void {
     // generate a pending message to test
     $gateway = 'adyen';
     $pending_message = $this->createTestPendingRecord($gateway);
@@ -609,7 +603,7 @@ class AdyenResolveTest extends TestCase {
         'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
         'order_id' => $pending_message['order_id'],
         'gateway_session_id' => $pending_message['gateway_session_id'],
-        'processor_contact_id' => null
+        'processor_contact_id' => NULL,
       ])
       ->willReturn($approvePaymentResponse);
 
@@ -633,7 +627,8 @@ class AdyenResolveTest extends TestCase {
       'gateway_txn_id',
       'contribution_tracking_id',
       'order_id',
-      'server', // same value as 'source_host' but it's needed by payments-init qc
+      // same value as 'source_host' but it's needed by payments-init qc
+      'server',
       // we're not too concerned about the source_* keys in this test but they'll
       // be there anyhow so we should expect them.
       'source_name',
@@ -651,27 +646,15 @@ class AdyenResolveTest extends TestCase {
     $this->assertEmpty(array_diff_key($paymentsInitQueueMessage, array_flip($expectedArrayKeys)));
   }
 
-
   /**
-   * @param string $contributionId
+   * @param int $contributionTrackingId
+   * @param int $order_id
+   * @param string $gateway
    *
    * @return void
+   * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  protected function deleteContributionIDRecord($contributionId): void {
-    db_delete('contribution_tracking')
-      ->condition('id', $contributionId)
-      ->execute();
-  }
-
-  /**
-   * @param $contributionTrackingId
-   * @param $order_id
-   * @param $gateway
-   *
-   * @return void
-   * @throws \Exception
-   */
-  protected function createTestPaymentFraudRecordProcess($contributionTrackingId, $order_id, $gateway) {
+  protected function createTestPaymentFraudRecordProcess(int $contributionTrackingId, string $order_id, string $gateway): void {
     $message = [
       'order_id' => $order_id,
       'contribution_tracking_id' => $contributionTrackingId,
@@ -689,14 +672,14 @@ class AdyenResolveTest extends TestCase {
   }
 
   /**
-   * @param $contributionTrackingId
-   * @param $order_id
-   * @param $gateway
+   * @param int $contributionTrackingId
+   * @param int $order_id
+   * @param string $gateway
    *
    * @return void
-   * @throws \Exception
+   * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  protected function createTestPaymentFraudRecordReview($contributionTrackingId, $order_id, $gateway) {
+  protected function createTestPaymentFraudRecordReview(int $contributionTrackingId, string $order_id, string $gateway): void {
     $message = [
       'order_id' => $order_id,
       'contribution_tracking_id' => $contributionTrackingId,
@@ -714,14 +697,14 @@ class AdyenResolveTest extends TestCase {
   }
 
   /**
-   * @param $contributionTrackingId
-   * @param $order_id
-   * @param $gateway
+   * @param int $contributionTrackingId
+   * @param int $order_id
+   * @param string $gateway
    *
    * @return void
-   * @throws \Exception
+   * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  protected function createTestPaymentFraudRecordReject($contributionTrackingId, $order_id, $gateway) {
+  protected function createTestPaymentFraudRecordReject(int $contributionTrackingId, string $order_id, string $gateway): void {
     $message = [
       'order_id' => $order_id,
       'contribution_tracking_id' => $contributionTrackingId,
@@ -739,40 +722,42 @@ class AdyenResolveTest extends TestCase {
   }
 
   /**
-   * @param $contributionTrackingId
+   * @param int $contributionTrackingId
    * @param array $overrides
    *
    * @return array
-   * @throws \Exception
    */
-  protected function createTestContributionTrackingRecord($contributionTrackingId, $overrides = []): array {
-    $contribution_tracking_message = array_merge([
-      'id' => $contributionTrackingId,
-      'contribution_id' => NULL,
-      'country' => 'US',
-      'usd_amount' => 10,
-      'note' => 'test',
-      'form_amount' => 10,
-    ], $overrides);
-
-    db_insert('contribution_tracking')
-      ->fields($contribution_tracking_message)
-      ->execute();
-
-    return $contribution_tracking_message;
+  protected function createTestContributionTrackingRecord(int $contributionTrackingId, array $overrides = []): array {
+    try {
+      $contribution_tracking_message = array_merge([
+        'id' => $contributionTrackingId,
+        'contribution_id' => NULL,
+        'country' => 'US',
+        'usd_amount' => 10,
+        'note' => 'test',
+        'form_amount' => 10,
+      ], $overrides);
+      $record = ContributionTracking::save(FALSE)->setRecords([$contribution_tracking_message])->execute()->first();
+      $this->ids['ContributionTracking']['default'] = $record['id'];
+      return $contribution_tracking_message;
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('failed to create Contribution Tracking record');
+    }
   }
 
   /**
    * @param string $gateway
    * @param array $additionalKeys
+   *
    * @return array
    * @throws \SmashPig\Core\DataStores\DataStoreException
    * @throws \SmashPig\Core\SmashPigException
    */
-  protected function createTestPendingRecord($gateway = 'test', $additionalKeys = []): array {
+  protected function createTestPendingRecord(string $gateway = 'test', array $additionalKeys = []): array {
     $id = mt_rand();
-    $payment_method = ($gateway == 'paypal_ec') ? 'paypal' : 'cc';
-    $payment_submethod = ($gateway == 'paypal_ec') ? '' : 'visa';
+    $payment_method = ($gateway === 'paypal_ec') ? 'paypal' : 'cc';
+    $payment_submethod = ($gateway === 'paypal_ec') ? '' : 'visa';
 
     $message = array_merge([
       'contribution_tracking_id' => $id,
@@ -792,11 +777,46 @@ class AdyenResolveTest extends TestCase {
     ], $additionalKeys);
 
     // adyen needs a gateway txn id
-    if ($gateway == 'adyen') {
+    if ($gateway === 'adyen') {
       $message['gateway_txn_id'] = mt_rand();
     }
 
     PendingDatabase::get()->storeMessage($message);
     return $message;
   }
+
+  /**
+   * @param int $contribution_tracking_id
+   *
+   * @return void
+   */
+  public function createContributionWithTrackingRecord(int $contribution_tracking_id): void {
+    $this->createContactWithContribution();
+    $this->createTestContributionTrackingRecord(
+      $contribution_tracking_id,
+      ['contribution_id' => $this->ids['Contribution']['default']]
+    );
+  }
+
+  /**
+   * @param array $pending_message
+   *
+   * @return void
+   */
+  public function createContactWithContribution(array $pending_message = []): void {
+    $contact = $this->createTestEntity('Contact', [
+      'first_name' => $pending_message['first_name'] ?? 'Donald',
+      'last_name' => $pending_message['last_name'] ?? 'Duck',
+      'email_primary.email' => $pending_message['email'] ?? 'donald@example.com',
+    ]);
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $contact['id'],
+      'total_amount' => '2.34',
+      'currency' => 'USD',
+      'receive_date' => '2018-06-20',
+      'financial_type_id' => 1,
+      'contribution_status_id:name' => 'Completed',
+    ]);
+  }
+
 }

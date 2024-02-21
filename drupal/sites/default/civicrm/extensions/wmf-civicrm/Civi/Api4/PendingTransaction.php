@@ -1,4 +1,5 @@
 <?php
+
 namespace Civi\Api4;
 
 use Civi\Api4\Action\PendingTransaction\Resolve;
@@ -21,8 +22,6 @@ class PendingTransaction extends Generic\AbstractEntity {
    * @param bool $checkPermissions
    *
    * @return \Civi\Api4\Action\PendingTransaction\Resolve
-   *
-   * @throws \API_Exception
    */
   public static function resolve(bool $checkPermissions = FALSE): Resolve {
     return (new Resolve(__CLASS__, __FUNCTION__))
@@ -30,7 +29,7 @@ class PendingTransaction extends Generic\AbstractEntity {
   }
 
   public static function getFields() {
-    return new BasicGetFieldsAction(__CLASS__, __FUNCTION__, function () {
+    return new BasicGetFieldsAction(__CLASS__, __FUNCTION__, function() {
       return [];
     });
   }
@@ -38,4 +37,5 @@ class PendingTransaction extends Generic\AbstractEntity {
   public static function getResolvableMethods(): array {
     return self::$resolvableMethods;
   }
+
 }
