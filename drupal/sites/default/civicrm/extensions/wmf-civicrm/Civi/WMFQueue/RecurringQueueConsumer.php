@@ -1,4 +1,6 @@
-<?php namespace queue2civicrm\recurring;
+<?php
+
+namespace Civi\WMFQueue;
 
 use Civi;
 use Civi\Api4\Action\WMFContact\Save;
@@ -9,7 +11,6 @@ use Civi\WMFException\WMFException;
 use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
-use Civi\WMFQueue\TransactionalQueueConsumer;
 
 class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
@@ -110,15 +111,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       }
     }
 
-    if (isset($msg['frequency_unit'])) {
-      if (!in_array($msg['frequency_unit'], ['day', 'week', 'month', 'year'])) {
-        throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency unit: {$msg['frequency_unit']}");
-      }
-    }
-
     //Seeing as we're in the recurring module...
     $msg['recurring'] = TRUE;
     $message = new RecurDonationMessage($msg);
+    $message->validate();
     $msg = $message->normalize();
     return $msg;
   }

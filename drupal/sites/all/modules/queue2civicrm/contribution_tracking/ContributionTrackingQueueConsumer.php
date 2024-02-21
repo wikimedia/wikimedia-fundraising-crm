@@ -28,7 +28,6 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
       ['contribution_tracking_id' => $message['id']]
     );
 
-    $csData = $this->getContributionSourceData($message);
     $message = $this->truncateFields($message);
 
     // For the legacy table insert, pick out the fields we want and ignore
@@ -53,76 +52,32 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
       ]);
     }, ARRAY_FILTER_USE_KEY);
 
-    $hasContributionId = !empty($ctData['contribution_id']);
-    [$existingContributionID, $existingRow] = $this->getExisting($ctData['id']);
-    if ($existingContributionID
-      && $hasContributionId
-      && ($existingContributionID !== (int) $ctData['contribution_id'])
-    ) {
-      $this->rejectChangingContributionID($ctData, $existingContributionID);
-    }
-    else {
-      try {
-        ContributionTracking::save(FALSE)
-          ->addRecord(WMFHelper::getContributionTrackingParameters($message))
-          ->execute();
-
-        $this->persistContributionTrackingData($ctData, $csData, $existingRow);
-      }
-      catch (\CRM_Core_Exception $ex) {
-        // When setting a contribution ID, we can expect a few constraint violations
-        // from messages sent by the donations queue consumer after a contribution
-        // insert has been rolled back. Ignore those exceptions, rethrow the rest.
-        $isConstraintViolation = (
-          $ex->getErrorCode() === 'constraint violation' ||
-          $ex->getErrorCode() === DB_ERROR_CONSTRAINT
-        );
-        if (!$hasContributionId || !$isConstraintViolation) {
-          throw $ex;
-        }
+    if (!empty($ctData['contribution_id'])) {
+      $existingContributionID = $this->getExistingContributionID($ctData['id']);
+      if ($existingContributionID && $existingContributionID !== $ctData['contribution_id']) {
+        $this->rejectChangingContributionID($ctData, $existingContributionID);
+        $this->endStatistics();
+        return;
       }
     }
-    $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
-    $ContributionTrackingStatsCollector->recordContributionTrackingRecord();
-  }
-
-  /**
-   * Insert or update a contribution tracking entry.
-   *
-   * @param array $ctData data to be written to contribution_tracking tbl
-   * @param array|null $csData data to be written to contribution_source tbl
-   * @param array|null $existingRow
-   *
-   * @throws \Exception
-   */
-  protected function persistContributionTrackingData(array $ctData, ?array $csData, ?array $existingRow): void {
-    // @todo - move all the below to a hook to run from the ContributionTracking save.
-    if ($existingRow) {
-      db_update('contribution_tracking')
-        ->fields($ctData)
-        ->condition('id', $ctData['id'])
+    try {
+      ContributionTracking::save(FALSE)
+        ->addRecord(WMFHelper::getContributionTrackingParameters($message))
         ->execute();
-
-      // Only update contribution_source if message has a changed utm_source
-      if ($csData !== NULL && $existingRow['utm_source'] !== $ctData['utm_source']) {
-        db_update('contribution_source')
-          ->fields($csData)
-          ->condition('contribution_tracking_id', $ctData['id'])
-          ->execute();
+    }
+    catch (\CRM_Core_Exception $ex) {
+      // When setting a contribution ID, we can expect a few constraint violations
+      // from messages sent by the donations queue consumer after a contribution
+      // insert has been rolled back. Ignore those exceptions, rethrow the rest.
+      $isConstraintViolation = (
+        $ex->getErrorCode() === 'constraint violation' ||
+        $ex->getErrorCode() === DB_ERROR_CONSTRAINT
+      );
+      if (!empty($ctData['contribution_id']) || !$isConstraintViolation) {
+        throw $ex;
       }
     }
-    else {
-      db_insert('contribution_tracking')
-        ->fields($ctData)
-        ->execute();
-
-      if ($csData !== NULL) {
-        $csData['contribution_tracking_id'] = $ctData['id'];
-        db_insert('contribution_source')
-          ->fields($csData)
-          ->execute();
-      }
-    }
+    $this->endStatistics();
   }
 
   /**
@@ -139,32 +94,6 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
     \Civi::log('wmf')->info('contribution-tracking: ' . $message, $context);
   }
 
-  /**
-   * @param array $msg Original (untruncated) contribution-tracking queue message
-   *
-   * @return array|null data for contribution_source table, or null if no good data found
-   */
-  protected function getContributionSourceData(array $msg): ?array {
-    if (empty($msg['utm_source'])) {
-      return NULL;
-    }
-    $source = $msg['utm_source'];
-    // Sometimes it's just dots. Skip it instead of writing an empty row
-    if (empty(str_replace('.', '', $source))) {
-      return NULL;
-    }
-    // Usually just 3 segments, 4 when payment_submethod is specified, e.g. for iDEAL
-    $exploded = explode('.', $source);
-    if (count($exploded) > 4 || count($exploded) < 3) {
-      return NULL;
-    }
-    return [
-      'banner' => mb_substr($exploded[0], 0, 128),
-      'landing_page' => mb_substr($exploded[1], 0, 128),
-      'payment_method' => mb_substr($exploded[2], 0, 128),
-    ];
-  }
-
   protected function truncateFields(array $msg) {
     $fields = ContributionTracking::getFields(FALSE)->execute()->indexBy('name');
     $truncated = $msg;
@@ -177,26 +106,15 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
   }
 
   /**
-   * @param $id
+   * @param int $id Contribution Tracking ID.
    *
-   * @return array
-   *  - contributionID (int|null)
-   *  - existingRow (array)
+   * @return int|null
+   *   - contributionID
+   * @throws \CRM_Core_Exception
    */
-  protected function getExisting($id): array {
-    $checkSql = "
-SELECT id, contribution_id, utm_source FROM contribution_tracking
-WHERE id = :ct_id
-LIMIT 1";
-    $checkResult = db_query($checkSql, [
-      ':ct_id' => $id,
-    ]);
-
-    if ($checkResult->rowCount() > 0) {
-      $existingRow = $checkResult->fetchAssoc();
-      $existingContributionID = $existingRow['contribution_id'] ? (int) $existingRow['contribution_id'] : NULL;
-    }
-    return [$existingContributionID ?? NULL, $existingRow ?? NULL];
+  protected function getExistingContributionID(int $id): ?int {
+    $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $id)->execute()->first();
+    return !empty($result['contribution_id']) ? (int) $result['contribution_id'] : NULL;
   }
 
   /**
@@ -216,6 +134,14 @@ LIMIT 1";
 
     $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
     $ContributionTrackingStatsCollector->recordChangeOfContributionIdError();
+  }
+
+  /**
+   * @return void
+   */
+  public function endStatistics(): void {
+    $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
+    $ContributionTrackingStatsCollector->recordContributionTrackingRecord();
   }
 
 }
