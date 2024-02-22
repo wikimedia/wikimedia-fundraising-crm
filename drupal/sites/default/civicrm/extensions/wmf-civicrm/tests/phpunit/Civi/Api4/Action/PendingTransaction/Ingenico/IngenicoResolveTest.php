@@ -1,11 +1,13 @@
 <?php
 
-namespace Civi\Api4\Action\PendingTransaction;
+namespace Civi\Api4\Action\Ingenico;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionTracking;
 use Civi\Api4\Email;
 use Civi\Api4\PendingTransaction;
+use Civi\Test\EntityTrait;
 use PHPUnit\Framework\TestCase;
 use SmashPig\Core\DataStores\PaymentsFraudDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
@@ -25,6 +27,8 @@ use SmashPig\PaymentProviders\Responses\CancelPaymentResponse;
  * @group PendingTransactionResolver
  */
 class IngenicoResolveTest extends TestCase {
+
+  use EntityTrait;
 
   protected $hostedCheckoutProvider;
 
@@ -64,14 +68,26 @@ class IngenicoResolveTest extends TestCase {
    */
   public function tearDown(): void {
     TestingDatabase::clearStatics();
-    if ($this->contactId) {
+
+    TestingDatabase::clearStatics();
+    Contribution::delete(FALSE)
+      ->addWhere('contact_id.first_name', 'IN', ['Testy', 'Donald'])
+      ->execute();
+    Contact::delete(FALSE)
+      ->addWhere('first_name', 'IN', ['Testy', 'Donald'])
+      ->setUseTrash(FALSE)
+      ->execute();
+    if (!empty($this->ids['Contact'])) {
       Contribution::delete(FALSE)
-        ->addWhere('contact_id', '=', $this->contactId)
+        ->addWhere('contact_id', 'IN', $this->ids['Contact'])
         ->execute();
       Contact::delete(FALSE)
-        ->addWhere('id', '=', $this->contactId)
+        ->addWhere('id', '=', $this->ids['Contact'])
         ->setUseTrash(FALSE)
         ->execute();
+    }
+    if (!empty($this->ids['ContributionTracking'])) {
+      ContributionTracking::delete(FALSE)->addWhere('id', 'IN', $this->ids['ContributionTracking'])->execute();
     }
   }
 
@@ -175,20 +191,20 @@ class IngenicoResolveTest extends TestCase {
     $this->assertNotNull($donation_queue_message);
     SourceFields::removeFromMessage($donation_queue_message);
     $this->assertEquals([
-        'contribution_tracking_id',
-        'country',
-        'email',
-        'gateway',
-        'order_id',
-        'gateway_account',
-        'payment_method',
-        'payment_submethod',
-        'date',
-        'gross',
-        'currency',
-        'full_name',
-        'gateway_txn_id',
-      ], array_keys($donation_queue_message)
+      'contribution_tracking_id',
+      'country',
+      'email',
+      'gateway',
+      'order_id',
+      'gateway_account',
+      'payment_method',
+      'payment_submethod',
+      'date',
+      'gross',
+      'currency',
+      'full_name',
+      'gateway_txn_id',
+    ], array_keys($donation_queue_message)
     );
 
     // confirm donation queue message data matches original pending message data
@@ -252,8 +268,8 @@ class IngenicoResolveTest extends TestCase {
       ->setAlreadyResolved([
         '1' => [
           'email' => $pending_message['email'],
-          'status' => FinalStatus::COMPLETE
-        ]
+          'status' => FinalStatus::COMPLETE,
+        ],
       ])
       ->execute();
 
@@ -336,7 +352,7 @@ class IngenicoResolveTest extends TestCase {
       'recurring',
       'full_name',
       'gateway_txn_id',
-      'recurring_payment_token'
+      'recurring_payment_token',
     ], array_keys($donation_queue_message)
     );
 
@@ -395,9 +411,8 @@ class IngenicoResolveTest extends TestCase {
    */
   public function testContributionIdSetAndPendingPokeDuplicateInPendingDatabase(): void {
     $pending_message = $this->createTestPendingRecord();
-    $this->createTestContributionTrackingRecord(
+    $this->createContributionWithTrackingRecord(
       $pending_message['contribution_tracking_id'],
-      ['contribution_id' => mt_rand()]
     );
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
@@ -447,7 +462,6 @@ class IngenicoResolveTest extends TestCase {
     $pending_message = $this->createTestPendingRecord();
     $this->createTestContributionTrackingRecord(
       $pending_message['contribution_tracking_id'],
-      ['contribution_id' => mt_rand()]
     );
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
@@ -485,9 +499,8 @@ class IngenicoResolveTest extends TestCase {
    */
   public function testContributionIdSetAndCompletedDuplicateInPendingDatabase(): void {
     $pending_message = $this->createTestPendingRecord();
-    $this->createTestContributionTrackingRecord(
+    $this->createContributionWithTrackingRecord(
       $pending_message['contribution_tracking_id'],
-      ['contribution_id' => mt_rand()]
     );
     $hostedPaymentStatusResponse = new PaymentDetailResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
@@ -626,7 +639,7 @@ class IngenicoResolveTest extends TestCase {
         'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
         'order_id' => $pending_message['order_id'],
         'gateway_session_id' => $pending_message['gateway_session_id'],
-        'processor_contact_id' => null
+        'processor_contact_id' => NULL,
       ])
       ->willReturn($approvePaymentResponse);
 
@@ -705,7 +718,7 @@ class IngenicoResolveTest extends TestCase {
         'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
         'order_id' => $pending_message['order_id'],
         'gateway_session_id' => $pending_message['gateway_session_id'],
-        'processor_contact_id' => null
+        'processor_contact_id' => NULL,
       ])
       ->willReturn($approvePaymentResponse);
 
@@ -815,7 +828,7 @@ class IngenicoResolveTest extends TestCase {
         1 => [
           'email' => $pending_message['email'],
           'status' => FinalStatus::COMPLETE,
-        ]
+        ],
       ])
       ->execute();
 
@@ -928,36 +941,47 @@ class IngenicoResolveTest extends TestCase {
   }
 
   /**
-   * @param $contributionTrackingId
-   * @param array $overrides
+   * @param int $contribution_tracking_id
    *
-   * @return array
-   * @throws \Exception
+   * @return void
    */
-  protected function createTestContributionTrackingRecord($contributionTrackingId, $overrides = []): array {
-    $contribution_tracking_message = array_merge([
-      'id' => $contributionTrackingId,
-      'contribution_id' => NULL,
-      'country' => 'US',
-      'usd_amount' => 10,
-      'note' => 'test',
-      'form_amount' => 10,
-    ], $overrides);
+  public function createContributionWithTrackingRecord(int $contribution_tracking_id): void {
+    $this->createContactWithContribution();
+    $this->createTestContributionTrackingRecord(
+      $contribution_tracking_id,
+      ['contribution_id' => $this->ids['Contribution']['default']]
+    );
+  }
 
-    db_insert('contribution_tracking')
-      ->fields($contribution_tracking_message)
-      ->execute();
-
-    return $contribution_tracking_message;
+  /**
+   * @param array $pending_message
+   *
+   * @return void
+   */
+  public function createContactWithContribution(array $pending_message = []): void {
+    $contact = $this->createTestEntity('Contact', [
+      'first_name' => $pending_message['first_name'] ?? 'Donald',
+      'last_name' => $pending_message['last_name'] ?? 'Duck',
+      'email_primary.email' => $pending_message['email'] ?? 'donald@example.com',
+    ]);
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $contact['id'],
+      'total_amount' => '2.34',
+      'currency' => 'USD',
+      'receive_date' => '2018-06-20',
+      'financial_type_id' => 1,
+      'contribution_status_id:name' => 'Completed',
+    ]);
   }
 
   /**
    * @param array $additionalKeys
+   *
    * @return array
    * @throws \SmashPig\Core\DataStores\DataStoreException
    * @throws \SmashPig\Core\SmashPigException
    */
-  protected function createTestPendingRecord( $additionalKeys = [] ): array {
+  protected function createTestPendingRecord($additionalKeys = []): array {
     $id = mt_rand();
 
     $message = array_merge([
@@ -977,6 +1001,31 @@ class IngenicoResolveTest extends TestCase {
 
     PendingDatabase::get()->storeMessage($message);
     return $message;
+  }
+
+  /**
+   * @param int $contributionTrackingId
+   * @param array $overrides
+   *
+   * @return array
+   */
+  protected function createTestContributionTrackingRecord(int $contributionTrackingId, array $overrides = []): array {
+    try {
+      $contribution_tracking_message = array_merge([
+        'id' => $contributionTrackingId,
+        'contribution_id' => NULL,
+        'country' => 'US',
+        'usd_amount' => 10,
+        'note' => 'test',
+        'form_amount' => 10,
+      ], $overrides);
+      $record = ContributionTracking::save(FALSE)->setRecords([$contribution_tracking_message])->execute()->first();
+      $this->ids['ContributionTracking']['default'] = $record['id'];
+      return $contribution_tracking_message;
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('failed to create Contribution Tracking record');
+    }
   }
 
 }
