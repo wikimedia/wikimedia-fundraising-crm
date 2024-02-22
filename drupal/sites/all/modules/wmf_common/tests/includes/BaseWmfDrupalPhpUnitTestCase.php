@@ -347,19 +347,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    * @throws \CRM_Core_Exception
    */
   protected function cleanupContribution(int $id): void {
-    $trackingRows = db_query('SELECT id, contribution_id, utm_source FROM contribution_tracking
-WHERE contribution_id = :contribution_id', [
-      ':contribution_id' => $id,
-    ]);
-    if ($trackingRows->rowCount() > 0) {
-      $row = $trackingRows->fetchAssoc();
-      db_delete('contribution_source')
-        ->condition('contribution_tracking_id', $row['id'])
-        ->execute();
-      db_delete('contribution_tracking')
-        ->condition('contribution_id', $id)
-        ->execute();
-    }
     ContributionTracking::delete(FALSE)->addWhere('contribution_id', '=', $id)->execute();
     Contribution::delete(FALSE)->addWhere('id', '=', $id)->execute();
   }

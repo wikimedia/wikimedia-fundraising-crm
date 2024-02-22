@@ -1,12 +1,13 @@
 <?php
 
-use Civi\WMFException\WMFException;
+use Civi\Api4\ContributionTracking;
 
 /**
  * @group Ingenico
  * @group WmfAudit
  */
 class IngenicoAuditTest extends BaseAuditTestCase {
+
   protected $idForRefundTest;
 
   protected $contact_ids = [];
@@ -90,14 +91,15 @@ class IngenicoAuditTest extends BaseAuditTestCase {
       $contribution = $existing[0];
     }
     else {
-      db_merge('contribution_tracking')->key([
-        'id' => 48987654,
-      ])->fields([
-        'country' => 'IT',
-        'utm_source' => 'something',
-        'utm_medium' => 'another_thing',
-        'utm_campaign' => 'campaign_thing',
-        'language' => 'it',
+      ContributionTracking::save(FALSE)->setRecords([
+        [
+          'id' => 48987654,
+          'country' => 'IT',
+          'utm_source' => 'something',
+          'utm_medium' => 'another_thing',
+          'utm_campaign' => 'campaign_thing',
+          'language' => 'it',
+        ],
       ])->execute();
       $msg = [
         'contribution_tracking_id' => 48987654,
@@ -178,7 +180,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'city' => 'Denver',
               'state_province' => 'CO',
               'postal_code' => '87654',
-              'invoice_id' => '5551212.68168'
+              'invoice_id' => '5551212.68168',
             ],
           ],
         ],
@@ -211,7 +213,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'utm_source' => 'B1718_0429_nlNL_m_p1_lg_txt_cnt.no-LP.rtbt.rtbt_ideal',
               'street_address' => 'N0NE PROVIDED',
               'city' => 'NOCITY',
-              'invoice_id' => '57123456.84401'
+              'invoice_id' => '57123456.84401',
             ],
           ],
         ],
@@ -294,7 +296,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'city' => 'Cityville',
               'state_province' => 'OR',
               'postal_code' => '12345',
-              'invoice_id' => '55599991.635'
+              'invoice_id' => '55599991.635',
             ],
           ],
         ],
@@ -327,7 +329,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'utm_source' => 'B1718_0429_nlNL_m_p1_lg_txt_cnt.no-LP..cc',
               'street_address' => 'N0NE PROVIDED',
               'city' => 'NOCITY',
-              'invoice_id' => '57123456.84401'
+              'invoice_id' => '57123456.84401',
             ],
             [
               'contribution_tracking_id' => '5551212',
@@ -355,7 +357,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'postal_code' => '87654',
               'invoice_id' => '5551212.1',
               'user_ip' => '111.222.33.44',
-              'gateway_account' => '1234'
+              'gateway_account' => '1234',
             ],
           ],
         ],
@@ -367,7 +369,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles($path, $expectedMessages) {
-    variable_set('ingenico_audit_recon_files_dir',  $path);
+    variable_set('ingenico_audit_recon_files_dir', $path);
 
     $this->runAuditor();
 
@@ -377,7 +379,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
   public function testAlreadyRefundedTransactionIsSkipped() {
     variable_set('ingenico_audit_recon_files_dir', __DIR__ . '/data/Ingenico/refundNoGatewayIDinCivi/');
     $expectedMessages = [
-      'refund' => []
+      'refund' => [],
     ];
 
     $msg = [
