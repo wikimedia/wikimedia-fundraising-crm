@@ -69,7 +69,6 @@ class IngenicoResolveTest extends TestCase {
   public function tearDown(): void {
     TestingDatabase::clearStatics();
 
-    TestingDatabase::clearStatics();
     Contribution::delete(FALSE)
       ->addWhere('contact_id.first_name', 'IN', ['Testy', 'Donald'])
       ->execute();
@@ -447,9 +446,6 @@ class IngenicoResolveTest extends TestCase {
 
     // confirm status is now cancelled
     $this->assertEquals(FinalStatus::CANCELLED, $result[$pending_message['order_id']]['status']);
-
-    //clean up
-    $this->deleteContributionIDRecord($pending_message['contribution_tracking_id']);
   }
 
   /**
@@ -486,9 +482,6 @@ class IngenicoResolveTest extends TestCase {
 
     // confirm status is now failed
     $this->assertEquals(FinalStatus::FAILED, $result[$pending_message['order_id']]['status']);
-
-    //clean up
-    $this->deleteContributionIDRecord($pending_message['contribution_tracking_id']);
   }
 
   /**
@@ -525,9 +518,6 @@ class IngenicoResolveTest extends TestCase {
 
     // confirm status is now complete
     $this->assertEquals(FinalStatus::COMPLETE, $result[$pending_message['order_id']]['status']);
-
-    //clean up
-    $this->deleteContributionIDRecord($pending_message['contribution_tracking_id']);
   }
 
   /**
@@ -902,17 +892,6 @@ class IngenicoResolveTest extends TestCase {
     // Should not have a donation queue message
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
     $this->assertNull($donationMessage);
-  }
-
-  /**
-   * @param string $contributionId
-   *
-   * @return void
-   */
-  protected function deleteContributionIDRecord($contributionId): void {
-    db_delete('contribution_tracking')
-      ->condition('id', $contributionId)
-      ->execute();
   }
 
   /**
