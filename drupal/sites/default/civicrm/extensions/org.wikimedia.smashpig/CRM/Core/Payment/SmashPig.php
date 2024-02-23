@@ -15,6 +15,8 @@ require_once "CRM/SmashPig/ContextWrapper.php";
 
 class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
 
+  protected $_mode = NULL;
+
   /**
    * Constructor.
    *
