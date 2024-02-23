@@ -77,7 +77,7 @@ class Snooze extends AbstractAction {
         ],
       ],
       'Snooze contact'
-    ));
+    ), ['weight' => 100]);
 
     $result[] = [
       'queue_name' => $queueName,
