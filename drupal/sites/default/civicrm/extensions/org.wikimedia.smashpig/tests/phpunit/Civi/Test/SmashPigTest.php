@@ -926,9 +926,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
   public function testPaymentAutoRescueFailed() {
     $contributionRecur = $this->setupRecurring();
     $orderId = $contributionRecur['invoice_id'];
-    $response = (new CreatePaymentWithProcessorRetryResponse())
-      ->setRawResponse(
-      [
+    $msg = [
         'merchantReference' => $orderId,
         'pspReference' => 'testPspReference',
         'resultCode' => 'Refused',
@@ -936,12 +934,13 @@ class SmashPigTest extends SmashPigBaseTestClass {
         'refusalReason' => 'Issuer Suspected Fraud',
         'additionalData' => [
           'retry.rescueScheduled' => 'false',
-          'retry.rescueReference' => 'testRescueReference',
-        ],
-      ]
-    )->setSuccessful(FALSE)
+          'retry.rescueReference' => null,
+      ],
+    ];
+    $response = (new CreatePaymentWithProcessorRetryResponse())
+      ->setRawResponse($msg)->setSuccessful(FALSE)
       ->setProcessorRetryRefusalReason('Issuer Suspected Fraud')
-      ->setIsProcessorRetryScheduled(FALSE);
+      ->setIsProcessorRetryScheduled(filter_var( $msg['additionalData']['retry.rescueScheduled'], FILTER_VALIDATE_BOOLEAN ));
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn($response);
