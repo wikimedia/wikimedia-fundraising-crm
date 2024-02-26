@@ -14,6 +14,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
   protected $contribution_id;
 
   public function setUp(): void {
+    $this->markTestSkipped('Removed in Smashpig');
     parent::setUp();
     $dirs = [
       'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
