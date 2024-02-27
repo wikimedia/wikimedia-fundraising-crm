@@ -40,6 +40,7 @@ class RecurDonationMessage extends DonationMessage {
 
   /**
    * Validate the message
+   *
    * @return void
    * @throws \Civi\WMFException\WMFException
    */
@@ -48,6 +49,23 @@ class RecurDonationMessage extends DonationMessage {
       && !in_array($this->getFrequencyUnit(), ['day', 'week', 'month', 'year'])) {
       throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency unit: " . $this->getFrequencyUnit());
     }
+    if (!$this->getSubscriptionID() && !$this->getContributionRecurID() && !$this->getRecurringPaymentToken()) {
+      throw new WMFException(WMFException::INVALID_RECURRING, 'Recurring donation, but no subscription ID or recurring payment token found.');
+    }
+  }
+
+  /**
+   * @return string|int|null
+   */
+  public function getRecurringPaymentToken() {
+    return $this->message['recurring_payment_token'] ?? NULL;
+  }
+
+  /**
+   * @return int|null
+   */
+  public function getContributionRecurID(): ?int {
+    return $this->message['contribution_recur_id'] ?? NULL;
   }
 
   public function getFrequencyUnit() {

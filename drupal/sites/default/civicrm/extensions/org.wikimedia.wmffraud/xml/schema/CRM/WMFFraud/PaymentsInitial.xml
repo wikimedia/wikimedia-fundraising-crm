@@ -60,7 +60,7 @@
   <field>
     <name>gateway_txn_id</name>
     <type>varchar</type>
-    <required>true</required>
+    <required>false</required>
     <length>255</length>
     <comment>Gateway Transaction ID</comment>
     <html>
@@ -93,7 +93,7 @@
     <name>payment_method</name>
     <type>varchar</type>
     <length>16</length>
-    <required>true</required>
+    <required>false</required>
     <comment>Payment Method</comment>
     <html>
       <type>Text</type>
@@ -104,7 +104,7 @@
     <name>payment_submethod</name>
     <type>varchar</type>
     <length>32</length>
-    <required>true</required>
+    <required>false</required>
     <comment>Payment SubMethod</comment>
     <html>
       <type>Text</type>
@@ -144,7 +144,7 @@
   </field>
   <field>
     <name>server</name>
-    <type>decimal</type>
+    <type>varchar</type>
     <length>64</length>
     <required>true</required>
     <comment>Server</comment>

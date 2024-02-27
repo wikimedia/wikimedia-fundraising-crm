@@ -1,6 +1,7 @@
-<?php namespace queue2civicrm\banner_history;
+<?php
 
-use Civi\WMFQueue\QueueConsumer;
+namespace Civi\WMFQueue;
+
 use Civi\WMFException\WMFException;
 
 class BannerHistoryQueueConsumer extends QueueConsumer {
@@ -12,7 +13,7 @@ class BannerHistoryQueueConsumer extends QueueConsumer {
    *
    * @throws \Civi\WMFException\WMFException
    */
-  function processMessage($message) {
+  public function processMessage($message) {
     if (empty($message)) {
       throw new WMFException(
         WMFException::BANNER_HISTORY,

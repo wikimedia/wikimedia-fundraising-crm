@@ -3,7 +3,6 @@
 
 namespace Civi\Api4\Action\FailureEmail;
 
-use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\FailureEmail;
