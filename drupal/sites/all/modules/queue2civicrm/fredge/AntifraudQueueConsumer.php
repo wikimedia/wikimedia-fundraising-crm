@@ -61,7 +61,6 @@ class AntifraudQueueConsumer extends QueueConsumer {
    *
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\FredgeDataValidationException
-   * @throws \InvalidMergeQueryException
    */
   protected function insertAntifraudData(array $msg, string $logIdentifier) {
     if (empty($msg['contribution_tracking_id']) || empty($msg['order_id'])) {
@@ -103,10 +102,19 @@ class AntifraudQueueConsumer extends QueueConsumer {
       ];
       // validate the data. none of these fields would be converted, so no need
       // to store the output
-      fredge_prep_data($breakdown, 'payments_fraud_breakdown', $logIdentifier, TRUE);
-      PaymentsFraudBreakdown::create(FALSE)
-        ->setValues($breakdown)
-        ->execute();
+      try {
+        fredge_prep_data($breakdown, 'payments_fraud_breakdown', $logIdentifier);
+        PaymentsFraudBreakdown::create(FALSE)
+          ->setValues($breakdown)
+          ->execute();
+      }
+      catch (\CRM_Core_Exception $e) {
+        if ($e->getErrorCode() === 'mandatory_missing') {
+          $error = $logIdentifier . ": Expected field " . implode($e->getErrorData()['fields']) . " bound for table payments_initial not present! Dropping message on floor.";
+          throw new FredgeDataValidationException($error);
+        }
+        throw $e;
+      }
     }
   }
 

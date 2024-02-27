@@ -10,8 +10,6 @@ use Civi\WMFHelper\Database;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\PaymentProviders\PaymentProviderFactory;
-use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
@@ -200,12 +198,12 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   _get_import_timer()->startImportTimer($importTimerName);
 
   civicrm_initialize();
-
-  $msg = _verify_message_and_stage($msg);
+  $msg = _verify_message_and_stage($message);
+  $message->validate();
 
   $createRecurringToken = FALSE;
   // Associate with existing recurring records
-  if ($msg['recurring'] && !$msg['contribution_recur_id']) {
+  if ($message->isRecurring() && !$msg['contribution_recur_id']) {
     if (!empty($msg['recurring_payment_token'])) {
       $token_record = _get_recurring_payment_token($msg);
       if ($token_record) {
@@ -233,9 +231,6 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
         }
         check_recur_modification_and_queue($recur_record, $msg);
       }
-    }
-    else {
-      throw new WMFException(WMFException::INVALID_MESSAGE, 'Recurring donation, but no subscription ID or recurring payment token found.');
     }
   }
   if ($msg['contact_id'] && isset($msg['contact_hash'])) {
@@ -393,14 +388,14 @@ function _get_gateway_subscription(array $msg) {
 }
 
 /**
- * @param array $msg
+ * @param DonationMessage $msg
  *
  * @return array
  * @throws \Civi\WMFException\WMFException
  */
-function _verify_message_and_stage(array $msg): array {
+function _verify_message_and_stage(DonationMessage $message): array {
   _get_import_timer()->startImportTimer("verify_and_stage");
-  $msg = wmf_civicrm_verify_message_and_stage($msg);
+  $msg = wmf_civicrm_verify_message_and_stage($message);
   _get_import_timer()->endImportTimer("verify_and_stage");
   return $msg;
 }
@@ -691,8 +686,14 @@ function _wmf_civicrm_message_contribution_insert($msg) {
   return $contribution_result['values'][$contribution_result['id']];
 }
 
-function wmf_civicrm_verify_message_and_stage($msg) {
-  $message = DonationMessage::getWMFMessage($msg);
+/**
+ * @param \Civi\WMFQueueMessage\DonationMessage $message
+ *
+ * @return array
+ * @throws \CRM_Core_Exception
+ * @throws \Civi\WMFException\WMFException
+ */
+function wmf_civicrm_verify_message_and_stage(DonationMessage $message) {
   $msg = $message->normalize();
   $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
 
@@ -768,21 +769,6 @@ function wmf_civicrm_verify_message_and_stage($msg) {
   //Now check to make sure this isn't going to be a duplicate message for this gateway.
   wmf_civicrm_check_for_duplicates($msg);
   return $msg;
-}
-
-function wmf_civicrm_remove_recurring_token(array $message) {
-  wmf_common_create_smashpig_context('donation_queue_process_message', $message['gateway']);
-  $provider = PaymentProviderFactory::getProviderForMethod(
-    $message['payment_method']
-  );
-  // todo: need to add this deleteRecurringPaymentToken function for other payment gateways if we pre tokenized for recurring
-  if ($provider instanceof IDeleteRecurringPaymentTokenProvider) {
-    // handle remove recurring token for on-time donor with post monthly convert
-    \Civi::log('wmf')->notice('decline-recurring:' . $message['gateway'] . ' ' . $message['payment_method'] . ': decline recurring with order id ' . $message['order_id']);
-    $result = $provider->deleteRecurringPaymentToken($message);
-    $logMessage = "decline-recurring: For order id: {$message['order_id']}, delete recurring payment token with status " . ($result ? 'success' : 'failed');
-    \Civi::log('wmf')->info($logMessage);
-  }
 }
 
 /**
