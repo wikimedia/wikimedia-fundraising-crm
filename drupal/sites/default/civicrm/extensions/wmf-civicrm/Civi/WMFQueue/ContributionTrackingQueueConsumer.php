@@ -10,8 +10,7 @@ use Civi\WMFStatistic\ContributionTrackingStatsCollector;
 class ContributionTrackingQueueConsumer extends QueueConsumer {
 
   /**
-   * Normalise the queue message and insert into the contribution_tracking
-   * and contribution_source tables
+   * Normalise the queue message and insert into civicrm_contribution_tracking
    *
    * @param array $message contribution-tracking queue message
    *
@@ -30,32 +29,10 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
 
     $message = $this->truncateFields($message);
 
-    // For the legacy table insert, pick out the fields we want and ignore
-    // anything else (e.g. source_* fields). The data array to insert into
-    // the new table is built in WMFHelper::getContributionTrackingParameters
-    $ctData = array_filter($message, function($key) {
-      return in_array($key, [
-        'id',
-        'contribution_id',
-        'note',
-        'referrer',
-        'anonymous',
-        'form_amount',
-        'payments_form',
-        'utm_source',
-        'utm_medium',
-        'utm_campaign',
-        'utm_key',
-        'language',
-        'country',
-        'ts',
-      ]);
-    }, ARRAY_FILTER_USE_KEY);
-
-    if (!empty($ctData['contribution_id'])) {
-      $existingContributionID = $this->getExistingContributionID($ctData['id']);
-      if ($existingContributionID && $existingContributionID !== $ctData['contribution_id']) {
-        $this->rejectChangingContributionID($ctData, $existingContributionID);
+    if (!empty($message['contribution_id'])) {
+      $existingContributionID = $this->getExistingContributionID($message['id']);
+      if ($existingContributionID && $existingContributionID !== $message['contribution_id']) {
+        $this->rejectChangingContributionID($message, $existingContributionID);
         $this->endStatistics();
         return;
       }
@@ -73,7 +50,7 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
         $ex->getErrorCode() === 'constraint violation' ||
         $ex->getErrorCode() === DB_ERROR_CONSTRAINT
       );
-      if (!empty($ctData['contribution_id']) || !$isConstraintViolation) {
+      if (!empty($message['contribution_id']) || !$isConstraintViolation) {
         throw $ex;
       }
     }
@@ -118,17 +95,17 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
   }
 
   /**
-   * @param array $ctData
+   * @param array $message
    * @param $existingContributionID
    */
-  protected function rejectChangingContributionID($ctData, $existingContributionID): void {
+  protected function rejectChangingContributionID($message, $existingContributionID): void {
     $this->log(
       "Trying to update contribution tracking row {contribution_tracking_id} that " .
       "already has contribution_id {existing_contribution_id} " .
       "with new contribution id {contribution_id}.", [
-        'contribution_tracking_id' => $ctData['id'],
+        'contribution_tracking_id' => $message['id'],
         'existing_contribution_id' => $existingContributionID,
-        'contribution_id' => $ctData['contribution_id'],
+        'contribution_id' => $message['contribution_id'],
       ]
     );
 
