@@ -260,7 +260,9 @@ class DonationMessage {
    * @throws \Civi\WMFException\WMFException
    */
   private function normalizeContributionAmounts($msg) {
-    $msg = $this->formatCurrencyFields($msg);
+    $msg['gross'] = $this->getAmount();
+    $msg['net'] = $this->getNetAmount();
+    $msg['fee'] = $this->getFeeAmount();
 
     // If there is anything fishy about the amount...
     if ((empty($msg['gross']) or empty($msg['currency']))
@@ -274,19 +276,6 @@ class DonationMessage {
     if (empty($msg['original_currency']) && empty($msg['original_gross'])) {
       $msg['original_currency'] = $msg['currency'];
       $msg['original_gross'] = $msg['gross'];
-    }
-
-    $validFee = array_key_exists('fee', $msg) && is_numeric($msg['fee']);
-    $validNet = array_key_exists('net', $msg) && is_numeric($msg['net']);
-    if (!$validFee && !$validNet) {
-      $msg['fee'] = '0.00';
-      $msg['net'] = $msg['gross'];
-    }
-    elseif ($validNet && !$validFee) {
-      $msg['fee'] = $msg['gross'] - $msg['net'];
-    }
-    elseif ($validFee && !$validNet) {
-      $msg['net'] = $msg['gross'] - $msg['fee'];
     }
 
     $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
@@ -315,28 +304,40 @@ class DonationMessage {
   }
 
   /**
-   * Format currency fields in passed array.
-   *
-   * Currently we are just stripping out commas on the assumption they are a
-   * thousand separator and unhelpful.
-   *
-   * @param array $values
-   * @param array $currencyFields
-   *
-   * @return array
+   * Get the donation amount.
    */
-  private function formatCurrencyFields($values, $currencyFields = [
-    'gross',
-    'fee',
-    'net',
-  ]
-  ) {
-    foreach ($currencyFields as $field) {
-      if (isset($values[$field])) {
-        $values[$field] = str_replace(',', '', $values[$field]);
-      }
+  public function getAmount(): float {
+    return $this->cleanMoney($this->message['gross'] ?? 0);
+  }
+
+  /**
+   * Get the fee amount charged.
+   */
+  public function getFeeAmount(): float {
+    if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
+      return $this->cleanMoney($this->message['fee']);
     }
-    return $values;
+    if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
+      return $this->getAmount() - $this->getNetAmount();
+    }
+    return 0.00;
+  }
+
+  /**
+   * Get amount less any fee charged by the processor.
+   */
+  public function getNetAmount(): float {
+    if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
+      return $this->cleanMoney($this->message['net']);
+    }
+    if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
+      return $this->getAmount() - $this->getFeeAmount();
+    }
+    return $this->getAmount();
+  }
+
+  protected function cleanMoney($value): float {
+    return (float) str_replace(',', '', $value);
   }
 
   /**
