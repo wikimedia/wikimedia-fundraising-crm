@@ -4,5 +4,3 @@ core = 7.x
 package = queue2civicrm
 configure = admin/config/queue2civicrm/contribution_tracking_qc
 dependencies[] = queue2civicrm
-files[] = ContributionTrackingQueueConsumer.php
-files[] = ContributionTrackingStatsCollector.php
