@@ -100,10 +100,7 @@ class AntifraudQueueConsumer extends QueueConsumer {
         'filter_name' => $test,
         'risk_score' => $score,
       ];
-      // validate the data. none of these fields would be converted, so no need
-      // to store the output
       try {
-        fredge_prep_data($breakdown, 'payments_fraud_breakdown', $logIdentifier);
         PaymentsFraudBreakdown::create(FALSE)
           ->setValues($breakdown)
           ->execute();
