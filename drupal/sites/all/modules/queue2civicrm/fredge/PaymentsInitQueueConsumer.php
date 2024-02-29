@@ -27,11 +27,11 @@ class PaymentsInitQueueConsumer extends QueueConsumer {
     // The DonationQueueConsumer will delete pending rows for successful
     // contributions, and we don't want to be too hasty.
     // Leave details for payments still open for manual review.
-    // We make an exception for Adyen and Astropay because those
+    // We make an exception for Adyen and Dlocal because those
     // processors allow donors to reuse the merchant reference by
     // reloading the hosted page. Note that this means we can't
     // implement orphan rectifiers for those gateways.
-    $processorAllowsRepeat = in_array(['gateway'], ['astropay', 'adyen']);
+    $processorAllowsRepeat = in_array(['gateway'], ['dlocal', 'adyen']);
     if (
       PaymentsInitialDatabase::isMessageFailed($message) &&
       !$processorAllowsRepeat

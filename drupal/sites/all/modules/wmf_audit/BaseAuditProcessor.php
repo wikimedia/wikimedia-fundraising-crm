@@ -1183,6 +1183,7 @@ abstract class BaseAuditProcessor {
     switch ($record['payment_method']) {
       case 'cc':
         return 'c';
+      case 'ach':
       case 'bt':
       case 'rtbt':
       case 'obt':

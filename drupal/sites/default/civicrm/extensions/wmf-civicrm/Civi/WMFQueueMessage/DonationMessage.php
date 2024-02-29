@@ -30,6 +30,11 @@ class DonationMessage {
    */
   public function __construct(array $message) {
     $this->message = $message;
+    foreach ($this->message as $key => $input) {
+      if (is_string($input)) {
+        $this->message[$key] = trim($input);
+      }
+    }
   }
 
   /**
@@ -117,14 +122,6 @@ class DonationMessage {
    */
   public function normalize(): array {
     $msg = $this->message;
-    $trim_strings = function($input) {
-      if (!is_string($input)) {
-        return $input;
-      }
-      return trim($input);
-    };
-
-    $msg = array_map($trim_strings, $msg);
 
     // defaults: Keys that aren't actually required, but which will cause some
     // portion of the code to complain if they don't exist (even if they're
@@ -226,7 +223,23 @@ class DonationMessage {
     }
 
     // set the correct amount fields/data and do exchange rate conversions.
-    $msg = $this->normalizeContributionAmounts($msg);
+    // If there is anything fishy about the amount...
+    if (!$this->getOriginalAmount() || !$this->getOriginalCurrency()) {
+      // just... don't
+      \Civi::log('wmf')->info('wmf_civicrm: Not freaking out about non-monetary message.');
+      return $msg;
+    }
+    if ($this->isExchangeRateConversionRequired()) {
+      \Civi::log('wmf')->info('wmf_civicrm: Converting to settlement currency: {old} -> {new}',
+        ['old' => $msg['currency'], 'new' => $this->getSettlementCurrency()]);
+    }
+
+    $msg['original_gross'] = $this->getOriginalAmount();
+    $msg['original_currency'] = $this->getOriginalCurrency();;
+    $msg['currency'] = $this->getSettlementCurrency();
+    $msg['fee'] = $this->getFeeAmountRounded();
+    $msg['gross'] = $this->getAmountRounded();
+    $msg['net'] = $this->getNetAmountRounded();
 
     return $msg;
   }
@@ -241,81 +254,49 @@ class DonationMessage {
   }
 
   /**
-   * Normalize contribution amounts
+   * Get the currency remitted by the donor.
    *
-   * Do exchange rate conversions and set appropriate fields for CiviCRM
-   * based on information contained in the message.
-   *
-   * Upon exiting this function, the message is guaranteed to have these fields:
-   *    currency - settlement currency
-   *    original_currency - currency remitted by the donor
-   *    gross - settled total amount
-   *    original_gross - remitted amount in original currency
-   *    fee - processor fees, when available
-   *    net - gross less fees
-   *
-   * @param $msg
-   *
-   * @return array
-   * @throws \Civi\WMFException\WMFException
+   * @return string
    */
-  private function normalizeContributionAmounts($msg) {
-    $msg['gross'] = $this->getAmount();
-    $msg['net'] = $this->getNetAmount();
-    $msg['fee'] = $this->getFeeAmount();
-
-    // If there is anything fishy about the amount...
-    if ((empty($msg['gross']) or empty($msg['currency']))
-      and (empty($msg['original_gross']) or empty($msg['original_currency']))
-    ) {
-      // just... don't
-      \Civi::log('wmf')->info('wmf_civicrm: Not freaking out about non-monetary message.');
-      return $msg;
-    }
-
-    if (empty($msg['original_currency']) && empty($msg['original_gross'])) {
-      $msg['original_currency'] = $msg['currency'];
-      $msg['original_gross'] = $msg['gross'];
-    }
-
-    $settlement_currency = wmf_civicrm_get_settlement_currency($msg);
-    if ($msg['currency'] !== $settlement_currency) {
-      \Civi::log('wmf')->info('wmf_civicrm: Converting to settlement currency: {old} -> {new}',
-        ['old' => $msg['currency'], 'new' => $settlement_currency]);
-      try {
-        $settlement_convert = exchange_rate_convert($msg['original_currency'], 1, $msg['date']) / exchange_rate_convert($settlement_currency, 1, $msg['date']);
-      }
-      catch (ExchangeRatesException $ex) {
-        throw new WMFException(WMFException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$msg['original_currency']}': " . $ex->getMessage());
-      }
-
-      // Do exchange rate conversion
-      $msg['currency'] = $settlement_currency;
-      $msg['fee'] = $msg['fee'] * $settlement_convert;
-      $msg['gross'] = $msg['gross'] * $settlement_convert;
-      $msg['net'] = $msg['net'] * $settlement_convert;
-    }
-
-    $msg['fee'] = CurrencyRoundingHelper::round($msg['fee'], $msg['currency']);
-    $msg['gross'] = CurrencyRoundingHelper::round($msg['gross'], $msg['currency']);
-    $msg['net'] = CurrencyRoundingHelper::round($msg['net'], $msg['currency']);
-
-    return $msg;
+  public function getOriginalCurrency(): string {
+    return $this->message['original_currency'] ?? $this->message['currency'];
   }
 
   /**
-   * Get the donation amount.
+   * Get the original remitted amount in original currency.
+   *
+   * @return string
+   */
+  public function getOriginalAmount(): string {
+    return !empty($this->message['original_gross']) ? $this->cleanMoney($this->message['original_gross']) : $this->cleanMoney($this->message['gross'] ?? 0);
+  }
+
+  /**
+   * Get the currency the donation is settled in.
+   *
+   * Currency it is always converted to USD.
+   */
+  public function getSettlementCurrency(): string {
+    return 'USD';
+  }
+
+  /**
+   * Get the donation amount as we receive it in the settled currency.
    */
   public function getAmount(): float {
-    return $this->cleanMoney($this->message['gross'] ?? 0);
+    return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
+  }
+
+  public function getAmountRounded(): string {
+    return CurrencyRoundingHelper::round($this->getAmount(), $this->getSettlementCurrency());
   }
 
   /**
-   * Get the fee amount charged.
+   * Get the fee amount charged by the processing gateway, when available
    */
   public function getFeeAmount(): float {
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
-      return $this->cleanMoney($this->message['fee']);
+      return $this->cleanMoney($this->message['fee']) * $this->getConversionRate();
     }
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
       return $this->getAmount() - $this->getNetAmount();
@@ -323,17 +304,25 @@ class DonationMessage {
     return 0.00;
   }
 
+  public function getFeeAmountRounded(): string {
+    return CurrencyRoundingHelper::round($this->getFeeAmount(), $this->getSettlementCurrency());
+  }
+
   /**
    * Get amount less any fee charged by the processor.
    */
   public function getNetAmount(): float {
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
-      return $this->cleanMoney($this->message['net']);
+      return $this->cleanMoney($this->message['net']) * $this->getConversionRate();
     }
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
       return $this->getAmount() - $this->getFeeAmount();
     }
     return $this->getAmount();
+  }
+
+  public function getNetAmountRounded(): string {
+    return CurrencyRoundingHelper::round($this->getNetAmount(), $this->getSettlementCurrency());
   }
 
   protected function cleanMoney($value): float {
@@ -457,5 +446,29 @@ class DonationMessage {
    * @throws \Civi\WMFException\WMFException
    */
   public function validate(): void {}
+
+  /**
+   * Get the rate to convert the currency using.
+   *
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function getConversionRate(): float {
+    if (!$this->isExchangeRateConversionRequired()) {
+      return 1;
+    }
+    try {
+      return (float) exchange_rate_convert($this->getOriginalCurrency(), 1, $this->getTimestamp()) / exchange_rate_convert($this->getSettlementCurrency(), 1, $this->getTimestamp());
+    }
+    catch (ExchangeRatesException $e) {
+      throw new WMFException(WMFException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$this->getOriginalCurrency()}': " . $e->getMessage());
+    }
+  }
+
+  /**
+   * Are we dealing with a message that had a currency other than our settlement currency.
+   */
+  public function isExchangeRateConversionRequired(): bool {
+    return $this->message['currency'] !== $this->getSettlementCurrency();
+  }
 
 }
