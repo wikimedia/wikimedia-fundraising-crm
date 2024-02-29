@@ -30,6 +30,11 @@ class DonationMessage {
    */
   public function __construct(array $message) {
     $this->message = $message;
+    foreach ($this->message as $key => $input) {
+      if (is_string($input)) {
+        $this->message[$key] = trim($input);
+      }
+    }
   }
 
   /**
@@ -117,14 +122,6 @@ class DonationMessage {
    */
   public function normalize(): array {
     $msg = $this->message;
-    $trim_strings = function($input) {
-      if (!is_string($input)) {
-        return $input;
-      }
-      return trim($input);
-    };
-
-    $msg = array_map($trim_strings, $msg);
 
     // defaults: Keys that aren't actually required, but which will cause some
     // portion of the code to complain if they don't exist (even if they're
