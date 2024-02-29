@@ -1,13 +1,13 @@
 <?php
 
-use SmashPig\PaymentProviders\AstroPay\Audit\AstroPayAudit;
+use SmashPig\PaymentProviders\dlocal\Audit\DlocalAudit;
 
-class AstroPayAuditProcessor extends BaseAuditProcessor {
+class DlocalAuditProcessor extends BaseAuditProcessor {
 
-  protected $name = 'astropay';
+  protected $name = 'dlocal';
 
   protected function get_audit_parser() {
-    return new AstroPayAudit();
+    return new DlocalAudit();
   }
 
   protected function get_recon_file_sort_key($file) {
@@ -39,7 +39,7 @@ class AstroPayAuditProcessor extends BaseAuditProcessor {
   }
 
   /**
-   * Initial logs for AstroPay have no gateway transaction id, just our
+   * Initial logs for Dlocal have no gateway transaction id, just our
    * contribution tracking id.
    *
    * @param array $transaction possibly incomplete set of transaction data
@@ -54,9 +54,8 @@ class AstroPayAuditProcessor extends BaseAuditProcessor {
   }
 
   /**
-   * This is glue to get the astropay audit parser to look at
+   * This is glue to get the dlocal audit parser to look at
    * the dlocal named files from apiv2
-   * TODO: Make dlocal it's own audit
    *
    */
   protected function get_compressed_log_file_names($date) {
@@ -66,9 +65,8 @@ class AstroPayAuditProcessor extends BaseAuditProcessor {
   }
 
   /**
-   * This is glue to get the astropay audit parser to look at
+   * This is glue to get the dlocal audit parser to look at
    * the dlocal named files from apiv2
-   * TODO: Make dlocal it's own audit
    *
    */
   protected function get_uncompressed_log_file_names($date) {

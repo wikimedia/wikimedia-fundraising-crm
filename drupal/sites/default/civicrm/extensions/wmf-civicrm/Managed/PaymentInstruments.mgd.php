@@ -83,7 +83,7 @@ $instruments = [
   'Trilogy' => 'Trilogy',
   'Webmoney' => 'Webmoney',
 
-  // Latin payment methods for Astropay
+  // Latin payment methods for Dlocal
   'Credit Card: Alia' => 'Credit Card: Alia',
   'Credit Card: Codenza' => 'Credit Card: Codenza',
   'Credit Card: Elo' => 'Credit Card: Elo',

@@ -10,9 +10,11 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
       '' => '--any--',
       'ADYEN' => 'Adyen',
       'AMAZON' => 'Amazon',
-      'ASTROPAY' => 'AstroPay',
+      'ASTROPAY' => 'AstroPay', // depreciated
       'BITPAY' => 'Bitpay',
+      'BRAINTREE' => 'Braintree',
       'COINBASE' => 'Coinbase',
+      'DLOCAL' => 'Dlocal',
       'ENGAGE' => 'Engage',
       'GENERIC_IMPORT' => 'Generic Import',
       'GLOBALCOLLECT' => 'GlobalCollect (legacy integration)',

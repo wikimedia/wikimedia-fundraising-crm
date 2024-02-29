@@ -415,9 +415,9 @@ class DonationQueueTest extends BaseWmfDrupalPhpUnitTestCase {
         ),
       ],
       [
-        new AstroPayDonationMessage(),
+        new DlocalDonationMessage(),
         json_decode(
-          file_get_contents(__DIR__ . '/../data/pending_astropay.json'),
+          file_get_contents(__DIR__ . '/../data/pending_dlocal.json'),
           TRUE
         ),
       ],
