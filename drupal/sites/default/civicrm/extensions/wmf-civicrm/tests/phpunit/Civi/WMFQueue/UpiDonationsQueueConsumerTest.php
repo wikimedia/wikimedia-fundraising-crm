@@ -20,6 +20,7 @@ use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
+use Civi\Api4\WMFQueue;
 
 class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterface, TransactionalInterface {
 
@@ -123,7 +124,10 @@ class UpiDonationsQueueConsumerTest extends TestCase implements HeadlessInterfac
     );
     QueueWrapper::push('upi-donations', $message);
 
-    $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
+    $processed = WMFQueue::consume()
+      ->setQueueName('upi-donations')
+      ->setQueueConsumer('UpiDonations')
+      ->execute()->first()['dequeued'];
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
     $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
