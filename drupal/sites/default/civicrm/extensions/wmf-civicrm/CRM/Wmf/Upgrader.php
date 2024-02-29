@@ -1977,6 +1977,7 @@ AND q.id BETWEEN %1 AND %2";
       LIMIT 2000";
 
     $this->queueSQL($sql);
+    return TRUE;
   }
 
   /**
