@@ -414,6 +414,31 @@ function wmf_civicrm_civicrm_customPre(string $op, int $groupID, int $entityID, 
 }
 
 /**
+ * Implementation of hook_civicrm_post, used to update contribution_extra fields
+ * and wmf_donor rollup fields.
+ *
+ * @implements hook_civicrm_post
+ *
+ * @param string $op
+ * @param string $type
+ * @param int $id
+ * @param \CRM_Contribute_BAO_Contribution $entity
+ *
+ * @throws \Civi\WMFException\WMFException
+ * @throws \CRM_Core_Exception
+ */
+function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
+  switch ($type) {
+    case 'Contribution':
+      \Civi\WMFHelper\Contribution::updateWMFDonorLastDonation($op, $entity);
+      break;
+    case 'ContributionRecur':
+      \Civi\WMFHelper\ContributionRecur::cancelRecurAutoRescue($op, $id, $entity);
+      break;
+  }
+}
+
+/**
  * Add Email Preferences Center link to contact summary block list
  *
  * @param array $blocks
