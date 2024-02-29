@@ -1,11 +1,11 @@
 <?php
 
 /**
- * @group AstroPay
+ * @group Dlocal
  * @group WmfAudit
- * @group AstroPayAudit
+ * @group DlocalAudit
  */
-class AstroPayAuditTest extends BaseAuditTestCase {
+class DlocalAuditTest extends BaseAuditTestCase {
 
   static protected $loglines;
 
@@ -14,12 +14,11 @@ class AstroPayAuditTest extends BaseAuditTestCase {
   protected $contribution_id;
 
   public function setUp(): void {
-    $this->markTestSkipped('Removed in Smashpig');
     parent::setUp();
     $dirs = [
       'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
-      'astropay_audit_recon_completed_dir' => $this->getTempDir(),
-      'astropay_audit_working_log_dir' => $this->getTempDir(),
+      'dlocal_audit_recon_completed_dir' => $this->getTempDir(),
+      'dlocal_audit_working_log_dir' => $this->getTempDir(),
     ];
 
     foreach ($dirs as $var => $dir) {
@@ -29,20 +28,20 @@ class AstroPayAuditTest extends BaseAuditTestCase {
       variable_set($var, $dir);
     }
 
-    $old_working = glob($dirs['astropay_audit_working_log_dir'] . '*');
+    $old_working = glob($dirs['dlocal_audit_working_log_dir'] . '*');
     foreach ($old_working as $zap) {
       if (is_file($zap)) {
         unlink($zap);
       }
     }
 
-    variable_set('astropay_audit_log_search_past_days', 1);
+    variable_set('dlocal_audit_log_search_past_days', 1);
 
     // Fakedb doesn't fake the original txn for refunds, so add one here
     // First we need to set an exchange rate for a sickeningly specific time
     $this->setExchangeRates(1434488406, ['BRL' => 3.24]);
     $this->setExchangeRates(1434488406, ['USD' => 1]);
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('astropay', '5138333');
+    $existing = wmf_civicrm_get_contributions_from_gateway_id('dlocal', '5138333');
     if ($existing) {
       // Previous test run may have crashed before cleaning up
       $contribution = $existing[0];
@@ -53,7 +52,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
         'currency' => 'BRL',
         'date' => 1434488406,
         'email' => 'lurch@yahoo.com',
-        'gateway' => 'ASTROPAY',
+        'gateway' => 'DLOCAL',
         'gateway_txn_id' => '5138333',
         'gross' => 5.00,
         'payment_method' => 'cc',
@@ -79,7 +78,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
   public function auditTestProvider() {
     return [
       [
-        __DIR__ . '/data/AstroPay/donation/',
+        __DIR__ . '/data/Dlocal/donation/',
         [
           'donations' => [
             [
@@ -89,7 +88,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
               'date' => 1434477552,
               'email' => 'nonchalant@gmail.com',
               'first_name' => 'Test',
-              'gateway' => 'astropay',
+              'gateway' => 'dlocal',
               'gateway_account' => 'default',
               'gateway_txn_id' => '5258111',
               'gross' => 5,
@@ -114,7 +113,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
         [],
       ],
       [
-        __DIR__ . '/data/AstroPay/bt/',
+        __DIR__ . '/data/Dlocal/bt/',
         [
           'donations' => [
             [
@@ -124,7 +123,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
               'date' => 1434506370,
               'email' => 'jimmy@bankster.com',
               'first_name' => 'Jimmy',
-              'gateway' => 'astropay',
+              'gateway' => 'dlocal',
               'gateway_account' => 'default',
               'gateway_txn_id' => '5258777',
               'gross' => 4,
@@ -149,12 +148,12 @@ class AstroPayAuditTest extends BaseAuditTestCase {
         [],
       ],
       [
-        __DIR__ . '/data/AstroPay/refund/',
+        __DIR__ . '/data/Dlocal/refund/',
         [
           'refund' => [
             [
               'date' => 1434488406,
-              'gateway' => 'astropay',
+              'gateway' => 'dlocal',
               'gateway_parent_id' => '5138333',
               'gateway_refund_id' => '33333',
               'gross' => '5.00',
@@ -172,7 +171,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles($path, $expectedMessages, $expectedLoglines) {
-    variable_set('astropay_audit_recon_files_dir', $path);
+    variable_set('dlocal_audit_recon_files_dir', $path);
 
     $this->runAuditor();
 
@@ -187,7 +186,7 @@ class AstroPayAuditTest extends BaseAuditTestCase {
       'test' => TRUE,
       #'verbose' => 'true', # Uncomment to debug.
     ];
-    $audit = new AstroPayAuditProcessor($options);
+    $audit = new DlocalAuditProcessor($options);
     $audit->run();
   }
 

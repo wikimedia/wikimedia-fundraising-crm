@@ -8,7 +8,7 @@
     "fee": "0",
     "first_name": "Mickey",
     "gateway_account": "default",
-    "gateway": "astropay",
+    "gateway": "dlocal",
     "gross": "20.00",
     "language": "pt",
     "last_name": "Mouse",

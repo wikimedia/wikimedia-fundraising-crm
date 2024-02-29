@@ -178,15 +178,15 @@ class AmazonDonationMessage extends TransactionMessage {
 }
 
 /**
- * Class AstroPayDonationMessage Sparse message format pointing to donor
+ * Class DlocalDonationMessage Sparse message format pointing to donor
  *  details in the pending database
  */
-class AstroPayDonationMessage extends TransactionMessage {
+class DlocalDonationMessage extends TransactionMessage {
 	function __construct( $values = array() ) {
-		$this->loadDefaults( "sparse_donation_astropay" );
+		$this->loadDefaults( "sparse_donation_dlocal" );
 
 		parent::__construct( $values );
 		$this->data['completion_message_id'] =
-			'astropay-' . $this->get( 'order_id' );
+			'dlocal-' . $this->get( 'order_id' );
 	}
 }
