@@ -21,7 +21,11 @@ use Civi\Api4\WMFQueue;
 /**
  * @group WMFQueue
  */
-class UpiDonationsQueueConsumerTest extends BaseQueueTest {
+class UpiDonationsQueueConsumerTest extends BaseQueue {
+
+  protected string $queueConsumer = 'UpiDonations';
+
+  protected string $queueName = 'upi-donations';
 
   /**
    * @var PHPUnit_Framework_MockObject_MockObject
@@ -64,8 +68,7 @@ class UpiDonationsQueueConsumerTest extends BaseQueueTest {
     // to donation queue.
     // Initial message has info from pending table plus info from IPN
     $message = $this->loadMessage('upiInitialDonation');
-    QueueWrapper::push('upi-donations', $message);
-    $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
+    $processed = $this->processMessage($message)['dequeued'];
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
     $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
@@ -104,13 +107,7 @@ class UpiDonationsQueueConsumerTest extends BaseQueueTest {
 
     // Test that a donation IPN with a pre-existing token and recurring
     // record will set the donation message IDs correctly
-    $message = $this->loadMessage('upiSubsequentDonation');
-    QueueWrapper::push('upi-donations', $message);
-
-    $processed = WMFQueue::consume()
-      ->setQueueName('upi-donations')
-      ->setQueueConsumer('UpiDonations')
-      ->execute()->first()['dequeued'];
+    $processed = $this->processMessage($this->loadMessage('upiSubsequentDonation'))['dequeued'];
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
     $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
@@ -194,9 +191,8 @@ class UpiDonationsQueueConsumerTest extends BaseQueueTest {
 
     $this->cancelTestContributionRecurRecord($recur3['id']);
 
-    QueueWrapper::push('upi-donations', $message);
+    $processed = $this->processMessage($message)['dequeued'];
 
-    $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
     $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
@@ -239,9 +235,8 @@ class UpiDonationsQueueConsumerTest extends BaseQueueTest {
     $this->setContributionRecurRecordInProgress($recur2['id']);
 
     $message['gross'] = $messageAmount;
-    QueueWrapper::push('upi-donations', $message);
+    $processed = $this->processMessage($message)['dequeued'];
 
-    $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
     $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
@@ -298,9 +293,7 @@ class UpiDonationsQueueConsumerTest extends BaseQueueTest {
     $this->cancelTestContributionRecurRecord($recur2['id']);
     $this->cancelTestContributionRecurRecord($recur3['id']);
 
-    QueueWrapper::push('upi-donations', $message);
-
-    $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
+    $processed = $this->processMessage($message)['dequeued'];
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
 
     $donationMessage = QueueWrapper::getQueue('donations')->pop();
@@ -359,15 +352,10 @@ class UpiDonationsQueueConsumerTest extends BaseQueueTest {
 
     $recur = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $rejectionQueueMessage['gross']);
 
-    // push a test rejection queue message to the upi donations queue
-    QueueWrapper::push('upi-donations', $rejectionQueueMessage);
-
-    // process the message
-    $upiDonationsQueueConsumer = new UpiDonationsQueueConsumer('upi-donations');
-    $messageCount = $upiDonationsQueueConsumer->dequeueMessages();
+    $processed = $this->processMessage($rejectionQueueMessage)['dequeued'];
 
     // confirm that only one message is processed
-    $this->assertEquals(1, $messageCount, 'Did not process exactly 1 message');
+    $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
 
     // confirm that no donation messages are pushed to the queue for rejections
     $donationMessage = QueueWrapper::getQueue('donations')->pop();

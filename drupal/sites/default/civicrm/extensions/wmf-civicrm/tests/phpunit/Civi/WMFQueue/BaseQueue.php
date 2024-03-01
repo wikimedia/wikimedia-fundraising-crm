@@ -3,16 +3,22 @@
 namespace Civi\WMFQueue;
 
 use Civi\Api4\Contact;
+use Civi\Api4\WMFQueue;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
 use PHPUnit\Framework\TestCase;
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingGlobalConfiguration;
 
-class BaseQueueTest extends TestCase implements HeadlessInterface, TransactionalInterface {
+class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInterface {
 
   use Test\EntityTrait;
+
+  protected string $queueName = '';
+
+  protected string $queueConsumer = '';
 
   /**
    * @return \Civi\Test\CiviEnvBuilder
@@ -53,6 +59,23 @@ class BaseQueueTest extends TestCase implements HeadlessInterface, Transactional
   }
 
   /**
+   * Process the given queue.
+   *
+   * @param string $queueName
+   * @param string $queueConsumer
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function processQueue(string $queueName, string $queueConsumer): ?array {
+    return WMFQueue::consume()
+      ->setQueueName($queueName)
+      ->setQueueConsumer($queueConsumer)
+      ->execute()->first();
+  }
+
+  /**
    * Helper to make getting the contact ID even shorter.
    *
    * @param string $identifier
@@ -71,8 +94,13 @@ class BaseQueueTest extends TestCase implements HeadlessInterface, Transactional
   protected function getContact(string $identifier = 'danger_mouse'): ?array {
     try {
       return Contact::get(FALSE)->addWhere('id', '=', $this->ids['Contact'][$identifier])
-        ->addSelect('is_opt_out')
-        ->execute()->first();
+        ->addSelect(
+          'is_opt_out',
+          'do_not_email',
+          'Communication.do_not_solicit',
+          'Communication.opt_in',
+          'email_primary.email',
+        )->execute()->first();
     }
     catch (\CRM_Core_Exception $e) {
       $this->fail($e->getMessage());
@@ -94,6 +122,24 @@ class BaseQueueTest extends TestCase implements HeadlessInterface, Transactional
     catch (\JsonException $e) {
       $this->fail('could not load json:' . $name . ' ' . $e->getMessage());
     }
+  }
+
+  /**
+   * Process the given queue.
+   *
+   * @param array $message
+   * @param string|null $queueConsumer
+   * @param string|null $queueName
+   *
+   * @return array|null
+   * @noinspection PhpUnhandledExceptionInspection
+   * @noinspection PhpDocMissingThrowsInspection
+   */
+  public function processMessage(array $message, ?string $queueConsumer = NULL, ?string $queueName = NULL): ?array {
+    $queueName = $queueName ?: $this->queueName;
+    $queueConsumer = $queueConsumer ?: $this->queueConsumer;
+    QueueWrapper::push($queueName, $message);
+    return $this->processQueue($queueName, $queueConsumer);
   }
 
 }
