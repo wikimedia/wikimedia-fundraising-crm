@@ -35,7 +35,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    *
    * @var string
    */
-  protected $currentDate;
+  protected string $currentDate;
 
   /**
    * @return \Civi\Test\CiviEnvBuilder
@@ -54,12 +54,13 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       $this->currentDate = date('Y') . '-08-01';
     }
     else {
-      $this->currentDate = (date('Y') -1) . '-08-01';
+      $this->currentDate = (date('Y') - 1) . '-08-01';
     }
 
     \CRM_Utils_Time::setTime($this->currentDate);
     parent::setUp();
   }
+
   /**
    * @throws \CRM_Core_Exception
    */
@@ -102,7 +103,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $result = WMFDonor::get(FALSE)
       ->addWhere('id', '=', $this->ids['Contact']['donor'])
       ->execute()->first();
-    $this->assertEquals($this->getDate() .  ' 00:00:00', $result['last_donation_date']);
+    $this->assertEquals($this->getDate() . ' 00:00:00', $result['last_donation_date']);
 
     // Specify a field that requires an additional join.
     $result = WMFDonor::get(FALSE)
@@ -179,7 +180,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    *
    * @return array[]
    */
-  public function segmentDataProvider() : array {
+  public function segmentDataProvider(): array {
     return [
       'new_major_donor' => [
         'status' => 'new',
@@ -207,6 +208,9 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   public function createDonor($contributionParams = [], $identifier = 'donor'): void {
     if (empty($this->ids['Contact'][$identifier])) {
       $this->createContact($identifier);
+    }
+    if (!empty($contributionParams['receive_date']) && !str_starts_with($contributionParams['receive_date'], 2)) {
+      $contributionParams['receive_date'] = date('Y-m-d', strtotime($contributionParams['receive_date'], strtotime($this->currentDate)));
     }
     Contribution::create(FALSE)->setValues(array_merge([
       'receive_date' => $this->getDate(),
@@ -236,7 +240,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->setValues([
         'first_name' => 'Billy',
         'last_name' => 'Bill',
-        'contact_type' => 'Individual'
+        'contact_type' => 'Individual',
       ])
       ->execute()
       ->first()['id'];
