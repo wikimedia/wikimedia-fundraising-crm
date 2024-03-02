@@ -149,6 +149,9 @@ class FinanceInstrument {
         $payment_submethod = strtolower($msg['payment_submethod']);
       }
       switch ($payment_method) {
+        case 'ach':
+          $payment_instrument = 'ACH';
+          break;
         case 'apple':
           $payment_instrument = 'Apple Pay';
           if (!empty($payment_submethod)

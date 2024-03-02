@@ -254,6 +254,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    */
   public static function getPaymentMethod(array $params) {
     switch ($params['payment_instrument']) {
+      case 'ACH':
+        return 'ach';
       case 'iDeal':
         return 'rtbt';
       case 'Paypal';
