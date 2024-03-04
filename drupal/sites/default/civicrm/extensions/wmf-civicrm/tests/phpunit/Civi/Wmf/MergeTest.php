@@ -93,7 +93,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
     \Civi::settings()->set('deduper_resolver_preferred_contact_resolution', ['most_recent_contributor']);
     \Civi::settings()->set('deduper_resolver_preferred_contact_last_resort', 'most_recently_created_contact');
     \Civi::settings()->set('deduper_resolver_custom_groups_to_skip', ['wmf_donor']);
-
   }
 
   /**
@@ -130,6 +129,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID, 'skip_undelete' => TRUE]);
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID2, 'skip_undelete' => TRUE]);
     $this->doDuckHunt();
+    $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     parent::tearDown();
     $this->assertEquals($this->initialContactCount, $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']), 'contact cleanup incomplete');
   }
@@ -904,7 +904,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
     $this->assertEquals('First on the left after you cross the border', $address['street_address']);
     $this->assertEquals('MX', \CRM_Core_PseudoConstant::countryIsoCode($address['country_id']));
     $this->assertNotTrue(isset($address['city']));
-
   }
 
   /**

@@ -6,12 +6,11 @@ namespace Civi\WMFQueue;
  * @group WMFQueue
  * @group Unsubscribe
  */
-class UnsubscribeQueueTest extends BaseQueueTest {
+class UnsubscribeQueueTest extends BaseQueue {
 
-  /**
-   * @var UnsubscribeQueueConsumer
-   */
-  protected UnsubscribeQueueConsumer $consumer;
+  protected string $queueConsumer = 'Unsubscribe';
+
+  protected string $queueName = 'unsubscribe';
 
   /**
    * @var string
@@ -27,8 +26,6 @@ class UnsubscribeQueueTest extends BaseQueueTest {
   }
 
   /**
-   * @throws \Civi\WMFException\WMFException
-   * @throws \Civi\Core\Exception\DBQueryException
    */
   public function testContactIsUnsubscribed(): void {
     $subscribed = $this->getContact();
@@ -38,7 +35,7 @@ class UnsubscribeQueueTest extends BaseQueueTest {
     $this->assertEquals(0, $subscribed['is_opt_out']);
 
     //process the unsubscription message
-    $this->consumer->processMessage($this->getMessage());
+    $this->processMessage($this->getMessage());
 
     // Confirm we've unsubscribed our fixture contact.
     $unsubscribed = $this->getContact();
