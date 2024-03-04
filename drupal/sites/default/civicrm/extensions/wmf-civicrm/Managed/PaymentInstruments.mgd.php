@@ -8,6 +8,7 @@ $depositFinancialAccountID = FinancialAccount::get(FALSE)
 
 // These are indexed name => label
 $instruments = [
+  'ACH' => 'ACH',
   'Alipay' => 'Alipay',
   'Amazon' => 'Amazon',
   'Apple Pay' => 'Apple Pay',

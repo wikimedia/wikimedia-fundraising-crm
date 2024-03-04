@@ -29,6 +29,7 @@ class FinanceInstrument {
 
   public const BT_SUBMETHOD_LIST = [
     'ach' => 'ACH', // Worldwide, via DLocal
+    'bancomer' => 'Bancomer', //Mexico
     'banco_do_brasil' => 'Banco do Brasil', // Brazil
     'bbva' => 'BBVA', // Peru
     'bcp' => 'BCP', // Peru
@@ -112,7 +113,6 @@ class FinanceInstrument {
     'cash_abitab' => 'Abitab',
     'cash_boleto' => 'Boleto',
     'cash_banamex' => 'Banamex',
-    'cash_bancomer' => 'Bancomer',
     'cash_davivienda' => 'Davivienda',
     'cash_efecty' => 'Efecty',
     'cash_oxxo' => 'OXXO',
@@ -149,6 +149,9 @@ class FinanceInstrument {
         $payment_submethod = strtolower($msg['payment_submethod']);
       }
       switch ($payment_method) {
+        case 'ach':
+          $payment_instrument = 'ACH';
+          break;
         case 'apple':
           $payment_instrument = 'Apple Pay';
           if (!empty($payment_submethod)
