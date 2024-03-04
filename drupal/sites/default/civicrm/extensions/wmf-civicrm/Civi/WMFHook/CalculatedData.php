@@ -1276,7 +1276,7 @@ class CalculatedData extends TriggerHook {
           'range' => [
             [
               'from' => $this->getFinancialYearEndDateTime(-25),
-              'to' => $this->getFinancialYearEndDateTime(-5),
+              'to' => $this->getFinancialYearEndDateTime(-6),
               'total' => 0.01,
             ],
           ],
@@ -1350,6 +1350,22 @@ class CalculatedData extends TriggerHook {
             ['from' => $financialYears[-3]['start'], 'to' => $financialYears[-3]['end'], 'total' => 1000],
             ['from' => $financialYears[-4]['start'], 'to' => $financialYears[-4]['end'], 'total' => 1000],
             ['from' => $financialYears[-5]['start'], 'to' => $financialYears[-5]['end'], 'total' => 1000],
+          ],
+        ],
+      ],
+      300 => [
+        'label' => 'Mid-Value Prospect',
+        'value' => 300,
+        'static_description' => 'has given 250+ in one of the past 5 financial years, or in the current financial year so far',
+        'name' => 'mid_value',
+        'criteria' => [
+          'range' => [
+            ['from' => $financialYears['this']['start'], 'to' => $this->getFinancialYearEndDateTime(), 'total' => 250],
+            ['from' => $financialYears[-1]['start'], 'to' => $financialYears[-1]['end'], 'total' => 250],
+            ['from' => $financialYears[-2]['start'], 'to' => $financialYears[-2]['end'], 'total' => 250],
+            ['from' => $financialYears[-3]['start'], 'to' => $financialYears[-3]['end'], 'total' => 250],
+            ['from' => $financialYears[-4]['start'], 'to' => $financialYears[-4]['end'], 'total' => 250],
+            ['from' => $financialYears[-5]['start'], 'to' => $financialYears[-5]['end'], 'total' => 250],
           ],
         ],
       ],
