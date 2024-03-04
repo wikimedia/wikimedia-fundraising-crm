@@ -6,17 +6,13 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\PaymentToken;
-use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\Core\UtcDate;
 use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\Responses\RefundPaymentResponse;
 use SmashPig\Tests\TestingContext;
-use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
-use Civi\Api4\WMFQueue;
 
 /**
  * @group WMFQueue
@@ -31,9 +27,6 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
    * @var PHPUnit_Framework_MockObject_MockObject
    */
   private $hostedPaymentProvider;
-
-  /** @var \SmashPig\PaymentProviders\Responses\RefundPaymentResponse */
-  private $refundPaymentResponse;
 
   public function setUp(): void {
     parent::setUp();
@@ -53,6 +46,11 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
     $providerConfig->overrideObjectInstance('payment-provider/bt', $this->hostedPaymentProvider);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   */
   public function testInitialDonation(): void {
     // Test that an initial donation IPN correctly sets up contact,
     // token, and contribution_recur record, and passes message along
@@ -65,8 +63,7 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
     $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
     $this->assertArrayHasKey('contribution_recur_id', $donationMessage);
     $contributionRecurId = $donationMessage['contribution_recur_id'];
-    unset($donationMessage['contribution_recur_id']);
-    unset($donationMessage['contact_id']);
+    unset($donationMessage['contribution_recur_id'], $donationMessage['contact_id']);
     SourceFields::removeFromMessage($donationMessage);
     SourceFields::removeFromMessage($message);
     $this->assertEquals($message, $donationMessage, 'Did not push same message to donation queue');
@@ -90,6 +87,11 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
     $this->assertEquals($message['last_name'], $contactRecord['last_name']);
   }
 
+  /**
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \CRM_Core_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   */
   public function testSuccessfulInstallment(): void {
     // set up test records to link queue message with
     $contact = $this->createTestContactRecord();
@@ -106,6 +108,15 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
     $this->assertEquals($contact['id'], $donationMessage['contact_id']);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \Statistics\Exception\StatisticsCollectorException
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \Civi\WMFException\WMFException
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   * @throws \Exception
+   */
   public function testInstallmentAfterCancelledRecurRecord(): void {
     // set up test records to link queue message with
     $contact = $this->createTestContactRecord();
@@ -166,6 +177,11 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
     $this->assertNull($newContributionRecur, 'It should not create a new contribution recur row');
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   */
   public function testInstallmentAfterMultipleDifferentRecurRecord(): void {
     // set up test records to link queue message with
     $messageAmount = 1000;
@@ -208,6 +224,11 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
     $this->assertNull($newContributionRecur, 'It should not create a new contribution recur row');
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   */
   public function testInstallmentAfterMultipleSimilarRecurRecord(): void {
     // set up test records to link queue message with
     $messageAmount = 1000;
@@ -217,7 +238,7 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
     // record set to "In Progress" will set the donation message IDs correctly
     $message = $this->loadMessage('upiSubsequentDonation');
 
-    $next_day_date = wmf_common_date_unix_to_civicrm(strtotime('+1 day', $message['date']));
+    $next_day_date = date('Y-m-d H:i:s', (strtotime('+1 day', $message['date'])));
     $recur1 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount, $next_day_date);
     $recur2 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount, $next_day_date);
     $recur3 = $this->createTestContributionRecurRecord($contact['id'], $token['id'], $messageAmount, $next_day_date);
@@ -250,6 +271,14 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
     $this->assertNull($newContributionRecur, 'It should not create a new contribution recur row');
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \Statistics\Exception\StatisticsCollectorException
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \Civi\WMFException\WMFException
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   */
   public function testInstallmentAfterMultipleCancelledRecurRecord(): void {
     // set up test records to link queue message with
     $messageAmount = 1000;
@@ -333,6 +362,9 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
    * and then end up on the 'upi-donations' queue as it's the closet process
    * with access to the CiviCRM DB.
    *
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \CRM_Core_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
    */
   public function testRejectionMessage(): void {
     // set up test records to link queue message with
@@ -363,7 +395,6 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
   /**
    * @return array|null
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function createTestContactRecord(): ?array {
     return Contact::create(FALSE)
@@ -378,13 +409,16 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
 
   /**
    * @param int $id
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
    */
   protected function createTestPaymentToken(int $id): ?array {
     return PaymentToken::create(FALSE)
       ->setValues([
         'token' => '5dff49d4-462c-432e-a12a-9f4c997e34c3',
         'contact_id' => $id,
-        'payment_processor_id' => wmf_civicrm_get_payment_processor_id('dlocal'),
+        'payment_processor_id.name' => 'dlocal',
         'ip_address' => '192.168.1.1',
       ])
       ->execute()
@@ -394,6 +428,11 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
   /**
    * @param int $contactId
    * @param int $paymentTokenId
+   * @param int|null $amount
+   * @param string|null $next_sched_date
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
    */
   protected function createTestContributionRecurRecord(int $contactId, int $paymentTokenId, ?int $amount = 505, ?string $next_sched_date = NULL): ?array {
     $params = [
@@ -413,14 +452,16 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
   }
 
   /**
-   * @param int $contactId
-   * @param int $paymentTokenId
+   * @param int $id
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
    */
   protected function cancelTestContributionRecurRecord(int $id): ?array {
     $params = [];
     $params['id'] = $id;
     $params['contribution_status_id:name'] = 'Cancelled';
-    $params['cancel_date'] = UtcDate::getUtcDatabaseString();
+    $params['cancel_date'] = 'now';
     $params['cancel_reason'] = 'Subscription cancelled at gateway';
     return ContributionRecur::update(FALSE)
       ->setValues($params)
@@ -430,18 +471,15 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
   }
 
   /**
-   * @param int $contactId
-   * @param int $paymentTokenId
+   * @param int $id
+   *
+   * @throws \CRM_Core_Exception
    */
-  protected function setContributionRecurRecordInProgress(int $id): ?array {
-    $params = [];
-    $params['id'] = $id;
-    $params['contribution_status_id:name'] = 'In Progress';
-    return ContributionRecur::update(FALSE)
-      ->setValues($params)
+  protected function setContributionRecurRecordInProgress(int $id): void {
+    ContributionRecur::update(FALSE)
+      ->setValues(['contribution_status_id:name' => 'In Progress'])
       ->addWhere('id', '=', $id)
-      ->execute()
-      ->first();
+      ->execute();
   }
 
 }
