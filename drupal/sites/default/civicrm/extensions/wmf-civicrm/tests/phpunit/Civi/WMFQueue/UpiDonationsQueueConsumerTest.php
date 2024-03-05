@@ -53,15 +53,6 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
     $providerConfig->overrideObjectInstance('payment-provider/bt', $this->hostedPaymentProvider);
   }
 
-  public function tearDown(): void {
-    $this->deleteTestData();
-    // Reset some SmashPig-specific things
-    TestingDatabase::clearStatics();
-    // Nullify the context for next run.
-    Context::set();
-    parent::tearDown();
-  }
-
   public function testInitialDonation(): void {
     // Test that an initial donation IPN correctly sets up contact,
     // token, and contribution_recur record, and passes message along
@@ -367,35 +358,6 @@ class UpiDonationsQueueConsumerTest extends BaseQueue {
       ->addSelect('contribution_status_id:name', 'cancel_reason')->execute()->first();
     $this->assertEquals('Cancelled', $contributionRecur['contribution_status_id:name']);
     $this->assertEquals('Subscription cancelled at gateway', $contributionRecur['cancel_reason']);
-  }
-
-  /**
-   * @return void
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  private function deleteTestData(): void {
-    $testContact = Contact::get(FALSE)
-      ->addWhere('display_name', '=', 'Testy McTest')
-      ->setSelect(['id'])
-      ->execute()
-      ->first();
-
-    if ($testContact) {
-      ContributionRecur::delete(FALSE)
-        ->addWhere('contact_id', '=', $testContact['id'])
-        ->execute();
-      Contribution::delete(FALSE)
-        ->addWhere('contact_id', '=', $testContact['id'])
-        ->execute();
-      PaymentToken::delete(FALSE)
-        ->addWhere('contact_id', '=', $testContact['id'])
-        ->execute();
-      Contact::delete(FALSE)
-        ->addWhere('id', '=', $testContact['id'])
-        ->setUseTrash(FALSE)
-        ->execute();
-    }
   }
 
   /**

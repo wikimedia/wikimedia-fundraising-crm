@@ -3,13 +3,18 @@
 namespace Civi\WMFQueue;
 
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
+use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFQueue;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
 use PHPUnit\Framework\TestCase;
+use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Tests\TestingContext;
+use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 
 class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInterface {
@@ -40,6 +45,42 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
     // Initialize SmashPig with a fake context object
     $config = TestingGlobalConfiguration::create();
     TestingContext::init($config);
+  }
+
+  public function tearDown(): void {
+    $this->cleanupNamedContact(['last_name' => 'McTest']);
+    $this->cleanupNamedContact(['last_name' => 'Mouse']);
+    // Reset some SmashPig-specific things
+    TestingDatabase::clearStatics();
+    // Nullify the context for next run.
+    Context::set();
+    parent::tearDown();
+  }
+
+  protected function cleanupNamedContact(array $contact): void {
+    try {
+      $where = [];
+      foreach ($contact as $key => $value) {
+        $where[] = ['contact_id.' . $key, '=', $value];
+      }
+      ContributionRecur::delete(FALSE)
+        ->setWhere($where)
+        ->execute();
+      Contribution::delete(FALSE)
+        ->setWhere($where)
+        ->execute();
+      PaymentToken::delete(FALSE)
+        ->setWhere($where)
+        ->execute();
+      $where = [];
+      foreach ($contact as $key => $value) {
+        $where[] = [$key, '=', $value];
+      }
+      Contact::delete(FALSE)->setWhere($where)->execute();
+    }
+    catch (\CRM_Core_Exception $e) {
+      // do not fail in cleanup.
+    }
   }
 
   /**
@@ -73,6 +114,22 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
       ->setQueueName($queueName)
       ->setQueueConsumer($queueConsumer)
       ->execute()->first();
+  }
+
+  /**
+   * @param array $exchangeRates
+   * @param array $message
+   *
+   * @return void
+   */
+  public function setExchangeRatesForMessage(array $exchangeRates, array $message): void {
+    if ($exchangeRates) {
+      if (isset($exchangeRates['*']) && !isset($exchangeRates[$message['currency']])) {
+        $exchangeRates[$message['currency']] = $exchangeRates['*'];
+      }
+      unset($exchangeRates['*']);
+      $this->setExchangeRates($message['date'], $exchangeRates);
+    }
   }
 
   /**
@@ -125,6 +182,64 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
   }
 
   /**
+   * @param array $values
+   *   Any values to be used instead of the loaded ones.
+   * @param array $exchangeRates
+   *   Exchange rates to set, defaults to setting USD to 1
+   *   and the loaded currency to 3.
+   *
+   * @return array
+   */
+  public function getDonationMessage(array $values = [], array $exchangeRates = ['USD' => 1, 'PLN' => 0.5]): array {
+    $message = $this->loadMessage('donation');
+    $contributionTrackingID = mt_rand();
+    $message += [
+      'gateway_txn_id' => mt_rand(),
+      'order_id' => "$contributionTrackingID.1",
+      'contribution_tracking_id' => $contributionTrackingID,
+    ];
+    $this->setExchangeRatesForMessage($exchangeRates, $message);
+    return array_merge($message, $values);
+  }
+
+  /**
+   * @param array $values
+   * @param array $exchangeRates
+   *
+   * @return array
+   */
+  protected function getRecurringSignupMessage(array $values = [], array $exchangeRates = ['USD' => 1, '*' => 2]): array {
+    $message = $this->loadMessage('recurring_signup');
+    $contributionTrackingID = mt_rand();
+    $message += [
+      'gateway_txn_id' => mt_rand(),
+      'order_id' => "$contributionTrackingID.1",
+      'contribution_tracking_id' => $contributionTrackingID,
+      'subscr_id' => mt_rand(),
+    ];
+    $this->setExchangeRatesForMessage($exchangeRates, $message);
+    return array_merge($message, $values);
+  }
+
+  /**
+   * @param array $values
+   *
+   * @return array
+   */
+  public function getRefundMessage(array $values = []): array {
+    $donation_message = $this->getDonationMessage([], []);
+    return array_merge($this->loadMessage('refund'),
+      [
+        'gateway' => $donation_message['gateway'],
+        'gateway_parent_id' => $donation_message['gateway_txn_id'],
+        'gateway_refund_id' => mt_rand(),
+        'gross' => $donation_message['gross'],
+        'gross_currency' => $donation_message['original_currency'],
+      ], $values
+    );
+  }
+
+  /**
    * Process the given queue.
    *
    * @param array $message
@@ -159,6 +274,55 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
     /* @var = \Civi\WMFQueue\QueueConsumer */
     $consumer = new $queueConsumerClass('test');
     $consumer->processMessage($message);
+  }
+
+  /**
+   * Temporarily set foreign exchange rates to known values
+   *
+   * TODO: Should reset after each test.
+   */
+  protected function setExchangeRates(int $timestamp, array $rates): void {
+    foreach ($rates as $currency => $rate) {
+      exchange_rate_cache_set($currency, $timestamp, $rate);
+    }
+  }
+
+  /**
+   * @param array $donation_message
+   *
+   * @return array
+   */
+  public function getContributionForMessage(array $donation_message): array {
+    try {
+      return Contribution::get(FALSE)
+        ->addSelect('*', 'contribution_status_id:name', 'contribution_recur_id.*')
+        ->addWhere('contribution_extra.gateway', '=', $donation_message['gateway'])
+        ->addWhere('contribution_extra.gateway_txn_id', '=', $donation_message['gateway_txn_id'])
+        ->execute()->single();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('contribution lookup failed: ' . $e->getMessage());
+    }
+  }
+
+  /**
+   * @param array $donation_message
+   *
+   * @return void
+   */
+  public function assertOneContributionExistsForMessage(array $donation_message): void {
+    $this->getContributionForMessage($donation_message);
+  }
+
+  /**
+   * @param array $message
+   * @param string $status
+   *
+   * @return void
+   */
+  public function assertMessageContributionStatus(array $message, string $status): void {
+    $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals($status, $contribution['contribution_status_id:name']);
   }
 
 }
