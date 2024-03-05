@@ -1,6 +1,6 @@
 <?php
 
-namespace wmf_communication;
+namespace Civi\WMFMailTracking;
 
 /**
  * Tests for CiviMail helper classes
@@ -10,7 +10,11 @@ namespace wmf_communication;
  */
 class CiviMailTest extends CiviMailTestBase {
 
-  public function testAddQueueRecord() {
+  /**
+   * @throws \Civi\WMFMailTracking\CiviQueueInsertException
+   * @throws \Civi\WMFMailTracking\CiviMailingMissingException
+   */
+  public function testAddQueueRecord(): void {
     $storedMailing = $this->mailStore->getMailing('thank_you');
     $queueRecord = $this->mailStore->addQueueRecord(
       $storedMailing,
@@ -18,13 +22,12 @@ class CiviMailTest extends CiviMailTestBase {
       $this->contactID
     );
     $this->assertInstanceOf(
-      'wmf_communication\ICiviMailQueueRecord',
+      CiviMailQueueRecord::class,
       $queueRecord,
-      'addQueueRecord should return an ICiviMailQueueRecord'
+      'addQueueRecord should return an CiviMailQueueRecord'
     );
-    $this->assertTrue(
-      is_numeric($queueRecord->getQueueID()),
-      'CiviMailQueueRecord should have a numeric ID'
+    $this->assertIsNumeric(
+      $queueRecord->getQueueID(), 'CiviMailQueueRecord should have a numeric ID'
     );
     $this->assertEquals(
       $this->contactID,
