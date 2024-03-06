@@ -582,12 +582,13 @@ function find_damaged_queue(\CRM_Queue_Queue $original): \CRM_Queue_Queue {
 }
 
 function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$outcome, ?\Throwable $exception) {
+  $message = "Queue item with id={$item->id} failed with exception=\"{$exception->getMessage()}\"";
+  Civi::log('wmf-queue-' . $queue->getName())->error($message);
+
   if ($outcome === 'abort' && !empty($item)) {
-    Civi::log('wmf-queue-' . $queue->getName())->debug(
-      'Queue item with id={id} failed with exception="{exception}", moving to the dedicated damaged queue', [
-      'id' => $item->id,
-      'exception' => $exception->getMessage(),
-    ]);
+    $mailableDetails = $message . ", aborted and moved to the dedicated damaged queue";
+    wmf_common_failmail('WMFQueues', '', $exception, $mailableDetails);
+
     \CRM_Core_DAO::executeQuery('UPDATE civicrm_queue_item SET queue_name = %1 WHERE id = %2', [
       1 => [find_damaged_queue($queue)->getName(), 'String'],
       2 => [$item->id, 'Positive'],
