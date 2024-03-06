@@ -582,8 +582,8 @@ function find_damaged_queue(\CRM_Queue_Queue $original): \CRM_Queue_Queue {
 }
 
 function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$outcome, ?\Throwable $exception) {
-  $message = "Queue item with id={$item->id} failed with exception=\"{$exception->getMessage()}\"";
-  Civi::log('wmf-queue-' . $queue->getName())->error($message);
+  $message = "Queue item from {$queue->getName()} with id={$item->id} failed with exception=\"{$exception->getMessage()}\"";
+  Civi::log('wmf')->error($message);
 
   if ($outcome === 'abort' && !empty($item)) {
     $mailableDetails = $message . ", aborted and moved to the dedicated damaged queue";
