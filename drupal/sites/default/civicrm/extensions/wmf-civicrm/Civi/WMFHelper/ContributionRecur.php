@@ -72,7 +72,7 @@ class ContributionRecur {
           'cancel_date' => NULL,
           'cancel_reason' => '',
           'end_date' => NULL,
-          'contribution_status_id' => 'In Progress',
+          'contribution_status_id:name' => 'In Progress',
         ])->execute();
     }
   }

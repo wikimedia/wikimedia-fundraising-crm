@@ -976,6 +976,21 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
+   * Test reactivating recurrings.
+   */
+  public function testPaymentAfterCancelContributions(): void {
+    $subscr_id = mt_rand();
+    $values = $this->processRecurringSignup($subscr_id);
+    $this->importMessage(new RecurringCancelMessage($values));
+    $this->importMessage(new RecurringPaymentMessage($values));
+
+    $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
+    $this->assertNotEmpty($recur_record['payment_processor_id']);
+    $this->assertTrue(empty($recur_record['failure_retry_date']));
+    $this->assertEquals('In Progress', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
+  }
+
+  /**
    * Process the original recurring sign up message.
    *
    * @param string $subscr_id
