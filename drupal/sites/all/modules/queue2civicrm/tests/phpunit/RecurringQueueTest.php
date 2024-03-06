@@ -980,10 +980,16 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testPaymentAfterCancelContributions(): void {
     $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup($subscr_id);
-    $this->importMessage(new RecurringCancelMessage($values));
-    $this->importMessage(new RecurringPaymentMessage($values));
 
+    // Create recur record
+    $values = $this->processRecurringSignup($subscr_id);
+    // Cancel recur record
+    $this->importMessage(new RecurringCancelMessage($values));
+    // Verify record is cancelled
+    $cancelled_recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
+    $this->assertEquals('Cancelled', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $cancelled_recur_record['contribution_status_id']));
+    // Import new Subscription payment on cancelled recur record
+    $this->importMessage(new RecurringPaymentMessage($values));
     $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
     $this->assertNotEmpty($recur_record['payment_processor_id']);
     $this->assertTrue(empty($recur_record['failure_retry_date']));
