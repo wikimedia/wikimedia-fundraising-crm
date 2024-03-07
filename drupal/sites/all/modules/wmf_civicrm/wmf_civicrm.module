@@ -1646,34 +1646,6 @@ function wmf_civicrm_flush_cached_options() {
 }
 
 /**
- * @param string $language
- *
- * @throws \API_Exception
- */
-function wmf_civicrm_insert_failure_message_translation($language) {
-  $msgHtml = file_get_contents(__DIR__ . '/templates/recurring_failed_message.en.' . $language . '.html.txt');
-  $subject = file_get_contents(__DIR__ . '/templates/recurring_failed_message.en.' . $language . '.subject.txt');
-  $msgText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.en.' . $language . '.text.txt');
-  // It actually stores what we pass it - but we want it to store the same value as on the contact.
-  $languageName = \Civi\Api4\OptionValue::get()
-    ->setCheckPermissions(FALSE)
-    ->addWhere('value', '=', $language)
-    ->addSelect('name')->execute()->first()['name'];
-  // This should be done by Civi but I hit an error on inserting the Japanese (although
-  // this might not be needed as I added table alter statements too.
-  CRM_Core_DAO::executeQuery('SET NAMES utf8mb4');
-
-  \Civi\Api4\MessageTemplate::update()->setCheckPermissions(FALSE)
-    ->setValues([
-      'msg_html' => $msgHtml,
-      'subject' => $subject,
-      'msg_text' => $msgText,
-    ])
-    ->addWhere('workflow_name', '=', 'recurring_failed_message')
-    ->setLanguage($languageName)->execute();
-}
-
-/**
  * Queue wrapper for api function.
  *
  * I'm hoping to get this or a similar fix upstreamed - so this

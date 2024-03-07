@@ -4,7 +4,7 @@ $htmlText = file_get_contents($directory . 'thank_you.en.html.txt');
 $subject = file_get_contents($directory . 'thank_you.en.subject.txt');
 
 /**
- * Add recurring_failed_message template.
+ * Add thank_you template.
  */
 return [
   [
