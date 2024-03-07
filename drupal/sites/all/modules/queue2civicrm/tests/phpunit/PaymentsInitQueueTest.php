@@ -1,7 +1,7 @@
 <?php
 
 use Civi\Api4\PaymentsInitial;
-use queue2civicrm\fredge\PaymentsInitQueueConsumer;
+use Civi\WMFQueue\PaymentsInitQueueConsumer;
 use Civi\WMFException\FredgeDataValidationException;
 
 /**

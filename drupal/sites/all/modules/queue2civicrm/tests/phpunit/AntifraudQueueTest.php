@@ -2,7 +2,7 @@
 
 use Civi\Api4\PaymentsFraud;
 use Civi\Api4\PaymentsFraudBreakdown;
-use queue2civicrm\fredge\AntifraudQueueConsumer;
+use Civi\WMFQueue\AntifraudQueueConsumer;
 use Civi\WMFException\FredgeDataValidationException;
 
 /**

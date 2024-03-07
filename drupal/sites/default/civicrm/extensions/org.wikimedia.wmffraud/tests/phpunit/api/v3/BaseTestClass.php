@@ -4,8 +4,8 @@ use CRM_WMFFraud_ExtensionUtil as E;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
-use queue2civicrm\contribution_tracking\ContributionTrackingQueueConsumer;
-use queue2civicrm\fredge\AntifraudQueueConsumer;
+use Civi\WMFQueue\ContributionTrackingQueueConsumer;
+use Civi\WMFQueue\AntifraudQueueConsumer;
 
 /**
  * FIXME - Add test description.
