@@ -2,8 +2,9 @@
 
 use Civi\Api4\PaymentsFraud;
 use Civi\Api4\PaymentsFraudBreakdown;
-use \Civi\WMFException\FredgeDataValidationException;
+use Civi\WMFException\FredgeDataValidationException;
 use Civi\WMFQueue\QueueConsumer;
+use Civi\WMFQueueMessage\FredgeMessage;
 
 class AntifraudQueueConsumer extends QueueConsumer {
 
@@ -72,8 +73,8 @@ class AntifraudQueueConsumer extends QueueConsumer {
       ->addWhere('contribution_tracking_id', '=', $msg['contribution_tracking_id'])
       ->addWhere('order_id', '=', $msg['order_id'])
       ->execute()->first();
-    $data = fredge_prep_data($msg, 'payments_fraud', $logIdentifier, FALSE);
-
+    $message = new FredgeMessage($msg, 'PaymentsFraud', $logIdentifier);
+    $data = $message->normalize();
     if ($result) {
       $data['id'] = $result['id'];
     }

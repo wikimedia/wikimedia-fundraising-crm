@@ -2,6 +2,7 @@
 
 use Civi\Api4\PaymentsInitial;
 use Civi\WMFException\FredgeDataValidationException;
+use Civi\WMFQueueMessage\FredgeMessage;
 use SmashPig\Core\DataStores\PaymentsInitialDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use Civi\WMFQueue\QueueConsumer;
@@ -14,7 +15,9 @@ class PaymentsInitQueueConsumer extends QueueConsumer {
    *
    * @param array $message
    *
-   * @throws \Civi\WMFException\WMFException|\SmashPig\Core\DataStores\DataStoreException
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\FredgeDataValidationException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
    */
   public function processMessage(array $message): void {
     $logId = "{$message['gateway']}-{$message['order_id']}";
@@ -22,6 +25,10 @@ class PaymentsInitQueueConsumer extends QueueConsumer {
       'fredge: Beginning processing of payments-init message for {log_id}',
       ['log_id' => $logId]
     );
+    if (empty($message)) {
+      $error = "$logId: Trying to insert nothing into payments_initial. Dropping message on floor.";
+      throw new FredgeDataValidationException($error);
+    }
 
     // Delete corresponding pending rows if this contribution failed.
     // The DonationQueueConsumer will delete pending rows for successful
@@ -47,7 +54,8 @@ class PaymentsInitQueueConsumer extends QueueConsumer {
       ->addWhere('order_id', '=', $message['order_id'])
       ->execute()->first();
 
-    $data = fredge_prep_data($message, 'payments_initial', $logId, FALSE);
+    $fraudMessage = new FredgeMessage($message, 'PaymentsInitial', $logId);
+    $data = $fraudMessage->normalize();
 
     if ($result) {
       $data['id'] = $result['id'];
