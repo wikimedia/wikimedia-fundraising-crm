@@ -699,53 +699,6 @@ function wmf_civicrm_verify_message_and_stage(DonationMessage $message) {
     throw new WMFException(WMFException::CIVI_REQ_FIELD, $err);
   }
 
-  $max_lengths = [
-    'check_number' => 255,
-    'city' => 64,
-    'email' => 254,
-    'first_name' => 64,
-    'last_name' => 64,
-    'middle_name' => 64,
-    'organization_name' => 128,
-    'postal_code' => 64,
-    'street_address' => 96,
-    'supplemental_address_1' => 96,
-    'supplemental_address_2' => 96,
-  ];
-  // Truncate address and name if exceed the max_lengths that civi allowed
-  // since they should not be a blocker to import contribution msg
-  $truncate_tags = [
-    'postal_code' => 'AddressTruncated',
-    'street_address' => 'AddressTruncated',
-    'supplemental_address_1' => 'AddressTruncated',
-    'supplemental_address_2' => 'AddressTruncated',
-    'city' => 'AddressTruncated',
-    'first_name' => 'NameTruncated',
-    'last_name' => 'NameTruncated',
-    'middle_name' => 'NameTruncated',
-    'organization_name' => 'NameTruncated',
-  ];
-  foreach ($max_lengths as $key => $limit) {
-    if (mb_strlen($msg[$key]) > $limit) {
-      if (array_key_exists($key, $truncate_tags)) {
-        \Civi::log('wmf')->warning(
-          'wmf_civicrm: Truncating key {key} to {length} chars. Original: "{original_value}". Applying tag {tag}',
-          [
-            'key' => $key,
-            'length' => $limit,
-            'original_value' => $msg[$key],
-            'tag' => $truncate_tags[$key],
-          ]
-        );
-        $msg[$key] = mb_substr($msg[$key], 0, $limit);
-        $msg['contact_tags'][] = $truncate_tags[$key];
-      }
-      else {
-        throw new WMFException(WMFException::INVALID_MESSAGE, "Field '{$key}' is too long.");
-      }
-    }
-  }
-
   //Now check to make sure this isn't going to be a duplicate message for this gateway.
   wmf_civicrm_check_for_duplicates($msg);
   return $msg;
