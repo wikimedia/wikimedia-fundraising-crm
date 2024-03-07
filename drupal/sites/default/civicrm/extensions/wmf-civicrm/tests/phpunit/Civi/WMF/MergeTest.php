@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\Wmf;
+namespace Civi\WMF;
 
 use Civi\Api4\Contact;
 use Civi\Api4\CustomField;
@@ -576,7 +576,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
     $this->assertEquals(1, $contact['values'][0]['do_not_email']);
   }
 
-
   /**
    * Test that a conflict on communication preferences is handled.
    *
@@ -1083,7 +1082,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
       ],
     ]);
     $this->assertEquals('Duck Manor', $contact['values'][$toKeepID]['street_address']);
-
   }
 
   /**
@@ -1115,7 +1113,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
         ],
       ]));
     return $data;
-
   }
 
   /**
@@ -1739,7 +1736,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
     ];
   }
 
-
   /**
    * Clean up previous runs.
    *
@@ -2026,6 +2022,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface, Tr
     AND a2.id IS NULL
     AND a1.contact_id IS NOT NULL) AS primary_descrepancies
       '));
-
   }
+
 }

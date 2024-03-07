@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\Wmf;
+namespace Civi\WMF;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\Wmf;
+namespace Civi\WMF;
 
 use Civi\Test;
 use Civi\Test\Api3TestTrait;
@@ -64,4 +64,5 @@ class ReportTest extends TestCase implements HeadlessInterface, HookInterface, T
     ];
     $this->callAPISuccess('report_template', 'getrows', $params);
   }
+
 }
