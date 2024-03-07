@@ -15,7 +15,7 @@ class WMFContactSaveTest extends TestCase {
   /**
    * @var array
    */
-  protected $ids = [];
+  protected array $ids = [];
 
   /**
    * Clean up after test.
@@ -29,27 +29,32 @@ class WMFContactSaveTest extends TestCase {
         ->addWhere('id', 'IN', $this->ids['Contact'])
         ->setUseTrash(FALSE)->execute();
     }
+    Contact::delete(FALSE)
+      ->addWhere('last_name', '=', 'Mouse')
+      ->setUseTrash(FALSE)->execute();
     parent::tearDown();
     unset(\Civi::$statics['wmf_contact']);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   public function testExternalIdentifierUpdate(): void {
     $newVenmoUserName = 'test';
-    $unique = uniqid(__FUNCTION__);
     $initialDetails = [
-        'first_name' => $unique,
-        'last_name' => 'bb',
-        'nick_name' => '',
-        'email' => $unique . '@bb.org',
-        'gateway' => 'braintree',
-        'payment_method' => 'venmo',
-        'external_identifier' => 'old',
-        'country' => 'US',
-        'street_address' => '',
-        'city' => '',
-        'street_number' => '',
-        'postal_code' => '',
-        'state_province' => '',
+      'first_name' => 'Sally',
+      'last_name' => 'Mouse',
+      'nick_name' => '',
+      'email' => 'sally@bb.org',
+      'gateway' => 'braintree',
+      'payment_method' => 'venmo',
+      'external_identifier' => 'old',
+      'country' => 'US',
+      'street_address' => '',
+      'city' => '',
+      'street_number' => '',
+      'postal_code' => '',
+      'state_province' => '',
     ];
     $oldContactId = WMFContact::save(FALSE)->setMessage($initialDetails)->execute()->first()['id'];
     $oldContact = Contact::get(FALSE)
@@ -61,35 +66,37 @@ class WMFContactSaveTest extends TestCase {
     $newDetails = array_merge($initialDetails, [
       'id' => $oldContactId,
       'contact_id' => $oldContactId,
-      'external_identifier' => $newVenmoUserName
+      'external_identifier' => $newVenmoUserName,
     ]);
 
     WMFContact::save(FALSE)->setMessage($newDetails)->execute();
     $updatedContact = Contact::get(FALSE)
-        ->addSelect('External_Identifiers.venmo_user_name')
-        ->addWhere('id', '=', $oldContactId)
-        ->execute()->first();
+      ->addSelect('External_Identifiers.venmo_user_name')
+      ->addWhere('id', '=', $oldContactId)
+      ->execute()->first();
 
     $this->assertEquals($newVenmoUserName, $updatedContact['External_Identifiers.venmo_user_name']);
   }
 
+  /**
+   * @throws \CRM_Core_Exception|\Random\RandomException
+   */
   public function testExternalIdentifierFundraiseupIdUpdate(): void {
-    $fundraiseup_id = rand(10000,11200);
-    $unique = uniqid(__FUNCTION__);
+    $fundraiseup_id = random_int(10000, 11200);
     $initialDetails = [
-        'first_name' => $unique,
-        'last_name' => 'bb',
-        'nick_name' => '',
-        'email' => $unique . '@bb.org',
-        'gateway' => 'adyen',
-        'payment_method' => 'cc',
-        'external_identifier' => '',
-        'country' => 'US',
-        'street_address' => '',
-        'city' => '',
-        'street_number' => '',
-        'postal_code' => '',
-        'state_province' => '',
+      'first_name' => 'Sarah',
+      'last_name' => 'Mouse',
+      'nick_name' => '',
+      'email' => 'sarah@bb.org',
+      'gateway' => 'adyen',
+      'payment_method' => 'cc',
+      'external_identifier' => '',
+      'country' => 'US',
+      'street_address' => '',
+      'city' => '',
+      'street_number' => '',
+      'postal_code' => '',
+      'state_province' => '',
     ];
     $oldContactId = WMFContact::save(FALSE)->setMessage($initialDetails)->execute()->first()['id'];
 
@@ -102,50 +109,54 @@ class WMFContactSaveTest extends TestCase {
 
     WMFContact::save(FALSE)->setMessage($newDetails)->execute();
     $updatedContact = Contact::get(FALSE)
-        ->addSelect('External_Identifiers.fundraiseup_id', 'email_primary.email')
-        ->addWhere('id', '=', $oldContactId)
-        ->execute()->first();
+      ->addSelect('External_Identifiers.fundraiseup_id', 'email_primary.email')
+      ->addWhere('id', '=', $oldContactId)
+      ->execute()->first();
 
     $this->assertNotNull($updatedContact);
     $this->assertEquals(strtolower($initialDetails['email']), $updatedContact['email_primary.email']);
     $this->assertEquals($fundraiseup_id, $updatedContact['External_Identifiers.fundraiseup_id']);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \Random\RandomException
+   */
   public function testExternalIdentifierIdDedupe(): void {
-    $lastName = uniqid(__FUNCTION__);
-    $fundraiseup_id = rand(10000,11200);
+    $fundraiseup_id = random_int(10000, 11200);
     $new_email = 'anothertestemail@em.org';
     $new_first_name = 'One';
     $initialDetails = [
-        'first_name' => 'Zero',
-        'last_name' => $lastName,
-        'nick_name' => 'Nick',
-        'email' => 'testemail@em.org',
-        'gateway' => 'fundraiseup',
-        'external_identifier' => $fundraiseup_id,
-        'country' => 'US',
-        'street_address' => '',
-        'city' => '',
-        'street_number' => '',
-        'postal_code' => '',
-        'state_province' => '',
+      'first_name' => 'Zero',
+      'last_name' => 'Mouse',
+      'nick_name' => 'Nick',
+      'email' => 'testemail@em.org',
+      'gateway' => 'fundraiseup',
+      'external_identifier' => $fundraiseup_id,
+      'country' => 'US',
+      'street_address' => '',
+      'city' => '',
+      'street_number' => '',
+      'postal_code' => '',
+      'state_province' => '',
     ];
 
     $newDetails = array_merge($initialDetails, [
-        'first_name' => $new_first_name,
-        'email' => $new_email
+      'first_name' => $new_first_name,
+      'email' => $new_email,
     ]);
 
     WMFContact::save(FALSE)->setMessage($initialDetails)->execute();
     WMFContact::save(FALSE)->setMessage($newDetails)->execute();
     $contact = Contact::get(FALSE)
-        ->addSelect('first_name', 'External_Identifiers.fundraiseup_id', 'email_primary.email')
-        ->addWhere('External_Identifiers.fundraiseup_id', '=', $fundraiseup_id)
-        ->execute();
+      ->addSelect('first_name', 'External_Identifiers.fundraiseup_id', 'email_primary.email')
+      ->addWhere('External_Identifiers.fundraiseup_id', '=', $fundraiseup_id)
+      ->execute();
     $this->ids['Contact'][] = $contact[0]['id'];
 
     $this->assertCount(1, $contact);
     $this->assertEquals($new_email, $contact[0]['email_primary.email']);
     $this->assertEquals($new_first_name, $contact[0]['first_name']);
   }
+
 }
