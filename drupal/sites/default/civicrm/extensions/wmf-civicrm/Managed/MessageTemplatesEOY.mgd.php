@@ -6,7 +6,7 @@ $msgText = ' ';
 $subject = file_get_contents($directory . 'eoy_thank_you.en.subject.txt');
 
 /**
- * Add recurring_failed_message template.
+ * Add eoy_thank_you template.
  */
 return [
   [

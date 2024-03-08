@@ -699,53 +699,6 @@ function wmf_civicrm_verify_message_and_stage(DonationMessage $message) {
     throw new WMFException(WMFException::CIVI_REQ_FIELD, $err);
   }
 
-  $max_lengths = [
-    'check_number' => 255,
-    'city' => 64,
-    'email' => 254,
-    'first_name' => 64,
-    'last_name' => 64,
-    'middle_name' => 64,
-    'organization_name' => 128,
-    'postal_code' => 64,
-    'street_address' => 96,
-    'supplemental_address_1' => 96,
-    'supplemental_address_2' => 96,
-  ];
-  // Truncate address and name if exceed the max_lengths that civi allowed
-  // since they should not be a blocker to import contribution msg
-  $truncate_tags = [
-    'postal_code' => 'AddressTruncated',
-    'street_address' => 'AddressTruncated',
-    'supplemental_address_1' => 'AddressTruncated',
-    'supplemental_address_2' => 'AddressTruncated',
-    'city' => 'AddressTruncated',
-    'first_name' => 'NameTruncated',
-    'last_name' => 'NameTruncated',
-    'middle_name' => 'NameTruncated',
-    'organization_name' => 'NameTruncated',
-  ];
-  foreach ($max_lengths as $key => $limit) {
-    if (mb_strlen($msg[$key]) > $limit) {
-      if (array_key_exists($key, $truncate_tags)) {
-        \Civi::log('wmf')->warning(
-          'wmf_civicrm: Truncating key {key} to {length} chars. Original: "{original_value}". Applying tag {tag}',
-          [
-            'key' => $key,
-            'length' => $limit,
-            'original_value' => $msg[$key],
-            'tag' => $truncate_tags[$key],
-          ]
-        );
-        $msg[$key] = mb_substr($msg[$key], 0, $limit);
-        $msg['contact_tags'][] = $truncate_tags[$key];
-      }
-      else {
-        throw new WMFException(WMFException::INVALID_MESSAGE, "Field '{$key}' is too long.");
-      }
-    }
-  }
-
   //Now check to make sure this isn't going to be a duplicate message for this gateway.
   wmf_civicrm_check_for_duplicates($msg);
   return $msg;
@@ -1568,18 +1521,6 @@ function _wmf_civicrm_get_contact_last_donation_data(&$contribution) {
 }
 
 /**
- * Get a grip on multiple database connections.
- *
- * @return db_switcher
- * @deprecated  we are working towards using APIV4 Apis. PaymentFraud has an apiv4.
- * PaymentsInitial needs one and contribution_tracking is doomed.
- *
- */
-function wmf_civicrm_get_dbs() {
-  return new db_switcher();
-}
-
-/**
  * Expand CiviCRM DAO results object into an array of rows as array
  *
  * @param $dao CRM_Core_DAO
@@ -1690,34 +1631,6 @@ function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
  */
 function wmf_civicrm_flush_cached_options() {
   \Civi::$statics['wmf_civicrm'] = [];
-}
-
-/**
- * @param string $language
- *
- * @throws \API_Exception
- */
-function wmf_civicrm_insert_failure_message_translation($language) {
-  $msgHtml = file_get_contents(__DIR__ . '/templates/recurring_failed_message.en.' . $language . '.html.txt');
-  $subject = file_get_contents(__DIR__ . '/templates/recurring_failed_message.en.' . $language . '.subject.txt');
-  $msgText = file_get_contents(__DIR__ . '/templates/recurring_failed_message.en.' . $language . '.text.txt');
-  // It actually stores what we pass it - but we want it to store the same value as on the contact.
-  $languageName = \Civi\Api4\OptionValue::get()
-    ->setCheckPermissions(FALSE)
-    ->addWhere('value', '=', $language)
-    ->addSelect('name')->execute()->first()['name'];
-  // This should be done by Civi but I hit an error on inserting the Japanese (although
-  // this might not be needed as I added table alter statements too.
-  CRM_Core_DAO::executeQuery('SET NAMES utf8mb4');
-
-  \Civi\Api4\MessageTemplate::update()->setCheckPermissions(FALSE)
-    ->setValues([
-      'msg_html' => $msgHtml,
-      'subject' => $subject,
-      'msg_text' => $msgText,
-    ])
-    ->addWhere('workflow_name', '=', 'recurring_failed_message')
-    ->setLanguage($languageName)->execute();
 }
 
 /**

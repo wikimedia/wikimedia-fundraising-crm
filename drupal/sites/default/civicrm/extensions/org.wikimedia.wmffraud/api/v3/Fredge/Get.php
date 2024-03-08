@@ -9,6 +9,7 @@ use Civi\Api4\ContributionTracking;
  * This is used for documentation and validation.
  *
  * @param array $spec description of fields supported by this API call
+ *
  * @return void
  * @see http://wiki.civicrm.org/confluence/display/CRMDOC/API+Architecture+Standards
  */
@@ -30,10 +31,11 @@ function _civicrm_api3_fredge_get_spec(&$spec) {
  * and formatting.
  *
  * @param array $params
+ *
  * @return array API result descriptor
- * @see civicrm_api3_create_success
- * @see civicrm_api3_create_error
  * @throws API_Exception
+ * @see civicrm_api3_create_error
+ * @see civicrm_api3_create_success
  */
 function civicrm_api3_fredge_get($params) {
   $contributions = array_keys(civicrm_api3('Contribution', 'get', ['contact_id' => $params['contact_id'], 'return' => 'id'])['values']);
@@ -44,9 +46,9 @@ function civicrm_api3_fredge_get($params) {
     ->addSelect('id')
     ->addWhere('contribution_id', 'IN', $contributions)
     ->execute();
-    $contributionTrackingIds = [];
+  $contributionTrackingIds = [];
 
-  foreach($result as $tracking) {
+  foreach ($result as $tracking) {
     $contributionTrackingIds[] = $tracking['id'];
   }
   if (count($result) === 0) {
@@ -60,7 +62,9 @@ function civicrm_api3_fredge_get($params) {
   foreach ($paymentsFrauds as $id => $paymentsFraud) {
     if (!empty($paymentsFraud['user_ip'])) {
       // This could perhaps be done in the api
-      $paymentsFraud[$id]['user_ip'] = long2ip($paymentsFraud['user_ip']);
+      if (is_numeric($paymentsFraud['user_ip'])) {
+        $paymentsFraud[$id]['user_ip'] = long2ip($paymentsFraud['user_ip']);
+      }
     }
   }
 

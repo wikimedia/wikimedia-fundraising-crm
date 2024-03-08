@@ -4,7 +4,7 @@ $htmlText = file_get_contents($directory . 'monthly_convert.en.html.txt');
 $subject = file_get_contents($directory . 'monthly_convert.en.subject.txt');
 
 /**
- * Add recurring_failed_message template.
+ * Add monthly_convert template.
  */
 return [
   [

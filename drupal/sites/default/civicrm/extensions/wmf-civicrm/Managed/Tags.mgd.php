@@ -35,91 +35,63 @@ if (!empty($missing)) {
   }
 }
 // Note that reserved tags cannot be edited by (most) users.
-  return [
-    'RecurringRestarted' => [
-      // Tag used by recurring global collect module
+return [
+  'RecurringRestarted' => [
+    // Tag used by recurring global collect module
+    'name' => 'RecurringRestarted',
+    'entity' => 'Tag',
+    'cleanup' => 'never',
+    'params' => [
+      'version' => 3,
       'name' => 'RecurringRestarted',
-      'entity' => 'Tag',
-      'cleanup' => 'never',
-      'params' => [
-        'version' => 3,
-        'name' => 'RecurringRestarted',
-        'description' => 'For the first contribution of a restarted recurring subscription.',
-        'is_selectable' => FALSE,
-        'is_reserved' => TRUE,
-        'used_for' => 'civicrm_contribution',
-      ],
+      'description' => 'For the first contribution of a restarted recurring subscription.',
+      'is_selectable' => FALSE,
+      'is_reserved' => TRUE,
+      'used_for' => 'civicrm_contribution',
     ],
-    'RecurringRestartedUncharged' => [
-      // Indicates that the subscription has been cured of some
-      // malady, and that the next contribution record created
-      // from it should get the RecurringRestarted tag so the donor is thanked
-      // correctly. The recurring processor should then remove
-      // this tag from the civicrm_contribution_recur table.
+  ],
+  'RecurringRestartedUncharged' => [
+    // Indicates that the subscription has been cured of some
+    // malady, and that the next contribution record created
+    // from it should get the RecurringRestarted tag so the donor is thanked
+    // correctly. The recurring processor should then remove
+    // this tag from the civicrm_contribution_recur table.
+    'name' => 'RecurringRestartedUncharged',
+    'entity' => 'Tag',
+    'cleanup' => 'never',
+    'params' => [
       'name' => 'RecurringRestartedUncharged',
-      'entity' => 'Tag',
-      'cleanup' => 'never',
-      'params' => [
-        'name' => 'RecurringRestartedUncharged',
-        'description' => 'A subscription that has been restarted but not yet charged.',
-        'is_selectable' => FALSE,
-        'is_reserved' => TRUE,
-        'used_for' => 'civicrm_contribution_recur',
-      ],
+      'description' => 'A subscription that has been restarted but not yet charged.',
+      'is_selectable' => FALSE,
+      'is_reserved' => TRUE,
+      'used_for' => 'civicrm_contribution_recur',
     ],
-    'UnrecordedCharge' => [
+  ],
+  'UnrecordedCharge' => [
+    'name' => 'UnrecordedCharge',
+    'entity' => 'Tag',
+    'cleanup' => 'never',
+    'params' => [
+      'version' => 3,
       'name' => 'UnrecordedCharge',
-      'entity' => 'Tag',
-      'cleanup' => 'never',
-      'params' => [
-        'version' => 3,
-        'name' => 'UnrecordedCharge',
-        'description' => 'For donations which have already been charged, but were not recorded in Civi at the time.',
-        'is_selectable' => FALSE,
-        'is_reserved' => TRUE,
-        'used_for' => 'civicrm_contribution',
-      ],
+      'description' => 'For donations which have already been charged, but were not recorded in Civi at the time.',
+      'is_selectable' => FALSE,
+      'is_reserved' => TRUE,
+      'used_for' => 'civicrm_contribution',
     ],
-    'DuplicateInvoiceId' => [
-      // Used in modifyDuplicateInvoice function in wmf queue consumer.
+  ],
+  'DuplicateInvoiceId' => [
+    // Used in modifyDuplicateInvoice function in wmf queue consumer.
+    'name' => 'DuplicateInvoiceId',
+    'entity' => 'Tag',
+    'cleanup' => 'never',
+    'params' => [
+      'version' => 3,
       'name' => 'DuplicateInvoiceId',
-      'entity' => 'Tag',
-      'cleanup' => 'never',
-      'params' => [
-        'version' => 3,
-        'name' => 'DuplicateInvoiceId',
-        'used_for' => 'civicrm_contribution',
-        'description' => 'Used for contributions where the original assigned invoice id was a duplicate with another already in the database',
-        'is_reserved' => 1,
-        'selectable' => 0,
-      ],
+      'used_for' => 'civicrm_contribution',
+      'description' => 'Used for contributions where the original assigned invoice id was a duplicate with another already in the database',
+      'is_reserved' => 1,
+      'selectable' => 0,
     ],
-    'AddressTruncated' => [
-      // Tag applied in wmf import code
-      'name' => 'AddressTruncated',
-      'entity' => 'Tag',
-      'cleanup' => 'never',
-      'params' => [
-        'version' => 3,
-        'name' => 'AddressTruncated',
-        'description' => 'Tag applied to a contact when the address was truncated on import.',
-        'is_selectable' => TRUE,
-        'is_reserved' => TRUE,
-        'used_for' => 'civicrm_contact',
-      ],
-    ],
-    'NameTruncated' => [
-      // Tag applied in wmf import code
-      'name' => 'NameTruncated',
-      'entity' => 'Tag',
-      'cleanup' => 'never',
-      'params' => [
-        'version' => 3,
-        'name' => 'NameTruncated',
-        'description' => 'Tag applied to a contact when the name was truncated on import.',
-        'is_selectable' => TRUE,
-        'is_reserved' => TRUE,
-        'used_for' => 'civicrm_contact',
-      ],
-    ],
-  ];
+  ],
+];
