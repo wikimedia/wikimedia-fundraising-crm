@@ -4,5 +4,3 @@ core = 7.x
 package = queue2civicrm
 configure = admin/config/queue2civicrm/fredge_qc
 dependencies[] = queue2civicrm
-files[] = AntifraudQueueConsumer.php
-files[] = PaymentsInitQueueConsumer.php

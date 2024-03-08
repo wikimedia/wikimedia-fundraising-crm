@@ -1,9 +1,10 @@
-<?php namespace queue2civicrm\fredge;
+<?php
+
+namespace Civi\WMFQueue;
 
 use Civi\Api4\PaymentsFraud;
 use Civi\Api4\PaymentsFraudBreakdown;
 use Civi\WMFException\FredgeDataValidationException;
-use Civi\WMFQueue\QueueConsumer;
 use Civi\WMFQueueMessage\FredgeMessage;
 
 class AntifraudQueueConsumer extends QueueConsumer {
