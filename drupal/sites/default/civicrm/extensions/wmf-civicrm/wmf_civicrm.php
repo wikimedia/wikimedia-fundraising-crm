@@ -491,9 +491,8 @@ function _wmf_civicrm_managed_get_translations(string $workflowName): array {
   }
   $translations = [];
   $directory = __DIR__ . '/msg_templates/' . $workflowName . '/';
-  // The folder may contain in-migration-directories 'html' and 'subject' as
-  // well as pseudo-directories '.' and '..' and the files we actually want.
-  $files = array_diff(scandir($directory), ['.', '..', 'html', 'subject']);
+  // The folder may contain pseudo-directories '.' and '..' and the files we actually want.
+  $files = array_diff(scandir($directory), ['.', '..']);
 
   foreach ($files as $file) {
     $content = file_get_contents($directory . $file);
