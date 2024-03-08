@@ -11,10 +11,10 @@
 
 namespace Civi\Import\DataSource;
 
-use GuzzleHttp\Client;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 use League\Csv\Reader;
 use CRM_ImportExtensions_ExtensionUtil as E;
+use League\Csv\Statement;
 
 /**
  * Objects that implement the DataSource interface can be used in CiviCRM
@@ -209,14 +209,18 @@ class UploadedFile extends \CRM_Import_DataSource {
         // load and then the limit to the remaining number of rows to load
         // for this iteration, so the next query will load the rows we are just adding to the
         // table.
+
         $this->setOffset($offset);
         $this->setLimit($numberOfRowsToLoad);
 
-        // Pull rows into the database, using the offset to specify the line in the file.
-        while ($numberOfRowsToLoad > 0) {
-          $this->insertRowIntoImportTable($this->getReader()->fetchOne($offset));
-          $offset++;
-          $numberOfRowsToLoad--;
+        $stmt = Statement::create()
+          ->offset($offset)
+          ->limit($numberOfRowsToLoad);
+
+        // Pull rows into the database, using the offset to specify the starting line in the file.
+        $rows = $stmt->process($this->getReader());
+        foreach ($rows as $row) {
+          $this->insertRowIntoImportTable($row);
         }
         return parent::getRow();
       }
@@ -266,7 +270,7 @@ class UploadedFile extends \CRM_Import_DataSource {
     $configuredFilePath = \CRM_Utils_Constant::value('IMPORT_EXTENSIONS_UPLOAD_FOLDER');
     // Only return the directory if it exists...
     if (!\CRM_Utils_File::isDir($configuredFilePath)) {
-      \Civi::log('import')->warning('Configured file path {path} is not value', ['path' => $configuredFilePath]);
+      \Civi::log('import')->warning('Configured file path {path} is not valid', ['path' => $configuredFilePath]);
       return NULL;
     }
     return $configuredFilePath;
