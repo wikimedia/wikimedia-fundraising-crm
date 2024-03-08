@@ -1544,35 +1544,6 @@ function wmf_civicrm_dao_to_list($dao) {
 }
 
 /**
- * Return tomorrow's month number.  Used to tell if today is New Year's Eve or
- * later.
- */
-function wmf_civicrm_tomorrows_month() {
-  $tomorrow = new DateTime('+1 day');
-  $month = gmdate("m", $tomorrow->getTimestamp());
-  return $month;
-}
-
-/**
- * Return true if the user has this role
- *
- * @param string $role Name of the role
- *
- * @return bool
- */
-function wmf_civicrm_user_has_role($role) {
-  global $user;
-
-  foreach ($user->roles as $rid => $roleName) {
-    if ($role === $roleName) {
-      return TRUE;
-    }
-  }
-
-  return FALSE;
-}
-
-/**
  * Get options for a field.
  *
  * @param string $entity
