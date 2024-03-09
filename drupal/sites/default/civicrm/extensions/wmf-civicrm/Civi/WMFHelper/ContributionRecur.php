@@ -109,8 +109,10 @@ class ContributionRecur {
       $allContactIds = Contact::duplicateContactIds($contact_id);
       \Civi::log('wmf')->debug("Check if donor " . json_encode($allContactIds) . " upgradable");
       $contribution_recurs = \Civi\Api4\ContributionRecur::get(FALSE)
-        ->addSelect('id', 'currency', 'amount', 'next_sched_contribution_date', 'contact.display_name')
+        ->addSelect('id', 'currency', 'amount', 'next_sched_contribution_date', 'contact.display_name', 'country.iso_code')
         ->addJoin('Contact AS contact', 'LEFT', ['contact.id', '=', $contact_id])
+        ->addJoin('Address AS address', 'LEFT', ['address.contact_id', '=', $contact_id], ['address.is_primary', '=', 1])
+        ->addJoin('Country AS country', 'LEFT', ['country.id', '=', 'address.country_id'])
         ->addJoin('PaymentProcessor AS payment_processor', 'LEFT', ['payment_processor.id', '=', 'payment_processor_id'])
         ->addWhere('contact_id', 'IN', $allContactIds)
         ->addWhere('cancel_date', 'IS NULL')
@@ -126,6 +128,7 @@ class ContributionRecur {
           'currency' => $contribution_recurs[0]['currency'],
           'amount' => $contribution_recurs[0]['amount'],
           'donor_name' => $contribution_recurs[0]['contact.display_name'],
+          'country' => $contribution_recurs[0]['country.iso_code'],
           'next_sched_contribution_date' => $contribution_recurs[0]['next_sched_contribution_date'],
         ];
       }
