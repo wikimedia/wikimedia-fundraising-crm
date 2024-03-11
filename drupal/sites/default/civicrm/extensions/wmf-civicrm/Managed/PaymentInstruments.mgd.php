@@ -72,6 +72,7 @@ $instruments = [
   'Enets' => 'Enets',
   'EPS' => 'EPS',
   'iDeal' => 'iDeal',
+  'SEPA Direct Debit' => 'SEPA Direct Debit',
   'JP Morgan EUR' => 'JP Morgan EUR',
   'Moneybookers' => 'Moneybookers',
   // Nordea exists on live but no contributions.

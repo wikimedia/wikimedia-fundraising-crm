@@ -257,6 +257,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       case 'ACH':
         return 'ach';
       case 'iDeal':
+      case 'SEPA Direct Debit':
         return 'rtbt';
       case 'Paypal';
         return 'paypal';
@@ -282,6 +283,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     switch ($params['payment_instrument']) {
       case 'iDeal':
         return 'rtbt_ideal';
+      case 'SEPA Direct Debit':
+        return 'sepadirectdebit';
       case 'Bank Transfer: UPI':
         return 'upi';
       case 'Bank Transfer: PayTM Wallet':
