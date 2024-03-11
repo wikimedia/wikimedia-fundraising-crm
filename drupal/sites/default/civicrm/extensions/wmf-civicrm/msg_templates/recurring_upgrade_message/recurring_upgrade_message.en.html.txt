@@ -1,0 +1,19 @@
+<p>Dear {contact.first_name},</p>
+
+<p>Thank you so much for upgrading your monthly gift to the Wikimedia Foundation. Your new {contribution_recur.amount} gift shows your dedication to ensuring everyone, everywhere has access to the world’s knowledge. This donation will be debited monthly. Each January, you will receive a summary of your previous year’s contributions. If you wish to cancel for any reason, <a href='https://donate.wikimedia.org/wiki/Cancel_or_change_recurring_giving'>follow these instructions</a>.<p>
+
+<p>Your upgraded monthly gift means we will keep expanding the reach of knowledge to new corners of the world. Here’s a <a href='https://www.youtube.com/watch?v=3eCDmyvYBiA'>one-minute glimpse</a> into all of the work you make possible with your support.</p>
+
+<p>Thank you, {contact.first_name}, for going above and beyond in your commitment to our mission.</p>
+
+<p>With gratitude,<br>
+Your friends at the Wikimedia Foundation</p>
+
+<p>You are receiving this email at {contact.email} as a valued donor of the Wikimedia Foundation. If you do not wish to receive any future emails from the Wikimedia Foundation, <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>unsubscribe now</a>. If you wish to, we’d also be happy to update your contact preferences, including your personal details such as your name or email address, should you wish for these to be changed.</p>
+
+<p>Wikimedia Foundation, Inc.<br>
+P.O. Box 98204<br>
+Washington, DC 20090-8204<br>
+United States of America</p>
+
+<p>Ref CiviRecUpg{contact.preferred_language} {contribution_recur.id}</p>

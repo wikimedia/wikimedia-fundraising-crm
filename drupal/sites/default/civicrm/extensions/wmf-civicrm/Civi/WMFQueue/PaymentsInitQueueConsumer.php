@@ -1,12 +1,12 @@
-<?php namespace queue2civicrm\fredge;
+<?php
+
+namespace Civi\WMFQueue;
 
 use Civi\Api4\PaymentsInitial;
 use Civi\WMFException\FredgeDataValidationException;
 use Civi\WMFQueueMessage\FredgeMessage;
 use SmashPig\Core\DataStores\PaymentsInitialDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
-use Civi\WMFQueue\QueueConsumer;
-use Civi\WMFException\WMFException;
 
 class PaymentsInitQueueConsumer extends QueueConsumer {
 
