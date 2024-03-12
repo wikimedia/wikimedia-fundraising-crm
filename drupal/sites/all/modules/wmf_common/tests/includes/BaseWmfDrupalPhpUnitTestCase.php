@@ -387,7 +387,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     }
     catch (WMFException $e) {
       $created = (array) Contact::get(FALSE)->setWhere([
-        ['display_name', '=', rtrim($msg['first_name'] . ' ' . $msg['last_name'])],
+        ['display_name', '=', rtrim(($msg['first_name'] ?? '') . ' ' . ($msg['last_name'] ?? ''))],
       ])->setSelect(['id'])->execute()->indexBy('id');
       foreach (array_keys($created) as $contactID) {
         $this->ids['Contact'][$contactID] = $contactID;
