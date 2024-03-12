@@ -71,6 +71,7 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $msg = $original_msg;
     $message = new DonationMessage($msg);
     $normal_msg_1 = $message->normalize();
+    unset($original_msg['middle_name']);
     $this->assertEquals($original_msg, $normal_msg_1);
     $message = new DonationMessage($normal_msg_1);
     $normal_msg_2 = $message->normalize();

@@ -1031,7 +1031,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function getTestContributionRecurRecords($recurParams = []): array {
-    $contactID = $recurParams['contact_id'] ?? $this->individualCreate();
+    $contactID = $recurParams['contact_id'] ?? $this->individualCreate(['preferred_language' => 'fr_FR']);
     $recur = ContributionRecur::create(FALSE)
       ->setValues(array_merge([
         'contact_id' => $contactID,
