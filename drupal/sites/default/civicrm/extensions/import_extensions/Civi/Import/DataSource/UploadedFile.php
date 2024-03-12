@@ -305,6 +305,7 @@ class UploadedFile extends \CRM_Import_DataSource {
    * @throws \Civi\Core\Exception\DBQueryException
    */
   private function insertRowIntoImportTable($row): void {
+    $row = array_map('strval', $row);
     $row = array_map([__CLASS__, 'trimNonBreakingSpaces'], $row);
     $row = array_map(['CRM_Core_DAO', 'escapeString'], $row);
     $sql = ["('" . implode("', '", $row) . "')"];
