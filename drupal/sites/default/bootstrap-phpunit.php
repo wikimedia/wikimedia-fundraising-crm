@@ -9,7 +9,6 @@ define('DRUPAL_ROOT', __DIR__ . "/../../../drupal");
 require_once(__DIR__ . "/../all/modules/wmf_common/tests/includes/BaseWmfDrupalPhpUnitTestCase.php");
 require_once(__DIR__ . "/../all/modules/wmf_audit/tests/includes/BaseAuditTestCase.php");
 require_once(__DIR__ . "/../all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php");
-require_once(__DIR__ . "/../all/modules/wmf_communication/tests/phpunit/CiviMailTestBase.php");
 require_once(__DIR__ . "/../../../vendor/mrmarkfrench/silverpop-php-connector/test/tests/BaseTestClass.php");
 require_once(__DIR__ . "/../../../vendor/mrmarkfrench/silverpop-php-connector/test/tests/SilverpopBaseTestClass.php");
 
@@ -27,7 +26,7 @@ restore_error_handler();
 require_once(__DIR__ . '/../../../vendor/autoload.php');
 
 putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
-require_once __DIR__. '/civicrm/extensions/wmf-civicrm/tests/phpunit/bootstrap.php';
+require_once __DIR__ . '/civicrm/extensions/wmf-civicrm/tests/phpunit/bootstrap.php';
 civicrm_initialize();
 // This causes errors to be thrown rather than the user-oriented html being presented on a fatal error.
 // Note that the CRM_Core_TemporaryErrorScope reverts the scope on _deconstruct so

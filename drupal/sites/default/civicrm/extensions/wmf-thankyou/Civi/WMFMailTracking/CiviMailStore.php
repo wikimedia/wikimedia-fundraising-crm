@@ -2,12 +2,9 @@
 
 namespace Civi\WMFMailTracking;
 
-use CRM_Core_DAO;
 use CRM_Core_DAO_Email;
 use CRM_Core_Transaction;
 use Exception;
-use wmf_communication\CiviMailingRecord;
-use wmf_communication\CiviMailQueueRecord;
 
 /**
  * Handle inserting sent CiviMail records for emails
@@ -32,7 +29,6 @@ class CiviMailStore {
    * @throws CiviQueueInsertException if email isn't in Civi or an error occurs
    */
   public function addQueueRecord($mailingRecord, $emailAddress, $contactId) {
-
     $email = new CRM_Core_DAO_Email();
     $email->email = $emailAddress;
     $email->contact_id = $contactId;
@@ -118,4 +114,3 @@ class CiviMailStore {
   }
 
 }
-
