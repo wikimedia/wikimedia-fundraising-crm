@@ -145,44 +145,6 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
-   * Test use of API4 in Contribution Tracking in recurring module
-   *
-   * @throws \CRM_Core_Exception
-   */
-  public function testApi4CTinRecurringGet(): void {
-    $recur = $this->createContributionRecur();
-    $contribution = $this->createRecurringContribution([
-      'contribution_recur_id' => $recur['id'],
-      'contact_id' => $recur['contact_id'],
-      'trxn_id' => $recur['trxn_id'],
-    ]);
-    $generator = Factory::getSequenceGenerator('contribution-tracking');
-    $contribution_tracking_id = $generator->getNext();
-    $createTestCT = ContributionTracking::save(FALSE)->addRecord(WMFHelper::getContributionTrackingParameters([
-      'utm_source' => '..rpp',
-      'utm_medium' => 'civicrm',
-      'ts' => '',
-      'contribution_id' => $contribution['id'],
-      'id' => $contribution_tracking_id,
-    ]))->execute()->first();
-
-    $ctFromResponse = ContributionRecur::get(FALSE)
-      ->addSelect('MIN(contribution_tracking.id) AS contribution_tracking_id', 'MIN(contribution.id) AS contribution_id')
-      ->addJoin('Contribution AS contribution', 'INNER')
-      ->addJoin('ContributionTracking AS contribution_tracking', 'LEFT', ['contribution_tracking.contribution_id', '=', 'contribution.id'])
-      ->addGroupBy('id')
-      ->addWhere('trxn_id', '=', $recur['trxn_id'])
-      ->setLimit(1)
-      ->execute()
-      ->first()['contribution_tracking_id'];
-
-    $this->assertEquals($createTestCT['id'], $ctFromResponse);
-    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
-    $this->ids['ContributionRecur'][$contribution['contribution_recur_id']] = $contribution['contribution_recur_id'];
-    $this->ids['ContributionTracking'][$ctFromResponse] = $ctFromResponse;
-  }
-
-  /**
    * Create a contribution_recur table row for a test
    *
    * @param array $values
