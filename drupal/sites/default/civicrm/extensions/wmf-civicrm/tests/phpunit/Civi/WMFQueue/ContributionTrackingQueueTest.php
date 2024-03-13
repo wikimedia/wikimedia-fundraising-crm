@@ -1,40 +1,35 @@
 <?php
 
+namespace Civi\WMFQueue;
+
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
-use Civi\WMFQueue\ContributionTrackingQueueConsumer;
-use Civi\WMFStatistic\ContributionTrackingStatsCollector;
-use SmashPig\Core\SequenceGenerators\Factory;
+use Civi\Api4\Generic\Result;
 use Civi\WMFException\ContributionTrackingDataValidationException;
+use Civi\WMFStatistic\ContributionTrackingStatsCollector;
 
 /**
- * @group Queue2Civicrm
- * @group ContributionTracking
+ * @group queues
  */
-class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
+class ContributionTrackingQueueTest extends BaseQueue {
+
+  protected string $queueConsumer = 'ContributionTracking';
+
+  protected string $queueName = 'contribution-tracking';
 
   /**
-   * @var ContributionTrackingQueueConsumer
+   * @throws \CRM_Core_Exception
    */
-  protected $consumer;
-
-  public function setUp(): void {
-    parent::setUp();
-    $this->consumer = new ContributionTrackingQueueConsumer(
-      'contribution-tracking'
-    );
-  }
-
   public function testCanProcessContributionTrackingMessage(): void {
-    $message = $this->getMessage();
+    $message = $this->getContributionTrackingMessage();
     $message['utm_source'] = 'B2223_1115_en6C_m_p1_lg_amt_cnt.no-LP.paypal';
     $message['payment_method'] = 'paypal';
-    $this->consumer->processMessage($message);
+    $this->processMessage($message);
     $this->compareMessageWithDb($message);
     $this->validateContributionTracking($message['id'], [
-      'payment_method_id' => CRM_Core_PseudoConstant::getKey('CRM_Wmf_BAO_ContributionTracking', 'payment_method_id', 'paypal'),
-      'banner_size_id' => CRM_Core_PseudoConstant::getKey('CRM_Wmf_BAO_ContributionTracking', 'banner_size_id', 'banner_size_large'),
-      'device_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Wmf_BAO_ContributionTracking', 'device_type_id', 'device_type_mobile'),
+      'payment_method_id' => \CRM_Core_PseudoConstant::getKey('CRM_Wmf_BAO_ContributionTracking', 'payment_method_id', 'paypal'),
+      'banner_size_id' => \CRM_Core_PseudoConstant::getKey('CRM_Wmf_BAO_ContributionTracking', 'banner_size_id', 'banner_size_large'),
+      'device_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Wmf_BAO_ContributionTracking', 'device_type_id', 'device_type_mobile'),
       'utm_source' => 'B2223_1115_en6C_m_p1_lg_amt_cnt.no-LP.paypal',
       'banner_variant' => 1115,
       'mailing_identifier' => NULL,
@@ -48,12 +43,15 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   public function testTruncatesOverlongFields(): void {
-    $message = $this->getMessage();
+    $message = $this->getContributionTrackingMessage();
     $message['utm_source'] = 'Blah_source-this-donor-came-in-from-a-search-' .
       'engine-and-they-were-looking-for-how-to-donate-to-wikipedia.' .
-      'default~default~jimmywantscash.paypal';
-    $this->consumer->processMessage($message);
+      'default~default~jimmy-wants-cash.paypal';
+    $this->processMessage($message);
     $truncatedMessage = $message;
     $truncatedMessage['utm_source'] = substr($message['utm_source'], 0, 128);
     $this->compareMessageWithDb($truncatedMessage);
@@ -61,20 +59,19 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   * @throws \Civi\WMFException\ContributionTrackingDataValidationException
    */
   public function testCanProcessUpdateMessage(): void {
-    $message = $this->getMessage();
-    $this->consumer->processMessage($message);
+    $message = $this->getContributionTrackingMessage();
+    $this->processMessage($message);
     $contributionID = $this->createContribution();
     $updateMessage = [
       'id' => $message['id'],
       'contribution_id' => $contributionID,
-      'form_amount' => 'GBP 10.00', // updated from 35
+      // updated from 35
+      'form_amount' => 'GBP 10.00',
       'amount' => '10.00',
     ];
-    $this->consumer->processMessage($updateMessage);
+    $this->processMessage($updateMessage);
     $this->validateContributionTracking((int) $message['id'], [
       'contribution_id' => $contributionID,
       'amount' => 10,
@@ -88,12 +85,16 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * $messages should ALWAYS contain the field 'id'
    */
   public function testExceptionThrowOnInvalidContributionTrackingMessage(): void {
-    $message = $this->getMessage();
+    $message = $this->getContributionTrackingMessage();
     unset($message['id']);
     $this->expectException(ContributionTrackingDataValidationException::class);
-    $this->consumer->processMessage($message);
+    $this->processMessage($message);
   }
 
+  /**
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \CRM_Core_Exception
+   */
   public function testExceptionNotThrownOnChangeOfContributionID(): void {
     $contributionID1 = $this->createContribution();
     $contributionID2 = $this->createContribution();
@@ -101,25 +102,29 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $firstMessage = [
         'id' => '12345',
         'contribution_id' => $contributionID1,
-      ] + $this->getMessage();
+      ] + $this->getContributionTrackingMessage();
 
-    $this->consumer->processMessage($firstMessage);
+    $this->processMessage($firstMessage);
 
     $secondMessage = [
         'id' => '12345',
         'contribution_id' => $contributionID2,
       ] + $firstMessage;
 
-    $this->consumer->processMessage($secondMessage);
+    $this->processMessage($secondMessage);
 
     // the second message when processed previously resulted in an exception
     // being thrown. Now these types of errors fail silently and instead we
-    // track them via statscollector/prometheus and logging.
+    // track them via statsCollector/prometheus and logging.
     $expectedData = $firstMessage;
     $this->compareMessageWithDb($expectedData);
   }
 
-  public function testChangeOfContributionIdErrorsAreCountedInStatsCollector() {
+  /**
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \CRM_Core_Exception
+   */
+  public function testChangeOfContributionIdErrorsAreCountedInStatsCollector(): void {
     $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
     // should be a clean slate.
     $this->assertEquals(0, $ContributionTrackingStatsCollector->get('change_cid_errors'));
@@ -127,36 +132,40 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $firstMessage = [
         'id' => '12345',
         'contribution_id' => $this->createContribution(),
-      ] + $this->getMessage();
+      ] + $this->getContributionTrackingMessage();
 
-    $this->consumer->processMessage($firstMessage);
+    $this->processMessage($firstMessage);
 
     $secondMessage = [
         'id' => '12345',
         'contribution_id' => $this->createContribution(),
       ] + $firstMessage;
 
-    $this->consumer->processMessage($secondMessage);
+    $this->processMessage($secondMessage);
 
     // we updated the contribution_id from '11111' to '22222' which shouldn't happen.
     // let's see if the error stat was incremented as expected
     $this->assertEquals(1, $ContributionTrackingStatsCollector->get('change_cid_errors'));
   }
 
-  public function testChangeOfContributionIdErrorsAreWrittenToPrometheusOutputFile() {
+  /**
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \CRM_Core_Exception
+   */
+  public function testChangeOfContributionIdErrorsAreWrittenToPrometheusOutputFile(): void {
     $firstMessage = [
         'id' => '12345',
         'contribution_id' => $this->createContribution(),
-      ] + $this->getMessage();
+      ] + $this->getContributionTrackingMessage();
 
-    $this->consumer->processMessage($firstMessage);
+    $this->processMessage($firstMessage);
 
     $secondMessage = [
         'id' => '12345',
         'contribution_id' => $this->createContribution(),
       ] + $firstMessage;
 
-    $this->consumer->processMessage($secondMessage);
+    $this->processMessage($secondMessage);
 
     // set the prometheus file output location that
     // ContributionTrackingStatsCollector will write to
@@ -167,12 +176,14 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     );
 
     // ask the stats collector to export stats captured so far
-    $ContributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
-    $ContributionTrackingStatsCollector->export();
+    /* @var ContributionTrackingStatsCollector $contributionTrackingStatsCollector */
+    $contributionTrackingStatsCollector = ContributionTrackingStatsCollector::getInstance();
+    $contributionTrackingStatsCollector->export();
 
     $expectedStatsOutput = [
       'contribution_tracking_change_cid_errors' => 1,
-      'contribution_tracking_count' => 2, // count of records processed
+      // count of records processed
+      'contribution_tracking_count' => 2,
     ];
 
     $statsWrittenAssocArray = $this->buildArrayFromPrometheusOutputFile(
@@ -184,31 +195,15 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * build a queue message from our fixture file and drop in a random
-   * contribution tracking id
-   *
-   * @return array
-   */
-  protected function getMessage() {
-    $message = json_decode(
-      file_get_contents(__DIR__ . '/../data/contribution-tracking.json'),
-      TRUE
-    );
-    $generator = Factory::getSequenceGenerator('contribution-tracking');
-    $ctId = $generator->getNext();
-    $message['id'] = $ctId; // overwrite to make unique
-    $this->ids['ContributionTracking'][] = $ctId;
-    return $message;
-  }
-
-  /**
    * Check that the fields in the db line up with the original message fields
    *
-   * @param $message
+   * @param array $message
+   *
+   * @throws \CRM_Core_Exception
    */
-  protected function compareMessageWithDb($message) {
-    $dbEntries = $this->getDbEntries($message['id']);
-    $this->assertEquals(1, count($dbEntries));
+  protected function compareMessageWithDb(array $message): void {
+    $dbEntries = $this->getContributionTrackingRecords($message['id']);
+    $this->assertCount(1, $dbEntries);
     $fields = [
       'id',
       'contribution_id',
@@ -239,7 +234,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * @return \Civi\Api4\Generic\Result
    * @throws \CRM_Core_Exception
    */
-  protected function getDbEntries(int $contributionTrackingID): \Civi\Api4\Generic\Result {
+  protected function getContributionTrackingRecords(int $contributionTrackingID): Result {
     return ContributionTracking::get(FALSE)->addWhere('id', '=', $contributionTrackingID)->execute();
   }
 
@@ -254,7 +249,8 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $statsWrittenAssocArray = [];
     if (file_exists($prometheusFileLocation)) {
       $statsFileFullPath = $prometheusFileLocation;
-      $statsWritten = rtrim(file_get_contents($statsFileFullPath)); // remove trailing \n
+      // remove trailing \n
+      $statsWritten = rtrim(file_get_contents($statsFileFullPath));
       $statsWrittenLinesArray = explode("\n", $statsWritten);
       foreach ($statsWrittenLinesArray as $statsLine) {
         [$name, $value] = explode(" ", $statsLine);
@@ -293,7 +289,7 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * @noinspection PhpDocMissingThrowsInspection
    * @noinspection PhpUnhandledExceptionInspection
    */
-  private function validateContributionTracking(int $id, $overrides = []): void {
+  private function validateContributionTracking(int $id, array $overrides = []): void {
     $expected = $this->getExpectedTracking($id, $overrides);
     $tracking = ContributionTracking::get(FALSE)
       ->addWhere('id', '=', $id)
@@ -319,14 +315,14 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'amount' => 35,
       'currency' => 'GBP',
       'is_recurring' => FALSE,
-      'referrer' => 'payments.wiki.local.wmftest.net/wiki/Main_Page',
+      'referrer' => 'payments.wiki.local.test.net/wiki/Main_Page',
       'utm_medium' => 'civicrm',
       'utm_campaign' => 'test_campaign',
       'utm_key' => 'vw_1280~vh_577~otherAmt_1~ptf_1~time_37',
       'gateway' => 'ingenico',
       'appeal' => 'JimmyQuote',
       'payments_form_variant' => NULL,
-      'payment_method_id' => CRM_Core_PseudoConstant::getKey('CRM_Wmf_BAO_ContributionTracking', 'payment_method_id', 'cc'),
+      'payment_method_id' => \CRM_Core_PseudoConstant::getKey('CRM_Wmf_BAO_ContributionTracking', 'payment_method_id', 'cc'),
       'payment_submethod_id' => NULL,
       'language' => 'en',
       'country' => 'UK',
@@ -345,12 +341,11 @@ class ContributionTrackingQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   private function createContribution() {
-    $contributionID2 = Contribution::create(FALSE)->setValues([
+    return Contribution::create(FALSE)->setValues([
       'contact_id' => $this->createIndividual(),
       'total_amount' => 5,
       'financial_type_id:name' => 'Engage',
     ])->execute()->first()['id'];
-    return $contributionID2;
   }
 
 }

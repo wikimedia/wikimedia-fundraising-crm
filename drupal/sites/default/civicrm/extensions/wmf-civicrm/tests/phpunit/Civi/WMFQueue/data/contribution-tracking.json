@@ -5,7 +5,7 @@
   "browser_version": "4",
   "os": "Solaris",
   "os_version": "11",
-  "referrer": "payments.wiki.local.wmftest.net/wiki/Main_Page",
+  "referrer": "payments.wiki.local.test.net/wiki/Main_Page",
   "amount": "35.00",
   "currency": "GBP",
   "form_amount": "GBP 35.00",

@@ -7,6 +7,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFQueue;
+use Civi\Omnimail\MailFactory;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
@@ -37,11 +38,14 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
       ->apply();
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   public function setUp(): void {
     // Since we can't kill jobs on jenkins this prevents a loop from going
     // on for too long....
     set_time_limit(180);
-
+    MailFactory::singleton()->setActiveMailer('test');
     // Initialize SmashPig with a fake context object
     $config = TestingGlobalConfiguration::create();
     TestingContext::init($config);
@@ -76,7 +80,7 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
       foreach ($contact as $key => $value) {
         $where[] = [$key, '=', $value];
       }
-      Contact::delete(FALSE)->setWhere($where)->execute();
+      Contact::delete(FALSE)->setUseTrash(FALSE)->setWhere($where)->execute();
     }
     catch (\CRM_Core_Exception $e) {
       // do not fail in cleanup.
@@ -323,6 +327,18 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
   public function assertMessageContributionStatus(array $message, string $status): void {
     $contribution = $this->getContributionForMessage($message);
     $this->assertEquals($status, $contribution['contribution_status_id:name']);
+  }
+
+  /**
+   * @param array $values
+   *
+   * @return array
+   */
+  protected function getContributionTrackingMessage(array $values = []): array {
+    $values += $this->loadMessage('contribution-tracking');
+    $maxID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking');
+    $values['id'] = $this->ids['ContributionTracking'][] = $maxID + 1;
+    return $values;
   }
 
 }
