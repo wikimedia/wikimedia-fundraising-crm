@@ -49,7 +49,7 @@ class Consume extends AbstractAction {
   public function _run(Result $result) {
     // @todo -this feels wrong - maybe we fire
     // a listener? what does it do?
-    CRM_SmashPig_ContextWrapper::createContext('civicrm');
+    CRM_SmashPig_ContextWrapper::createContext($this->getQueueName());
     Civi::log('wmf')->info('Executing: {queue_consumer}', ['queue_consumer' => $this->getQueueName()]);
 
     $consumer = $this->loadQueueConsumer();

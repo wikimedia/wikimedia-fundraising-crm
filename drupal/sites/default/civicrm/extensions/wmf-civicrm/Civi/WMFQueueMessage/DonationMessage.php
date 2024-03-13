@@ -25,6 +25,8 @@ class DonationMessage {
    */
   protected array $message;
 
+  protected array $parsedName;
+
   /**
    * Constructor.
    */
@@ -166,25 +168,17 @@ class DonationMessage {
     $msg['date'] = $this->getTimestamp();
 
     $msg['thankyou_date'] = $this->getThankYouDate();
-
-    if (!empty($msg['full_name']) && (empty($msg['first_name']) || empty($msg['last_name']))) {
-      // Parse name parts into fields if we have the full name and the name parts are
-      // not otherwise specified.
-      $parsed = Name::parse(FALSE)
-        ->setNames([$msg['full_name']])
-        ->execute()->first();
+    $parsed = $this->getParsedName();
+    if (!empty($parsed)) {
       $msg = array_merge(array_filter((array) $parsed), $msg);
       $msg['addressee_custom'] = $msg['full_name'];
     }
 
-    if (empty($msg['first_name']) && empty($msg['last_name'])) {
-      $msg['first_name'] = 'Anonymous';
-      $msg['last_name'] = '';
-    }
-
-    // Apply name defaults after full_name has been parsed
-    $nameDefaults = ['first_name' => '', 'middle_name' => '', 'last_name' => ''];
-    $msg = array_merge($nameDefaults, $msg);
+    $msg += array_filter([
+      'first_name' => $this->getFirstName(),
+      'last_name' => $this->getLastName(),
+      'middle_name' => $this->getMiddleName(),
+    ]);
 
     // Check for special flags
     // TODO: push non-generic cases into database
@@ -241,6 +235,48 @@ class DonationMessage {
     $msg['net'] = $this->getNetAmountRounded();
 
     return $msg;
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function getFirstName(): string {
+    if (!empty($this->message['first_name'])) {
+      return $this->message['first_name'];
+    }
+    if (!empty($this->getParsedName())) {
+      return $this->getParsedName()['first_name'] ?? '';
+    }
+    if ($this->getContactID()) {
+      return '';
+    }
+    // Historically we have set Anonymous here but
+    // Only if both first & last are empty.
+    // It's probably something we could stop doing.
+    if (empty($this->message['last_name'])) {
+      return 'Anonymous';
+    }
+    return '';
+  }
+
+  public function getLastName(): string {
+    if (!empty($this->message['last_name'])) {
+      return $this->message['last_name'];
+    }
+    if (!empty($this->getParsedName())) {
+      return $this->getParsedName()['last_name'] ?? '';
+    }
+    return '';
+  }
+
+  public function getMiddleName(): string {
+    if (!empty($this->message['middle_name'])) {
+      return $this->message['middle_name'];
+    }
+    if (!empty($this->getParsedName())) {
+      return $this->getParsedName()['middle_name'] ?? '';
+    }
+    return '';
   }
 
   /**
@@ -481,6 +517,28 @@ class DonationMessage {
    */
   public function isExchangeRateConversionRequired(): bool {
     return $this->message['currency'] !== $this->getSettlementCurrency();
+  }
+
+  /**
+   * Get the name parts parsed.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function getParsedName(): ?array {
+    if (!isset($this->parsedName)) {
+      if (empty($this->message['full_name']) || !empty($this->message['first_name']) || !empty($this->message['last_name'])) {
+        $this->parsedName = [];
+      }
+      else {
+        // Parse name parts into fields if we have the full name and the name parts are
+        // not otherwise specified.
+        $this->parsedName = Name::parse(FALSE)
+          ->setNames([$this->message['full_name']])
+          ->execute()->first();
+      }
+    }
+    return $this->parsedName;
   }
 
 }

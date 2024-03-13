@@ -1,4 +1,5 @@
 <?php
+
 $templateDir = tempnam(sys_get_temp_dir(), 'crmunit');
 unlink($templateDir);
 mkdir($templateDir);
