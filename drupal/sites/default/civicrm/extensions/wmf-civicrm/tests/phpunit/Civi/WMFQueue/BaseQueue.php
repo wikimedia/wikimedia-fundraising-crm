@@ -5,6 +5,7 @@ namespace Civi\WMFQueue;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\ContributionTracking;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFQueue;
 use Civi\Omnimail\MailFactory;
@@ -17,6 +18,7 @@ use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
 
 class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInterface {
 
@@ -51,9 +53,27 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
     TestingContext::init($config);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
   public function tearDown(): void {
-    $this->cleanupNamedContact(['last_name' => 'McTest']);
-    $this->cleanupNamedContact(['last_name' => 'Mouse']);
+    if (!empty($this->ids['ContributionTracking'])) {
+      $contributionTracking = (array) ContributionTracking::get(FALSE)->addWhere('id', 'IN', $this->ids['ContributionTracking'])->execute()->indexBy('id');
+      if (!empty($contributionTracking)) {
+        foreach ($contributionTracking as $item) {
+          if ($item['contribution_id']) {
+            $this->cleanupContribution($item['contribution_id']);
+          }
+        }
+        ContributionTracking::delete(FALSE)->addWhere('id', 'IN', $this->ids['ContributionTracking'])->execute();
+      }
+    }
+    if (!empty($this->ids['Contribution'])) {
+      Contribution::delete(FALSE)->addWhere('id', 'IN', $this->ids['Contribution'])->execute();
+    }
+    $this->cleanupContact(['last_name' => 'McTest']);
+    $this->cleanupContact(['last_name' => 'Mouse']);
     // Reset some SmashPig-specific things
     TestingDatabase::clearStatics();
     // Nullify the context for next run.
@@ -61,12 +81,17 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
     parent::tearDown();
   }
 
-  protected function cleanupNamedContact(array $contact): void {
+  protected function cleanupContact(array $contact): void {
     try {
       $where = [];
       foreach ($contact as $key => $value) {
         $where[] = ['contact_id.' . $key, '=', $value];
+        $contributionTrackingWhere[] = ['contribution_id.contact_id.' . $key, '=', $value];
+        $contactWhere[] = [$key, '=', $value];
       }
+      ContributionTracking::delete(FALSE)
+        ->setWhere($contributionTrackingWhere)
+        ->execute();
       ContributionRecur::delete(FALSE)
         ->setWhere($where)
         ->execute();
@@ -76,15 +101,23 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
       PaymentToken::delete(FALSE)
         ->setWhere($where)
         ->execute();
-      $where = [];
-      foreach ($contact as $key => $value) {
-        $where[] = [$key, '=', $value];
-      }
-      Contact::delete(FALSE)->setUseTrash(FALSE)->setWhere($where)->execute();
+      Contact::delete(FALSE)->setUseTrash(FALSE)->setWhere($contactWhere)->execute();
     }
     catch (\CRM_Core_Exception $e) {
-      // do not fail in cleanup.
+      $this->fail('clean up failed ' . $e->getMessage());
     }
+  }
+
+  /**
+   * Clean up a contribution
+   *
+   * @param int $id
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function cleanupContribution(int $id): void {
+    ContributionTracking::delete(FALSE)->addWhere('contribution_id', '=', $id)->execute();
+    Contribution::delete(FALSE)->addWhere('id', '=', $id)->execute();
   }
 
   /**
@@ -342,16 +375,77 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
     $this->assertEquals($status, $contribution['contribution_status_id:name']);
   }
 
+  protected function addContributionTrackingRecord($values = []): int {
+    $values = $this->getContributionTrackingMessage($values);
+    $this->processMessage($values, 'ContributionTracking', 'contribution-tracking');
+    return $values['id'];
+  }
+
+  /**
+   * @param array $values
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  protected function getContributionTrackingMessage(array $values = []): array {
+    $values += $this->loadMessage('contribution-tracking');
+    $maxID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking');
+    $values['id'] = $this->ids['ContributionTracking'][] = ($maxID + 1);
+    return $values;
+  }
+
+  /**
+   * Create a contribution for a test.
+   *
+   * This will have the financial type ID of the initial recurring contribution
+   * if no override is passed in.
+   *
+   * @param array $values
+   * @param string $identifier
+   *
+   * @return array
+   */
+  protected function createContribution(array $values = [], string $identifier = 'danger'): array {
+    if (empty($values['contact_id'])) {
+      $values['contact_id'] = $this->createIndividual();
+    }
+    return $this->createTestEntity('Contribution', array_merge([
+      'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
+      'total_amount' => 60,
+      'receive_date' => 'now',
+    ], $values), $identifier);
+  }
+
+  /**
+   * Create a contribution_recur table row for a test
+   *
+   * @param array $values
+   * @param string $identifier
+   *
+   * @return array
+   */
+  protected function createContributionRecur(array $values = [], string $identifier = 'danger'): array {
+    if (empty($values['contact_id'])) {
+      $values['contact_id'] = $this->createIndividual();
+    }
+    return $this->createTestEntity('ContributionRecur', array_merge([
+      'amount' => 10,
+      'frequency_interval' => 'month',
+      'cycle_day' => date('d'),
+      'start_date' => 'now',
+      'is_active' => TRUE,
+      'contribution_status_id:name' => 'Pending',
+      'trxn_id' => 1234,
+    ], $values), $identifier);
+  }
+
   /**
    * @param array $values
    *
    * @return array
    */
-  protected function getContributionTrackingMessage(array $values = []): array {
-    $values += $this->loadMessage('contribution-tracking');
-    $maxID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking');
-    $values['id'] = $this->ids['ContributionTracking'][] = $maxID + 1;
-    return $values;
+  public function getRecurringPaymentMessage(array $values = []): array {
+    return array_merge($this->loadMessage('recurring_payment'), $values);
   }
 
 }

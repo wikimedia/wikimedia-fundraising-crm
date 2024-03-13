@@ -2,7 +2,6 @@
 
 namespace Civi\WMFQueue;
 
-use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\Generic\Result;
 use Civi\WMFException\ContributionTrackingDataValidationException;
@@ -63,7 +62,7 @@ class ContributionTrackingQueueTest extends BaseQueue {
   public function testCanProcessUpdateMessage(): void {
     $message = $this->getContributionTrackingMessage();
     $this->processMessage($message);
-    $contributionID = $this->createContribution();
+    $contributionID = $this->createContribution()['id'];
     $updateMessage = [
       'id' => $message['id'],
       'contribution_id' => $contributionID,
@@ -83,6 +82,8 @@ class ContributionTrackingQueueTest extends BaseQueue {
 
   /**
    * $messages should ALWAYS contain the field 'id'
+   *
+   * @throws \CRM_Core_Exception
    */
   public function testExceptionThrowOnInvalidContributionTrackingMessage(): void {
     $message = $this->getContributionTrackingMessage();
@@ -96,20 +97,20 @@ class ContributionTrackingQueueTest extends BaseQueue {
    * @throws \CRM_Core_Exception
    */
   public function testExceptionNotThrownOnChangeOfContributionID(): void {
-    $contributionID1 = $this->createContribution();
-    $contributionID2 = $this->createContribution();
-
+    $contributionID1 = $this->createContribution()['id'];
+    $contributionID2 = $this->createContribution()['id'];
+    $this->ids['ContributionTracking'][] = 12345;
     $firstMessage = [
-        'id' => '12345',
-        'contribution_id' => $contributionID1,
-      ] + $this->getContributionTrackingMessage();
+      'id' => '12345',
+      'contribution_id' => $contributionID1,
+    ] + $this->getContributionTrackingMessage();
 
     $this->processMessage($firstMessage);
 
     $secondMessage = [
-        'id' => '12345',
-        'contribution_id' => $contributionID2,
-      ] + $firstMessage;
+      'id' => '12345',
+      'contribution_id' => $contributionID2,
+    ] + $firstMessage;
 
     $this->processMessage($secondMessage);
 
@@ -130,16 +131,16 @@ class ContributionTrackingQueueTest extends BaseQueue {
     $this->assertEquals(0, $ContributionTrackingStatsCollector->get('change_cid_errors'));
 
     $firstMessage = [
-        'id' => '12345',
-        'contribution_id' => $this->createContribution(),
-      ] + $this->getContributionTrackingMessage();
+      'id' => '12345',
+      'contribution_id' => $this->createContribution()['id'],
+    ] + $this->getContributionTrackingMessage();
 
     $this->processMessage($firstMessage);
 
     $secondMessage = [
-        'id' => '12345',
-        'contribution_id' => $this->createContribution(),
-      ] + $firstMessage;
+      'id' => '12345',
+      'contribution_id' => $this->createContribution()['id'],
+    ] + $firstMessage;
 
     $this->processMessage($secondMessage);
 
@@ -154,16 +155,16 @@ class ContributionTrackingQueueTest extends BaseQueue {
    */
   public function testChangeOfContributionIdErrorsAreWrittenToPrometheusOutputFile(): void {
     $firstMessage = [
-        'id' => '12345',
-        'contribution_id' => $this->createContribution(),
-      ] + $this->getContributionTrackingMessage();
+      'id' => '12345',
+      'contribution_id' => $this->createContribution()['id'],
+    ] + $this->getContributionTrackingMessage();
 
     $this->processMessage($firstMessage);
 
     $secondMessage = [
-        'id' => '12345',
-        'contribution_id' => $this->createContribution(),
-      ] + $firstMessage;
+      'id' => '12345',
+      'contribution_id' => $this->createContribution()['id'],
+    ] + $firstMessage;
 
     $this->processMessage($secondMessage);
 
@@ -202,8 +203,6 @@ class ContributionTrackingQueueTest extends BaseQueue {
    * @throws \CRM_Core_Exception
    */
   protected function compareMessageWithDb(array $message): void {
-    $dbEntries = $this->getContributionTrackingRecords($message['id']);
-    $this->assertCount(1, $dbEntries);
     $fields = [
       'id',
       'contribution_id',
@@ -218,11 +217,13 @@ class ContributionTrackingQueueTest extends BaseQueue {
       'language',
       'country',
     ];
+    $contributionTrackingRecord = $this->getContributionTrackingRecords($message['id'])
+      ->single();
     foreach ($fields as $field) {
       if (array_key_exists($field, $message)) {
-        $this->assertEquals($message[$field], $dbEntries[0][$field]);
+        $this->assertEquals($message[$field], $contributionTrackingRecord[$field]);
       }
-      $this->assertEquals(strtotime($message['ts']), strtotime($dbEntries[0]['tracking_date']));
+      $this->assertEquals(strtotime($message['ts']), strtotime($contributionTrackingRecord['tracking_date']));
     }
   }
 
@@ -333,19 +334,6 @@ class ContributionTrackingQueueTest extends BaseQueue {
       'mailing_identifier' => 'sp72294511',
       'utm_source' => 'sp72294511.default~default~JimmyQuote~default~control.cc',
     ], $overrides);
-  }
-
-  /**
-   * @return mixed
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  private function createContribution() {
-    return Contribution::create(FALSE)->setValues([
-      'contact_id' => $this->createIndividual(),
-      'total_amount' => 5,
-      'financial_type_id:name' => 'Engage',
-    ])->execute()->first()['id'];
   }
 
 }

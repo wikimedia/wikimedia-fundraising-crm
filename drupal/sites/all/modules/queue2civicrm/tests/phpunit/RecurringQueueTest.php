@@ -365,65 +365,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Deal with a bad situation caused by PayPal's botched subscr_id migration.
-   * See comment on RecurringQueueConsumer::importSubscriptionPayment.
-   */
-  public function testScrewySubscrId() {
-    civicrm_initialize();
-    $email = 'test_recur_' . mt_rand() . '@example.org';
-    // Set up an old-style PayPal recurring subscription with S-XXXX subscr_id
-    $subscr_id = 'S-' . mt_rand();
-    $ctId = $this->addContributionTracking();
-    $values = $this->processRecurringSignup($subscr_id, [
-      'gateway' => 'paypal',
-      'email' => $email,
-      'contribution_tracking_id' => $ctId,
-    ]);
-
-    // Import an initial payment with consistent gateway and subscr_id
-    $values['email'] = $email;
-    $values['gateway'] = 'paypal';
-    $oldStyleMessage = new RecurringPaymentMessage($values);
-
-    $this->importMessage($oldStyleMessage);
-
-    // New payment comes in with subscr ID format that we associate
-    // with paypal_ec, so we mis-tag the gateway.
-    $new_subscr_id = 'I-' . mt_rand();
-    $values['subscr_id'] = $new_subscr_id;
-    $values['gateway'] = 'paypal_ec';
-    $newStyleMessage = new RecurringPaymentMessage($values);
-
-    $this->consumer->processMessage($newStyleMessage->getBody());
-    // It should be imported as a paypal donation, not paypal_ec
-    $contributions = wmf_civicrm_get_contributions_from_gateway_id(
-      'paypal',
-      $newStyleMessage->getGatewayTxnId()
-    );
-    // New record should have created a new contribution
-    $this->assertEquals(1, count($contributions));
-
-    // Add the contribution to our tearDown array, since we didn't go through
-    // $this->importMessage for this one.
-    $this->addToCleanup($contributions[0]);
-
-    // There should still only be one contribution_recur record
-    $recur_records = wmf_civicrm_dao_to_list(CRM_Core_DAO::executeQuery("
-      SELECT ccr.*
-      FROM civicrm_contribution_recur ccr
-      INNER JOIN civicrm_email e on ccr.contact_id = e.contact_id
-      WHERE e.email = '$email'
-    "));
-    $this->assertEquals(1, count($recur_records));
-
-    // ...and it should be associated with the contribution
-    $this->assertEquals($recur_records[0]['id'], $contributions[0]['contribution_recur_id']);
-
-    // Finally, we should have stuck the new ID in the processor_id field
-    $this->assertEquals($new_subscr_id, $recur_records[0]['processor_id']);
-  }
-
-  /**
    *  Test that a token is created for a new ingenico recurring donation and a recurring contribution
    *  is created correctly
    */
@@ -677,76 +618,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Test use of Auto Rescue message consumption
-   */
-  public function testRecurringQueueConsumeAutoRescueMessage() {
-    $rescueReference = 'MT6S49RV4HNG5S82';
-    $orderId = "279.2";
-    $recur = $this->getTestContributionRecurRecords([
-      'frequency_interval' => '1',
-      'frequency_unit' => 'month',
-      'contribution_recur_smashpig.rescue_reference' => $rescueReference,
-      'invoice_id' => $orderId,
-    ]);
-    $this->ids['ContributionRecur'][$recur['id']] = $recur['id'];
-
-    $this->getContribution([
-      'total_amount' => $recur['amount'],
-      'payment_instrument_id:name' => "Credit Card: Visa",
-      'contribution_recur_id' => $recur['id'],
-      'amount' => $recur['amount'],
-      'currency' => $recur['currency'],
-      'contact_id' => $recur['contact_id'],
-      'receive_date' => date('Y-m-d H:i:s', strtotime('-1 month')),
-      'gateway' => 'adyen',
-      'trxn_id' => $recur['trxn_id'],
-      'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
-    ]);
-
-    $date = time();
-    $message = new RecurringPaymentMessage(
-      [
-        'txn_type' => 'subscr_payment',
-        'gateway' => 'adyen',
-        'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
-        'date' => $date,
-        'is_successful_autorescue' => TRUE,
-        'rescue_reference' => $rescueReference,
-        'currency' => 'USD',
-        'amount' => 10,
-        'order_id' => $orderId,
-        'source_name' => 'CiviCRM',
-        'source_type' => 'direct',
-        'source_host' => '051a7ac1b08d',
-        'source_run_id' => 10315,
-        'source_version' => 'unknown',
-        'source_enqueued_time' => 1694530827,
-      ]
-    );
-    $contributionsAfterRecurring = $this->importMessage($message);
-
-    // importMessage adds the id to cleanup but it had already been added in getTestContributionRecurRecords
-    unset($this->ids['Contact'][$recur['contact_id']]);
-
-    $updatedRecur = ContributionRecur::get(FALSE)
-      ->addSelect('*', 'contribution_status_id:name')
-      ->addWhere('id', '=', $recur['id'])
-      ->execute()
-      ->first();
-
-    $this->assertEquals('In Progress', $updatedRecur['contribution_status_id:name']);
-
-    // check that the generated next_sched date is between 27 and 31 days away
-    $today = DateTime::createFromFormat("U", $date);
-    $nextMonth = new DateTime($updatedRecur['next_sched_contribution_date']);
-    $difference = $nextMonth->diff($today)->days;
-    $this->assertGreaterThanOrEqual(27, $difference);
-    $this->assertLessThanOrEqual(31, $difference);
-
-    $this->assertStringContainsString($orderId, $contributionsAfterRecurring[0]['invoice_id']);
-  }
-
-  /**
    * Test handling of deadlock exception in function that imports subscription payment
    */
   public function testHandleDeadlockExceptionSubscriptionPayment() {
@@ -863,23 +734,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       ->execute()
       ->first();
     return $recur;
-  }
-
-  /**
-   * Create a contribution_recur table row for a test
-   *
-   * @param array $recurParams
-   *
-   * @return array
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  protected function getContribution(array $recurParams = []): array {
-    return Contribution::create(FALSE)->setValues(array_merge([
-      'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
-      'total_amount' => 60,
-      'receive_date' => 'now',
-    ], $recurParams))->execute()->first();
   }
 
   protected function getTestRecurringQueueConsumerWithContributionRecurExceptions(): RecurringQueueConsumer {

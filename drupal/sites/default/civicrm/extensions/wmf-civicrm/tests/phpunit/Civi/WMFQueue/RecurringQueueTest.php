@@ -31,7 +31,7 @@ class RecurringQueueTest extends BaseQueue {
    * @throws \CRM_Core_Exception
    */
   public function testDeclineRecurringUpgrade(): void {
-    $testRecurring = $this->getTestContributionRecurRecords();
+    $testRecurring = $this->createContributionRecur();
     $msg = [
       'txn_type' => "recurring_upgrade_decline",
       'contribution_recur_id' => $testRecurring['id'],
@@ -58,7 +58,7 @@ class RecurringQueueTest extends BaseQueue {
    * @throws \CRM_Core_Exception
    */
   public function testRecurringUpgrade(): void {
-    $testRecurring = $this->getTestContributionRecurRecords();
+    $testRecurring = $this->createContributionRecur();
     $additionalAmount = 5;
     $msg = [
       'txn_type' => "recurring_upgrade",
@@ -96,7 +96,7 @@ class RecurringQueueTest extends BaseQueue {
    * @throws \CRM_Core_Exception
    */
   public function testRecurringDowngrade(): void {
-    $testRecurringContributionFor15Dollars = $this->getTestContributionRecurRecords([
+    $testRecurringContributionFor15Dollars = $this->createContributionRecur([
       'amount' => 15,
     ]);
 
@@ -150,8 +150,8 @@ class RecurringQueueTest extends BaseQueue {
    * @throws \CRM_Core_Exception
    */
   public function testApi4CTinRecurringGet(): void {
-    $recur = $this->getTestContributionRecurRecords();
-    $contribution = $this->getContribution([
+    $recur = $this->createContributionRecur();
+    $contribution = $this->createRecurringContribution([
       'contribution_recur_id' => $recur['id'],
       'contact_id' => $recur['contact_id'],
       'trxn_id' => $recur['trxn_id'],
@@ -185,52 +185,18 @@ class RecurringQueueTest extends BaseQueue {
   /**
    * Create a contribution_recur table row for a test
    *
-   * @param array $recurParams
-   *
-   * @return array
-   * @throws \CRM_Core_Exception
-   */
-  protected function getTestContributionRecurRecords(array $recurParams = []): array {
-    $contactID = $recurParams['contact_id'] ?? $this->createIndividual();
-    return ContributionRecur::create(FALSE)
-      ->setValues(array_merge([
-        'contact_id' => $contactID,
-        'amount' => 10,
-        'frequency_interval' => 'month',
-        'cycle_day' => date('d'),
-        'start_date' => 'now',
-        'is_active' => TRUE,
-        'contribution_status_id:name' => 'Pending',
-        'trxn_id' => 1234,
-      ], $recurParams))
-      ->execute()
-      ->first();
-  }
-
-  /**
-   * Create a contribution_recur table row for a test
-   *
-   * @param array $recurParams
+   * @param array $values
    *
    * @return array
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  protected function getContribution(array $recurParams = []): array {
+  protected function createRecurringContribution(array $values = []): array {
     return Contribution::create(FALSE)->setValues(array_merge([
       'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
       'total_amount' => 60,
       'receive_date' => 'now',
-    ], $recurParams))->execute()->first();
-  }
-
-  /**
-   * @param array $values
-   *
-   * @return array
-   */
-  public function getRecurringPaymentMessage(array $values = []): array {
-    return array_merge($this->loadMessage('recurring_payment'), $values);
+    ], $values))->execute()->first();
   }
 
   /**
@@ -261,6 +227,64 @@ class RecurringQueueTest extends BaseQueue {
       ->execute()->single();
     // ...and it should have the correct currency
     $this->assertEquals('CAD', $contributionRecur['currency']);
+  }
+
+  /**
+   * Deal with a bad situation caused by PayPal's botched subscr_id migration.
+   * See comment on RecurringQueueConsumer::importSubscriptionPayment.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testScrewySubscrId(): void {
+    $email = 'test_recur_' . mt_rand() . '@example.org';
+    // Set up an old-style PayPal recurring subscription with S-XXXX subscr_id
+    $subscr_id = 'S-' . mt_rand();
+    $ctId = $this->addContributionTrackingRecord();
+    $values = $this->processRecurringSignup($subscr_id, [
+      'gateway' => 'paypal',
+      'email' => $email,
+      'contribution_tracking_id' => $ctId,
+    ]);
+
+    // Import an initial payment with consistent gateway and subscr_id
+    $values['email'] = $email;
+    $values['gateway'] = 'paypal';
+    $oldStyleMessage = $this->getRecurringPaymentMessage($values);
+
+    $this->processMessage($oldStyleMessage);
+
+    // New payment comes in with subscr ID format that we associate
+    // with paypal_ec, so we mis-tag the gateway.
+    $new_subscr_id = 'I-' . mt_rand();
+    $values['subscr_id'] = $new_subscr_id;
+    $values['gateway'] = 'paypal_ec';
+    $values['gateway_txn_id'] = 456789;
+    $newStyleMessage = $this->getRecurringPaymentMessage($values);
+
+    $this->processMessage($newStyleMessage);
+    // It should be imported as a paypal donation, not paypal_ec
+    $contribution = $this->getContributionForMessage(['gateway' => 'paypal'] + $newStyleMessage);
+
+    $contributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $contribution['contribution_recur_id'])
+      ->execute()->single();
+
+    // Finally, we should have stuck the new ID in the processor_id field
+    $this->assertEquals($new_subscr_id, $contributionRecur['processor_id']);
+  }
+
+  /**
+   * Process the original recurring sign up message.
+   *
+   * @param string $subscr_id
+   * @param array $overrides
+   *
+   * @return array
+   */
+  private function processRecurringSignup(string $subscr_id, array $overrides = []): array {
+    $values = $overrides + ['subscr_id' => $subscr_id];
+    $this->processMessage($this->getRecurringSignupMessage($values));
+    return $values;
   }
 
 }
