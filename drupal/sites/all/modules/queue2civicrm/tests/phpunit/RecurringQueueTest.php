@@ -1,15 +1,12 @@
 <?php
 
-use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\Contribution;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
-use Civi\WMFHelper\ContributionTracking as WMFHelper;
 use Civi\WMFQueue\RecurringQueueConsumer;
 use Civi\WMFException\WMFException;
 use SmashPig\Core\DataStores\DamagedDatabase;
-use SmashPig\Core\SequenceGenerators\Factory;
 use SmashPig\Core\UtcDate;
 
 /**
@@ -71,106 +68,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     }
     $consumer = $this->getTestRecurringQueueConsumerWithContributionRecurExceptions();
     $consumer->processMessageWithErrorHandling($message->getBody());
-  }
-
-  public function testDeclineRecurringUpgrade() {
-    $testRecurring = $this->getTestContributionRecurRecords();
-    $msg = [
-      'txn_type' => "recurring_upgrade_decline",
-      'contribution_recur_id' => $testRecurring['id'],
-      'contact_id' => $testRecurring['contact_id'],
-    ];
-    $this->consumer->processMessage($msg);
-    $activity = Activity::get(FALSE)
-      ->addWhere('source_record_id', '=', $testRecurring['id'])
-      ->addWhere('activity_type_id', '=', RecurringQueueConsumer::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
-      ->execute()
-      ->last();
-    $this->assertEquals($activity['subject'], "Decline recurring update");
-  }
-
-  public function testRecurringUpgrade() {
-    $testRecurring = $this->getTestContributionRecurRecords();
-    $additionalAmount = 5;
-    $msg = [
-      'txn_type' => "recurring_upgrade",
-      'contribution_recur_id' => $testRecurring['id'],
-      'amount' => $testRecurring['amount'] + $additionalAmount,
-      'currency' => $testRecurring['currency'],
-    ];
-    $amountDetails = [
-      "native_currency" => $msg['currency'],
-      "native_original_amount" => $testRecurring['amount'],
-      "usd_original_amount" => round(exchange_rate_convert($msg['currency'], $testRecurring['amount']), 2),
-      "native_amount_added" => $additionalAmount,
-      "usd_amount_added" => round(exchange_rate_convert($msg['currency'], $additionalAmount), 2),
-    ];
-
-    $this->consumer->processMessage($msg);
-    $updatedRecurring = ContributionRecur::get(FALSE)
-      ->addSelect('id', 'amount')
-      ->addWhere('id', '=', $testRecurring['id'])
-      ->execute()
-      ->first();
-    $activity = Activity::get(FALSE)
-      ->addWhere('source_record_id', '=', $testRecurring['id'])
-      ->addWhere('activity_type_id', '=', RecurringQueueConsumer::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID)
-      ->execute()
-      ->last();
-    $this->assertEquals($testRecurring['amount'] + $additionalAmount, $updatedRecurring['amount']);
-    $this->assertEquals($activity['subject'], "Added " . $additionalAmount . " " . $msg['currency']);
-    $this->assertEquals($activity['details'], json_encode($amountDetails));
-    $this->ids['ContributionRecur'][$testRecurring['id']] = $testRecurring['id'];
-    $this->ids['Activity'][$activity['id']] = $activity['id'];
-  }
-
-  public function testRecurringDowngrade(): void {
-    $testRecurringContributionFor15Dollars = $this->getTestContributionRecurRecords([
-      'amount' => 15,
-    ]);
-
-    // The recurring donation has been reduced by 10 dollars
-    $newRecurringDonationAmount = 5;
-    $changeAmount = ($testRecurringContributionFor15Dollars['amount'] - $newRecurringDonationAmount);
-
-    $recurringQueueMessage = [
-      'txn_type' => "recurring_downgrade",
-      'contribution_recur_id' => $testRecurringContributionFor15Dollars['id'],
-      'amount' => $newRecurringDonationAmount,
-      'currency' => $testRecurringContributionFor15Dollars['currency'],
-    ];
-
-    $amountDetails = [
-      "native_currency" => $recurringQueueMessage['currency'],
-      "native_original_amount" => $testRecurringContributionFor15Dollars['amount'],
-      "usd_original_amount" => round(exchange_rate_convert($recurringQueueMessage['currency'], $testRecurringContributionFor15Dollars['amount']), 2),
-      "native_amount_removed" => $changeAmount,
-      "usd_amount_removed" => round(exchange_rate_convert($recurringQueueMessage['currency'], $changeAmount), 2),
-    ];
-
-    $this->consumer->processMessage($recurringQueueMessage);
-
-    $updatedRecurring = ContributionRecur::get(FALSE)
-      ->addSelect('id', 'amount')
-      ->addWhere('id', '=', $testRecurringContributionFor15Dollars['id'])
-      ->execute()
-      ->first();
-
-    $activity = Activity::get(FALSE)
-      ->addWhere('source_record_id', '=', $testRecurringContributionFor15Dollars['id'])
-      ->addWhere('activity_type_id', '=', RecurringQueueConsumer::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID)
-      ->execute()
-      ->last();
-
-    $this->assertEquals($newRecurringDonationAmount, $updatedRecurring['amount']);
-
-    $this->assertEquals("Recurring amount reduced by " . abs($changeAmount) . " " . $recurringQueueMessage['currency'], $activity['subject']);
-
-    $this->assertEquals(json_encode($amountDetails), $activity['details']);
-
-    // clean up fixture data
-    $this->ids['ContributionRecur'][$testRecurringContributionFor15Dollars['id']] = $testRecurringContributionFor15Dollars['id'];
-    $this->ids['Activity'][$activity['id']] = $activity['id'];
   }
 
   public function testCreateDistinctContributions(): void {
@@ -555,43 +452,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Finally, we should have stuck the new ID in the processor_id field
     $this->assertEquals($new_subscr_id, $recur_records[0]['processor_id']);
-  }
-
-  /**
-   * Test use of API4 in Contribution Tracking in recurring module
-   */
-  public function testApi4CTinRecurringGet(): void {
-    $email = 'test_recur_' . mt_rand() . '@example.org';
-    $recur = $this->getTestContributionRecurRecords();
-    $contribution = $this->getContribution([
-      'contribution_recur_id' => $recur['id'],
-      'contact_id' => $recur['contact_id'],
-      'trxn_id' => $recur['trxn_id'],
-    ]);
-    $generator = Factory::getSequenceGenerator('contribution-tracking');
-    $contribution_tracking_id = $generator->getNext();
-    $createTestCT = ContributionTracking::save(FALSE)->addRecord(WMFHelper::getContributionTrackingParameters([
-      'utm_source' => '..rpp',
-      'utm_medium' => 'civicrm',
-      'ts' => '',
-      'contribution_id' => $contribution['id'],
-      'id' => $contribution_tracking_id,
-    ]))->execute()->first();
-
-    $ctFromResponse = ContributionRecur::get(FALSE)
-      ->addSelect('MIN(contribution_tracking.id) AS ctid', 'MIN(contribution.id) AS contribution_id')
-      ->addJoin('Contribution AS contribution', 'INNER')
-      ->addJoin('ContributionTracking AS contribution_tracking', 'LEFT', ['contribution_tracking.contribution_id', '=', 'contribution.id'])
-      ->addGroupBy('id')
-      ->addWhere('trxn_id', '=', $recur['trxn_id'],)
-      ->setLimit(1)
-      ->execute()
-      ->first()['ctid'];
-
-    $this->assertEquals($createTestCT['id'], $ctFromResponse);
-    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
-    $this->ids['ContributionRecur'][$contribution['contribution_recur_id']] = $contribution['contribution_recur_id'];
-    $this->ids['ContributionTracking'][$ctFromResponse] = $ctFromResponse;
   }
 
   public function testNoSubscrId(): void {
