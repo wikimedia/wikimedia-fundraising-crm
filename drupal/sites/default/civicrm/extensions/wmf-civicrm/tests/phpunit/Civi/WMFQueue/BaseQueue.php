@@ -244,6 +244,19 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
   }
 
   /**
+   * Process donation, using defaults plus any passed in values.
+   *
+   * @param array $values
+   *
+   * @return array
+   */
+  protected function processDonationMessage(array $values): array {
+    $donation_message = $this->getDonationMessage($values);
+    $this->processMessage($donation_message, 'Donation', 'test');
+    return $donation_message;
+  }
+
+  /**
    * Process the given queue.
    *
    * @param array $message

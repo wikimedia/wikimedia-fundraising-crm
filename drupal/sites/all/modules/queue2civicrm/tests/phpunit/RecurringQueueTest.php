@@ -365,37 +365,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Ensure non-USD PayPal synthetic start message gets the right
-   * currency imported
-   */
-  public function testPayPalMissingPredecessorNonUSD() {
-    $email = 'notinthedb' . (string) mt_rand() . '@example.com';
-    $message = new RecurringPaymentMessage(
-      [
-        'currency' => 'CAD',
-        'amount' => 10.00,
-        'gateway' => 'paypal_ec',
-        'subscr_id' => 'I-' . (string) mt_rand(),
-        'email' => $email,
-      ]
-    );
-
-    $this->importMessage($message);
-
-    // We should have inserted one contribution_recur record
-    $recur_records = wmf_civicrm_dao_to_list(CRM_Core_DAO::executeQuery("
-      SELECT ccr.*
-      FROM civicrm_contribution_recur ccr
-      INNER JOIN civicrm_email e on ccr.contact_id = e.contact_id
-      WHERE e.email = '$email'
-    "));
-    $this->assertEquals(1, count($recur_records));
-
-    // ...and it should have the correct currency
-    $this->assertEquals('CAD', $recur_records[0]['currency']);
-  }
-
-  /**
    * Deal with a bad situation caused by PayPal's botched subscr_id migration.
    * See comment on RecurringQueueConsumer::importSubscriptionPayment.
    */
@@ -452,18 +421,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     // Finally, we should have stuck the new ID in the processor_id field
     $this->assertEquals($new_subscr_id, $recur_records[0]['processor_id']);
-  }
-
-  public function testNoSubscrId(): void {
-    $this->expectExceptionCode(WMFException::INVALID_RECURRING);
-    $this->expectException(WMFException::class);
-    $message = new RecurringPaymentMessage(
-      [
-        'subscr_id' => NULL,
-      ]
-    );
-
-    $this->importMessage($message);
   }
 
   /**

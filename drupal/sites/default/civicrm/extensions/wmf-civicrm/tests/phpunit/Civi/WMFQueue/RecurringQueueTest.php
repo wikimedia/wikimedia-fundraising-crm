@@ -3,6 +3,7 @@
 namespace Civi\WMFQueue;
 
 use Civi\Api4\Activity;
+use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Test\Api3TestTrait;
@@ -11,6 +12,7 @@ use Civi\Api4\Contribution;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFHelper\ContributionTracking as WMFHelper;
 use SmashPig\Core\SequenceGenerators\Factory;
+use Civi\WMFException\WMFException;
 
 /**
  * @group queues
@@ -42,6 +44,14 @@ class RecurringQueueTest extends BaseQueue {
       ->execute()
       ->last();
     $this->assertEquals("Decline recurring update", $activity['subject']);
+  }
+
+  public function testNoSubscrId(): void {
+    $this->expectExceptionCode(WMFException::INVALID_RECURRING);
+    $this->expectException(WMFException::class);
+    $message = $this->getRecurringPaymentMessage();
+    $message['subscr_id'] = NULL;
+    $this->processMessageWithoutQueuing($message);
   }
 
   /**
@@ -212,6 +222,45 @@ class RecurringQueueTest extends BaseQueue {
       'total_amount' => 60,
       'receive_date' => 'now',
     ], $recurParams))->execute()->first();
+  }
+
+  /**
+   * @param array $values
+   *
+   * @return array
+   */
+  public function getRecurringPaymentMessage(array $values = []): array {
+    return array_merge($this->loadMessage('recurring_payment'), $values);
+  }
+
+  /**
+   * Ensure non-USD PayPal synthetic start message gets the right
+   * currency imported
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Random\RandomException
+   */
+  public function testPayPalMissingPredecessorNonUSD(): void {
+    $email = random_int(0, 1000) . 'not-in-the-database@example.com';
+    $message = $this->getRecurringPaymentMessage(
+      [
+        'currency' => 'CAD',
+        'amount' => 10.00,
+        'gateway' => 'paypal_ec',
+        'subscr_id' => 'I-123456',
+        'email' => $email,
+      ]
+    );
+
+    $this->processMessage($message);
+    $contact = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', $email)
+      ->execute()->single();
+    $contributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->execute()->single();
+    // ...and it should have the correct currency
+    $this->assertEquals('CAD', $contributionRecur['currency']);
   }
 
 }
