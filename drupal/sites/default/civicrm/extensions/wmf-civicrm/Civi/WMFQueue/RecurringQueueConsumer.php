@@ -384,14 +384,19 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   protected function upgradeRecurDecline($msg) {
-    Activity::create(FALSE)
+    $createCall = Activity::create(FALSE)
       ->addValue('activity_type_id', self::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
       ->addValue('source_record_id', $msg['contribution_recur_id'])
       ->addValue('status_id:name', 'Completed')
       ->addValue('subject', "Decline recurring update")
       ->addValue('details', "Decline recurring update")
-      ->addValue('source_contact_id', $msg['contact_id'])
-      ->execute();
+      ->addValue('source_contact_id', $msg['contact_id']);
+    foreach (['campaign', 'medium', 'source'] as $trackingField) {
+      if (!empty($msg[$trackingField])) {
+        $createCall->addValue('activity_tracking.activity_' . $trackingField, $msg[$trackingField]);
+      }
+    }
+    $createCall->execute();
   }
 
   protected function getSubscrModificationParameters($msg, $recur_record): array {
@@ -405,6 +410,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       'contact_id' => $recur_record['contact_id'],
       'contribution_recur_id' => $recur_record['id'],
     ];
+    foreach (['campaign', 'medium', 'source'] as $trackingField) {
+      $activityParams[$trackingField] = $msg[$trackingField] ?? NULL;
+    }
     return [$amountDetails, $activityParams];
   }
 
@@ -810,7 +818,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  protected function updateContributionRecurAndRecurringActivity($amountDetails = [], array $activityParams): void {
+  protected function updateContributionRecurAndRecurringActivity($amountDetails, array $activityParams): void {
     $additionalData = json_encode($amountDetails);
 
     ContributionRecur::update(FALSE)->addValue('amount', $activityParams['amount'])->addWhere(
@@ -819,7 +827,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $activityParams['contribution_recur_id']
     )->execute();
 
-    Activity::create(FALSE)
+    $createCall = Activity::create(FALSE)
       ->addValue('activity_type_id', $activityParams['activity_type_id'])
       ->addValue(
         'source_record_id',
@@ -828,8 +836,12 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       ->addValue('status_id:name', 'Completed')
       ->addValue('subject', $activityParams['subject'])
       ->addValue('details', $additionalData)
-      ->addValue('source_contact_id', $activityParams['contact_id'])
-      ->execute();
+      ->addValue('source_contact_id', $activityParams['contact_id']);
+    foreach (['campaign', 'medium', 'source'] as $trackingField) {
+      if (!empty($activityParams[$trackingField])) {
+        $createCall->addValue('activity_tracking.activity_' . $trackingField, $activityParams[$trackingField]);
+      }
+    }
+    $createCall->execute();
   }
-
 }
