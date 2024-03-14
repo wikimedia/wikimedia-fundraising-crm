@@ -61,6 +61,7 @@
     <ext>civicrm_admin_ui</ext>
     <ext>biz.lcdservices.movecontrib</ext>
     <ext>theisland</ext>
+    <ext>damaged</ext>
   </requires>
   <civix>
     <namespace>CRM/Wmf</namespace>
