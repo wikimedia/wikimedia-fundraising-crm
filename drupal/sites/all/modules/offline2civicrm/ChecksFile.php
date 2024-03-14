@@ -561,6 +561,17 @@ abstract class ChecksFile {
         }
       }
     }
+
+    $list_fields = [
+      'contact_groups',
+      'contact_tags',
+      'contribution_tags',
+    ];
+    foreach ($list_fields as $field) {
+      if (!empty($msg[$field])) {
+        $msg[$field] = preg_split('/[\s,]+/', $msg[$field], NULL, PREG_SPLIT_NO_EMPTY);
+      }
+    }
   }
 
   /**

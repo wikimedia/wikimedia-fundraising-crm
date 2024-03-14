@@ -856,7 +856,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'gross' => '1.23',
       'payment_method' => 'cc',
       'payment_submethod' => 'visa',
-      'contact_groups' => 'in_group',
+      'contact_groups' => ['in_group'],
     ];
     $contribution = $this->messageImport($msg);
 

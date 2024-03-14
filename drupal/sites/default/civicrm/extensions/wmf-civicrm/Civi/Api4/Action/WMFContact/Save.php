@@ -273,7 +273,7 @@ class Save extends AbstractAction {
       $stacked_ex = [];
       foreach (array_unique($msg['contact_groups']) as $group) {
         try {
-          $tag_result = civicrm_api3("GroupContact", "Create", [
+          civicrm_api3("GroupContact", "Create", [
             'contact_id' => $contact_id,
             'group_id' => $supported_groups[$group],
           ]);
