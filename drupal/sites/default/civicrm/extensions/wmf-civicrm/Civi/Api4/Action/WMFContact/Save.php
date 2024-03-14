@@ -1,4 +1,5 @@
 <?php
+
 namespace Civi\Api4\Action\WMFContact;
 
 use Civi\Api4\Address;
@@ -151,8 +152,10 @@ class Save extends AbstractAction {
     if (!empty($msg['name_suffix'])) {
       $contact['suffix_id'] = $msg['name_suffix'];
     }
-
-    $contact['preferred_language'] = $this->getPreferredLanguage($msg);
+    $preferredLanguage = $this->getPreferredLanguage($msg);
+    if ($preferredLanguage) {
+      $contact['preferred_language'] = $preferredLanguage;
+    }
 
     // Copy some fields, if they exist
     $direct_fields = [
@@ -213,17 +216,17 @@ class Save extends AbstractAction {
     }
     // Attempt to insert the contact
     try {
-      $this->startTimer( 'create_contact_civi_api' );
+      $this->startTimer('create_contact_civi_api');
       $contact_result = civicrm_api3('Contact', 'Create', $contact);
-      $this->stopTimer( 'create_contact_civi_api' );
+      $this->stopTimer('create_contact_civi_api');
       \Civi::log('wmf')->debug('wmf_civicrm: Successfully ' . ($contact_id ? 'updated' : 'created ') . ' contact: {id}', ['id' => $contact_result['id']]);
       $this->createEmployerRelationshipIfSpecified($contact_result['id'], $msg);
       if (Database::isNativeTxnRolledBack()) {
         throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
       }
     }
-    // Soon we will only catch CRM_Core_Exception as the other exceptions are now aliased to it
-    // preparatory to being phased out
+      // Soon we will only catch CRM_Core_Exception as the other exceptions are now aliased to it
+      // preparatory to being phased out
     catch (\CRM_Core_Exception $ex) {
       if (in_array($ex->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) {
         throw new WMFException(
@@ -322,7 +325,6 @@ class Save extends AbstractAction {
     $result[] = $contact_result;
   }
 
-
   /**
    * Start the timer on a process.
    *
@@ -402,6 +404,9 @@ class Save extends AbstractAction {
     $incomingLanguage = $msg['language'] ?? '';
     $country = $msg['country'] ?? '';
     $preferredLanguage = '';
+    if (!$incomingLanguage && $this->getContactID()) {
+      return '';
+    }
     if (!$incomingLanguage) {
       // TODO: use LanguageTag to prevent truncation of >2 char lang codes
       // guess from contribution_tracking data

@@ -179,32 +179,15 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         // PayPal has just not been sending subscr_signup messages for a lot of
         // messages lately. Insert a whole new contribution_recur record.
         $startMessage = [
-          'txn_type' => 'subscr_signup',
-          'subscr_id' => $msg['subscr_id'],
-          'contribution_tracking_id' => $msg['contribution_tracking_id'],
-          'email' => $msg['email'],
-          'first_name' => $msg['first_name'],
-          'middle_name' => $msg['middle_name'],
-          'last_name' => $msg['last_name'],
-          'street_address' => $msg['street_address'],
-          'city' => $msg['city'],
-          'state_province' => $msg['state_province'],
-          'country' => $msg['country'],
-          'postal_code' => $msg['postal_code'],
-          // Assuming monthly donation
-          'frequency_interval' => '1',
-          'frequency_unit' => 'month',
-          'installments' => 0,
-          'original_gross' => $msg['original_gross'] ?? NULL,
-          'original_currency' => $msg['original_currency'] ?? NULL,
-          'gross' => $msg['gross'],
-          'currency' => $msg['currency'],
-          'create_date' => $msg['date'],
-          'start_date' => $msg['date'],
-          'date' => $msg['date'],
-          'gateway' => $msg['gateway'],
-          'recurring' => TRUE,
-        ];
+            'txn_type' => 'subscr_signup',
+            // Assuming monthly donation
+            'frequency_interval' => '1',
+            'frequency_unit' => 'month',
+            'installments' => 0,
+            'create_date' => $msg['date'],
+            'start_date' => $msg['date'],
+            'recurring' => TRUE,
+          ] + $msg;
         $startMessage = $this->normalizeMessage($startMessage);
         $this->importSubscriptionSignup($startMessage);
         $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);

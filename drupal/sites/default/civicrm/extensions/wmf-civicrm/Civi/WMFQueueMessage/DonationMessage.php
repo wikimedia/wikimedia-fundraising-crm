@@ -174,12 +174,20 @@ class DonationMessage {
       $msg['addressee_custom'] = $msg['full_name'];
     }
 
-    $msg += array_filter([
+    $contactFields = [
       'first_name' => $this->getFirstName(),
       'last_name' => $this->getLastName(),
       'middle_name' => $this->getMiddleName(),
-    ]);
-
+      'language' => $this->getLanguage(),
+    ];
+    foreach ($contactFields as $name => $contactField) {
+      if ($contactField) {
+        $msg[$name] = $contactField;
+      }
+      else {
+        unset($msg[$name]);
+      }
+    }
     // Check for special flags
     // TODO: push non-generic cases into database
     if (!empty($msg['utm_campaign'])) {
@@ -207,12 +215,6 @@ class DonationMessage {
         $msg[$field] = preg_split('/[\s,]+/', $msg[$field], NULL, PREG_SPLIT_NO_EMPTY);
       }
       $msg[$field] = array_unique($msg[$field]);
-    }
-
-    // Front-end uses es-419 to represent Latin American Spanish but
-    // CiviCRM needs to store it as a 5 char string. We choose es_MX.
-    if (isset($msg['language']) && strtolower($msg['language']) === 'es-419') {
-      $msg['language'] = 'es_MX';
     }
 
     // set the correct amount fields/data and do exchange rate conversions.
@@ -275,6 +277,16 @@ class DonationMessage {
     }
     if (!empty($this->getParsedName())) {
       return $this->getParsedName()['middle_name'] ?? '';
+    }
+    return '';
+  }
+
+  public function getLanguage(): string {
+    if (!empty($this->message['language'])) {
+      $isES419 = strtolower($this->message['language']) === 'es-419';
+      // Front-end uses es-419 to represent Latin American Spanish but
+      // CiviCRM needs to store it as a 5 char string. We choose es_MX.
+      return $isES419 ? 'es_MX' : $this->message['language'];
     }
     return '';
   }
