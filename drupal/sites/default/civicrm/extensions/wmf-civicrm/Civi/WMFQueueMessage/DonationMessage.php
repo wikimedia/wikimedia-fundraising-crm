@@ -128,15 +128,8 @@ class DonationMessage extends Message {
     $msg['financial_type_id'] = $this->getFinancialTypeID();
     $msg['contribution_recur_id'] = $this->getContributionRecurID();
     $msg['contact_id'] = $this->getContactID();
-    if (empty($msg['payment_instrument_id'])) {
-      $paymentInstrument = $msg['payment_instrument'] ?? FinanceInstrument::getPaymentInstrument($msg);
-      $msg['payment_instrument_id'] = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $paymentInstrument);
-    }
-    if (!$msg['payment_instrument_id']) {
-      throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
-    }
+    $msg['payment_instrument_id'] = $this->getPaymentInstrumentID();
     $msg['date'] = $this->getTimestamp();
-
     $msg['thankyou_date'] = $this->getThankYouDate();
     $parsed = $this->getParsedName();
     if (!empty($parsed)) {
@@ -480,6 +473,29 @@ class DonationMessage extends Message {
       }
     }
     return $this->parsedName;
+  }
+
+  /**
+   * @return int
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function getPaymentInstrumentID(): int {
+    if (!empty($this->message['payment_instrument_id'])) {
+      if (is_numeric($this->message['payment_instrument_id'])) {
+        return (int) $this->message['payment_instrument_id'];
+      }
+      $paymentInstrumentID = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $this->message['payment_instrument_id']);
+      if (!$paymentInstrumentID) {
+        throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
+      }
+      return (int) $paymentInstrumentID;
+    }
+    $paymentInstrument = $this->message['payment_instrument'] ?? FinanceInstrument::getPaymentInstrument($this->message);
+    $paymentInstrumentID = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $paymentInstrument);
+    if ($paymentInstrumentID) {
+      return (int) $paymentInstrumentID;
+    }
+    throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
   }
 
 }
