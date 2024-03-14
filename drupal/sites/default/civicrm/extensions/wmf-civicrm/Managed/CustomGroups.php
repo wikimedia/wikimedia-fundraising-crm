@@ -35,6 +35,60 @@ $endowment_year_end_appeal_activity_type = CRM_Core_BAO_OptionValue::ensureOptio
   'name' => 'Endowment Year End Appeal',
   'label' => ts('Endowment Year End Appeal'),
 ]);
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'label' => 'Recurring Upgrade',
+  'value' => 165,
+  'name' => 'Recurring Upgrade',
+  'grouping' => NULL,
+  'filter' => 1,
+  'is_default' => FALSE,
+  'description' => 'Donor agreed to increase their recurring donation amount',
+  'is_optgroup' => FALSE,
+  'is_reserved' => TRUE,
+  'is_active' => TRUE,
+  'component_id' => NULL,
+  'domain_id' => NULL,
+  'visibility_id' => NULL,
+  'icon' => 'fa-thumbs-o-up',
+  'color' => NULL,
+]);
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'label' => 'Recurring Downgrade',
+  'value' => 168,
+  'name' => 'Recurring Downgrade',
+  'grouping' => NULL,
+  'filter' => 1,
+  'is_default' => FALSE,
+  'description' => 'Donor reduced their recurring donation amount',
+  'is_optgroup' => FALSE,
+  'is_reserved' => TRUE,
+  'is_active' => TRUE,
+  'component_id' => NULL,
+  'domain_id' => NULL,
+  'visibility_id' => NULL,
+  'icon' => 'fa-arrow-down',
+  'color' => NULL,
+]);
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'label' => 'Recurring Upgrade Decline',
+  'value' => 166,
+  'name' => 'Recurring Upgrade Decline',
+  'grouping' => NULL,
+  'filter' => 1,
+  'is_default' => FALSE,
+  'description' => 'Donor declined to increase their recurring donation amount',
+  'is_optgroup' => FALSE,
+  'is_reserved' => TRUE,
+  'is_active' => TRUE,
+  'component_id' => NULL,
+  'domain_id' => NULL,
+  'visibility_id' => NULL,
+  'icon' => 'fa-thumbs-o-down',
+  'color' => NULL,
+]);
 
 return [
   'wmf_donor' => [
@@ -206,6 +260,19 @@ return [
     ],
     'fields' => _wmf_civicrm_get_endowment_year_end_appeal_fields(),
   ],
+  'activity_tracking' => [
+    'group' => [
+      'name' => 'activity_tracking',
+      'title' => 'Activity Tracking',
+      'extends' => 'Activity',
+      'extends_entity_column_value' => [165, 166, 168], // Values hardcoded above
+      'style' => 'Inline',
+      'is_active' => TRUE,
+      'table_name' => 'civicrm_activity_tracking',
+      'weight' => 3,
+    ],
+    'fields' => _wmf_civicrm_get_activity_tracking_fields()
+  ]
 ];
 
 /**
@@ -1852,5 +1919,40 @@ function _wmf_civicrm_get_solicitor_values(): array {
     '4' => 'Katherine Maher',
     '5' => 'Maryana Iskander',
     '6' => 'General',
+  ];
+}
+
+function _wmf_civicrm_get_activity_tracking_fields(): array {
+  return [
+    'activity_campaign' => [
+      'name' => 'activity_campaign',
+      'label' => 'Campaign from URL',
+      'html_type' => 'Text',
+      'data_type' => 'String',
+      'is_searchable' => TRUE,
+      'text_length' => 255,
+      'column_name' => 'campaign',
+      'is_view' => 1,
+    ],
+    'activity_medium' => [
+      'name' => 'activity_medium',
+      'label' => 'Medium from URL',
+      'html_type' => 'Text',
+      'data_type' => 'String',
+      'is_searchable' => TRUE,
+      'text_length' => 255,
+      'column_name' => 'medium',
+      'is_view' => 1,
+    ],
+    'activity_source' => [
+      'name' => 'activity_source',
+      'label' => 'Source from URL',
+      'html_type' => 'Text',
+      'data_type' => 'String',
+      'is_searchable' => TRUE,
+      'text_length' => 255,
+      'column_name' => 'source',
+      'is_view' => 1,
+    ],
   ];
 }
