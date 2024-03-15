@@ -36,6 +36,9 @@ class CRM_Damaged_Form_SmashpigDamaged extends CRM_Core_Form {
     $params = ['id' => $id];
     $damagedRow = null;
     CRM_Damaged_BAO_Damaged::retrieve($params, $damagedRow);
+    if (empty($damagedRow)) {
+      throw new CRM_Core_Exception('Damaged message does not exist or has been resent to the corresponding queue.');
+    }
     $this->damagedRow = new CRM_Damaged_DamagedRow($damagedRow);
     return $this;
   }
@@ -101,31 +104,40 @@ class CRM_Damaged_Form_SmashpigDamaged extends CRM_Core_Form {
 
 
   public function buildQuickForm(): void {
-    $buttons = array([
-      "type" => "submit",
-      "name" => "Resend",
-      "isDefault" => TRUE
-    ]);
-    if ($this->_action & CRM_Core_Action::DELETE) {
+    try {
       $buttons = array([
         "type" => "submit",
-        "name" => "Delete",
+        "name" => "Resend",
+        "isDefault" => TRUE
       ]);
-      $this->setTitle("Delete damaged message");
-      $this->assign('deleteMessage', $this->deleteMessage);
-    } else {
-      $this->applyFilter('__ALL__', 'trim');
-      $this->setDamagedRow($this->_id)
-      ->setDamagedMessage()
-      ->setMessageFields()
-      ->setTrace();
-      $this->setTitle("Examine damaged message");
-      $this->assign('trace', $this->_trace);
-      $this->assign('error', $this->damagedRow->getError());
-      $this->assign('messageFields', $this->messageFields);
+      if ($this->_action & CRM_Core_Action::DELETE) {
+        $buttons = array([
+          "type" => "submit",
+          "name" => "Delete",
+        ]);
+        $this->setTitle("Delete damaged message");
+        $this->assign('deleteMessage', $this->deleteMessage);
+      } else {
+        $this->applyFilter('__ALL__', 'trim');
+        $this->setDamagedRow($this->_id)
+        ->setDamagedMessage()
+        ->setMessageFields()
+        ->setTrace();
+        $this->setTitle("Examine damaged message");
+        $this->assign('trace', $this->_trace);
+        $this->assign('error', $this->damagedRow->getError());
+        $this->assign('messageFields', $this->messageFields);
+      }
+      $this->addButtons($buttons);
+      parent::buildQuickForm();
+    } catch (CRM_Core_Exception $exception) {
+      $error_message = "Invalid damaged row ID";
+      if (!empty($this->_id)) {
+        $error_message = "Damaged message with ID: $this->_id does not exist.";
+      }
+      $this->setTitle($error_message);
+      CRM_Core_Session::setStatus($exception->getMessage(), ts('Error'), 'error');
     }
-    $this->addButtons($buttons);
-    parent::buildQuickForm();
   }
 
 
@@ -153,7 +165,7 @@ class CRM_Damaged_Form_SmashpigDamaged extends CRM_Core_Form {
   /**
    * @return array
    */
-  public function setDefaultValues(): array {
+  public function setDefaultValues(): ?array {
     if ($this->_action !== CRM_Core_Action::DELETE &&
       isset($this->_id)
     ) {
@@ -171,7 +183,7 @@ class CRM_Damaged_Form_SmashpigDamaged extends CRM_Core_Form {
         CRM_Damaged_BAO_Damaged::del($this->_id);
         CRM_Core_Session::setStatus(ts('Selected Damaged message has been deleted.'), ts('Record Deleted'), 'success');
       }
-      catch (CRM_Core_Exception $exception ) {
+      catch (CRM_Core_Exception $exception) {
         CRM_Core_Session::setStatus($exception->getMessage(), ts('Error'), 'error');
       }
     }
@@ -192,6 +204,10 @@ class CRM_Damaged_Form_SmashpigDamaged extends CRM_Core_Form {
         CRM_Damaged_BAO_Damaged::pushObjectsToQueue($damagedRow);
         CRM_Core_Session::setStatus(ts('Message %1 resent for processing.', array( 1 => $damagedRow->getId() ) ), ts('Saved'), 'success');
         CRM_Damaged_BAO_Damaged::del($damagedRow->getId());
+        $this->assign('trace', '');
+        $this->assign('error', '');
+        $this->assign('messageFields', '');
+        $this->setTitle("Message $this->_id has been resent for processing");
       }
       catch (CRM_Core_Exception | JsonException $exception ) {
         CRM_Core_Session::setStatus($exception->getMessage(), ts('Error'), 'error');

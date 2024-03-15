@@ -37,7 +37,7 @@ class CRM_Damaged_BAO_Damaged extends CRM_Damaged_DAO_Damaged {
    *   The DAO object, if found.
    *
    */
-  public static function retrieve($params, &$defaults): self {
+  public static function retrieve($params, &$defaults): ?self {
     return self::commonRetrieve(self::class, $params, $defaults);
   }
 
