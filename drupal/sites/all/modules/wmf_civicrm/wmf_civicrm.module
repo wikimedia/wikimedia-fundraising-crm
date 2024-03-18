@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Contact;
 use Civi\Api4\CustomField;
 use Civi\Api4\WMFContact;
 use Civi\WMFQueueMessage\DonationMessage;
@@ -1476,26 +1477,25 @@ function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_
 }
 
 /**
- * @param $contribution
+ * @param int $contactID
  *
  * @return array
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
-function _wmf_civicrm_get_contact_last_donation_data(&$contribution) {
-  $contactExistingCustomData = civicrm_api3('Contact', 'getsingle', [
-    'id' => $contribution->contact_id,
-    'return' => [
-      wmf_civicrm_get_custom_field_name('last_donation_currency'),
-      wmf_civicrm_get_custom_field_name('last_donation_amount'),
-      wmf_civicrm_get_custom_field_name('last_donation_date'),
-      wmf_civicrm_get_custom_field_name('last_donation_usd'),
-    ],
-  ]);
+function _wmf_civicrm_get_contact_last_donation_data(int $contactID): array {
+  $contactExistingCustomData = Contact::get(FALSE)->addWhere('id', '=', $contactID)
+    ->addSelect(
+      'wmf_donor.last_donation_currency',
+      'wmf_donor.last_donation_amount',
+      'wmf_donor.last_donation_date',
+      'wmf_donor.last_donation_usd'
+    )
+    ->execute()->first();
   return [
-    'amount' => CRM_Utils_Array::value(wmf_civicrm_get_custom_field_name('last_donation_amount'), $contactExistingCustomData),
-    'date' => CRM_Utils_Array::value(wmf_civicrm_get_custom_field_name('last_donation_date'), $contactExistingCustomData),
-    'amount_usd' => CRM_Utils_Array::value(wmf_civicrm_get_custom_field_name('last_donation_usd'), $contactExistingCustomData),
-    'currency' => CRM_Utils_Array::value(wmf_civicrm_get_custom_field_name('last_donation_currency'), $contactExistingCustomData),
+    'amount' => $contactExistingCustomData['wmf_donor.last_donation_amount'],
+    'date' => $contactExistingCustomData['wmf_donor.last_donation_date'],
+    'amount_usd' => $contactExistingCustomData['wmf_donor.last_donation_usd'],
+    'currency' => $contactExistingCustomData['wmf_donor.last_donation_currency'],
   ];
 }
 
