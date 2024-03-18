@@ -29,6 +29,7 @@
 {/literal}
 {/block}
 {* this template is used for adding/editing entities  located in forms*}
+{if $trace ne ''}
 <div class="crm-block damaged-form crm-form-block crm-{$entityInClassFormat}-form-block">
   {if $action eq 8}
     <div class="messages status no-popup">
@@ -66,6 +67,7 @@
   {/if}
   <div class="crm-submit-buttons">{include file="CRM/common/formButtons.tpl" location="bottom"}</div>
 </div>
+{/if}
 {literal}
  <script type="text/javascript">
    toggle = function(className) {
