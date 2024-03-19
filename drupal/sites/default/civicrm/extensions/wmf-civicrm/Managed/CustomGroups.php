@@ -271,8 +271,20 @@ return [
       'table_name' => 'civicrm_activity_tracking',
       'weight' => 3,
     ],
-    'fields' => _wmf_civicrm_get_activity_tracking_fields()
-  ]
+    'fields' => _wmf_civicrm_get_activity_tracking_fields(),
+  ],
+
+  'address_data' => [
+    'group' => [
+      'name' => 'address_data',
+      'title' => 'Address Data',
+      'extends' => 'Address',
+      'style' => 'Inline',
+      'is_active' => TRUE,
+      'table_name' => 'civicrm_value_address_data',
+    ],
+    'fields' => _wmf_civicrm_get_address_data_fields(),
+  ],
 ];
 
 /**
@@ -1953,6 +1965,36 @@ function _wmf_civicrm_get_activity_tracking_fields(): array {
       'text_length' => 255,
       'column_name' => 'source',
       'is_view' => 1,
+    ],
+  ];
+}
+
+function _wmf_civicrm_get_address_data_fields(): array {
+  return [
+    'address_source' => [
+      'name' => 'address_source',
+      'label' => 'Source',
+      'html_type' => 'Select',
+      'data_type' => 'String',
+      'text_length' => 255,
+      'column_name' => 'source',
+      'option_values' => [
+        'noca' => 'NOCA update',
+        'staff' => 'Staff Supplied',
+        'iwave' => 'iWave',
+        'donor' => 'Donor Supplied',
+      ],
+    ],
+    'address_update_date' => [
+      'name' => 'address_update_date',
+      'label' => 'Update date',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'text_length' => 255,
+      'date_format' => 'yy-mm-dd',
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'column_name' => 'update_date',
     ],
   ];
 }
