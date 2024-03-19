@@ -401,9 +401,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
   protected function getSubscrModificationParameters($msg, $recur_record): array {
     $amountDetails = [
-      "native_currency" => $msg['currency'],
-      "native_original_amount" => $recur_record['amount'],
-      "usd_original_amount" => round(exchange_rate_convert($msg['currency'], $recur_record['amount']), 2),
+      'native_currency' => $msg['currency'],
+      'native_original_amount' => $recur_record['amount'],
+      'usd_original_amount' => round(exchange_rate_convert($msg['currency'], $recur_record['amount']), 2),
     ];
     $activityParams = [
       'amount' => $msg['amount'],
@@ -440,7 +440,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     $amountDetails['native_amount_added'] = $amountAdded;
     $amountDetails['usd_amount_added'] = round(exchange_rate_convert($msg['currency'], $amountAdded), 2);
 
-    $activityParams['subject'] = "Added " . $amountAdded . " " . $msg['currency'];
+    $activityParams['subject'] = "Added $amountAdded {$msg['currency']}";
     $activityParams['activity_type_id'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
     $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
 
@@ -473,7 +473,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     $amountDetails['native_amount_removed'] = $amountRemoved;
     $amountDetails['usd_amount_removed'] = round(exchange_rate_convert($msg['currency'], $amountRemoved), 2);
 
-    $activityParams['subject'] = "Recurring amount reduced by " . $amountRemoved . " " . $msg['currency'];
+    $activityParams['subject'] = "Recurring amount reduced by $amountRemoved {$msg['currency']}";
     $activityParams['activity_type_id'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
     $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
   }

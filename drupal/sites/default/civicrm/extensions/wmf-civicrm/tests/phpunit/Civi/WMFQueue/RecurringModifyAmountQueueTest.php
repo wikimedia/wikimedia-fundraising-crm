@@ -26,7 +26,7 @@ class RecurringModifyAmountQueueTest extends BaseQueue {
   public function testDeclineRecurringUpgrade(): void {
     $testRecurring = $this->createContributionRecur();
     $msg = [
-      'txn_type' => "recurring_upgrade_decline",
+      'txn_type' => 'recurring_upgrade_decline',
       'contribution_recur_id' => $testRecurring['id'],
       'contact_id' => $testRecurring['contact_id'],
     ];
@@ -36,7 +36,7 @@ class RecurringModifyAmountQueueTest extends BaseQueue {
       ->addWhere('activity_type_id', '=', RecurringQueueConsumer::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
       ->execute()
       ->last();
-    $this->assertEquals("Decline recurring update", $activity['subject']);
+    $this->assertEquals('Decline recurring update', $activity['subject']);
   }
 
   /**
@@ -46,17 +46,17 @@ class RecurringModifyAmountQueueTest extends BaseQueue {
     $testRecurring = $this->createContributionRecur();
     $additionalAmount = 5;
     $msg = [
-      'txn_type' => "recurring_upgrade",
+      'txn_type' => 'recurring_upgrade',
       'contribution_recur_id' => $testRecurring['id'],
       'amount' => $testRecurring['amount'] + $additionalAmount,
       'currency' => $testRecurring['currency'],
     ];
     $amountDetails = [
-      "native_currency" => $msg['currency'],
-      "native_original_amount" => $testRecurring['amount'],
-      "usd_original_amount" => $testRecurring['amount'],
-      "native_amount_added" => $additionalAmount,
-      "usd_amount_added" => $additionalAmount,
+      'native_currency' => $msg['currency'],
+      'native_original_amount' => $testRecurring['amount'],
+      'usd_original_amount' => $testRecurring['amount'],
+      'native_amount_added' => $additionalAmount,
+      'usd_amount_added' => $additionalAmount,
     ];
 
     $this->processMessage($msg);
@@ -71,8 +71,8 @@ class RecurringModifyAmountQueueTest extends BaseQueue {
       ->execute()
       ->last();
     $this->assertEquals($testRecurring['amount'] + $additionalAmount, $updatedRecurring['amount']);
-    $this->assertEquals($activity['subject'], "Added " . $additionalAmount . " " . $msg['currency']);
-    $this->assertEquals($activity['details'], json_encode($amountDetails));
+    $this->assertEquals("Added $additionalAmount {$msg['currency']}", $activity['subject']);
+    $this->assertEquals(json_encode($amountDetails), $activity['details']);
     $this->ids['ContributionRecur'][$testRecurring['id']] = $testRecurring['id'];
     $this->ids['Activity'][$activity['id']] = $activity['id'];
   }
@@ -90,18 +90,18 @@ class RecurringModifyAmountQueueTest extends BaseQueue {
     $changeAmount = ($testRecurringContributionFor15Dollars['amount'] - $newRecurringDonationAmount);
 
     $recurringQueueMessage = [
-      'txn_type' => "recurring_downgrade",
+      'txn_type' => 'recurring_downgrade',
       'contribution_recur_id' => $testRecurringContributionFor15Dollars['id'],
       'amount' => $newRecurringDonationAmount,
       'currency' => $testRecurringContributionFor15Dollars['currency'],
     ];
 
     $amountDetails = [
-      "native_currency" => 'USD',
-      "native_original_amount" => 15.0,
-      "usd_original_amount" => 15.0,
-      "native_amount_removed" => 10.0,
-      "usd_amount_removed" => 10.0,
+      'native_currency' => 'USD',
+      'native_original_amount' => 15.0,
+      'usd_original_amount' => 15.0,
+      'native_amount_removed' => 10.0,
+      'usd_amount_removed' => 10.0,
     ];
 
     $this->processMessage($recurringQueueMessage);
@@ -120,7 +120,7 @@ class RecurringModifyAmountQueueTest extends BaseQueue {
 
     $this->assertEquals($newRecurringDonationAmount, $updatedRecurring['amount']);
 
-    $this->assertEquals("Recurring amount reduced by " . abs($changeAmount) . " " . $recurringQueueMessage['currency'], $activity['subject']);
+    $this->assertEquals('Recurring amount reduced by ' . abs($changeAmount) . ' ' . $recurringQueueMessage['currency'], $activity['subject']);
 
     $this->assertEquals(json_encode($amountDetails), $activity['details']);
 
