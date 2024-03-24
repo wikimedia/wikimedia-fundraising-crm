@@ -5,6 +5,7 @@ namespace Civi\WMFQueue;
 use Civi;
 use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\RecurUpgradeEmail;
+use Civi\Api4\WMFContact;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
@@ -326,8 +327,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @return array
    */
   private function updateContact($msg, $contact_id) {
-    //FIXME: reverse the way these functions delegate.  Or eliminate -_insert.
-    $contact = wmf_civicrm_message_contact_insert($msg, $contact_id);
+    $contact = WMFContact::save(FALSE)
+      ->setContactID($contact_id)
+      ->setMessage($msg)
+      ->execute()->first();
     // Insert the location record
     // This will be duplicated in some cases in the main message_import, but should
     // not have a negative impact. Longer term it should be removed from here in favour of there.
@@ -351,7 +354,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     $ctRecord = wmf_civicrm_get_contribution_tracking($msg);
     if (empty($ctRecord['contribution_id'])) {
       // create contact record
-      $contact = wmf_civicrm_message_contact_insert($msg);
+      $contact = WMFContact::save(FALSE)
+        ->setMessage($msg)
+        ->execute()->first();
 
       $contactId = $contact['id'];
     }

@@ -743,24 +743,6 @@ function wmf_civicrm_check_for_duplicates(array $message) {
 }
 
 /**
- * Insert the contact record
- *
- * Serves as a standard way for message processors to handle contact
- * insertion.  By passing a contact id, a contact can be updated.
- *
- * @param array $msg
- * @param int $contact_id
- *
- * @return array
- */
-function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
-  return WMFContact::save(FALSE)
-    ->setContactID($contact_id)
-    ->setMessage($msg)
-    ->execute()->first();
-}
-
-/**
  * Check if the language string exists.
  *
  * @param string $languageAbbreviation

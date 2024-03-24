@@ -4,6 +4,7 @@ namespace Civi\WMFQueue;
 
 use Civi;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\WMFContact;
 use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
@@ -132,7 +133,9 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
     $normalized = wmf_civicrm_verify_message_and_stage($recurMessage);
 
     // Create (or update) the contact
-    $contact = wmf_civicrm_message_contact_insert($normalized);
+    $contact = WMFContact::save(FALSE)
+      ->setMessage($normalized)
+      ->execute()->first();
 
     // Create a token
     $paymentToken = wmf_civicrm_recur_payment_token_create(
