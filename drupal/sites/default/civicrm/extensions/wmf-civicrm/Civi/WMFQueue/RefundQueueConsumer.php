@@ -3,11 +3,10 @@
 namespace Civi\WMFQueue;
 
 use Civi\Api4\Contribution;
-use Civi\Api4\ContributionRecur;
+use Civi\WMFException\WMFException;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Exception;
 use SmashPig\Core\DataStores\QueueWrapper;
-use Civi\WMFQueue\TransactionalQueueConsumer;
-use \Civi\WMFException\WMFException;
 
 class RefundQueueConsumer extends TransactionalQueueConsumer {
 
@@ -94,7 +93,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         \Civi::log('wmf')->error('refund {log_id}: Could not refund due to internal error: {message}', array_merge($context, ['message' => $ex->getMessage()]));
         throw $ex;
       }
-      $this->cancelRecurringOnChargeback($contributionStatus, $contributions);
+      $this->cancelRecurringOnChargeback($contributionStatus, $contributions, $gateway);
     }
     else {
       \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
@@ -128,8 +127,23 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     return $validTypes[$type];
   }
 
-  private function cancelRecurringOnChargeback(string $contributionStatus, array $contributions): void {
-    if ($contributionStatus === 'Chargeback' && !empty($contributions[0]['contribution_recur_id'])) {
+  /**
+   * For gateways where we can unilaterally decide to stop charging the donor, cancel any recurring donation
+   * as soon as we get a chargeback.
+   *
+   * @param string $contributionStatus
+   * @param array $contributions
+   * @param string $gateway
+   * @return void
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  private function cancelRecurringOnChargeback(string $contributionStatus, array $contributions, string $gateway): void {
+    if (
+      $contributionStatus === 'Chargeback' &&
+      !empty($contributions[0]['contribution_recur_id']) &&
+      !RecurHelper::gatewayManagesOwnRecurringSchedule($gateway)
+    ) {
       $message = [
         'txn_type' => 'subscr_cancel',
         'contribution_recur_id' => $contributions[0]['contribution_recur_id'],

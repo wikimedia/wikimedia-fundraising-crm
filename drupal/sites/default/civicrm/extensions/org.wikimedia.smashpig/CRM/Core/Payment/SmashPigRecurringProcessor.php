@@ -118,8 +118,11 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
         // Ignore check when a specific contribution recur id is given
         if ($days < 24 && !$contributionRecurId) {
-          Civi::log('wmf')->info('Skipping payment: Two recurring charges within 23 days. recurring_id: ' . $recurringPayment['id']);
-          continue;
+          // Allow autorescue donations to be charged in close date ranges
+          if (!$this->getAutorescueReference($recurringPayment)) {
+            Civi::log('wmf')->info('Skipping payment: Two recurring charges within 23 days. recurring_id: ' . $recurringPayment['id']);
+            continue;
+          }
         }
 
         // Mark the recurring contribution Processing
@@ -458,6 +461,25 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     if ( Civi::settings()->get('smashpig_recurring_send_failure_email') ) {
       FailureEmail::send()->setCheckPermissions(FALSE)->setContactID($contactID)->setContributionRecurID($contributionRecurID)->execute();
     }
+  }
+
+  /**
+   * Check if this recurring donation has been autorescued
+   *
+   * @param array $recurringPayment
+   *
+   * @return string|null
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function getAutorescueReference($recurringPayment): ?string {
+    $autorescue = ContributionRecur::get(FALSE)
+      ->addSelect('contribution_recur_smashpig.rescue_reference')
+      ->addWhere('id','=',$recurringPayment['id'])
+      ->execute()
+      ->first();
+
+    return $autorescue['contribution_recur_smashpig.rescue_reference'];
   }
 
   /**

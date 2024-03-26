@@ -111,7 +111,7 @@ class Contribution {
     // We could possibly 'assume' it to be the latest if on the latest day - although in that
     // case we probably lose a get query & gain an 'update' query as the extra fields are likely already
     // updated by the triggers.
-    $contactLastDonation = _wmf_civicrm_get_contact_last_donation_data($contribution);
+    $contactLastDonation = _wmf_civicrm_get_contact_last_donation_data((int) $contribution->contact_id);
     $extra = wmf_civicrm_get_original_currency_and_amount_from_source($contribution->source, $contribution->total_amount);
     if ($contributionStatus === 'Completed' && substr($contribution->trxn_id, 0, 4) !== 'RFD ') {
       // This is a 'valid' transaction - it's either the latest or no update is required.
