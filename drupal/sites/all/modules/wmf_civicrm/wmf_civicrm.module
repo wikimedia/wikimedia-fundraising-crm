@@ -220,10 +220,12 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
           'id' => $message->getContributionRecurID(),
         ]);
       }
-      check_recur_modification_and_queue([
-        'amount' => $message->getContributionRecurValue('amount'),
-        'currency' => $message->getContributionRecurValue('currency'),
-      ], $msg);
+      if ($message->isFundraiseUp()) {
+        check_recur_modification_and_queue([
+          'amount' => $message->getContributionRecurValue('amount'),
+          'currency' => $message->getContributionRecurValue('currency'),
+        ], $msg);
+      }
     }
   }
   if ($msg['contact_id'] && isset($msg['contact_hash'])) {
@@ -641,12 +643,12 @@ function _wmf_civicrm_message_contribution_insert($msg) {
   }
 
   // Create any required tags on the contribution
-  if ($msg['contribution_tags']) {
+  if (!empty($msg['contribution_tags'])) {
     $supported_tags = array_flip(CRM_Core_BAO_Tag::getTags('civicrm_contribution'));
     $stacked_ex = [];
     foreach (array_unique($msg['contribution_tags']) as $tag) {
       try {
-        $tag_result = civicrm_api3("EntityTag", "Create", [
+        civicrm_api3("EntityTag", "Create", [
           'entity_table' => 'civicrm_contribution',
           'entity_id' => $contribution_result['id'],
           'tag_id' => $supported_tags[$tag],

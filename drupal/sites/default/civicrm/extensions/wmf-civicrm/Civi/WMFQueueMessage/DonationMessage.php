@@ -145,9 +145,6 @@ class DonationMessage {
       'recurring' => NULL,
       'utm_campaign' => NULL,
       'effort_id' => NULL,
-      'contact_groups' => [],
-      'contact_tags' => [],
-      'contribution_tags' => [],
       'soft_credit_to' => NULL,
       'soft_credit_to_id' => NULL,
     ];
@@ -203,18 +200,6 @@ class DonationMessage {
     if ($this->isEndowmentGift()) {
       $msg['restrictions'] = 'Endowment Fund';
       $msg['gift_source'] = 'Online Gift';
-    }
-
-    $list_fields = [
-      'contact_groups',
-      'contact_tags',
-      'contribution_tags',
-    ];
-    foreach ($list_fields as $field) {
-      if (is_string($msg[$field])) {
-        $msg[$field] = preg_split('/[\s,]+/', $msg[$field], NULL, PREG_SPLIT_NO_EMPTY);
-      }
-      $msg[$field] = array_unique($msg[$field]);
     }
 
     // set the correct amount fields/data and do exchange rate conversions.
@@ -480,6 +465,14 @@ class DonationMessage {
 
   public function isAmazon(): bool {
     return $this->isGateway('amazon');
+  }
+
+  public function isPaypal(): bool {
+    return $this->isGateway('paypal') || $this->isGateway('paypal_ec');
+  }
+
+  public function isFundraiseUp(): bool {
+    return $this->isGateway('fundraiseup');
   }
 
   public function isGateway(string $gateway): bool {
