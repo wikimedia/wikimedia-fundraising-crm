@@ -183,9 +183,9 @@ class DonationMessage extends Message {
     $msg['original_gross'] = $this->getOriginalAmount();
     $msg['original_currency'] = $this->getOriginalCurrency();;
     $msg['currency'] = $this->getSettlementCurrency();
-    $msg['fee'] = $this->getFeeAmountRounded();
-    $msg['gross'] = $this->getAmountRounded();
-    $msg['net'] = $this->getNetAmountRounded();
+    $msg['fee'] = $this->getUsdFeeAmountRounded();
+    $msg['gross'] = $this->getUsdAmountRounded();
+    $msg['net'] = $this->getUsdNetAmountRounded();
 
     return $msg;
   }
@@ -281,46 +281,46 @@ class DonationMessage extends Message {
   /**
    * Get the donation amount as we receive it in the settled currency.
    */
-  public function getAmount(): float {
+  public function getUsdAmount(): float {
     return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
   }
 
-  public function getAmountRounded(): string {
-    return $this->round($this->getAmount(), $this->getSettlementCurrency());
+  public function getUsdAmountRounded(): string {
+    return $this->round($this->getUsdAmount(), $this->getSettlementCurrency());
   }
 
   /**
    * Get the fee amount charged by the processing gateway, when available
    */
-  public function getFeeAmount(): float {
+  public function getUsdFeeAmount(): float {
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
       return $this->cleanMoney($this->message['fee']) * $this->getConversionRate();
     }
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
-      return $this->getAmount() - $this->getNetAmount();
+      return $this->getUsdAmount() - $this->getUsdNetAmount();
     }
     return 0.00;
   }
 
-  public function getFeeAmountRounded(): string {
-    return $this->round($this->getFeeAmount(), $this->getSettlementCurrency());
+  public function getUsdFeeAmountRounded(): string {
+    return $this->round($this->getUsdFeeAmount(), $this->getSettlementCurrency());
   }
 
   /**
    * Get amount less any fee charged by the processor.
    */
-  public function getNetAmount(): float {
+  public function getUsdNetAmount(): float {
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
       return $this->cleanMoney($this->message['net']) * $this->getConversionRate();
     }
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
-      return $this->getAmount() - $this->getFeeAmount();
+      return $this->getUsdAmount() - $this->getUsdFeeAmount();
     }
-    return $this->getAmount();
+    return $this->getUsdAmount();
   }
 
-  public function getNetAmountRounded(): string {
-    return $this->round($this->getNetAmount(), $this->getSettlementCurrency());
+  public function getUsdNetAmountRounded(): string {
+    return $this->round($this->getUsdNetAmount(), $this->getSettlementCurrency());
   }
 
   /**
