@@ -7,7 +7,6 @@ use Civi\WMFHelper\FinanceInstrument;
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFException\WMFException;
 use Civi\ExchangeException\ExchangeRatesException;
-use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class DonationMessage extends Message {
 
@@ -294,7 +293,7 @@ class DonationMessage extends Message {
   }
 
   public function getAmountRounded(): string {
-    return CurrencyRoundingHelper::round($this->getAmount(), $this->getSettlementCurrency());
+    return $this->round($this->getAmount(), $this->getSettlementCurrency());
   }
 
   /**
@@ -311,7 +310,7 @@ class DonationMessage extends Message {
   }
 
   public function getFeeAmountRounded(): string {
-    return CurrencyRoundingHelper::round($this->getFeeAmount(), $this->getSettlementCurrency());
+    return $this->round($this->getFeeAmount(), $this->getSettlementCurrency());
   }
 
   /**
@@ -328,7 +327,7 @@ class DonationMessage extends Message {
   }
 
   public function getNetAmountRounded(): string {
-    return CurrencyRoundingHelper::round($this->getNetAmount(), $this->getSettlementCurrency());
+    return $this->round($this->getNetAmount(), $this->getSettlementCurrency());
   }
 
   /**

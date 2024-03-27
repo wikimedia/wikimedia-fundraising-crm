@@ -1,6 +1,7 @@
 <?php
 
 namespace Civi\WMFQueueMessage;
+use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class Message {
   /**
@@ -35,6 +36,22 @@ class Message {
 
   protected function cleanMoney($value): float {
     return (float) str_replace(',', '', $value);
+  }
+
+  /**
+   * Round the number based on currency.
+   *
+   * Note this could also be done using code that ships with Civi (BrickMoney)
+   * or \Civi::format() functions - we use a thin wrapper so if we ever change
+   * we can change it here only.
+   *
+   * @param float $amount
+   * @param string $currency
+   *
+   * @return string
+   */
+  protected function round(float $amount, string $currency): string {
+    return CurrencyRoundingHelper::round($amount, $currency);
   }
 
   public function getContactID(): ?int {
