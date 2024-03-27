@@ -16,12 +16,6 @@ use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
-  public const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID = 165;
-
-  public const RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID = 166;
-
-  public const RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID = 168;
-
   /**
    * Import messages about recurring payments
    *
@@ -33,7 +27,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   public function processMessage($message) {
     $txn_upgrade_recur = ['recurring_upgrade', 'recurring_upgrade_decline', 'recurring_downgrade'];
     if (isset($message['txn_type']) && in_array($message['txn_type'], $txn_upgrade_recur, TRUE)) {
-      $this->subscrModify($message);
+      // Transitional handling while we update process control.
+      $consumer = new RecurringModifyAmountQueueConsumer($this->queueName, $this->timeLimit, $this->messageLimit, $this->waitForNewMessages);
+      $consumer->processMessage($message);
       return;
     }
 
@@ -318,42 +314,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   }
 
   /**
-   * @param $msg
-   *
-   * @return void
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   * @throws \Civi\WMFException\WMFException
-   */
-  protected function subscrModify($msg) {
-    if (!isset($msg['contribution_recur_id'])) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid message type');
-    }
-    switch ($msg['txn_type']) {
-      case "recurring_upgrade_decline":
-        if (!isset($msg['contact_id'])) {
-          throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid contact_id');
-        }
-        $this->upgradeRecurDecline($msg);
-        break;
-      case "recurring_upgrade":
-        if (!isset($msg['amount'])) {
-          throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to upgrade recurring subscription but amount is not set');
-        }
-        $this->upgradeRecurAmount($msg);
-        break;
-      case "recurring_downgrade":
-        if (!isset($msg['amount'])) {
-          throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to downgrade recurring subscription but amount is not set');
-        }
-        $this->downgradeRecurAmount($msg);
-        break;
-      default:
-        throw new WMFException(WMFException::INVALID_RECURRING, 'Unknown transaction type');
-    }
-  }
-
-  /**
    * Update the contact record
    *
    * Serves as a standard way for message processors to handle contact
@@ -372,121 +332,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     // not have a negative impact. Longer term it should be removed from here in favour of there.
     wmf_civicrm_message_location_update($msg, $contact);
     return $contact;
-  }
-
-  /**
-   * Decline upgrade recurring
-   *
-   * Completes the process of upgrading the contribution recur
-   * if the donor decline
-   *
-   * @param array $msg
-   *
-   * @throws \Civi\WMFException\WMFException
-   */
-  protected function upgradeRecurDecline($msg) {
-    $createCall = Activity::create(FALSE)
-      ->addValue('activity_type_id', self::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
-      ->addValue('source_record_id', $msg['contribution_recur_id'])
-      ->addValue('status_id:name', 'Completed')
-      ->addValue('subject', "Decline recurring update")
-      ->addValue('details', "Decline recurring update")
-      ->addValue('source_contact_id', $msg['contact_id']);
-    foreach (['campaign', 'medium', 'source'] as $trackingField) {
-      if (!empty($msg[$trackingField])) {
-        $createCall->addValue('activity_tracking.activity_' . $trackingField, $msg[$trackingField]);
-      }
-    }
-    $createCall->execute();
-  }
-
-  protected function getSubscrModificationParameters($msg, $recur_record): array {
-    $amountDetails = [
-      'native_currency' => $msg['currency'],
-      'native_original_amount' => CurrencyRoundingHelper::round(
-        $recur_record['amount'], $msg['currency']
-      ),
-      'usd_original_amount' => CurrencyRoundingHelper::round(
-        exchange_rate_convert($msg['currency'], $recur_record['amount']), 'USD'
-      ),
-    ];
-    $activityParams = [
-      'amount' => CurrencyRoundingHelper::round($msg['amount'], $msg['currency']),
-      'contact_id' => $recur_record['contact_id'],
-      'contribution_recur_id' => $recur_record['id'],
-    ];
-    foreach (['campaign', 'medium', 'source'] as $trackingField) {
-      $activityParams[$trackingField] = $msg[$trackingField] ?? NULL;
-    }
-    return [$amountDetails, $activityParams];
-  }
-
-  /**
-   * Upgrade Contribution Recur Amount
-   *
-   * Completes the process of upgrading the contribution recur amount
-   * if the donor agrees
-   *
-   * @param array $msg
-   *
-   * @throws \Civi\WMFException\WMFException
-   */
-  protected function upgradeRecurAmount($msg) {
-    $recur_record = ContributionRecur::get(FALSE)
-      ->addWhere('id', '=', $msg['contribution_recur_id'])
-      ->execute()
-      ->first();
-
-    if ($msg['amount'] < $recur_record['amount']) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'upgradeRecurAmount: New recurring amount is less than the original amount.');
-    }
-    [$amountDetails, $activityParams] = $this->getSubscrModificationParameters($msg, $recur_record);
-    $amountAdded = $msg['amount'] - $recur_record['amount'];
-    $amountAddedRounded = CurrencyRoundingHelper::round($amountAdded, $msg['currency']);
-    $amountDetails['native_amount_added'] = $amountAddedRounded;
-    $amountDetails['usd_amount_added'] = CurrencyRoundingHelper::round(
-      exchange_rate_convert($msg['currency'], $amountAdded), 'USD'
-    );
-
-    $activityParams['subject'] = "Added $amountAddedRounded {$msg['currency']}";
-    $activityParams['activity_type_id'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
-    $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
-
-    RecurUpgradeEmail::send()
-      ->setCheckPermissions(FALSE)
-      ->setContactID($recur_record['contact_id'])
-      ->setContributionRecurID($recur_record['id'])
-      ->execute();
-  }
-
-  /**
-   * Downgrade Contribution Recur Amount
-   *
-   * Completes the process of downgrading the contribution recur amount
-   *
-   * @param array $msg
-   *
-   * @throws \Civi\WMFException\WMFException
-   */
-  protected function downgradeRecurAmount($msg) {
-    $recur_record = ContributionRecur::get(FALSE)
-      ->addWhere('id', '=', $msg['contribution_recur_id'])
-      ->execute()
-      ->first();
-    if ($msg['amount'] > $recur_record['amount']) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'downgradeRecurAmount: New recurring amount is greater than the original amount.');
-    }
-    [$amountDetails, $activityParams] = $this->getSubscrModificationParameters($msg, $recur_record);
-    $amountRemoved = $recur_record['amount'] - $msg['amount'];
-    $amountRemovedRounded = CurrencyRoundingHelper::round($amountRemoved, $msg['currency']);
-    $amountDetails['native_amount_removed'] = CurrencyRoundingHelper::round($amountRemoved, $msg['currency']);
-    $amountDetails['usd_amount_removed'] = CurrencyRoundingHelper::round(
-      exchange_rate_convert($msg['currency'], $amountRemoved), 'USD'
-    );
-
-    $activityParams['subject'] = "Recurring amount reduced by $amountRemovedRounded {$msg['currency']}";
-    $activityParams['activity_type_id'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
-    $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
   }
 
   /**
@@ -817,42 +662,4 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     Civi::log('wmf')->notice('recurring: Successfully recorded failed payment for subscriber id: {subscriber_id} ', ['subscriber_id' => print_r($msg['subscr_id'], TRUE)]);
   }
 
-  /**
-   * @param array $amountDetails
-   * @param array $activityParams array containing activity and contribution recur data
-   * - contact_id (number): required
-   * - contribution_recur_id (number): required
-   * - activity_type_id (string): required
-   * - amount (string): required
-   * - subject (string): required
-   *
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  protected function updateContributionRecurAndRecurringActivity($amountDetails, array $activityParams): void {
-    $additionalData = json_encode($amountDetails);
-
-    ContributionRecur::update(FALSE)->addValue('amount', $activityParams['amount'])->addWhere(
-      'id',
-      '=',
-      $activityParams['contribution_recur_id']
-    )->execute();
-
-    $createCall = Activity::create(FALSE)
-      ->addValue('activity_type_id', $activityParams['activity_type_id'])
-      ->addValue(
-        'source_record_id',
-        $activityParams['contribution_recur_id']
-      )
-      ->addValue('status_id:name', 'Completed')
-      ->addValue('subject', $activityParams['subject'])
-      ->addValue('details', $additionalData)
-      ->addValue('source_contact_id', $activityParams['contact_id']);
-    foreach (['campaign', 'medium', 'source'] as $trackingField) {
-      if (!empty($activityParams[$trackingField])) {
-        $createCall->addValue('activity_tracking.activity_' . $trackingField, $activityParams[$trackingField]);
-      }
-    }
-    $createCall->execute();
-  }
 }
