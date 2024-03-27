@@ -220,10 +220,12 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
           'id' => $message->getContributionRecurID(),
         ]);
       }
-      check_recur_modification_and_queue([
-        'amount' => $message->getContributionRecurValue('amount'),
-        'currency' => $message->getContributionRecurValue('currency'),
-      ], $msg);
+      if ($message->isFundraiseUp()) {
+        check_recur_modification_and_queue([
+          'amount' => $message->getContributionRecurValue('amount'),
+          'currency' => $message->getContributionRecurValue('currency'),
+        ], $msg);
+      }
     }
   }
   if ($msg['contact_id'] && isset($msg['contact_hash'])) {

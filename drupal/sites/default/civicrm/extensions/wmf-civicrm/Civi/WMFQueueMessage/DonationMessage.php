@@ -467,6 +467,14 @@ class DonationMessage {
     return $this->isGateway('amazon');
   }
 
+  public function isPaypal(): bool {
+    return $this->isGateway('paypal') || $this->isGateway('paypal_ec');
+  }
+
+  public function isFundraiseUp(): bool {
+    return $this->isGateway('fundraiseup');
+  }
+
   public function isGateway(string $gateway): bool {
     return $this->getGateway() === $gateway;
   }
