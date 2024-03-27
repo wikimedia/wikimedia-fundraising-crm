@@ -7,8 +7,10 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
 use Civi\WMFQueueMessage\RecurringModifyAmountMessage;
-use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
+/**
+ *
+ */
 class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
 
   public const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID = 165;
@@ -23,7 +25,6 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * @param array $message
    *
    * @throws \CRM_Core_Exception
-   * @throws \Civi\ExchangeException\ExchangeRatesException
    * @throws \Civi\WMFException\WMFException
    */
   public function processMessage(array $message): void {
@@ -58,11 +59,11 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
   protected function upgradeRecurDecline(RecurringModifyAmountMessage $message, array $msg): void {
     $createCall = Activity::create(FALSE)
       ->addValue('activity_type_id', self::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
-      ->addValue('source_record_id', $msg['contribution_recur_id'])
+      ->addValue('source_record_id', $message->getContributionRecurID())
       ->addValue('status_id:name', 'Completed')
       ->addValue('subject', "Decline recurring update")
       ->addValue('details', "Decline recurring update")
-      ->addValue('source_contact_id', $msg['contact_id']);
+      ->addValue('source_contact_id', $message->getContactID());
     foreach (['campaign', 'medium', 'source'] as $trackingField) {
       if (!empty($msg[$trackingField])) {
         $createCall->addValue('activity_tracking.activity_' . $trackingField, $msg[$trackingField]);
@@ -72,27 +73,17 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
   }
 
   /**
-   * @throws \Civi\ExchangeException\ExchangeRatesException
    */
-  protected function getSubscrModificationParameters($msg, $recur_record): array {
-    $amountDetails = [
-      'native_currency' => $msg['currency'],
-      'native_original_amount' => CurrencyRoundingHelper::round(
-        $recur_record['amount'], $msg['currency']
-      ),
-      'usd_original_amount' => CurrencyRoundingHelper::round(
-        exchange_rate_convert($msg['currency'], $recur_record['amount']), 'USD'
-      ),
-    ];
+  protected function getActivityValues(RecurringModifyAmountMessage $message, $msg): array {
     $activityParams = [
-      'amount' => CurrencyRoundingHelper::round($msg['amount'], $msg['currency']),
-      'contact_id' => $recur_record['contact_id'],
-      'contribution_recur_id' => $recur_record['id'],
+      'amount' => $message->getModifiedAmountRounded(),
+      'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
+      'contribution_recur_id' => $message->getContributionRecurID(),
     ];
     foreach (['campaign', 'medium', 'source'] as $trackingField) {
       $activityParams[$trackingField] = $msg[$trackingField] ?? NULL;
     }
-    return [$amountDetails, $activityParams];
+    return $activityParams;
   }
 
   /**
@@ -105,31 +96,24 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * @param array $msg
    *
    * @throws \CRM_Core_Exception
-   * @throws \Civi\ExchangeException\ExchangeRatesException
-   * @throws \Civi\WMFException\WMFException
    */
   protected function upgradeRecurAmount(RecurringModifyAmountMessage $message, array $msg): void {
-    $recur_record = ContributionRecur::get(FALSE)
-      ->addWhere('id', '=', $message->getContributionRecurID())
-      ->execute()
-      ->first();
+    $amountDetails = [
+      'native_currency' => $message->getModifiedCurrency(),
+      'native_original_amount' => $message->getOriginalExistingAmountRounded(),
+      'usd_original_amount' => $message->getUsdExistingAmountRounded(),
+      'native_amount_added' => $message->getOriginalIncreaseAmountRounded(),
+      'usd_amount_added' => $message->getUsdIncreaseAmountRounded(),
+    ];
 
-    [$amountDetails, $activityParams] = $this->getSubscrModificationParameters($msg, $recur_record);
-    $amountAdded = $msg['amount'] - $recur_record['amount'];
-    $amountAddedRounded = CurrencyRoundingHelper::round($amountAdded, $msg['currency']);
-    $amountDetails['native_amount_added'] = $amountAddedRounded;
-    $amountDetails['usd_amount_added'] = CurrencyRoundingHelper::round(
-      exchange_rate_convert($msg['currency'], $amountAdded), 'USD'
-    );
-
-    $activityParams['subject'] = "Added $amountAddedRounded {$msg['currency']}";
+    $activityParams = $this->getActivityValues($message, $msg);
+    $activityParams['subject'] = "Added " . $message->getOriginalIncreaseAmountRounded() . ' ' . $message->getModifiedCurrency();
     $activityParams['activity_type_id'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
     $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
-
     RecurUpgradeEmail::send()
       ->setCheckPermissions(FALSE)
-      ->setContactID($recur_record['contact_id'])
-      ->setContributionRecurID($recur_record['id'])
+      ->setContactID($message->getExistingContributionRecurValue('contact_id'))
+      ->setContributionRecurID($message->getContributionRecurID())
       ->execute();
   }
 
@@ -142,24 +126,18 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * @param array $msg
    *
    * @throws \CRM_Core_Exception
-   * @throws \Civi\ExchangeException\ExchangeRatesException
-   * @throws \Civi\WMFException\WMFException
    */
   protected function downgradeRecurAmount(RecurringModifyAmountMessage $message, array $msg): void {
-    $recur_record = ContributionRecur::get(FALSE)
-      ->addWhere('id', '=', $msg['contribution_recur_id'])
-      ->execute()
-      ->first();
+    $amountDetails = [
+      'native_currency' => $message->getModifiedCurrency(),
+      'native_original_amount' => $message->getOriginalExistingAmountRounded(),
+      'usd_original_amount' => $message->getUsdExistingAmountRounded(),
+      'native_amount_removed' => $message->getOriginalDecreaseAmountRounded(),
+      'usd_amount_removed' => $message->getUsdDecreaseAmountRounded(),
+    ];
+    $activityParams = $this->getActivityValues($message, $msg);
 
-    [$amountDetails, $activityParams] = $this->getSubscrModificationParameters($msg, $recur_record);
-    $amountRemoved = $recur_record['amount'] - $msg['amount'];
-    $amountRemovedRounded = CurrencyRoundingHelper::round($amountRemoved, $msg['currency']);
-    $amountDetails['native_amount_removed'] = CurrencyRoundingHelper::round($amountRemoved, $msg['currency']);
-    $amountDetails['usd_amount_removed'] = CurrencyRoundingHelper::round(
-      exchange_rate_convert($msg['currency'], $amountRemoved), 'USD'
-    );
-
-    $activityParams['subject'] = "Recurring amount reduced by $amountRemovedRounded {$msg['currency']}";
+    $activityParams['subject'] = "Recurring amount reduced by " . $message->getOriginalDecreaseAmountRounded() . ' ' . $message->getModifiedCurrency();
     $activityParams['activity_type_id'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
     $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
   }
