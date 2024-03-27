@@ -110,13 +110,10 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    */
   protected function upgradeRecurAmount(RecurringModifyAmountMessage $message, array $msg): void {
     $recur_record = ContributionRecur::get(FALSE)
-      ->addWhere('id', '=', $msg['contribution_recur_id'])
+      ->addWhere('id', '=', $message->getContributionRecurID())
       ->execute()
       ->first();
 
-    if ($msg['amount'] < $recur_record['amount']) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'upgradeRecurAmount: New recurring amount is less than the original amount.');
-    }
     [$amountDetails, $activityParams] = $this->getSubscrModificationParameters($msg, $recur_record);
     $amountAdded = $msg['amount'] - $recur_record['amount'];
     $amountAddedRounded = CurrencyRoundingHelper::round($amountAdded, $msg['currency']);
@@ -153,9 +150,7 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
       ->addWhere('id', '=', $msg['contribution_recur_id'])
       ->execute()
       ->first();
-    if ($msg['amount'] > $recur_record['amount']) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'downgradeRecurAmount: New recurring amount is greater than the original amount.');
-    }
+
     [$amountDetails, $activityParams] = $this->getSubscrModificationParameters($msg, $recur_record);
     $amountRemoved = $recur_record['amount'] - $msg['amount'];
     $amountRemovedRounded = CurrencyRoundingHelper::round($amountRemoved, $msg['currency']);

@@ -29,12 +29,22 @@ class RecurringModifyAmountMessage extends Message {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid contact_id');
     }
 
-    if ($this->isUpgrade() && !isset($this->message['amount'])) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to upgrade recurring subscription but amount is not set');
+    if ($this->isUpgrade()) {
+      if (!isset($this->message['amount'])) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to upgrade recurring subscription but amount is not set');
+      }
+      if ($this->getAmountDifference() <= 0) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'upgradeRecurAmount: New recurring amount is less than the original amount.');
+      }
     }
 
-    if ($this->isDowngrade() && !isset($this->message['amount'])) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to downgrade recurring subscription but amount is not set');
+    if ($this->isDowngrade()) {
+      if (!isset($this->message['amount'])) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to downgrade recurring subscription but amount is not set');
+      }
+      if ($this->getAmountDifference() >= 0) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'downgradeRecurAmount: New recurring amount is greater than the original amount.');
+      }
     }
   }
 
@@ -53,7 +63,24 @@ class RecurringModifyAmountMessage extends Message {
    * @return string
    */
   public function getModifiedAmountRounded(): string {
-    return $this->round($this->message['amount'], $this->getModifiedCurrency());
+    return $this->round($this->getModifiedAmount(), $this->getModifiedCurrency());
+  }
+
+  public function getModifiedAmount(): float {
+    return (float) $this->message['amount'];
+  }
+
+  /**
+   * Get the difference between the incoming (modified) amount and the existing amount.
+   *
+   * If the modified amount is greater than the existing amount (an increased donation)
+   * this will be positive. If it is a negative amount the donor is downgrading their
+   * recurring contribution.
+   *
+   * @return float
+   */
+  public function getAmountDifference(): float {
+    return $this->getModifiedAmount() - $this->getExistingContributionRecurValue('amount');
   }
 
 }
