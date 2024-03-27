@@ -25,7 +25,7 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * @param array $message
    *
    * @throws \CRM_Core_Exception
-   * @throws \Civi\WMFException\WMFException
+   * @throws \Civi\WMFException\WMFException|\Civi\ExchangeException\ExchangeRatesException
    */
   public function processMessage(array $message): void {
     $messageObject = new RecurringModifyAmountMessage($message);
@@ -96,6 +96,7 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * @param array $msg
    *
    * @throws \CRM_Core_Exception
+   * @throws \Civi\ExchangeException\ExchangeRatesException
    */
   protected function upgradeRecurAmount(RecurringModifyAmountMessage $message, array $msg): void {
     $amountDetails = [
@@ -126,6 +127,7 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * @param array $msg
    *
    * @throws \CRM_Core_Exception
+   * @throws \Civi\ExchangeException\ExchangeRatesException
    */
   protected function downgradeRecurAmount(RecurringModifyAmountMessage $message, array $msg): void {
     $amountDetails = [

@@ -70,6 +70,7 @@ class RecurringModifyAmountMessage extends Message {
    * Get the amount in the original currency.
    *
    * @return string
+   * @throws \Civi\ExchangeException\ExchangeRatesException
    */
   public function getUsdModifiedAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getModifiedCurrency(), $this->getModifiedAmount()), $this->getModifiedCurrency());
@@ -97,12 +98,20 @@ class RecurringModifyAmountMessage extends Message {
     return $this->round($this->getDecreaseAmount(), $this->getModifiedCurrency());
   }
 
+  /**
+   * @throws \Civi\ExchangeException\ExchangeRatesException
+   */
   public function getUsdDecreaseAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getModifiedCurrency(), $this->getDecreaseAmount()), $this->getModifiedCurrency());
   }
+
   public function getOriginalIncreaseAmountRounded(): string {
     return $this->round($this->getDifferenceAmount(), $this->getModifiedCurrency());
   }
+
+  /**
+   * @throws \Civi\ExchangeException\ExchangeRatesException
+   */
   public function getUsdIncreaseAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getModifiedCurrency(), $this->getDifferenceAmount()), $this->getModifiedCurrency());
   }
@@ -111,6 +120,10 @@ class RecurringModifyAmountMessage extends Message {
     return $this->round($this->getExistingContributionRecurValue('amount'), $this->getExistingContributionRecurValue('currency'));
   }
 
+  /**
+   * @return string
+   * @throws \Civi\ExchangeException\ExchangeRatesException
+   */
   public function getUsdExistingAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getExistingContributionRecurValue('currency'), $this->getExistingContributionRecurValue('amount')), $this->getExistingContributionRecurValue('currency'));
   }

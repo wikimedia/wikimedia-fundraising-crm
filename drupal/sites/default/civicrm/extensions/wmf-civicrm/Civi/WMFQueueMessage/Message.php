@@ -115,7 +115,6 @@ class Message {
     return time();
   }
 
-
   public function isAmazon(): bool {
     return $this->isGateway('amazon');
   }
