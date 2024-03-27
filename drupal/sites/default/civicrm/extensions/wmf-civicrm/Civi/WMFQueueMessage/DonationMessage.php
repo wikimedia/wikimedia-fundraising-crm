@@ -9,35 +9,9 @@ use Civi\WMFException\WMFException;
 use Civi\ExchangeException\ExchangeRatesException;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
-class DonationMessage {
-
-  /**
-   * WMF message with keys (incomplete list)
-   *  - recurring
-   *  - contribution_recur_id
-   *  - subscr_id
-   *  - recurring_payment_token
-   *  - date
-   *  - thankyou_date
-   *  - utm_medium
-   *
-   * @var array
-   */
-  protected array $message;
+class DonationMessage extends Message {
 
   protected array $parsedName;
-
-  /**
-   * Constructor.
-   */
-  public function __construct(array $message) {
-    $this->message = $message;
-    foreach ($this->message as $key => $input) {
-      if (is_string($input)) {
-        $this->message[$key] = trim($input);
-      }
-    }
-  }
 
   /**
    * Is it recurring - we would be using the child class if it is.
@@ -357,14 +331,6 @@ class DonationMessage {
     return CurrencyRoundingHelper::round($this->getNetAmount(), $this->getSettlementCurrency());
   }
 
-  protected function cleanMoney($value): float {
-    return (float) str_replace(',', '', $value);
-  }
-
-  public function getContactID(): ?int {
-    return !empty($this->message['contact_id']) ? (int) $this->message['contact_id'] : NULL;
-  }
-
   /**
    * Remove known bad strings from address.
    *
@@ -477,15 +443,6 @@ class DonationMessage {
 
   public function isGateway(string $gateway): bool {
     return $this->getGateway() === $gateway;
-  }
-
-  /**
-   * Get the recurring contribution ID if it already exists.
-   *
-   * @return int|null
-   */
-  public function getContributionRecurID(): ?int {
-    return !empty($this->message['contribution_recur_id']) ? (int) $this->message['contribution_recur_id'] : NULL;
   }
 
   public function getGateway(): string {
