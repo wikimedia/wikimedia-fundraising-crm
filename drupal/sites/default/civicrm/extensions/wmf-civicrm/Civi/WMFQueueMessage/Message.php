@@ -1,9 +1,14 @@
 <?php
 
 namespace Civi\WMFQueueMessage;
+
+use Civi\API\EntityLookupTrait;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class Message {
+
+  use EntityLookupTrait;
+
   /**
    * WMF message with keys relevant to the message.
    *
@@ -65,6 +70,24 @@ class Message {
    */
   public function getContributionRecurID(): ?int {
     return !empty($this->message['contribution_recur_id']) ? (int) $this->message['contribution_recur_id'] : NULL;
+  }
+
+  /**
+   * @param string $value
+   *   The value to fetch, in api v4 format (e.g supports contribution_status_id:name).
+   *
+   * @return mixed|null
+   * @noinspection PhpDocMissingThrowsInspection
+   * @noinspection PhpUnhandledExceptionInspection
+   */
+  public function getExistingContributionRecurValue(string $value) {
+    if (!$this->getContributionRecurID()) {
+      return NULL;
+    }
+    if (!$this->isDefined('ContributionRecur')) {
+      $this->define('ContributionRecur', 'ContributionRecur', ['id' => $this->getContributionRecurID()]);
+    }
+    return $this->lookup('ContributionRecur', $value);
   }
 
   /**
