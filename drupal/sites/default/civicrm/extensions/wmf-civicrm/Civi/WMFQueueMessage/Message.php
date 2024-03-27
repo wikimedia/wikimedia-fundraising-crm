@@ -67,4 +67,29 @@ class Message {
     return !empty($this->message['contribution_recur_id']) ? (int) $this->message['contribution_recur_id'] : NULL;
   }
 
+  /**
+   * Convert currency.
+   *
+   * This is a thin wrapper around our external function.
+   *
+   * @param string $currency
+   * @param float $amount
+   * @param int|null $timestamp
+   *
+   * @return float
+   * @throws \Civi\ExchangeException\ExchangeRatesException
+   */
+  protected function currencyConvert(string $currency, float $amount, ?int $timestamp = NULL): float {
+    return (float) exchange_rate_convert($currency, $amount, $timestamp ?: $this->getTimestamp());
+  }
+
+  /**
+   * Get the time stamp for the message.
+   *
+   * @return int
+   */
+  public function getTimestamp(): int {
+    return time();
+  }
+
 }
