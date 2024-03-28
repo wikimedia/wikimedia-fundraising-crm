@@ -15,5 +15,30 @@
 -- *
 -- *******************************************************/
 
-create view damaged_view as select * from smashpig.damaged where retry_date is null;
+CREATE TABLE IF NOT EXISTS `smashpig`.`damaged`
+(
+    `id`             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `original_date`  datetime            NOT NULL,
+    `damaged_date`   datetime            NOT NULL,
+    `retry_date`     datetime     DEFAULT NULL,
+    `original_queue` varchar(255)        NOT NULL,
+    `gateway`        varchar(255) DEFAULT NULL,
+    `order_id`       varchar(255) DEFAULT NULL,
+    `gateway_txn_id` varchar(255) DEFAULT NULL,
+    `error`          mediumtext   DEFAULT NULL,
+    `trace`          mediumtext   DEFAULT NULL,
+    `message`        mediumtext          NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_damaged_original_date` (`original_date`),
+    KEY `idx_damaged_original_date_original_queue` (`original_date`, `original_queue`),
+    KEY `idx_damaged_retry_date` (`retry_date`),
+    KEY `idx_damaged_order_id_gateway` (`order_id`, `gateway`),
+    KEY `idx_damaged_gateway_txn_id_gateway` (`gateway_txn_id`, `gateway`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
 
+create view damaged_view as
+select *
+from smashpig.damaged
+where retry_date is null;
