@@ -280,8 +280,8 @@ class DonationMessage extends Message {
    *
    * @return string
    */
-  public function getOriginalCurrency(): string {
-    return $this->message['original_currency'] ?? $this->message['currency'];
+  public function getOriginalCurrency(): ?string {
+    return $this->message['original_currency'] ?? $this->message['currency'] ?? NULL;
   }
 
   /**
