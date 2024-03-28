@@ -466,7 +466,7 @@ class DonationMessage extends Message {
       return 1;
     }
     try {
-      return (float) exchange_rate_convert($this->getOriginalCurrency(), 1, $this->getTimestamp()) / exchange_rate_convert($this->getSettlementCurrency(), 1, $this->getTimestamp());
+      return (float) $this->currencyConvert($this->getOriginalCurrency(), 1, $this->getTimestamp()) / $this->currencyConvert($this->getSettlementCurrency(), 1, $this->getTimestamp());
     }
     catch (ExchangeRatesException $e) {
       throw new WMFException(WMFException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$this->getOriginalCurrency()}': " . $e->getMessage());
