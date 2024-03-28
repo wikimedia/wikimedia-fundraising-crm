@@ -103,7 +103,7 @@ class WmfTransaction {
             }
             break;
         default:
-            throw new WMFException( WMFException::INVALID_MESSAGE, "Malformed unique id (too many terms)" );
+            throw new WMFException( WMFException::INVALID_MESSAGE, "Malformed unique id (too many terms): " . $unique_id );
         }
 
         // TODO: debate whether to renormalize here
