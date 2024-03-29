@@ -216,14 +216,14 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
       // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
       if (ContributionRecur::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
         ContributionRecur::reactivateIfInactive([
-          'contribution_status_id' => $message->getContributionRecurValue('contribution_status_id'),
+          'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
           'id' => $message->getContributionRecurID(),
         ]);
       }
       if ($message->isFundraiseUp()) {
         check_recur_modification_and_queue([
-          'amount' => $message->getContributionRecurValue('amount'),
-          'currency' => $message->getContributionRecurValue('currency'),
+          'amount' => $message->getExistingContributionRecurValue('amount'),
+          'currency' => $message->getExistingContributionRecurValue('currency'),
         ], $msg);
       }
     }

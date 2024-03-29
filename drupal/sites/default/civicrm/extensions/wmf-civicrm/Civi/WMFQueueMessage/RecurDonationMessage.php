@@ -78,7 +78,7 @@ class RecurDonationMessage extends DonationMessage {
    */
   private function isRecurringFound(): bool {
     try {
-      return (bool) $this->getContributionRecurValue('contribution_status_id');
+      return (bool) $this->getExistingContributionRecurValue('contribution_status_id');
     }
     catch (\CRM_Core_Exception $e) {
       return FALSE;
@@ -146,7 +146,7 @@ class RecurDonationMessage extends DonationMessage {
    * @throws \CRM_Core_Exception
    */
   public function getContactID(): ?int {
-    return $this->getContributionRecurValue('contact_id') ?: parent::getContactID();
+    return $this->getExistingContributionRecurValue('contact_id') ?: parent::getContactID();
   }
 
   /**
@@ -166,24 +166,6 @@ class RecurDonationMessage extends DonationMessage {
     }
 
     return $subscriberID ?: NULL;
-  }
-
-  /**
-   * @param string $value
-   *   The value to fetch, in api v4 format (e.g supports contribution_status_id:name).
-   *
-   * @return mixed|null
-   * @throws \CRM_Core_Exception
-   *   Exception is thrown when the contact is not found.
-   */
-  public function getContributionRecurValue(string $value) {
-    if (!$this->getContributionRecurID()) {
-      return NULL;
-    }
-    if (!$this->isDefined('ContributionRecur')) {
-      $this->define('ContributionRecur', 'ContributionRecur', ['id' => $this->getContributionRecurID()]);
-    }
-    return $this->lookup('ContributionRecur', $value);
   }
 
 }
