@@ -2,6 +2,7 @@
 
 use Civi\WMFException\WMFException;
 use Civi\WMFException\NonUniqueTransaction;
+use Civi\WMFTransaction;
 
 /**
  * @group WmfCommon
@@ -9,7 +10,7 @@ use Civi\WMFException\NonUniqueTransaction;
 class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
 
   public function testParseUniqueId() {
-    $transaction = WmfTransaction::from_unique_id("RFD RECURRING GLOBALCOLLECT 1234 432");
+    $transaction = WMFTransaction::from_unique_id("RFD RECURRING GLOBALCOLLECT 1234 432");
     $this->assertEquals(
       $transaction->gateway_txn_id, "1234",
       "5-argument form gateway_txn_id is parsed correctly.");
@@ -29,7 +30,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       $transaction->get_unique_id(), "RFD RECURRING GLOBALCOLLECT 1234",
       "5-argument form is renormalized to 4-form");
 
-    $transaction = WmfTransaction::from_unique_id("RFD GLOBALCOLLECT 1234 432");
+    $transaction = WMFTransaction::from_unique_id("RFD GLOBALCOLLECT 1234 432");
     $this->assertEquals(
       $transaction->gateway_txn_id, "1234",
       "4-argument form gateway_txn_id is parsed correctly.");
@@ -43,7 +44,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       $transaction->get_unique_id(), "RFD GLOBALCOLLECT 1234",
       "4-argument form is renormalized correctly");
 
-    $transaction = WmfTransaction::from_unique_id("GLOBALCOLLECT 1234x 432");
+    $transaction = WMFTransaction::from_unique_id("GLOBALCOLLECT 1234x 432");
     $this->assertEquals(
       $transaction->gateway_txn_id, "1234x",
       "3-argument form gateway_txn_id is parsed correctly.");
@@ -51,7 +52,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       $transaction->get_unique_id(),"GLOBALCOLLECT 1234x",
       "3-argument form is renormalized correctly");
 
-    $transaction = WmfTransaction::from_unique_id("GLOBALCOLLECT 1234");
+    $transaction = WMFTransaction::from_unique_id("GLOBALCOLLECT 1234");
     $this->assertEquals(
       $transaction->gateway_txn_id, "1234",
       "2-argument form gateway_txn_id is parsed correctly.");
@@ -65,7 +66,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => "1234",
       'recurring' => NULL,
     ];
-    $transaction = WmfTransaction::from_message($msg);
+    $transaction = WMFTransaction::from_message($msg);
     $this->assertEquals(
       "1234", $transaction->gateway_txn_id,
       "parsed message gateway_txn_id is correct");
@@ -77,36 +78,36 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
   function testInvalidEmptyId() {
     $this->expectException(WMFException::class);
     $this->expectExceptionCode(WMFException::INVALID_MESSAGE);
-    WmfTransaction::from_unique_id("");
+    WMFTransaction::from_unique_id("");
   }
 
   function testInvalidAlmostEmptyId() {
     $this->expectExceptionCode(WMFException::INVALID_MESSAGE);
     $this->expectException(WMFException::class);
-    WmfTransaction::from_unique_id('RFD RECURRING');
+    WMFTransaction::from_unique_id('RFD RECURRING');
   }
 
   public function testInvalidWhitespaceId(): void {
     $this->expectException(WMFException::class);
     $this->expectExceptionCode(WMFException::INVALID_MESSAGE);
-    WmfTransaction::from_unique_id('RFD RECURRING ');
+    WMFTransaction::from_unique_id('RFD RECURRING ');
   }
 
   public function testInvalidExtraPartsId(): void {
     $this->expectExceptionCode(WMFException::INVALID_MESSAGE);
     $this->expectException(WMFException::class);
-    WmfTransaction::from_unique_id('TEST_GATEWAY 123 1234 EXTRA_PART');
+    WMFTransaction::from_unique_id('TEST_GATEWAY 123 1234 EXTRA_PART');
   }
 
   public function testInvalidTimestampId(): void {
     $this->expectException(WMFException::class);
     $this->expectExceptionCode(WMFException::INVALID_MESSAGE);
-    WmfTransaction::from_unique_id('TEST_GATEWAY 123 BAD_TIMESTAMP');
+    WMFTransaction::from_unique_id('TEST_GATEWAY 123 BAD_TIMESTAMP');
   }
 
   function testExistsNone() {
     civicrm_initialize();
-    $transaction = WmfTransaction::from_unique_id('TEST_GATEWAY ' . mt_rand());
+    $transaction = WMFTransaction::from_unique_id('TEST_GATEWAY ' . mt_rand());
     $this->assertEquals(FALSE, $transaction->exists());
   }
 
@@ -122,7 +123,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       'email' => 'somebody@wikimedia.org',
     ];
     $this->messageImport($msg);
-    $transaction = WmfTransaction::from_unique_id('TEST_GATEWAY ' . $gateway_txn_id);
+    $transaction = WMFTransaction::from_unique_id('TEST_GATEWAY ' . $gateway_txn_id);
     $this->assertEquals(TRUE, $transaction->exists());
   }
 
@@ -149,7 +150,7 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
       'gateway_txn_id' => $gateway_txn_id,
     ]);
 
-    $transaction = WmfTransaction::from_unique_id('TEST_GATEWAY ' . $gateway_txn_id);
+    $transaction = WMFTransaction::from_unique_id('TEST_GATEWAY ' . $gateway_txn_id);
     $transaction->getContribution();
   }
 

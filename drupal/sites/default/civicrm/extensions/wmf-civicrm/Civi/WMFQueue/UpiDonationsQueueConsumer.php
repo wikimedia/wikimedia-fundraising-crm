@@ -9,7 +9,7 @@ use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
-use WmfTransaction;
+use Civi\WMFTransaction;
 
 class UpiDonationsQueueConsumer extends QueueConsumer {
 
@@ -155,7 +155,7 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
       'payment_token_id' => $paymentToken['id'],
       'processor_id' => $normalized['gateway_txn_id'],
       'start_date' => UtcDate::getUtcDatabaseString($normalized['date']),
-      'trxn_id' => WmfTransaction::from_message($normalized)->get_unique_id(),
+      'trxn_id' => WMFTransaction::from_message($normalized)->get_unique_id(),
     ];
 
     $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextDateForMonth(

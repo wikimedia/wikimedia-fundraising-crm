@@ -12,6 +12,7 @@ use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use SmashPig\Core\DataStores\QueueWrapper;
+use Civi\WMFTransaction;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
@@ -478,7 +479,7 @@ function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
  *
  */
 function _wmf_civicrm_message_contribution_insert($msg) {
-  $transaction = WmfTransaction::from_message($msg);
+  $transaction = WMFTransaction::from_message($msg);
   $trxn_id = $transaction->get_unique_id();
 
   $contribution = [
@@ -1375,7 +1376,7 @@ function wmf_civicrm_mark_refund(
   if ($refund_amount !== NULL) {
     $amount_scammed = round($refund_amount, 2) - round($original_amount, 2);
     if ($amount_scammed != 0) {
-      $transaction = WmfTransaction::from_unique_id($contribution['trxn_id']);
+      $transaction = WMFTransaction::from_unique_id($contribution['trxn_id']);
       if ($refund_gateway_txn_id) {
         $transaction->gateway_txn_id = $refund_gateway_txn_id;
       }
@@ -1435,7 +1436,7 @@ function wmf_civicrm_get_wmf_contribution_extra($contribution) {
 
   if (!empty($contribution['trxn_id'])) {
     try {
-      $transaction = WmfTransaction::from_unique_id($contribution['trxn_id']);
+      $transaction = WMFTransaction::from_unique_id($contribution['trxn_id']);
       $extra['gateway'] = strtolower($transaction->gateway);
       $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
     }

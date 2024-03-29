@@ -3,6 +3,7 @@
 use Civi\Api4\ContributionRecur;
 use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFException\WMFException;
+use Civi\WMFTransaction;
 
 /**
  * Insert the recurring contribution record
@@ -95,7 +96,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       'payment_token_id' => $msg['payment_token_id'],
       'payment_processor_id' => $msg['payment_processor_id'],
       'processor_id' => $gateway_subscr_id,
-      'trxn_id' => WmfTransaction::from_message($msg)->get_unique_id()
+      'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id()
     ];
   }
   elseif (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
@@ -110,7 +111,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       'payment_token_id' => $payment_token_result['id'],
       'payment_processor_id' => $payment_token_result['payment_processor_id'],
       'processor_id' => $gateway_subscr_id,
-      'trxn_id' => WmfTransaction::from_message($msg)->get_unique_id(),
+      'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
     ];
   }
   else if (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {

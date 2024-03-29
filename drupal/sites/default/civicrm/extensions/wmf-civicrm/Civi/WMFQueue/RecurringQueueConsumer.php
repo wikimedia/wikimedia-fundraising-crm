@@ -13,6 +13,7 @@ use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
+use Civi\WMFTransaction;
 
 class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
@@ -397,7 +398,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         // Set up the params to have the token
         $params['payment_token_id'] = $payment_token_result['id'];
         // Create a non paypal style trxn_id
-        $params['trxn_id'] = \WmfTransaction::from_message($msg)
+        $params['trxn_id'] = WMFTransaction::from_message($msg)
           ->get_unique_id();
         $params['processor_id'] = $msg['gateway_txn_id'];
         $params['invoice_id'] = $msg['order_id'];
