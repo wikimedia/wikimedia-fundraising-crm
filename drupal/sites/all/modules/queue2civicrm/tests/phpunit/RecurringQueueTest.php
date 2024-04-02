@@ -59,15 +59,15 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     return $contributions;
   }
 
-  protected function importMessageProcessWithMockConsumer(TransactionMessage $message): void {
-    $payment_time = $message->get('date');
+  protected function importMessageProcessWithMockConsumer(array $message): void {
+    $payment_time = $message['date'];
     exchange_rate_cache_set('USD', $payment_time, 1);
-    $currency = $message->get('currency');
+    $currency = $message['currency'];
     if ($currency !== 'USD') {
       exchange_rate_cache_set($currency, $payment_time, 3);
     }
     $consumer = $this->getTestRecurringQueueConsumerWithContributionRecurExceptions();
-    $consumer->processMessageWithErrorHandling($message->getBody());
+    $consumer->processMessageWithErrorHandling($message);
   }
 
   public function testCreateDistinctContributions(): void {
@@ -182,7 +182,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $values = $this->processRecurringSignup($subscr_id);
     $values['source_enqueued_time'] = UtcDate::getUtcTimestamp();
     $message = new RecurringCancelMessage($values);
-    $this->importMessageProcessWithMockConsumer($message);
+    $this->importMessageProcessWithMockConsumer($message->getBody());
 
     $damagedPDO = $this->damagedDb->getDatabase();
 
@@ -255,7 +255,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $values = $this->processRecurringSignup($subscr_id);
     $values['source_enqueued_time'] = UtcDate::getUtcTimestamp();
     $message = new RecurringEOTMessage($values);
-    $this->importMessageProcessWithMockConsumer($message);
+    $this->importMessageProcessWithMockConsumer($message->getBody());
 
     $damagedPDO = $this->damagedDb->getDatabase();
 
@@ -304,12 +304,11 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testBlankEmail(): void {
     $subscr_id = mt_rand();
     $ctId = $this->addContributionTracking();
-    $values = $this->processRecurringSignup(
-      $subscr_id,
-      ['contribution_tracking_id' => $ctId]
-    );
-    $message = new RecurringPaymentMessage($values);
-    $messageBody = $message->getBody();
+    $values = $this->processRecurringSignup([
+      'contribution_tracking_id' => $ctId,
+      'subscr_id' => $subscr_id,
+    ]);
+    $message = $this->getRecurringPaymentMessage($values);
 
     $addressFields = [
       'city',
@@ -319,20 +318,17 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'postal_code',
     ];
     foreach ($addressFields as $addressField) {
-      $messageBody[$addressField] = '';
+      $message[$addressField] = '';
     }
 
-    $this->consumer->processMessage($messageBody);
+    $this->consumer->processMessage($message);
 
-    $contributions = wmf_civicrm_get_contributions_from_gateway_id(
-      $message->getGateway(),
-      $message->getGatewayTxnId()
-    );
-    $this->addToCleanup($contributions[0]);
+    $contribution = $this->getContributionForMessage($message);
+    $this->addToCleanup($contribution);
     $addresses = $this->callAPISuccess(
       'Address',
       'get',
-      ['contact_id' => $contributions[0]['contact_id'], 'sequential' => 1]
+      ['contact_id' => $contribution['contact_id'], 'sequential' => 1]
     );
     $this->assertEquals(1, $addresses['count']);
     // The address created by the sign up (Lockwood Rd) should not have been overwritten by the blank.
@@ -603,39 +599,40 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $date = time();
     $orderId = "279.2";
-    $message = new RecurringPaymentMessage(
-      [
-        'txn_type' => 'subscr_payment',
-        'subscr_id' => $recur['trxn_id'],
-        'order_id' => $orderId,
-        'contact_id' => $recur['contact_id'],
-        'gateway' => 'adyen',
-        'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
-        'date' => $date,
-        'is_auto_rescue_retry' => TRUE,
-        'currency' => 'USD',
-        'amount' => 10,
-        'contribution_recur_id' => $recur['id'],
-        'payment_instrument_id' => 1,
-        'source_name' => 'CiviCRM',
-        'source_type' => 'direct',
-        'source_host' => '051a7ac1b08d',
-        'source_run_id' => 10315,
-        'source_version' => 'unknown',
-        'source_enqueued_time' => UtcDate::getUtcTimestamp(),
-      ]
-    );
+    $message = $this->getRecurringPaymentMessage([
+      'subscr_id' => $recur['trxn_id'],
+      'order_id' => $orderId,
+      'contact_id' => $recur['contact_id'],
+      'gateway' => 'adyen',
+      'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
+      'date' => $date,
+      'is_auto_rescue_retry' => TRUE,
+      'currency' => 'USD',
+      'amount' => 10,
+      'contribution_recur_id' => $recur['id'],
+      'payment_instrument_id' => 1,
+      'source_name' => 'CiviCRM',
+      'source_type' => 'direct',
+      'source_host' => '051a7ac1b08d',
+      'source_run_id' => 10315,
+      'source_version' => 'unknown',
+      'source_enqueued_time' => UtcDate::getUtcTimestamp(),
+    ]);
     $this->importMessageProcessWithMockConsumer($message);
 
-    $damagedPDO = $this->damagedDb->getDatabase();
-
-    $result = $damagedPDO->query("
-    SELECT * FROM damaged
-    WHERE gateway = '{$message->getGateway()}'
-    AND gateway_txn_id = '{$message->getGatewayTxnId()}'");
-    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+    $rows = $this->getDamagedRows($message);
     $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
     $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
+  }
+
+  /**
+   * @param array $values
+   *
+   * @return array
+   */
+  public function getRecurringPaymentMessage(array $values = []): array {
+    $values += ['txn_type' => 'subscr_payment'];
+    return (new RecurringPaymentMessage($values))->getBody();
   }
 
   /**
@@ -735,6 +732,21 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       }
 
     };
+  }
+
+  /**
+   * @param array $message
+   *
+   * @return array|false
+   */
+  public function getDamagedRows(array $message) {
+    $damagedPDO = $this->damagedDb->getDatabase();
+
+    $result = $damagedPDO->query("
+    SELECT * FROM damaged
+    WHERE gateway = '{$message['gateway']}'
+    AND gateway_txn_id = '{$message['gateway_txn_id']}'");
+    return $result->fetchAll(PDO::FETCH_ASSOC);
   }
 
 }
