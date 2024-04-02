@@ -267,16 +267,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $update_params['contribution_status_id:name'] = 'In Progress';
     }
     $this->updateContributionRecurWithErrorHandling($update_params);
-
-    // construct an array of useful info to invocations of queue2civicrm_import
-    $contribution_info = [
-      'contribution_id' => $contribution['id'],
-      'contact_id' => $recur_record->contact_id,
-      'msg' => $msg,
-    ];
-
-    // Send thank you email, other post-import things
-    module_invoke_all('queue2civicrm_import', $contribution_info);
   }
 
   /**
