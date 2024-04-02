@@ -12,6 +12,7 @@ use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 use SmashPig\Core\DataStores\QueueWrapper;
+use Civi\WMFTransaction;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
@@ -216,14 +217,14 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
       // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
       if (ContributionRecur::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
         ContributionRecur::reactivateIfInactive([
-          'contribution_status_id' => $message->getContributionRecurValue('contribution_status_id'),
+          'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
           'id' => $message->getContributionRecurID(),
         ]);
       }
       if ($message->isFundraiseUp()) {
         check_recur_modification_and_queue([
-          'amount' => $message->getContributionRecurValue('amount'),
-          'currency' => $message->getContributionRecurValue('currency'),
+          'amount' => $message->getExistingContributionRecurValue('amount'),
+          'currency' => $message->getExistingContributionRecurValue('currency'),
         ], $msg);
       }
     }
@@ -478,7 +479,7 @@ function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
  *
  */
 function _wmf_civicrm_message_contribution_insert($msg) {
-  $transaction = WmfTransaction::from_message($msg);
+  $transaction = WMFTransaction::from_message($msg);
   $trxn_id = $transaction->get_unique_id();
 
   $contribution = [
@@ -739,24 +740,6 @@ function wmf_civicrm_check_for_duplicates(array $message) {
       'Contribution already exists. Ignoring message.'
     );
   }
-}
-
-/**
- * Insert the contact record
- *
- * Serves as a standard way for message processors to handle contact
- * insertion.  By passing a contact id, a contact can be updated.
- *
- * @param array $msg
- * @param int $contact_id
- *
- * @return array
- */
-function wmf_civicrm_message_contact_insert($msg, $contact_id = NULL) {
-  return WMFContact::save(FALSE)
-    ->setContactID($contact_id)
-    ->setMessage($msg)
-    ->execute()->first();
 }
 
 /**
@@ -1375,7 +1358,7 @@ function wmf_civicrm_mark_refund(
   if ($refund_amount !== NULL) {
     $amount_scammed = round($refund_amount, 2) - round($original_amount, 2);
     if ($amount_scammed != 0) {
-      $transaction = WmfTransaction::from_unique_id($contribution['trxn_id']);
+      $transaction = WMFTransaction::from_unique_id($contribution['trxn_id']);
       if ($refund_gateway_txn_id) {
         $transaction->gateway_txn_id = $refund_gateway_txn_id;
       }
@@ -1435,7 +1418,7 @@ function wmf_civicrm_get_wmf_contribution_extra($contribution) {
 
   if (!empty($contribution['trxn_id'])) {
     try {
-      $transaction = WmfTransaction::from_unique_id($contribution['trxn_id']);
+      $transaction = WMFTransaction::from_unique_id($contribution['trxn_id']);
       $extra['gateway'] = strtolower($transaction->gateway);
       $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
     }

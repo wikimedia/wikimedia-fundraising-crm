@@ -21,6 +21,9 @@
     <ver>5.45</ver>
   </compatibility>
   <comments>This is a new, undeveloped module</comments>
+  <requires>
+    <ext>org.wikimedia.smashpig</ext>
+  </requires>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
     <psr0 prefix="CRM_" path="."/>

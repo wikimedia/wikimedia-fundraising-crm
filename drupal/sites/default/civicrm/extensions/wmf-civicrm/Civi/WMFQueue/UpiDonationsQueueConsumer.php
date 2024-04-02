@@ -4,12 +4,13 @@ namespace Civi\WMFQueue;
 
 use Civi;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\WMFContact;
 use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
-use WmfTransaction;
+use Civi\WMFTransaction;
 
 class UpiDonationsQueueConsumer extends QueueConsumer {
 
@@ -132,7 +133,9 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
     $normalized = wmf_civicrm_verify_message_and_stage($recurMessage);
 
     // Create (or update) the contact
-    $contact = wmf_civicrm_message_contact_insert($normalized);
+    $contact = WMFContact::save(FALSE)
+      ->setMessage($normalized)
+      ->execute()->first();
 
     // Create a token
     $paymentToken = wmf_civicrm_recur_payment_token_create(
@@ -155,7 +158,7 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
       'payment_token_id' => $paymentToken['id'],
       'processor_id' => $normalized['gateway_txn_id'],
       'start_date' => UtcDate::getUtcDatabaseString($normalized['date']),
-      'trxn_id' => WmfTransaction::from_message($normalized)->get_unique_id(),
+      'trxn_id' => WMFTransaction::from_message($normalized)->get_unique_id(),
     ];
 
     $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextDateForMonth(

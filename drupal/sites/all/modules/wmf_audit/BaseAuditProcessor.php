@@ -4,6 +4,7 @@ use Civi\Api4\Contribution;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFException\WMFException;
 use Civi\WMFAudit\MultipleFileTypeParser;
+use Civi\WMFTransaction;
 
 abstract class BaseAuditProcessor {
 
@@ -531,7 +532,7 @@ abstract class BaseAuditProcessor {
       foreach ($remaining as $group => $transactions) {
         foreach ($transactions as $date => $missing) {
           foreach ($missing as $transaction) {
-            $wrap_up .= "\t" . WmfTransaction::from_message($transaction)
+            $wrap_up .= "\t" . WMFTransaction::from_message($transaction)
                 ->get_unique_id() . "\n";
           }
         }
@@ -569,7 +570,7 @@ abstract class BaseAuditProcessor {
               // $parentByInvoice['trxn_id'] has extra information in it for example
               // RECURRING INGENICO 000000123410000010640000200001
               // Need to get just the transaction id after the processor name
-              $record['gateway_parent_id'] = (WmfTransaction::from_unique_id($parentByInvoice['trxn_id']))->gateway_txn_id;
+              $record['gateway_parent_id'] = (WMFTransaction::from_unique_id($parentByInvoice['trxn_id']))->gateway_txn_id;
               $record['gateway_refund_id'] = $record['gateway_parent_id'];
               $foundParent = TRUE;
             }

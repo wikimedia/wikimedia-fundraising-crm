@@ -6,5 +6,3 @@ dependencies[] = civicrm
 dependencies[] = exchange_rates
 dependencies[] = metrics_reporting
 dependencies[] = wmf_common
-files[] = db_switcher.inc
-files[] = WmfTransaction.php

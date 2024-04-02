@@ -128,15 +128,8 @@ class DonationMessage extends Message {
     $msg['financial_type_id'] = $this->getFinancialTypeID();
     $msg['contribution_recur_id'] = $this->getContributionRecurID();
     $msg['contact_id'] = $this->getContactID();
-    if (empty($msg['payment_instrument_id'])) {
-      $paymentInstrument = $msg['payment_instrument'] ?? FinanceInstrument::getPaymentInstrument($msg);
-      $msg['payment_instrument_id'] = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $paymentInstrument);
-    }
-    if (!$msg['payment_instrument_id']) {
-      throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
-    }
+    $msg['payment_instrument_id'] = $this->getPaymentInstrumentID();
     $msg['date'] = $this->getTimestamp();
-
     $msg['thankyou_date'] = $this->getThankYouDate();
     $parsed = $this->getParsedName();
     if (!empty($parsed)) {
@@ -190,9 +183,9 @@ class DonationMessage extends Message {
     $msg['original_gross'] = $this->getOriginalAmount();
     $msg['original_currency'] = $this->getOriginalCurrency();;
     $msg['currency'] = $this->getSettlementCurrency();
-    $msg['fee'] = $this->getFeeAmountRounded();
-    $msg['gross'] = $this->getAmountRounded();
-    $msg['net'] = $this->getNetAmountRounded();
+    $msg['fee'] = $this->getUsdFeeAmountRounded();
+    $msg['gross'] = $this->getUsdAmountRounded();
+    $msg['net'] = $this->getUsdNetAmountRounded();
 
     return $msg;
   }
@@ -288,46 +281,46 @@ class DonationMessage extends Message {
   /**
    * Get the donation amount as we receive it in the settled currency.
    */
-  public function getAmount(): float {
+  public function getUsdAmount(): float {
     return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
   }
 
-  public function getAmountRounded(): string {
-    return $this->round($this->getAmount(), $this->getSettlementCurrency());
+  public function getUsdAmountRounded(): string {
+    return $this->round($this->getUsdAmount(), $this->getSettlementCurrency());
   }
 
   /**
    * Get the fee amount charged by the processing gateway, when available
    */
-  public function getFeeAmount(): float {
+  public function getUsdFeeAmount(): float {
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
       return $this->cleanMoney($this->message['fee']) * $this->getConversionRate();
     }
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
-      return $this->getAmount() - $this->getNetAmount();
+      return $this->getUsdAmount() - $this->getUsdNetAmount();
     }
     return 0.00;
   }
 
-  public function getFeeAmountRounded(): string {
-    return $this->round($this->getFeeAmount(), $this->getSettlementCurrency());
+  public function getUsdFeeAmountRounded(): string {
+    return $this->round($this->getUsdFeeAmount(), $this->getSettlementCurrency());
   }
 
   /**
    * Get amount less any fee charged by the processor.
    */
-  public function getNetAmount(): float {
+  public function getUsdNetAmount(): float {
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
       return $this->cleanMoney($this->message['net']) * $this->getConversionRate();
     }
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
-      return $this->getAmount() - $this->getFeeAmount();
+      return $this->getUsdAmount() - $this->getUsdFeeAmount();
     }
-    return $this->getAmount();
+    return $this->getUsdAmount();
   }
 
-  public function getNetAmountRounded(): string {
-    return $this->round($this->getNetAmount(), $this->getSettlementCurrency());
+  public function getUsdNetAmountRounded(): string {
+    return $this->round($this->getUsdNetAmount(), $this->getSettlementCurrency());
   }
 
   /**
@@ -428,26 +421,6 @@ class DonationMessage extends Message {
     return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
   }
 
-  public function isAmazon(): bool {
-    return $this->isGateway('amazon');
-  }
-
-  public function isPaypal(): bool {
-    return $this->isGateway('paypal') || $this->isGateway('paypal_ec');
-  }
-
-  public function isFundraiseUp(): bool {
-    return $this->isGateway('fundraiseup');
-  }
-
-  public function isGateway(string $gateway): bool {
-    return $this->getGateway() === $gateway;
-  }
-
-  public function getGateway(): string {
-    return trim($this->message['gateway']);
-  }
-
   /**
    * Validate the message
    *
@@ -466,7 +439,7 @@ class DonationMessage extends Message {
       return 1;
     }
     try {
-      return (float) exchange_rate_convert($this->getOriginalCurrency(), 1, $this->getTimestamp()) / exchange_rate_convert($this->getSettlementCurrency(), 1, $this->getTimestamp());
+      return (float) $this->currencyConvert($this->getOriginalCurrency(), 1, $this->getTimestamp()) / $this->currencyConvert($this->getSettlementCurrency(), 1, $this->getTimestamp());
     }
     catch (ExchangeRatesException $e) {
       throw new WMFException(WMFException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$this->getOriginalCurrency()}': " . $e->getMessage());
@@ -500,6 +473,29 @@ class DonationMessage extends Message {
       }
     }
     return $this->parsedName;
+  }
+
+  /**
+   * @return int
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function getPaymentInstrumentID(): int {
+    if (!empty($this->message['payment_instrument_id'])) {
+      if (is_numeric($this->message['payment_instrument_id'])) {
+        return (int) $this->message['payment_instrument_id'];
+      }
+      $paymentInstrumentID = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $this->message['payment_instrument_id']);
+      if (!$paymentInstrumentID) {
+        throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
+      }
+      return (int) $paymentInstrumentID;
+    }
+    $paymentInstrument = $this->message['payment_instrument'] ?? FinanceInstrument::getPaymentInstrument($this->message);
+    $paymentInstrumentID = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $paymentInstrument);
+    if ($paymentInstrumentID) {
+      return (int) $paymentInstrumentID;
+    }
+    throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
   }
 
 }

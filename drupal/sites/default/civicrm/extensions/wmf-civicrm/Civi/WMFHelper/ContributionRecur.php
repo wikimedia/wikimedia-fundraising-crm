@@ -123,7 +123,7 @@ class ContributionRecur {
       // Also filter out multi recurring e.g. contact 1925710.
       if (count($contribution_recurs) === 1) {
         $recur = $contribution_recurs[0];
-        $result[] = [
+        $result = [
           'id' => $recur['id'],
           'contact_id' => $contact_id,
           'currency' => $recur['currency'],

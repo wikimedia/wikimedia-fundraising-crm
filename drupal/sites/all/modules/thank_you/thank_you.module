@@ -9,6 +9,7 @@ use Civi\WMFMailTracking\CiviMailStore;
 use Civi\WMFMailTracking\CiviMailingInsertException;
 use Civi\WMFMailTracking\CiviMailingMissingException;
 use Civi\WMFMailTracking\CiviQueueInsertException;
+use Civi\WMFTransaction;
 
 // TODO:
 // * use more exceptions in place of logging/return false
@@ -377,7 +378,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
 
   $is_recurring = FALSE;
   try {
-    $transaction = WmfTransaction::from_unique_id($mailingData['trxn_id']);
+    $transaction = WMFTransaction::from_unique_id($mailingData['trxn_id']);
     $is_recurring = $transaction->is_recurring;
   }
   catch (WMFException $ex) {
