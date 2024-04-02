@@ -2,12 +2,12 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\Email;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\ContactTestTrait;
-use Civi\Api4\Contribution;
-use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFException\WMFException;
 
 /**
@@ -22,6 +22,63 @@ class RecurringQueueTest extends BaseQueue {
   protected string $queueName = 'recurring';
 
   protected string $queueConsumer = 'Recurring';
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringPaymentNormalizedMessages(): void {
+    $subscr_id = mt_rand();
+    $values = [
+      'contribution_tracking_id' => $this->addContributionTrackingRecord(),
+      'subscr_id' => $subscr_id,
+    ];
+    $this->processRecurringSignup($values);
+
+    $message = $this->processRecurringPaymentMessage($values);
+    $contribution = $this->getContributionForMessage($message);
+
+    $recur_record = $this->getContributionRecurForMessage($message);
+    $this->assertIsNumeric($recur_record['payment_processor_id']);
+
+    $this->assertEquals($recur_record['id'], $contribution['contribution_recur_id']);
+
+    // The ->single() means these will fail if there is not exactly 1.
+    Address::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->execute()->single();
+    $email = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->execute()->single();
+    $this->assertEquals('test+fr@wikimedia.org', $email['email']);
+  }
+
+  /**
+   *  Test that a blank address is not written to the DB.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringPaymentBlankAddress(): void {
+    $subscr_id = mt_rand();
+    $values = [
+      'contribution_tracking_id' => $this->addContributionTrackingRecord(),
+      'subscr_id' => $subscr_id,
+    ];
+    $this->processRecurringSignup($values);
+    $values['city'] = '';
+    $values['country'] = '';
+    $values['state_province'] = '';
+    $values['street_address'] = '';
+    $values['postal_code'] = '';
+
+    $message = $this->processRecurringPaymentMessage($values);
+
+    $contribution = $this->getContributionForMessage($message);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->execute()->single();
+    // The address created by the sign up (Lockwood Rd) should not have been overwritten by the blank.
+    $this->assertEquals('5109 Lockwood Rd', $address['street_address']);
+  }
 
   public function testRecurringPaymentPaypalNoSubscrId(): void {
     $this->expectExceptionCode(WMFException::INVALID_RECURRING);
@@ -114,13 +171,13 @@ class RecurringQueueTest extends BaseQueue {
     $email = 'test_recur_' . mt_rand() . '@example.org';
     // Set up an old-style PayPal recurring subscription with S-XXXX subscr_id
     $subscr_id = 'S-' . mt_rand();
-    $ctId = $this->addContributionTrackingRecord();
-    $values = $this->processRecurringSignup([
+    $values = [
       'gateway' => 'paypal',
       'email' => $email,
-      'contribution_tracking_id' => $ctId,
+      'contribution_tracking_id' => $this->addContributionTrackingRecord(),
       'subscr_id' => $subscr_id,
-    ]);
+    ];
+    $this->processRecurringSignup($values);
 
     // Import an initial payment with consistent gateway and subscr_id
     $values['email'] = $email;
@@ -157,9 +214,23 @@ class RecurringQueueTest extends BaseQueue {
    * @return array
    */
   private function processRecurringSignup(array $overrides = []): array {
-    $values = $overrides;
-    $this->processMessage($this->getRecurringSignupMessage($values));
-    return $values;
+    $message = $this->getRecurringSignupMessage($overrides);
+    $this->processMessage($message);
+    return $message;
+  }
+
+  /**
+   * Get the recurring subscription relevant to the message.
+   *
+   * @param array $message
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   */
+  public function getContributionRecurForMessage(array $message): ?array {
+    return ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', '=', $message['subscr_id'])
+      ->execute()->single();
   }
 
 }
