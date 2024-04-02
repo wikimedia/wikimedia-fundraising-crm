@@ -74,51 +74,47 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $subscr_id = mt_rand();
     $ctId = $this->addContributionTracking();
 
-    $values = $this->processRecurringSignup(
-      $subscr_id,
-      ['contribution_tracking_id' => $ctId]
-    );
+    $values = $this->processRecurringSignup([
+      'contribution_tracking_id' => $ctId,
+      'subscr_id' => $subscr_id,
+    ]);
 
-    $message = new RecurringPaymentMessage($values);
-    $message2 = new RecurringPaymentMessage($values);
+    $message = $this->processRecurringPaymentMessage($values);
 
-    $msg = $message->getBody();
-
-    $contributions = $this->importMessage($message);
+    $contribution = $this->getContributionForMessage($message);
     $this->consumeCtQueue();
     $contributionTracking = ContributionTracking::get(FALSE)
-      ->addWhere('id', '=', $msg['contribution_tracking_id'])
+      ->addWhere('id', '=', $message['contribution_tracking_id'])
       ->execute()->first();
     $this->assertEquals(
-      $contributions[0]['id'],
+      $contribution['id'],
       $contributionTracking['contribution_id']
     );
-    $contributions2 = $this->importMessage($message2);
+    $message2 = $this->processRecurringPaymentMessage($values);
     $this->consumeCtQueue();
 
     $contributionTracking = ContributionTracking::get(FALSE)
-      ->addWhere('id', '=', $msg['contribution_tracking_id'])
+      ->addWhere('id', '=', $message['contribution_tracking_id'])
       ->execute()->first();
 
     // The ct_id record should still link to the first contribution
     $this->assertEquals(
-      $contributions[0]['id'],
+      $contribution['id'],
       $contributionTracking['contribution_id']
     );
-    $recur_record = RecurHelper::getByGatewaySubscriptionId($msg['gateway'], $subscr_id);
+    $recur_record = RecurHelper::getByGatewaySubscriptionId($message['gateway'], $subscr_id);
 
     $this->assertNotEquals(FALSE, $recur_record);
 
-    $this->assertCount(1, $contributions);
-    $this->assertEquals($recur_record['id'], $contributions[0]['contribution_recur_id']);
-    $this->assertCount(1, $contributions2);
-    $this->assertEquals($recur_record['id'], $contributions2[0]['contribution_recur_id']);
+    $this->assertEquals($recur_record['id'], $contribution['contribution_recur_id']);
+    $contribution2 = $this->getContributionForMessage($message2);
+    $this->assertEquals($recur_record['id'], $contribution2['contribution_recur_id']);
 
-    $this->assertEquals($contributions[0]['contact_id'], $contributions2[0]['contact_id']);
+    $this->assertEquals($contribution['contact_id'], $contribution2['contact_id']);
     $addresses = $this->callAPISuccess(
       'Address',
       'get',
-      ['contact_id' => $contributions2[0]['contact_id']]
+      ['contact_id' => $contribution2['contact_id']]
     );
     $this->assertEquals(1, $addresses['count']);
     // The address comes from the recurring_payment.json not the recurring_signup.json as it
@@ -126,9 +122,38 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     // the scenario the code works to. In production they would probably always be the same.
     $this->assertEquals('1211122 132 st', $addresses['values'][$addresses['id']]['street_address']);
 
-    $emails = $this->callAPISuccess('Email', 'get', ['contact_id' => $contributions2[0]['contact_id']]);
+    $emails = $this->callAPISuccess('Email', 'get', ['contact_id' => $contribution2['contact_id']]);
     $this->assertEquals(1, $emails['count']);
     $this->assertEquals('test+fr@wikimedia.org', $emails['values'][$emails['id']]['email']);
+  }
+
+  /**
+   * @param array $overrides
+   *
+   * @return array
+   */
+  public function processRecurringPaymentMessage(array $overrides): array {
+    $message = new RecurringPaymentMessage($overrides);
+    $this->importMessage($message);
+    return $message->getBody();
+  }
+
+  /**
+   * @param array $donation_message
+   *
+   * @return array
+   */
+  public function getContributionForMessage(array $donation_message): array {
+    try {
+      return Contribution::get(FALSE)
+        ->addSelect('*', 'contribution_status_id:name', 'contribution_recur_id.*')
+        ->addWhere('contribution_extra.gateway', '=', $donation_message['gateway'])
+        ->addWhere('contribution_extra.gateway_txn_id', '=', $donation_message['gateway_txn_id'])
+        ->execute()->single();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('contribution lookup failed: ' . $e->getMessage());
+    }
   }
 
   /**
@@ -136,7 +161,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testCancelContributions(): void {
     $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup($subscr_id);
+    $values = $this->processRecurringSignup(['subscr_id' => $subscr_id]);
     $this->importMessage(new RecurringCancelMessage($values));
 
     $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
@@ -244,7 +269,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   public function testNormalizedMessages() {
-    civicrm_initialize();
     $subscr_id = mt_rand();
     $ctId = $this->addContributionTracking();
     $values = $this->processRecurringSignup(
@@ -252,11 +276,10 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       ['contribution_tracking_id' => $ctId]
     );
 
-    $message = new RecurringPaymentMessage($values);
+    $message = $this->processRecurringPaymentMessage($values);
+    $contributions = [$this->getContributionForMessage($message)];
 
-    $contributions = $this->importMessage($message);
-
-    $recur_record = RecurHelper::getByGatewaySubscriptionId($contributions[0]['gateway'], $subscr_id);
+    $recur_record = RecurHelper::getByGatewaySubscriptionId($message['gateway'], $subscr_id);
     $this->assertNotEquals(FALSE, $recur_record);
     $this->assertTrue(is_numeric($recur_record['payment_processor_id']));
 
@@ -278,8 +301,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    *  Test that a blank address is not written to the DB.
    */
-  public function testBlankEmail() {
-    civicrm_initialize();
+  public function testBlankEmail(): void {
     $subscr_id = mt_rand();
     $ctId = $this->addContributionTracking();
     $values = $this->processRecurringSignup(
@@ -640,11 +662,19 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Process the original recurring sign up message.
    *
-   * @param string $subscr_id
+   * @param string|array $subscr_id
+   * @param array $overrides
    *
    * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
    */
   private function processRecurringSignup($subscr_id, $overrides = []) {
+    if (is_array($subscr_id)) {
+      // This is a transitional hack because the class we are copying to just
+      // has one array parameter.
+      $overrides = $subscr_id;
+    }
     $values = $overrides + ['subscr_id' => $subscr_id];
     $signup_message = new RecurringSignupMessage($values);
     $subscr_time = $signup_message->get('date');
