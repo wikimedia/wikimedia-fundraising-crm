@@ -5,7 +5,6 @@ use Civi\Api4\ContributionTracking;
 use Civi\Api4\Contribution;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFQueue\RecurringQueueConsumer;
-use Civi\WMFException\WMFException;
 use SmashPig\Core\DataStores\DamagedDatabase;
 use SmashPig\Core\UtcDate;
 
@@ -183,14 +182,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $values['source_enqueued_time'] = UtcDate::getUtcTimestamp();
     $message = new RecurringCancelMessage($values);
     $this->importMessageProcessWithMockConsumer($message->getBody());
-
-    $damagedPDO = $this->damagedDb->getDatabase();
-
-    $result = $damagedPDO->query("
-    SELECT * FROM damaged
-    WHERE gateway = '{$message->getGateway()}'
-    AND gateway_txn_id = '{$message->getGatewayTxnId()}'");
-    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+    $rows = $this->getDamagedRows($message->getBody());
     $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
     $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
   }
@@ -254,16 +246,10 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $subscr_id = mt_rand();
     $values = $this->processRecurringSignup($subscr_id);
     $values['source_enqueued_time'] = UtcDate::getUtcTimestamp();
-    $message = new RecurringEOTMessage($values);
-    $this->importMessageProcessWithMockConsumer($message->getBody());
+    $message = $this->getRecurringEOTMessage($values);
+    $this->importMessageProcessWithMockConsumer($message);
 
-    $damagedPDO = $this->damagedDb->getDatabase();
-
-    $result = $damagedPDO->query("
-    SELECT * FROM damaged
-    WHERE gateway = '{$message->getGateway()}'
-    AND gateway_txn_id = '{$message->getGatewayTxnId()}'");
-    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+    $rows = $this->getDamagedRows($message);
     $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
     $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
   }
@@ -440,13 +426,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     // Consume the recurring signup with deadlock exception
     $consumer = $this->getTestRecurringQueueConsumerWithContributionRecurExceptions();
     $consumer->processMessageWithErrorHandling($signup_message->getBody());
-    $damagedPDO = $this->damagedDb->getDatabase();
-
-    $result = $damagedPDO->query("
-    SELECT * FROM damaged
-    WHERE gateway = '{$signup_message->getGateway()}'
-    AND gateway_txn_id = '{$subscr_id}'");
-    $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+    $rows = $this->getDamagedRows($signup_message->getBody());
     $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
     $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
   }
@@ -674,12 +654,22 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function getDamagedRows(array $message) {
     $damagedPDO = $this->damagedDb->getDatabase();
-
     $result = $damagedPDO->query("
     SELECT * FROM damaged
     WHERE gateway = '{$message['gateway']}'
     AND gateway_txn_id = '{$message['gateway_txn_id']}'");
     return $result->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  /**
+   * @param array $values
+   *
+   * @return array|mixed
+   */
+  public function getRecurringEOTMessage(array $values) {
+    $message = new RecurringEOTMessage($values);
+    $message = $message->getBody();
+    return $message;
   }
 
 }
