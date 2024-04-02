@@ -23,12 +23,58 @@ class RecurringQueueTest extends BaseQueue {
 
   protected string $queueConsumer = 'Recurring';
 
-  public function testNoSubscrId(): void {
+  public function testRecurringPaymentPaypalNoSubscrId(): void {
     $this->expectExceptionCode(WMFException::INVALID_RECURRING);
     $this->expectException(WMFException::class);
     $message = $this->getRecurringPaymentMessage();
     $message['subscr_id'] = NULL;
     $this->processMessageWithoutQueuing($message);
+  }
+
+  /**
+   * If the payment does not have a subscr
+   * @return void
+   */
+  public function testRecurringPaymentPaypalMissingPredecessor(): void {
+    $this->expectExceptionCode(WMFException::MISSING_PREDECESSOR);
+    $this->expectException(WMFException::class);
+    $message = $this->getRecurringPaymentMessage([
+      'subscr_id' => mt_rand(),
+      'email' => 'notinthedb@example.com',
+    ]);
+    $this->processMessageWithoutQueuing($message);
+  }
+
+  /**
+   * With PayPal, we don't reliably get subscr_signup messages before the
+   * first payment message. Fortunately the payment messages have enough
+   * data to insert the recur record.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringPaymentPayPalECMissingPredecessor(): void {
+    $email = 'not-in-the-db' . (string) mt_rand() . '@example.com';
+    $this->processRecurringPaymentMessage([
+      'gateway' => 'paypal_ec',
+      'subscr_id' => 'I-' . (string) mt_rand(),
+      'email' => $email,
+      'gateway_txn_id' => 123,
+    ]);
+    $recurRecord = ContributionRecur::get(FALSE)
+      ->addWhere('contact_id.email_primary.email', '=', $email)
+      ->execute()->single();
+
+    $contribution = $this->getContributionForMessage([
+      'gateway' => 'paypal_ec',
+      'gateway_txn_id' => 123,
+    ]);
+
+    // ...and it should be associated with the contribution
+    $this->assertEquals(
+      $recurRecord['id'],
+      $contribution['contribution_recur_id'],
+      'New recurring record not associated with newly inserted payment.'
+    );
   }
 
   /**
@@ -38,19 +84,16 @@ class RecurringQueueTest extends BaseQueue {
    * @throws \CRM_Core_Exception
    * @throws \Random\RandomException
    */
-  public function testPayPalMissingPredecessorNonUSD(): void {
+  public function testRecurringPaymentPayPalECMissingPredecessorNonUSD(): void {
     $email = random_int(0, 1000) . 'not-in-the-database@example.com';
-    $message = $this->getRecurringPaymentMessage(
-      [
-        'currency' => 'CAD',
-        'amount' => 10.00,
-        'gateway' => 'paypal_ec',
-        'subscr_id' => 'I-123456',
-        'email' => $email,
-      ]
-    );
-
-    $this->processMessage($message);
+    $overrides = [
+      'email' => $email,
+      'amount' => 10.00,
+      'gateway' => 'paypal_ec',
+      'subscr_id' => 'I-123456',
+      'currency' => 'CAD',
+    ];
+    $this->processRecurringPaymentMessage($overrides);
     $contact = Contact::get(FALSE)
       ->addWhere('email_primary.email', '=', $email)
       ->execute()->single();
@@ -67,15 +110,16 @@ class RecurringQueueTest extends BaseQueue {
    *
    * @throws \CRM_Core_Exception
    */
-  public function testScrewySubscrId(): void {
+  public function testRecurringPaymentPaypalScrewySubscrId(): void {
     $email = 'test_recur_' . mt_rand() . '@example.org';
     // Set up an old-style PayPal recurring subscription with S-XXXX subscr_id
     $subscr_id = 'S-' . mt_rand();
     $ctId = $this->addContributionTrackingRecord();
-    $values = $this->processRecurringSignup($subscr_id, [
+    $values = $this->processRecurringSignup([
       'gateway' => 'paypal',
       'email' => $email,
       'contribution_tracking_id' => $ctId,
+      'subscr_id' => $subscr_id,
     ]);
 
     // Import an initial payment with consistent gateway and subscr_id
@@ -108,13 +152,12 @@ class RecurringQueueTest extends BaseQueue {
   /**
    * Process the original recurring sign up message.
    *
-   * @param string $subscr_id
    * @param array $overrides
    *
    * @return array
    */
-  private function processRecurringSignup(string $subscr_id, array $overrides = []): array {
-    $values = $overrides + ['subscr_id' => $subscr_id];
+  private function processRecurringSignup(array $overrides = []): array {
+    $values = $overrides;
     $this->processMessage($this->getRecurringSignupMessage($values));
     return $values;
   }

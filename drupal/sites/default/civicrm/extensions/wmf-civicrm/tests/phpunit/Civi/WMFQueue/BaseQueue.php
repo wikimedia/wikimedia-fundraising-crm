@@ -192,6 +192,17 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
   }
 
   /**
+   * @param array $overrides
+   *
+   * @return array
+   */
+  public function processRecurringPaymentMessage(array $overrides): array {
+    $message = $this->getRecurringPaymentMessage($overrides);
+    $this->processMessage($message);
+    return $message;
+  }
+
+  /**
    * Process the given queue.
    *
    * @param array $message
