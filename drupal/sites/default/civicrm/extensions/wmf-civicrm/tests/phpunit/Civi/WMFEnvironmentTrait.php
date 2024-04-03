@@ -123,6 +123,26 @@ trait WMFEnvironmentTrait {
   }
 
   /**
+   * Get the number of mailings sent in the test.
+   *
+   * @return int
+   */
+  public function getMailingCount(): int {
+    return MailFactory::singleton()->getMailer()->countMailings();
+  }
+
+  /**
+   * Get the content on the sent mailing.
+   *
+   * @param int $index
+   *
+   * @return array
+   */
+  public function getMailing(int $index): array {
+    return MailFactory::singleton()->getMailer()->getMailing($index);
+  }
+
+  /**
    * @return \Civi\Test\CiviEnvBuilder
    * @throws \CRM_Extension_Exception_ParseException
    */

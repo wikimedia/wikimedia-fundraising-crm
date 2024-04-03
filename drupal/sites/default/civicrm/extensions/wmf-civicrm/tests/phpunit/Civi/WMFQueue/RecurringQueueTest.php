@@ -7,6 +7,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\Email;
+use Civi\Api4\MessageTemplate;
 use Civi\Api4\PaymentToken;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\ContactTestTrait;
@@ -112,10 +113,10 @@ class RecurringQueueTest extends BaseQueue {
    * @throws \CRM_Core_Exception
    */
   public function testRecurringPaymentPayPalECMissingPredecessor(): void {
-    $email = 'not-in-the-db' . (string) mt_rand() . '@example.com';
+    $email = 'not-in-the-db' . mt_rand() . '@example.com';
     $this->processRecurringPaymentMessage([
       'gateway' => 'paypal_ec',
-      'subscr_id' => 'I-' . (string) mt_rand(),
+      'subscr_id' => 'I-' . mt_rand(),
       'email' => $email,
       'gateway_txn_id' => 123,
     ]);
@@ -341,6 +342,64 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
+   * Test that the notification email is sent when a donation is upgraded to a recurring.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringPaymentIngenicoMonthlyConvertNotificationEmailSend(): void {
+    \Civi::settings()->set('thank_you_add_civimail_records', FALSE);
+
+    // Subscr_id is the same as gateway_txn_id
+    $subscr_id = mt_rand();
+
+    // Create the first donation
+    $contributionTrackingRecordID = $this->addContributionTrackingRecord();
+    $donationMessage = $this->processDonationMessage([
+      'gateway' => 'ingenico',
+      'gross' => 400,
+      'original_gross' => 400,
+      'original_currency' => 'CAD',
+      'contribution_tracking_id' => $contributionTrackingRecordID,
+    ]);
+    $this->processContributionTrackingQueue();
+
+    // Set up token specific values
+    $signupMessage['recurring_payment_token'] = mt_rand();
+    $signupMessage['currency'] = 'CAD';
+    $signupMessage['gateway_txn_id'] = $subscr_id;
+    $signupMessage['user_ip'] = '1.1.1.1';
+    $signupMessage['gateway'] = 'ingenico';
+    $signupMessage['payment_method'] = 'cc';
+    $signupMessage['payment_submethod'] = 'visa';
+    $signupMessage['create_date'] = 1564068649;
+    $signupMessage['start_date'] = 1566732720;
+    $signupMessage['contribution_tracking_id'] = $contributionTrackingRecordID;
+
+    $this->processRecurringSignup($signupMessage);
+
+    $this->assertEquals(1, $this->getMailingCount());
+    $sent = $this->getMailing(0);
+
+    // Check the right email
+    $this->assertEquals($donationMessage['email'], $sent['to_address']);
+
+    // Check right email content
+    $this->assertMatchesRegularExpression('/you donated, and then decided to set up an additional/', $sent['html']);
+
+    // Check the right donation amount
+    $this->assertMatchesRegularExpression('/3.00/', $sent['html']);
+
+    // Check the right donation currency, original currency is CAD
+    $this->assertMatchesRegularExpression('/CA\$/', $sent['html']);
+    // Check the subject.
+    $expectedSubject = MessageTemplate::get(FALSE)
+      ->addWhere('workflow_name', '=', 'monthly_convert')
+      ->addWhere('is_default', '=', TRUE)
+      ->execute()->first()['msg_subject'];
+    $this->assertEquals($expectedSubject, $sent['subject']);
+  }
+
+  /**
    * Test that a recurring donation created after a one-time donation with the
    * same contribution tracking ID is assigned to the same donor
    *
@@ -450,7 +509,6 @@ class RecurringQueueTest extends BaseQueue {
     $this->assertEmpty($recur_record['failure_retry_date']);
     $this->assertEquals('Cancelled', $recur_record['contribution_status_id:name']);
   }
-
 
   /**
    * Test function adds reason to the recur row.
