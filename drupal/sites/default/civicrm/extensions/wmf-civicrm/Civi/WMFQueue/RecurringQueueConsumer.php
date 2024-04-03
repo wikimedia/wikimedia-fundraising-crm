@@ -101,7 +101,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       || (isset($msg['is_successful_autorescue']) && $msg['is_successful_autorescue']);
 
     if (!$skipContributionTracking && !isset($msg['contribution_tracking_id'])) {
-      $msg['contribution_tracking_id'] = recurring_get_contribution_tracking_id($msg);
+      $msg['contribution_tracking_id'] = $this->getContributionTracking($msg);
     }
 
     //Seeing as we're in the recurring module...
@@ -317,6 +317,66 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
       default:
         throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid subscription message type');
+    }
+  }
+
+
+  /**
+   * Get the contribution tracking id for a given a recurring trxn
+   *
+   * If the 'custom' field is not set (from paypal, which would normally carry the tracking id),
+   * we look and see if any related recurring transactions have had a contrib tracking id set.
+   *
+   * If they do, we'll use that contrib tracking id, otherwise we'll generate a new row in the
+   * contrib tracking table.
+   *
+   * @param array $msg
+   *
+   * @return int contribution tracking id
+   */
+  private function getContributionTracking($msg) {
+    if (array_key_exists('custom', $msg) && strlen($msg['custom'])) {
+      \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Using $msg["custom"], {contribution_tracking_id}', ['contribution_tracking_id' => $msg['custom']]);
+      return $msg['custom'];
+    }
+    elseif ($msg['txn_type'] == 'subscr_payment') {
+      $queryResult = ContributionRecur::get(FALSE)
+        ->addSelect('MIN(contribution_tracking.id) AS ctid', 'MIN(contribution.id) AS contribution_id')
+        ->addJoin('Contribution AS contribution', 'INNER')
+        ->addJoin('ContributionTracking AS contribution_tracking', 'LEFT', ['contribution_tracking.contribution_id', '=', 'contribution.id'])
+        ->addGroupBy('id')
+        ->addWhere('trxn_id', '=', $msg['subscr_id'])
+        ->setLimit(1)
+        ->execute()
+        ->first();
+      $contribution_tracking_id = $queryResult['ctid'] ?? NULL;
+      $contribution_id = $queryResult['contribution_id'] ?? NULL;
+
+      if (!empty($contribution_tracking_id)) {
+        \Civi::log('wmf')->debug(
+          'recurring: recurring_get_contribution_tracking_id: Selected contribution tracking id from past contributions, {contribution_tracking_id}',
+          ['contribution_tracking_id' => $contribution_tracking_id]
+        );
+      }
+      // if we still don't have a contribution tracking id (but we do have previous contributions),
+      // we're gonna have to add new contribution tracking.
+      if ($contribution_id && !$contribution_tracking_id) {
+        $rawDate = empty($msg['payment_date']) ? $msg['date'] : $msg['payment_date'];
+        $date = wmf_common_date_unix_to_sql(strtotime($rawDate));
+        $tracking = [
+          'utm_source' => '..rpp', // FIXME: recurring donations are not all paypal
+          'utm_medium' => 'civicrm',
+          'ts' => $date,
+          'contribution_id' => $contribution_id,
+        ];
+        $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking($tracking);
+        \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Got new contribution tracking id, {contribution_tracking_id}', ['contribution_tracking_id' => $contribution_tracking_id]);
+      }
+      return $contribution_tracking_id;
+    }
+    else {
+      \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: No contribution_tracking_id returned.');
+      return NULL;
     }
   }
 
