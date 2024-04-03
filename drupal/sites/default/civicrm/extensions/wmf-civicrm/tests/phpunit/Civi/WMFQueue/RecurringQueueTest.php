@@ -5,6 +5,7 @@ namespace Civi\WMFQueue;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\ContributionTracking;
 use Civi\Api4\Email;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\ContactTestTrait;
@@ -207,6 +208,65 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
+   * Test that processing more than one recurring payment creates separate contributions.
+   *
+   * This is to ensure that (e.g.) monthly payments each get their own records.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringPaymentDistinctContributions(): void {
+    $subscr_id = mt_rand();
+    $ctId = $this->addContributionTrackingRecord();
+
+    $values = [
+      'contribution_tracking_id' => $ctId,
+      'subscr_id' => $subscr_id,
+    ];
+
+    $this->processRecurringSignup($values);
+
+    $message = $this->processRecurringPaymentMessage($values);
+    $contribution = $this->getContributionForMessage($message);
+    $contributionTracking = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $message['contribution_tracking_id'])
+      ->execute()->first();
+    $this->assertEquals(
+      $contribution['id'],
+      $contributionTracking['contribution_id']
+    );
+    $message2 = $this->processRecurringPaymentMessage($values);
+
+    $contributionTracking = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $message['contribution_tracking_id'])
+      ->execute()->first();
+
+    // The ct_id record should still link to the first contribution
+    $this->assertEquals(
+      $contribution['id'],
+      $contributionTracking['contribution_id']
+    );
+    $recur_record = $this->getContributionRecurForMessage($message);
+
+    $this->assertEquals($recur_record['id'], $contribution['contribution_recur_id']);
+    $contribution2 = $this->getContributionForMessage($message2);
+    $this->assertEquals($recur_record['id'], $contribution2['contribution_recur_id']);
+
+    $this->assertEquals($contribution['contact_id'], $contribution2['contact_id']);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->execute()->single();
+    // The address comes from the recurring_payment.json not the recurring_signup.json as it
+    // has been overwritten. This is perhaps not a valid scenario in production but it is
+    // the scenario the code works to. In production they would probably always be the same.
+    $this->assertEquals('1211122 132 st', $address['street_address']);
+
+    $email = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->execute()->single();
+    $this->assertEquals('test+fr@wikimedia.org', $email['email']);
+  }
+
+  /**
    * Test deadlock results in re-queuing in function that expires recurring contributions.
    */
   public function testHandleDeadlocksInEOTMessage(): void {
@@ -223,6 +283,24 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
+   * Test processing a recurring cancel method.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringCancelMessage(): void {
+    $values = ['subscr_id' => mt_rand()];
+    $this->processRecurringSignup($values);
+    $this->processMessage($this->getRecurringCancelMessage($values));
+    $recur_record = $this->getContributionRecurForMessage($values);
+    $this->assertEquals('(auto) User Cancelled via Gateway', $recur_record['cancel_reason']);
+    $this->assertEquals('2013-11-01 23:07:05', $recur_record['cancel_date']);
+    $this->assertEquals('2013-11-01 23:07:05', $recur_record['end_date']);
+    $this->assertNotEmpty($recur_record['payment_processor_id']);
+    $this->assertEmpty($recur_record['failure_retry_date']);
+    $this->assertEquals('Cancelled', $recur_record['contribution_status_id:name']);
+  }
+
+  /**
    * Process the original recurring sign up message.
    *
    * @param array $overrides
@@ -233,6 +311,15 @@ class RecurringQueueTest extends BaseQueue {
     $message = $this->getRecurringSignupMessage($overrides);
     $this->processMessage($message);
     return $message;
+  }
+
+  /**
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function processContributionTrackingQueue(): void {
+    $this->processQueue('contribution-tracking', 'ContributionTracking');
   }
 
 }

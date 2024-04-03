@@ -70,63 +70,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $consumer->processMessageWithErrorHandling($message);
   }
 
-  public function testCreateDistinctContributions(): void {
-    $subscr_id = mt_rand();
-    $ctId = $this->addContributionTracking();
-
-    $values = $this->processRecurringSignup([
-      'contribution_tracking_id' => $ctId,
-      'subscr_id' => $subscr_id,
-    ]);
-
-    $message = $this->processRecurringPaymentMessage($values);
-
-    $contribution = $this->getContributionForMessage($message);
-    $this->consumeCtQueue();
-    $contributionTracking = ContributionTracking::get(FALSE)
-      ->addWhere('id', '=', $message['contribution_tracking_id'])
-      ->execute()->first();
-    $this->assertEquals(
-      $contribution['id'],
-      $contributionTracking['contribution_id']
-    );
-    $message2 = $this->processRecurringPaymentMessage($values);
-    $this->consumeCtQueue();
-
-    $contributionTracking = ContributionTracking::get(FALSE)
-      ->addWhere('id', '=', $message['contribution_tracking_id'])
-      ->execute()->first();
-
-    // The ct_id record should still link to the first contribution
-    $this->assertEquals(
-      $contribution['id'],
-      $contributionTracking['contribution_id']
-    );
-    $recur_record = RecurHelper::getByGatewaySubscriptionId($message['gateway'], $subscr_id);
-
-    $this->assertNotEquals(FALSE, $recur_record);
-
-    $this->assertEquals($recur_record['id'], $contribution['contribution_recur_id']);
-    $contribution2 = $this->getContributionForMessage($message2);
-    $this->assertEquals($recur_record['id'], $contribution2['contribution_recur_id']);
-
-    $this->assertEquals($contribution['contact_id'], $contribution2['contact_id']);
-    $addresses = $this->callAPISuccess(
-      'Address',
-      'get',
-      ['contact_id' => $contribution2['contact_id']]
-    );
-    $this->assertEquals(1, $addresses['count']);
-    // The address comes from the recurring_payment.json not the recurring_signup.json as it
-    // has been overwritten. This is perhaps not a valid scenario in production but it is
-    // the scenario the code works to. In production they would probably always be the same.
-    $this->assertEquals('1211122 132 st', $addresses['values'][$addresses['id']]['street_address']);
-
-    $emails = $this->callAPISuccess('Email', 'get', ['contact_id' => $contribution2['contact_id']]);
-    $this->assertEquals(1, $emails['count']);
-    $this->assertEquals('test+fr@wikimedia.org', $emails['values'][$emails['id']]['email']);
-  }
-
   /**
    * @param array $overrides
    *
@@ -154,24 +97,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     catch (\CRM_Core_Exception $e) {
       $this->fail('contribution lookup failed: ' . $e->getMessage());
     }
-  }
-
-  /**
-   * Test function that cancels recurrings.
-   */
-  public function testCancelContributions(): void {
-    $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup(['subscr_id' => $subscr_id]);
-    $this->importMessage(new RecurringCancelMessage($values));
-
-    $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
-    $this->ids['Contact'][] = $recur_record['contact_id'];
-    $this->assertEquals('(auto) User Cancelled via Gateway', $recur_record['cancel_reason']);
-    $this->assertEquals('2013-11-01 23:07:05', $recur_record['cancel_date']);
-    $this->assertEquals('2013-11-01 23:07:05', $recur_record['end_date']);
-    $this->assertNotEmpty($recur_record['payment_processor_id']);
-    $this->assertTrue(empty($recur_record['failure_retry_date']));
-    $this->assertEquals('Cancelled', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
   }
 
   /**

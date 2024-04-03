@@ -167,6 +167,22 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
    *
    * @return array
    */
+  protected function getRecurringCancelMessage(array $values = []): array {
+    $message = $this->loadMessage('recurring_cancel');
+    $contributionTrackingID = mt_rand();
+    $message += [
+      'gateway_txn_id' => mt_rand(),
+      'order_id' => "$contributionTrackingID.1",
+      'contribution_tracking_id' => $contributionTrackingID,
+    ];
+    return array_merge($message, $values);
+  }
+
+  /**
+   * @param array $values
+   *
+   * @return array
+   */
   protected function getRecurringEOTMessage(array $values = []): array {
     $message = $this->loadMessage('recurring_eot');
     $contributionTrackingID = mt_rand();
@@ -218,6 +234,7 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
   public function processRecurringPaymentMessage(array $overrides): array {
     $message = $this->getRecurringPaymentMessage($overrides);
     $this->processMessage($message);
+    $this->processContributionTrackingQueue();
     return $message;
   }
 
@@ -394,6 +411,7 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
   public function getContributionRecurForMessage(array $message): ?array {
     return ContributionRecur::get(FALSE)
       ->addWhere('trxn_id', '=', $message['subscr_id'])
+      ->addSelect('*', 'contribution_status_id:name')
       ->execute()->single();
   }
 
