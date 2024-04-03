@@ -267,6 +267,24 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
+   * Test reactivating recurring contribution when a payment comes in.
+   */
+  public function testRecurringPaymentAfterCancelContributions(): void {
+    $values = ['subscr_id' => mt_rand()];
+    $this->processRecurringSignup($values);
+    $this->processMessage($this->getRecurringCancelMessage($values));
+    $contributionRecur = $this->getContributionRecurForMessage($values);
+    // Verify record is cancelled
+    $this->assertEquals('Cancelled', $contributionRecur['contribution_status_id:name']);
+    // Import new Subscription payment on cancelled recur record
+    $message = $this->processRecurringPaymentMessage($values);
+    $contributionRecur = $this->getContributionRecurForMessage($values);
+    $this->assertNotEmpty($contributionRecur['payment_processor_id']);
+    $this->assertEmpty($contributionRecur['failure_retry_date']);
+    $this->assertEquals('In Progress', $contributionRecur['contribution_status_id:name']);
+  }
+
+  /**
    * Test deadlock results in re-queuing in function that expires recurring contributions.
    */
   public function testHandleDeadlocksInEOTMessage(): void {
@@ -277,15 +295,24 @@ class RecurringQueueTest extends BaseQueue {
     $message = $this->getRecurringEOTMessage($values);
     $this->processMessage($message, 'RecurDeadlock');
 
-    $rows = $this->getDamagedRows($message);
-    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
-    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
+    $this->assertDamagedRowExists($message);
+  }
+
+  /**
+   * Test deadlock handling in function that cancels recurring contributions.
+   */
+  public function testHandleDeadlocksInCancelMessage(): void {
+    $signup = $this->processRecurringSignup();
+    $message = $this->getRecurringCancelMessage([
+      'source_enqueued_time' => time(),
+      'subscr_id' => $signup['subscr_id'],
+    ]);
+    $this->processMessage($message, 'RecurDeadlock');
+    $this->assertDamagedRowExists($message);
   }
 
   /**
    * Test processing a recurring cancel method.
-   *
-   * @throws \CRM_Core_Exception
    */
   public function testRecurringCancelMessage(): void {
     $values = ['subscr_id' => mt_rand()];
@@ -298,6 +325,36 @@ class RecurringQueueTest extends BaseQueue {
     $this->assertNotEmpty($recur_record['payment_processor_id']);
     $this->assertEmpty($recur_record['failure_retry_date']);
     $this->assertEquals('Cancelled', $recur_record['contribution_status_id:name']);
+  }
+
+
+  /**
+   * Test function adds reason to the recur row.
+   */
+  public function testRecurringCancelMessageWithReason(): void {
+    $signup = $this->processRecurringSignup();
+    $values = [
+      'cancel_reason' => 'Failed: Card declined',
+      'subscr_id' => $signup['subscr_id'],
+    ];
+    $this->processMessage($this->getRecurringCancelMessage($values));
+
+    $contributionRecur = $this->getContributionRecurForMessage($values);
+    $this->assertEquals('Failed: Card declined', $contributionRecur['cancel_reason']);
+    $this->assertEquals('Cancelled', $contributionRecur['contribution_status_id:name']);
+  }
+
+  /**
+   * Test cancellation by the ID rather than by the subscr_id
+   */
+  public function testRecurringCancelMessageWithRecurringContributionID(): void {
+    $signup = $this->processRecurringSignup();
+    $contributionRecur = $this->getContributionRecurForMessage($signup);
+    $this->processMessage($this->getRecurringCancelMessage([
+      'contribution_recur_id' => $contributionRecur['id'],
+    ]));
+    $contributionRecur = $this->getContributionRecurForMessage($signup);
+    $this->assertEquals('Cancelled', $contributionRecur['contribution_status_id:name']);
   }
 
   /**
@@ -320,6 +377,17 @@ class RecurringQueueTest extends BaseQueue {
    */
   public function processContributionTrackingQueue(): void {
     $this->processQueue('contribution-tracking', 'ContributionTracking');
+  }
+
+  /**
+   * @param array $message
+   *
+   * @return void
+   */
+  public function assertDamagedRowExists(array $message): void {
+    $rows = $this->getDamagedRows($message);
+    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
+    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
   }
 
 }

@@ -406,13 +406,17 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
    * @param array $message
    *
    * @return array|null
-   * @throws \CRM_Core_Exception
    */
   public function getContributionRecurForMessage(array $message): ?array {
-    return ContributionRecur::get(FALSE)
-      ->addWhere('trxn_id', '=', $message['subscr_id'])
-      ->addSelect('*', 'contribution_status_id:name')
-      ->execute()->single();
+    try {
+      return ContributionRecur::get(FALSE)
+        ->addWhere('trxn_id', '=', $message['subscr_id'])
+        ->addSelect('*', 'contribution_status_id:name')
+        ->execute()->single();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('contribution recur retrieval failure :' . $e->getMessage());
+    }
   }
 
   /**

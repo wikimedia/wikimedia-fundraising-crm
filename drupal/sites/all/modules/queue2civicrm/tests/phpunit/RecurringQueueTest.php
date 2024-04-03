@@ -100,20 +100,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Test deadlock handling in function that cancels recurrings.
-   */
-  public function testHandleDeadlockDuringCancelContributions(): void {
-    $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup($subscr_id);
-    $values['source_enqueued_time'] = UtcDate::getUtcTimestamp();
-    $message = new RecurringCancelMessage($values);
-    $this->importMessageProcessWithMockConsumer($message->getBody());
-    $rows = $this->getDamagedRows($message->getBody());
-    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
-    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
-  }
-
-  /**
    * Test function that expires recurrings.
    */
   public function testExpireContributions(): void {
@@ -129,40 +115,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertTrue(empty($recur_record['failure_retry_date']));
     $this->assertTrue(empty($recur_record['next_sched_contribution_date']));
     $this->assertEquals('Completed', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
-  }
-
-  /**
-   * Test function adds reason to the recur row.
-   */
-  public function testCancelPaymentWithReason(): void {
-    $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup($subscr_id);
-    $this->importMessage(new RecurringCancelWithReasonMessage($values));
-
-    $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
-    $this->ids['Contact'][] = $recur_record['contact_id'];
-    $this->assertEquals('Failed: Card declined', $recur_record['cancel_reason']);
-    $this->assertEquals('Cancelled', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
-  }
-
-  /**
-   * Test cancellation by the ID rather than by the subscr_id
-   */
-  public function testCancelWithRecurringContributionId(): void {
-    $subscr_id = mt_rand();
-    $this->processRecurringSignup($subscr_id);
-    $recurRecord = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
-    $this->ids['Contact'][] = $recurRecord['contact_id'];
-
-    $message = new RecurringCancelMessage(['contribution_recur_id' => $recurRecord['id']]);
-    $message->unset('subscr_id');
-    $this->importMessage($message);
-
-    $recurRecord = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
-    $this->assertEquals(
-      'Cancelled',
-      CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recurRecord['contribution_status_id'])
-    );
   }
 
   /**
@@ -457,27 +409,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   public function getRecurringPaymentMessage(array $values = []): array {
     $values += ['txn_type' => 'subscr_payment'];
     return (new RecurringPaymentMessage($values))->getBody();
-  }
-
-  /**
-   * Test reactivating recurrings.
-   */
-  public function testPaymentAfterCancelContributions(): void {
-    $subscr_id = mt_rand();
-
-    // Create recur record
-    $values = $this->processRecurringSignup($subscr_id);
-    // Cancel recur record
-    $this->importMessage(new RecurringCancelMessage($values));
-    // Verify record is cancelled
-    $cancelled_recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
-    $this->assertEquals('Cancelled', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $cancelled_recur_record['contribution_status_id']));
-    // Import new Subscription payment on cancelled recur record
-    $this->importMessage(new RecurringPaymentMessage($values));
-    $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
-    $this->assertNotEmpty($recur_record['payment_processor_id']);
-    $this->assertTrue(empty($recur_record['failure_retry_date']));
-    $this->assertEquals('In Progress', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
   }
 
   /**
