@@ -311,11 +311,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @return int contribution tracking id
    */
   private function getContributionTracking($msg) {
-    if (array_key_exists('custom', $msg) && strlen($msg['custom'])) {
-      \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Using $msg["custom"], {contribution_tracking_id}', ['contribution_tracking_id' => $msg['custom']]);
-      return $msg['custom'];
-    }
-    elseif ($msg['txn_type'] == 'subscr_payment') {
+  if ($msg['txn_type'] == 'subscr_payment') {
       $queryResult = ContributionRecur::get(FALSE)
         ->addSelect('MIN(contribution_tracking.id) AS ctid', 'MIN(contribution.id) AS contribution_id')
         ->addJoin('Contribution AS contribution', 'INNER')
