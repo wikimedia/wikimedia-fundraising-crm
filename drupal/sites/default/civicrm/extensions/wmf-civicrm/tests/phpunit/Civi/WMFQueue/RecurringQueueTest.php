@@ -7,6 +7,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\Email;
+use Civi\Api4\PaymentToken;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\ContactTestTrait;
 use Civi\WMFException\WMFException;
@@ -277,11 +278,66 @@ class RecurringQueueTest extends BaseQueue {
     // Verify record is cancelled
     $this->assertEquals('Cancelled', $contributionRecur['contribution_status_id:name']);
     // Import new Subscription payment on cancelled recur record
-    $message = $this->processRecurringPaymentMessage($values);
+    $this->processRecurringPaymentMessage($values);
     $contributionRecur = $this->getContributionRecurForMessage($values);
     $this->assertNotEmpty($contributionRecur['payment_processor_id']);
     $this->assertEmpty($contributionRecur['failure_retry_date']);
     $this->assertEquals('In Progress', $contributionRecur['contribution_status_id:name']);
+  }
+
+  /**
+   *  Test ingenico recurring donation payment.
+   *
+   *  A token & and a recurring contribution should be created.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringPaymentIngenicoToken(): void {
+    // Subscr_id is the same as gateway_txn_id
+    $subscr_id = mt_rand();
+
+    // Create the first donation
+    $contributionTrackingID = $this->addContributionTrackingRecord([
+      'form_amount' => 4,
+      'utm_source' => 'testy-test',
+      'language' => 'en',
+      'country' => 'US',
+    ]);
+
+    $this->processDonationMessage([
+      'gateway' => 'ingenico',
+      'gross' => 400,
+      'original_gross' => 400,
+      'original_currency' => 'USD',
+      'contribution_tracking_id' => $contributionTrackingID,
+    ]);
+    $this->processContributionTrackingQueue();
+
+    // Set up token specific values
+    $signupMessage['recurring_payment_token'] = mt_rand();
+    $signupMessage['gateway_txn_id'] = $subscr_id;
+    $signupMessage['user_ip'] = '1.1.1.1';
+    $signupMessage['gateway'] = 'ingenico';
+    $signupMessage['payment_method'] = 'cc';
+    $signupMessage['payment_submethod'] = 'visa';
+    $signupMessage['create_date'] = 1564068649;
+    $signupMessage['start_date'] = 1566732720;
+    $signupMessage['contribution_tracking_id'] = $contributionTrackingID;
+
+    $this->processRecurringSignup($signupMessage);
+    // Check the token was created successfully
+    $token = $this->getTokenFromSignupMessage($signupMessage);
+    $this->assertEquals($token['token'], $signupMessage['recurring_payment_token']);
+
+    $contributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', '=', 'RECURRING ' . strtoupper(($signupMessage['gateway'])) . ' ' . $subscr_id)
+      ->addSelect('*', 'contribution_status_id:name')
+      ->execute()->single();
+    // The first contribution should be on the start_date
+    $this->assertEquals($contributionRecur['next_sched_contribution_date'], $contributionRecur['start_date']);
+
+    // Check cycle_day matches the start date
+    $this->assertEquals($contributionRecur['cycle_day'], date('j', $signupMessage['start_date']));
   }
 
   /**
@@ -425,6 +481,24 @@ class RecurringQueueTest extends BaseQueue {
     $rows = $this->getDamagedRows($message);
     $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
     $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
+  }
+
+  /**
+   * @param array $signupMessage
+   *
+   * @return array|null
+   */
+  public function getTokenFromSignupMessage(array $signupMessage): ?array {
+    try {
+      return PaymentToken::get(FALSE)
+        ->addWhere('payment_processor_id.name', '=', $signupMessage['gateway'])
+        ->addWhere('token', '=', $signupMessage['recurring_payment_token'])
+        ->addOrderBy('created_date', 'DESC')
+        ->execute()->first();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('failed to load PaymentToken :' . $e->getMessage());
+    }
   }
 
 }

@@ -325,7 +325,7 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
   }
 
   /**
-   * @throws \CRM_Core_Exception
+   * Add a contribution tracking record for the message.
    */
   protected function addContributionTrackingRecord($values = []): int {
     $values = $this->getContributionTrackingMessage($values);
@@ -337,12 +337,16 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
    * @param array $values
    *
    * @return array
-   * @throws \CRM_Core_Exception
    */
   protected function getContributionTrackingMessage(array $values = []): array {
-    $values += $this->loadMessage('contribution-tracking');
-    $maxID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking');
-    $values['id'] = $this->ids['ContributionTracking'][] = ($maxID + 1);
+    try {
+      $values += $this->loadMessage('contribution-tracking');
+      $maxID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking');
+      $values['id'] = $this->ids['ContributionTracking'][] = ($maxID + 1);
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('unexpected failure to get the next contribution tracking ID :' . $e->getMessage());
+    }
     return $values;
   }
 

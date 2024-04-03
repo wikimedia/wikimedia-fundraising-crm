@@ -1,12 +1,7 @@
 <?php
 
-use Civi\Api4\ContributionRecur;
-use Civi\Api4\ContributionTracking;
-use Civi\Api4\Contribution;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
-use Civi\WMFQueue\RecurDeadlockQueueConsumer;
 use Civi\WMFQueue\RecurringQueueConsumer;
-use SmashPig\Core\DataStores\DamagedDatabase;
 
 /**
  * @group Queue2Civicrm
@@ -21,106 +16,16 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $consumer;
 
-  /**
-   * @var DamagedDatabase
-   */
-  protected $damagedDb;
-
   public function setUp(): void {
     parent::setUp();
     $this->consumer = new RecurringQueueConsumer(
       'recurring'
     );
 
-    $this->damagedDb = DamagedDatabase::get();
-
     // Set up for TestMailer
     if (!defined('WMF_UNSUB_SALT')) {
       define('WMF_UNSUB_SALT', 'abc123');
     }
-  }
-
-  protected function importMessage(TransactionMessage $message) {
-    $payment_time = $message->get('date');
-    exchange_rate_cache_set('USD', $payment_time, 1);
-    $currency = $message->get('currency');
-    if ($currency !== 'USD') {
-      exchange_rate_cache_set($currency, $payment_time, 3);
-    }
-    $this->consumer->processMessage($message->getBody());
-    $contributions = wmf_civicrm_get_contributions_from_gateway_id(
-      $message->getGateway(),
-      $message->getGatewayTxnId()
-    );
-    if (!empty($contributions[0])) {
-      $this->addToCleanup($contributions[0]);
-    }
-    return $contributions;
-  }
-
-  /**
-   *  Test that a token is created for a new ingenico recurring donation and a recurring contribution
-   *  is created correctly
-   */
-  public function testRecurringTokenIngenico(): void {
-    // Subscr_id is the same as gateway_txn_id
-    $subscr_id = mt_rand();
-
-    // Create the first donation
-    $ct_id = $this->addContributionTracking([
-      'form_amount' => 4,
-      'utm_source' => 'testytest',
-      'language' => 'en',
-      'country' => 'US',
-    ]);
-
-    $message = new TransactionMessage([
-        'gateway' => 'ingenico',
-        'gross' => 400,
-        'original_gross' => 400,
-        'original_currency' => 'USD',
-        'contribution_tracking_id' => $ct_id,
-      ]
-    );
-
-    $messageBody = $message->getBody();
-    exchange_rate_cache_set('USD', $messageBody['date'], 1);
-    $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
-    $this->addToCleanup($firstContribution);
-    $this->consumeCtQueue();
-
-    // Set up token specific values
-    $overrides['recurring_payment_token'] = mt_rand();
-    $overrides['gateway_txn_id'] = $subscr_id;
-    $overrides['user_ip'] = '1.1.1.1';
-    $overrides['gateway'] = 'ingenico';
-    $overrides['payment_method'] = 'cc';
-    $overrides['payment_submethod'] = 'visa';
-    $overrides['create_date'] = 1564068649;
-    $overrides['start_date'] = 1566732720;
-    $overrides['contribution_tracking_id'] = $ct_id;
-
-    $this->processRecurringSignup($subscr_id, $overrides);
-
-    // Get the new token
-    $token = wmf_civicrm_get_recurring_payment_token($overrides['gateway'], $overrides['recurring_payment_token']);
-    // Check the token was created successfully
-    $this->assertEquals($token['token'], $overrides['recurring_payment_token']);
-
-    // Create matching trxn_id
-    $trxn_id = 'RECURRING ' . strtoupper(($overrides['gateway'])) . ' ' . $subscr_id;
-    $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $trxn_id]);
-    // Check the record was created successfully
-    $this->assertEquals($recur_record['trxn_id'], $trxn_id);
-    // The first contribution should be on the start_date
-    $this->assertEquals($recur_record['next_sched_contribution_date'], $recur_record['start_date']);
-
-    // Check cycle_day matches the start date
-    $this->assertEquals($recur_record['cycle_day'], date('j', $overrides['start_date']));
-
-    // Clean up
-    $this->ids['ContributionRecur'][$recur_record['id']] = $recur_record['id'];
-    $this->ids['Contact'][$recur_record['contact_id']] = $recur_record['contact_id'];
   }
 
   /**
