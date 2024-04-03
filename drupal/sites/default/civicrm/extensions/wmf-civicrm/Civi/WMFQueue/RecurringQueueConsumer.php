@@ -107,6 +107,11 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     //Seeing as we're in the recurring module...
     $msg['recurring'] = TRUE;
     $message = new RecurDonationMessage($msg);
+    // Set is payment to false here so that amounts will not be validated.
+    // It's possible that sometimes the message here is a payment message
+    // but if so we haven't been validating the amounts here historically
+    // so setting isPayment to false respects that behaviour.
+    $message->setIsPayment(FALSE);
     $message->validate();
     $msg = $message->normalize();
     return $msg;
@@ -462,14 +467,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     }
   }
 
-  protected function createContributionRecur($params) {
+  protected function createContributionRecur(array $params): ?array {
     return ContributionRecur::create(FALSE)
       ->setValues($params)
       ->execute()
       ->first();
   }
 
-  protected function updateContributionRecur($params) {
+  protected function updateContributionRecur(array $params): ?array {
     return ContributionRecur::update(FALSE)
       ->setValues($params)
       ->execute()

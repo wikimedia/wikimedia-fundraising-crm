@@ -129,8 +129,11 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
    */
   protected function insertContributionRecur(array $message): int {
     $recurMessage = new RecurDonationMessage($message);
-    // Cribbed and compacted from RecurringQueueConsumer::importSubscriptionSignup
-    $normalized = wmf_civicrm_verify_message_and_stage($recurMessage);
+    $recurMessage->setIsPayment(TRUE);
+
+    $normalized = $recurMessage->normalize();
+    $normalized = wmf_civicrm_add_contribution_tracking_if_missing($normalized);
+    $recurMessage->validate();
 
     // Create (or update) the contact
     $contact = WMFContact::save(FALSE)

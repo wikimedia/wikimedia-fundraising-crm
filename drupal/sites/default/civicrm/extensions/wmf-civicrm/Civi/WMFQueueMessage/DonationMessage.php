@@ -13,6 +13,31 @@ class DonationMessage extends Message {
   protected array $parsedName;
 
   /**
+   * Is a payment being processed as part of this Message.
+   *
+   * The goal is that this would ALWAYS be TRUE because non-donation
+   * messages would use different message classes. However, we have some
+   * recurring messages that are over-loading this class that would
+   * ideally have their own Message objects.
+   *
+   * @var bool
+   */
+  protected bool $isPayment = TRUE;
+
+  /**
+   * Set is Payment.
+   *
+   * This is set to false when being called from our recurring code when
+   * we are unsure is some message might be being processed that does not
+   * include a payment (e.g an end of term notice).
+   *
+   * @param bool $isPayment
+   */
+  public function setIsPayment(bool $isPayment): void {
+    $this->isPayment = $isPayment;
+  }
+
+  /**
    * Is it recurring - we would be using the child class if it is.
    *
    * @return bool
@@ -421,13 +446,58 @@ class DonationMessage extends Message {
     return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
   }
 
+  public function getGatewayTxnID(): string {
+    return $this->message['gateway_txn_id'];
+  }
+
   /**
    * Validate the message
    *
    * @return void
-   * @throws \Civi\WMFException\WMFException
+   * @throws \Civi\WMFException\WMFException|\CRM_Core_Exception
    */
-  public function validate(): void {}
+  public function validate(): void {
+
+    $missingFields = [];
+    if (!$this->getOriginalCurrency()) {
+      $missingFields[] = 'currency';
+    }
+    if (!$this->getOriginalAmount()) {
+      $missingFields[] = 'gross';
+    }
+    if (!$this->getGateway()) {
+      $missingFields[] = 'gateway';
+    }
+    if (!$this->getGatewayTxnID()) {
+      $missingFields[] = 'gateway_txn_id';
+    }
+    $errors = [];
+    if (!empty($missingFields)) {
+      $errors[] = 'Required field/s missing from message: ' . implode(', ', $missingFields);
+    }
+
+    if ($this->getUsdNetAmount() <= 0 || $this->getUsdAmount() <= 0) {
+      $errors[] = "Positive amount required.";
+    }
+
+    if (!empty($errors)) {
+      throw new WMFException(WMFException::CIVI_REQ_FIELD, implode("\n", $errors));
+    }
+
+    //Now check to make sure this isn't going to be a duplicate message for this gateway.
+    if (\CRM_Core_DAO::singleValueQuery(
+      'SELECT count(*)
+    FROM wmf_contribution_extra cx
+    WHERE gateway = %1 AND gateway_txn_id = %2', [
+      1 => [$this->getGateway(), 'String'],
+      2 => [$this->getGatewayTxnID(), 'String'],
+    ])) {
+      throw new WMFException(
+        WMFException::DUPLICATE_CONTRIBUTION,
+        'Contribution already exists. Ignoring message.'
+      );
+    }
+  }
 
   /**
    * Get the rate to convert the currency using.

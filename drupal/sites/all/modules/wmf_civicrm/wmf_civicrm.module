@@ -187,13 +187,17 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
  */
 function wmf_civicrm_contribution_message_import(array &$msg): array {
   $message = DonationMessage::getWMFMessage($msg);
+  $message->setIsPayment(TRUE);
   $isRecurring = $message->isRecurring();
   $importTimerName = getImportTimerName($isRecurring);
   _get_import_timer()->startImportTimer($importTimerName);
 
   civicrm_initialize();
-  $msg = _verify_message_and_stage($message);
+  _get_import_timer()->startImportTimer("verify_and_stage");
+  $msg = $message->normalize();
   $message->validate();
+  $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
+  _get_import_timer()->endImportTimer("verify_and_stage");
 
   $createRecurringToken = FALSE;
   // Associate with existing recurring records
@@ -668,44 +672,6 @@ function _wmf_civicrm_message_contribution_insert($msg) {
   }
 
   return $contribution_result['values'][$contribution_result['id']];
-}
-
-/**
- * @param \Civi\WMFQueueMessage\DonationMessage $message
- *
- * @return array
- * @throws \CRM_Core_Exception
- * @throws \Civi\WMFException\WMFException
- */
-function wmf_civicrm_verify_message_and_stage(DonationMessage $message) {
-  $msg = $message->normalize();
-  $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
-
-  $required = [
-    'gross',
-    'currency',
-    'gateway',
-    'gateway_txn_id',
-  ];
-
-  $err = [];
-  foreach ($required as $key) {
-    if (empty($msg[$key])) {
-      $err[] = "Required Field '$key' not found in message.";
-    }
-  }
-
-  if ((float) $msg['net'] <= 0 || (float) $msg['gross'] <= 0) {
-    $err[] = "Positive amount required.";
-  }
-
-  if (!empty($err)) {
-    throw new WMFException(WMFException::CIVI_REQ_FIELD, $err);
-  }
-
-  //Now check to make sure this isn't going to be a duplicate message for this gateway.
-  wmf_civicrm_check_for_duplicates($msg);
-  return $msg;
 }
 
 /**
