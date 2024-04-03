@@ -111,16 +111,6 @@ class TransactionMessage extends Message {
 
 }
 
-class RecurringSignupMessage extends TransactionMessage {
-
-  function __construct($values = []) {
-    $this->loadDefaults("recurring_signup");
-
-    parent::__construct($values);
-  }
-
-}
-
 /**
  * Class AmazonDonationMessage Sparse message format pointing to donor
  *  details in the pending database
