@@ -59,53 +59,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * @param array $overrides
-   *
-   * @return array
-   */
-  public function processRecurringPaymentMessage(array $overrides): array {
-    $message = new RecurringPaymentMessage($overrides);
-    $this->importMessage($message);
-    return $message->getBody();
-  }
-
-  /**
-   * @param array $donation_message
-   *
-   * @return array
-   */
-  public function getContributionForMessage(array $donation_message): array {
-    try {
-      return Contribution::get(FALSE)
-        ->addSelect('*', 'contribution_status_id:name', 'contribution_recur_id.*')
-        ->addWhere('contribution_extra.gateway', '=', $donation_message['gateway'])
-        ->addWhere('contribution_extra.gateway_txn_id', '=', $donation_message['gateway_txn_id'])
-        ->execute()->single();
-    }
-    catch (\CRM_Core_Exception $e) {
-      $this->fail('contribution lookup failed: ' . $e->getMessage());
-    }
-  }
-
-  /**
-   * Test function that expires recurrings.
-   */
-  public function testExpireContributions(): void {
-    $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup($subscr_id);
-    $this->importMessage(new RecurringEOTMessage($values));
-
-    $recur_record = $this->callAPISuccessGetSingle('ContributionRecur', ['trxn_id' => $subscr_id]);
-    $this->ids['Contact'][] = $recur_record['contact_id'];
-    $this->assertEquals('(auto) Expiration notification', $recur_record['cancel_reason']);
-    $this->assertEquals(date('Y-m-d'), date('Y-m-d', strtotime($recur_record['end_date'])));
-    $this->assertNotEmpty($recur_record['payment_processor_id']);
-    $this->assertTrue(empty($recur_record['failure_retry_date']));
-    $this->assertTrue(empty($recur_record['next_sched_contribution_date']));
-    $this->assertEquals('Completed', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recur_record['contribution_status_id']));
-  }
-
-  /**
    *  Test that a token is created for a new ingenico recurring donation and a recurring contribution
    *  is created correctly
    */
@@ -298,16 +251,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * @param array $values
-   *
-   * @return array
-   */
-  public function getRecurringPaymentMessage(array $values = []): array {
-    $values += ['txn_type' => 'subscr_payment'];
-    return (new RecurringPaymentMessage($values))->getBody();
-  }
-
-  /**
    * Process the original recurring sign up message.
    *
    * @param string|array $subscr_id
@@ -338,17 +281,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
     if (!empty($contribution['contribution_recur_id'])) {
       $this->ids['ContributionRecur'][$contribution['contribution_recur_id']] = $contribution['contribution_recur_id'];
     }
-  }
-
-  /**
-   * @param array $values
-   *
-   * @return array|mixed
-   */
-  public function getRecurringEOTMessage(array $values) {
-    $message = new RecurringEOTMessage($values);
-    $message = $message->getBody();
-    return $message;
   }
 
 }

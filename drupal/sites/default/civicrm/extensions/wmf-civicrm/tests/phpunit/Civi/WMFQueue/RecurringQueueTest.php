@@ -380,6 +380,21 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
+   * Test processing EOT (end of term) message from paypal.
+   */
+  public function testRecurringEOTPaypalMessage(): void {
+    $signupMessage = $this->processRecurringSignup();
+    $this->processMessage($this->getRecurringEOTMessage(['subscr_id' => $signupMessage['subscr_id']]));
+    $contributionRecur = $this->getContributionRecurForMessage($signupMessage);
+    $this->assertEquals('(auto) Expiration notification', $contributionRecur['cancel_reason']);
+    $this->assertEquals(date('Y-m-d'), date('Y-m-d', strtotime($contributionRecur['end_date'])));
+    $this->assertNotEmpty($contributionRecur['payment_processor_id']);
+    $this->assertEmpty($contributionRecur['failure_retry_date']);
+    $this->assertEmpty($contributionRecur['next_sched_contribution_date']);
+    $this->assertEquals('Completed', $contributionRecur['contribution_status_id:name']);
+  }
+
+  /**
    * Process the original recurring sign up message.
    *
    * @param array $overrides

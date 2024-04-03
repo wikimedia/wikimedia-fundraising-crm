@@ -111,30 +111,6 @@ class TransactionMessage extends Message {
 
 }
 
-class RecurringPaymentMessage extends TransactionMessage {
-
-  function __construct($values = []) {
-    $this->loadDefaults("recurring_payment");
-
-    $this->txn_id_key = 'gateway_txn_id';
-
-    parent::__construct($values);
-  }
-
-}
-
-class RecurringEOTMessage extends TransactionMessage {
-
-  function __construct($values = []) {
-    $this->loadDefaults("recurring_eot");
-
-    $this->txn_id_key = 'gateway_txn_id';
-
-    parent::__construct($values);
-  }
-
-}
-
 class RecurringSignupMessage extends TransactionMessage {
 
   function __construct($values = []) {
