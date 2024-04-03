@@ -285,6 +285,29 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
+   * Test handling of deadlock exception in function that imports subscription payment
+   */
+  public function testHandleDeadlocksInRecurringPayment(): void {
+    $signupMessage = $this->processRecurringSignup();
+    $message = $this->getRecurringPaymentMessage(['subscr_id' => $signupMessage['subscr_id']]);
+    // Consume the recurring signup with deadlock exception
+    $this->processMessage($message, 'RecurDeadlock');
+    $this->assertDamagedRowExists($message);
+  }
+
+  /**
+   * Test handling of deadlock exception in function that handles recurring signup
+   */
+  public function testHandleDeadlocksInRecurringSignupMessage(): void {
+    $signupMessage = $this->getRecurringSignupMessage();
+    // Consume the recurring signup with deadlock exception
+    $this->processMessage($signupMessage, 'RecurDeadlock');
+    $rows = $this->getDamagedRows($signupMessage);
+    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
+    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
+  }
+
+  /**
    * Test deadlock results in re-queuing in function that expires recurring contributions.
    */
   public function testHandleDeadlocksInEOTMessage(): void {
@@ -294,7 +317,6 @@ class RecurringQueueTest extends BaseQueue {
     $values['source_enqueued_time'] = time();
     $message = $this->getRecurringEOTMessage($values);
     $this->processMessage($message, 'RecurDeadlock');
-
     $this->assertDamagedRowExists($message);
   }
 
@@ -302,10 +324,10 @@ class RecurringQueueTest extends BaseQueue {
    * Test deadlock handling in function that cancels recurring contributions.
    */
   public function testHandleDeadlocksInCancelMessage(): void {
-    $signup = $this->processRecurringSignup();
+    $signupMessage = $this->processRecurringSignup();
     $message = $this->getRecurringCancelMessage([
       'source_enqueued_time' => time(),
-      'subscr_id' => $signup['subscr_id'],
+      'subscr_id' => $signupMessage['subscr_id'],
     ]);
     $this->processMessage($message, 'RecurDeadlock');
     $this->assertDamagedRowExists($message);
@@ -332,10 +354,10 @@ class RecurringQueueTest extends BaseQueue {
    * Test function adds reason to the recur row.
    */
   public function testRecurringCancelMessageWithReason(): void {
-    $signup = $this->processRecurringSignup();
+    $signupMessage = $this->processRecurringSignup();
     $values = [
       'cancel_reason' => 'Failed: Card declined',
-      'subscr_id' => $signup['subscr_id'],
+      'subscr_id' => $signupMessage['subscr_id'],
     ];
     $this->processMessage($this->getRecurringCancelMessage($values));
 
@@ -348,12 +370,12 @@ class RecurringQueueTest extends BaseQueue {
    * Test cancellation by the ID rather than by the subscr_id
    */
   public function testRecurringCancelMessageWithRecurringContributionID(): void {
-    $signup = $this->processRecurringSignup();
-    $contributionRecur = $this->getContributionRecurForMessage($signup);
+    $signupMessage = $this->processRecurringSignup();
+    $contributionRecur = $this->getContributionRecurForMessage($signupMessage);
     $this->processMessage($this->getRecurringCancelMessage([
       'contribution_recur_id' => $contributionRecur['id'],
     ]));
-    $contributionRecur = $this->getContributionRecurForMessage($signup);
+    $contributionRecur = $this->getContributionRecurForMessage($signupMessage);
     $this->assertEquals('Cancelled', $contributionRecur['contribution_status_id:name']);
   }
 
