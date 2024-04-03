@@ -52,7 +52,23 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       }
     }
 
-    $message = $this->normalizeMessage($message);
+    $skipContributionTracking = (isset($message['gateway']) && $message['gateway'] === 'amazon')
+      || (isset($message['is_successful_autorescue']) && $message['is_successful_autorescue']);
+
+    if (!$skipContributionTracking && !isset($message['contribution_tracking_id'])) {
+      $message['contribution_tracking_id'] = $this->getContributionTracking($message);
+    }
+
+    //Seeing as we're in the recurring module...
+    $message['recurring'] = TRUE;
+    $messageObject = new RecurDonationMessage($message);
+    // Set is payment to false here so that amounts will not be validated.
+    // It's possible that sometimes the message here is a payment message
+    // but if so we haven't been validating the amounts here historically
+    // so setting isPayment to false respects that behaviour.
+    $messageObject->setIsPayment(FALSE);
+    $messageObject->validate();
+    $message = $messageObject->normalize();
 
     // define the subscription txn type for an actual 'payment'
     $txn_subscr_payment = ['subscr_payment'];
@@ -83,38 +99,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     else {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
     }
-  }
-
-  /**
-   * Convert queued message to a standardized format
-   *
-   * This is a wrapper to ensure that all necessary normalization occurs on the
-   * message.
-   *
-   * @param array $msg
-   *
-   * @return array
-   * @throws \Civi\WMFException\WMFException
-   */
-  protected function normalizeMessage($msg) {
-    $skipContributionTracking = (isset($msg['gateway']) && $msg['gateway'] === 'amazon')
-      || (isset($msg['is_successful_autorescue']) && $msg['is_successful_autorescue']);
-
-    if (!$skipContributionTracking && !isset($msg['contribution_tracking_id'])) {
-      $msg['contribution_tracking_id'] = $this->getContributionTracking($msg);
-    }
-
-    //Seeing as we're in the recurring module...
-    $msg['recurring'] = TRUE;
-    $message = new RecurDonationMessage($msg);
-    // Set is payment to false here so that amounts will not be validated.
-    // It's possible that sometimes the message here is a payment message
-    // but if so we haven't been validating the amounts here historically
-    // so setting isPayment to false respects that behaviour.
-    $message->setIsPayment(FALSE);
-    $message->validate();
-    $msg = $message->normalize();
-    return $msg;
   }
 
   /**
