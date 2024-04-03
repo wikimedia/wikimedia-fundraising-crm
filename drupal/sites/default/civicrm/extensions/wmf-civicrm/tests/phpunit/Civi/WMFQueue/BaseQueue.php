@@ -4,6 +4,7 @@ namespace Civi\WMFQueue;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Civi\Api4\WMFQueue;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
@@ -12,6 +13,7 @@ use Civi\WMFEnvironmentTrait;
 use PHPUnit\Framework\TestCase;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use SmashPig\Core\DataStores\DamagedDatabase;
 
 class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInterface {
 
@@ -159,6 +161,23 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
     $this->setExchangeRatesForMessage($exchangeRates, $message);
     return array_merge($message, $values);
   }
+
+  /**
+   * @param array $values
+   *
+   * @return array
+   */
+  protected function getRecurringEOTMessage(array $values = []): array {
+    $message = $this->loadMessage('recurring_eot');
+    $contributionTrackingID = mt_rand();
+    $message += [
+      'gateway_txn_id' => mt_rand(),
+      'order_id' => "$contributionTrackingID.1",
+      'contribution_tracking_id' => $contributionTrackingID,
+    ];
+    return array_merge($message, $values);
+  }
+
 
   /**
    * @param array $values
@@ -362,6 +381,34 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
    */
   public function getRecurringPaymentMessage(array $values = []): array {
     return array_merge($this->loadMessage('recurring_payment'), $values);
+  }
+
+  /**
+   * Get the recurring subscription relevant to the message.
+   *
+   * @param array $message
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   */
+  public function getContributionRecurForMessage(array $message): ?array {
+    return ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', '=', $message['subscr_id'])
+      ->execute()->single();
+  }
+
+  /**
+   * @param array $message
+   *
+   * @return array|false
+   */
+  public function getDamagedRows(array $message) {
+    $damagedPDO = DamagedDatabase::get()->getDatabase();
+    $result = $damagedPDO->query("
+    SELECT * FROM damaged
+    WHERE gateway = '{$message['gateway']}'
+    AND gateway_txn_id = '{$message['gateway_txn_id']}'");
+    return $result->fetchAll(\PDO::FETCH_ASSOC);
   }
 
 }

@@ -4,6 +4,7 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\Contribution;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use Civi\WMFQueue\RecurDeadlockQueueConsumer;
 use Civi\WMFQueue\RecurringQueueConsumer;
 use SmashPig\Core\DataStores\DamagedDatabase;
 use SmashPig\Core\UtcDate;
@@ -237,21 +238,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
       'Cancelled',
       CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $recurRecord['contribution_status_id'])
     );
-  }
-
-  /**
-   * Test deadlock exception in function that expires recurrings.
-   */
-  public function testHandleDeadlocksInExpireContributions(): void {
-    $subscr_id = mt_rand();
-    $values = $this->processRecurringSignup($subscr_id);
-    $values['source_enqueued_time'] = UtcDate::getUtcTimestamp();
-    $message = $this->getRecurringEOTMessage($values);
-    $this->importMessageProcessWithMockConsumer($message);
-
-    $rows = $this->getDamagedRows($message);
-    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
-    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
   }
 
   /**
@@ -630,21 +616,7 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   protected function getTestRecurringQueueConsumerWithContributionRecurExceptions(): RecurringQueueConsumer {
-    return new class extends RecurringQueueConsumer {
-
-      public function __construct() {
-        parent::__construct('recurring');
-      }
-
-      protected function createContributionRecur($params) {
-        throw new CRM_Core_Exception('DBException error', 123, ['error_code' => 'deadlock']);
-      }
-
-      protected function updateContributionRecur($params) {
-        throw new CRM_Core_Exception('DBException error', 123, ['error_code' => 'deadlock']);
-      }
-
-    };
+    return new RecurDeadlockQueueConsumer('recurring');
   }
 
   /**

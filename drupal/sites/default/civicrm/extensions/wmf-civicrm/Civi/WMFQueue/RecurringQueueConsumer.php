@@ -467,14 +467,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     }
   }
 
-  protected function createContributionRecur($params) {
+  protected function createContributionRecur(array $params): ?array {
     return ContributionRecur::create(FALSE)
       ->setValues($params)
       ->execute()
       ->first();
   }
 
-  protected function updateContributionRecur($params) {
+  protected function updateContributionRecur(array $params): ?array {
     return ContributionRecur::update(FALSE)
       ->setValues($params)
       ->execute()

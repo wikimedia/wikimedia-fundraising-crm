@@ -207,6 +207,22 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
+   * Test deadlock results in re-queuing in function that expires recurring contributions.
+   */
+  public function testHandleDeadlocksInEOTMessage(): void {
+    $subscr_id = mt_rand();
+    $values = ['subscr_id' => $subscr_id];
+    $this->processRecurringSignup($values);
+    $values['source_enqueued_time'] = time();
+    $message = $this->getRecurringEOTMessage($values);
+    $this->processMessage($message, 'RecurDeadlock');
+
+    $rows = $this->getDamagedRows($message);
+    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
+    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
+  }
+
+  /**
    * Process the original recurring sign up message.
    *
    * @param array $overrides
@@ -217,20 +233,6 @@ class RecurringQueueTest extends BaseQueue {
     $message = $this->getRecurringSignupMessage($overrides);
     $this->processMessage($message);
     return $message;
-  }
-
-  /**
-   * Get the recurring subscription relevant to the message.
-   *
-   * @param array $message
-   *
-   * @return array|null
-   * @throws \CRM_Core_Exception
-   */
-  public function getContributionRecurForMessage(array $message): ?array {
-    return ContributionRecur::get(FALSE)
-      ->addWhere('trxn_id', '=', $message['subscr_id'])
-      ->execute()->single();
   }
 
 }
