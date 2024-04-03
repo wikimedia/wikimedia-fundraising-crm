@@ -506,6 +506,27 @@ function wmf_civicrm_update_legacy_paypal_subscription($recur_record, $msg) {
     ])->execute();
 }
 
+/**
+ * @param $gateway
+ * @param $token
+ *
+ * @return mixed|null
+ * @throws \CRM_Core_Exception
+ * @throws \Civi\WMFException\WMFException
+ * @deprecated
+ *
+ * This code has 2 callers - but would ideally they would call a function on the
+ * Message class like getPaymentToken() which would do an apiv4 call like
+ *
+ * PaymentToken::get(FALSE)
+ * ->addWhere('payment_processor_id.name', '=', $signupMessage['gateway'])
+ * ->addWhere('token', '=', $signupMessage['recurring_payment_token'])
+ * ->addOrderBy('created_date', 'DESC')
+ * ->execute()->first();
+ *
+ * The api call is trivial enough that unless the relevant Message classes easily inherit
+ * it is likely not worth trying to avoid repeating it.
+ */
 function wmf_civicrm_get_recurring_payment_token($gateway, $token) {
   $processorId = wmf_civicrm_get_payment_processor_id($gateway);
 
