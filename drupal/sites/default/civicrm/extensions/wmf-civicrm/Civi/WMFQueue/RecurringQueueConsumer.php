@@ -183,16 +183,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         // PayPal has just not been sending subscr_signup messages for a lot of
         // messages lately. Insert a whole new contribution_recur record.
         $startMessage = [
-            'txn_type' => 'subscr_signup',
-            // Assuming monthly donation
-            'frequency_interval' => '1',
-            'frequency_unit' => 'month',
-            'installments' => 0,
-            'create_date' => $msg['date'],
-            'start_date' => $msg['date'],
-            'recurring' => TRUE,
+          'txn_type' => 'subscr_signup',
           ] + $msg;
-        $startMessage = $this->normalizeMessage($startMessage);
         $this->importSubscriptionSignup($startMessage);
         $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
         if (!$recur_record) {
@@ -407,8 +399,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * Import a subscription signup message
    *
    * @param array $msg
-   *
-   * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionSignup($msg) {
     $contact = NULL;
@@ -437,8 +427,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'contact_id' => $contactId,
         'currency' => $msg['original_currency'],
         'amount' => $msg['original_gross'],
-        'frequency_unit' => $msg['frequency_unit'],
-        'frequency_interval' => $msg['frequency_interval'],
+        // If not provided (eg. a payment where we missed the signup) we assume monthly.
+        'frequency_unit' => $msg['frequency_unit'] ?? 'month',
+        'frequency_interval' => $msg['frequency_interval'] ?? 1,
         // Set installments to 0 - they should all be open ended
         'installments' => 0,
         'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
