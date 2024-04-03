@@ -342,11 +342,11 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
-   * Test that the notification email is sent when a donation is upgraded to a recurring.
+   * Test that the notification email is sent when a donation is a monthly convert
    *
    * @throws \CRM_Core_Exception
    */
-  public function testRecurringPaymentIngenicoMonthlyConvertNotificationEmailSend(): void {
+  public function testRecurringPaymentMonthlyConvertNotificationEmailSend(): void {
     \Civi::settings()->set('thank_you_add_civimail_records', FALSE);
 
     // Subscr_id is the same as gateway_txn_id
@@ -355,7 +355,7 @@ class RecurringQueueTest extends BaseQueue {
     // Create the first donation
     $contributionTrackingRecordID = $this->addContributionTrackingRecord();
     $donationMessage = $this->processDonationMessage([
-      'gateway' => 'ingenico',
+      'gateway' => 'adyen',
       'gross' => 400,
       'original_gross' => 400,
       'original_currency' => 'CAD',
@@ -368,7 +368,7 @@ class RecurringQueueTest extends BaseQueue {
     $signupMessage['currency'] = 'CAD';
     $signupMessage['gateway_txn_id'] = $subscr_id;
     $signupMessage['user_ip'] = '1.1.1.1';
-    $signupMessage['gateway'] = 'ingenico';
+    $signupMessage['gateway'] = 'adyen';
     $signupMessage['payment_method'] = 'cc';
     $signupMessage['payment_submethod'] = 'visa';
     $signupMessage['create_date'] = 1564068649;
@@ -405,13 +405,13 @@ class RecurringQueueTest extends BaseQueue {
    *
    * @throws \CRM_Core_Exception
    */
-  public function testRecurringSignupIngenicoAfterOnePayment(): void {
+  public function testRecurringSignupAfterOnePayment(): void {
     // Subscr_id is the same as gateway_txn_id
     $subscr_id = mt_rand();
     $contributionTrackingID = $this->addContributionTrackingRecord();
 
     $donationMessage = $this->processDonationMessage([
-      'gateway' => 'ingenico',
+      'gateway' => 'adyen',
       'gross' => 400,
       'original_gross' => 400,
       'original_currency' => 'USD',
@@ -425,7 +425,7 @@ class RecurringQueueTest extends BaseQueue {
     $signupMessage['recurring_payment_token'] = mt_rand();
     $signupMessage['gateway_txn_id'] = $subscr_id;
     $signupMessage['user_ip'] = '1.1.1.1';
-    $signupMessage['gateway'] = 'ingenico';
+    $signupMessage['gateway'] = 'adyen';
     $signupMessage['payment_method'] = 'cc';
     $signupMessage['payment_submethod'] = 'visa';
     $signupMessage['create_date'] = 1564068649;
