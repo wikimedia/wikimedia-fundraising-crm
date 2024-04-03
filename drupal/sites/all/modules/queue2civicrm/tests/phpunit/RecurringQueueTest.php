@@ -29,63 +29,6 @@ class RecurringQueueTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Test that a recurring donation created after a one-time donation with the
-   * same ct_id is assigned to the same donor
-   */
-  public function testRecurringSignupAfterOneTime() {
-    // Subscr_id is the same as gateway_txn_id
-    $subscr_id = mt_rand();
-    $ct_id = $this->addContributionTracking([
-      'form_amount' => 4,
-      'utm_source' => 'testytest',
-      'language' => 'en',
-      'country' => 'US',
-    ]);
-
-    $message = new TransactionMessage([
-        'gateway' => 'ingenico',
-        'gross' => 400,
-        'original_gross' => 400,
-        'original_currency' => 'USD',
-        'contribution_tracking_id' => $ct_id,
-      ]
-    );
-
-    $messageBody = $message->getBody();
-    exchange_rate_cache_set('USD', $messageBody['date'], 1);
-    $firstContribution = wmf_civicrm_contribution_message_import($messageBody);
-    $this->addToCleanup($firstContribution);
-    $this->consumeCtQueue();
-
-    // Set up token specific values
-    $overrides['currency'] = 'USD';
-    $overrides['recurring_payment_token'] = mt_rand();
-    $overrides['gateway_txn_id'] = $subscr_id;
-    $overrides['user_ip'] = '1.1.1.1';
-    $overrides['gateway'] = 'ingenico';
-    $overrides['payment_method'] = 'cc';
-    $overrides['payment_submethod'] = 'visa';
-    $overrides['create_date'] = 1564068649;
-    $overrides['start_date'] = 1566732720;
-    $overrides['contribution_tracking_id'] = $ct_id;
-
-    $this->processRecurringSignup($subscr_id, $overrides);
-
-    // Get the new token
-    $token = wmf_civicrm_get_recurring_payment_token($overrides['gateway'], $overrides['recurring_payment_token']);
-    // Check that the token belongs to the same donor as the first donation
-    $this->assertEquals($firstContribution['contact_id'], $token['contact_id']);
-    // Create matching trxn_id
-    $trxn_id = 'RECURRING ' . strtoupper(($overrides['gateway'])) . ' ' . $subscr_id;
-    $recurRecord = RecurHelper::getByGatewaySubscriptionId($overrides['gateway'], $trxn_id);
-    // Check that the recur record belongs to the same donor
-    $this->assertEquals($firstContribution['contact_id'], $recurRecord['contact_id']);
-
-    // Clean up
-    $this->ids['ContributionRecur'][] = $recurRecord['id'];
-  }
-
-  /**
    * Test that the notification email is sent when a updonate recurring subscription is started
    */
   public function testRecurringNotificationEmailSend(): void {

@@ -341,6 +341,52 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
+   * Test that a recurring donation created after a one-time donation with the
+   * same contribution tracking ID is assigned to the same donor
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringSignupIngenicoAfterOnePayment(): void {
+    // Subscr_id is the same as gateway_txn_id
+    $subscr_id = mt_rand();
+    $contributionTrackingID = $this->addContributionTrackingRecord();
+
+    $donationMessage = $this->processDonationMessage([
+      'gateway' => 'ingenico',
+      'gross' => 400,
+      'original_gross' => 400,
+      'original_currency' => 'USD',
+      'contribution_tracking_id' => $contributionTrackingID,
+    ]);
+    $this->processContributionTrackingQueue();
+    $firstContribution = $this->getContributionForMessage($donationMessage);
+
+    // Set up token specific values
+    $signupMessage['currency'] = 'USD';
+    $signupMessage['recurring_payment_token'] = mt_rand();
+    $signupMessage['gateway_txn_id'] = $subscr_id;
+    $signupMessage['user_ip'] = '1.1.1.1';
+    $signupMessage['gateway'] = 'ingenico';
+    $signupMessage['payment_method'] = 'cc';
+    $signupMessage['payment_submethod'] = 'visa';
+    $signupMessage['create_date'] = 1564068649;
+    $signupMessage['start_date'] = 1566732720;
+    $signupMessage['contribution_tracking_id'] = $contributionTrackingID;
+
+    $this->processRecurringSignup($signupMessage);
+    $token = $this->getTokenFromSignupMessage($signupMessage);
+    // Check that the token belongs to the same donor as the first donation
+    $this->assertEquals($firstContribution['contact_id'], $token['contact_id']);
+
+    // Check that the recur record belongs to the same donor
+    $contributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', '=', 'RECURRING ' . strtoupper(($signupMessage['gateway'])) . ' ' . $subscr_id)
+      ->addSelect('*', 'contribution_status_id:name')
+      ->execute()->single();
+    $this->assertEquals($firstContribution['contact_id'], $contributionRecur['contact_id']);
+  }
+
+  /**
    * Test handling of deadlock exception in function that imports subscription payment
    */
   public function testHandleDeadlocksInRecurringPayment(): void {
