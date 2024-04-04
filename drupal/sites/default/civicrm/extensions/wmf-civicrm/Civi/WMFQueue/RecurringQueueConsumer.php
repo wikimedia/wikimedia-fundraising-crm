@@ -11,6 +11,7 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\PaymentProcessor;
+use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
@@ -91,10 +92,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         ]);
         throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution already exists. Ignoring message.");
       }
-      $this->importSubscriptionPayment($message);
+      $this->importSubscriptionPayment($messageObject, $message);
     }
     elseif (isset($message['txn_type']) && in_array($message['txn_type'], $txn_subscr_acct)) {
-      $this->importSubscriptionAccount($message);
+      $this->importSubscriptionAccount($messageObject, $message);
     }
     else {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
@@ -104,11 +105,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Import a recurring payment
    *
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
    * @param array $msg
    *
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
-  protected function importSubscriptionPayment($msg) {
+  protected function importSubscriptionPayment(RecurDonationMessage $message, $msg) {
     /**
      * if the subscr_id is not set, we can't process it due to an error in the message.
      *
@@ -117,7 +121,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
      *
      * otherwise, process the payment.
      */
-    if (!isset($msg['subscr_id'])) {
+    if (!$message->getSubscriptionID()) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg missing the subscr_id; cannot process.');
     }
     // check for parent record in civicrm_contribution_recur and fetch its id
@@ -143,7 +147,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     if (
       !$recur_record &&
       !empty($msg['email']) &&
-      strpos($msg['gateway'], 'paypal') === 0 &&
+      $message->isPaypal() &&
       strpos($msg['subscr_id'], 'I-') === 0
     ) {
       $recur_record = wmf_civicrm_get_legacy_paypal_subscription($msg);
@@ -270,7 +274,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    *
    * @throws \Civi\WMFException\WMFException
    */
-  protected function importSubscriptionAccount($msg) {
+  protected function importSubscriptionAccount(RecurDonationMessage $message, $msg) {
     switch ($msg['txn_type']) {
       case 'subscr_signup':
         $this->importSubscriptionSignup($msg);
