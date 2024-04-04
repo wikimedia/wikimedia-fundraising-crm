@@ -16,9 +16,9 @@ class RecurringModifyAmountQueueTest extends BaseQueue {
   use ContactTestTrait;
   use Api3TestTrait;
 
-  protected string $queueName = 'recurring';
+  protected string $queueName = 'recurring-upgrade';
 
-  protected string $queueConsumer = 'Recurring';
+  protected string $queueConsumer = 'RecurringModifyAmount';
 
   /**
    * @throws \CRM_Core_Exception
