@@ -294,7 +294,7 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
   public function getContributionForMessage(array $donation_message): array {
     try {
       return Contribution::get(FALSE)
-        ->addSelect('*', 'contribution_status_id:name', 'contribution_recur_id.*')
+        ->addSelect('*', 'contribution_status_id:name', 'contribution_recur_id.*', 'Gift_Data.*')
         ->addWhere('contribution_extra.gateway', '=', $donation_message['gateway'])
         ->addWhere('contribution_extra.gateway_txn_id', '=', $donation_message['gateway_txn_id'])
         ->execute()->single();
