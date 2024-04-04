@@ -446,4 +446,15 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
     $this->processQueue('contribution-tracking', 'ContributionTracking');
   }
 
+  /**
+   * @param array $message
+   *
+   * @return void
+   */
+  public function assertDamagedRowExists(array $message): void {
+    $rows = $this->getDamagedRows($message);
+    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
+    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
+  }
+
 }

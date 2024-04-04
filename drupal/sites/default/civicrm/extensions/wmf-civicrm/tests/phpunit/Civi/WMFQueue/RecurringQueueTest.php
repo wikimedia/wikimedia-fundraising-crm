@@ -568,17 +568,6 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
-   * @param array $message
-   *
-   * @return void
-   */
-  public function assertDamagedRowExists(array $message): void {
-    $rows = $this->getDamagedRows($message);
-    $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
-    $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
-  }
-
-  /**
    * @param array $signupMessage
    *
    * @return array|null

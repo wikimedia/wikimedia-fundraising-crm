@@ -6,6 +6,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\CustomField;
 use Civi\Api4\OptionValue;
+use SmashPig\Core\DataStores\DamagedDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 
 /**
@@ -185,6 +186,55 @@ class DonationQueueTest extends BaseQueue {
       $pendingMessage['order_id']
     );
     $this->assertNull($pendingEntry, 'Should have deleted pending DB entry');
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \JsonException
+   */
+  public function testDuplicateHandling(): void {
+    $message = $this->processDonationMessage();
+    $message2 = $this->processDonationMessage([
+      'contribution_tracking_id' => $message['contribution_tracking_id'],
+      'order_id' => $message['order_id'],
+      'date' => time(),
+      'source_name' => 'SmashPig',
+      'source_type' => 'listener',
+      'source_version' => 'unknown',
+    ]);
+    $this->processContributionTrackingQueue();
+
+    $originalOrderId = $message2['order_id'];
+    $damagedRows = $this->getDamagedRows($message2);
+    $this->assertCount(1, $damagedRows);
+    $this->assertEquals($originalOrderId, $damagedRows[0]['order_id']);
+
+    $expected = [
+      // NOTE: This is a db-specific string, sqlite3 in this case, and
+      // you'll have different formatting if using any other database.
+      'original_date' => date('YmdHis', $message2['date']),
+      'gateway' => $message2['gateway'],
+      'order_id' => $originalOrderId,
+      'gateway_txn_id' => $message2['gateway_txn_id'],
+      'original_queue' => 'test',
+    ];
+    foreach ($expected as $key => $value) {
+      $this->assertEquals($value, $damagedRows[0][$key], 'Stored message had expected contents for key ' . $key);
+    }
+
+    $this->assertNotNull($damagedRows[0]['retry_date'], 'Should retry');
+    $storedMessage = json_decode($damagedRows[0]['message'], TRUE, 512, JSON_THROW_ON_ERROR);
+    $storedInvoiceId = $storedMessage['invoice_id'];
+    $storedTags = $storedMessage['contribution_tags'];
+    unset($storedMessage['invoice_id'], $storedMessage['contribution_tags'], $storedMessage['source_run_id'], $storedMessage['source_enqueued_time'], $storedMessage['source_host']);
+    $this->assertEquals($message2, $storedMessage);
+
+    $invoiceIdLen = strlen((string) $originalOrderId);
+    $this->assertEquals(
+      "$originalOrderId|dup-",
+      substr($storedInvoiceId, 0, $invoiceIdLen + 5)
+    );
+    $this->assertEquals(['DuplicateInvoiceId'], $storedTags);
   }
 
   public function getSparseMessages(): array {
