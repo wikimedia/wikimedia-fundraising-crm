@@ -110,35 +110,3 @@ class TransactionMessage extends Message {
   }
 
 }
-
-/**
- * Class AmazonDonationMessage Sparse message format pointing to donor
- *  details in the pending database
- */
-class AmazonDonationMessage extends TransactionMessage {
-
-  function __construct($values = []) {
-    $this->loadDefaults("sparse_donation_amazon");
-
-    parent::__construct($values);
-    $this->data['completion_message_id'] =
-      'amazon-' . $this->get('order_id');
-  }
-
-}
-
-/**
- * Class DlocalDonationMessage Sparse message format pointing to donor
- *  details in the pending database
- */
-class DlocalDonationMessage extends TransactionMessage {
-
-  function __construct($values = []) {
-    $this->loadDefaults("sparse_donation_dlocal");
-
-    parent::__construct($values);
-    $this->data['completion_message_id'] =
-      'dlocal-' . $this->get('order_id');
-  }
-
-}

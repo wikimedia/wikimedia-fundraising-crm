@@ -6,6 +6,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\CustomField;
 use Civi\Api4\OptionValue;
+use SmashPig\Core\DataStores\PendingDatabase;
 
 /**
  * @group queues
@@ -159,6 +160,43 @@ class DonationQueueTest extends BaseQueue {
     // Use single() to check that no other option values with this option exist.
     OptionValue::get(FALSE)->addWhere('value', '=', $optionValue)
       ->execute()->single();
+  }
+
+  /**
+   * Process a donation message with some info from pending db
+   *
+   * @dataProvider getSparseMessages
+   *
+   * @param array $message
+   * @param array $pendingMessage
+   *
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
+   */
+  public function testDonationSparseMessages(array $message, array $pendingMessage): void {
+    $pendingMessage['order_id'] = $message['order_id'];
+    PendingDatabase::get()->storeMessage($pendingMessage);
+    $this->createCustomOption('Appeal', $pendingMessage['utm_campaign']);
+    $this->processMessage($message, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals($pendingMessage['utm_campaign'], $contribution['Gift_Data.Appeal']);
+    $pendingEntry = PendingDatabase::get()->fetchMessageByGatewayOrderId(
+      $message['gateway'],
+      $pendingMessage['order_id']
+    );
+    $this->assertNull($pendingEntry, 'Should have deleted pending DB entry');
+  }
+
+  public function getSparseMessages(): array {
+    $amazonMessage = $this->loadMessage('sparse_donation_amazon');
+    $amazonMessage['completion_message_id'] = 'amazon-' . $amazonMessage['order_id'];
+    $dLocalMessage = $this->loadMessage('sparse_donation_dlocal');
+    $dLocalMessage['completion_message_id'] = 'dlocal-' . $dLocalMessage['order_id'];
+
+    return [
+      'amazon' => [$amazonMessage, $this->loadMessage('pending_amazon')],
+      'dlocal' => [$dLocalMessage, $this->loadMessage('pending_dlocal')],
+    ];
   }
 
   /**
