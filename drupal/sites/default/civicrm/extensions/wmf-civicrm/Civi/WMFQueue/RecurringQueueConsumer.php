@@ -11,6 +11,7 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\PaymentProcessor;
+use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
@@ -52,7 +53,23 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       }
     }
 
-    $message = $this->normalizeMessage($message);
+    $skipContributionTracking = (isset($message['gateway']) && $message['gateway'] === 'amazon')
+      || (isset($message['is_successful_autorescue']) && $message['is_successful_autorescue']);
+
+    if (!$skipContributionTracking && !isset($message['contribution_tracking_id'])) {
+      $message['contribution_tracking_id'] = $this->getContributionTracking($message);
+    }
+
+    //Seeing as we're in the recurring module...
+    $message['recurring'] = TRUE;
+    $messageObject = new RecurDonationMessage($message);
+    // Set is payment to false here so that amounts will not be validated.
+    // It's possible that sometimes the message here is a payment message
+    // but if so we haven't been validating the amounts here historically
+    // so setting isPayment to false respects that behaviour.
+    $messageObject->setIsPayment(FALSE);
+    $messageObject->validate();
+    $message = $messageObject->normalize();
 
     // define the subscription txn type for an actual 'payment'
     $txn_subscr_payment = ['subscr_payment'];
@@ -75,10 +92,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         ]);
         throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution already exists. Ignoring message.");
       }
-      $this->importSubscriptionPayment($message);
+      $this->importSubscriptionPayment($messageObject, $message);
     }
     elseif (isset($message['txn_type']) && in_array($message['txn_type'], $txn_subscr_acct)) {
-      $this->importSubscriptionAccount($message);
+      $this->importSubscriptionAccount($messageObject, $message);
     }
     else {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
@@ -86,45 +103,16 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   }
 
   /**
-   * Convert queued message to a standardized format
-   *
-   * This is a wrapper to ensure that all necessary normalization occurs on the
-   * message.
-   *
-   * @param array $msg
-   *
-   * @return array
-   * @throws \Civi\WMFException\WMFException
-   */
-  protected function normalizeMessage($msg) {
-    $skipContributionTracking = (isset($msg['gateway']) && $msg['gateway'] === 'amazon')
-      || (isset($msg['is_successful_autorescue']) && $msg['is_successful_autorescue']);
-
-    if (!$skipContributionTracking && !isset($msg['contribution_tracking_id'])) {
-      $msg['contribution_tracking_id'] = recurring_get_contribution_tracking_id($msg);
-    }
-
-    //Seeing as we're in the recurring module...
-    $msg['recurring'] = TRUE;
-    $message = new RecurDonationMessage($msg);
-    // Set is payment to false here so that amounts will not be validated.
-    // It's possible that sometimes the message here is a payment message
-    // but if so we haven't been validating the amounts here historically
-    // so setting isPayment to false respects that behaviour.
-    $message->setIsPayment(FALSE);
-    $message->validate();
-    $msg = $message->normalize();
-    return $msg;
-  }
-
-  /**
    * Import a recurring payment
    *
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
    * @param array $msg
    *
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
-  protected function importSubscriptionPayment($msg) {
+  protected function importSubscriptionPayment(RecurDonationMessage $message, $msg) {
     /**
      * if the subscr_id is not set, we can't process it due to an error in the message.
      *
@@ -133,7 +121,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
      *
      * otherwise, process the payment.
      */
-    if (!isset($msg['subscr_id'])) {
+    if (!$message->getSubscriptionID()) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg missing the subscr_id; cannot process.');
     }
     // check for parent record in civicrm_contribution_recur and fetch its id
@@ -159,7 +147,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     if (
       !$recur_record &&
       !empty($msg['email']) &&
-      strpos($msg['gateway'], 'paypal') === 0 &&
+      $message->isPaypal() &&
       strpos($msg['subscr_id'], 'I-') === 0
     ) {
       $recur_record = wmf_civicrm_get_legacy_paypal_subscription($msg);
@@ -183,16 +171,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         // PayPal has just not been sending subscr_signup messages for a lot of
         // messages lately. Insert a whole new contribution_recur record.
         $startMessage = [
-            'txn_type' => 'subscr_signup',
-            // Assuming monthly donation
-            'frequency_interval' => '1',
-            'frequency_unit' => 'month',
-            'installments' => 0,
-            'create_date' => $msg['date'],
-            'start_date' => $msg['date'],
-            'recurring' => TRUE,
+          'txn_type' => 'subscr_signup',
           ] + $msg;
-        $startMessage = $this->normalizeMessage($startMessage);
         $this->importSubscriptionSignup($startMessage);
         $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
         if (!$recur_record) {
@@ -294,7 +274,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    *
    * @throws \Civi\WMFException\WMFException
    */
-  protected function importSubscriptionAccount($msg) {
+  protected function importSubscriptionAccount(RecurDonationMessage $message, $msg) {
     switch ($msg['txn_type']) {
       case 'subscr_signup':
         $this->importSubscriptionSignup($msg);
@@ -317,6 +297,62 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
       default:
         throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid subscription message type');
+    }
+  }
+
+
+  /**
+   * Get the contribution tracking id for a given a recurring trxn
+   *
+   * If the 'custom' field is not set (from paypal, which would normally carry the tracking id),
+   * we look and see if any related recurring transactions have had a contrib tracking id set.
+   *
+   * If they do, we'll use that contrib tracking id, otherwise we'll generate a new row in the
+   * contrib tracking table.
+   *
+   * @param array $msg
+   *
+   * @return int contribution tracking id
+   */
+  private function getContributionTracking($msg) {
+  if ($msg['txn_type'] == 'subscr_payment') {
+      $queryResult = ContributionRecur::get(FALSE)
+        ->addSelect('MIN(contribution_tracking.id) AS ctid', 'MIN(contribution.id) AS contribution_id')
+        ->addJoin('Contribution AS contribution', 'INNER')
+        ->addJoin('ContributionTracking AS contribution_tracking', 'LEFT', ['contribution_tracking.contribution_id', '=', 'contribution.id'])
+        ->addGroupBy('id')
+        ->addWhere('trxn_id', '=', $msg['subscr_id'])
+        ->setLimit(1)
+        ->execute()
+        ->first();
+      $contribution_tracking_id = $queryResult['ctid'] ?? NULL;
+      $contribution_id = $queryResult['contribution_id'] ?? NULL;
+
+      if (!empty($contribution_tracking_id)) {
+        \Civi::log('wmf')->debug(
+          'recurring: recurring_get_contribution_tracking_id: Selected contribution tracking id from past contributions, {contribution_tracking_id}',
+          ['contribution_tracking_id' => $contribution_tracking_id]
+        );
+      }
+      // if we still don't have a contribution tracking id (but we do have previous contributions),
+      // we're gonna have to add new contribution tracking.
+      if ($contribution_id && !$contribution_tracking_id) {
+        $rawDate = empty($msg['payment_date']) ? $msg['date'] : $msg['payment_date'];
+        $date = wmf_common_date_unix_to_sql(strtotime($rawDate));
+        $tracking = [
+          'utm_source' => '..rpp', // FIXME: recurring donations are not all paypal
+          'utm_medium' => 'civicrm',
+          'ts' => $date,
+          'contribution_id' => $contribution_id,
+        ];
+        $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking($tracking);
+        \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Got new contribution tracking id, {contribution_tracking_id}', ['contribution_tracking_id' => $contribution_tracking_id]);
+      }
+      return $contribution_tracking_id;
+    }
+    else {
+      \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: No contribution_tracking_id returned.');
+      return NULL;
     }
   }
 
@@ -347,8 +383,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * Import a subscription signup message
    *
    * @param array $msg
-   *
-   * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionSignup($msg) {
     $contact = NULL;
@@ -377,8 +411,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'contact_id' => $contactId,
         'currency' => $msg['original_currency'],
         'amount' => $msg['original_gross'],
-        'frequency_unit' => $msg['frequency_unit'],
-        'frequency_interval' => $msg['frequency_interval'],
+        // If not provided (eg. a payment where we missed the signup) we assume monthly.
+        'frequency_unit' => $msg['frequency_unit'] ?? 'month',
+        'frequency_interval' => $msg['frequency_interval'] ?? 1,
         // Set installments to 0 - they should all be open ended
         'installments' => 0,
         'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
