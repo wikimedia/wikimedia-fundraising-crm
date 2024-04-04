@@ -211,15 +211,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $this->updateContact($msg, $recur_record->contact_id);
     }
 
-    // update subscription record with next payment date
-    if (isset($msg['date'])) {
-      $date = $msg['date'];
-    }
-    else {
-      // TODO: Remove this when audit and IPN are sending normalized messages
-      $date = $msg['payment_date'];
-    }
-
     $update_params = [
       'id' => $recur_record->id,
     ];
@@ -227,16 +218,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       'cycle_day' => $recur_record->cycle_day,
       'frequency_interval' => $recur_record->frequency_interval,
     ];
-    // Old PayPal donations didn't record the cycle_day, so use the donation's day and update the
-    // old record. Should be able to remove this code in March or April 2024 once all old records
-    // are updated.
-    if (
-      strpos($msg['gateway'], 'paypal') === 0 &&
-      date('j', strtotime(wmf_common_date_unix_to_civicrm($date))) !== $recur_record->cycle_day
-    ) {
-      $update_params['cycle_day'] = date('j', strtotime(wmf_common_date_unix_to_civicrm($date)));
-      $scheduleCalculationParams['cycle_day'] = $update_params['cycle_day'];
-    }
     $update_params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextDateForMonth(
       $scheduleCalculationParams
     );
