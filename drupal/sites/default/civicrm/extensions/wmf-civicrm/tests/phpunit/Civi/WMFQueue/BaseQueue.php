@@ -10,6 +10,7 @@ use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\TransactionalInterface;
 use Civi\WMFEnvironmentTrait;
+use Civi\WMFQueueTrait;
 use PHPUnit\Framework\TestCase;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
@@ -19,6 +20,7 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
 
   use Test\EntityTrait;
   use WMFEnvironmentTrait;
+  use WMFQueueTrait;
 
   protected string $queueName = '';
 
@@ -38,23 +40,6 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
     ], $params), $identifier)['id'];
-  }
-
-  /**
-   * Process the given queue.
-   *
-   * @param string $queueName
-   * @param string $queueConsumer
-   *
-   * @return array|null
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  public function processQueue(string $queueName, string $queueConsumer): ?array {
-    return WMFQueue::consume()
-      ->setQueueName($queueName)
-      ->setQueueConsumer($queueConsumer)
-      ->execute()->first();
   }
 
   /**
@@ -276,17 +261,6 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
   }
 
   /**
-   * Temporarily set foreign exchange rates to known values
-   *
-   * TODO: Should reset after each test.
-   */
-  protected function setExchangeRates(int $timestamp, array $rates): void {
-    foreach ($rates as $currency => $rate) {
-      exchange_rate_cache_set($currency, $timestamp, $rate);
-    }
-  }
-
-  /**
    * @param array $donation_message
    *
    * @return array
@@ -435,15 +409,6 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
     WHERE gateway = '{$message['gateway']}'
     AND gateway_txn_id = '{$message['gateway_txn_id']}'");
     return $result->fetchAll(\PDO::FETCH_ASSOC);
-  }
-
-  /**
-   * @return void
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  public function processContributionTrackingQueue(): void {
-    $this->processQueue('contribution-tracking', 'ContributionTracking');
   }
 
   /**

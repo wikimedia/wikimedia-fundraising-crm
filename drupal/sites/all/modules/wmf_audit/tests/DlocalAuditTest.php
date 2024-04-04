@@ -5,7 +5,8 @@
  * @group WmfAudit
  * @group DlocalAudit
  */
-class DlocalAuditTest extends BaseAuditTestCase {
+class DlocalAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
+  use \Civi\Test\Api3TestTrait;
 
   static protected $loglines;
 

@@ -7,7 +7,7 @@ use SmashPig\Core\DataStores\QueueWrapper;
  * @group WmfAudit
  * @group CiviAudit
  */
-class WmfAuditTest extends BaseAuditTestCase {
+class WmfAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
   public function testGetContributionTrackingData(): void {
     $expectedContributionTrackingData = [

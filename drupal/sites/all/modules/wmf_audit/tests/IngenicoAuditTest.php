@@ -6,7 +6,7 @@ use Civi\Api4\ContributionTracking;
  * @group Ingenico
  * @group WmfAudit
  */
-class IngenicoAuditTest extends BaseAuditTestCase {
+class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
   protected $idForRefundTest;
 
@@ -137,15 +137,9 @@ class IngenicoAuditTest extends BaseAuditTestCase {
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
-    $this->consumeCtQueue();
+    $this->processContributionTrackingQueue();
     $this->contact_ids[] = $contribution['contact_id'];
     $this->idForRefundTest = $contribution['id'];
-  }
-
-  public function tearDown(): void {
-    foreach ($this->contact_ids as $contact_id) {
-      $this->cleanUpContact($contact_id);
-    }
   }
 
   public function auditTestProvider() {

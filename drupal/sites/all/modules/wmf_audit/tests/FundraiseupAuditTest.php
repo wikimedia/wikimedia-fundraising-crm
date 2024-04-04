@@ -1,5 +1,6 @@
 <?php
 
+use Civi\WMFAudit\BaseAuditTestCase;
 use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\Fundraiseup\Tests\FundraiseupTestConfiguration;
 use SmashPig\Core\DataStores\QueueWrapper;
@@ -332,7 +333,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $dqc = new DonationQueueConsumer('test');
     $message = new TransactionMessage($donation);
     $dqc->processMessage($message->getBody());
-    $this->consumeCtQueue();
+    $this->processContributionTrackingQueue();
 
     $expected = [
       'contact_id.contact_type' => 'Individual',
@@ -376,7 +377,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $dqc = new DonationQueueConsumer('test');
     $message = new TransactionMessage($donation);
     $dqc->processMessage($message->getBody());
-    $this->consumeCtQueue();
+    $this->processContributionTrackingQueue();
 
     $expected = [
       'contact_id.contact_type' => 'Individual',
@@ -420,7 +421,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $dqc = new DonationQueueConsumer('test');
     $message = new TransactionMessage($donation);
     $dqc->processMessage($message->getBody());
-    $this->consumeCtQueue();
+    $this->processContributionTrackingQueue();
 
     $expected = [
       'contact_id.contact_type' => 'Individual',
@@ -468,7 +469,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     );
     $message = new TransactionMessage($donation);
     $dqc->processMessage($message->getBody());
-    $this->consumeCtQueue();
+    $this->processContributionTrackingQueue();
 
     $refundMessage = new TransactionMessage($refund);
     $rfqc->processMessage($refundMessage->getBody());

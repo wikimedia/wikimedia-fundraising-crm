@@ -6,7 +6,7 @@ use Civi\Api4\Contribution;
  * @group Braintree
  * @group WmfAudit
  */
-class BraintreeAuditTest extends BaseAuditTestCase {
+class BraintreeAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();
@@ -74,7 +74,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
         'invoice_id' => '17.1',
         'phone' => null,
         'first_name' => 'f',
-        'last_name' => 'doner',
+        'last_name' => 'Mouse',
         'payment_method' => 'paypal',
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
@@ -93,7 +93,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2F4eG1yfff',
       'phone' => null,
       'first_name' => 'f',
-      'last_name' => 'doner',
+      'last_name' => 'Mouse',
       'payment_method' => 'paypal',
     ];
     $contribution = wmf_civicrm_contribution_message_import($msg);
