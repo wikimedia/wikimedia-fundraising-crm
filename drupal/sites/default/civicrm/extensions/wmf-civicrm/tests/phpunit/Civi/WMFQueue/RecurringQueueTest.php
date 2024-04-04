@@ -568,15 +568,6 @@ class RecurringQueueTest extends BaseQueue {
   }
 
   /**
-   * @return void
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  public function processContributionTrackingQueue(): void {
-    $this->processQueue('contribution-tracking', 'ContributionTracking');
-  }
-
-  /**
    * @param array $message
    *
    * @return void

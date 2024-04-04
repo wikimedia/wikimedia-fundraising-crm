@@ -20,7 +20,7 @@ class RefundQueueTest extends BaseQueue {
 
   public function testRefund(): void {
     $donation_message = $this->getDonationMessage([], ['USD' => 1, '*' => 3]);
-    $refund_message = $this->getRefundMessage();
+    $refund_message = $this->getRefundMessage(['gateway_parent_id' => $donation_message['gateway_txn_id']]);
 
     $this->processMessage($donation_message, 'Donation', 'test');
     $this->assertOneContributionExistsForMessage($donation_message);
