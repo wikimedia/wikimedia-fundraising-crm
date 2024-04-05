@@ -1,44 +1,24 @@
 <?php
 
 use Civi\Api4\Contribution;
+use Civi\WMFAudit\BaseAuditTestCase;
 
 /**
  * @group Braintree
  * @group WmfAudit
  */
-class BraintreeAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
+class BraintreeAuditTest extends BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();
-    $dirs = [
-      'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
-      'braintree_audit_recon_completed_dir' => $this->getTempDir(),
-      'braintree_audit_working_log_dir' => $this->getTempDir(),
-    ];
-
-    foreach ($dirs as $var => $dir) {
-      if (!is_dir($dir)) {
-        mkdir($dir);
-      }
-      variable_set($var, $dir);
-    }
-
-    $old_working = glob($dirs['braintree_audit_working_log_dir'] . '*');
-    foreach ($old_working as $zap) {
-      if (is_file($zap)) {
-        unlink($zap);
-      }
-    }
-
-    variable_set('braintree_audit_log_search_past_days', 7);
-
     // Fakedb doesn't fake the original txn for refunds, so add one here
     $existing = wmf_civicrm_get_contributions_from_gateway_id('braintree', 'dHJhbnNhY3Rpb25fMTYxZXdrMjk');
 
     if ($existing) {
       // Previous test run may have crashed before cleaning up
       $contribution = $existing[0];
-    } else {
+    }
+    else {
       $msg = [
         'gateway' => 'braintree',
         'date' => 1656383927,
@@ -53,10 +33,9 @@ class BraintreeAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
         'last_name' => 'test',
         'payment_method' => 'paypal',
       ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
+      wmf_civicrm_contribution_message_import($msg);
     }
-    $this->contact_id = $contribution['contact_id'];
-    $this->contribution_id = $contribution['id'];
+
     // and another for the dispute
     $existing = wmf_civicrm_get_contributions_from_gateway_id('braintree', 'dHJhbnNhY3Rpb25fa2F4eG1ycjE');
     if ($existing) {
@@ -79,8 +58,6 @@ class BraintreeAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
       ];
       $contribution = wmf_civicrm_contribution_message_import($msg);
     }
-    $this->contact_id = $contribution['contact_id'];
-    $this->contribution_id = $contribution['id'];
 
     $msg = [
       'gateway' => 'braintree',
@@ -174,7 +151,7 @@ class BraintreeAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles($path, $expectedMessages) {
-    variable_set('braintree_audit_recon_files_dir', $path);
+    \Civi::settings()->set('wmf_audit_directory_audit', $path);
 
     $this->runAuditor();
 
@@ -182,7 +159,7 @@ class BraintreeAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
   }
 
   public function testAlreadyRefundedTransactionIsSkipped(): void {
-    variable_set('braintree_audit_recon_files_dir',  __DIR__ . '/data/Braintree/refundNoGatewayIDinCivi/');
+    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Braintree/refundNoGatewayIDinCivi/');
     $expectedMessages = [
       'refund' => []
     ];

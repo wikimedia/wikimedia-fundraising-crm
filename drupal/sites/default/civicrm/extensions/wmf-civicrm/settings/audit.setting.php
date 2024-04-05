@@ -23,7 +23,7 @@ return [
     'title' => E::ts('Working directory for audit process'),
     'description' => E::ts('Files are copied here & unzipped for parsing'),
     'help_text' => '',
-    'default' => '/var/log/',
+    'default' => '/var/log/fundraising',
     'html_type' => 'text',
     'type' => 'String',
     'is_domain' => 1,

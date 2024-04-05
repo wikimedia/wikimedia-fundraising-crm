@@ -23,7 +23,6 @@ abstract class BaseAuditProcessor {
 
   public function __construct($options) {
     $this->options = $options;
-    // FIXME: Copy to confusing global thing.
     $options['submod_prefix'] = $this->name;
     \Civi::$statics['wmf_audit_runtime'] = $options;
   }
@@ -149,6 +148,9 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function get_recon_dir() {
+    if (method_exists($this, 'getIncomingFilesDirectory')) {
+      return $this->getIncomingFilesDirectory();
+    }
     return variable_get($this->name . '_audit_recon_files_dir');
   }
 
@@ -158,6 +160,9 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function get_recon_completed_dir() {
+    if (method_exists($this, 'getCompletedFilesDirectory')) {
+      return $this->getCompletedFilesDirectory();
+    }
     return variable_get($this->name . '_audit_recon_completed_dir');
   }
 
@@ -167,6 +172,9 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function get_working_log_dir() {
+    if (method_exists($this, 'getWorkingLogDirectory')) {
+      return $this->getWorkingLogDirectory();
+    }
     return variable_get($this->name . '_audit_working_log_dir');
   }
 
