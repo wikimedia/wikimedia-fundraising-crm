@@ -199,6 +199,8 @@ function wmf_audit_runtime_options($confusing_thing = NULL) {
 /**
  * Logs the errors we get in a consistent way
  *
+ * @deprecated call $this->logError() on Audit classes.
+ *
  * @param string $message The message we want to log. Should be
  * descriptive enough that we can bug hunt without having to go all cowboy in
  * prod.
