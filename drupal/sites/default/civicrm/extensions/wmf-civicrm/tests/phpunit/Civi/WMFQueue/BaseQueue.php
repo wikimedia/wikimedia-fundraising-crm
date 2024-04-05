@@ -133,9 +133,9 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
    */
   public function getDonationMessage(array $values = [], array $exchangeRates = ['USD' => 1, 'PLN' => 0.5]): array {
     $message = $this->loadMessage('donation');
+    $message['gateway_txn_id'] = mt_rand();
     $contributionTrackingID = mt_rand();
     $message += [
-      'gateway_txn_id' => mt_rand(),
       'order_id' => "$contributionTrackingID.1",
       'contribution_tracking_id' => $contributionTrackingID,
     ];
@@ -220,7 +220,7 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
    *
    * @return array
    */
-  protected function processDonationMessage(array $values): array {
+  protected function processDonationMessage(array $values = []): array {
     $donation_message = $this->getDonationMessage($values);
     $this->processMessage($donation_message, 'Donation', 'test');
     return $donation_message;
@@ -435,6 +435,15 @@ class BaseQueue extends TestCase implements HeadlessInterface, TransactionalInte
     WHERE gateway = '{$message['gateway']}'
     AND gateway_txn_id = '{$message['gateway_txn_id']}'");
     return $result->fetchAll(\PDO::FETCH_ASSOC);
+  }
+
+  /**
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function processContributionTrackingQueue(): void {
+    $this->processQueue('contribution-tracking', 'ContributionTracking');
   }
 
 }
