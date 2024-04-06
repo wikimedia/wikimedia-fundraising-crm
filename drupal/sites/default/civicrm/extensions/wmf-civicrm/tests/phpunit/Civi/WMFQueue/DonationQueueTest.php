@@ -126,38 +126,71 @@ class DonationQueueTest extends BaseQueue {
   }
 
   /**
+   * Process an ordinary (one-time) donation message with an UTF campaign
+   * previously disabled.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testDonationWithDisabledUTFCampaignOption(): void {
+    $optionValue = 'disabled-option-value';
+    $this->createCustomOption('Appeal', $optionValue);
+    OptionValue::update(FALSE)
+      ->addValue('is_active', FALSE)
+      ->addWhere('value', '=', $optionValue)
+      ->execute();
+    $message = $this->processDonationMessage(['utm_campaign' => $optionValue]);
+    $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals($optionValue, $contribution['Gift_Data.Appeal']);
+  }
+
+  /**
+   * Process an ordinary (one-time) donation message with an UTF campaign with
+   * a different label.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function testDonationWithDifferentLabelUTFCampaignOption(): void {
+    $optionValue = 'new option';
+    $this->createCustomOption('Appeal', $optionValue, 'different-label');
+    $message = $this->processDonationMessage(['utm_campaign' => $optionValue]);
+    $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals($optionValue, $contribution['Gift_Data.Appeal']);
+    // Use single() to check that no other option values with this option exist.
+    OptionValue::get(FALSE)->addWhere('value', '=', $optionValue)
+      ->execute()->single();
+  }
+
+  /**
    * Create a custom option for the given field.
    *
    * @param string $fieldName
    * @param string $value
    * @param string $label
-   *   Optional label (otherwise value is used)
-   *
-   * @throws \CRM_Core_Exception
+   *   Optional label (defaults to same as value).
    */
-  public function createCustomOption(string $fieldName, string $value, string $label = '') {
-    $appealField = CustomField::get(FALSE)
-      ->addWhere('name', '=', $fieldName)
-      ->execute()->first();
-    $optionValue = OptionValue::get(FALSE)
-      ->addWhere('option_group_id', '=', $appealField['option_group_id'])
-      ->addWhere('value', '=', $value)
-      ->execute()
-      ->first();
-    if (!$optionValue) {
-      $this->createTestEntity('OptionValue', [
-        'option_group_id' => $appealField['option_group_id'],
-        'name' => $value,
-        'label' => $label ?: $value,
-        'value' => $value,
-        'is_active' => 1,
-      ]);
+  public function createCustomOption(string $fieldName, string $value, string $label = ''): void {
+    try {
+      $appealField = CustomField::get(FALSE)
+        ->addWhere('name', '=', $fieldName)
+        ->execute()->first();
+      $optionValue = OptionValue::get(FALSE)
+        ->addWhere('option_group_id', '=', $appealField['option_group_id'])
+        ->addWhere('value', '=', $value)
+        ->execute()
+        ->first();
+      if (!$optionValue) {
+        $this->createTestEntity('OptionValue', [
+          'option_group_id' => $appealField['option_group_id'],
+          'name' => $value,
+          'label' => $label ?: $value,
+          'value' => $value,
+          'is_active' => 1,
+        ]);
+      }
     }
-    elseif ($optionValue['label'] !== $label) {
-      OptionValue::update(FALSE)
-        ->addWhere('id', '=', $value)
-        ->addValue('label', $label)
-        ->execute();
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('failed to set up Option Value ' . $e->getMessage());
     }
   }
 
