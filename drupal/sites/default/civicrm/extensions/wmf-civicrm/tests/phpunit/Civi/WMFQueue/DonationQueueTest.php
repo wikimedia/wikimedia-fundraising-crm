@@ -4,6 +4,8 @@ namespace Civi\WMFQueue;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
+use Civi\Api4\CustomField;
+use Civi\Api4\OptionValue;
 
 /**
  * @group queues
@@ -97,6 +99,66 @@ class DonationQueueTest extends BaseQueue {
       'Gift_Data.Campaign' => 'Online Gift',
     ];
     $this->assertExpectedContributionValues($expected, $message['gateway_txn_id']);
+  }
+
+
+  /**
+   * Process an ordinary (one-time) donation message with an UTF campaign.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testDonationWithUTFCampaignOption(): void {
+    $this->createCustomOption('Appeal', 'EmailCampaign1');
+    $message = $this->processDonationMessage(['utm_campaign' => 'EmailCampaign1']);
+    $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals('EmailCampaign1', $contribution['Gift_Data.Appeal']);
+  }
+
+  /**
+   * Process an ordinary (one-time) donation message with an UTF campaign not
+   * already existing.
+   */
+  public function testDonationWithInvalidUTFCampaignOption(): void {
+    $optionValue = 'made-up-option-value';
+    $message = $this->processDonationMessage(['utm_campaign' => $optionValue]);
+    $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals($optionValue, $contribution['Gift_Data.Appeal']);
+  }
+
+  /**
+   * Create a custom option for the given field.
+   *
+   * @param string $fieldName
+   * @param string $value
+   * @param string $label
+   *   Optional label (otherwise value is used)
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function createCustomOption(string $fieldName, string $value, string $label = '') {
+    $appealField = CustomField::get(FALSE)
+      ->addWhere('name', '=', $fieldName)
+      ->execute()->first();
+    $optionValue = OptionValue::get(FALSE)
+      ->addWhere('option_group_id', '=', $appealField['option_group_id'])
+      ->addWhere('value', '=', $value)
+      ->execute()
+      ->first();
+    if (!$optionValue) {
+      $this->createTestEntity('OptionValue', [
+        'option_group_id' => $appealField['option_group_id'],
+        'name' => $value,
+        'label' => $label ?: $value,
+        'value' => $value,
+        'is_active' => 1,
+      ]);
+    }
+    elseif ($optionValue['label'] !== $label) {
+      OptionValue::update(FALSE)
+        ->addWhere('id', '=', $value)
+        ->addValue('label', $label)
+        ->execute();
+    }
   }
 
   /**

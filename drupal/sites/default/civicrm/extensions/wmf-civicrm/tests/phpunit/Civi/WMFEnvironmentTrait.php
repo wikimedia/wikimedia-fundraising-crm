@@ -6,6 +6,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
+use Civi\Api4\OptionValue;
 use Civi\Api4\PaymentToken;
 use Civi\Omnimail\MailFactory;
 use SmashPig\Core\Context;
@@ -65,6 +66,10 @@ trait WMFEnvironmentTrait {
     if (!empty($this->ids['Contribution'])) {
       Contribution::delete(FALSE)->addWhere('id', 'IN', $this->ids['Contribution'])->execute();
     }
+    if (!empty($this->ids['OptionValue'])) {
+      OptionValue::delete(FALSE)->addWhere('id', 'IN', $this->ids['OptionValue'])->execute();
+    }
+    OptionValue::delete(FALSE)->addWhere('value', '=', 'made-up-option-value')->execute();
     $this->cleanupContact(['last_name' => 'McTest']);
     $this->cleanupContact(['last_name' => 'Mouse']);
     $this->cleanupContact(['last_name' => 'Russ']);
