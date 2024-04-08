@@ -443,7 +443,7 @@ function check_recur_modification_and_queue(array $recur_record, array $msg): vo
     if ($msg['original_gross'] < $recur_amount) {
       $msg['txn_type'] = 'recurring_downgrade';
     }
-    QueueWrapper::push('recurring', $msg);
+    QueueWrapper::push('recurring-upgrade', $msg);
   }
 }
 

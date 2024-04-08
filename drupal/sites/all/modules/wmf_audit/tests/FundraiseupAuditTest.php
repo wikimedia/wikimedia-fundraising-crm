@@ -6,6 +6,7 @@ use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFQueue\DonationQueueConsumer;
 use Civi\WMFQueue\RefundQueueConsumer;
 use Civi\WMFQueue\RecurringQueueConsumer;
+use Civi\WMFQueue\RecurringModifyAmountQueueConsumer;
 
 /**
  * @group Fundraiseup
@@ -614,8 +615,8 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $this->runAuditor();
     $dqc = new DonationQueueConsumer('test');
     $queue = QueueWrapper::getQueue('donations');
-    $rqc = new RecurringQueueConsumer(
-      'recurring'
+    $rqc = new RecurringModifyAmountQueueConsumer(
+      'recurring-upgrade'
     );
     $count = 0;
     $messages = [];
@@ -661,8 +662,8 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $this->runAuditor();
     $dqc = new DonationQueueConsumer('test');
     $queue = QueueWrapper::getQueue('donations');
-    $rqc = new RecurringQueueConsumer(
-      'recurring'
+    $rqc = new RecurringModifyAmountQueueConsumer(
+      'recurring-upgrade'
     );
     $count = 0;
     $messages = [];
