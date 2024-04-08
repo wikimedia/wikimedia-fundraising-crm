@@ -1,6 +1,4 @@
 name = Banner history
-description = Imports associated banner history log IDs and contribution tracking IDs.
+description = Adds table for tracking banner history, table to be removed next maintenance window.
 core = 7.x
 package = queue2civicrm
-configure = admin/config/queue2civicrm/banner_history
-dependencies[] = queue2civicrm
