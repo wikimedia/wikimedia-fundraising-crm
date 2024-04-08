@@ -1997,6 +1997,23 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
+   * Allow manual creation of 'Recurring Upgrade Decline' activities
+   *
+   * Bug: T362087
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4460(): bool {
+    CRM_Core_DAO::executeQuery('
+    UPDATE civicrm_option_value
+    SET is_reserved = 0, filter = 0
+    WHERE name=\'Recurring Upgrade Decline\'
+    ');
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
