@@ -15,7 +15,6 @@ large_donation
 metrics_reporting
 offline2civicrm
 queue2civicrm
-recurring
 redis
 syslog
 thank_you
