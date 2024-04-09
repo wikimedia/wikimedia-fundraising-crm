@@ -208,9 +208,9 @@ class DonationMessage extends Message {
     $msg['original_gross'] = $this->getOriginalAmount();
     $msg['original_currency'] = $this->getOriginalCurrency();;
     $msg['currency'] = $this->getSettlementCurrency();
-    $msg['fee'] = $this->getUsdFeeAmountRounded();
-    $msg['gross'] = $this->getUsdAmountRounded();
-    $msg['net'] = $this->getUsdNetAmountRounded();
+    $msg['fee'] = $this->getSettledFeeAmountRounded();
+    $msg['gross'] = $this->getSettledAmountRounded();
+    $msg['net'] = $this->getSettledNetAmountRounded();
 
     return $msg;
   }
@@ -306,46 +306,46 @@ class DonationMessage extends Message {
   /**
    * Get the donation amount as we receive it in the settled currency.
    */
-  public function getUsdAmount(): float {
+  public function getSettledAmount(): float {
     return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
   }
 
-  public function getUsdAmountRounded(): string {
-    return $this->round($this->getUsdAmount(), $this->getSettlementCurrency());
+  public function getSettledAmountRounded(): string {
+    return $this->round($this->getSettledAmount(), $this->getSettlementCurrency());
   }
 
   /**
    * Get the fee amount charged by the processing gateway, when available
    */
-  public function getUsdFeeAmount(): float {
+  public function getSettledFeeAmount(): float {
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
       return $this->cleanMoney($this->message['fee']) * $this->getConversionRate();
     }
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
-      return $this->getUsdAmount() - $this->getUsdNetAmount();
+      return $this->getSettledAmount() - $this->getSettledNetAmount();
     }
     return 0.00;
   }
 
-  public function getUsdFeeAmountRounded(): string {
-    return $this->round($this->getUsdFeeAmount(), $this->getSettlementCurrency());
+  public function getSettledFeeAmountRounded(): string {
+    return $this->round($this->getSettledFeeAmount(), $this->getSettlementCurrency());
   }
 
   /**
    * Get amount less any fee charged by the processor.
    */
-  public function getUsdNetAmount(): float {
+  public function getSettledNetAmount(): float {
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
       return $this->cleanMoney($this->message['net']) * $this->getConversionRate();
     }
     if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
-      return $this->getUsdAmount() - $this->getUsdFeeAmount();
+      return $this->getSettledAmount() - $this->getSettledFeeAmount();
     }
-    return $this->getUsdAmount();
+    return $this->getSettledAmount();
   }
 
-  public function getUsdNetAmountRounded(): string {
-    return $this->round($this->getUsdNetAmount(), $this->getSettlementCurrency());
+  public function getSettledNetAmountRounded(): string {
+    return $this->round($this->getSettledNetAmount(), $this->getSettlementCurrency());
   }
 
   /**
@@ -476,7 +476,7 @@ class DonationMessage extends Message {
       $errors[] = 'Required field/s missing from message: ' . implode(', ', $missingFields);
     }
 
-    if ($this->getUsdNetAmount() <= 0 || $this->getUsdAmount() <= 0) {
+    if ($this->getSettledNetAmount() <= 0 || $this->getSettledAmount() <= 0) {
       $errors[] = "Positive amount required.";
     }
 
