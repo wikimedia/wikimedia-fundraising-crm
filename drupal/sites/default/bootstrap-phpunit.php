@@ -8,7 +8,6 @@ define('WMF_CRM_PHPUNIT', TRUE);
 define('CIVICRM_TEST', TRUE);
 define('DRUPAL_ROOT', __DIR__ . "/../../../drupal");
 require_once(__DIR__ . "/../all/modules/wmf_common/tests/includes/BaseWmfDrupalPhpUnitTestCase.php");
-require_once(__DIR__ . "/../all/modules/wmf_audit/tests/includes/BaseAuditTestCase.php");
 require_once(__DIR__ . "/../all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php");
 require_once(__DIR__ . "/../../../vendor/mrmarkfrench/silverpop-php-connector/test/tests/BaseTestClass.php");
 require_once(__DIR__ . "/../../../vendor/mrmarkfrench/silverpop-php-connector/test/tests/SilverpopBaseTestClass.php");

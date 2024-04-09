@@ -199,16 +199,18 @@ function wmf_audit_echo($echo, $verbose = FALSE) {
  * $confusing_thing is neither an array nor null)
  */
 function wmf_audit_runtime_options($confusing_thing = NULL) {
-  static $args = [];
+  if (!isset(\Civi::$statics['wmf_audit_runtime'])) {
+    \Civi::$statics['wmf_audit_runtime'] = [];
+  }
   if (is_array($confusing_thing)) { //we're setting up the function for later use, and $confusing_thing is the array of current settings.
-    $args = $confusing_thing;
+    \Civi::$statics['wmf_audit_runtime'] = $confusing_thing;
     return TRUE;
   }
   elseif (is_null($confusing_thing)) { //we want all the settings
-    return $args;
+    return \Civi::$statics['wmf_audit_runtime'];
   }
-  elseif (array_key_exists($confusing_thing, $args)) { //we are after a specific setting
-    return $args[$confusing_thing];
+  elseif (array_key_exists($confusing_thing, \Civi::$statics['wmf_audit_runtime'])) { //we are after a specific setting
+    return \Civi::$statics['wmf_audit_runtime'][$confusing_thing];
   }
   return FALSE;
 }

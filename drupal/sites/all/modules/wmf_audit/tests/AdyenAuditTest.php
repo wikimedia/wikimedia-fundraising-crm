@@ -6,7 +6,7 @@ use Civi\WMFException\WMFException;
  * @group Adyen
  * @group WmfAudit
  */
-class AdyenAuditTest extends BaseAuditTestCase {
+class AdyenAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
   protected $idForRefundTest;
 
   public function setUp(): void {

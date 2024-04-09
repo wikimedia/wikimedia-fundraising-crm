@@ -7,7 +7,9 @@ use SmashPig\PaymentProviders\Amazon\Tests\AmazonTestConfiguration;
  * @group Amazon
  * @group WmfAudit
  */
-class AmazonAuditTest extends BaseAuditTestCase {
+class AmazonAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
+
+  use \Civi\Test\Api3TestTrait;
 
   protected $contact_id;
 

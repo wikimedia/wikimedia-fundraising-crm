@@ -225,23 +225,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     }
   }
 
-  /**
-   * Create a temporary directory and return the name
-   *
-   * @return string|boolean directory path if creation was successful, or false
-   */
-  protected function getTempDir() {
-    $tempFile = tempnam(sys_get_temp_dir(), 'wmfDrupalTest_');
-    if (file_exists($tempFile)) {
-      unlink($tempFile);
-    }
-    mkdir($tempFile);
-    if (is_dir($tempFile)) {
-      return $tempFile . '/';
-    }
-    return FALSE;
-  }
-
   public function cleanUpContact($contactId) {
     $contributions = $this->callAPISuccess('Contribution', 'get', [
       'contact_id' => $contactId,
