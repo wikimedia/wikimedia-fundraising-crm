@@ -1135,26 +1135,6 @@ function wmf_civicrm_get_contributions_from_contribution_id($contribution_id) {
   return wmf_civicrm_dao_to_list($dao);
 }
 
-/**
- * Checks to see whether a contribution is refunded or charged back by gateway
- * and gateway transaction id.
- *
- * @param string $gateway
- * @param string $gateway_txn_id
- *
- * @return bool true if contribution exists and is refunded or charged back,
- *   else false
- */
-function wmf_civicrm_is_refunded_by_gateway_id($gateway, $gateway_txn_id) {
-  $contributions = wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id);
-  if (!$contributions) {
-    return FALSE;
-  }
-  return CRM_Contribute_BAO_Contribution::isContributionStatusNegative(
-    $contributions[0]['contribution_status_id']
-  );
-}
-
 function wmf_civicrm_boost_performance() {
   civicrm_initialize();
   $config = CRM_Core_Config::singleton();

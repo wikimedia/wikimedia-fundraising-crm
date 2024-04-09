@@ -28,13 +28,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   public function processMessage($message) {
-    $txn_upgrade_recur = ['recurring_upgrade', 'recurring_upgrade_decline', 'recurring_downgrade'];
-    if (isset($message['txn_type']) && in_array($message['txn_type'], $txn_upgrade_recur, TRUE)) {
-      // Transitional handling while we update process control.
-      $consumer = new RecurringModifyAmountQueueConsumer($this->queueName, $this->timeLimit, $this->messageLimit, $this->waitForNewMessages);
-      $consumer->processMessage($message);
-      return;
-    }
 
     if (!empty($message['is_successful_autorescue']) && $message['is_successful_autorescue'] === TRUE) {
       $recur_record = ContributionRecur::get(FALSE)
