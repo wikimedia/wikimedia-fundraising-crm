@@ -368,7 +368,14 @@ abstract class BaseAuditProcessor {
   protected function negative_transaction_exists_in_civi($transaction) {
     $positive_txn_id = $this->get_parent_order_id($transaction);
     $gateway = $transaction['gateway'];
-    return wmf_civicrm_is_refunded_by_gateway_id($gateway, $positive_txn_id);
+
+    $contributions = wmf_civicrm_get_contributions_from_gateway_id($gateway, $positive_txn_id);
+    if (!$contributions) {
+      return FALSE;
+    }
+    return CRM_Contribute_BAO_Contribution::isContributionStatusNegative(
+      $contributions[0]['contribution_status_id']
+    );
   }
 
   protected function get_runtime_options($name) {
