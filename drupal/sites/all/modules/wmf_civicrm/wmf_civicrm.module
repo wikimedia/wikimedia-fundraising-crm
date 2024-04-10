@@ -628,40 +628,6 @@ function _wmf_civicrm_message_contribution_insert($msg) {
 }
 
 /**
- * Throw an exception if a contribution already exists
- *
- * @param array $message
- *
- * @throws \Civi\WMFException\WMFException
- */
-function wmf_civicrm_check_for_duplicates(array $message) {
-  if (
-    empty($message['gateway']) ||
-    empty($message['gateway_txn_id'])
-  ) {
-    throw new WMFException(
-      WMFException::CIVI_REQ_FIELD,
-      'Missing required field: ' .
-      (empty($message['gateway']) ? 'gateway, ' : '') .
-      (empty($message['gateway_trxn_id']) ? 'gateway_trxn_id, ' : '')
-    );
-  }
-
-  if (CRM_Core_DAO::singleValueQuery(
-    'SELECT count(*)
-    FROM wmf_contribution_extra cx
-    WHERE gateway = %1 AND gateway_txn_id = %2', [
-    1 => [$message['gateway'], 'String'],
-    2 => [$message['gateway_txn_id'], 'String'],
-  ])) {
-    throw new WMFException(
-      WMFException::DUPLICATE_CONTRIBUTION,
-      'Contribution already exists. Ignoring message.'
-    );
-  }
-}
-
-/**
  * Check if the language string exists.
  *
  * @param string $languageAbbreviation
