@@ -34,7 +34,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @var array
    */
-  protected $fieldsToIgnore = [
+  protected array $fieldsToIgnore = [
     'address_id',
     'contact_id',
     'cancel_date',
@@ -57,7 +57,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     'is_template',
   ];
 
-  protected $moneyFields = [
+  protected array $moneyFields = [
     'total_amount',
     'source',
     'net_amount',
@@ -90,8 +90,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param array $msg
    * @param array $expected
    *
-   * @throws \CiviCRM_API3_Exception
-   * @throws \Civi\WMFException\WMFException
+   * @throws CRM_Core_Exception
    */
   public function testMessageInsert(array $msg, array $expected): void {
     if (!empty($msg['contribution_recur_id'])) {
@@ -166,8 +165,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param array $params
    *
    * @return int
+   * @throws CRM_Core_Exception
    */
-  protected function createRecurringContribution($params = []): int {
+  protected function createRecurringContribution(array $params = []): int {
     $this->ids['ContributionRecur']['import'] = ContributionRecur::create(FALSE)->setValues(array_merge([
       'amount' => '2.34',
       'currency' => 'USD',
@@ -205,14 +205,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * Data provider for import test.
    *
    * @return array
-   *
-   * @throws \Civi\WMFException\WMFException
    */
   public function messageProvider(): array {
 
-    $financial_type_cash = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
-    $payment_instrument_cc = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Credit Card: Visa');
-    $payment_instrument_check = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Check');
+    $financial_type_cash = (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
+    $payment_instrument_cc = (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Credit Card: Visa');
+    $payment_instrument_check = (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Check');
 
     $gateway_txn_id = mt_rand();
     $check_number = (string) mt_rand();
@@ -606,7 +604,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
             // Internally I have set it to reduce multiple ideographic space to only one.
             // However, I've had second thoughts about my earlier update change to
             // convert them as they are formatted differently & the issue was not the
-            // existance of them but the strings of several of them in a row.
+            // existence of them but the strings of several of them in a row.
             'first_name' => 'Jack &amp; Jill',
             'middle_name' => 'Jack &Amp; Jill',
             'last_name' => 'Jack & Jill',
@@ -844,7 +842,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * Test importing to a group.
    *
    * @throws \CRM_Core_Exception
-   * @throws \Civi\WMFException\WMFException
    */
   public function testImportContactGroups(): void {
     $this->createGroup('in_group');
@@ -870,6 +867,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param string $name
    *
    * @return int
+   * @throws CRM_Core_Exception
    */
   protected function createGroup(string $name): int {
     $group = civicrm_api3('Group', 'get', ['title' => $name]);
@@ -890,7 +888,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Test that existing on hold setting is retained.
    *
-   * @throws \Civi\WMFException\WMFException
+   * @throws WMFException
    */
   public function testKeepOnHold(): void {
     $contactID = $this->createIndividual();
@@ -931,7 +929,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Test that existing on hold setting is removed if the email changes.
    *
-   * @throws \Civi\WMFException\WMFException
+   * @throws WMFException
    */
   public function testRemoveOnHoldWhenUpdating() {
     $contactID = $this->createIndividual();
@@ -998,10 +996,11 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * When we get a contact ID and matching hash and email, update instead of
    * creating new contact.
    *
-   * @throws \Civi\WMFException\WMFException
-   * @throws \CRM_Core_Exception
+   * @throws CRM_Core_Exception
+   * @throws WMFException
+   * @throws StatisticsCollectorException
    */
-  public function testImportWithContactIdAndHash() {
+  public function testImportWithContactIdAndHash(): void {
     $existingContact = $this->callAPISuccess('Contact', 'Create', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
@@ -1060,7 +1059,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * If we get a contact ID and a bad hash, leave the existing contact alone
    *
-   * @throws \Civi\WMFException\WMFException
+   * @throws WMFException
    * @throws \CRM_Core_Exception
    */
   public function testImportWithContactIdAndBadHash() {
@@ -1113,10 +1112,11 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * If we get a contact ID and a bad email, leave the existing contact alone
    *
-   * @throws \Civi\WMFException\WMFException
-   * @throws \CRM_Core_Exception
+   * @throws CRM_Core_Exception
+   * @throws StatisticsCollectorException
+   * @throws WMFException
    */
-  public function testImportWithContactExisting() {
+  public function testImportWithContactExisting(): void {
     $existingContact = $this->callAPISuccess('Contact', 'Create', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
@@ -1189,8 +1189,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * If we get a matching contact email, add missing name fields from the message
    *
-   * @throws \Civi\WMFException\WMFException
-   * @throws \CRM_Core_Exception
+   * @throws WMFException
+   * @throws \CRM_Core_Exception|StatisticsCollectorException
    */
   public function testAddMissingNameWithContactExisting() {
     $existingContact = $this->callAPISuccess('Contact', 'Create', [
@@ -1377,10 +1377,10 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param string $sourceType
    * @param bool $isUpdate
    * @param ?bool $expected
-   * @throws API_Exception
-   * @throws CiviCRM_API3_Exception
+   *
+   * @throws CRM_Core_Exception
+   * @throws StatisticsCollectorException
    * @throws WMFException
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function testIndicatesEmployerProvidedByDonor(string $sourceType, bool $isUpdate, ?bool $expected) {
     $orgContact = $this->callAPISuccess('Contact', 'create', array(
@@ -1460,13 +1460,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @dataProvider messageProvider
    *
    * @param array $msg
-   * @param array $expected
-   *
-   * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
-   * @throws \Civi\WMFException\WMFException
+   * @throws CRM_Core_Exception
    */
-  public function testMessageImportStatsCreatedOnImport($msg, $expected) {
+  public function testMessageImportStatsCreatedOnImport(array $msg): void {
     if (!empty($msg['contribution_recur_id'])) {
       $msg['contact_id'] = $this->createIndividual();
       $msg['contribution_recur_id'] = $this->createRecurringContribution(['contact_id' => $msg['contact_id']]);
@@ -1490,13 +1486,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param array $expected
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
-   * @throws \Civi\WMFException\WMFException
    */
-  public function testMessageImportStatsProcessingRatesGenerated(
-    $msg,
-    $expected
-  ) {
+  public function testMessageImportStatsProcessingRatesGenerated(array $msg, array $expected) {
     if (!empty($msg['contribution_recur_id'])) {
       $msg['contact_id'] = $this->createIndividual();
       $msg['contribution_recur_id'] = $this->createRecurringContribution(['contact_id' => $msg['contact_id']]);
@@ -1526,12 +1517,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * timer is started twice for the same stat.
    *
    * Previously this would fail and convert the 'start' stat into an
-   * array but now we protect against this by disregrding any existing
+   * array, but now we protect against this by disregarding any existing
    * start timestamps for timers that are started again.
    *
    * @see https://phabricator.wikimedia.org/T289175
    */
-  public function testMessageImportStatsResetStartTimer() {
+  public function testMessageImportStatsResetStartTimer(): void {
     $this->markTestSkipped('flapping');
     $importStatsCollector = ImportStatsCollector::getInstance();
     $emptyStats = $importStatsCollector->getAllStats();
@@ -1569,7 +1560,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param array $array1
    * @param array $array2
    */
-  public function assertComparable($array1, $array2) {
+  public function assertComparable(array $array1, array $array2) {
     $this->reformatMoneyFields($array1);
     $this->reformatMoneyFields($array2);
     $array1 = $this->filterIgnoredFieldsFromArray($array1);
@@ -1597,11 +1588,10 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param string $gateway_txn_id
    *
    * @return array
-   * @throws \Civi\WMFException\WMFException
    */
-  protected function getBaseContribution($gateway_txn_id): array {
-    $financial_type_cash = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
-    $payment_instrument_cc = (int) CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Credit Card: Visa');
+  protected function getBaseContribution(string $gateway_txn_id): array {
+    $financial_type_cash = (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
+    $payment_instrument_cc = (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Credit Card: Visa');
     return [
       'address_id' => '',
       'amount_level' => '',
@@ -1637,7 +1627,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @param array $array
    */
-  public function reformatMoneyFields(&$array) {
+  public function reformatMoneyFields(array &$array) {
     foreach ($array as $field => $value) {
       if (in_array($field, $this->moneyFields, TRUE)) {
         $array[$field] = str_replace(',', '', $value);
@@ -1652,7 +1642,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function filterIgnoredFieldsFromArray($array): array {
+  public function filterIgnoredFieldsFromArray(array $array): array {
     return array_diff_key($array, array_flip($this->fieldsToIgnore));
   }
 
