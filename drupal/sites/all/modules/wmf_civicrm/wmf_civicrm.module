@@ -263,8 +263,7 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   }
 
   // Make new recurring record if necessary
-  $initial_recurring = ($msg['recurring'] && !$msg['contribution_recur_id']);
-  if ($initial_recurring) {
+  if ($message->isRecurring() && !$message->getContributionRecurID()) {
     $recurring_transaction_id = "";
     if ($msg['subscr_id']) {
       $recurring_transaction_id = $msg['subscr_id'];
@@ -281,17 +280,9 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
     $message->setContributionRecurID($recur_record->id);
   }
 
-  // Set no_thank_you to recurring if its the 2nd+ of any recurring payments
-  if (!$initial_recurring && $message->getContributionRecurID()) {
-    //check for previous recurring payments
-    $recurring_check = civicrm_api3('Contribution', 'getcount', [
-      'contribution_recur_id' => $msg['contribution_recur_id'],
-    ]);
-
-    //If there's at least 1, set no_thank_you to recurring
-    if ($recurring_check >= 1) {
-      $msg['no_thank_you'] = 'recurring';
-    }
+  // Set no_thank_you to recurring if it's the 2nd+ of any recurring payments
+  if ($message->getRecurringPriorContributionValue('id')) {
+    $msg['no_thank_you'] = 'recurring';
   }
 
   // Insert the contribution record.
@@ -299,7 +290,7 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
 
   if (!$message->isMatchingGiftContribution()
     && $message->getContributionTrackingID()
-    && wmf_civicrm_should_update_contribution_tracking($msg, $initial_recurring)) {
+    && !$message->getRecurringPriorContributionValue('id')) {
     QueueWrapper::push('contribution-tracking', [
       'id' => $message->getContributionTrackingID(),
       'contribution_id' => $contribution['id'],

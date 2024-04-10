@@ -209,12 +209,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
      */
     $ctRecord = wmf_civicrm_get_contribution_tracking($msg);
     if (empty($ctRecord['contribution_id'])) {
-      // TODO: this scenario should be handled by the wmf_civicrm_contribution_message_import function.
-
-      // Map the tracking record to the CiviCRM contribution
-      wmf_civicrm_message_update_contribution_tracking($msg, $contribution);
-
-      // update the contact
+      // update the contact - it's not clear that this is needed
+      // as the call to wmf_civicrm_contribution_message_import
+      // will do it.
       $this->updateContact($msg, $recur_record->contact_id);
     }
 
