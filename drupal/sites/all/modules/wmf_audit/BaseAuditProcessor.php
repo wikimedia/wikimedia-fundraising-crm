@@ -25,7 +25,7 @@ abstract class BaseAuditProcessor {
     $this->options = $options;
     // FIXME: Copy to confusing global thing.
     $options['submod_prefix'] = $this->name;
-    wmf_audit_runtime_options($options);
+    \Civi::$statics['wmf_audit_runtime'] = $options;
   }
 
   /**
