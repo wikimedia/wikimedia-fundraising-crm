@@ -28,6 +28,17 @@ class Message {
   protected array $message;
 
   /**
+   * Contribution Tracking ID.
+   *
+   * This contains the ID of the contribution Tracking record if it was looked up
+   * or set from external code rather than passed in. We keep the original $message array unchanged but
+   * track the value here to avoid duplicate lookups.
+   *
+   * @var int|null
+   */
+  protected ?int $contributionTrackingID;
+
+  /**
    * Constructor.
    */
   public function __construct(array $message) {
@@ -37,6 +48,19 @@ class Message {
         $this->message[$key] = trim($input);
       }
     }
+  }
+
+  /**
+   * Set the contribution tracking ID.
+   *
+   * This would be used when the calling code has created a missing contribution
+   * tracking ID.
+   *
+   * @param int|null $contributionTrackingID
+   * @return void
+   */
+  public function setContributionTrackingID(?int $contributionTrackingID): void{
+    $this->contributionTrackingID = $contributionTrackingID;
   }
 
   protected function cleanMoney($value): float {
@@ -133,6 +157,18 @@ class Message {
 
   public function getGateway(): string {
     return trim($this->message['gateway']);
+  }
+
+  /**
+   * Get the contribution tracking ID if it already exists.
+   *
+   * @return int|null
+   */
+  public function getContributionTrackingID(): ?int {
+    if (isset($this->contributionTrackingID)) {
+      return $this->contributionTrackingID;
+    }
+    return !empty($this->message['contribution_tracking_id']) ? (int) $this->message['contribution_tracking_id'] : NULL;
   }
 
 }

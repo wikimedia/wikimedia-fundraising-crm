@@ -14,7 +14,7 @@ class RecurDonationMessage extends DonationMessage {
    * Contribution recur ID.
    *
    * This contains the ID of the contribution Recur record if it was looked up
-   * rather than passed in. We keep the original $message array unchanged but
+   * or set from external code rather than passed in. We keep the original $message array unchanged but
    * track the value here to avoid duplicate lookups.
    *
    * @var int|null
@@ -174,6 +174,19 @@ class RecurDonationMessage extends DonationMessage {
     }
 
     return $subscriberID ?: NULL;
+  }
+
+  /**
+   * Set the contribution Recur ID.
+   *
+   * This would be used when the calling code has created a missing contribution
+   * recur.
+   *
+   * @param int|null $contributionRecurID
+   * @return void
+   */
+  public function setContributionRecurID(?int $contributionRecurID): void{
+    $this->contributionRecurID = $contributionRecurID;
   }
 
 }

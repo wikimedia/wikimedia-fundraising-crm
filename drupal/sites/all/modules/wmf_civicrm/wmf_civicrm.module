@@ -196,7 +196,10 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   _get_import_timer()->startImportTimer("verify_and_stage");
   $msg = $message->normalize();
   $message->validate();
-  $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
+  if (!$message->getContributionTrackingID()) {
+    $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
+    $message->setContributionTrackingID($msg['contribution_tracking_id'] ?? NULL);
+  }
   _get_import_timer()->endImportTimer("verify_and_stage");
 
   $createRecurringToken = FALSE;
@@ -275,6 +278,7 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
     _message_contribution_recur_insert($msg, $recurring_transaction_id);
     $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $recurring_transaction_id);
     $msg['contribution_recur_id'] = $recur_record->id;
+    $message->setContributionRecurID($recur_record->id);
   }
 
   // Look up soft credit contact.
@@ -296,7 +300,7 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   }
 
   // Set no_thank_you to recurring if its the 2nd+ of any recurring payments
-  if (!$initial_recurring && $msg['contribution_recur_id']) {
+  if (!$initial_recurring && $message->getContributionRecurID()) {
     //check for previous recurring payments
     $recurring_check = civicrm_api3('Contribution', 'getcount', [
       'contribution_recur_id' => $msg['contribution_recur_id'],
@@ -311,10 +315,14 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   // Insert the contribution record.
   $contribution = _message_contribution_insert($msg);
 
-  if (wmf_civicrm_should_update_contribution_tracking($msg, $initial_recurring)) {
-    // Map the tracking record to the CiviCRM contribution
-    // @FIXME what do we do if this returns false?  nothing at the moment...
-    wmf_civicrm_message_update_contribution_tracking($msg, $contribution);
+  if (!$message->isMatchingGiftContribution()
+    && $message->getContributionTrackingID()
+    && wmf_civicrm_should_update_contribution_tracking($msg, $initial_recurring)) {
+    QueueWrapper::push('contribution-tracking', [
+      'id' => $message->getContributionTrackingID(),
+      'contribution_id' => $contribution['id'],
+    ]);
+    \Civi::log('wmf')->info('wmf_civicrm: Queued update to contribution_tracking for {id}', ['id' => $message->getContributionTrackingID()]);
   }
 
   if (!empty($msg['notes'])) {

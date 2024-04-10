@@ -67,13 +67,6 @@ function wmf_civicrm_should_update_contribution_tracking(array $msg, bool $isIni
     return TRUE;
   }
 
-  // Do not update the contribution tracking record for matching gift contributions.
-  // Note: we don't need to check this as it will return false for these cases by default.
-  // I guess leaving it here makes that intention more explicit.
-  if (isMatchingGiftContribution($msg['gateway_txn_id'])) {
-    return FALSE;
-  }
-
   // Update the contribution tracking record for initial(first) recurring contributions
   if ($isInitialRecurring) {
     return TRUE;
@@ -98,15 +91,6 @@ function isInitialIndiaRecurringContribution(array $msg) : bool {
   $recurring_payment_token = $msg['recurring_payment_token'] ?? NULL;
 
   return in_array($payment_submethod, [ 'upi', 'paytmwallet' ], true) && !empty($recurring_payment_token);
-}
-
-/**
- * @param $gateway_txn_id
- *
- * @return false|string
- */
-function isMatchingGiftContribution($gateway_txn_id) {
-  return stristr($gateway_txn_id, '_matched');
 }
 
 function wmf_civicrm_get_contribution_tracking($msg) {
