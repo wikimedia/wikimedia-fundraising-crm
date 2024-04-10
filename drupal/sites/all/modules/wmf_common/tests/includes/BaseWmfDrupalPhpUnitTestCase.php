@@ -4,13 +4,15 @@
 // include path is not yet fixed so otherwise the require_once in that file will fail.
 set_include_path(__DIR__ . '/../../../civicrm' . PATH_SEPARATOR . get_include_path());
 require_once __DIR__ . '/../../../civicrm/Civi/Test/Api3TestTrait.php';
+require_once __DIR__ . '/../../../civicrm/Civi/Test/EntityTrait.php';
+require_once __DIR__ . '/../../../../../default/civicrm/extensions/wmf-civicrm/tests/phpunit/Civi/WMFEnvironmentTrait.php';
 
 use Civi\Api4\Contribution;
-use Civi\Api4\ContributionTracking;
 use Civi\Test\Api3TestTrait;
+use Civi\Test\EntityTrait;
+use Civi\WMFEnvironmentTrait;
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFQueue\ContributionTrackingQueueConsumer;
-use SmashPig\Core\Context;
 use SmashPig\Core\SequenceGenerators\Factory;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
@@ -20,8 +22,9 @@ use Civi\WMFException\WMFException;
 use Civi\Omnimail\MailFactory;
 
 class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
-
+  use WMFEnvironmentTrait;
   use Api3TestTrait;
+  use EntityTrait;
 
   protected $startTimestamp;
 
@@ -53,14 +56,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    */
   public function setUp(): void {
     parent::setUp();
-    // Since we can't kill jobs on jenkins this prevents a loop from going
-    // on for too long....
-    set_time_limit(180);
-
-    // Initialize SmashPig with a fake context object
-    $config = TestingGlobalConfiguration::create();
-    TestingContext::init($config);
-    $this->setUpCtSequence();
+    $this->setUpWMFEnvironment();
 
     if (!defined('DRUPAL_ROOT')) {
       throw new Exception("Define DRUPAL_ROOT somewhere before running unit tests.");
@@ -116,14 +112,8 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     foreach ($this->ids as $entity => $entityIDs) {
       foreach ($entityIDs as $entityID) {
         try {
-          if ($entity === 'Contact') {
-            $this->cleanUpContact($entityID);
-          }
-          elseif ($entity === 'PaymentProcessor') {
+          if ($entity === 'PaymentProcessor') {
             $this->cleanupPaymentProcessor($entityID);
-          }
-          elseif ($entity === 'ContributionTracking') {
-            ContributionTracking::delete(FALSE)->addWhere('id', '=', $entityID)->execute();
           }
           elseif ($entity === 'Contribution') {
             $this->cleanupContribution($entityID);
@@ -134,14 +124,12 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
             ]);
           }
         }
-        catch (CiviCRM_API3_Exception $e) {
+        catch (CRM_Core_Exception $e) {
           // No harm done - it was a best effort cleanup
         }
       }
     }
-
-    TestingDatabase::clearStatics();
-    Context::set(NULL); // Nullify any SmashPig context for the next run
+    $this->tearDownWMFEnvironment();
     parent::tearDown();
     // Check we cleaned up properly. This check exists to ensure we don't add tests that
     // leave test contacts behind as over time they cause problems in our dev dbs.
@@ -191,10 +179,9 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
    * @param array $params
    *
    * @return int
-   * @throws \CRM_Core_Exception
    */
   public function createTestContact($params): int {
-    $id = (int) $this->callAPISuccess('Contact', 'create', $params)['id'];
+    $id = (int) $this->createTestEntity('Contact', $params)['id'];
     $this->ids['Contact'][$id] = $id;
     return $id;
   }
@@ -223,21 +210,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     foreach ($rates as $currency => $rate) {
       exchange_rate_cache_set($currency, $timestamp, $rate);
     }
-  }
-
-  public function cleanUpContact($contactId) {
-    $contributions = $this->callAPISuccess('Contribution', 'get', [
-      'contact_id' => $contactId,
-    ]);
-    if (!empty($contributions['values'])) {
-      foreach ($contributions['values'] as $id => $details) {
-        $this->cleanupContribution($id);
-      }
-    }
-    $this->callAPISuccess('Contact', 'delete', [
-      'id' => $contactId,
-      'skip_undelete' => TRUE,
-    ]);
   }
 
   /**
@@ -320,18 +292,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     foreach ($expected as $key => $value) {
       $this->assertEquals($value, $contact[$key], "wrong value for $key");
     }
-  }
-
-  /**
-   * Clean up a contribution
-   *
-   * @param int $id
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function cleanupContribution(int $id): void {
-    ContributionTracking::delete(FALSE)->addWhere('contribution_id', '=', $id)->execute();
-    Contribution::delete(FALSE)->addWhere('id', '=', $id)->execute();
   }
 
   /**

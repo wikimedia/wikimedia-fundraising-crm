@@ -6,6 +6,7 @@ use Civi\Api4\Email;
 use Civi\Api4\Relationship;
 use Civi\WMFException\WMFException;
 use Civi\WMFStatistic\ImportStatsCollector;
+use Statistics\Exception\StatisticsCollectorException;
 
 define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
 
@@ -15,16 +16,6 @@ define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
  * @group WmfCivicrm
  */
 class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
-
-  protected $contact_custom_mangle;
-
-  protected $contribution_id;
-
-  protected $contact_id;
-
-  protected $contribution_custom_mangle;
-
-  static protected $fixtures;
 
   /**
    * These are contribution fields that we do not check for in our comparison.
@@ -71,17 +62,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals(1, $geoCoders['count']);
   }
 
-  public function tearDown(): void {
-    if ($this->contribution_id) {
-      $this->cleanupContribution($this->contribution_id);
-    }
-    if ($this->contact_id) {
-      $this->cleanUpContact($this->contact_id);
-    }
-    ImportStatsCollector::tearDown(TRUE);
-    parent::tearDown();
-  }
-
   /**
    * Test importing messages using variations form messageProvider data-provider.
    *
@@ -99,8 +79,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       $msg['contribution_recur_id'] = $this->createRecurringContribution(['contact_id' => $msg['contact_id']]);
     }
     $contribution = $this->messageImport($msg);
+    $this->ids['Contact'][] = $contribution['contact_id'];
     $this->consumeCtQueue();
-    $this->contribution_id = $contribution['id'];
 
     // Ignore contact_id if we have no expectation.
     if (empty($expected['contribution']['contact_id'])) {
@@ -972,28 +952,26 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws StatisticsCollectorException
    */
   public function testImportWithContactIdAndHash(): void {
-    $existingContact = $this->callAPISuccess('Contact', 'Create', [
+    $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Es' . mt_rand(),
-    ]);
-    $this->contact_id = $existingContact['id'];
-    $existingContact = $existingContact['values'][$existingContact['id']];
+    ], 'existing');
     $email = 'booboo' . mt_rand() . '@example.org';
     $this->callAPISuccess('Email', 'Create', [
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['existing'],
       'email' => $email,
       'location_type_id' => 1,
     ]);
     $this->callAPISuccess('Address', 'Create', [
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['existing'],
       'country' => wmf_civicrm_get_country_id('FR'),
       'street_address' => '777 Trompe L\'Oeil Boulevard',
       'location_type_id' => 1,
     ]);
     $expectedEmployer = "Subotnik's Apple Orchard";
     $msg = [
-      'contact_id' => $existingContact['id'],
+      'contact_id' => $this->ids['Contact']['existing'],
       'contact_hash' => $existingContact['hash'],
       'currency' => 'USD',
       'date' => '2017-01-01 00:00:00',
@@ -1034,27 +1012,25 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testImportWithContactIdAndBadHash() {
-    $existingContact = $this->callAPISuccess('Contact', 'Create', [
+    $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Es' . mt_rand(),
-    ]);
+    ], 'existing');
     $email = 'booboo' . mt_rand() . '@example.org';
-    $this->contact_id = $existingContact['id'];
-    $existingContact = $existingContact['values'][$existingContact['id']];
     $this->callAPISuccess('Email', 'Create', [
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['existing'],
       'email' => $email,
       'location_type_id' => 1,
     ]);
     $this->callAPISuccess('Address', 'Create', [
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['existing'],
       'country' => wmf_civicrm_get_country_id('FR'),
       'street_address' => '777 Trompe L\'Oeil Boulevard',
       'location_type_id' => 1,
     ]);
     $msg = [
-      'contact_id' => $existingContact['id'],
+      'contact_id' => $this->ids['Contact']['existing'],
       'first_name' => 'Lex',
       'contact_hash' => 'This is not a valid hash',
       'currency' => 'USD',
@@ -1088,18 +1064,16 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws WMFException
    */
   public function testImportWithContactExisting(): void {
-    $existingContact = $this->callAPISuccess('Contact', 'Create', [
+    $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
-      'last_name' => 'Dupey',
-      'email' => 'dupe@example.org',
+      'last_name' => 'Mouse',
+      'email_primary.email' => 'dupe@example.org',
     ]);
-
-    $this->contact_id = $existingContact['id'];
 
     $msg = [
       'first_name' => 'Test',
-      'last_name' => 'Dupey',
+      'last_name' => 'Mouse',
       'currency' => 'USD',
       'date' => '2017-01-01 00:00:00',
       'invoice_id' => mt_rand(),
@@ -1123,19 +1097,17 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testUpdateLanguageWithContactExisting() {
-    $existingContact = $this->callAPISuccess('Contact', 'Create', [
+    $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
-      'last_name' => 'Dupey',
-      'email' => 'dupe@example.org',
+      'last_name' => 'Mouse',
+      'email_primary.email' => 'dupe@example.org',
       'preferred_language' => 'es_ES'
-    ]);
-
-    $this->contact_id = $existingContact['id'];
+    ], 'existing');
 
     $msg = [
       'first_name' => 'Test',
-      'last_name' => 'Dupey',
+      'last_name' => 'Mouse',
       'currency' => 'USD',
       'date' => '2017-01-01 00:00:00',
       'invoice_id' => mt_rand(),
@@ -1152,7 +1124,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
-    $updatedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->contact_id]);
+    $updatedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->ids['Contact']['existing']]);
     $this->assertEquals('es_MX', $updatedContact['preferred_language']);
   }
 
@@ -1164,13 +1136,11 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CRM_Core_Exception|StatisticsCollectorException
    */
   public function testAddMissingNameWithContactExisting() {
-    $existingContact = $this->callAPISuccess('Contact', 'Create', [
+    $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
-      'email' => 'noname@example.org',
+      'email_primary.email' => 'noname@example.org',
       'preferred_language' => 'es_ES'
-    ]);
-
-    $this->contact_id = $existingContact['id'];
+    ], 'existing');
 
     $msg = [
       'first_name' => 'NowIHave',
@@ -1191,7 +1161,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
     $contribution = wmf_civicrm_contribution_message_import($msg);
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
-    $updatedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->contact_id]);
+    $updatedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->ids['Contact']['existing']]);
     $this->assertEquals('NowIHave', $updatedContact['first_name']);
     $this->assertEquals('AName', $updatedContact['last_name']);
   }
@@ -1203,21 +1173,19 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testImportWithContactIdAndBadEmail() {
-    $existingContact = $this->callAPISuccess('Contact', 'Create', [
+    $existingContact = $this->createTestEntity('Contact',  [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Es' . mt_rand(),
-    ]);
+    ], 'existing');
     $email = 'booboo' . mt_rand() . '@example.org';
-    $this->contact_id = $existingContact['id'];
-    $existingContact = $existingContact['values'][$existingContact['id']];
     $this->callAPISuccess('Email', 'Create', [
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['existing'],
       'email' => $email,
       'location_type_id' => 1,
     ]);
     $this->callAPISuccess('Address', 'Create', [
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['existing'],
       'country' => wmf_civicrm_get_country_id('FR'),
       'street_address' => '777 Trompe L\'Oeil Boulevard',
       'location_type_id' => 1,
@@ -1307,16 +1275,14 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @see https://phabricator.wikimedia.org/T262232
    */
   public function testInvalidZipCodeDataFiltered() {
-    $createContact = $this->callAPISuccess('Contact', 'Create', [
+    $contact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Es' . mt_rand(),
     ]);
-    $contact = $createContact['values'][$createContact['id']];
-    $this->contact_id = $contact['id'];
 
     $msg = [
-      'contact_id' =>$contact['id'],
+      'contact_id' => $contact['id'],
       'contact_hash' => $contact['hash'],
       'currency' => 'USD',
       'date' => time(),
@@ -1333,7 +1299,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
 
     $contribution = wmf_civicrm_contribution_message_import( $msg );
-    $this->contribution_id = $contribution['id'];
 
     $address = $this->callAPISuccessGetSingle(
       'Address',
@@ -1354,11 +1319,10 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws WMFException
    */
   public function testIndicatesEmployerProvidedByDonor(string $sourceType, bool $isUpdate, ?bool $expected) {
-    $orgContact = $this->callAPISuccess('Contact', 'create', array(
+    $orgContact = $this->createTestEntity('Contact', [
       'organization_name' => 'Puritan Foods',
       'contact_type' => 'Organization',
-    ));
-    $this->ids['Contact'][] = $orgContact['id'];
+    ], 'employer');
 
     $contactParams = [
       'first_name' => 'Philip',
@@ -1429,6 +1393,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @dataProvider messageProvider
+   *
+   * @todo - why do we run this with the messageProvider? Surely we just
+   * need to run once with 1 dataset?
    *
    * @param array $msg
    * @throws CRM_Core_Exception
