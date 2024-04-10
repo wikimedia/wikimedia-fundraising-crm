@@ -17,7 +17,7 @@ use SmashPig\Tests\TestingProviderConfiguration;
 /**
  * @group WMFQueue
  */
-class UpiDonationsQueueConsumerTest extends BaseQueue {
+class UpiDonationsQueueConsumerTest extends BaseQueueTestCase {
 
   protected string $queueConsumer = 'UpiDonations';
 

@@ -8,7 +8,7 @@ use Civi\WMFException\FredgeDataValidationException;
 /**
  * @group queues
  */
-class PaymentsInitQueueTest extends BaseQueue {
+class PaymentsInitQueueTest extends BaseQueueTestCase {
 
   protected string $queueName = 'payments-init';
 

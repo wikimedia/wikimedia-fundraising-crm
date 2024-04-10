@@ -11,7 +11,7 @@ use Civi\Test\ContactTestTrait;
  * @group queues
  * @group Recurring
  */
-class RecurringModifyAmountQueueTest extends BaseQueue {
+class RecurringModifyAmountQueueTest extends BaseQueueTestCase {
 
   use ContactTestTrait;
   use Api3TestTrait;

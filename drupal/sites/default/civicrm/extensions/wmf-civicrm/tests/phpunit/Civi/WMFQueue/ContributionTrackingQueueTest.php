@@ -10,7 +10,7 @@ use Civi\WMFStatistic\ContributionTrackingStatsCollector;
 /**
  * @group queues
  */
-class ContributionTrackingQueueTest extends BaseQueue {
+class ContributionTrackingQueueTest extends BaseQueueTestCase {
 
   protected string $queueConsumer = 'ContributionTracking';
 

@@ -9,7 +9,7 @@ use Civi\WMFException\WMFException;
 /**
  * @group Queue2Civicrm
  */
-class OptInTest extends BaseQueue {
+class OptInTest extends BaseQueueTestCase {
 
   use EntityTrait;
 

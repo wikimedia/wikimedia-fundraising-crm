@@ -12,7 +12,7 @@ use Civi\WMFHelper\ContributionRecur as RecurHelper;
 /**
  * @group Queue2Civicrm
  */
-class RefundQueueTest extends BaseQueue {
+class RefundQueueTest extends BaseQueueTestCase {
 
   protected string $queueName = 'refund';
 

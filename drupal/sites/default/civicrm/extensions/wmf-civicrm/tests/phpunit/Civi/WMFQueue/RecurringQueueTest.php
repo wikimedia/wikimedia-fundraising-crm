@@ -17,7 +17,7 @@ use Civi\WMFException\WMFException;
  * @group queues
  * @group Recurring
  */
-class RecurringQueueTest extends BaseQueue {
+class RecurringQueueTest extends BaseQueueTestCase {
 
   use ContactTestTrait;
   use Api3TestTrait;

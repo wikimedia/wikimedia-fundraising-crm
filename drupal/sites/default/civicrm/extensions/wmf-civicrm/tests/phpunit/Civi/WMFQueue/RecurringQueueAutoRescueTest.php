@@ -8,7 +8,7 @@ use Civi\WMFHelper\ContributionRecur as RecurHelper;
  * @group queues
  * @group Recurring
  */
-class RecurringQueueAutoRescueTest extends BaseQueue {
+class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
 
   protected string $queueName = 'recurring';
 

@@ -7,7 +7,7 @@ use Civi\WMFException\WMFException;
 /**
  * @group Queue2Civicrm
  */
-class BannerHistoryTest extends BaseQueue {
+class BannerHistoryTest extends BaseQueueTestCase {
 
   protected string $queueConsumer = 'BannerHistory';
 

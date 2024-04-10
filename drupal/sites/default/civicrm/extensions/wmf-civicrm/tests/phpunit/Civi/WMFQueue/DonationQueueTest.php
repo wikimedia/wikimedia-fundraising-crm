@@ -12,7 +12,7 @@ use SmashPig\Core\DataStores\PendingDatabase;
 /**
  * @group queues
  */
-class DonationQueueTest extends BaseQueue {
+class DonationQueueTest extends BaseQueueTestCase {
 
   protected string $queueName = 'test';
 

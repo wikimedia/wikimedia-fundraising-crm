@@ -6,7 +6,7 @@ namespace Civi\WMFQueue;
  * @group WMFQueue
  * @group Unsubscribe
  */
-class UnsubscribeQueueTest extends BaseQueue {
+class UnsubscribeQueueTest extends BaseQueueTestCase {
 
   protected string $queueConsumer = 'Unsubscribe';
 
