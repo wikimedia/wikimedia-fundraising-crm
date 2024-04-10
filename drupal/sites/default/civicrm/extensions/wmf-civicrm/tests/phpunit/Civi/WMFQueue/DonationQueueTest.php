@@ -225,8 +225,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertNotNull($damagedRows[0]['retry_date'], 'Should retry');
     $storedMessage = json_decode($damagedRows[0]['message'], TRUE, 512, JSON_THROW_ON_ERROR);
     $storedInvoiceId = $storedMessage['invoice_id'];
-    $storedTags = $storedMessage['contribution_tags'];
-    unset($storedMessage['invoice_id'], $storedMessage['contribution_tags'], $storedMessage['source_run_id'], $storedMessage['source_enqueued_time'], $storedMessage['source_host']);
+    unset($storedMessage['invoice_id'], $storedMessage['source_run_id'], $storedMessage['source_enqueued_time'], $storedMessage['source_host']);
     $this->assertEquals($message2, $storedMessage);
 
     $invoiceIdLen = strlen((string) $originalOrderId);
@@ -234,7 +233,6 @@ class DonationQueueTest extends BaseQueueTestCase {
       "$originalOrderId|dup-",
       substr($storedInvoiceId, 0, $invoiceIdLen + 5)
     );
-    $this->assertEquals(['DuplicateInvoiceId'], $storedTags);
   }
 
   public function getSparseMessages(): array {

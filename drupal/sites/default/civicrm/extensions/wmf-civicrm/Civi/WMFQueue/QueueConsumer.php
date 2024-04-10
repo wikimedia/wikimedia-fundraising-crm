@@ -160,7 +160,6 @@ abstract class QueueConsumer extends BaseQueueConsumer {
       'wmf_civicrm: Found duplicate invoice ID, changing this one to {invoice_id}',
       ['invoice_id' => $message['invoice_id']]
     );
-    $message['contribution_tags'][] = 'DuplicateInvoiceId';
     return $message;
   }
 

@@ -624,30 +624,6 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     }
   }
 
-  // Create any required tags on the contribution
-  if (!empty($msg['contribution_tags'])) {
-    $supported_tags = array_flip(CRM_Core_BAO_Tag::getTags('civicrm_contribution'));
-    $stacked_ex = [];
-    foreach (array_unique($msg['contribution_tags']) as $tag) {
-      try {
-        civicrm_api3("EntityTag", "Create", [
-          'entity_table' => 'civicrm_contribution',
-          'entity_id' => $contribution_result['id'],
-          'tag_id' => $supported_tags[$tag],
-        ]);
-      }
-      catch (CiviCRM_API3_Exception $ex) {
-        $stacked_ex[] = "Failed to add tag {$tag} to contribution ID {$contribution_result['id']}. Error: " . $ex->getMessage();
-      }
-    }
-    if (!empty($stacked_ex)) {
-      throw new WMFException(
-        WMFException::IMPORT_CONTRIB,
-        implode("\n", $stacked_ex)
-      );
-    }
-  }
-
   return $contribution_result['values'][$contribution_result['id']];
 }
 
