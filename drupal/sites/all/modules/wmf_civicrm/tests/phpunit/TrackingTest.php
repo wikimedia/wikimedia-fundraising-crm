@@ -27,13 +27,8 @@ class TrackingTest extends BaseWmfDrupalPhpUnitTestCase {
       'ts' => '',
     ];
     $id = wmf_civicrm_insert_contribution_tracking(array_merge($tracking, $params));
-    $this->consumeCtQueue();
+    $this->processContributionTrackingQueue();
     return $id;
-  }
-
-  protected function consumeCtQueue() {
-    $consumer = new ContributionTrackingQueueConsumer('contribution-tracking');
-    $consumer->dequeueMessages();
   }
 
   protected function getContribution($recurParams = []): array {

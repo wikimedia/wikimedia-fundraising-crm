@@ -80,7 +80,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
     $contribution = $this->messageImport($msg);
     $this->ids['Contact'][] = $contribution['contact_id'];
-    $this->consumeCtQueue();
+    $this->processContributionTrackingQueue();
 
     // Ignore contact_id if we have no expectation.
     if (empty($expected['contribution']['contact_id'])) {
