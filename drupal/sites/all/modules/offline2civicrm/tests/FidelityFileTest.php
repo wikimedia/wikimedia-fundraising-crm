@@ -2,6 +2,8 @@
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionSoft;
+use Civi\WMFException\WMFException;
 
 /**
  * @group Import
@@ -23,10 +25,9 @@ class FidelityFileTest extends BaseChecksFileTest {
   /**
    * Test basic import.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
-   * @throws \Civi\WMFException\WMFException
+   * @throws WMFException
    */
   public function testImport(): void {
     $importer = new FidelityFile(__DIR__ . "/data/fidelity.csv");
@@ -61,6 +62,10 @@ class FidelityFileTest extends BaseChecksFileTest {
     $this->assertEquals('Jim', $contribution['contact_id.first_name']);
     $this->assertEquals('White', $contribution['contact_id.last_name']);
 
+    $softCredits = ContributionSoft::get(FALSE)
+      ->addWhere('contact_id.display_name', '=', 'Fidelity Charitable Gift Fund')
+      ->execute();
+    $this->assertCount(5, $softCredits);
   }
 
 }

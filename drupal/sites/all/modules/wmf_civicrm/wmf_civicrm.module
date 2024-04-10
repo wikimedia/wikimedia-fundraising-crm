@@ -281,24 +281,6 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
     $message->setContributionRecurID($recur_record->id);
   }
 
-  // Look up soft credit contact.
-  if (!empty($msg['soft_credit_to'])) {
-    $soft_credit_contact = civicrm_api3('Contact', 'Get', [
-      'organization_name' => $msg['soft_credit_to'],
-      'contact_type' => 'Organization',
-      'sequential' => 1,
-      'return' => 'id',
-    ]);
-    if ($soft_credit_contact['count'] !== 1) {
-      throw new WMFException(
-        WMFException::INVALID_MESSAGE,
-        "Bad soft credit target, [${msg['soft_credit_to']}]"
-      );
-    }
-    # FIXME: awkward to have the two fields.
-    $msg['soft_credit_to_id'] = $soft_credit_contact['id'];
-  }
-
   // Set no_thank_you to recurring if its the 2nd+ of any recurring payments
   if (!$initial_recurring && $message->getContributionRecurID()) {
     //check for previous recurring payments
@@ -494,7 +476,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     'source' => $msg['original_currency'] . ' ' . CurrencyRoundingHelper::round($msg['original_gross'], $msg['original_currency']),
     'contribution_recur_id' => $msg['contribution_recur_id'],
     'check_number' => $msg['check_number'],
-    'soft_credit_to' => $msg['soft_credit_to_id'],
+    'soft_credit_to' => $msg['soft_credit_to'] ?? NULL,
     'debug' => TRUE,
   ];
 

@@ -143,8 +143,6 @@ class DonationMessage extends Message {
       'recurring' => NULL,
       'utm_campaign' => NULL,
       'effort_id' => NULL,
-      'soft_credit_to' => NULL,
-      'soft_credit_to_id' => NULL,
     ];
     $msg = $msg + $defaults;
 

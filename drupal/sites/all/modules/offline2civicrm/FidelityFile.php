@@ -77,7 +77,7 @@ class FidelityFile extends ChecksFile {
    */
   protected function getDefaultValues(): array {
     return [
-      'soft_credit_to_id' => $this->getSoftCreditToID(),
+      'soft_credit_to' => $this->getSoftCreditToID(),
       'contact_type' => 'Individual',
       'country' => 'US',
       'currency' => 'USD',
