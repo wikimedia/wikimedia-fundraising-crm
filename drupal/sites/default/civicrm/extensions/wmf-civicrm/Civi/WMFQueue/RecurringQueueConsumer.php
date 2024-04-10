@@ -150,7 +150,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         // Update it to make sure it's not mistakenly canceled, and while we're
         // at it, stash the new subscr_id in unused field processor_id, in case
         // we need it later.
-        wmf_civicrm_update_legacy_paypal_subscription($recur_record, $msg);
+        ContributionRecur::update(FALSE)
+          ->addWhere('id', '=', $recur_record->id)
+          ->setValues([
+            'contribution_status_id.name' => 'In Progress',
+            'cancel_date' => NULL,
+            'end_date' => NULL,
+            'processor_id' => $msg['subscr_id']
+          ])->execute();
         // Make the message look like it should be associated with that record.
         // There is some code in wmf_civicrm_contribution_message_import that
         // might look the recur record up again (FIXME, but not now). This
