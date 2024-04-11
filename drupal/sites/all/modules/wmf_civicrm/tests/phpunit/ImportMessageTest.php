@@ -1299,10 +1299,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'city' => 'San Francisco',
       'state_province' => 'CA',
       'country' => 'US',
-      'postal_code' => '9412”£&*1', // Problematic postal code
+      'email' => '',
+      // Problematic postal code
+      'postal_code' => '9412”£&*1',
     ];
 
-    wmf_civicrm_contribution_message_import( $msg );
+    $this->processDonationMessage($msg);
 
     $address = Address::get(FALSE)
       ->addWhere('contact_id', '=', $contact['id'])
