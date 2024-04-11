@@ -141,7 +141,7 @@ class RefundQueueTest extends BaseQueueTestCase {
       'language' => 'en',
       'email' => 'jwales@example.com',
       'first_name' => 'Jimmy',
-      'last_name' => 'Wales',
+      'last_name' => 'Mouse',
       'country' => 'US',
       'gateway' => 'adyen',
       'order_id' => '13.1',
