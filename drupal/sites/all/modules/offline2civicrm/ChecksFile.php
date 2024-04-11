@@ -522,6 +522,23 @@ abstract class ChecksFile {
         $msg['soft_credit_to'] = $nickname_mapping[$msg['soft_credit_to']];
       }
     }
+    // Look up soft credit contact.
+    if (!empty($msg['soft_credit_to']) && !is_numeric($msg['soft_credit_to'])) {
+      $soft_credit_contact = civicrm_api3('Contact', 'Get', [
+        'organization_name' => $msg['soft_credit_to'],
+        'contact_type' => 'Organization',
+        'sequential' => 1,
+        'return' => 'id',
+      ]);
+      if ($soft_credit_contact['count'] !== 1) {
+        throw new WMFException(
+          WMFException::INVALID_MESSAGE,
+          "Bad soft credit target, [${msg['soft_credit_to']}]"
+        );
+      }
+      # FIXME: awkward to have the two fields.
+      $msg['soft_credit_to'] = $soft_credit_contact['id'];
+    }
 
     if (empty($msg['gateway'])) {
       $msg['gateway'] = 'generic_import';
@@ -565,7 +582,6 @@ abstract class ChecksFile {
     $list_fields = [
       'contact_groups',
       'contact_tags',
-      'contribution_tags',
     ];
     foreach ($list_fields as $field) {
       if (!empty($msg[$field])) {

@@ -232,7 +232,7 @@ class BenevityFile extends ChecksFile {
       $matchedMsg = $msg;
       unset($matchedMsg['net'], $matchedMsg['fee'], $matchedMsg['email']);
       $matchedMsg['contact_id'] = $msg['employer_id'];
-      $matchedMsg['soft_credit_to_id'] = ($msg['contact_id'] == $this->getAnonymousContactID() ? NULL : $msg['contact_id']);
+      $matchedMsg['soft_credit_to'] = ($msg['contact_id'] == $this->getAnonymousContactID() ? NULL : $msg['contact_id']);
       $matchedMsg['original_gross'] = $msg['original_matching_amount'];
       $matchedMsg['gross'] = $msg['matching_amount'];
       $matchedMsg['gateway_txn_id'] = $msg['gateway_txn_id'] . '_matched';

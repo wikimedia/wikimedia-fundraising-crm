@@ -196,7 +196,10 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   _get_import_timer()->startImportTimer("verify_and_stage");
   $msg = $message->normalize();
   $message->validate();
-  $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
+  if (!$message->getContributionTrackingID()) {
+    $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
+    $message->setContributionTrackingID($msg['contribution_tracking_id'] ?? NULL);
+  }
   _get_import_timer()->endImportTimer("verify_and_stage");
 
   $createRecurringToken = FALSE;
@@ -275,28 +278,11 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
     _message_contribution_recur_insert($msg, $recurring_transaction_id);
     $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $recurring_transaction_id);
     $msg['contribution_recur_id'] = $recur_record->id;
-  }
-
-  // Look up soft credit contact.
-  if (!empty($msg['soft_credit_to'])) {
-    $soft_credit_contact = civicrm_api3('Contact', 'Get', [
-      'organization_name' => $msg['soft_credit_to'],
-      'contact_type' => 'Organization',
-      'sequential' => 1,
-      'return' => 'id',
-    ]);
-    if ($soft_credit_contact['count'] !== 1) {
-      throw new WMFException(
-        WMFException::INVALID_MESSAGE,
-        "Bad soft credit target, [${msg['soft_credit_to']}]"
-      );
-    }
-    # FIXME: awkward to have the two fields.
-    $msg['soft_credit_to_id'] = $soft_credit_contact['id'];
+    $message->setContributionRecurID($recur_record->id);
   }
 
   // Set no_thank_you to recurring if its the 2nd+ of any recurring payments
-  if (!$initial_recurring && $msg['contribution_recur_id']) {
+  if (!$initial_recurring && $message->getContributionRecurID()) {
     //check for previous recurring payments
     $recurring_check = civicrm_api3('Contribution', 'getcount', [
       'contribution_recur_id' => $msg['contribution_recur_id'],
@@ -311,10 +297,14 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   // Insert the contribution record.
   $contribution = _message_contribution_insert($msg);
 
-  if (wmf_civicrm_should_update_contribution_tracking($msg, $initial_recurring)) {
-    // Map the tracking record to the CiviCRM contribution
-    // @FIXME what do we do if this returns false?  nothing at the moment...
-    wmf_civicrm_message_update_contribution_tracking($msg, $contribution);
+  if (!$message->isMatchingGiftContribution()
+    && $message->getContributionTrackingID()
+    && wmf_civicrm_should_update_contribution_tracking($msg, $initial_recurring)) {
+    QueueWrapper::push('contribution-tracking', [
+      'id' => $message->getContributionTrackingID(),
+      'contribution_id' => $contribution['id'],
+    ]);
+    \Civi::log('wmf')->info('wmf_civicrm: Queued update to contribution_tracking for {id}', ['id' => $message->getContributionTrackingID()]);
   }
 
   if (!empty($msg['notes'])) {
@@ -486,7 +476,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     'source' => $msg['original_currency'] . ' ' . CurrencyRoundingHelper::round($msg['original_gross'], $msg['original_currency']),
     'contribution_recur_id' => $msg['contribution_recur_id'],
     'check_number' => $msg['check_number'],
-    'soft_credit_to' => $msg['soft_credit_to_id'],
+    'soft_credit_to' => $msg['soft_credit_to'] ?? NULL,
     'debug' => TRUE,
   ];
 
@@ -630,30 +620,6 @@ function _wmf_civicrm_message_contribution_insert($msg) {
         WMFException::INVALID_MESSAGE,
         'Cannot create contribution, civi error!',
         $eInner->getExtraParams()
-      );
-    }
-  }
-
-  // Create any required tags on the contribution
-  if (!empty($msg['contribution_tags'])) {
-    $supported_tags = array_flip(CRM_Core_BAO_Tag::getTags('civicrm_contribution'));
-    $stacked_ex = [];
-    foreach (array_unique($msg['contribution_tags']) as $tag) {
-      try {
-        civicrm_api3("EntityTag", "Create", [
-          'entity_table' => 'civicrm_contribution',
-          'entity_id' => $contribution_result['id'],
-          'tag_id' => $supported_tags[$tag],
-        ]);
-      }
-      catch (CiviCRM_API3_Exception $ex) {
-        $stacked_ex[] = "Failed to add tag {$tag} to contribution ID {$contribution_result['id']}. Error: " . $ex->getMessage();
-      }
-    }
-    if (!empty($stacked_ex)) {
-      throw new WMFException(
-        WMFException::IMPORT_CONTRIB,
-        implode("\n", $stacked_ex)
       );
     }
   }

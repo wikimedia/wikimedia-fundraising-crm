@@ -143,8 +143,6 @@ class DonationMessage extends Message {
       'recurring' => NULL,
       'utm_campaign' => NULL,
       'effort_id' => NULL,
-      'soft_credit_to' => NULL,
-      'soft_credit_to_id' => NULL,
     ];
     $msg = $msg + $defaults;
 
@@ -566,6 +564,18 @@ class DonationMessage extends Message {
       return (int) $paymentInstrumentID;
     }
     throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
+  }
+
+  /**
+   * Is this transaction coming from a matching gift import - ie Benevity.
+   *
+   * Note that in the medium term we are trying to get Benevity to stop going
+   * through the donation flow.
+   *
+   * @return bool
+   */
+  public function isMatchingGiftContribution(): bool {
+    return stristr($this->getGatewayTxnID(), '_matched');
   }
 
 }
