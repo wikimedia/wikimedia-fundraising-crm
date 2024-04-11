@@ -77,7 +77,6 @@ trait WMFEnvironmentTrait {
     $this->cleanupContact(['last_name' => 'McTest']);
     $this->cleanupContact(['last_name' => 'Mouse']);
     $this->cleanupContact(['last_name' => 'Russ']);
-    $this->cleanupContact(['last_name' => 'Wales']);
     $this->cleanUpContact(['display_name' => 'Anonymous']);
     ImportStatsCollector::tearDown();
     // Reset some SmashPig-specific things
