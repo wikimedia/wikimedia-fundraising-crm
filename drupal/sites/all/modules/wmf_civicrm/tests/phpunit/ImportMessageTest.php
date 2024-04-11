@@ -987,7 +987,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_submethod' => 'visa',
       'employer' => $expectedEmployer,
     ];
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->processDonationMessage($msg);
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
     $address = $this->callAPISuccessGetSingle(
       'Address', [
