@@ -1385,14 +1385,18 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function employerRelationDataProvider(): array {
     return [
-      // Should create new donor with employer, provided_by_donor = TRUE
-      ['payments', FALSE, TRUE],
-      // Should update donor with employer relationship, provided_by_donor = TRUE
-      ['payments', TRUE, TRUE],
-      // Should create new donor with employer, provided_by_donor not set
-      ['direct', FALSE, NULL],
-      // Should update donor with employer relationship, provided_by_donor not set
-      ['direct', TRUE, NULL],
+      'Should create new donor with employer, provided_by_donor = TRUE' => [
+        'payments', FALSE, TRUE,
+      ],
+      'Should update donor with employer relationship, provided_by_donor = TRUE' => [
+        'payments', TRUE, TRUE,
+      ],
+      'Should create new donor with employer, provided_by_donor not set' => [
+        'direct', FALSE, NULL,
+      ],
+      'Should update donor with employer relationship, provided_by_donor not set' => [
+        'direct', TRUE, NULL,
+      ],
     ];
   }
 
