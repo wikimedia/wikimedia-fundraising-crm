@@ -23,9 +23,8 @@ abstract class BaseAuditProcessor {
 
   public function __construct($options) {
     $this->options = $options;
-    // FIXME: Copy to confusing global thing.
     $options['submod_prefix'] = $this->name;
-    wmf_audit_runtime_options($options);
+    \Civi::$statics['wmf_audit_runtime'] = $options;
   }
 
   /**
@@ -67,7 +66,7 @@ abstract class BaseAuditProcessor {
       $message = ": Missing one of the required arrays.\nLog Data: "
         . print_r($log_data, TRUE)
         . "\nAudit file Data: " . print_r($audit_file_data, TRUE);
-      wmf_audit_log_error(__FUNCTION__ . $message, 'DATA_WEIRD');
+      $this->logError(__FUNCTION__ . $message, 'DATA_WEIRD');
       return FALSE;
     }
 
@@ -90,16 +89,36 @@ abstract class BaseAuditProcessor {
           $audit_file_data[$field] = (string) floatval($audit_file_data[$field]);
         }
         if ($log_data[$field] !== $audit_file_data[$field]) {
-          wmf_audit_log_error("Data mismatch between log and audit $field ({$log_data[$field]} != {$audit_file_data[$field]}). Investigation required. " . print_r($audit_file_data, TRUE), 'DATA_INCONSISTENT');
+          $this->logError("Data mismatch between log and audit $field ({$log_data[$field]} != {$audit_file_data[$field]}). Investigation required. " . print_r($audit_file_data, TRUE), 'DATA_INCONSISTENT');
           return FALSE;
         }
       }
       else {
-        wmf_audit_log_error("Audit data is expecting $field but at least one is missing. Investigation required. " . print_r($audit_file_data, TRUE), 'DATA_INCONSISTENT');
+        $this->logError("Audit data is expecting $field but at least one is missing. Investigation required. " . print_r($audit_file_data, TRUE), 'DATA_INCONSISTENT');
         return FALSE;
       }
     }
     return TRUE;
+  }
+
+  /**
+   * Logs the errors we get in a consistent way
+   *
+   * @param string $message The message we want to log. Should be
+   * descriptive enough that we can bug hunt without having to go all cowboy in
+   * prod.
+   * @param string $drush_code If this code is fatal (According to
+   * wmf_audit_error_isfatal), this will result in the whole script dying.
+   */
+  protected function logError($message, $drush_code) {
+    \Civi::log('wmf')
+      ->error(wmf_audit_runtime_options('submod_prefix') . '_audit: {message}',
+        ['message' => $message]);
+
+    //Maybe explode
+    if (wmf_audit_error_isfatal($drush_code)) {
+      die("\n*** Fatal Error $drush_code: $message");
+    }
   }
 
   /**
@@ -129,6 +148,9 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function get_recon_dir() {
+    if (method_exists($this, 'getIncomingFilesDirectory')) {
+      return $this->getIncomingFilesDirectory();
+    }
     return variable_get($this->name . '_audit_recon_files_dir');
   }
 
@@ -138,6 +160,9 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function get_recon_completed_dir() {
+    if (method_exists($this, 'getCompletedFilesDirectory')) {
+      return $this->getCompletedFilesDirectory();
+    }
     return variable_get($this->name . '_audit_recon_completed_dir');
   }
 
@@ -147,6 +172,9 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function get_working_log_dir() {
+    if (method_exists($this, 'getWorkingLogDirectory')) {
+      return $this->getWorkingLogDirectory();
+    }
     return variable_get($this->name . '_audit_working_log_dir');
   }
 
@@ -647,7 +675,7 @@ abstract class BaseAuditProcessor {
     }
     else {
       //can't open the directory at all. Problem.
-      wmf_audit_log_error("Can't open directory $files_directory", 'FILE_DIR_MISSING'); //should be fatal
+      $this->logError("Can't open directory $files_directory", 'FILE_DIR_MISSING'); //should be fatal
     }
     return FALSE;
   }
@@ -715,7 +743,7 @@ abstract class BaseAuditProcessor {
     $logs_to_grab = $this->wmf_common_date_get_date_gap($earliest, $latest);
 
     if (empty($logs_to_grab)) {
-      wmf_audit_log_error(__FUNCTION__ . ': No logs identified as grabbable. Aborting.', 'RUNTIME_ERROR');
+      $this->logError(__FUNCTION__ . ': No logs identified as grabbable. Aborting.', 'RUNTIME_ERROR');
       return FALSE;
     }
 
@@ -860,7 +888,7 @@ abstract class BaseAuditProcessor {
                 // an error, we found something and the re-fusion didn't work.
                 // Handle consistently, and definitely don't try looking in other
                 // logs.
-                wmf_audit_log_error($ex->getMessage(), $ex->getErrorName());
+                $this->logError($ex->getMessage(), $ex->getErrorName());
                 unset($tryme[$audit_date][$id]);
                 wmf_audit_echo('X');
               }
@@ -975,7 +1003,7 @@ abstract class BaseAuditProcessor {
         exec(escapeshellcmd($cmd), $ret, $errorlevel);
         $full_compressed_path = $working_directory . '/' . $compressed_filename;
         if (!file_exists($full_compressed_path)) {
-          wmf_audit_log_error("FILE PROBLEM: Trying to get log archives, and something went wrong with $cmd", 'FILE_MOVE');
+          $this->logError("FILE PROBLEM: Trying to get log archives, and something went wrong with $cmd", 'FILE_MOVE');
           return FALSE;
         }
         else {
@@ -989,7 +1017,7 @@ abstract class BaseAuditProcessor {
         $uncompressed_file = $uncompressed_filenames[$i];
         $full_uncompressed_path = $working_directory . '/' . $uncompressed_file;
         if (!file_exists($full_uncompressed_path)) {
-          wmf_audit_log_error("FILE PROBLEM: Something went wrong with uncompressing logs: $cmd : $full_uncompressed_path doesn't exist.", 'FILE_UNCOMPRESS');
+          $this->logError("FILE PROBLEM: Something went wrong with uncompressing logs: $cmd : $full_uncompressed_path doesn't exist.", 'FILE_UNCOMPRESS');
         }
         else {
           $cleanup[] = $full_uncompressed_path;
@@ -1019,7 +1047,7 @@ abstract class BaseAuditProcessor {
       }
       else {
         //this happens if the archive file doesn't exist. Definitely not the end of the world, but we should probably log about it.
-        wmf_audit_log_error("Archive file $full_archive_path seems not to exist\n", 'MISSING_PAYMENTS_LOG');
+        $this->logError("Archive file $full_archive_path seems not to exist\n", 'MISSING_PAYMENTS_LOG');
       }
     }
     //return
@@ -1069,7 +1097,7 @@ abstract class BaseAuditProcessor {
     if (!is_dir($completed_dir)) {
       if (!mkdir($completed_dir, 0770)) {
         $message = "Could not make $completed_dir";
-        wmf_audit_log_error($message, 'FILE_PERMS');
+        $this->logError($message, 'FILE_PERMS');
         return FALSE;
       }
     }
@@ -1080,7 +1108,7 @@ abstract class BaseAuditProcessor {
     if (!rename($file, $newfile)) {
       $message = "Unable to move $file to $newfile";
 
-      wmf_audit_log_error($message, 'FILE_PERMS');
+      $this->logError($message, 'FILE_PERMS');
       return FALSE;
     }
     wmf_audit_echo("Moved $file to $newfile");
@@ -1104,12 +1132,12 @@ abstract class BaseAuditProcessor {
       if ($dir && !is_dir($dir)) {
         if ($id === 'log_archive' || $id === 'recon') {
           //already done. We don't want to try to create these, because required files come from here.
-          wmf_audit_log_error("Missing required directory $dir", 'MISSING_DIR_' . strtoupper($id));
+          $this->logError("Missing required directory $dir", 'MISSING_DIR_' . strtoupper($id));
           return FALSE;
         }
 
         if (!mkdir($dir, 0770)) {
-          wmf_audit_log_error("Missing and could not create required directory $dir", 'MISSING_DIR_' . strtoupper($id));
+          $this->logError("Missing and could not create required directory $dir", 'MISSING_DIR_' . strtoupper($id));
           return FALSE;
         }
       }
@@ -1219,7 +1247,7 @@ abstract class BaseAuditProcessor {
     if ($record) {
       echo print_r($record, TRUE);
     }
-    wmf_audit_log_error(
+    $this->logError(
       __FUNCTION__ . " Appeareth a payment_method hitherto unknown...",
       'DATA_WEIRD'
     );
@@ -1276,7 +1304,7 @@ abstract class BaseAuditProcessor {
         $raw_data = $this->parse_log_line($line);
 
         if (empty($raw_data)) {
-          wmf_audit_log_error(
+          $this->logError(
             "We found a transaction in the logs for $order_id, but there's nothing left after we tried to grab its data. Investigation required.",
             'DATA_WEIRD'
           );
@@ -1398,7 +1426,7 @@ abstract class BaseAuditProcessor {
       $recon_data = $recon_parser->parseFile($file);
     }
     catch (Exception $e) {
-      wmf_audit_log_error(
+      $this->logError(
         "Something went amiss with the recon parser while "
         . "processing $file: \"{$e->getMessage()}\""
         , 'RECON_PARSE_ERROR'

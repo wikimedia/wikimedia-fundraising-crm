@@ -89,5 +89,14 @@ function drush_wmf_audit_parse_audit() {
     $options['recon_complete_count'] = drush_get_option('recon_complete_count');
   }
 
-  wmf_audit_main($gateway, $options);
+  civicrm_initialize();
+  wmf_common_create_smashpig_context("{$gateway}_audit", $gateway);
+  wmf_common_set_smashpig_message_source(
+    'audit', wmf_audit_runtime_options('submod_prefix') . ' Recon Auditor'
+  );
+  $audit = module_invoke("{$gateway}_audit", 'create_processor', $options);
+  if (!$audit) {
+    throw new Exception("Gateway [$gateway] not found");
+  }
+  $audit->run();
 }

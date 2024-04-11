@@ -15,7 +15,6 @@ large_donation
 metrics_reporting
 offline2civicrm
 queue2civicrm
-recurring
 redis
 syslog
 thank_you
@@ -27,4 +26,3 @@ wmf_communication
 wmf_fredge_qc
 wmf_refund_qc
 wmf_ct_qc
-wmf_unsubscribe_qc

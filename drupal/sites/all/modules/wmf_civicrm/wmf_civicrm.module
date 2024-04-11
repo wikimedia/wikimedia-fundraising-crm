@@ -238,7 +238,12 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   }
 
   if (!$msg['contact_id']) {
-    $msg = _create_contact($msg);
+    _get_import_timer()->startImportTimer("create_contact");
+    $contact = WMFContact::save(FALSE)
+      ->setMessage($msg)
+      ->execute()->first();
+    $msg['contact_id'] = $contact['id'];
+    _get_import_timer()->endImportTimer("create_contact");
   }
   else {
     $save = new Civi\Api4\Action\WMFContact\Save('WMFContact', 'save');
@@ -355,24 +360,6 @@ function _message_contribution_recur_insert(array $msg, $recurring_transaction_i
   _get_import_timer()->startImportTimer("message_contribution_recur_insert");
   wmf_civicrm_message_contribution_recur_insert($msg, $msg['contact_id'], $recurring_transaction_id);
   _get_import_timer()->endImportTimer("message_contribution_recur_insert");
-}
-
-/**
- * @param array $msg
- *
- * @return array
- * @throws \API_Exception
- * @throws \CRM_Core_Exception
- * @throws \Civi\API\Exception\UnauthorizedException
- */
-function _create_contact(array $msg): array {
-  _get_import_timer()->startImportTimer("create_contact");
-  $contact = WMFContact::save(FALSE)
-    ->setMessage($msg)
-    ->execute()->first();
-  $msg['contact_id'] = $contact['id'];
-  _get_import_timer()->endImportTimer("create_contact");
-  return $msg;
 }
 
 /**

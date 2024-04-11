@@ -10,6 +10,18 @@ class BraintreeAuditProcessor extends BaseAuditProcessor {
     return new BraintreeAudit();
   }
 
+  protected function getIncomingFilesDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR;
+  }
+
+  protected function getCompletedFilesDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'completed' . DIRECTORY_SEPARATOR;
+  }
+
+  protected function getWorkingLogDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_working_log') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
+  }
+
   /**
    * @param $file
    * Get the date from parsed file name
