@@ -1,11 +1,12 @@
 <?php
 
+use Civi\WMFAudit\BaseAuditTestCase;
 /**
  * @group Dlocal
  * @group WmfAudit
  * @group DlocalAudit
  */
-class DlocalAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
+class DlocalAuditTest extends BaseAuditTestCase {
   use \Civi\Test\Api3TestTrait;
 
   static protected $loglines;
@@ -16,28 +17,6 @@ class DlocalAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();
-    $dirs = [
-      'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
-      'dlocal_audit_recon_completed_dir' => $this->getTempDir(),
-      'dlocal_audit_working_log_dir' => $this->getTempDir(),
-    ];
-
-    foreach ($dirs as $var => $dir) {
-      if (!is_dir($dir)) {
-        mkdir($dir);
-      }
-      variable_set($var, $dir);
-    }
-
-    $old_working = glob($dirs['dlocal_audit_working_log_dir'] . '*');
-    foreach ($old_working as $zap) {
-      if (is_file($zap)) {
-        unlink($zap);
-      }
-    }
-
-    variable_set('dlocal_audit_log_search_past_days', 1);
-
     // Fakedb doesn't fake the original txn for refunds, so add one here
     // First we need to set an exchange rate for a sickeningly specific time
     $this->setExchangeRates(1434488406, ['BRL' => 3.24]);
@@ -172,7 +151,7 @@ class DlocalAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles($path, $expectedMessages, $expectedLoglines) {
-    variable_set('dlocal_audit_recon_files_dir', $path);
+    \Civi::settings()->set('wmf_audit_directory_audit', $path);
 
     $this->runAuditor();
 
