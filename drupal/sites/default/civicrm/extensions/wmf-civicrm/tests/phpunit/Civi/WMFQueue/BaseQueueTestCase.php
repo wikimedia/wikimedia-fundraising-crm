@@ -43,22 +43,6 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface, Transacti
   }
 
   /**
-   * @param array $exchangeRates
-   * @param array $message
-   *
-   * @return void
-   */
-  public function setExchangeRatesForMessage(array $exchangeRates, array $message): void {
-    if ($exchangeRates) {
-      if (isset($exchangeRates['*']) && !isset($exchangeRates[$message['currency']])) {
-        $exchangeRates[$message['currency']] = $exchangeRates['*'];
-      }
-      unset($exchangeRates['*']);
-      $this->setExchangeRates($message['date'], $exchangeRates);
-    }
-  }
-
-  /**
    * Helper to make getting the contact ID even shorter.
    *
    * @param string $identifier
@@ -105,27 +89,6 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface, Transacti
     catch (\JsonException $e) {
       $this->fail('could not load json:' . $name . ' ' . $e->getMessage());
     }
-  }
-
-  /**
-   * @param array $values
-   *   Any values to be used instead of the loaded ones.
-   * @param array $exchangeRates
-   *   Exchange rates to set, defaults to setting USD to 1
-   *   and the loaded currency to 3.
-   *
-   * @return array
-   */
-  public function getDonationMessage(array $values = [], array $exchangeRates = ['USD' => 1, 'PLN' => 0.5]): array {
-    $message = $this->loadMessage('donation');
-    $message['gateway_txn_id'] = mt_rand();
-    $contributionTrackingID = mt_rand();
-    $message += [
-      'order_id' => "$contributionTrackingID.1",
-      'contribution_tracking_id' => $contributionTrackingID,
-    ];
-    $this->setExchangeRatesForMessage($exchangeRates, $message);
-    return array_merge($message, $values);
   }
 
   /**
@@ -199,19 +162,6 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface, Transacti
   }
 
   /**
-   * Process donation, using defaults plus any passed in values.
-   *
-   * @param array $values
-   *
-   * @return array
-   */
-  protected function processDonationMessage(array $values = []): array {
-    $donation_message = $this->getDonationMessage($values);
-    $this->processMessage($donation_message, 'Donation', 'test');
-    return $donation_message;
-  }
-
-  /**
    * @param array $overrides
    *
    * @return array
@@ -221,24 +171,6 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface, Transacti
     $this->processMessage($message);
     $this->processContributionTrackingQueue();
     return $message;
-  }
-
-  /**
-   * Process the given queue.
-   *
-   * @param array $message
-   * @param string|null $queueConsumer
-   * @param string|null $queueName
-   *
-   * @return array|null
-   * @noinspection PhpUnhandledExceptionInspection
-   * @noinspection PhpDocMissingThrowsInspection
-   */
-  public function processMessage(array $message, ?string $queueConsumer = NULL, ?string $queueName = NULL): ?array {
-    $queueName = $queueName ?: $this->queueName;
-    $queueConsumer = $queueConsumer ?: $this->queueConsumer;
-    QueueWrapper::push($queueName, $message);
-    return $this->processQueue($queueName, $queueConsumer);
   }
 
   /**
@@ -258,24 +190,6 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface, Transacti
     /* @var = \Civi\WMFQueue\QueueConsumer */
     $consumer = new $queueConsumerClass('test');
     $consumer->processMessage($message);
-  }
-
-  /**
-   * @param array $donation_message
-   *
-   * @return array
-   */
-  public function getContributionForMessage(array $donation_message): array {
-    try {
-      return Contribution::get(FALSE)
-        ->addSelect('*', 'contribution_status_id:name', 'contribution_recur_id.*', 'Gift_Data.*')
-        ->addWhere('contribution_extra.gateway', '=', $donation_message['gateway'])
-        ->addWhere('contribution_extra.gateway_txn_id', '=', $donation_message['gateway_txn_id'])
-        ->execute()->single();
-    }
-    catch (\CRM_Core_Exception $e) {
-      $this->fail('contribution lookup failed: ' . $e->getMessage());
-    }
   }
 
   /**

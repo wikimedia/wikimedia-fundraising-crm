@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Address;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Contribution;
 use Civi\Api4\Email;
@@ -1159,7 +1160,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       // This should be normalized to es_MX and then used to update the contact record
       'language' => 'es-419'
     ];
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->processDonationMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
     $updatedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->ids['Contact']['existing']]);
     $this->assertEquals('NowIHave', $updatedContact['first_name']);
@@ -1273,12 +1275,14 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @see https://phabricator.wikimedia.org/T262232
+   *
+   * @throws CRM_Core_Exception
    */
-  public function testInvalidZipCodeDataFiltered() {
+  public function testInvalidZipCodeDataFiltered(): void {
     $contact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
-      'last_name' => 'Es' . mt_rand(),
+      'last_name' => 'Mouse',
     ]);
 
     $msg = [
@@ -1298,12 +1302,11 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'postal_code' => '9412”£&*1', // Problematic postal code
     ];
 
-    $contribution = wmf_civicrm_contribution_message_import( $msg );
+    wmf_civicrm_contribution_message_import( $msg );
 
-    $address = $this->callAPISuccessGetSingle(
-      'Address',
-      ['contact_id' => $contact['id']]
-    );
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->execute()->single();
 
     $this->assertEquals("94121", $address['postal_code']);
   }
