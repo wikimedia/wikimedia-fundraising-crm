@@ -2,6 +2,7 @@
 
 namespace Civi;
 
+use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\WMFQueue;
 use SmashPig\Core\DataStores\QueueWrapper;
@@ -188,6 +189,33 @@ trait WMFQueueTrait {
     }
     catch (\CRM_Core_Exception $e) {
       $this->fail('contribution lookup failed: ' . $e->getMessage());
+    }
+  }
+
+  /**
+   * Assert that the DB contact has a specific value.
+   *
+   * Note that this will re-use the contact it has looked up if accessed multiple times.
+   *
+   * If you don't want it to re-use a loaded contact you should set up a different identifier.
+   *
+   * @param string $identifier
+   *   The key used to identify the contact in the IDs array. You may need to add it to this array
+   * @param string $value
+   *   The expected value
+   * @param string $key
+   *   The key to look up.
+   */
+  public function assertContactValue(int $id, string $value, string $key): void {
+    try {
+      $contact = Contact::get(FALSE)
+        ->addWhere('id', '=', $id)
+        ->addSelect($key)
+        ->execute()->single();
+      $this->assertEquals($value, $contact[$key]);
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('failed to loop up value');
     }
   }
 
