@@ -14,6 +14,7 @@ use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Core\SequenceGenerators\Factory;
+use Civi\WMFStatistic\ImportStatsCollector;
 
 trait WMFEnvironmentTrait {
 
@@ -66,6 +67,9 @@ trait WMFEnvironmentTrait {
     if (!empty($this->ids['Contribution'])) {
       Contribution::delete(FALSE)->addWhere('id', 'IN', $this->ids['Contribution'])->execute();
     }
+    foreach ($this->ids['Contact'] ?? [] as $id) {
+      $this->cleanupContact(['id' => $id]);
+    }
     if (!empty($this->ids['OptionValue'])) {
       OptionValue::delete(FALSE)->addWhere('id', 'IN', $this->ids['OptionValue'])->execute();
     }
@@ -75,6 +79,7 @@ trait WMFEnvironmentTrait {
     $this->cleanupContact(['last_name' => 'Russ']);
     $this->cleanupContact(['last_name' => 'Wales']);
     $this->cleanUpContact(['display_name' => 'Anonymous']);
+    ImportStatsCollector::tearDown();
     // Reset some SmashPig-specific things
     TestingDatabase::clearStatics();
     // Nullify the context for next run.
@@ -97,6 +102,7 @@ trait WMFEnvironmentTrait {
         $where[] = ['contact_id.' . $key, '=', $value];
         $contributionTrackingWhere[] = ['contribution_id.contact_id.' . $key, '=', $value];
         $contactWhere[] = [$key, '=', $value];
+        $contactWhere[] = ['is_deleted', 'IN', [TRUE, FALSE]];
       }
       ContributionTracking::delete(FALSE)
         ->setWhere($contributionTrackingWhere)

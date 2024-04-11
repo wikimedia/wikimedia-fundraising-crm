@@ -48,13 +48,12 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
   public function setUp(): void {
     parent::setUp();
 
-    $results = $this->callAPISuccess('contact', 'create', array(
+    $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Es',
       'debug' => 1,
-    ));
-    $this->contact_id = $results['id'];
+    ]);
 
     $this->original_currency = 'EUR';
     $this->original_amount = '1.23';
@@ -65,7 +64,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->setExchangeRates(strtotime('1 year ago'), array('USD' => 1, 'EUR' => 0.5, 'NZD' => 5));
 
     $results = civicrm_api3('contribution', 'create', array(
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['default'],
       'financial_type_id' => 'Cash',
       'total_amount' => $this->original_amount,
       'contribution_source' => $this->original_currency . ' ' . $this->original_amount,
@@ -75,19 +74,13 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->original_contribution_id = $results['id'];
     $this->financialYearEnd = (date('m') > 6) ? date('Y') + 1 : date('Y');
     $this->financialYearTotalFieldName = 'total_' . ($this->financialYearEnd - 1) . '_' . $this->financialYearEnd;
-    $this->assertCustomFieldValues($this->contact_id, [
+    $this->assertCustomFieldValues($this->ids['Contact']['default'], [
       'lifetime_usd_total' => 1.23,
       'last_donation_date' => date('Y-m-d'),
       'last_donation_amount' => 1.23,
       'last_donation_usd' => 1.23,
       $this->financialYearTotalFieldName => 1.23,
     ]);
-  }
-
-  public function tearDown(): void {
-    $this->cleanUpContact($this->contact_id);
-
-    parent::tearDown();
   }
 
   /**
@@ -130,7 +123,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     // seems an OK sacrifice. If one valid donation (in any year) exists we
     // will get zeros in other years so only non-donors will have NULL values.
     // not quite sure why some are zeros not null?
-    $this->assertCustomFieldValues($this->contact_id, [
+    $this->assertCustomFieldValues($contribution['contact_id'], [
       'lifetime_usd_total' => NULL,
       'last_donation_date' => NULL,
       'last_donation_amount' => 0.00,
@@ -147,7 +140,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
   public function testMarkRefundCheckCustomData(): void {
     $this->callAPISuccess('Contribution', 'create', [
       'version' => 4,
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['default'],
       'financial_type_id:name' => 'Cash',
       'total_amount' => 50,
       'source' => 'USD 50',
@@ -157,7 +150,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     // We want to check it is ignored for the purpose of determining the most recent donation
     // although it should contribute to the lifetime total.
     $this->callAPISuccess('Contribution', 'create', array(
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['default'],
       'financial_type_id:name' => 'Cash',
       'version' => 4,
       'total_amount' => -10,
@@ -167,7 +160,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     wmf_civicrm_mark_refund($this->original_contribution_id, 'Refunded', FALSE, '2025-09-09', 'my_special_ref');
 
 
-    $this->assertContactValues($this->contact_id, [
+    $this->assertContactValues($this->ids['Contact']['default'], [
       'wmf_donor.lifetime_usd_total' => 40,
       'wmf_donor.last_donation_date' => '2024-11-01 00:00:00',
       'wmf_donor.last_donation_amount' => 50,
@@ -217,7 +210,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     // deleted.
     $receiveDate = date('Y-m-d', strtotime('1 year ago'));
     $this->callAPISuccess('Contribution', 'create', [
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['default'],
       'version' => 4,
       'financial_type_id:name' => 'Cash',
       'total_amount' => 40,
@@ -225,7 +218,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'receive_date' => $receiveDate,
       'trxn_id' => "TEST_GATEWAY {$this->gateway_txn_id} " . ($time - 200),
     ]);
-    $this->assertContactValues($this->contact_id, [
+    $this->assertContactValues($this->ids['Contact']['default'], [
       'wmf_donor.lifetime_usd_total' => 41.23,
       'wmf_donor.last_donation_date' => date('Y-m-d') . ' 04:05:06',
       'wmf_donor.last_donation_amount' => 1.23,
@@ -256,7 +249,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       $refund_contribution['contribution_source'],
       'Refund contribution has correct lesser amount'
     );
-    $this->assertContactValues($this->contact_id, [
+    $this->assertContactValues($this->ids['Contact']['default'], [
       'wmf_donor.lifetime_usd_total' => 40,
       'wmf_donor.last_donation_date' => date('Y-m-d 00:00:00', strtotime('1 year ago')),
       'wmf_donor.last_donation_usd' => 40,
@@ -302,7 +295,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->setExchangeRates($epochtime, array('USD' => 1, 'COP' => .01));
 
     $result = $this->callAPISuccess('contribution', 'create', array(
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['default'],
       'financial_type_id' => 'Cash',
       'total_amount' => 200,
       'currency' => 'USD',
@@ -321,7 +314,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     );
 
     $contributions = $this->callAPISuccess('Contribution', 'get', array(
-      'contact_id' => $this->contact_id,
+      'contact_id' => $this->ids['Contact']['default'],
       'sequential' => TRUE,
     ));
     $this->assertEquals(3, $contributions['count'], print_r($contributions, TRUE));
