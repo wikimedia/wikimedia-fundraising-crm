@@ -1,6 +1,5 @@
 <?php
 
-use Civi\Api4\Contribution;
 use Civi\WMFAudit\BaseAuditTestCase;
 
 /**
@@ -11,53 +10,37 @@ class BraintreeAuditTest extends BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();
-    // Fakedb doesn't fake the original txn for refunds, so add one here
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('braintree', 'dHJhbnNhY3Rpb25fMTYxZXdrMjk');
+    $msg = [
+      'gateway' => 'braintree',
+      'date' => 1656383927,
+      'gross' => '10.0',
+      'contribution_tracking_id' => '34',
+      'currency' => 'USD',
+      'email' => 'donor@gmail.com',
+      'gateway_txn_id' => 'dHJhbnNhY3Rpb25fMTYxZXdrMjk',
+      'invoice_id' => '34.1',
+      'phone' => null,
+      'first_name' => 'donor',
+      'last_name' => 'Mouse',
+      'payment_method' => 'paypal',
+    ];
+    $this->processDonationMessage($msg, FALSE);
 
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    }
-    else {
-      $msg = [
-        'gateway' => 'braintree',
-        'date' => 1656383927,
-        'gross' => '10.0',
-        'contribution_tracking_id' => '34',
-        'currency' => 'USD',
-        'email' => 'donor@gmail.com',
-        'gateway_txn_id' => 'dHJhbnNhY3Rpb25fMTYxZXdrMjk',
-        'invoice_id' => '34.1',
-        'phone' => null,
-        'first_name' => 'donor',
-        'last_name' => 'test',
-        'payment_method' => 'paypal',
-      ];
-      wmf_civicrm_contribution_message_import($msg);
-    }
-
-    // and another for the dispute
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('braintree', 'dHJhbnNhY3Rpb25fa2F4eG1ycjE');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    } else {
-      $msg = [
-        'gateway' => 'braintree',
-        'date' => 1656390820,
-        'gross' => '3.33',
-        'contribution_tracking_id' => '17',
-        'currency' => 'USD',
-        'email' => 'fr-tech+donor@wikimedia.org',
-        'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2F4eG1ycjE',
-        'invoice_id' => '17.1',
-        'phone' => null,
-        'first_name' => 'f',
-        'last_name' => 'Mouse',
-        'payment_method' => 'paypal',
-      ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
+    $msg = [
+      'gateway' => 'braintree',
+      'date' => 1656390820,
+      'gross' => '3.33',
+      'contribution_tracking_id' => '17',
+      'currency' => 'USD',
+      'email' => 'fr-tech+donor@wikimedia.org',
+      'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2F4eG1ycjE',
+      'invoice_id' => '17.1',
+      'phone' => null,
+      'first_name' => 'f',
+      'last_name' => 'Mouse',
+      'payment_method' => 'paypal',
+    ];
+    $this->processDonationMessage($msg, FALSE);
 
     $msg = [
       'gateway' => 'braintree',
@@ -73,15 +56,15 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       'last_name' => 'Mouse',
       'payment_method' => 'paypal',
     ];
-    $contribution = wmf_civicrm_contribution_message_import($msg);
-    $this->ids['Contact']['test'] = $this->contact_id = $contribution['contact_id'];
-    $this->contribution_id = $contribution['id'];
+    $this->processDonationMessage($msg, FALSE);
+    $contribution = $this->getContributionForMessage($msg);
     $this->ids['Contribution']['refund_test'] = $contribution['id'];
   }
 
-  public function auditTestProvider() {
+  public function auditTestProvider(): array
+  {
     return [
-      [
+      'donation' => [
         __DIR__ . '/data/Braintree/donation/',
         [
           'donations' => [
@@ -112,7 +95,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'refund' => [
         __DIR__ . '/data/Braintree/refund/',
         [
           "refund" => [
@@ -128,7 +111,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
           ]
         ],
       ],
-      [
+      'chargeback' => [
         __DIR__ . '/data/Braintree/chargeback/',
         [
           "refund" =>  [

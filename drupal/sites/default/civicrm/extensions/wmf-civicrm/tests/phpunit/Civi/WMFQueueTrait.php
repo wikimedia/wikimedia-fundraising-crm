@@ -27,11 +27,14 @@ trait WMFQueueTrait {
    * Process donation, using defaults plus any passed in values.
    *
    * @param array $values
-   *
+   *   Values to use in the message. These will be augmented with some defaults unless isAddDefaults is FALSE.
+   * @param bool $isAddDefaults
+   *   TRUE to add additional values. FALSE to ensure that only required fields are added.
+   *   If you wish to simulate not having a required field you need to set it to an empty string.
    * @return array
    */
-  protected function processDonationMessage(array $values = []): array {
-    $donation_message = $this->getDonationMessage($values);
+  protected function processDonationMessage(array $values = [], bool $isAddDefaults = TRUE): array {
+    $donation_message = $this->getDonationMessage($values, $isAddDefaults);
     $this->processMessage($donation_message, 'Donation', 'test');
     return $donation_message;
   }
@@ -39,19 +42,29 @@ trait WMFQueueTrait {
   /**
    * @param array $values
    *   Any values to be used instead of the loaded ones.
+   * @param bool $isAddDefaults
+   *   TRUE to add additional values. FALSE to ensure that only required fields are added.
+   *   If you wish to simulate not having a required field you need to set it to an empty string.
    * @param array $exchangeRates
    *   Exchange rates to set, defaults to setting USD to 1
    *   and the loaded currency to 3.
    *
    * @return array
    */
-  public function getDonationMessage(array $values = [], array $exchangeRates = ['USD' => 1, 'PLN' => 0.5]): array {
-    $message = $this->getBasicDonationMessage();
+  public function getDonationMessage(array $values = [], bool $isAddDefaults = TRUE, array $exchangeRates = ['USD' => 1, 'PLN' => 0.5]): array {
+    $message = $isAddDefaults ? $this->getBasicDonationMessage() : [];
     $message['gateway_txn_id'] = mt_rand();
     $contributionTrackingID = mt_rand();
+    // Add required values, if not passed in.
     $message += [
       'order_id' => "$contributionTrackingID.1",
       'contribution_tracking_id' => $contributionTrackingID,
+      'date' => time(),
+      'payment_method' => 'cc',
+      'payment_submethod' => empty($message['payment_method']) ? 'cc' : '',
+      'currency' => 'USD',
+      'gateway' => 'test_gateway',
+      'gross' => '1.23',
     ];
     $this->setExchangeRatesForMessage($exchangeRates, $message);
     return array_merge($message, $values);
