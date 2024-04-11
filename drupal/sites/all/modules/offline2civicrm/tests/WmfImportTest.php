@@ -46,7 +46,7 @@ class WmfImportTest extends BaseChecksFileTest {
     $exposed = TestingAccessWrapper::newFromObject($importer);
     $message = $exposed->parseRow($data);
     $exposed->doImport($message);
-    $this->consumeCtQueue();
+    $this->processContributionTrackingQueue();
 
     $contributions = wmf_civicrm_get_contributions_from_gateway_id(
       $this->gateway, $this->trxn_id

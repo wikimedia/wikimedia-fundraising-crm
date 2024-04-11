@@ -6,6 +6,7 @@ set_include_path(__DIR__ . '/../../../civicrm' . PATH_SEPARATOR . get_include_pa
 require_once __DIR__ . '/../../../civicrm/Civi/Test/Api3TestTrait.php';
 require_once __DIR__ . '/../../../civicrm/Civi/Test/EntityTrait.php';
 require_once __DIR__ . '/../../../../../default/civicrm/extensions/wmf-civicrm/tests/phpunit/Civi/WMFEnvironmentTrait.php';
+require_once __DIR__ . '/../../../../../default/civicrm/extensions/wmf-civicrm/tests/phpunit/Civi/WMFQueueTrait.php';
 
 use Civi\Api4\Contribution;
 use Civi\Test\Api3TestTrait;
@@ -13,10 +14,8 @@ use Civi\Test\EntityTrait;
 use Civi\WMFEnvironmentTrait;
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFQueue\ContributionTrackingQueueConsumer;
+use Civi\WMFQueueTrait;
 use SmashPig\Core\SequenceGenerators\Factory;
-use SmashPig\Tests\TestingContext;
-use SmashPig\Tests\TestingDatabase;
-use SmashPig\Tests\TestingGlobalConfiguration;
 use Civi\Api4\Contact;
 use Civi\WMFException\WMFException;
 use Civi\Omnimail\MailFactory;
@@ -25,6 +24,7 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
   use WMFEnvironmentTrait;
   use Api3TestTrait;
   use EntityTrait;
+  use WMFQueueTrait;
 
   protected $startTimestamp;
 
@@ -202,17 +202,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
   }
 
   /**
-   * Temporarily set foreign exchange rates to known values
-   *
-   * TODO: Should reset after each test.
-   */
-  protected function setExchangeRates($timestamp, $rates) {
-    foreach ($rates as $currency => $rate) {
-      exchange_rate_cache_set($currency, $timestamp, $rate);
-    }
-  }
-
-  /**
    * Clean up any payment processor rows
    *
    * @param int $processorID
@@ -294,24 +283,10 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     }
   }
 
-  /**
-   * @throws \CRM_Core_Exception
-   */
-  protected function setUpCtSequence(): void {
-    $ctInitial = CRM_Core_DAO::singleValueQuery('SELECT MAX(id) as maxId from civicrm_contribution_tracking');
-    $generator = Factory::getSequenceGenerator('contribution-tracking');
-    $generator->initializeSequence($ctInitial);
-  }
-
-  protected function consumeCtQueue() {
-    $consumer = new ContributionTrackingQueueConsumer('contribution-tracking');
-    $consumer->dequeueMessages();
-  }
-
   protected function addContributionTracking($values = []) {
     $ctId = wmf_civicrm_insert_contribution_tracking($values);
     $this->ids['ContributionTracking'][] = $ctId;
-    $this->consumeCtQueue();
+    $this->processContributionTrackingQueue();
     return $ctId;
   }
 
@@ -337,38 +312,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
       }
       throw $e;
     }
-  }
-
-  /**
-   * Get the number of mailings sent in the test.
-   *
-   * @return int
-   */
-  public function getMailingCount(): int {
-    return MailFactory::singleton()->getMailer()->countMailings();
-  }
-
-  /**
-   * Get the content on the sent mailing.
-   *
-   * @param int $index
-   *
-   * @return array
-   */
-  public function getMailing(int $index): array {
-    return MailFactory::singleton()->getMailer()->getMailing($index);
-  }
-
-  /**
-   * Convert civi api Y-m-d H:i:s to unix seconds
-   *
-   * @param string $date as Civi timestamp, returned by an api call
-   *
-   * @return int unix epoch seconds
-   */
-  protected function wmf_common_date_civicrm_to_unix($date) {
-    return DateTime::createFromFormat('Y-m-d H:i:s', $date, new DateTimeZone('UTC'))
-      ->getTimestamp();
   }
 
 }
