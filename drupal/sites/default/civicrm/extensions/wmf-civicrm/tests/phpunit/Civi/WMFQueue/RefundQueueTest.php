@@ -19,7 +19,7 @@ class RefundQueueTest extends BaseQueueTestCase {
   protected string $queueConsumer = 'Refund';
 
   public function testRefund(): void {
-    $donation_message = $this->getDonationMessage([], ['USD' => 1, '*' => 3]);
+    $donation_message = $this->getDonationMessage([], TRUE, ['USD' => 1, '*' => 3]);
     $refund_message = $this->getRefundMessage(['gateway_parent_id' => $donation_message['gateway_txn_id']]);
 
     $this->processMessage($donation_message, 'Donation', 'test');
@@ -215,7 +215,7 @@ class RefundQueueTest extends BaseQueueTestCase {
     $donationMessage = $this->getDonationMessage([
       'gateway' => 'test_gateway',
       'contribution_recur_id' => $recurRecord['id'],
-    ], []);
+    ], TRUE, []);
     $this->processMessage($donationMessage, 'Donation', 'test');
 
     $refundMessage = $this->getRefundMessage([
@@ -246,7 +246,7 @@ class RefundQueueTest extends BaseQueueTestCase {
    * @return array
    */
   public function getRefundMessage(array $values = []): array {
-    $donation_message = $this->getDonationMessage([], []);
+    $donation_message = $this->getDonationMessage([], TRUE, []);
     return array_merge($this->loadMessage('refund'),
       [
         'gateway' => $donation_message['gateway'],
