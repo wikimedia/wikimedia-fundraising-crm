@@ -1094,11 +1094,9 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * If we get a matching contact name and email, update the preferred language
    *
-   * @throws \Civi\WMFException\WMFException
-   * @throws \CRM_Core_Exception
    */
   public function testUpdateLanguageWithContactExisting() {
-    $existingContact = $this->createTestEntity('Contact', [
+    $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Mouse',
@@ -1123,18 +1121,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       // This should be normalized to es_MX and then used to update the contact record
       'language' => 'es-419'
     ];
-    $contribution = wmf_civicrm_contribution_message_import($msg);
-    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
-    $updatedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->ids['Contact']['existing']]);
-    $this->assertEquals('es_MX', $updatedContact['preferred_language']);
+    $this->processDonationMessage($msg);
+    $this->assertContactValue($this->ids['Contact']['existing'], 'es_MX', 'preferred_language');
   }
-
 
   /**
    * If we get a matching contact email, add missing name fields from the message
-   *
-   * @throws WMFException
-   * @throws \CRM_Core_Exception|StatisticsCollectorException
    */
   public function testAddMissingNameWithContactExisting() {
     $existingContact = $this->createTestEntity('Contact', [
@@ -1163,9 +1155,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->processDonationMessage($msg);
     $contribution = $this->getContributionForMessage($msg);
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
-    $updatedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->ids['Contact']['existing']]);
-    $this->assertEquals('NowIHave', $updatedContact['first_name']);
-    $this->assertEquals('AName', $updatedContact['last_name']);
+    $this->assertContactValue($this->ids['Contact']['existing'], 'NowIHave', 'first_name');
+    $this->assertContactValue($this->ids['Contact']['existing'], 'AName', 'last_name');
   }
 
   /**
@@ -1320,8 +1311,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param ?bool $expected
    *
    * @throws CRM_Core_Exception
-   * @throws StatisticsCollectorException
-   * @throws WMFException
    */
   public function testIndicatesEmployerProvidedByDonor(string $sourceType, bool $isUpdate, ?bool $expected) {
     $orgContact = $this->createTestEntity('Contact', [
