@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueueMessage;
 
+use Civi\Api4\Contribution;
 use Civi\Api4\Name;
 use Civi\WMFHelper\FinanceInstrument;
 use Civi\WMFHelper\ContributionRecur;
@@ -564,6 +565,40 @@ class DonationMessage extends Message {
       return (int) $paymentInstrumentID;
     }
     throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
+  }
+
+  /**
+   * Get the specified value from any prior contribution that exists.
+   *
+   * If the contribution is part of a series of recurring contributions
+   * this will find any earlier contribution & return the relevant value.
+   *
+   * If there is not a prior contribution it will return NULL.
+   *
+   * @param string $value
+   * @return mixed|null
+   * @throws \CRM_Core_Exception
+   */
+  public function getRecurringPriorContributionValue(string $value) {
+    // Note that in some cases looking up the contributionRecurID will lazy load the
+    // prior contribution so there is a possible performance advantage in checking this up front.
+    if (!$this->getContributionRecurID()) {
+      return NULL;
+    }
+    if (!$this->isDefined('PriorContribution')) {
+      $contribution = Contribution::get(FALSE)
+        ->addWhere('contribution_recur_id', '=', $this->getContributionRecurID())
+        ->addClause('OR',
+          ['contribution_extra.gateway', '!=', $this->getGateway()],
+          ['contribution_extra.gateway_txn_id', '!=', $this->getGatewayTxnID()])
+        ->setLimit(1)
+        ->execute()->first();
+      if (!$contribution) {
+        return NULL;
+      }
+      $this->define('Contribution', 'PriorContribution', $contribution);
+    }
+    return $this->lookup('PriorContribution', $value);
   }
 
   /**

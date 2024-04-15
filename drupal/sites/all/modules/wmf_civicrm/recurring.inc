@@ -487,26 +487,6 @@ function wmf_civicrm_get_legacy_paypal_subscription($msg) {
 }
 
 /**
- * Note the new ID for an old subscription, and make sure it's not listed as
- * canceled. This and the code that calls it in
- * RecurringQueueConsumer::importSubscriptionPayment should be destroyed when
- * PayPal gives us better guidance on T209008.
- *
- * @param CRM_Core_DAO $recur_record
- * @param array $msg
- */
-function wmf_civicrm_update_legacy_paypal_subscription($recur_record, $msg) {
-  ContributionRecur::update(FALSE)
-    ->addWhere('id', '=', $recur_record->id)
-    ->setValues([
-      'contribution_status_id.name' => 'In Progress',
-      'cancel_date' => NULL,
-      'end_date' => NULL,
-      'processor_id' => $msg['subscr_id']
-    ])->execute();
-}
-
-/**
  * @param $gateway
  * @param $token
  *
