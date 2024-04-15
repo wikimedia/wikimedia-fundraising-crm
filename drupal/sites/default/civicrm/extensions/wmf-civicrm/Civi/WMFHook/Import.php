@@ -74,41 +74,41 @@ class Import {
         throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
       }
 
-      $organizationName = $organizationID = NULL;
-
-      if (($mappedRow['Contact']['contact_type'] ?? NULL) === 'Organization') {
-        $organizationName = self::resolveOrganization($mappedRow['Contact']);
-        $mappedRow['Contribution']['contact_id'] = $mappedRow['Contact']['id'];
-        foreach ($mappedRow['SoftCreditContact'] ?? [] as $index => $softCreditContact) {
-          if (empty($mappedRow['SoftCreditContact'][$index]['Contact']['id'])) {
-            $mappedRow['SoftCreditContact'][$index]['Contact']['id'] = Contact::getIndividualID(
-              $softCreditContact['Contact']['email_primary.email'] ?? NULL,
-              $softCreditContact['Contact']['first_name'] ?? NULL,
-              $softCreditContact['Contact']['last_name'] ?? NULL,
-              $organizationName
-            );
-          }
-        }
-      }
-      elseif ($mappedRow['Contact']['contact_type'] === 'Individual' && !empty($mappedRow['SoftCreditContact'])) {
-        foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
-          if ($softCreditContact['Contact']['contact_type'] === 'Organization') {
-            if (!empty($softCreditContact['Contact']['id'])) {
-              $organizationID = $softCreditContact['Contact']['id'];
-            }
-            else {
-              $organizationName = self::resolveOrganization($mappedRow['SoftCreditContact'][$index]['Contact']);
+      if (!empty($mappedRow['SoftCreditContact'])) {
+        if (($mappedRow['Contact']['contact_type'] ?? NULL) === 'Organization') {
+          $organizationName = self::resolveOrganization($mappedRow['Contact']);
+          $mappedRow['Contribution']['contact_id'] = $mappedRow['Contact']['id'];
+          foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
+            if (empty($mappedRow['SoftCreditContact'][$index]['Contact']['id'])) {
+              $mappedRow['SoftCreditContact'][$index]['Contact']['id'] = Contact::getIndividualID(
+                $softCreditContact['Contact']['email_primary.email'] ?? NULL,
+                $softCreditContact['Contact']['first_name'] ?? NULL,
+                $softCreditContact['Contact']['last_name'] ?? NULL,
+                $organizationName
+              );
             }
           }
         }
+        elseif ($mappedRow['Contact']['contact_type'] === 'Individual') {
+          $organizationName = $organizationID = NULL;
+          foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
+            if ($softCreditContact['Contact']['contact_type'] === 'Organization') {
+              if (!empty($softCreditContact['Contact']['id'])) {
+                $organizationID = $softCreditContact['Contact']['id'];
+              } else {
+                $organizationName = self::resolveOrganization($mappedRow['SoftCreditContact'][$index]['Contact']);
+              }
+            }
+          }
 
-        $mappedRow['Contact']['id'] = $mappedRow['Contribution']['contact_id'] = Contact::getIndividualID(
-          $mappedRow['Contact']['email_primary.email'] ?? NULL,
-          $mappedRow['Contact']['first_name'] ?? NULL,
-          $mappedRow['Contact']['last_name'] ?? NULL,
-          $organizationName,
-          $organizationID
-        );
+          $mappedRow['Contact']['id'] = $mappedRow['Contribution']['contact_id'] = Contact::getIndividualID(
+            $mappedRow['Contact']['email_primary.email'] ?? NULL,
+            $mappedRow['Contact']['first_name'] ?? NULL,
+            $mappedRow['Contact']['last_name'] ?? NULL,
+            $organizationName,
+            $organizationID
+          );
+        }
       }
 
       $originalCurrency = $mappedRow['Contribution']['currency'] ?? 'USD';
