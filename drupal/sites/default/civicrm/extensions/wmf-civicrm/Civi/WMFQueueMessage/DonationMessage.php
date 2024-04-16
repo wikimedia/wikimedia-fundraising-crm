@@ -619,4 +619,15 @@ class DonationMessage extends Message {
     return stristr($this->getGatewayTxnID(), '_matched');
   }
 
+  /**
+   * Is this coming as a UPI.
+   *
+   * UPI is a bank transfer standard from India.
+   *
+   * @return bool
+   */
+  public function isUPI() : bool{
+    return ($this->message['payment_submethod'] ?? '') === 'upi';
+  }
+
 }

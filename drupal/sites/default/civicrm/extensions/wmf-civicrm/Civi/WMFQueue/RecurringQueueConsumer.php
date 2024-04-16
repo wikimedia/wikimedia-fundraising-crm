@@ -211,22 +211,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       // will do it.
       $this->updateContact($msg, $recur_record->contact_id);
     }
-
-    $update_params = [
-      'id' => $recur_record->id,
-    ];
-    $scheduleCalculationParams = [
-      'cycle_day' => $recur_record->cycle_day,
-      'frequency_interval' => $recur_record->frequency_interval,
-    ];
-    $update_params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextDateForMonth(
-      $scheduleCalculationParams
-    );
-
-    if (!empty($msg['is_auto_rescue_retry'])) {
-      $update_params['contribution_status_id:name'] = 'In Progress';
-    }
-    $this->updateContributionRecurWithErrorHandling($update_params);
   }
 
   /**

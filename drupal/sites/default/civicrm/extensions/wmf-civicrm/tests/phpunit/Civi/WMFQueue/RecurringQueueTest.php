@@ -135,6 +135,7 @@ class RecurringQueueTest extends BaseQueueTestCase {
       $contribution['contribution_recur_id'],
       'New recurring record not associated with newly inserted payment.'
     );
+
   }
 
   /**
@@ -225,9 +226,11 @@ class RecurringQueueTest extends BaseQueueTestCase {
       'subscr_id' => $subscr_id,
     ];
 
-    $this->processRecurringSignup($values);
-
+    $message = $this->processRecurringSignup($values);
+    $nextScheduledDate = $this->getContributionRecurForMessage($message)['next_sched_contribution_date'];
     $message = $this->processRecurringPaymentMessage($values);
+    $nextScheduledDateAfterPayment = $this->getContributionRecurForMessage($message)['next_sched_contribution_date'];
+    $this->assertGreaterThan(strtotime($nextScheduledDate), strtotime($nextScheduledDateAfterPayment));
     $contribution = $this->getContributionForMessage($message);
     $contributionTracking = ContributionTracking::get(FALSE)
       ->addWhere('id', '=', $message['contribution_tracking_id'])
@@ -443,17 +446,6 @@ class RecurringQueueTest extends BaseQueueTestCase {
       ->addSelect('*', 'contribution_status_id:name')
       ->execute()->single();
     $this->assertEquals($firstContribution['contact_id'], $contributionRecur['contact_id']);
-  }
-
-  /**
-   * Test handling of deadlock exception in function that imports subscription payment
-   */
-  public function testHandleDeadlocksInRecurringPayment(): void {
-    $signupMessage = $this->processRecurringSignup();
-    $message = $this->getRecurringPaymentMessage(['subscr_id' => $signupMessage['subscr_id']]);
-    // Consume the recurring signup with deadlock exception
-    $this->processMessage($message, 'RecurDeadlock');
-    $this->assertDamagedRowExists($message);
   }
 
   /**

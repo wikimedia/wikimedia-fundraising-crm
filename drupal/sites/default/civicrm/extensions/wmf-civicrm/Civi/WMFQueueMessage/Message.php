@@ -151,6 +151,18 @@ class Message {
     return $this->isGateway('fundraiseup');
   }
 
+  /**
+   * Is this a recurring payment which the provider has been able to 'rescue'.
+   *
+   * Adyen is able to get the donor's failing recurring back on track in some
+   * cases - these manifest as an auto-rescue.
+   *
+   * @return bool
+   */
+  public function isAutoRescue(): bool {
+    return isset($this->message['is_successful_autorescue']) && $this->message['is_successful_autorescue'];
+  }
+
   public function isGateway(string $gateway): bool {
     return $this->getGateway() === $gateway;
   }
