@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi;
 use Civi\Api4\RecurUpgradeEmail;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
@@ -99,6 +100,11 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Civi\ExchangeException\ExchangeRatesException
    */
   protected function upgradeRecurAmount(RecurringModifyAmountMessage $message, array $msg): void {
+    $increaseAsFloat = floatval($message->getOriginalIncreaseAmountRounded());
+    if ($increaseAsFloat === 0.0) {
+      Civi::log('wmf')->info('Discarding (probable duplicate) recurring upgrade message with zero amount');
+      return;
+    }
     $amountDetails = [
       'native_currency' => $message->getModifiedCurrency(),
       'native_original_amount' => $message->getOriginalExistingAmountRounded(),
@@ -108,7 +114,12 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
     ];
 
     $activityParams = $this->getActivityValues($message, $msg);
-    $activityParams['subject'] = "Added " . $message->getOriginalIncreaseAmountRounded() . ' ' . $message->getModifiedCurrency();
+    $activityParams['subject'] = 'Added ' . $message->getOriginalIncreaseAmountRounded() . ' ' . $message->getModifiedCurrency();
+
+    if ($increaseAsFloat < 0) {
+      $activityParams['subject'] .= ' (Negative value probably indicates a second upgrade form click with a lower amount)';
+    }
+
     $activityParams['activity_type_id'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
     $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
     RecurUpgradeEmail::send()
