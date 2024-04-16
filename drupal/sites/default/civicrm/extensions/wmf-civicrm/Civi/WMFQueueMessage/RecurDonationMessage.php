@@ -74,9 +74,27 @@ class RecurDonationMessage extends DonationMessage {
     // split it into it's own class but for now we only validate the amounts
     // if the message is coming through a flow which we know to be a payment
     // flow.
-    if ($this->isPayment) {
+    if ($this->isPayment()) {
       parent::validate();
     }
+  }
+
+  /**
+   * Is this a payment message.
+   *
+   * The default is that messages ARE payment - however we do have sign-ups etc.
+   * coming in though the Recurring Queue Consumer.
+   *
+   * @return bool
+   */
+  public function isPayment() : bool {
+    if (isset($this->isPayment)) {
+      return $this->isPayment;
+    }
+    if (!isset($this->message['txn_type'])) {
+      return TRUE;
+    }
+    return $this->message['txn_type'] === 'subscr_payment';
   }
 
   /**

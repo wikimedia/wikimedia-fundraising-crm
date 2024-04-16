@@ -129,7 +129,6 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
    */
   protected function insertContributionRecur(array $message): int {
     $recurMessage = new RecurDonationMessage($message);
-    $recurMessage->setIsPayment(TRUE);
 
     $normalized = $recurMessage->normalize();
     $normalized = wmf_civicrm_add_contribution_tracking_if_missing($normalized);

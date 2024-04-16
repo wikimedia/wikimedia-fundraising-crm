@@ -16,14 +16,13 @@ class DonationMessage extends Message {
   /**
    * Is a payment being processed as part of this Message.
    *
-   * The goal is that this would ALWAYS be TRUE because non-donation
-   * messages would use different message classes. However, we have some
-   * recurring messages that are over-loading this class that would
-   * ideally have their own Message objects.
+   * This is always TRUE for donation messages but not always for
+   * the recurring donation messages that override this class
+   * (e.g. sign up or cancel messages).
    *
    * @var bool
    */
-  protected bool $isPayment = TRUE;
+  protected bool $isPayment;
 
   /**
    * Set is Payment.
@@ -36,6 +35,13 @@ class DonationMessage extends Message {
    */
   public function setIsPayment(bool $isPayment): void {
     $this->isPayment = $isPayment;
+  }
+
+  public function isPayment() : bool {
+    if (isset($this->isPayment)) {
+      return $this->isPayment;
+    }
+    return TRUE;
   }
 
   /**

@@ -3,6 +3,7 @@
 namespace Civi\WMFQueue;
 
 use Civi;
+use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\RecurUpgradeEmail;
 use Civi\Api4\WMFContact;
@@ -16,6 +17,7 @@ use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use Civi\WMFTransaction;
+use Statistics\Exception\StatisticsCollectorException;
 
 class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
@@ -24,8 +26,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    *
    * @param array $message
    *
+   * @throws WMFException
    * @throws \CRM_Core_Exception
-   * @throws \Civi\WMFException\WMFException
+   * @throws StatisticsCollectorException
    */
   public function processMessage($message) {
     if (empty($message['txn_type']) || !in_array($message['txn_type'], [
@@ -67,22 +70,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $message['contribution_tracking_id'] = $this->getContributionTracking($message);
     }
 
-    //Seeing as we're in the recurring module...
+    // Set recurring to true in case the message is re-queued.
     $message['recurring'] = TRUE;
     $messageObject = new RecurDonationMessage($message);
-    // Set is payment to false here so that amounts will not be validated.
-    // It's possible that sometimes the message here is a payment message
-    // but if so we haven't been validating the amounts here historically
-    // so setting isPayment to false respects that behaviour.
-    $messageObject->setIsPayment(FALSE);
     $messageObject->validate();
     $message = $messageObject->normalize();
 
-    // define the subscription txn type for an actual 'payment'
-    $txn_subscr_payment = ['subscr_payment'];
-
     // route the message to the appropriate handler depending on transaction type
-    if (isset($message['txn_type']) && in_array($message['txn_type'], $txn_subscr_payment)) {
+    if ($messageObject->isPayment()) {
       if (wmf_civicrm_get_contributions_from_gateway_id($message['gateway'], $message['gateway_txn_id'])) {
         Civi::log('wmf')->notice('recurring: Duplicate contribution: {gateway}-{gateway_txn_id}.', [
           'gateway' => $message['gateway'],
