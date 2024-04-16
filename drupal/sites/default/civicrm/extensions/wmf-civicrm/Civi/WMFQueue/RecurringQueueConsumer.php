@@ -28,7 +28,21 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   public function processMessage($message) {
-
+    if (empty($message['txn_type']) || !in_array($message['txn_type'], [
+      // subscription canceled by user at the gateway.
+      'subscr_cancel',
+      // subscription expired (end of term)
+      'subscr_eot',
+      // failed signup
+      'subscr_failed',
+      // 'subscr_modify' - we don't handle subscription modifications here.
+      // subscription account creation
+      'subscr_signup',
+      // subscription payment
+      'subscr_payment',
+    ])) {
+      throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
+    }
     if (!empty($message['is_successful_autorescue']) && $message['is_successful_autorescue'] === TRUE) {
       $recur_record = ContributionRecur::get(FALSE)
         ->addWhere('contribution_recur_smashpig.rescue_reference', '=', $message['rescue_reference'])
@@ -67,15 +81,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     // define the subscription txn type for an actual 'payment'
     $txn_subscr_payment = ['subscr_payment'];
 
-    // define the subscription txn types that affect the subscription account
-    $txn_subscr_acct = [
-      'subscr_cancel', // subscription canceled by user at the gateway.
-      'subscr_eot', // subscription expired
-      'subscr_failed', // failed signup
-      // 'subscr_modify', // subscription modification
-      'subscr_signup', // subscription account creation
-    ];
-
     // route the message to the appropriate handler depending on transaction type
     if (isset($message['txn_type']) && in_array($message['txn_type'], $txn_subscr_payment)) {
       if (wmf_civicrm_get_contributions_from_gateway_id($message['gateway'], $message['gateway_txn_id'])) {
@@ -87,11 +92,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       }
       $this->importSubscriptionPayment($messageObject, $message);
     }
-    elseif (isset($message['txn_type']) && in_array($message['txn_type'], $txn_subscr_acct)) {
-      $this->importSubscriptionAccount($messageObject, $message);
-    }
     else {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
+      $this->importSubscriptionAccount($messageObject, $message);
     }
   }
 
