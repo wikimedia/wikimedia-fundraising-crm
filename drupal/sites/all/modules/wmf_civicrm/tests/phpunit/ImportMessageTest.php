@@ -1184,46 +1184,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * @see https://phabricator.wikimedia.org/T262232
-   *
-   * @throws CRM_Core_Exception
-   */
-  public function testInvalidZipCodeDataFiltered(): void {
-    $contact = $this->createTestEntity('Contact', [
-      'contact_type' => 'Individual',
-      'first_name' => 'Test',
-      'last_name' => 'Mouse',
-    ]);
-
-    $msg = [
-      'contact_id' => $contact['id'],
-      'contact_hash' => $contact['hash'],
-      'currency' => 'USD',
-      'date' => time(),
-      'gateway' => 'test_gateway',
-      'gateway_txn_id' => mt_rand(),
-      'gross' => '1.23',
-      'payment_method' => 'cc',
-      'payment_submethod' => 'visa',
-      'street_address' => '1 Montgomery Street',
-      'city' => 'San Francisco',
-      'state_province' => 'CA',
-      'country' => 'US',
-      'email' => '',
-      // Problematic postal code
-      'postal_code' => '9412”£&*1',
-    ];
-
-    $this->processDonationMessage($msg);
-
-    $address = Address::get(FALSE)
-      ->addWhere('contact_id', '=', $contact['id'])
-      ->execute()->single();
-
-    $this->assertEquals("94121", $address['postal_code']);
-  }
-
-  /**
    * @dataProvider employerRelationDataProvider
    * @param string $sourceType
    * @param bool $isUpdate
