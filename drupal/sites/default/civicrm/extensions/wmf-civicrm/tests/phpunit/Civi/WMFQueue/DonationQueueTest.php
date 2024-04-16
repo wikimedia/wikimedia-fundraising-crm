@@ -5,9 +5,11 @@ namespace Civi\WMFQueue;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\CustomField;
+use Civi\Api4\Email;
 use Civi\Api4\OptionValue;
-use SmashPig\Core\DataStores\DamagedDatabase;
+use SmashPig\Core\DataStores\DataStoreException;
 use SmashPig\Core\DataStores\PendingDatabase;
+use SmashPig\Core\SmashPigException;
 
 /**
  * @group queues
@@ -103,11 +105,8 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertExpectedContributionValues($expected, $message['gateway_txn_id']);
   }
 
-
   /**
    * Process an ordinary (one-time) donation message with an UTF campaign.
-   *
-   * @throws \CRM_Core_Exception
    */
   public function testDonationWithUTFCampaignOption(): void {
     $this->createCustomOption('Appeal', 'EmailCampaign1');
@@ -150,7 +149,6 @@ class DonationQueueTest extends BaseQueueTestCase {
    * a different label.
    *
    * @throws \CRM_Core_Exception
-   * @throws \Civi\WMFException\WMFException
    */
   public function testDonationWithDifferentLabelUTFCampaignOption(): void {
     $optionValue = 'new option';
@@ -171,8 +169,8 @@ class DonationQueueTest extends BaseQueueTestCase {
    * @param array $message
    * @param array $pendingMessage
    *
-   * @throws \SmashPig\Core\DataStores\DataStoreException
-   * @throws \SmashPig\Core\SmashPigException
+   * @throws DataStoreException
+   * @throws SmashPigException
    */
   public function testDonationSparseMessages(array $message, array $pendingMessage): void {
     $pendingMessage['order_id'] = $message['order_id'];
@@ -189,7 +187,6 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
   /**
-   * @throws \CRM_Core_Exception
    * @throws \JsonException
    */
   public function testDuplicateHandling(): void {
@@ -307,6 +304,78 @@ class DonationQueueTest extends BaseQueueTestCase {
         ->execute()->first();
       $this->assertEquals($tracking['id'], $contributionTrackingID);
     }
+  }
+
+  /**
+   * Test that existing on hold setting is retained.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testKeepOnHold(): void {
+    $contactID = $this->createIndividual([
+      'email_primary.email' => 'Agatha@wikimedia.org',
+      'email_primary.on_hold' => TRUE,
+    ]);
+    // Double check it is set to on hold.
+    Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contactID)
+      ->addWhere('on_hold', '=', TRUE)
+      ->execute()->single();
+
+    $msg = [
+      'contact_id' => $contactID,
+      'contribution_recur_id' => $this->createContributionRecur(['contact_id' => $contactID])['id'],
+      'currency' => 'USD',
+      'date' => '2014-01-01 00:00:00',
+      'effort_id' => 2,
+      'email' => 'Agatha@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => 2.34,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg);
+    $email = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contactID)
+      ->execute()->single();
+
+    $this->assertEquals(1, $email['on_hold']);
+    $this->assertEquals('agatha@wikimedia.org', $email['email']);
+
+  }
+
+  /**
+   * Test that existing on hold setting is removed if the email changes.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRemoveOnHoldWhenUpdating() {
+    $contactID = $this->createIndividual([
+      'email_primary.email' => 'Agatha@wikimedia.org',
+      'email_primary.on_hold' => TRUE,
+    ]);
+
+    $msg = [
+      'contact_id' => $contactID,
+      'contribution_recur_id' => $this->createContributionRecur(['contact_id' => $contactID])['id'],
+      'currency' => 'USD',
+      'date' => '2014-01-01 00:00:00',
+      'effort_id' => 2,
+      'email' => 'Pantha@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => 2.34,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg);
+    $email = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contactID)
+      ->execute()->single();
+
+    $this->assertEquals('pantha@wikimedia.org', $email['email']);
+    $this->assertEquals(0, $email['on_hold']);
   }
 
 }
