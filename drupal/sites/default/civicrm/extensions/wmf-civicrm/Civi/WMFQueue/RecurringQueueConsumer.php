@@ -46,35 +46,17 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     ])) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
     }
-    if (!empty($message['is_successful_autorescue']) && $message['is_successful_autorescue'] === TRUE) {
-      $recur_record = ContributionRecur::get(FALSE)
-        ->addWhere('contribution_recur_smashpig.rescue_reference', '=', $message['rescue_reference'])
-        ->addSelect('*', 'contribution.payment_instrument_id')
-        ->addJoin('Contribution AS contribution', 'LEFT', ['contribution.contribution_recur_id', '=', 'id'])
-        ->execute()
-        ->first();
-      if (!empty($recur_record)) {
-        $message['payment_instrument_id'] = $recur_record['contribution.payment_instrument_id'];
-        $message['contribution_recur_id'] = $recur_record['id'];
-        $message['subscr_id'] = $recur_record['trxn_id'];
-      }
-      else {
-        throw new WMFException(WMFException::INVALID_RECURRING, "Error finding rescued recurring payment with recurring reference {$message['rescue_reference']}");
-      }
-    }
-
-    $skipContributionTracking = (isset($message['gateway']) && $message['gateway'] === 'amazon')
-      || (isset($message['is_successful_autorescue']) && $message['is_successful_autorescue']);
-
-    if (!$skipContributionTracking && !isset($message['contribution_tracking_id'])) {
-      $message['contribution_tracking_id'] = $this->getContributionTracking($message);
-    }
-
     // Set recurring to true in case the message is re-queued.
+    // @todo - we can switch later to do this at the point where we re-queue.
     $message['recurring'] = TRUE;
     $messageObject = new RecurDonationMessage($message);
     $messageObject->validate();
     $message = $messageObject->normalize();
+    $skipContributionTracking = $messageObject->isAmazon() || $messageObject->isAutoRescue();
+
+    if (!$skipContributionTracking && !$messageObject->getContributionTrackingID()) {
+      $message['contribution_tracking_id'] = $this->getContributionTracking($message);
+    }
 
     // route the message to the appropriate handler depending on transaction type
     if ($messageObject->isPayment()) {
@@ -95,12 +77,12 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Import a recurring payment
    *
-   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
+   * @param RecurDonationMessage $message
    * @param array $msg
    *
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
-   * @throws \Statistics\Exception\StatisticsCollectorException
+   * @throws StatisticsCollectorException
    */
   protected function importSubscriptionPayment(RecurDonationMessage $message, $msg) {
     /**

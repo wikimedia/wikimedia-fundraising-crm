@@ -3,6 +3,7 @@
 namespace Civi\WMFQueueMessage;
 
 use Civi\API\EntityLookupTrait;
+use Civi\Api4\ContributionRecur;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 
@@ -38,7 +39,7 @@ class RecurDonationMessage extends DonationMessage {
    *
    * @return array
    *
-   * @throws \Civi\WMFException\WMFException
+   * @throws WMFException
    * @throws \CRM_Core_Exception
    */
   public function normalize(): array {
@@ -49,6 +50,7 @@ class RecurDonationMessage extends DonationMessage {
       $message['create_date'] = $message['date'];
     }
     $message['subscr_id'] = $this->getSubscriptionID();
+    $message['contribution_recur_id'] = $this->getContributionRecurID();
     return $message;
   }
 
@@ -56,7 +58,7 @@ class RecurDonationMessage extends DonationMessage {
    * Validate the message
    *
    * @return void
-   * @throws \Civi\WMFException\WMFException
+   * @throws WMFException
    */
   public function validate(): void {
     if ($this->getFrequencyUnit()
@@ -122,6 +124,8 @@ class RecurDonationMessage extends DonationMessage {
    * Get the recurring contribution ID if it already exists.
    *
    * @return int|null
+   * @throws \CRM_Core_Exception
+   * @throws WMFException
    */
   public function getContributionRecurID(): ?int {
     if (isset($this->contributionRecurID)) {
@@ -129,6 +133,30 @@ class RecurDonationMessage extends DonationMessage {
     }
     if (!empty($this->message['contribution_recur_id'])) {
       return (int) $this->message['contribution_recur_id'];
+    }
+    if ($this->isAutoRescue()) {
+      $recurRecord = ContributionRecur::get(FALSE)
+        ->addWhere('contribution_recur_smashpig.rescue_reference', '=', $this->getAutoRescueReference())
+        ->addSelect('*', 'contribution.*')
+        ->addJoin('Contribution AS contribution', 'LEFT', ['contribution.contribution_recur_id', '=', 'id'])
+        ->setLimit(1)
+        ->execute()
+        ->first();
+      if (!$recurRecord) {
+        throw new WMFException(WMFException::INVALID_RECURRING, "Error finding rescued recurring payment with recurring reference " . $this->getAutoRescueReference());
+      }
+      $contributionValues = [];
+      foreach ($recurRecord as $key => $value) {
+        if (str_starts_with($key, 'contribution.')) {
+          $contributionValues[substr($key, 13)] = $value;
+          unset($recurRecord[$key]);
+        }
+      }
+      // Register the entities we have loaded so we can lazy access them.
+      $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
+      $this->contributionRecurID = $recurRecord['id'];
+      $this->define('Contribution', 'PriorContribution', $contributionValues);
+      return $this->contributionRecurID;
     }
     if (!empty($this->getSubscriptionID())) {
       $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->getSubscriptionID());
@@ -190,6 +218,9 @@ class RecurDonationMessage extends DonationMessage {
       // is a substring of the Capture ID we record as 'gateway_txn_id'
       $subscriberID = substr((string) $this->message['gateway_txn_id'], 0, 19);
     }
+    if ($this->isAutoRescue()) {
+      return $this->getExistingContributionRecurValue('trxn_id');
+    }
 
     return $subscriberID ?: NULL;
   }
@@ -203,8 +234,42 @@ class RecurDonationMessage extends DonationMessage {
    * @param int|null $contributionRecurID
    * @return void
    */
-  public function setContributionRecurID(?int $contributionRecurID): void{
+  public function setContributionRecurID(?int $contributionRecurID): void {
     $this->contributionRecurID = $contributionRecurID;
+  }
+
+  /**
+   * Is this a recurring payment which the provider has been able to 'rescue'.
+   *
+   * Adyen is able to get the donor's failing recurring back on track in some
+   * cases - these manifest as an auto-rescue.
+   *
+   * @return bool
+   */
+  public function isAutoRescue(): bool {
+    return isset($this->message['is_successful_autorescue']) && $this->message['is_successful_autorescue'];
+  }
+
+  /**
+   * Get the reference associated with the auto-rescue attempt.
+   *
+   * @return string|null
+   */
+  public function getAutoRescueReference(): ?string {
+    return $this->message['rescue_reference'] ?? NULL;
+  }
+
+  /**
+   * @return int
+   * @throws WMFException
+   * @throws \CRM_Core_Exception
+   */
+  public function getPaymentInstrumentID(): ?int {
+    if ($this->getRecurringPriorContributionValue('id') && empty($this->message['payment_instrument_id']) && empty($this->message['payment_instrument'])) {
+      // If it was not in the message we can look it up from the previous donation.
+      return $this->getRecurringPriorContributionValue('payment_instrument_id');
+    }
+    return parent::getPaymentInstrumentID();
   }
 
 }

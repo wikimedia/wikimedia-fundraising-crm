@@ -451,8 +451,8 @@ class DonationMessage extends Message {
     return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
   }
 
-  public function getGatewayTxnID(): string {
-    return $this->message['gateway_txn_id'];
+  public function getGatewayTxnID(): ?string {
+    return $this->message['gateway_txn_id'] ?? NULL;
   }
 
   /**
@@ -462,7 +462,9 @@ class DonationMessage extends Message {
    * @throws \Civi\WMFException\WMFException|\CRM_Core_Exception
    */
   public function validate(): void {
-
+    if (!$this->getPaymentInstrumentID()) {
+      throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
+    }
     $missingFields = [];
     if (!$this->getOriginalCurrency()) {
       $missingFields[] = 'currency';
@@ -554,7 +556,7 @@ class DonationMessage extends Message {
    * @return int
    * @throws \Civi\WMFException\WMFException
    */
-  public function getPaymentInstrumentID(): int {
+  public function getPaymentInstrumentID(): ?int {
     if (!empty($this->message['payment_instrument_id'])) {
       if (is_numeric($this->message['payment_instrument_id'])) {
         return (int) $this->message['payment_instrument_id'];
@@ -570,7 +572,7 @@ class DonationMessage extends Message {
     if ($paymentInstrumentID) {
       return (int) $paymentInstrumentID;
     }
-    throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
+    return NULL;
   }
 
   /**
