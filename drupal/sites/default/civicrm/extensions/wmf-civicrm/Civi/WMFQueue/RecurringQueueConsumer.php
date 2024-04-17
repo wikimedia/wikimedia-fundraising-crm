@@ -299,15 +299,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @return array
    */
   private function updateContact($msg, $contact_id) {
-    $contact = WMFContact::save(FALSE)
+    return WMFContact::save(FALSE)
       ->setContactID($contact_id)
       ->setMessage($msg)
       ->execute()->first();
-    // Insert the location record
-    // This will be duplicated in some cases in the main message_import, but should
-    // not have a negative impact. Longer term it should be removed from here in favour of there.
-    wmf_civicrm_message_location_update($msg, $contact);
-    return $contact;
   }
 
   /**

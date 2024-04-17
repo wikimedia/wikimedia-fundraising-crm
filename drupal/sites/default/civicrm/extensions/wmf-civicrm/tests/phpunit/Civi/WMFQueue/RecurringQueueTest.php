@@ -36,8 +36,33 @@ class RecurringQueueTest extends BaseQueueTestCase {
       'subscr_id' => $subscr_id,
     ];
     $this->processRecurringSignup($values);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id.last_name', '=', 'Russ')
+      ->execute()->single();
+    $this->assertEquals('5109 Lockwood Rd', $address['street_address']);
 
+    // Our expectations on update are
+    // 1) The contact's name WILL always be updated to reflect the message
+    // 2) The contact's email will always be updated to reflect the message
+    // 3) The contact's address will always be updated to reflect the message
+
+    // By contrast in the normal queue
+    // 1) The contact's name is updated only if it does not already have first_name, last_name
+    // 2) (same) The contact's email will always be updated to reflect the message
+    // 3) (effectively the same) The contact's address is only updated if street address (required)
+    // is present. Since recurring queue address updates come from paypal
+    // which always provides street address this can rely on the shared code.
+
+    $values['street_address'] = '5019 Bendy Road';
+    $values['email'] = 'RussTheGreat@example.com';
     $message = $this->processRecurringPaymentMessage($values);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id.last_name', '=', 'Mouse')
+      ->execute()->single();
+    $this->assertEquals('5019 Bendy Road', $address['street_address']);
+    Email::get(FALSE)
+      ->addWhere('contact_id.last_name', '=', 'Mouse')
+      ->execute()->single();
     $contribution = $this->getContributionForMessage($message);
 
     $recur_record = $this->getContributionRecurForMessage($message);
@@ -52,7 +77,7 @@ class RecurringQueueTest extends BaseQueueTestCase {
     $email = Email::get(FALSE)
       ->addWhere('contact_id', '=', $contribution['contact_id'])
       ->execute()->single();
-    $this->assertEquals('test+fr@wikimedia.org', $email['email']);
+    $this->assertEquals('russthegreat@example.com', $email['email']);
   }
 
   /**
@@ -251,7 +276,6 @@ class RecurringQueueTest extends BaseQueueTestCase {
       $contributionTracking['contribution_id']
     );
     $recur_record = $this->getContributionRecurForMessage($message);
-
     $this->assertEquals($recur_record['id'], $contribution['contribution_recur_id']);
     $contribution2 = $this->getContributionForMessage($message2);
     $this->assertEquals($recur_record['id'], $contribution2['contribution_recur_id']);
