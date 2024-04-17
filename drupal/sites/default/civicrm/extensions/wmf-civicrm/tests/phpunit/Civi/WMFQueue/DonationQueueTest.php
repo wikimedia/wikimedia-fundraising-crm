@@ -419,4 +419,45 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertEquals("94121", $address['postal_code']);
   }
 
+  /**
+   * If we get a contact ID and a bad email, leave the existing contact alone
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testImportWithContactIDAndBadEmail(): void {
+    $email = 'boo-boo' . mt_rand() . '@example.org';
+    $existingContact = $this->createTestEntity('Contact',  [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'email_primary.email' => $email,
+      'address_primary.country_id.iso_code' => 'FR',
+      'address_primary.street_address' => '777 Trompe L\'Oeil Boulevard',
+    ], 'existing');
+
+    $msg = [
+      'contact_id' => $existingContact['id'],
+      'first_name' => 'Lex',
+      'contact_hash' => $existingContact['hash'],
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'totally.different@example.com',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $existingContact['id'])
+      ->execute()->single();
+    $this->assertNotEquals($msg['street_address'], $address['street_address']);
+  }
+
 }
