@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueueMessage;
 
+use Civi\ExchangeException\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 
@@ -114,9 +115,9 @@ class RecurringModifyAmountMessage extends Message {
    * Get the amount in the original currency.
    *
    * @return string
-   * @throws \Civi\ExchangeException\ExchangeRatesException
+   * @throws ExchangeRatesException
    */
-  public function getUsdModifiedAmountRounded(): string {
+  public function getSettledModifiedAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getModifiedCurrency(), $this->getModifiedAmount()), $this->getModifiedCurrency());
   }
 
@@ -143,9 +144,9 @@ class RecurringModifyAmountMessage extends Message {
   }
 
   /**
-   * @throws \Civi\ExchangeException\ExchangeRatesException
+   * @throws ExchangeRatesException
    */
-  public function getUsdDecreaseAmountRounded(): string {
+  public function getSettledDecreaseAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getModifiedCurrency(), $this->getDecreaseAmount()), $this->getModifiedCurrency());
   }
 
@@ -154,9 +155,9 @@ class RecurringModifyAmountMessage extends Message {
   }
 
   /**
-   * @throws \Civi\ExchangeException\ExchangeRatesException
+   * @throws ExchangeRatesException
    */
-  public function getUsdIncreaseAmountRounded(): string {
+  public function getSettledIncreaseAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getModifiedCurrency(), $this->getDifferenceAmount()), $this->getModifiedCurrency());
   }
 
@@ -166,9 +167,9 @@ class RecurringModifyAmountMessage extends Message {
 
   /**
    * @return string
-   * @throws \Civi\ExchangeException\ExchangeRatesException
+   * @throws ExchangeRatesException
    */
-  public function getUsdExistingAmountRounded(): string {
+  public function getSettledExistingAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getExistingContributionRecurValue('currency'), $this->getExistingContributionRecurValue('amount')), $this->getExistingContributionRecurValue('currency'));
   }
 

@@ -1,6 +1,9 @@
 <?php
 
+use Civi\Api4\ContributionRecur;
+use Civi\ExchangeException\ExchangeRatesException;
 use Civi\WMFAudit\BaseAuditTestCase;
+use Civi\WMFException\WMFException;
 use SmashPig\Core\Context;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\PaymentProviders\Fundraiseup\Tests\FundraiseupTestConfiguration;
@@ -549,7 +552,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Pending"),
     ];
 
-    $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
+    $recurRow = ContributionRecur::get(FALSE)
       ->addSelect('*', 'contact_id.*')
       ->addWhere('trxn_id', '=', $recurring['subscr_id'])
       ->execute()->first();
@@ -585,7 +588,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Cancelled"),
     ];
 
-    $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
+    $recurRow = ContributionRecur::get(FALSE)
       ->addSelect('*', 'contact_id.*')
       ->addWhere('trxn_id', '=', $newRecurringMsg['subscr_id'])
       ->execute()->first();
@@ -622,7 +625,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'cancel_reason' => 'Failed: Your card was declined.',
     ];
 
-    $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
+    $recurRow = ContributionRecur::get(FALSE)
       ->addSelect('*', 'contact_id.*')
       ->addWhere('trxn_id', '=', $newRecurringMsg['subscr_id'])
       ->execute()->first();
@@ -634,27 +637,32 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     }
   }
 
+  /**
+   * @throws CRM_Core_Exception
+   * @throws ExchangeRatesException
+   */
   public function testRecurringPlanChange() {
     $audit = $this->auditTestProvider();
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $planChangeMessage = $audit[5][1]['recurring'][0];
-    $rqc = new RecurringQueueConsumer(
-      'recurring'
-    );
-    $recurringModifyConsumer = new RecurringModifyAmountQueueConsumer(
-      'recurring'
-    );
-    $rqc->processMessage($newRecurringMsg);
-    $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
+    $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
+
+    $recurRow = ContributionRecur::get(FALSE)
     ->addSelect('id', 'amount', 'contact_id')
     ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
     ->execute()->first();
-    $this->ids['ContributionRecur'][$recurRow['id']] = $recurRow['id'];
+    // We need to add this contact to ids for it to be dealt to in tearDown
+    // because it doesn't have one of the names we automatically clean up
+    // e.g. 'Mouse' or 'Russ'. The nice thing with the test-names is that
+    // if you do get spare Mice in your DB then they get cleaned up
+    // when you re-run the tests whereas you have to manually delete 'tracked'
+    // creates.
+    $this->ids['Contact'][] = $recurRow['contact_id'];
     $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
 
-    $recurringModifyConsumer->processMessage($planChangeMessage);
+    $this->processMessage($planChangeMessage, 'RecurringModifyAmount', 'recurring-upgrade');
 
-    $recurRowUpdated = \Civi\Api4\ContributionRecur::get(FALSE)
+    $recurRowUpdated = ContributionRecur::get(FALSE)
       ->addSelect('id', 'amount', 'contact_id')
       ->addWhere('id', '=', $recurRow['id'])
       ->execute()->first();
@@ -664,7 +672,6 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->addSelect('*')
       ->addWhere('id', '=', $recurRow['contact_id'])
       ->execute()->first();
-    $this->ids['Contact'][$recurRow['contact_id']] = $recurRow['contact_id'];
     $this->assertEquals($planChangeMessage['last_name'], $contact['last_name']);
 
     $activity = \Civi\Api4\Activity::get(FALSE)
@@ -683,10 +690,13 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $convertedDifference = abs($planChangeMessage['amount']-$newRecurringMsg['gross']);
     $this->assertEquals(CurrencyRoundingHelper::round($convertedDifference, 'GBP'), $details['native_amount_added']);
     $this->assertEquals(CurrencyRoundingHelper::round(exchange_rate_convert('GBP', $convertedDifference), 'USD'), $details['usd_amount_added']);
-
-    \Civi\Api4\ContributionRecur::delete(FALSE)->addWhere('id', '=', $recurRow['id'])->execute();
   }
 
+  /**
+   * @throws CRM_Core_Exception
+   * @throws ExchangeRatesException
+   * @throws WMFException
+   */
   public function testRecurringPlanChangeDowngrade() {
     $audit = $this->auditTestProvider();
     $newRecurringMsg = $audit[3][1]['recurring'][0];
@@ -699,16 +709,15 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'recurring'
     );
     $rqc->processMessage($newRecurringMsg);
-    $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
+    $recurRow = ContributionRecur::get(FALSE)
     ->addSelect('id', 'amount', 'contact_id')
     ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
     ->execute()->first();
-    $this->ids['ContributionRecur'][$recurRow['id']] = $recurRow['id'];
     $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
 
     $recurringModifyConsumer->processMessage($planChangeMessage);
 
-    $recurRowUpdated = \Civi\Api4\ContributionRecur::get(FALSE)
+    $recurRowUpdated = ContributionRecur::get(FALSE)
       ->addSelect('id', 'amount', 'contact_id')
       ->addWhere('id', '=', $recurRow['id'])
       ->execute()->first();
@@ -737,8 +746,6 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $convertedDifference = abs($planChangeMessage['amount']-$newRecurringMsg['gross']);
     $this->assertEquals(CurrencyRoundingHelper::round($convertedDifference, 'GBP'), $details['native_amount_removed']);
     $this->assertEquals(CurrencyRoundingHelper::round(exchange_rate_convert('GBP', $convertedDifference), 'USD'), $details['usd_amount_removed']);
-
-    \Civi\Api4\ContributionRecur::delete(FALSE)->addWhere('id', '=', $recurRow['id'])->execute();
   }
 
   protected function runAuditor() {
