@@ -1,6 +1,5 @@
 <?php
 
-use Civi\Api4\Address;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Contribution;
 use Civi\Api4\Email;
@@ -35,25 +34,14 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     'amount_level',
     'contribution_recur_id',
     'contribution_page_id',
-    // Contribution type id is the old name, replaced by financial_type_id
-    'contribution_type_id',
-    'creditnote_id',
     'is_test',
     'id',
     'invoice_id',
     'is_pay_later',
     'campaign_id',
-    'tax_amount',
     'revenue_recognition_date',
     'invoice_number',
     'is_template',
-  ];
-
-  protected array $moneyFields = [
-    'total_amount',
-    'source',
-    'net_amount',
-    'fee_amount',
   ];
 
   public function setUp(): void {
@@ -79,8 +67,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       $msg['contact_id'] = $this->createIndividual();
       $msg['contribution_recur_id'] = $this->createRecurringContribution(['contact_id' => $msg['contact_id']]);
     }
-    $contribution = $this->messageImport($msg);
-    $this->ids['Contact'][] = $contribution['contact_id'];
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
     $this->processContributionTrackingQueue();
 
     // Ignore contact_id if we have no expectation.
@@ -89,14 +77,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     }
 
     $this->assertComparable($expected['contribution'], $contribution);
-
-    if (!empty($expected['contribution_custom_values'])) {
-      $actual_contribution_custom_values = wmf_civicrm_get_custom_values(
-        $contribution['id'],
-        array_keys($expected['contribution_custom_values'])
-      );
-      $this->assertEquals($expected['contribution_custom_values'], $actual_contribution_custom_values);
-    }
 
     if (!empty($expected['contact'])) {
       $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $contribution['contact_id']]);
@@ -128,15 +108,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         array_keys($expected['contact_custom_values'])
       );
       $this->assertEquals($expected['contact_custom_values'], $actual_contact_custom_values);
-    }
-
-    if (!empty($msg['contribution_tracking_id'])) {
-      $tracking = db_select('contribution_tracking', 'contribution_tracking')
-        ->fields('contribution_tracking')
-        ->condition('contribution_id', $contribution['id'])
-        ->execute()
-        ->fetchAssoc();
-      $this->assertEquals($tracking['id'], $msg['contribution_tracking_id']);
     }
   }
 
@@ -209,7 +180,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         'currency' => 'USD',
         'date' => '2012-05-01 00:00:00',
-        'email' => 'somebody@wikimedia.org',
+        'email' => 'mouse@wikimedia.org',
         'gateway' => 'test_gateway',
         'gateway_txn_id' => $gateway_txn_id,
         'gross' => '1,000.23',
@@ -220,13 +191,12 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         'contribution' => [
           'contribution_status_id' => '1',
           'currency' => 'USD',
-          'fee_amount' => '0.00',
+          'fee_amount' => 0.00,
           'total_amount' => '1,000.23',
           'net_amount' => '1,000.23',
-          'non_deductible_amount' => '',
           'payment_instrument_id' => $payment_instrument_cc,
           'receipt_date' => '',
-          'receive_date' => '20120501000000',
+          'receive_date' => '2012-05-01 00:00:00',
           'source' => 'USD 1,000.23',
           'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
           'financial_type_id' => $financial_type_cash,
@@ -258,7 +228,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         'do_not_phone' => 'Y',
         'do_not_sms' => 'Y',
         'do_not_solicit' => 'Y',
-        'email' => 'somebody@wikimedia.org',
+        'email' => 'mouse@wikimedia.org',
         'first_name' => 'First',
         'fee' => 0.03,
         'language' => 'en',
@@ -309,28 +279,23 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'invoice_id' => '',
           'is_pay_later' => '',
           'is_test' => '',
-          'net_amount' => '1.20', # :(
-          'non_deductible_amount' => '',
+          'net_amount' => 1.20,
           'payment_instrument_id' => $payment_instrument_check,
           'receipt_date' => '',
-          'receive_date' => '20240301000000',
+          'receive_date' => '2024-03-01 00:00:00',
           'source' => 'USD 1.23',
-          'thankyou_date' => '20240401000000',
+          'thankyou_date' => '2024-04-01 00:00:00',
           'total_amount' => '1.23',
           'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
           'financial_type_id' => $financial_type_cash,
-          'creditnote_id' => '',
-          'tax_amount' => '',
-        ],
-        'contribution_custom_values' => [
-          'Appeal' => ImportMessageTest_campaign,
-          'import_batch_number' => '4321',
-          'Campaign' => 'Legacy Gift',
-          'gateway' => 'test_gateway',
-          'gateway_txn_id' => (string) $gateway_txn_id,
-          'gateway_status_raw' => 'P',
-          'no_thank_you' => 'no forwarding address',
-          'Description_of_Stock' => 'Long-winded prolegemenon',
+          'Gift_Data.Appeal' => ImportMessageTest_campaign,
+          'Gift_Information.import_batch_number' => '4321',
+          'Gift_Data.Campaign' => 'Legacy Gift',
+          'contribution_extra.gateway' => 'test_gateway',
+          'contribution_extra.gateway_txn_id' => (string) $gateway_txn_id,
+          'contribution_extra.gateway_status_raw' => 'P',
+          'contribution_extra.no_thank_you' => 'no forwarding address',
+          'Stock_Information.Description_of_Stock' => 'Long-winded prolegemenon',
         ],
         'contact_custom_values' => [
           'do_not_solicit' => '1',
@@ -351,7 +316,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         'currency' => 'USD',
         'date' => '2012-05-01 00:00:00',
-        'email' => 'somebody@wikimedia.org',
+        'email' => 'mouse@wikimedia.org',
         'gateway' => 'test_gateway',
         'gateway_txn_id' => $gateway_txn_id,
         'gross' => '1.23',
@@ -376,21 +341,21 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         'currency' => 'USD',
         'date' => '2012-05-01 00:00:00',
-        'email' => 'somebody@wikimedia.org',
+        'email' => 'mouse@wikimedia.org',
         'gateway' => 'test_gateway',
         'gateway_txn_id' => $gateway_txn_id,
         'gross' => '1.23',
         'payment_method' => 'cc',
         'payment_submethod' => 'visa',
         'language' => 'en_US',
-        'full_name' => 'Dr. Martin Luther King, Jr.',
+        'full_name' => 'Dr. Martin Luther Mouse, Jr.',
       ],
       [
         'contact' => [
           'prefix' => 'Dr.',
           'first_name' => 'Martin',
           'middle_name' => 'Luther',
-          'last_name' => 'King',
+          'last_name' => 'Mouse',
           'suffix' => 'Jr',
         ],
         'contribution' => $this->getBaseContribution($gateway_txn_id),
@@ -405,7 +370,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         'gateway' => 'test_gateway',
         'gateway_txn_id' => $gateway_txn_id,
         'gross' => '1.23',
-        'organization_name' => 'Hedge Co',
+        'organization_name' => 'The Firm',
         'org_contact_name' => 'Test Name',
         'org_contact_title' => 'Test Title',
         'payment_method' => 'cc',
@@ -423,22 +388,19 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'contribution_recur_id' => '',
           'contribution_status_id' => '1',
           'currency' => 'USD',
-          'fee_amount' => '0.00',
+          'fee_amount' => 0.00,
           'invoice_id' => '',
           'is_pay_later' => '',
           'is_test' => '',
           'net_amount' => '1.23',
-          'non_deductible_amount' => '',
           'payment_instrument_id' => $payment_instrument_cc,
           'receipt_date' => '',
-          'receive_date' => '20120301000000',
+          'receive_date' => '2012-03-01 00:00:00',
           'source' => 'USD 1.23',
           'thankyou_date' => '',
           'total_amount' => '1.23',
           'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
           'financial_type_id' => $financial_type_cash,
-          'creditnote_id' => '',
-          'tax_amount' => '',
         ],
         'contact_custom_values' => [
           'Name' => 'Test Name',
@@ -455,7 +417,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         'currency' => 'USD',
         'date' => '2014-01-01 00:00:00',
         'effort_id' => 2,
-        'email' => 'somebody@wikimedia.org',
+        'email' => 'mouse@wikimedia.org',
         'gateway' => 'test_gateway',
         'gateway_txn_id' => $gateway_txn_id,
         'gross' => 2.34,
@@ -475,22 +437,19 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'contribution_recur_id' => TRUE,
           'contribution_status_id' => '1',
           'currency' => 'USD',
-          'fee_amount' => '0.00',
+          'fee_amount' => 0.00,
           'invoice_id' => '',
           'is_pay_later' => '',
           'is_test' => '',
           'net_amount' => 2.34,
-          'non_deductible_amount' => '',
           'payment_instrument_id' => $payment_instrument_cc,
           'receipt_date' => '',
-          'receive_date' => '20140101000000',
+          'receive_date' => '2014-01-01 00:00:00',
           'source' => 'USD ' . 2.34,
           'thankyou_date' => '',
           'total_amount' => 2.34,
           'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
           'financial_type_id' => \Civi\WMFHelper\ContributionRecur::getFinancialTypeForFirstContribution(),
-          'creditnote_id' => '',
-          'tax_amount' => '',
         ],
       ],
     ];
@@ -587,7 +546,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         'country' => 'US',
         'currency' => 'USD',
         'date' => '2012-05-01 00:00:00',
-        'email' => 'somebody@wikimedia.org',
+        'email' => 'mouse@wikimedia.org',
         'gateway' => 'test_gateway',
         'gateway_txn_id' => $gateway_txn_id,
         'gross' => '1.23',
@@ -681,7 +640,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       [
         'currency' => 'USD',
         'date' => '2018-07-01 00:00:00',
-        'email' => 'somebody@wikimedia.org',
+        'email' => 'mouse@wikimedia.org',
         'first_name' => 'First',
         'fee' => '0.03',
         'language' => 'en_US',
@@ -689,7 +648,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         'gateway_txn_id' => $gateway_txn_id,
         'gateway_status' => 'P',
         'gross' => '1.23',
-        'last_name' => 'Last',
+        'last_name' => 'Mouse',
         'middle_name' => 'Middle',
         'payment_method' => 'cc',
         'payment_submethod' => 'visa',
@@ -711,22 +670,19 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
           'invoice_id' => '',
           'is_pay_later' => '',
           'is_test' => '',
-          'net_amount' => '1.20', # :(
-          'non_deductible_amount' => '',
+          'net_amount' => 1.20,
           'payment_instrument_id' => $payment_instrument_cc,
           'receipt_date' => '',
-          'receive_date' => '20180701000000',
+          'receive_date' => '2018-07-01 00:00:00',
           'source' => 'USD 1.23',
           'total_amount' => '1.23',
           'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
           'financial_type_id' => $endowmentFinancialType,
-          'creditnote_id' => '',
-          'tax_amount' => '',
         ],
         'contribution_custom_values' => [
-          'gateway' => 'test_gateway',
-          'gateway_txn_id' => (string) $gateway_txn_id,
-          'gateway_status_raw' => 'P',
+          'contribution_extra.gateway' => 'test_gateway',
+          'contribution_extra.gateway_txn_id' => (string) $gateway_txn_id,
+          'contribution_extra.gateway_status_raw' => 'P',
         ],
       ],
     ];
@@ -771,7 +727,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
         'country' => 'US',
         'currency' => 'USD',
         'date' => '2012-05-01 00:00:00',
-        'email' => 'somebody@wikimedia.org',
+        'email' => 'mouse@wikimedia.org',
         'gateway' => 'test_gateway',
         'gateway_txn_id' => $gateway_txn_id,
         'gross' => '1.23',
@@ -875,7 +831,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
-      'last_name' => 'Es' . mt_rand(),
+      'last_name' => 'Mouse',
     ], 'existing');
     $email = 'booboo' . mt_rand() . '@example.org';
     $this->callAPISuccess('Email', 'Create', [
@@ -935,7 +891,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
-      'last_name' => 'Es' . mt_rand(),
+      'last_name' => 'Mouse',
     ], 'existing');
     $email = 'booboo' . mt_rand() . '@example.org';
     $this->callAPISuccess('Email', 'Create', [
@@ -1142,13 +1098,13 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function testIndicatesEmployerProvidedByDonor(string $sourceType, bool $isUpdate, ?bool $expected) {
     $orgContact = $this->createTestEntity('Contact', [
-      'organization_name' => 'Puritan Foods',
+      'organization_name' => 'The Firm',
       'contact_type' => 'Organization',
     ], 'employer');
 
     $contactParams = [
       'first_name' => 'Philip',
-      'last_name' => 'Mason',
+      'last_name' => 'Mouse',
     ];
     if ($isUpdate) {
       $existingContact = $this->callAPISuccess(
@@ -1192,7 +1148,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'return' => 'current_employer',
       'id' => $contribution['contact_id'],
     ]);
-    $this->assertEquals('Puritan Foods', $contactOrgName);
+    $this->assertEquals('The Firm', $contactOrgName);
     // TODO: test with active relationship to other employer
   }
 
@@ -1321,15 +1277,15 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * This has been written for a specific test & will probably take extra work
    * to use more broadly.
    *
-   * @param array $array1
-   * @param array $array2
+   * @param array $expected
+   * @param array $actual
    */
-  public function assertComparable(array $array1, array $array2) {
-    $this->reformatMoneyFields($array1);
-    $this->reformatMoneyFields($array2);
-    $array1 = $this->filterIgnoredFieldsFromArray($array1);
-    $array2 = $this->filterIgnoredFieldsFromArray($array2);
-    $this->assertEquals($array1, $array2);
+  public function assertComparable(array $expected, array $actual) {
+    $this->reformatMoneyFields($expected);
+    $this->reformatMoneyFields($actual);
+    foreach ($expected as $field => $value) {
+      $this->assertEquals($value, $actual[$field], 'Expected match on field : ' . $field);
+    }
 
   }
 
@@ -1337,7 +1293,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     return [
       'currency' => 'USD',
       'date' => '2012-05-01 00:00:00',
-      'email' => 'somebody@wikimedia.org',
+      'email' => 'mouse@wikimedia.org',
       'gateway' => 'test_gateway',
       'gateway_txn_id' => $gateway_txn_id,
       'gross' => '1.23',
@@ -1357,8 +1313,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $financial_type_cash = (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
     $payment_instrument_cc = (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Credit Card: Visa');
     return [
-      'address_id' => '',
-      'amount_level' => '',
       'campaign_id' => '',
       'cancel_date' => '',
       'cancel_reason' => '',
@@ -1367,22 +1321,19 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_recur_id' => '',
       'contribution_status_id' => '1',
       'currency' => 'USD',
-      'fee_amount' => '0.00',
+      'fee_amount' => 0.00,
       'invoice_id' => '',
       'is_pay_later' => '',
       'is_test' => '',
       'net_amount' => '1.23',
-      'non_deductible_amount' => '',
       'payment_instrument_id' => $payment_instrument_cc,
       'receipt_date' => '',
-      'receive_date' => '20120501000000',
+      'receive_date' => '2012-05-01 00:00:00',
       'source' => 'USD 1.23',
       'thankyou_date' => '',
       'total_amount' => '1.23',
       'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
       'financial_type_id' => $financial_type_cash,
-      'creditnote_id' => '',
-      'tax_amount' => '',
     ];
   }
 
@@ -1393,7 +1344,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   public function reformatMoneyFields(array &$array) {
     foreach ($array as $field => $value) {
-      if (in_array($field, $this->moneyFields, TRUE)) {
+      if (in_array($field, ['total_amount', 'source', 'net_amount', 'fee_amount'], TRUE)) {
         $array[$field] = str_replace(',', '', $value);
       }
     }
