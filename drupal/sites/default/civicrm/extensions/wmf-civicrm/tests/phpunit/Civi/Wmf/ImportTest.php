@@ -8,6 +8,7 @@ use Civi\Api4\ContributionSoft;
 use Civi\Api4\Import;
 use Civi\Api4\Relationship;
 use Civi\Api4\UserJob;
+use Civi\Core\Exception\DBQueryException;
 use Civi\Test;
 use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
@@ -21,12 +22,6 @@ use PHPUnit\Framework\TestCase;
  *  - With HookInterface, you may implement CiviCRM hooks directly in the test
  * class. Simply create corresponding functions (e.g. "hook_civicrm_post(...)"
  * or similar).
- *  - With TransactionalInterface, any data changes made by setUp() or
- * test****() functions will rollback automatically -- as long as you don't
- * manipulate schema or truncate tables. If this test needs to manipulate
- * schema or truncate tables, then either: a. Do all that using setupHeadless()
- * and Civi\Test. b. Disable TransactionalInterface, and handle all
- * setup/teardown yourself.
  *
  * @group headless
  */
@@ -43,10 +38,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   /**
    * @var int
    */
-  protected $userJobID;
+  protected int $userJobID;
 
   /**
-   * @return \Civi\Test\CiviEnvBuilder
+   * @return CiviEnvBuilder
    * @throws \CRM_Extension_Exception_ParseException
    */
   public function setUpHeadless(): CiviEnvBuilder {
@@ -60,7 +55,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   /**
    * Clean up after test.
    *
-   * @throws \Civi\Core\Exception\DBQueryException
+   * @throws DBQueryException
    * @throws \CRM_Core_Exception
    */
   protected function tearDown(): void {
@@ -173,7 +168,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals('ERROR', $import[1]['_status']);
   }
 
-  public function testIDUsedIfPresent() {
+    /**
+     * @throws \CRM_Core_Exception
+     */
+    public function testIDUsedIfPresent() {
     $this->createOrganization();
     $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
@@ -216,7 +214,6 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->runImport($data);
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
     $this->assertEquals('soft_credit_imported', $import[0]['_status']);
-    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
   }
 
   /**
@@ -234,7 +231,6 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->fillImportRow($data);
     $this->runImport($data, 'Individual');
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
-    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
     $this->assertEquals('soft_credit_imported', $import[0]['_status']);
   }
 
@@ -303,7 +299,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * they need merging so throw an error.
    *
    * There is some small chance they are legit - but more likely
-   * this requires a merge so it's probably ok to err on the side of
+   * this requires a merge, so it's probably ok to err on the side of
    * requiring user resolution.
    *
    * @throws \CRM_Core_Exception
@@ -341,7 +337,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals('ERROR', $import['_status']);
     $this->assertStringContainsString('Multiple contact matches', $import['_status_message']);
 
-    // Let's now check that if we change individual2's relationship to be disabled then
+    // Let's now check that if we change individual2's relationship to be disabled
     // then it will select contact 1.
     Relationship::update()->setValues(['is_active' => FALSE])->addWhere('contact_id_a', '=', $individualID2)->execute();
     $this->runImport($importFields, 'Individual');
@@ -349,7 +345,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals('soft_credit_imported', $import['_status']);
   }
 
-  public function testStockSetsTimeToNoon() {
+    /**
+     * @throws \CRM_Core_Exception
+     */
+    public function testStockSetsTimeToNoon() {
     $this->imitateAdminUser();
     $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
@@ -385,7 +384,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   /**
    * Create the table that would be created on submitting the first (DataSource) form.
    *
-   * @throws \Civi\Core\Exception\DBQueryException
+   * @throws DBQueryException
    * @noinspection SqlResolve
    */
   protected function createImportTable($columns = []): void {
@@ -407,7 +406,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
-   * Emulate a logged in user since certain functions use that.
+   * Emulate a logged-in user since certain functions use that.
    * value to store a record in the DB (like activity)
    * CRM-8180
    *
@@ -466,14 +465,15 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     throw new \CRM_Core_Exception('workplace soft credit type does not exist');
   }
 
-  /**
-   * Helper to run the import.
-   *
-   * @param array $data
-   * @param string $mainContactType
-   *
-   * @throws \CRM_Core_Exception
-   */
+    /**
+     * Helper to run the import.
+     *
+     * @param array $data
+     * @param string $mainContactType
+     * @param bool $useSoftCredit
+     *
+     * @throws \CRM_Core_Exception
+     */
   private function runImport(array $data, string $mainContactType = 'Organization', bool $useSoftCredit = TRUE): void {
     $softCreditTypeID = $this->getEmploymentSoftCreditType();
     $importMappings = [];
@@ -556,11 +556,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
-   * @return mixed
+   * @return int
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  private function createSoftCreditConnectedContacts() {
+  private function createSoftCreditConnectedContacts(): int {
     $this->createOrganization();
     // Create 2 'Jane Doe' contacts - we test it finds the second one, who has an employer relationship.
     $this->createTestEntity('Contact', [
@@ -583,11 +582,12 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     ], 'organization')['id'];
   }
 
-  /**
-   * @return array
-   * @throws \Civi\Core\Exception\DBQueryException
-   */
-  protected function setupImport($data = []): array {
+    /**
+     * @param array $data
+     * @return array
+     * @throws DBQueryException
+     */
+  protected function setupImport(array $data = []): array {
     $this->imitateAdminUser();
     $data = array_merge([
       'financial_type_id' => 'Engage',
@@ -601,15 +601,14 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     return $data;
   }
 
-  /**
-   * @param $organizationID
-   * @param $individualID
-   *
-   * @return mixed
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  private function createSoftCreditLink($organizationID, $individualID) {
+    /**
+     * @param int $organizationID
+     * @param int $individualID
+     *
+     * @return int
+     * @throws \CRM_Core_Exception
+     */
+  private function createSoftCreditLink(int $organizationID, int $individualID): int {
     // Link the second contact by a pre-existing soft credit.
     $contributionID = Contribution::create()->setValues([
       'contact_id' => $organizationID,
@@ -627,15 +626,18 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   /**
    * @param $columns
    *
-   * @throws \Civi\Core\Exception\DBQueryException
+   * @throws DBQueryException
    */
   protected function fillImportRow($columns): void {
     \CRM_Core_DAO::executeQuery('INSERT INTO civicrm_tmp_d_abc (' . implode(',', array_keys($columns)) . ') ' . $this->getSelectQuery($columns));
   }
 
-  protected function ensureAnonymousUserExists(): void {
+    /**
+     * @throws \CRM_Core_Exception
+     */
+    protected function ensureAnonymousUserExists(): void {
     if (!\Civi\WMFHelper\Contact::getAnonymousContactID()) {
-      $this->ids['Contact']['anonyous'] = Contact::create([
+      $this->ids['Contact']['anonymous'] = Contact::create([
         'first_name' => 'Anonymous',
         'last_name' => 'Anonymous',
         'contact_type' => 'Individual',
