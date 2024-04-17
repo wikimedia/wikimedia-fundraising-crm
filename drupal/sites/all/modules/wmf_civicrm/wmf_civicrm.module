@@ -292,15 +292,6 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
     \Civi::log('wmf')->info('wmf_civicrm: Queued update to contribution_tracking for {id}', ['id' => $message->getContributionTrackingID()]);
   }
 
-  if (!empty($msg['notes'])) {
-    // TODO: Handle failure.
-    civicrm_api3("Note", "Create", [
-      'entity_table' => 'civicrm_contact',
-      'entity_id' => $msg['contact_id'],
-      'note' => $msg['notes'],
-    ]);
-  }
-
   // Need to get this full name before ending the timer
   $uniqueTimerName = _get_import_timer()->getUniqueNamespace($importTimerName);
   _get_import_timer()->endImportTimer($importTimerName);

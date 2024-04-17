@@ -789,6 +789,14 @@ abstract class ChecksFile {
    */
   public function doImport($msg) {
     $contribution = wmf_civicrm_contribution_message_import($msg);
+    // It's not clear this is used in practice.
+    if (!empty($msg['notes'])) {
+      civicrm_api3("Note", "Create", [
+        'entity_table' => 'civicrm_contact',
+        'entity_id' => $contribution['contact_id'],
+        'note' => $msg['notes'],
+      ]);
+    }
     $this->mungeContribution($contribution);
     foreach ($msg as $key => $value) {
       if (strpos($key, 'relationship.') === 0) {
