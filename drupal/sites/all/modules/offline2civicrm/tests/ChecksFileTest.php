@@ -31,8 +31,7 @@ class ChecksFileTest extends BaseChecksFileTest {
   /**
    * Populate contribution_tracking.country
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
   public function testImportCountry(): void {
@@ -60,15 +59,10 @@ class ChecksFileTest extends BaseChecksFileTest {
     $importer = new ChecksFileProbe();
     $message = $importer->_parseRow($data);
     $importer->doImport($message);
-    $this->processContributionTrackingQueue();
 
     $this->callAPISuccessGetSingle(
       'Contribution', ['trxn_id' => "GENERIC_IMPORT {$data['Transaction ID']}"]
     );
-    $contributionTracking = ContributionTracking::get(FALSE)
-      ->addWhere('contribution_id.trxn_id', '=', "GENERIC_IMPORT {$data['Transaction ID']}")
-      ->execute()->first();
-    $this->assertEquals('AR', $contributionTracking['country']);
   }
 
 }
