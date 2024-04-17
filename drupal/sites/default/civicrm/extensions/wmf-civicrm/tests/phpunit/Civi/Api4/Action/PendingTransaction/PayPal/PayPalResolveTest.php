@@ -106,7 +106,7 @@ class PayPalResolveTest extends TestCase {
       ->setProcessorContactID(mt_rand())
       ->setDonorDetails((new DonorDetails())
         ->setFirstName('Testy')
-        ->setLastName('McTesterson')
+        ->setLastName('McTest')
         ->setEmail('testy@example.com')
       )
       ->setSuccessful(TRUE);
@@ -180,7 +180,7 @@ class PayPalResolveTest extends TestCase {
     );
     $this->assertEquals('testy@example.com', $donationQueueMessage['email']);
     $this->assertEquals('Testy', $donationQueueMessage['first_name']);
-    $this->assertEquals('McTesterson', $donationQueueMessage['last_name']);
+    $this->assertEquals('McTest', $donationQueueMessage['last_name']);
   }
 
   public function testResolveRecurring(): void {
@@ -193,7 +193,7 @@ class PayPalResolveTest extends TestCase {
       ->setProcessorContactID(mt_rand())
       ->setDonorDetails((new DonorDetails())
         ->setFirstName('Testy')
-        ->setLastName('McTesterson')
+        ->setLastName('McTest')
         ->setEmail('testy@example.com')
       )
       ->setSuccessful(TRUE);

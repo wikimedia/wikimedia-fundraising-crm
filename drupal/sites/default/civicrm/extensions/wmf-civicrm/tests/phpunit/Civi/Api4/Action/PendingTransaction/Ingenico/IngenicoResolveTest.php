@@ -106,7 +106,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 0,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
 
     // set configured response to mock getLatestPaymentStatus call
@@ -151,7 +151,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 0,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
 
     // set configured response to mock getLatestPaymentStatus call
@@ -216,7 +216,7 @@ class IngenicoResolveTest extends TestCase {
       $donation_queue_message['gateway_txn_id']
     );
     $this->assertEquals(
-      'Testy McTesterson',
+      'Testy McTest',
       $donation_queue_message['full_name']
     );
   }
@@ -239,7 +239,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 0,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
 
     // set configured response to mock getLatestPaymentStatus call
@@ -298,7 +298,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 0,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
 
     // set configured response to mock getLatestPaymentStatus call
@@ -385,7 +385,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 50,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
 
     // set configured response to mock getLatestPaymentStatus call
@@ -422,7 +422,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 0,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -468,7 +468,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 0,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -504,7 +504,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 0,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
     // set configured response to mock getLatestPaymentStatus call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -540,7 +540,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 100,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
 
     // set configured response to mock getLatestPaymentStatus call
@@ -607,7 +607,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 0,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
 
     // set configured response to mock getLatestPaymentStatus call
@@ -686,7 +686,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 50,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
 
     // set configured response to mock getLatestPaymentStatus call
@@ -715,7 +715,7 @@ class IngenicoResolveTest extends TestCase {
     $contact = Contact::create(FALSE)
       ->setValues([
         'first_name' => 'Testy',
-        'last_name' => 'McTesterson',
+        'last_name' => 'McTest',
       ])->execute()->first();
     $this->contactId = $contact['id'];
     Email::create(FALSE)
@@ -743,7 +743,7 @@ class IngenicoResolveTest extends TestCase {
     unset($pending_message['gateway_session_id']);
     $this->assertEquals(array_merge($pending_message, [
       'gateway_txn_id' => $hostedPaymentStatusResponse->getGatewayTxnId(),
-      'full_name' => 'Testy McTesterson',
+      'full_name' => 'Testy McTest',
     ]), $donationMessage);
   }
 
@@ -766,7 +766,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 50,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
 
     // set configured response to mock getLatestPaymentStatus call
@@ -791,7 +791,7 @@ class IngenicoResolveTest extends TestCase {
     $contact = Contact::create(FALSE)
       ->setValues([
         'first_name' => 'Testy',
-        'last_name' => 'McTesterson',
+        'last_name' => 'McTest',
       ])->execute()->first();
     $this->contactId = $contact['id'];
     Email::create(FALSE)
@@ -841,7 +841,7 @@ class IngenicoResolveTest extends TestCase {
         'avs' => 50,
       ])
       ->setDonorDetails(
-        (new DonorDetails())->setFullName('Testy McTesterson')
+        (new DonorDetails())->setFullName('Testy McTest')
       );
 
     // set configured response to mock getLatestPaymentStatus call
@@ -856,7 +856,7 @@ class IngenicoResolveTest extends TestCase {
     $contact = Contact::create(FALSE)
       ->setValues([
         'first_name' => 'Testy',
-        'last_name' => 'McTesterson',
+        'last_name' => 'McTest',
       ])->execute()->first();
     $this->contactId = $contact['id'];
     Email::create(FALSE)
