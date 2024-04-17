@@ -519,7 +519,8 @@ class Save extends AbstractAction {
     // all & introducing it this conservatively feels like a safe strategy.
     if (!empty($msg['street_address'])) {
       $this->startTimer('message_location_update');
-      wmf_civicrm_message_location_update($msg, ['id' => $msg['contact_id']]);
+      wmf_civicrm_message_email_update($msg, $msg['contact_id']);
+      wmf_civicrm_message_address_update($msg, $msg['contact_id']);
       $this->stopTimer('message_location_update');
     }
     elseif (!empty($msg['email'])) {
