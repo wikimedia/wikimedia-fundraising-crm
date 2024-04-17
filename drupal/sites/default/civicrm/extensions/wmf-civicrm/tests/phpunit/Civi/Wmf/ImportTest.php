@@ -105,14 +105,15 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->ids['Individual'] = Contact::create()->setValues(['contact_type' => 'Individual', 'first_name' => 'Jane', 'last_name' => 'Doe', 'employer_id' => $this->ids['Organization']])->execute()->first()['id'];
 
     $this->runImport($data);
-    $contributions = Contribution::get()->addWhere('contact_id', '=', $this->ids['Organization'])->addSelect(
+    $contribution = Contribution::get()->addWhere('contact_id', '=', $this->ids['Organization'])->addSelect(
       'contribution_extra.gateway',
+        'contribution_extra.no_thank_you',
       'source'
-    )->execute();
-    $this->assertCount(1, $contributions);
-    $contribution = $contributions->first();
+    )->execute()->single();
+
     $this->assertEquals('USD 50.00', $contribution['source']);
     $this->assertEquals('Matching Gifts', $contribution['contribution_extra.gateway']);
+    $this->assertEquals('Sent by portal (matching gift/ workplace giving)', $contribution['contribution_extra.no_thank_you']);
 
     $softCredits = ContributionSoft::get()->addWhere('contribution_id', '=', $contribution['id'])->execute();
     $this->assertCount(1, $softCredits);

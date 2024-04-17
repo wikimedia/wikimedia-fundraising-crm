@@ -18,7 +18,7 @@ class ContributionSoft {
    * @throws \CRM_Core_Exception
    */
   public static function pre(string $op, array $softCreditParams) {
-    if ($op === 'create' && in_array((int) ($softCreditParams['soft_credit_type_id'] ?? NULL), self::getEmploymentSoftCreditTypes(), TRUE)) {
+    if ($op === 'create' && in_array((int) ($softCreditParams['soft_credit_type_id'] ?? NULL), \Civi\WMFHelper\ContributionSoft::getEmploymentSoftCreditTypes(), TRUE)) {
       $contributionContact = Contribution::get(FALSE)
         ->addWhere('id', '=', $softCreditParams['contribution_id'])
         ->addSelect('contact_id', 'contact_id.contact_type', 'contact_id.organization_name', 'contact_id.employer_id', 'receive_date')
@@ -53,31 +53,6 @@ class ContributionSoft {
         ])->addWhere('id', '=', $contributionContact['contact_id'])->execute();
       }
     }
-  }
-
-  /**
-   * @return array
-   *
-   * @throws \CRM_Core_Exception
-   */
-  private static function getEmploymentSoftCreditTypes(): array {
-    if (!\Civi::cache('metadata')->has('wmf_civicrm_employer_soft_credit_types')) {
-      $types = \Civi\Api4\ContributionSoft::getFields(FALSE)
-        ->setLoadOptions(['id', 'name'])
-        ->addWhere('name', '=', 'soft_credit_type_id')
-        ->execute()
-        ->first()['options'];
-      $employmentSoftCreditTypes = [];
-      foreach ($types as $type) {
-        if (in_array($type['name'], ['workplace', 'matched_gift'])) {
-          $employmentSoftCreditTypes[$type['name']] = $type['id'];
-        }
-      }
-      \Civi::cache('metadata')
-        ->set('wmf_civicrm_employer_soft_credit_types', $employmentSoftCreditTypes);
-      return $employmentSoftCreditTypes;
-    }
-    return \Civi::cache('metadata')->get('wmf_civicrm_employer_soft_credit_types');
   }
 
 }
