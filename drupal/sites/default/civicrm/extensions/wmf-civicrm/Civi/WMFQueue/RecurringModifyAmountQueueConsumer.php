@@ -6,12 +6,11 @@ use Civi;
 use Civi\Api4\RecurUpgradeEmail;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
+use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
 use Civi\WMFQueueMessage\RecurringModifyAmountMessage;
+use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
-/**
- *
- */
 class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
 
   public const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID = 165;
@@ -31,6 +30,7 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
   public function processMessage(array $message): void {
     $messageObject = new RecurringModifyAmountMessage($message);
     $messageObject->validate();
+
     if ($messageObject->isDecline()) {
       $this->upgradeRecurDecline($messageObject, $message);
       return;
@@ -41,6 +41,10 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
     }
     if ($messageObject->isDowngrade()) {
       $this->downgradeRecurAmount($messageObject, $message);
+      return;
+    }
+    if ($messageObject->isExternalSubscriptionModification()) {
+      $this->importExternalModifiedRecurRecord($messageObject, $message);
       return;
     }
     throw new WMFException(WMFException::INVALID_RECURRING, 'Unknown transaction type');
@@ -192,6 +196,49 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
       }
     }
     $createCall->execute();
+  }
+
+  /**
+   * Import recur record from external payment orchestrator
+   * ex. Fundraiseup
+   *
+   * @return void
+   */
+  private function importExternalModifiedRecurRecord(RecurringModifyAmountMessage $messageObject, array $msg ) {
+
+    $contact_id = $messageObject->getExistingContributionRecurValue('contact_id');
+    // Fundraiseup also sends contact updates in the notification
+    WMFContact::save(FALSE)
+      ->setContactID($contact_id)
+      ->setMessage($msg)
+      ->execute()->first();
+
+    $recur_amount = (float) $messageObject->getExistingContributionRecurValue('amount');
+    $recur_currency = $messageObject->getExistingContributionRecurValue('currency');
+
+    //The subscr_modify message could also be a notification of changing amount
+    $amount_mismatch = !empty($messageObject->getModifiedAmount()) && ($messageObject->getModifiedAmount() !== $recur_amount );
+    if ($amount_mismatch) {
+      $amountDetails = [
+        'native_currency' => $messageObject->getModifiedCurrency(),
+        'native_original_amount' => $recur_amount,
+        'usd_original_amount' => $messageObject->getUsdExistingAmountRounded(),
+      ];
+      $activityParams = $this->getActivityValues($messageObject, $msg);
+
+      if ($msg[ 'amount' ] < $recur_amount) {
+        $amountDetails['native_amount_removed'] = $messageObject->getOriginalDecreaseAmountRounded();
+        $amountDetails['usd_amount_removed'] = $messageObject->getUsdDecreaseAmountRounded();
+        $activityParams['subject'] = "Recurring amount reduced by {$messageObject->getOriginalDecreaseAmountRounded()} {$recur_currency}";
+        $activityParams['activity_type_id'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
+      } else {
+        $amountDetails['native_amount_added'] = $messageObject->getOriginalIncreaseAmountRounded();
+        $amountDetails['usd_amount_added'] = $messageObject->getUsdIncreaseAmountRounded();
+        $activityParams['subject'] = "Recurring amount increased by {$messageObject->getOriginalIncreaseAmountRounded()} {$recur_currency}";
+        $activityParams['activity_type_id'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
+      }
+      $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
+    }
   }
 
 }

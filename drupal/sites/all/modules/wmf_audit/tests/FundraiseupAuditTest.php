@@ -2,8 +2,8 @@
 
 use Civi\WMFAudit\BaseAuditTestCase;
 use SmashPig\Core\Context;
+use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\PaymentProviders\Fundraiseup\Tests\FundraiseupTestConfiguration;
-use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFQueue\DonationQueueConsumer;
 use Civi\WMFQueue\RefundQueueConsumer;
 use Civi\WMFQueue\RecurringQueueConsumer;
@@ -314,6 +314,29 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
+      [
+        __DIR__ . '/data/Fundraiseup/recurring/planchange',
+        [
+          'recurring' => [
+            [
+              'gateway' => 'fundraiseup',
+              'subscr_id' => 'RWRYRXYC',
+              'first_name' => 'Jimmy',
+              'last_name' => 'Wales Updated',
+              'email' => 'jwales@example.org',
+              'type' => 'recurring',
+              'amount' => '11',
+              'employer' => '',
+              'txn_type' => 'external_recurring_modification',
+              'date' => 1710760069,
+              'no_thank_you' => 'Fundraiseup import',
+              'payment_method' => 'cc',
+              'payment_submethod' => 'visa',
+              'external_identifier' => 'SUBJJCQA'
+            ],
+          ],
+        ],
+      ],
     ];
   }
 
@@ -611,44 +634,38 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     }
   }
 
-  public function testRecurringUpgradeImport() {
-    variable_set('fundraiseup_audit_recon_files_dir', __DIR__ . '/data/Fundraiseup/recurring-upgrade/');
-    $this->runAuditor();
-    $dqc = new DonationQueueConsumer('test');
-    $queue = QueueWrapper::getQueue('donations');
-    $rqc = new RecurringModifyAmountQueueConsumer(
-      'recurring-upgrade'
+  public function testRecurringPlanChange() {
+    $audit = $this->auditTestProvider();
+    $newRecurringMsg = $audit[3][1]['recurring'][0];
+    $planChangeMessage = $audit[5][1]['recurring'][0];
+    $rqc = new RecurringQueueConsumer(
+      'recurring'
     );
-    $count = 0;
-    $messages = [];
-    $message = $queue->pop();
-    $invoiceIds = [];
-    while (!empty($message)) {
-      $count++;
-      $messages[] = $message;
-      $invoiceIds[] = $message['invoice_id'];
-      $dqc->processMessage($message);
-      $message = $queue->pop();
-    }
-    foreach ($invoiceIds as $invoiceId) {
-      $contribution = \Civi\Api4\Contribution::get(FALSE)
-        ->addSelect('id', 'contact_id',)
-        ->addWhere('invoice_id', 'LIKE', $invoiceId . "%")
-        ->execute()->first();
-
-      $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-      $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
-    }
-    $this->assertEquals(2, $count);
-    $rqc->dequeueMessages();
+    $recurringModifyConsumer = new RecurringModifyAmountQueueConsumer(
+      'recurring'
+    );
+    $rqc->processMessage($newRecurringMsg);
     $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
-      ->addSelect('id', 'amount')
-      ->addWhere('trxn_id', '=', $messages[0]['subscr_id'])
-      ->execute()->first();
-
+    ->addSelect('id', 'amount', 'contact_id')
+    ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
+    ->execute()->first();
     $this->ids['ContributionRecur'][$recurRow['id']] = $recurRow['id'];
+    $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
 
-    $this->assertEquals($messages[1]['original_gross'], $recurRow['amount']);
+    $recurringModifyConsumer->processMessage($planChangeMessage);
+
+    $recurRowUpdated = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('id', 'amount', 'contact_id')
+      ->addWhere('id', '=', $recurRow['id'])
+      ->execute()->first();
+    $this->assertEquals($planChangeMessage['amount'], $recurRowUpdated['amount']);
+
+    $contact = \Civi\Api4\Contact::get(FALSE)
+      ->addSelect('*')
+      ->addWhere('id', '=', $recurRow['contact_id'])
+      ->execute()->first();
+    $this->ids['Contact'][$recurRow['contact_id']] = $recurRow['contact_id'];
+    $this->assertEquals($planChangeMessage['last_name'], $contact['last_name']);
 
     $activity = \Civi\Api4\Activity::get(FALSE)
       ->addWhere('source_record_id', '=', $recurRow['id'])
@@ -656,45 +673,53 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->execute()
       ->last();
     $this->assertNotNull($activity);
+    $this->assertEquals('Recurring amount increased by 1.00 GBP', $activity['subject']);
+    $this->assertEquals(165, $activity['activity_type_id']);
+    $this->assertNotNull($activity['details']);
+    $details = json_decode($activity['details'], TRUE);
+    $this->assertEquals('GBP', $details['native_currency']);
+    $this->assertEquals($newRecurringMsg['gross'], $details['native_original_amount']);
+    $this->assertEquals(CurrencyRoundingHelper::round(exchange_rate_convert('GBP',$newRecurringMsg['gross']), 'GBP'), $details['usd_original_amount']);
+    $convertedDifference = abs($planChangeMessage['amount']-$newRecurringMsg['gross']);
+    $this->assertEquals(CurrencyRoundingHelper::round($convertedDifference, 'GBP'), $details['native_amount_added']);
+    $this->assertEquals(CurrencyRoundingHelper::round(exchange_rate_convert('GBP', $convertedDifference), 'USD'), $details['usd_amount_added']);
+
+    \Civi\Api4\ContributionRecur::delete(FALSE)->addWhere('id', '=', $recurRow['id'])->execute();
   }
 
-  public function testRecurringDowngradeImport() {
-    variable_set('fundraiseup_audit_recon_files_dir', __DIR__ . '/data/Fundraiseup/recurring-downgrade/');
-    $this->runAuditor();
-    $dqc = new DonationQueueConsumer('test');
-    $queue = QueueWrapper::getQueue('donations');
-    $rqc = new RecurringModifyAmountQueueConsumer(
-      'recurring-upgrade'
+  public function testRecurringPlanChangeDowngrade() {
+    $audit = $this->auditTestProvider();
+    $newRecurringMsg = $audit[3][1]['recurring'][0];
+    $planChangeMessage = $audit[5][1]['recurring'][0];
+    $planChangeMessage['amount'] = '9';
+    $rqc = new RecurringQueueConsumer(
+      'recurring'
     );
-    $count = 0;
-    $messages = [];
-    $message = $queue->pop();
-    $invoiceIds = [];
-    while (!empty($message)) {
-      $count++;
-      $messages[] = $message;
-      $invoiceIds[] = $message['invoice_id'];
-      $dqc->processMessage($message);
-      $message = $queue->pop();
-    }
-    foreach ($invoiceIds as $invoiceId) {
-      $contribution = \Civi\Api4\Contribution::get(FALSE)
-        ->addSelect('id', 'contact_id', 'contribution_recur_id')
-        ->addWhere('invoice_id', 'LIKE', $invoiceId . "%")
-        ->execute()->first();
-
-      $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-      $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
-    }
-    $this->assertEquals(2, $count);
-    $rqc->dequeueMessages();
+    $recurringModifyConsumer = new RecurringModifyAmountQueueConsumer(
+      'recurring'
+    );
+    $rqc->processMessage($newRecurringMsg);
     $recurRow = \Civi\Api4\ContributionRecur::get(FALSE)
-      ->addSelect('id', 'amount')
-      ->addWhere('trxn_id', '=', $messages[0]['subscr_id'])
-      ->execute()->first();
+    ->addSelect('id', 'amount', 'contact_id')
+    ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
+    ->execute()->first();
     $this->ids['ContributionRecur'][$recurRow['id']] = $recurRow['id'];
+    $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
 
-    $this->assertEquals($messages[1]['original_gross'], $recurRow['amount']);
+    $recurringModifyConsumer->processMessage($planChangeMessage);
+
+    $recurRowUpdated = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('id', 'amount', 'contact_id')
+      ->addWhere('id', '=', $recurRow['id'])
+      ->execute()->first();
+    $this->assertEquals($planChangeMessage['amount'], $recurRowUpdated['amount']);
+
+    $contact = \Civi\Api4\Contact::get(FALSE)
+      ->addSelect('*')
+      ->addWhere('id', '=', $recurRow['contact_id'])
+      ->execute()->first();
+    $this->ids['Contact'][$recurRow['contact_id']] = $recurRow['contact_id'];
+    $this->assertEquals($planChangeMessage['last_name'], $contact['last_name']);
 
     $activity = \Civi\Api4\Activity::get(FALSE)
       ->addWhere('source_record_id', '=', $recurRow['id'])
@@ -702,6 +727,18 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->execute()
       ->last();
     $this->assertNotNull($activity);
+    $this->assertEquals('Recurring amount reduced by 1.00 GBP', $activity['subject']);
+    $this->assertEquals(168, $activity['activity_type_id']);
+    $this->assertNotNull($activity['details']);
+    $details = json_decode($activity['details'], TRUE);
+    $this->assertEquals('GBP', $details['native_currency']);
+    $this->assertEquals($newRecurringMsg['gross'], $details['native_original_amount']);
+    $this->assertEquals(CurrencyRoundingHelper::round(exchange_rate_convert('GBP',$newRecurringMsg['gross']), 'GBP'), $details['usd_original_amount']);
+    $convertedDifference = abs($planChangeMessage['amount']-$newRecurringMsg['gross']);
+    $this->assertEquals(CurrencyRoundingHelper::round($convertedDifference, 'GBP'), $details['native_amount_removed']);
+    $this->assertEquals(CurrencyRoundingHelper::round(exchange_rate_convert('GBP', $convertedDifference), 'USD'), $details['usd_amount_removed']);
+
+    \Civi\Api4\ContributionRecur::delete(FALSE)->addWhere('id', '=', $recurRow['id'])->execute();
   }
 
   protected function runAuditor() {

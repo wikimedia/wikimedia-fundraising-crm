@@ -42,7 +42,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         $message['subscr_id'] = $recur_record['trxn_id'];
       }
       else {
-        throw new WMFException(WMFException::INVALID_RECURRING, "Error finding rescued recurring payment with recurring reference {$msg['rescue_reference']}");
+        throw new WMFException(WMFException::INVALID_RECURRING, "Error finding rescued recurring payment with recurring reference {$message['rescue_reference']}");
       }
     }
 
