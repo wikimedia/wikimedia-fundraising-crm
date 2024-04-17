@@ -297,6 +297,18 @@ abstract class ChecksFile {
   }
 
   /**
+   * @param array $msg
+   * @return array
+   * @throws CRM_Core_Exception
+   * @throws WMFException
+   * @throws \Statistics\Exception\StatisticsCollectorException
+   */
+  public function insertRow(array $msg): array {
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    return $contribution;
+  }
+
+  /**
    * Read checks from a file and save to the database.
    *
    * @param int $offset
@@ -786,7 +798,7 @@ abstract class ChecksFile {
    * @throws \CRM_Core_Exception
    */
   public function doImport($msg) {
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->insertRow($msg);
     // It's not clear this is used in practice.
     if (!empty($msg['notes'])) {
       civicrm_api3("Note", "Create", [

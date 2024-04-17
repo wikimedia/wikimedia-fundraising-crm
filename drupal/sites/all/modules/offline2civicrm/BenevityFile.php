@@ -212,7 +212,8 @@ class BenevityFile extends ChecksFile {
   public function doImport($msg) {
     $contribution = [];
     if (!empty($msg['gross']) && $msg['gross'] > 0) {
-      $contribution = wmf_civicrm_contribution_message_import($msg);
+      $contribution = $this->insertRow($msg);
+      $msg['contact_id'] = $contribution['contact_id'];
     }
     elseif (empty($msg['contact_id'])) {
       // We still want to create the contact and link it to the organization, and
@@ -254,7 +255,7 @@ class BenevityFile extends ChecksFile {
       }
 
       $this->unsetAddressFields($matchedMsg);
-      $matchingContribution = wmf_civicrm_contribution_message_import($matchedMsg);
+      $matchingContribution = $this->insertRow($matchedMsg);
       if (!empty($matchedMsg['notes'])) {
         // It's not clear this is used in practice.
         civicrm_api3("Note", "Create", [
