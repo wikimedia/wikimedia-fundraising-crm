@@ -155,12 +155,14 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $importer = new EngageChecksFile($fileUri);
     $importer->import();
-    $contact = $this->callAPISuccess('Contact', 'get', [
-      'email' => 'rsimpson4@unblog.fr',
-      'sequential' => 1,
-    ]);
-    $this->assertEquals('07065', $contact['values'][0]['postal_code']);
-    $this->assertEquals(5, strlen($contact['values'][0]['postal_code']));
+    $contact = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', 'rsimpson4@unblog.fr')
+      ->addSelect('sort_name', 'display_name', 'address_primary.postal_code')
+      ->execute()->single();
+    $this->assertEquals('Jaloo', $contact['sort_name']);
+    $this->assertEquals('Jaloo', $contact['display_name']);
+    $this->assertEquals('07065', $contact['address_primary.postal_code']);
+    $this->assertEquals(5, strlen($contact['address_primary.postal_code']));
   }
 
   /**
