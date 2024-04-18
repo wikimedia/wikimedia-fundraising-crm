@@ -1487,6 +1487,7 @@ abstract class BaseAuditProcessor {
       'main' => 'donations',
       'negative' => 'refund',
       'recurring' => 'recurring',
+      'recurring-modify' => 'recurring-modify',
     ];
 
     if (!array_key_exists($type, $queueNames)) {

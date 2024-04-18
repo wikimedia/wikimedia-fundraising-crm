@@ -16,7 +16,7 @@ class RecurringModifyAmountQueueTest extends BaseQueueTestCase {
   use ContactTestTrait;
   use Api3TestTrait;
 
-  protected string $queueName = 'recurring-upgrade';
+  protected string $queueName = 'recurring-modify';
 
   protected string $queueConsumer = 'RecurringModifyAmount';
 

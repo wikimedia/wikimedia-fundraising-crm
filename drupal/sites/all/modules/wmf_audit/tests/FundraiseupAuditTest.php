@@ -320,14 +320,14 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       [
         __DIR__ . '/data/Fundraiseup/recurring/planchange',
         [
-          'recurring' => [
+          'recurring-modify' => [
             [
               'gateway' => 'fundraiseup',
               'subscr_id' => 'RWRYRXYC',
               'first_name' => 'Jimmy',
               'last_name' => 'Wales Updated',
               'email' => 'jwales@example.org',
-              'type' => 'recurring',
+              'type' => 'recurring-modify',
               'amount' => '11',
               'employer' => '',
               'txn_type' => 'external_recurring_modification',
@@ -644,7 +644,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   public function testRecurringPlanChange() {
     $audit = $this->auditTestProvider();
     $newRecurringMsg = $audit[3][1]['recurring'][0];
-    $planChangeMessage = $audit[5][1]['recurring'][0];
+    $planChangeMessage = $audit[5][1]['recurring-modify'][0];
     $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
 
     $recurRow = ContributionRecur::get(FALSE)
@@ -660,7 +660,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $this->ids['Contact'][] = $recurRow['contact_id'];
     $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
 
-    $this->processMessage($planChangeMessage, 'RecurringModifyAmount', 'recurring-upgrade');
+    $this->processMessage($planChangeMessage, 'RecurringModifyAmount', 'recurring-modify');
 
     $recurRowUpdated = ContributionRecur::get(FALSE)
       ->addSelect('id', 'amount', 'contact_id')
@@ -700,22 +700,17 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   public function testRecurringPlanChangeDowngrade() {
     $audit = $this->auditTestProvider();
     $newRecurringMsg = $audit[3][1]['recurring'][0];
-    $planChangeMessage = $audit[5][1]['recurring'][0];
+    $planChangeMessage = $audit[5][1]['recurring-modify'][0];
     $planChangeMessage['amount'] = '9';
-    $rqc = new RecurringQueueConsumer(
-      'recurring'
-    );
-    $recurringModifyConsumer = new RecurringModifyAmountQueueConsumer(
-      'recurring'
-    );
-    $rqc->processMessage($newRecurringMsg);
+
+    $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
     $recurRow = ContributionRecur::get(FALSE)
     ->addSelect('id', 'amount', 'contact_id')
     ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
     ->execute()->first();
     $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
 
-    $recurringModifyConsumer->processMessage($planChangeMessage);
+    $this->processMessage($planChangeMessage, 'RecurringModifyAmount', 'recurring-modify');
 
     $recurRowUpdated = ContributionRecur::get(FALSE)
       ->addSelect('id', 'amount', 'contact_id')

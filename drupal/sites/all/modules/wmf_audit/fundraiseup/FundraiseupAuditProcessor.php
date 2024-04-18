@@ -84,6 +84,8 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
         $sendme = $this->normalize_partial($message);
         if (!empty($sendme['type']) && $sendme['type'] === 'recurring') {
           $this->send_queue_message($sendme, 'recurring');
+        } else if(!empty($sendme['type']) && $sendme['type'] === 'recurring-modify') {
+          $this->send_queue_message($sendme, 'recurring-modify');
         }
         else {
           $this->send_queue_message($sendme, 'main');
