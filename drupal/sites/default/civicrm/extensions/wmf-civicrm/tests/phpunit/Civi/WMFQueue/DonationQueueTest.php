@@ -5,6 +5,7 @@ namespace Civi\WMFQueue;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\CustomField;
+use Civi\Api4\Address;
 use Civi\Api4\Email;
 use Civi\Api4\OptionValue;
 use SmashPig\Core\DataStores\DataStoreException;
@@ -376,6 +377,46 @@ class DonationQueueTest extends BaseQueueTestCase {
 
     $this->assertEquals('pantha@wikimedia.org', $email['email']);
     $this->assertEquals(0, $email['on_hold']);
+  }
+
+  /**
+   * @see https://phabricator.wikimedia.org/T262232
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testInvalidZipCodeDataFiltered(): void {
+    $contact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+    ]);
+
+    $msg = [
+      'contact_id' => $contact['id'],
+      'contact_hash' => $contact['hash'],
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'street_address' => '1 Montgomery Street',
+      'city' => 'San Francisco',
+      'state_province' => 'CA',
+      'country' => 'US',
+      'email' => '',
+      // Problematic postal code
+      'postal_code' => '9412”£&*1',
+    ];
+
+    $this->processDonationMessage($msg);
+
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->execute()->single();
+
+    $this->assertEquals("94121", $address['postal_code']);
   }
 
 }
