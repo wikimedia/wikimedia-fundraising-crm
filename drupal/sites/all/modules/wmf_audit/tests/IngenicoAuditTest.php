@@ -128,7 +128,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
         'invoice_id' => '1014.0',
         'currency' => 'USD',
         'date' => 1455825706,
-        'email' => 'asdf@asdf.com',
+        'email' => 'mouse@wikimedia.org',
         'gateway' => 'globalcollect',
         'gateway_txn_id' => '1111662247',
         'gross' => 1.00,

@@ -1,12 +1,13 @@
 <?php
 
+use Civi\WMFAudit\BaseAuditTestCase;
 use Civi\WMFException\WMFException;
 
 /**
  * @group Adyen
  * @group WmfAudit
  */
-class AdyenAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
+class AdyenAuditTest extends BaseAuditTestCase {
   protected $idForRefundTest;
 
   public function setUp(): void {
@@ -35,81 +36,54 @@ class AdyenAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
     variable_set('adyen_audit_log_search_past_days', 1);
 
     // Fakedb doesn't fake the original txn for refunds, so add one here
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('adyen', '4522268860022701');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    }
-    else {
-      $msg = [
-        'contribution_tracking_id' => 92598312,
-        'currency' => 'USD',
-        'date' => 1455825706,
-        'email' => 'asdf@asdf.com',
-        'gateway' => 'adyen',
-        'gateway_txn_id' => '4522268860022701',
-        'gross' => 1.00,
-        'payment_method' => 'cc',
-        'payment_submethod' => 'visa',
-        'contribution_status_id' => 1
-      ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
-    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
+    $msg = [
+      'contribution_tracking_id' => 92598312,
+      'currency' => 'USD',
+      'date' => 1455825706,
+      'email' => 'mouse@wikimedia.org',
+      'gateway' => 'adyen',
+      'gateway_txn_id' => '4522268860022701',
+      'gross' => 1.00,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'contribution_status_id' => 1
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
 
-    // and another for the chargeback
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('adyen', '4555568860022701');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    }
-    else {
-      $msg = [
-        'contribution_tracking_id' => 92598318,
-        'currency' => 'USD',
-        'date' => 1443724034,
-        'email' => 'asdf@asdf.org',
-        'gateway' => 'adyen',
-        'gateway_txn_id' => '4555568860022701',
-        'gross' => 1.00,
-        'payment_method' => 'cc',
-        'payment_submethod' => 'visa',
-        ];
-        $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
-    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
+    $msg = [
+      'contribution_tracking_id' => 92598318,
+      'currency' => 'USD',
+      'date' => 1443724034,
+      'email' => 'mouse@wikimedia.org',
+      'gateway' => 'adyen',
+      'gateway_txn_id' => '4555568860022701',
+      'gross' => 1.00,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
 
     // Fake refunded transaction
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('adyen', '4555568860022703');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    }
-    else {
-      $msg = [
-        'contribution_tracking_id' => 1004,
-        'invoice_id' => 1004.0,
-        'currency' => 'USD',
-        'date' => 1455825706,
-        'email' => 'asdf@asdf.com',
-        'gateway' => 'adyen',
-        'gateway_txn_id' => '4522268860022703',
-        'gross' => 1.00,
-        'payment_method' => 'cc',
-        'payment_submethod' => 'visa',
-      ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
-    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
-    $this->idForRefundTest = $contribution['id'];
+    $msg = [
+      'contribution_tracking_id' => 1004,
+      'invoice_id' => 1004.0,
+      'currency' => 'USD',
+      'date' => 1455825706,
+      'email' => 'mouse@wikimedia.org',
+      'gateway' => 'adyen',
+      'gateway_txn_id' => '4522268860022703',
+      'gross' => 1.00,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
+    $this->ids['Contribution']['for_refund'] = $this->getContributionForMessage($msg)['id'];
   }
 
 
 
-  public function auditTestProvider() {
+  public function auditTestProvider(): array
+  {
     return [
       [
         __DIR__ . '/data/Adyen/donation_recur/',
@@ -135,7 +109,7 @@ class AdyenAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
               'first_name' => 'Bob',
               'gateway_account' => 'WikimediaDonations',
               'language' => 'nl',
-              'last_name' => 'Bobby Bobbiest',
+              'last_name' => 'Mouse',
               'recurring' => '1',
               'recurring_payment_token' => '82431234.1',
               'user_ip' => '127.0.0.1',
@@ -157,7 +131,7 @@ class AdyenAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
               'country' => 'US',
               'currency' => 'USD',
               'date' => 1487484651,
-              'email' => 'asdf@asdf.com',
+              'email' => 'mouse@wikimedia.org',
               'fee' => 0.24,
               'first_name' => 'asdf',
               'gateway' => 'adyen',
@@ -206,7 +180,7 @@ class AdyenAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
               'gross' => '5.35',
               'invoice_id' => '80188432.1',
               'language' => 'nl',
-              'last_name' => 'McTesterson',
+              'last_name' => 'McTest',
               'order_id' => '80188432.1',
               'payment_method' => 'rtbt',
               'payment_submethod' => 'rtbt_ideal',
@@ -258,7 +232,7 @@ class AdyenAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
     ];
   }
 
-  public function auditErrorTestProvider() {
+  public function auditErrorTestProvider(): array {
     return [
       [
         __DIR__ . '/data/Adyen/refund/',
@@ -303,7 +277,7 @@ class AdyenAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
       'gateway_txn_id' => '4522268860022701',
       'gross' => 1.00,
     ];
-    wmf_civicrm_mark_refund($this->idForRefundTest, 'Refunded', TRUE, $msg['date'],
+    wmf_civicrm_mark_refund($this->ids['Contribution']['for_refund'], 'Refunded', TRUE, $msg['date'],
       $msg['gateway_txn_id'],
       $msg['currency'],
       $msg['gross']
