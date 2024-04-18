@@ -5,7 +5,9 @@ namespace Civi;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\WMFQueue;
+use Civi\ExchangeException\ExchangeRatesException;
 use SmashPig\Core\DataStores\QueueWrapper;
+use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 trait WMFQueueTrait {
 
@@ -136,8 +138,42 @@ trait WMFQueueTrait {
       'user_ip' => '127.0.0.2',
       'utm_campaign' => '',
       'utm_medium' => '',
-      'utm_source' => '..cc'
+      'utm_source' => '..cc',
     ];
+  }
+
+  /**
+   * @param $currency
+   * @param $amount
+   *
+   * @return float
+   */
+  protected function getConvertedAmount($currency, $amount): float {
+    try {
+      return exchange_rate_convert($currency, $amount);
+    }
+    catch (ExchangeRatesException $e) {
+      $this->fail('Exchange rate conversion failed: ' . $e->getMessage());
+    }
+  }
+
+  /**
+   * @param string $currency
+   * @param float $amount
+   * @return float
+   */
+  protected function getConvertedAmountRounded(string $currency, float $amount): float {
+    return $this->round($this->getConvertedAmount($currency, $amount), $currency);
+  }
+
+  /**
+   * @param float $amount
+   * @param string $currency
+   *
+   * @return string
+   */
+  protected function round(float $amount, string $currency = 'USD'): string {
+    return CurrencyRoundingHelper::round($amount, $currency);
   }
 
   /**
@@ -212,7 +248,7 @@ trait WMFQueueTrait {
    *
    * If you don't want it to re-use a loaded contact you should set up a different identifier.
    *
-   * @param string $identifier
+   * @param int $id
    *   The key used to identify the contact in the IDs array. You may need to add it to this array
    * @param string $value
    *   The expected value

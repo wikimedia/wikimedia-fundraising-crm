@@ -1,11 +1,9 @@
 <?php
 
 use Civi\Api4\ContributionRecur;
-use Civi\ExchangeException\ExchangeRatesException;
 use Civi\WMFAudit\BaseAuditTestCase;
 use Civi\WMFException\WMFException;
 use SmashPig\Core\Context;
-use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\PaymentProviders\Fundraiseup\Tests\FundraiseupTestConfiguration;
 use Civi\WMFQueue\DonationQueueConsumer;
 use Civi\WMFQueue\RefundQueueConsumer;
@@ -37,7 +35,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     }
   }
 
-  public function auditTestProvider() {
+  public function auditTestProvider(): array {
     return [
       [
         __DIR__ . '/data/Fundraiseup/donations/',
@@ -335,7 +333,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
               'no_thank_you' => 'Fundraiseup import',
               'payment_method' => 'cc',
               'payment_submethod' => 'visa',
-              'external_identifier' => 'SUBJJCQA'
+              'external_identifier' => 'SUBJJCQA',
             ],
           ],
         ],
@@ -639,7 +637,6 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
 
   /**
    * @throws CRM_Core_Exception
-   * @throws ExchangeRatesException
    */
   public function testRecurringPlanChange() {
     $audit = $this->auditTestProvider();
@@ -686,15 +683,14 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $details = json_decode($activity['details'], TRUE);
     $this->assertEquals('GBP', $details['native_currency']);
     $this->assertEquals($newRecurringMsg['gross'], $details['native_original_amount']);
-    $this->assertEquals(CurrencyRoundingHelper::round(exchange_rate_convert('GBP',$newRecurringMsg['gross']), 'GBP'), $details['usd_original_amount']);
-    $convertedDifference = abs($planChangeMessage['amount']-$newRecurringMsg['gross']);
-    $this->assertEquals(CurrencyRoundingHelper::round($convertedDifference, 'GBP'), $details['native_amount_added']);
-    $this->assertEquals(CurrencyRoundingHelper::round(exchange_rate_convert('GBP', $convertedDifference), 'USD'), $details['usd_amount_added']);
+    $this->assertEquals($this->getConvertedAmountRounded('GBP', $newRecurringMsg['gross']), $details['usd_original_amount']);
+    $convertedDifference = abs($planChangeMessage['amount'] - $newRecurringMsg['gross']);
+    $this->assertEquals($this->round($convertedDifference, 'GBP'), $details['native_amount_added']);
+    $this->assertEquals($this->getConvertedAmountRounded('GBP', $convertedDifference), $details['usd_amount_added']);
   }
 
   /**
    * @throws CRM_Core_Exception
-   * @throws ExchangeRatesException
    * @throws WMFException
    */
   public function testRecurringPlanChangeDowngrade() {
@@ -737,13 +733,16 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $details = json_decode($activity['details'], TRUE);
     $this->assertEquals('GBP', $details['native_currency']);
     $this->assertEquals($newRecurringMsg['gross'], $details['native_original_amount']);
-    $this->assertEquals(CurrencyRoundingHelper::round(exchange_rate_convert('GBP',$newRecurringMsg['gross']), 'GBP'), $details['usd_original_amount']);
-    $convertedDifference = abs($planChangeMessage['amount']-$newRecurringMsg['gross']);
-    $this->assertEquals(CurrencyRoundingHelper::round($convertedDifference, 'GBP'), $details['native_amount_removed']);
-    $this->assertEquals(CurrencyRoundingHelper::round(exchange_rate_convert('GBP', $convertedDifference), 'USD'), $details['usd_amount_removed']);
+    $this->assertEquals($this->getConvertedAmountRounded('GBP', $newRecurringMsg['gross']), $details['usd_original_amount']);
+    $convertedDifference = abs($planChangeMessage['amount'] - $newRecurringMsg['gross']);
+    $this->assertEquals($this->round($convertedDifference, 'GBP'), $details['native_amount_removed']);
+    $this->assertEquals($this->getConvertedAmountRounded('GBP', $convertedDifference), $details['usd_amount_removed']);
   }
 
-  protected function runAuditor() {
+  /**
+   * @noinspection PhpUnhandledExceptionInspection
+   */
+  protected function runAuditor(): void {
     $options = [
       'fakedb' => TRUE,
       'quiet' => TRUE,
