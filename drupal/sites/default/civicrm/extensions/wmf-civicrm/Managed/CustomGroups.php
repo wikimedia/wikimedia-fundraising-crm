@@ -285,6 +285,17 @@ return [
     ],
     'fields' => _wmf_civicrm_get_address_data_fields(),
   ],
+  'donor_advised_fund' => [
+    'group' => [
+      'name' => 'donor_advised_fund',
+      'title' => 'Donor Advised Fund',
+      'extends' => 'Contribution',
+      'style' => 'Inline',
+      'is_active' => TRUE,
+      'table_name' => 'civicrm_relationship_donor_advised',
+    ],
+    'fields' => _wmf_civicrm_get_donor_advised_fields(),
+  ],
 ];
 
 /**
@@ -1995,6 +2006,21 @@ function _wmf_civicrm_get_address_data_fields(): array {
       'note_columns' => 60,
       'note_rows' => 4,
       'column_name' => 'update_date',
+    ],
+  ];
+}
+
+function _wmf_civicrm_get_donor_advised_fields(): array {
+  return [
+    'owns_donor_advised_for' => [
+      'name' => 'owns_donor_advised_for',
+      'label' => 'Owns the Donor Advised Fund',
+      'html_type' => 'Autocomplete-Select',
+      'data_type' => 'EntityReference',
+      'text_length' => 255,
+      'column_name' => 'owns_donor_advised_for',
+      'filter' => 'contact_type=Organization',
+      'fk_entity' => 'Contact',
     ],
   ];
 }

@@ -4,7 +4,10 @@
 namespace Civi\WMFHook;
 
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\Api4\CustomField;
+use Civi\Api4\CustomGroup;
+use Civi\Api4\Relationship;
 use Civi\WMFHelper\CustomData;
 use CRM_Wmf_ExtensionUtil as E;
 
@@ -23,6 +26,9 @@ class Data {
    * @throws \API_Exception
    */
   public static function customPre(string $op, int $groupID, int $entityID, array &$params): void {
+    if ($op !== 'delete') {
+      self::createDonorAdvisedRelationshipFromCustomField($groupID, $entityID, $params);
+    }
     if (empty(self::getDateTrackingFields())) {
       return;
     }
@@ -49,6 +55,40 @@ class Data {
               }
             }
           }
+        }
+      }
+    }
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  protected static function createDonorAdvisedRelationshipFromCustomField(int $groupID, int $entityID, array $params) {
+    $groupName = CustomGroup::get(FALSE)
+      ->addWhere('id', '=', $groupID)
+      ->execute()->single()['name'];
+    if ($groupName === 'donor_advised_fund') {
+      foreach ($params as $field) {
+        if ($field['column_name'] !== 'owns_donor_advised_for' || empty($field['value'])) {
+          continue;
+        }
+        $relatedContactID = (int) $field['value'];
+        $contactID = Contribution::get(FALSE)->addWhere('id', '=', $entityID)
+          ->addSelect('contact_id')
+          ->execute()->single()['contact_id'];
+        if (!count(Relationship::get(FALSE)
+          ->addWhere('contact_id_b', '=', $contactID)
+          ->addWhere('contact_id_a', '=', $relatedContactID)
+          ->addWhere('relationship_type_id.name_a_b', '=', 'Holds a Donor Advised Fund of')
+          ->addSelect('id')->execute())) {
+          // Relationship type is a required field so if not found this would
+          // throw an error and the line import would be rolled back. There would be
+          // an error line in the csv presented to the user.
+          Relationship::create(FALSE)->setValues([
+            'contact_id_b' => $contactID,
+            'contact_id_a' => $relatedContactID,
+            'relationship_type_id.name_a_b' => 'Holds a Donor Advised Fund of',
+          ])->execute();
         }
       }
     }

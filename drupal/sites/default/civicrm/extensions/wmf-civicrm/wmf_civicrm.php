@@ -1,6 +1,8 @@
 <?php
 
 use Civi\Api4\CustomField;
+use Civi\Api4\CustomGroup;
+use Civi\Api4\Relationship;
 use Civi\WMFHelper\Queue;
 
 require_once 'wmf_civicrm.civix.php';
