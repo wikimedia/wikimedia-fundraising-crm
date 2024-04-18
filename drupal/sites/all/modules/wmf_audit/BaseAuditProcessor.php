@@ -1215,42 +1215,43 @@ abstract class BaseAuditProcessor {
     if ($this->record_is_cancel($record)) {
       return 'x';
     }
-
-    switch ($record['payment_method']) {
-      case 'cc':
-        return 'c';
-      case 'ach':
-      case 'bt':
-      case 'rtbt':
-      case 'obt':
-        return 't';
-      case 'cash':
-        return 'h';
-      case 'amazon':
-        return 'a';
-      case 'apple':
-        return 'l';
-      case 'google':
-        return 'g';
-      case 'paypal':
-        return 'p';
-      case 'dd':
-        return 'd';
-      case 'check':
-      case 'stock':
-        return 'k';
-      case 'ew':
-        return 'w';
-      case 'venmo':
-        return 'v';
+    if (!empty($record['payment_method'])) {
+      switch ($record['payment_method']) {
+        case 'cc':
+          return 'c';
+        case 'ach':
+        case 'bt':
+        case 'rtbt':
+        case 'obt':
+          return 't';
+        case 'cash':
+          return 'h';
+        case 'amazon':
+          return 'a';
+        case 'apple':
+          return 'l';
+        case 'google':
+          return 'g';
+        case 'paypal':
+          return 'p';
+        case 'dd':
+          return 'd';
+        case 'check':
+        case 'stock':
+          return 'k';
+        case 'ew':
+          return 'w';
+        case 'venmo':
+          return 'v';
+      }
+      if ($record) {
+        echo print_r($record, TRUE);
+      }
+      $this->logError(
+        __FUNCTION__ . " Appeareth a payment_method hitherto unknown...",
+        'DATA_WEIRD'
+      );
     }
-    if ($record) {
-      echo print_r($record, TRUE);
-    }
-    $this->logError(
-      __FUNCTION__ . " Appeareth a payment_method hitherto unknown...",
-      'DATA_WEIRD'
-    );
     return '?';
   }
 
@@ -1486,6 +1487,7 @@ abstract class BaseAuditProcessor {
       'main' => 'donations',
       'negative' => 'refund',
       'recurring' => 'recurring',
+      'recurring-modify' => 'recurring-modify',
     ];
 
     if (!array_key_exists($type, $queueNames)) {

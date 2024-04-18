@@ -228,12 +228,6 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
           'id' => $message->getContributionRecurID(),
         ]);
       }
-      if ($message->isFundraiseUp()) {
-        check_recur_modification_and_queue([
-          'amount' => $message->getExistingContributionRecurValue('amount'),
-          'currency' => $message->getExistingContributionRecurValue('currency'),
-        ], $msg);
-      }
     }
   }
   if ($msg['contact_id'] && isset($msg['contact_hash'])) {
@@ -390,29 +384,6 @@ function getImportTimerName($isRecurring): string {
  */
 function _get_import_timer(): \Statistics\Collector\AbstractCollector {
   return ImportStatsCollector::getInstance();
-}
-
-/**
- * @param object $recur_record
- * @param array $msg
- *
- * @return void
- * @throws \SmashPig\Core\ConfigurationKeyException
- * @throws \SmashPig\Core\DataStores\DataStoreException
- */
-function check_recur_modification_and_queue(array $recur_record, array $msg): void {
-  $recur_amount = $recur_record['amount'];
-  $recur_currency = $recur_record['currency'];
-  $amount_mismatch = !empty($msg['original_gross']) && ($msg['original_gross'] != $recur_amount);
-  $currency_match = $recur_currency === $msg['original_currency'];
-  if ($currency_match && $amount_mismatch) {
-    $msg['amount'] = $msg['original_gross'];
-    $msg['txn_type'] = 'recurring_upgrade';
-    if ($msg['original_gross'] < $recur_amount) {
-      $msg['txn_type'] = 'recurring_downgrade';
-    }
-    QueueWrapper::push('recurring-upgrade', $msg);
-  }
 }
 
 /**

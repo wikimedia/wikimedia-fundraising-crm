@@ -2,9 +2,20 @@
 
 namespace Civi\WMFQueueMessage;
 
+use Civi\ExchangeException\ExchangeRatesException;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
+
 
 class RecurringModifyAmountMessage extends Message {
+
+  private $contributionRecurID;
+  /**
+   * Constructor.
+   */
+  public function __construct(array $message) {
+    parent::__construct($message);
+  }
 
   public function isDecline(): bool {
     return $this->message['txn_type'] === 'recurring_upgrade_decline';
@@ -16,6 +27,36 @@ class RecurringModifyAmountMessage extends Message {
 
   public function isDowngrade(): bool {
     return $this->message['txn_type'] === 'recurring_downgrade';
+  }
+
+  public function isExternalSubscriptionModification(): bool {
+    return $this->message['txn_type'] === 'external_recurring_modification';
+  }
+
+  /**
+   * Get the recurring contribution ID if it already exists.
+   *
+   * @return int|null
+   */
+  public function getContributionRecurID(): ?int {
+    if (isset($this->contributionRecurID)) {
+      return $this->contributionRecurID;
+    }
+    if (!empty($this->message['contribution_recur_id'])) {
+      return (int) $this->message['contribution_recur_id'];
+    }
+    if (!empty($this->getSubscriptionID())) {
+      $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->getSubscriptionID());
+      if ($recurRecord) {
+        \Civi::log('wmf')->info('recur_donation_import: Found matching recurring record for subscr_id: {subscriber_id}', ['subscriber_id' => $this->getSubscriptionID()]);
+        // Since we have loaded this we should register it so we can lazy access it.
+        $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
+        $this->contributionRecurID = $recurRecord['id'];
+        return $this->contributionRecurID;
+      }
+    }
+    $this->contributionRecurID = NULL;
+    return $this->contributionRecurID;
   }
 
   /**
@@ -46,15 +87,19 @@ class RecurringModifyAmountMessage extends Message {
         throw new WMFException(WMFException::INVALID_RECURRING, 'downgradeRecurAmount: New recurring amount is greater than the original amount.');
       }
     }
+
+    if ($this->isExternalSubscriptionModification() && !$this->getContributionRecurID()) {
+      throw new WMFException(WMFException::INVALID_RECURRING, 'Unable to locate recur record without Subscription ID');
+    }
   }
 
   /**
    * Get the currency remitted by the donor.
    *
-   * @return string
+   * @return ?string
    */
   public function getModifiedCurrency(): string {
-    return $this->message['currency'];
+    return $this->message['currency'] ?? $this->getExistingContributionRecurValue('currency');
   }
 
   /**
@@ -70,9 +115,9 @@ class RecurringModifyAmountMessage extends Message {
    * Get the amount in the original currency.
    *
    * @return string
-   * @throws \Civi\ExchangeException\ExchangeRatesException
+   * @throws ExchangeRatesException
    */
-  public function getUsdModifiedAmountRounded(): string {
+  public function getSettledModifiedAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getModifiedCurrency(), $this->getModifiedAmount()), $this->getModifiedCurrency());
   }
 
@@ -99,9 +144,9 @@ class RecurringModifyAmountMessage extends Message {
   }
 
   /**
-   * @throws \Civi\ExchangeException\ExchangeRatesException
+   * @throws ExchangeRatesException
    */
-  public function getUsdDecreaseAmountRounded(): string {
+  public function getSettledDecreaseAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getModifiedCurrency(), $this->getDecreaseAmount()), $this->getModifiedCurrency());
   }
 
@@ -110,9 +155,9 @@ class RecurringModifyAmountMessage extends Message {
   }
 
   /**
-   * @throws \Civi\ExchangeException\ExchangeRatesException
+   * @throws ExchangeRatesException
    */
-  public function getUsdIncreaseAmountRounded(): string {
+  public function getSettledIncreaseAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getModifiedCurrency(), $this->getDifferenceAmount()), $this->getModifiedCurrency());
   }
 
@@ -122,9 +167,9 @@ class RecurringModifyAmountMessage extends Message {
 
   /**
    * @return string
-   * @throws \Civi\ExchangeException\ExchangeRatesException
+   * @throws ExchangeRatesException
    */
-  public function getUsdExistingAmountRounded(): string {
+  public function getSettledExistingAmountRounded(): string {
     return $this->round($this->currencyConvert($this->getExistingContributionRecurValue('currency'), $this->getExistingContributionRecurValue('amount')), $this->getExistingContributionRecurValue('currency'));
   }
 
@@ -135,6 +180,15 @@ class RecurringModifyAmountMessage extends Message {
    */
   public function getDecreaseAmount(): string {
     return -$this->getDifferenceAmount();
+  }
+
+  /**
+   * Get the subscriber ID.
+   *
+   * @return string|null
+   */
+  public function getSubscriptionID(): ?string {
+    return trim($this->message['subscr_id'] ?? $this->message['trxn_id'] ?? NULL);
   }
 
 }

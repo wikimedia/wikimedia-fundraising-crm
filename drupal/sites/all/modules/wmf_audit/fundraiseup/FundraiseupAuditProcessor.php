@@ -84,6 +84,8 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
         $sendme = $this->normalize_partial($message);
         if (!empty($sendme['type']) && $sendme['type'] === 'recurring') {
           $this->send_queue_message($sendme, 'recurring');
+        } else if(!empty($sendme['type']) && $sendme['type'] === 'recurring-modify') {
+          $this->send_queue_message($sendme, 'recurring-modify');
         }
         else {
           $this->send_queue_message($sendme, 'main');
@@ -109,10 +111,10 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
    * @return int|void
    */
   protected function get_recon_files_count($recon_files) {
-    //...Five, for new donations, new recurring, cancellations, failed recurring, and refunds.
+    //...Six, for new donations, new recurring, cancellations, failed recurring, recurring updates, and refunds.
     $count = count($recon_files);
-    if ($count > 5 && !$this->get_runtime_options('run_all')) {
-      $count = 5;
+    if ($count > 6 && !$this->get_runtime_options('run_all')) {
+      $count = 6;
     }
     return $count;
   }
