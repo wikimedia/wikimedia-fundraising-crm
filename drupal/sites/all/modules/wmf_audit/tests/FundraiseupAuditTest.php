@@ -1,14 +1,12 @@
 <?php
 
+use Civi\Api4\Activity;
+use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\WMFAudit\BaseAuditTestCase;
-use Civi\WMFException\WMFException;
 use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\Fundraiseup\Tests\FundraiseupTestConfiguration;
-use Civi\WMFQueue\DonationQueueConsumer;
-use Civi\WMFQueue\RefundQueueConsumer;
-use Civi\WMFQueue\RecurringQueueConsumer;
-use Civi\WMFQueue\RecurringModifyAmountQueueConsumer;
 
 /**
  * @group Fundraiseup
@@ -352,13 +350,13 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $this->assertMessages($expectedMessages);
   }
 
+  /**
+   * @throws CRM_Core_Exception
+   */
   public function testImportCreditCardUsdDonationMessages() {
     $audit = $this->auditTestProvider()[0];
     $donation = $audit[1]['donations'][0];
-    $dqc = new DonationQueueConsumer('test');
-    $message = new TransactionMessage($donation);
-    $dqc->processMessage($message->getBody());
-    $this->processContributionTrackingQueue();
+    $this->processDonationMessage($donation);
 
     $expected = [
       'contact_id.contact_type' => 'Individual',
@@ -377,18 +375,15 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Credit Card: Visa"),
     ];
 
-    $contribution = \Civi\Api4\Contribution::get(FALSE)
-      ->addSelect('*', 'contact_id.*',)
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('*', 'contact_id.*')
       ->addWhere('invoice_id', 'LIKE', $donation['invoice_id'] . "%")
       ->execute()->first();
 
-    $contact = \Civi\Api4\Contact::get(FALSE)
-      ->addSelect('custom.*',)
+    $contact = Contact::get(FALSE)
+      ->addSelect('custom.*')
       ->addWhere('id', '=', $contribution['contact_id'])
       ->execute()->first();
-
-    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
 
     $this->assertEquals($contact["External_Identifiers.fundraiseup_id"], $donation['external_identifier']);
     foreach ($expected as $key => $item) {
@@ -396,13 +391,13 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     }
   }
 
+  /**
+   * @throws CRM_Core_Exception
+   */
   public function testImportGooglePayDonationMessages() {
     $audit = $this->auditTestProvider()[0];
     $donation = $audit[1]['donations'][1];
-    $dqc = new DonationQueueConsumer('test');
-    $message = new TransactionMessage($donation);
-    $dqc->processMessage($message->getBody());
-    $this->processContributionTrackingQueue();
+    $this->processDonationMessage($donation);
 
     $expected = [
       'contact_id.contact_type' => 'Individual',
@@ -421,18 +416,15 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Google Pay: Visa"),
     ];
 
-    $contribution = \Civi\Api4\Contribution::get(FALSE)
-      ->addSelect('*', 'contact_id.*',)
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('*', 'contact_id.*')
       ->addWhere('invoice_id', 'LIKE', $donation['invoice_id'] . "%")
       ->execute()->first();
 
-    $contact = \Civi\Api4\Contact::get(FALSE)
-      ->addSelect('custom.*',)
+    $contact = Contact::get(FALSE)
+      ->addSelect('custom.*')
       ->addWhere('id', '=', $contribution['contact_id'])
       ->execute()->first();
-
-    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
 
     $this->assertEquals($contact["External_Identifiers.fundraiseup_id"], $donation['external_identifier']);
     foreach ($expected as $key => $item) {
@@ -440,13 +432,13 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     }
   }
 
+  /**
+   * @throws CRM_Core_Exception
+   */
   public function testImportBtDonationMessages() {
     $audit = $this->auditTestProvider()[0];
     $donation = $audit[1]['donations'][2];
-    $dqc = new DonationQueueConsumer('test');
-    $message = new TransactionMessage($donation);
-    $dqc->processMessage($message->getBody());
-    $this->processContributionTrackingQueue();
+    $this->processDonationMessage($donation);
 
     $expected = [
       'contact_id.contact_type' => 'Individual',
@@ -465,18 +457,15 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Bank Transfer: ACH"),
     ];
 
-    $contribution = \Civi\Api4\Contribution::get(FALSE)
-      ->addSelect('*', 'contact_id.*',)
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('*', 'contact_id.*')
       ->addWhere('invoice_id', 'LIKE', $donation['invoice_id'] . "%")
       ->execute()->first();
 
-    $contact = \Civi\Api4\Contact::get(FALSE)
-      ->addSelect('custom.*',)
+    $contact = Contact::get(FALSE)
+      ->addSelect('custom.*')
       ->addWhere('id', '=', $contribution['contact_id'])
       ->execute()->first();
-
-    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
 
     $this->assertEquals($contact["External_Identifiers.fundraiseup_id"], $donation['external_identifier']);
     foreach ($expected as $key => $item) {
@@ -484,20 +473,15 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     }
   }
 
+  /**
+   * @throws CRM_Core_Exception
+   */
   public function testImportRefundDonationMessages() {
     $audit = $this->auditTestProvider();
     $donation = $audit[0][1]['donations'][3];
     $refund = $audit[1][1]['refund'][0];
-    $dqc = new DonationQueueConsumer('test');
-    $rfqc = new RefundQueueConsumer(
-      'refund'
-    );
-    $message = new TransactionMessage($donation);
-    $dqc->processMessage($message->getBody());
-    $this->processContributionTrackingQueue();
-
-    $refundMessage = new TransactionMessage($refund);
-    $rfqc->processMessage($refundMessage->getBody());
+    $this->processDonationMessage($donation);
+    $this->processMessage($refund, 'Refund', 'refund');
 
     $expected = [
       'contact_id.contact_type' => 'Individual',
@@ -516,26 +500,23 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Credit Card: Visa"),
     ];
 
-    $contribution = \Civi\Api4\Contribution::get(FALSE)
-      ->addSelect('*', 'contact_id.*',)
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('*', 'contact_id.*')
       ->addWhere('invoice_id', 'LIKE', $donation['invoice_id'] . "%")
       ->execute()->first();
-
-    $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
 
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $contribution[$key]);
     }
   }
 
+  /**
+   * @throws CRM_Core_Exception
+   */
   public function testImportNewRecurring() {
     $audit = $this->auditTestProvider();
     $recurring = $audit[3][1]['recurring'][0];
-    $rqc = new RecurringQueueConsumer(
-      'recurring'
-    );
-    $rqc->processMessage($recurring);
+    $this->processMessage($recurring, 'Recurring', 'recurring');
 
     $expected = [
       'contact_id.contact_type' => 'Individual',
@@ -555,23 +536,20 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->addWhere('trxn_id', '=', $recurring['subscr_id'])
       ->execute()->first();
 
-    $this->ids['Contact'][$recurRow['contact_id']] = $recurRow['contact_id'];
-    $this->ids['ContributionRecur'][$recurRow['id']] = $recurRow['id'];
-
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $recurRow[$key]);
     }
   }
 
-  public function testImportCancelRecurring() {
+  /**
+   * @throws CRM_Core_Exception
+   */
+  public function testImportCancelRecurring(): void {
     $audit = $this->auditTestProvider();
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $cancelMsg = $audit[2][1]['recurring'][0];
-    $rqc = new RecurringQueueConsumer(
-      'recurring'
-    );
-    $rqc->processMessage($newRecurringMsg);
-    $rqc->processMessage($cancelMsg);
+    $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
+    $this->processMessage($cancelMsg, 'Recurring', 'recurring');
 
     $expected = [
       'contact_id.contact_type' => 'Individual',
@@ -591,23 +569,20 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->addWhere('trxn_id', '=', $newRecurringMsg['subscr_id'])
       ->execute()->first();
 
-    $this->ids['Contact'][$recurRow['contact_id']] = $recurRow['contact_id'];
-    $this->ids['ContributionRecur'][$recurRow['id']] = $recurRow['id'];
-
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $recurRow[$key]);
     }
   }
 
-  public function testImportFailedRecurring() {
+  /**
+   * @throws CRM_Core_Exception
+   */
+  public function testImportFailedRecurring(): void {
     $audit = $this->auditTestProvider();
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $failedMsg = $audit[4][1]['recurring'][0];
-    $rqc = new RecurringQueueConsumer(
-      'recurring'
-    );
-    $rqc->processMessage($newRecurringMsg);
-    $rqc->processMessage($failedMsg);
+    $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
+    $this->processMessage($failedMsg, 'Recurring', 'recurring');
 
     $expected = [
       'contact_id.contact_type' => 'Individual',
@@ -628,8 +603,6 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->addWhere('trxn_id', '=', $newRecurringMsg['subscr_id'])
       ->execute()->first();
 
-    $this->ids['Contact'][$recurRow['contact_id']] = $recurRow['contact_id'];
-
     foreach ($expected as $key => $item) {
       $this->assertEquals($item, $recurRow[$key]);
     }
@@ -645,9 +618,9 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
 
     $recurRow = ContributionRecur::get(FALSE)
-    ->addSelect('id', 'amount', 'contact_id')
-    ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
-    ->execute()->first();
+      ->addSelect('id', 'amount', 'contact_id')
+      ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
+      ->execute()->first();
     // We need to add this contact to ids for it to be dealt to in tearDown
     // because it doesn't have one of the names we automatically clean up
     // e.g. 'Mouse' or 'Russ'. The nice thing with the test-names is that
@@ -665,13 +638,13 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->execute()->first();
     $this->assertEquals($planChangeMessage['amount'], $recurRowUpdated['amount']);
 
-    $contact = \Civi\Api4\Contact::get(FALSE)
+    $contact = Contact::get(FALSE)
       ->addSelect('*')
       ->addWhere('id', '=', $recurRow['contact_id'])
       ->execute()->first();
     $this->assertEquals($planChangeMessage['last_name'], $contact['last_name']);
 
-    $activity = \Civi\Api4\Activity::get(FALSE)
+    $activity = Activity::get(FALSE)
       ->addWhere('source_record_id', '=', $recurRow['id'])
       ->addWhere('activity_type_id:name', '=', 'Recurring Upgrade')
       ->execute()
@@ -691,22 +664,19 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
 
   /**
    * @throws CRM_Core_Exception
-   * @throws WMFException
    */
-  public function testRecurringPlanChangeDowngrade() {
+  public function testRecurringPlanChangeDowngrade(): void {
     $audit = $this->auditTestProvider();
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $planChangeMessage = $audit[5][1]['recurring-modify'][0];
     $planChangeMessage['amount'] = '9';
-
     $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
     $recurRow = ContributionRecur::get(FALSE)
-    ->addSelect('id', 'amount', 'contact_id')
-    ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
-    ->execute()->first();
+      ->addSelect('id', 'amount', 'contact_id')
+      ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
+      ->execute()->first();
     $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
-
-    $this->processMessage($planChangeMessage, 'RecurringModifyAmount', 'recurring-modify');
+    $this->processMessage($planChangeMessage, 'RecurringModifyAmount', 'recurring');
 
     $recurRowUpdated = ContributionRecur::get(FALSE)
       ->addSelect('id', 'amount', 'contact_id')
@@ -714,14 +684,13 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->execute()->first();
     $this->assertEquals($planChangeMessage['amount'], $recurRowUpdated['amount']);
 
-    $contact = \Civi\Api4\Contact::get(FALSE)
+    $contact = Contact::get(FALSE)
       ->addSelect('*')
       ->addWhere('id', '=', $recurRow['contact_id'])
       ->execute()->first();
-    $this->ids['Contact'][$recurRow['contact_id']] = $recurRow['contact_id'];
     $this->assertEquals($planChangeMessage['last_name'], $contact['last_name']);
 
-    $activity = \Civi\Api4\Activity::get(FALSE)
+    $activity = Activity::get(FALSE)
       ->addWhere('source_record_id', '=', $recurRow['id'])
       ->addWhere('activity_type_id:name', '=', 'Recurring Downgrade')
       ->execute()

@@ -13,6 +13,8 @@ class BaseAuditTestCase extends TestCase {
   use WMFEnvironmentTrait;
   use WMFQueueTrait;
 
+  protected array $ids = [];
+
   public function setUp(): void {
     // Reset any runtime options that may have been set by previous tests
     unset(\Civi::$statics['wmf_audit_runtime']);
@@ -63,4 +65,5 @@ class BaseAuditTestCase extends TestCase {
       $this->fail('SmashPig configuration problem :' . $e->getMessage());
     }
   }
+
 }
