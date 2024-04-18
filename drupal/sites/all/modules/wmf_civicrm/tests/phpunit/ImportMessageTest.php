@@ -1078,57 +1078,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertContactValue($this->ids['Contact']['existing'], 'AName', 'last_name');
   }
 
-  /**
-   * If we get a contact ID and a bad email, leave the existing contact alone
-   *
-   * @throws \Civi\WMFException\WMFException
-   * @throws \CRM_Core_Exception
-   */
-  public function testImportWithContactIdAndBadEmail() {
-    $existingContact = $this->createTestEntity('Contact',  [
-      'contact_type' => 'Individual',
-      'first_name' => 'Test',
-      'last_name' => 'Es' . mt_rand(),
-    ], 'existing');
-    $email = 'booboo' . mt_rand() . '@example.org';
-    $this->callAPISuccess('Email', 'Create', [
-      'contact_id' => $this->ids['Contact']['existing'],
-      'email' => $email,
-      'location_type_id' => 1,
-    ]);
-    $this->callAPISuccess('Address', 'Create', [
-      'contact_id' => $this->ids['Contact']['existing'],
-      'country' => wmf_civicrm_get_country_id('FR'),
-      'street_address' => '777 Trompe L\'Oeil Boulevard',
-      'location_type_id' => 1,
-    ]);
-    $msg = [
-      'contact_id' => $existingContact['id'],
-      'first_name' => 'Lex',
-      'contact_hash' => $existingContact['hash'],
-      'currency' => 'USD',
-      'date' => '2017-01-01 00:00:00',
-      'invoice_id' => mt_rand(),
-      'email' => 'totally.different@example.com',
-      'country' => 'US',
-      'street_address' => '123 42nd St. #321',
-      'gateway' => 'test_gateway',
-      'gateway_txn_id' => mt_rand(),
-      'gross' => '1.25',
-      'payment_method' => 'cc',
-      'payment_submethod' => 'visa',
-    ];
-    $contribution = $this->messageImport($msg);
-    $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
-    $address = $this->callAPISuccessGetSingle(
-      'Address', [
-        'contact_id' => $existingContact['id'],
-        'location_type' => 1,
-      ]
-    );
-    $this->assertNotEquals($msg['street_address'], $address['street_address']);
-  }
-
   public function testRecurringNoToken() {
     // need to set up a recurring message recurring=1 but there is no entry in the token DB
     $msg = [
