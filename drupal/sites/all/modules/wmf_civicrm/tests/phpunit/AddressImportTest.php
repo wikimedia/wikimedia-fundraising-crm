@@ -1,36 +1,24 @@
 <?php
 
+use Civi\Api4\Address;
+use Civi\Api4\Generic\Result;
+
 /**
  * @group Pipeline
  * @group WmfCivicrm
  */
 class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
 
-  /**
-   * Contact ID
-   *
-   * @var int
-   */
-  protected $contactID;
-
   public function setUp(): void {
     parent::setUp();
-    civicrm_initialize();
-    $contact = $this->callAPISuccess('Contact', 'create', array(
-      'first_name' => 'Minnie', 'last_name' => 'Mouse', 'contact_type' => 'Individual', 'email' => 'minnie@mouse.org')
-    );
-    $this->contactID = $contact['id'];
-  }
-
-  public function tearDown(): void {
-    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_contact WHERE last_name = 'Mouse'");
+    $this->createIndividual();
   }
 
   /**
    * Test creating an address with void data does not create an address.
    */
-  public function testAddressImportVoidData() {
-    $msg = array(
+  public function testAddressImportVoidData(): void {
+    $msg = [
       'currency' => 'USD',
       'date' => time(),
       'last_name' => 'Mouse',
@@ -42,11 +30,11 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_submethod' => 'visa',
       'street_address' => 'N0NE PROVIDED',
       'postal_code' => 0,
-    );
+    ];
 
-    $contribution = wmf_civicrm_contribution_message_import($msg);
-    $addresses = $this->callAPISuccess('Address', 'get', array('contact_id' => $contribution['contact_id']));
-    $this->assertEquals(0, $addresses['count']);
+    $this->processMessage($msg, 'Donation', 'test');
+    $addresses = $this->getMouseHouses();
+    $this->assertCount(0, $addresses);
   }
 
   /**
@@ -54,10 +42,11 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @dataProvider getVoidValues
    *
-   * @param string $voidValue
+   * @param string|int $voidValue
+   * @throws CRM_Core_Exception
    */
   public function testAddressImportSkipVoidData($voidValue) {
-    $msg = array(
+    $msg = [
       'currency' => 'USD',
       'date' => time(),
       'last_name' => 'Mouse',
@@ -71,10 +60,10 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
       'postal_code' => $voidValue,
       'city' => $voidValue,
       'country' => 'US',
-    );
+    ];
 
-    $contribution = wmf_civicrm_contribution_message_import($msg);
-    $address = $this->callAPISuccessGetSingle('Address',  array('contact_id' => $contribution['contact_id']));
+    $this->processMessage($msg, 'Donation', 'test');
+    $address = $this->getMouseHouses()->single();
     $this->assertTrue(!isset($address['city']));
     $this->assertTrue(!isset($address['postal_code']));
   }
@@ -84,13 +73,13 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function getVoidValues() {
-    return array(
-      array('0'),
-      array(0),
-      array('NoCity'),
-      array('City/Town'),
-    );
+  public function getVoidValues(): array {
+    return [
+      ['0'],
+      [0],
+      ['NoCity'],
+      ['City/Town'],
+    ];
   }
 
   /**
@@ -99,8 +88,8 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
    * In this case the contact already exists.
    */
   public function testAddressImportVoidDataContactExists() {
-    $msg = array(
-      'contact_id' => $this->contactID,
+    $msg = [
+      'contact_id' => $this->ids['Contact']['default'],
       'currency' => 'USD',
       'date' => time(),
       'last_name' => 'Mouse',
@@ -112,11 +101,24 @@ class AddressImportTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_submethod' => 'visa',
       'street_address' => 'N0NE PROVIDED',
       'postal_code' => 0,
-    );
+    ];
 
-    $contribution = wmf_civicrm_contribution_message_import($msg);
-    $addresses = $this->callAPISuccess('Address', 'get', array('contact_id' => $contribution['contact_id']));
-    $this->assertEquals(0, $addresses['count']);
+    $this->processMessage($msg, 'Donation', 'test');
+    $this->assertCount(0, $this->getMouseHouses());
+  }
+
+  /**
+   * @return Civi\Api4\Generic\Result
+   */
+  public function getMouseHouses(): Result {
+    try {
+      return Address::get(FALSE)
+        ->addWhere('contact_id.last_name', '=', 'Mouse')
+        ->execute();
+    }
+    catch (CRM_Core_Exception $e) {
+      $this->fail('Failed to retrieve addresses');
+    }
   }
 
 }
