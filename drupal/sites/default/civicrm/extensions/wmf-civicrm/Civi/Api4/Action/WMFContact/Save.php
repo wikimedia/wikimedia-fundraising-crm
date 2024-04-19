@@ -130,11 +130,6 @@ class Save extends AbstractAction {
       // For inserts however we can rely on the core api.
       $contact['email'] = $msg['email'];
     }
-    if (strtolower($msg['contact_type']) === 'organization') {
-      // @todo probably can remove handling for sort name and display name now.
-      $contact['sort_name'] = $msg['organization_name'];
-      $contact['display_name'] = $msg['organization_name'];
-    }
 
     if (!empty($msg['prefix_id:label'])) {
       // prefix_id:label is APIv4 format. name_prefix is our own fandango.
