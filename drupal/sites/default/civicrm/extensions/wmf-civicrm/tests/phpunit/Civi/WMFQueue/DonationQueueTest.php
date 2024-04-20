@@ -426,7 +426,7 @@ class DonationQueueTest extends BaseQueueTestCase {
    */
   public function testImportWithContactIDAndBadEmail(): void {
     $email = 'boo-boo' . mt_rand() . '@example.org';
-    $existingContact = $this->createTestEntity('Contact',  [
+    $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Mouse',

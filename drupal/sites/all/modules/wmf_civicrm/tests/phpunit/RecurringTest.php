@@ -1,8 +1,11 @@
 <?php
 
+use Civi\Api4\PaymentToken;
+use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFQueueMessage\RecurDonationMessage;
+use Statistics\Exception\StatisticsCollectorException;
 
 /**
  * @group Pipeline
@@ -11,25 +14,12 @@ use Civi\WMFQueueMessage\RecurDonationMessage;
  */
 class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
 
-  public static function getInfo() {
-    return [
-      'name' => 'Recurring',
-      'group' => 'Pipeline',
-      'description' => 'Checks for recurring functionality',
-    ];
-  }
-
-  public function setUp(): void {
-    parent::setUp();
-    civicrm_initialize();
-  }
-
   /**
    * Test next_sched_contribution calculation
    *
    * @dataProvider nextSchedProvider
    */
-  public function testNextScheduled($now, $cycle_day, $expected_next_sched) {
+  public function testNextScheduled($now, $cycle_day, $expected_next_sched): void {
     $msg = [
       'cycle_day' => $cycle_day,
       'frequency_interval' => 1,
@@ -40,7 +30,7 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($expected_next_sched, $calculated_next_sched);
   }
 
-  public function nextSchedProvider() {
+  public function nextSchedProvider(): array {
     return [
       ['2014-06-01T00:00:00Z', '1', '2014-07-01 00:00:00'],
       ['2014-06-01T01:00:00Z', '1', '2014-07-01 00:00:00'],
@@ -60,51 +50,48 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
   }
 
-  public function testGetGatewaySubscription() {
-    $contactID = $this->createTestContact([
-      'first_name' => 'Testes',
-      'contact_type' => 'Individual',
-    ]);
-    $this->contact_id = $contactID;
+  /**
+   * Test functionality in RecurHelper::getByGatewaySubscriptionId.
+   *
+   * @return void
+   */
+  public function testGetGatewaySubscription(): void {
+    $contactID = $this->createIndividual();
 
     $subscription_id_1 = 'SUB_FOO-' . mt_rand();
-    $recur_values = [
-      'contact_id' => $this->contact_id,
+    $recurValues = [
+      'contact_id' => $contactID,
       'amount' => '1.21',
       'frequency_interval' => 1,
       'frequency_unit' => 'month',
-      'next_sched_contribution' => wmf_common_date_unix_to_civicrm(strtotime('+1 month')),
+      'next_sched_contribution' => date('Y-m-d', strtotime('+1 month')),
       'installments' => 0,
       'processor_id' => 1,
       'currency' => 'USD',
       'trxn_id' => "RECURRING TESTGATEWAY {$subscription_id_1}",
     ];
-    $this->callAPISuccess('ContributionRecur', 'create', $recur_values);
+    $this->callAPISuccess('ContributionRecur', 'create', $recurValues);
 
     $record = RecurHelper::getByGatewaySubscriptionId('TESTGATEWAY', $subscription_id_1);
 
-    $this->assertTrue(is_array($record),
-      'Will match on full unique subscription ID');
-    $this->assertEquals($recur_values['trxn_id'], $record['trxn_id']);
+    $this->assertTrue(is_array($record), 'Will match on full unique subscription ID');
+    $this->assertEquals($recurValues['trxn_id'], $record['trxn_id']);
 
     $subscription_id_2 = 'SUB_FOO-' . mt_rand();
-    $recur_values['trxn_id'] = $subscription_id_2;
-    $result = civicrm_api3('ContributionRecur', 'create', $recur_values);
+    $recurValues['trxn_id'] = $subscription_id_2;
+    $this->createTestEntity('ContributionRecur', $recurValues);
 
     $record = RecurHelper::getByGatewaySubscriptionId('TESTGATEWAY', $subscription_id_2);
 
     $this->assertTrue(is_array($record),
       'Will match raw subscription ID');
-    $this->assertEquals($recur_values['trxn_id'], $record['trxn_id']);
+    $this->assertEquals($recurValues['trxn_id'], $record['trxn_id']);
   }
 
-  public function testRecurringContributionWithoutPaymentToken() {
-    // Bypass all the stuff generated in create()
-    $fixture = new CiviFixtures();
-
+  public function testRecurringContributionWithoutPaymentToken(): void {
     $msg = [
       'first_name' => 'Peter',
-      'last_name' => 'Abernathy',
+      'last_name' => 'Mouse',
       'email' => 'abernathy@sweetwater.org',
       'currency' => 'USD',
       'date' => time(),
@@ -113,14 +100,15 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'gross' => '1.23',
       'payment_method' => 'cc',
       'payment_submethod' => 'visa',
-      'subscr_id' => 'aslkdjalksd123123',
+      'subscr_id' => 'abc123123',
       'recurring' => 1,
-      'financial_type_id' => 'Cash',
+      'financial_type_id' => ContributionRecur::getFinancialTypeForFirstContribution(),
     ];
 
     // import old-style recurring contribution message
     // this should result in a new contribution and recurring contribution.
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
 
     $this->assertEquals($msg['gross'], $contribution['total_amount']);
     $this->assertNotEmpty($contribution['contribution_recur_id']);
@@ -130,28 +118,24 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
     );
 
     // confirm recurring contribution record was created correctly
-    $recurring_record = RecurHelper::getByGatewaySubscriptionId(
-      'test_gateway', $msg['subscr_id']
-    );
+    $recurring_record = $this->getRecurringContribution($msg['subscr_id']);
     $this->assertEquals(1, $recurring_record['processor_id']);
     $this->assertEquals($msg['subscr_id'], $recurring_record['trxn_id']);
     $this->assertEquals($contribution['contact_id'], $recurring_record['contact_id']);
     $this->assertEquals($msg['gross'], $recurring_record['amount']);
     $this->assertEquals($msg['currency'], $recurring_record['currency']);
-
-    // clean up records using fixture tear down destruct process
-    $fixture->contact_id = $contribution['contact_id'];
-    $fixture->contribution_id = $contribution['id'];
-    $fixture->contribution_recur_id = $recurring_record['id'];
   }
 
-  public function testRecurringContributionWithPaymentToken() {
-    $fixture = CiviFixtures::createContact();
+  /**
+   * @throws CRM_Core_Exception
+   */
+  public function testRecurringContributionWithPaymentToken(): void {
+    $this->createIndividual(['hash' => 'mousy_mouse']);
     $this->createPaymentProcessor();
 
     $msg = [
-      'contact_id' => $fixture->contact_id,
-      'contact_hash' => $fixture->contact_hash,
+      'contact_id' => $this->ids['Contact']['default'],
+      'contact_hash' => 'mousy_mouse',
       'currency' => 'USD',
       'date' => time(),
       'gateway' => "test_gateway",
@@ -163,58 +147,45 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => 'TEST-RECURRING-TOKEN-' . mt_rand(),
       'recurring' => 1,
       'user_ip' => '12.34.56.78',
-      'financial_type_id' => 'Cash',
     ];
 
     //import contribution message containing populated recurring and recurring_payment_token fields
     //this should result in a new contribution, recurring contribution and payment token record.
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
 
-    $this->assertEquals($fixture->contact_id, $contribution['contact_id']);
+    $this->assertEquals($this->ids['Contact']['default'], $contribution['contact_id']);
     $this->assertEquals($msg['gross'], $contribution['total_amount']);
     $this->assertNotEmpty($contribution['contribution_recur_id']);
     $this->assertEquals(strtoupper("RECURRING {$msg['gateway']} {$msg['gateway_txn_id']}"),
       $contribution['trxn_id']);
 
     //confirm recurring contribution record was created with associated payment token record
-    $recurring_record = RecurHelper::getByGatewaySubscriptionId("test_gateway", $msg['gateway_txn_id']);
-    $this->assertNotEmpty($recurring_record['payment_token_id']);
-    $this->assertNotEmpty($recurring_record['payment_processor_id']);
+    $recurringContribution = $this->getRecurringContribution($msg['gateway_txn_id']);
+    $this->assertNotEmpty($recurringContribution['payment_token_id']);
+    $this->assertNotEmpty($recurringContribution['payment_processor_id']);
 
     //confirm payment token persisted matches original $msg token
-    $payment_token_id = $recurring_record['payment_token_id'];
-    $payment_token_result = civicrm_api3('PaymentToken', 'getSingle', [
-      'id' => $payment_token_id,
-    ]);
-    $this->assertEquals($msg['recurring_payment_token'], $payment_token_result['token']);
+    $paymentToken = PaymentToken::get(FALSE)
+      ->addWhere('id', '=', $recurringContribution['payment_token_id'])
+      ->execute()->first();
+    $this->assertEquals($msg['recurring_payment_token'], $paymentToken['token']);
     $this->assertEquals(
-      $recurring_record['payment_processor_id'],
-      $payment_token_result['payment_processor_id']
+      $recurringContribution['payment_processor_id'],
+      $paymentToken['payment_processor_id']
     );
-    $this->assertEquals($msg['user_ip'], $payment_token_result['ip_address']);
-
-    //clean up recurring contribution records using fixture tear down destruct process
-    $fixture->contribution_id = $contribution['id'];
-    $fixture->contribution_recur_id = $recurring_record['id'];
-
-    //clean up test payment token record
-    civicrm_api3('PaymentToken', 'delete', [
-      'id' => $payment_token_id,
-    ]);
+    $this->assertEquals($msg['user_ip'], $paymentToken['ip_address']);
   }
 
   /**
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\WMFException\WMFException
-   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function testSecondRecurringContributionWithPaymentToken(): void {
-    $fixture = CiviFixtures::createContact();
+    $this->createIndividual();
     $this->createPaymentProcessor();
     $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
 
     $firstMessage = [
-      'contact_id' => $fixture->contact_id,
+      'contact_id' => $this->ids['Contact']['default'],
       'currency' => 'USD',
       'date' => time(),
       'gateway' => 'test_gateway',
@@ -226,12 +197,11 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => $token,
       'recurring' => 1,
       'user_ip' => '12.34.56.78',
-      'financial_type_id' => 'Cash',
     ];
 
     //import contribution message containing populated recurring and recurring_payment_token fields
     //this should result in a new contribution, recurring contribution and payment token record.
-    $firstContribution = wmf_civicrm_contribution_message_import($firstMessage);
+    $this->processDonationMessage($firstMessage);
 
     $secondMessage = [
       'currency' => 'USD',
@@ -244,24 +214,20 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring_payment_token' => $token,
       'recurring' => 1,
       'user_ip' => '12.34.56.78',
-      'financial_type_id' => 'Cash',
     ];
 
-    $secondContribution = wmf_civicrm_contribution_message_import($secondMessage);
+    $this->processDonationMessage($secondMessage);
+    $secondContribution = $this->getContributionForMessage($secondMessage);
 
-    $this->assertEquals($fixture->contact_id, $secondContribution['contact_id']);
+    $this->assertEquals($this->ids['Contact']['default'], $secondContribution['contact_id']);
     $this->assertEquals($secondMessage['gross'], $secondContribution['total_amount']);
     $this->assertNotEmpty($secondContribution['contribution_recur_id']);
     $this->assertEquals(strtoupper("RECURRING {$secondMessage['gateway']} {$secondMessage['gateway_txn_id']}"),
       $secondContribution['trxn_id']);
 
     //confirm recurring contribution record was created with same payment token record
-    $firstRecurringRecord = RecurHelper::getByGatewaySubscriptionId(
-      'test_gateway', $firstMessage['gateway_txn_id']
-    );
-    $secondRecurringRecord = RecurHelper::getByGatewaySubscriptionId(
-      'test_gateway', $secondMessage['gateway_txn_id']
-    );
+    $firstRecurringRecord = $this->getRecurringContribution($firstMessage['gateway_txn_id']);
+    $secondRecurringRecord = $this->getRecurringContribution($secondMessage['gateway_txn_id']);
     $this->assertNotEquals($firstRecurringRecord['id'], $secondRecurringRecord['id']);
     $this->assertEquals(
       $firstRecurringRecord['payment_token_id'],
@@ -273,22 +239,6 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       $secondRecurringRecord['payment_processor_id']
     );
     $this->assertEquals('Cash', CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $firstRecurringRecord['financial_type_id']));
-    //clean up recurring contribution records using fixture tear down destruct process
-    $fixture->contribution_id = $firstContribution['id'];
-    $fixture->contribution_recur_id = $firstRecurringRecord['id'];
-
-    civicrm_api3('Contribution', 'delete', [
-      'id' => $secondContribution['id'],
-    ]);
-
-    civicrm_api3('ContributionRecur', 'delete', [
-      'id' => $secondRecurringRecord['id'],
-    ]);
-
-    //clean up test payment token record
-    civicrm_api3('PaymentToken', 'delete', [
-      'id' => $firstRecurringRecord['payment_token_id'],
-    ]);
   }
 
   /**
@@ -320,14 +270,11 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
 
     //import contribution message containing populated recurring and recurring_payment_token fields
     //this should result in a new contribution, recurring contribution and payment token record.
-    $firstContribution = $this->messageImport($firstMessage);
-
-    $firstContributionExtra =
-      wmf_civicrm_get_contributions_from_contribution_id($firstContribution['id']);
+    $this->processDonationMessage($firstMessage);
+    $firstContribution = $this->getContributionForMessage($firstMessage);
 
     //check that no_thank_you is not set to recurring for the first payment
-    $this->assertNotEquals($firstContributionExtra[0]['no_thank_you'],
-      'recurring');
+    $this->assertNotEquals('recurring', $firstContribution['contribution_extra.no_thank_you']);
 
     $firstRecurringRecord =
       RecurHelper::getByGatewaySubscriptionId('test_gateway',
@@ -353,22 +300,14 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       wmf_civicrm_get_contributions_from_contribution_id($secondContribution['id']);
 
     //check that no_thank_you is set to recurring for the second payment
-    $this->assertEquals($secondContributionExtra[0]['no_thank_you'],
-      'recurring');
-
-    civicrm_api3('Contribution', 'delete', [
-      'id' => $secondContribution['id'],
-    ]);
-
-    //clean up test payment token record
-    civicrm_api3('PaymentToken', 'delete', [
-      'id' => $firstRecurringRecord['payment_token_id'],
-    ]);
+    $this->assertEquals('recurring', $secondContributionExtra[0]['no_thank_you']);
   }
 
   /**
    * Test confirming that a recurring payment leads to a financial type of "Recurring Gift"
    *
+   * @throws CRM_Core_Exception
+   * @throws WMFException
    * @group recurring
    */
   public function testFirstRecurringHasFinancialType(): void {
@@ -413,6 +352,21 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
         'is_default' => 1,
         'is_active' => 1,
       ])['id'];
+    }
+  }
+
+  /**
+   * @param string $gatewayTxnID
+   * @return array|null
+   */
+  public function getRecurringContribution(string $gatewayTxnID): ?array {
+    try {
+      return \Civi\Api4\ContributionRecur::get(FALSE)
+        ->addWhere('trxn_id', '=', $gatewayTxnID)
+        ->execute()->first();
+    }
+    catch (CRM_Core_Exception $e) {
+      $this->fail('failed recurring contribution lookup');
     }
   }
 
