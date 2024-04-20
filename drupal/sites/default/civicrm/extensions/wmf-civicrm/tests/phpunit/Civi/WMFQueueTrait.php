@@ -231,7 +231,7 @@ trait WMFQueueTrait {
   public function getContributionForMessage(array $donation_message): array {
     try {
       return Contribution::get(FALSE)
-        ->addSelect('*', 'contribution_status_id:name', 'contribution_recur_id.*', 'Gift_Data.*', 'contribution_extra.*', 'Stock_Information.*', 'Gift_Information.*')
+        ->addSelect('*', 'contribution_status_id:name', 'financial_type_id:name', 'contribution_recur_id.*', 'Gift_Data.*', 'contribution_extra.*', 'Stock_Information.*', 'Gift_Information.*')
         ->addWhere('contribution_extra.gateway', '=', $donation_message['gateway'])
         ->addWhere('contribution_extra.gateway_txn_id', '=', $donation_message['gateway_txn_id'])
         ->execute()->single();
