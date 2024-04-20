@@ -492,4 +492,34 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertEquals('Phone', $phone['phone_type_id:name']);
   }
 
+  /**
+   * Test that endowment donation is imported with the right fields for
+   * restrictions, gift_source, and financial_type_id
+   * see: https://phabricator.wikimedia.org/T343756
+   */
+  public function testEndowmentDonationImport(): void {
+    $contactID = $this->createIndividual();
+
+    $msg = [
+      'contact_id' => $contactID,
+      'contribution_recur_id' => NULL,
+      'currency' => 'USD',
+      'date' => '2014-01-01 00:00:00',
+      'effort_id' => 2,
+      'email' => 'Agatha@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => 2.34,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'utm_medium' => 'endowment',
+    ];
+    $this->processDonationMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
+
+    $this->assertEquals("Endowment Fund", $contribution['Gift_Data.Fund']);
+    $this->assertEquals("Online Gift", $contribution['Gift_Data.Campaign']);
+    $this->assertEquals('Endowment Gift', $contribution['financial_type_id:name']);
+  }
+
 }
