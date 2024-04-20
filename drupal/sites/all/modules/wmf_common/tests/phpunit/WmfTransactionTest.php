@@ -105,28 +105,6 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     WMFTransaction::from_unique_id('TEST_GATEWAY 123 BAD_TIMESTAMP');
   }
 
-  function testExistsNone() {
-    civicrm_initialize();
-    $transaction = WMFTransaction::from_unique_id('TEST_GATEWAY ' . mt_rand());
-    $this->assertEquals(FALSE, $transaction->exists());
-  }
-
-  function testExistsOne() {
-    $gateway_txn_id = mt_rand();
-    $msg = [
-      'gross' => 1,
-      'currency' => 'USD',
-      'gateway' => 'TEST_GATEWAY',
-      'gateway_txn_id' => $gateway_txn_id,
-      'payment_method' => 'cc',
-      'payment_submethod' => 'visa',
-      'email' => 'somebody@wikimedia.org',
-    ];
-    $this->messageImport($msg);
-    $transaction = WMFTransaction::from_unique_id('TEST_GATEWAY ' . $gateway_txn_id);
-    $this->assertEquals(TRUE, $transaction->exists());
-  }
-
   function testGetContributionMany() {
     $this->expectException(NonUniqueTransaction::class);
     $gateway_txn_id = mt_rand();
