@@ -383,33 +383,6 @@ function wmf_civicrm_cal_days_in_month($month) {
 }
 
 /**
- * Get the first contribution in a recurring series
- *
- * @param integer $contribution_recur_id
- *
- * @return array $contribution
- *
- * @throws Civi\WMFException\WMFException if no matching subscription exists.
- */
-function wmf_civicrm_get_initial_recurring_contribution($contribution_recur_id) {
-  $sql = "
-SELECT * FROM civicrm_contribution
-WHERE contribution_recur_id = %1
-ORDER BY id ASC
-LIMIT 1";
-
-  $res = CRM_Core_DAO::executeQuery($sql, [
-    '1' => [$contribution_recur_id, 'Integer'],
-  ]);
-
-  $out = wmf_civicrm_dao_to_list($res);
-  if (!$out) {
-    throw new WMFException(WMFException::MISSING_PREDECESSOR, 'No such recurring contribution, id=' . $contribution_recur_id);
-  }
-  return array_pop($out);
-}
-
-/**
  * Get recurring record in CiviCRM for the given subscriber id
  *
  * There is tension between trxn_id as searchable index and full gateway style
