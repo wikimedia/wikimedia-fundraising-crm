@@ -129,16 +129,6 @@ class WMFTransaction {
     return $transaction;
   }
 
-  public function exists(): bool {
-    try {
-      $this->getContribution();
-      return TRUE;
-    }
-    catch (WMFException $ex) {
-      return FALSE;
-    }
-  }
-
   /**
    * @return array of civicrm_contribution and wmf_contribution_extra db values
    */
