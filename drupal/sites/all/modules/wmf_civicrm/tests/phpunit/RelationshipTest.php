@@ -8,22 +8,12 @@ use Civi\WMFException\WMFException;
  */
 class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
 
-  public function testRelationship() {
-    $msg = [
-      'currency' => 'USD',
-      'date' => time(),
-      'email' => 'somebody@wikimedia.org',
-      'gateway' => 'test_gateway',
-      'gateway_txn_id' => mt_rand(),
-      'gross' => '1.23',
-      'payment_method' => 'cc',
-      'payment_submethod' => 'visa',
+  public function testRelationship(): void {
+    $msg = $this->processDonationMessage([
       'relationship_target_contact_id' => $this->createIndividual(),
       'relationship_type' => 'Spouse of',
-    ];
-
-    $contribution = $this->messageImport($msg);
-
+    ]);
+    $contribution = $this->getContributionForMessage($msg);
     $relationshipType = $this->callAPISuccessGetSingle('RelationshipType', [
       'name_a_b' => 'Spouse of',
     ]);
@@ -50,25 +40,17 @@ class RelationshipTest extends BaseWmfDrupalPhpUnitTestCase {
       'relationship_type' => 'Spouse of',
     ];
 
-    $this->messageImport($msg);
+    $this->processMessageWithoutQueuing($msg, 'Donation');
   }
 
   public function testBadRelationshipType(): void {
     $this->expectException(WMFException::class);
     $msg = [
-      'currency' => 'USD',
-      'date' => time(),
-      'email' => 'somebody@wikimedia.org',
-      'gateway' => 'test_gateway',
-      'gateway_txn_id' => mt_rand(),
-      'gross' => '1.23',
-      'payment_method' => 'cc',
-      'payment_submethod' => 'visa',
       'relationship_target_contact_id' => $this->createIndividual(),
       'relationship_type' => 'Total stranger to',
     ];
 
-    $this->messageImport($msg);
+    $this->processMessageWithoutQueuing($msg, 'Donation', 'test');
   }
 
 }

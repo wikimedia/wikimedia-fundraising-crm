@@ -28,6 +28,10 @@ trait WMFQueueTrait {
   /**
    * Process donation, using defaults plus any passed in values.
    *
+   * Note that it is intended that when using this method you only
+   * pass in relevant values to make it easier to distinguish the
+   * meaningful aspects of the test.
+   *
    * @param array $values
    *   Values to use in the message. These will be augmented with some defaults unless isAddDefaults is FALSE.
    * @param bool $isAddDefaults
@@ -212,6 +216,24 @@ trait WMFQueueTrait {
     $queueConsumer = $queueConsumer ?: $this->queueConsumer;
     QueueWrapper::push($queueName, $message);
     return $this->processQueue($queueName, $queueConsumer);
+  }
+
+  /**
+   * Process the given queue.
+   *
+   * @param array $message
+   * @param string|null $queueConsumer
+   *   QueueConsumer if different from property. e.g 'Recurring'
+   *   (QueueConsumer is appended in the function.)
+   *
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function processMessageWithoutQueuing(array $message, ?string $queueConsumer = NULL): void {
+    $queueConsumer = $queueConsumer ?: $this->queueConsumer;
+    $queueConsumerClass = '\\Civi\\WMFQueue\\' . $queueConsumer . 'QueueConsumer';
+    /* @var = \Civi\WMFQueue\QueueConsumer */
+    $consumer = new $queueConsumerClass('test');
+    $consumer->processMessage($message);
   }
 
   /**

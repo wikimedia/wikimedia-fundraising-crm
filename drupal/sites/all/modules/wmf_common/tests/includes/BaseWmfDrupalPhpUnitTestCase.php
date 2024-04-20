@@ -290,28 +290,4 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     return $ctId;
   }
 
-  /**
-   * Import message, tracking the created contact id for cleanup.
-   *
-   * @param array $msg
-   *
-   * @return array
-   */
-  protected function messageImport($msg): array {
-    try {
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-      $this->ids['Contact'][$contribution['contact_id']] = $contribution['contact_id'];
-      return $contribution;
-    }
-    catch (WMFException $e) {
-      $created = (array) Contact::get(FALSE)->setWhere([
-        ['display_name', '=', rtrim(($msg['first_name'] ?? '') . ' ' . ($msg['last_name'] ?? ''))],
-      ])->setSelect(['id'])->execute()->indexBy('id');
-      foreach (array_keys($created) as $contactID) {
-        $this->ids['Contact'][$contactID] = $contactID;
-      }
-      throw $e;
-    }
-  }
-
 }
