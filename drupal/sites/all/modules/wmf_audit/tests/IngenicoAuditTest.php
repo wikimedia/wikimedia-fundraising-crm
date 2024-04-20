@@ -8,12 +8,6 @@ use Civi\Api4\ContributionTracking;
  */
 class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
-  protected $idForRefundTest;
-
-  protected $contact_ids = [];
-
-  protected $contribution_ids = [];
-
   public function setUp(): void {
     parent::setUp();
 
@@ -39,110 +33,78 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
     variable_set('ingenico_audit_log_search_past_days', 1);
 
-    // Fakedb doesn't fake the original txn for refunds, so add one here
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('globalcollect', '11992288');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    }
-    else {
-      $msg = [
-        'contribution_tracking_id' => 8675309,
-        'currency' => 'USD',
-        'date' => 1455825706,
-        'email' => 'nun@flying.com',
-        'gateway' => 'globalcollect',
-        'gateway_txn_id' => '11992288',
-        'gross' => 100.00,
-        'payment_method' => 'cc',
-        'payment_submethod' => 'visa',
-      ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
-    $this->contact_ids[] = $contribution['contact_id'];
-
+    $msg = [
+      'contribution_tracking_id' => 8675309,
+      'currency' => 'USD',
+      'date' => 1455825706,
+      'email' => 'nun@flying.com',
+      'gateway' => 'globalcollect',
+      'gateway_txn_id' => '11992288',
+      'gross' => 100.00,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
     // and another for the chargeback
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('globalcollect', '55500002');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    }
-    else {
-      $msg = [
-        'contribution_tracking_id' => 5318008,
-        'currency' => 'USD',
-        'date' => 1443724034,
-        'email' => 'lovelyspam@python.com',
-        'gateway' => 'globalcollect',
-        'gateway_txn_id' => '55500002',
-        'gross' => 200.00,
-        'payment_method' => 'cc',
-        'payment_submethod' => 'visa',
-      ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
-    $this->contact_ids[] = $contribution['contact_id'];
+
+    $msg = [
+      'contribution_tracking_id' => 5318008,
+      'currency' => 'USD',
+      'date' => 1443724034,
+      'email' => 'lovelyspam@python.com',
+      'gateway' => 'globalcollect',
+      'gateway_txn_id' => '55500002',
+      'gross' => 200.00,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
 
     // and another for the sparse refund
     $this->setExchangeRates(1443724034, ['EUR' => 1.5, 'USD' => 1]);
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('globalcollect', '1111662235');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    }
-    else {
-      ContributionTracking::save(FALSE)->setRecords([
-        [
-          'id' => 48987654,
-          'country' => 'IT',
-          'utm_source' => 'something',
-          'utm_medium' => 'another_thing',
-          'utm_campaign' => 'campaign_thing',
-          'language' => 'it',
-        ],
-      ])->execute();
-      $msg = [
-        'contribution_tracking_id' => 48987654,
-        'currency' => 'EUR',
-        'date' => 1443724034,
-        'email' => 'lovelyspam@python.com',
-        'gateway' => 'globalcollect',
-        'gateway_txn_id' => '1111662235',
-        'gross' => 15.00,
-        'payment_method' => 'cc',
-        'payment_submethod' => 'visa',
-      ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
-    $this->contact_ids[] = $contribution['contact_id'];
+    ContributionTracking::save(FALSE)->setRecords([
+      [
+        'id' => 48987654,
+        'country' => 'IT',
+        'utm_source' => 'something',
+        'utm_medium' => 'another_thing',
+        'utm_campaign' => 'campaign_thing',
+        'language' => 'it',
+      ],
+    ])->execute();
+    $msg = [
+      'contribution_tracking_id' => 48987654,
+      'currency' => 'EUR',
+      'date' => 1443724034,
+      'email' => 'lovelyspam@python.com',
+      'gateway' => 'globalcollect',
+      'gateway_txn_id' => '1111662235',
+      'gross' => 15.00,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
 
     // Fake refunded transaction
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('ingenico', '1111662247');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    }
-    else {
-      $msg = [
-        'contribution_tracking_id' => 1014,
-        'invoice_id' => '1014.0',
-        'currency' => 'USD',
-        'date' => 1455825706,
-        'email' => 'mouse@wikimedia.org',
-        'gateway' => 'globalcollect',
-        'gateway_txn_id' => '1111662247',
-        'gross' => 1.00,
-        'payment_method' => 'cc',
-        'payment_submethod' => 'visa',
-      ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
+    $msg = [
+      'contribution_tracking_id' => 1014,
+      'invoice_id' => '1014.0',
+      'currency' => 'USD',
+      'date' => 1455825706,
+      'email' => 'mouse@wikimedia.org',
+      'gateway' => 'globalcollect',
+      'gateway_txn_id' => '1111662247',
+      'gross' => 1.00,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
     $this->processContributionTrackingQueue();
-    $this->contact_ids[] = $contribution['contact_id'];
-    $this->idForRefundTest = $contribution['id'];
+    $contribution = $this->getContributionForMessage($msg);
+    $this->ids['Contribution']['refund'] = $contribution['id'];
   }
 
-  public function auditTestProvider() {
+  public function auditTestProvider(): array {
     return [
       [
         __DIR__ . '/data/Ingenico/donation/',
@@ -370,7 +332,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
     $this->assertMessages($expectedMessages);
   }
 
-  public function testAlreadyRefundedTransactionIsSkipped() {
+  public function testAlreadyRefundedTransactionIsSkipped(): void {
     variable_set('ingenico_audit_recon_files_dir', __DIR__ . '/data/Ingenico/refundNoGatewayIDinCivi/');
     $expectedMessages = [
       'refund' => [],
@@ -383,7 +345,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
       'gateway_txn_id' => '1111662247',
       'gross' => 1.00,
     ];
-    wmf_civicrm_mark_refund($this->idForRefundTest, 'Refunded', TRUE, $msg['date'],
+    wmf_civicrm_mark_refund($this->ids['Contribution']['refund'], 'Refunded', TRUE, $msg['date'],
       $msg['gateway_txn_id'],
       $msg['currency'],
       $msg['gross']
@@ -393,7 +355,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
     $this->assertMessages($expectedMessages);
   }
 
-  protected function runAuditor() {
+  protected function runAuditor(): void {
     $options = [
       'fakedb' => TRUE,
       'quiet' => TRUE,
