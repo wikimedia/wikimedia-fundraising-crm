@@ -8,6 +8,7 @@ use Civi\Api4\CustomField;
 use Civi\Api4\Address;
 use Civi\Api4\Email;
 use Civi\Api4\OptionValue;
+use Civi\Api4\Phone;
 use SmashPig\Core\DataStores\DataStoreException;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\SmashPigException;
@@ -458,6 +459,37 @@ class DonationQueueTest extends BaseQueueTestCase {
       ->addWhere('contact_id', '=', $existingContact['id'])
       ->execute()->single();
     $this->assertNotEquals($msg['street_address'], $address['street_address']);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testPhoneImport(): void {
+    $phoneNumber = '555-555-5555';
+    $msg = [
+      'currency' => 'USD',
+      'date' => time(),
+      'email' => 'mouse@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'phone' => $phoneNumber,
+    ];
+
+    $this->processDonationMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
+
+    $phone = Phone::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->addSelect('location_type_id', 'phone', 'is_primary', 'phone_type_id:name')
+      ->execute()->single();
+
+    $this->assertEquals($phoneNumber, $phone['phone']);
+    $this->assertEquals(1, $phone['is_primary']);
+    $this->assertEquals(\CRM_Core_BAO_LocationType::getDefault()->id, $phone['location_type_id']);
+    $this->assertEquals('Phone', $phone['phone_type_id:name']);
   }
 
 }
