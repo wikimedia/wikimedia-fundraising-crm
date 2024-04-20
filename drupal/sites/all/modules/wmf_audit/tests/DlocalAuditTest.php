@@ -1,19 +1,14 @@
 <?php
 
 use Civi\WMFAudit\BaseAuditTestCase;
+
 /**
  * @group Dlocal
  * @group WmfAudit
  * @group DlocalAudit
  */
 class DlocalAuditTest extends BaseAuditTestCase {
-  use \Civi\Test\Api3TestTrait;
-
   static protected $loglines;
-
-  protected $contact_id;
-
-  protected $contribution_id;
 
   public function setUp(): void {
     parent::setUp();
@@ -21,41 +16,21 @@ class DlocalAuditTest extends BaseAuditTestCase {
     // First we need to set an exchange rate for a sickeningly specific time
     $this->setExchangeRates(1434488406, ['BRL' => 3.24]);
     $this->setExchangeRates(1434488406, ['USD' => 1]);
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('dlocal', '5138333');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    }
-    else {
-      $msg = [
-        'contribution_tracking_id' => 2476135333,
-        'currency' => 'BRL',
-        'date' => 1434488406,
-        'email' => 'lurch@yahoo.com',
-        'gateway' => 'DLOCAL',
-        'gateway_txn_id' => '5138333',
-        'gross' => 5.00,
-        'payment_method' => 'cc',
-        'payment_submethod' => 'mc',
-      ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
-    $this->contact_id = $contribution['contact_id'];
-    $this->contribution_id = $contribution['id'];
+    $msg = [
+      'contribution_tracking_id' => 2476135333,
+      'currency' => 'BRL',
+      'date' => 1434488406,
+      'email' => 'mouse@wikimedia.org',
+      'gateway' => 'DLOCAL',
+      'gateway_txn_id' => '5138333',
+      'gross' => 5.00,
+      'payment_method' => 'cc',
+      'payment_submethod' => 'mc',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
   }
 
-  /**
-   * Cleanup after tests.
-   *
-   * @throws \CRM_Core_Exception
-   */
-  public function tearDown(): void {
-    $this->callAPISuccess('Contribution', 'delete', ['id' => $this->contribution_id]);
-    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id, 'skip_undelete' => TRUE]);
-    parent::tearDown();
-  }
-
-  public function auditTestProvider() {
+  public function auditTestProvider(): array {
     return [
       [
         __DIR__ . '/data/Dlocal/donation/',
@@ -74,7 +49,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
               'gross' => 5,
               'invoice_id' => '26683111.0',
               'language' => 'en',
-              'last_name' => 'Person',
+              'last_name' => 'Mouse',
               'order_id' => '26683111.0',
               'payment_method' => 'cc',
               'payment_submethod' => 'mc',
@@ -109,7 +84,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
               'gross' => 4,
               'invoice_id' => '2476135999.0',
               'language' => 'en',
-              'last_name' => 'Bankster',
+              'last_name' => 'Mouse',
               'order_id' => '2476135999.0',
               'payment_method' => 'bt',
               'payment_submethod' => 'bradesco',
@@ -185,11 +160,8 @@ class DlocalAuditTest extends BaseAuditTestCase {
       $notFound[] = $expectedEntry;
     }
     if ($notFound) {
-      $this->fail("Did not see these loglines, " . json_encode($notFound));
+      $this->fail("Did not see these log lines, " . json_encode($notFound));
     }
   }
 
-  static public function receiveLogline($entry) {
-    self::$loglines[] = $entry;
-  }
 }
