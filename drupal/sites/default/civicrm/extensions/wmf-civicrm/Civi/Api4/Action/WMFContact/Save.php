@@ -107,10 +107,7 @@ class Save extends AbstractAction {
       'contact_type' => $msg['contact_type'],
       'contact_source' => $msg['contact_source'],
       'debug' => TRUE,
-      'addressee_custom' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
-      'addressee_display' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
       'addressee_id' => empty($msg['addressee_custom']) ? NULL : 'Customized',
-      'legal_identifier' => empty($msg['fiscal_number']) ? NULL : $this->cleanString($msg['fiscal_number'], 32),
       // Major gifts wants greeting processing - but we are not sure speedwise.
       'skip_greeting_processing' => !\Civi::settings()->get('wmf_save_process_greetings_on_create'),
     ];
@@ -121,7 +118,7 @@ class Save extends AbstractAction {
     if (strtolower($msg['contact_type']) !== 'organization') {
       foreach (['first_name', 'last_name', 'middle_name', 'nick_name'] as $name) {
         if (isset($msg[$name])) {
-          $contact[$name] = $this->cleanString($msg[$name], 64);
+          $contact[$name] = $msg[$name];
         }
       }
     }
@@ -424,10 +421,7 @@ class Save extends AbstractAction {
     $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
     $updateParams += $this->getApiReadyFields();
     if (!empty($msg['external_identifier'])) {
-      $updateParams['External_Identifiers.' . $this->getExternalIdentifierField($msg)] = $this->cleanString($msg['external_identifier'], 32);
-    }
-    if (!empty($msg['fiscal_number'])) {
-      $updateParams['legal_identifier'] = $this->cleanString($msg['fiscal_number'], 32);
+      $updateParams['External_Identifiers.' . $this->getExternalIdentifierField($msg)] = $msg['external_identifier'];
     }
     if (($msg['contact_type'] ?? NULL) === 'Organization') {
       // Find which of these keys we have update values for.
@@ -681,35 +675,6 @@ class Save extends AbstractAction {
   }
 
   /**
-   * Clean up a string by
-   *  - trimming preceding & ending whitespace
-   *  - removing any in-string double whitespace
-   *
-   * @param string $string
-   * @param int $length
-   *
-   * @return string
-   */
-  protected function cleanString($string, $length) {
-    $replacements = [
-      // Hex for &nbsp;
-      '/\xC2\xA0/' => ' ',
-      '/&nbsp;/' => ' ',
-      // Replace multiple ideographic space with just one.
-      '/(\xE3\x80\x80){2}/' => html_entity_decode("&#x3000;"),
-      // Trim ideographic space (this could be done in trim further down but seems a bit fiddly)
-      '/^(\xE3\x80\x80)/' => ' ',
-      '/(\xE3\x80\x80)$/' => ' ',
-      // Replace multiple space with just one.
-      '/\s\s+/' => ' ',
-      // And html ampersands with normal ones.
-      '/&amp;/' => '&',
-      '/&Amp;/' => '&',
-    ];
-    return mb_substr(trim(preg_replace(array_keys($replacements), $replacements, $string)), 0, $length);
-  }
-
-  /**
    * @param int $destinationApiVersion
    * @return array
    */
@@ -725,6 +690,9 @@ class Save extends AbstractAction {
       'is_opt_out' => 'is_opt_out',
       'prefix_id' => 'prefix_id:label',
       'suffix_id' => 'suffix_id:label',
+      'legal_identifier' => 'legal_identifier',
+      'addressee_custom' => 'addressee_custom',
+      'addressee_display' => 'addressee_display',
     ];
     foreach ($apiFields as $api3Field => $api4Field) {
       // We are currently calling apiv3 here but aim to call v4.

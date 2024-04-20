@@ -387,12 +387,12 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         $params['contribution_recur_smashpig.rescue_reference'] = $msg['rescue_reference'];
       }
 
-      if (isset($msg['fiscal_number'])) {
+      if (isset($msg['legal_identifier'])) {
         // TODO handle this in the create contact block above rather than creating and then updating
         $save = new Save('WMFContact', 'save');
         $save->setMessage([
           'contact_id' => $contactId,
-          'fiscal_number' => $msg['fiscal_number'],
+          'legal_identifier' => $msg['legal_identifier'],
         ]);
         $save->handleUpdate();
       }

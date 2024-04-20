@@ -164,14 +164,17 @@ class DonationMessage extends Message {
     $parsed = $this->getParsedName();
     if (!empty($parsed)) {
       $msg = array_merge(array_filter((array) $parsed), $msg);
-      $msg['addressee_custom'] = $msg['full_name'];
+      $msg['addressee_custom'] = $this->cleanString($msg['full_name'], 128);
+      $msg['addressee_display'] = $msg['addressee_custom'];
     }
 
     $contactFields = [
-      'first_name' => $this->getFirstName(),
-      'last_name' => $this->getLastName(),
-      'middle_name' => $this->getMiddleName(),
+      'first_name' => $this->cleanString($this->getFirstName() ?? '', 64),
+      'last_name' => $this->cleanString($this->getLastName() ?? '', 64),
+      'middle_name' => $this->cleanString($this->getMiddleName() ?? '', 64),
       'language' => $this->getLanguage(),
+      'legal_identifier' => $this->cleanString($this->message['fiscal_number'] ?? '', 32),
+      'external_identifier' => $this->cleanString($this->message['external_identifier'] ?? '', 32),
     ];
     foreach ($contactFields as $name => $contactField) {
       if ($contactField) {
