@@ -522,4 +522,35 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertEquals('Endowment Gift', $contribution['financial_type_id:name']);
   }
 
+  /**
+   * If we get a contact ID and a bad email, leave the existing contact alone
+   */
+  public function testImportWithContactExisting(): void {
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'email_primary.email' => 'dupe@example.org',
+    ]);
+
+    $msg = [
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'dupe@example.org',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processDonationMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+  }
+
 }
