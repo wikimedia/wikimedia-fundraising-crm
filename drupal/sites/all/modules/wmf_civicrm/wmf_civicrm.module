@@ -244,7 +244,8 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   }
   else {
     $save = new Civi\Api4\Action\WMFContact\Save('WMFContact', 'save');
-    $save->handleUpdate($msg);
+    $save->setMessage($msg);
+    $save->handleUpdate();
   }
 
   // Create recurring token if it isn't already there

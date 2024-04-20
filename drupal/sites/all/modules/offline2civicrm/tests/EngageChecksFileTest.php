@@ -64,7 +64,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       'gross' => '50',
       'import_batch_number' => '1234',
       'last_name' => 'Tell',
-      'name_prefix' => 'Mrs.',
+      'prefix_id:label' => 'Mrs.',
       'payment_method' => 'Check',
       'postal_code' => '02468',
       'restrictions' => 'Unrestricted - General',

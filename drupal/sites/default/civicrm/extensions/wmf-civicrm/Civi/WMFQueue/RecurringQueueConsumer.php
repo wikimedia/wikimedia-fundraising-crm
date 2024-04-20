@@ -390,10 +390,11 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       if (isset($msg['fiscal_number'])) {
         // TODO handle this in the create contact block above rather than creating and then updating
         $save = new Save('WMFContact', 'save');
-        $save->handleUpdate([
+        $save->setMessage([
           'contact_id' => $contactId,
           'fiscal_number' => $msg['fiscal_number'],
         ]);
+        $save->handleUpdate();
       }
 
       $newContributionRecur = $this->createContributionRecurWithErrorHandling($params);
