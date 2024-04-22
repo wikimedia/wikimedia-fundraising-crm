@@ -65,7 +65,7 @@ class PaymentsInitQueueConsumer extends QueueConsumer {
     }
     catch (\CRM_Core_Exception $e) {
       if ($e->getErrorCode() === 'mandatory_missing') {
-        $error = $logId . ": Expected field " . implode($e->getErrorData()['fields']) . " bound for table payments_fraud not present! Dropping message on floor.";
+        $error = $logId . ": Expected field " . implode($e->getErrorData()['fields']) . " bound for table payments_initial not present! Dropping message on floor.";
         throw new FredgeDataValidationException($error);
       }
       throw $e;
