@@ -222,6 +222,15 @@ class BenevityFile extends ChecksFile {
         ->execute()->first();
       $msg['contact_id'] = $contact['id'];
     }
+
+    // It's not clear this is used in practice.
+    if (!empty($msg['notes'])) {
+      civicrm_api3("Note", "Create", [
+        'entity_table' => 'civicrm_contact',
+        'entity_id' => $msg['contact_id'],
+        'note' => $msg['notes'],
+      ]);
+    }
     if (isset($msg['employer_id']) && $msg['contact_id'] != $this->getAnonymousContactID()) {
       // This is done in the import but if we have no donation let's still do this update.
       civicrm_api3('Contact', 'create', ['contact_id' => $msg['contact_id'], 'employer_id' => $msg['employer_id']]);
@@ -246,6 +255,14 @@ class BenevityFile extends ChecksFile {
 
       $this->unsetAddressFields($matchedMsg);
       $matchingContribution = wmf_civicrm_contribution_message_import($matchedMsg);
+      if (!empty($matchedMsg['notes'])) {
+        // It's not clear this is used in practice.
+        civicrm_api3("Note", "Create", [
+          'entity_table' => 'civicrm_contact',
+          'entity_id' => $matchedMsg['contact_id'],
+          'note' => $matchedMsg['notes'],
+        ]);
+      }
     }
 
     if (empty($contribution)) {
