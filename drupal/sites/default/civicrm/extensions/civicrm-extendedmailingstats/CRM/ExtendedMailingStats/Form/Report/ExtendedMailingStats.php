@@ -47,7 +47,7 @@ class CRM_ExtendedMailingStats_Form_Report_ExtendedMailingStats extends CRM_Repo
    */
   public function __construct() {
     $this->_columns = array();
-    if (CRM_Campaign_BAO_Campaign::isCampaignEnable()) {
+    if (CRM_Campaign_BAO_Campaign::isComponentEnabled()) {
       $this->_columns['civicrm_mailing'] = array(
         'fields' => array(
           'mailing_id' => array(
@@ -412,7 +412,7 @@ class CRM_ExtendedMailingStats_Form_Report_ExtendedMailingStats extends CRM_Repo
    */
   function getCampaignColumns() {
 
-    if (!CRM_Campaign_BAO_Campaign::isCampaignEnable()) {
+    if (!CRM_Campaign_BAO_Campaign::isComponentEnabled()) {
       return array('civicrm_campaign' => array('fields' => array(), 'metadata' => array()));
     }
     $specs = array(
