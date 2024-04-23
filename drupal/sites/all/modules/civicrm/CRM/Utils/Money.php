@@ -230,7 +230,9 @@ class CRM_Utils_Money {
       // @todo - we should not attempt to format non-numeric strings. For now
       // these will not fail but will give notices on php 7.4
       if (!is_numeric($amount)) {
-        CRM_Core_Error::deprecatedWarning('Formatting non-numeric values is no longer supported: ' . htmlspecialchars($amount));
+        CRM_Core_Error::deprecatedWarning('Formatting non-numeric values is no longer supported: ' . htmlspecialchars($amount)
+          . "\n"
+          . CRM_Core_Error::formatBacktrace(debug_backtrace()));
       }
       else {
         self::missingIntlNotice();
