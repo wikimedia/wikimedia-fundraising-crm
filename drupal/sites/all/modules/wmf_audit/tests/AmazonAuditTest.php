@@ -1,5 +1,6 @@
 <?php
 
+use Civi\WMFAudit\BaseAuditTestCase;
 use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\Amazon\Tests\AmazonTestConfiguration;
 
@@ -7,14 +8,12 @@ use SmashPig\PaymentProviders\Amazon\Tests\AmazonTestConfiguration;
  * @group Amazon
  * @group WmfAudit
  */
-class AmazonAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
+class AmazonAuditTest extends BaseAuditTestCase {
 
-  use \Civi\Test\Api3TestTrait;
-
-  protected $contact_id;
-
-  protected $contribution_id;
-
+  /**
+   * @throws \Civi\WMFException\WMFException
+   * @throws CRM_Core_Exception
+   */
   public function setUp(): void {
     parent::setUp();
 
@@ -45,36 +44,20 @@ class AmazonAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
     variable_set('amazon_audit_log_search_past_days', 1);
 
-    // Fakedb doesn't fake the original txn for refunds, so add one here
-    $existing = wmf_civicrm_get_contributions_from_gateway_id('amazon', 'P01-4968629-7654321-C070794');
-    if ($existing) {
-      // Previous test run may have crashed before cleaning up
-      $contribution = $existing[0];
-    }
-    else {
-      $msg = [
-        'contribution_tracking_id' => 2476135333,
-        'currency' => 'USD',
-        'date' => 1443724034,
-        'email' => 'lurch@yahoo.com',
-        'gateway' => 'amazon',
-        'gateway_txn_id' => 'P01-4968629-7654321-C070794',
-        'gross' => 1.00,
-        'payment_method' => 'amazon',
-      ];
-      $contribution = wmf_civicrm_contribution_message_import($msg);
-    }
-    $this->contact_id = $contribution['contact_id'];
-    $this->contribution_id = $contribution['id'];
+    $msg = [
+      'contribution_tracking_id' => 2476135333,
+      'currency' => 'USD',
+      'date' => 1443724034,
+      'email' => 'mouse@wikimedia.org',
+      'gateway' => 'amazon',
+      'gateway_txn_id' => 'P01-4968629-7654321-C070794',
+      'gross' => 1.00,
+      'payment_method' => 'amazon',
+    ];
+    $this->processMessageWithoutQueuing($msg, 'Donation', 'test');
   }
 
-  public function tearDown(): void {
-    $this->callAPISuccess('Contribution', 'delete', ['id' => $this->contribution_id]);
-    $this->callAPISuccess('Contact', 'delete', ['id' => $this->contact_id, 'skip_undelete' => TRUE]);
-    parent::tearDown();
-  }
-
-  public function auditTestProvider() {
+  public function auditTestProvider(): array {
     return [
       [
         __DIR__ . '/data/Amazon/donation/',
@@ -94,7 +77,7 @@ class AmazonAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
               'gross' => '10.00',
               'invoice_id' => '87654321-0',
               'language' => 'en',
-              'last_name' => 'Person',
+              'last_name' => 'Mouse',
               'order_id' => '87654321-0',
               'payment_method' => 'amazon',
               'payment_submethod' => '',
@@ -145,7 +128,7 @@ class AmazonAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
   /**
    * @dataProvider auditTestProvider
    */
-  public function testParseFiles($path, $expectedMessages) {
+  public function testParseFiles(string $path, array $expectedMessages): void {
     variable_set('amazon_audit_recon_files_dir', $path);
 
     $this->runAuditor();
@@ -163,4 +146,5 @@ class AmazonAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
     $audit = new AmazonAuditProcessor($options);
     $audit->run();
   }
+
 }

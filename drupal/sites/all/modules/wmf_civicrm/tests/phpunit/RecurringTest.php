@@ -293,8 +293,8 @@ class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring' => 1,
     ];
 
-    $secondContribution = $this->messageImport($secondMessage);
-    $this->ids['Contact'][$secondContribution['contact_id']] = $secondContribution['contact_id'];
+    $this->processDonationMessage($secondMessage);
+    $secondContribution = $this->getContributionForMessage($secondMessage);
 
     $secondContributionExtra =
       wmf_civicrm_get_contributions_from_contribution_id($secondContribution['id']);

@@ -763,8 +763,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_submethod' => 'visa',
       'contact_groups' => ['in_group'],
     ];
-    $contribution = $this->messageImport($msg);
-
+    $this->processDonationMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
     $group = $this->callAPISuccessGetSingle('GroupContact', ['contact_id' => $contribution['contact_id']]);
     $this->assertEquals($this->ids['Group']['in_group'], $group['group_id']);
   }
@@ -780,7 +780,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   protected function createGroup(string $name): int {
     $group = civicrm_api3('Group', 'get', ['title' => $name]);
 
-    if ($group['count'] === 1 ) {
+    if ($group['count'] === 1) {
       $this->ids['Group'][$name] = (int) $group['id'];
     }
     else {
@@ -808,7 +808,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
 
     try {
-      $this->messageImport($msg);
+      $this->processMessageWithoutQueuing($msg, 'Donation', 'test');
     }
     catch (WMFException $ex) {
       $this->assertTrue($ex->isRequeue());
@@ -825,7 +825,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * @throws CRM_Core_Exception
    * @throws WMFException
-   * @throws StatisticsCollectorException
    */
   public function testImportWithContactIdAndHash(): void {
     $existingContact = $this->createTestEntity('Contact', [
@@ -883,11 +882,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * If we get a contact ID and a bad hash, leave the existing contact alone
-   *
-   * @throws WMFException
-   * @throws \CRM_Core_Exception
    */
-  public function testImportWithContactIdAndBadHash() {
+  public function testImportWithContactIdAndBadHash(): void {
     $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
@@ -921,7 +917,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'payment_method' => 'cc',
       'payment_submethod' => 'visa',
     ];
-    $contribution = $this->messageImport($msg);
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
     $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
     $address = $this->callAPISuccessGetSingle(
       'Address', [
@@ -1017,9 +1014,10 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'recurring' => 1,
       'recurring_payment_token' => mt_rand(),
       'initial_scheme_transaction_id' => 'FlargBlarg12345',
-      'user_ip' => '123.232.232'
+      'user_ip' => '123.232.232',
     ];
-    $contribution = $this->messageImport($msg);
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
     $recurRecord = ContributionRecur::get(FALSE)
       ->addSelect('contribution_recur_smashpig.initial_scheme_transaction_id')
       ->addWhere('id', '=', $contribution['contribution_recur_id'])
@@ -1038,6 +1036,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
    * @param ?bool $expected
    *
    * @throws CRM_Core_Exception
+   * @throws WMFException
    */
   public function testIndicatesEmployerProvidedByDonor(string $sourceType, bool $isUpdate, ?bool $expected) {
     $orgContact = $this->createTestEntity('Contact', [
@@ -1071,9 +1070,8 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $msg['source_type'] = $sourceType;
     $msg['employer_id'] = $orgContact['id'];
 
-    $contribution = wmf_civicrm_contribution_message_import($msg);
-    $this->ids['Contact'][] = $contribution['contact_id'];
-
+    $this->processMessageWithoutQueuing($msg, 'Donation');
+    $contribution = $this->getContributionForMessage($msg);
     $relationship = Relationship::get(FALSE)
       ->addWhere('contact_id_a', '=', $contribution['contact_id'])
       ->addWhere('contact_id_b', '=', $orgContact['id'])
@@ -1135,7 +1133,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $emptyStats = $importStatsCollector->getAllStats();
     $this->assertEmpty($emptyStats);
 
-    $this->messageImport($msg);
+    $this->processMessageWithoutQueuing($msg, 'Donation', 'test');
 
     $importStatsCollector = ImportStatsCollector::getInstance();
     $notEmptyStats = $importStatsCollector->getAllStats();
@@ -1160,7 +1158,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $emptyStats = $importStatsCollector->getAllStats();
     $this->assertEmpty($emptyStats);
 
-    $this->messageImport($msg);
+    $this->processMessageWithoutQueuing($msg, 'Donation', 'test');
 
     // Ignore contact_id if we have no expectation.
     if (empty($expected['contribution']['contact_id'])) {

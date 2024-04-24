@@ -174,25 +174,6 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface, Transacti
   }
 
   /**
-   * Process the given queue.
-   *
-   * @param array $message
-   * @param string|null $queueConsumer
-   *   QueueConsumer if different from property. e.g 'Recurring'
-   *   (QueueConsumer is appended in the function.)
-   *
-   * @noinspection PhpUnhandledExceptionInspection
-   * @noinspection PhpDocMissingThrowsInspection
-   */
-  public function processMessageWithoutQueuing(array $message, ?string $queueConsumer = NULL): void {
-    $queueConsumer = $queueConsumer ?: $this->queueConsumer;
-    $queueConsumerClass = '\\Civi\\WMFQueue\\' . $queueConsumer . 'QueueConsumer';
-    /* @var = \Civi\WMFQueue\QueueConsumer */
-    $consumer = new $queueConsumerClass('test');
-    $consumer->processMessage($message);
-  }
-
-  /**
    * @param array $donation_message
    *
    * @return void
