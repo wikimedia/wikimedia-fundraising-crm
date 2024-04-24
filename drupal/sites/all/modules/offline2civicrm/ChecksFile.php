@@ -581,7 +581,6 @@ abstract class ChecksFile {
 
     $list_fields = [
       'contact_groups',
-      'contact_tags',
     ];
     foreach ($list_fields as $field) {
       if (!empty($msg[$field])) {
@@ -680,7 +679,6 @@ abstract class ChecksFile {
       'State' => 'state_province',
       'Street Address' => 'street_address',
       'Suffix' => 'name_suffix',
-      'Tags' => 'contact_tags',
       'Target Contact ID' => 'relationship_target_contact_id',
       'Thank You Letter Date' => 'thankyou_date',
       'Title' => 'org_contact_title',
