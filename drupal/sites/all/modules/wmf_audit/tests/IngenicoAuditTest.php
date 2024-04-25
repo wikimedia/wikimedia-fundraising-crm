@@ -5,33 +5,12 @@ use Civi\Api4\ContributionTracking;
 /**
  * @group Ingenico
  * @group WmfAudit
+ * @group IngenicoAudit
  */
 class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();
-
-    $dirs = [
-      'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
-      'ingenico_audit_recon_completed_dir' => $this->getTempDir(),
-      'ingenico_audit_working_log_dir' => $this->getTempDir(),
-    ];
-
-    foreach ($dirs as $var => $dir) {
-      if (!is_dir($dir)) {
-        mkdir($dir);
-      }
-      variable_set($var, $dir);
-    }
-
-    $old_working = glob($dirs['ingenico_audit_working_log_dir'] . '*');
-    foreach ($old_working as $zap) {
-      if (is_file($zap)) {
-        unlink($zap);
-      }
-    }
-
-    variable_set('ingenico_audit_log_search_past_days', 1);
 
     $msg = [
       'contribution_tracking_id' => 8675309,
@@ -325,7 +304,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles($path, $expectedMessages) {
-    variable_set('ingenico_audit_recon_files_dir', $path);
+    \Civi::settings()->set('wmf_audit_directory_audit', $path);
 
     $this->runAuditor();
 
@@ -333,7 +312,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
   }
 
   public function testAlreadyRefundedTransactionIsSkipped(): void {
-    variable_set('ingenico_audit_recon_files_dir', __DIR__ . '/data/Ingenico/refundNoGatewayIDinCivi/');
+    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Ingenico/refundNoGatewayIDinCivi/');
     $expectedMessages = [
       'refund' => [],
     ];
