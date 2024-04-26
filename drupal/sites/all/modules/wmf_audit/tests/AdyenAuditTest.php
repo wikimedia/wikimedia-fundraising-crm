@@ -12,29 +12,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();
-
-    $dirs = [
-      'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
-      'adyen_audit_recon_completed_dir' => $this->getTempDir(),
-      'adyen_audit_working_log_dir' => $this->getTempDir(),
-    ];
-
-    foreach ($dirs as $var => $dir) {
-      if (!is_dir($dir)) {
-        mkdir($dir);
-      }
-      variable_set($var, $dir);
-    }
-
-    $old_working = glob($dirs['adyen_audit_working_log_dir'] . '*');
-    foreach ($old_working as $zap) {
-      if (is_file($zap)) {
-        unlink($zap);
-      }
-    }
-
-    variable_set('adyen_audit_log_search_past_days', 1);
-
+    // @todo - this needs to be moved to a setting too....
+    variable_set('wmf_audit_log_archive_dir', __DIR__ . '/data/logs/',);
     // Fakedb doesn't fake the original txn for refunds, so add one here
     $msg = [
       'contribution_tracking_id' => 92598312,
@@ -46,7 +25,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'gross' => 1.00,
       'payment_method' => 'cc',
       'payment_submethod' => 'visa',
-      'contribution_status_id' => 1
+      'contribution_status_id' => 1,
     ];
     $this->processMessage($msg, 'Donation', 'test');
 
@@ -257,7 +236,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles($path, $expectedMessages) {
-    variable_set('adyen_audit_recon_files_dir', $path);
+    \Civi::settings()->set('wmf_audit_directory_audit', $path);
 
     $this->runAuditor();
 
@@ -265,7 +244,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
   }
 
   public function testAlreadyRefundedTransactionIsSkipped() {
-    variable_set('adyen_audit_recon_files_dir',  __DIR__ . '/data/Adyen/refunded/');
+    \Civi::settings()->set('wmf_audit_directory_audit',  __DIR__ . '/data/Adyen/refunded/');
     $expectedMessages = [
       'refund' => []
     ];
