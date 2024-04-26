@@ -747,29 +747,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Test importing to a group.
-   *
-   * @throws \CRM_Core_Exception
-   */
-  public function testImportContactGroups(): void {
-    $this->createGroup('in_group');
-    $msg = [
-      'currency' => 'USD',
-      'date' => '2012-03-01 00:00:00',
-      'gateway' => 'test_gateway',
-      'gateway_txn_id' => mt_rand(),
-      'gross' => '1.23',
-      'payment_method' => 'cc',
-      'payment_submethod' => 'visa',
-      'contact_groups' => ['in_group'],
-    ];
-    $this->processDonationMessage($msg);
-    $contribution = $this->getContributionForMessage($msg);
-    $group = $this->callAPISuccessGetSingle('GroupContact', ['contact_id' => $contribution['contact_id']]);
-    $this->assertEquals($this->ids['Group']['in_group'], $group['group_id']);
-  }
-
-  /**
    * Create a group and add to cleanup tracking.
    *
    * @param string $name

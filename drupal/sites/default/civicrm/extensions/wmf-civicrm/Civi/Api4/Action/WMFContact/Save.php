@@ -260,35 +260,6 @@ class Save extends AbstractAction {
       }
     }
 
-    // Add groups to this contact.
-    if (!empty($msg['contact_groups'])) {
-      // TODO: Use CRM_Contact_GroupContact::buildOptions in Civi 4.4, also
-      // in place of ::tag below.
-      $supported_groups = array_flip(\CRM_Core_PseudoConstant::allGroup());
-      $stacked_ex = [];
-      foreach (array_unique($msg['contact_groups']) as $group) {
-        try {
-          civicrm_api3("GroupContact", "Create", [
-            'contact_id' => $contact_id,
-            'group_id' => $supported_groups[$group],
-          ]);
-        }
-        catch (\CRM_Core_Exception $ex) {
-          $stacked_ex[] = "Failed to add group {$group} to contact ID {$contact_id}. Error: " . $ex->getMessage();
-        }
-      }
-      if (!empty($stacked_ex)) {
-        throw new WMFException(
-          WMFException::IMPORT_CONTACT,
-          implode("\n", $stacked_ex)
-        );
-      }
-    }
-
-    // Create a relationship to an existing contact?
-    if (!empty($msg['relationship_target_contact_id'])) {
-      $this->createRelationship( $contact_id, $msg['relationship_target_contact_id'], $msg['relationship_type'] );
-    }
     if ($isCreate) {
       // Insert the location records if this is being called as a create.
       // For update it's handled in the update routing.
