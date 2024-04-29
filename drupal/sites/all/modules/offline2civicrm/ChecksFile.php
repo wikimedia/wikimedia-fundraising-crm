@@ -297,6 +297,18 @@ abstract class ChecksFile {
   }
 
   /**
+   * @param array $msg
+   * @return array
+   * @throws CRM_Core_Exception
+   * @throws WMFException
+   * @throws \Statistics\Exception\StatisticsCollectorException
+   */
+  public function insertRow(array $msg): array {
+    $contribution = wmf_civicrm_contribution_message_import($msg);
+    return $contribution;
+  }
+
+  /**
    * Read checks from a file and save to the database.
    *
    * @param int $offset
@@ -581,7 +593,6 @@ abstract class ChecksFile {
 
     $list_fields = [
       'contact_groups',
-      'contact_tags',
     ];
     foreach ($list_fields as $field) {
       if (!empty($msg[$field])) {
@@ -680,7 +691,6 @@ abstract class ChecksFile {
       'State' => 'state_province',
       'Street Address' => 'street_address',
       'Suffix' => 'name_suffix',
-      'Tags' => 'contact_tags',
       'Target Contact ID' => 'relationship_target_contact_id',
       'Thank You Letter Date' => 'thankyou_date',
       'Title' => 'org_contact_title',
@@ -788,7 +798,15 @@ abstract class ChecksFile {
    * @throws \CRM_Core_Exception
    */
   public function doImport($msg) {
-    $contribution = wmf_civicrm_contribution_message_import($msg);
+    $contribution = $this->insertRow($msg);
+    // It's not clear this is used in practice.
+    if (!empty($msg['notes'])) {
+      civicrm_api3("Note", "Create", [
+        'entity_table' => 'civicrm_contact',
+        'entity_id' => $contribution['contact_id'],
+        'note' => $msg['notes'],
+      ]);
+    }
     $this->mungeContribution($contribution);
     foreach ($msg as $key => $value) {
       if (strpos($key, 'relationship.') === 0) {

@@ -11,7 +11,7 @@
   <urls>
     <url desc="Main Extension Page">https://www.mediawiki.org/wiki/Fundraising_tech/CiviCRM#Matching_Gifts</url>
     <url desc="Documentation">https://www.mediawiki.org/wiki/Fundraising_tech/CiviCRM#Matching_Gifts</url>
-    <url desc="Support">irc://freenode/%23wikimedia-fundraising</url>
+    <url desc="Support">irc://irc.libera.chat/%23wikimedia-fundraising</url>
     <url desc="Licensing">http://www.gnu.org/licenses/gpl-3.0.html</url>
   </urls>
   <releaseDate>2020-04-07</releaseDate>

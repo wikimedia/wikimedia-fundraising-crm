@@ -18,7 +18,7 @@
     "license": "GPL-2.0-or-later",
     "type": "project",
     "support": {
-        "irc": "irc://irc.freenode.org/wikimedia-fundraising"
+        "irc": "irc://irc.libera.chat/wikimedia-fundraising"
     },
     "require": {
         "amzn/login-and-pay-with-amazon-sdk-php": "^2.5",

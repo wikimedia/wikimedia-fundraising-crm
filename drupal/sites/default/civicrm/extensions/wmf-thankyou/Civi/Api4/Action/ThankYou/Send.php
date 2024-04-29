@@ -3,12 +3,18 @@
 namespace Civi\Api4\Action\ThankYou;
 
 use Civi;
+use Civi\Api4\Activity;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\ThankYou;
 use Civi\Api4\WMFLink;
 use Civi\WMFException\WMFException;
 use Civi\Omnimail\MailFactory;
+use Civi\WMFMailTracking\CiviMailQueueRecord;
+use Civi\WMFMailTracking\CiviMailStore;
+use Civi\WMFMailTracking\CiviMailingInsertException;
+use Civi\WMFMailTracking\CiviMailingMissingException;
+use Civi\WMFMailTracking\CiviQueueInsertException;
 use Civi\WMFThankYou\From;
 
 /**
@@ -124,7 +130,7 @@ class Send extends AbstractAction {
       $create_civi_mail = \Civi::settings()->get('thank_you_add_civimail_records');
       $rate = \Civi::settings()->get('thank_you_civimail_rate');
       if ($create_civi_mail && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id']) && $params['contact_id'] > 0) {
-        $civi_queue_record = thank_you_add_civi_queue(
+        $civi_queue_record = $this->trackMessage(
           $this->getEmail(),
           $params['contact_id'],
           $subject,
@@ -218,5 +224,58 @@ class Send extends AbstractAction {
       // 'List-Unsubscribe-Post'  => '<' . $links['unsubscribe_url_post'] . '>',
     ];
   }
+
+
+  /**
+   * Add record of the sent email to CiviMail
+   *
+   * @param string $email recipient address
+   * @param int $contact_id recipient contact id
+   * @param string $subject subject header to insert in case of missing mailing
+   * @param string $html HTML email body, which should have a template info
+   *   comment
+   *
+   * @return CiviMailQueueRecord mail queue record with VERP
+   *   header
+   */
+  private function trackMessage($email, $contact_id, $subject, $html) {
+    $civi_queue_record = NULL;
+    $civimail_store = new CiviMailStore();
+    try {
+      try {
+        $civi_mailing = $civimail_store->getMailing('thank_you');
+      }
+      catch (CiviMailingMissingException $e) {
+        \Civi::log('wmf')->info(
+          'thank_you: Thank you mailing missing - wtf'
+        );
+      }
+      $civi_queue_record = $civimail_store->addQueueRecord($civi_mailing, $email, $contact_id);
+
+      Activity::create(FALSE)->setValues([
+        'source_contact_id' => $civi_queue_record->getContactID(),
+        'target_contact_id' => $civi_queue_record->getContactID(),
+        'activity_type_id:name' => 'Thank you email',
+        'activity_date_time' => 'now',
+        'subject' => $subject,
+        'details' => $html,
+        'status_id' => 2,
+      ])->execute();
+    }
+    catch (CiviQueueInsertException $e) {
+      \Civi::log('wmf')->info(
+        'thank_you: CiviMail queue insert failed: {error_message}',
+        ['error_message' => $e->getMessage()]
+      );
+    }
+    catch (CiviMailingInsertException $e) {
+      \Civi::log('wmf')->info(
+        'Could not insert fallback mailing: {error_message}',
+        ['error_message' => $e->getMessage()]
+      );
+    }
+    return $civi_queue_record;
+  }
+
 
 }

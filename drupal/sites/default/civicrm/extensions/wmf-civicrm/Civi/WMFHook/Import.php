@@ -5,8 +5,9 @@ namespace Civi\WMFHook;
 
 use Civi\Api4\UserJob;
 use Civi\WMFHelper\Contact;
-use Civi\WMFHelper\Contribution as WMFContribution;
+use Civi\WMFHelper\Contribution as ContributionHelper;
 use CRM_Contribute_BAO_Contribution;
+use Civi\WMFHelper\ContributionSoft as ContributionSoftHelper;
 
 class Import {
 
@@ -32,17 +33,19 @@ class Import {
    * @param int $userJobID
    *
    * @throws \CRM_Core_Exception
-   * @noinspection PhpUnusedParameterInspection
+   * @throws \Exception
    */
   public static function alterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID): void {
     if ($context === 'import' && $importType === 'contribution_import') {
       // Provide a default, allowing the import to be configured to override.
-      if (!array_key_exists('contribution_extra.no_thank_you', $mappedRow['Contribution'])) {
-        $mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal';
+      $isMatchingGift = in_array(self::getSoftCreditTypeIDForRow($mappedRow), ContributionSoftHelper::getEmploymentSoftCreditTypes(), TRUE);
+
+      if ($isMatchingGift && !array_key_exists('contribution_extra.no_thank_you', $mappedRow['Contribution'])) {
+        $mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal (matching gift/ workplace giving)';
       }
       // Assume matching gifts if there is a soft credit involved...
       if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
-        $mappedRow['Contribution']['contribution_extra.gateway'] = !empty($mappedRow['SoftCreditContact']) ? 'Matching Gifts' : 'CiviCRM Import';
+        $mappedRow['Contribution']['contribution_extra.gateway'] = $isMatchingGift ? 'Matching Gifts' : 'CiviCRM Import';
       }
       if (
         !empty($mappedRow['Contribution']['contact_id'])
@@ -51,7 +54,7 @@ class Import {
           || ($mappedRow['Contact']['contact_type'] === 'Organization' && empty($mappedRow['Contact']['organization_name']))
         )
       ) {
-        // We have just an ID so it is in ['Contribution']['contact_id']
+        // We have just an ID, so it is in ['Contribution']['contact_id']
         // Since we have handling further down let's populate the contact.
         $mappedRow['Contact']['id'] = (int) $mappedRow['Contribution']['contact_id'];
         $organizationName = Contact::getOrganizationName($mappedRow['Contact']['id']);
@@ -63,13 +66,13 @@ class Import {
       }
       if (empty($mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
         // Generate a transaction ID so that we don't import the same rows multiple times
-        $mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = WMFContribution::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
+        $mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
       }
 
       if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
         $mappedRow['Contribution']['contribution_extra.gateway'] = self::getGateway($userJobID);
       }
-      $existingContributionID = WMFContribution::exists($mappedRow['Contribution']['contribution_extra.gateway'], $mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
+      $existingContributionID = ContributionHelper::exists($mappedRow['Contribution']['contribution_extra.gateway'], $mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
       if ($existingContributionID) {
         throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
       }
@@ -121,9 +124,22 @@ class Import {
   }
 
   /**
-   * @param array $mappedRow
+   * Get the soft_credit_type_id for the given row.
    *
-   * @return array
+   * @param array $row
+   * @return int|null
+   */
+  private static function getSoftCreditTypeIDForRow(array $row): ?int {
+    if (empty($row['SoftCreditContact'])) {
+      return NULL;
+    }
+    $record = reset($row['SoftCreditContact']);
+    return (int) $record['soft_credit_type_id'];
+  }
+
+  /**
+   * @param array $organizationContact
+   * @return string
    * @throws \CRM_Core_Exception
    */
   private static function resolveOrganization(array &$organizationContact): string {
@@ -145,7 +161,6 @@ class Import {
    * @param int $userJobID
    *
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected static function getGateway(int $userJobID): string {
     if (!isset(\Civi::$statics[__CLASS__]['user_job'])) {
@@ -169,7 +184,7 @@ class Import {
   /**
    * Get the transformed field based on the relevant field transformation.
    *
-   * This is a public static function for now as we we are calling it from
+   * This is a public static function for now as we are calling it from
    * Benevity import (as part of moving that into this extension/methodology).
    * It should become private or protected on this class later on as we consolidate
    * here.
@@ -239,7 +254,6 @@ class Import {
    * to set the hour to something later than that.
    * @param array $mappedRow
    * @return void
-   * @throws \Exception
    */
   private static function setTimeOfDayIfStockDonation(array &$mappedRow): void {
     static $stockType;

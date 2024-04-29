@@ -16,14 +16,13 @@ class DonationMessage extends Message {
   /**
    * Is a payment being processed as part of this Message.
    *
-   * The goal is that this would ALWAYS be TRUE because non-donation
-   * messages would use different message classes. However, we have some
-   * recurring messages that are over-loading this class that would
-   * ideally have their own Message objects.
+   * This is always TRUE for donation messages but not always for
+   * the recurring donation messages that override this class
+   * (e.g. sign up or cancel messages).
    *
    * @var bool
    */
-  protected bool $isPayment = TRUE;
+  protected bool $isPayment;
 
   /**
    * Set is Payment.
@@ -36,6 +35,13 @@ class DonationMessage extends Message {
    */
   public function setIsPayment(bool $isPayment): void {
     $this->isPayment = $isPayment;
+  }
+
+  public function isPayment() : bool {
+    if (isset($this->isPayment)) {
+      return $this->isPayment;
+    }
+    return TRUE;
   }
 
   /**
@@ -445,8 +451,8 @@ class DonationMessage extends Message {
     return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash');
   }
 
-  public function getGatewayTxnID(): string {
-    return $this->message['gateway_txn_id'];
+  public function getGatewayTxnID(): ?string {
+    return $this->message['gateway_txn_id'] ?? NULL;
   }
 
   /**
@@ -456,7 +462,9 @@ class DonationMessage extends Message {
    * @throws \Civi\WMFException\WMFException|\CRM_Core_Exception
    */
   public function validate(): void {
-
+    if (!$this->getPaymentInstrumentID()) {
+      throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
+    }
     $missingFields = [];
     if (!$this->getOriginalCurrency()) {
       $missingFields[] = 'currency';
@@ -548,7 +556,7 @@ class DonationMessage extends Message {
    * @return int
    * @throws \Civi\WMFException\WMFException
    */
-  public function getPaymentInstrumentID(): int {
+  public function getPaymentInstrumentID(): ?int {
     if (!empty($this->message['payment_instrument_id'])) {
       if (is_numeric($this->message['payment_instrument_id'])) {
         return (int) $this->message['payment_instrument_id'];
@@ -564,7 +572,7 @@ class DonationMessage extends Message {
     if ($paymentInstrumentID) {
       return (int) $paymentInstrumentID;
     }
-    throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
+    return NULL;
   }
 
   /**
@@ -611,6 +619,17 @@ class DonationMessage extends Message {
    */
   public function isMatchingGiftContribution(): bool {
     return stristr($this->getGatewayTxnID(), '_matched');
+  }
+
+  /**
+   * Is this coming as a UPI.
+   *
+   * UPI is a bank transfer standard from India.
+   *
+   * @return bool
+   */
+  public function isUPI() : bool{
+    return ($this->message['payment_submethod'] ?? '') === 'upi';
   }
 
 }

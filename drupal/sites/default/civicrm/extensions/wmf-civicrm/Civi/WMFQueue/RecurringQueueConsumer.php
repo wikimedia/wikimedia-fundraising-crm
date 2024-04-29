@@ -3,6 +3,7 @@
 namespace Civi\WMFQueue;
 
 use Civi;
+use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\RecurUpgradeEmail;
 use Civi\Api4\WMFContact;
@@ -16,6 +17,7 @@ use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use Civi\WMFTransaction;
+use Statistics\Exception\StatisticsCollectorException;
 
 class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
@@ -24,60 +26,40 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    *
    * @param array $message
    *
+   * @throws WMFException
    * @throws \CRM_Core_Exception
-   * @throws \Civi\WMFException\WMFException
+   * @throws StatisticsCollectorException
    */
   public function processMessage($message) {
-
-    if (!empty($message['is_successful_autorescue']) && $message['is_successful_autorescue'] === TRUE) {
-      $recur_record = ContributionRecur::get(FALSE)
-        ->addWhere('contribution_recur_smashpig.rescue_reference', '=', $message['rescue_reference'])
-        ->addSelect('*', 'contribution.payment_instrument_id')
-        ->addJoin('Contribution AS contribution', 'LEFT', ['contribution.contribution_recur_id', '=', 'id'])
-        ->execute()
-        ->first();
-      if (!empty($recur_record)) {
-        $message['payment_instrument_id'] = $recur_record['contribution.payment_instrument_id'];
-        $message['contribution_recur_id'] = $recur_record['id'];
-        $message['subscr_id'] = $recur_record['trxn_id'];
-      }
-      else {
-        throw new WMFException(WMFException::INVALID_RECURRING, "Error finding rescued recurring payment with recurring reference {$message['rescue_reference']}");
-      }
+    if (empty($message['txn_type']) || !in_array($message['txn_type'], [
+      // subscription canceled by user at the gateway.
+      'subscr_cancel',
+      // subscription expired (end of term)
+      'subscr_eot',
+      // failed signup
+      'subscr_failed',
+      // 'subscr_modify' - we don't handle subscription modifications here.
+      // subscription account creation
+      'subscr_signup',
+      // subscription payment
+      'subscr_payment',
+    ])) {
+      throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
     }
+    // Set recurring to true in case the message is re-queued.
+    // @todo - we can switch later to do this at the point where we re-queue.
+    $message['recurring'] = TRUE;
+    $messageObject = new RecurDonationMessage($message);
+    $messageObject->validate();
+    $message = $messageObject->normalize();
+    $skipContributionTracking = $messageObject->isAmazon() || $messageObject->isAutoRescue();
 
-    $skipContributionTracking = (isset($message['gateway']) && $message['gateway'] === 'amazon')
-      || (isset($message['is_successful_autorescue']) && $message['is_successful_autorescue']);
-
-    if (!$skipContributionTracking && !isset($message['contribution_tracking_id'])) {
+    if (!$skipContributionTracking && !$messageObject->getContributionTrackingID()) {
       $message['contribution_tracking_id'] = $this->getContributionTracking($message);
     }
 
-    //Seeing as we're in the recurring module...
-    $message['recurring'] = TRUE;
-    $messageObject = new RecurDonationMessage($message);
-    // Set is payment to false here so that amounts will not be validated.
-    // It's possible that sometimes the message here is a payment message
-    // but if so we haven't been validating the amounts here historically
-    // so setting isPayment to false respects that behaviour.
-    $messageObject->setIsPayment(FALSE);
-    $messageObject->validate();
-    $message = $messageObject->normalize();
-
-    // define the subscription txn type for an actual 'payment'
-    $txn_subscr_payment = ['subscr_payment'];
-
-    // define the subscription txn types that affect the subscription account
-    $txn_subscr_acct = [
-      'subscr_cancel', // subscription canceled by user at the gateway.
-      'subscr_eot', // subscription expired
-      'subscr_failed', // failed signup
-      // 'subscr_modify', // subscription modification
-      'subscr_signup', // subscription account creation
-    ];
-
     // route the message to the appropriate handler depending on transaction type
-    if (isset($message['txn_type']) && in_array($message['txn_type'], $txn_subscr_payment)) {
+    if ($messageObject->isPayment()) {
       if (wmf_civicrm_get_contributions_from_gateway_id($message['gateway'], $message['gateway_txn_id'])) {
         Civi::log('wmf')->notice('recurring: Duplicate contribution: {gateway}-{gateway_txn_id}.', [
           'gateway' => $message['gateway'],
@@ -87,23 +69,20 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       }
       $this->importSubscriptionPayment($messageObject, $message);
     }
-    elseif (isset($message['txn_type']) && in_array($message['txn_type'], $txn_subscr_acct)) {
-      $this->importSubscriptionAccount($messageObject, $message);
-    }
     else {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
+      $this->importSubscriptionAccount($messageObject, $message);
     }
   }
 
   /**
    * Import a recurring payment
    *
-   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
+   * @param RecurDonationMessage $message
    * @param array $msg
    *
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
-   * @throws \Statistics\Exception\StatisticsCollectorException
+   * @throws StatisticsCollectorException
    */
   protected function importSubscriptionPayment(RecurDonationMessage $message, $msg) {
     /**
@@ -214,22 +193,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       // will do it.
       $this->updateContact($msg, $recur_record->contact_id);
     }
-
-    $update_params = [
-      'id' => $recur_record->id,
-    ];
-    $scheduleCalculationParams = [
-      'cycle_day' => $recur_record->cycle_day,
-      'frequency_interval' => $recur_record->frequency_interval,
-    ];
-    $update_params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextDateForMonth(
-      $scheduleCalculationParams
-    );
-
-    if (!empty($msg['is_auto_rescue_retry'])) {
-      $update_params['contribution_status_id:name'] = 'In Progress';
-    }
-    $this->updateContributionRecurWithErrorHandling($update_params);
   }
 
   /**
