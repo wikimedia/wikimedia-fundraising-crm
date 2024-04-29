@@ -46,7 +46,13 @@ function _civicrm_api3_preferences_create_spec(&$spec) {
   $spec['send_email'] = [
     'name' => 'send_email',
     'title' => 'Send Email',
-    'api.required' => TRUE,
+    'api.required' => FALSE,
+    'type' => CRM_Utils_Type::T_STRING,
+  ];
+  $spec['snooze_date'] = [
+    'name' => 'snooze_date',
+    'title' => 'Snooze Date',
+    'api.required' => FALSE,
     'type' => CRM_Utils_Type::T_STRING,
   ];
 }
@@ -66,7 +72,11 @@ function civicrm_api3_preferences_create(array $params): array {
   if (
     !preg_match('/^[0-9a-f_]*$/', $params['checksum']) ||
     !preg_match('/^[0-9a-zA-Z_-]*$/', $params['language']) ||
-    !preg_match('/^[a-zA-Z]*$/', $params['country'])
+    !preg_match('/^[a-zA-Z]*$/', $params['country']) ||
+    (
+      !empty($params['snooze_date']) &&
+      !preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/', $params['snooze_date'])
+    )
   ) {
     throw new API_Exception('Invalid data in e-mail preferences message.', 'invalid_message');
   }
@@ -75,10 +85,11 @@ function civicrm_api3_preferences_create(array $params): array {
     throw new API_Exception('Checksum mismatch');
   }
 
-  $result = Contact::update(FALSE)->setValues([
-    'Communication.opt_in' => $params['send_email'],
-    'preferred_language' => $params['language'],
-  ])
+  $contactUpdateValues = ['preferred_language' => $params['language']];
+  if (array_key_exists('send_email', $params)) {
+    $contactUpdateValues['Communication.opt_in'] = $params['send_email'];
+  }
+  $result = Contact::update(FALSE)->setValues($contactUpdateValues)
     ->addWhere('id', '=', (int) $params['contact_id'])
     ->execute()->first();
 
@@ -115,10 +126,14 @@ function civicrm_api3_preferences_create(array $params): array {
     ])->execute();
   }
 
+  // We just need to set this value here. The omnimail_civicrm_custom hook will pick up
+  // the change and queue up an API request to Acoustic to actually snooze it.
+  $snoozeValues = empty($params['snooze_date']) ? [] : ['email_settings.snooze_date' => $params['snooze_date']];
+
   if (count($email) === 1) {
     Email::update(FALSE)->setValues([
       'email' => (string) $params['email']
-    ])
+    ] + $snoozeValues)
       ->addWhere('id', '=', $email->first()['id'])
       ->execute();
   }
@@ -127,7 +142,7 @@ function civicrm_api3_preferences_create(array $params): array {
       'email' => (string) $params['email'],
       'contact_id' => (int) $params['contact_id'],
       'is_primary' => 1,
-    ])->execute();
+    ] + $snoozeValues)->execute();
   }
 
   // TODO: add info about email and address updates to the contact update result
