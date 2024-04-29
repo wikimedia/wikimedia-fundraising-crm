@@ -52,6 +52,7 @@ function civicrm_api3_civiproxy_getpreferences(array $params): array {
       'email.email',
       'is_opt_out',
       'Communication.opt_in',
+      'email_primary.email_settings.snooze_date',
     ])
     ->addJoin('Address AS address', 'LEFT', ['address.is_primary', '=', 1])
     ->addJoin('Email AS email', 'LEFT', ['email.is_primary', '=', 1])
@@ -67,7 +68,8 @@ function civicrm_api3_civiproxy_getpreferences(array $params): array {
     'email' => $result['email.email'] ?? NULL,
     'first_name' => $result['first_name'] ?? NULL,
     'preferred_language' => $result['preferred_language'] ?? NULL,
-    'is_opt_in' => empty($result['is_opt_out']) && ($result['Communication.opt_in'] ?? NULL) !== FALSE
+    'is_opt_in' => empty($result['is_opt_out']) && ($result['Communication.opt_in'] ?? NULL) !== FALSE,
+    'snooze_date' => $result['email_primary.email_settings.snooze_date']
   ];
 
 }
