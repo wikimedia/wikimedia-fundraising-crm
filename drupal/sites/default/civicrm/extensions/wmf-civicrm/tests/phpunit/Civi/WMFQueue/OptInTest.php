@@ -80,10 +80,9 @@ class OptInTest extends BaseQueueTestCase {
   }
 
   /**
-   * @throws \Civi\API\Exception\UnauthorizedException
    * @throws \CRM_Core_Exception
    */
-  public function testNonExistantEmail(): void {
+  public function testNonExistentEmail(): void {
     $this->processMessage($this->getContactMessage());
     // Check the original contact (with no email) is unchanged.
     $contact = $this->getContact();

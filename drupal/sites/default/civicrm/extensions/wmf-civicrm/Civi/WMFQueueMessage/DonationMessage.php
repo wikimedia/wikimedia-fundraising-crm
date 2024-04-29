@@ -226,6 +226,21 @@ class DonationMessage extends Message {
   }
 
   /**
+   * @return int|null
+   * @throws \CRM_Core_Exception
+   */
+  public function getContactID(): ?int {
+    $contactID = parent::getContactID();
+    // Override parent to ensure that the email address matches too.
+    // This is not applied to the OptInConsumer
+    if ($contactID && !empty($this->message['contact_hash'])
+      && !empty($this->message['email']) && $this->message['email'] !== $this->lookup('Contact', 'email_primary.email')) {
+      return NULL;
+    }
+    return $contactID;
+  }
+
+  /**
    * @throws \CRM_Core_Exception
    */
   public function getFirstName(): string {
