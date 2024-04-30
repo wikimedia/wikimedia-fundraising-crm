@@ -2,12 +2,8 @@
 
 namespace Civi\WMFHelper;
 
-use Civi\Api4\Contribution;
-use CRM_Core_PseudoConstant;
-use SmashPig\Core\Context;
-use SmashPig\PaymentProviders\PaymentProviderFactory;
-
 class ContributionSoft {
+
   /**
    * @return array
    *
@@ -32,4 +28,5 @@ class ContributionSoft {
     }
     return \Civi::cache('metadata')->get('wmf_civicrm_employer_soft_credit_types');
   }
+
 }
