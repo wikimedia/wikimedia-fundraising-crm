@@ -107,6 +107,7 @@ class FinanceInstrument {
     'rtbt_enets' => 'Enets',
     'rtbt_sofortuberweisung' => 'Sofort',
     'rtbt_eps' => 'EPS',
+    'sepadirectdebit' => 'SEPA Direct Debit',
   ];
 
   public const CASH_SUBMETHOD_LIST = [

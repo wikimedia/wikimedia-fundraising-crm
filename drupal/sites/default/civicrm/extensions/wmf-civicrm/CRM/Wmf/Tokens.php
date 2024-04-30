@@ -36,28 +36,30 @@ class CRM_Wmf_Tokens {
 
   /**
    * @param string $type
+   * @param string $email
    * @param string $language
    *
    * @return string
+   * @throws CRM_Core_Exception
    */
   protected static function getUrl($type, $email, $language) {
     switch ($type) {
-      case 'new_recur' :
+      case 'new_recur':
         return 'https://donate.wikimedia.org/wiki/Ways_to_Give/'
           . substr($language, 0, 2)
           . '?rdfrom=%2F%2Ffoundation.wikimedia.org%2Fw%2Findex.php%3Ftitle%3DWays_to_Give%2Fen%26redirect%3Dno&utm_medium=civi-mail&utm_campaign=FailedRecur&utm_source=FY2021_FailedRecur';
 
-      case 'new_recur_brief' :
+      case 'new_recur_brief':
         return 'https://donate.wikimedia.org/wiki/Ways_to_Give/'
           . substr($language, 0, 2) . '#monthly';
 
-      case 'unsubscribe' :
+      case 'unsubscribe':
         return WMFLink::getUnsubscribeURL(FALSE)
           ->setEmail($email)
           ->setLanguage($language)
           ->execute()->first()['unsubscribe_url'];
 
-      case 'cancel' :
+      case 'cancel':
         return 'https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language='
           . substr($language, 0, 2);
 
@@ -75,8 +77,7 @@ class CRM_Wmf_Tokens {
       ->register('unsubscribe', ts('Unsubscribe url'))
       ->register('new_recur', ts('New recurring url'))
       ->register('cancel', ts('Cancel recurring url'))
-      ->register('new_recur_brief', ts('New recurring url with less creepy stuff'))
-    ;
+      ->register('new_recur_brief', ts('New recurring url with less creepy stuff'));
     $e->entity('now')
       ->register('MMMM', ts('Current month'));
   }

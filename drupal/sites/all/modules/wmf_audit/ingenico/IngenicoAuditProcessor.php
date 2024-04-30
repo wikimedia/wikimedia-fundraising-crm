@@ -12,6 +12,19 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
     return new IngenicoAudit();
   }
 
+  // For the transition from drupal to extension
+  protected function getIncomingFilesDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR;
+  }
+
+  protected function getCompletedFilesDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'completed' . DIRECTORY_SEPARATOR;
+  }
+
+  protected function getWorkingLogDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_working_log') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
+  }
+
   // TODO: wx2 files should supersede wx1 files of the same name
   protected function get_recon_file_sort_key($file) {
     // Example: wx1.000000123420160423.010211.xml.gz
