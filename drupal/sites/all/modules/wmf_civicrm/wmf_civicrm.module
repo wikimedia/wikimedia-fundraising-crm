@@ -303,8 +303,7 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
   // Insert the contribution record.
   $contribution = _message_contribution_insert($msg);
 
-  if (!$message->isMatchingGiftContribution()
-    && $message->getContributionTrackingID()
+  if ($message->getContributionTrackingID()
     && !$message->getRecurringPriorContributionValue('id')) {
     QueueWrapper::push('contribution-tracking', [
       'id' => $message->getContributionTrackingID(),

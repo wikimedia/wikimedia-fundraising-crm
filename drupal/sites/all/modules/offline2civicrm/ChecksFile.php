@@ -1,10 +1,13 @@
 <?php
 
+use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\Relationship;
 use Civi\Api4\RelationshipType;
+use Civi\Api4\WMFContact;
 use Civi\WMFHelper\Contact;
 use Civi\WMFHelper\Contribution;
 use Civi\WMFHelper\Database;
+use Civi\WMFQueueMessage\DonationMessage;
 use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
 use SmashPig\Core\Context;
@@ -301,11 +304,25 @@ abstract class ChecksFile {
    * @return array
    * @throws CRM_Core_Exception
    * @throws WMFException
-   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function insertRow(array $msg): array {
-    $contribution = wmf_civicrm_contribution_message_import($msg);
-    return $contribution;
+    $message = DonationMessage::getWMFMessage($msg);
+    $msg = $message->normalize();
+    if (!$msg['contact_id']) {
+      $contact = WMFContact::save(FALSE)
+        ->setMessage($msg)
+        ->execute()->first();
+      $msg['contact_id'] = $contact['id'];
+    }
+    else {
+      // Note that the difference between this & the above
+      // is SUPER confusing because of the code history.
+      // For now, we have copied same wrangling as is done in message_insert
+      // but hope to consolidate on 1 call.
+      $save = new Save('WMFContact', 'save');
+      $save->handleUpdate($msg);
+    }
+    return _message_contribution_insert($msg);
   }
 
   /**
