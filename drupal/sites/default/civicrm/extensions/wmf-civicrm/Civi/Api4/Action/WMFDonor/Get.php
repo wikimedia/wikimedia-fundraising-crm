@@ -84,7 +84,6 @@ class Get extends DAOGetAction {
     $sqlQuery = \CRM_Core_DAO::executeQuery($this->getSQL());
     $rows = [];
     $calculatedData = new CalculatedData();
-    $calculatedData->setIsForceSegment(TRUE);
     while ($sqlQuery->fetch()) {
       /** @noinspection PhpPossiblePolymorphicInvocationInspection */
       $row = ['id' => $sqlQuery->entity_id];
@@ -129,7 +128,6 @@ class Get extends DAOGetAction {
    */
   protected function getSQL(): string {
     $calculatedData = new CalculatedData();
-    $calculatedData->setIsForceSegment(TRUE);
     $calculatedData->setTriggerContext(FALSE)
       ->setWhereClause($this->getTemporaryTableSelectClause());
 

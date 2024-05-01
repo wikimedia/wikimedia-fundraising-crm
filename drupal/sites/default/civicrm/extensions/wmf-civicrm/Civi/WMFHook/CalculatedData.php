@@ -60,16 +60,6 @@ class CalculatedData extends TriggerHook {
   private $statusSelectSQL;
 
   /**
-   * @param bool $isForceSegment
-   *
-   * @return \Civi\WMFHook\CalculatedData
-   */
-  public function setIsForceSegment(bool $isForceSegment): self {
-    $this->isForceSegment = $isForceSegment;
-    return $this;
-  }
-
-  /**
    * @param bool $triggerContext
    *
    * @return \Civi\WMFHook\CalculatedData
@@ -897,31 +887,8 @@ class CalculatedData extends TriggerHook {
         ];
       }
     }
-    if (!$this->isSegmentReady()) {
-      unset($this->calculatedFields['donor_segment_id'], $this->calculatedFields['donor_status_id']);
-    }
 
     return $this->calculatedFields;
-  }
-
-  /**
-   * Is the world ready for donor segments.
-   *
-   * More specifically - is the database ready for them. We don't want to inadvertently
-   * add triggers for these fields to production before we have added the fields.
-   *
-   * We don't want to accidentally add the fields either - but we would have to actively
-   * run WMFConfig::syncCustomFields(FALSE)->execute(); to do that - so we can probably avoid that
-   * for 2 weeks (really we probably won't run triggers either).
-   *
-   * @return bool
-   * @throws \CRM_Core_Exception
-   */
-  private function isSegmentReady(): bool {
-    if (!empty(\Civi::$statics['is_install_mode']) || \CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_custom_field WHERE name = "donor_segment_id"')) {
-      return TRUE;
-    }
-    return $this->isForceSegment;
   }
 
   /**
