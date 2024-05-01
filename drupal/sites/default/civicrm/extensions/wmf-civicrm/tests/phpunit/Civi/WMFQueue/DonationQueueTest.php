@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\CustomField;
@@ -9,9 +10,9 @@ use Civi\Api4\Address;
 use Civi\Api4\Email;
 use Civi\Api4\OptionValue;
 use Civi\Api4\Phone;
-use SmashPig\Core\DataStores\DataStoreException;
+use Civi\Api4\StateProvince;
+use Civi\WMFHelper\ContributionRecur;
 use SmashPig\Core\DataStores\PendingDatabase;
-use SmashPig\Core\SmashPigException;
 
 /**
  * @group queues
@@ -170,9 +171,7 @@ class DonationQueueTest extends BaseQueueTestCase {
    *
    * @param array $message
    * @param array $pendingMessage
-   *
-   * @throws DataStoreException
-   * @throws SmashPigException
+   * @throws \SmashPig\Core\DataStores\DataStoreException|\SmashPig\Core\SmashPigException
    */
   public function testDonationSparseMessages(array $message, array $pendingMessage): void {
     $pendingMessage['order_id'] = $message['order_id'];
@@ -286,7 +285,6 @@ class DonationQueueTest extends BaseQueueTestCase {
    *
    * @return void
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function assertExpectedContributionValues(array $expected, int $gatewayTxnID, ?int $contributionTrackingID = NULL): void {
     $returnFields = array_keys($expected);
@@ -576,6 +574,666 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->processDonationMessage($msg);
     $contribution = $this->getContributionForMessage($msg);
     $this->assertNotEmpty($contribution['contribution_recur_id']);
+  }
+
+  /**
+   * Test importing messages using variations form messageProvider data-provider.
+   *
+   * @dataProvider messageProvider
+   *
+   * @param array $msg
+   * @param array $expected
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testProcessMessage(array $msg, array $expected): void {
+    if (!empty($msg['contribution_recur_id'])) {
+      // Create this here - the fixtures way was not reliable
+      $msg['contact_id'] = $this->createIndividual();
+      $msg['contribution_recur_id'] = $this->createContributionRecur(['contact_id' => $msg['contact_id']])['id'];
+    }
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+    $this->processContributionTrackingQueue();
+    $this->assertComparable($expected['contribution'], $contribution);
+
+    if (!empty($expected['contact'])) {
+      $contact = Contact::get(FALSE)->addWhere('id', '=', $contribution['contact_id'])
+        ->addSelect('*', 'prefix_id:name', 'suffix_id:name', 'custom.*', 'financial_type_id:name', 'payment_instrument_id:name')
+        ->execute()->single();
+      $renamedFields = ['prefix' => 1, 'suffix' => 1];
+      $this->assertEquals(array_diff_key($expected['contact'], $renamedFields), array_intersect_key($contact, $expected['contact']), print_r(array_intersect_key($contact, $expected['contact']), TRUE) . " does not match " . print_r(array_diff_key($expected['contact'], $renamedFields), TRUE));
+      foreach (array_keys($renamedFields) as $renamedField) {
+        if (isset($expected['contact'][$renamedField])) {
+          $this->assertEquals(civicrm_api3('OptionValue', 'getvalue', [
+            'value' => $contact[$renamedField . '_id'],
+            'option_group_id' => 'individual_' . $renamedField,
+            'return' => 'name',
+          ]), $expected['contact'][$renamedField]);
+        }
+      }
+    }
+
+    if (!empty($expected['address'])) {
+      $address = Address::get(FALSE)
+        ->addWhere('contact_id', '=', $contribution['contact_id'])
+        ->addSelect('country_id:name', 'state_province_id:name', 'state_province_id', 'city', 'postal_code', 'street_address', 'geo_code_1', 'geo_code_2', 'timezone')
+        ->execute()->first();
+      $this->assertComparable($expected['address'], $address);
+    }
+  }
+
+  /**
+   * Data provider for import test.
+   *
+   * @return array
+   */
+  public function messageProvider(): array {
+    return [
+      'Minimal contribution' => [
+        'message' => $this->getMinimalImportData(7690),
+        'expected' => [
+          'contribution' => $this->getBaseContribution(7690),
+        ],
+      ],
+      'Minimal contribution with comma thousand separator' => [
+        'message' => [
+          'currency' => 'USD',
+          'date' => '2012-05-01 00:00:00',
+          'email' => 'mouse@wikimedia.org',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => 8907,
+          'gross' => '1,000.23',
+          'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
+        ],
+        'expected' => [
+          'contribution' => [
+            'contribution_status_id:name' => 'Completed',
+            'currency' => 'USD',
+            'fee_amount' => 0.00,
+            'total_amount' => '1,000.23',
+            'net_amount' => '1,000.23',
+            'payment_instrument_id:name' => 'Credit Card: Visa',
+            'receipt_date' => '',
+            'receive_date' => '2012-05-01 00:00:00',
+            'source' => 'USD 1,000.23',
+            'trxn_id' => "TEST_GATEWAY 8907",
+            'financial_type_id:name' => 'Cash',
+            'check_number' => '',
+          ],
+        ],
+      ],
+      'over-long city' => [
+        'message' => array_merge(
+          $this->getMinimalImportData(99998888),
+          ['city' => 'This is just stupidly long and I do not know why I would enter something this crazily long into a field']
+        ),
+        'expected' => [
+          'contribution' => $this->getBaseContribution(99998888),
+        ],
+      ],
+      'Maximal contribution' => [
+        'message' => [
+          'check_number' => 56565656,
+          'currency' => 'USD',
+          'date' => '2024-03-01 00:00:00',
+          'direct_mail_appeal' => 'Spontaneous Donation',
+          'do_not_email' => '1',
+          'do_not_mail' => '1',
+          'do_not_phone' => '1',
+          'do_not_sms' => '1',
+          'do_not_solicit' => '1',
+          'email' => 'mouse@wikimedia.org',
+          'first_name' => 'First',
+          'fee' => 0.03,
+          'language' => 'en',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => 67676767,
+          'gateway_status' => 'P',
+          'gift_source' => 'Legacy Gift',
+          'gross' => '1.23',
+          'import_batch_number' => '4321',
+          'is_opt_out' => '1',
+          'last_name' => 'Last',
+          'middle_name' => 'Middle',
+          'no_thank_you' => 'no forwarding address',
+          'prefix_id:label' => 'Mr.',
+          'suffix_id:label' => 'Sr.',
+          'payment_method' => 'check',
+          'stock_description' => 'Long-winded prolegemenon',
+          'thankyou_date' => '2024-04-01',
+          'fiscal_number' => 'AAA11223344',
+        ],
+        'expected' => [
+          'contact' => [
+            'do_not_email' => '1',
+            'do_not_mail' => '1',
+            'do_not_phone' => '1',
+            'do_not_sms' => '1',
+            'first_name' => 'First',
+            'is_opt_out' => '1',
+            'last_name' => 'Last',
+            'middle_name' => 'Middle',
+            'prefix' => 'Mr.',
+            'suffix' => 'Sr.',
+            'preferred_language' => 'en_US',
+            'legal_identifier' => 'AAA11223344',
+            'Communication.do_not_solicit' => '1',
+            'wmf_donor.total_2023' => 0,
+            'wmf_donor.total_2024' => 1.23,
+            'wmf_donor.number_donations' => 1,
+            'wmf_donor.first_donation_date' => '2024-03-01 00:00:00',
+            'wmf_donor.last_donation_date' => '2024-03-01 00:00:00',
+            'wmf_donor.last_donation_usd' => '1.23',
+            'wmf_donor.lifetime_usd_total' => '1.23',
+            'wmf_donor.total_2023_2024' => 1.23,
+          ],
+          'contribution' => [
+            'address_id' => '',
+            'amount_level' => '',
+            'campaign_id' => '',
+            'cancel_date' => '',
+            'cancel_reason' => '',
+            'check_number' => 56565656,
+            'contribution_page_id' => '',
+            'contribution_recur_id' => '',
+            'contribution_status_id:name' => 'Completed',
+            'currency' => 'USD',
+            'fee_amount' => 0.03,
+            'invoice_id' => '',
+            'is_pay_later' => '',
+            'is_test' => '',
+            'net_amount' => 1.20,
+            'payment_instrument_id:name' => 'Check',
+            'receipt_date' => '',
+            'receive_date' => '2024-03-01 00:00:00',
+            'source' => 'USD 1.23',
+            'thankyou_date' => '2024-04-01 00:00:00',
+            'total_amount' => '1.23',
+            'trxn_id' => "TEST_GATEWAY 67676767",
+            'financial_type_id:name' => 'Cash',
+            'Gift_Data.Appeal' => 'Spontaneous Donation',
+            'Gift_Information.import_batch_number' => '4321',
+            'Gift_Data.Campaign' => 'Legacy Gift',
+            'contribution_extra.gateway' => 'test_gateway',
+            'contribution_extra.gateway_txn_id' => '67676767',
+            'contribution_extra.gateway_status_raw' => 'P',
+            'contribution_extra.no_thank_you' => 'no forwarding address',
+            'Stock_Information.Description_of_Stock' => 'Long-winded prolegemenon',
+          ],
+        ],
+      ],
+      'Invalid language suffix for valid short lang' => [
+        'data' => [
+          'currency' => 'USD',
+          'date' => '2012-05-01 00:00:00',
+          'email' => 'mouse@wikimedia.org',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => 444444,
+          'gross' => '1.23',
+          'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
+          'language' => 'en_ZW',
+          'prefix_id:label' => 'Mr.',
+          'suffix_id:label' => 'Sr.',
+        ],
+        'expected' => [
+          'contact' => [
+            'preferred_language' => 'en_US',
+            'prefix_id:name' => 'Mr.',
+            'suffix_id:name' => 'Sr.',
+          ],
+          'contribution' => $this->getBaseContribution(444444),
+        ],
+      ],
+      'Full name' => [
+        'message' => [
+          'currency' => 'USD',
+          'date' => '2012-05-01 00:00:00',
+          'email' => 'mouse@wikimedia.org',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => 999999,
+          'gross' => '1.23',
+          'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
+          'language' => 'en_US',
+          'full_name' => 'Dr. Martin Luther Mouse, Jr.',
+        ],
+        'expected' => [
+          'contact' => [
+            'prefix' => 'Dr.',
+            'first_name' => 'Martin',
+            'middle_name' => 'Luther',
+            'last_name' => 'Mouse',
+            'suffix' => 'Jr',
+          ],
+          'contribution' => $this->getBaseContribution(999999),
+        ],
+      ],
+      'Organization contribution' => [
+        'message' => [
+          'contact_type' => 'Organization',
+          'currency' => 'USD',
+          'date' => '2012-03-01 00:00:00',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => 232323,
+          'gross' => '1.23',
+          'organization_name' => 'The Firm',
+          'org_contact_name' => 'Test Name',
+          'org_contact_title' => 'Test Title',
+          'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
+        ],
+        'expected' => [
+          'contact' => [
+            'Organization_Contact.Name' => 'Test Name',
+            'Organization_Contact.Title' => 'Test Title',
+          ],
+          'contribution' => [
+            'address_id' => '',
+            'amount_level' => '',
+            'campaign_id' => '',
+            'cancel_date' => '',
+            'cancel_reason' => '',
+            'check_number' => '',
+            'contribution_page_id' => '',
+            'contribution_recur_id' => '',
+            'contribution_status_id:name' => 'Completed',
+            'currency' => 'USD',
+            'fee_amount' => 0.00,
+            'invoice_id' => '',
+            'is_pay_later' => '',
+            'is_test' => '',
+            'net_amount' => '1.23',
+            'payment_instrument_id:name' => 'Credit Card: Visa',
+            'receipt_date' => '',
+            'receive_date' => '2012-03-01 00:00:00',
+            'source' => 'USD 1.23',
+            'thankyou_date' => '',
+            'total_amount' => '1.23',
+            'trxn_id' => "TEST_GATEWAY 232323",
+            'financial_type_id:name' => 'Cash',
+          ],
+        ],
+      ],
+      'Subscription payment' => [
+        'message' => [
+          'contact_id' => TRUE,
+          'contribution_recur_id' => TRUE,
+          'currency' => 'USD',
+          'date' => '2014-01-01 00:00:00',
+          'effort_id' => 2,
+          'email' => 'mouse@wikimedia.org',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => 5555555,
+          'gross' => 2.34,
+          'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
+        ],
+        'expected' => [
+          'contribution' => [
+            'address_id' => '',
+            'amount_level' => '',
+            'campaign_id' => '',
+            'cancel_date' => '',
+            'cancel_reason' => '',
+            'check_number' => '',
+            'contact_id' => TRUE,
+            'contribution_page_id' => '',
+            'contribution_recur_id' => TRUE,
+            'contribution_status_id:name' => 'Completed',
+            'currency' => 'USD',
+            'fee_amount' => 0.00,
+            'invoice_id' => '',
+            'is_pay_later' => '',
+            'is_test' => '',
+            'net_amount' => 2.34,
+            'payment_instrument_id:name' => 'Credit Card: Visa',
+            'receipt_date' => '',
+            'receive_date' => '2014-01-01 00:00:00',
+            'source' => 'USD ' . 2.34,
+            'thankyou_date' => '',
+            'total_amount' => 2.34,
+            'trxn_id' => "TEST_GATEWAY 5555555",
+            'financial_type_id' => ContributionRecur::getFinancialTypeForFirstContribution(),
+          ],
+        ],
+      ],
+      'Country-only address' => [
+        'message' => array_merge(
+          $this->getMinimalImportData(4567890),
+          [
+            'country' => 'FR',
+          ]
+        ),
+        'expected' => [
+          'contribution' => $this->getBaseContribution(4567890),
+          'address' => [
+            'country_id:name' => 'FR',
+          ],
+        ],
+      ],
+      'Strip duff characters' => [
+        'message' => array_merge(
+          $this->getMinimalImportData(345345),
+          [
+            'first_name' => 'Baa   baa black sheep',
+          ]
+        ),
+        'expected' => [
+          'contact' => [
+            'first_name' => 'Baa baa black sheep',
+          ],
+          'contribution' => $this->getBaseContribution(345345),
+        ],
+      ],
+      'white_space_cleanup' => [
+        'message' => array_merge(
+          $this->getMinimalImportData(494949),
+          [
+            // The multiple spaces & trailing ideographic space should go.
+            // Internally I have set it to reduce multiple ideographic space to only one.
+            // However, I've had second thoughts about my earlier update change to
+            // convert them as they are formatted differently & the issue was not the
+            // existence of them but the strings of several of them in a row.
+            'first_name' => 'Baa   baa' . html_entity_decode('&#x3000;')
+            . html_entity_decode('&#x3000;')
+            . 'black sheep' . html_entity_decode('&#x3000;'),
+            'middle_name' => '  Have &nbsp; you any wool',
+            'last_name' => ' Yes sir yes sir ' . html_entity_decode('&nbsp;') . ' three bags full',
+          ]
+        ),
+        'expected' => [
+          'contact' => [
+            'first_name' => 'Baa baa' . html_entity_decode('&#x3000;') . 'black sheep',
+            'middle_name' => 'Have you any wool',
+            'last_name' => 'Yes sir yes sir three bags full',
+            'display_name' => 'Baa baa'
+            . html_entity_decode('&#x3000;')
+            . 'black sheep Yes sir yes sir three bags full',
+          ],
+          'contribution' => $this->getBaseContribution(494949),
+        ],
+      ],
+      'ampersands' => [
+        'message' => array_merge(
+          $this->getMinimalImportData(232323),
+          [
+            // The multiple spaces & trailing ideographic space should go.
+            // Internally I have set it to reduce multiple ideographic space to only one.
+            // However, I've had second thoughts about my earlier update change to
+            // convert them as they are formatted differently & the issue was not the
+            // existence of them but the strings of several of them in a row.
+            'first_name' => 'Jack &amp; Jill',
+            'middle_name' => 'Jack &Amp; Jill',
+            'last_name' => 'Jack & Jill',
+          ]
+        ),
+        'expected' => [
+          'contact' => [
+            'first_name' => 'Jack & Jill',
+            'middle_name' => 'Jack & Jill',
+            'last_name' => 'Jack & Jill',
+            'display_name' => 'Jack & Jill Jack & Jill',
+          ],
+          'contribution' => $this->getBaseContribution(232323),
+        ],
+      ],
+      'US address import is geocoded' => [
+        'message' => [
+          'city' => 'Somerville',
+          'country' => 'US',
+          'currency' => 'USD',
+          'date' => '2012-05-01 00:00:00',
+          'email' => 'mouse@wikimedia.org',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => 9111,
+          'gross' => '1.23',
+          'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
+          'postal_code' => '02144',
+          'state_province' => 'MA',
+          'street_address' => '1 Davis Square',
+        ],
+        'expected' => [
+          'contribution' => $this->getBaseContribution(9111),
+          'address' => [
+            'country_id:name' => 'US',
+            'state_province_id' => StateProvince::get(FALSE)
+              ->addWhere('abbreviation', '=', 'MA')
+              ->addWhere('country_id.iso_code', '=', 'US')
+              ->execute()->first()['id'],
+            'city' => 'Somerville',
+            'postal_code' => '02144',
+            'street_address' => '1 Davis Square',
+            'geo_code_1' => '42.399546',
+            'geo_code_2' => '-71.12165',
+            'timezone' => 'UTC-5',
+          ],
+        ],
+      ],
+      'opt in (yes)' => [
+        'message' => array_merge(
+          $this->getMinimalImportData(181818),
+          [
+            'opt_in' => '1',
+          ]
+        ),
+        'expected' => [
+          'contact' => [
+            'Communication.opt_in' => '1',
+          ],
+          'contribution' => $this->getBaseContribution(181818),
+        ],
+      ],
+      'opt in (no)' => [
+        'message' => array_merge(
+          $this->getMinimalImportData(2982989),
+          [
+            'opt_in' => '0',
+          ]
+        ),
+        'expected' => [
+          'contact' => [
+            'Communication.opt_in' => '0',
+          ],
+          'contribution' => $this->getBaseContribution(2982989),
+        ],
+      ],
+      'opt in (empty)' => [
+        'message' => array_merge(
+          $this->getMinimalImportData(535251),
+          [
+            'opt_in' => '',
+          ]
+        ),
+        'expected' => [
+          'contact' => [
+            'Communication.opt_in' => NULL,
+          ],
+          'contribution' => $this->getBaseContribution(535251),
+        ],
+      ],
+      "'employer' field populated and mapped correctly" => [
+        'message' => array_merge(
+          $this->getMinimalImportData(74747),
+          [
+            'employer' => 'Wikimedia Foundation',
+          ]
+        ),
+        'expected' => [
+          'contact' => ['Communication.Employer_Name' => 'Wikimedia Foundation'],
+          'contribution' => $this->getBaseContribution(74747),
+        ],
+      ],
+      'Endowment Gift, specified in utm_medium' => [
+        'message' => [
+          'currency' => 'USD',
+          'date' => '2018-07-01 00:00:00',
+          'email' => 'mouse@wikimedia.org',
+          'first_name' => 'First',
+          'fee' => '0.03',
+          'language' => 'en_US',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => 123789,
+          'gateway_status' => 'P',
+          'gross' => '1.23',
+          'last_name' => 'Mouse',
+          'middle_name' => 'Middle',
+          'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
+          'utm_medium' => 'endowment',
+        ],
+        'expected' => [
+          'contribution' => [
+            'address_id' => '',
+            'amount_level' => '',
+            'campaign_id' => '',
+            'cancel_date' => '',
+            'cancel_reason' => '',
+            'check_number' => '',
+            'contribution_page_id' => '',
+            'contribution_recur_id' => '',
+            'contribution_status_id:name' => 'Completed',
+            'currency' => 'USD',
+            'fee_amount' => 0.03,
+            'invoice_id' => '',
+            'is_pay_later' => '',
+            'is_test' => '',
+            'net_amount' => 1.20,
+            'payment_instrument_id:name' => 'Credit Card: Visa',
+            'receipt_date' => '',
+            'receive_date' => '2018-07-01 00:00:00',
+            'source' => 'USD 1.23',
+            'total_amount' => '1.23',
+            'trxn_id' => "TEST_GATEWAY 123789",
+            'financial_type_id:name' => 'Endowment Gift',
+          ],
+          'contribution_custom_values' => [
+            'contribution_extra.gateway' => 'test_gateway',
+            'contribution_extra.gateway_txn_id' => '123789',
+            'contribution_extra.gateway_status_raw' => 'P',
+          ],
+        ],
+      ],
+      'Language es-419' => [
+        'message' => array_merge(
+          $this->getMinimalImportData(9599),
+          [
+            'language' => 'es-419',
+          ]
+        ),
+        [
+          'contact' => [
+            'preferred_language' => 'es_MX',
+          ],
+          'contribution' => $this->getBaseContribution(9599),
+        ],
+      ],
+      'Unsupported 3 char language code' => [
+        'message' => array_merge(
+          $this->getMinimalImportData(887766),
+          [
+            'language' => 'shn',
+          ]
+        ),
+        'expected' => [
+          'contact' => [
+            'preferred_language' => 'en_US',
+          ],
+          'contribution' => $this->getBaseContribution(887766),
+        ],
+      ],
+      'Unicode middle initial in full_name' => [
+        // Unicode middle initial in full_name is not mangled
+        // for now, workaround sticks it on last name (which
+        // may be the right thing to do for some cases)
+        'message' => [
+          'full_name' => 'Someone Ó Something',
+          'country' => 'US',
+          'currency' => 'USD',
+          'date' => '2012-05-01 00:00:00',
+          'email' => 'mouse@wikimedia.org',
+          'gateway' => 'test_gateway',
+          'gateway_txn_id' => 7272727,
+          'gross' => '1.23',
+          'payment_method' => 'cc',
+          'payment_submethod' => 'visa',
+        ],
+        [
+          'contact' => [
+            'first_name' => 'Someone',
+            'last_name' => 'Ó Something',
+          ],
+          'contribution' => $this->getBaseContribution(7272727),
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Assert that 2 arrays are the same in all the ways that matter :-).
+   *
+   * This has been written for a specific test & will probably take extra work
+   * to use more broadly.
+   *
+   * @param array $expected
+   * @param array $actual
+   */
+  public function assertComparable(array $expected, array $actual) {
+    foreach ($expected as $field => $value) {
+      if (in_array($field, ['total_amount', 'source', 'net_amount', 'fee_amount'], TRUE)) {
+        $value = str_replace(',', '', $value);
+      }
+      $this->assertEquals($value, $actual[$field], 'Expected match on field : ' . $field);
+    }
+  }
+
+  protected function getMinimalImportData($gateway_txn_id): array {
+    return [
+      'currency' => 'USD',
+      'date' => '2012-05-01 00:00:00',
+      'email' => 'mouse@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => $gateway_txn_id,
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+  }
+
+  /**
+   * Get the basic array of contribution data.
+   *
+   * @param string $gateway_txn_id
+   *
+   * @return array
+   */
+  protected function getBaseContribution(string $gateway_txn_id): array {
+    return [
+      'campaign_id' => '',
+      'cancel_date' => '',
+      'cancel_reason' => '',
+      'check_number' => '',
+      'contribution_page_id' => '',
+      'contribution_recur_id' => '',
+      'contribution_status_id:name' => 'Completed',
+      'currency' => 'USD',
+      'fee_amount' => 0.00,
+      'invoice_id' => '',
+      'is_pay_later' => '',
+      'is_test' => '',
+      'net_amount' => '1.23',
+      'payment_instrument_id:name' => 'Credit Card: Visa',
+      'receipt_date' => '',
+      'receive_date' => '2012-05-01 00:00:00',
+      'source' => 'USD 1.23',
+      'thankyou_date' => '',
+      'total_amount' => '1.23',
+      'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
+      'financial_type_id:name' => 'Cash',
+    ];
   }
 
 }

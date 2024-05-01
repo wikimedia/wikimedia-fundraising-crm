@@ -52,66 +52,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Test importing messages using variations form messageProvider data-provider.
-   *
-   * @dataProvider messageProvider
-   *
-   * @param array $msg
-   * @param array $expected
-   *
-   * @throws CRM_Core_Exception
-   */
-  public function testMessageInsert(array $msg, array $expected): void {
-    if (!empty($msg['contribution_recur_id'])) {
-      // Create this here - the fixtures way was not reliable
-      $msg['contact_id'] = $this->createIndividual();
-      $msg['contribution_recur_id'] = $this->createRecurringContribution(['contact_id' => $msg['contact_id']]);
-    }
-    $this->processMessage($msg, 'Donation', 'test');
-    $contribution = $this->getContributionForMessage($msg);
-    $this->processContributionTrackingQueue();
-
-    // Ignore contact_id if we have no expectation.
-    if (empty($expected['contribution']['contact_id'])) {
-      $this->fieldsToIgnore[] = 'contact_id';
-    }
-
-    $this->assertComparable($expected['contribution'], $contribution);
-
-    if (!empty($expected['contact'])) {
-      $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $contribution['contact_id']]);
-      $renamedFields = ['prefix' => 1, 'suffix' => 1];
-      $this->assertEquals(array_diff_key($expected['contact'], $renamedFields), array_intersect_key($contact, $expected['contact']), print_r(array_intersect_key($contact, $expected['contact']), TRUE) . " does not match " . print_r(array_diff_key($expected['contact'], $renamedFields), TRUE));
-      foreach (array_keys($renamedFields) as $renamedField) {
-        if (isset($expected['contact'][$renamedField])) {
-          $this->assertEquals(civicrm_api3('OptionValue', 'getvalue', [
-            'value' => $contact[$renamedField . '_id'],
-            'option_group_id' => 'individual_' . $renamedField,
-            'return' => 'name',
-          ]), $expected['contact'][$renamedField]);
-        }
-      }
-    }
-
-    if (!empty($expected['address'])) {
-      $addresses = civicrm_api3('Address', 'get', [
-        'contact_id' => $contribution['contact_id'],
-        'return' => 'country_id,state_province_id,city,postal_code,street_address,geo_code_1,geo_code_2,timezone',
-      ]);
-      $address = $addresses['values'][$addresses['id']];
-      $this->assertComparable($expected['address'], $address);
-    }
-
-    if (!empty($expected['contact_custom_values'])) {
-      $actual_contact_custom_values = wmf_civicrm_get_custom_values(
-        $contribution['contact_id'],
-        array_keys($expected['contact_custom_values'])
-      );
-      $this->assertEquals($expected['contact_custom_values'], $actual_contact_custom_values);
-    }
-  }
-
-  /**
    * Create a recurring contribution with some helpful defaults.
    *
    * @param array $params
@@ -1189,24 +1129,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertArrayHasKey('diff', $second_timer);
   }
 
-  /**
-   * Assert that 2 arrays are the same in all the ways that matter :-).
-   *
-   * This has been written for a specific test & will probably take extra work
-   * to use more broadly.
-   *
-   * @param array $expected
-   * @param array $actual
-   */
-  public function assertComparable(array $expected, array $actual) {
-    $this->reformatMoneyFields($expected);
-    $this->reformatMoneyFields($actual);
-    foreach ($expected as $field => $value) {
-      $this->assertEquals($value, $actual[$field], 'Expected match on field : ' . $field);
-    }
-
-  }
-
   protected function getMinimalImportData($gateway_txn_id): array {
     return [
       'currency' => 'USD',
@@ -1253,30 +1175,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
       'financial_type_id' => $financial_type_cash,
     ];
-  }
-
-  /**
-   * Remove commas from money fields.
-   *
-   * @param array $array
-   */
-  public function reformatMoneyFields(array &$array) {
-    foreach ($array as $field => $value) {
-      if (in_array($field, ['total_amount', 'source', 'net_amount', 'fee_amount'], TRUE)) {
-        $array[$field] = str_replace(',', '', $value);
-      }
-    }
-  }
-
-  /**
-   * Remove fields we don't care about from the array.
-   *
-   * @param array $array
-   *
-   * @return array
-   */
-  public function filterIgnoredFieldsFromArray(array $array): array {
-    return array_diff_key($array, array_flip($this->fieldsToIgnore));
   }
 
 }
