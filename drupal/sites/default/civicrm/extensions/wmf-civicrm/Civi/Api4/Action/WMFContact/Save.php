@@ -693,6 +693,8 @@ class Save extends AbstractAction {
       'legal_identifier' => 'legal_identifier',
       'addressee_custom' => 'addressee_custom',
       'addressee_display' => 'addressee_display',
+      $this->getApiv3FieldName('first_name_phonetic') => 'Communication.first_name_phonetic',
+      $this->getApiv3FieldName('last_name_phonetic') => 'Communication.last_name_phonetic',
     ];
     foreach ($apiFields as $api3Field => $api4Field) {
       // We are currently calling apiv3 here but aim to call v4.
@@ -706,6 +708,19 @@ class Save extends AbstractAction {
       }
     }
     return $values;
+  }
+
+  /**
+   * Get the apiv3 name - e.g custom_6
+   *
+   * This should be short term enough it can just wrap the legacy function...
+   *
+   * @param string $name
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  private function getApiv3FieldName(string $name): string {
+    return wmf_civicrm_get_custom_field_name($name);
   }
 
 }
