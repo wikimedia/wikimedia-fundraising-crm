@@ -49,7 +49,7 @@ function exchange_rates_make_ref_content( $format, $rates ) {
 
     $params = array(
         'generated_by' => basename( __FILE__ ) . ":templates/{$filename}",
-        'last_updated' => date( 'Y-m-d', variable_get( 'exchange_rates_bank_update', 0 ) ),
+        'last_updated' => date( 'Y-m-d', Civi::settings()->get('exchange_rates_last_update_timestamp') ),
         'currency_rates' => $inverse,
     );
 

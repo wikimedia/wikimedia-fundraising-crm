@@ -2014,6 +2014,21 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
+   * Copy exchange rates drupal vars to Civi settings
+   * @return bool
+   */
+  public function upgrade_4465(): bool {
+    $copySettings = [
+      'exchange_rates_bank_update' => 'exchange_rates_last_update_timestamp',
+      'exchange_rates_key_oanda' => 'exchange_rates_key_oanda',
+      'exchange_rates_quote_oanda' => 'exchange_rates_quote_oanda',
+      'exchange_rates_remaining_quotes' => 'exchange_rates_remaining_quotes',
+    ];
+    $this->convertDrupalVariableToCiviCRMSetting($copySettings);
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
