@@ -13,6 +13,7 @@ use Civi\Api4\Phone;
 use Civi\Api4\StateProvince;
 use Civi\WMFHelper\ContributionRecur;
 use SmashPig\Core\DataStores\PendingDatabase;
+use Civi\WMFStatistic\ImportStatsCollector;
 
 /**
  * @group queues
@@ -1234,6 +1235,24 @@ class DonationQueueTest extends BaseQueueTestCase {
       'trxn_id' => "TEST_GATEWAY {$gateway_txn_id}",
       'financial_type_id:name' => 'Cash',
     ];
+  }
+
+  /**
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function testMessageImportStatsProcessingRatesGenerated(): void {
+    $importStatsCollector = ImportStatsCollector::getInstance();
+    $emptyStats = $importStatsCollector->getAllStats();
+    $this->assertEmpty($emptyStats);
+    $this->processMessageWithoutQueuing($this->getDonationMessage(), 'Donation', 'test');
+    $notEmptyStats = $importStatsCollector->getAllStats();
+    $this->assertNotEmpty($notEmptyStats);
+    // Check we have running times for a insertContribution after each import
+    $contribution_insert_stats = $importStatsCollector->get("*timer.message_contribution_insert*");
+
+    $this->assertArrayHasKey('start', $contribution_insert_stats);
+    $this->assertArrayHasKey('end', $contribution_insert_stats);
+    $this->assertArrayHasKey('diff', $contribution_insert_stats);
   }
 
 }
