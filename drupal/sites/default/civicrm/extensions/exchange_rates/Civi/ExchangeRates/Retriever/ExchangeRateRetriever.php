@@ -1,8 +1,7 @@
 <?php
-namespace exchange_rates;
+namespace Civi\ExchangeRates\Retriever;
 
-use \Exception;
-use \InvalidArgumentException;
+use InvalidArgumentException;
 
 abstract class ExchangeRateRetriever {
 	protected $httpRequester;
@@ -21,20 +20,8 @@ abstract class ExchangeRateRetriever {
 	/**
 	 * Retrieve updated rates using $this->httpRequester
 	 * @param array $currencies - list of currency codes to update
-	 * @param DateTime $date - retrieve rates for this date.  If omitted, get latest rates.
-	 * @return ExchangeRateUpdateResult
+	 * @param \DateTime $date - retrieve rates for this date.  If omitted, get latest rates.
+	 * @return \Civi\ExchangeRates\UpdateResult
 	 */
 	abstract function updateRates( $currencies, $date = null );
-}
-
-class ExchangeRateUpdateResult {
-	/**
-	 * @var array key is currency code, value is array with two keys:
-	 *	'value' = USD value of a single unit, 'date' = UTC timestamp
-	 */
-	public $rates = array();
-	/**
-	 * @var int number of quotes remaining
-	 */
-	public $quotesRemaining = -1;
 }

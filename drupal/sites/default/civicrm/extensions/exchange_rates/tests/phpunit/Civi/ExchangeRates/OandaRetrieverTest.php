@@ -1,9 +1,9 @@
 <?php
 namespace Civi\ExchangeRates;
 
+use Civi\ExchangeRates\Retriever\OandaRetriever;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
-use exchange_rates\OandaRetriever;
 use PHPUnit\Framework\TestCase;
 
 /**

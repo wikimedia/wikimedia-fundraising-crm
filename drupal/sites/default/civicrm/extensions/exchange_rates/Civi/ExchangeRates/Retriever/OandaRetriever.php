@@ -1,8 +1,10 @@
 <?php
 
-namespace exchange_rates;
+namespace Civi\ExchangeRates\Retriever;
 
 use Civi\ExchangeException\ExchangeRateUpdateException;
+use Civi\ExchangeRates\UpdateResult;
+use InvalidArgumentException;
 
 class OandaRetriever extends ExchangeRateRetriever {
 
@@ -61,7 +63,7 @@ class OandaRetriever extends ExchangeRateRetriever {
       }
       throw new ExchangeRateUpdateException($msg);
     }
-    $result = new ExchangeRateUpdateResult();
+    $result = new UpdateResult();
     if (array_key_exists('x-rate-limit-remaining', $response->headers)) {
       $remaining = $response->headers['x-rate-limit-remaining'];
       if (is_numeric($remaining)) {

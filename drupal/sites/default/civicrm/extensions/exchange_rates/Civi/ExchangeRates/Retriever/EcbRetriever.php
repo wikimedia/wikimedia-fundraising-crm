@@ -1,6 +1,8 @@
 <?php
-namespace exchange_rates;
+namespace Civi\ExchangeRates\Retriever;
+
 use Civi\ExchangeException\ExchangeRateUpdateException;
+use Civi\ExchangeRates\UpdateResult;
 
 class EcbRetriever extends ExchangeRateRetriever {
 
@@ -33,7 +35,7 @@ class EcbRetriever extends ExchangeRateRetriever {
 			}
 		}
 		$bankUpdateTimestamp = strtotime( $date . ' 00:00:00 GMT' );
-		$result = new ExchangeRateUpdateResult();
+		$result = new UpdateResult();
 
 		// Table is based on EUR, so must insert manually if we actually got anything
         if ( $usdBase !== 0 ) {
