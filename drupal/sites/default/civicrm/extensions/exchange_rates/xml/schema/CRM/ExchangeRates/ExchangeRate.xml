@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/ExchangeRates</base>
+  <class>ExchangeRate</class>
+  <name>civicrm_exchange_rate</name>
+  <comment>Historical exchange rates</comment>
+  <log>false</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique ExchangeRate ID</comment>
+    <html>
+      <type>Number</type>
+    </html>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+  <field>
+    <name>currency</name>
+    <type>char</type>
+    <length>3</length>
+    <comment>ISO currency code</comment>
+  </field>
+  <field>
+    <name>value_in_usd</name>
+    <type>float</type>
+    <comment>USD value of a single unit of the currency</comment>
+  </field>
+  <field>
+    <name>local_update</name>
+    <type>timestamp</type>
+    <default>CURRENT_TIMESTAMP</default>
+    <comment>Timestamp of the last update on the local side</comment>
+  </field>
+  <field>
+    <name>bank_update</name>
+    <type>timestamp</type>
+    <required>true</required>
+    <comment>Timestamp of the last update on the bank side</comment>
+  </field>
+  <index>
+    <name>ExchangeRate_Currency_BankUpdate</name>
+    <fieldName>currency</fieldName>
+    <fieldName>bank_update</fieldName>
+    <unique>true</unique>
+  </index>
+</table>
