@@ -37,20 +37,20 @@ function exportpermission_civicrm_enable() {
  */
 function exportpermission_civicrm_permission(&$permissions) {
   $permissions[EXPORT_PERMISSION_NAME] = [
-    E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access export menu'),
-    E::ts('Access "Export as CSV" drop down menu item from actions menu on after search/report'),
+    'label' => E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access export menu'),
+    'description' => E::ts('Access "Export as CSV" drop down menu item from actions menu on after search/report'),
   ];
   $permissions[PRINT_PERMISSION_NAME] = [
-    E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access print menu'),
-    E::ts('Access "Print" drop down menu item from actions menu on search/report'),
+    'label' => E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access print menu'),
+    'description' => E::ts('Access "Print" drop down menu item from actions menu on search/report'),
   ];
   $permissions[PDF_PERMISSION_NAME] = [
-    E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access print pdf menu'),
-    E::ts('Access "Print/Merge document (PDF Letter)" drop down menu item from actions menu on search/report'),
+    'label' => E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access print pdf menu'),
+    'description' => E::ts('Access "Print/Merge document (PDF Letter)" drop down menu item from actions menu on search/report'),
   ];
   $permissions[LABEL_PERMISSION_NAME] = [
-    E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access mailing labels menu'),
-    E::ts('Access "Print Mailing Labels" drop down menu item from actions menu on search/report'),
+    'label' => E::ts('CiviCRM Export Permissions') . ': ' . E::ts('access mailing labels menu'),
+    'description' => E::ts('Access "Print Mailing Labels" drop down menu item from actions menu on search/report'),
   ];
 }
 
