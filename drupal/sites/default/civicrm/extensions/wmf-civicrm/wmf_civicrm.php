@@ -350,10 +350,7 @@ function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, 
   }
   if ($formName === 'CRM_Contribute_Form_Contribution') {
     /* @var CRM_Contribute_Form_Contribution $form */
-    $engageErrors = wmf_civicrm_validate_contribution($fields, $form);
-    if (!empty($engageErrors)) {
-      $errors = array_merge($errors, $engageErrors);
-    }
+    $errors = array_merge(wmf_civicrm_validate_contribution($fields, $form));
   }
 }
 
@@ -388,15 +385,6 @@ function wmf_civicrm_validate_contribution($fields, $form): array {
   }
 
   return $errors;
-}
-
-/**
- * https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_permission/
- *
- * @param array $permissions
- */
-function wmf_civicrm_civicrm_permission(array &$permissions) {
-  Permissions::permissions($permissions);
 }
 
 /**
