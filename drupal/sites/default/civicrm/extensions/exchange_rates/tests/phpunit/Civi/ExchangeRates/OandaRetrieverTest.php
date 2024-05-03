@@ -4,6 +4,8 @@ namespace Civi\ExchangeRates;
 use Civi\ExchangeRates\Retriever\OandaRetriever;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -11,45 +13,49 @@ use PHPUnit\Framework\TestCase;
  */
 class OandaRetrieverTest extends TestCase implements HookInterface, TransactionalInterface {
 
-  public function testExceptionOnBadHttpResponseCode() {
+  /**
+   * @var Client|(Client&\PHPUnit_Framework_MockObject_MockObject)|\PHPUnit_Framework_MockObject_MockObject
+   */
+  protected $client;
+
+  public function setUp(): void {
+    parent::setUp();
+    $this->client = $this->createMock('GuzzleHttp\Client');
+  }
+
+  public function testExceptionOnBadHttpResponseCode(): void {
     $this->expectException('\Civi\ExchangeException\ExchangeRateUpdateException');
+    $this->client->expects($this->once())
+      ->method('get')
+      ->willReturn(
+        new Response(404)
+      );
     $retriever = new OandaRetriever(
-      function( $url, $options ) {
-        return (object) array( 'code' => 404 );
-      },
+      $this->client,
       'key',
       'bid'
     );
 
-    $retriever->updateRates( array() );
+    $retriever->updateRates([]);
   }
 
-  public function testExceptionOnBadHttpResponseBody() {
+  public function testExceptionOnBadHttpResponseBody(): void {
     $this->expectException('\Civi\ExchangeException\ExchangeRateUpdateException');
+    $this->client->expects($this->once())
+      ->method('get')
+      ->willReturn(
+        new Response(200, [], '{this is not good JSON!}')
+      );
     $retriever = new OandaRetriever(
-      function( $url, $options ) {
-        return (object) array(
-          'code' => 200,
-          'data' => '{this is not good JSON!}',
-          'headers' => array(),
-        );
-      },
+      $this->client,
       'key',
       'bid'
     );
-    $retriever->updateRates( array() );
+    $retriever->updateRates([]);
   }
 
-  public function testNormalRetrieval() {
-    $that = $this;
-    $retriever = new OandaRetriever(
-      function( $url, $options ) use ( $that ) {
-        $that->assertEquals( 'Bearer mzplx', $options['headers']['Authorization'] );
-        $urlParts = parse_url( $url );
-        $that->assertEquals( 'https', $urlParts['scheme'] );
-        $that->assertEquals( 'www.oanda.com', $urlParts['host'] );
-        $that->assertEquals( '/rates/api/v1/rates/USD.json', $urlParts['path'] );
-        $jsonResponse = '{
+  public function testNormalRetrieval(): void {
+    $jsonResponse = '{
    "base_currency" : "USD",
    "meta" : {
       "effective_params" : {
@@ -77,18 +83,27 @@ class OandaRetrieverTest extends TestCase implements HookInterface, Transactiona
       }
    }
 }';
-        return (object)array(
-          'code' => 200,
-          'data' => $jsonResponse,
-          'headers' => array( 'x-rate-limit-remaining' => 144 )
-        );
-      },
+    $this->client->expects($this->once())
+      ->method('get')
+      ->with(
+        'https://www.oanda.com/rates/api/v1/rates/USD.json?fields=midpoint&decimal_places=all&quote=EUR&quote=GBP',
+        [
+          'headers' => [
+            'Authorization' => 'Bearer mzplx',
+          ]
+        ]
+      )
+      ->willReturn(
+        new Response(200, ['x-rate-limit-remaining' => 144], $jsonResponse)
+      );
+    $retriever = new OandaRetriever(
+      $this->client,
       'mzplx',
       'midpoint'
     );
-    $result = $retriever->updateRates( array( 'EUR', 'GBP' ) );
-    $this->assertEquals( 1.25, $result->rates['EUR']['value'] );
-    $this->assertEquals( 2, $result->rates['GBP']['value'] );
-    $this->assertEquals( 144, $result->quotesRemaining );
+    $result = $retriever->updateRates(['EUR', 'GBP']);
+    $this->assertEquals(1.25, $result->rates['EUR']['value']);
+    $this->assertEquals(2, $result->rates['GBP']['value']);
+    $this->assertEquals(144, $result->quotesRemaining);
   }
 }
