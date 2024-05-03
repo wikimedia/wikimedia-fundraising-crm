@@ -57,12 +57,11 @@ function emailamender_civicrm_searchTasks($objectType, &$tasks) {
  * Implements hook_civicrm_permission().
  *
  * @see CRM_Utils_Hook::permission()
- * @param array $permissions
  */
-function emailamender_civicrm_permission(&$permissions) {
+function emailamender_civicrm_permission(array &$permissions) {
   $permissions['administer_email_amender'] = [
-    E::ts('Email Amender'),
-    E::ts('administer email corrections'),
+    'label' => E::ts('Email Amender'),
+    'description' => E::ts('administer email corrections'),
   ];
 }
 
