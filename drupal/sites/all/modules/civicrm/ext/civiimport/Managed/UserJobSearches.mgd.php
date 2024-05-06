@@ -120,24 +120,6 @@ return [
               'label' => E::ts('Job Type'),
               'sortable' => TRUE,
             ],
-            [
-              'links' => [
-                [
-                  'entity' => 'UserJob',
-                  'action' => 'view',
-                  'join' => '',
-                  'target' => 'crm-popup',
-                  'icon' => 'fa-external-link',
-                  'text' => E::ts('View outcome'),
-                  'style' => 'default',
-                  'path' => '',
-                  'task' => '',
-                  'condition' => [],
-                ],
-              ],
-              'type' => 'links',
-              'alignment' => 'text-right',
-            ],
           ],
           'actions' => TRUE,
           'classes' => [
@@ -382,7 +364,7 @@ return [
               'dataType' => 'Timestamp',
               'label' => E::ts('Expires Date'),
               'sortable' => TRUE,
-              'editable' =>  TRUE,
+              'editable' => TRUE,
             ],
             [
               'type' => 'field',
@@ -390,24 +372,6 @@ return [
               'dataType' => 'String',
               'label' => E::ts('Type'),
               'sortable' => TRUE,
-            ],
-            [
-              'links' => [
-                [
-                  'entity' => 'UserJob',
-                  'action' => 'view',
-                  'join' => '',
-                  'target' => 'crm-popup',
-                  'icon' => 'fa-external-link',
-                  'text' => E::ts('View outcome'),
-                  'style' => 'default',
-                  'path' => '',
-                  'task' => '',
-                  'condition' => [],
-                ],
-              ],
-              'type' => 'links',
-              'alignment' => 'text-right',
             ],
           ],
           'actions' => TRUE,

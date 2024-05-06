@@ -58,6 +58,9 @@ class CRM_Profile_Form extends CRM_Core_Form {
    * The group id that we are passing in url.
    *
    * @var int
+   *
+   * @deprecated
+   * @internal
    */
   public $_grid;
 
@@ -805,7 +808,7 @@ class CRM_Profile_Form extends CRM_Core_Form {
       // if we are a admin OR the same user OR acl-user with access to the profile
       // or we have checksum access to this contact (i.e. the user without a login) - CRM-5909
       if (
-        CRM_Core_Permission::check('administer users') ||
+        CRM_Core_Permission::check('cms:administer users') ||
         $this->_id == $this->_currentUserID ||
         $this->_isPermissionedChecksum ||
         in_array(

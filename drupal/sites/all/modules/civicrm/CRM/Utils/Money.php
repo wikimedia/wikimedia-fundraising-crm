@@ -100,7 +100,7 @@ class CRM_Utils_Money {
     $replacements = [
       '%a' => $amount,
       '%C' => $currency,
-      '%c' => CRM_Utils_Array::value($currency, self::$_currencySymbols, $currency),
+      '%c' => self::$_currencySymbols[$currency] ?? $currency,
     ];
     return strtr($format, $replacements);
   }
@@ -230,9 +230,7 @@ class CRM_Utils_Money {
       // @todo - we should not attempt to format non-numeric strings. For now
       // these will not fail but will give notices on php 7.4
       if (!is_numeric($amount)) {
-        CRM_Core_Error::deprecatedWarning('Formatting non-numeric values is no longer supported: ' . htmlspecialchars($amount)
-          . "\n"
-          . CRM_Core_Error::formatBacktrace(debug_backtrace()));
+        CRM_Core_Error::deprecatedWarning('Formatting non-numeric values is no longer supported: ' . htmlspecialchars($amount));
       }
       else {
         self::missingIntlNotice();
@@ -349,7 +347,9 @@ class CRM_Utils_Money {
     if (is_numeric($amount) && function_exists('money_format')) {
       $lc = setlocale(LC_MONETARY, 0);
       setlocale(LC_MONETARY, 'en_US.utf8', 'en_US', 'en_US.utf8', 'en_US', 'C');
+      // phpcs:disable
       $amount = money_format($valueFormat, $amount);
+      // phpcs:enable
       setlocale(LC_MONETARY, $lc);
     }
     return $amount;

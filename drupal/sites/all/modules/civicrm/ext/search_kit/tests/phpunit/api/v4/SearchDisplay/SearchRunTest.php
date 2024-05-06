@@ -175,6 +175,76 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
     $this->assertCount(2, $count);
   }
 
+  public function testDefaultDisplayLinks(): void {
+    $group1 = $this->createTestRecord('Group', ['title' => uniqid('a')])['id'];
+    $group2 = $this->createTestRecord('Group', ['title' => uniqid('b')])['id'];
+    $contact1 = $this->createTestRecord('Individual', ['last_name' => 'b', 'first_name' => 'b'])['id'];
+    $contact2 = $this->createTestRecord('Individual', ['last_name' => 'a', 'first_name' => 'a'])['id'];
+    // Add both contacts to group2
+    $this->saveTestRecords('GroupContact', [
+      'records' => [
+        ['contact_id' => $contact1, 'group_id' => $group2],
+        ['contact_id' => $contact2, 'group_id' => $group2],
+      ],
+    ]);
+
+    $params = [
+      'checkPermissions' => FALSE,
+      'return' => 'page:1',
+      'savedSearch' => [
+        'api_entity' => 'Group',
+        'api_params' => [
+          'version' => 4,
+          'select' => [
+            'title',
+            'Group_GroupContact_Contact_01.sort_name',
+          ],
+          'join' => [
+            [
+              'Contact AS Group_GroupContact_Contact_01',
+              'LEFT',
+              'GroupContact',
+              ['id', '=', 'Group_GroupContact_Contact_01.group_id'],
+              ['Group_GroupContact_Contact_01.status:name', '=', '"Added"'],
+            ],
+          ],
+          'where' => [],
+        ],
+      ],
+      'display' => NULL,
+      'sort' => [
+        ['title', 'ASC'],
+        ['Group_GroupContact_Contact_01.sort_name', 'ASC'],
+      ],
+      'filters' => ['id' => [$group1, $group2]],
+    ];
+
+    $result = civicrm_api4('SearchDisplay', 'run', $params);
+    $this->assertCount(1, $result[0]['columns'][0]['links']);
+    $this->assertNull($result[0]['columns'][1]['val']);
+    $this->assertArrayNotHasKey('links', $result[0]['columns'][1]);
+    $this->assertCount(1, $result[1]['columns'][0]['links']);
+    $this->assertCount(1, $result[1]['columns'][1]['links']);
+    $this->assertCount(1, $result[2]['columns'][0]['links']);
+    $this->assertCount(1, $result[2]['columns'][1]['links']);
+    $this->assertContains('View Group', array_column($result[0]['columns'][2]['links'], 'text'));
+    $this->assertContains('Update Group', array_column($result[0]['columns'][2]['links'], 'text'));
+    $this->assertContains('Delete Group', array_column($result[0]['columns'][2]['links'], 'text'));
+    // Add and browse links should not be shown in rows
+    $this->assertNotContains('Add Group', array_column($result[0]['columns'][2]['links'], 'text'));
+    $this->assertNotContains('Browse Group', array_column($result[0]['columns'][2]['links'], 'text'));
+    // No contact links in 1st row since the group is empty
+    $this->assertNotContains('View Contact', array_column($result[0]['columns'][2]['links'], 'text'));
+    $this->assertNotContains('Delete Contact', array_column($result[0]['columns'][2]['links'], 'text'));
+    $this->assertContains('View Contact', array_column($result[1]['columns'][2]['links'], 'text'));
+    $this->assertContains('Delete Contact', array_column($result[1]['columns'][2]['links'], 'text'));
+    $this->assertContains('View Contact', array_column($result[2]['columns'][2]['links'], 'text'));
+    $this->assertContains('Delete Contact', array_column($result[2]['columns'][2]['links'], 'text'));
+    // Add and browse links should not be shown in rows
+    $this->assertNotContains('Add Contact', array_column($result[1]['columns'][2]['links'], 'text'));
+    $this->assertNotContains('Browse Contact', array_column($result[2]['columns'][2]['links'], 'text'));
+  }
+
   /**
    * Test return values are augmented by tokens.
    */
@@ -321,13 +391,75 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
     $this->assertEquals('fa-external-link', $result[0]['columns'][1]['links'][0]['icon']);
     // 2nd link is to the native SK bulk-update task
     $this->assertArrayNotHasKey('url', $result[0]['columns'][1]['links'][1]);
+    $this->assertArrayNotHasKey('action', $result[0]['columns'][1]['links'][1]);
     $this->assertEquals('update', $result[0]['columns'][1]['links'][1]['task']);
     $this->assertEquals('fa-pencil', $result[0]['columns'][1]['links'][1]['icon']);
     // 3rd link is a popup link to the delete contribution quickform
+    $this->assertArrayNotHasKey('task', $result[0]['columns'][1]['links'][2]);
     $this->assertStringContainsString('action=delete&id=' . $contributions[0]['id'], $result[0]['columns'][1]['links'][2]['url']);
     $this->assertEquals('crm-popup', $result[0]['columns'][1]['links'][2]['target']);
     $this->assertEquals('fa-trash', $result[0]['columns'][1]['links'][2]['icon']);
     $this->assertEquals('Delete', $result[0]['columns'][1]['links'][2]['title']);
+  }
+
+  public function testEnableDisableTaskLinks():void {
+    $contributionPage = $this->createTestRecord('ContributionPage', [
+      'is_active' => TRUE,
+    ]);
+    $params = [
+      'checkPermissions' => FALSE,
+      'return' => 'page:1',
+      'savedSearch' => [
+        'api_entity' => 'ContributionPage',
+        'api_params' => [
+          'version' => 4,
+          'select' => ['title'],
+          'where' => [['id', '=', $contributionPage['id']]],
+        ],
+      ],
+      'display' => [
+        'type' => 'table',
+        'label' => 'testDisplay',
+        'settings' => [
+          'actions' => TRUE,
+          'pager' => [],
+          'columns' => [
+            [
+              'key' => 'title',
+              'label' => 'Title',
+              'dataType' => 'String',
+              'type' => 'field',
+            ],
+            [
+              'type' => 'buttons',
+              'links' => [
+                [
+                  'entity' => 'ContributionPage',
+                  'task' => 'enable',
+                  'icon' => 'fa-pencil',
+                ],
+                [
+                  'entity' => 'ContributionPage',
+                  'task' => 'disable',
+                  'icon' => 'fa-pencil',
+                ],
+              ],
+            ],
+          ],
+          'sort' => [
+            ['id', 'ASC'],
+          ],
+        ],
+      ],
+    ];
+    $result = civicrm_api4('SearchDisplay', 'run', $params);
+    $this->assertEquals(1, $result->count());
+    $this->assertCount(1, $result[0]['columns'][1]['links']);
+    // Native SK tasks should not have a url
+    $this->assertArrayNotHasKey('url', $result[0]['columns'][1]['links'][0]);
+    $this->assertArrayNotHasKey('action', $result[0]['columns'][1]['links'][0]);
+    $this->assertEquals('disable', $result[0]['columns'][1]['links'][0]['task']);
+    $this->assertEquals('fa-pencil', $result[0]['columns'][1]['links'][0]['icon']);
   }
 
   public function testRelationshipCacheLinks():void {
@@ -386,12 +518,10 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
                 [
                   'entity' => 'Relationship',
                   'task' => 'enable',
-                  'condition' => ['is_active', '=', FALSE],
                 ],
                 [
                   'entity' => 'Relationship',
                   'task' => 'disable',
-                  'condition' => ['is_active', '=', TRUE],
                 ],
                 [
                   'entity' => 'Case',
@@ -480,13 +610,13 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
               'key' => 'first_name',
               'label' => 'Name',
               'type' => 'field',
-              'rewrite' => '{if "[nick_name]"}[nick_name]{else}[first_name]{/if} [last_name]',
+              'rewrite' => '{if $nick_name}{$nick_name}{else}[first_name]{/if} [last_name]',
             ],
             [
               'key' => 'Contact_Email_contact_id_01.email',
               'label' => 'Email',
               'type' => 'field',
-              'rewrite' => '{if "[Contact_Email_contact_id_01.email]"}[Contact_Email_contact_id_01.email] ([Contact_Email_contact_id_01.location_type_id:label]){/if}',
+              'rewrite' => '{if $Contact_Email_contact_id_01.email}{$Contact_Email_contact_id_01.email} ({$Contact_Email_contact_id_01.location_type_id_label}){/if}',
             ],
           ],
           'sort' => [
@@ -509,6 +639,49 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
     }
     catch (\Exception $e) {
     }
+
+    // Start with email as base entity and use implicit join
+
+    $params = [
+      'checkPermissions' => FALSE,
+      'return' => 'page:1',
+      'savedSearch' => [
+        'api_entity' => 'Email',
+        'api_params' => [
+          'version' => 4,
+          'select' => ['id', 'email', 'contact_id', 'contact_id.first_name', 'contact_id.last_name', 'contact_id.nick_name'],
+          'where' => [['contact_id.last_name', '=', $lastName]],
+        ],
+      ],
+      'display' => [
+        'type' => 'table',
+        'label' => 'testDisplay',
+        'settings' => [
+          'limit' => 20,
+          'pager' => TRUE,
+          'columns' => [
+            [
+              'key' => 'contact_id',
+              'label' => 'Contact ID',
+              'type' => 'field',
+              'rewrite' => '#{$contact_id.id} is #{$contact_id}',
+            ],
+            [
+              'key' => 'first_name',
+              'label' => 'Name',
+              'type' => 'field',
+              'rewrite' => '{if $contact_id.nick_name}{$contact_id.nick_name}{else}[contact_id.first_name]{/if} {$contact_id.last_name}',
+            ],
+          ],
+          'sort' => [
+            ['id', 'ASC'],
+          ],
+        ],
+      ],
+    ];
+    $result = civicrm_api4('SearchDisplay', 'run', $params);
+    $this->assertEquals("#{$contacts[0]['id']} is #{$contacts[0]['id']}", $result[0]['columns'][0]['val']);
+    $this->assertEquals("Uno $lastName", $result[0]['columns'][1]['val']);
   }
 
   /**
@@ -930,7 +1103,7 @@ class SearchRunTest extends Api4TestBase implements TransactionalInterface {
     }
     $this->assertStringContainsString('failed', $error);
 
-    $config->userPermissionClass->permissions = ['access CiviCRM', 'administer search_kit'];
+    $config->userPermissionClass->permissions = ['administer CiviCRM'];
 
     // Admins can edit the search and the display
     SavedSearch::update()->addWhere('name', '=', $searchName)

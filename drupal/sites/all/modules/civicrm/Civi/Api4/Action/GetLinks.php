@@ -101,6 +101,7 @@ class GetLinks extends BasicGetAction {
         'icon' => \CRM_Core_Action::getIcon($actionKey),
         'weight' => (int) \CRM_Core_Action::getWeight($actionKey),
         'target' => 'crm-popup',
+        'conditions' => [],
       ];
       $links[] = $link;
     }
@@ -114,6 +115,7 @@ class GetLinks extends BasicGetAction {
         'entity' => $entityName,
         'weight' => 0,
         'target' => 'crm-popup',
+        'conditions' => [],
       ];
     }
     usort($links, ['CRM_Utils_Sort', 'cmpFunc']);
@@ -129,7 +131,7 @@ class GetLinks extends BasicGetAction {
     // Text was translated with `%1` placeholders preserved so it could be cached
     // Now we'll replace `%1` placeholders with the entityTitle, unless FALSE
     $entityTitle = $this->entityTitle === TRUE ? CoreUtil::getInfoItem($this->getEntityName(), 'title') : $this->entityTitle;
-    foreach ($links as &$link) {
+    foreach ($links as $index => &$link) {
       // Swap placeholders with $entityTitle (TRUE means use default title)
       if ($entityTitle !== FALSE && !empty($link['text'])) {
         $link['text'] = str_replace('%1', $entityTitle, $link['text']);
@@ -141,6 +143,12 @@ class GetLinks extends BasicGetAction {
           $value = $this->getValue($fieldExpr);
           if (isset($value)) {
             $link['path'] = str_replace($token['token'], $value, $link['path']);
+          }
+          // If $values was supplied, treat all tokens as mandatory and remove links with null values
+          // This hides invalid links from SearchKit e.g. `civicrm/group/edit?id=null`
+          else {
+            unset($links[$index]);
+            break;
           }
         }
       }
@@ -218,6 +226,11 @@ class GetLinks extends BasicGetAction {
       [
         'name' => 'target',
         'description' => 'HTML target attribute',
+      ],
+      [
+        'name' => 'conditions',
+        'data_type' => 'Array',
+        'description' => 'Conditions for displaying link',
       ],
     ];
   }

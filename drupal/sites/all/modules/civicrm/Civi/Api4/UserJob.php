@@ -10,8 +10,6 @@
  */
 namespace Civi\Api4;
 
-use Civi\Api4\Generic\ExportAction;
-
 /**
  * UserJob entity.
  *

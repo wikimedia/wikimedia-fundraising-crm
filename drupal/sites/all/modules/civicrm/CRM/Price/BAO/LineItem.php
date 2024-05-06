@@ -128,8 +128,10 @@ WHERE li.contribution_id = %1";
   }
 
   /**
-   * Wrapper for line item retrieval when contribution ID is known.
+   * (quasi-deprecated) Wrapper for line item retrieval when contribution ID is known.
    * @param int $contributionID
+   *
+   * @internal - apiv4 is recommended.
    *
    * @return array
    */
@@ -319,7 +321,7 @@ WHERE li.contribution_id = %1";
         'max_value' => $options[$oid]['max_value'] ?? NULL,
         'membership_type_id' => $options[$oid]['membership_type_id'] ?? NULL,
         'membership_num_terms' => $options[$oid]['membership_num_terms'] ?? NULL,
-        'auto_renew' => $options[$oid]['auto_renew'] ?? NULL,
+        'auto_renew' => !empty($options[$oid]['auto_renew']) ? (int) $options[$oid]['auto_renew'] : NULL,
         'html_type' => $fields['html_type'],
         'financial_type_id' => $options[$oid]['financial_type_id'] ?? NULL,
         'tax_amount' => $options[$oid]['tax_amount'] ?? 0,
@@ -327,7 +329,7 @@ WHERE li.contribution_id = %1";
       ];
 
       if ($values[$oid]['membership_type_id'] && empty($values[$oid]['auto_renew'])) {
-        $values[$oid]['auto_renew'] = CRM_Core_DAO::getFieldValue('CRM_Member_DAO_MembershipType', $values[$oid]['membership_type_id'], 'auto_renew');
+        $values[$oid]['auto_renew'] = (int) CRM_Core_DAO::getFieldValue('CRM_Member_DAO_MembershipType', $values[$oid]['membership_type_id'], 'auto_renew');
       }
     }
   }
@@ -423,61 +425,6 @@ WHERE li.contribution_id = %1";
     if (!$update && $contributionDetails) {
       CRM_Core_BAO_FinancialTrxn::createDeferredTrxn($lineItems, $contributionDetails);
     }
-  }
-
-  /**
-   * @param int $entityId
-   * @param string $entityTable
-   * @param $amount
-   * @param array $otherParams
-   */
-  public static function syncLineItems($entityId, $entityTable, $amount, $otherParams = NULL) {
-    if (!$entityId || CRM_Utils_System::isNull($amount)) {
-      return;
-    }
-
-    $from = " civicrm_line_item li
-      LEFT JOIN   civicrm_price_field pf ON pf.id = li.price_field_id
-      LEFT JOIN   civicrm_price_set ps ON ps.id = pf.price_set_id ";
-
-    $set = " li.unit_price = %3,
-      li.line_total = %3 ";
-
-    $where = " li.entity_id = %1 AND
-      li.entity_table = %2 ";
-
-    $params = [
-      1 => [$entityId, 'Integer'],
-      2 => [$entityTable, 'String'],
-      3 => [$amount, 'Float'],
-    ];
-
-    if ($entityTable == 'civicrm_contribution') {
-      $entityName = 'default_contribution_amount';
-      $where .= " AND ps.name = %4 ";
-      $params[4] = [$entityName, 'String'];
-    }
-    elseif ($entityTable == 'civicrm_participant') {
-      $from .= "
-        LEFT JOIN civicrm_price_set_entity cpse ON cpse.price_set_id = ps.id
-        LEFT JOIN civicrm_price_field_value cpfv ON cpfv.price_field_id = pf.id and cpfv.label = %4 ";
-      $set .= " ,li.label = %4,
-        li.price_field_value_id = cpfv.id ";
-      $where .= " AND cpse.entity_table = 'civicrm_event' AND cpse.entity_id = %5 ";
-      $amount = empty($amount) ? 0 : $amount;
-      $params += [
-        4 => [$otherParams['fee_label'], 'String'],
-        5 => [$otherParams['event_id'], 'String'],
-      ];
-    }
-
-    $query = "
-      UPDATE $from
-      SET    $set
-      WHERE  $where
-      ";
-
-    CRM_Core_DAO::executeQuery($query, $params);
   }
 
   /**
@@ -677,7 +624,7 @@ WHERE li.contribution_id = %1";
       $updatedAmount = CRM_Price_BAO_LineItem::getLineTotal($contributionId);
     }
     else {
-      $updatedAmount = CRM_Utils_Array::value('amount', $params, CRM_Utils_Array::value('total_amount', $params));
+      $updatedAmount = $params['amount'] ?? $params['total_amount'] ?? NULL;
     }
     if (strlen($params['tax_amount']) != 0) {
       $taxAmount = $params['tax_amount'];
