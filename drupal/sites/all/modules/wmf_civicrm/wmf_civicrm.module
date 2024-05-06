@@ -286,8 +286,9 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
       if ($message->isPaypal()) {
         // Other than for PayPal this is done elsewhere, but we want to display
         // something meaningful in the UI for PayPal.
-        $recurUpdate->addValue('next_sched_contribution_date', CRM_Core_Payment_Scheduler::getNextDateForMonth([
+        $recurUpdate->addValue('next_sched_contribution_date', CRM_Core_Payment_Scheduler::getNextContributionDate([
           'frequency_interval' => $message->getExistingContributionRecurValue('frequency_interval'),
+          'frequency_unit' => $message->getExistingContributionRecurValue('frequency_unit'),
           'cycle_day' => $message->getExistingContributionRecurValue('cycle_day'),
         ]));
       }

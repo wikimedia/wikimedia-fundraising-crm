@@ -4,14 +4,15 @@ class CRM_Core_Payment_Scheduler {
 
   /**
    * @param array $record contribution_recur db record, containing at least:
-   *  frequency_interval, cycle_day
+   *  frequency_interval, cycle_day. frequency_unit is also consulted to see
+   *  whether the donation is annual.
    * @param int $nowstamp optional timestamp at which to perform the
    *  calculation, otherwise now()
    *
    * @return string  Returns a date stamp in the format 'Y-m-d H:i:s' =>
    *   2011-12-31 00:00:00
    */
-  public static function getNextDateForMonth($record, $nowstamp = NULL) {
+  public static function getNextContributionDate( $record, $nowstamp = NULL) {
     $triggered_for_date = self::getLastTriggerDate($record, $nowstamp);
     // $frequency_interval and $cycle_day will, at this point, have been found in $record.
     $frequency_interval = (integer) $record['frequency_interval'];
@@ -21,7 +22,9 @@ class CRM_Core_Payment_Scheduler {
     $added = 0;
     while (gmdate('Y-m-d', $triggered_for_date) >= gmdate('Y-m-d', $scheduled_date_stamp) && ($added < $frequency_interval)) {
       // this will happen at least once.
-      $scheduled_date_stamp = self::incrementDateToTargetDay($scheduled_date_stamp, 'month', $cycle_day);
+      $scheduled_date_stamp = self::incrementDateToTargetDay(
+        $scheduled_date_stamp, $record['frequency_unit'] ?: 'month', $cycle_day
+      );
       $added += 1;
     }
 
@@ -102,15 +105,17 @@ class CRM_Core_Payment_Scheduler {
    * @return int The $date parameter incremented by one calendar interval.
    */
   protected static function incrementDateToTargetDay($date, $interval = 'month', $cycle_day = NULL) {
+    if (is_null($cycle_day)) {
+      $cycle_day = self::getCycleDay($date);
+    }
+    $month = (int) gmdate('n', $date);
+    $year = (int) gmdate('Y', $date);
+
     switch ($interval) { //just making it slightly nicer in here for the next guy
+      case 'year':
+        return gmmktime(0, 0, 0, $month, self::getCycleDayForMonth($cycle_day, $month), $year + 1);
       case 'month':
       default:
-        if (is_null($cycle_day)) {
-          $cycle_day = self::getCycleDay($date);
-        }
-        $month = (int) gmdate('n', $date);
-        $year = (int) gmdate('Y', $date);
-
         $month += 1;
         //if we wanted to edit this to handle adding more than one month at
         //a time, we could do some fun stuff with modulo here.

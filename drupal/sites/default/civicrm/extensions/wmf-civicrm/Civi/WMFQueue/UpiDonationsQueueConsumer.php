@@ -163,7 +163,7 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
       'trxn_id' => WMFTransaction::from_message($normalized)->get_unique_id(),
     ];
 
-    $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextContributionDate(
       $params, $normalized['date']
     );
 

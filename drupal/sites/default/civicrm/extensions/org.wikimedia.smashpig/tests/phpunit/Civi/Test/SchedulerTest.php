@@ -48,8 +48,9 @@ class SchedulerTest extends TestCase implements HeadlessInterface, Transactional
     $record = [
       'cycle_day' => '1',
       'frequency_interval' => '1',
+      'frequency_unit' => 'month',
     ];
-    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextContributionDate(
       $record, gmmktime(0, 0, 0, 1, 1, 2018)
     );
     $this->assertEquals('2018-02-01 00:00:00', $nextChargeDate);
@@ -59,8 +60,9 @@ class SchedulerTest extends TestCase implements HeadlessInterface, Transactional
     $record = [
       'cycle_day' => '3',
       'frequency_interval' => '1',
+      'frequency_unit' => 'month',
     ];
-    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextContributionDate(
       $record, gmmktime(18, 13, 56, 6, 3, 2020)
     );
     $this->assertEquals('2020-07-03 00:00:00', $nextChargeDate);
@@ -74,8 +76,9 @@ class SchedulerTest extends TestCase implements HeadlessInterface, Transactional
     $record = [
       'cycle_day' => '31',
       'frequency_interval' => '1',
+      'frequency_unit' => 'month',
     ];
-    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextContributionDate(
       $record, gmmktime(0, 0, 0, 1, 31, 2018)
     );
     $this->assertEquals('2018-02-28 00:00:00', $nextChargeDate);
@@ -89,8 +92,9 @@ class SchedulerTest extends TestCase implements HeadlessInterface, Transactional
     $record = [
       'cycle_day' => '31',
       'frequency_interval' => '1',
+      'frequency_unit' => 'month',
     ];
-    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextContributionDate(
       $record, gmmktime(0, 0, 0, 2, 28, 2018)
     );
     $this->assertEquals('2018-03-31 00:00:00', $nextChargeDate);
@@ -100,8 +104,9 @@ class SchedulerTest extends TestCase implements HeadlessInterface, Transactional
     $record = [
       'cycle_day' => '9',
       'frequency_interval' => '1',
+      'frequency_unit' => 'month',
     ];
-    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextContributionDate(
       $record, gmmktime(0, 0, 0, 12, 9, 2017)
     );
     $this->assertEquals('2018-01-09 00:00:00', $nextChargeDate);
@@ -115,10 +120,35 @@ class SchedulerTest extends TestCase implements HeadlessInterface, Transactional
     $record = [
       'cycle_day' => '1',
       'frequency_interval' => '1',
+      'frequency_unit' => 'month',
     ];
-    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextDateForMonth(
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextContributionDate(
       $record, gmmktime(0, 0, 0, 1, 9, 2018)
     );
     $this->assertEquals('2018-02-01 00:00:00', $nextChargeDate);
+  }
+
+  public function testAnnualDonation(): void {
+    $record = [
+      'cycle_day' => '20',
+      'frequency_interval' => '1',
+      'frequency_unit' => 'year',
+    ];
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextContributionDate(
+      $record, gmmktime(0, 0, 0, 1, 20, 2024)
+    );
+    $this->assertEquals('2025-01-20 00:00:00', $nextChargeDate);
+  }
+
+  public function testAnnualDonationLeapYear(): void {
+    $record = [
+      'cycle_day' => '29',
+      'frequency_interval' => '1',
+      'frequency_unit' => 'year',
+    ];
+    $nextChargeDate = \CRM_Core_Payment_Scheduler::getNextContributionDate(
+      $record, gmmktime(0, 0, 0, 2, 29, 2024)
+    );
+    $this->assertEquals('2025-02-28 00:00:00', $nextChargeDate);
   }
 }
