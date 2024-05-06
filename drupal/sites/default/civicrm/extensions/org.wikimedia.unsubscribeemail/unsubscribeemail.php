@@ -26,12 +26,14 @@ function unsubscribeemail_civicrm_enable() {
 
 /**
  * @param array $permissions
+ *
+ * @noinspection PhpUnused
  */
-function unsubscribeemail_civicrm_permission(&$permissions) {
+function unsubscribeemail_civicrm_permission(array &$permissions) {
   $prefix = 'CiviCRM UnsubscribeEmail: ';
   $permissions['access unsubscribe email form'] = [
-    $prefix . 'access unsubscribe email form',
-    E::ts('Access the form to unsubscribe any contact by entering email address.'),
+    'label' => $prefix . E::ts('access unsubscribe email form'),
+    'description' => E::ts('Access the form to unsubscribe any contact by entering email address.'),
   ];
 }
 
