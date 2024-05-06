@@ -1349,6 +1349,8 @@ abstract class BaseAuditProcessor {
       'currency',
       'email',
       'first_name',
+      'frequency_interval',
+      'frequency_unit',
       'gateway',
       'gateway_account',
       'gross',
