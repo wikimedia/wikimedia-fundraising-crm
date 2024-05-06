@@ -126,6 +126,43 @@ trait WMFEnvironmentTrait {
   }
 
   /**
+   * Create a contact of type Individual.
+   *
+   * This contact will be automatically removed after the test
+   * by virtue of having a magic name (last_name = 'Mouse').
+   *
+   * @param array $params
+   * @param string $identifier
+   *
+   * @return int
+   */
+  public function createIndividual(array $params = [], string $identifier = 'danger_mouse'): int {
+    return $this->createTestEntity('Contact', array_merge([
+      'first_name' => 'Danger',
+      'last_name' => 'Mouse',
+      'contact_type' => 'Individual',
+    ], $params), $identifier)['id'];
+  }
+
+  /**
+   * Create a contact of type Individual.
+   *
+   * This contact will be automatically removed after the test
+   * by virtue of having a magic name (last_name = 'Mouse').
+   *
+   * @param array $params
+   * @param string $identifier
+   *
+   * @return int
+   */
+  public function createOrganization(array $params = [], string $identifier = 'organization'): int {
+    return $this->createTestEntity('Contact', array_merge([
+      'contact_type' => 'Organization',
+      'organization_name' => 'The Firm',
+    ], $params), $identifier)['id'];
+  }
+
+  /**
    * Clean up a contribution
    *
    * @param int $id

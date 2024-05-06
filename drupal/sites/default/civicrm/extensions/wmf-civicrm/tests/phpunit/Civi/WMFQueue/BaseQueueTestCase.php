@@ -27,22 +27,6 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface, Transacti
   protected string $queueConsumer = '';
 
   /**
-   * Create an contact of type Individual.
-   *
-   * @param array $params
-   * @param string $identifier
-   *
-   * @return int
-   */
-  public function createIndividual(array $params = [], string $identifier = 'danger_mouse'): int {
-    return $this->createTestEntity('Contact', array_merge([
-      'first_name' => 'Danger',
-      'last_name' => 'Mouse',
-      'contact_type' => 'Individual',
-    ], $params), $identifier)['id'];
-  }
-
-  /**
    * Helper to make getting the contact ID even shorter.
    *
    * @param string $identifier
