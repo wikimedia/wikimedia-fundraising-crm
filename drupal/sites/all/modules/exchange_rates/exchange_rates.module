@@ -1,9 +1,9 @@
 <?php
 // FIXME: some functions begin with the incorrect prefix "exchange_rate_"
-use exchange_rates\OandaRetriever;
-use exchange_rates\EcbRetriever;
-use \Civi\ExchangeException\ExchangeRateUpdateException;
-use \Civi\ExchangeException\ExchangeRatesException;
+use Civi\ExchangeException\ExchangeRatesException;
+use Civi\ExchangeException\ExchangeRateUpdateException;
+use Civi\ExchangeRates\Retriever\EcbRetriever;
+use Civi\ExchangeRates\Retriever\OandaRetriever;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 function exchange_rates_menu() {

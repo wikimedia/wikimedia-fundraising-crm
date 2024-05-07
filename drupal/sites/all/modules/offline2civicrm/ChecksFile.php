@@ -607,15 +607,6 @@ abstract class ChecksFile {
         }
       }
     }
-
-    $list_fields = [
-      'contact_groups',
-    ];
-    foreach ($list_fields as $field) {
-      if (!empty($msg[$field])) {
-        $msg[$field] = preg_split('/[\s,]+/', $msg[$field], NULL, PREG_SPLIT_NO_EMPTY);
-      }
-    }
   }
 
   /**
@@ -671,7 +662,6 @@ abstract class ChecksFile {
       'Fee Amount' => 'fee',
       'First Name' => 'first_name',
       'Gift Source' => 'gift_source',
-      'Groups' => 'contact_groups',
       'Is Opt Out' => 'is_opt_out',
       'Last Name' => 'last_name',
       'Letter Code' => 'letter_code',
@@ -708,7 +698,6 @@ abstract class ChecksFile {
       'State' => 'state_province',
       'Street Address' => 'street_address',
       'Suffix' => 'name_suffix',
-      'Target Contact ID' => 'relationship_target_contact_id',
       'Thank You Letter Date' => 'thankyou_date',
       'Title' => 'org_contact_title',
       'Total Amount' => 'gross',

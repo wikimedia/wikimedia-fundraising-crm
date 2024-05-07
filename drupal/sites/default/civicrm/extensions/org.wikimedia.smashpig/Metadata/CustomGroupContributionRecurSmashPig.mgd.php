@@ -1,11 +1,12 @@
 <?php
+
 // Custom field group to extend ContributionRecur to hold extra IDs we need for SmashPig
 return [
   [
     'name' => 'CustomGroup_Contribution_Recur_SmashPig',
     'entity' => 'CustomGroup',
     'cleanup' => 'never',
-    'update' => 'never',
+    'update' => 'unmodified',
     'params' => [
       'version' => 4,
       'values' => [
@@ -15,7 +16,7 @@ return [
         'extends_entity_column_id' => NULL,
         'extends_entity_column_value' => NULL,
         'style' => 'Inline',
-        'collapse_display' => FALSE,
+        'collapse_display' => TRUE,
         'help_pre' => '',
         'help_post' => '',
         'weight' => 33,
@@ -25,7 +26,7 @@ return [
         'max_multiple' => NULL,
         'collapse_adv_display' => TRUE,
         'created_date' => '2022-11-22 16:42:05',
-        'is_reserved' => FALSE,
+        'is_reserved' => TRUE,
         'is_public' => TRUE,
         'icon' => '',
         'table_name' => 'civicrm_contribution_recur_smashpig',
@@ -39,7 +40,7 @@ return [
     'name' => 'CustomGroup_Contribution_Recur_SmashPig_CustomField_Initial_Scheme_Transaction_ID',
     'entity' => 'CustomField',
     'cleanup' => 'never',
-    'update' => 'never',
+    'update' => 'unmodified',
     'params' => [
       'version' => 4,
       'values' => [
@@ -58,7 +59,7 @@ return [
         'attributes' => NULL,
         'javascript' => NULL,
         'is_active' => TRUE,
-        'is_view' => FALSE,
+        'is_view' => TRUE,
         'options_per_line' => NULL,
         'text_length' => 255,
         'start_date_years' => NULL,
@@ -82,7 +83,7 @@ return [
     'name' => 'CustomGroup_Contribution_Recur_SmashPig_CustomField_Processor_Contact_Id',
     'entity' => 'CustomField',
     'cleanup' => 'never',
-    'update' => 'never',
+    'update' => 'unmodified',
     'params' => [
       'version' => 4,
       'values' => [
@@ -95,15 +96,15 @@ return [
         'is_required' => FALSE,
         'is_searchable' => TRUE,
         'is_search_range' => FALSE,
-        'help_pre' => 'Payment Processor-side ID for the donor. In a world with a single account for each donor, this' .
-          'would be a Contact custom field but our donors sometimes have multiple recurring contributions with' .
-          'different values here. At Adyen this is known as the ShopperReference.',
+        'help_pre' => 'Payment-Processor-side ID for the donor. Not a Contact custom field because our donors ' .
+          'sometimes have multiple recurring contributions with ' .
+          'different values here. For Adyen this is the ShopperReference.',
         'help_post' => NULL,
         'mask' => NULL,
         'attributes' => NULL,
         'javascript' => NULL,
         'is_active' => TRUE,
-        'is_view' => FALSE,
+        'is_view' => TRUE,
         'options_per_line' => NULL,
         'text_length' => 255,
         'start_date_years' => NULL,
@@ -127,7 +128,7 @@ return [
     'name' => 'CustomGroup_Contribution_Recur_SmashPig_CustomField_Rescue_Reference',
     'entity' => 'CustomField',
     'cleanup' => 'never',
-    'update' => 'never',
+    'update' => 'unmodified',
     'params' => [
       'version' => 4,
       'values' => [
@@ -140,13 +141,13 @@ return [
         'is_required' => FALSE,
         'is_searchable' => TRUE,
         'is_search_range' => FALSE,
-        'help_pre' => 'This adyen auto rescue reference would be use when cancel rescue. At Adyen this is known as the rescueReference.',
+        'help_pre' => 'Identifier used in auto-rescue. At Adyen this is known as the rescueReference.',
         'help_post' => NULL,
         'mask' => NULL,
         'attributes' => NULL,
         'javascript' => NULL,
         'is_active' => TRUE,
-        'is_view' => FALSE,
+        'is_view' => TRUE,
         'options_per_line' => NULL,
         'text_length' => 255,
         'start_date_years' => NULL,
