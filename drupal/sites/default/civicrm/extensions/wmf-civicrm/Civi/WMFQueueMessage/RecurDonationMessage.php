@@ -61,23 +61,33 @@ class RecurDonationMessage extends DonationMessage {
    * @throws WMFException
    */
   public function validate(): void {
-    if ($this->getFrequencyUnit()
-      && !in_array($this->getFrequencyUnit(), ['day', 'week', 'month', 'year'])) {
-      throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency unit: " . $this->getFrequencyUnit());
+    try {
+      if ($this->getFrequencyUnit()
+        && !in_array($this->getFrequencyUnit(), [
+          'day',
+          'week',
+          'month',
+          'year'
+        ])) {
+        throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency unit: " . $this->getFrequencyUnit());
+      }
+      if (!$this->getSubscriptionID() && !$this->getContributionRecurID() && !$this->getRecurringPaymentToken()) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'Recurring donation, but no subscription ID or recurring payment token found.');
+      }
+      if ($this->getContributionRecurID() && !$this->isRecurringFound()) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'Contribution recur ID passed in but could not be loaded');
+      }
+      // If our RecurDonationMessage is not actually a recur donation
+      // message but is actually some other kind of message we would ideally
+      // split it into it's own class but for now we only validate the amounts
+      // if the message is coming through a flow which we know to be a payment
+      // flow.
+      if ($this->isPayment()) {
+        parent::validate();
+      }
     }
-    if (!$this->getSubscriptionID() && !$this->getContributionRecurID() && !$this->getRecurringPaymentToken()) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Recurring donation, but no subscription ID or recurring payment token found.');
-    }
-    if ($this->getContributionRecurID() && !$this->isRecurringFound()) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'Contribution recur ID passed in but could not be loaded');
-    }
-    // If our RecurDonationMessage is not actually a recur donation
-    // message but is actually some other kind of message we would ideally
-    // split it into it's own class but for now we only validate the amounts
-    // if the message is coming through a flow which we know to be a payment
-    // flow.
-    if ($this->isPayment()) {
-      parent::validate();
+    catch (\CRM_Core_Exception $e) {
+      throw new WMFException(WMFException::UNKNOWN, 'unknown error' . $e->getMessage() . $e->getTraceAsString());
     }
   }
 
