@@ -11,13 +11,7 @@
  */
 namespace Civi\Api4\Action\WMFDonor;
 
-use Civi\API\Exception\UnauthorizedException;
-use Civi\API\Request;
-use Civi\Api4\Generic\DAOGetAction;
 use Civi\Api4\Generic\DAOUpdateAction;
-use Civi\Api4\Generic\Result;
-use Civi\Api4\Query\Api4SelectQuery;
-use Civi\Api4\Utils\CoreUtil;
 use Civi\WMFHook\CalculatedData;
 
 /**
@@ -29,7 +23,7 @@ use Civi\WMFHook\CalculatedData;
  *   or
  *   ['*' => TRUE]
  *
- * Values is required for the action we are inheriting so we are misusing it
+ * Values is required for the action we are inheriting, so we are misusing it
  * rather than figuring out how to make it go away & adding a different property.
  */
 class Update extends DAOUpdateAction {
