@@ -4,6 +4,8 @@ namespace Civi\WMFQueue;
 
 use Civi\Api4\ContributionRecur;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use Civi\WMFException\WMFException;
+
 /**
  * @group queues
  * @group Recurring
@@ -18,6 +20,7 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
    * Test use of Auto Rescue message consumption
    *
    * @throws \CRM_Core_Exception
+   * @throws \Exception
    */
   public function testRecurringQueueConsumeAutoRescueMessage(): void {
     $rescueReference = 'MT6S49RV4HNG5S82';
@@ -28,7 +31,6 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
       'contribution_recur_smashpig.rescue_reference' => $rescueReference,
       'invoice_id' => $orderId,
     ]);
-    $this->ids['ContributionRecur'][$recur['id']] = $recur['id'];
 
     $this->createContribution([
       'total_amount' => $recur['amount'],
@@ -44,29 +46,8 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
     ]);
 
     $date = time();
-    $message = $this->getRecurringPaymentMessage(
-      [
-        'txn_type' => 'subscr_payment',
-        'gateway' => 'adyen',
-        'gateway_txn_id' => 'L4X6T3WDS8NKGK82',
-        'date' => $date,
-        'is_successful_autorescue' => TRUE,
-        'rescue_reference' => $rescueReference,
-        'currency' => 'USD',
-        'amount' => 10,
-        'order_id' => $orderId,
-        'source_name' => 'CiviCRM',
-        'source_type' => 'direct',
-        'source_host' => '051a7ac1b08d',
-        'source_run_id' => 10315,
-        'source_version' => 'unknown',
-        'source_enqueued_time' => 1694530827,
-      ]
-    );
+    $message = $this->getAutoRescueMessage($date, $rescueReference, $orderId);
     $this->processMessage($message);
-
-    // importMessage adds the id to cleanup but it had already been added in getTestContributionRecurRecords
-    unset($this->ids['Contact'][$recur['contact_id']]);
 
     $updatedRecur = ContributionRecur::get(FALSE)
       ->addSelect('*', 'contribution_status_id:name')
@@ -83,6 +64,48 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
     $this->assertGreaterThanOrEqual(27, $difference);
     $this->assertLessThanOrEqual(31, $difference);
     $this->assertStringContainsString($orderId, $this->getContributionForMessage($message)['invoice_id']);
+  }
+
+  public function testAutoRescueNoPredecessor(): void {
+    $this->expectException(WMFException::class);
+    $this->expectExceptionMessage('INVALID_MESSAGE No payment type found for message');
+    $this->createContributionRecur([
+      'frequency_interval' => '1',
+      'frequency_unit' => 'month',
+      'contribution_recur_smashpig.rescue_reference' => 12345,
+      'invoice_id' => 6789,
+    ]);
+    $message = $this->getAutoRescueMessage(time(), 12345, 6789);
+    $this->processMessageWithoutQueuing($message);
+  }
+
+  /**
+   * @param int $date
+   * @param string $rescueReference
+   * @param string $orderId
+   *
+   * @return array
+   */
+  public function getAutoRescueMessage(int $date, string $rescueReference, string $orderId): array {
+    return $this->getRecurringPaymentMessage(
+      [
+        'txn_type' => 'subscr_payment',
+        'gateway' => 'adyen',
+        'gateway_txn_id' => 'L4X6T3WDS8NK3GK82',
+        'date' => $date,
+        'is_successful_autorescue' => TRUE,
+        'rescue_reference' => $rescueReference,
+        'currency' => 'USD',
+        'amount' => 10,
+        'order_id' => $orderId,
+        'source_name' => 'CiviCRM',
+        'source_type' => 'direct',
+        'source_host' => '051a7ac1b08d',
+        'source_run_id' => 10315,
+        'source_version' => 'unknown',
+        'source_enqueued_time' => 1694530827,
+      ]
+    );
   }
 
 }
