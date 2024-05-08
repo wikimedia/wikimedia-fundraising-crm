@@ -11,3 +11,4 @@ drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/vendor
 wmff.iml
 .phpunit.result.cache
 drupal/sites/all/modules/civicrm/bin/setup.conf
+!drupal/sites/all/modules/civicrm/packages/*/vendor
