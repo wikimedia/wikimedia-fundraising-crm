@@ -2,15 +2,65 @@
 
 namespace Civi\WMFQueue;
 
-use SmashPig\Core\DataStores\PendingDatabase;
-use Queue2civicrmTrxnCounter;
-use SmashPig\Core\UtcDate;
 use Civi\WMFException\WMFException;
+use Civi\WMFStatistic\ImportStatsCollector;
 use DonationStatsCollector;
-use SmashPig\PaymentProviders\PaymentProviderFactory;
+use Queue2civicrmTrxnCounter;
+use SmashPig\Core\DataStores\PendingDatabase;
+use SmashPig\Core\UtcDate;
 use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
+use SmashPig\PaymentProviders\PaymentProviderFactory;
+use Statistics\Collector\AbstractCollector;
 
 class DonationQueueConsumer extends TransactionalQueueConsumer {
+
+  private AbstractCollector $statsCollector;
+
+  public function initiateStatistics(): void {
+    $this->statsCollector = DonationStatsCollector::getInstance();
+    $this->statsCollector->startDefaultTimer();
+  }
+
+  public function reportStatistics(int $totalMessagesDequeued): void {
+    $this->statsCollector->endDefaultTimer();
+
+    $this->statsCollector->addStat('total_messages_dequeued', $totalMessagesDequeued);
+
+    if ($this->statsCollector->exists('message_import_timers')) {
+      $this->statsCollector->addStat('total_messages_import_time', $this->statsCollector->sum('message_import_timers'));
+      $this->statsCollector->del('message_import_timers');
+    }
+
+    $this->statsCollector->export();
+    DonationStatsCollector::tearDown();
+
+    // export civicrm import timer stats
+    ImportStatsCollector::getInstance()->export();
+
+    /**
+     * === Legacy Donations Counter implementation ===
+     *
+     * Note that this might be a little whack.  At least, it feels a little sloppy.
+     * We might consider specifying the names of gateways to keep track of, rather than auto-generate
+     * the gateways to keep track of during queue consumption. With the latter (current) method,
+     * we'll only report to prometheus when there are > 0 msgs consumed from the queue - meaning if
+     * there are no msgs for a particular gateway, that fact will not get reported to prometheus.
+     *
+     * TODO: metrics stuff should be a hook
+     */
+    $counter = Queue2civicrmTrxnCounter::instance();
+    $metrics = [];
+    foreach ($counter->getTrxnCounts() as $gateway => $count) {
+      $metrics["${gateway}_donations"] = $count;
+    }
+    $metrics['total_donations'] = $counter->getCountTotal();
+    module_invoke('metrics_reporting', 'report_metrics', 'queue2civicrm', $metrics);
+    $ageMetrics = [];
+    foreach ($counter->getAverageAges() as $gateway => $age) {
+      $ageMetrics["${gateway}_message_age"] = $age;
+    }
+    module_invoke('metrics_reporting', 'report_metrics', 'donation_message_age', $ageMetrics);
+  }
 
   /**
    * Feed queue messages to wmf_civicrm_contribution_message_import,

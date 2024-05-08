@@ -5,9 +5,8 @@ namespace Civi\Api4\Action\WMFQueue;
 use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\WMFQueue\UpiDonationsQueueConsumer;
+use Civi\WMFQueue\QueueConsumer;
 use CRM_SmashPig_ContextWrapper;
-use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 
 /**
  * @method string getQueueName()
@@ -53,9 +52,11 @@ class Consume extends AbstractAction {
     Civi::log('wmf')->info('Executing: {queue_consumer}', ['queue_consumer' => $this->getQueueName()]);
 
     $consumer = $this->loadQueueConsumer();
+    $consumer->initiateStatistics();
 
     $processed = $consumer->dequeueMessages();
 
+    $consumer->reportStatistics($processed);
     if ($processed > 0) {
       \Civi::log('wmf')->info('Successfully processed {processed} from queue {queue_name}', ['processed' => $processed, 'queue_name' => $this->getQueueName()]);
     }
@@ -67,9 +68,9 @@ class Consume extends AbstractAction {
   }
 
   /**
-   * @return \SmashPig\Core\QueueConsumers\BaseQueueConsumer
+   * @return QueueConsumer
    */
-  private function loadQueueConsumer(): BaseQueueConsumer {
+  private function loadQueueConsumer(): QueueConsumer {
     $class = '\Civi\WMFQueue\\' . $this->getQueueConsumer() . 'QueueConsumer';
     return new $class(
       $this->getQueueName(),

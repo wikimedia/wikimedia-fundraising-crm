@@ -173,4 +173,11 @@ abstract class QueueConsumer extends BaseQueueConsumer {
     return $message;
   }
 
+  public function initiateStatistics(): void {
+
+  }
+
+  public function reportStatistics(int $totalMessagesDequeued): void {
+
+  }
 }
