@@ -345,6 +345,19 @@ class CRM_Core_DAO_AllCoreTables {
   }
 
   /**
+   * Given a DAO or BAO class-name, return the entity name.
+   *
+   * @param string|null $className
+   *   Ex: 'CRM_Contact_DAO_Contact'.
+   * @return string|NULL
+   *   Ex: 'Contact'.
+   */
+  public static function getEntityNameForClass(?string $className): ?string {
+    $className = self::getCanonicalClassName($className);
+    return array_search($className, self::daoToClass(), TRUE) ?: NULL;
+  }
+
+  /**
    * @param string $className DAO or BAO name
    * @return string|FALSE SQL table name
    */
