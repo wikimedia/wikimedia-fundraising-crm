@@ -43,7 +43,7 @@ abstract class QueueConsumer extends BaseQueueConsumer {
       \Civi::log('wmf')->error(
         'wmf_common: {error}', ['error' => $error]);
       wmf_common_failmail('wmf_common', $error, NULL, $logId);
-
+      $this->sendToDamagedStore($message, $ex);
       throw $ex;
     }
   }
