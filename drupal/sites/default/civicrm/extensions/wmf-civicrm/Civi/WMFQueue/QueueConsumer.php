@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Core\Exception\DBQueryException;
 use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 use Exception;
 use SmashPig\Core\UtcDate;
@@ -35,6 +36,15 @@ abstract class QueueConsumer extends BaseQueueConsumer {
       );
 
       $this->handleWMFException($message, $ex, $logId);
+    }
+    elseif ($ex instanceof DBQueryException && in_array($ex->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+      $newException = new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $ex->getErrorData());
+      \Civi::log('wmf')->error(
+        'wmf_common: Contribution not saved due to database load: {message}',
+        ['message' => $ex->getMessage()]
+      );
+      $this->handleWMFException($message, $newException, $logId);
+      throw $ex;
     }
     else {
       $error = 'UNHANDLED ERROR. Halting dequeue loop. Exception: ' .
