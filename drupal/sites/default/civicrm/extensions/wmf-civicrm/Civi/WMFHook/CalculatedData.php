@@ -25,10 +25,12 @@ class CalculatedData extends TriggerHook {
    * However, sometimes we want to do an sql_update to backfill
    * missing wmf_donor data - in which case we want to get
    * the same sql but to refer to the existing contact id rather
-   * than the NEW or OLD contact ids - which are key words that
+   * than the NEW or OLD contact ids - which are key-words that
    * are only meaningful in the context of triggers.
+   *
+   * @var bool
    */
-  protected $triggerContext = TRUE;
+  protected bool $triggerContext = TRUE;
 
   /**
    * Should the donor segment be included even if the field is not there.
@@ -290,7 +292,7 @@ class CalculatedData extends TriggerHook {
    *
    * All fields in the dataset are recalculated (the performance gain on a
    * 'normal' contact of being more selective was too little to show in testing.
-   * On our anonymous contact it was perhaps 100 ms but we don't have many
+   * On our anonymous contact it was perhaps 100 ms, but we don't have many
    * contact with thousands of donations.)
    *
    * The wmf_contribution_extra record is saved after the contribution is
@@ -809,29 +811,32 @@ class CalculatedData extends TriggerHook {
         // Financial year totals for endowment (5 years), but we only started in 2018.
         $this->calculatedFields["endowment_total_{$year}_{$nextYear}"] = array_merge(
           $this->calculatedFields["total_{$year}_{$nextYear}"], [
-          'name' => "endowment_total_{$year}_{$nextYear}",
-          'column_name' => "endowment_total_{$year}_{$nextYear}",
-          'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total"),
-          'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}",
-        ]);
+            'name' => "endowment_total_{$year}_{$nextYear}",
+            'column_name' => "endowment_total_{$year}_{$nextYear}",
+            'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total"),
+            'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}",
+          ]
+        );
         // Endowment field total from 2018
         if ($year >= self::WMF_MIN_CALENDER_YEAR) {
           $this->calculatedFields["endowment_total_{$year}"] = array_merge(
             $this->calculatedFields["total_{$year}"], [
-            'name' => "endowment_total_{$year}",
-            'column_name' => "endowment_total_{$year}",
-            'label' => 'Endowment ' . ts("CY {$year} total"),
-            'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}",
-          ]);
+              'name' => "endowment_total_{$year}",
+              'column_name' => "endowment_total_{$year}",
+              'label' => 'Endowment ' . ts("CY {$year} total"),
+              'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}",
+            ]
+          );
         }
         // Financial year totals for all funds (5 years). But we only started in 2018
         $this->calculatedFields["all_funds_total_{$year}_{$nextYear}"] = array_merge(
           $this->calculatedFields["total_{$year}_{$nextYear}"], [
-          'name' => "all_funds_total_{$year}_{$nextYear}",
-          'column_name' => "all_funds_total_{$year}_{$nextYear}",
-          'label' => 'All Funds ' . ts("FY {$year}-{$nextYear} total"),
-          'select_clause' => "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as all_funds_total_{$year}_{$nextYear}",
-        ]);
+            'name' => "all_funds_total_{$year}_{$nextYear}",
+            'column_name' => "all_funds_total_{$year}_{$nextYear}",
+            'label' => 'All Funds ' . ts("FY {$year}-{$nextYear} total"),
+            'select_clause' => "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as all_funds_total_{$year}_{$nextYear}",
+          ]
+        );
       }
       if ($nextYear >= self::WMF_MIN_CALENDER_YEAR) {
         // Change fields, year ending in this year onwards, co-incident with our calendar years.
@@ -886,7 +891,7 @@ class CalculatedData extends TriggerHook {
           'weight' => $weight,
           'is_search_range' => 1,
           'select_clause' => "
-          SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
+            SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
           as change_{$year}_{$nextYear}",
         ];
@@ -907,7 +912,7 @@ class CalculatedData extends TriggerHook {
    *
    * We don't want to accidentally add the fields either - but we would have to actively
    * run WMFConfig::syncCustomFields(FALSE)->execute(); to do that - so we can probably avoid that
-   * for 2 weeks (really we probably wont' run triggers either).
+   * for 2 weeks (really we probably won't run triggers either).
    *
    * @return bool
    * @throws \CRM_Core_Exception
