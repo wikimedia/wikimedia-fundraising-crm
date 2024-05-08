@@ -165,7 +165,20 @@ class RecurDonationMessage extends DonationMessage {
       // Register the entities we have loaded so we can lazy access them.
       $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
       $this->contributionRecurID = $recurRecord['id'];
-      $this->define('Contribution', 'PriorContribution', $contributionValues);
+      if (!empty($contributionValues['id'])) {
+        $this->define('Contribution', 'PriorContribution', $contributionValues);
+      }
+      else {
+        \Civi::log('wmf')->info('No previous contribution found for auto-rescue %url', [
+          'contribution_recur_id' => $this->contributionRecurID,
+          'auto_rescue' => $this->getAutoRescueReference(),
+          'contact_id' => $recurRecord['contact_id'],
+          'url' => \CRM_Utils_System::url('civicrm/contact/view/contributionrecur', [
+            'reset' => 1,
+            'id' => $this->contributionRecurID,
+          ], TRUE),
+        ]);
+      }
       return $this->contributionRecurID;
     }
     if (!empty($this->getSubscriptionID())) {
