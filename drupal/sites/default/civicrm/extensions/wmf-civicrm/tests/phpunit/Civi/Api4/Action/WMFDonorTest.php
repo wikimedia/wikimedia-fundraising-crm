@@ -9,6 +9,7 @@ use Civi\Api4\WMFDonor;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
+use Civi\WMFEnvironmentTrait;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -28,6 +29,9 @@ use PHPUnit\Framework\TestCase;
  */
 class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface {
 
+  use WMFEnvironmentTrait;
+  use Test\EntityTrait;
+
   /**
    * Current date.
    *
@@ -36,18 +40,6 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    * @var string
    */
   protected string $currentDate;
-
-  /**
-   * @return \Civi\Test\CiviEnvBuilder
-   * @throws \CRM_Extension_Exception_ParseException
-   */
-  public function setUpHeadless(): Test\CiviEnvBuilder {
-    // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
-    // See: https://docs.civicrm.org/dev/en/latest/testing/phpunit/#civitest
-    return Test::headless()
-      ->installMe(__DIR__)
-      ->apply();
-  }
 
   public function setUp(): void {
     if (date('m') > 6) {
@@ -59,20 +51,6 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
 
     \CRM_Utils_Time::setTime($this->currentDate);
     parent::setUp();
-  }
-
-  /**
-   * @throws \CRM_Core_Exception
-   */
-  public function tearDown(): void {
-    if (!empty($this->ids['Contact'])) {
-      Contribution::delete(FALSE)
-        ->addWhere('contact_id', 'IN', $this->ids['Contact'])
-        ->execute();
-      Contact::delete(FALSE)->addWhere('id', 'IN', $this->ids['Contact'])->execute();
-    }
-    \CRM_Utils_Time::resetTime();
-    parent::tearDown();
   }
 
   /**
@@ -207,7 +185,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    */
   public function createDonor($contributionParams = [], $identifier = 'donor'): void {
     if (empty($this->ids['Contact'][$identifier])) {
-      $this->createContact($identifier);
+      $this->createIndividual([], $identifier);
     }
     if (!empty($contributionParams['receive_date']) && !str_starts_with($contributionParams['receive_date'], 2)) {
       $contributionParams['receive_date'] = date('Y-m-d', strtotime($contributionParams['receive_date'], strtotime($this->currentDate)));
@@ -227,23 +205,6 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    */
   public function getDate() {
     return date('Y-m-d', strtotime('- 2 years', strtotime($this->currentDate)));
-  }
-
-  /**
-   * @param $identifier
-   *
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  protected function createContact($identifier): void {
-    $this->ids['Contact'][$identifier] = Contact::create(FALSE)
-      ->setValues([
-        'first_name' => 'Billy',
-        'last_name' => 'Bill',
-        'contact_type' => 'Individual',
-      ])
-      ->execute()
-      ->first()['id'];
   }
 
   /**

@@ -6,7 +6,6 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
-use Civi\Api4\Email;
 use Civi\Api4\OptionValue;
 use Civi\Api4\PaymentToken;
 use Civi\Omnimail\MailFactory;
@@ -86,6 +85,8 @@ trait WMFEnvironmentTrait {
     TestingDatabase::clearStatics();
     // Nullify the context for next run.
     Context::set();
+    // Remove any function override for time handling (e.g. with \CRM_Utils_Time::setTime()).
+    \CRM_Utils_Time::resetTime();
   }
 
   /**
