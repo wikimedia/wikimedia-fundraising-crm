@@ -2020,6 +2020,18 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
+   * Copy prometheus drupal vars to Civi settings
+   * @return bool
+   */
+  public function upgrade_4470(): bool {
+    $copySettings = [
+      'metrics_reporting_prometheus_path' => 'metrics_reporting_prometheus_path',
+    ];
+    $this->convertDrupalVariableToCiviCRMSetting($copySettings);
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
@@ -2031,7 +2043,6 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
-   * >>>>>>> 5ad732cc6 (Add Queue Settings + navigation entries)
    * Queue up an SQL update.
    *
    * @param string $sql

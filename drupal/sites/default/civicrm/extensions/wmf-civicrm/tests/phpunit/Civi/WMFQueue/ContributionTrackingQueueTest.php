@@ -150,8 +150,7 @@ class ContributionTrackingQueueTest extends BaseQueueTestCase {
   }
 
   /**
-   * @throws \Civi\API\Exception\UnauthorizedException
-   * @throws \CRM_Core_Exception
+   *
    */
   public function testChangeOfContributionIdErrorsAreWrittenToPrometheusOutputFile(): void {
     $firstMessage = [
@@ -171,10 +170,7 @@ class ContributionTrackingQueueTest extends BaseQueueTestCase {
     // set the prometheus file output location that
     // ContributionTrackingStatsCollector will write to
     $tmpPrometheusFilePath = '/tmp/';
-    variable_set(
-      'metrics_reporting_prometheus_path',
-      $tmpPrometheusFilePath
-    );
+    \Civi::settings()->set('metrics_reporting_prometheus_path', $tmpPrometheusFilePath);
 
     // ask the stats collector to export stats captured so far
     /* @var ContributionTrackingStatsCollector $contributionTrackingStatsCollector */

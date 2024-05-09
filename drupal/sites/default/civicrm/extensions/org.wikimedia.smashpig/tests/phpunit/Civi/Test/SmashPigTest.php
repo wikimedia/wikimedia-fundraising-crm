@@ -87,8 +87,8 @@ class SmashPigTest extends SmashPigBaseTestClass {
       ->setStatus(FinalStatus::COMPLETE)
       ->setSuccessful(TRUE);
 
-    $this->oldPromPath = variable_get('metrics_reporting_prometheus_path');
-    variable_set('metrics_reporting_prometheus_path', '/tmp/');
+    $this->oldPromPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
+    \Civi::settings()->set('metrics_reporting_prometheus_path', '/tmp/');
     $smashPigSettings = civicrm_api3('setting', 'getfields', [
       'filters' => ['group' => 'smashpig'],
     ]);
@@ -127,7 +127,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         $setting, $value
       );
     }
-    variable_set('metrics_reporting_prometheus_path', $this->oldPromPath);
+    \Civi::settings()->set('metrics_reporting_prometheus_path', $this->oldPromPath);
     // Reset some SmashPig-specific things
     TestingDatabase::clearStatics();
     Context::set(); // Nullify the context for next run.
