@@ -93,6 +93,10 @@ class CRM_Core_DAO_AllCoreTables {
     return self::$entityTypes;
   }
 
+  public static function getEntities() {
+    return self::get();
+  }
+
   /**
    * @return array
    *   List of SQL table names.
