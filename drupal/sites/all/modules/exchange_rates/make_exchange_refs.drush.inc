@@ -29,8 +29,8 @@ function make_exchange_refs_drush_help( $section ) {
 }
 
 function drush_make_exchange_refs( $dir ) {
-
-    $rates = module_invoke( 'exchange_rates', 'get_conversions' );
+  civicrm_initialize();
+  $rates = module_invoke( 'exchange_rates', 'get_conversions' );
 	if ( !is_dir( $dir ) ) {
 		mkdir( $dir );
 	}
@@ -49,7 +49,7 @@ function exchange_rates_make_ref_content( $format, $rates ) {
 
     $params = array(
         'generated_by' => basename( __FILE__ ) . ":templates/{$filename}",
-        'last_updated' => date( 'Y-m-d', Civi::settings()->get('exchange_rates_last_update_timestamp') ),
+        'last_updated' => date( 'Y-m-d', \Civi::settings()->get('exchange_rates_last_update_timestamp') ),
         'currency_rates' => $inverse,
     );
 
