@@ -137,21 +137,22 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
   }
 
   $insert_params = [
-      'contact_id' => $contact_id,
-      'amount' => $msg['original_gross'],
-      'currency' => $msg['original_currency'],
-      'financial_type_id:name' => 'Cash',
-      'frequency_unit' => $msg['frequency_unit'],
-      'frequency_interval' => $msg['frequency_interval'],
-      'installments' => $msg['installments'],
-      'start_date' => wmf_common_date_unix_to_civicrm($msg['date']),
-      'create_date' => wmf_common_date_unix_to_civicrm($msg['date']),
-      'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),
-      'cycle_day' => $msg['cycle_day'],
-      'next_sched_contribution_date' => $next_sched_contribution,
-      'trxn_id' => $gateway_subscr_id,
-      'contribution_status_id:name' => 'Pending',
-    ] + $extra_recurring_params;
+    'payment_instrument_id' => $msg['payment_instrument_id'],
+    'contact_id' => $contact_id,
+    'amount' => $msg['original_gross'],
+    'currency' => $msg['original_currency'],
+    'financial_type_id:name' => 'Cash',
+    'frequency_unit' => $msg['frequency_unit'],
+    'frequency_interval' => $msg['frequency_interval'],
+    'installments' => $msg['installments'],
+    'start_date' => wmf_common_date_unix_to_civicrm($msg['date']),
+    'create_date' => wmf_common_date_unix_to_civicrm($msg['date']),
+    'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),
+    'cycle_day' => $msg['cycle_day'],
+    'next_sched_contribution_date' => $next_sched_contribution,
+    'trxn_id' => $gateway_subscr_id,
+    'contribution_status_id:name' => 'Pending',
+  ] + $extra_recurring_params;
 
   try {
     $result = ContributionRecur::create(FALSE)

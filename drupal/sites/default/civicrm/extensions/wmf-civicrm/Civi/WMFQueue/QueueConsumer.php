@@ -6,7 +6,7 @@ use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 use Exception;
 use SmashPig\Core\UtcDate;
 use SmashPig\CrmLink\Messages\DateFields;
-use \Civi\WMFException\WMFException;
+use Civi\WMFException\WMFException;
 
 /**
  * Queue consumer that knows what to do with WMFExceptions

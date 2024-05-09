@@ -630,20 +630,6 @@ function wmf_civicrm_get_valid_languages() {
 }
 
 /**
- * Update the location record
- *
- * Serves as a standard way for message processors to handle location
- * updates.
- *
- * @param array $msg
- * @param array $contact
- */
-function wmf_civicrm_message_location_update($msg, $contact) {
-  wmf_civicrm_message_email_update($msg, $contact['id']);
-  wmf_civicrm_message_address_update($msg, $contact['id']);
-}
-
-/**
  * Updates the email for a contact.
  *
  * @param array $msg
