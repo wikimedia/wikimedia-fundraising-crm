@@ -332,6 +332,13 @@ class CRM_Core_DAO_AllCoreTables {
   }
 
   /**
+   *
+   */
+  public static function getDAONameForEntity($entityName) {
+    return self::getFullName($entityName);
+  }
+
+  /**
    * Given a full class-name, determine the brief-name.
    *
    * @param string $className
