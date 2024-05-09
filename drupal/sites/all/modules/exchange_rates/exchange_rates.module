@@ -4,6 +4,7 @@ use Civi\ExchangeException\ExchangeRatesException;
 use Civi\ExchangeException\ExchangeRateUpdateException;
 use Civi\ExchangeRates\Retriever\EcbRetriever;
 use Civi\ExchangeRates\Retriever\OandaRetriever;
+use GuzzleHttp\Client;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 function exchange_rates_menu() {
@@ -202,10 +203,10 @@ function exchange_rates_update_all($date = NULL) {
     wmf_common_failmail('exchange_rates', 'OANDA API key not set!  Will fall back to ECB');
   }
   else {
-    $retrievers[] = new OandaRetriever('drupal_http_request', $oanda_key, $oanda_quote);
+    $retrievers[] = new OandaRetriever(new Client(), $oanda_key, $oanda_quote);
   }
 
-  $retrievers[] = new EcbRetriever('drupal_http_request');
+  $retrievers[] = new EcbRetriever(new Client());
   $result = NULL;
 
   foreach ($retrievers as $retriever) {

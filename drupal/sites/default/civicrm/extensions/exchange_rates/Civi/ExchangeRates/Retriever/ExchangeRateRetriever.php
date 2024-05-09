@@ -2,20 +2,16 @@
 
 namespace Civi\ExchangeRates\Retriever;
 
-use InvalidArgumentException;
+use GuzzleHttp\Client;
 
 abstract class ExchangeRateRetriever {
-  protected $httpRequester;
+  protected Client $client;
 
   /**
-   * @param callable $httpRequester - either drupal_http_request or a fake
-   * @throws InvalidArgumentException
+   * @param Client $client - either Guzzle Http Client or a mock
    */
-  public function __construct($httpRequester) {
-    if (!is_callable($httpRequester)) {
-      throw new InvalidArgumentException('httpRequester should be callable');
-    }
-    $this->httpRequester = $httpRequester;
+  public function __construct(Client $client) {
+    $this->client = $client;
   }
 
   /**

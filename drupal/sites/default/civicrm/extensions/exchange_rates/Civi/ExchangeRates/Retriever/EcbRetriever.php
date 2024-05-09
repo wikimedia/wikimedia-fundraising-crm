@@ -15,8 +15,8 @@ class EcbRetriever extends ExchangeRateRetriever {
     $url = 'http://www.ecb.int/stats/eurofxref/eurofxref-daily.xml';
 
     // Retrieve and parse the XML results
-    $request = call_user_func($this->httpRequester, $url);
-    $xml = $request->data;
+    $response = $this->client->get($url);
+    $xml = $response->getBody();
     $p = xml_parser_create();
     $results = array();
     $index = array();
