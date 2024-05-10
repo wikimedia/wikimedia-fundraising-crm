@@ -1,28 +1,22 @@
 <?php
 
 use Civi\Api4\CustomField;
-use Civi\Api4\CustomGroup;
-use Civi\Api4\Relationship;
 use Civi\WMFHelper\Queue;
 
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
-use Civi\Api4\WMFDonor;
 use Civi\WMFHook\Activity;
 use Civi\WMFHook\CalculatedData;
 use Civi\WMFHook\Contribution;
-use Civi\WMFHook\ContributionRecur;
 use Civi\WMFHook\ContributionRecurTrigger;
 use Civi\WMFHook\ContributionSoft;
 use Civi\WMFHook\Import;
-use Civi\WMFHook\Permissions;
 use Civi\WMFHook\ProfileDynamic;
 use Civi\WMFHook\QuickForm;
 use Civi\WMFHook\Data;
 use Civi\Api4\MessageTemplate;
 use Civi\WMFHelper\Language;
 use Civi\WMFHook\PreferencesLink;
-use CRM_WmfCivicrm_ExtensionUtil as E;
 
 // phpcs:enable
 
