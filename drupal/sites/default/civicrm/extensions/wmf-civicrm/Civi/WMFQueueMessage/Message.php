@@ -174,6 +174,10 @@ class Message {
     return $this->isGateway('paypal') || $this->isGateway('paypal_ec');
   }
 
+  public function isBraintreeVenmo(): bool {
+    return $this->isGateway('braintree') || $this->message['payment_method'] === 'venmo';
+  }
+
   public function isFundraiseUp(): bool {
     return $this->isGateway('fundraiseup');
   }
@@ -237,6 +241,19 @@ class Message {
       '/&Amp;/' => '&',
     ];
     return mb_substr(trim(preg_replace(array_keys($replacements), $replacements, $string)), 0, $length);
+  }
+
+  public function getExternalIdentifierFields(): array {
+    if (!$this->getGateway() || empty($this->message['external_identifier'])) {
+      return [];
+    }
+    if ($this->isBraintreeVenmo()) {
+      return ['External_Identifiers.venmo_user_name' => $this->cleanString($this->message['external_identifier'], 64)];
+    }
+    if (\CRM_Core_BAO_CustomField::getCustomFieldID($this->getGateway() . '_id')) {
+      return ['External_Identifiers.' . $this->getGateway() . '_id' => $this->cleanString($this->message['external_identifier'], 64)];
+    }
+    return [];
   }
 
 }

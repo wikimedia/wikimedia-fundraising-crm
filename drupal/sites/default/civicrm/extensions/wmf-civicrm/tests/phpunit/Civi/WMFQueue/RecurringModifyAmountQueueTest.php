@@ -103,6 +103,7 @@ class RecurringModifyAmountQueueTest extends BaseQueueTestCase {
       'postal_code' => 90210,
       'first_name' => 'Safe',
       'last_name' => 'Mouse',
+      'gateway' => 'fundraiseup',
     ];
 
     $this->processMessage($msg);

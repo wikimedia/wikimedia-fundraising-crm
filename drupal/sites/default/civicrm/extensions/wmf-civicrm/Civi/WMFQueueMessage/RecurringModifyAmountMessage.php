@@ -95,7 +95,7 @@ class RecurringModifyAmountMessage extends Message {
   }
 
   public function normalize(): array {
-    $message = $this->message;
+    $message = $this->message + $this->getExternalIdentifierFields();
     $message['contact_id'] = $this->getExistingContributionRecurValue('contact_id');
     if (!empty($message['email'])) {
       $message['email_primary.email'] = $message['email'];

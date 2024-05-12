@@ -1428,16 +1428,24 @@ class DonationQueueTest extends BaseQueueTestCase {
   public function employerRelationDataProvider(): array {
     return [
       'Should create new donor with employer, provided_by_donor = TRUE' => [
-        'payments', FALSE, TRUE,
+        'payments',
+        FALSE,
+        TRUE,
       ],
       'Should update donor with employer relationship, provided_by_donor = TRUE' => [
-        'payments', TRUE, TRUE,
+        'payments',
+        TRUE,
+        TRUE,
       ],
       'Should create new donor with employer, provided_by_donor not set' => [
-        'direct', FALSE, NULL,
+        'direct',
+        FALSE,
+        NULL,
       ],
       'Should update donor with employer relationship, provided_by_donor not set' => [
-        'direct', TRUE, NULL,
+        'direct',
+        TRUE,
+        NULL,
       ],
     ];
   }
@@ -1475,6 +1483,48 @@ class DonationQueueTest extends BaseQueueTestCase {
       'FlargBlarg12345',
       $recurRecord['contribution_recur_smashpig.initial_scheme_transaction_id']
     );
+  }
+
+  public function testExternalIdentifierUpdate(): void {
+    $newVenmoUserName = 'test';
+    $initialDetails = $this->getDonationMessage([
+      'first_name' => 'Sally',
+      'last_name' => 'Mouse',
+      'nick_name' => '',
+      'email' => 'sally@bb.org',
+      'gateway' => 'braintree',
+      'payment_method' => 'venmo',
+      'external_identifier' => 'old',
+      'country' => 'US',
+      'street_address' => '',
+      'city' => '',
+      'street_number' => '',
+      'postal_code' => '',
+      'state_province' => '',
+    ]);
+    $this->processDonationMessage($initialDetails);
+    $contribution = $this->getContributionForMessage($initialDetails);
+    $oldContact = Contact::get(FALSE)
+      ->addSelect('External_Identifiers.venmo_user_name')
+      ->addWhere('id', '=', $contribution['contact_id'])
+      ->execute()->first();
+    $this->assertEquals('old', $oldContact['External_Identifiers.venmo_user_name']);
+
+    $newDetails = array_merge($initialDetails, [
+      'id' => $contribution['contact_id'],
+      'contact_id' => $contribution['contact_id'],
+      'external_identifier' => $newVenmoUserName,
+      'gateway_txn_id' => 8888888,
+      'invoice_id' => 8888888,
+    ]);
+
+    $this->processDonationMessage($this->getDonationMessage($newDetails));
+    $updatedContact = Contact::get(FALSE)
+      ->addSelect('External_Identifiers.venmo_user_name')
+      ->addWhere('id', '=', $contribution['contact_id'])
+      ->execute()->first();
+
+    $this->assertEquals($newVenmoUserName, $updatedContact['External_Identifiers.venmo_user_name']);
   }
 
 }

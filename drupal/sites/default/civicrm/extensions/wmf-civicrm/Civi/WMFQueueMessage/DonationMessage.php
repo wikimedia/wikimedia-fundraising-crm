@@ -174,10 +174,9 @@ class DonationMessage extends Message {
       'middle_name' => $this->cleanString($this->getMiddleName() ?? '', 64),
       'language' => $this->getLanguage(),
       'legal_identifier' => $this->cleanString($this->message['fiscal_number'] ?? '', 32),
-      'external_identifier' => $this->cleanString($this->message['external_identifier'] ?? '', 32),
       'Communication.first_name_phonetic' => $this->message['first_name_phonetic'] ?? NULL,
       'Communication.last_name_phonetic' => $this->message['last_name_phonetic'] ?? NULL,
-    ];
+    ] + $this->getExternalIdentifierFields();
     foreach ($contactFields as $name => $contactField) {
       if ($contactField) {
         $msg[$name] = $contactField;

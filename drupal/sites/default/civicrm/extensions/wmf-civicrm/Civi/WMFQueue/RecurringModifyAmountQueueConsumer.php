@@ -219,7 +219,7 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
     $recur_currency = $messageObject->getExistingContributionRecurValue('currency');
 
     //The subscr_modify message could also be a notification of changing amount
-    $amount_mismatch = !empty($messageObject->getModifiedAmount()) && ($messageObject->getModifiedAmount() !== $recur_amount );
+    $amount_mismatch = !empty($messageObject->getModifiedAmount()) && ($messageObject->getModifiedAmount() !== $recur_amount);
     if ($amount_mismatch) {
       $amountDetails = [
         'native_currency' => $messageObject->getModifiedCurrency(),

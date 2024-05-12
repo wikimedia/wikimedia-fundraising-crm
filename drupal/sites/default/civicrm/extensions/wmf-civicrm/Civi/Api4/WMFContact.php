@@ -19,8 +19,6 @@ class WMFContact extends Generic\AbstractEntity {
    * @param bool $checkPermissions
    *
    * @return \Civi\Api4\Action\WMFContact\Save
-   *
-   * @throws \API_Exception
    */
   public static function save(bool $checkPermissions = TRUE): Save {
     return (new Save(__CLASS__, __FUNCTION__))

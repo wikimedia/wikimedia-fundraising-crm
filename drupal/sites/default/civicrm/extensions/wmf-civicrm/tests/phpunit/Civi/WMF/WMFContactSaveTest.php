@@ -4,6 +4,8 @@ namespace Civi\WMF;
 
 use Civi\Api4\Contact;
 use Civi\Api4\WMFContact;
+use Civi\WMFQueueMessage\RecurDonationMessage;
+use Civi\WMFQueueMessage\RecurringModifyAmountMessage;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -37,53 +39,11 @@ class WMFContactSaveTest extends TestCase {
   }
 
   /**
-   * @throws \CRM_Core_Exception
-   */
-  public function testExternalIdentifierUpdate(): void {
-    $newVenmoUserName = 'test';
-    $initialDetails = [
-      'first_name' => 'Sally',
-      'last_name' => 'Mouse',
-      'nick_name' => '',
-      'email' => 'sally@bb.org',
-      'gateway' => 'braintree',
-      'payment_method' => 'venmo',
-      'external_identifier' => 'old',
-      'country' => 'US',
-      'street_address' => '',
-      'city' => '',
-      'street_number' => '',
-      'postal_code' => '',
-      'state_province' => '',
-    ];
-    $oldContactId = WMFContact::save(FALSE)->setMessage($initialDetails)->execute()->first()['id'];
-    $oldContact = Contact::get(FALSE)
-      ->addSelect('External_Identifiers.venmo_user_name')
-      ->addWhere('id', '=', $oldContactId)
-      ->execute()->first();
-    $this->assertEquals('old', $oldContact['External_Identifiers.venmo_user_name']);
-
-    $newDetails = array_merge($initialDetails, [
-      'id' => $oldContactId,
-      'contact_id' => $oldContactId,
-      'external_identifier' => $newVenmoUserName,
-    ]);
-
-    WMFContact::save(FALSE)->setMessage($newDetails)->execute();
-    $updatedContact = Contact::get(FALSE)
-      ->addSelect('External_Identifiers.venmo_user_name')
-      ->addWhere('id', '=', $oldContactId)
-      ->execute()->first();
-
-    $this->assertEquals($newVenmoUserName, $updatedContact['External_Identifiers.venmo_user_name']);
-  }
-
-  /**
    * @throws \CRM_Core_Exception|\Random\RandomException
    */
   public function testExternalIdentifierFundraiseupIdUpdate(): void {
     $fundraiseup_id = random_int(10000, 11200);
-    $initialDetails = [
+    $initialDetails = new RecurringModifyAmountMessage([
       'first_name' => 'Sarah',
       'last_name' => 'Mouse',
       'nick_name' => '',
@@ -97,60 +57,60 @@ class WMFContactSaveTest extends TestCase {
       'street_number' => '',
       'postal_code' => '',
       'state_province' => '',
-    ];
-    $oldContactId = WMFContact::save(FALSE)->setMessage($initialDetails)->execute()->first()['id'];
+    ]);
+    $oldContactId = WMFContact::save(FALSE)->setMessage($initialDetails->normalize())->execute()->first()['id'];
 
-    $newDetails = array_merge($initialDetails, [
+    $newDetails = new RecurringModifyAmountMessage(array_merge($initialDetails->normalize(), [
       'id' => $oldContactId,
       'contact_id' => $oldContactId,
       'gateway' => 'fundraiseup',
       'external_identifier' => $fundraiseup_id,
-    ]);
+    ]));
 
-    WMFContact::save(FALSE)->setMessage($newDetails)->execute();
+    WMFContact::save(FALSE)->setMessage($newDetails->normalize())->execute();
     $updatedContact = Contact::get(FALSE)
       ->addSelect('External_Identifiers.fundraiseup_id', 'email_primary.email')
       ->addWhere('id', '=', $oldContactId)
       ->execute()->first();
 
     $this->assertNotNull($updatedContact);
-    $this->assertEquals(strtolower($initialDetails['email']), $updatedContact['email_primary.email']);
+    $this->assertEquals('sarah@bb.org', $updatedContact['email_primary.email']);
     $this->assertEquals($fundraiseup_id, $updatedContact['External_Identifiers.fundraiseup_id']);
   }
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \Random\RandomException
+   * @throws \Civi\WMFException\WMFException
    */
   public function testExternalIdentifierIdDedupe(): void {
-    $fundraiseup_id = random_int(10000, 11200);
     $new_email = 'anothertestemail@em.org';
     $new_first_name = 'One';
-    $initialDetails = [
+    $initialDetails = new RecurDonationMessage([
       'first_name' => 'Zero',
       'last_name' => 'Mouse',
       'nick_name' => 'Nick',
       'email' => 'testemail@em.org',
       'gateway' => 'fundraiseup',
-      'external_identifier' => $fundraiseup_id,
+      'external_identifier' => 6666666666,
+      'payment_method' => 'cc',
       'country' => 'US',
       'street_address' => '',
       'city' => '',
       'street_number' => '',
       'postal_code' => '',
       'state_province' => '',
-    ];
-
-    $newDetails = array_merge($initialDetails, [
-      'first_name' => $new_first_name,
-      'email' => $new_email,
     ]);
 
-    WMFContact::save(FALSE)->setMessage($initialDetails)->execute();
-    WMFContact::save(FALSE)->setMessage($newDetails)->execute();
+    $newDetails = new RecurDonationMessage(array_merge($initialDetails->normalize(), [
+      'first_name' => $new_first_name,
+      'email' => $new_email,
+    ]));
+
+    WMFContact::save(FALSE)->setMessage($initialDetails->normalize())->execute();
+    WMFContact::save(FALSE)->setMessage($newDetails->normalize())->execute();
     $contact = Contact::get(FALSE)
       ->addSelect('first_name', 'External_Identifiers.fundraiseup_id', 'email_primary.email')
-      ->addWhere('External_Identifiers.fundraiseup_id', '=', $fundraiseup_id)
+      ->addWhere('External_Identifiers.fundraiseup_id', '=', 6666666666)
       ->execute();
     $this->ids['Contact'][] = $contact[0]['id'];
 
