@@ -134,7 +134,7 @@ class FinanceInstrument {
    *
    * @return string payment instrument label
    */
-  public static function getPaymentInstrument(array $msg): string {
+  public static function getPaymentInstrument(array $msg): ?string {
     $payment_instrument = null;
     $payment_method = null;
     if (isset($msg['raw_payment_instrument'])) {
@@ -290,12 +290,7 @@ class FinanceInstrument {
           break;
       }
     }
-
-    if (!$payment_instrument && !$payment_method) {
-        throw new WMFException(WMFException::INVALID_MESSAGE, "No payment type found for message.");
-    }
-
     //I was going to check to make sure the target gateway was a real thing, but: Hello, overhead. No.
-    return $payment_instrument ?? $msg['payment_method'];
+    return $payment_instrument ?? $msg['payment_method'] ?? null;
   }
 }

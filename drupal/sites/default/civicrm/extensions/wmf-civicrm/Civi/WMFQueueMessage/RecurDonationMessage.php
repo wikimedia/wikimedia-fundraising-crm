@@ -292,6 +292,7 @@ class RecurDonationMessage extends DonationMessage {
       // If it was not in the message we can look it up from the previous donation.
       return $this->getRecurringPriorContributionValue('payment_instrument_id');
     }
+
     return parent::getPaymentInstrumentID();
   }
 
