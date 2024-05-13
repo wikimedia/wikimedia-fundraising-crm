@@ -22,10 +22,6 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
    * @throws \API_Exception
    */
   public function install(): void {
-    // This is a temporary static to allow us to add segment fields on install
-    // on our dev sites while we are in this half-way state of not having the
-    // fields on live yet.
-    \Civi::$statics['is_install_mode'] = TRUE;
     $settings = new CRM_Wmf_Upgrader_Settings();
     $settings->setWmfSettings();
     $this->addCustomFields();
@@ -1004,11 +1000,6 @@ SET
    * @throws \API_Exception
    */
   public function upgrade_4305(): bool {
-    // This is a temporary static which forces the new segment fields to be included.
-    // In theory we can remove the whole isSegmentReady() function once this upgrade
-    // has run - although it might be nice to see the requirements settle down
-    // a little first in case we can't include them in triggers & want to re-purpose that function
-    \Civi::$statics['is_install_mode'] = TRUE;
     $this->addCustomFields();
     return TRUE;
   }
@@ -2029,6 +2020,18 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
+   * Copy prometheus drupal vars to Civi settings
+   * @return bool
+   */
+  public function upgrade_4470(): bool {
+    $copySettings = [
+      'metrics_reporting_prometheus_path' => 'metrics_reporting_prometheus_path',
+    ];
+    $this->convertDrupalVariableToCiviCRMSetting($copySettings);
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
@@ -2040,7 +2043,6 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
-   * >>>>>>> 5ad732cc6 (Add Queue Settings + navigation entries)
    * Queue up an SQL update.
    *
    * @param string $sql

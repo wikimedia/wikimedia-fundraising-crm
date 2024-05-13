@@ -239,7 +239,7 @@ class CRM_Forgetme_Metadata {
    * @return NULL|string
    */
   public static function getEntityName($tableName) {
-    return CRM_Core_DAO_AllCoreTables::getBriefName(CRM_Core_DAO_AllCoreTables::getClassForTable($tableName));
+    return CRM_Core_DAO_AllCoreTables::getEntityNameForClass(CRM_Core_DAO_AllCoreTables::getClassForTable($tableName));
   }
 
   /**
@@ -250,7 +250,7 @@ class CRM_Forgetme_Metadata {
    * @return string
    */
   public static function getTableName($entity) {
-    return CRM_Core_DAO_AllCoreTables::getTableForClass(CRM_Core_DAO_AllCoreTables::getFullName($entity));
+    return CRM_Core_DAO_AllCoreTables::getTableForClass(CRM_Core_DAO_AllCoreTables::getDAONameForEntity($entity));
   }
 
   public static function getContactFieldMetadata($fields) {

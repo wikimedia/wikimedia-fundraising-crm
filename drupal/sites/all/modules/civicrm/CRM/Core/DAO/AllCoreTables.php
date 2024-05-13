@@ -93,6 +93,10 @@ class CRM_Core_DAO_AllCoreTables {
     return self::$entityTypes;
   }
 
+  public static function getEntities() {
+    return self::get();
+  }
+
   /**
    * @return array
    *   List of SQL table names.
@@ -332,6 +336,13 @@ class CRM_Core_DAO_AllCoreTables {
   }
 
   /**
+   *
+   */
+  public static function getDAONameForEntity($entityName) {
+    return self::getFullName($entityName);
+  }
+
+  /**
    * Given a full class-name, determine the brief-name.
    *
    * @param string $className
@@ -340,6 +351,19 @@ class CRM_Core_DAO_AllCoreTables {
    *   Ex: 'Contact'.
    */
   public static function getBriefName($className) {
+    $className = self::getCanonicalClassName($className);
+    return array_search($className, self::daoToClass(), TRUE) ?: NULL;
+  }
+
+  /**
+   * Given a DAO or BAO class-name, return the entity name.
+   *
+   * @param string|null $className
+   *   Ex: 'CRM_Contact_DAO_Contact'.
+   * @return string|NULL
+   *   Ex: 'Contact'.
+   */
+  public static function getEntityNameForClass(?string $className): ?string {
     $className = self::getCanonicalClassName($className);
     return array_search($className, self::daoToClass(), TRUE) ?: NULL;
   }

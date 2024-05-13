@@ -183,4 +183,33 @@ class Message {
     return !empty($this->message['contribution_tracking_id']) ? (int) $this->message['contribution_tracking_id'] : NULL;
   }
 
+  /**
+   * Clean up a string by
+   *  - trimming preceding & ending whitespace
+   *  - removing any in-string double whitespace
+   *
+   * @param string $string
+   * @param int $length
+   *
+   * @return string
+   */
+  protected function cleanString(string $string, int $length): string {
+    $replacements = [
+      // Hex for &nbsp;
+      '/\xC2\xA0/' => ' ',
+      '/&nbsp;/' => ' ',
+      // Replace multiple ideographic space with just one.
+      '/(\xE3\x80\x80){2}/' => html_entity_decode("&#x3000;"),
+      // Trim ideographic space (this could be done in trim further down but seems a bit fiddly)
+      '/^(\xE3\x80\x80)/' => ' ',
+      '/(\xE3\x80\x80)$/' => ' ',
+      // Replace multiple space with just one.
+      '/\s\s+/' => ' ',
+      // And html ampersands with normal ones.
+      '/&amp;/' => '&',
+      '/&Amp;/' => '&',
+    ];
+    return mb_substr(trim(preg_replace(array_keys($replacements), $replacements, $string)), 0, $length);
+  }
+
 }

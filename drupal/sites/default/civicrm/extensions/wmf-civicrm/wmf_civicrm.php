@@ -1,28 +1,22 @@
 <?php
 
 use Civi\Api4\CustomField;
-use Civi\Api4\CustomGroup;
-use Civi\Api4\Relationship;
 use Civi\WMFHelper\Queue;
 
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
-use Civi\Api4\WMFDonor;
 use Civi\WMFHook\Activity;
 use Civi\WMFHook\CalculatedData;
 use Civi\WMFHook\Contribution;
-use Civi\WMFHook\ContributionRecur;
 use Civi\WMFHook\ContributionRecurTrigger;
 use Civi\WMFHook\ContributionSoft;
 use Civi\WMFHook\Import;
-use Civi\WMFHook\Permissions;
 use Civi\WMFHook\ProfileDynamic;
 use Civi\WMFHook\QuickForm;
 use Civi\WMFHook\Data;
 use Civi\Api4\MessageTemplate;
 use Civi\WMFHelper\Language;
 use Civi\WMFHook\PreferencesLink;
-use CRM_WmfCivicrm_ExtensionUtil as E;
 
 // phpcs:enable
 
@@ -35,7 +29,8 @@ function wmf_civicrm_civicrm_config(&$config) {
   _wmf_civicrm_civix_civicrm_config($config);
   $dispatcher = Civi::dispatcher();
   $dispatcher->addListener('civi.token.list', ['CRM_Wmf_Tokens', 'onListTokens']);
-  $dispatcher->addListener('civi.token.eval', ['CRM_Wmf_Tokens', 'onEvalTokens']);
+  // Ensure it runs after the first ones, since we override some core tokens.
+  $dispatcher->addListener('civi.token.eval', ['CRM_Wmf_Tokens', 'onEvalTokens'], -200);
   $dispatcher->addListener('hook_civicrm_queueActive', [Queue::class, 'isSiteBusy']);
 }
 

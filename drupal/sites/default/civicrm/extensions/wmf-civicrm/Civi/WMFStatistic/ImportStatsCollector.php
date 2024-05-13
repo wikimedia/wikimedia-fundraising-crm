@@ -113,17 +113,14 @@ class ImportStatsCollector extends AbstractCollector {
   /**
    * Get the output file path.
    *
-   * Default path is drupal global variable 'metrics_reporting_prometheus_path'
+   * Default path is CiviCRM Setting 'metrics_reporting_prometheus_path'
    * unless outputFilePath is set.
    *
    * @return string
    */
   public function getOutputFilePath(): string {
     if ($this->outputFilePath === NULL) {
-      $this->outputFilePath = variable_get(
-        'metrics_reporting_prometheus_path',
-        '/var/spool/prometheus'
-      );
+      $this->outputFilePath = \Civi::settings()->get('metrics_reporting_prometheus_path');
     }
     return $this->outputFilePath;
   }

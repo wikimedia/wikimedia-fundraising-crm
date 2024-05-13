@@ -81,7 +81,8 @@ class Save extends AbstractAction {
           empty($existingContact['contact_id.first_name']) &&
           empty($existingContact['contact_id.last_name'])
         );
-        $this->handleUpdate($msg, $replaceNames);
+        $this->setMessage($msg);
+        $this->handleUpdate($replaceNames);
         $result[] = ['id' => $contact_id];
         return;
       }
@@ -106,10 +107,7 @@ class Save extends AbstractAction {
       'contact_type' => $msg['contact_type'],
       'contact_source' => $msg['contact_source'],
       'debug' => TRUE,
-      'addressee_custom' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
-      'addressee_display' => empty($msg['addressee_custom']) ? NULL : $this->cleanString($msg['addressee_custom'], 128),
       'addressee_id' => empty($msg['addressee_custom']) ? NULL : 'Customized',
-      'legal_identifier' => empty($msg['fiscal_number']) ? NULL : $this->cleanString($msg['fiscal_number'], 32),
       // Major gifts wants greeting processing - but we are not sure speedwise.
       'skip_greeting_processing' => !\Civi::settings()->get('wmf_save_process_greetings_on_create'),
     ];
@@ -120,7 +118,7 @@ class Save extends AbstractAction {
     if (strtolower($msg['contact_type']) !== 'organization') {
       foreach (['first_name', 'last_name', 'middle_name', 'nick_name'] as $name) {
         if (isset($msg[$name])) {
-          $contact[$name] = $this->cleanString($msg[$name], 64);
+          $contact[$name] = $msg[$name];
         }
       }
     }
@@ -131,45 +129,11 @@ class Save extends AbstractAction {
       $contact['email'] = $msg['email'];
     }
 
-    if (!empty($msg['prefix_id:label'])) {
-      // prefix_id:label is APIv4 format. name_prefix is our own fandango.
-      // We should start migrating to APIv4 format so supporting it
-      // is a first step.
-      $msg['name_prefix'] = $msg['prefix_id:label'];
-    }
-    if (!empty($msg['suffix_id:label'])) {
-      // Same with suffix
-      $msg['name_suffix'] = $msg['suffix_id:label'];
-    }
-    if (!empty($msg['name_prefix'])) {
-      $contact['prefix_id'] = $msg['name_prefix'];
-    }
-    if (!empty($msg['name_suffix'])) {
-      $contact['suffix_id'] = $msg['name_suffix'];
-    }
     $preferredLanguage = $this->getPreferredLanguage($msg);
     if ($preferredLanguage) {
       $contact['preferred_language'] = $preferredLanguage;
     }
-
-    // Copy some fields, if they exist
-    $direct_fields = [
-      'do_not_email',
-      'do_not_mail',
-      'do_not_phone',
-      'do_not_sms',
-      'is_opt_out',
-    ];
-    foreach ($direct_fields as $field) {
-      if (isset($msg[$field])) {
-        if (in_array($msg[$field], [0, 1, '0', '1', TRUE, FALSE], TRUE)) {
-          $contact[$field] = $msg[$field];
-        }
-        elseif (strtoupper($msg[$field]) === 'Y') {
-          $contact[$field] = TRUE;
-        }
-      }
-    }
+    $contact += $this->getApiReadyFields(3);
 
     $custom_vars = [];
     $custom_field_mangle = [
@@ -324,7 +288,6 @@ class Save extends AbstractAction {
    *
    * @param array $msg
    * @return string
-   * @throws \API_Exception
    */
   protected function getPreferredLanguage(array $msg): string {
     $incomingLanguage = $msg['language'] ?? '';
@@ -385,7 +348,7 @@ class Save extends AbstractAction {
           $default_locale = Language::getLanguageCode($parts[0]);
           $preferredLanguage = $default_locale;
         }
-        catch(\CRM_Core_Exception $ex) {
+        catch (\CRM_Core_Exception $ex) {
           $preferredLanguage = 'en_US';
         }
       }
@@ -422,7 +385,7 @@ class Save extends AbstractAction {
         ->setValues($params)
         ->execute();
     }
-    catch (\API_Exception|\CRM_Core_Exception $ex) {
+    catch (\CRM_Core_Exception $ex) {
       throw new WMFException(WMFException::IMPORT_CONTACT, $ex->getMessage());
     }
   }
@@ -430,39 +393,35 @@ class Save extends AbstractAction {
   /**
    * Handle a contact update - this is moved here but not yet integrated.
    *
+   * Calling this directly is deprecated - we are working towards eliminating that.
+   *
    * This is an interim step... getting it onto the same class.
    *
-   * @param array $msg
+   * @param bool $replaceNames
    *
-   * @throws \API_Exception
-   * @throws \Civi\WMFException\WMFException
+   * @throws WMFException
+   * @throws \CRM_Core_Exception
    */
-  public function handleUpdate(array $msg, bool $replaceNames = false): void {
+  public function handleUpdate(bool $replaceNames = FALSE): void {
     // This winds up being a list of permitted fields to update. The approach of
     // filtering out some fields here probably persists more because we
     // have not been brave enough to change historical code than an underlying reason.
     $updateFields = [
-      'do_not_email',
-      'do_not_mail',
-      'do_not_trade',
-      'do_not_phone',
-      'is_opt_out',
-      'do_not_sms',
       'Partner.Partner',
     ];
-    if (!empty($this->getExternalIdentifierField($msg))) {
-      $updateFields[] = 'External_Identifiers.'. $this->getExternalIdentifierField($msg);
+
+    if (!empty($this->getExternalIdentifierField($this->getMessage()))) {
+      $updateFields[] = 'External_Identifiers.' . $this->getExternalIdentifierField($this->getMessage());
     }
     if ($replaceNames) {
       $updateFields[] = 'first_name';
       $updateFields[] = 'last_name';
     }
+    $msg = $this->getMessage();
     $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
+    $updateParams += $this->getApiReadyFields();
     if (!empty($msg['external_identifier'])) {
-      $updateParams['External_Identifiers.'. $this->getExternalIdentifierField($msg)] = $this->cleanString($msg['external_identifier'], 32);
-    }
-    if (!empty($msg['fiscal_number'])) {
-      $updateParams['legal_identifier'] = $this->cleanString($msg['fiscal_number'], 32);
+      $updateParams['External_Identifiers.' . $this->getExternalIdentifierField($msg)] = $msg['external_identifier'];
     }
     if (($msg['contact_type'] ?? NULL) === 'Organization') {
       // Find which of these keys we have update values for.
@@ -505,12 +464,12 @@ class Save extends AbstractAction {
       }
     }
     if (!empty($updateParams)) {
-      $this->startTimer( 'update_contact_civi_api' );
+      $this->startTimer('update_contact_civi_api');
       Contact::update(FALSE)
         ->addWhere('id', '=', $msg['contact_id'])
         ->setValues($updateParams)
         ->execute();
-      $this->stopTimer( 'update_contact_civi_api' );
+      $this->stopTimer('update_contact_civi_api');
     }
     $this->createEmployerRelationshipIfSpecified($msg['contact_id'], $msg);
 
@@ -716,32 +675,52 @@ class Save extends AbstractAction {
   }
 
   /**
-   * Clean up a string by
-   *  - trimming preceding & ending whitespace
-   *  - removing any in-string double whitespace
-   *
-   * @param string $string
-   * @param int $length
-   *
-   * @return string
+   * @param int $destinationApiVersion
+   * @return array
    */
-  protected function cleanString($string, $length) {
-    $replacements = [
-      // Hex for &nbsp;
-      '/\xC2\xA0/' => ' ',
-      '/&nbsp;/' => ' ',
-      // Replace multiple ideographic space with just one.
-      '/(\xE3\x80\x80){2}/' => html_entity_decode("&#x3000;"),
-      // Trim ideographic space (this could be done in trim further down but seems a bit fiddly)
-      '/^(\xE3\x80\x80)/' => ' ',
-      '/(\xE3\x80\x80)$/' => ' ',
-      // Replace multiple space with just one.
-      '/\s\s+/' => ' ',
-      // And html ampersands with normal ones.
-      '/&amp;/' => '&',
-      '/&Amp;/' => '&',
+  public function getApiReadyFields(int $destinationApiVersion = 4): array {
+    $values = [];
+    // Copy some fields, if they exist
+    $apiFields = [
+      'do_not_email' => 'do_not_email',
+      'do_not_mail' => 'do_not_mail',
+      'do_not_phone' => 'do_not_phone',
+      'do_not_trade' => 'do_not_trade',
+      'do_not_sms' => 'do_not_sms',
+      'is_opt_out' => 'is_opt_out',
+      'prefix_id' => 'prefix_id:label',
+      'suffix_id' => 'suffix_id:label',
+      'legal_identifier' => 'legal_identifier',
+      'addressee_custom' => 'addressee_custom',
+      'addressee_display' => 'addressee_display',
+      $this->getApiv3FieldName('first_name_phonetic') => 'Communication.first_name_phonetic',
+      $this->getApiv3FieldName('last_name_phonetic') => 'Communication.last_name_phonetic',
     ];
-    return mb_substr(trim(preg_replace(array_keys($replacements), $replacements, $string)), 0, $length);
+    foreach ($apiFields as $api3Field => $api4Field) {
+      // We are currently calling apiv3 here but aim to call v4.
+      // We can map either incoming, but prefer v4.
+      $destinationField = $destinationApiVersion === 4 ? $api4Field : $api3Field;
+      if (isset($this->message[$api4Field])) {
+        $values[$destinationField] = $this->message[$api4Field];
+      }
+      elseif (isset($this->message[$api3Field])) {
+        $values[$destinationField] = $this->message[$api3Field];
+      }
+    }
+    return $values;
+  }
+
+  /**
+   * Get the apiv3 name - e.g custom_6
+   *
+   * This should be short term enough it can just wrap the legacy function...
+   *
+   * @param string $name
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  private function getApiv3FieldName(string $name): string {
+    return wmf_civicrm_get_custom_field_name($name);
   }
 
 }

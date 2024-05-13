@@ -4,18 +4,18 @@ use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\Relationship;
 use Civi\Api4\RelationshipType;
 use Civi\Api4\WMFContact;
+use Civi\WMFException\EmptyRowException;
+use Civi\WMFException\IgnoredRowException;
+use Civi\WMFException\WMFException;
 use Civi\WMFHelper\Contact;
 use Civi\WMFHelper\Contribution;
 use Civi\WMFHelper\Database;
 use Civi\WMFQueueMessage\DonationMessage;
-use SmashPig\CrmLink\Messages\SourceFields;
 use League\Csv\Reader;
-use SmashPig\Core\Context;
-use League\Csv\Writer;
 use League\Csv\Statement;
-use Civi\WMFException\WMFException;
-use Civi\WMFException\EmptyRowException;
-use Civi\WMFException\IgnoredRowException;
+use League\Csv\Writer;
+use SmashPig\Core\Context;
+use SmashPig\CrmLink\Messages\SourceFields;
 
 /**
  * CSV batch format for manually-keyed donation checks
@@ -306,7 +306,7 @@ abstract class ChecksFile {
    * @throws WMFException
    */
   public function insertRow(array $msg): array {
-    $message = DonationMessage::getWMFMessage($msg);
+    $message = new DonationMessage($msg);
     $msg = $message->normalize();
     if (!$msg['contact_id']) {
       $contact = WMFContact::save(FALSE)
@@ -320,7 +320,8 @@ abstract class ChecksFile {
       // For now, we have copied same wrangling as is done in message_insert
       // but hope to consolidate on 1 call.
       $save = new Save('WMFContact', 'save');
-      $save->handleUpdate($msg);
+      $save->setMessage($msg);
+      $save->handleUpdate();
     }
     return _message_contribution_insert($msg);
   }
@@ -688,7 +689,7 @@ abstract class ChecksFile {
       'Postmark Date' => 'postmark_date',
       'Phone Number' => 'phone',
       'Phone' => 'phone',
-      'Prefix' => 'name_prefix',
+      'Prefix' => 'prefix_id:label',
       'Raw Payment Instrument' => 'raw_payment_instrument',
       'Received Date' => 'date',
       'Relationship Type' => 'relationship_type',
@@ -697,7 +698,7 @@ abstract class ChecksFile {
       'Source' => 'contribution_source',
       'State' => 'state_province',
       'Street Address' => 'street_address',
-      'Suffix' => 'name_suffix',
+      'Suffix' => 'suffix_id:label',
       'Thank You Letter Date' => 'thankyou_date',
       'Title' => 'org_contact_title',
       'Total Amount' => 'gross',

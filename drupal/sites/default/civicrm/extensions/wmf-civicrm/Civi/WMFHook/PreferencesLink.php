@@ -2,8 +2,6 @@
 
 namespace Civi\WMFHook;
 
-use Civi\Api4\ContributionRecur;
-
 class PreferencesLink {
 
   public static function contactSummaryBlocks(array &$blocks) {
@@ -36,13 +34,10 @@ class PreferencesLink {
       $page instanceof \CRM_Contact_Page_View_Summary &&
       $contactID !== 0
     ) {
-      $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
       $page->assign('expiryDays', \Civi::settings()->get('checksum_timeout'));
-
-      $emailPreferencesBaseUrl = (string) \Civi::settings()->get('wmf_email_preferences_url');
-      $page->assign('preferencesLink',
-        self::addContactAndChecksumToUrl($emailPreferencesBaseUrl, $contactID, $checksum)
-      );
+      $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
+      list($checksum, $preferencesLink) = self::getPreferenceUrl($contactID, $checksum);
+      $page->assign('preferencesLink', $preferencesLink);
 
       $upgradeableRecur = \Civi\WMFHelper\ContributionRecur::getUpgradeable($contactID, $checksum);
       if ($upgradeableRecur) {
@@ -74,4 +69,29 @@ class PreferencesLink {
       $parsed->withQuery(implode('&', $queryParts))
     );
   }
+
+  /**
+   * Get the url to link to the preference centre.
+   *
+   * @todo figure out where this should live. We have an api in ThankYou extension
+   * called WMFLink with getUnsubscribeUrl which makes sense except that the
+   * preference code kinda 'belongs' to this extension. We could move that api class
+   * into this extension maybe?
+   *
+   * @param int $contactID
+   * @param string|null $checksum
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public static function getPreferenceUrl(int $contactID, ?string $checksum = NULL): string {
+    if (!$checksum) {
+      if (!isset(\Civi::$statics[__CLASS__ . __FUNCTION__][$contactID])) {
+        \Civi::$statics[__CLASS__ . __FUNCTION__][$contactID] = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
+      }
+      $checksum = \Civi::$statics[__CLASS__ . __FUNCTION__][$contactID];
+    }
+    $emailPreferencesBaseUrl = (string) \Civi::settings()->get('wmf_email_preferences_url');
+    return self::addContactAndChecksumToUrl($emailPreferencesBaseUrl, $contactID, $checksum);
+  }
+
 }

@@ -5,6 +5,7 @@ namespace Civi\WMFQueue;
 use Civi;
 use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Action\WMFContact\Save;
+use Civi\Api4\Contact;
 use Civi\Api4\RecurUpgradeEmail;
 use Civi\Api4\WMFContact;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
@@ -317,22 +318,28 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, 'Subscription account already exists');
     }
     $ctRecord = wmf_civicrm_get_contribution_tracking($msg);
-    if (empty($ctRecord['contribution_id'])) {
-      // create contact record
-      $contact = WMFContact::save(FALSE)
-        ->setMessage($msg)
-        ->execute()->first();
-
-      $contactId = $contact['id'];
-    }
-    else {
-      $contactId = civicrm_api3('Contribution', 'getvalue', [
-        'id' => $ctRecord['contribution_id'],
-        'return' => 'contact_id',
-      ]);
-    }
-
     try {
+      if (empty($ctRecord['contribution_id'])) {
+        // create contact record
+        $contact = WMFContact::save(FALSE)
+          ->setMessage($msg)
+          ->execute()->first();
+        $contactId = $contact['id'];
+      }
+      else {
+        $contactId = civicrm_api3('Contribution', 'getvalue', [
+          'id' => $ctRecord['contribution_id'],
+          'return' => 'contact_id',
+        ]);
+
+        if (isset($msg['legal_identifier'])) {
+          Contact::update(FALSE)
+            ->addWhere('id', '=', $contactId)
+            ->addValue('legal_identifier', $msg['legal_identifier'])
+            ->execute();
+        }
+      }
+
       $params = [
         'contact_id' => $contactId,
         'currency' => $msg['original_currency'],
@@ -385,15 +392,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
       if (isset($msg['rescue_reference'])) {
         $params['contribution_recur_smashpig.rescue_reference'] = $msg['rescue_reference'];
-      }
-
-      if (isset($msg['fiscal_number'])) {
-        // TODO handle this in the create contact block above rather than creating and then updating
-        $save = new Save('WMFContact', 'save');
-        $save->handleUpdate([
-          'contact_id' => $contactId,
-          'fiscal_number' => $msg['fiscal_number'],
-        ]);
       }
 
       $newContributionRecur = $this->createContributionRecurWithErrorHandling($params);
