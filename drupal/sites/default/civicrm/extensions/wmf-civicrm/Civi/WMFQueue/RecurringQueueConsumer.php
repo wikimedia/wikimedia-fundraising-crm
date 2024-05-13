@@ -347,6 +347,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         // If not provided (eg. a payment where we missed the signup) we assume monthly.
         'frequency_unit' => $msg['frequency_unit'] ?? 'month',
         'frequency_interval' => $msg['frequency_interval'] ?? 1,
+        'payment_instrument_id' => $msg['payment_instrument_id'] ?? NULL,
         // Set installments to 0 - they should all be open ended
         'installments' => 0,
         'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
@@ -361,7 +362,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         // any gateway values with no valid processor mapping so we do this ourselves.
         $params['payment_processor_id'] = PaymentProcessor::getPaymentProcessorID($msg['gateway']);
       }
-
       // Create a new recurring donation with a token
       if (isset($msg['recurring_payment_token'])) {
         // Check that the original contribution has processed first
