@@ -36,7 +36,7 @@ class PreferencesLink {
     ) {
       $page->assign('expiryDays', \Civi::settings()->get('checksum_timeout'));
       $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
-      list($checksum, $preferencesLink) = self::getPreferenceUrl($contactID, $checksum);
+      $preferencesLink = self::getPreferenceUrl($contactID, $checksum);
       $page->assign('preferencesLink', $preferencesLink);
 
       $upgradeableRecur = \Civi\WMFHelper\ContributionRecur::getUpgradeable($contactID, $checksum);
