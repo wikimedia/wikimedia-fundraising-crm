@@ -66,6 +66,38 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
     $this->assertStringContainsString($orderId, $this->getContributionForMessage($message)['invoice_id']);
   }
 
+  public function testRecurringQueueConsumeAutoRescueMessageNoPriorContribution(): void {
+    $rescueReference = 'MT6S49RV4HNG5S82';
+    $orderId = "279.2";
+    $recur = $this->createContributionRecur([
+      'frequency_interval' => '1',
+      'frequency_unit' => 'month',
+      'contribution_recur_smashpig.rescue_reference' => $rescueReference,
+      'invoice_id' => $orderId,
+      'payment_instrument_id:name' => "Credit Card: Visa",
+    ]);
+
+    $date = time();
+    $message = $this->getAutoRescueMessage($date, $rescueReference, $orderId);
+    $this->processMessage($message);
+
+    $updatedRecur = ContributionRecur::get(FALSE)
+      ->addSelect('*', 'contribution_status_id:name')
+      ->addWhere('id', '=', $recur['id'])
+      ->execute()
+      ->first();
+
+    $this->assertEquals('In Progress', $updatedRecur['contribution_status_id:name']);
+
+    // check that the generated next_sched date is between 27 and 31 days away
+    $today = \DateTime::createFromFormat("U", $date);
+    $nextMonth = new \DateTime($updatedRecur['next_sched_contribution_date']);
+    $difference = $nextMonth->diff($today)->days;
+    $this->assertGreaterThanOrEqual(27, $difference);
+    $this->assertLessThanOrEqual(31, $difference);
+    $this->assertStringContainsString($orderId, $this->getContributionForMessage($message)['invoice_id']);
+  }
+
   public function testAutoRescueNoPredecessor(): void {
     $this->expectException(WMFException::class);
     $this->expectExceptionMessage('INVALID_MESSAGE No payment type found for message');
