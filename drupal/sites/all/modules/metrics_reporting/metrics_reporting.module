@@ -1,7 +1,1 @@
 <?php
-
-function metrics_reporting_report_metrics( $component, $metrics = array() ) {
-	$prometheusPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
-	$reporter = new PrometheusReporter( $prometheusPath );
-	$reporter->reportMetrics( $component, $metrics );
-}
