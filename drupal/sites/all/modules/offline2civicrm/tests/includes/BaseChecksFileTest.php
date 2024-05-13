@@ -39,13 +39,13 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->ensureAnonymousContactExists();
     parent::setUp();
     civicrm_initialize();
-    $this->epochtime = wmf_common_date_parse_string('2016-09-15');
+    $this->epochtime = strtotime('2016-09-15');
   }
 
   /**
    * Test and remove some dynamic fields, to simplify test fixtures.
    */
-  function stripSourceData(&$msg) {
+  protected function stripSourceData(&$msg) {
     $this->assertEquals('direct', $msg['source_type']);
     $importerClass = str_replace('Test', 'Probe', get_class($this));
     $this->assertEquals("Offline importer: {$importerClass}", $msg['source_name']);

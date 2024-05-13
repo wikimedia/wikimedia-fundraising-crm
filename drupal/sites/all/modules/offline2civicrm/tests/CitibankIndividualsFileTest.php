@@ -6,7 +6,7 @@
  */
 class CitibankIndividualsFileTest extends BaseChecksFileTest {
 
-  function setUp(): void {
+  public function setUp(): void {
     $params = [
       'contact_type' => 'Individual',
       'last_name' => 'Citibank',
@@ -17,7 +17,7 @@ class CitibankIndividualsFileTest extends BaseChecksFileTest {
       $this->callAPISuccess('Contact', 'create', $params);
     }
     parent::setUp();
-    $this->setExchangeRates(wmf_common_date_parse_string('2019-01-02'), ['USD' => 1, 'EUR' => 3]);
+    $this->setExchangeRates(strtotime('2019-01-02'), ['USD' => 1, 'EUR' => 3]);
   }
 
   public function tearDown(): void {

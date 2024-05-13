@@ -10,7 +10,7 @@ class ForeignChecksFileTest extends BaseChecksFileTest {
 
   public function setUp(): void {
     parent::setUp();
-    $this->epochtime = wmf_common_date_parse_string('2017-02-28');
+    $this->epochtime = strtotime('2017-02-28');
     $this->setExchangeRates($this->epochtime, array('USD' => 1, 'GBP' => 2));
 
     require_once __DIR__ . "/includes/ForeignChecksFileProbe.php";
