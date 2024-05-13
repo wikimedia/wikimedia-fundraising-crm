@@ -54,12 +54,18 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       $metrics["${gateway}_donations"] = $count;
     }
     $metrics['total_donations'] = $counter->getCountTotal();
-    module_invoke('metrics_reporting', 'report_metrics', 'queue2civicrm', $metrics);
+    $this->recordMetric('queue2civicrm', $metrics);
     $ageMetrics = [];
     foreach ($counter->getAverageAges() as $gateway => $age) {
       $ageMetrics["${gateway}_message_age"] = $age;
     }
-    module_invoke('metrics_reporting', 'report_metrics', 'donation_message_age', $ageMetrics);
+    $this->recordMetric('donation_message_age', $ageMetrics);
+  }
+
+  protected function recordMetric($namespace, $metrics) {
+    $prometheusPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
+    $reporter = new \PrometheusReporter($prometheusPath);
+    $reporter->reportMetrics($namespace, $metrics);
   }
 
   /**
