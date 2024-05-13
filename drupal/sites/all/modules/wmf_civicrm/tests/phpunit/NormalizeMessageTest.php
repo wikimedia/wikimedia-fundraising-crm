@@ -126,9 +126,9 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     ];
 
     $msg = $original_msg;
-    $this->expectException(WMFException::class);
     $message = new DonationMessage($msg);
     $message->normalize();
+    $this->assertNull($message->getPaymentInstrumentID());
   }
 
   public function testEmptyNet(): void {

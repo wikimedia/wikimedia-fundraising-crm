@@ -577,8 +577,14 @@ class DonationMessage extends Message {
     if ($paymentInstrumentID) {
       return (int) $paymentInstrumentID;
     }
-    // In most cases this will return NULL but one last attempt to look it up.
-    return $this->getExistingContributionRecurValue('payment_instrument_id');
+    try {
+      // In most cases this will return NULL but one last attempt to look it up.
+      $paymentInstrumentID = $this->getExistingContributionRecurValue('payment_instrument_id');
+      return (int) $paymentInstrumentID;
+    }
+    catch (\CRM_Core_Exception $exception) {
+      return null;
+    }
   }
 
   /**
