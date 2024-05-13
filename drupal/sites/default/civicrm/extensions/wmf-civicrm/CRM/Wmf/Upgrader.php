@@ -2032,6 +2032,23 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
+   * Backfill payment_instrument_id on contribution_recur
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4475(): bool {
+    CRM_Core_DAO::executeQuery(
+      "UPDATE civicrm_contribution_recur cr
+      INNER JOIN wmf_contribution_extra x ON x.gateway_txn_id = cr.processor_id
+      INNER JOIN civicrm_contribution c ON c.id = x.entity_id
+      SET cr.payment_instrument_id = c.payment_instrument_id
+      WHERE cr.payment_instrument_id IS NULL
+      AND cr.create_date > '2024-03-01'"
+    );
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
