@@ -676,20 +676,6 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
 }
 
 /**
- * At a minimum, we need a country to store an address
- *
- * @param array $address
- *
- * @return bool
- */
-function wmf_civicrm_is_address_valid($address) {
-  if (!empty($address['country_id'])) {
-    return TRUE;
-  }
-  return FALSE;
-}
-
-/**
  * Update address for a contact.
  *
  * @param array $msg
@@ -701,6 +687,9 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
   // CiviCRM does a DB lookup instead of checking the pseudoconstant.
   // @todo fix Civi to use the pseudoconstant.
   $country_id = wmf_civicrm_get_country_id($msg['country']);
+  if (!$country_id) {
+    return;
+  }
   $address = [
     'is_primary' => 1,
     'street_address' => $msg['street_address'],
@@ -715,9 +704,6 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
   if (!empty($msg['state_province'])) {
     $address['state_province'] = $msg['state_province'];
     $address['state_province_id'] = wmf_civicrm_get_state_id($country_id, $msg['state_province']);
-  }
-  if (!wmf_civicrm_is_address_valid($address)) {
-    return;
   }
 
   $address_params = [
@@ -752,6 +738,9 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
   // We can do these lookups a bit more efficiently than Civi
   $country_id = wmf_civicrm_get_country_id($msg['country']);
 
+  if (!$country_id) {
+    return;
+  }
   $address_params = [
     'contact_id' => $contact_id,
     'location_type_id' => $loc_type_id,
@@ -770,10 +759,6 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
   if (!empty($msg['state_province'])) {
     $address_params['state_province'] = $msg['state_province'];
     $address_params['state_province_id'] = wmf_civicrm_get_state_id($country_id, $msg['state_province']);
-  }
-
-  if (!wmf_civicrm_is_address_valid($address_params)) {
-    return;
   }
   if (Database::isNativeTxnRolledBack()) {
     throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back before inserting address");
