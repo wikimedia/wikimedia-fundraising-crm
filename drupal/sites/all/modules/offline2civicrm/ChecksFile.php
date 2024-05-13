@@ -405,14 +405,9 @@ abstract class ChecksFile {
     // city or postal_code is not enough, as historically this update has not occurred at
     // all & introducing it this conservatively feels like a safe strategy.
     if (!empty($msg['street_address'])) {
-      wmf_civicrm_message_email_update($msg, $msg['contact_id']);
       wmf_civicrm_message_address_update($msg, $msg['contact_id']);
     }
-    elseif (!empty($msg['email'])) {
-      // location_update updates email, if set and address, if set.
-      // However, not quite ready to start dealing with the situation
-      // where less of the address is incoming than already exists
-      // hence only call this part if street_address is empty.
+    if (!empty($msg['email'])) {
       wmf_civicrm_message_email_update($msg, $msg['contact_id']);
     }
   }
