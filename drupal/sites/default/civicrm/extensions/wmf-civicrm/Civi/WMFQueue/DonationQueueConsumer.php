@@ -3,9 +3,9 @@
 namespace Civi\WMFQueue;
 
 use Civi\WMFException\WMFException;
+use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
 use Civi\WMFStatistic\PrometheusReporter;
-use DonationStatsCollector;
 use Queue2civicrmTrxnCounter;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\UtcDate;

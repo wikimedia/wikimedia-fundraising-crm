@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFStatistic\DonationStatsCollector;
+
 /**
  * Tests for DonationStatsCollector.
  *
@@ -17,7 +19,7 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
   protected $statsFileExtension;
 
   /**
-   * @var \DonationStatsCollector
+   * @var \Civi\WMFStatistic\DonationStatsCollector
    */
   protected $donationStatsCollector;
 
@@ -76,8 +78,8 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
   public function testCanGenerateDonationProcessingRateStats($message, $contribution) {
     $contribution['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution['receive_date']);
     // open up protected methods
-    $reflectionMethodAggregates = new ReflectionMethod('DonationStatsCollector', 'generateAggregateStats');
-    $reflectionMethodPurgeSuperfluousStats = new ReflectionMethod('DonationStatsCollector', 'purgeSuperfluousStats');
+    $reflectionMethodAggregates = new ReflectionMethod(DonationStatsCollector::class, 'generateAggregateStats');
+    $reflectionMethodPurgeSuperfluousStats = new ReflectionMethod(DonationStatsCollector::class, 'purgeSuperfluousStats');
     $reflectionMethodAggregates->setAccessible(TRUE);
     $reflectionMethodPurgeSuperfluousStats->setAccessible(TRUE);
 
@@ -121,7 +123,7 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
    */
   public function testCanGenerateAverageDataFromRecordedStats($message, $contribution) {
     // open up protected method
-    $reflectionMethod = new ReflectionMethod('DonationStatsCollector', 'generateAverageStats');
+    $reflectionMethod = new ReflectionMethod(DonationStatsCollector::class, 'generateAverageStats');
     $reflectionMethod->setAccessible(TRUE);
 
     //record stats
@@ -161,8 +163,8 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
    */
   public function testCanGenerateOverallDataFromRecordedStats($message, $contribution) {
     // open up protected methods
-    $reflectionMethodAverages = new ReflectionMethod('DonationStatsCollector', 'generateAverageStats');
-    $reflectionMethodOverall = new ReflectionMethod('DonationStatsCollector', 'generateOverallStats');
+    $reflectionMethodAverages = new ReflectionMethod(DonationStatsCollector::class, 'generateAverageStats');
+    $reflectionMethodOverall = new ReflectionMethod(DonationStatsCollector::class, 'generateOverallStats');
     $reflectionMethodAverages->setAccessible(TRUE);
     $reflectionMethodOverall->setAccessible(TRUE);
 
@@ -208,8 +210,8 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
   public function testGetOverallAverageGatewayTransactionAge($message, $contribution) {
     $contribution['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution['receive_date']);
     // open up protected methods
-    $reflectionMethodAverages = new ReflectionMethod('DonationStatsCollector', 'generateAverageStats');
-    $reflectionMethodOverall = new ReflectionMethod('DonationStatsCollector', 'generateOverallStats');
+    $reflectionMethodAverages = new ReflectionMethod(DonationStatsCollector::class, 'generateAverageStats');
+    $reflectionMethodOverall = new ReflectionMethod(DonationStatsCollector::class, 'generateOverallStats');
     $reflectionMethodAverages->setAccessible(TRUE);
     $reflectionMethodOverall->setAccessible(TRUE);
 
@@ -352,7 +354,7 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
       $statsWritten = rtrim(file_get_contents($statsFileFullPath)); // remove trailing \n
       $statsWrittenLinesArray = explode("\n", $statsWritten);
       foreach ($statsWrittenLinesArray as $statsLine) {
-        list($name, $value) = explode(" ", $statsLine);
+        [$name, $value] = explode(" ", $statsLine);
         if (array_key_exists($name, $statsWrittenAssocArray)) {
           if (is_array($statsWrittenAssocArray[$name])) {
             $statsWrittenAssocArray[$name][] = $value;

@@ -9,12 +9,13 @@ use Civi\Api4\ContributionTracking;
 use Civi\Api4\OptionValue;
 use Civi\Api4\PaymentToken;
 use Civi\Omnimail\MailFactory;
+use Civi\WMFStatistic\DonationStatsCollector;
+use Civi\WMFStatistic\ImportStatsCollector;
 use SmashPig\Core\Context;
+use SmashPig\Core\SequenceGenerators\Factory;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
-use SmashPig\Core\SequenceGenerators\Factory;
-use Civi\WMFStatistic\ImportStatsCollector;
 
 trait WMFEnvironmentTrait {
 
@@ -84,7 +85,7 @@ trait WMFEnvironmentTrait {
     $this->cleanupContact(['organization_name' => 'The Firm']);
     $this->cleanUpContact(['display_name' => 'Anonymous']);
     ImportStatsCollector::tearDown();
-    \DonationStatsCollector::tearDown();
+    DonationStatsCollector::tearDown();
     // Reset some SmashPig-specific things
     TestingDatabase::clearStatics();
     // Nullify the context for next run.
