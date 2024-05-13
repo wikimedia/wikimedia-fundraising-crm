@@ -44,6 +44,9 @@ trait WMFEnvironmentTrait {
     MailFactory::singleton()->setActiveMailer('test');
     // Initialize SmashPig with a fake context object
     TestingContext::init(TestingGlobalConfiguration::create());
+    if (!file_exists(\Civi::settings()->get('metrics_reporting_prometheus_path'))) {
+      \Civi::settings()->set('metrics_reporting_prometheus_path', \CRM_Core_Config::singleton()->configAndLogDir);
+    }
     $this->initializeSequenceGenerator();
   }
 
@@ -81,6 +84,7 @@ trait WMFEnvironmentTrait {
     $this->cleanupContact(['organization_name' => 'The Firm']);
     $this->cleanUpContact(['display_name' => 'Anonymous']);
     ImportStatsCollector::tearDown();
+    \DonationStatsCollector::tearDown();
     // Reset some SmashPig-specific things
     TestingDatabase::clearStatics();
     // Nullify the context for next run.
