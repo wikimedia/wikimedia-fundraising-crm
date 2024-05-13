@@ -4,6 +4,7 @@ namespace Civi\WMFQueue;
 
 use Civi\WMFException\WMFException;
 use Civi\WMFStatistic\ImportStatsCollector;
+use Civi\WMFStatistic\PrometheusReporter;
 use DonationStatsCollector;
 use Queue2civicrmTrxnCounter;
 use SmashPig\Core\DataStores\PendingDatabase;
@@ -64,7 +65,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
 
   protected function recordMetric($namespace, $metrics) {
     $prometheusPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
-    $reporter = new \PrometheusReporter($prometheusPath);
+    $reporter = new PrometheusReporter($prometheusPath);
     $reporter->reportMetrics($namespace, $metrics);
   }
 
