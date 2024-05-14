@@ -142,10 +142,6 @@ class Save extends AbstractAction {
       'org_contact_name' => 'Name',
       'org_contact_title' => 'Title',
       'employer' => 'Employer_Name',
-      // Partner is the custom field's name, Partner is also the custom group's name
-      // since other custom fields have names similar to core fields (Partner.Email)
-      // this api-similar namespacing convention seems like a good choice.
-      'Partner.Partner' => 'Partner',
       'Organization_Contact.Phone' => 'Phone',
       'Organization_Contact.Email' => 'Email',
       // These 2 fields already have aliases but adding
@@ -406,16 +402,10 @@ class Save extends AbstractAction {
     // This winds up being a list of permitted fields to update. The approach of
     // filtering out some fields here probably persists more because we
     // have not been brave enough to change historical code than an underlying reason.
-    $updateFields = [
-      'Partner.Partner',
-    ];
+    $updateFields = $replaceNames ? ['first_name', 'last_name'] : [];
 
     if (!empty($this->getExternalIdentifierField($this->getMessage()))) {
       $updateFields[] = 'External_Identifiers.' . $this->getExternalIdentifierField($this->getMessage());
-    }
-    if ($replaceNames) {
-      $updateFields[] = 'first_name';
-      $updateFields[] = 'last_name';
     }
     $msg = $this->getMessage();
     $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
@@ -695,6 +685,7 @@ class Save extends AbstractAction {
       'addressee_display' => 'addressee_display',
       $this->getApiv3FieldName('first_name_phonetic') => 'Communication.first_name_phonetic',
       $this->getApiv3FieldName('last_name_phonetic') => 'Communication.last_name_phonetic',
+      $this->getApiv3FieldName('Partner') => 'Partner.Partner',
     ];
     foreach ($apiFields as $api3Field => $api4Field) {
       // We are currently calling apiv3 here but aim to call v4.
