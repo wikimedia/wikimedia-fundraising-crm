@@ -4,6 +4,7 @@ namespace Civi\WMFQueue;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\CustomField;
 use Civi\Api4\Address;
@@ -13,7 +14,7 @@ use Civi\Api4\OptionValue;
 use Civi\Api4\Phone;
 use Civi\Api4\Relationship;
 use Civi\Api4\StateProvince;
-use Civi\WMFHelper\ContributionRecur;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use SmashPig\Core\DataStores\PendingDatabase;
 use Civi\WMFStatistic\ImportStatsCollector;
 
@@ -900,7 +901,7 @@ class DonationQueueTest extends BaseQueueTestCase {
             'thankyou_date' => '',
             'total_amount' => 2.34,
             'trxn_id' => "TEST_GATEWAY 5555555",
-            'financial_type_id' => ContributionRecur::getFinancialTypeForFirstContribution(),
+            'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
           ],
         ],
       ],
@@ -1439,6 +1440,41 @@ class DonationQueueTest extends BaseQueueTestCase {
         'direct', TRUE, NULL,
       ],
     ];
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringInitialSchemeTxnId(): void {
+    $msg = [
+      'first_name' => 'Lex',
+      'currency' => 'USD',
+      'date' => '2023-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'totally.different@example.com',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'Ingenico',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'recurring' => 1,
+      'recurring_payment_token' => mt_rand(),
+      'initial_scheme_transaction_id' => 'FlargBlarg12345',
+      'user_ip' => '123.232.232',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+    $recurRecord = ContributionRecur::get(FALSE)
+      ->addSelect('contribution_recur_smashpig.initial_scheme_transaction_id')
+      ->addWhere('id', '=', $contribution['contribution_recur_id'])
+      ->execute()
+      ->first();
+    $this->assertEquals(
+      'FlargBlarg12345',
+      $recurRecord['contribution_recur_smashpig.initial_scheme_transaction_id']
+    );
   }
 
 }
