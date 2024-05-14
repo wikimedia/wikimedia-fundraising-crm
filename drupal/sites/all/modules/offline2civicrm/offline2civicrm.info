@@ -13,7 +13,6 @@ files[] = EngageChecksFile.php
 files[] = ChecksFile.php
 files[] = ChecksImportLog.php
 files[] = ForeignChecksFile.php
-files[] = BitpayFile.php
 files[] = BenevityFile.php
 files[] = CitibankIndividualsFile.php
 files[] = FidelityFile.php
