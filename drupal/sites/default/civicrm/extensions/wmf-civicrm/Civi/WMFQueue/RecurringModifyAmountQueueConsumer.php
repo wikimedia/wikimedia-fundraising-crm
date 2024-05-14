@@ -213,7 +213,6 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
     $contact_id = $messageObject->getExistingContributionRecurValue('contact_id');
     // FundraiseUp also sends contact updates in the notification
     WMFContact::save(FALSE)
-      ->setContactID($contact_id)
       ->setMessage($msg)
       ->execute()->first();
 

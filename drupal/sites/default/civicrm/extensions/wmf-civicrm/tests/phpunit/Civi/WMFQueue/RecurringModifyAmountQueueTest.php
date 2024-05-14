@@ -3,7 +3,9 @@
 namespace Civi\WMFQueue;
 
 use Civi\Api4\Activity;
+use Civi\Api4\Address;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\Email;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\ContactTestTrait;
 
@@ -74,9 +76,52 @@ class RecurringModifyAmountQueueTest extends BaseQueueTestCase {
     $this->assertEquals($testRecurring['amount'] + $additionalAmount, $updatedRecurring['amount']);
     $this->assertEquals('Added 5.00 USD', $activity['subject']);
     $this->assertEquals(json_encode($amountDetails), $activity['details']);
+  }
 
-    $this->ids['ContributionRecur'][$testRecurring['id']] = $testRecurring['id'];
-    $this->ids['Activity'][$activity['id']] = $activity['id'];
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringExternalModification(): void {
+    $contactID = $this->createIndividual([
+      'email_primary.email' => 'old_mouse@wikimedia.org',
+      'street_address' => 'Yellow Brick Road',
+      'country_id:name' => 'US',
+    ]);
+    $testRecurring = $this->createContributionRecur([
+      'contact_id' => $contactID,
+    ]);
+    $additionalAmount = 5.00;
+    $msg = [
+      'txn_type' => 'external_recurring_modification',
+      'contribution_recur_id' => $testRecurring['id'],
+      'amount' => $testRecurring['amount'] + $additionalAmount,
+      'currency' => $testRecurring['currency'],
+      'email' => 'mouse@wikimedia.org',
+      'country' => 'US',
+      'street_address' => 'Sesame Street',
+      'city' => 'PleasantVille',
+      'postal_code' => 90210,
+      'first_name' => 'Safe',
+      'last_name' => 'Mouse',
+    ];
+
+    $this->processMessage($msg);
+    $updatedRecurring = ContributionRecur::get(FALSE)
+      ->addSelect('id', 'amount', 'contact_id')
+      ->addWhere('id', '=', $testRecurring['id'])
+      ->execute()
+      ->first();
+
+    $this->assertEquals($testRecurring['amount'] + $additionalAmount, $updatedRecurring['amount']);
+
+    $email = Email::get(FALSE)->addSelect('email')
+      ->addWhere('contact_id', '=', $updatedRecurring['contact_id'])->execute()->first()['email'];
+    $this->assertEquals('mouse@wikimedia.org', $email);
+
+    $address = Address::get(FALSE)->addSelect('street_address', 'country_id.iso_code')
+      ->addWhere('contact_id', '=', $updatedRecurring['contact_id'])->execute()->first();
+    $this->assertEquals('Sesame Street', $address['street_address']);
+    $this->assertEquals('US', $address['country_id.iso_code']);
   }
 
   /**
