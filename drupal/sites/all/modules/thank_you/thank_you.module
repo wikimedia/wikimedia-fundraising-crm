@@ -3,6 +3,7 @@
 use Civi\Api4\ThankYou;
 use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
+use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
 use Civi\WMFTransaction;
 use SmashPig\Core\UtcDate;
@@ -418,22 +419,15 @@ EOT;
     $metrics["${gateway}_thank_you_emails"] = $count;
   }
   $metrics['total_thank_you_emails'] = $counter->getCountTotal();
-  module_invoke(
-    'metrics_reporting',
-    'report_metrics',
-    'thank_you_emails_sent',
-    $metrics
-  );
+  $prometheusPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
+  $reporter = new PrometheusReporter($prometheusPath);
+  $reporter->reportMetrics('thank_you_emails_sent', $metrics);
   $ageMetrics = [];
   foreach ($counter->getAverageAges() as $gateway => $age) {
     $ageMetrics["${gateway}_thank_you_donation_age"] = $age;
   }
-  module_invoke(
-    'metrics_reporting',
-    'report_metrics',
-    'thank_you_donation_age',
-    $ageMetrics
-  );
+
+  $reporter->reportMetrics('thank_you_donation_age', $ageMetrics);
   \Civi::log('wmf')->info(
     'thank_you: Sent {total_thank_you_emails} thank you emails.',
     ['total_thank_you_emails' => $metrics['total_thank_you_emails']]
