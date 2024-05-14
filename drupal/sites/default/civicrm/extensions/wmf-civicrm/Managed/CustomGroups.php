@@ -1995,7 +1995,7 @@ function _wmf_civicrm_get_address_data_fields(): array {
         'iwave' => 'iWave',
         'donor' => 'Donor Supplied',
         'paypal' => 'PayPal Account',
-        'fundraise_up' => 'Fundraise Up',
+        'fundraiseup' => 'Fundraise Up',
       ],
     ],
     'address_update_date' => [

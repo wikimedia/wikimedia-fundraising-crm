@@ -2057,8 +2057,8 @@ AND q.id BETWEEN %1 AND %2";
     ] + $optionValues;
     $fundraiseUp = [
       'label' => 'Fundraise Up',
-      'name' => 'fundraise_up',
-      'value' => 'fundraise_up',
+      'name' => 'fundraiseup',
+      'value' => 'fundraiseup',
     ] + $optionValues;
     OptionValue::create(FALSE)
       ->setValues($paypal)
