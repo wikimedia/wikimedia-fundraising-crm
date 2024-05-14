@@ -1,5 +1,7 @@
 <?php
 
+namespace Civi\WMFStatistic;
+
 /**
  * A class to keep track of transaction counts, grouped by payment gateway
  */
@@ -11,8 +13,7 @@ class Queue2civicrmTrxnCounter {
 
   protected $ages = [];
 
-  protected function __construct() {
-  }
+  protected function __construct() {}
 
   public static function instance() {
     if (!self::$singleton) {
@@ -90,4 +91,5 @@ class Queue2civicrmTrxnCounter {
     $averages['overall'] = $overallCount === 0 ? 0 : $overallTotal / $overallCount;
     return $averages;
   }
+
 }

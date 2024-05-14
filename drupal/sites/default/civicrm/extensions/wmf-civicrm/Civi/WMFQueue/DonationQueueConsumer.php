@@ -6,7 +6,7 @@ use Civi\WMFException\WMFException;
 use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
 use Civi\WMFStatistic\PrometheusReporter;
-use Queue2civicrmTrxnCounter;
+use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
