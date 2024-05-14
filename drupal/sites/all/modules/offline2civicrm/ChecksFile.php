@@ -319,11 +319,187 @@ abstract class ChecksFile {
       // is SUPER confusing because of the code history.
       // For now, we have copied same wrangling as is done in message_insert
       // but hope to consolidate on 1 call.
-      $save = new Save('WMFContact', 'save');
-      $save->setMessage($msg);
-      $save->handleUpdate();
+      $this->handleUpdate($msg);
     }
     return _message_contribution_insert($msg);
+  }
+
+  /**
+   * Handle a contact update - this is moved here but not yet integrated.
+   *
+   * Calling this directly is deprecated - we are working towards eliminating that.
+   *
+   * This is an interim step... getting it onto the same class.
+   *
+   * @param array $msg
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function handleUpdate(array $msg): void {
+    $updateFields = [
+      'do_not_email',
+      'do_not_mail',
+      'do_not_phone',
+      'do_not_trade',
+      'do_not_sms',
+      'is_opt_out',
+      'prefix_id:label',
+      'suffix_id:label',
+      'legal_identifier',
+      'addressee_custom',
+      'addressee_display',
+      'Partner.Partner',
+    ];
+    $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
+
+    if (($msg['contact_type'] ?? NULL) === 'Organization') {
+      // Find which of these keys we have update values for.
+      $customFieldsToUpdate = array_filter(array_intersect_key($msg, array_fill_keys([
+        'Organization_Contact.Name',
+        'Organization_Contact.Email',
+        'Organization_Contact.Phone',
+        'Organization_Contact.Title',
+      ], TRUE)));
+      if (!empty($customFieldsToUpdate)) {
+        if ($msg['gross'] >= 25000) {
+          // See https://phabricator.wikimedia.org/T278892#70402440)
+          // 25k plus gifts we keep both names for manual review.
+          $existingCustomFields = \Civi\Api4\Contact::get(FALSE)
+            ->addWhere('id', '=', $msg['contact_id'])
+            ->setSelect(array_keys($customFieldsToUpdate))
+            ->execute()
+            ->first();
+          foreach ($customFieldsToUpdate as $fieldName => $value) {
+            if (stripos($existingCustomFields[$fieldName], $value) === FALSE) {
+              $updateParams[$fieldName] = empty($existingCustomFields[$fieldName]) ? $value : $existingCustomFields[$fieldName] . '|' . $value;
+            }
+          }
+        }
+        else {
+          $updateParams = array_merge($updateParams, $customFieldsToUpdate);
+        }
+      }
+    }
+    else {
+      // Individual-only custom fields
+      if (!empty($msg['employer'])) {
+        // WMF-only custom field
+        $updateParams['Communication.Employer_Name'] = $msg['employer'];
+      }
+      if (!empty($msg['language'])) {
+        // Only update this if we've got something on the message, so we don't
+        // overwrite previous good data with some lame default.
+        $updateParams['preferred_language'] = $msg['language'];
+      }
+    }
+    if (!empty($updateParams)) {
+      \Civi\Api4\Contact::update(FALSE)
+        ->addWhere('id', '=', $msg['contact_id'])
+        ->setValues($updateParams)
+        ->execute();
+    }
+    $this->createEmployerRelationshipIfSpecified($msg['contact_id'], $msg);
+
+    // We have set the bar for invoking a location update fairly high here - ie state,
+    // city or postal_code is not enough, as historically this update has not occurred at
+    // all & introducing it this conservatively feels like a safe strategy.
+    if (!empty($msg['street_address'])) {
+      wmf_civicrm_message_address_update($msg, $msg['contact_id']);
+    }
+    if (!empty($msg['email'])) {
+      wmf_civicrm_message_email_update($msg, $msg['contact_id']);
+    }
+  }
+
+  /**
+   * When employer_id is present in the message, create the 'Employee of' relationship,
+   * specifying that it was provided by the donor if the source_type is 'payments'.
+   * Also set any other employer relationships to inactive.
+   *
+   * @param int $contactId
+   * @param array $msg
+   * @throws WMFException
+   */
+  protected function createEmployerRelationshipIfSpecified(int $contactId, array $msg) {
+    if (empty($msg['employer_id']) || $contactId == $msg['employer_id']) {
+      // Do nothing if employer ID is unset or the same as the contact ID
+      // The latter can happen when we're importing matching gifts
+      return;
+    }
+
+    $existingRelationships = Relationship::get(FALSE)
+      ->addWhere('contact_id_a', '=', $contactId)
+      ->addWhere('relationship_type_id:name', '=', 'Employee of')
+      ->addSelect('is_active')
+      ->addSelect('contact_id_b')
+      ->addSelect('custom.*')
+      ->execute();
+
+    $needToAddNewRelationship = TRUE;
+    $isProvidedByDonor = isset($msg['source_type']) && $msg['source_type'] === 'payments';
+    $relationshipParams = [];
+    if ($isProvidedByDonor) {
+      $relationshipParams['Relationship_Metadata.provided_by_donor'] = 1;
+    }
+
+    foreach ($existingRelationships as $existingRelationship) {
+      if ($existingRelationship['contact_id_b'] == $msg['employer_id']) {
+        // Found existing relationship with the same employer
+        $needToAddNewRelationship = FALSE;
+        if (
+          ($existingRelationship['is_active'] == FALSE) ||
+          ($isProvidedByDonor && $existingRelationship['Relationship_Metadata.provided_by_donor'] == FALSE)
+        ) {
+          // Set is_active and provided_by_donor flag
+          $values = array_merge($relationshipParams, ['is_active' => 1]);
+          Relationship::update(FALSE)
+            ->addWhere('id', '=', $existingRelationship['id'])
+            ->setValues($values)
+            ->execute();
+        }
+      }
+      elseif ($existingRelationship['is_active'] == TRUE) {
+        // Active relationship with different employer should be set to inactive
+        Relationship::update(FALSE)
+          ->addWhere('id', '=', $existingRelationship['id'])
+          ->setValues(['is_active' => 0])
+          ->execute();
+      }
+    }
+
+    if ($needToAddNewRelationship) {
+      $this->createRelationship($contactId, $msg['employer_id'], 'Employee of', $relationshipParams);
+    }
+  }
+
+  /**
+   * Create a relationship to another specified contact.
+   *
+   * @param int $contact_id
+   * @param int $relatedContactID
+   * @param string $relationshipType
+   * @param array $customFields relationship-specific custom fields
+   *
+   * @throws \Civi\WMFException\WMFException
+   */
+  protected function createRelationship(int $contact_id, int $relatedContactID, string $relationshipType, array  $customFields = []): void {
+    $params = array_merge($customFields, [
+      'contact_id_a' => $contact_id,
+      'contact_id_b' => $relatedContactID,
+      'relationship_type_id:name' => $relationshipType,
+      'is_active' => 1,
+      'is_current_employer' => $relationshipType === 'Employee of',
+    ]);
+
+    try {
+      Relationship::create(FALSE)
+        ->setValues($params)
+        ->execute();
+    }
+    catch (\CRM_Core_Exception $ex) {
+      throw new WMFException(WMFException::IMPORT_CONTACT, $ex->getMessage());
+    }
   }
 
   /**

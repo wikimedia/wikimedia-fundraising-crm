@@ -35,6 +35,7 @@ function civicrm_api3_omnimailing_get($params) {
   $mailings = $mailer->getMailings($mailerParameters)->getResponse();
   $results = [];
   foreach ($mailings as $mailing) {
+    /* @var \Omnimail\Silverpop\Responses\Mailing $mailing */
     try {
       $result = [
         'subject' => $mailing->getSubject(),
@@ -50,7 +51,8 @@ function civicrm_api3_omnimailing_get($params) {
         'number_suppressed' => $mailing->getNumberSuppressedByProvider(),
         // 'forwarded'
         'number_blocked' => $mailing->getNumberBlocked(),
-        // 'clicked_total' => $stats['NumGrossClick'],
+        'clicked_total' => $mailing->getNumberClicked(),
+        'clicked_unique' => $mailing->getNumberUniqueClicked(),
         'number_abuse_complaints' => $mailing->getNumberAbuseReports(),
         'list_id' => $mailing->getListId(),
         'body_html' => $mailing->getHtmlBody(),

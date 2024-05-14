@@ -3,6 +3,7 @@
 namespace Civi\WMFQueueMessage;
 
 use Civi\API\EntityLookupTrait;
+use Civi\Api4\Contact;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class Message {
@@ -84,7 +85,33 @@ class Message {
   }
 
   public function getContactID(): ?int {
-    return !empty($this->message['contact_id']) ? (int) $this->message['contact_id'] : NULL;
+    if ($this->isDefined('Contact')) {
+      return $this->lookup('Contact', 'id');
+    }
+    $contactID = !empty($this->message['contact_id']) ? (int) $this->message['contact_id'] : NULL;
+    if (!empty($this->message['contact_hash'])) {
+      $contact = Contact::get(FALSE)
+        ->addWhere('id', '=', $contactID)
+        ->addWhere('hash', '=', $this->message['contact_hash'])
+        ->addSelect('email_primary.email')
+        ->execute()->first();
+      if ($contact) {
+        // Store the values in case we want to look them up.
+        $this->define('Contact', 'Contact', $contact);
+        return $contactID;
+      }
+      return NULL;
+    }
+    return $contactID;
+  }
+
+  public function filterNull($array): array {
+    foreach ($array as $key => $value) {
+      if ($value === NULL) {
+        unset($array[$key]);
+      }
+    }
+    return $array;
   }
 
   /**

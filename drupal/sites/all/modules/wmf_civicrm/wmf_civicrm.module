@@ -352,19 +352,6 @@ function _message_contribution_recur_insert(array $msg, $recurring_transaction_i
 }
 
 /**
- * @param DonationMessage $msg
- *
- * @return array
- * @throws \Civi\WMFException\WMFException
- */
-function _verify_message_and_stage(DonationMessage $message): array {
-  _get_import_timer()->startImportTimer("verify_and_stage");
-  $msg = wmf_civicrm_verify_message_and_stage($message);
-  _get_import_timer()->endImportTimer("verify_and_stage");
-  return $msg;
-}
-
-/**
  * @param array $msg
  *
  * @return mixed|null
@@ -640,12 +627,9 @@ function wmf_civicrm_get_valid_languages() {
  * @throws \Civi\WMFException\WMFException
  */
 function wmf_civicrm_message_email_update($msg, $contact_id) {
-  if (empty($msg['email'])) {
-    return;
-  }
 
   try {
-    $loc_type_id = isset($msg['email_location_type_id']) ? $msg['email_location_type_id'] : wmf_civicrm_get_default_location_type_id();
+    $loc_type_id = isset($msg['email_location_type_id']) ? $msg['email_location_type_id'] : CRM_Core_BAO_LocationType::getDefault()->id;
     if (!is_numeric($loc_type_id)) {
       $loc_type_id = CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', $loc_type_id);
     }
@@ -703,7 +687,7 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
 
     civicrm_api3('Email', 'create', $emailParams);
   }
-  catch (CiviCRM_API3_Exception $e) {
+  catch (CRM_Core_Exception $e) {
     // Constraint violations occur when data is rolled back to resolve a deadlock.
     $code = (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTACT;
     throw new WMFException($code, "Couldn't store email for the contact.", $e->getExtraParams());
