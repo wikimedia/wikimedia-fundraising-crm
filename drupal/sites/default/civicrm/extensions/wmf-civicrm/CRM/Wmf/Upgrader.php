@@ -2048,6 +2048,27 @@ AND q.id BETWEEN %1 AND %2";
     return TRUE;
   }
 
+  public function upgrade_4480(): bool {
+    $optionValues = ['option_group_id:name' => 'Address_Data_Source', 'is_active' => TRUE];
+    $paypal = [
+      'label' => 'PayPal',
+      'name' => 'paypal',
+      'value' => 'paypal',
+    ] + $optionValues;
+    $fundraiseUp = [
+      'label' => 'Fundraise Up',
+      'name' => 'fundraise_up',
+      'value' => 'fundraise_up',
+    ] + $optionValues;
+    OptionValue::create(FALSE)
+      ->setValues($paypal)
+      ->execute();
+    OptionValue::create(FALSE)
+      ->setValues($fundraiseUp)
+      ->execute();
+    return TRUE;
+  }
+
   /**
    * @param array $conversions
    *

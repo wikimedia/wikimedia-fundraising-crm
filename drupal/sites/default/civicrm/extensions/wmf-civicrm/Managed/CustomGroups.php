@@ -1994,6 +1994,8 @@ function _wmf_civicrm_get_address_data_fields(): array {
         'staff' => 'Staff Supplied',
         'iwave' => 'iWave',
         'donor' => 'Donor Supplied',
+        'paypal' => 'PayPal Account',
+        'fundraise_up' => 'Fundraise Up',
       ],
     ],
     'address_update_date' => [
