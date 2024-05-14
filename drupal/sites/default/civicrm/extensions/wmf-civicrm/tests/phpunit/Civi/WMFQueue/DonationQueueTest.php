@@ -11,6 +11,7 @@ use Civi\Api4\Email;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\OptionValue;
 use Civi\Api4\Phone;
+use Civi\Api4\Relationship;
 use Civi\Api4\StateProvince;
 use Civi\WMFHelper\ContributionRecur;
 use SmashPig\Core\DataStores\PendingDatabase;
@@ -1359,6 +1360,85 @@ class DonationQueueTest extends BaseQueueTestCase {
     catch (\CRM_Core_Exception $e) {
       $this->fail('Failed to retrieve addresses');
     }
+  }
+
+  /**
+   * @dataProvider employerRelationDataProvider
+   *
+   * @param string $sourceType
+   * @param bool $isUpdate
+   * @param ?bool $expected
+   *
+   * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
+   */
+  public function testIndicatesEmployerProvidedByDonor(string $sourceType, bool $isUpdate, ?bool $expected) {
+    $orgContact = $this->createTestEntity('Contact', [
+      'organization_name' => 'The Firm',
+      'contact_type' => 'Organization',
+    ], 'employer');
+
+    $contactParams = [
+      'first_name' => 'Philip',
+      'last_name' => 'Mouse',
+    ];
+    if ($isUpdate) {
+      $existingContactID = $this->createIndividual(array_merge($contactParams, [
+        'contact_type' => 'Individual',
+        'employer_id' => $orgContact['id'],
+      ]));
+      Email::create(FALSE)
+        ->setValues([
+          'contact_id' => $existingContactID,
+          'email' => 'pmason@puritanfoods.com',
+        ])
+        ->execute();
+    }
+
+    $msg = array_merge(
+      $contactParams, $this->getMinimalImportData(mt_rand())
+    );
+    $msg['email'] = 'pmason@puritanfoods.com';
+    $msg['source_type'] = $sourceType;
+    $msg['employer_id'] = $orgContact['id'];
+
+    $this->processMessageWithoutQueuing($msg, 'Donation');
+    $contribution = $this->getContributionForMessage($msg);
+    $relationship = Relationship::get(FALSE)
+      ->addWhere('contact_id_a', '=', $contribution['contact_id'])
+      ->addWhere('contact_id_b', '=', $orgContact['id'])
+      ->addWhere('relationship_type_id:name', '=', 'Employee of')
+      ->addWhere('is_active', '=', 1)
+      ->addSelect('custom.*')
+      ->execute();
+
+    $this->assertCount(1, $relationship);
+    $this->assertEquals(
+      $expected, $relationship->first()['Relationship_Metadata.provided_by_donor']
+    );
+    $this->assertContactValue($contribution['contact_id'], 'The Firm', 'employer_id.display_name');
+    // @todo test with active relationship to other employer
+  }
+
+  /**
+   * Data provider for employer metadata tests
+   * @return array[]
+   */
+  public function employerRelationDataProvider(): array {
+    return [
+      'Should create new donor with employer, provided_by_donor = TRUE' => [
+        'payments', FALSE, TRUE,
+      ],
+      'Should update donor with employer relationship, provided_by_donor = TRUE' => [
+        'payments', TRUE, TRUE,
+      ],
+      'Should create new donor with employer, provided_by_donor not set' => [
+        'direct', FALSE, NULL,
+      ],
+      'Should update donor with employer relationship, provided_by_donor not set' => [
+        'direct', TRUE, NULL,
+      ],
+    ];
   }
 
 }
