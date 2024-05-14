@@ -12,7 +12,6 @@ environment_indicator
 exchange_rates
 ingenico_audit
 large_donation
-metrics_reporting
 offline2civicrm
 queue2civicrm
 redis

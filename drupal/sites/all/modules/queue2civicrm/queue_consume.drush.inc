@@ -12,21 +12,6 @@
 function queue_consume_drush_command() {
   $items = [];
 
-  $items['queue-consume'] = [
-    'description' =>
-      'Consumes items from a specified queue and processes them into CiviCRM',
-    'examples' => [
-      'drush queue-consume' => '# Consume the queue',
-      'drush qc --message-limit=10' => '# Process up to 10 contributions',
-      'drush qc --time-limit=59 --wait=1' => '# Wait for new messages, till 59 seconds have passed',
-    ],
-    'options' => [
-      'message-limit' => 'Number of contributions to process. If set to zero, it will be treated as unlimited',
-      'time-limit' => 'Time limit in seconds for job',
-      'wait' => 'When true, wait for new messages rather than exiting when the queue is empty'
-    ],
-    'aliases' => ['qc'],
-  ];
   $items['donations-process-messagefile'] = [
     'description' =>
       'Feeds messages directly into the import pipeline, bypassing the queue.',
@@ -45,8 +30,6 @@ function queue_consume_drush_command() {
  */
 function queue_consume_drush_help($section) {
   switch ($section) {
-    case 'drush:queue-consume':
-      return dt("Pulls items from a message queue and processes them into CiviCRM");
     case 'drush:donations-process-messagefile':
       return dt("Feeds messages directly into the import pipeline, bypassing the queue.");
   }
@@ -75,33 +58,6 @@ function drush_queue_consume_validate() {
     }
   }
   return TRUE;
-}
-
-/**
- * Fires the 'batch_process' method in the queue2civicrm module.
- *
- * This simply executes the code necessary to pull and process items from
- * a queue.  All configurations happen in the module.
- */
-function drush_queue_consume() {
-  // Set the number of contributions to batch
-  $messageLimit = drush_get_option('message-limit');
-  $timeLimit = drush_get_option('time-limit');
-  $wait = drush_get_option('wait', FALSE);
-
-  module_invoke('queue2civicrm', 'batch_process', $messageLimit, $timeLimit, $wait);
-  $errors = drush_get_error_log();
-  if (!empty($errors)) {
-    echo "\n***ERRORS***";
-    foreach ($errors as $error => $msgarray) {
-      echo "\n$error: ";
-      foreach ($msgarray as $count => $message) {
-        echo "\n    $message";
-      }
-    }
-    echo "\n\n";
-    exit(drush_get_error());
-  }
 }
 
 /**

@@ -1,8 +1,10 @@
 <?php
 
+namespace Civi\WMFStatistic;
+
+use SmashPig\Core\UtcDate;
 use Statistics\Collector\AbstractCollector;
 use Statistics\Exporter\Prometheus as PrometheusStatsExporter;
-use SmashPig\Core\UtcDate;
 
 /**
  * Class DonationStatsCollector
@@ -18,49 +20,52 @@ class DonationStatsCollector extends AbstractCollector {
    *
    * @var string
    */
-  public $outputFileName = "donations";
+  public string $outputFileName = 'donations';
 
   /**
    * Output file path.
    *
    * @var string
    */
-  public $outputFilePath;
+  public string $outputFilePath;
 
-  /*
-   * Stats timer namespace used for processing rate stats
+  /**
+   * Stats timer namespace used for processing rate stats.
+   *
+   * @var string
    */
-  public $timerNamespace = "queue2civicrm";
+  public string $timerNamespace = 'queue2civicrm';
 
   /**
    * @var string
    */
-  protected $defaultNamespace = "donations";
+  protected string $defaultNamespace = 'donations';
 
   /**
-   * Populated during generateOverallStats() and used within convenience method getOverallAverageGatewayTransactionAge()
+   * Populated during generateOverallStats() and used within convenience method
+   * getOverallAverageGatewayTransactionAge()
    *
    * @var float
    */
   protected $overallAverageGatewayTransactionAge;
 
-
   /**
    * Record donation stats:
    * 1) Number of donations by gateway
    * 2) Time between gateway transaction time and civiCRM import time (now)
-   * 3) Time between donation message enqueued time and civiCRM import time (now)
+   * 3) Time between donation message enqueued time and civiCRM import time
+   * (now)
    *
    * This method is called within DonationQueueConsumer::processMessage()
-   *
-   * @see DonationQueueConsumer::processMessage()
    *
    * @param array $message
    * @param array $contribution
    *
    * @throws \Statistics\Exception\StatisticsCollectorException
+   * @see DonationQueueConsumer::processMessage()
+   *
    */
-  public function recordDonationStats($message, $contribution) {
+  public function recordDonationStats(array $message, array $contribution) {
     $gateway = $message['gateway'];
     $gatewayTransactionTime = $contribution['receive_date'];
 
@@ -98,7 +103,9 @@ class DonationStatsCollector extends AbstractCollector {
   /**
    * Generate export stats data and export to backends.
    *
-   * Currently we only export to Prometheus.
+   * Currently, we only export to Prometheus.
+   *
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function export() {
     $this->generateAggregateStats();
@@ -109,13 +116,15 @@ class DonationStatsCollector extends AbstractCollector {
   /**
    * Get the output file path.
    *
-   * Default path is CiviCRM setting 'metrics_reporting_prometheus_path' unless outputFilePath is set.
+   * Default path is CiviCRM setting 'metrics_reporting_prometheus_path' unless
+   * outputFilePath is set.
    *
    * @return null|string
    */
-  public function getOutputFilePath() {
-    if ($this->outputFilePath === NULL) {
-      $this->outputFilePath = \Civi::settings()->get('metrics_reporting_prometheus_path');
+  public function getOutputFilePath(): string {
+    if (!isset($this->outputFilePath)) {
+      $this->outputFilePath = \Civi::settings()
+        ->get('metrics_reporting_prometheus_path');
     }
     return $this->outputFilePath;
   }
@@ -123,12 +132,15 @@ class DonationStatsCollector extends AbstractCollector {
   /**
    * Convenience method for logging average transaction ages
    */
-  public function getOverallAverageGatewayTransactionAge() {
+  public function getOverallAverageGatewayTransactionAge(): float {
     return $this->overallAverageGatewayTransactionAge;
   }
 
   /**
-   * Some prometheus specific mapping and then export using PrometheusStatsExporter
+   * Some prometheus specific mapping and then export using
+   * PrometheusStatsExporter
+   *
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   protected function exportToPrometheus() {
     $this->mapStatsKeysToPrometheusLabels();
@@ -137,7 +149,10 @@ class DonationStatsCollector extends AbstractCollector {
   }
 
   /**
-   * Generate the averages and overall stats from the individually recorded stats
+   * Generate the averages and overall stats from the individually recorded
+   * stats
+   *
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   protected function generateAggregateStats() {
     $this->generateAverageStats();
@@ -145,9 +160,9 @@ class DonationStatsCollector extends AbstractCollector {
     $this->generateAverageDonationsProcessingTimeStats();
   }
 
-
   /**
-   * The below averaging would be less verbose if the Stats Collector could also average literal values.
+   * The below averaging would be less verbose if the Stats Collector could
+   * also average literal values.
    */
   protected function generateAverageStats() {
     if ($this->exists("transaction_age")) {
@@ -165,6 +180,9 @@ class DonationStatsCollector extends AbstractCollector {
     }
   }
 
+  /**
+   * @throws \Statistics\Exception\StatisticsCollectorException
+   */
   protected function generateOverallStats() {
     if ($this->exists("transaction_age")) {
       $this->overallAverageGatewayTransactionAge = $overallAverageGatewayTransactionAge = $this->avg("transaction_age");
@@ -186,21 +204,21 @@ class DonationStatsCollector extends AbstractCollector {
     }
   }
 
-  /*
-   * Record the average number of donations processed within a per-second time period using
-   * average-donations-processed-per-second as the base and extrapolating upwards to
-   * estimate averages over longer periods.
+  /**
+   * Record the average number of donations processed within a per-second time
+   * period using average-donations-processed-per-second as the base and
+   * extrapolating upwards to estimate averages over longer periods.
    *
-   * This method of blind average scaling will distort the *actual* messages-processed
-   * per-time-window so will not be useful or accurate above short time periods.
+   * This method of blind average scaling will distort the *actual*
+   * messages-processed per-time-window so will not be useful or accurate above
+   * short time periods.
    *
-   * This stat is passed as an associative array so that it is mapped as a Prometheus metric
-   * with labels for each seconds grouping.
+   * This stat is passed as an associative array so that it is mapped as a
+   * Prometheus metric with labels for each seconds grouping.
    *
-   * @param $batchProcessingTime
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
-  protected function generateAverageDonationsProcessingTimeStats() {
-
+  protected function generateAverageDonationsProcessingTimeStats(): void {
     // get total donations count
     $countStats = $this->get("count", FALSE, []);
     if (isset($countStats['all'])) {
@@ -231,8 +249,10 @@ class DonationStatsCollector extends AbstractCollector {
   }
 
   /**
-   * We only want to pull the *unique* summary data when exporting to Prometheus.
-   * Superfluous are purged prior to export.
+   * We only want to pull the *unique* summary data when exporting to
+   * Prometheus. Superfluous are purged prior to export.
+   *
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   protected function purgeSuperfluousStats() {
     if ($this->exists("enqueued_age")) {
@@ -247,12 +267,16 @@ class DonationStatsCollector extends AbstractCollector {
   }
 
   /**
-   * We map the some stats data to a more Prometheus-friendly format so that these stats are processed
-   * with gateway-specific labels. We do this separately to allow exporting of these stats to other backends in the
+   * We map some stats data to a more Prometheus-friendly format so that
+   * these stats are processed with gateway-specific labels. We do this
+   * separately to allow exporting of these stats to other backends in the
    * future.
    *
-   * (to export to another backend, we would probably want to change the *global* namespaces written to below to
-   * something more backend specific e.g. backend.average_transaction_age, at point of mapping)
+   * (to export to another backend, we would probably want to change the
+   * *global* namespaces written to below to something more backend specific
+   * e.g. backend.average_transaction_age, at point of mapping)
+   *
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   protected function mapStatsKeysToPrometheusLabels() {
     $statsToBeMappedToLabelFormat = [
@@ -261,7 +285,7 @@ class DonationStatsCollector extends AbstractCollector {
       'count',
     ];
     // due to array_map not allowing you to modify array keys, we go the long way around
-    $mapPaymentGatewayKeysToPrometheusLabelsFunc = function (&$value) {
+    $mapPaymentGatewayKeysToPrometheusLabelsFunc = function(&$value) {
       $value = "gateway=$value";
     };
 
@@ -281,7 +305,7 @@ class DonationStatsCollector extends AbstractCollector {
    *
    * @return string
    */
-  protected function getDefaultNamespace() {
+  protected function getDefaultNamespace(): string {
     return $this->defaultNamespace;
   }
 

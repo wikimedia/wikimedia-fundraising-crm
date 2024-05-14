@@ -131,7 +131,6 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
     '#default_value' => 'generic_ind',
     '#options' => array(
       'benevity' => t('Benevity'),
-      'bitpay' => t('Bitpay'),
       'citibank_individuals' => t('Citibank Individuals'),
       'engage' => t('Engage'),
       'fidelity' => t('Fidelity'),
@@ -384,9 +383,6 @@ function offline2civicrm_get_importer_class($uploadFormat, $fileUri, $additional
 
     case 'benevity':
       return new BenevityFile($fileUri, $additionalFields);
-
-    case 'bitpay':
-      return new BitpayFile($fileUri, $additionalFields);
 
     case 'fidelity':
       return new FidelityFile($fileUri, $additionalFields);
