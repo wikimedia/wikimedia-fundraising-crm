@@ -352,19 +352,6 @@ function _message_contribution_recur_insert(array $msg, $recurring_transaction_i
 }
 
 /**
- * @param DonationMessage $msg
- *
- * @return array
- * @throws \Civi\WMFException\WMFException
- */
-function _verify_message_and_stage(DonationMessage $message): array {
-  _get_import_timer()->startImportTimer("verify_and_stage");
-  $msg = wmf_civicrm_verify_message_and_stage($message);
-  _get_import_timer()->endImportTimer("verify_and_stage");
-  return $msg;
-}
-
-/**
  * @param array $msg
  *
  * @return mixed|null
