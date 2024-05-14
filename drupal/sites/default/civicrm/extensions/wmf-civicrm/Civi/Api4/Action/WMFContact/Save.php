@@ -363,17 +363,17 @@ class Save extends AbstractAction {
    * @throws \Civi\WMFException\WMFException
    */
   protected function createRelationship(
-    int    $contact_id,
-    int    $relatedContactID,
+    int $contact_id,
+    int $relatedContactID,
     string $relationshipType,
-    array  $customFields = []
+    array $customFields = []
   ): void {
     $params = array_merge($customFields, [
       'contact_id_a' => $contact_id,
       'contact_id_b' => $relatedContactID,
       'relationship_type_id:name' => $relationshipType,
       'is_active' => 1,
-      'is_current_employer' => $relationshipType === 'Employee of'
+      'is_current_employer' => $relationshipType === 'Employee of',
     ]);
 
     try {
@@ -413,35 +413,7 @@ class Save extends AbstractAction {
     if (!empty($msg['external_identifier'])) {
       $updateParams['External_Identifiers.' . $this->getExternalIdentifierField($msg)] = $msg['external_identifier'];
     }
-    if (($msg['contact_type'] ?? NULL) === 'Organization') {
-      // Find which of these keys we have update values for.
-      $customFieldsToUpdate = array_filter(array_intersect_key($msg, array_fill_keys([
-        'Organization_Contact.Name',
-        'Organization_Contact.Email',
-        'Organization_Contact.Phone',
-        'Organization_Contact.Title',
-      ], TRUE)));
-      if (!empty($customFieldsToUpdate)) {
-        if ($msg['gross'] >= 25000) {
-          // See https://phabricator.wikimedia.org/T278892#70402440)
-          // 25k plus gifts we keep both names for manual review.
-          $existingCustomFields = Contact::get(FALSE)
-            ->addWhere('id', '=', $msg['contact_id'])
-            ->setSelect(array_keys($customFieldsToUpdate))
-            ->execute()
-            ->first();
-          foreach ($customFieldsToUpdate as $fieldName => $value) {
-            if (stripos($existingCustomFields[$fieldName], $value) === FALSE) {
-              $updateParams[$fieldName] = empty($existingCustomFields[$fieldName]) ? $value : $existingCustomFields[$fieldName] . '|' . $value;
-            }
-          }
-        }
-        else {
-          $updateParams = array_merge($updateParams, $customFieldsToUpdate);
-        }
-      }
-    }
-    else {
+    if (empty($msg['contact_type']) || $msg['contact_type'] === 'Individual') {
       // Individual-only custom fields
       if (!empty($msg['employer'])) {
         // WMF-only custom field
