@@ -185,7 +185,7 @@ class WMFException extends Exception {
    *   mails - but only 'error_message' is used for user messages (provided the
    *   getUserMessage function is used).
    */
-  function __construct($code, $message, $extra = []) {
+  public function __construct($code, $message, $extra = []) {
     if (!array_key_exists($code, self::$error_types)) {
       $message .= ' -- ' . t('Warning, throwing an unknown exception: "%code"', ['%code' => $code]);
       $code = self::UNKNOWN;
@@ -200,9 +200,7 @@ class WMFException extends Exception {
     $this->message = "{$this->type} {$message}";
     $this->userMessage = $this->message;
     $addToMessage = $this->extra;
-    if (isset ($addToMessage['trace'])) {
-      unset ($addToMessage['trace']);
-    }
+    unset($addToMessage['trace'], $addToMessage['exception']);
     $this->message = $this->message . "\nSource: " . var_export($addToMessage, TRUE);
   }
 
@@ -211,13 +209,13 @@ class WMFException extends Exception {
    *
    * @return string
    */
-  function getUserErrorMessage() {
+  public function getUserErrorMessage(): string {
     if ($this->type === self::DATABASE_CONTENTION) {
       // Add a user-friendly message for database contention as it happens during manual imports & turns out to be the
       // underlying error for the message 'financial_type_id is not valid: Benevity'
       return ts('The database is under heavy load and failed to process this row. Try again when it is quieter');
     }
-    return !empty($this->extra['error_message']) ? $this->extra['error_message'] : $this->userMessage;
+    return (string) (!empty($this->extra['error_message']) ? $this->extra['error_message'] : $this->userMessage);
   }
 
   /**
