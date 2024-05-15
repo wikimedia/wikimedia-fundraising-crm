@@ -215,7 +215,11 @@ trait WMFQueueTrait {
     $queueName = $queueName ?: $this->queueName;
     $queueConsumer = $queueConsumer ?: $this->queueConsumer;
     QueueWrapper::push($queueName, $message);
-    return $this->processQueue($queueName, $queueConsumer);
+    $result = $this->processQueue($queueName, $queueConsumer);
+    if ($queueConsumer === 'Recurring' && $message['txn_type'] === 'subscr_payment') {
+      $this->processQueue('donations', 'Donation');
+    }
+    return $result;
   }
 
   /**
