@@ -59,7 +59,7 @@ class MailFactory {
         break;
 
       case 'test':
-        $this->activeMailer = new TestMailer();
+        $this->activeMailer = new \Civi\Test\Mailer();
         break;
 
       default:
