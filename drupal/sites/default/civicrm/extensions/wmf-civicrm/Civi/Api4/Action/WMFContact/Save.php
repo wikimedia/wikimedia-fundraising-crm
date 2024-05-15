@@ -73,17 +73,18 @@ class Save extends AbstractAction {
 
     if ($isCreate) {
       $existingContact = $this->getExistingContact($msg);
+      $replaceNames = FALSE;
       if ($existingContact) {
-        $contact_id = $existingContact['contact_id'];
-        $msg['contact_id'] = $contact_id;
-
+        $msg['contact_id'] = $existingContact['contact_id'];
         $replaceNames = (
           empty($existingContact['contact_id.first_name']) &&
           empty($existingContact['contact_id.last_name'])
         );
+      }
+      if (!empty($msg['contact_id'])) {
         $this->setMessage($msg);
         $this->handleUpdate($replaceNames);
-        $result[] = ['id' => $contact_id];
+        $result[] = ['id' => $msg['contact_id']];
         return;
       }
     }
@@ -456,6 +457,14 @@ class Save extends AbstractAction {
   protected function getExistingContact(array $msg): ?array {
     if (empty($msg['first_name']) || empty($msg['last_name'])) {
       return NULL;
+    }
+    if (!empty($msg['contact_id'])) {
+      $contact = Contact::get(FALSE)->addWhere('id', '=', $msg['contact_id'])
+        ->addSelect('first_name', 'last_name')->execute()->first();
+      if ($contact) {
+        return ['contact_id.first_name' => $contact['first_name'], 'contact_id.last_name' => $contact['last_name'], 'contact_id' => $contact['id']];
+      }
+      // @todo - should we throw an exception here? Should no be reachable.
     }
     $externalIdentifiers = array_flip($this->getExternalIdentifierFields());
     if ($externalIdentifiers) {
