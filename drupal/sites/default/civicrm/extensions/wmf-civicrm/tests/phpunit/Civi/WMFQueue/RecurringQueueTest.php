@@ -4,6 +4,7 @@ namespace Civi\WMFQueue;
 
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\Email;
@@ -30,54 +31,84 @@ class RecurringQueueTest extends BaseQueueTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testRecurringPaymentNormalizedMessages(): void {
-    $subscr_id = mt_rand();
+    // Do the original sign-up with a low-information donor.
     $values = [
       'contribution_tracking_id' => $this->addContributionTrackingRecord(),
-      'subscr_id' => $subscr_id,
+      'subscr_id' => 456799,
+      'first_name' => '',
+      'last_name' => 'Mouse',
+      'street_address' => '',
+      'city' => '',
+      'postal_code' => '',
+      'country' => '',
+      'state_province' => '',
+      'email' => 'bob-the-mouse@example.org',
+      'gateway' => 'paypal',
     ];
     $this->processRecurringSignup($values);
+
+    // We want to try the update on a contact with no name but, it adds the name 'Anonymous
+    // if we leave blank above - so use a query to wipe it out.
+    \CRM_Core_DAO::executeQuery('UPDATE civicrm_contact SET last_name = "" WHERE last_name = "Mouse"');
+
+    // Now process a message with more information.
+    // Our expectations on update are
+    // 1) The contact's name is updated as we did not have one.
+    // 2) The contact's email will not be updated, as it exists.
+    // 3) The contact's address will be created, as it does not exist.
+    $values = [
+      'first_name' => 'Bob',
+      'last_name' => 'Mouse',
+      'street_address' => '5109 Lockwood Rd',
+      'country' => 'US',
+      'email' => 'bob-the-mouse@example.org',
+    ] + $values;
+    $message = $this->processRecurringPaymentMessage($values);
+    $contribution = $this->getContributionForMessage($message);
+
+    $email = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->execute()->single();
+    $this->assertEquals('bob-the-mouse@example.org', $email['email']);
+
     $address = Address::get(FALSE)
-      ->addWhere('contact_id.last_name', '=', 'Russ')
+      ->addSelect('*', 'contact_id.display_name')
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
       ->execute()->single();
     $this->assertEquals('5109 Lockwood Rd', $address['street_address']);
+    $this->assertEquals('Bob Mouse', $address['contact_id.display_name']);
 
+    // Now delete the donation & try again, passing in updated email, address, name values.
+    Contribution::delete(FALSE)->addWhere('id', '=', $contribution['id'])
+      ->execute();
     // Our expectations on update are
-    // 1) The contact's name WILL always be updated to reflect the message
-    // 2) The contact's email will always be updated to reflect the message
-    // 3) The contact's address will always be updated to reflect the message
-
-    // By contrast in the normal queue
-    // 1) The contact's name is updated only if it does not already have first_name, last_name
-    // 2) (same) The contact's email will always be updated to reflect the message
-    // 3) (effectively the same) The contact's address is only updated if street address (required)
-    // is present. Since recurring queue address updates come from paypal
-    // which always provides street address this can rely on the shared code.
-
+    // 1) The contact's name is not updated as we already have first_name, last_name
+    // 2) The contact's email will not be updated, as it exists.
+    // 3) The contact's address will not be updated, as it exists.
+    $values['first_name'] = 'Robert';
     $values['street_address'] = '5019 Bendy Road';
+    $values['country'] = 'US';
     $values['email'] = 'RussTheGreat@example.com';
     $message = $this->processRecurringPaymentMessage($values);
-    $address = Address::get(FALSE)
-      ->addWhere('contact_id.last_name', '=', 'Mouse')
-      ->execute()->single();
-    $this->assertEquals('5019 Bendy Road', $address['street_address']);
-    Email::get(FALSE)
-      ->addWhere('contact_id.last_name', '=', 'Mouse')
-      ->execute()->single();
     $contribution = $this->getContributionForMessage($message);
+
+    $email = Email::get(FALSE)
+      ->addWhere('contact_id.last_name', '=', 'Mouse')
+      ->execute()->single();
+    $this->assertEquals('bob-the-mouse@example.org', $email['email'], 'Email should be unchanged');
+
+    $address = Address::get(FALSE)
+      ->addSelect('*', 'contact_id.display_name')
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->execute()->single();
+    $this->assertEquals('5109 Lockwood Rd', $address['street_address'], 'Address should be unchanged');
+    $this->assertEquals($contribution['contact_id'], $address['contact_id']);
+    $this->assertEquals('Bob Mouse', $address['contact_id.display_name']);
 
     $recur_record = $this->getContributionRecurForMessage($message);
     $this->assertIsNumeric($recur_record['payment_processor_id']);
 
     $this->assertEquals($recur_record['id'], $contribution['contribution_recur_id']);
-
-    // The ->single() means these will fail if there is not exactly 1.
-    Address::get(FALSE)
-      ->addWhere('contact_id', '=', $contribution['contact_id'])
-      ->execute()->single();
-    $email = Email::get(FALSE)
-      ->addWhere('contact_id', '=', $contribution['contact_id'])
-      ->execute()->single();
-    $this->assertEquals('russthegreat@example.com', $email['email']);
   }
 
   /**
@@ -284,15 +315,12 @@ class RecurringQueueTest extends BaseQueueTestCase {
     $address = Address::get(FALSE)
       ->addWhere('contact_id', '=', $contribution['contact_id'])
       ->execute()->single();
-    // The address comes from the recurring_payment.json not the recurring_signup.json as it
-    // has been overwritten. This is perhaps not a valid scenario in production but it is
-    // the scenario the code works to. In production they would probably always be the same.
-    $this->assertEquals('1211122 132 st', $address['street_address']);
+    $this->assertEquals('5109 Lockwood Rd', $address['street_address']);
 
     $email = Email::get(FALSE)
       ->addWhere('contact_id', '=', $contribution['contact_id'])
       ->execute()->single();
-    $this->assertEquals('test+fr@wikimedia.org', $email['email']);
+    $this->assertEquals('test+recur_fr@wikimedia.org', $email['email']);
   }
 
   /**
