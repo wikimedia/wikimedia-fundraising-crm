@@ -4,6 +4,7 @@ namespace Civi\Api4;
 use API_Exception;
 use Civi;
 use Civi\Test\Api3TestTrait;
+use Civi\Test\EntityTrait;
 use Civi\WMFEnvironmentTrait;
 use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
@@ -11,7 +12,7 @@ use Civi\Omnimail\MailFactory;
 
 class ThankYouTest extends TestCase {
   use WMFEnvironmentTrait;
-
+  use EntityTrait;
   use Api3TestTrait;
 
   protected $originalSettings = [];
@@ -33,19 +34,18 @@ class ThankYouTest extends TestCase {
     parent::setUp();
     MailFactory::singleton()->setActiveMailer('test');
 
-    $contact = reset($this->callAPISuccess('Contact', 'create', [
+    $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
-      'email' => 'generousdonor@example.org',
+      'email_primary.email' => 'generousdonor@example.org',
       'city' => 'Somerville',
-      'country' => 'US',
+      'country_id:name' => 'US',
       'postal_code' => '02144',
-      'state_province' => 'MA',
+      'state_province_id:name' => 'MA',
       'street_address' => '1 Davis Square',
       'first_name' => 'Test',
       'last_name' => 'Contact',
-      'language' => 'en_US',
-    ])['values']);
-    $this->ids['Contact'] = [$contact['id']];
+      'preferred_language' => 'en_US',
+    ], 0);
   }
 
   /**
@@ -155,7 +155,7 @@ class ThankYouTest extends TestCase {
   }
 
   /**
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
   public function testSendThankYouAddCiviMailActivity(): void {
@@ -181,7 +181,7 @@ class ThankYouTest extends TestCase {
   }
 
   /**
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
   public function testSendEndowmentThankYou(): void {
@@ -203,19 +203,15 @@ class ThankYouTest extends TestCase {
   /**
    * Test that DAF (Donor Advised Fund) thank you mails do not have tax information
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
   public function testSendDAFThankYou(): void {
     $this->setSetting('thank_you_add_civimail_records', FALSE);
 
     // Set the gift source to Donor Advised Fund
-    $custom_field_name = wmf_civicrm_get_custom_field_name('Gift Source');
-    $this->callAPISuccess('Contribution', 'create', [
-      'id' => $this->getContributionID(),
-      $custom_field_name => 'Donor Advised Fund',
-    ]);
-
+    Contribution::update(FALSE)->addWhere('id', '=', $this->getContributionID())
+      ->addValue('Gift_Data.Campaign', 'Donor Advised Fund')->execute();
     $sent = $this->sendThankYou();
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
@@ -261,13 +257,12 @@ class ThankYouTest extends TestCase {
 
   public function testRenderVenmoContainsUsername() {
     $result = $this->renderMessage('en_US', [
-        'gateway' => 'braintree',
-        'payment_instrument_id' => CRM_Core_PseudoConstant::getKey(
-            'CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Venmo'
-        ),
-        'venmo_user_name' => 'venmojoe',
-        ]
-    );
+      'gateway' => 'braintree',
+      'payment_instrument_id' => CRM_Core_PseudoConstant::getKey(
+          'CRM_Contribute_BAO_Contribution', 'payment_instrument_id', 'Venmo'
+      ),
+      'venmo_user_name' => 'venmojoe',
+    ]);
     $this->assertStringContainsString('Donated with venmo username: venmojoe.', $result['html']);
   }
 
@@ -300,7 +295,7 @@ class ThankYouTest extends TestCase {
   /**
    * Test that Stock gift thank you mails use the stock value amount
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
   public function testSendStockThankYou(): void {
@@ -392,7 +387,7 @@ class ThankYouTest extends TestCase {
         'recurring' => FALSE,
         'transaction_id' => 123,
         'receive_date' => '2022-08-09',
-        'contact_id' =>  $this->ids['Contact'][0],
+        'contact_id' => $this->ids['Contact'][0],
         'contribution_id' => $contributionID,
       ], $parameters))
       ->setTemplateName('thank_you')->execute()->first();
