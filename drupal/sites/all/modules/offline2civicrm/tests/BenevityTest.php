@@ -166,9 +166,8 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_type' => 'Organization',
     ]);
     $relationships = $this->callAPISuccess('Relationship', 'get', [
-        'contact_id_b' => $thaMouseMeister['id'],
-      ]
-    );
+      'contact_id_b' => $thaMouseMeister['id'],
+    ]);
     $this->assertEquals(0, $relationships['count']);
 
     $importer = new BenevityFile(__DIR__ . "/data/benevity_only_match.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
@@ -177,9 +176,8 @@ class BenevityTest extends BaseChecksFileTest {
     $this->assertEquals('All rows were imported', $messages['Result']);
     $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED']);
     $relationship = $this->callAPISuccessGetSingle('Relationship', [
-        'contact_id_b' => $thaMouseMeister['id'],
-      ]
-    );
+      'contact_id_b' => $thaMouseMeister['id'],
+    ]);
     $this->assertEquals($relationship['contact_id_a'], $contribution['soft_credit_to']);
   }
 
