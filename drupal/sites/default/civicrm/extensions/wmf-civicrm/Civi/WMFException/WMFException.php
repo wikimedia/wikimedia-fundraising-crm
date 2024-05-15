@@ -239,11 +239,15 @@ class WMFException extends Exception {
     return $this->getErrorCharacteristic('drop', FALSE);
   }
 
-  function isRequeue() {
+  public function isRequeue(): bool {
+    if ($this->getErrorCharacteristic('requeue', FALSE)) {
+      return TRUE;
+    }
     if ($this->extra) {
+      // The above should have already picked up any deadlocks but
+      // perhaps this legacy check still picks that up?
       // We want to retry later if the problem was a lock wait timeout
-      // or a deadlock. Unfortunately we have to do string parsing to
-      // figure that out.
+      // or a deadlock. This string parsing used to be the only way to determine that.
       $flattened = print_r($this->extra, TRUE);
       if (
         preg_match('/\'12(05|13) \*\* /', $flattened) ||
@@ -255,7 +259,7 @@ class WMFException extends Exception {
         return TRUE;
       }
     }
-    return $this->getErrorCharacteristic('requeue', FALSE);
+    return FALSE;
   }
 
   function isFatal() {
