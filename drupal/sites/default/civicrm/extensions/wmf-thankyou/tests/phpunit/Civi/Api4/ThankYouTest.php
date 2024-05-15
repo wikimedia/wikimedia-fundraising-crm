@@ -4,11 +4,13 @@ namespace Civi\Api4;
 use API_Exception;
 use Civi;
 use Civi\Test\Api3TestTrait;
+use Civi\WMFEnvironmentTrait;
 use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
 use Civi\Omnimail\MailFactory;
 
 class ThankYouTest extends TestCase {
+  use WMFEnvironmentTrait;
 
   use Api3TestTrait;
 
@@ -368,26 +370,6 @@ class ThankYouTest extends TestCase {
     $this->assertTrue($result);
     $this->assertEquals(1, $this->getMailingCount());
     return $this->getMailing(0);
-  }
-
-  /**
-   * Get the number of mailings sent in the test.
-   *
-   * @return int
-   */
-  public function getMailingCount(): int {
-    return MailFactory::singleton()->getMailer()->countMailings();
-  }
-
-  /**
-   * Get the content on the sent mailing.
-   *
-   * @param int $index
-   *
-   * @return array
-   */
-  public function getMailing(int $index): array {
-    return MailFactory::singleton()->getMailer()->getMailing($index);
   }
 
   /**

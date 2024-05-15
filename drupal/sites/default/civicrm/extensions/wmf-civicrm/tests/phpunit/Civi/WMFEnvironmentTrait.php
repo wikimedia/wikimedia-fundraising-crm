@@ -186,7 +186,7 @@ trait WMFEnvironmentTrait {
    * @return int
    */
   public function getMailingCount(): int {
-    return MailFactory::singleton()->getMailer()->countMailings();
+    return MailFactory::singleton()->getMailer()->count();
   }
 
   /**
@@ -197,7 +197,7 @@ trait WMFEnvironmentTrait {
    * @return array
    */
   public function getMailing(int $index): array {
-    return MailFactory::singleton()->getMailer()->getMailing($index);
+    return MailFactory::singleton()->getMailer()->getMailings()[$index];
   }
 
   /**

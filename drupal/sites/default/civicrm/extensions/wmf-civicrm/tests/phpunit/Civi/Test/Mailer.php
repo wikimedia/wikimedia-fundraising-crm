@@ -4,7 +4,7 @@ namespace Civi\Test;
 
 use Civi\Omnimail\IMailer;
 
-class Mailer implements IMailer{
+class Mailer implements IMailer {
 
   /**
    * @var array
