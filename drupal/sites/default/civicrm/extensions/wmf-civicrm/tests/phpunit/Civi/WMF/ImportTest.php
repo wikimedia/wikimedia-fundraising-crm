@@ -2,6 +2,7 @@
 
 namespace Civi\WMF;
 
+use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionSoft;
@@ -539,6 +540,99 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ],
     ])->execute()->first()['id'];
     Import::import($this->userJobID)->execute();
+  }
+
+  /**
+   * Test that when importing contacts with an NCOA address.
+   *
+   * The expectation is that any old address is re-located rather
+   * than deleted. This happens using the contact import
+   * as that is how we bring in DataAxle data.
+   *
+   * @return void
+   */
+  public function testContactImportAddressHook(): void {
+    $contactID = $this->createIndividual(['address_primary.street_address' => 'Bumble Lane']);
+    $this->doContactImport([
+      'id' => $contactID,
+      // See https://phabricator.wikimedia.org/T357345#9807519
+      // we are hopefully renaming the option value from 'noca' to 'ncoa' soon.
+      'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID('address_source') => 'NOCA_update',
+      'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID('address_update_date') => '20240101',
+      'street_address' => '123 Main St',
+      'country' => 'United States',
+    ]);
+    $addresses = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $contactID)
+      ->addSelect('*', 'custom.*', 'location_type_id:name')
+      ->addOrderBy('is_primary', 'DESC')
+      ->execute();
+    $this->assertCount(2, $addresses);
+    $newAddress = $addresses[0];
+    $oldAddress = $addresses[1];
+    // See https://phabricator.wikimedia.org/T357345#9807519
+    // we are hopefully renaming the option value from 'noca' to 'ncoa' soon.
+    $this->assertEquals('noca', $newAddress['address_data.address_source']);
+    $this->assertEquals('123 Main St', $newAddress['street_address']);
+    $this->assertEquals('Bumble Lane', $oldAddress['street_address']);
+    $this->assertEquals('Old_' . date('Y'), $oldAddress['location_type_id:name']);
+    $this->assertEquals(FALSE, $oldAddress['is_primary']);
+  }
+
+  private function doContactImport($data) {
+    $this->imitateAdminUser();
+    $this->createImportTable($data + ['_related_contact_created' => 0, '_related_contact_matched' => 0]);
+    $this->runContactImport($data);
+  }
+
+  /**
+   * Helper to run the import.
+   *
+   * @param array $data
+   * @param string $mainContactType
+   */
+  private function runContactImport(array $data, string $mainContactType = 'Individual'): void {
+    try {
+      $importMappings = [];
+      $mapper = [];
+      foreach (array_keys($data) as $index => $columnName) {
+        $importMappings[] = [
+          'name' => $columnName,
+          'default_value' => NULL,
+          'column_number' => $index,
+          'entity_data' => [],
+        ];
+        $mapper[] = [$columnName];
+      }
+      $this->userJobID = UserJob::create()->setValues([
+        'job_type' => 'contact_import',
+        'status_id' => 1,
+        'metadata' => [
+          'submitted_values' => [
+            'contactType' => $mainContactType,
+            'contactSubType' => '',
+            'dateFormats' => 1,
+            'dataSource' => 'CRM_Import_DataSource_SQL',
+            'onDuplicate' => \CRM_Import_Parser::DUPLICATE_UPDATE,
+            'disableUSPS' => '',
+            'doGeocodeAddress' => 1,
+            'mapper' => $mapper,
+          ],
+          'Template' => ['mapping_id' => NULL],
+          'DataSource' => [
+            'table_name' => 'civicrm_tmp_d_abc',
+            'column_headers' => array_keys($data),
+            'number_of_columns' => count($data),
+          ],
+          'sqlQuery' => $this->getSelectQuery($data),
+          'import_mappings' => $importMappings,
+        ],
+      ])->execute()->first()['id'];
+      Import::import($this->userJobID)->execute();
+    }
+    catch (DBQueryException $e) {
+      $this->fail('query error ' . $e->getMessage() . $e->getSQL());
+    }
   }
 
   /**
