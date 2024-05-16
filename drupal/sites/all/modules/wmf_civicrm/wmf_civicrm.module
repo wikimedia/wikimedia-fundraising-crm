@@ -96,25 +96,6 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
   }
 }
 
-function wmf_civicrm_get_custom_values($entity_id, $names, $group_name = NULL) {
-  $names = (array) $names;
-  $params['entityID'] = $entity_id;
-  foreach ($names as $name) {
-    $field = wmf_civicrm_get_custom_field_name($name, $group_name);
-    #var_export( "Custom field mapping: {$name} -> {$field}" );
-    $params[$field] = 1;
-    $field_map[$field] = $name;
-  }
-  $result = CRM_Core_BAO_CustomValueTable::getValues($params);
-  $ret = [];
-  foreach ($result as $field => $value) {
-    if (array_key_exists($field, $field_map)) {
-      $ret[$field_map[$field]] = $value;
-    }
-  }
-  return $ret;
-}
-
 /**
  * @param $entity_id
  * @param $map
@@ -578,7 +559,7 @@ function _wmf_civicrm_message_contribution_insert($msg) {
         );
       }
     }
-    catch (CiviCRM_API3_Exception $eInner) {
+    catch (CRM_Core_Exception $eInner) {
       throw new WMFException(
         WMFException::INVALID_MESSAGE,
         'Cannot create contribution, civi error!',
