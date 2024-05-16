@@ -4,6 +4,7 @@ namespace Civi\WMFQueueMessage;
 
 use Civi\API\EntityLookupTrait;
 use Civi\Api4\Contact;
+use Civi\Api4\ExchangeRate;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class Message {
@@ -154,7 +155,12 @@ class Message {
    * @throws \Civi\ExchangeException\ExchangeRatesException
    */
   protected function currencyConvert(string $currency, float $amount, ?int $timestamp = NULL): float {
-    return (float) exchange_rate_convert($currency, $amount, $timestamp ?: $this->getTimestamp());
+    return (float)ExchangeRate::convert(FALSE)
+      ->setFromCurrency($currency)
+      ->setFromAmount($amount)
+      ->setTimestamp('@' . ($timestamp ?: $this->getTimestamp()))
+      ->execute()
+      ->first()['amount'];
   }
 
   /**
