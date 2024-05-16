@@ -3,6 +3,7 @@
 namespace Civi\WMFQueue;
 
 use Civi;
+use Civi\Api4\Contact;
 use Civi\Api4\RecurUpgradeEmail;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
@@ -209,12 +210,10 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * @throws \CRM_Core_Exception
    */
   private function importExternalModifiedRecurRecord(RecurringModifyAmountMessage $messageObject, array $msg): void {
-
-    $contact_id = $messageObject->getExistingContributionRecurValue('contact_id');
+    $message = $messageObject->normalize();
+    $message['id'] = $message['contact_id'];
     // FundraiseUp also sends contact updates in the notification
-    WMFContact::save(FALSE)
-      ->setMessage($msg)
-      ->execute()->first();
+    Contact::save(FALSE)->addRecord($message)->execute();
 
     $recur_amount = (float) $messageObject->getExistingContributionRecurValue('amount');
     $recur_currency = $messageObject->getExistingContributionRecurValue('currency');

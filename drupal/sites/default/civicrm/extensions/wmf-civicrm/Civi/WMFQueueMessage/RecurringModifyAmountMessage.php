@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueueMessage;
 
+use Civi\Api4\Address;
 use Civi\ExchangeException\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
@@ -91,6 +92,26 @@ class RecurringModifyAmountMessage extends Message {
     if ($this->isExternalSubscriptionModification() && !$this->getContributionRecurID()) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Unable to locate recur record without Subscription ID');
     }
+  }
+
+  public function normalize(): array {
+    $message = $this->message;
+    $message['contact_id'] = $this->getExistingContributionRecurValue('contact_id');
+    if (!empty($message['email'])) {
+      $message['email_primary.email'] = $message['email'];
+    }
+    if (!empty($message['street_address'])) {
+      $addressFields = Address::getFields(FALSE)
+        ->execute()->indexBy('name');
+      foreach ($addressFields as $field) {
+        $message['address_primary.' . $field['name']] = $message[$field['name']] ?? NULL;
+      }
+      $message['address_primary.country_id:name'] = $message['country'] ?? NULL;
+      unset($message['address_primary.country']);
+      $message['address_primary.state_province_id:name'] = $message['state_province'] ?? NULL;
+      unset($message['address_primary.state_province']);
+    }
+    return $message;
   }
 
   /**
