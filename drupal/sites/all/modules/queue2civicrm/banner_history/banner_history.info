@@ -1,4 +1,0 @@
-name = Banner history
-description = Adds table for tracking banner history, table to be removed next maintenance window.
-core = 7.x
-package = queue2civicrm

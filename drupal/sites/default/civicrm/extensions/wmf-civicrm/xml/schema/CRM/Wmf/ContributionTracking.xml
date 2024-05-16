@@ -354,8 +354,21 @@
     </html>
     <comment>UTM Source. This is the original text but is separately broken out into banner etc. We aspire to drop this field but per T354708 Peter Coombe is still reliant on it</comment>
   </field>
+  <field>
+    <name>banner_history_log_id</name>
+    <type>varchar</type>
+    <length>255</length>
+    <comment>Temporary banner history log ID to associate banner history EventLogging events.</comment>
+    <html>
+      <type>Text</type>
+    </html>
+  </field>
   <index>
     <name>index_mailing_identifier</name>
     <fieldName>mailing_identifier</fieldName>
+  </index>
+  <index>
+    <name>banner_history_log_id</name>
+    <fieldName>banner_history_log_id</fieldName>
   </index>
 </table>

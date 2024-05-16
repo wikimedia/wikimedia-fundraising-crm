@@ -2070,6 +2070,24 @@ AND q.id BETWEEN %1 AND %2";
     return TRUE;
   }
 
+  public function upgrade_4484(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_contribution_tracking', 'banner_history_log_id', FALSE)) {
+      CRM_Core_DAO::executeQuery("
+        ALTER TABLE civicrm_contribution_tracking ADD COLUMN
+         `banner_history_log_id` varchar(255) COMMENT 'Temporary banner history log ID to associate banner history EventLogging events.'
+      ");
+    }
+    global $databases;
+    CRM_Core_DAO::executeQuery("
+        UPDATE civicrm_contribution_tracking t
+        LEFT JOIN " . $databases['default']['default']['database'] . ".banner_history_contribution_associations b
+          ON b.contribution_tracking_id = t.id
+        SET t.banner_history_log_id = b.banner_history_log_id
+        WHERE t.banner_history_log_id IS NULL
+    ");
+    return TRUE;
+  }
+
   /**
    * Copy existing exchange rates from drupal table
    * @return bool
