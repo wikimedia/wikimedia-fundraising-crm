@@ -15,42 +15,6 @@ use Statistics\Exception\StatisticsCollectorException;
 class RecurringTest extends BaseWmfDrupalPhpUnitTestCase {
 
   /**
-   * Test next_sched_contribution calculation
-   *
-   * @dataProvider nextSchedProvider
-   */
-  public function testNextScheduled($now, $cycle_day, $expected_next_sched): void {
-    $msg = [
-      'cycle_day' => $cycle_day,
-      'frequency_interval' => 1,
-    ];
-    $nowstamp = strtotime($now);
-    $calculated_next_sched = wmf_civicrm_get_next_sched_contribution_date_for_month($msg, $nowstamp);
-
-    $this->assertEquals($expected_next_sched, $calculated_next_sched);
-  }
-
-  public function nextSchedProvider(): array {
-    return [
-      ['2014-06-01T00:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T01:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T02:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T03:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T04:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T05:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T06:59:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T07:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T07:01:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T08:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T09:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T13:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T14:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T15:00:00Z', '1', '2014-07-01 00:00:00'],
-      ['2014-06-01T16:00:00Z', '1', '2014-07-01 00:00:00'],
-    ];
-  }
-
-  /**
    * Test functionality in RecurHelper::getByGatewaySubscriptionId.
    *
    * @return void
