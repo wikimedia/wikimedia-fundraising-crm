@@ -18,9 +18,6 @@
     <testsuite name="exchange_rates tests">
       <directory>drupal/sites/default/civicrm/extensions/exchange_rates/tests/phpunit</directory>
     </testsuite>
-    <testsuite name="queue2civicrm tests">
-      <directory>drupal/sites/all/modules/queue2civicrm/tests/phpunit</directory>
-    </testsuite>
     <testsuite name="wmf_audit tests">
       <directory>drupal/sites/all/modules/wmf_audit/tests</directory>
     </testsuite>

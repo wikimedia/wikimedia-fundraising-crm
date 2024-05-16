@@ -1,6 +1,14 @@
 <?php
 
-use Civi\WMFStatistic\DonationStatsCollector;
+namespace Civi\WMFStatistic;
+
+use Civi\Test\HeadlessInterface;
+use Civi\Test\HookInterface;
+use Civi\Test\TransactionalInterface;
+use Civi\WMFEnvironmentTrait;
+use CRM_Utils_File;
+use PHPUnit\Framework\TestCase;
+use Statistics\Collector\AbstractCollector;
 
 /**
  * Tests for DonationStatsCollector.
@@ -10,13 +18,15 @@ use Civi\WMFStatistic\DonationStatsCollector;
  * @group Queue2Civicrm
  * @group DonationStats
  */
-class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
+class DonationStatsCollectorTest extends TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
 
-  protected $statsFilename;
+  use WMFEnvironmentTrait;
 
-  protected $statsFilePath;
+  protected string $statsFilename;
 
-  protected $statsFileExtension;
+  protected string $statsFilePath;
+
+  protected string $statsFileExtension;
 
   /**
    * @var \Civi\WMFStatistic\DonationStatsCollector
@@ -30,17 +40,17 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @dataProvider singleDummyDonationDataProvider
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function testCanRecordSingleDonationStat($message, $contribution) {
-    $contribution['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution['receive_date']);
-
     $this->donationStatsCollector->recordDonationStats($message, $contribution);
 
     $recordedStats = $this->donationStatsCollector->getAllStats();
 
     $expected = [
       'test_namespace.count' => ['ACME_PAYMENTS' => 1],
-      'test_namespace.transaction_age' => ['ACME_PAYMENTS' => 3600], // 1 hour
+      // 1 hour
+      'test_namespace.transaction_age' => ['ACME_PAYMENTS' => 3600],
     ];
 
     $this->assertEquals($expected, $recordedStats);
@@ -48,10 +58,9 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @dataProvider singleDummyDonationDataProvider
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function testCanRecordMultipleDonationStats($message, $contribution) {
-    $contribution['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution['receive_date']);
-
     // count stat doesn't exist yet
     $this->assertFalse($this->donationStatsCollector->exists("count"));
 
@@ -74,12 +83,13 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @dataProvider singleDummyDonationDataProvider
+   * @throws \Statistics\Exception\StatisticsCollectorException
+   * @throws \ReflectionException
    */
   public function testCanGenerateDonationProcessingRateStats($message, $contribution) {
-    $contribution['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution['receive_date']);
     // open up protected methods
-    $reflectionMethodAggregates = new ReflectionMethod(DonationStatsCollector::class, 'generateAggregateStats');
-    $reflectionMethodPurgeSuperfluousStats = new ReflectionMethod(DonationStatsCollector::class, 'purgeSuperfluousStats');
+    $reflectionMethodAggregates = new \ReflectionMethod(DonationStatsCollector::class, 'generateAggregateStats');
+    $reflectionMethodPurgeSuperfluousStats = new \ReflectionMethod(DonationStatsCollector::class, 'purgeSuperfluousStats');
     $reflectionMethodAggregates->setAccessible(TRUE);
     $reflectionMethodPurgeSuperfluousStats->setAccessible(TRUE);
 
@@ -100,7 +110,8 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
 
     // we expect the internal times to be generated exactly as worked out below
     $batchProcessingTime = $end - $start;
-    $totalDonations = 1; // we only recorded one (line 80)
+    // we only recorded one (line 80)
+    $totalDonations = 1;
     $donationsProcessedPerSecond = $totalDonations / $batchProcessingTime;
 
     $expected = [
@@ -120,16 +131,16 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @dataProvider doubleDummyDonationDataProvider
+   * @throws \Statistics\Exception\StatisticsCollectorException|\ReflectionException
    */
   public function testCanGenerateAverageDataFromRecordedStats($message, $contribution) {
     // open up protected method
-    $reflectionMethod = new ReflectionMethod(DonationStatsCollector::class, 'generateAverageStats');
+    $reflectionMethod = new \ReflectionMethod(DonationStatsCollector::class, 'generateAverageStats');
     $reflectionMethod->setAccessible(TRUE);
 
     //record stats
     for ($i = 0; $i < 2; $i++) {
       $message[$i]['source_enqueued_time'] = \SmashPig\Core\UtcDate::getUtcTimestamp($message[$i]['source_enqueued_time']);
-      $contribution[$i]['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution[$i]['receive_date']);
       $this->donationStatsCollector->recordDonationStats($message[$i], $contribution[$i]);
     }
 
@@ -146,12 +157,16 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
       'test_namespace.transaction_age' => ['ACME_PAYMENTS' => 3600, 'NICE_GATEWAY' => 3600],
       'test_namespace.enqueued_age' => ['ACME_PAYMENTS' => 3600, 'NICE_GATEWAY' => 3600],
       'test_namespace.average_enqueued_age' => [
-        'ACME_PAYMENTS' => 3600, //average data
-        'NICE_GATEWAY' => 3600, //average data
+        //average data
+        'ACME_PAYMENTS' => 3600,
+        //average data
+        'NICE_GATEWAY' => 3600,
       ],
       'test_namespace.average_transaction_age' => [
-        'ACME_PAYMENTS' => 3600, //average data
-        'NICE_GATEWAY' => 3600, //average data
+        //average data
+        'ACME_PAYMENTS' => 3600,
+        //average data
+        'NICE_GATEWAY' => 3600,
       ],
     ];
 
@@ -160,18 +175,19 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @dataProvider doubleDummyDonationDataProvider
+   * @throws \ReflectionException
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function testCanGenerateOverallDataFromRecordedStats($message, $contribution) {
     // open up protected methods
-    $reflectionMethodAverages = new ReflectionMethod(DonationStatsCollector::class, 'generateAverageStats');
-    $reflectionMethodOverall = new ReflectionMethod(DonationStatsCollector::class, 'generateOverallStats');
+    $reflectionMethodAverages = new \ReflectionMethod(DonationStatsCollector::class, 'generateAverageStats');
+    $reflectionMethodOverall = new \ReflectionMethod(DonationStatsCollector::class, 'generateOverallStats');
     $reflectionMethodAverages->setAccessible(TRUE);
     $reflectionMethodOverall->setAccessible(TRUE);
 
     //record stats
     for ($i = 0; $i < 2; $i++) {
       $message[$i]['source_enqueued_time'] = \SmashPig\Core\UtcDate::getUtcTimestamp($message[$i]['source_enqueued_time']);
-      $contribution[$i]['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution[$i]['receive_date']);
       $this->donationStatsCollector->recordDonationStats($message[$i], $contribution[$i]);
     }
 
@@ -185,19 +201,22 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
       'test_namespace.count' => [
         'ACME_PAYMENTS' => 1,
         'NICE_GATEWAY' => 1,
-        'all' => 2, // overall data
+        // overall data
+        'all' => 2,
       ],
       'test_namespace.transaction_age' => ['ACME_PAYMENTS' => 3600, 'NICE_GATEWAY' => 3600],
       'test_namespace.enqueued_age' => ['ACME_PAYMENTS' => 3600, 'NICE_GATEWAY' => 3600],
       'test_namespace.average_enqueued_age' => [
         'ACME_PAYMENTS' => 3600,
         'NICE_GATEWAY' => 3600,
-        'all' => 3600 // overall data
+        // overall data
+        'all' => 3600,
       ],
       'test_namespace.average_transaction_age' => [
         'ACME_PAYMENTS' => 3600,
         'NICE_GATEWAY' => 3600,
-        'all' => 3600 // overall data
+        // overall data
+        'all' => 3600,
       ],
     ];
 
@@ -206,12 +225,17 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @dataProvider singleDummyDonationDataProvider
+   *
+   * @param $message
+   * @param $contribution
+   *
+   * @throws \ReflectionException
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function testGetOverallAverageGatewayTransactionAge($message, $contribution) {
-    $contribution['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution['receive_date']);
     // open up protected methods
-    $reflectionMethodAverages = new ReflectionMethod(DonationStatsCollector::class, 'generateAverageStats');
-    $reflectionMethodOverall = new ReflectionMethod(DonationStatsCollector::class, 'generateOverallStats');
+    $reflectionMethodAverages = new \ReflectionMethod(DonationStatsCollector::class, 'generateAverageStats');
+    $reflectionMethodOverall = new \ReflectionMethod(DonationStatsCollector::class, 'generateOverallStats');
     $reflectionMethodAverages->setAccessible(TRUE);
     $reflectionMethodOverall->setAccessible(TRUE);
 
@@ -228,10 +252,10 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
 
   /**
    * @dataProvider singleDummyDonationDataProvider
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function testExportingStatsCreatesOutputFile($message, $contribution) {
     $this->setUpStatsOutFileProperties();
-    $contribution['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution['receive_date']);
 
     // test output file does not currently exist
     $this->assertFileDoesNotExist($this->statsFilePath . $this->statsFilename . $this->statsFileExtension);
@@ -252,10 +276,10 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
    * We also check for the mapping and presence of Prometheus labels {key=value} here.
    *
    * @dataProvider singleDummyDonationDataProvider
+   * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function testExportedPrometheusOutputIsCorrect($message, $contribution) {
     $this->setUpStatsOutFileProperties();
-    $contribution['receive_date'] = \SmashPig\Core\UtcDate::getUtcDatabaseString($contribution['receive_date']);
 
     $this->donationStatsCollector->recordDonationStats($message, $contribution);
     $this->donationStatsCollector->outputFileName = $this->statsFilename;
@@ -288,7 +312,7 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function singleDummyDonationDataProvider() {
+  public function singleDummyDonationDataProvider(): array {
     return [
       [
         ['gateway' => "ACME_PAYMENTS"],
@@ -307,7 +331,7 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
    *
    * @return array
    */
-  public function doubleDummyDonationDataProvider() {
+  public function doubleDummyDonationDataProvider(): array {
     return [
       [
         [
@@ -333,7 +357,7 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
     rmdir($this->statsFilePath);
   }
 
-  private function getTestDonationStatsCollectorInstance() {
+  private function getTestDonationStatsCollectorInstance(): AbstractCollector {
     $this->resetDonationStatsCollector();
     $DonationStatsCollector = DonationStatsCollector::getInstance();
     $DonationStatsCollector->setNamespace(("test_namespace"));
@@ -351,7 +375,8 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
     $statsWrittenAssocArray = [];
     if (file_exists($prometheusFileLocation)) {
       $statsFileFullPath = $prometheusFileLocation;
-      $statsWritten = rtrim(file_get_contents($statsFileFullPath)); // remove trailing \n
+      // remove trailing \n
+      $statsWritten = rtrim(file_get_contents($statsFileFullPath));
       $statsWrittenLinesArray = explode("\n", $statsWritten);
       foreach ($statsWrittenLinesArray as $statsLine) {
         [$name, $value] = explode(" ", $statsLine);
@@ -386,4 +411,5 @@ class DonationStatsCollectorTest extends \BaseWmfDrupalPhpUnitTestCase {
   private function resetDonationStatsCollector() {
     DonationStatsCollector::tearDown(TRUE);
   }
+
 }
