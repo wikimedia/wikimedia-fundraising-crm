@@ -665,6 +665,62 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   /**
    * @throws CRM_Core_Exception
    */
+  public function testRecurringPlanChangeModifyEmail() {
+    $audit = $this->auditTestProvider();
+    $newRecurringMsg = $audit[3][1]['recurring'][0];
+    $planChangeMessage = $audit[5][1]['recurring-modify'][0];
+    $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
+
+    $recurRow = ContributionRecur::get(FALSE)
+      ->addSelect('id', 'amount', 'contact_id')
+      ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
+      ->execute()->first();
+    // We need to add this contact to ids for it to be dealt to in tearDown
+    // because it doesn't have one of the names we automatically clean up
+    // e.g. 'Mouse' or 'Russ'. The nice thing with the test-names is that
+    // if you do get spare Mice in your DB then they get cleaned up
+    // when you re-run the tests whereas you have to manually delete 'tracked'
+    // creates.
+    $this->ids['Contact'][] = $recurRow['contact_id'];
+    $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
+
+    $planChangeMessage['email'] = 'jwales_1_updated@example.org';
+    $this->processMessage($planChangeMessage, 'RecurringModifyAmount', 'recurring-modify');
+
+    $recurRowUpdated = ContributionRecur::get(FALSE)
+      ->addSelect('id', 'amount', 'contact_id')
+      ->addWhere('id', '=', $recurRow['id'])
+      ->execute()->first();
+    $this->assertEquals($planChangeMessage['amount'], $recurRowUpdated['amount']);
+
+    $contact = Contact::get(FALSE)
+      ->addSelect('*', 'email_primary.email')
+      ->addWhere('id', '=', $recurRow['contact_id'])
+      ->execute()->first();
+    $this->assertEquals($planChangeMessage['last_name'], $contact['last_name']);
+    $this->assertEquals($planChangeMessage['email'], $contact['email_primary.email']);
+
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $recurRow['id'])
+      ->addWhere('activity_type_id:name', '=', 'Recurring Upgrade')
+      ->execute()
+      ->last();
+    $this->assertNotNull($activity);
+    $this->assertEquals('Recurring amount increased by 1.00 GBP', $activity['subject']);
+    $this->assertEquals(165, $activity['activity_type_id']);
+    $this->assertNotNull($activity['details']);
+    $details = json_decode($activity['details'], TRUE);
+    $this->assertEquals('GBP', $details['native_currency']);
+    $this->assertEquals($newRecurringMsg['gross'], $details['native_original_amount']);
+    $this->assertEquals($this->getConvertedAmountRounded('GBP', $newRecurringMsg['gross']), $details['usd_original_amount']);
+    $convertedDifference = abs($planChangeMessage['amount'] - $newRecurringMsg['gross']);
+    $this->assertEquals($this->round($convertedDifference, 'GBP'), $details['native_amount_added']);
+    $this->assertEquals($this->getConvertedAmountRounded('GBP', $convertedDifference), $details['usd_amount_added']);
+  }
+
+  /**
+   * @throws CRM_Core_Exception
+   */
   public function testRecurringPlanChangeDowngrade(): void {
     $audit = $this->auditTestProvider();
     $newRecurringMsg = $audit[3][1]['recurring'][0];
