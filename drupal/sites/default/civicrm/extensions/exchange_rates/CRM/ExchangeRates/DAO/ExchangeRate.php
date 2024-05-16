@@ -253,5 +253,4 @@ class CRM_ExchangeRates_DAO_ExchangeRate extends CRM_Core_DAO {
     ];
     return ($localize && !empty($indices)) ? CRM_Core_DAO_AllCoreTables::multilingualize(__CLASS__, $indices) : $indices;
   }
-
 }
