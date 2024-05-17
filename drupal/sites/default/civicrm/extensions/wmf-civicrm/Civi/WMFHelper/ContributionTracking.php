@@ -188,6 +188,13 @@ class ContributionTracking {
       }
     }
 
+    if (
+      !empty($rawData['banner_history_log_id']) &&
+      preg_match('/^[0-9a-f]{10,20}$/', $rawData['banner_history_log_id'] )
+    ) {
+      $contributionTracking['banner_history_log_id'] = $rawData['banner_history_log_id'];
+    }
+
     return $contributionTracking;
   }
 
