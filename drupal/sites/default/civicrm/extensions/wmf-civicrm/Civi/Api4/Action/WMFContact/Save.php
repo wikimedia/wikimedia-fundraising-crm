@@ -59,26 +59,24 @@ class Save extends AbstractAction {
    */
   public function _run(Result $result): void {
     $contact_id = NULL;
-    $isCreate = !$contact_id;
     $msg = $this->getMessage();
 
-    if ($isCreate) {
-      $existingContact = $this->getExistingContact($msg);
-      $replaceNames = FALSE;
-      if ($existingContact) {
-        $msg['contact_id'] = $existingContact['contact_id'];
-        $replaceNames = (
-          empty($existingContact['contact_id.first_name']) &&
-          empty($existingContact['contact_id.last_name'])
-        );
-      }
-      if (!empty($msg['contact_id'])) {
-        $this->setMessage($msg);
-        $this->handleUpdate($replaceNames);
-        $result[] = ['id' => $msg['contact_id']];
-        return;
-      }
+    $existingContact = $this->getExistingContact($msg);
+    $replaceNames = FALSE;
+    if ($existingContact) {
+      $msg['contact_id'] = $existingContact['contact_id'];
+      $replaceNames = (
+        empty($existingContact['contact_id.first_name']) &&
+        empty($existingContact['contact_id.last_name'])
+      );
     }
+    if (!empty($msg['contact_id'])) {
+      $this->setMessage($msg);
+      $this->handleUpdate($replaceNames);
+      $result[] = ['id' => $msg['contact_id']];
+      return;
+    }
+
     // Set defaults for optional fields in the message
     if (!array_key_exists('contact_type', $msg)) {
       $msg['contact_type'] = "Individual";
@@ -209,30 +207,29 @@ class Save extends AbstractAction {
       }
     }
 
-    if ($isCreate) {
-      // Insert the location records if this is being called as a create.
-      // For update it's handled in the update routing.
-      try {
-        wmf_civicrm_message_address_insert($msg, $contact_id);
+    // Insert the location records if this is being called as a create.
+    // For update it's handled in the update routing.
+    try {
+      wmf_civicrm_message_address_insert($msg, $contact_id);
+    }
+    catch (\CRM_Core_Exception $ex) {
+      $hasContact = Contact::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('id', '=', $contact_id)->execute()->first();
+      // check contact_id exist in table
+      if (!$hasContact) {
+        // throw the DATABASE_CONTENTION exception will to trigger retry
+        throw new WmfException(
+          WmfException::DATABASE_CONTENTION,
+          'Contact could not be added due to database contention',
+          $ex->getExtraParams()
+        );
       }
-      catch (\CRM_Core_Exception $ex) {
-        $hasContact = Contact::get(FALSE)
-          ->addSelect('id')
-          ->addWhere('id', '=', $contact_id)->execute()->first();
-        // check contact_id exist in table
-        if (!$hasContact) {
-          // throw the DATABASE_CONTENTION exception will to trigger retry
-          throw new WmfException(
-            WmfException::DATABASE_CONTENTION,
-            'Contact could not be added due to database contention',
-            $ex->getExtraParams()
-          );
-        }
-        else {
-          throw $ex;
-        }
+      else {
+        throw $ex;
       }
     }
+
     if (Database::isNativeTxnRolledBack()) {
       throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact auxiliary fields");
     }
