@@ -24,8 +24,6 @@ use Civi\WMFHelper\Language;
  *
  * @method $this setMessage(array $msg) Set WMF normalised values.
  * @method array getMessage() Get WMF normalised values.
- * @method $this setContactID(int $contactID) Set the contact id to update.
- * @method int|null getContactID() get the contact it to update.
  * @method $this setIsLowConfidenceNameSource(bool $isLowConfidenceNameSource) Set IsLowConfidenceNameSource.
  *
  * @package Civi\Api4
@@ -38,13 +36,6 @@ class Save extends AbstractAction {
    * @var array
    */
   protected $message = [];
-
-  /**
-   * Contact ID to update.
-   *
-   * @var int
-   */
-  protected $contactID;
 
   /**
    * Indicate that donation came in via a low confidence name data source e.g.
@@ -67,7 +58,7 @@ class Save extends AbstractAction {
    * @throws \Civi\WMFException\WMFException
    */
   public function _run(Result $result): void {
-    $contact_id = $this->getContactID();
+    $contact_id = NULL;
     $isCreate = !$contact_id;
     $msg = $this->getMessage();
 
@@ -287,9 +278,6 @@ class Save extends AbstractAction {
     $incomingLanguage = $msg['language'] ?? '';
     $country = $msg['country'] ?? '';
     $preferredLanguage = '';
-    if (!$incomingLanguage && $this->getContactID()) {
-      return '';
-    }
     if (!$incomingLanguage) {
       // TODO: use LanguageTag to prevent truncation of >2 char lang codes
       // guess from contribution_tracking data
