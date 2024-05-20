@@ -3,7 +3,7 @@
 use Civi\Api4\ContributionTracking;
 use Civi\WMFHelper\ContributionTracking as WMFHelper;
 use SmashPig\Core\SequenceGenerators\Factory;
-use queue2civicrm\fredge\AntifraudQueueConsumer;
+use Civi\WMFQueue\AntifraudQueueConsumer;
 
 class GetTest extends BaseWmfDrupalPhpUnitTestCase {
 
@@ -25,7 +25,7 @@ class GetTest extends BaseWmfDrupalPhpUnitTestCase {
         'receive_date' => 'now',
         'total_amount' => 55,
         'is_pay_later' => FALSE,
-        'is_template' => FALSE
+        'is_template' => FALSE,
       ], $params))
       ->execute()
       ->first();
@@ -37,7 +37,7 @@ class GetTest extends BaseWmfDrupalPhpUnitTestCase {
       'utm_medium' => 'civicrm',
       'ts' => '',
       'contribution_id' => $contribution['id'],
-      'id' => $contribution_tracking_id
+      'id' => $contribution_tracking_id,
     ]))->execute()->first();
 
     $this->createFredgeTestRecord([

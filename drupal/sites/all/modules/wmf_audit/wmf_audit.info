@@ -1,7 +1,6 @@
 name = WMF Audit
 description = Auditing framework for contacts and contributions that come in through nightly reconciliation files
 core = 7.x
-dependencies[] = queue2civicrm
 dependencies[] = civicrm
 dependencies[] = wmf_common
 dependencies[] = wmf_civicrm
