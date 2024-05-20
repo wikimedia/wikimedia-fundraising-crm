@@ -2,7 +2,6 @@ name = Queue to CiviCRM
 description = Imports contributions from a message queue.
 core = 7.x
 configure = admin/config/queue2civicrm
-dependencies[] = exchange_rates
 dependencies[] = wmf_civicrm
 package = queue2civicrm
 
