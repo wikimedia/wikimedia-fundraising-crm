@@ -1,6 +1,7 @@
 <?php /** @noinspection PhpUnused */
 
 use Civi\Api4\CustomField;
+use Civi\Api4\ExchangeRate;
 use Civi\Api4\OptionGroup;
 use Civi\Api4\OptionValue;
 use Civi\Api4\WMFConfig;
@@ -2068,6 +2069,30 @@ AND q.id BETWEEN %1 AND %2";
       ->execute();
     return TRUE;
   }
+
+  /**
+   * Copy existing exchange rates from drupal table
+   * @return bool
+   */
+  public function upgrade_4485(): bool {
+    // Skip if old table is already gone
+    if (!CRM_Core_DAO::singleValueQuery(
+      "SELECT 1 FROM information_schema.tables WHERE table_schema='drupal' AND table_name='exchange_rates'"
+    )) {
+      return TRUE;
+    }
+    $existingRates = CRM_Core_DAO::executeQuery('SELECT * FROM drupal.exchange_rates');
+    while ($existingRates->fetch()) {
+      ExchangeRate::create(FALSE)->setValues([
+        'currency' => $existingRates->currency,
+        'value_in_usd' => $existingRates->value_in_usd,
+        'bank_update' => date('Y-m-d H:i:s', $existingRates->bank_update),
+        'local_update' => date('Y-m-d H:i:s', $existingRates->local_update),
+      ])->execute();
+    }
+    return TRUE;
+  }
+
 
   /**
    * @param array $conversions

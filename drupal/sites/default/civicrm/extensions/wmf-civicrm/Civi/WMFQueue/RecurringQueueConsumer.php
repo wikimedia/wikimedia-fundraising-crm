@@ -3,22 +3,16 @@
 namespace Civi\WMFQueue;
 
 use Civi;
-use Civi\API\Exception\UnauthorizedException;
-use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
-use Civi\Api4\RecurUpgradeEmail;
 use Civi\Api4\WMFContact;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\Api4\ContributionRecur;
-use Civi\Api4\Activity;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\PaymentProcessor;
-use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
-use CRM_Core_Payment_Scheduler;
-use SmashPig\Core\Helpers\CurrencyRoundingHelper;
+use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFTransaction;
 use Statistics\Exception\StatisticsCollectorException;
 
@@ -210,7 +204,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     if (!RecurHelper::isFirst($recur_record->id)) {
       $msg['financial_type_id'] = RecurHelper::getFinancialTypeForSubsequentContributions();
     }
-    wmf_civicrm_contribution_message_import($msg);
+    QueueWrapper::push('donations', $msg);
   }
 
   /**
