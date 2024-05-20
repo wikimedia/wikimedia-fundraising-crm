@@ -24,8 +24,6 @@ use Civi\WMFHelper\Language;
  *
  * @method $this setMessage(array $msg) Set WMF normalised values.
  * @method array getMessage() Get WMF normalised values.
- * @method $this setContactID(int $contactID) Set the contact id to update.
- * @method int|null getContactID() get the contact it to update.
  * @method $this setIsLowConfidenceNameSource(bool $isLowConfidenceNameSource) Set IsLowConfidenceNameSource.
  *
  * @package Civi\Api4
@@ -38,13 +36,6 @@ class Save extends AbstractAction {
    * @var array
    */
   protected $message = [];
-
-  /**
-   * Contact ID to update.
-   *
-   * @var int
-   */
-  protected $contactID;
 
   /**
    * Indicate that donation came in via a low confidence name data source e.g.
@@ -67,26 +58,25 @@ class Save extends AbstractAction {
    * @throws \Civi\WMFException\WMFException
    */
   public function _run(Result $result): void {
-    $contact_id = $this->getContactID();
-    $isCreate = !$contact_id;
+    $contact_id = NULL;
     $msg = $this->getMessage();
 
-    if ($isCreate) {
-      $existingContact = $this->getExistingContact($msg);
-      if ($existingContact) {
-        $contact_id = $existingContact['contact_id'];
-        $msg['contact_id'] = $contact_id;
-
-        $replaceNames = (
-          empty($existingContact['contact_id.first_name']) &&
-          empty($existingContact['contact_id.last_name'])
-        );
-        $this->setMessage($msg);
-        $this->handleUpdate($replaceNames);
-        $result[] = ['id' => $contact_id];
-        return;
-      }
+    $existingContact = $this->getExistingContact($msg);
+    $replaceNames = FALSE;
+    if ($existingContact) {
+      $msg['contact_id'] = $existingContact['contact_id'];
+      $replaceNames = (
+        empty($existingContact['contact_id.first_name']) &&
+        empty($existingContact['contact_id.last_name'])
+      );
     }
+    if (!empty($msg['contact_id'])) {
+      $this->setMessage($msg);
+      $this->handleUpdate($replaceNames);
+      $result[] = ['id' => $msg['contact_id']];
+      return;
+    }
+
     // Set defaults for optional fields in the message
     if (!array_key_exists('contact_type', $msg)) {
       $msg['contact_type'] = "Individual";
@@ -150,9 +140,6 @@ class Save extends AbstractAction {
       'Organization_Contact.Title' => 'Title',
       'Organization_Contact.Name' => 'Name',
     ];
-    if (!empty($this->getExternalIdentifierField($msg))) {
-      $custom_field_mangle['external_identifier'] = $this->getExternalIdentifierField($msg);
-    }
     foreach ($custom_field_mangle as $msgField => $customField) {
       if (isset($msg[$msgField])) {
         $custom_vars[$customField] = $msg[$msgField];
@@ -180,8 +167,8 @@ class Save extends AbstractAction {
         throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
       }
     }
-      // Soon we will only catch CRM_Core_Exception as the other exceptions are now aliased to it
-      // preparatory to being phased out
+    // Soon we will only catch CRM_Core_Exception as the other exceptions are now aliased to it
+    // preparatory to being phased out
     catch (\CRM_Core_Exception $ex) {
       if (in_array($ex->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) {
         throw new WMFException(
@@ -220,30 +207,29 @@ class Save extends AbstractAction {
       }
     }
 
-    if ($isCreate) {
-      // Insert the location records if this is being called as a create.
-      // For update it's handled in the update routing.
-      try {
-        wmf_civicrm_message_address_insert($msg, $contact_id);
+    // Insert the location records if this is being called as a create.
+    // For update it's handled in the update routing.
+    try {
+      wmf_civicrm_message_address_insert($msg, $contact_id);
+    }
+    catch (\CRM_Core_Exception $ex) {
+      $hasContact = Contact::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('id', '=', $contact_id)->execute()->first();
+      // check contact_id exist in table
+      if (!$hasContact) {
+        // throw the DATABASE_CONTENTION exception will to trigger retry
+        throw new WmfException(
+          WmfException::DATABASE_CONTENTION,
+          'Contact could not be added due to database contention',
+          $ex->getExtraParams()
+        );
       }
-      catch (\CRM_Core_Exception $ex) {
-        $hasContact = Contact::get(FALSE)
-          ->addSelect('id')
-          ->addWhere('id', '=', $contact_id)->execute()->first();
-        // check contact_id exist in table
-        if (!$hasContact) {
-          // throw the DATABASE_CONTENTION exception will to trigger retry
-          throw new WmfException(
-            WmfException::DATABASE_CONTENTION,
-            'Contact could not be added due to database contention',
-            $ex->getExtraParams()
-          );
-        }
-        else {
-          throw $ex;
-        }
+      else {
+        throw $ex;
       }
     }
+
     if (Database::isNativeTxnRolledBack()) {
       throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact auxiliary fields");
     }
@@ -289,9 +275,6 @@ class Save extends AbstractAction {
     $incomingLanguage = $msg['language'] ?? '';
     $country = $msg['country'] ?? '';
     $preferredLanguage = '';
-    if (!$incomingLanguage && $this->getContactID()) {
-      return '';
-    }
     if (!$incomingLanguage) {
       // TODO: use LanguageTag to prevent truncation of >2 char lang codes
       // guess from contribution_tracking data
@@ -404,15 +387,9 @@ class Save extends AbstractAction {
     // have not been brave enough to change historical code than an underlying reason.
     $updateFields = $replaceNames ? ['first_name', 'last_name'] : [];
 
-    if (!empty($this->getExternalIdentifierField($this->getMessage()))) {
-      $updateFields[] = 'External_Identifiers.' . $this->getExternalIdentifierField($this->getMessage());
-    }
     $msg = $this->getMessage();
     $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
     $updateParams += $this->getApiReadyFields();
-    if (!empty($msg['external_identifier'])) {
-      $updateParams['External_Identifiers.' . $this->getExternalIdentifierField($msg)] = $msg['external_identifier'];
-    }
     if (empty($msg['contact_type']) || $msg['contact_type'] === 'Individual') {
       // Individual-only custom fields
       if (!empty($msg['employer'])) {
@@ -450,20 +427,6 @@ class Save extends AbstractAction {
     }
   }
 
-  protected function getExternalIdentifierField(array $msg): ?string {
-    if (empty($msg['gateway'])) {
-      return null;
-    }
-    // Save external platform contact id if braintree venmo, then save the user_name otherwise save to id
-    $isBraintreeVenmoPayment = !empty($msg['payment_method']) && $msg['payment_method'] === 'venmo' && $msg['gateway'] === 'braintree';
-    $externalIdentifier = ($isBraintreeVenmoPayment) ? 'venmo_user_name' : $msg['gateway'] . '_id';
-    if (\CRM_Core_BAO_CustomField::getCustomFieldID($externalIdentifier, null)) {
-      return $externalIdentifier;
-    }
-    return null;
-  }
-
-
   /**
    * Look for existing exact-match contact in the database.
    *
@@ -480,21 +443,30 @@ class Save extends AbstractAction {
     if (empty($msg['first_name']) || empty($msg['last_name'])) {
       return NULL;
     }
-    if (!empty($this->getExternalIdentifierField($msg))) {
-        $external_identifier_field = $this->getExternalIdentifierField($msg);
-        // since venmo allow user to update their user_name, we can not use this as single select param,
-        // we can probably use venmo_user_id in the future for this dedupe function works for venmo
-        if (!empty($msg['external_identifier']) && $external_identifier_field !== 'venmo_user_name') {
-          $matches = Contact::get(FALSE)
-            ->addWhere('External_Identifiers.'.$external_identifier_field, '=', $msg['external_identifier'])
-            ->execute()
-            ->first();
-          if(!empty($matches)) {
-            $matches['contact_id'] = $matches['id'];
-            return $matches;
-          }
+    if (!empty($msg['contact_id'])) {
+      $contact = Contact::get(FALSE)->addWhere('id', '=', $msg['contact_id'])
+        ->addSelect('first_name', 'last_name')->execute()->first();
+      if ($contact) {
+        return ['contact_id.first_name' => $contact['first_name'], 'contact_id.last_name' => $contact['last_name'], 'contact_id' => $contact['id']];
+      }
+      // @todo - should we throw an exception here? Should no be reachable.
+    }
+    $externalIdentifiers = array_flip($this->getExternalIdentifierFields());
+    if ($externalIdentifiers) {
+      // since venmo allow user to update their user_name, we can not use this as single select param,
+      // we can probably use venmo_user_id in the future for this dedupe function works for venmo
+      if (empty($externalIdentifiers['External_Identifiers.venmo_user_name'])) {
+        $external_identifier_field = array_key_first($externalIdentifiers);
+        $matches = Contact::get(FALSE)
+          ->addWhere($external_identifier_field, '=', $this->message[$external_identifier_field])
+          ->execute()
+          ->first();
+        if (!empty($matches)) {
+          $matches['contact_id'] = $matches['id'];
+          return $matches;
         }
       }
+    }
 
     if (!empty($msg['email'])) {
       // Check for existing....
@@ -638,6 +610,10 @@ class Save extends AbstractAction {
   public function getApiReadyFields(int $destinationApiVersion = 4): array {
     $values = [];
     // Copy some fields, if they exist
+    // Why do this rather than just do pattern based conversion?
+    // At this stage there is an allow-list of sorts in play - it's
+    // not totally clear how deliberate it is but as we work through
+    // it, we will hopefully reach a zen-like state of clarity.
     $apiFields = [
       'do_not_email' => 'do_not_email',
       'do_not_mail' => 'do_not_mail',
@@ -653,7 +629,8 @@ class Save extends AbstractAction {
       $this->getApiv3FieldName('first_name_phonetic') => 'Communication.first_name_phonetic',
       $this->getApiv3FieldName('last_name_phonetic') => 'Communication.last_name_phonetic',
       $this->getApiv3FieldName('Partner') => 'Partner.Partner',
-    ];
+    ] + $this->getExternalIdentifierFields();
+
     foreach ($apiFields as $api3Field => $api4Field) {
       // We are currently calling apiv3 here but aim to call v4.
       // We can map either incoming, but prefer v4.
@@ -679,6 +656,21 @@ class Save extends AbstractAction {
    */
   private function getApiv3FieldName(string $name): string {
     return wmf_civicrm_get_custom_field_name($name);
+  }
+
+  /**
+   * Get any custom fields that represent external identifiers.
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function getExternalIdentifierFields(): array {
+    $externalIdentifierFields = [];
+    foreach (array_keys($this->message) as $field) {
+      if (str_starts_with($field, 'External_Identifiers.')) {
+        $externalIdentifierFields[$this->getApiv3FieldName(substr($field, 21))] = $field;
+      }
+    }
+    return $externalIdentifierFields;
   }
 
 }

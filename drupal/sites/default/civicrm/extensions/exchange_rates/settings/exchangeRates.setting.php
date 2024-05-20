@@ -67,4 +67,26 @@ return [
     'html_type' => 'text',
     'settings_pages' => ['exchange_rates' => ['weight' => 40]],
   ],
+  'exchange_rates_cache_granularity' => [
+    'group_name' => 'Exchange Rates Settings',
+    'group' => 'exchange_rates',
+    'name' => 'exchange_rates_cache_granularity',
+    'type' => 'string',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('Granularity of the cache for a given exchange rate. More granular means more DB lookups but potentially more accurate rates.'),
+    'default' => 'day',
+    'title' => E::ts('Cache granularity'),
+    'help_text' => 'Should match the frequency at which you fetch new exchange rates (e.g. via the updateAll API call)',
+    'html_type' => 'select',
+    'html_attributes' => [
+      'class' => 'crm-select2',
+    ],
+    'settings_pages' => ['exchange_rates' => ['weight' => 50]],
+    'options' => [
+      'hour' => 'Hour',
+      'day' => 'Day',
+      'month' => 'Month',
+    ],
+  ],
 ];

@@ -2,6 +2,7 @@
 
 use Civi\Api4\CustomField;
 use Civi\WMFHelper\Queue;
+use Civi\WMFHook\Address as AddressHook;
 
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
@@ -196,6 +197,10 @@ function wmf_civicrm_civicrm_pre(string $op, $type, $id, &$entity) {
 
     case 'ContributionSoft':
       ContributionSoft::pre($op, $entity);
+      break;
+
+    case 'Address':
+      AddressHook::pre($op, $entity);
       break;
   }
 }

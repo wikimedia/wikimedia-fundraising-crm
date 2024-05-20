@@ -5,7 +5,9 @@ namespace Civi\WMFQueue;
 use Civi;
 use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Action\WMFContact\Save;
+use Civi\Api4\Address;
 use Civi\Api4\Contact;
+use Civi\Api4\Email;
 use Civi\Api4\RecurUpgradeEmail;
 use Civi\Api4\WMFContact;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
@@ -76,7 +78,12 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   }
 
   /**
-   * Import a recurring payment
+   * Import a recurring payment from PayPal.
+   *
+   * Other recurring payments go directly into donation queue.
+   * PayPal is different. This is largely historical but there is a real
+   * reason in that currently this code is what ensures the ContributionRecur
+   * record exists. Potentially the Donation queue could do that too.
    *
    * @param RecurDonationMessage $message
    * @param array $msg
@@ -172,28 +179,38 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     $msg['contact_id'] = $recur_record->contact_id;
     $msg['contribution_recur_id'] = $recur_record->id;
 
+    // Unset email & address values if the contact already has details.
+    // Do separate 'quick' look-ups as likely to be less lock-inducing.
+    $emailExists = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $msg['contact_id'])
+      ->addSelect('email')
+      ->execute()->first()['email'] ?? FALSE;
+    if ($emailExists) {
+      // If the contact already has an email then do not attempt to update or override it
+      // because this flow is only used by PayPal, which is not considered a more reliable source.
+      unset($msg['email']);
+    }
+
+    $address = Address::get(FALSE)
+      ->addSelect('country_id:name', '*')
+      ->addWhere('contact_id', '=', $msg['contact_id'])
+      ->execute()->first();
+    $isUpdateAddress = $address === NULL;
+    if ($address && empty($address['street_address']) && !empty($msg['street_address'])) {
+      // We might have something to add here.... as long as the country is the same.
+      if ($msg['country'] === $address['country_id:name']) {
+        $isUpdateAddress = TRUE;
+      }
+    }
+    if (!$isUpdateAddress) {
+      // Unsetting country is actually enough to block it. The rest are for clarity.
+      unset($msg['street_address'], $msg['country'], $msg['city'], $msg['postal_code'], $msg['state_province']);
+    }
+
     if (!RecurHelper::isFirst($recur_record->id)) {
       $msg['financial_type_id'] = RecurHelper::getFinancialTypeForSubsequentContributions();
     }
-    //insert the contribution
-    $contribution = wmf_civicrm_contribution_message_import($msg);
-
-    /**
-     *  Insert the contribution record.
-     *
-     *  PayPal only sends us full address information for the user in payment messages,
-     *  but we only want to insert this data once unless we're modifying the record.
-     *  We know that this should be the first time we're processing a contribution
-     *  for this given user if we are also updating the contribution_tracking table
-     *  for this contribution.
-     */
-    $ctRecord = wmf_civicrm_get_contribution_tracking($msg);
-    if (empty($ctRecord['contribution_id'])) {
-      // update the contact - it's not clear that this is needed
-      // as the call to wmf_civicrm_contribution_message_import
-      // will do it.
-      $this->updateContact($msg, $recur_record->contact_id);
-    }
+    wmf_civicrm_contribution_message_import($msg);
   }
 
   /**
@@ -286,24 +303,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: No contribution_tracking_id returned.');
       return NULL;
     }
-  }
-
-  /**
-   * Update the contact record
-   *
-   * Serves as a standard way for message processors to handle contact
-   * updates.
-   *
-   * @param array $msg
-   * @param int $contact_id
-   *
-   * @return array
-   */
-  private function updateContact($msg, $contact_id) {
-    return WMFContact::save(FALSE)
-      ->setContactID($contact_id)
-      ->setMessage($msg)
-      ->execute()->first();
   }
 
   /**
