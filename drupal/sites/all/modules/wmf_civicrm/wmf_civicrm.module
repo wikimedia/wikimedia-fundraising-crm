@@ -1090,7 +1090,14 @@ function wmf_civicrm_mark_refund(
     if ($refund_currency != $original_currency) {
       if ($refund_currency === 'USD') {
         // change original amount and currency to match refund
-        $original_amount = round(exchange_rate_convert($original_currency, $original_amount, CRM_Utils_Date::unixTime($contribution['receive_date'])), 2);
+        $original_amount = round((float)Civi\Api4\ExchangeRate::convert(FALSE)
+          ->setFromCurrency($original_currency)
+          ->setFromAmount($original_amount)
+          ->setTimestamp(is_int($contribution['receive_date'])
+            ? ( '@' . $contribution['receive_date'] )
+            : $contribution['receive_date'])
+          ->execute()
+          ->first()['amount'], 2);
         $original_currency = 'USD';
       }
       else {
@@ -1138,11 +1145,12 @@ function wmf_civicrm_mark_refund(
       try {
         civicrm_api3('Contribution', 'create', [
           'total_amount' => round(
-            exchange_rate_convert(
-              $refund_currency,
-              -$amount_scammed,
-              wmf_common_date_parse_string(date('Y-m-d h:i:s', $refund_date)
-              )), 2),
+            (float)Civi\Api4\ExchangeRate::convert(FALSE)
+              ->setFromCurrency($refund_currency)
+              ->setFromAmount(-$amount_scammed)
+              ->setTimestamp(is_int($refund_date) ? "@$refund_date" : $refund_date)
+              ->execute()
+              ->first()['amount'], 2),
           // New type?
           'financial_type_id' => 'Refund',
           'contact_id' => $contribution['contact_id'],

@@ -4,8 +4,10 @@ namespace Civi;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
+use Civi\Api4\ExchangeRate;
 use Civi\Api4\WMFQueue;
 use Civi\ExchangeException\ExchangeRatesException;
+use CRM_ExchangeRates_BAO_ExchangeRate;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
@@ -154,7 +156,11 @@ trait WMFQueueTrait {
    */
   protected function getConvertedAmount($currency, $amount): float {
     try {
-      return exchange_rate_convert($currency, $amount);
+      return (float)ExchangeRate::convert(FALSE)
+        ->setFromCurrency($currency)
+        ->setFromAmount($amount)
+        ->execute()
+        ->first()['amount'];
     }
     catch (ExchangeRatesException $e) {
       $this->fail('Exchange rate conversion failed: ' . $e->getMessage());
@@ -245,7 +251,9 @@ trait WMFQueueTrait {
    */
   protected function setExchangeRates(int $timestamp, array $rates): void {
     foreach ($rates as $currency => $rate) {
-      exchange_rate_cache_set($currency, $timestamp, $rate);
+      CRM_ExchangeRates_BAO_ExchangeRate::addToCache(
+        $currency, (new \DateTime('@' . $timestamp))->format('YmdHis'), $rate
+      );
     }
   }
 
