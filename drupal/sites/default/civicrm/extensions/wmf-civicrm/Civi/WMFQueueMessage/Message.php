@@ -263,7 +263,7 @@ class Message {
    * @throws \CRM_Core_Exception
    */
   public function getCustomFieldMetadataByFieldName(string $name): ?array {
-    $fieldsThatAreNotCustom = ['date', 'email'];
+    $fieldsThatAreNotCustom = ['date', 'email', 'country', 'phone'];
     if (in_array($name, $fieldsThatAreNotCustom)) {
       return NULL;
     }
