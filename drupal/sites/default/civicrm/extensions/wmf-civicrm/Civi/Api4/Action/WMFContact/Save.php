@@ -58,7 +58,6 @@ class Save extends AbstractAction {
    * @throws \Civi\WMFException\WMFException
    */
   public function _run(Result $result): void {
-    $contact_id = NULL;
     $msg = $this->getMessage();
 
     $existingContact = $this->getExistingContact($msg);
@@ -77,25 +76,10 @@ class Save extends AbstractAction {
       return;
     }
 
-    // Set defaults for optional fields in the message
-    if (!array_key_exists('contact_type', $msg)) {
-      $msg['contact_type'] = "Individual";
-    }
-    elseif ($msg['contact_type'] !== 'Individual' && $msg['contact_type'] !== 'Organization') {
-      // looks like an unsupported type was sent, revert to default
-      \Civi::log('wmf')->warning('wmf_civicrm: Non-supported contact_type received: {type}', ['type' => $msg['contact_type']]);
-      $msg['contact_type'] = "Individual";
-    }
-
-    if (!array_key_exists('contact_source', $msg)) {
-      $msg['contact_source'] = "online donation";
-    }
-
     // Create the contact record
     $contact = [
-      'id' => $contact_id,
-      'contact_type' => $msg['contact_type'],
-      'contact_source' => $msg['contact_source'],
+      'contact_type' => $msg['contact_type'] ?? 'Individual',
+      'contact_source' => $msg['contact_source'] ?? 'online donation',
       'debug' => TRUE,
       'addressee_id' => empty($msg['addressee_custom']) ? NULL : 'Customized',
       // Major gifts wants greeting processing - but we are not sure speedwise.
@@ -105,7 +89,7 @@ class Save extends AbstractAction {
       $contact['organization_name'] = $msg['organization_name'];
     }
 
-    if (strtolower($msg['contact_type']) !== 'organization') {
+    if (strtolower($contact['contact_type']) !== 'organization') {
       foreach (['first_name', 'last_name', 'middle_name', 'nick_name'] as $name) {
         if (isset($msg[$name])) {
           $contact[$name] = $msg[$name];
@@ -113,7 +97,7 @@ class Save extends AbstractAction {
       }
     }
 
-    if (!$contact_id && !empty($msg['email'])) {
+    if (!empty($msg['email'])) {
       // For updates we are still using our own process which may or may not confer benefits
       // For inserts however we can rely on the core api.
       $contact['email'] = $msg['email'];
@@ -161,7 +145,7 @@ class Save extends AbstractAction {
       $this->startTimer('create_contact_civi_api');
       $contact_result = civicrm_api3('Contact', 'Create', $contact);
       $this->stopTimer('create_contact_civi_api');
-      \Civi::log('wmf')->debug('wmf_civicrm: Successfully ' . ($contact_id ? 'updated' : 'created ') . ' contact: {id}', ['id' => $contact_result['id']]);
+      \Civi::log('wmf')->debug('wmf_civicrm: Successfully created contact: {id}', ['id' => $contact_result['id']]);
       $this->createEmployerRelationshipIfSpecified($contact_result['id'], $msg);
       if (Database::isNativeTxnRolledBack()) {
         throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
@@ -184,14 +168,13 @@ class Save extends AbstractAction {
         $ex->getErrorData()
       );
     }
-    $contact_id = (int) $contact_result['id'];
 
     // Add phone number
     if (isset($msg['phone'])) {
       try {
         $phone_result = civicrm_api3('Phone', 'Create', [
           // XXX all the fields are nullable, should we set any others?
-          'contact_id' => $contact_id,
+          'contact_id' => (int) $contact_result['id'],
           'location_type_id' => wmf_civicrm_get_default_location_type_id(),
           'phone' => $msg['phone'],
           'phone_type_id' => 'Phone',
@@ -202,7 +185,7 @@ class Save extends AbstractAction {
       catch (\CRM_Core_Exception $ex) {
         throw new WMFException(
           WMFException::IMPORT_CONTACT,
-          "Failed to add phone for contact ID {$contact_id}: {$ex->getMessage()} " . print_r($ex->getErrorData(), TRUE)
+          "Failed to add phone for contact ID {$contact_result['id']} contact_id}: {$ex->getMessage()} " . print_r($ex->getErrorData(), TRUE)
         );
       }
     }
@@ -210,12 +193,12 @@ class Save extends AbstractAction {
     // Insert the location records if this is being called as a create.
     // For update it's handled in the update routing.
     try {
-      wmf_civicrm_message_address_insert($msg, $contact_id);
+      wmf_civicrm_message_address_insert($msg, (int) $contact_result['id']);
     }
     catch (\CRM_Core_Exception $ex) {
       $hasContact = Contact::get(FALSE)
         ->addSelect('id')
-        ->addWhere('id', '=', $contact_id)->execute()->first();
+        ->addWhere('id', '=', (int) $contact_result['id'])->execute()->first();
       // check contact_id exist in table
       if (!$hasContact) {
         // throw the DATABASE_CONTENTION exception will to trigger retry
