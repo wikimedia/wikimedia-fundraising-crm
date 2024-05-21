@@ -321,6 +321,9 @@ abstract class ChecksFile {
       // but hope to consolidate on 1 call.
       $this->handleUpdate($msg);
     }
+    if (!empty($msg['no_thank_you'])) {
+      $msg['contribution_extra.no_thank_you'] = $msg['no_thank_you'];
+    }
     return _message_contribution_insert($msg);
   }
 

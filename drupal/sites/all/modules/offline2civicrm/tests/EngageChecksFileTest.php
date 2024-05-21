@@ -707,7 +707,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     $importer->import();
     $this->assertFalse($importer->isSuccess());
     $messages = $importer->getMessages();
-    $this->assertEquals("Import aborted due to 10 consecutive errors, last error was at row 12: 'Invalid Name' is not a valid option for field custom_", substr($messages[0], 0, 125));
+    $this->assertEquals("Import aborted due to 10 consecutive errors, last error was at row 12: INVALID_MESSAGE Invalid value (Invalid Name) submitted", substr($messages[0], 0, 125));
   }
 
   /**
@@ -743,7 +743,8 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     unset($errors[0]);
 
     $this->assertCount(3, $errors);
-    $this->assertEquals('"\'invalid value\' is not a valid option for field ' . wmf_civicrm_get_custom_field_name('Fund') . '",B15_0601_enlvroskLVROSK_dsk_lg_nag_sd.no-LP.cc,C15_mlWW_mob_lw_FR,sitenotice,10563,Engage,24,"USD 24.00",5/9/2015,5/9/2015,Check,1,"invalid value","Corporate Gift","Carl TEST Perry","Townsend Agency","53 International Circle",Nowe,Poland,,cperry0@salon.com,,12/21/2014,,,,,,,
+    $customFieldID = CRM_Core_BAO_CustomField::getCustomFieldID('Fund');
+    $this->assertEquals('"INVALID_MESSAGE Invalid value (invalid value) submitted for custom field ' . $customFieldID . ':Gift Data Restrictions - Gift_Data.Fund",B15_0601_enlvroskLVROSK_dsk_lg_nag_sd.no-LP.cc,C15_mlWW_mob_lw_FR,sitenotice,10563,Engage,24,"USD 24.00",5/9/2015,5/9/2015,Check,1,"invalid value","Corporate Gift","Carl TEST Perry","Townsend Agency","53 International Circle",Nowe,Poland,,cperry0@salon.com,,12/21/2014,,,,,,,
 ', $errors[1]);
 
     $skippedURI = str_replace('.csv', '_skipped.' . $user->uid . '.csv', $fileUri);

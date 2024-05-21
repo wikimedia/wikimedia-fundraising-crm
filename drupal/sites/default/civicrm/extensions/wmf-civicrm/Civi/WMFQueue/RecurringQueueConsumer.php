@@ -7,6 +7,7 @@ use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
 use Civi\Api4\WMFContact;
+use Civi\Core\Exception\DBQueryException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\Api4\ContributionRecur;
 use Civi\WMFException\WMFException;
@@ -401,8 +402,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     try {
       return $this->createContributionRecur($params);
     }
-    catch (\CRM_Core_Exception $e) {
-      if (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+    catch (DBQueryException $e) {
+      if (in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
         throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
       }
     }
@@ -412,13 +413,22 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     try {
       return $this->updateContributionRecur($params);
     }
-    catch (\CRM_Core_Exception $e) {
-      if (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+    catch (DBQueryException $e) {
+      if (in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
         throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
       }
+      // If it is a mysql query error then re-throw it.
+      throw $e;
     }
   }
 
+  /**
+   * @param array $params
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
   protected function createContributionRecur(array $params): ?array {
     return ContributionRecur::create(FALSE)
       ->setValues($params)
@@ -426,6 +436,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       ->first();
   }
 
+  /**
+   * @throws \Civi\Core\Exception\DBQueryException
+   * @throws \CRM_Core_Exception
+   */
   protected function updateContributionRecur(array $params): ?array {
     return ContributionRecur::update(FALSE)
       ->setValues($params)

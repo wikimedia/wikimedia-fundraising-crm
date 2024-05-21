@@ -11,6 +11,7 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function testDoubleNormalization(): void {
     // Start with a message already in normal form, to make comparison easy
+    $enqueuedTime = time() + 2;
     $original_msg = [
       'anonymous' => 0,
       'check_number' => '',
@@ -46,12 +47,18 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'postal_code' => '',
       'postmark_date' => NULL,
       'recurring' => '1',
-      'source_enqueued_time' => time() + 2,
+      'source_enqueued_time' => $enqueuedTime,
+      'contribution_extra.source_enqueued_time' => $enqueuedTime,
       'source_host' => 'thulium',
+      'contribution_extra.source_host' => 'thulium',
       'source_name' => 'PayPal IPN (legacy)',
-      'source_run_id' => mt_rand(),
+      'contribution_extra.source_name' => 'PayPal IPN (legacy)',
+      'source_run_id' => 9999998888877777,
+      'contribution_extra.source_run_id' => 9999998888877777,
       'source_type' => 'listener',
+      'contribution_extra.source_type' => 'listener',
       'source_version' => 'legacy',
+      'contribution_extra.source_version' => 'legacy',
       'start_date' => time() + 10,
       'state_province' => '',
       'street_address' => '',
@@ -61,6 +68,9 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'thankyou_date' => '',
       'txn_type' => 'subscr_payment',
       'utm_campaign' => '',
+      'contribution_extra.gateway_txn_id' => '1234AB1234-2',
+      'contribution_extra.Postmark_Date' => NULL,
+      'Gift_Data.Appeal' => '',
     ];
 
     $msg = $original_msg;

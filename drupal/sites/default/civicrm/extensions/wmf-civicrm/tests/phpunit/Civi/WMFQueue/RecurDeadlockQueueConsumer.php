@@ -2,20 +2,25 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Core\Exception\DBQueryException;
+
 class RecurDeadlockQueueConsumer extends RecurringQueueConsumer {
 
   /**
    * @throws \CRM_Core_Exception
    */
   protected function createContributionRecur(array $params): ?array {
-    throw new \CRM_Core_Exception('DBException error', 123, ['error_code' => 'deadlock']);
+
+    $pearError = new \DB_Error(-31);
+    throw new DBQueryException($pearError->getMessage(), $pearError->getCode(), ['exception' => $pearError]);
   }
 
   /**
    * @throws \CRM_Core_Exception
    */
   protected function updateContributionRecur($params): ?array {
-    throw new \CRM_Core_Exception('DBException error', 123, ['error_code' => 'deadlock']);
+    $pearError = new \DB_Error(-31);
+    throw new DBQueryException($pearError->getMessage(), $pearError->getCode(), ['exception' => $pearError]);
   }
 
 }
