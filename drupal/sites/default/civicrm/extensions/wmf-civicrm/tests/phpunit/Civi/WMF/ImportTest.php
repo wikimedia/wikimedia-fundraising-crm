@@ -555,9 +555,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $contactID = $this->createIndividual(['address_primary.street_address' => 'Bumble Lane']);
     $this->doContactImport([
       'id' => $contactID,
-      // See https://phabricator.wikimedia.org/T357345#9807519
-      // we are hopefully renaming the option value from 'noca' to 'ncoa' soon.
-      'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID('address_source') => 'NOCA_update',
+      'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID('address_source') => 'NCOA_update',
       'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID('address_update_date') => '20240101',
       'street_address' => '123 Main St',
       'country' => 'United States',
@@ -570,9 +568,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertCount(2, $addresses);
     $newAddress = $addresses[0];
     $oldAddress = $addresses[1];
-    // See https://phabricator.wikimedia.org/T357345#9807519
-    // we are hopefully renaming the option value from 'noca' to 'ncoa' soon.
-    $this->assertEquals('noca', $newAddress['address_data.address_source']);
+    $this->assertEquals('ncoa', $newAddress['address_data.address_source']);
     $this->assertEquals('123 Main St', $newAddress['street_address']);
     $this->assertEquals('Bumble Lane', $oldAddress['street_address']);
     $this->assertEquals('Old_' . date('Y'), $oldAddress['location_type_id:name']);

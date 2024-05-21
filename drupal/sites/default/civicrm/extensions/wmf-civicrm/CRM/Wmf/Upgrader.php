@@ -2093,6 +2093,21 @@ AND q.id BETWEEN %1 AND %2";
     return TRUE;
   }
 
+  /**
+   * Copy existing exchange rates from drupal table
+   * @return bool
+   */
+  public function upgrade_4490(): bool {
+    OptionValue::update(FALSE)
+      ->addWhere('name', '=', 'NOCA_update')
+      ->setValues([
+        'name' => 'NCOA_update',
+        'value' => 'ncoa',
+        'label' => 'NCOA Update',
+      ])->execute();
+    CRM_Core_DAO::executeQuery('UPDATE civicrm_value_address_data SET source = "ncoa" WHERE source = "noca"');
+    return TRUE;
+  }
 
   /**
    * @param array $conversions
