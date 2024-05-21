@@ -35,9 +35,7 @@ class Address {
     $updateDate = $existingAddress = NULL;
     foreach ($entity['custom'] as $customValues) {
       $customValue = reset($customValues);
-      // See https://phabricator.wikimedia.org/T357345#9807519
-      // we are hopefully renaming the option value from 'noca' to 'ncoa' soon.
-      if ($customValue['column_name'] === 'source' && $customValue['value'] === 'noca') {
+      if ($customValue['column_name'] === 'source' && $customValue['value'] === 'ncoa') {
         // This is a National Change of Address update.
         $existingAddress = \Civi\Api4\Address::get(FALSE)
           ->addWhere('contact_id', '=', $entity['contact_id'])

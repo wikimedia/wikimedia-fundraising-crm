@@ -2,7 +2,6 @@ name = Large Donation
 description = Check large donations and notify staff in the event this is a fraudulent or a major donation.
 core = 7.x
 dependencies[] = civicrm
-dependencies[] = queue2civicrm
 dependencies[] = thank_you
 package = Wikimedia
 configure = admin/config/large_donation/configure

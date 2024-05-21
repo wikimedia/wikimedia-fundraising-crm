@@ -12,7 +12,6 @@ environment_indicator
 ingenico_audit
 large_donation
 offline2civicrm
-queue2civicrm
 redis
 syslog
 thank_you

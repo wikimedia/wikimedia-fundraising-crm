@@ -1990,7 +1990,7 @@ function _wmf_civicrm_get_address_data_fields(): array {
       'text_length' => 255,
       'column_name' => 'source',
       'option_values' => [
-        'noca' => 'NOCA update',
+        'ncoa' => 'NCOA update',
         'staff' => 'Staff Supplied',
         'iwave' => 'iWave',
         'donor' => 'Donor Supplied',
