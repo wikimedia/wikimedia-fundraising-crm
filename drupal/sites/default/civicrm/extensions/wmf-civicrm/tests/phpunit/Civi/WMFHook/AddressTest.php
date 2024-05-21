@@ -36,7 +36,7 @@ class AddressTest extends TestCase implements HeadlessInterface {
     try {
       Contact::update(FALSE)
         ->addValue('address_primary.street_address', 'Sad Street')
-        ->addValue('address_primary.address_data.address_source', 'noca')
+        ->addValue('address_primary.address_data.address_source', 'ncoa')
         ->addValue('address_primary.address_data.address_updated', '2024-01-01')
         ->addWhere('id', '=', $contactID)
         ->execute();
