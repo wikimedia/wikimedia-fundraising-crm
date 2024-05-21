@@ -19,9 +19,6 @@ class UpdateAll extends AbstractAction {
 
   /**
    * @inheritDoc
-   *
-   * @param \Civi\Api4\Generic\Result $result
-   *
    */
   public function _run(Result $result): void {
     // Ouroboros

@@ -23,5 +23,3 @@ class CurrencyRates {
 		return $currencyRates;
 	}
 }
-
-
