@@ -6,5 +6,10 @@
     <title>Exchange Rates Settings</title>
     <access_arguments>administer CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/exchange-rates</path>
+    <page_callback>CRM_ExchangeRates_Page_LatestRates</page_callback>
+    <title>LatestRates</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>
-
