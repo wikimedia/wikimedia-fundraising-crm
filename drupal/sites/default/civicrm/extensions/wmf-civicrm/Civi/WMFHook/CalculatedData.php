@@ -33,19 +33,6 @@ class CalculatedData extends TriggerHook {
   protected bool $triggerContext = TRUE;
 
   /**
-   * Should the donor segment be included even if the field is not there.
-   *
-   * This is a transitional mechanism to allow us to add segment data in advance
-   * of prod having the field (which will be added late June 2023).
-   * In WMFDonor.get mode we are retrieving
-   * what WOULD be calculated - so we force it to be included via this
-   * flag.
-   *
-   * @var bool
-   */
-  public $isForceSegment = FALSE;
-
-  /**
    * SQL for the segment selects.
    *
    * @var string
