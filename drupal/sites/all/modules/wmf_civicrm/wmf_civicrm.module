@@ -1,8 +1,11 @@
 <?php
 
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
+use Civi\Api4\ContributionSoft;
 use Civi\Api4\CustomField;
 use Civi\Api4\WMFContact;
+use Civi\Core\Exception\DBQueryException;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFHelper\Database;
@@ -274,7 +277,7 @@ function wmf_civicrm_contribution_message_import(array &$msg): array {
 
   // Set no_thank_you to recurring if it's the 2nd+ of any recurring payments
   if ($message->getRecurringPriorContributionValue('id')) {
-    $msg['no_thank_you'] = 'recurring';
+    $msg['contribution_extra.no_thank_you'] = 'recurring';
   }
 
   // Insert the contribution record.
@@ -393,6 +396,7 @@ function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
  * @return array
  *
  * @throws \Civi\WMFException\WMFException
+ * @throws \CRM_Core_Exception
  * @see wmf_civicrm_contribution_message_import.
  *
  */
@@ -440,90 +444,54 @@ function _wmf_civicrm_message_contribution_insert($msg) {
     }
   }
 
-  /**
-   *  Hopefully the Civi API will eventually handle custom fields in the
-   *  above "Create" call.
-   *
-   * NOTE: the custom field for "Gift_Information" indicates that check number is stored here.  It is not.
-   */
-  $custom_field_defaults = [
-    'gateway_account' => '',
-  ];
-
-  // Legacy field names which do not match the message field names
-  $custom_name_mangle = [
-    'direct_mail_appeal' => 'Appeal',
-    'gift_source' => 'Campaign',
-    'postmark_date' => 'Postmark_Date',
-    'restrictions' => 'Fund',
-    'stock_description' => 'Description_of_Stock',
-    'gateway_status' => 'gateway_status_raw',
-  ];
-
-  // Custom fields with names that match the message fields.
-  $custom_name_passthrough = [
-    'gateway_account',
-    'import_batch_number',
-    'no_thank_you',
-    'source_name',
-    'source_type',
-    'source_host',
-    'source_run_id',
-    'source_version',
-    'source_enqueued_time',
-    'Donor_Specified',
-  ];
-
-  $custom_fields = $custom_name_mangle
-    + array_combine($custom_name_passthrough, $custom_name_passthrough);
-
-  $custom_vars = [];
-  foreach ($custom_fields as $msg_key => $custom_key) {
-    if (array_key_exists($msg_key, $msg)) {
-      $custom_vars[$custom_key] = $msg[$msg_key];
-    }
-  }
-
-  // Transform any unix timestamps into an unambiguous MySQL datetime literal.
-  // If the date is already in mysql format, it will be 14 characters long:
-  // YYYYmmddHHiiss :-/
-  $date_mangle = [
-    'Postmark_Date',
-    'source_enqueued_time',
-  ];
-  foreach ($date_mangle as $field) {
-    if (array_key_exists($field, $custom_vars)
-      && is_numeric($custom_vars[$field])
-      && strlen($custom_vars[$field]) < 14
-    ) {
-      $custom_vars[$field] = wmf_common_date_unix_to_sql($custom_vars[$field]);
-    }
-  }
-
-  $custom_vars += $custom_field_defaults;
-
-  $custom_name_mapping = wmf_civicrm_get_custom_field_map(array_keys($custom_vars));
-  foreach ($custom_name_mapping as $readable => $machined) {
-    if (array_key_exists($readable, $custom_vars)) {
-      $contribution[$machined] = $custom_vars[$readable];
-    }
-  }
+  $customFields = (array) Contribution::getFields(FALSE)
+    ->addWhere('custom_field_id', 'IS NOT EMPTY')
+    ->addSelect('name')
+    ->execute()->indexBy('name');
+  $contribution += array_intersect_key($msg, $customFields);
 
   Civi::log('wmf')->debug('wmf_civicrm: Contribution array for contribution create {contribution}: ', ['contribution' => $contribution, TRUE]);
   try {
-    $contribution_result = civicrm_api3('Contribution', 'Create', array_merge($contribution, ['skipRecentView' => 1]));
+    $contributionAction = Contribution::create(FALSE)
+      ->setValues(array_merge($contribution, ['skipRecentView' => 1]));
+    if (!empty($msg['soft_credit_to'])) {
+      // @todo - consider moving this back to the import class!
+      // We don't do soft credit for Queue purposes do we?
+      $contributionSoftAction = ContributionSoft::create(FALSE)
+        ->setValues([
+          'contribution_id' => '$id',
+          'contact_id' => $msg['soft_credit_to'],
+          'currency' => $msg['currency'],
+          'amount' => $msg['gross'],
+          // Traditionally this has wound up being NULL on production because it was calling
+          // CRM_Core_OptionGroup::getDefaultValue("soft_credit_type") which ran a query each time but
+          // did not find a default. Locally a default is found. The newer import approach usually
+          // does set soft credit type and accounts for the small number of soft credits with type
+          // set in our DB.
+          'soft_credit_type_id' => NULL,
+        ]);
+      $contributionAction->addChain('ContributionSoft', $contributionSoftAction);
+    }
+    $contribution_result = $contributionAction->execute()->first();
     Civi::log('wmf')->debug('wmf_civicrm: Successfully created contribution {contribution_id} for contact {contact_id}', [
       'contribution_id' => $contribution_result['id'],
       'contact_id' => $contribution['contact_id'],
     ]);
+    return $contribution_result;
+  }
+  catch (DBQueryException $e) {
+    Civi::log('wmf')->info('wmf_civicrm: SQL Error inserting contribution: {message} {code}', ['message' => $e->getMessage(), 'code' => $e->getCode()]);
+    // Constraint violations occur when data is rolled back to resolve a deadlock.
+    if (in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+      // @todo - consider just re-throwing here.... it will be caught higher up.
+      throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
+    }
+    // Rethrowing this here will cause it to be caught by the next catch
+    // as it extends CRM_Core_Exception.
+    throw $e;
   }
   catch (CRM_Core_Exception $e) {
     Civi::log('wmf')->info('wmf_civicrm: Error inserting contribution: {message} {code}', ['message' => $e->getMessage(), 'code' => $e->getCode()]);
-    // Constraint violations occur when data is rolled back to resolve a deadlock.
-    if (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
-      throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
-    }
-
     $duplicate = 0;
 
     try {
@@ -560,8 +528,6 @@ function _wmf_civicrm_message_contribution_insert($msg) {
       );
     }
   }
-
-  return $contribution_result['values'][$contribution_result['id']];
 }
 
 /**

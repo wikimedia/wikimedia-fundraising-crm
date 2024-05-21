@@ -5,6 +5,7 @@ namespace Civi\WMFQueueMessage;
 use Civi\API\EntityLookupTrait;
 use Civi\Api4\Contact;
 use Civi\Api4\ExchangeRate;
+use Civi\WMFException\WMFException;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class Message {
@@ -61,7 +62,7 @@ class Message {
    * @param int|null $contributionTrackingID
    * @return void
    */
-  public function setContributionTrackingID(?int $contributionTrackingID): void{
+  public function setContributionTrackingID(?int $contributionTrackingID): void {
     $this->contributionTrackingID = $contributionTrackingID;
   }
 
@@ -218,6 +219,107 @@ class Message {
       return $this->contributionTrackingID;
     }
     return !empty($this->message['contribution_tracking_id']) ? (int) $this->message['contribution_tracking_id'] : NULL;
+  }
+
+  /**
+   * Get any keyed custom fields, transforming them to apiv4 style values.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function getCustomFields(): array {
+    $customFields = [];
+    foreach ($this->message as $fieldName => $value) {
+      if ($fieldName === 'direct_mail_appeal' && !empty($this->message['utm_campaign'])) {
+        // This is a weird one, utm_campaign beats direct_mail_appeal because ... code history.
+        continue;
+      }
+      $field = $this->getCustomFieldMetadataByFieldName($fieldName);
+      if ($field && !isset($this->message[$field['custom_group_id.name'] . '.' . $field['name']])) {
+        if (empty($field['options'])) {
+          $customFields[$field['custom_group_id.name'] . '.' . $field['name']] = $value;
+        }
+        else {
+          if ($value === '' || $value === NULL || !empty($field['options'][$value])) {
+            $customFields[$field['custom_group_id.name'] . '.' . $field['name']] = $value;
+          }
+          elseif (in_array($value, $field['options'])) {
+            $customFields[$field['custom_group_id.name'] . '.' . $field['name']] = array_search($value, $field['options']);
+          }
+          else {
+            // @todo - maybe move to validate? Might be easier once separation from import has been done.
+            $value = \CRM_Utils_Type::escape($value, 'String');
+            throw new WMFException(WMFException::INVALID_MESSAGE,
+              "Invalid value ($value) submitted for custom field {$field['id']}:"
+              . "{$field['custom_group_id.title']} {$field['label']} - {$field['custom_group_id.name']}.{$field['name']}");
+          }
+        }
+      }
+    }
+    return $customFields;
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function getCustomFieldMetadataByFieldName(string $name): ?array {
+    $fieldsThatAreNotCustom = ['date', 'email'];
+    if (in_array($name, $fieldsThatAreNotCustom)) {
+      return NULL;
+    }
+    $fieldsToMap = [
+      'utm_campaign' => 'Gift_Data.Appeal',
+      'direct_mail_appeal' => 'Gift_Data.Appeal',
+      'gift_source' => 'Gift_Data.Campaign',
+      'restrictions' => 'Gift_Data.Fund',
+      'stock_description' => 'Stock_Information.Description_of_Stock',
+      'postmark_date' => 'contribution_extra.Postmark_Date',
+      'gateway_status' => 'contribution_extra.gateway_status_raw',
+    ];
+    if (!empty($fieldsToMap[$name])) {
+      $name = $fieldsToMap[$name];
+    }
+    $parts = explode('.', $name);
+    if (count($parts) == 1) {
+      $fieldID = \CRM_Core_BAO_CustomField::getCustomFieldID($parts[0]);
+    }
+    else {
+      $fieldID = \CRM_Core_BAO_CustomField::getCustomFieldID($parts[1], $parts[0]);
+    }
+    if (!$fieldID) {
+      return NULL;
+    }
+    $field = $this->getCustomFieldMetadata($fieldID);
+    // Only pass through Contribution fields on the allow-list.
+    // This filtering may or may not be a good idea but historically the
+    // code has been permission on contact field pass-through &
+    // restrictive on contribution fields.
+    if ($field['custom_group_id.extends'] === 'Contribution' && !in_array($field['name'], [
+      'gateway_account',
+      'import_batch_number',
+      'no_thank_you',
+      'source_name',
+      'source_type',
+      'source_host',
+      'source_run_id',
+      'source_version',
+      'source_enqueued_time',
+      'Donor_Specified',
+      'Appeal',
+      'Fund',
+      'Campaign',
+      'Description_of_Stock',
+      'gateway_status_raw',
+      'Postmark_Date',
+      'gateway_txn_id',
+    ])) {
+      return NULL;
+    }
+    return $field;
+  }
+
+  public function getCustomFieldMetadata(int $id): array {
+    return \CRM_Core_BAO_CustomField::getField($id);
   }
 
   /**

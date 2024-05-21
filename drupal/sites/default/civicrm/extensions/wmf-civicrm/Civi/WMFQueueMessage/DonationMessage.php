@@ -4,6 +4,7 @@ namespace Civi\WMFQueueMessage;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\Name;
+use Civi\Api4\OptionValue;
 use Civi\WMFHelper\FinanceInstrument;
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFException\WMFException;
@@ -174,8 +175,6 @@ class DonationMessage extends Message {
       'middle_name' => $this->cleanString($this->getMiddleName() ?? '', 64),
       'language' => $this->getLanguage(),
       'legal_identifier' => $this->cleanString($this->message['fiscal_number'] ?? '', 32),
-      'Communication.first_name_phonetic' => $this->message['first_name_phonetic'] ?? NULL,
-      'Communication.last_name_phonetic' => $this->message['last_name_phonetic'] ?? NULL,
     ] + $this->getExternalIdentifierFields();
     foreach ($contactFields as $name => $contactField) {
       if ($contactField) {
@@ -185,21 +184,18 @@ class DonationMessage extends Message {
         unset($msg[$name]);
       }
     }
-    // Check for special flags
-    // TODO: push non-generic cases into database
-    if (!empty($msg['utm_campaign'])) {
-      $directMailOptions = wmf_civicrm_get_options('Contribution', wmf_civicrm_get_custom_field_name('Appeal'));
-      if (!array_key_exists($msg['utm_campaign'], $directMailOptions)) {
-        // @todo - I am hoping to replace with an api call but need more clarity as this doesn't work yet.
-        // Contribution::getFields(FALSE)->setLoadOptions(TRUE)->->addWhere('field_name', '=', 'Gift_Data:Campaign')
-        wmf_civicrm_ensure_option_value_exists(wmf_civicrm_get_direct_mail_field_option_id(), $msg['utm_campaign']);
+    $appealValue = $msg['utm_campaign'] ?? $msg['Gift_Data.Appeal'] ?? $msg['direct_mail_appeal'] ?? NULL;
+    if ($appealValue) {
+      $field = $this->getCustomFieldMetadataByFieldName('Gift_Data.Appeal');
+      if (empty($field['options'][$appealValue])) {
+        wmf_civicrm_ensure_option_value_exists($field['option_group_id'], $appealValue);
       }
-      $msg['direct_mail_appeal'] = $msg['utm_campaign'];
     }
+    $msg += $this->getCustomFields();
 
     if ($this->isEndowmentGift()) {
-      $msg['restrictions'] = 'Endowment Fund';
-      $msg['gift_source'] = 'Online Gift';
+      $msg['Gift_Data.Fund'] = 'Endowment Fund';
+      $msg['Gift_Data.Campaign'] = 'Online Gift';
     }
 
     // set the correct amount fields/data and do exchange rate conversions.
