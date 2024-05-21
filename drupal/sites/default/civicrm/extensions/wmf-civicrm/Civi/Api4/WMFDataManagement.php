@@ -31,20 +31,6 @@ class WMFDataManagement extends Generic\AbstractEntity {
   }
 
   /**
-   * Archive thank you emails.
-   *
-   * This removes the details field from old thank you emails.
-   *
-   * @param bool $checkPermissions
-   *
-   * @return \Civi\Api4\Action\WMFDataManagement\UpdateWMFDonor
-   */
-  public static function updateWMFDonor(bool $checkPermissions = TRUE): UpdateWMFDonor {
-    return (new UpdateWMFDonor(__CLASS__, __FUNCTION__))
-      ->setCheckPermissions($checkPermissions);
-  }
-
-  /**
    * Clean up unused languages.
    *
    * @param bool $checkPermissions
