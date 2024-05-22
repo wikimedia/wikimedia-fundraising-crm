@@ -257,6 +257,17 @@ class Message {
       }
       $field = $this->getCustomFieldMetadataByFieldName($fieldName);
       if ($field && !isset($this->message[$field['custom_group']['name'] . '.' . $field['name']])) {
+        if (!empty($field['option_group_id'])) {
+          // temporary handling while I adjust the code to apiv4.
+          $entity = $field['custom_group']['extends'] === 'Contribution' ? 'Contribution' : 'Contact';
+          $field['options'] = civicrm_api4($entity, 'getfields', [
+            'loadOptions' => TRUE,
+            'where' => [
+              ['custom_field_id', '=', $field['id']],
+            ],
+            'checkPermissions' => FALSE,
+          ])->first()['options'];
+        }
         if (empty($field['options'])) {
           $customFields[$field['custom_group']['name'] . '.' . $field['name']] = $value;
         }
