@@ -1089,10 +1089,10 @@ class CalculatedData extends TriggerHook {
     // or more in one of the last 5 financial years or this one to-date -
     // will get a recurring status in preference to a one-off status.
     $details = [
-      80 => [
+      2 => [
         'name' => 'recurring_active',
         'label' => 'Active Recurring',
-        'value' => 80,
+        'value' => 2,
         'static_description' => 'gave recurring within last month',
         'criteria' => [
           'multiple_range' => array_merge([
@@ -1105,10 +1105,10 @@ class CalculatedData extends TriggerHook {
           ], $midTierAndMajorGiftsExclusionRange),
         ],
       ],
-      85 => [
+      4 => [
         'label' => 'Delinquent Recurring',
         'static_description' => 'gave recurring more than 1 month & less than 4 months ago',
-        'value' => 85,
+        'value' => 4,
         'name' => 'recurring_delinquent',
         'criteria' => [
           'multiple_range' => array_merge([
@@ -1121,10 +1121,10 @@ class CalculatedData extends TriggerHook {
           ], $midTierAndMajorGiftsExclusionRange),
         ],
       ],
-      90 => [
+      6 => [
         'label' => 'Recent lapsed Recurring',
         'static_description' => 'gave recurring more than 3 months & less than 7 months ago',
-        'value' => 90,
+        'value' => 6,
         'name' => 'recurring_lapsed_recent',
         'criteria' => [
           'multiple_range' => array_merge([
@@ -1137,11 +1137,11 @@ class CalculatedData extends TriggerHook {
           ], $midTierAndMajorGiftsExclusionRange),
         ],
       ],
-      95 => [
+      8 => [
         'label' => 'Deep lapsed Recurring',
         'static_description' => 'gave recurring more than 6 months & less than 37 months ago',
-        'value' => 95,
-        'name' => 'recurring_delinquent',
+        'value' => 8,
+        'name' => 'recurring_deep_lapsed',
         'criteria' => [
           'multiple_range' => array_merge([
             [

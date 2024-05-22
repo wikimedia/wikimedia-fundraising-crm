@@ -2110,6 +2110,39 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
+   * Copy existing exchange rates from drupal table
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_4495(): bool {
+    OptionValue::update(FALSE)
+      ->addWhere('name', '=', 'recurring_active')
+      ->setValues([
+        'value' => 2,
+      ])->execute();
+    OptionValue::update(FALSE)
+      ->addWhere('name', '=', 'recurring_delinquent')
+      ->addWhere('value', '=', 85)
+      ->setValues([
+        'value' => 4,
+      ])->execute();
+    OptionValue::update(FALSE)
+      ->addWhere('name', '=', 'recurring_lapsed_recent')
+      ->setValues([
+        'value' => 6,
+      ])->execute();
+    OptionValue::update(FALSE)
+      ->addWhere('name', '=', 'recurring_delinquent')
+      ->addWhere('value', '=', 95)
+      ->setValues([
+        'value' => 8,
+        'name' => 'recurring_deep_lapsed',
+      ])->execute();
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
