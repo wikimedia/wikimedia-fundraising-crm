@@ -165,8 +165,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   private function doImport(array &$msg): array {
     $message = DonationMessage::getWMFMessage($msg);
     $message->setIsPayment(TRUE);
-    $isRecurring = $message->isRecurring();
-    $importTimerName = getImportTimerName($isRecurring);
+    $importTimerName = $message->isRecurring() ? 'wmf_civicrm_recurring_message_import' : 'wmf_civicrm_contribution_message_import';
     _get_import_timer()->startImportTimer($importTimerName);
     _get_import_timer()->startImportTimer("verify_and_stage");
     $msg = $message->normalize();
