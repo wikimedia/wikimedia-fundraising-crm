@@ -626,12 +626,18 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     }
 
     try {
-      $params = [
-        'id' => $msg['contribution_recur_id'],
-        'failure_count' => $msg['failure_count'],
-        'failure_retry_date' => wmf_common_date_unix_to_civicrm($msg['failure_retry_date']),
-      ];
-      $this->createContributionRecurWithErrorHandling($params);
+      ContributionRecur::update(FALSE)
+        ->addWhere('id', '=', $msg['contribution_recur_id'])
+        ->setValues([
+          'failure_count' => $msg['failure_count'],
+          'failure_retry_date' => wmf_common_date_unix_to_civicrm($msg['failure_retry_date']),
+        ])->execute();
+    }
+    catch (DBQueryException $e) {
+      if (in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+        throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
+      }
+      throw $e;
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for failed payment for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
