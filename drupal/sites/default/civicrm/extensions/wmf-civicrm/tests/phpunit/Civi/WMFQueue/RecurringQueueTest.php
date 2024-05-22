@@ -229,6 +229,7 @@ class RecurringQueueTest extends BaseQueueTestCase {
    */
   public function testRecurringPaymentPaypalScrewySubscrId(): void {
     $email = 'test_recur_' . mt_rand() . '@example.org';
+    \Civi::$statics['wmf_civicrm_get_legacy_paypal_subscription'] = 0;
     // Set up an old-style PayPal recurring subscription with S-XXXX subscr_id
     $subscr_id = 'S-' . mt_rand();
     $values = [
@@ -263,7 +264,12 @@ class RecurringQueueTest extends BaseQueueTestCase {
       ->execute()->single();
 
     // Finally, we should have stuck the new ID in the processor_id field
-    $this->assertEquals($new_subscr_id, $contributionRecur['processor_id']);
+    $this->assertEquals($new_subscr_id, $contributionRecur['trxn_id']);
+
+    // Now import again & make sure we find it rather than doing another loop-de-loop
+    // of our 2018 outgoing code.
+    $this->processMessage($newStyleMessage);
+    $this->assertEquals(1, \Civi::$statics['wmf_civicrm_get_legacy_paypal_subscription']);
   }
 
   /**
