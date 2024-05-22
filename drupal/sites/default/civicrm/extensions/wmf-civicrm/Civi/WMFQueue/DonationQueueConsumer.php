@@ -168,8 +168,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $isRecurring = $message->isRecurring();
     $importTimerName = getImportTimerName($isRecurring);
     _get_import_timer()->startImportTimer($importTimerName);
-
-    civicrm_initialize();
     _get_import_timer()->startImportTimer("verify_and_stage");
     $msg = $message->normalize();
     $message->validate();
