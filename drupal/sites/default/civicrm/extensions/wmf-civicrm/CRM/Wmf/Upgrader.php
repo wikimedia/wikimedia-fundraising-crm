@@ -2128,7 +2128,7 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
-   * Copy existing exchange rates from drupal table
+   * Update segment values.
    *
    * @return bool
    * @throws \CRM_Core_Exception
@@ -2157,6 +2157,28 @@ AND q.id BETWEEN %1 AND %2";
         'value' => 8,
         'name' => 'recurring_deep_lapsed',
       ])->execute();
+    return TRUE;
+  }
+
+  /**
+   * Update segment values for non-donors.
+   *
+   * These have generally NOT been populated but
+   * obviously in some early runs we got some donor
+   * segments populated without the donor status.
+   *
+   * The script won't touch these unless we merge
+   * https://gerrit.wikimedia.org/r/c/wikimedia/fundraising/crm/+/1034643
+   * but there are only 200 k of these so let's just tidy
+   * them up.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_4500(): bool {
+    CRM_Core_DAO::executeQuery(
+      'UPDATE wmf_donor SET donor_status_id = 100 WHERE donor_segment_id = 1000 AND donor_status_id IS NULL'
+    );
     return TRUE;
   }
 

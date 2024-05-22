@@ -402,10 +402,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     try {
       return $this->createContributionRecur($params);
     }
+    // Ideally we would move this catching higher up
+    // see https://phabricator.wikimedia.org/T365418.
     catch (DBQueryException $e) {
       if (in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
         throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
       }
+      // Could be a mysql error so let's pass it on up
+      throw $e;
     }
   }
 
