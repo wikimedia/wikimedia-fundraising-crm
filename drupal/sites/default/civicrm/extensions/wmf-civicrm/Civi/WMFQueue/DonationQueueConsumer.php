@@ -166,15 +166,15 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $message = DonationMessage::getWMFMessage($msg);
     $message->setIsPayment(TRUE);
     $importTimerName = $message->isRecurring() ? 'wmf_civicrm_recurring_message_import' : 'wmf_civicrm_contribution_message_import';
-    _get_import_timer()->startImportTimer($importTimerName);
-    _get_import_timer()->startImportTimer("verify_and_stage");
+    $this->startTiming($importTimerName);
+    $this->startTiming('verify_and_stage');
     $msg = $message->normalize();
     $message->validate();
     if (!$message->getContributionTrackingID()) {
       $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
       $message->setContributionTrackingID($msg['contribution_tracking_id'] ?? NULL);
     }
-    _get_import_timer()->endImportTimer("verify_and_stage");
+    $this->stopTiming('verify_and_stage');
 
     $createRecurringToken = FALSE;
     // Associate with existing recurring records
@@ -207,13 +207,12 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     if ($msg['contact_id'] && isset($msg['contact_hash'])) {
       wmf_civicrm_set_null_id_on_hash_mismatch($msg, TRUE);
     }
-
-    _get_import_timer()->startImportTimer("create_contact");
+    $this->startTiming('create_contact');
     $contact = WMFContact::save(FALSE)
       ->setMessage($msg)
       ->execute()->first();
     $msg['contact_id'] = $contact['id'];
-    _get_import_timer()->endImportTimer("create_contact");
+    $this->stopTiming("create_contact");
 
     // Create recurring token if it isn't already there
     // Audit files bring in recurrings that we have the token for but were never created
@@ -282,11 +281,11 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
 
     // Need to get this full name before ending the timer
-    $uniqueTimerName = _get_import_timer()->getUniqueNamespace($importTimerName);
-    _get_import_timer()->endImportTimer($importTimerName);
+    $uniqueTimerName = ImportStatsCollector::getInstance()->getUniqueNamespace($importTimerName);
+    $this->stopTiming($importTimerName);
 
     DonationStatsCollector::getInstance()
-      ->addStat("message_import_timers", _get_import_timer()->getTimerDiff($uniqueTimerName));
+      ->addStat("message_import_timers", ImportStatsCollector::getInstance()->getTimerDiff($uniqueTimerName));
 
     return $contribution;
   }
