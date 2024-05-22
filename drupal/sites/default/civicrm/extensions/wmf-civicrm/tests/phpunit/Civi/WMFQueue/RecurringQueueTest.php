@@ -584,6 +584,23 @@ class RecurringQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Test record of failed recurring payment rather than by the subscr_id
+   */
+  public function testRecurringFailedMessageWithRecurringContributionID(): void {
+    $failed_trxn_message = $this->getRecurringFailedMessage();
+    $signupMessage = $this->processRecurringSignup([
+      'subscr_id' => $failed_trxn_message['subscr_id']
+    ]);
+    $contributionRecur = $this->getContributionRecurForMessage($signupMessage);
+    $this->processMessage($failed_trxn_message);
+    $contributionRecur = $this->getContributionRecurForMessage($signupMessage);
+
+    $this->assertEquals(1, $contributionRecur['failure_count']);
+    $this->assertEquals( wmf_common_date_unix_to_civicrm($failed_trxn_message['date']), $contributionRecur['failure_retry_date']);
+  }
+
+
+  /**
    * Test processing EOT (end of term) message from paypal.
    */
   public function testRecurringEOTPaypalMessage(): void {

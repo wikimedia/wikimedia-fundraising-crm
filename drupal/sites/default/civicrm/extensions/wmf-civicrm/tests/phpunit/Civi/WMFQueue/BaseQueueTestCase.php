@@ -115,6 +115,21 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface, Transacti
    *
    * @return array
    */
+  protected function getRecurringFailedMessage(array $values = []): array {
+    $message = $this->loadMessage('recurring_fail');
+    $contributionTrackingID = mt_rand();
+    $message += [
+      'order_id' => "$contributionTrackingID.1",
+      'contribution_tracking_id' => $contributionTrackingID,
+    ];
+    return array_merge($message, $values);
+  }
+
+  /**
+   * @param array $values
+   *
+   * @return array
+   */
   protected function getRecurringEOTMessage(array $values = []): array {
     $message = $this->loadMessage('recurring_eot');
     $contributionTrackingID = mt_rand();
