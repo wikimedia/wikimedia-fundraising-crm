@@ -41,16 +41,15 @@ summary.crm-accordion-header,
 }
 
 .crm-master-accordion-header {
+  color: $crm-white !important;
   background: $brand-primary !important;
   font-size: $font-size-base !important;
   line-height: 18px;
   padding: 16px 20px;
   border-radius: $border-radius-base $border-radius-base 0 0 !important;
-  color: $crm-white !important;
   font-weight: $crm-font-weight-h3 !important;
 
   &::before {
-    color: $crm-white;
     padding-right: 10px;
   }
 

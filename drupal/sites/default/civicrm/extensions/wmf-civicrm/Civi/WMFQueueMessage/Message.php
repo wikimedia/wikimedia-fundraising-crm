@@ -6,6 +6,7 @@ use Civi\API\EntityLookupTrait;
 use Civi\Api4\Contact;
 use Civi\Api4\ExchangeRate;
 use Civi\WMFException\WMFException;
+use CRM_Wmf_ExtensionUtil as E;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class Message {
@@ -17,6 +18,9 @@ class Message {
    *
    * This is an incomplete list of parameters used in the past
    * but it should be message specific.
+   *
+   * We have started documenting them in the getFields() function which
+   * will eventually be used for mapping & validation.
    *
    *  - recurring
    *  - contribution_recur_id
@@ -51,6 +55,23 @@ class Message {
         $this->message[$key] = trim($input);
       }
     }
+  }
+
+  /**
+   * Get the array of fields supported.
+   *
+   * This is very much WIP.... but let's build it out!
+   *
+   * @return array
+   */
+  public function getFields(): array {
+    return [
+      'type' => ['description' => 'queue - as determined by audit code', 'data_type' => 'String'],
+      'phone' => ['api_field' => 'phone_primary.phone', 'label' => E::ts('Phone'), 'api_entity' => 'Contact'],
+      'email' => ['api_field' => 'email_primary.email', 'label' => E::ts('Email'), 'api_entity' => 'Contact'],
+      'date' => ['api_field' => 'receive_date', 'api_entity' => 'Contribution', 'label' => E::ts('Transaction Date')],
+      'country' => ['api_field' => 'address_primary.country_id', 'label' => E::ts('Phone'), 'api_entity' => 'Contact'],
+    ];
   }
 
   /**
@@ -263,8 +284,8 @@ class Message {
    * @throws \CRM_Core_Exception
    */
   public function getCustomFieldMetadataByFieldName(string $name): ?array {
-    $fieldsThatAreNotCustom = ['date', 'email', 'country', 'phone'];
-    if (in_array($name, $fieldsThatAreNotCustom)) {
+    $declaredFields = $this->getFields();
+    if (!empty($declaredFields[$name]) && empty($declaredFields['custom_field_id'])) {
       return NULL;
     }
     $fieldsToMap = [

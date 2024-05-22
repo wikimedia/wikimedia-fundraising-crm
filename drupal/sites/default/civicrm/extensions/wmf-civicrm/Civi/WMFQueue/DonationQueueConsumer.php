@@ -2,12 +2,17 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\ContributionRecur;
+use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
+use Civi\WMFQueueMessage\DonationMessage;
 use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
 use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
 use SmashPig\Core\DataStores\PendingDatabase;
+use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
@@ -77,6 +82,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    *
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    * @throws \Statistics\Exception\StatisticsCollectorException
    */
@@ -119,7 +125,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       $message['gift_source'] = "Online Gift";
     }
     // import the contribution here!
-    $contribution = wmf_civicrm_contribution_message_import($message);
+    $contribution = $this->doImport($message);
 
     // record other donation stats such as gateway
     $DonationStatsCollector = DonationStatsCollector::getInstance();
@@ -142,6 +148,151 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
   }
 
+  /**
+   * Try to import a transaction message into CiviCRM, otherwise
+   * throw an exception.
+   *
+   * @param array $msg
+   *
+   * @return array Contribution as inserted
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \Statistics\Exception\StatisticsCollectorException
+   */
+  private function doImport(array &$msg): array {
+    $message = DonationMessage::getWMFMessage($msg);
+    $message->setIsPayment(TRUE);
+    $isRecurring = $message->isRecurring();
+    $importTimerName = getImportTimerName($isRecurring);
+    _get_import_timer()->startImportTimer($importTimerName);
+
+    civicrm_initialize();
+    _get_import_timer()->startImportTimer("verify_and_stage");
+    $msg = $message->normalize();
+    $message->validate();
+    if (!$message->getContributionTrackingID()) {
+      $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
+      $message->setContributionTrackingID($msg['contribution_tracking_id'] ?? NULL);
+    }
+    _get_import_timer()->endImportTimer("verify_and_stage");
+
+    $createRecurringToken = FALSE;
+    // Associate with existing recurring records
+    if ($message->isRecurring()) {
+      if (!$message->getContributionRecurID()) {
+        if (!empty($msg['recurring_payment_token'])) {
+          $token_record = _get_recurring_payment_token($msg);
+          if ($token_record) {
+            \Civi::log('wmf')->info('queue2civicrm_import: Found matching recurring payment token: {token}', ['token' => $msg['recurring_payment_token']]);
+            $msg['contact_id'] = $token_record['contact_id'];
+            $msg['payment_token_id'] = $token_record['id'];
+            $msg['payment_processor_id'] = $token_record['payment_processor_id'];
+          }
+          else {
+            // When there is a token on the $msg but not in the db
+            $createRecurringToken = TRUE;
+          }
+        }
+      }
+      else {
+        // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
+        if (ContributionRecurHelper::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
+          ContributionRecurHelper::reactivateIfInactive([
+            'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
+            'id' => $message->getContributionRecurID(),
+          ]);
+        }
+      }
+    }
+    if ($msg['contact_id'] && isset($msg['contact_hash'])) {
+      wmf_civicrm_set_null_id_on_hash_mismatch($msg, TRUE);
+    }
+
+    _get_import_timer()->startImportTimer("create_contact");
+    $contact = WMFContact::save(FALSE)
+      ->setMessage($msg)
+      ->execute()->first();
+    $msg['contact_id'] = $contact['id'];
+    _get_import_timer()->endImportTimer("create_contact");
+
+    // Create recurring token if it isn't already there
+    // Audit files bring in recurrings that we have the token for but were never created
+    if ($createRecurringToken) {
+      $token_record = wmf_civicrm_recur_payment_token_create($msg['contact_id'], $msg['gateway'], $msg['recurring_payment_token'], $msg['user_ip']);
+      \Civi::log('wmf')->info('queue2civicrm_import: No payment token found. Creating : {token}', ['token' => $token_record['id']]);
+      $msg['payment_token_id'] = $token_record['id'];
+      $msg['payment_processor_id'] = $token_record['payment_processor_id'];
+    }
+
+    // Make new recurring record if necessary
+    if ($message->isRecurring()) {
+      if (!$message->getContributionRecurID()) {
+        $recurring_transaction_id = "";
+        if ($msg['subscr_id']) {
+          $recurring_transaction_id = $msg['subscr_id'];
+        }
+
+        if (!empty($msg['recurring_payment_token'])) {
+          $recurring_transaction_id = $msg['gateway_txn_id'];
+        }
+
+        \Civi::log('wmf')->info('queue2civicrm_import: Attempting to insert new recurring subscription: {recurring_transaction_id}', ['recurring_transaction_id' => $recurring_transaction_id]);
+        _message_contribution_recur_insert($msg, $recurring_transaction_id);
+        $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $recurring_transaction_id);
+        $msg['contribution_recur_id'] = $recur_record->id;
+        $message->setContributionRecurID($recur_record->id);
+      }
+      elseif ($message->isPaypal() || $message->isAutoRescue()) {
+        // We are looking at a PayPal or auto-rescue payment
+        // that has come out of the recurring queue.
+        // We need to manage their status and (for PayPal) the next scheduled date.
+        $recurUpdate = ContributionRecur::update(FALSE)
+          ->setValues([
+            'contribution_status_id:name' => 'In Progress',
+          ])
+          ->addWhere('id', '=', $message->getContributionRecurID());
+        if ($message->isPaypal()) {
+          // Other than for PayPal this is done elsewhere, but we want to display
+          // something meaningful in the UI for PayPal.
+          $recurUpdate->addValue('next_sched_contribution_date', \CRM_Core_Payment_Scheduler::getNextContributionDate([
+            'frequency_interval' => $message->getExistingContributionRecurValue('frequency_interval'),
+            'frequency_unit' => $message->getExistingContributionRecurValue('frequency_unit'),
+            'cycle_day' => $message->getExistingContributionRecurValue('cycle_day'),
+          ]));
+        }
+        $recurUpdate->execute();
+      }
+    }
+
+    // Set no_thank_you to recurring if it's the 2nd+ of any recurring payments
+    if ($message->getRecurringPriorContributionValue('id')) {
+      $msg['contribution_extra.no_thank_you'] = 'recurring';
+    }
+
+    // Insert the contribution record.
+    $contribution = _message_contribution_insert($msg);
+
+    if ($message->getContributionTrackingID()
+      && !$message->getRecurringPriorContributionValue('id')) {
+      QueueWrapper::push('contribution-tracking', [
+        'id' => $message->getContributionTrackingID(),
+        'contribution_id' => $contribution['id'],
+      ]);
+      \Civi::log('wmf')->info('wmf_civicrm: Queued update to contribution_tracking for {id}', ['id' => $message->getContributionTrackingID()]);
+    }
+
+    // Need to get this full name before ending the timer
+    $uniqueTimerName = _get_import_timer()->getUniqueNamespace($importTimerName);
+    _get_import_timer()->endImportTimer($importTimerName);
+
+    DonationStatsCollector::getInstance()
+      ->addStat("message_import_timers", _get_import_timer()->getTimerDiff($uniqueTimerName));
+
+    return $contribution;
+  }
 
   /**
    * Throw an exception if a contribution already exists
