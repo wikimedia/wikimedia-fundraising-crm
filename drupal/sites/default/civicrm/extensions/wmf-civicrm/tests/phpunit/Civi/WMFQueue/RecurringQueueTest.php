@@ -588,6 +588,7 @@ class RecurringQueueTest extends BaseQueueTestCase {
    */
   public function testRecurringFailedMessageWithRecurringContributionID(): void {
     $failed_trxn_message = $this->getRecurringFailedMessage();
+    $failed_trxn_message['failure_retry_date'] = strtotime('03:00:00 May 27, 2024 PDT');
     $signupMessage = $this->processRecurringSignup([
       'subscr_id' => $failed_trxn_message['subscr_id']
     ]);
@@ -596,7 +597,8 @@ class RecurringQueueTest extends BaseQueueTestCase {
     $contributionRecur = $this->getContributionRecurForMessage($signupMessage);
 
     $this->assertEquals(1, $contributionRecur['failure_count']);
-    $this->assertEquals( wmf_common_date_unix_to_civicrm($failed_trxn_message['date']), $contributionRecur['failure_retry_date']);
+    $this->assertEquals( wmf_common_date_unix_to_civicrm($failed_trxn_message['failure_retry_date']), $contributionRecur['failure_retry_date']);
+    $this->assertEquals('Failing', $contributionRecur['contribution_status_id:name']);
   }
 
 
