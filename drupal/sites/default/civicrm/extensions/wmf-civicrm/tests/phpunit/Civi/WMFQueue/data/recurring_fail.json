@@ -1,0 +1,16 @@
+{
+    "subscr_id": 2048343366,
+    "txn_type": "subscr_failed",
+    "contribution_tracking_id": "15028173",
+    "email": "test+recur_fr@wikimedia.org",
+    "first_name": "Gen D",
+    "middle_name": "",
+    "last_name": "Russ",
+    "country": "US",
+    "gross": "3.00",
+    "currency": "USD",
+    "date": 1383347225,
+    "gateway": "paypal",
+    "recurring": true,
+    "order_id":"15028173.1"
+  }

@@ -629,7 +629,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       ContributionRecur::update(FALSE)
         ->addWhere('id', '=', $msg['contribution_recur_id'])
         ->setValues([
-          'failure_count' => $msg['failure_count'],
+          'failure_count' => $msg['failure_count'] + 1,
           'failure_retry_date' => wmf_common_date_unix_to_civicrm($msg['failure_retry_date']),
         ])->execute();
     }

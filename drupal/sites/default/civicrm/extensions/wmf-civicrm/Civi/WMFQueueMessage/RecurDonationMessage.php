@@ -51,6 +51,14 @@ class RecurDonationMessage extends DonationMessage {
     }
     $message['subscr_id'] = $this->getSubscriptionID();
     $message['contribution_recur_id'] = $this->getContributionRecurID();
+    if (isset($message['txn_type']) && $message['txn_type'] == 'subscr_failed') {
+      if(empty($message['failure_count'])) {
+        $message['failure_count'] = $this->getRecurringFailCount();
+      }
+      if(empty($message['failure_retry_date'])) {
+        $message['failure_retry_date'] = $message['date'];
+      }
+    }
     return $message;
   }
 
@@ -294,6 +302,21 @@ class RecurDonationMessage extends DonationMessage {
     }
 
     return parent::getPaymentInstrumentID();
+  }
+
+  /**
+   * @return int
+   * @throws WMFException
+   * @throws \CRM_Core_Exception
+   */
+  public function getRecurringFailCount(): int {
+    try {
+      $fail_count = $this->getExistingContributionRecurValue('failure_count');
+      return (int) $fail_count;
+    }
+    catch (\CRM_Core_Exception $exception) {
+      return 0;
+    }
   }
 
 }
