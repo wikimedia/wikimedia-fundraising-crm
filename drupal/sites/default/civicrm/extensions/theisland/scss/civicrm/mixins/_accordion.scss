@@ -2,7 +2,7 @@
   @extend %no-border-radius;
   background: $crm-accordion-header-color !important;
   background-image: none !important;
-  color: $gray-darker;
+  color: $gray-darker !important;
   font-family: $font-family-base;
   font-weight: $crm-font-weight-bold;
   line-height: 18px;
