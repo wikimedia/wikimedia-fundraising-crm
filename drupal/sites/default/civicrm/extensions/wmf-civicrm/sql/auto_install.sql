@@ -20,6 +20,7 @@ SET FOREIGN_KEY_CHECKS=0;
 DROP TABLE IF EXISTS `civicrm_contribution_tracking`;
 
 SET FOREIGN_KEY_CHECKS=1;
+
 -- /*******************************************************
 -- *
 -- * Create new tables
@@ -66,6 +67,7 @@ CREATE TABLE `civicrm_contribution_tracking` (
   `is_pay_fee` tinyint COMMENT 'Did the user select to pay the processing fee',
   `mailing_identifier` varchar(32) COMMENT 'External mailing identifier',
   `utm_source` varchar(128) COMMENT 'UTM Source. This is the original text but is separately broken out into banner etc. We aspire to drop this field but per T354708 Peter Coombe is still reliant on it',
+  `banner_history_log_id` varchar(255) COMMENT 'Temporary banner history log ID to associate banner history EventLogging events.',
   PRIMARY KEY (`id`),
   INDEX `currency`(currency),
   INDEX `utm_medium_id`(utm_medium),
@@ -77,6 +79,6 @@ CREATE TABLE `civicrm_contribution_tracking` (
   INDEX `country`(country),
   INDEX `tracking_date`(tracking_date),
   INDEX `index_mailing_identifier`(mailing_identifier),
-  CONSTRAINT FK_civicrm_contribution_tracking_contribution_id FOREIGN KEY (`contribution_id`) REFERENCES `civicrm_contribution`(`id`) ON DELETE SET NULL
-)
+  INDEX `banner_history_log_id`(mailing_identifier),
+  CONSTRAINT FK_civicrm_contribution_tracking_contribution_id FOREIGN KEY (`contribution_id`) REFERENCES `civicrm_contribution`(`id`) ON DELETE SET NULL)
 ENGINE=InnoDB;

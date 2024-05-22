@@ -2070,6 +2070,24 @@ AND q.id BETWEEN %1 AND %2";
     return TRUE;
   }
 
+  public function upgrade_4484(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_contribution_tracking', 'banner_history_log_id', FALSE)) {
+      CRM_Core_DAO::executeQuery("
+        ALTER TABLE civicrm_contribution_tracking ADD COLUMN
+         `banner_history_log_id` varchar(255) COMMENT 'Temporary banner history log ID to associate banner history EventLogging events.'
+      ");
+    }
+    global $databases;
+    CRM_Core_DAO::executeQuery("
+        UPDATE civicrm_contribution_tracking t
+        LEFT JOIN " . $databases['default']['default']['database'] . ".banner_history_contribution_associations b
+          ON b.contribution_tracking_id = t.id
+        SET t.banner_history_log_id = b.banner_history_log_id
+        WHERE t.banner_history_log_id IS NULL
+    ");
+    return TRUE;
+  }
+
   /**
    * Copy existing exchange rates from drupal table
    * @return bool
@@ -2106,6 +2124,39 @@ AND q.id BETWEEN %1 AND %2";
         'label' => 'NCOA Update',
       ])->execute();
     CRM_Core_DAO::executeQuery('UPDATE civicrm_value_address_data SET source = "ncoa" WHERE source = "noca"');
+    return TRUE;
+  }
+
+  /**
+   * Copy existing exchange rates from drupal table
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_4495(): bool {
+    OptionValue::update(FALSE)
+      ->addWhere('name', '=', 'recurring_active')
+      ->setValues([
+        'value' => 2,
+      ])->execute();
+    OptionValue::update(FALSE)
+      ->addWhere('name', '=', 'recurring_delinquent')
+      ->addWhere('value', '=', 85)
+      ->setValues([
+        'value' => 4,
+      ])->execute();
+    OptionValue::update(FALSE)
+      ->addWhere('name', '=', 'recurring_lapsed_recent')
+      ->setValues([
+        'value' => 6,
+      ])->execute();
+    OptionValue::update(FALSE)
+      ->addWhere('name', '=', 'recurring_delinquent')
+      ->addWhere('value', '=', 95)
+      ->setValues([
+        'value' => 8,
+        'name' => 'recurring_deep_lapsed',
+      ])->execute();
     return TRUE;
   }
 

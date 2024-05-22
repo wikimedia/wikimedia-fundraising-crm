@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\ContributionTracking;
 use Civi\WMFException\WMFException;
 
 class BannerHistoryQueueConsumer extends QueueConsumer {
@@ -48,16 +49,9 @@ class BannerHistoryQueueConsumer extends QueueConsumer {
       'banner_history: About to add row for {banner_history_id}',
       ['banner_history_id' => $bannerHistoryId]
     );
-
-    db_merge('banner_history_contribution_associations')
-      ->key([
-        'banner_history_log_id' => $bannerHistoryId,
-        'contribution_tracking_id' => $contributionTrackingId,
-      ])
-      ->insertFields([
-        'banner_history_log_id' => $bannerHistoryId,
-        'contribution_tracking_id' => $contributionTrackingId,
-      ])
+    ContributionTracking::update(FALSE)
+      ->addWhere('id', '=', $contributionTrackingId)
+      ->addValue('banner_history_log_id', $bannerHistoryId)
       ->execute();
 
     \Civi::log('wmf')->info('banner_history: Processed {banner_history_id}', ['banner_history_id' => $bannerHistoryId]);
