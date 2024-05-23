@@ -27,7 +27,7 @@ $settings = [
   'partial_locales' => 1,
 
   // Shoreditch theme settings.
-  'customCSSURL' => 'sites/default/civicrm/extensions/org.civicrm.shoreditch/css/custom-civicrm.css',
+  'customCSSURL' => 'sites/default/civicrm/extensions/theisland/css/custom-civicrm.css',
   'menubar_color' => '#ffffff',
   'editor_id' => 'CKEditor5-base64',
 

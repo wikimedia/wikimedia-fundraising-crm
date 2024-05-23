@@ -1,9 +1,0 @@
-#{civi-page('pledge-add')} {
-  .crm-container {
-    .CRM_Pledge_Form_Pledge {
-      .accordion + br {
-        display: none;
-      }
-    }
-  }
-}

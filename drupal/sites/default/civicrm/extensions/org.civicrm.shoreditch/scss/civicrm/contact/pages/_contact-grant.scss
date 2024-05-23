@@ -1,7 +1,0 @@
-#{civi-page('contact-view')} {
-  .CRM_Grant_Form_Search {
-    .row-highlight {
-      @include expandable-table;
-    }
-  }
-}
