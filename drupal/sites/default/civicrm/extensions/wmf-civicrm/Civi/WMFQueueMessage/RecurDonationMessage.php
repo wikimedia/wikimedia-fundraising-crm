@@ -55,9 +55,6 @@ class RecurDonationMessage extends DonationMessage {
       if(empty($message['failure_count'])) {
         $message['failure_count'] = $this->getRecurringFailCount();
       }
-      if(empty($message['failure_retry_date'])) {
-        $message['failure_retry_date'] = $message['date'];
-      }
     }
     return $message;
   }

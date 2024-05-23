@@ -629,13 +629,19 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist for subscription id: ' . print_r($msg['subscr_id'], TRUE));
     }
 
+    $updateParams = [
+      'failure_count' => $msg['failure_count'] + 1,
+      'contribution_status_id:name' => 'Failing',
+    ];
+
+    if (!empty($msg['failure_retry_date'])) {
+      $updateParams['failure_retry_date'] = wmf_common_date_unix_to_civicrm($msg['failure_retry_date']);
+    }
+
     try {
       ContributionRecur::update(FALSE)
         ->addWhere('id', '=', $msg['contribution_recur_id'])
-        ->setValues([
-          'failure_count' => $msg['failure_count'] + 1,
-          'failure_retry_date' => wmf_common_date_unix_to_civicrm($msg['failure_retry_date']),
-        ])->execute();
+        ->setValues($updateParams)->execute();
     }
     catch (DBQueryException $e) {
       if (in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
