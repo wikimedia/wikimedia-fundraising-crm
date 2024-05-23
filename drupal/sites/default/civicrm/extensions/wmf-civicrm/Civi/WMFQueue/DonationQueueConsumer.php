@@ -329,7 +329,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'source' => $msg['original_currency'] . ' ' . CurrencyRoundingHelper::round($msg['original_gross'], $msg['original_currency']),
       'contribution_recur_id' => $msg['contribution_recur_id'],
       'check_number' => $msg['check_number'],
-      'soft_credit_to' => $msg['soft_credit_to'] ?? NULL,
       'debug' => TRUE,
     ];
 
@@ -366,24 +365,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     try {
       $contributionAction = Contribution::create(FALSE)
         ->setValues(array_merge($contribution, ['skipRecentView' => 1]));
-      if (!empty($msg['soft_credit_to'])) {
-        // @todo - can this go now?
-        // We don't do soft credit for Queue purposes do we?
-        $contributionSoftAction = ContributionSoft::create(FALSE)
-          ->setValues([
-            'contribution_id' => '$id',
-            'contact_id' => $msg['soft_credit_to'],
-            'currency' => $msg['currency'],
-            'amount' => $msg['gross'],
-            // Traditionally this has wound up being NULL on production because it was calling
-            // CRM_Core_OptionGroup::getDefaultValue("soft_credit_type") which ran a query each time but
-            // did not find a default. Locally a default is found. The newer import approach usually
-            // does set soft credit type and accounts for the small number of soft credits with type
-            // set in our DB.
-            'soft_credit_type_id' => NULL,
-          ]);
-        $contributionAction->addChain('ContributionSoft', $contributionSoftAction);
-      }
       $contribution_result = $contributionAction->execute()->first();
       \Civi::log('wmf')->debug('wmf_civicrm: Successfully created contribution {contribution_id} for contact {contact_id}', [
         'contribution_id' => $contribution_result['id'],
