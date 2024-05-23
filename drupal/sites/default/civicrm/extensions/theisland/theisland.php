@@ -15,10 +15,12 @@ function theisland_civicrm_config(&$config): void {
 
   if (CIVICRM_UF == 'WordPress') {
     if (empty(CRM_Utils_Request::retrieveValue('snippet', 'String'))) {
-      // Inline the CSS so that the page load is less glitchy
-      // See also shoreditchwpworkarounds_body_class()
-      $css = file_get_contents(E::path('css/wordpress.css'));
-      Civi::resources()->addStyle($css);
+      if (_theisland_isActive()) {
+        // Inline the CSS so that the page load is less glitchy
+        // See also shoreditchwpworkarounds_body_class()
+        $css = file_get_contents(E::path('css/wordpress.css'));
+        Civi::resources()->addStyle($css);
+      }
     }
   }
 }
@@ -121,14 +123,20 @@ function theisland_civicrm_navigationMenu(&$menu) {
  *   TRUE if The Island is the active theme.
  */
 function _theisland_isActive() {
-  // The Job civicrm_api3_job_cleanup can clear the DB cache, causing the
-  // CiviCRM menu to be empty on the first load after the command ran.
-  // Without the menu, the getActiveThemeKey is unable to detect the current
-  // theme. This condition ensures the menu is filled.
-  if (!CRM_Core_DAO::checkTableHasData(CRM_Core_DAO_Menu::getTableName())) {
-    CRM_Core_Menu::store(FALSE);
+  // If this returns false, it is usually pretty reliable
+  if (Civi::service('themes')->getActiveThemeKey() !== 'theisland') {
+    return FALSE;
   }
 
+  // Check if it is a public page
+  // we fallback on REQUEST_URI because currentPath() does not work reliably on WordPress
+  $path = CRM_Utils_System::currentPath() ?: substr($_SERVER['REQUEST_URI'], 1);
+  $item = CRM_Core_Menu::get($path);
+  if (!empty($item['is_public'])) {
+    return Civi::settings()->get('theme_frontend') === 'theisland';
+  }
+
+  // Fallback on the normal CiviCRM mechanism
   return Civi::service('themes')->getActiveThemeKey() === 'theisland';
 }
 

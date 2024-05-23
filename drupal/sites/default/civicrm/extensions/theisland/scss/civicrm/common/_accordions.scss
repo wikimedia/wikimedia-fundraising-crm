@@ -3,22 +3,21 @@
 }
 
 // Remove padding for accordions in accordions
-details details.crm-accordion-wrapper {
+details details {
   padding: 0;
 }
 
 // These extra selectors are a transition for 5.69
 // hopefully we can cleanup one day
-details.crm-accordion-wrapper > .crm-accordion-header,
-summary.crm-accordion-header,
-.collapsed > .crm-accordion-header,
-.crm-accordion-header {
-  @include accordion-header;
 
+.crm-accordion-header,
+.crm-accordion-bold > summary {
+  @include accordion-header;
   &:not(.crm-master-accordion-header) {
     border-bottom: 1px solid $crm-grayblue-dark;
     font-size: $font-size-base !important;
     font-weight: $crm-font-weight-h3;
+    padding: 16px 20px !important;
   }
 
   .crm-close-accordion {
@@ -40,12 +39,13 @@ summary.crm-accordion-header,
   }
 }
 
-.crm-master-accordion-header {
+.crm-master-accordion-header,
+.crm-accordion-light > summary {
   color: $crm-white !important;
   background: $brand-primary !important;
   font-size: $font-size-base !important;
   line-height: 18px;
-  padding: 16px 20px;
+  padding: 16px 20px !important;
   border-radius: $border-radius-base $border-radius-base 0 0 !important;
   font-weight: $crm-font-weight-h3 !important;
 
@@ -62,22 +62,24 @@ summary.crm-accordion-header,
 }
 
 .crm-master-accordion-wrapper,
-.crm-accordion-wrapper {
+.crm-accordion-wrapper,
+details {
   border-radius: 0;
   margin-bottom: 0;
 
-  &.collapsed {
-    .crm-master-accordion-header {
-      border-radius: $border-radius-base !important;
-    }
+  &.collapsed .crm-master-accordion-header,
+  &.crm-accordion-light[open] {
+    border-radius: $border-radius-base !important;
   }
 }
 
-.crm-master-accordion-header + .crm-accordion-body {
+.crm-master-accordion-header + .crm-accordion-body,
+.crm-accordion-light > .crm-accordion-body {
   border-radius: 0 0 $border-radius-base $border-radius-base !important;
 }
 
-.crm-accordion-header:not(.crm-master-accordion-header) + .crm-accordion-body {
+.crm-accordion-header:not(.crm-master-accordion-header) + .crm-accordion-body,
+.crm-accordion-bold > .crm-accordion-body {
   box-shadow: $crm-box-shadow-inset;
   padding: 15px !important;
 
@@ -98,7 +100,6 @@ summary.crm-accordion-header,
   }
 }
 
-details.crm-accordion-wrapper > .crm-accordion-body /* new in 5.69 */,
 .crm-accordion-body {
   @extend %no-border-radius;
   background: $crm-white;
