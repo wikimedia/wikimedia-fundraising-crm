@@ -1005,7 +1005,7 @@ class CalculatedData extends TriggerHook {
         }
       }
       $this->statusSelectSQL .= '
-       ELSE 100
+       ELSE 1000
        END  as donor_status_id';
     }
     return $this->statusSelectSQL;
