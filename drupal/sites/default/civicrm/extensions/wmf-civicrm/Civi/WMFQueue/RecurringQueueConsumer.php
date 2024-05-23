@@ -97,14 +97,18 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
      * otherwise, process the payment.
      */
     if (!$message->getSubscriptionID()) {
+      // @todo - didn't the validate in the previous function pick up these already?
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg missing the subscr_id; cannot process.');
     }
-    // check for parent record in civicrm_contribution_recur and fetch its id
-    $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
 
-    if ($recur_record && RecurHelper::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
+    if ($message->getContributionRecurID() && RecurHelper::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
       // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
-      RecurHelper::reactivateIfInactive((array) $recur_record);
+      // @todo - confirm this duplicates the processing that happens once this
+      // is pushed to the donation queue & remove from here.
+      RecurHelper::reactivateIfInactive([
+        'id' => $message->getContributionRecurID(),
+        'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
+      ]);
     }
 
     // Since October 2018 or so, PayPal has been doing two things that really
@@ -120,7 +124,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     // recurring donation for the same email address. If PayPal gives us better
     // advice on how to deal with their ID migration, delete this.
     if (
-      !$recur_record &&
+      !$message->getContributionRecurID() &&
       !empty($msg['email']) &&
       $message->isPaypal() &&
       strpos($msg['subscr_id'], 'I-') === 0
@@ -138,15 +142,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
             'contribution_status_id.name' => 'In Progress',
             'cancel_date' => NULL,
             'end_date' => NULL,
-            'processor_id' => $msg['subscr_id']
+            'trxn_id' => $msg['subscr_id'],
           ])->execute();
-        // Make the message look like it should be associated with that record.
-        // There is some code in wmf_civicrm_contribution_message_import that
-        // might look the recur record up again (FIXME, but not now). This
-        // mutation here will make sure the payment doesn't create a second
-        // recurring record.
-        $msg['subscr_id'] = $recur_record->id;
         $msg['gateway'] = 'paypal';
+        $message->setContributionRecurID($recur_record->id);
       }
       else {
         Civi::log('wmf')->info('Creating new contribution_recur record while processing a subscr_payment');
@@ -156,6 +155,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
           'txn_type' => 'subscr_signup',
           ] + $msg;
         $this->importSubscriptionSignup($startMessage);
+        // @todo we shouldn't need this check - the sign up processing should
+        // fail it if ... fails & the lookup happens in the donations queue anyway
+        // (which would also fail if it needed to).
         $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
         if (!$recur_record) {
           Civi::log('wmf')->notice('recurring: Fallback contribution_recur record creation failed.');
@@ -164,15 +166,16 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
             "Could not create the initial recurring record for subscr_id {$msg['subscr_id']}"
           );
         }
+        $message->setContributionRecurID($recur_record->id);
       }
     }
-    if (!$recur_record) {
+    if (!$message->getContributionRecurID()) {
       Civi::log('wmf')->notice('recurring: Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
       throw new WMFException(WMFException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$msg['subscr_id']}");
     }
 
-    $msg['contact_id'] = $recur_record->contact_id;
-    $msg['contribution_recur_id'] = $recur_record->id;
+    $msg['contact_id'] = $message->getExistingContributionRecurValue('contact_id');
+    $msg['contribution_recur_id'] = $message->getContributionRecurID();
 
     // Unset email & address values if the contact already has details.
     // Do separate 'quick' look-ups as likely to be less lock-inducing.
@@ -202,7 +205,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       unset($msg['street_address'], $msg['country'], $msg['city'], $msg['postal_code'], $msg['state_province']);
     }
 
-    if (!RecurHelper::isFirst($recur_record->id)) {
+    if (!RecurHelper::isFirst($message->getContributionRecurID())) {
+      // @todo - confirm this is unnecessary as done in the Donations queue & remove.
       $msg['financial_type_id'] = RecurHelper::getFinancialTypeForSubsequentContributions();
     }
     QueueWrapper::push('donations', $msg);

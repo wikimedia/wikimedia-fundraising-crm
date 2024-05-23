@@ -3,6 +3,7 @@
 namespace Civi\WMFQueue;
 
 use Civi\Core\Exception\DBQueryException;
+use Civi\WMFStatistic\ImportStatsCollector;
 use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
 use Exception;
 use SmashPig\Core\UtcDate;
@@ -180,4 +181,23 @@ abstract class QueueConsumer extends BaseQueueConsumer {
   public function reportStatistics(int $totalMessagesDequeued): void {
 
   }
+
+  /**
+   * @param string $action
+   *
+   * @return void
+   */
+  public function startTiming(string $action): void {
+    ImportStatsCollector::getInstance()->startImportTimer($action);
+  }
+
+  /**
+   * @param string $action
+   *
+   * @return void
+   */
+  public function stopTiming(string $action): void {
+    ImportStatsCollector::getInstance()->endImportTimer($action);
+  }
+
 }

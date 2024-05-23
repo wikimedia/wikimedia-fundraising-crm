@@ -195,21 +195,6 @@ function _get_recurring_payment_token(array $msg) {
 }
 
 /**
- * @param $isRecurring
- *
- * @return string
- */
-function getImportTimerName($isRecurring): string {
-  if (!$isRecurring) {
-    $overallTimerName = "wmf_civicrm_contribution_message_import";
-  }
-  else {
-    $overallTimerName = "wmf_civicrm_recurring_message_import";
-  }
-  return $overallTimerName;
-}
-
-/**
  * @return \Statistics\Collector\AbstractCollector
  */
 function _get_import_timer(): \Statistics\Collector\AbstractCollector {

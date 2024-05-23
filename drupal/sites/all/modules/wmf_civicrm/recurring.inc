@@ -269,6 +269,10 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
  * @return CRM_Core_DAO|false
  */
 function wmf_civicrm_get_legacy_paypal_subscription($msg) {
+  // This is a janky way to make the test check how many times we do this.
+  // However unlike in 2018 we should REALLY be almost ready to remove this code..
+  // https://phabricator.wikimedia.org/T355448#9819521
+  \Civi::$statics[__FUNCTION__] = isset(\Civi::$statics[__FUNCTION__]) ? \Civi::$statics[__FUNCTION__] + 1 : 1;
   // We include recently-canceled donations because PayPal has apparently
   // not communicated about their ID migration to the team that makes their
   // audit files, leading a ton of subscriptions to be mistakenly canceled
