@@ -169,19 +169,6 @@ function _message_contribution_insert(array $msg): array {
 
 /**
  * @param array $msg
- * @param $recurring_transaction_id
- *
- * @return void
- * @throws \Civi\WMFException\WMFException
- */
-function _message_contribution_recur_insert(array $msg, $recurring_transaction_id): void {
-  _get_import_timer()->startImportTimer("message_contribution_recur_insert");
-  wmf_civicrm_message_contribution_recur_insert($msg, $msg['contact_id'], $recurring_transaction_id);
-  _get_import_timer()->endImportTimer("message_contribution_recur_insert");
-}
-
-/**
- * @param array $msg
  *
  * @return mixed|null
  */
