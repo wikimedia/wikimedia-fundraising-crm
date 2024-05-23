@@ -69,6 +69,14 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->doCleanUp();
     // Employer contact ids are cached in statics.
     unset(\Civi::$statics['wmf_contact']);
+    // Clean up generated files
+    foreach (['all_missed', 'all_not_matched', 'errors', 'ignored', 'skipped'] as $suffix) {
+      $files = glob(__DIR__ . "/../data/*_$suffix.*.csv");
+      foreach ($files as $file) {
+        unlink($file);
+      }
+    }
+
     parent::tearDown();
   }
 
