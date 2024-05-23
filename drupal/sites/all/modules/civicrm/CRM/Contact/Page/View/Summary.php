@@ -15,6 +15,8 @@
  * @copyright CiviCRM LLC https://civicrm.org/licensing
  */
 
+use Civi\Api4\CustomGroup;
+
 /**
  * Main page for viewing contact.
  */
@@ -220,6 +222,9 @@ class CRM_Contact_Page_View_Summary extends CRM_Contact_Page_View {
       $this->assign("dnc_viewCustomData", NULL);
     }
 
+    if (!empty($defaults['email'])) {
+      $this->addEmailCustomData($defaults);
+    }
     $defaults['gender_display'] = CRM_Core_PseudoConstant::getLabel('CRM_Contact_DAO_Contact', 'gender_id', $defaults['gender_id'] ?? NULL);
 
     $communicationStyle = CRM_Core_PseudoConstant::get('CRM_Contact_DAO_Contact', 'communication_style_id');
@@ -514,6 +519,40 @@ class CRM_Contact_Page_View_Summary extends CRM_Contact_Page_View {
       }
     }
     return $locationEntities;
+  }
+
+  protected function addEmailCustomData(array &$defaults) {
+    foreach ($defaults['email'] as $blockId => $blockVal) {
+      $custom = [];
+      $fieldLabels = [];
+      $hasCustomValues = false;
+      foreach ($blockVal as $fieldName => $fieldValue) {
+        $fieldNameParts = explode('.', $fieldName);
+        if (count($fieldNameParts) === 2) {
+          if ($fieldValue) {
+            $hasCustomValues = true;
+          }
+          $customGroupName = $fieldNameParts[0];
+          $customFieldName = $fieldNameParts[1];
+          if (!isset($custom[$customGroupName]['label'])) {
+            $groupAndFieldLabels = CustomGroup::get(FALSE)
+              ->addSelect('title', 'custom_field.name', 'custom_field.label')
+              ->addJoin('CustomField AS custom_field', 'LEFT')
+              ->addWhere('name', '=', $customGroupName)
+              ->execute();
+            foreach ($groupAndFieldLabels as $labelSet) {
+              $custom[$customGroupName]['label'] = $labelSet['title'];
+              $fieldLabels[$customGroupName][$labelSet['custom_field.name']] = $labelSet['custom_field.label'];
+            }
+          }
+          $custom[$customGroupName]['fields'][$customFieldName] = [
+            'label' => $fieldLabels[$customGroupName][$customFieldName],
+            'value' => $fieldValue
+          ];
+        }
+      }
+      $defaults['email'][$blockId]['custom'] = $hasCustomValues ? $custom : false;
+    }
   }
 
 }
