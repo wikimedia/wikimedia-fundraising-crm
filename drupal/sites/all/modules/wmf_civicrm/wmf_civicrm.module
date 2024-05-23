@@ -157,19 +157,6 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
 /**
  * @param array $msg
  *
- * @return array
- * @throws \Civi\WMFException\WMFException
- */
-function _message_contribution_insert(array $msg): array {
-  _get_import_timer()->startImportTimer("message_contribution_insert");
-  $contribution = _wmf_civicrm_message_contribution_insert($msg);
-  _get_import_timer()->endImportTimer("message_contribution_insert");
-  return $contribution;
-}
-
-/**
- * @param array $msg
- *
  * @return mixed|null
  */
 function _get_recurring_payment_token(array $msg) {

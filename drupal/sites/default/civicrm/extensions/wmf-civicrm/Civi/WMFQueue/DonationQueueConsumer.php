@@ -271,7 +271,9 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
 
     // Insert the contribution record.
-    $contribution = _message_contribution_insert($msg);
+    $this->startTiming('message_contribution_insert');
+    $contribution = _wmf_civicrm_message_contribution_insert($msg);
+    $this->stopTiming('message_contribution_insert');
 
     if ($message->getContributionTrackingID()
       && !$message->getRecurringPriorContributionValue('id')) {
