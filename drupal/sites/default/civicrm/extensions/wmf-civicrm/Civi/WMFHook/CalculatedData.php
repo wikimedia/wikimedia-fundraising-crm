@@ -1241,10 +1241,10 @@ class CalculatedData extends TriggerHook {
           ],
         ],
       ],
-      100 => [
+      1000 => [
         'label' => 'Non donor',
         'static_description' => 'no donations in last 200 months',
-        'value' => 100,
+        'value' => 1000,
         'name' => 'non-donor',
       ],
     ];
