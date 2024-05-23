@@ -1161,6 +1161,12 @@ WHERE entity_id =%1 AND entity_table = %2";
    * @param array $contactIds
    * @param int $sourceContactId This is the source contact Id
    *
+   * @deprecated since 5.71.
+   *
+   * This function has no core usage. There is some non-core usage. At some point
+   * we should add a suitable api & noisily deprecate this / set an tentative
+   * removal date.
+   *
    * @return array(bool $sent, int $activityId, int $success)
    * @throws CRM_Core_Exception
    */
@@ -1413,62 +1419,6 @@ WHERE entity_id =%1 AND entity_table = %2";
     ];
     CRM_Activity_BAO_ActivityContact::create($activityTargetParams);
     return TRUE;
-  }
-
-  /**
-   * Combine all the importable fields from the lower levels object.
-   *
-   * The ordering is important, since currently we do not have a weight
-   * scheme. Adding weight is super important and should be done in the
-   * next week or so, before this can be called complete.
-   *
-   * @param bool $status
-   * @deprecated
-   * @return array
-   *   array of importable Fields
-   */
-  public static function &importableFields($status = FALSE) {
-    CRM_Core_Error::deprecatedFunctionWarning('api');
-    if (empty(Civi::$statics[__CLASS__][__FUNCTION__])) {
-      Civi::$statics[__CLASS__][__FUNCTION__] = [];
-      if (!$status) {
-        $fields = ['' => ['title' => ts('- do not import -')]];
-      }
-      else {
-        $fields = ['' => ['title' => ts('- Activity Fields -')]];
-      }
-
-      $tmpFields = CRM_Activity_DAO_Activity::import();
-      $contactFields = CRM_Contact_BAO_Contact::importableFields('Individual', NULL);
-
-      // Using new Dedupe rule.
-      $ruleParams = [
-        'contact_type' => 'Individual',
-        'used' => 'Unsupervised',
-      ];
-      $fieldsArray = CRM_Dedupe_BAO_DedupeRule::dedupeRuleFields($ruleParams);
-
-      $tmpConatctField = [];
-      if (is_array($fieldsArray)) {
-        foreach ($fieldsArray as $value) {
-          $customFieldId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_CustomField',
-            $value,
-            'id',
-            'column_name'
-          );
-          $value = $customFieldId ? 'custom_' . $customFieldId : $value;
-          $tmpConatctField[trim($value)] = $contactFields[trim($value)];
-          $tmpConatctField[trim($value)]['title'] = $tmpConatctField[trim($value)]['title'] . " (match to contact)";
-        }
-      }
-      $tmpConatctField['external_identifier'] = $contactFields['external_identifier'];
-      $tmpConatctField['external_identifier']['title'] = $contactFields['external_identifier']['title'] . " (match to contact)";
-      $fields = array_merge($fields, $tmpConatctField);
-      $fields = array_merge($fields, $tmpFields);
-      $fields = array_merge($fields, CRM_Core_BAO_CustomField::getFieldsForImport('Activity'));
-      Civi::$statics[__CLASS__][__FUNCTION__] = $fields;
-    }
-    return Civi::$statics[__CLASS__][__FUNCTION__];
   }
 
   /**
@@ -2774,18 +2724,22 @@ INNER JOIN  civicrm_option_group grp ON (grp.id = option_group_id AND grp.name =
    *
    * @param string $entityName
    *   Always "Activity".
-   * @param int $entityId
+   * @param int|null $entityId
    *   Id of the activity.
    * @throws CRM_Core_Exception
    */
-  public static function getEntityIcon(string $entityName, int $entityId) {
+  public static function getEntityIcon(string $entityName, int $entityId = NULL): ?string {
+    $default = parent::getEntityIcon($entityName);
+    if (!$entityId) {
+      return $default;
+    }
     $field = Civi\Api4\Activity::getFields(FALSE)
       ->addWhere('name', '=', 'activity_type_id')
       ->setLoadOptions(['id', 'label', 'icon'])
       ->execute()->single();
     $activityTypes = array_column($field['options'], NULL, 'id');
     $activityType = CRM_Core_DAO::getFieldValue(parent::class, $entityId, 'activity_type_id');
-    return $activityTypes[$activityType]['icon'] ?? self::$_icon;
+    return $activityTypes[$activityType]['icon'] ?? $default;
   }
 
 }

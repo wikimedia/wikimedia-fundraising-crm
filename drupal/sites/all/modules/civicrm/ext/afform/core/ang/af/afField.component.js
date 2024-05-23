@@ -123,10 +123,6 @@
           else if (ctrl.afFieldset.getStoredValue(ctrl.fieldName) !== undefined) {
             setValue(ctrl.afFieldset.getStoredValue(ctrl.fieldName));
           }
-          else if ('default_date_type' in ctrl.defn && ctrl.defn.default_date_type === 'now') {
-            let currentDate = new Date();
-            setValue(currentDate.toISOString().split('T')[0]);
-          }
           // Set default value based on field defn
           else if ('afform_default' in ctrl.defn) {
             setValue(ctrl.defn.afform_default);
@@ -188,6 +184,9 @@
         // correct the value type
         value = correctValueType(value, ctrl.defn.data_type);
 
+        if (ctrl.defn.input_type === 'Date' && typeof value === 'string' && value.startsWith('now')) {
+          value = getRelativeDate(value);
+        }
         if (ctrl.defn.input_type === 'Number' && ctrl.defn.search_range) {
           if (!_.isPlainObject(value)) {
             value = {
@@ -256,8 +255,12 @@
         };
       };
 
-      ctrl.getAutocompleteFieldName = function() {
-        return ctrl.afFieldset.modelName + (ctrl.afJoin ? ('+' + ctrl.afJoin.entity) : '') + ':' + ctrl.fieldName;
+      ctrl.getAutocompleteParams = function() {
+        return {
+          formName: 'afform:' + ctrl.afFieldset.getFormName(),
+          fieldName: ctrl.afFieldset.getName() + ':' + ctrl.fieldName,
+          values: $scope.dataProvider.getFieldData()
+        };
       };
 
       $scope.getOptions = function () {
@@ -342,6 +345,24 @@
         }
         return currentVal;
       };
+
+      function getRelativeDate(dateString) {
+        const parts = dateString.split(' ');
+        const baseDate = new Date();
+        let unit = parts[2] || 'day';
+        let offset = parseInt(parts[1] || '0', 10);
+
+        switch (unit) {
+          case 'week':
+            offset *= 7;
+            break;
+
+          case 'year':
+            offset *= 365;
+        }
+        let newDate = new Date(baseDate.getTime() + offset * 24 * 60 * 60 * 1000);
+        return newDate.toISOString().split('T')[0];
+      }
 
     }
   });

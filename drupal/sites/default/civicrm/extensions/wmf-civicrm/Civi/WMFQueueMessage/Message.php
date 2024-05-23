@@ -256,23 +256,34 @@ class Message {
         continue;
       }
       $field = $this->getCustomFieldMetadataByFieldName($fieldName);
-      if ($field && !isset($this->message[$field['custom_group_id.name'] . '.' . $field['name']])) {
+      if ($field && !isset($this->message[$field['custom_group']['name'] . '.' . $field['name']])) {
+        if (!empty($field['option_group_id'])) {
+          // temporary handling while I adjust the code to apiv4.
+          $entity = $field['custom_group']['extends'] === 'Contribution' ? 'Contribution' : 'Contact';
+          $field['options'] = civicrm_api4($entity, 'getfields', [
+            'loadOptions' => TRUE,
+            'where' => [
+              ['custom_field_id', '=', $field['id']],
+            ],
+            'checkPermissions' => FALSE,
+          ])->first()['options'];
+        }
         if (empty($field['options'])) {
-          $customFields[$field['custom_group_id.name'] . '.' . $field['name']] = $value;
+          $customFields[$field['custom_group']['name'] . '.' . $field['name']] = $value;
         }
         else {
           if ($value === '' || $value === NULL || !empty($field['options'][$value])) {
-            $customFields[$field['custom_group_id.name'] . '.' . $field['name']] = $value;
+            $customFields[$field['custom_group']['name'] . '.' . $field['name']] = $value;
           }
           elseif (in_array($value, $field['options'])) {
-            $customFields[$field['custom_group_id.name'] . '.' . $field['name']] = array_search($value, $field['options']);
+            $customFields[$field['custom_group']['name'] . '.' . $field['name']] = array_search($value, $field['options']);
           }
           else {
             // @todo - maybe move to validate? Might be easier once separation from import has been done.
             $value = \CRM_Utils_Type::escape($value, 'String');
             throw new WMFException(WMFException::INVALID_MESSAGE,
               "Invalid value ($value) submitted for custom field {$field['id']}:"
-              . "{$field['custom_group_id.title']} {$field['label']} - {$field['custom_group_id.name']}.{$field['name']}");
+              . "{$field['custom_group']['title']} {$field['label']} - {$field['custom_group']['name']}.{$field['name']}");
           }
         }
       }
@@ -315,7 +326,7 @@ class Message {
     // This filtering may or may not be a good idea but historically the
     // code has been permission on contact field pass-through &
     // restrictive on contribution fields.
-    if ($field['custom_group_id.extends'] === 'Contribution' && !in_array($field['name'], [
+    if ($field['custom_group']['extends'] === 'Contribution' && !in_array($field['name'], [
       'gateway_account',
       'import_batch_number',
       'no_thank_you',

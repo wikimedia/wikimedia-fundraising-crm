@@ -354,7 +354,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     // current contribution page id
     $this->getContributionPageID();
     $this->_ccid = CRM_Utils_Request::retrieve('ccid', 'Positive', $this);
-    $this->_emailExists = $this->get('emailExists');
+    $this->_emailExists = $this->get('emailExists') ?? FALSE;
 
     $this->_contactID = $this->_membershipContactID = $this->getContactID();
 
@@ -764,7 +764,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       }
     }
     else {
-      $this->assign('email', CRM_Utils_Array::value("email-{$this->_bltID}", $this->_params));
+      $this->assign('email', $this->_params["email-{$this->_bltID}"] ?? NULL);
     }
   }
 
@@ -925,9 +925,9 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     $this->add('hidden', 'selectProduct', $selectedProductID, ['id' => 'selectProduct']);
     $premiumProducts = PremiumsProduct::get()
       ->addSelect('product_id.*')
-      ->addSelect('product_id')
       ->addSelect('premiums_id.*')
       ->addWhere('product_id.is_active', '=', TRUE)
+      ->addWhere('premiums_id.premiums_active', '=', TRUE)
       ->addWhere('premiums_id.entity_id', '=', $this->getContributionPageID())
       ->addWhere('premiums_id.entity_table', '=', 'civicrm_contribution_page')
       ->addOrderBy('weight')
@@ -935,23 +935,14 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     $products = [];
     $premium = [];
     foreach ($premiumProducts as $premiumProduct) {
-      $product = ['options' => NULL];
-      foreach ($premiumProduct as $key => $value) {
-        if (str_starts_with($key, 'product_id.')) {
-          if ($key === 'product_id.options' && $selectedProductID === $product['id'] && $selectedOption) {
-            // In this case we are on the thank you or confirm page so assign
-            // the selected option to the page for display.
-            $product['options'] = ts('Selected Option') . ': ' . $selectedOption;
-          }
-          else {
-            $product[str_replace('product_id.', '', $key)] = $value;
-          }
-        }
-        if (str_starts_with($key, 'premiums_id.')) {
-          $premium[str_replace('premiums_id.', '', $key)] = $value;
-        }
+      $product = CRM_Utils_Array::filterByPrefix($premiumProduct, 'product_id.');
+      $premium = CRM_Utils_Array::filterByPrefix($premiumProduct, 'premiums_id.');
+      if ($selectedProductID === $product['id'] && $selectedOption) {
+        // In this case we are on the thank you or confirm page so assign
+        // the selected option to the page for display.
+        $product['options'] = [ts('Selected Option') . ': ' . $selectedOption];
       }
-      $options = array_filter(explode(',', $product['options']));
+      $options = array_filter((array) $product['options']);
       $productOptions = [];
       foreach ($options as $option) {
         $optionValue = trim($option);
@@ -962,10 +953,10 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       if (!empty($options)) {
         $this->addElement('select', 'options_' . $product['id'], NULL, $productOptions);
       }
-      $products[$premiumProduct['product_id']] = $product;
+      $products[$product['id']] = $product;
     }
     $this->assign('premiumBlock', $premium);
-    $this->assign('products', $products ?? NULL);
+    $this->assign('products', $products);
   }
 
   /**
@@ -1116,7 +1107,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
 
     //check for valid pledge status.
     if (!in_array($pledgeValues['status_id'], $validStatus)) {
-      CRM_Core_Error::statusBounce(ts('Oops. You cannot make a payment for this pledge - pledge status is %1.', [1 => CRM_Utils_Array::value($pledgeValues['status_id'], $allStatus)]));
+      CRM_Core_Error::statusBounce(ts('Oops. You cannot make a payment for this pledge - pledge status is %1.', [1 => $allStatus[$pledgeValues['status_id']] ?? '']));
     }
   }
 
@@ -1545,19 +1536,14 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
    * Rather historic - might have unneeded stuff
    *
    * @return string
+   * @throws \CRM_Core_Exception
    */
-  public function getCurrency() {
-    $currency = $this->_values['currency'] ?? NULL;
-    // For event forms, currency is in a different spot
-    if (empty($currency)) {
-      $currency = CRM_Utils_Array::value('currency', CRM_Utils_Array::value('event', $this->_values));
-    }
+  public function getCurrency(): string {
+    $currency = $this->getContributionPageValue('currency');
     if (empty($currency)) {
       $currency = CRM_Utils_Request::retrieveValue('currency', 'String');
     }
-    // @todo If empty there is a problem - we should probably put in a deprecation notice
-    // to warn if that seems to be happening.
-    return (string) $currency;
+    return (string) ($currency ?? \Civi::settings()->get('currency'));
   }
 
 }

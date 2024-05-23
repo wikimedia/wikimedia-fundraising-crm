@@ -72,26 +72,43 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
    */
   private static $UNDEFINED_VALUE;
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \SmartyException
+   */
   private function initialize() {
     $config = CRM_Core_Config::singleton();
 
     if (isset($config->customTemplateDir) && $config->customTemplateDir) {
-      $this->template_dir = array_merge([$config->customTemplateDir],
+      $template_dir = array_merge([$config->customTemplateDir],
         $config->templateDir
       );
     }
     else {
-      $this->template_dir = $config->templateDir;
+      $template_dir = $config->templateDir;
     }
-    $this->compile_dir = CRM_Utils_File::addTrailingSlash(CRM_Utils_File::addTrailingSlash($config->templateCompileDir) . $this->getLocale());
-    CRM_Utils_File::createDir($this->compile_dir);
-    CRM_Utils_File::restrictAccess($this->compile_dir);
+    $compile_dir = CRM_Utils_File::addTrailingSlash(CRM_Utils_File::addTrailingSlash($config->templateCompileDir) . $this->getLocale());
+
+    if (!defined('SMARTY_DIR')) {
+      // The absence of the global indicates Smarty5 - which is not a fan of bypassing the functions.
+      // In theory this would work on all & it does run fun with Smarty2 but our tests
+      // do something weird with loading Smarty so we have to head tests running Smarty2 off
+      // at the pass.
+      $this->setTemplateDir($template_dir);
+      $this->setCompileDir($compile_dir);
+    }
+    else {
+      $this->template_dir = $template_dir;
+      $this->compile_dir = $compile_dir;
+    }
+    CRM_Utils_File::createDir($compile_dir);
+    CRM_Utils_File::restrictAccess($compile_dir);
 
     // check and ensure it is writable
     // else we sometime suppress errors quietly and this results
     // in blank emails etc
-    if (!is_writable($this->compile_dir)) {
-      echo "CiviCRM does not have permission to write temp files in {$this->compile_dir}, Exiting";
+    if (!is_writable($compile_dir)) {
+      echo "CiviCRM does not have permission to write temp files in {$compile_dir}, Exiting";
       exit();
     }
 
@@ -108,18 +125,16 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
       if (!file_exists($customPluginsDir)) {
         $customPluginsDir = NULL;
       }
+      if ($customPluginsDir) {
+        $this->addPluginsDir($customPluginsDir);
+      }
     }
 
     $pkgsDir = Civi::paths()->getVariable('civicrm.packages', 'path');
-    $smartyDir = $pkgsDir . DIRECTORY_SEPARATOR . 'Smarty' . DIRECTORY_SEPARATOR;
-    $pluginsDir = __DIR__ . DIRECTORY_SEPARATOR . 'Smarty' . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR;
-
-    if ($customPluginsDir) {
-      $this->plugins_dir = [$customPluginsDir, $smartyDir . 'plugins', $pluginsDir];
-    }
-    else {
-      $this->plugins_dir = [$smartyDir . 'plugins', $pluginsDir];
-    }
+    // smarty3/4 have the define, fall back to smarty2. smarty5 deprecates plugins_dir - TBD.
+    $smartyPluginsDir = defined('SMARTY_PLUGINS_DIR') ? SMARTY_PLUGINS_DIR : ($pkgsDir . DIRECTORY_SEPARATOR . 'Smarty' . DIRECTORY_SEPARATOR . 'plugins');
+    $corePluginsDir = __DIR__ . DIRECTORY_SEPARATOR . 'Smarty' . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR;
+    $this->addPluginsDir($corePluginsDir);
 
     $this->compile_check = $this->isCheckSmartyIsCompiled();
 
@@ -147,7 +162,9 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
     }
 
     if (CRM_Utils_Constant::value('CIVICRM_SMARTY_DEFAULT_ESCAPE')
-      && !CRM_Utils_Constant::value('CIVICRM_SMARTY3_AUTOLOAD_PATH')) {
+      && !CRM_Utils_Constant::value('CIVICRM_SMARTY3_AUTOLOAD_PATH')
+      && !CRM_Utils_Constant::value('CIVICRM_SMARTY_AUTOLOAD_PATH')
+    ) {
       // Currently DEFAULT escape does not work with Smarty3
       // dunno why - thought it would be the default with Smarty3 - but
       // getting onto Smarty 3 is higher priority.
@@ -158,16 +175,38 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
       // contribution dashboard from RecentlyViewed.tpl
       require_once 'Smarty/plugins/modifier.escape.php';
       if (!isset($this->_plugins['modifier']['escape'])) {
-        $this->register_modifier('escape', ['CRM_Core_Smarty', 'escape']);
+        $this->registerPlugin('modifier', 'escape', ['CRM_Core_Smarty', 'escape']);
       }
       $this->default_modifiers[] = 'escape:"htmlall"';
     }
-    $this->load_filter('pre', 'resetExtScope');
-    $this->load_filter('pre', 'htxtFilter');
+    $this->loadFilter('pre', 'resetExtScope');
+    $this->loadFilter('pre', 'htxtFilter');
+
+    // Smarty5 can't use php functions unless they are registered.... Smarty4 gets noisy about it.
+    $functionsForSmarty = [
+      // In theory json_encode, count & implode no longer need to
+      // be added as they are now more natively supported in smarty4, smarty5
+      'json_encode',
+      'count',
+      'implode',
+      // We use str_starts_with to check if a field is (e.g 'phone_' in profile presentation.
+      'str_starts_with',
+      // Trim is used on the extensions page.
+      'trim',
+      'is_numeric',
+      // used for permission checks although it might be nicer if it wasn't
+      'call_user_func',
+      'array_key_exists',
+      'strstr',
+      'strpos',
+    ];
+    foreach ($functionsForSmarty as $function) {
+      $this->registerPlugin('modifier', $function, $function);
+    }
 
     $this->assign('crmPermissions', new CRM_Core_Smarty_Permissions());
 
-    if ($config->debug || str_contains(CIVICRM_UF_BASEURL, 'localhost')) {
+    if ($config->debug || str_contains(CIVICRM_UF_BASEURL, 'localhost') || CRM_Utils_Constant::value('CIVICRM_UF') === 'UnitTests') {
       $this->error_reporting = E_ALL;
     }
   }
@@ -280,43 +319,29 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
     }
   }
 
-  public function clearTemplateVars() {
-    foreach (array_keys($this->_tpl_vars) as $key) {
-      if ($key == 'config' || $key == 'session') {
+  /**
+   * Clear template variables, except session or config.
+   *
+   * Also the debugging variable because during test runs initialize() is only
+   * called once at the start but the var gets indirectly accessed by a couple
+   * tests that test forms.
+   *
+   * @return void
+   */
+  public function clearTemplateVars(): void {
+    foreach (array_keys($this->getTemplateVars()) as $key) {
+      if ($key === 'config' || $key === 'session' || $key === 'debugging') {
         continue;
       }
-      unset($this->_tpl_vars[$key]);
+      $this->clearAssign($key);
     }
   }
 
   public static function registerStringResource() {
-    require_once 'CRM/Core/Smarty/resources/String.php';
-    civicrm_smarty_register_string_resource();
-  }
-
-  /**
-   * Add template directory(s).
-   *
-   * @param string|array $template_dir directory(s) of template sources
-   * @param string $key (Smarty3+) of the array element to assign the template dir to
-   * @param bool $isConfig (Smarty3+) true for config_dir
-   *
-   * @return Smarty          current Smarty instance for chaining
-   */
-  public function addTemplateDir($template_dir, $key = NULL, $isConfig = FALSE) {
-    if (method_exists('parent', 'addTemplateDir')) {
-      // More recent versions of Smarty have this method.
-      return parent::addTemplateDir($template_dir, $key, $isConfig);
+    if (method_exists('Smarty', 'register_resource')) {
+      require_once 'CRM/Core/Smarty/resources/String.php';
+      civicrm_smarty_register_string_resource();
     }
-    if (is_array($this->template_dir)) {
-      if (!in_array($template_dir, $this->template_dir)) {
-        array_unshift($this->template_dir, $template_dir);
-      }
-    }
-    else {
-      $this->template_dir = [$template_dir, $this->template_dir];
-    }
-    return $this;
   }
 
   /**
@@ -371,7 +396,7 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
         $this->assign($key, $value);
       }
       else {
-        $this->clear_assign($key);
+        $this->clearAssign($key);
       }
     }
     return $this;
