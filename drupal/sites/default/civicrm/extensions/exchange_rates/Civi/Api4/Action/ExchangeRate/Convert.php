@@ -4,7 +4,7 @@ namespace Civi\Api4\Action\ExchangeRate;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\ExchangeException\ExchangeRatesException;
+use Civi\ExchangeRates\ExchangeRatesException;
 use CRM_Core_DAO;
 use CRM_ExchangeRates_BAO_ExchangeRate;
 use CRM_ExchangeRates_DAO_ExchangeRate;

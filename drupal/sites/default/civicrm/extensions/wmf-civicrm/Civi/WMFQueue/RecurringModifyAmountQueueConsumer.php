@@ -3,12 +3,11 @@
 namespace Civi\WMFQueue;
 
 use Civi;
-use Civi\Api4\Contact;
-use Civi\Api4\RecurUpgradeEmail;
-use Civi\Api4\ContributionRecur;
 use Civi\Api4\Activity;
-use Civi\Api4\WMFContact;
-use Civi\ExchangeException\ExchangeRatesException;
+use Civi\Api4\Contact;
+use Civi\Api4\ContributionRecur;
+use Civi\Api4\RecurUpgradeEmail;
+use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFQueueMessage\RecurringModifyAmountMessage;
 

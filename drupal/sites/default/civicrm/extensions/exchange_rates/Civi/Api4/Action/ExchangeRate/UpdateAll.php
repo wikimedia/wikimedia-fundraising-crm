@@ -6,7 +6,7 @@ use Civi;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\ExchangeException\ExchangeRateUpdateException;
+use Civi\ExchangeRates\ExchangeRateUpdateException;
 use Civi\ExchangeRates\Retriever\EcbRetriever;
 use Civi\ExchangeRates\Retriever\OandaRetriever;
 use GuzzleHttp\Client;

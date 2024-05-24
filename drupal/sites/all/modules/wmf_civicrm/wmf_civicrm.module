@@ -845,7 +845,7 @@ function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
  *
  * @return int
  *   The refund's contribution id.
- * @throws Civi\ExchangeException\ExchangeRatesException;
+ * @throws \Civi\ExchangeRates\ExchangeRatesException;
  * @throws \Civi\WMFException\WMFException
  */
 

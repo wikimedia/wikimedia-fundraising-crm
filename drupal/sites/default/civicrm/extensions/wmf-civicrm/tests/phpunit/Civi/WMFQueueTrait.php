@@ -6,7 +6,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\WMFQueue;
-use Civi\ExchangeException\ExchangeRatesException;
+use Civi\ExchangeRates\ExchangeRatesException;
 use CRM_ExchangeRates_BAO_ExchangeRate;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;

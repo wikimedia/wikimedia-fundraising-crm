@@ -24,7 +24,7 @@ class OandaRetrieverTest extends TestCase implements HookInterface, Transactiona
   }
 
   public function testExceptionOnBadHttpResponseCode(): void {
-    $this->expectException('\Civi\ExchangeException\ExchangeRateUpdateException');
+    $this->expectException('\Civi\ExchangeRates\ExchangeRateUpdateException');
     $this->client->expects($this->once())
       ->method('get')
       ->willReturn(
@@ -40,7 +40,7 @@ class OandaRetrieverTest extends TestCase implements HookInterface, Transactiona
   }
 
   public function testExceptionOnBadHttpResponseBody(): void {
-    $this->expectException('\Civi\ExchangeException\ExchangeRateUpdateException');
+    $this->expectException('\Civi\ExchangeRates\ExchangeRateUpdateException');
     $this->client->expects($this->once())
       ->method('get')
       ->willReturn(
@@ -90,7 +90,7 @@ class OandaRetrieverTest extends TestCase implements HookInterface, Transactiona
         [
           'headers' => [
             'Authorization' => 'Bearer mzplx',
-          ]
+          ],
         ]
       )
       ->willReturn(

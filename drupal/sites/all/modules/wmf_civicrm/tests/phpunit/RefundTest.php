@@ -2,7 +2,6 @@
 
 use Civi\WMFException\WMFException;
 
-
 /**
  * @group Pipeline
  * @group WmfCivicrm
@@ -198,7 +197,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * The new donation gets today's date as we have not passed a refund date.
    *
-   * @throws \Civi\ExchangeException\ExchangeRatesException;
+   * @throws \Civi\ExchangeRates\ExchangeRatesException;
    * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */

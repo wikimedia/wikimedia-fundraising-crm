@@ -1,5 +1,5 @@
 <?php
-namespace Civi\ExchangeException;
+namespace Civi\ExchangeRates;
 
 class ExchangeRatesException extends \Exception {
 }
