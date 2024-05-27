@@ -11,12 +11,14 @@ use Civi\Api4\Address;
 use Civi\Api4\Email;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\OptionValue;
+use Civi\Api4\PaymentToken;
 use Civi\Api4\Phone;
 use Civi\Api4\Relationship;
 use Civi\Api4\StateProvince;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
-use SmashPig\Core\DataStores\PendingDatabase;
+use Civi\WMFQueueMessage\RecurDonationMessage;
 use Civi\WMFStatistic\ImportStatsCollector;
+use SmashPig\Core\DataStores\PendingDatabase;
 
 /**
  * @group queues
@@ -1485,6 +1487,10 @@ class DonationQueueTest extends BaseQueueTestCase {
     );
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
   public function testExternalIdentifierUpdate(): void {
     $newVenmoUserName = 'test';
     $initialDetails = $this->getDonationMessage([
@@ -1525,6 +1531,306 @@ class DonationQueueTest extends BaseQueueTestCase {
       ->execute()->first();
 
     $this->assertEquals($newVenmoUserName, $updatedContact['External_Identifiers.venmo_user_name']);
+  }
+
+  /**
+   * Test functionality in RecurHelper::getByGatewaySubscriptionId.
+   *
+   * @return void
+   */
+  public function testGetGatewaySubscription(): void {
+    $contactID = $this->createIndividual();
+
+    $subscription_id_1 = 'SUB_FOO-' . mt_rand();
+    $recurValues = [
+      'contact_id' => $contactID,
+      'amount' => '1.21',
+      'frequency_interval' => 1,
+      'frequency_unit' => 'month',
+      'next_sched_contribution' => date('Y-m-d', strtotime('+1 month')),
+      'installments' => 0,
+      'processor_id' => 1,
+      'currency' => 'USD',
+      'trxn_id' => "RECURRING TESTGATEWAY {$subscription_id_1}",
+    ];
+    $this->createContributionRecur($recurValues);
+
+    $record = RecurHelper::getByGatewaySubscriptionId('TESTGATEWAY', $subscription_id_1);
+
+    $this->assertTrue(is_array($record), 'Will match on full unique subscription ID');
+    $this->assertEquals($recurValues['trxn_id'], $record['trxn_id']);
+
+    $subscription_id_2 = 'SUB_FOO-' . mt_rand();
+    $recurValues['trxn_id'] = $subscription_id_2;
+    $this->createTestEntity('ContributionRecur', $recurValues);
+
+    $record = RecurHelper::getByGatewaySubscriptionId('TESTGATEWAY', $subscription_id_2);
+
+    $this->assertTrue(is_array($record),
+      'Will match raw subscription ID');
+    $this->assertEquals($recurValues['trxn_id'], $record['trxn_id']);
+  }
+
+  public function testRecurringContributionWithoutPaymentToken(): void {
+    $msg = [
+      'first_name' => 'Peter',
+      'last_name' => 'Mouse',
+      'email' => 'abernathy@sweetwater.org',
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'subscr_id' => 'abc123123',
+      'recurring' => 1,
+      'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
+    ];
+
+    // import old-style recurring contribution message
+    // this should result in a new contribution and recurring contribution.
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+
+    $this->assertEquals($msg['gross'], $contribution['total_amount']);
+    $this->assertNotEmpty($contribution['contribution_recur_id']);
+    $this->assertEquals(
+      strtoupper("RECURRING {$msg['gateway']} {$msg['gateway_txn_id']}"),
+      $contribution['trxn_id']
+    );
+
+    // confirm recurring contribution record was created correctly
+    $recurring_record = $this->getRecurringContribution($msg['subscr_id']);
+    $this->assertEquals(1, $recurring_record['processor_id']);
+    $this->assertEquals($msg['subscr_id'], $recurring_record['trxn_id']);
+    $this->assertEquals($contribution['contact_id'], $recurring_record['contact_id']);
+    $this->assertEquals($msg['gross'], $recurring_record['amount']);
+    $this->assertEquals($msg['currency'], $recurring_record['currency']);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringContributionWithPaymentToken(): void {
+    $this->createIndividual(['hash' => 'mousy_mouse']);
+    $this->createPaymentProcessor();
+
+    $msg = [
+      'contact_id' => $this->ids['Contact']['danger_mouse'],
+      'contact_hash' => 'mousy_mouse',
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => "test_gateway",
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      // recurring contribution payment token fields below
+      'recurring_payment_token' => 'TEST-RECURRING-TOKEN-' . mt_rand(),
+      'recurring' => 1,
+      'user_ip' => '12.34.56.78',
+    ];
+
+    //import contribution message containing populated recurring and recurring_payment_token fields
+    //this should result in a new contribution, recurring contribution and payment token record.
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+
+    $this->assertEquals($this->ids['Contact']['danger_mouse'], $contribution['contact_id']);
+    $this->assertEquals($msg['gross'], $contribution['total_amount']);
+    $this->assertNotEmpty($contribution['contribution_recur_id']);
+    $this->assertEquals(strtoupper("RECURRING {$msg['gateway']} {$msg['gateway_txn_id']}"),
+      $contribution['trxn_id']);
+
+    //confirm recurring contribution record was created with associated payment token record
+    $recurringContribution = $this->getRecurringContribution($msg['gateway_txn_id']);
+    $this->assertNotEmpty($recurringContribution['payment_token_id']);
+    $this->assertNotEmpty($recurringContribution['payment_processor_id']);
+
+    //confirm payment token persisted matches original $msg token
+    $paymentToken = PaymentToken::get(FALSE)
+      ->addWhere('id', '=', $recurringContribution['payment_token_id'])
+      ->execute()->first();
+    $this->assertEquals($msg['recurring_payment_token'], $paymentToken['token']);
+    $this->assertEquals(
+      $recurringContribution['payment_processor_id'],
+      $paymentToken['payment_processor_id']
+    );
+    $this->assertEquals($msg['user_ip'], $paymentToken['ip_address']);
+  }
+
+  /**
+   */
+  public function testSecondRecurringContributionWithPaymentToken(): void {
+    $this->createIndividual();
+    $this->createPaymentProcessor();
+    $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
+
+    $firstMessage = [
+      'contact_id' => $this->ids['Contact']['danger_mouse'],
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      // recurring contribution payment token fields below
+      'recurring_payment_token' => $token,
+      'recurring' => 1,
+      'user_ip' => '12.34.56.78',
+    ];
+
+    //import contribution message containing populated recurring and recurring_payment_token fields
+    //this should result in a new contribution, recurring contribution and payment token record.
+    $this->processDonationMessage($firstMessage);
+
+    $secondMessage = [
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '2.34',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'recurring_payment_token' => $token,
+      'recurring' => 1,
+      'user_ip' => '12.34.56.78',
+    ];
+
+    $this->processDonationMessage($secondMessage);
+    $secondContribution = $this->getContributionForMessage($secondMessage);
+
+    $this->assertEquals($this->ids['Contact']['danger_mouse'], $secondContribution['contact_id']);
+    $this->assertEquals($secondMessage['gross'], $secondContribution['total_amount']);
+    $this->assertNotEmpty($secondContribution['contribution_recur_id']);
+    $this->assertEquals(strtoupper("RECURRING {$secondMessage['gateway']} {$secondMessage['gateway_txn_id']}"),
+      $secondContribution['trxn_id']);
+
+    //confirm recurring contribution record was created with same payment token record
+    $firstRecurringRecord = $this->getRecurringContribution($firstMessage['gateway_txn_id']);
+    $secondRecurringRecord = $this->getRecurringContribution($secondMessage['gateway_txn_id']);
+    $this->assertNotEquals($firstRecurringRecord['id'], $secondRecurringRecord['id']);
+    $this->assertEquals(
+      $firstRecurringRecord['payment_token_id'],
+      $secondRecurringRecord['payment_token_id']
+    );
+
+    $this->assertEquals(
+      $firstRecurringRecord['payment_processor_id'],
+      $secondRecurringRecord['payment_processor_id']
+    );
+    $this->assertEquals('Cash', \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $firstRecurringRecord['financial_type_id']));
+  }
+
+  /**
+   * Test no_thank_you field being set for recurring after first payment
+   *
+   * @group nothankyou
+   */
+  public function testRecurringNoThankYou(): void {
+    $contactID = $this->createIndividual();
+    $this->createPaymentProcessor();
+    $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
+
+    // create the recurring payment
+    $firstMessage = [
+      'contact_id' => $contactID,
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      // recurring contribution payment token fields below
+      'recurring_payment_token' => $token,
+      'recurring' => 1,
+      'user_ip' => '12.34.56.78',
+      'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
+    ];
+
+    //import contribution message containing populated recurring and recurring_payment_token fields
+    //this should result in a new contribution, recurring contribution and payment token record.
+    $this->processDonationMessage($firstMessage);
+    $firstContribution = $this->getContributionForMessage($firstMessage);
+
+    //check that no_thank_you is not set to recurring for the first payment
+    $this->assertNotEquals('recurring', $firstContribution['contribution_extra.no_thank_you']);
+
+    $firstRecurringRecord =
+      RecurHelper::getByGatewaySubscriptionId('test_gateway',
+        $firstMessage['gateway_txn_id']);
+
+    //charge the second payment
+    $secondMessage = [
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '2.34',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'contribution_recur_id' => $firstRecurringRecord['id'],
+      'recurring' => 1,
+    ];
+
+    $this->processDonationMessage($secondMessage);
+    $secondContribution = $this->getContributionForMessage($secondMessage);
+    //check that no_thank_you is set to recurring for the second payment
+    $this->assertEquals('recurring', $secondContribution['contribution_extra.no_thank_you']);
+  }
+
+  /**
+   * Test confirming that a recurring payment leads to a financial type of "Recurring Gift"
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   * @group recurring
+   */
+  public function testFirstRecurringHasFinancialType(): void {
+    $contactID = $this->createIndividual();
+    $this->createPaymentProcessor();
+    $token = 'TEST-RECURRING-TOKEN-' . mt_rand();
+
+    // create the recurring payment
+    $firstMessage = [
+      'contact_id' => $contactID,
+      'currency' => 'USD',
+      'date' => time(),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      // recurring contribution payment token fields below
+      'recurring_payment_token' => $token,
+      'recurring' => 1,
+      'user_ip' => '12.34.56.78',
+    ];
+
+    // Normalize a recurring payment initiation message, this should lead to the resulting message
+    // having a Financial Type of "Recurring Gift"
+    $message = new RecurDonationMessage($firstMessage);
+    $msg = $message->normalize();
+
+    $this->assertEquals($msg['financial_type_id'], \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift"));
+  }
+
+  /**
+   * @param string $gatewayTxnID
+   * @return array|null
+   */
+  public function getRecurringContribution(string $gatewayTxnID): ?array {
+    try {
+      return ContributionRecur::get(FALSE)
+        ->addWhere('trxn_id', '=', $gatewayTxnID)
+        ->execute()->first();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('failed recurring contribution lookup');
+    }
   }
 
 }

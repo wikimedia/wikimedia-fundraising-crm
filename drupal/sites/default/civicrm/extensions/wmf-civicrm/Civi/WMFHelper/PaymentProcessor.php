@@ -9,7 +9,7 @@ class PaymentProcessor {
    *
    * @param string $gateway
    *
-   * @return int[]|false
+   * @return int|false
    *
    * @throws \CRM_Core_Exception
    */
@@ -27,19 +27,13 @@ class PaymentProcessor {
    * @throws \CRM_Core_Exception
    */
   public static function getPaymentProcessors(): array {
-    // Note that the options themselves are cached already in core.
-    // This caching doesn't add much more.
-    $processors = \Civi::cache('metadata')->get('civicrm_payment_processors');
-    if (!$processors) {
-      $processors = [];
-      $options = \Civi\Api4\ContributionRecur::getFields(FALSE)
-        ->setLoadOptions(['id', 'name'])
-        ->addWhere('name', '=', 'payment_processor_id')
-        ->execute()->first()['options'];
-      foreach ($options as $option) {
-        $processors[$option['name']] = $option['id'];
-      }
-      \Civi::cache('metadata')->set('civicrm_payment_processors', $processors);
+    $processors = [];
+    $options = \Civi\Api4\ContributionRecur::getFields(FALSE)
+      ->setLoadOptions(['id', 'name'])
+      ->addWhere('name', '=', 'payment_processor_id')
+      ->execute()->first()['options'];
+    foreach ($options as $option) {
+      $processors[$option['name']] = (int) $option['id'];
     }
     return $processors;
   }

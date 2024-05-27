@@ -264,6 +264,17 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface, Transacti
   }
 
   /**
+   * Ensure the test payment processor exists.
+   */
+  protected function createPaymentProcessor($params = ['name' => 'test_gateway']): void {
+    $this->createTestEntity('PaymentProcessor', [
+      'payment_processor_type_id:name' => 'Dummy',
+      'is_default' => 1,
+      'is_active' => 1,
+    ] + $params, $params['name']);
+  }
+
+  /**
    * @param array $values
    *
    * @return array

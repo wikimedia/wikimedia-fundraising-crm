@@ -7,6 +7,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\OptionValue;
+use Civi\Api4\PaymentProcessor;
 use Civi\Api4\PaymentToken;
 use Civi\Omnimail\MailFactory;
 use Civi\WMFStatistic\DonationStatsCollector;
@@ -84,6 +85,10 @@ trait WMFEnvironmentTrait {
     $this->cleanupContact(['last_name' => 'Russ']);
     $this->cleanupContact(['organization_name' => 'The Firm']);
     $this->cleanUpContact(['display_name' => 'Anonymous']);
+    if (!empty($this->ids['PaymentProcessor'])) {
+      PaymentProcessor::delete(FALSE)->addWhere('id', 'IN', $this->ids['PaymentProcessor'])->execute();
+    }
+    PaymentProcessor::delete(FALSE)->addWhere('name', '=', 'test_gateway')->execute();
     ImportStatsCollector::tearDown();
     DonationStatsCollector::tearDown();
     // Reset some SmashPig-specific things
