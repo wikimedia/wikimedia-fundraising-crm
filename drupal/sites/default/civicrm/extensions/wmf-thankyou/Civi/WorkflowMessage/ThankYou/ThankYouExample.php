@@ -107,9 +107,7 @@ class ThankYouExample extends WorkflowMessageExample {
    *
    * @param array $example
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function build(array &$example): void {
     $workFlow = WorkflowMessage::get(TRUE)->addWhere('name', '=', $example['workflow'])->execute()->first();

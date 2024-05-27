@@ -3,7 +3,6 @@
 
 namespace Civi\Api4\Action\EOYEmail;
 
-use API_Exception;
 use Civi;
 use Civi\Api4\EOYEmail;
 use Civi\Api4\Exception\EOYEmail\NoContributionException;
@@ -79,28 +78,26 @@ class Send extends AbstractAction {
    *
    * @param \Civi\Api4\Generic\Result $result
    *
-   * @throws \API_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
     if (!$this->getContactID() && $this->isJobEmpty()) {
-      throw new API_Exception('All emails for year ' . $this->getYear() . ' have been sent');
+      throw new \CRM_Core_Exception('All emails for year ' . $this->getYear() . ' have been sent');
     }
     $result[] = $this->sendLetters();
   }
-
 
   /**
    * Send em out!
    *
    * @return array
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function sendLetters(): array {
     $fromAddress = From::getFromAddress('eoy');
     $fromName = From::getFromName('eoy');
     if (!$fromAddress || !$fromName) {
-      throw new API_Exception('Must configure a valid return address in the Thank-you module');
+      throw new \CRM_Core_Exception('Must configure a valid return address in the Thank-you module');
     }
     $mailer = MailFactory::singleton();
     $succeeded = $failed = $attempted = 0;
@@ -143,7 +140,7 @@ class Send extends AbstractAction {
           $email['from_name'] = $fromName;
           $email['from_address'] = $fromAddress;
           if (!$mailer->send($email, [])) {
-            throw new API_Exception('Unknown send error');
+            throw new \CRM_Core_Exception('Unknown send error');
           }
           $this->recordActivities($email);
           ++$succeeded;

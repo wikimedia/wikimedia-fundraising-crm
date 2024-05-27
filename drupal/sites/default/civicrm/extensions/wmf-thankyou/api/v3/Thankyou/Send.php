@@ -27,18 +27,18 @@ function _civicrm_api3_thankyou_send_spec(&$spec) {
  *
  * @throws \CiviCRM_API3_Exception
  * @throws \Civi\WMFException\WMFException
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  *
  * @see civicrm_api3_create_success
  */
 function civicrm_api3_thankyou_send($params) {
 
   if (thank_you_for_contribution($params['contribution_id'], TRUE, $params['template'] ?? NULL) === FALSE) {
-    throw new API_Exception('Thank you failed.');
+    throw new CRM_Core_Exception('Thank you failed.');
   }
   $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $params['contribution_id']]);
   if (empty($contribution['thankyou_date'])) {
-    throw new API_Exception('Thank you failed.');
+    throw new CRM_Core_Exception('Thank you failed.');
   }
   return civicrm_api3_create_success(1);
 }

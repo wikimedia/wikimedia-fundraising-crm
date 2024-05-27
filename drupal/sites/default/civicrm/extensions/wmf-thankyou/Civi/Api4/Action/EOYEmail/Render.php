@@ -150,7 +150,7 @@ class Render extends AbstractAction {
    * @param string $email
    *
    * @return array IDs and language of non-deleted contacts with that email
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getContactDetailsForEmail(string $email): array {
     $emailRecords = Civi\Api4\Email::get(FALSE)
