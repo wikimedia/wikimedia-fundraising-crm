@@ -12,7 +12,6 @@ use Civi\WMFTransaction;
  *
  * @param array $msg
  * @param integer $contact_id
- * @param string $subscr_id subscription_id/trnx_id
  * //FIXME: should not pass a contribution in, only subscr_id
  * @param array $contribution The contribution record
  *
@@ -21,7 +20,7 @@ use Civi\WMFTransaction;
  * @throws \CRM_Core_Exception
  *
  */
-function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subscr_id, $contribution_record = NULL) {
+function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $contribution_record = NULL) {
   $msg['frequency_unit'] = isset($msg['frequency_unit']) ? $msg['frequency_unit'] : 'month';
   $msg['frequency_interval'] = isset($msg['frequency_interval']) ? (integer) $msg['frequency_interval'] : 1;
   $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
