@@ -12,15 +12,12 @@ use Civi\WMFTransaction;
  *
  * @param array $msg
  * @param integer $contact_id
- * //FIXME: should not pass a contribution in, only subscr_id
- * @param array $contribution The contribution record
  *
- * @return boolean  Returns true on success
  * @throws \Civi\WMFException\WMFException
  * @throws \CRM_Core_Exception
  *
  */
-function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $contribution_record = NULL) {
+function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id) {
   $msg['frequency_unit'] = isset($msg['frequency_unit']) ? $msg['frequency_unit'] : 'month';
   $msg['frequency_interval'] = isset($msg['frequency_interval']) ? (integer) $msg['frequency_interval'] : 1;
   $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
@@ -73,17 +70,11 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $contr
     $gateway_subscr_id = $msg['gateway_txn_id'];
   }
   else {
-    // trxn_id must be set.
-    // FIXME: this should always be the subscr_id.
-    if (empty($contribution_record['trxn_id'])) {
-      $error_message = t(
-        '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
-        ["!contact_id" => $contact_id]
-      );
-      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
-    }
-
-    $gateway_subscr_id = $contribution_record['trxn_id'];
+    $error_message = t(
+      '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
+      ["!contact_id" => $contact_id]
+    );
+    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
   }
 
   $msg['cycle_day'] = wmf_civicrm_get_cycle_day($msg['date']);
@@ -155,24 +146,13 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $contr
   ] + $extra_recurring_params;
 
   try {
-    $result = ContributionRecur::create(FALSE)
+    ContributionRecur::create(FALSE)
       ->setValues($insert_params)
       ->execute()
       ->first();
   }
   catch (CRM_Core_Exception $e) {
     throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
-  }
-
-  $contribution_recur_id = $result['id'];
-
-  if ($contribution_record) {
-    // Link the contribution to the recurring payment
-    $link_contribution_status = wmf_civicrm_update_contribution_for_recurring($contribution_record['id'], $contribution_recur_id);
-    return $link_contribution_status;
-  }
-  else {
-    return TRUE;
   }
 }
 
