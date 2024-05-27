@@ -1,7 +1,7 @@
 <?php
 
 use Civi\Api4\ContributionRecur;
-use Civi\WMFHelper\PaymentProcessor;
+use Civi\WMFHelper\PaymentProcessor as PaymentProcessorHelper;
 use Civi\WMFException\WMFException;
 use Civi\WMFTransaction;
 
@@ -18,7 +18,7 @@ use Civi\WMFTransaction;
  *
  */
 function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id) {
-  $msg['frequency_unit'] = isset($msg['frequency_unit']) ? $msg['frequency_unit'] : 'month';
+  $msg['frequency_unit'] = $msg['frequency_unit'] ?? 'month';
   $msg['frequency_interval'] = isset($msg['frequency_interval']) ? (integer) $msg['frequency_interval'] : 1;
   $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
   $msg['cancel'] = isset($msg['cancel']) ? (integer) $msg['cancel'] : 0;
@@ -54,7 +54,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id) {
     throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
   }
 
-  // installments is only allowed to be 0.
+  // Installments is only allowed to be 0.
   if ($msg['installments'] !== 0) {
     $error_message = t(
       '`installments` must be set to 0, with the contact_id [!contact_id]',
@@ -96,7 +96,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id) {
       $contact_id,
       $msg['gateway'],
       $msg['recurring_payment_token'],
-      isset($msg['user_ip']) ? $msg['user_ip'] : NULL
+      $msg['user_ip'] ?? NULL
     );
     $extra_recurring_params = [
       'payment_token_id' => $payment_token_result['id'],
@@ -105,9 +105,9 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id) {
       'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
     ];
   }
-  elseif (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {
+  elseif (PaymentProcessorHelper::getPaymentProcessorID($msg['gateway'])) {
     $extra_recurring_params = [
-      'payment_processor_id' => PaymentProcessor::getPaymentProcessorID($msg['gateway']),
+      'payment_processor_id' => PaymentProcessorHelper::getPaymentProcessorID($msg['gateway']),
       'processor_id' => $gateway_subscr_id,
     ];
   }
