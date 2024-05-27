@@ -46,15 +46,6 @@ function wmf_civicrm_update_contribution_for_recurring($contribution_id, $contri
 }
 
 /**
- * @param timestamp $date as unix seconds
- *
- * @return day of the month for this date
- */
-function wmf_civicrm_get_cycle_day($date) {
-  return intval(gmdate('j', $date));
-}
-
-/**
  * Get recurring record in CiviCRM for the given subscriber id
  *
  * There is tension between trxn_id as searchable index and full gateway style

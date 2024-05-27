@@ -495,7 +495,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
     }
 
-    $msg['cycle_day'] = wmf_civicrm_get_cycle_day($msg['date']);
+    $msg['cycle_day'] = (int) (gmdate('j', $msg['date']));
 
     $next_sched_contribution = \CRM_Core_Payment_Scheduler::getNextContributionDate($msg);
 
