@@ -3,12 +3,12 @@
 namespace Civi\WMFQueue;
 
 use Civi\Api4\Contribution;
-use Civi\Api4\ContributionSoft;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\WMFContact;
 use Civi\Core\Exception\DBQueryException;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
+use Civi\WMFHelper\PaymentProcessor as PaymentProcessorHelper;
 use Civi\WMFQueueMessage\DonationMessage;
 use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
@@ -242,7 +242,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
 
         \Civi::log('wmf')->info('queue2civicrm_import: Attempting to insert new recurring subscription: {recurring_transaction_id}', ['recurring_transaction_id' => $recurring_transaction_id]);
         $this->startTiming('message_contribution_recur_insert');
-        wmf_civicrm_message_contribution_recur_insert($msg, $msg['contact_id']);
+        $this->importContributionRecur($msg, $msg['contact_id']);
         $this->stopTiming('message_contribution_recur_insert');
         $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $recurring_transaction_id);
         $msg['contribution_recur_id'] = $recur_record->id;
@@ -420,6 +420,157 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
           $eInner->getExtraParams()
         );
       }
+    }
+  }
+
+  /**
+   * Insert the recurring contribution record
+   *
+   * @todo Are the dates being set with the correct value?
+   *
+   * @param array $msg
+   * @param integer $contact_id
+   *
+   * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
+   *
+   */
+  private function importContributionRecur($msg, $contact_id) {
+    $msg['frequency_unit'] = $msg['frequency_unit'] ?? 'month';
+    $msg['frequency_interval'] = isset($msg['frequency_interval']) ? (integer) $msg['frequency_interval'] : 1;
+    $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
+    $msg['cancel'] = isset($msg['cancel']) ? (integer) $msg['cancel'] : 0;
+
+    if (!isset($msg['recurring']) || $msg['recurring'] != 1) {
+      $error_message = t(
+        'Payment is not marked as recurring, with the contact_id [!contact_id]',
+        ["!contact_id" => $contact_id]
+      );
+      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
+    }
+
+    // Allowed frequency_units
+    $frequency_units = ['month', 'year'];
+    if (!in_array($msg['frequency_unit'], $frequency_units)) {
+      $error_message = t(
+        'Invalid `frequency_unit` specified [!frequency_unit]. Supported frequency_units: !frequency_units, with the contact_id [!contact_id]',
+        [
+          "!frequency_unit" => $msg['frequency_unit'],
+          "!frequency_units" => implode(', ', $frequency_units),
+          "!contact_id" => $contact_id,
+        ]
+      );
+      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
+    }
+
+    // Frequency interval is only allowed to be 1. FIXME
+    if ($msg['frequency_interval'] !== 1) {
+      $error_message = t(
+        '`frequency_interval` is only allowed to be set to 1, with the contact_id [!contact_id]',
+        ["!contact_id" => $contact_id]
+      );
+      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
+    }
+
+    // Installments is only allowed to be 0.
+    if ($msg['installments'] !== 0) {
+      $error_message = t(
+        '`installments` must be set to 0, with the contact_id [!contact_id]',
+        ["!contact_id" => $contact_id]
+      );
+      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
+    }
+
+    if (!empty($msg['subscr_id'])) {
+      $gateway_subscr_id = $msg['subscr_id'];
+    }
+    elseif (!empty($msg['gateway_txn_id'])) {
+      $gateway_subscr_id = $msg['gateway_txn_id'];
+    }
+    else {
+      $error_message = t(
+        '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
+        ["!contact_id" => $contact_id]
+      );
+      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
+    }
+
+    $msg['cycle_day'] = wmf_civicrm_get_cycle_day($msg['date']);
+
+    $next_sched_contribution = \CRM_Core_Payment_Scheduler::getNextContributionDate($msg);
+
+    if (!empty($msg['payment_processor_id']) && !empty($msg['payment_token_id'])) {
+      // copy existing payment token and processor IDs from message
+      $extra_recurring_params = [
+        'payment_token_id' => $msg['payment_token_id'],
+        'payment_processor_id' => $msg['payment_processor_id'],
+        'processor_id' => $gateway_subscr_id,
+        'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
+      ];
+    }
+    elseif (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
+      // create a recurring payment token record if token is present
+      $payment_token_result = wmf_civicrm_recur_payment_token_create(
+        $contact_id,
+        $msg['gateway'],
+        $msg['recurring_payment_token'],
+        $msg['user_ip'] ?? NULL
+      );
+      $extra_recurring_params = [
+        'payment_token_id' => $payment_token_result['id'],
+        'payment_processor_id' => $payment_token_result['payment_processor_id'],
+        'processor_id' => $gateway_subscr_id,
+        'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
+      ];
+    }
+    elseif (PaymentProcessorHelper::getPaymentProcessorID($msg['gateway'])) {
+      $extra_recurring_params = [
+        'payment_processor_id' => PaymentProcessorHelper::getPaymentProcessorID($msg['gateway']),
+        'processor_id' => $gateway_subscr_id,
+      ];
+    }
+    else {
+      // Old-style recurring, initialize processor_id to 1 for use as effort ID
+      $extra_recurring_params = [
+        'processor_id' => 1,
+      ];
+    }
+
+    // Using custom field to hold the processor_contact_id for Adyen.
+    if (!empty($msg['processor_contact_id'])) {
+      $extra_recurring_params['contribution_recur_smashpig.processor_contact_id'] = $msg['processor_contact_id'];
+    }
+
+    if (!empty($msg['initial_scheme_transaction_id'])) {
+      $extra_recurring_params['contribution_recur_smashpig.initial_scheme_transaction_id'] = $msg['initial_scheme_transaction_id'];
+    }
+
+    $insert_params = [
+      'payment_instrument_id' => $msg['payment_instrument_id'],
+      'contact_id' => $contact_id,
+      'amount' => $msg['original_gross'],
+      'currency' => $msg['original_currency'],
+      'financial_type_id:name' => 'Cash',
+      'frequency_unit' => $msg['frequency_unit'],
+      'frequency_interval' => $msg['frequency_interval'],
+      'installments' => $msg['installments'],
+      'start_date' => wmf_common_date_unix_to_civicrm($msg['date']),
+      'create_date' => wmf_common_date_unix_to_civicrm($msg['date']),
+      'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),
+      'cycle_day' => $msg['cycle_day'],
+      'next_sched_contribution_date' => $next_sched_contribution,
+      'trxn_id' => $gateway_subscr_id,
+      'contribution_status_id:name' => 'Pending',
+    ] + $extra_recurring_params;
+
+    try {
+      ContributionRecur::create(FALSE)
+        ->setValues($insert_params)
+        ->execute()
+        ->first();
+    }
+    catch (\CRM_Core_Exception $e) {
+      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
     }
   }
 
