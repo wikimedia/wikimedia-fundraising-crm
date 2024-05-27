@@ -48,6 +48,8 @@ function wmf_civicrm_update_contribution_for_recurring($contribution_id, $contri
 /**
  * Get recurring record in CiviCRM for the given subscriber id
  *
+ * @todo - this should be handled in Message::normalize().
+ *
  * There is tension between trxn_id as searchable index and full gateway style
  * at the moment, so we search using either style: either bare gateway
  * subscription ID, or trxn-style full natural key.
@@ -79,6 +81,7 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
 }
 
 /**
+ * @todo - we rolled out a patch in May 2024 that should make this obsolete within a month.
  * Get a legacy PayPal subscription associated with the given email address.
  * This and the code that calls it in
  * RecurringQueueConsumer::importSubscriptionPayment should be destroyed when
@@ -127,6 +130,9 @@ function wmf_civicrm_get_legacy_paypal_subscription($msg) {
 }
 
 /**
+ * Get recurring token - to be moved to DonationMessage::normalize().
+ *
+ * @todo the message object normalize() function should retrieve these values as relevant - like it does with ContributionRecur, ContributionTracking)
  * @param $gateway
  * @param $token
  *
@@ -167,6 +173,8 @@ function wmf_civicrm_get_recurring_payment_token($gateway, $token) {
  * Create a recurring payment token to be used alongside a recurring
  * contribution record
  *
+ * @todo - this should be a method on the QueueConsumer parent class.
+ *
  * @param int $contact_id
  * @param string $gateway Short gateway identifier
  * @param string $token Token provided by payment processor
@@ -185,7 +193,8 @@ function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token, $
       'token' => $token,
       'ip_address' => $ip,
     ]);
-  } catch (CiviCRM_API3_Exception $e) {
+  }
+  catch (CRM_Core_Exception $e) {
     throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
   }
 
@@ -193,13 +202,21 @@ function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token, $
   return $payment_token_result['values'][$payment_token_result['id']];
 }
 
+/**
+ * @todo - this should be handled by Message::normalize().
+ * @param $processorName
+ *
+ * @return mixed
+ * @throws \Civi\WMFException\WMFException
+ */
 function wmf_civicrm_get_payment_processor_id($processorName) {
   try {
     $payment_processor_result = civicrm_api3('PaymentProcessor', 'getsingle', [
       'name' => $processorName,
       'is_test' => 0,
     ]);
-  } catch (CiviCRM_API3_Exception $e) {
+  }
+  catch (CRM_Core_Exception $e) {
     throw new WMFException(
       WMFException::MISSING_PREDECESSOR,
       "No such Payment Processor exists, name='$processorName', " . $e->getMessage()
