@@ -46,30 +46,39 @@ class CRM_Core_TokenSmarty {
       'controller' => __CLASS__,
       'smarty' => TRUE,
     ];
+    \Civi::log('wmf')->info('Creating new TokenProcessor');
     $tokenProcessor = new TokenProcessor(\Civi::dispatcher(), array_merge($tokenContextDefaults, $tokenContext));
+    \Civi::log('wmf')->info('Calling tokenProcessor->addRow');
     $tokenProcessor->addRow([]);
+    \Civi::log('wmf')->info('Finished tokenProcessor->addRow');
     $useSmarty = !empty($tokenProcessor->context['smarty']);
 
     // Load templates
     foreach ($messages as $messageId => $messageTpl) {
       $format = preg_match('/html/', $messageId) ? 'text/html' : 'text/plain';
+      \Civi::log('wmf')->info("Calling tokenProcessor->addMessage for message $messageId in format $format");
       $tokenProcessor->addMessage($messageId, $messageTpl, $format);
+      \Civi::log('wmf')->info('Finished tokenProcessor->addMessage');
     }
 
     // Evaluate/render templates
     try {
       if ($useSmarty) {
+        \Civi::log('wmf')->info('Calling CRM_Core_Smarty::singleton()->pushScope');
         CRM_Core_Smarty::singleton()->pushScope($smartyAssigns);
       }
+      \Civi::log('wmf')->info('Calling tokenProcessor->evaluate()');
       $tokenProcessor->evaluate();
       foreach ($messages as $messageId => $ign) {
         foreach ($tokenProcessor->getRows() as $row) {
+          \Civi::log('wmf')->info("Calling row->render() for message $messageId");
           $result[$messageId] = $row->render($messageId);
         }
       }
     }
     finally {
       if ($useSmarty) {
+        \Civi::log('wmf')->info('Calling CRM_Core_Smarty::singleton()->popScope');
         CRM_Core_Smarty::singleton()->popScope();
       }
     }
