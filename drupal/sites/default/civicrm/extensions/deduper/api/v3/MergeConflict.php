@@ -29,8 +29,7 @@ function civicrm_api3_merge_conflict_create($params) {
  * @param array $params
  *
  * @return array API result descriptor
- * @throws API_Exception
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_merge_conflict_delete($params) {
   return _civicrm_api3_basic_delete(_civicrm_api3_get_BAO(__FUNCTION__), $params);
@@ -43,7 +42,7 @@ function civicrm_api3_merge_conflict_delete($params) {
  *
  * @return array API result descriptor
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_merge_conflict_get($params) {
 

@@ -50,10 +50,7 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
   /**
    * Resolve conflicts where we have a record in the contact_name_pairs table telling us the names are equivalent.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function resolveConflicts() {
     if (!$this->hasIndividualNameFieldConflict()) {
@@ -246,7 +243,6 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
    * @param string $fieldName
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   protected function resolveNamesForPair($name, $otherName, $isContactToKeep, $hasNickName, $fieldName = 'first_name') {
     if ($this->isInferior($name)) {

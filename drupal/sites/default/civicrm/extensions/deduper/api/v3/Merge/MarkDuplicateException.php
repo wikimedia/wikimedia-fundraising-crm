@@ -29,8 +29,6 @@ function _civicrm_api3_merge_mark_duplicate_exceptionspec(&$spec) {
  *
  * @return array API result descriptor
  *
- * @throws API_Exception
- * @throws CiviCRM_API3_Exception
  * @throws \CRM_Core_Exception
  */
 function civicrm_api3_merge_mark_duplicate_exception($params) {
@@ -39,7 +37,7 @@ function civicrm_api3_merge_mark_duplicate_exception($params) {
   foreach ($pairs as $pair) {
     civicrm_api3('Exception', 'create', ['contact_id1' => $pair['dstID'], 'contact_id2' => $pair['srcID']]);
     CRM_Core_DAO::executeQuery('
-      DELETE FROM civicrm_prevnext_cache 
+      DELETE FROM civicrm_prevnext_cache
       WHERE (entity_id1 = %1 AND entity_id2 = %2)
       OR (entity_id1 = %2 AND entity_id2 = %1)
     ', [1 => [$pair['srcID'], 'Integer'], 2 => [$pair['dstID'], 'Integer']]);

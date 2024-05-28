@@ -31,7 +31,6 @@ class DedupeBaseTestClass extends \PHPUnit\Framework\TestCase implements Headles
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function tearDown(): void {
     foreach ($this->ids as $entity => $ids) {

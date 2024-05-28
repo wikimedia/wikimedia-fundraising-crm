@@ -78,7 +78,7 @@ class CRM_Contact_Form_Task_FindDuplicates extends CRM_Core_Form {
         'options' => array('limit' => 1),
       ));
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       CRM_Core_Error::statusBounce(ts('It was not possible to identify a default rule that was applicable to all selected contacts. You must choose only one contact type. You chose %1', array($contactType)));
     }
 

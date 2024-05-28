@@ -9,7 +9,6 @@ class CRM_Deduper_BAO_Resolver_PreferredContactLocationResolver extends CRM_Dedu
    * Resolve conflicts if possible.
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function resolveConflicts(): void {
     foreach (['email', 'address', 'phone'] as $entity) {

@@ -41,7 +41,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   /**
    * Test the boolean resolver works.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testGetBooleanFields() {
     $fields = CRM_Deduper_BAO_MergeConflict::getBooleanFields();
@@ -53,7 +53,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   /**
    * Test the boolean resolver works.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testGetContactFields() {
     $fields = CRM_Deduper_BAO_MergeConflict::getContactFields();
