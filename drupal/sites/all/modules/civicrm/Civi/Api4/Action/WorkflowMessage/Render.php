@@ -74,9 +74,7 @@ class Render extends \Civi\Api4\Generic\AbstractAction {
   protected $_model;
 
   public function _run(\Civi\Api4\Generic\Result $result) {
-    \Civi::log('wmf')->info('Starting WorkFlowMessage\Render::_run');
     $this->validateValues();
-    \Civi::log('wmf')->info('Calling CRM_Core_BAO_MessageTemplate::renderTemplate');
     $r = \CRM_Core_BAO_MessageTemplate::renderTemplate([
       'model' => $this->_model,
       'messageTemplate' => $this->getMessageTemplate(),
@@ -84,7 +82,6 @@ class Render extends \Civi\Api4\Generic\AbstractAction {
       'language' => $this->getLanguage(),
     ]);
     $result[] = \CRM_Utils_Array::subset($r, ['subject', 'html', 'text']);
-    \Civi::log('wmf')->info('Finished WorkFlowMessage\Render::_run');
   }
 
   /**

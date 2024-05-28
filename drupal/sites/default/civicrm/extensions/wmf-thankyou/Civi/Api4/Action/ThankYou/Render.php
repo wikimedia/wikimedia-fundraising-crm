@@ -66,7 +66,6 @@ class Render extends AbstractAction {
    * @throws \Throwable
    */
   public function _run(Result $result): void {
-    Civi::log('wmf')->info('Starting ThankYou\Render::_run');
     $locale = $this->getLanguage();
     $templateParams = $this->getTemplateParameters();
 
@@ -88,7 +87,6 @@ class Render extends AbstractAction {
       'html' => $page_content,
       'subject' => trim($subject),
     ];
-    Civi::log('wmf')->info('Finishing ThankYou\Render::_run');
   }
 
   /**

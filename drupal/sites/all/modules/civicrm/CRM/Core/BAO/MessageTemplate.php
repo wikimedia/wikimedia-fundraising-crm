@@ -353,23 +353,17 @@ class CRM_Core_BAO_MessageTemplate extends CRM_Core_DAO_MessageTemplate implemen
 
     self::synchronizeLegacyParameters($params);
     // Allow WorkflowMessage to run any filters/mappings/cleanups.
-    \Civi::log('wmf')->info('Calling WorkflowMessage::create');
     /** @var \Civi\WorkflowMessage\GenericWorkflowMessage $model */
     $model = $params['model'] ?? WorkflowMessage::create($params['workflow'] ?? 'UNKNOWN');
-    \Civi::log('wmf')->info('Calling WorkflowMessage::importAll');
     WorkflowMessage::importAll($model, $params);
-    \Civi::log('wmf')->info('Calling $model::resolveContent');
     $mailContent = $model->resolveContent();
-    \Civi::log('wmf')->info('Calling WorkflowMessage::exportAll');
     $params = WorkflowMessage::exportAll($model);
     unset($params['model']);
     // Subsequent hooks use $params. Retaining the $params['model'] might be nice - but don't do it unless you figure out how to ensure data-consistency (eg $params['tplParams'] <=> $params['model']).
     // If you want to expose the model via hook, consider interjecting a new Hook::alterWorkflowMessage($model) between `importAll()` and `exportAll()`.
 
     self::synchronizeLegacyParameters($params);
-    \Civi::log('wmf')->info('Calling CRM_Utils_Hook::alterMailParams');
     CRM_Utils_Hook::alterMailParams($params, 'messageTemplate');
-    \Civi::log('wmf')->info('Calling CRM_Utils_Hook::alterMailContent');
     CRM_Utils_Hook::alterMailContent($mailContent);
     if (!empty($params['subject'])) {
       CRM_Core_Error::deprecatedWarning('CRM_Core_BAO_MessageTemplate: $params[subject] is deprecated. Use $params[messageTemplate][msg_subject] instead.');
@@ -377,9 +371,7 @@ class CRM_Core_BAO_MessageTemplate extends CRM_Core_DAO_MessageTemplate implemen
     }
 
     self::synchronizeLegacyParameters($params);
-    \Civi::log('wmf')->info('Calling CRM_Core_TokenSmarty::render');
     $rendered = CRM_Core_TokenSmarty::render(CRM_Utils_Array::subset($mailContent, ['text', 'html', 'subject']), $params['tokenContext'], $params['tplParams']);
-    \Civi::log('wmf')->info('Finished CRM_Core_TokenSmarty::render');
     if (isset($rendered['subject'])) {
       $rendered['subject'] = trim(preg_replace('/[\r\n]+/', ' ', $rendered['subject']));
     }
