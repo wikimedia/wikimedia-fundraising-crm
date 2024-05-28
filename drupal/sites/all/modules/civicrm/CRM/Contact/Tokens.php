@@ -238,7 +238,6 @@ class CRM_Contact_Tokens extends CRM_Core_EntityTokens {
    * @throws \CRM_Core_Exception
    */
   public function evaluateLegacyHookTokens(TokenValueEvent $e): void {
-    \Civi::log('wmf')->info('Starting Contact\Tokens::evaluateLegacyHookTokens');
     $messageTokens = $e->getTokenProcessor()->getMessageTokens();
     if (empty($messageTokens) || !array_intersect(array_keys($this->getHookTokens()), array_keys($messageTokens))) {
       return;
@@ -275,7 +274,6 @@ class CRM_Contact_Tokens extends CRM_Core_EntityTokens {
         }
       }
     }
-    \Civi::log('wmf')->info('Finishing Contact\Tokens::evaluateLegacyHookTokens');
   }
 
   /**
@@ -287,7 +285,6 @@ class CRM_Contact_Tokens extends CRM_Core_EntityTokens {
    * @throws \CRM_Core_Exception
    */
   public function onEvaluate(TokenValueEvent $e) {
-    \Civi::log('wmf')->info('Starting Contact\Tokens::onEvaluate');
     $this->activeTokens = $e->getTokenProcessor()->getMessageTokens()['contact'] ?? [];
     if (empty($this->activeTokens)) {
       return;
@@ -323,7 +320,6 @@ class CRM_Contact_Tokens extends CRM_Core_EntityTokens {
         }
       }
     }
-    \Civi::log('wmf')->info('Finishing Contact\Tokens::onEvaluate');
   }
 
   /**

@@ -18,7 +18,6 @@ class CRM_Wmf_Tokens {
    * @param \Civi\Token\Event\TokenValueEvent $e
    */
   public static function onEvalTokens(TokenValueEvent $e): void {
-    \Civi::log('wmf')->info('Starting CRM_Wmf_Tokens::onEvalTokens');
     foreach ($e->getRows() as $row) {
       $tokens = $e->getTokenProcessor()->getMessageTokens();
       foreach (($tokens['wmf_url'] ?? []) as $token) {
@@ -48,7 +47,6 @@ class CRM_Wmf_Tokens {
         }
       }
     }
-    \Civi::log('wmf')->info('Finishing CRM_Wmf_Tokens::onEvalTokens');
   }
 
   /**

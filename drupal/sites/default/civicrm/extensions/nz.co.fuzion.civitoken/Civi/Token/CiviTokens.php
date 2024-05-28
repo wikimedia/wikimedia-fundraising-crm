@@ -119,7 +119,6 @@ class CiviTokens implements EventSubscriberInterface{
    *   The event, which includes a list of rows and tokens.
    */
   public function evaluateTokens(TokenValueEvent $e) {
-    \Civi::log('wmf')->info('Finishing CiviTokens::evaluateTokens');
     if (!$this->checkActive($e->getTokenProcessor())) {
       return;
     }
@@ -149,7 +148,6 @@ class CiviTokens implements EventSubscriberInterface{
         }
       }
     }
-    \Civi::log('wmf')->info('Finishing CiviTokens::evaluateTokens');
   }
 
 }
