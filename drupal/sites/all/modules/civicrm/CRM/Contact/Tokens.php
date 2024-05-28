@@ -241,7 +241,6 @@ class CRM_Contact_Tokens extends CRM_Core_EntityTokens {
     \Civi::log('wmf')->info('Starting Contact\Tokens::evaluateLegacyHookTokens');
     $messageTokens = $e->getTokenProcessor()->getMessageTokens();
     if (empty($messageTokens) || !array_intersect(array_keys($this->getHookTokens()), array_keys($messageTokens))) {
-      \Civi::log('wmf')->info('Finishing Contact\Tokens::evaluateLegacyHookTokens (empty token list)');
       return;
     }
 

@@ -119,16 +119,14 @@ class CiviTokens implements EventSubscriberInterface{
    *   The event, which includes a list of rows and tokens.
    */
   public function evaluateTokens(TokenValueEvent $e) {
-    \Civi::log('wmf')->info('Starting CiviTokens::evaluateTokens');
+    \Civi::log('wmf')->info('Finishing CiviTokens::evaluateTokens');
     if (!$this->checkActive($e->getTokenProcessor())) {
-      \Civi::log('wmf')->info('Finishing CiviTokens::evaluateTokens (checkActive returned false)');
       return;
     }
 
     $activeTokens = $e->getTokenProcessor()->getMessageTokens();
     $civitokens = array_intersect_key($this->getTokenMetadata(), $activeTokens);
     if (empty($civitokens)) {
-      \Civi::log('wmf')->info('Finishing CiviTokens::evaluateTokens (civiTokens was empty)');
       return;
     }
     $tokenFunctions = civitoken_initialize();
