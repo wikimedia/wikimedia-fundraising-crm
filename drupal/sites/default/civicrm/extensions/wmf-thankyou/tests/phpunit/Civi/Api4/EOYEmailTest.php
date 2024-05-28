@@ -3,11 +3,11 @@ namespace Civi\Api4;
 
 use Civi\Omnimail\MailFactory;
 use Civi\Test\Api3TestTrait;
+use Civi\Test\Mailer;
 use Civi\WorkflowMessage\EOYThankYou;
 use CRM_Core_DAO;
 use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
-use Civi\Test\Mailer;
 
 class EOYEmailTest extends TestCase {
 
