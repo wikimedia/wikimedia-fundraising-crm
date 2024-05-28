@@ -446,6 +446,26 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test resolving a name where the first name & last name are in reversed places.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMisplacedNameResolutionReversedNames(bool $isReverse) {
+    // Put Bob Smith in the right order in the preferred Contact.
+    $contact1 = $isReverse ? ['first_name' => 'Smith', 'last_name' => 'Bob'] : ['first_name' => 'Bob', 'last_name' => 'Smith'];
+    $contact2 = $isReverse ? ['first_name' => 'Bob', 'last_name' => 'Smith'] : ['first_name' => 'Smith', 'last_name' => 'Bob'];
+    $this->createDuplicateIndividuals([$contact1, $contact2]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Bob', $mergedContact['first_name']);
+    $this->assertEquals('Smith', $mergedContact['last_name']);
+  }
+
+  /**
    * Test resolving an initial in the first name with punctuation.
    *
    * @param bool $isReverse
