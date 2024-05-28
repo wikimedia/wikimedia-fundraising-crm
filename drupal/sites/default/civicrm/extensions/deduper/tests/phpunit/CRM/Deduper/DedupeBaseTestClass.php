@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
@@ -34,15 +36,17 @@ class DedupeBaseTestClass extends \PHPUnit\Framework\TestCase implements Headles
    */
   public function tearDown(): void {
     foreach ($this->ids as $entity => $ids) {
-      foreach ($ids as $id) {
-        if ($entity === 'Contact') {
-          foreach ($this->callAPISuccess('Contribution', 'get', ['contact_id' => $id])['values'] as $contribution) {
-            civicrm_api3('Contribution', 'delete', ['id' => $contribution['id']]);
-          }
-        }
-        civicrm_api3($entity, 'delete', ['id' => $id, 'skip_undelete' => TRUE]);
+      if ($entity === 'Contact') {
+        Contribution::delete(FALSE)
+          ->addWhere('contact_id', 'IN', $this->ids['Contact'])
+          ->execute();
+        Contact::delete(FALSE)
+          ->addWhere('id', 'IN', $this->ids['Contact'])
+          ->setUseTrash(FALSE)
+          ->execute();
       }
     }
     parent::tearDown();
   }
+
 }

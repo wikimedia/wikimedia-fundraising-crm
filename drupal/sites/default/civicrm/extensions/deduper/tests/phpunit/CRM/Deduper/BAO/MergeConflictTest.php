@@ -2,6 +2,7 @@
 
 use Civi\Test\Api3TestTrait;
 use Civi\Api4\Email;
+use Civi\Test\EntityTrait;
 
 require_once __DIR__ . '/../DedupeBaseTestClass.php';
 
@@ -22,6 +23,7 @@ require_once __DIR__ . '/../DedupeBaseTestClass.php';
 class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
 
   use Api3TestTrait;
+  use EntityTrait;
 
   /**
    * Setup for class.
@@ -542,7 +544,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_prolific_contributor']]);
     $this->createDuplicateDonors();
     // Add a second contribution to the first donor - making it more prolific.
-    $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 5, 'contact_id' => $this->ids['Contact'][0], 'receive_date' => '2019-08-08']);
+    $this->createTestEntity('Contribution', ['financial_type_id:name' => 'Donation', 'total_amount' => 5, 'contact_id' => $this->ids['Contact'][0], 'receive_date' => '2019-08-08']);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
   }
@@ -555,7 +557,6 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @param bool $isReverse
    *   Should we reverse which contact we merge into?
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    *
    * @dataProvider booleanDataProvider
