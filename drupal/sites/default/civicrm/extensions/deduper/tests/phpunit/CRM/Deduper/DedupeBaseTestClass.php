@@ -35,7 +35,7 @@ class DedupeBaseTestClass extends \PHPUnit\Framework\TestCase implements Headles
   public function tearDown(): void {
     foreach ($this->ids as $entity => $ids) {
       foreach ($ids as $id) {
-        if ($entity === 'contact') {
+        if ($entity === 'Contact') {
           foreach ($this->callAPISuccess('Contribution', 'get', ['contact_id' => $id])['values'] as $contribution) {
             civicrm_api3('Contribution', 'delete', ['id' => $contribution['id']]);
           }

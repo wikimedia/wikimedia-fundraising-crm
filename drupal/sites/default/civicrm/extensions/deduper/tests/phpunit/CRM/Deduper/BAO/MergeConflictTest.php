@@ -60,22 +60,22 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testResolveBooleanFields() {
     $this->createDuplicateIndividuals([['do_not_mail' => 0], ['do_not_mail' => 1]]);
-    $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['contact'][0], 'to_remove_id' => $this->ids['contact'][1]]);
-    $mergedContacts = $this->callAPISuccess('Contact', 'get', ['id' => ['IN' => $this->ids['contact']]])['values'];
+    $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['Contact'][0], 'to_remove_id' => $this->ids['Contact'][1]]);
+    $mergedContacts = $this->callAPISuccess('Contact', 'get', ['id' => ['IN' => $this->ids['Contact']]])['values'];
 
-    $this->assertEquals(1, $mergedContacts[$this->ids['contact'][1]]['contact_is_deleted']);
-    $this->assertEquals(0, $mergedContacts[$this->ids['contact'][0]]['contact_is_deleted']);
-    $this->assertEquals(1, $mergedContacts[$this->ids['contact'][0]]['do_not_mail']);
+    $this->assertEquals(1, $mergedContacts[$this->ids['Contact'][1]]['contact_is_deleted']);
+    $this->assertEquals(0, $mergedContacts[$this->ids['Contact'][0]]['contact_is_deleted']);
+    $this->assertEquals(1, $mergedContacts[$this->ids['Contact'][0]]['do_not_mail']);
 
     // Now try merging a contact with 0 in that field into our retained contact.
-    $this->ids['contact'][2] = $this->callAPISuccess('Contact', 'create', ['first_name' => 'bob', 'do_not_mail' => 0, 'contact_type' => 'Individual'])['id'];
-    $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['contact'][0], 'to_remove_id' => $this->ids['contact'][2]]);
-    $mergedContacts = $this->callAPISuccess('Contact', 'get', ['id' => ['IN' => $this->ids['contact'], 'is_deleted' => 0]])['values'];
+    $this->ids['Contact'][2] = $this->callAPISuccess('Contact', 'create', ['first_name' => 'bob', 'do_not_mail' => 0, 'contact_type' => 'Individual'])['id'];
+    $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['Contact'][0], 'to_remove_id' => $this->ids['Contact'][2]]);
+    $mergedContacts = $this->callAPISuccess('Contact', 'get', ['id' => ['IN' => $this->ids['Contact'], 'is_deleted' => 0]])['values'];
 
-    $this->assertEquals(1, $mergedContacts[$this->ids['contact'][0]]['do_not_mail']);
+    $this->assertEquals(1, $mergedContacts[$this->ids['Contact'][0]]['do_not_mail']);
 
-    $this->assertEquals(1, $mergedContacts[$this->ids['contact'][2]]['contact_is_deleted']);
-    $this->assertEquals(0, $mergedContacts[$this->ids['contact'][0]]['contact_is_deleted']);
+    $this->assertEquals(1, $mergedContacts[$this->ids['Contact'][2]]['contact_is_deleted']);
+    $this->assertEquals(0, $mergedContacts[$this->ids['Contact'][0]]['contact_is_deleted']);
   }
 
   /**
@@ -122,15 +122,15 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testResolveEmailOnHold(bool $isReverse): void {
     $this->createDuplicateIndividuals();
-    // Conveniently our 2 contacts are 0 & 1 in the $this->ids['contact'] array, so we can abuse the boolean var like this.
+    // Conveniently our 2 contacts are 0 & 1 in the $this->ids['Contact'] array, so we can abuse the boolean var like this.
     $contactIDOnHold = $isReverse;
 
-    $email1 = $this->callAPISuccess('Email', 'get', ['contact_id' => $this->ids['contact'][$contactIDOnHold]])['id'];
+    $email1 = $this->callAPISuccess('Email', 'get', ['contact_id' => $this->ids['Contact'][$contactIDOnHold]])['id'];
     $this->callAPISuccess('Email', 'create', ['id' => $email1, 'on_hold' => 1]);
 
-    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['contact'][0], 'to_remove_id' => $this->ids['contact'][1]])['values'];
+    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['Contact'][0], 'to_remove_id' => $this->ids['Contact'][1]])['values'];
     $this->assertCount(1, $mergeResult['merged']);
-    $email0 = $this->callAPISuccessGetSingle('Email', ['contact_id' => ['IN' => [$this->ids['contact'][0]]]]);
+    $email0 = $this->callAPISuccessGetSingle('Email', ['contact_id' => ['IN' => [$this->ids['Contact'][0]]]]);
     $this->assertEquals(1, $email0['on_hold']);
   }
 
@@ -542,7 +542,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_prolific_contributor']]);
     $this->createDuplicateDonors();
     // Add a second contribution to the first donor - making it more prolific.
-    $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 5, 'contact_id' => $this->ids['contact'][0], 'receive_date' => '2019-08-08']);
+    $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 5, 'contact_id' => $this->ids['Contact'][0], 'receive_date' => '2019-08-08']);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
   }
@@ -584,8 +584,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testBatchMergeResolvableConflictPostalSuffixExists(bool $isReverse): void {
     $this->createDuplicateDonors();
-    $contactIDWithPostalSuffix = ($isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0]);
-    $contactIDWithOutPostalSuffix = ($isReverse ? $this->ids['contact'][0] : $this->ids['contact'][1]);
+    $contactIDWithPostalSuffix = ($isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0]);
+    $contactIDWithOutPostalSuffix = ($isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1]);
     $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $contactIDWithPostalSuffix,
@@ -621,8 +621,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddress(bool $isReverse): void {
     $this->createDuplicateDonors();
-    $contactIDWithCountryOnlyAddress = ($isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0]);
-    $contactIDWithFullAddress = ($isReverse ? $this->ids['contact'][0] : $this->ids['contact'][1]);
+    $contactIDWithCountryOnlyAddress = ($isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0]);
+    $contactIDWithFullAddress = ($isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1]);
     $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
       'contact_id' => $contactIDWithCountryOnlyAddress,
@@ -670,7 +670,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
       ['first_name' => 'DONALD', 'last_name' => 'DUCK'],
       ['first_name' => 'DonalD', 'last_name' => 'DUck'],
     ]);
-    $mergedContact = $this->doBatchMerge($this->ids['contact'][0], ['skipped' => 0, 'merged' => 3]);
+    $mergedContact = $this->doBatchMerge($this->ids['Contact'][0], ['skipped' => 0, 'merged' => 3]);
     $this->assertEquals('Donald', $mergedContact['first_name']);
     $this->assertEquals('Duck', $mergedContact['last_name']);
   }
@@ -691,7 +691,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
       ['first_name' => $names[0]],
       ['first_name' => $names[1]],
     ]);
-    $mergedContact = $this->doBatchMerge($this->ids['contact'][0], ['skipped' => (int) !$isMatch, 'merged' => (int) $isMatch]);
+    $mergedContact = $this->doBatchMerge($this->ids['Contact'][0], ['skipped' => (int) !$isMatch, 'merged' => (int) $isMatch]);
     if ($isMatch) {
       $this->assertEquals($preferredName, $mergedContact['first_name']);
     }
@@ -780,7 +780,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     ];
     foreach ($contactParams as $index => $contactParam) {
       $contactParam = array_merge($params, $contactParam);
-      $this->ids['contact'][$index] = $this->callAPISuccess('Contact', 'create', $contactParam)['id'];
+      $this->ids['Contact'][$index] = $this->callAPISuccess('Contact', 'create', $contactParam)['id'];
     }
   }
 
@@ -793,8 +793,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *   both scenarios.
    */
   protected function doNotDoMerge(bool $isReverse): void {
-    $toKeepContactID = $isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0];
-    $toDeleteContactID = $isReverse ? $this->ids['contact'][0] : $this->ids['contact'][1];
+    $toKeepContactID = $isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0];
+    $toDeleteContactID = $isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1];
     $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID])['values'];
     $this->assertCount(1, $mergeResult['skipped']);
     $this->assertCount(0, $mergeResult['merged']);
@@ -813,8 +813,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @return array|int
    */
   protected function doMerge(bool $isReverse, bool $isAggressiveMode = FALSE) {
-    $toKeepContactID = $isReverse ? $this->ids['contact'][1] : $this->ids['contact'][0];
-    $toDeleteContactID = $isReverse ? $this->ids['contact'][0] : $this->ids['contact'][1];
+    $toKeepContactID = $isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0];
+    $toDeleteContactID = $isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1];
     $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID, 'mode' => ($isAggressiveMode ? 'aggressive' : 'safe')])['values'];
     $mergedContact = $this->callAPISuccessGetSingle('Contact', ['id' => $toKeepContactID]);
     $this->assertCount(1, $mergeResult['merged']);
@@ -844,14 +844,14 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   /**
    * Create 2 donor contacts, differing in their source value.
    *
-   * The first donor ($this->ids['contact'][0]) is the more recent donor.
+   * The first donor ($this->ids['Contact'][0] is the more recent donor.
    *
    * @param array $overrides
    */
   protected function createDuplicateDonors(array $overrides = [['contact_source' => 'keep me'], ['contact_source' => 'ditch me']]): void {
     $this->createDuplicateIndividuals($overrides);
     $receiveDate = '2017-08-09';
-    foreach ($this->ids['contact'] as $contactID) {
+    foreach ($this->ids['Contact'] as $contactID) {
       $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 5, 'contact_id' => $contactID, 'receive_date' => $receiveDate]);
       $receiveDate = '2016-08-09';
     }
