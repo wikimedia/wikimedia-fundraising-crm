@@ -235,37 +235,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
   }
 
   /**
-   * Assert custom values are as expected.
-   *
-   * @param int $contactID
-   * @param array $expected
-   *   Array in format name => value eg. ['total_2017_2018' => 50]
-   *
-   * @deprecated uses apiv3 - use assertContactValues()
-   */
-  protected function assertCustomFieldValues($contactID, $expected) {
-    $return = [];
-    foreach (array_keys($expected) as $key) {
-      $return[] = wmf_civicrm_get_custom_field_name($key);
-    }
-
-    $contact = civicrm_api3('contact', 'getsingle', [
-      'id' => $contactID,
-      'return' => $return,
-    ]);
-
-    foreach ($expected as $key => $value) {
-      if ($key === 'last_donation_date') {
-        // Compare by date only.
-        $this->assertEquals($value, substr($contact[wmf_civicrm_get_custom_field_name($key)], 0, 10));
-      }
-      else {
-        $this->assertEquals($value, $contact[wmf_civicrm_get_custom_field_name($key)], "wrong value for $key");
-      }
-    }
-  }
-
-  /**
    * Asset the specified fields match those on the given contact.
    *
    * @param int $contactID

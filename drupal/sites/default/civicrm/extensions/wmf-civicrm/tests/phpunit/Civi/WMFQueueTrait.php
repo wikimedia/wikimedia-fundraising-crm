@@ -258,6 +258,25 @@ trait WMFQueueTrait {
   }
 
   /**
+   * Get a contribution (from the database) previously registered under `$this->ids[]`.
+   *
+   * @param string $identifier
+   *
+   * @return array
+   */
+  public function getContribution(string $identifier): array {
+    try {
+      return Contribution::get(FALSE)
+        ->addSelect('*', 'contribution_status_id:name', 'financial_type_id:name', 'payment_instrument_id:name', 'contribution_recur_id.*', 'Gift_Data.*', 'contribution_extra.*', 'Stock_Information.*', 'Gift_Information.*')
+        ->addWhere('id', '=', $this->ids['Contribution'][$identifier])
+        ->execute()->single();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('contribution lookup failed: ' . $e->getMessage());
+    }
+  }
+
+  /**
    * @param array $donation_message
    *
    * @return array

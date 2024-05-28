@@ -55,21 +55,23 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
 
     $this->original_currency = 'EUR';
-    $this->original_amount = '1.23';
-    $this->gateway_txn_id = mt_rand();
+    $this->original_amount = 1.23;
+    $this->gateway_txn_id = 'E-I-E-I-O';
     $time = time();
-    $this->trxn_id = "TEST_GATEWAY {$this->gateway_txn_id} {$time}";
+    $this->trxn_id = "TEST_GATEWAY E-I-E-I-O {$time}";
     $this->setExchangeRates($time, array('USD' => 1, 'EUR' => 0.5, 'NZD' => 5));
     $this->setExchangeRates(strtotime('1 year ago'), array('USD' => 1, 'EUR' => 0.5, 'NZD' => 5));
 
-    $results = civicrm_api3('contribution', 'create', array(
+    $results = $this->createTestEntity('Contribution', [
       'contact_id' => $this->ids['Contact']['default'],
-      'financial_type_id' => 'Cash',
+      'financial_type_id:name' => 'Cash',
       'total_amount' => $this->original_amount,
       'contribution_source' => $this->original_currency . ' ' . $this->original_amount,
       'receive_date' => date('Y-m-d') . ' 04:05:06',
       'trxn_id' => $this->trxn_id,
-    ));
+      'contribution_xtra.gateway' => 'test_gateway',
+      'contribution_xtra.gateway_txn_id' => 'E-I-E-I-O',
+    ], 'original');
     $this->original_contribution_id = $results['id'];
     $this->financialYearEnd = (date('m') > 6) ? date('Y') + 1 : date('Y');
     $this->financialYearTotalFieldName = 'total_' . ($this->financialYearEnd - 1) . '_' . $this->financialYearEnd;
@@ -80,6 +82,37 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'last_donation_usd' => 1.23,
       $this->financialYearTotalFieldName => 1.23,
     ]);
+  }
+
+  /**
+   * Assert custom values are as expected.
+   *
+   * @param int $contactID
+   * @param array $expected
+   *   Array in format name => value eg. ['total_2017_2018' => 50]
+   *
+   * @deprecated uses apiv3 - use assertContactValues()
+   */
+  protected function assertCustomFieldValues($contactID, $expected) {
+    $return = [];
+    foreach (array_keys($expected) as $key) {
+      $return[] = wmf_civicrm_get_custom_field_name($key);
+    }
+
+    $contact = civicrm_api3('contact', 'getsingle', [
+      'id' => $contactID,
+      'return' => $return,
+    ]);
+
+    foreach ($expected as $key => $value) {
+      if ($key === 'last_donation_date') {
+        // Compare by date only.
+        $this->assertEquals($value, substr($contact[wmf_civicrm_get_custom_field_name($key)], 0, 10));
+      }
+      else {
+        $this->assertEquals($value, $contact[wmf_civicrm_get_custom_field_name($key)], "wrong value for $key");
+      }
+    }
   }
 
   /**
@@ -94,12 +127,20 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * Covers wmf_civicrm_mark_refund.
    */
   public function testMarkRefund() {
-    wmf_civicrm_mark_refund($this->original_contribution_id, 'Refunded', FALSE, '2015-09-09', 'my_special_ref');
+    $message = [
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gross_currency' => $this->original_currency,
+      'gross' => $this->original_amount,
+      'date' => '2015-09-09',
+      'gateway' => 'test_gateway',
+      'gateway_refund_id' => 'my_special_ref',
+      'type' => 'refund',
+    ];
+    $this->processMessage($message, 'Refund', 'refund');
 
-    $contribution = civicrm_api3('contribution', 'getsingle', ['id' => $this->original_contribution_id]);
+    $contribution = $this->getContribution('original');
 
-    $this->assertEquals('Refunded', $contribution['contribution_status'],
-      'Refunded contribution has correct status');
+    $this->assertEquals('Refunded', $contribution['contribution_status_id:name'], 'Contribution not refunded');
 
     $financialTransactions = civicrm_api3('EntityFinancialTrxn', 'get', array(
       'entity_id' => $this->original_contribution_id,
@@ -111,9 +152,9 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $transaction1 = $financialTransactions['values']['0']['api.financial_trxn.get']['values'][0];
     $transaction2 = $financialTransactions['values']['1']['api.financial_trxn.get']['values'][0];
 
-    $this->assertEquals($transaction1['trxn_id'], $this->trxn_id);
-    $this->assertEquals(strtotime($transaction2['trxn_date']), strtotime('2015-09-09'));
-    $this->assertEquals($transaction2['trxn_id'], 'my_special_ref');
+    $this->assertEquals($this->trxn_id, $transaction1['trxn_id']);
+    $this->assertEquals(strtotime('2015-09-09'), strtotime($transaction2['trxn_date']));
+    $this->assertEquals('my_special_ref', $transaction2['trxn_id']);
 
     // With no valid donations we wind up with null not zero as no rows are selected
     // in the calculation query.
@@ -128,8 +169,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'last_donation_amount' => 0.00,
       'last_donation_usd' => 0.00,
       $this->financialYearTotalFieldName => NULL,
-      ]
-    );
+    ]);
   }
 
   /**
@@ -173,7 +213,6 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'wmf_donor.' . $this->financialYearTotalFieldName => 0,
     ]);
   }
-
 
   /**
    * Make a refund with type set to "chargeback"
@@ -265,22 +304,28 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->expectException(WMFException::class);
     $wrong_currency = 'GBP';
     $this->assertNotEquals($this->original_currency, $wrong_currency);
-    wmf_civicrm_mark_refund(
-      $this->original_contribution_id, 'Refunded',
-      TRUE, NULL, NULL,
-      $wrong_currency, $this->original_amount
-    );
+    $this->processMessageWithoutQueuing([
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gross_currency' => $wrong_currency,
+      'gross' => $this->original_amount,
+      'date' => date('Y-m-d H:i:s'),
+      'gateway' => 'test_gateway',
+      'type' => 'refund',
+    ], 'Refund');
   }
 
   /**
    * Make a refund for too much.
    */
   public function testMakeScammerRefund(): void {
-    wmf_civicrm_mark_refund(
-      $this->original_contribution_id, 'Refunded',
-      TRUE, NULL, NULL,
-      $this->original_currency, $this->original_amount + 100.00
-    );
+    $this->processMessage([
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gross_currency' => $this->original_currency,
+      'gross' => $this->original_amount + 100.00,
+      'date' => date('Y-m-d H:i:s'),
+      'gateway' => 'test_gateway',
+      'type' => 'refund',
+    ], 'Refund', 'refund');
     $mailing = $this->getMailing(0);
     $this->assertStringContainsString("<p>Refund amount mismatch for : {$this->original_contribution_id}, difference is 100. See http", $mailing['html']);
   }

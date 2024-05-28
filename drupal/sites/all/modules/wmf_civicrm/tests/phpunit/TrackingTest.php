@@ -5,10 +5,13 @@ use Civi\WMFQueue\ContributionTrackingQueueConsumer;
 
 class TrackingTest extends BaseWmfDrupalPhpUnitTestCase {
 
-  use \Civi\Test\ContactTestTrait;
-
   public function testGetContributionTracking() {
-    $contribution = $this->getContribution();
+    $contribution = $this->createTestEntity('Contribution', [
+      'financial_type_id:name' => 'Donation',
+      'total_amount' => 60,
+      'receive_date' => 'now',
+      'contact_id' => $this->createIndividual(),
+    ]);
     $id = $this->getContributionTracking([
       'contribution_id' => $contribution['id'],
     ]);
@@ -17,7 +20,6 @@ class TrackingTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
     $this->assertEquals($id, $returnedTracking['id']);
     $this->ids['ContributionTracking'][$id] = $id;
-    $this->ids['Contribution'][$returnedTracking['contribution_id']] = $returnedTracking['contribution_id'];
   }
 
   protected function getContributionTracking($params = []): int {
@@ -29,16 +31,6 @@ class TrackingTest extends BaseWmfDrupalPhpUnitTestCase {
     $id = wmf_civicrm_insert_contribution_tracking(array_merge($tracking, $params));
     $this->processContributionTrackingQueue();
     return $id;
-  }
-
-  protected function getContribution($recurParams = []): array {
-    $contactID = $recurParams['contact_id'] ?? $this->individualCreate();
-    return Contribution::create(FALSE)->setValues(array_merge([
-      'financial_type_id:name' => 'Donation',
-      'total_amount' => 60,
-      'receive_date' => 'now',
-      'contact_id' => $contactID,
-    ], $recurParams))->execute()->first();
   }
 
 }
