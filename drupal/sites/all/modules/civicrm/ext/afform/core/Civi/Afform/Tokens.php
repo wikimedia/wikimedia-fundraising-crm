@@ -122,7 +122,6 @@ class Tokens extends AutoService implements EventSubscriberInterface {
   }
 
   public static function evaluateTokens(\Civi\Token\Event\TokenValueEvent $e) {
-    \Civi::log('wmf')->info('Starting Afform\Tokens::evaluateTokens');
     $messageTokens = $e->getTokenProcessor()->getMessageTokens();
     if (empty($messageTokens['afformSubmission'])) {
       return;
@@ -146,7 +145,6 @@ class Tokens extends AutoService implements EventSubscriberInterface {
       $row->format('text/plain')->tokens('afformSubmission', 'validateSubmissionUrl', $url);
       $row->format('text/html')->tokens('afformSubmission', 'validateSubmissionLink', $link);
     }
-    \Civi::log('wmf')->info('Finishing Afform\Tokens::evaluateTokens');
   }
 
   private static function generateEmailVerificationUrl(int $submissionId): string {
