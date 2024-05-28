@@ -154,8 +154,6 @@ class Send extends AbstractAction {
       ];
 
       \Civi::log('wmf')->info('thank_you: Sending ty email to: {to_address}', ['to_address' => $email['to_address']]);
-      \Civi::log('wmf')->info('thank_you: Contact preferred language: {preferred_language}', ['preferred_language' => $email['locale']]);
-
       $email_success = MailFactory::singleton()->send(
         $email,
         $this->getHeaders()
