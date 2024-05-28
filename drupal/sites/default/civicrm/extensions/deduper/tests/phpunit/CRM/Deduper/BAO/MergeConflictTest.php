@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Address;
 use Civi\Test\Api3TestTrait;
 use Civi\Api4\Email;
 use Civi\Test\EntityTrait;
@@ -590,7 +591,67 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->assertCount(2, $emails);
     $this->assertEquals('bob@example.com', $emails[0]['email']);
     $this->assertEquals('notbob@example.com', $emails[1]['email']);
+  }
 
+  /**
+   * This is testing an issue that cropped up where address merges were hitting type errors.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @throws \CRM_Core_Exception
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testAddressMerge(bool $isReverse): void {
+    $this->createDuplicateDonors();
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact'][0],
+      'street_address' => '意外だね42意外だね',
+      'is_billing' => TRUE,
+      'is_primary' => TRUE,
+      'location_type_id:name' => 'Home',
+      'city' => '意外だね',
+      'postal_code' => 310027,
+      'country_id:name' => 'China',
+    ], 'contact_1_main');
+
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact'][1],
+      'street_address' => '33 Main Street',
+      'is_billing' => TRUE,
+      'location_type_id:name' => 'Other',
+      'city' => 'Mega-ville',
+      'state_province_id:name' => 'CA',
+      'postal_code' => 90201,
+      'country_id:name' => 'United States',
+    ], 'contact_2_other');
+    // Mess up the location type ID.
+    // See https://lab.civicrm.org/dev/core/-/issues/5240.
+    CRM_Core_DAO::executeQuery('UPDATE civicrm_address SET location_type_id = 0 WHERE id = ' . $this->ids['Address']['contact_2_other']);
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact'][1],
+      'street_address' => 'Home sweet home',
+      'is_billing' => TRUE,
+      'is_primary' => TRUE,
+      'location_type_id:name' => 'Home',
+      'city' => 'Mega-ville',
+      'postal_code' => 90001,
+      'country_id:name' => 'United States',
+    ], 'contact_2_main');
+    $contact = $this->doMerge($isReverse);
+
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->addSelect('street_address', 'is_primary', 'location_type_id:name', 'location_type_id')
+      ->addOrderBy('is_primary', 'DESC')
+      ->execute();
+    $this->assertCount(2, $address);
+    $this->assertEquals('Home', $address[0]['location_type_id:name']);
+    $this->assertEquals('意外だね42意外だね', $address[0]['street_address']);
+    $this->assertNotEmpty($address[1]['location_type_id']);
+    $this->assertNotEquals($address[0]['location_type_id'], $address[1]['location_type_id']);
+    $this->assertEquals('33 Main Street', $address[1]['street_address']);
   }
 
   /**
