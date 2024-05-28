@@ -158,7 +158,6 @@ class Send extends AbstractAction {
         $email,
         $this->getHeaders()
       );
-      \Civi::log('wmf')->info('thank_you: Finished sending ty email to: {to_address}', ['to_address' => $email['to_address']]);
     }
     catch (\PHPMailer\PHPMailer\Exception $e) {
       //TODO: don't assume phpmailer
