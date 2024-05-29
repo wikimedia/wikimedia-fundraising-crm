@@ -36,11 +36,11 @@
  * other similar PEAR packages. doubt it
  */
 if (!class_exists('Smarty')) {
-  if (defined('CIVICRM_SMARTY_AUTOLOAD_PATH')) {
+  if (CRM_Utils_Constant::value('CIVICRM_SMARTY_AUTOLOAD_PATH')) {
     // Specify the smarty version to load.
     require_once CIVICRM_SMARTY_AUTOLOAD_PATH;
   }
-  elseif (defined('CIVICRM_SMARTY3_AUTOLOAD_PATH')) {
+  elseif (CRM_Utils_Constant::value('CIVICRM_SMARTY3_AUTOLOAD_PATH')) {
     // older version of the above constant.
     require_once CIVICRM_SMARTY3_AUTOLOAD_PATH;
   }
