@@ -174,7 +174,7 @@ class Message {
    * @param int|null $timestamp
    *
    * @return float
-   * @throws \Civi\ExchangeException\ExchangeRatesException
+   * @throws \Civi\ExchangeRates\ExchangeRatesException
    */
   protected function currencyConvert(string $currency, float $amount, ?int $timestamp = NULL): float {
     return (float)ExchangeRate::convert(FALSE)

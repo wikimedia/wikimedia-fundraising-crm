@@ -265,7 +265,7 @@ class MonologManager {
   protected function addStdOutLogger(string $channel, Logger $logger, string $minimumLevel, bool $isFinal): void {
     if (PHP_SAPI === 'cli' && !defined('CIVICRM_TEST')) {
       $minimumLevel = $this->adjustCommandLineMinimumLevel($minimumLevel);
-      $formatter = new LineFormatter("%channel%.%level_name%: %message% %context% %extra%\n", NULL, TRUE, TRUE);
+      $formatter = new LineFormatter("%channel%.%level_name%: %message% %extra%\n", NULL, TRUE, TRUE);
       $handler = new StreamHandler('php://stdout', $minimumLevel, !$isFinal);
       $handler->setFormatter($formatter);
       $logger->pushHandler($handler);

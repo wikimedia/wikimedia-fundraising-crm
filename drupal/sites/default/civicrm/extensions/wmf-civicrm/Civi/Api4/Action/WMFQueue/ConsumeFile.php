@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\WMFQueue;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\WMFException\WMFException;
 use Civi\WMFQueue\QueueConsumer;
 
 /**
@@ -19,7 +20,7 @@ class ConsumeFile extends AbstractAction {
   /**
    * @var string
    */
-  protected string $fileName;
+  protected string $fileName = '';
 
   /**
    * Queue consumer name.
@@ -29,7 +30,7 @@ class ConsumeFile extends AbstractAction {
    *
    * @var string
    */
-  protected string $queueConsumer;
+  protected string $queueConsumer = '';
 
   /**
    * Limit number of messages, or 0 for unlimited.
@@ -68,10 +69,14 @@ class ConsumeFile extends AbstractAction {
 
     $processed = 0;
     foreach ($messages as $message) {
-      $consumer->processMessage($message);
-      $processed++;
-      if ($this->limit && $processed === $this->limit) {
-        break;
+      try {
+        $consumer->processMessage( $message );
+        $processed++;
+        if ( $this->limit && $processed === $this->limit ) {
+          break;
+        }
+      } catch (WMFException $ex) {
+        \Civi::log('wmf')->info('WMF Exception: ' . $ex->getMessage());
       }
     }
 

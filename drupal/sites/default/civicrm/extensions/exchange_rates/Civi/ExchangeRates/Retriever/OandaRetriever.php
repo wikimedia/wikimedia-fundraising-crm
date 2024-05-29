@@ -2,7 +2,7 @@
 
 namespace Civi\ExchangeRates\Retriever;
 
-use Civi\ExchangeException\ExchangeRateUpdateException;
+use Civi\ExchangeRates\ExchangeRateUpdateException;
 use Civi\ExchangeRates\UpdateResult;
 use GuzzleHttp\Client;
 use InvalidArgumentException;

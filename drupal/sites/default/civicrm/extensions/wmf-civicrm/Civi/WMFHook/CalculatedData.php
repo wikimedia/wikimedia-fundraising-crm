@@ -1242,7 +1242,7 @@ class CalculatedData extends TriggerHook {
         ],
       ],
       1000 => [
-        'label' => 'Non donor',
+        'label' => 'Non Donor',
         'static_description' => 'no donations in last 200 months',
         'value' => 1000,
         'name' => 'non-donor',
@@ -1379,7 +1379,7 @@ class CalculatedData extends TriggerHook {
         ],
       ],
       1000 => [
-        'label' => 'Non Donors',
+        'label' => 'Non Donor',
         'value' => 1000,
         'static_description' => 'this can not be calculated with the others. We will have to populate once & then ?',
         'name' => 'non_donor',

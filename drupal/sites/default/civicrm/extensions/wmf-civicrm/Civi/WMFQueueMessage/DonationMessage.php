@@ -4,11 +4,10 @@ namespace Civi\WMFQueueMessage;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\Name;
-use Civi\Api4\OptionValue;
-use Civi\WMFHelper\FinanceInstrument;
-use Civi\WMFHelper\ContributionRecur;
+use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
-use Civi\ExchangeException\ExchangeRatesException;
+use Civi\WMFHelper\ContributionRecur;
+use Civi\WMFHelper\FinanceInstrument;
 
 class DonationMessage extends Message {
 
@@ -593,7 +592,7 @@ class DonationMessage extends Message {
       return (int) $paymentInstrumentID;
     }
     catch (\CRM_Core_Exception $exception) {
-      return null;
+      return NULL;
     }
   }
 
@@ -650,7 +649,7 @@ class DonationMessage extends Message {
    *
    * @return bool
    */
-  public function isUPI() : bool{
+  public function isUPI() : bool {
     return ($this->message['payment_submethod'] ?? '') === 'upi';
   }
 

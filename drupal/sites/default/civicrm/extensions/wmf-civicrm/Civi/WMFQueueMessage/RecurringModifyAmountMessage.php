@@ -3,10 +3,9 @@
 namespace Civi\WMFQueueMessage;
 
 use Civi\Api4\Address;
-use Civi\ExchangeException\ExchangeRatesException;
+use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
-
 
 class RecurringModifyAmountMessage extends Message {
 
