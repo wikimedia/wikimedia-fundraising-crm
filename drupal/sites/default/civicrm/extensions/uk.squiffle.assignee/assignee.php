@@ -36,7 +36,7 @@ function assignee_civicrm_enable() {
  */
 function assignee_civicrm_preProcess($formName, &$form) {
   if (is_a($form, 'CRM_Activity_Form_Activity')) {
-    $assignee_group = Civi::settings()->get('assignee_group');   # 4.7
+    $assignee_group = Civi::settings()->get('assignee_group');
     if ($assignee_group) {
       $form->_fields['assignee_contact_id']['attributes']['api']['params']['group'] = $assignee_group;
       $form->_fields['followup_assignee_contact_id']['attributes']['api']['params']['group'] = $assignee_group;
@@ -53,9 +53,15 @@ function assignee_civicrm_preProcess($formName, &$form) {
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_buildForm
  */
 function assignee_civicrm_buildForm($formName, &$form) {
-    if (is_a($form, 'CRM_Activity_Form_Activity') AND Civi::settings()->get('assignee_as_source')) {
-      $form->setDefaults(['assignee_contact_id' => $form->_defaultValues['source_contact_id']]);
+  if (is_a($form, 'CRM_Activity_Form_Activity')) {
+    $assignees = explode(",", Civi::settings()->get('assignee_contacts') ?? '');
+    if (Civi::settings()->get('assignee_as_source')) {
+      $assignees[] = $form->_defaultValues['source_contact_id'];
     }
+    if ($assignees) {
+      $form->setDefaults(['assignee_contact_id' => implode(",", $assignees)]);
+    }
+  }
 }
 
 /**
@@ -66,11 +72,9 @@ function assignee_civicrm_buildForm($formName, &$form) {
 function assignee_civicrm_navigationMenu(&$menu) {
   _assignee_civix_insert_navigation_menu($menu, "Administer/System Settings", [
     'label' => ts('Activity Assignee Settings', ['domain' => 'assignee']),
-    'name' => 'the_page',
-    'url' => 'civicrm/assigneesettings',
+    'name' => 'assignee-settings',
+    'url' => 'civicrm/settings/assignee',
     'permission' => 'administer CiviCRM',
-    'operator' => 'OR',
-    'separator' => 0,
   ]);
   _assignee_civix_navigationMenu($menu);
 } 
