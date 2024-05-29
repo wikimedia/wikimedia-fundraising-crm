@@ -1275,15 +1275,9 @@ abstract class BaseAuditProcessor {
     if (!$order_id) {
       return FALSE;
     }
-
-    // grep in all of the date's files at once
-    $logPaths = implode(' ', $logs);
-    // -h means don't print the file name prefix when grepping multiple files
-    $cmd = 'grep -h \'' . $this->get_log_line_grep_string($order_id) . '\' ' . $logPaths;
-    wmf_audit_echo(__FUNCTION__ . ' ' . $cmd, TRUE);
-
     $ret = [];
-    exec($cmd, $ret, $errorlevel);
+    $errorlevel = 0;
+    $this->grep_by_order_id($logs, $order_id, $errorlevel, $ret);
 
     if (count($ret) > 0) {
       //In this wonderful new world, we only expect one line.
@@ -1295,14 +1289,8 @@ abstract class BaseAuditProcessor {
       // Get a log line that is consistent with the data from the audit file
       // Count backwards, because we used to only take the last one.
       foreach (array_reverse($ret) as $line) {
-        // $linedata for *everything* from payments goes Month, day, time, box, bucket, CTID:OID, absolute madness with lots of unpredictable spaces.
-        // Hack: logs space-pad single digit days, so we collapse all repeated spaces
-        $unspaced = preg_replace('/ +/', ' ', $line);
-        $linedata = explode(' ', $unspaced);
-        $contribution_id = explode(':', $linedata[5]);
-        $contribution_id = $contribution_id[0];
-
-        $raw_data = $this->parse_log_line($line);
+        $contribution_id = NULL;
+        $this->extract_raw_data_from_logline($line, $contribution_id, $raw_data);
 
         if (empty($raw_data)) {
           $this->logError(
@@ -1576,6 +1564,38 @@ abstract class BaseAuditProcessor {
     date_add($date, date_interval_create_from_date_string("$add days"));
 
     return date_format($date, WMF_DATEFORMAT);
+  }
+
+  /**
+   * @param array $logs
+   * @param string $order_id
+   * @param $errorlevel
+   * @param $ret
+   */
+  protected function grep_by_order_id(array $logs, string $order_id, &$errorlevel, &$ret): void {
+    // grep in all of the date's files at once
+    $logPaths = implode(' ', $logs);
+    // -h means don't print the file name prefix when grepping multiple files
+    $cmd = 'grep -h \'' . $this->get_log_line_grep_string($order_id) . '\' ' . $logPaths;
+    wmf_audit_echo(__FUNCTION__ . ' ' . $cmd, TRUE);
+
+    exec($cmd, $ret, $errorlevel);
+  }
+
+  /**
+   * @param $line
+   * @param $contribution_id
+   * @param $raw_data
+   */
+  protected function extract_raw_data_from_logline($line, &$contribution_id, &$raw_data): void {
+    // $linedata for *everything* from payments goes Month, day, time, box, bucket, CTID:OID, absolute madness with lots of unpredictable spaces.
+    // Hack: logs space-pad single digit days, so we collapse all repeated spaces
+    $unspaced = preg_replace('/ +/', ' ', $line);
+    $linedata = explode(' ', $unspaced);
+    $contribution_id = explode(':', $linedata[5]);
+    $contribution_id = $contribution_id[0];
+
+    $raw_data = $this->parse_log_line($line);
   }
 
 }
