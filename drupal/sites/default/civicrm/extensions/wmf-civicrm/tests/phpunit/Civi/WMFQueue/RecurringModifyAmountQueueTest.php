@@ -38,7 +38,7 @@ class RecurringModifyAmountQueueTest extends BaseQueueTestCase {
       ->addWhere('activity_type_id', '=', $this->getActivityTypeID('decline'))
       ->execute()
       ->last();
-    $this->assertEquals('Decline recurring update', $activity['subject']);
+    $this->assertEquals('Decline recurring upgrade', $activity['subject']);
   }
 
   /**
