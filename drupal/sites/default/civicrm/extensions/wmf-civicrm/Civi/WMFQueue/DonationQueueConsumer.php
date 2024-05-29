@@ -242,7 +242,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
 
         \Civi::log('wmf')->info('queue2civicrm_import: Attempting to insert new recurring subscription: {recurring_transaction_id}', ['recurring_transaction_id' => $recurring_transaction_id]);
         $this->startTiming('message_contribution_recur_insert');
-        wmf_civicrm_message_contribution_recur_insert($msg, $msg['contact_id'], $recurring_transaction_id);
+        wmf_civicrm_message_contribution_recur_insert($msg, $msg['contact_id']);
         $this->stopTiming('message_contribution_recur_insert');
         $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $recurring_transaction_id);
         $msg['contribution_recur_id'] = $recur_record->id;

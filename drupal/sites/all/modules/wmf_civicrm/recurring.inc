@@ -12,15 +12,15 @@ use Civi\WMFTransaction;
  *
  * @param array $msg
  * @param integer $contact_id
- * @param string $subscr_id subscription_id/trnx_id
  * //FIXME: should not pass a contribution in, only subscr_id
  * @param array $contribution The contribution record
  *
  * @return boolean  Returns true on success
  * @throws \Civi\WMFException\WMFException
+ * @throws \CRM_Core_Exception
  *
  */
-function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subscr_id, $contribution_record = NULL) {
+function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $contribution_record = NULL) {
   $msg['frequency_unit'] = isset($msg['frequency_unit']) ? $msg['frequency_unit'] : 'month';
   $msg['frequency_interval'] = isset($msg['frequency_interval']) ? (integer) $msg['frequency_interval'] : 1;
   $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
@@ -96,7 +96,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       'payment_token_id' => $msg['payment_token_id'],
       'payment_processor_id' => $msg['payment_processor_id'],
       'processor_id' => $gateway_subscr_id,
-      'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id()
+      'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
     ];
   }
   elseif (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
@@ -114,7 +114,7 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
     ];
   }
-  else if (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {
+  elseif (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {
     $extra_recurring_params = [
       'payment_processor_id' => PaymentProcessor::getPaymentProcessorID($msg['gateway']),
       'processor_id' => $gateway_subscr_id,
@@ -159,7 +159,8 @@ function wmf_civicrm_message_contribution_recur_insert($msg, $contact_id, $subsc
       ->setValues($insert_params)
       ->execute()
       ->first();
-  } catch (CiviCRM_API3_Exception $e) {
+  }
+  catch (CRM_Core_Exception $e) {
     throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
   }
 
@@ -198,7 +199,8 @@ function wmf_civicrm_update_contribution_for_recurring($contribution_id, $contri
       'id' => $contribution_id,
       'contribution_recur_id' => $contribution_recur_id,
     ]);
-  } catch (CRM_Core_Exception $e) {
+  }
+  catch (CRM_Core_Exception $e) {
     $error_message = t(
       'There was a problem linking the contribution [!contribution_id] to the recurring contribution [!contribution_recur_id]: !msg',
       [

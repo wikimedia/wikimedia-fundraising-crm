@@ -5,7 +5,7 @@
     <title>WMF queue configuration</title>
     <page_callback>CRM_Admin_Form_Generic</page_callback>
     <desc>Configure queue settings.</desc>
-    <access_arguments>administer CiviCRM System</access_arguments>
+    <access_arguments>administer CiviCRM system</access_arguments>
     <weight>10</weight>
     <adminGroup>Customize Data and Screens</adminGroup>
   </item>
