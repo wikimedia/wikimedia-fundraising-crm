@@ -2,7 +2,6 @@
 
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Contribution;
-use Civi\WMFException\WMFException;
 
 define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
 
@@ -113,38 +112,11 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     return $this->ids['Group'][$name];
   }
 
-  public function testDuplicateHandling(): void {
-    $invoiceID = mt_rand(0, 1000);
-    $this->createContribution(['contact_id' => $this->createIndividual(), 'invoice_id' => $invoiceID]);
-    $msg = [
-      'currency' => 'USD',
-      'date' => '2012-03-01 00:00:00',
-      'gateway' => 'test_gateway',
-      'order_id' => $invoiceID,
-      'gross' => '1.23',
-      'payment_method' => 'cc',
-      'payment_submethod' => 'visa',
-      'gateway_txn_id' => 'CON_TEST_GATEWAY' . mt_rand(),
-    ];
-
-    try {
-      $this->processMessageWithoutQueuing($msg, 'Donation', 'test');
-    }
-    catch (WMFException $ex) {
-      $this->assertTrue($ex->isRequeue());
-      $this->assertEquals('DUPLICATE_INVOICE', $ex->getErrorName());
-      $this->assertEquals(WMFException::DUPLICATE_INVOICE, $ex->getCode());
-      return;
-    }
-    $this->fail('An exception was expected.');
-  }
-
   /**
    * When we get a contact ID and matching hash and email, update instead of
    * creating new contact.
    *
    * @throws CRM_Core_Exception
-   * @throws WMFException
    */
   public function testImportWithContactIdAndHash(): void {
     $existingContact = $this->createTestEntity('Contact', [

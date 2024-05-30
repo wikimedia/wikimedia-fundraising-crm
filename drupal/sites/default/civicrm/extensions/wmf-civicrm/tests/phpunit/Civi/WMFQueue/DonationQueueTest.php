@@ -19,6 +19,7 @@ use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use Civi\WMFStatistic\ImportStatsCollector;
 use SmashPig\Core\DataStores\PendingDatabase;
+use Civi\WMFException\WMFException;
 
 /**
  * @group queues
@@ -237,6 +238,33 @@ class DonationQueueTest extends BaseQueueTestCase {
       "$originalOrderId|dup-",
       substr($storedInvoiceId, 0, $invoiceIdLen + 5)
     );
+  }
+
+  public function testDuplicateHandlingThrowsError(): void {
+    $invoiceID = mt_rand(0, 1000);
+    $this->createContribution(['contact_id' => $this->createIndividual(), 'invoice_id' => $invoiceID]);
+    $msg = [
+      'currency' => 'USD',
+      'date' => '2012-03-01 00:00:00',
+      'gateway' => 'test_gateway',
+      'order_id' => $invoiceID,
+      'gross' => '1.23',
+      'email' => 'mouse@wikimedia.org',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'gateway_txn_id' => 'CON_TEST_GATEWAY' . mt_rand(),
+    ];
+
+    try {
+      $this->processMessageWithoutQueuing($msg, 'Donation', 'test');
+    }
+    catch (WMFException $ex) {
+      $this->assertTrue($ex->isRequeue());
+      $this->assertEquals('DUPLICATE_INVOICE', $ex->getErrorName());
+      $this->assertEquals(WMFException::DUPLICATE_INVOICE, $ex->getCode());
+      return;
+    }
+    $this->fail('An exception was expected.');
   }
 
   public function getSparseMessages(): array {

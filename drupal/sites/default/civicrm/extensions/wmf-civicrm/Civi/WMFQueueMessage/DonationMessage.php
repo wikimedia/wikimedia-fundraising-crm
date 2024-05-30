@@ -224,15 +224,6 @@ class DonationMessage extends Message {
     if (!empty($this->getParsedName())) {
       return $this->getParsedName()['first_name'] ?? '';
     }
-    if ($this->getContactID()) {
-      return '';
-    }
-    // Historically we have set Anonymous here but
-    // Only if both first & last are empty.
-    // It's probably something we could stop doing.
-    if (empty($this->message['last_name'])) {
-      return 'Anonymous';
-    }
     return '';
   }
 
