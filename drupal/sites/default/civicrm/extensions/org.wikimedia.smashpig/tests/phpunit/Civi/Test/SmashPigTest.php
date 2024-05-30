@@ -938,7 +938,14 @@ class SmashPigTest extends SmashPigBaseTestClass {
       ],
     ];
     $response = (new CreatePaymentWithProcessorRetryResponse())
-      ->setRawResponse($msg)->setSuccessful(FALSE)
+      ->setRawResponse($msg)
+      ->setSuccessful(FALSE)
+      ->addErrors(
+        new PaymentError(
+          ErrorCode::DECLINED,
+          'Issuer Suspected Fraud',
+          LogLevel::ERROR
+        ))
       ->setProcessorRetryRefusalReason('Issuer Suspected Fraud')
       ->setIsProcessorRetryScheduled(filter_var( $msg['additionalData']['retry.rescueScheduled'], FILTER_VALIDATE_BOOLEAN ));
     $this->hostedCheckoutProvider->expects($this->once())
@@ -1583,7 +1590,13 @@ class SmashPigTest extends SmashPigBaseTestClass {
       ]
     )->setGatewayTxnId($pspReference)
       ->setIsProcessorRetryScheduled(TRUE)
-      ->setSuccessful(FALSE);
+      ->setSuccessful(FALSE)
+      ->addErrors(
+        new PaymentError(
+          ErrorCode::DECLINED,
+          'Not Enough Balance',
+          LogLevel::ERROR
+        ));
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
       ->willReturn($response);
