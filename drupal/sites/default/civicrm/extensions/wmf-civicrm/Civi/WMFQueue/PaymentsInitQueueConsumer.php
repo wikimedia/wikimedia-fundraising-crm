@@ -38,7 +38,7 @@ class PaymentsInitQueueConsumer extends QueueConsumer {
     // processors allow donors to reuse the merchant reference by
     // reloading the hosted page. Note that this means we can't
     // implement orphan rectifiers for those gateways.
-    $processorAllowsRepeat = in_array(['gateway'], ['dlocal', 'adyen']);
+    $processorAllowsRepeat = in_array($message['gateway'], ['dlocal', 'adyen']);
     if (
       PaymentsInitialDatabase::isMessageFailed($message) &&
       !$processorAllowsRepeat
