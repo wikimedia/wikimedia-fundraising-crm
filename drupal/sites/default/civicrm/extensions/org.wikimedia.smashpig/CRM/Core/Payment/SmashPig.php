@@ -255,7 +255,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   public static function getPaymentMethod(array $params) {
     switch ($params['payment_instrument']) {
       case 'ACH':
-        return 'ach';
+        return 'dd';
       case 'iDeal':
       case 'SEPA Direct Debit':
         return 'rtbt';
@@ -281,6 +281,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    */
   public static function getPaymentSubmethod(array $params) {
     switch ($params['payment_instrument']) {
+      case 'ACH':
+        return 'ach';
       case 'iDeal':
         return 'rtbt_ideal';
       case 'SEPA Direct Debit':
