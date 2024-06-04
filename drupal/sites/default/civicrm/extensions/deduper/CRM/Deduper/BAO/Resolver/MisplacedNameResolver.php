@@ -42,16 +42,16 @@ class CRM_Deduper_BAO_Resolver_MisplacedNameResolver extends CRM_Deduper_BAO_Res
           }
         }
         elseif (strpos($contact1['last_name'], $contact1['first_name'] . ' ') === 0) {
-          // The first name is not empty but it could be repeated in the last name.
+          // The first name is not empty, but it could be repeated in the last name.
           // In this scenario we have first_name = 'Bob', last_name = 'Bob Max Smith'
           // being compared with first_name = 'Bob', 'last_name' = 'Max Smith.
           // At this point we say 'if the last name starts with the first name + 1 space
           // then set the last name to be the last name without the first name'. If that is then a match it
-          // will wind up resolved. Otherwise maybe a later resolver will get there.
+          // will wind up resolved. Otherwise, maybe a later resolver will get there.
           // This feels 'safe' given the need for the first_name + a space to be the first
           // part of the last name.
           $length = strlen($contact1['first_name'] . ' ');
-          $this->setContactValue('last_name', substr($contact1['last_name'] , $length), $isContactToKeep);
+          $this->setContactValue('last_name', substr($contact1['last_name'], $length), $isContactToKeep);
         }
       }
       if ($this->isFieldInConflict('first_name')) {
@@ -67,6 +67,15 @@ class CRM_Deduper_BAO_Resolver_MisplacedNameResolver extends CRM_Deduper_BAO_Res
             else {
               $this->setContactValue('first_name', $firstName, $isContactToKeep);
             }
+          }
+        }
+        // If first name & last name are the revers of each other, use names from preferred contact.
+        elseif ($this->isFieldInConflict('first_name')) {
+          if ($contact1['first_name'] === $contact2['last_name']
+            && $contact1['last_name'] === $contact2['first_name']
+          ) {
+            $this->setResolvedValue('first_name', $contact1['first_name']);
+            $this->setResolvedValue('last_name', $contact1['last_name']);
           }
         }
       }

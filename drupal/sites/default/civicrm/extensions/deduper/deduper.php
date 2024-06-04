@@ -111,7 +111,7 @@ function deduper_civicrm_summaryActions(&$actions, $contactID) {
       $weight++;
     }
   }
-  catch (CiviCRM_API3_Exception $e) {
+  catch (CRM_Core_Exception $e) {
     // This would most likely happen if viewing a deleted contact since we are not forcing
     // them to be returned. Keep calm & carry on.
   }
@@ -257,14 +257,11 @@ function deduper_civicrm_alterAPIPermissions($entity, $action, &$params, &$permi
  * @param int $otherId
  * @param array $tables
  *
- * @throws \API_Exception
  * @throws \CRM_Core_Exception
- * @throws \CiviCRM_API3_Exception
- * @throws \Civi\API\Exception\UnauthorizedException
  */
 function deduper_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
   switch ($type) {
-    case 'flip' :
+    case 'flip':
       // This is the closest we have to a pre-hook. It is called in batch mode
       // and since duplicate locations mess up merges this is our chance to fix any before
       // the merge starts.
@@ -273,8 +270,8 @@ function deduper_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
       Address::clean()->setContactIDs([$mainId, $otherId])->execute();
       return;
 
-    case 'batch' :
-    case 'form' :
+    case 'batch':
+    case 'form':
       $refs['migration_info']['context'] = $type;
       // Randomise log connection id. This ensures reverts can be done without reverting the whole batch if logging is enabled.
       CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(

@@ -32,7 +32,6 @@ class CRM_Deduper_BAO_PreferredContact  {
    *
    * @return int
    *
-   * @throws \CiviCRM_API3_Exception
    * @throws \CRM_Core_Exception
    */
   public function getPreferredContactID(): int {
@@ -55,26 +54,26 @@ class CRM_Deduper_BAO_PreferredContact  {
    * @return bool|int
    *   Preferred contact ID or FALSE if neither is preferred based on the method.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function resolvePreferredContactByMethod($method) {
     switch ($method) {
-      case 'most_recently_created_contact' :
+      case 'most_recently_created_contact':
         return $this->contact1 > $this->contact2 ? $this->contact1 : $this->contact2;
 
-      case 'earliest_created_contact' :
+      case 'earliest_created_contact':
         return $this->contact1 < $this->contact2 ? $this->contact1 : $this->contact2;
 
-      case 'most_recently_modified_contact' :
-        // You might thing the merge handler already got passed this info and we could save a DB look up
-        // but you would be wrong - core didn't pass it through the hooks.
+      case 'most_recently_modified_contact':
+        // You might think the merge handler already got passed this info and we could save a DB look up
+        // but, you would be wrong - core didn't pass it through the hooks.
         $contacts = civicrm_api3('Contact', 'get', ['id' => ['IN' => [$this->contact1, $this->contact2]], 'return' => 'modified_id'])['values'];
         if ($contacts[$this->contact1]['modified_date'] > $contacts[$this->contact2]['modified_date']) {
           return $this->contact1;
         }
         return $this->contact2;
 
-      case 'earliest_modified_contact' :
+      case 'earliest_modified_contact':
         $contacts = civicrm_api3('Contact', 'get', ['id' => ['IN' => [$this->contact1, $this->contact2]], 'return' => 'modified_id'])['values'];
         if ($contacts[$this->contact1]['modified_date'] < $contacts[$this->contact2]['modified_date']) {
           return $this->contact1;

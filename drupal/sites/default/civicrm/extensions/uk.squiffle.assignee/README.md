@@ -2,19 +2,27 @@
 
 ## What does this extension do?
 
-This module provides two options affecting Activity Assignees when creating Activities via the GUI:
+This module provides three options affecting Activity Assignees when creating Activities via the GUI:
 
 ### 1) Limit Assignees to a specified group
 
-Normally an activity can be assigned to any contact usually resulting in an email being sent to the assignee.  If the wrong assignee is selected, activity details are sent to the wrong person which could disclose confidential information.
+Normally an activity can be assigned to any contact resulting in an email being sent to the assignee (if configured).  If the wrong assignee is selected, activity details are sent to the wrong person which could disclose confidential information.
 
-To reduce this risk, this option limits the assignees of any activity to a specified group (static or smart) such as staff.
+To reduce this risk, this option limits the assignees of any activity to a specified group (static or smart) such as 'staff'.
 
-### 2) Default assignee is current user
+### 2) Add the current user as an Assignee
 
 Normally the assignee field is blank when adding an Activity.  If the main use of activities is to record people's own actions then always needing to add oneself as the assignee is repetitive.
 
 This option allows the current user to be set as the default assignee.  The default is not enforced and can be removed when creating an Activity.
+
+Note that if you set a group then the user will only be shown on the activity form if they are part of the group.
+
+### 3) Add specified contacts as Assignees
+
+This option lets you add default assignees to every activity.  I'm not sure this is widely useful but someone requested it as part of an integration process.
+
+Note that if you set a group then these contacts will only be shown on the activity form if they are part of the group.
 
 ## How do I use the extension?
 
@@ -22,6 +30,7 @@ This option allows the current user to be set as the default assignee.  The defa
 - To configure the settings go to: ```Administer > System Settings > Activity Assignee Settings```
 - Select the group of contacts that may be assigned activities
 - Choose whether the current user is the default assignee 
+- Choose other contacts as default assignees
 
 ## Note
 

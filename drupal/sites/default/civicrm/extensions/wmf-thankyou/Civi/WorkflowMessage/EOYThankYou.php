@@ -185,7 +185,7 @@ class EOYThankYou extends GenericWorkflowMessage {
   public $totals;
 
   /**
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getTotals(): array {
     $locale = $this->getLocale();
@@ -212,7 +212,6 @@ class EOYThankYou extends GenericWorkflowMessage {
    * Refunds are excluded.
    *
    * @return array
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function getContributions(): array {
@@ -269,7 +268,7 @@ class EOYThankYou extends GenericWorkflowMessage {
   /**
    * Get bool for whether a recurring is active.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getActiveRecurring(): bool {
     if (!isset($this->activeRecurring)) {
@@ -286,7 +285,7 @@ class EOYThankYou extends GenericWorkflowMessage {
   /**
    * Get bool for whether a recurring was cancelled this year
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getCancelledRecurring(): bool {
     if (!isset($this->cancelledRecurring)) {

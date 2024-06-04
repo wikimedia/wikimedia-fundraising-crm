@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <menu>
   <item>
-    <path>civicrm/assigneesettings</path>
+    <path>civicrm/settings/assignee</path>
     <page_callback>CRM_Admin_Form_Generic</page_callback>
     <title>Activity Assignee Settings</title>
     <access_arguments>administer CiviCRM</access_arguments>

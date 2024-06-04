@@ -2,4 +2,4 @@
 
 namespace Civi\Api4\Exception\EOYEmail;
 
-class NoContributionException extends \API_Exception {}
+class NoContributionException extends \CRM_Core_Exception {}

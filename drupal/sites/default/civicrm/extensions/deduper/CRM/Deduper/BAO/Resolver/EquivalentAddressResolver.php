@@ -12,7 +12,7 @@ class CRM_Deduper_BAO_Resolver_EquivalentAddressResolver extends CRM_Deduper_BAO
   /**
    * Resolve conflicts if possible.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function resolveConflicts() {
     foreach ($this->getAllAddressConflicts() as $blockNumber => $conflicts) {
@@ -47,7 +47,7 @@ class CRM_Deduper_BAO_Resolver_EquivalentAddressResolver extends CRM_Deduper_BAO
    * @param string $display
    *
    * @return bool
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function isDisplayCountryOnly(int $countryID, $display): bool {
     static $countries = [];

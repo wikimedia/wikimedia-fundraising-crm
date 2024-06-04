@@ -433,10 +433,7 @@ class CRM_Deduper_BAO_MergeHandler {
   /**
    * Resolve merge.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function resolve() {
     // @todo we'll build out how we manage resolvers later.
@@ -1040,7 +1037,6 @@ class CRM_Deduper_BAO_MergeHandler {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function getPreferredContact(): int {
     $preferredContact = new CRM_Deduper_BAO_PreferredContact($this->mainID, $this->otherID);
@@ -1052,7 +1048,6 @@ class CRM_Deduper_BAO_MergeHandler {
    *
    * @return mixed
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function getPreferredContactValue($fieldName) {
     return $this->getValueForField($fieldName, $this->isContactToKeepPreferred());
@@ -1079,7 +1074,6 @@ class CRM_Deduper_BAO_MergeHandler {
    * @return bool
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function isContactToKeepPreferred(): bool {
     return $this->getPreferredContact() === $this->mainID;

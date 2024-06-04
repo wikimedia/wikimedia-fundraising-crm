@@ -27,8 +27,7 @@ function _civicrm_api3_merge_getcount_spec(&$spec) {
  * @param array $params
  * @return int
  *
- * @throws API_Exception
- * @throws CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_merge_getcount($params) {
   $cacheKeyString = CRM_Dedupe_Merger::getMergeCacheKeyString($params['rule_group_id'], CRM_Utils_Array::value('group_id', $params), $params['criteria'], CRM_Utils_Array::value('check_permissions', $params), $params['search_limit']);
@@ -36,10 +35,10 @@ function civicrm_api3_merge_getcount($params) {
   // been marked duplicates now.
   return CRM_Core_DAO::singleValueQuery("
     SELECT count(*) FROM civicrm_prevnext_cache pn
-    LEFT JOIN civicrm_dedupe_exception de 
+    LEFT JOIN civicrm_dedupe_exception de
     ON (pn.entity_id1 = de.contact_id1 AND pn.entity_id2 = de.contact_id2 )
-    LEFT JOIN civicrm_dedupe_exception de2 
+    LEFT JOIN civicrm_dedupe_exception de2
     ON (pn.entity_id2 = de.contact_id1 AND pn.entity_id1 = de.contact_id2 )
-    WHERE (pn.cacheKey = %1 OR pn.cacheKey = %2) AND de.id IS NULL AND de2.id IS NULL  
+    WHERE (pn.cacheKey = %1 OR pn.cacheKey = %2) AND de.id IS NULL AND de2.id IS NULL
 ", [1 => [$cacheKeyString, 'String'], 2 => [$cacheKeyString . '_conflicts', 'String']]);
 }

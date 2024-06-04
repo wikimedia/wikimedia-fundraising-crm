@@ -11,7 +11,7 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
    *
    * These are fields which can be resolved by forcing to no or yes.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getBooleanFields(): array {
     $booleanFields = [];
@@ -43,7 +43,7 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
    *
    * @return array
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getContactFields(): array {
     $fields = civicrm_api3('Contact', 'getfields', ['action' => 'get'])['values'];

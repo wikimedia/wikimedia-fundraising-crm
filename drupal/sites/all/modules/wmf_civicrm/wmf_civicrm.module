@@ -12,6 +12,10 @@ require_once 'recurring.inc';
 require_once 'tracking.inc';
 require_once 'wmf_civicrm.hooks.php';
 
+/**
+ * @todo - delete or migrate to a setting.
+ * @return array
+ */
 function wmf_civicrm_menu() {
   $items = [];
 
@@ -27,6 +31,10 @@ function wmf_civicrm_menu() {
   return $items;
 }
 
+/**
+ * @return array
+ * @todo - delete or migrate to a setting.
+ */
 function wmf_civicrm_matching_gifts_form() {
   $form = [];
 
@@ -56,6 +64,8 @@ function wmf_civicrm_matching_gifts_form() {
 
 /**
  * Ensure the specified option value exists.
+ * @todo - stop calling from test, move to donation Message (there is already test
+ * cover that this function works in DonationQueue context).
  *
  * @param string $group_name
  * @param string $value
@@ -150,6 +160,7 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
 }
 
 /**
+ * @todo - the message object normalize() function should retrieve these values as relevant - like it does with ContributionRecur, ContributionTracking)
  * @param array $msg
  *
  * @return mixed|null
@@ -164,6 +175,7 @@ function _get_recurring_payment_token(array $msg) {
 }
 
 /**
+ * @todo - the QueueConsumer class has it's own helper for this.
  * @return \Statistics\Collector\AbstractCollector
  */
 function _get_import_timer(): \Statistics\Collector\AbstractCollector {
@@ -174,10 +186,12 @@ function _get_import_timer(): \Statistics\Collector\AbstractCollector {
  * Checks for contact ID and hash match.  If mismatched unset
  * ID and hash so message is treated as a new contact.
  *
+ * @todo - I think Message::normalize() already prunes invalid contact IDs so can probably just go.
+ * @deprecated
  * @param $msg
  * @param $matchEmail
  *
- * @throws CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
   $existing = civicrm_api3('Contact', 'getSingle', [
@@ -222,6 +236,8 @@ function wmf_civicrm_get_valid_languages() {
 
 /**
  * Updates the email for a contact.
+ *
+ * @todo - take a copy on the import class while it fades out, Move to WMFContact::save.
  *
  * @param array $msg
  * @param int $contact_id
@@ -298,11 +314,12 @@ function wmf_civicrm_message_email_update($msg, $contact_id) {
 
 /**
  * Update address for a contact.
- *
+ * @todo - take a copy on the import class while it fades out, Move to WMFContact::save.
  * @param array $msg
  * @param int $contact_id
  *
  * @throws \Civi\WMFException\WMFException
+ *
  */
 function wmf_civicrm_message_address_update($msg, $contact_id) {
   // CiviCRM does a DB lookup instead of checking the pseudoconstant.
@@ -345,6 +362,8 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
 
 /**
  * Insert a new address for a contact.
+ *
+ * @todo move to WMFContact::save
  *
  * If updating or unsure use the marginally slower update function.
  *
@@ -392,7 +411,7 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
     CRM_Core_BAO_Address::addGeocoderData($address_params);
     civicrm_api3('Address', 'Create', $address_params);
   }
-  catch (CiviCRM_API3_Exception $ex) {
+  catch (CRM_Core_Exception $ex) {
     throw new WMFException(
       WMFException::IMPORT_CONTACT,
       'Couldn\'t store address for the contact: ' .
@@ -405,6 +424,10 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
   }
 }
 
+/**
+ * @deprecated - just do CRM_Core_BAO_LocationType::getDefault()->id in the code.
+ * @return int|string|null
+ */
 function wmf_civicrm_get_default_location_type_id() {
   $default_location_type = CRM_Core_BAO_LocationType::getDefault();
   return $default_location_type->id;
@@ -542,6 +565,7 @@ function wmf_civicrm_get_direct_mail_field_option_id() {
 }
 
 /**
+ * @todo - in most places this becomes obsolete when Message::normlize() is used.
  * Pulls all records in the wmf_contribution_extras table that match the gateway
  * and gateway transaction id.
  *
@@ -607,6 +631,7 @@ function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
 }
 
 /**
+ * @todo - fix tests to process via the queue consumer, move this to the queue consumer.
  * Sets the civi records to reflect a contribution refund.
  *
  * The original contribution is set to status "Refunded", or "Chargeback" and a

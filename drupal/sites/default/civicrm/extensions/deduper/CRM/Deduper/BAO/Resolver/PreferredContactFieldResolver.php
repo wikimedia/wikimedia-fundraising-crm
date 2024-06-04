@@ -9,7 +9,6 @@ class CRM_Deduper_BAO_Resolver_PreferredContactFieldResolver extends CRM_Deduper
    * Resolve conflicts if possible.
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function resolveConflicts() {
     $fieldsAffected = $this->getFieldsToResolveOnPreferredContact();
