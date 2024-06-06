@@ -8,7 +8,7 @@ class PreferencesLink {
     // Provide our own group for this block to visually distinguish it on the contact summary editor palette.
     $blocks += [
       'preferenceslink' => [
-        'title' => ts('Email Preferences Link'),
+        'title' => ts('Donor Prefs Links'),
         'icon' => 'fa-at',
         'blocks' => [],
       ]
@@ -19,12 +19,12 @@ class PreferencesLink {
       'title' => ts('Email Prefs Link'),
       'tpl_file' => 'CRM/Wmf/Page/Inline/PreferencesLink.tpl',
       'sample' => [
-        ts('Email Prefs Link') . ' ' . ts('(expires in %1 days)', [1 => 7]),
+        ts('Donor Prefs Links') . ' ' . ts(' (expire in %1 days)', [1 => 7]),
         'https://example.com/emailpreferences'
       ],
       'edit' => FALSE,
       'system_default' => [3, 1], // Add to default layout under demographics block
-      'contact_type' => 'Individual',
+      'contact_type' => ['Individual'],
     ];
   }
 
