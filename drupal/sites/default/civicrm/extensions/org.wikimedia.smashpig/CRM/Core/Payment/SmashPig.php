@@ -1,8 +1,10 @@
 <?php
 
+use Civi\Api4\ContributionRecur;
 use Civi\Payment\Exception\PaymentProcessorException;
 use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentData\FinalStatus;
+use SmashPig\PaymentProviders\IRecurringPaymentProfileProvider;
 use SmashPig\PaymentProviders\IRefundablePaymentProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
@@ -356,5 +358,30 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       'payment_status_id' => $refundedStatusID,
       'payment_status' => 'Refunded',
     ];
+  }
+
+  public function cancelSubscription(&$message = '', $params = []): bool {
+    $recurringPayment = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $params->getContributionRecurID())
+      ->execute()
+      ->first();
+    $this->setContext();
+    try {
+      $previousPayment = CRM_Core_Payment_SmashPigRecurringProcessor::getPreviousContribution($recurringPayment);
+      $paymentMethod = self::getPaymentMethod($previousPayment);
+      $provider = PaymentProviderFactory::getProviderForMethod($paymentMethod);
+    } catch (CRM_Core_Exception $ex) {
+      $provider = PaymentProviderFactory::getDefaultProvider();
+    }
+    if ($provider instanceof IRecurringPaymentProfileProvider) {
+      $result = $provider->cancelSubscription(['subscr_id' => $recurringPayment['trxn_id']]);
+      if ($result->hasErrors()) {
+        $message = 'Error sending cancel request to processor: ' . $result->getErrors()[0]->getDebugMessage();
+      } else {
+        $message = ts('Sent subscription cancel request to processor');
+      }
+      return $result->isSuccessful();
+    }
+    return TRUE;
   }
 }
