@@ -53,7 +53,7 @@ function movecontrib_civicrm_searchTasks($objectType, &$tasks) {
  * @param array $permissions
  */
 function movecontrib_civicrm_permission(&$permissions) {
-  $permissions['Move Contributions'] = [
+  $permissions['allow Move Contribution'] = [
     'label' => E::ts('CiviCRM: Allow Move Contributions'),
     'description' => E::ts('Allow Move Contribution')
    ];
