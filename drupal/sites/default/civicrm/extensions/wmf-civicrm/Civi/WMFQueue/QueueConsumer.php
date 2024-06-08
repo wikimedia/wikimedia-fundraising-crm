@@ -158,8 +158,8 @@ abstract class QueueConsumer extends BaseQueueConsumer {
    */
   public static function itemUrl($damagedId) {
     global $base_url;
-    // Example URL https://civicrm.wikimedia.org/civicrm/damaged/edit?&id=1234
-    return "{$base_url}/civicrm/damaged/edit?id={$damagedId}";
+    // Example URL https://civicrm.wikimedia.org/civicrm/damaged/?action=update&id=1234&reset=1
+    return "$base_url/civicrm/damaged/edit?action=update&id=$damagedId&reset=1";
   }
 
   protected function modifyDuplicateInvoice($message) {
