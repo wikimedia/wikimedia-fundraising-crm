@@ -6,6 +6,9 @@
  * Time: 12:46 PM
  */
 
+use Civi\Api4\Address;
+use Civi\Api4\Email;
+use Civi\Api4\GroupContact;
 use Omnimail\Silverpop\Responses\Contact;
 
 /**
@@ -77,21 +80,38 @@ function civicrm_api3_omnigroupmember_load($params) {
         'preferred_language' => _civicrm_api3_omnigroupmember_get_language($groupMember),
       );
 
+      $contactCreateCall = \Civi\Api4\Contact::create(FALSE)
+        ->setValues($contactParams)
+        ->addChain(
+          'emailCreate',
+          Email::create(FALSE)->setValues([
+            'contact_id' => '$id',
+            'email' => $groupMember['email']
+          ])
+        );
+
       if (!empty($groupMember['country']) && _civicrm_api3_omnigroupmember_is_country_valid($groupMember['country'])) {
-        $contactParams['api.address.create'] = array(
-          'country_id' => $groupMember['country'],
-          'location_type_id' => $locationTypeID,
+        $contactCreateCall->addChain(
+          'addressCreate',
+          Address::create(FALSE)->setValues([
+            'contact_id' => '$id',
+            'country_id' => array_search($groupMember['country'], CRM_Core_PseudoConstant::countryIsoCode()),
+            'location_type_id' => $locationTypeID,
+          ])
         );
       }
 
-      $contact = civicrm_api3('Contact', 'create', $contactParams);
       if (!empty($params['group_id'])) {
-        civicrm_api3('GroupContact', 'create', array(
-          'group_id' => $params['group_id'],
-          'contact_id' => $contact['id'],
-        ));
+        $contactCreateCall->addChain(
+          'groupContact',
+          GroupContact::create(FALSE)->setValues([
+            'contact_id' => '$id',
+            'group_id' => $params['group_id']
+          ])
+        );
       }
-      $values[$contact['id']] = reset($contact['values']);
+      $contact = $contactCreateCall->execute()->first();
+      $values[$contact['id']] = $contact;
     }
 
     $count++;
