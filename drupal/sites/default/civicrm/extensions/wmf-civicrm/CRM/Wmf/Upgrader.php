@@ -2183,6 +2183,31 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
+   * Delete bad contributions caused by IPN boolean parsing bug
+   * Bug: T365519
+   *
+   * @return bool
+   */
+  public function upgrade_4510(): bool {
+    $sql = 'DELETE FROM civicrm_contribution WHERE id in (
+SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
+
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 200,
+      ],
+      2 => [
+        'value' => 200,
+        'type' => 'Integer',
+        'increment' => 200,
+      ],
+    ]);
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
