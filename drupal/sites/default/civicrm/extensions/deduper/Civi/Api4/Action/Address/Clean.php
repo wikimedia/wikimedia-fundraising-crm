@@ -161,7 +161,7 @@ class Clean extends CleanBase {
       'supplemental_address_2',
       'supplemental_address_3',
       'timezone',
-      'name'
+      'name',
     ];
   }
 

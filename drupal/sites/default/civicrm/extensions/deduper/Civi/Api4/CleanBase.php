@@ -108,8 +108,14 @@ abstract class CleanBase extends AbstractAction {
    */
   protected function getEntitiesForContactByLocation($contactID): array {
     $return = [];
+    $locationTypeForUnassigned = \CRM_Core_BAO_LocationType::getDefault()->id;
     foreach ($this->entities[$contactID] as $id => $entity) {
+      if ($entity['location_type_id'] === 0) {
+        // Treat it as 'one of the other existing types' so re-homing kicks in.
+        $entity['location_type_id'] = $locationTypeForUnassigned;
+      }
       $return[$entity['location_type_id'] . ($entity['phone_type_id'] ?? '')][$id] = $entity;
+      $locationTypeForUnassigned = $entity['location_type_id'];
     }
     return $return;
   }
@@ -123,7 +129,7 @@ abstract class CleanBase extends AbstractAction {
   protected function identifyEntitiesToCleanUp() {
     foreach (array_keys($this->entities) as $contactID) {
       $this->entitiesToKeep[$contactID] = [];
-      foreach ($this->getEntitiesForContactByLocation($contactID) as $locationTypeID => $entities) {
+      foreach ($this->getEntitiesForContactByLocation($contactID) as $entities) {
         if (count($entities) > 1) {
           $keeper = array_shift($entities);
           $originalKeeper = $keeper;

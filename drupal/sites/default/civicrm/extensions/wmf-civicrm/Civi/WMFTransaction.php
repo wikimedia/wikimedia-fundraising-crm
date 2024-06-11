@@ -40,6 +40,11 @@ class WMFTransaction {
   public $timestamp;
 
   /**
+   * @var string
+   */
+  public $unique_id;
+
+  /**
    * @return string
    * @throws \Civi\WMFException\WMFException
    */
