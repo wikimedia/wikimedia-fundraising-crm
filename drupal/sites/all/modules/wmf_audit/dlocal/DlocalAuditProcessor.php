@@ -72,13 +72,13 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
       'full_name' => !empty($log_data['card']) ? $log_data['card']['holder_name'] : NULL,
     ];
 
-    if (!empty($log_data['card']) && !array_key_exists('card_id', $log_data['card'])) {
+    if (!empty($log_data['card']) && array_key_exists('card_id', $log_data['card'])) {
       $filtered['recurring_payment_token'] = $log_data['card']['card_id'];
     }
 
     $method_type = $log_data['payment_method_type'] ?? '';
     $submethod = '';
-    if ($method_type == 'CARD') {
+    if ($method_type == 'CARD' && array_key_exists('brand', $log_data['card'])) {
       $submethod = $log_data['card']['brand'];
     } else {
       $submethod = $log_data['payment_method_id'] ?? '';
