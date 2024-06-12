@@ -69,9 +69,12 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
       'country' => $log_data['country'],
       'gateway' => 'dlocal',
       'recurring' => 0,
-      'recurring_payment_token' => !empty($log_data['card']) ? $log_data['card']['card_id'] : NULL,
       'full_name' => !empty($log_data['card']) ? $log_data['card']['holder_name'] : NULL,
     ];
+
+    if (!empty($log_data['card']) && !array_key_exists('card_id', $log_data['card'])) {
+      $filtered['recurring_payment_token'] = $log_data['card']['card_id'];
+    }
 
     [$filtered['payment_method'], $filtered['payment_submethod']] = ReferenceData::decodePaymentMethod($log_data['payment_method_id'], $log_data['card']['brand']);
 
@@ -182,6 +185,8 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
   protected function grep_by_order_id(array $logs, string $order_id, &$errorlevel, &$ret): void {
     parent::grep_by_order_id($logs, $order_id, $errorlevel, $ret);
     if (empty($ret)) {
+      wmf_audit_echo("Checking logs on error days for transaction information");
+
       // get logfiles on dates when custom filter exceptions broke the payment flow
       $fileDirs = $this->get_logs_on_error_days();
 
