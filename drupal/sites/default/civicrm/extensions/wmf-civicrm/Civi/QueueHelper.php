@@ -63,18 +63,20 @@ class QueueHelper {
   }
 
   /**
-   * Api3 & 4 helpers not yet tested ...
+   * Create a task to execute an api4 action in a queue context
    *
    * @param string $entity
    * @param string $action
    * @param array $params
-   *
+   * @param array $options
    * @return $this
-   *
-   * public function api4(string $entity, string $action, array $params = []) {
-   * $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi4'], [$entity, $action, $params]));
-   * return $this;
-   * }
+   */
+  public function api4(string $entity, string $action, array $params = [], array $options = []) {
+    $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi4'], [$entity, $action, $params]), $options);
+    return $this;
+  }
+  /**
+    *
    *
    * public function api3(string $entity, string $action, array $params = []) {
    * $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi3'], [$entity, $action, $params]));
@@ -184,25 +186,25 @@ class QueueHelper {
    * @return bool
    * @return bool
    * @internal only use from this class.
-   *
-   * public static function doApi4(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params): bool {
-   * try {
-   * civicrm_api4($entity, $action, $params);
-   * }
-   * catch (\CRM_Core_Exception $e) {
-   * \Civi::log('queue')->error('queued action failed {entity} {action} {params} {message} {exception}', [
-   * 'entity' => $entity,
-   * 'action' => $action,
-   * 'params' => $params,
-   * 'message' => $e->getMessage(),
-   * 'exception' => $e,
-   * ]);
-   * return FALSE;
-   * }
-   * return TRUE;
-   * }
-   *
-   * /**
+   */
+  public static function doApi4(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params): bool {
+    try {
+      civicrm_api4($entity, $action, $params);
+    }
+    catch (\CRM_Core_Exception $e) {
+      \Civi::log('queue')->error('queued action failed {entity} {action} {params} {message} {exception}', [
+        'entity' => $entity,
+        'action' => $action,
+        'params' => $params,
+        'message' => $e->getMessage(),
+        'exception' => $e,
+      ]);
+      return FALSE;
+    }
+    return TRUE;
+  }
+
+   /**
    * Do apiv3 call in a queue context.
    *
    * @internal only use from this class.
