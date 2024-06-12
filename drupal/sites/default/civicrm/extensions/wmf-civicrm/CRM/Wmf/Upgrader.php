@@ -2208,6 +2208,30 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Another attempt to delete bad contributions caused by IPN boolean parsing bug
+   * Bug: T365519
+   *
+   * @return bool
+   */
+  public function upgrade_4511(): bool {
+    $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
+      'type' => 'Sql',
+      'runner' => 'task',
+      'retry_limit' => 100,
+      'reset' => FALSE,
+      'error' => 'abort',
+    ]));
+    $contributionsToDelete = CRM_Core_DAO::executeQuery('SELECT distinct contribution_id FROM T365519');
+    while($contributionsToDelete->fetch()) {
+      $queue->api4('Contribution', 'delete', [
+        'where' => [['id', '=', $contributionsToDelete->contribution_id]],
+        'checkPermissions' => FALSE,
+      ], ['weight' => 100]);
+    }
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
