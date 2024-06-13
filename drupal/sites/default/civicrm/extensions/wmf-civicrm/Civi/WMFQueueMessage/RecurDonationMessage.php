@@ -275,7 +275,8 @@ class RecurDonationMessage extends DonationMessage {
    * @return bool
    */
   public function isAutoRescue(): bool {
-    return isset($this->message['is_successful_autorescue']) && $this->message['is_successful_autorescue'];
+    return (isset($this->message['is_successful_autorescue']) && $this->message['is_successful_autorescue']) ||
+      (isset($this->message['is_autorescue']) && $this->message['is_autorescue']);
   }
 
   /**
