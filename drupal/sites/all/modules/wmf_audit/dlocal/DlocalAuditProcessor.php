@@ -48,7 +48,7 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
   }
 
   protected function get_log_line_grep_string_temp($order_id) {
-    return ":$order_id  | Raw response from dlocal";
+    return ":$order_id  | Raw response from dlocal.*\"status\":\"AUTHORIZED\"";
   }
 
   protected function get_outbound_log_line_grep_string_temp($order_id) {
