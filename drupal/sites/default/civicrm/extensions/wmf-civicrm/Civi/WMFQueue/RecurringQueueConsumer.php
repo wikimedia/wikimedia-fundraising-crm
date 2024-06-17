@@ -635,8 +635,16 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
     $updateParams = [
       'failure_count' => $msg['failure_count'] + 1,
-      'contribution_status_id:name' => 'Failing',
     ];
+
+    $currentStatus = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $msg['contribution_recur_id'])
+      ->addSelect('contribution_status_id:name')
+      ->execute()->first()['contribution_status_id:name'];
+
+    if (in_array($currentStatus, ['In Progress', 'Pending', 'Processing'])) {
+      $updateParams['contribution_status_id:name'] = 'Failing';
+    }
 
     if (!empty($msg['failure_retry_date'])) {
       $updateParams['failure_retry_date'] = wmf_common_date_unix_to_civicrm($msg['failure_retry_date']);
