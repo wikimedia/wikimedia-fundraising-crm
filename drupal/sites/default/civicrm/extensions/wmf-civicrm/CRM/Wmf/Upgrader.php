@@ -2232,6 +2232,37 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Cancel recurring subscriptions with autorescue ended IPNs.
+   * Bug: T367451
+   *
+   * @return bool
+   */
+  public function upgrade_4515(): bool {
+    $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
+      'type' => 'Sql',
+      'runner' => 'task',
+      'retry_limit' => 100,
+      'reset' => FALSE,
+      'error' => 'abort',
+    ]));
+    $recursToCancel = CRM_Core_DAO::executeQuery(
+      'SELECT contribution_recur_id, date FROM T367451 WHERE contribution_recur_id IS NOT NULL');
+    while($recursToCancel->fetch()) {
+      $queue->api4('ContributionRecur', 'update', [
+        'values' => [
+          'cancel_date' => $recursToCancel->date,
+          'cancel_reason' => 'Payment cannot be rescued: maximum failures reached',
+          'contribution_status_id' => 3, // Cancelled
+        ],
+        'where' => [['id', '=', $recursToCancel->contribution_recur_id]],
+        'checkPermissions' => FALSE,
+      ], ['weight' => 100]);
+    }
+    return TRUE;
+  }
+
+
+  /**
    * @param array $conversions
    *
    * @return void
