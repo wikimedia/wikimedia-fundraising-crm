@@ -268,6 +268,9 @@ class Message {
             'checkPermissions' => FALSE,
           ])->first()['options'];
         }
+        if ($field['data_type'] === 'Date' && is_integer($value)) {
+          $value = '@' . $value;
+        }
         if (empty($field['options'])) {
           $customFields[$field['custom_group']['name'] . '.' . $field['name']] = $value;
         }
