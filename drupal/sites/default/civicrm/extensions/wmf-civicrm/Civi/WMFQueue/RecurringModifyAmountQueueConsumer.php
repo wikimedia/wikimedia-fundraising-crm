@@ -66,8 +66,8 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
       ->addValue('activity_type_id', self::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
       ->addValue('source_record_id', $message->getContributionRecurID())
       ->addValue('status_id:name', 'Completed')
-      ->addValue('subject', "Decline recurring update")
-      ->addValue('details', "Decline recurring update")
+      ->addValue('subject', "Decline recurring upgrade")
+      ->addValue('details', "Decline recurring upgrade")
       ->addValue('source_contact_id', $message->getContactID());
     foreach (['campaign', 'medium', 'source'] as $trackingField) {
       if (!empty($msg[$trackingField])) {
