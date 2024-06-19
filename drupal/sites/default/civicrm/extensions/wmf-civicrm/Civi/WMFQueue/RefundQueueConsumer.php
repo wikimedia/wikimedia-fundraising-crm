@@ -3,10 +3,14 @@
 namespace Civi\WMFQueue;
 
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use CRM_Core_Payment_SmashPig;
 use Exception;
 use SmashPig\Core\DataStores\QueueWrapper;
+use SmashPig\PaymentProviders\IRecurringPaymentProfileProvider;
+use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 class RefundQueueConsumer extends TransactionalQueueConsumer {
 
@@ -141,15 +145,25 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
   private function cancelRecurringOnChargeback(string $contributionStatus, array $contributions, string $gateway): void {
     if (
       $contributionStatus === 'Chargeback' &&
-      !empty($contributions[0]['contribution_recur_id']) &&
-      !RecurHelper::gatewayManagesOwnRecurringSchedule($gateway)
+      !empty($contributions[0]['contribution_recur_id'])
     ) {
+      $firstContribuion = $contributions[0];
+      if (RecurHelper::gatewayManagesOwnRecurringSchedule($gateway)) {
+        $recurRecord = ContributionRecur::get(FALSE)
+          ->addWhere('id', '=', $firstContribuion['contribution_recur_id'])
+          ->execute()
+          ->first();
+        $method = CRM_Core_Payment_SmashPig::getPaymentMethod($firstContribuion);
+        /** @var IRecurringPaymentProfileProvider $provider */
+        $provider = PaymentProviderFactory::getProviderForMethod($method);
+        $provider->cancelSubscription(['subscr_id' => $recurRecord['trxn_id']]);
+      }
       $message = [
         'txn_type' => 'subscr_cancel',
-        'contribution_recur_id' => $contributions[0]['contribution_recur_id'],
+        'contribution_recur_id' => $firstContribuion['contribution_recur_id'],
         'cancel_reason' => 'Automatically cancelling because we received a chargeback',
         // We add this to satisfy a check in the common message normalization function.
-        'payment_instrument_id' => $contributions[0]['payment_instrument_id'],
+        'payment_instrument_id' => $firstContribuion['payment_instrument_id'],
       ];
       QueueWrapper::push('recurring', $message);
     }
