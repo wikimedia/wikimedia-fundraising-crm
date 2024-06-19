@@ -2452,6 +2452,40 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Fix cancel dates for already cancelled paypal recurrings
+   * Bug: T367623
+   *
+   * @return bool
+   */
+  public function upgrade_4555(): bool {
+    // Get all the paypal recurrings that were automatically cancelled between 2024-05-23 and 2024-06-19
+    // 15079 in total
+    $contributionRecurs = \Civi\Api4\ContributionRecur::get(TRUE)
+      ->addSelect('id')
+      ->addWhere('payment_processor_id:name', 'IN', ['paypal', 'paypal_ec'])
+      ->addWhere('cancel_date', '>', '2024-05-22')
+      ->addWhere('cancel_date', '<', '2024-06-20')
+      ->addWhere('cancel_reason', '=', 'Automatically cancelled for inactivity')
+      ->execute();
+
+    foreach($contributionRecurs as $recur) {
+      $cancel_date = CRM_Core_DAO::singleValueQuery(
+        'SELECT cancel_date FROM log_civicrm_contribution_recur WHERE id='.$recur['id'].'
+        AND cancel_date IS NOT NULL AND cancel_date < "2024-05-24" LIMIT 1');
+
+      if ($cancel_date) {
+        \Civi\Api4\ContributionRecur::update(FALSE)
+          ->addWhere('id', '=', $recur['id'])
+          ->setValues([
+            'cancel_date' => $cancel_date,
+          ])->execute();
+      }
+    }
+
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
