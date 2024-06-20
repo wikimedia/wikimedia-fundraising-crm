@@ -827,6 +827,15 @@ class CRM_Event_Form_Participant extends CRM_Contribute_Form_AbstractEditPayment
         "reset=1&action=add&context={$this->_context}&cid={$this->_contactId}"
       ));
     }
+    elseif ($this->_contactId) {
+      // Refresh other tabs with related data
+      $this->ajaxResponse['updateTabs'] = [
+        '#tab_activity' => TRUE,
+      ];
+      if (CRM_Core_Permission::access('CiviContribute')) {
+        $this->ajaxResponse['updateTabs']['#tab_contribute'] = CRM_Contact_BAO_Contact::getCountComponent('contribution', $this->_contactId);
+      }
+    }
   }
 
   /**
@@ -1319,7 +1328,7 @@ class CRM_Event_Form_Participant extends CRM_Contribute_Form_AbstractEditPayment
 
     $form->add('select', 'from_email_address', ts('Receipt From'), $form->getAvailableFromEmails()['from_email_id']);
 
-    $form->add('textarea', 'receipt_text', ts('Confirmation Message'));
+    $form->add('wysiwyg', 'receipt_text', ts('Confirmation Message'));
 
     // Retrieve the name and email of the contact - form will be the TO for receipt email ( only if context is not standalone)
     if ($form->_context !== 'standalone') {
@@ -1550,10 +1559,11 @@ class CRM_Event_Form_Participant extends CRM_Contribute_Form_AbstractEditPayment
       'note' => $this->getSubmittedValue('note'),
       'is_test' => $this->isTest(),
     ];
-    if (!$this->getParticipantID()) {
-      // For new registrations fill in fee detail. For existing
-      // registrations we are not doing anything on this form that would require
-      // these fields to change.
+    if (!$this->getParticipantID() || !$this->getContributionID()) {
+      // For new registrations, or existing ones with no contribution,
+      // fill in fee detail. For existing
+      // registrations with a contribution the user will have the option to
+      // change the fees via a different form.
       $order = $this->getOrder();
       if ($order) {
         $participantParams['fee_level'] = $order->getAmountLevel();
@@ -1821,7 +1831,7 @@ INNER JOIN civicrm_price_field_value value ON ( value.id = lineItem.price_field_
         'PDFFilename' => ts('confirmation') . '.pdf',
         'modelProps' => [
           'participantID' => $participantID,
-          'userEnteredText' => $this->getSubmittedValue('receipt_text'),
+          'userEnteredHTML' => $this->getSubmittedValue('receipt_text'),
           'eventID' => $params['event_id'],
           'contributionID' => $contributionID,
         ],

@@ -159,6 +159,19 @@ function wmf_civicrm_civicrm_buildForm(string $formName, $form) {
 }
 
 /**
+ * Implements hook_civicrm_preProcess
+ *
+ * @param string $formName
+ * @param CRM_Core_Form $form
+ *
+ * @noinspection PhpUnused
+ */
+function wmf_civicrm_civicrm_preProcess(string $formName, $form) {
+  QuickForm::preProcess($formName, $form);
+}
+
+
+/**
  * Log the dedupe to our log.
  *
  * @param string $type

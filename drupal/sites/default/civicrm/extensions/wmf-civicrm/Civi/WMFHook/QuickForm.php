@@ -3,19 +3,49 @@
 
 namespace Civi\WMFHook;
 
+use CRM_Activity_Form_Activity;
+use CRM_Core_Form;
+
 class QuickForm {
 
   /**
    * @param string $formName
-   * @param \CRM_Core_Form $form
+   * @param CRM_Core_Form $form
    *
    * @throws \CiviCRM_API3_Exception
    */
   public static function buildForm($formName, $form) {
     switch ($formName) {
+      case 'CRM_Activity_Form_Activity':
+        /** @var CRM_Activity_Form_Activity $form */
+        if (self::isRecurringUpgradeDeclineForm($form)) {
+          $completedID = self::getCompletedStatusID();
+          $statusElement = $form->getElement('status_id');
+          $statusElement->setValue($completedID);
+        }
+        break;
+
       case 'CRM_Contribute_Form_Contribution':
         self::buildFormContributionForm($form);
         break;
+
+      case 'CRM_Contribute_Form_CancelSubscription':
+        if ($form->elementExists('cancel_reason')) {
+          $form->removeElement('cancel_reason');
+          $props['options'] = ['Financial Reasons' => 'Financial Reasons',
+                                'Duplicate recurring donation' => 'Duplicate recurring donation',
+                                'Wikipedia content related complaint' => 'Wikipedia content related complaint',
+                                'Wikimedia Foundation related complaint' => 'Wikimedia Foundation related complaint',
+                                'Lack of donation management tools' => 'Lack of donation management tools',
+                                'Matching Gift' => 'Matching Gift',
+                                'Unintended recurring donation' => 'Unintended recurring donation',
+                                'Other and Unspecified' => 'Other and Unspecified',
+                                'Chapter' => 'Chapter',
+                                'Automatic Billing Failure' => 'Automatic Billing Failure',
+                                'Update' => 'Update'
+                              ];
+          $form->addSelect('cancel_reason', $props);
+        }
 
       case 'CRM_Contribute_Form_Search':
       case 'CRM_Contact_Form_Search_Advanced':
@@ -30,7 +60,7 @@ class QuickForm {
         break;
 
       case 'CRM_Contact_Form_Merge':
-        $template = \CRM_Core_Form::getTemplate();
+        $template = CRM_Core_Form::getTemplate();
         $groupId = CalculatedData::getCalculatedCustomFieldGroupID();
         $rows = $template->getTemplateVars('rows');
         if (isset($rows["custom_group_$groupId"])) {
@@ -67,6 +97,20 @@ class QuickForm {
     }
   }
 
+  public static function preProcess(string $formName, CRM_Core_Form $form): void {
+    switch ($formName) {
+      case 'CRM_Activity_Form_Activity':
+        /** @var CRM_Activity_Form_Activity $form */
+        if (self::isRecurringUpgradeDeclineForm($form)) {
+          $form->setDefaults([
+            'subject' => 'Decline recurring upgrade',
+            'status_id' => self::getCompletedStatusID()
+          ]);
+        }
+        break;
+    }
+  }
+
   /**
    *
    */
@@ -75,12 +119,27 @@ class QuickForm {
   }
 
   /**
-   * @param \CRM_Core_Form $form
+   * @param CRM_Core_Form $form
    *
    * @throws \CiviCRM_API3_Exception
    */
-  protected static function buildFormContributionForm(\CRM_Core_Form $form): void {
+  protected static function buildFormContributionForm(CRM_Core_Form $form): void {
     \CRM_Core_Resources::singleton()->addScript(self::getSourceJS());
+  }
+
+  protected static function isRecurringUpgradeDeclineForm(CRM_Activity_Form_Activity $form): bool {
+    $activityTypeName = \CRM_Core_PseudoConstant::getName(
+      'CRM_Activity_BAO_Activity', 'activity_type_id', $form->_activityTypeId
+    );
+    return ('Recurring Upgrade Decline' === $activityTypeName);
+  }
+
+  /**
+   * @return false|int|string
+   */
+  public static function getCompletedStatusID() {
+    $statusOptions = \CRM_Activity_BAO_Activity::buildOptions( 'status_id' );
+    return array_search( 'Completed', $statusOptions );
   }
 
 }
