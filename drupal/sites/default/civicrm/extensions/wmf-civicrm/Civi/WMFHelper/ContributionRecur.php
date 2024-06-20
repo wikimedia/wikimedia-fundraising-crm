@@ -178,17 +178,21 @@ class ContributionRecur {
       $rescueReference = $contributionRecurring['contribution_recur_smashpig.rescue_reference'] ?? '';
       // if auto rescue is enabled for recur donations, rescue_reference needs to be used to request adyen to cancel it to avoid further charges
       if (!empty($rescueReference)) {
-        wmf_common_create_smashpig_context('cancelRecurContribution', 'adyen');
-        $provider = PaymentProviderFactory::getProviderForMethod('cc');
-        $response = $provider->cancelAutoRescue($rescueReference);
-        if ($response->isSuccessful()) {
-          \Civi::log('wmf')->info("Successfully send cancel auto rescue request for recurring id $id with rescueReference: $rescueReference");
-          return TRUE;
+        try {
+          wmf_common_create_smashpig_context( 'cancelRecurContribution', 'adyen' );
+          $provider = PaymentProviderFactory::getProviderForMethod( 'cc' );
+          $response = $provider->cancelAutoRescue( $rescueReference );
+          if ( $response->isSuccessful() ) {
+            \Civi::log( 'wmf' )->info(
+              "Successfully send cancel auto rescue request for recurring id $id with rescueReference: $rescueReference"
+            );
+            return TRUE;
+          }
+        } catch (\Exception $e) {
+          // suppress error, we log next line if we catch an error or if !$response->isSuccessful()
         }
-        else {
-          // Warn us that something wrong with sending request we need to cancel request again to avoid duplicate charge
-          \Civi::log('wmf')->error("Failed to send cancel auto rescue request for recurring id $id with rescueReference: $rescueReference");
-        }
+        // Warn us that something wrong with sending request we need to cancel request again to avoid duplicate charge
+        \Civi::log('wmf')->error("Failed to send cancel auto rescue request for recurring id $id with rescueReference: $rescueReference");
       }
     }
     return false;
