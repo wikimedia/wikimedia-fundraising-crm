@@ -2237,7 +2237,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    *
    * @return bool
    */
-  public function upgrade_4515(): bool {
+  public function upgrade_4516(): bool {
     $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
       'type' => 'Sql',
       'runner' => 'task',
@@ -2253,6 +2253,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
           'cancel_date' => $recursToCancel->date,
           'cancel_reason' => 'Payment cannot be rescued: maximum failures reached',
           'contribution_status_id' => 3, // Cancelled
+          'contribution_recur_smashpig.rescue_reference' => ''
         ],
         'where' => [['id', '=', $recursToCancel->contribution_recur_id]],
         'checkPermissions' => FALSE,
