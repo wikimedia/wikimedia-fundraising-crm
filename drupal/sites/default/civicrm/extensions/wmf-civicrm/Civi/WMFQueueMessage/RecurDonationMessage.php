@@ -317,4 +317,14 @@ class RecurDonationMessage extends DonationMessage {
     }
   }
 
+  public function getCancelReason(): ?string {
+    return $this->message['cancel_reason'] ?? NULL;
+  }
+
+  public function getCancelDate(): ?string {
+    if (empty($this->message['cancel_date'])) {
+      return NULL;
+    }
+    return date('Y-m-d H:i:s', $this->message['cancel_date']);
+  }
 }
