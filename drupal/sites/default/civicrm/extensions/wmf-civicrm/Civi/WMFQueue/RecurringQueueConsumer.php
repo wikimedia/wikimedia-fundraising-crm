@@ -550,6 +550,19 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'end_date' => $date,
       ];
       $this->updateContributionRecurWithErrorHandling($update_params);
+      // Since the API4 update doesn't create the activity the api3 cancel call does, we create it here
+      // Details a bit more vague and both contact IDs are the donor, but the rest should be the same.
+      // Based on code in CRM_Contribute_BAO_ContributionRecur::cancelRecurContribution
+      Civi\Api4\Activity::create(FALSE)
+        ->addValue('date', $date)
+        ->addValue('activity_type_id:name', 'Cancel Recurring Contribution')
+        ->addValue('details', 'Recurring subscription was cancelled in the RecurringQueueConsumer')
+        ->addValue('status_id:name', 'Completed')
+        ->addValue('subject', 'Recurring contribution cancelled')
+        ->addValue('source_contact_id', $message->getContactID())
+        ->addValue('target_contact_id', $message->getContactID())
+        ->addValue('source_record_id', $message->getContributionRecurID())
+        ->execute();
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem cancelling contribution recur ID: ' . $message->getContributionRecurID());
