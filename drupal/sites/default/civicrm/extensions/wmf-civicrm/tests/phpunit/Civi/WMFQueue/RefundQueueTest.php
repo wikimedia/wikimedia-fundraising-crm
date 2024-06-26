@@ -8,11 +8,36 @@ use Civi\WMFException\WMFException;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\CrmLink\Messages\SourceFields;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use SmashPig\PaymentProviders\Responses\CancelSubscriptionResponse;
+use SmashPig\Tests\TestingContext;
+use SmashPig\Tests\TestingGlobalConfiguration;
+use SmashPig\Tests\TestingProviderConfiguration;
 
 /**
  * @group Queue2Civicrm
  */
 class RefundQueueTest extends BaseQueueTestCase {
+
+  private $paypalProvider;
+
+  public function setUp() : void {
+    parent::setUp();
+
+    $globalConfig = TestingGlobalConfiguration::create();
+    TestingContext::init($globalConfig);
+    $ctx = TestingContext::get();
+
+    $providerConfig = TestingProviderConfiguration::createForProvider(
+      'paypal', $globalConfig
+    );
+    $ctx->providerConfigurationOverride = $providerConfig;
+
+    $this->paypalProvider = $this->getMockBuilder(
+      'SmashPig\PaymentProviders\Paypal\PaymentProvider'
+    )->disableOriginalConstructor()->getMock();
+
+    $providerConfig->overrideObjectInstance('payment-provider/paypal', $this->paypalProvider);
+  }
 
   protected string $queueName = 'refund';
 
@@ -101,6 +126,46 @@ class RefundQueueTest extends BaseQueueTestCase {
     ));
     $this->assertOneContributionExistsForMessage($donation_message);
     $this->assertMessageContributionStatus($donation_message, 'Chargeback');
+  }
+
+  /**
+   */
+  public function testPaypalExpressCancelRecurringOnChargeback(): void {
+    $signupMessage = $this->getRecurringSignupMessage();
+    $this->processMessage($signupMessage, 'Recurring', 'recurring');
+    $recurRecord = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', '=', $signupMessage['subscr_id'])
+      ->execute()->single();
+    $this->ids['ContributionRecur'][] = $recurRecord['id'];
+    $donationMessage = $this->getDonationMessage([
+      'gateway' => 'paypal',
+      'contribution_recur_id' => $recurRecord['id'],
+    ], TRUE, []);
+    $this->processMessage($donationMessage, 'Donation', 'test');
+
+    $this->paypalProvider->expects($this->once())
+      ->method('cancelSubscription')
+      ->willReturn(
+       (new CancelSubscriptionResponse())->setRawResponse([])
+      );
+
+    // simulate a mis-mapped paypal legacy refund
+    $this->processMessage($this->getRefundMessage(
+    [
+      'gateway' => 'paypal',
+      'gateway_parent_id' => $donationMessage['gateway_txn_id'],
+      'gross' => $donationMessage['original_gross'] + 1,
+    ]
+    ));
+    $this->assertOneContributionExistsForMessage($donationMessage);
+    $this->assertMessageContributionStatus($donationMessage, 'Chargeback');
+    $this->processQueue('recurring', 'Recurring');
+    $recurRecord = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', '=', $signupMessage['subscr_id'])
+      ->addSelect('*', 'contribution_status_id:name')
+      ->execute()->single();
+
+    $this->assertEquals($recurRecord['contribution_status_id:name'], 'Cancelled');
   }
 
   /**
@@ -232,6 +297,7 @@ class RefundQueueTest extends BaseQueueTestCase {
     unset($cancelMessage['payment_instrument_id']);
     $this->assertEquals(
       [
+        'gateway' => 'test_gateway',
         'contribution_recur_id' => $recurRecord['id'],
         'txn_type' => 'subscr_cancel',
         'cancel_reason' => 'Automatically cancelling because we received a chargeback',
