@@ -87,9 +87,9 @@ function deduper_civicrm_summaryActions(&$actions, $contactID) {
     return;
   }
   try {
-    $ruleGroups = civicrm_api3('RuleGroup', 'get', array(
-      'contact_type' => civicrm_api3('Contact', 'getvalue' , array('id' => $contactID, 'return' => 'contact_type')),
-    ));
+    $ruleGroups = civicrm_api3('RuleGroup', 'get', [
+      'contact_type' => civicrm_api3('Contact', 'getvalue', ['id' => $contactID, 'return' => 'contact_type']),
+    ]);
     $weight = 500;
 
     $contactIDS = array($contactID);
@@ -152,6 +152,7 @@ function deduper_civicrm_searchTasks($objectType, &$tasks) {
  * Implements hook_civicrm_preProcess().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_preProcess
+ * @noinspection PhpUnusedParameterInspection
  */
 function deduper_civicrm_preProcess($formName, &$form) {
   if ($formName === 'CRM_Contact_Form_Merge') {
@@ -247,15 +248,9 @@ function deduper_civicrm_alterAPIPermissions($entity, $action, &$params, &$permi
 }
 
 /**
- * Implementation of hook_civicrm_merge().
+ * Implements hook_civicrm_merge().
  *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_merge
- *
- * @param string $type
- * @param array $refs
- * @param int $mainId
- * @param int $otherId
- * @param array $tables
  *
  * @throws \CRM_Core_Exception
  */
