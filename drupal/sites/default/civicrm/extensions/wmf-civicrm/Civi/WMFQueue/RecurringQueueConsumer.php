@@ -229,7 +229,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         break;
 
       case 'subscr_cancel':
-        $this->importSubscriptionCancel($msg);
+        $this->importSubscriptionCancel($message);
         break;
 
       case 'subscr_eot':
@@ -528,12 +528,12 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Process a subscriber cancellation
    *
-   * @param array $msg
+   * @param RecurDonationMessage $message
    *
-   * @throws \Civi\WMFException\WMFException
+   * @throws WMFException
    */
-  protected function importSubscriptionCancel($msg) {
-    if (empty($msg['contribution_recur_id'])) {
+  protected function importSubscriptionCancel(RecurDonationMessage $message) {
+    if (empty($message->getContributionRecurID())) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
       // Revert this patch when that's resolved
       return;
@@ -541,37 +541,33 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     }
 
     try {
-      $params = [
-        'id' => $msg['contribution_recur_id'],
-        // This line of code is only reachable if the txn type is 'subscr_cancel'
-        // Which I believe always means the user has initiated the cancellation outside our process.
-        'cancel_reason' => '(auto) User Cancelled via Gateway',
+      $date = $message->getCancelDate() ?? date('Ymd H:i:s');
+      $update_params = [
+        'id' => $message->getContributionRecurID(),
+        'cancel_date' => $date,
+        'cancel_reason' => $message->getCancelReason() ?? '(auto) User Cancelled via Gateway',
+        'contribution_status_id:name' => 'Cancelled',
+        'end_date' => $date,
       ];
-
-      if (!empty($msg['cancel_reason'])) {
-        $params['cancel_reason'] = $msg['cancel_reason'];
-      }
-      civicrm_api3('ContributionRecur', 'cancel', $params);
+      $this->updateContributionRecurWithErrorHandling($update_params);
+      // Since the API4 update doesn't create the activity the api3 cancel call does, we create it here
+      // Details a bit more vague and both contact IDs are the donor, but the rest should be the same.
+      // Based on code in CRM_Contribute_BAO_ContributionRecur::cancelRecurContribution
+      Civi\Api4\Activity::create(FALSE)
+        ->addValue('date', $date)
+        ->addValue('activity_type_id:name', 'Cancel Recurring Contribution')
+        ->addValue('details', 'Recurring subscription was cancelled in the RecurringQueueConsumer')
+        ->addValue('status_id:name', 'Completed')
+        ->addValue('subject', 'Recurring contribution cancelled')
+        ->addValue('source_contact_id', $message->getContactID())
+        ->addValue('target_contact_id', $message->getContactID())
+        ->addValue('source_record_id', $message->getContributionRecurID())
+        ->execute();
     }
     catch (\CRM_Core_Exception $e) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem cancelling contribution recur ID: ' . $msg['contribution_recur_id']);
+      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem cancelling contribution recur ID: ' . $message->getContributionRecurID());
     }
-
-    if ($msg['cancel_date']) {
-      try {
-        // Set cancel and end dates to match those from message.
-        $update_params = [
-          'id' => $msg['contribution_recur_id'],
-          'cancel_date' => wmf_common_date_unix_to_civicrm($msg['cancel_date']),
-          'end_date' => wmf_common_date_unix_to_civicrm($msg['cancel_date']),
-        ];
-        $this->updateContributionRecurWithErrorHandling($update_params);
-      }
-      catch (\CRM_Core_Exception $e) {
-        throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the cancellation for contribution recur ID: ' . $msg['contribution_recur_id'] . ": " . $e->getMessage());
-      }
-    }
-    Civi::log('wmf')->notice('recurring: Successfully cancelled contribution recur id {contributionRecurId}', ['contributionRecurId' => $msg['contribution_recur_id']]);
+    Civi::log('wmf')->notice('recurring: Successfully cancelled contribution recur id {contributionRecurId}', ['contributionRecurId' => $message->getContributionRecurID()]);
   }
 
   /**

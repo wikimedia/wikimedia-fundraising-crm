@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
@@ -7,6 +8,7 @@ use SmashPig\PaymentData\ErrorCode;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\FailureEmail;
+use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
 use SmashPig\PaymentProviders\Responses\CreatePaymentWithProcessorRetryResponse;
 use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 
@@ -29,7 +31,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   protected $smashPigProcessors;
 
   const MAX_MERCHANT_REFERENCE_RETRIES = 3;
-
   /**
    * @param bool $useQueue Send messages to donations queue instead of directly
    *  inserting new contributions
@@ -366,6 +367,30 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     }
   }
 
+  protected function createActivity($recurringPayment, $errorResponse, $errorMessage, $type) {
+    if ($type == 'failure') {
+      $name = 'Recurring Failure';
+      $subject = 'Payment of ' . $recurringPayment['amount']. ' ' . $recurringPayment['currency'] . ' failed with ' . $errorMessage;
+      $details = $subject;
+    } else if ($type == 'processorRetry') {
+      $name = 'Recurring Processor Retry - Start';
+      $subject = 'Processor retry started with rescue reference ' . $errorResponse->getProcessorRetryRescueReference();
+      $details = 'Payment of ' . $recurringPayment['amount'] . ' ' .  $recurringPayment['currency'] . ' failed with ' . $errorMessage;
+    } else {
+      throw new UnexpectedValueException('Bad activity type: ' . $type);
+    }
+
+    $createCall = Activity::create(FALSE)
+      ->addValue('activity_type_id:name', $name)
+      ->addValue('source_record_id', $recurringPayment['id'])
+      ->addValue('status_id:name', 'Completed')
+      ->addValue('subject', $subject)
+      ->addValue('details', $details)
+      ->addValue('source_contact_id', $recurringPayment['contact_id'])
+      ->addValue('target_contact_id', $recurringPayment['contact_id']);
+    $createCall->execute();
+  }
+
   /**
    * @param array $recurringPayment
    * @param \CiviCRM_API3_Exception $exception
@@ -377,6 +402,16 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $cancelRecurringDonation = FALSE;
     $errorData = $exception->getErrorData();
     $errorResponse = $errorData['smashpig_processor_response'] ?? $exception->getMessage();
+
+    // Get the text of the error
+    if ($errorResponse instanceof CreatePaymentResponse) {
+      $errorMessage = $errorResponse->getErrors()[0]->getDebugMessage();
+    } else {
+      $errorMessage = $errorResponse;
+    }
+
+    $this->createActivity($recurringPayment, $errorResponse, $errorMessage, 'failure');
+
     $params = [
       'id' => $recurringPayment['id'],
     ];
@@ -395,6 +430,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         // Set status to Pending but advance the next charge date a month so we don't try to charge again
         $params['contribution_status_id'] = 'Pending';
         $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextContributionDate($recurringPayment);
+        $this->createActivity($recurringPayment, $errorResponse, $errorMessage, 'processorRetry');
       } else {
         // This happens when a payment cannot be rescued.
         // For example, because of account closure or fraud.
