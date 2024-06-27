@@ -445,6 +445,9 @@ class CRM_Deduper_BAO_MergeHandler {
     $resolver = new CRM_Deduper_BAO_Resolver_SkippedFieldsResolver($this);
     $resolver->resolveConflicts();
 
+    $resolver = new CRM_Deduper_BAO_Resolver_GreetingResolver($this);
+    $resolver->resolveConflicts();
+
     $resolver = new CRM_Deduper_BAO_Resolver_BooleanYesResolver($this);
     $resolver->resolveConflicts();
 

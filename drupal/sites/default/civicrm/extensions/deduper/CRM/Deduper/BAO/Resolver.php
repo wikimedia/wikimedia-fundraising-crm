@@ -282,6 +282,16 @@ abstract class CRM_Deduper_BAO_Resolver {
   }
 
   /**
+   * @param string $fieldName
+   * @param bool $isForContactToBeKept
+   *
+   * @return mixed|null
+   */
+  protected function getValueForField(string $fieldName, bool $isForContactToBeKept) {
+    return $this->mergeHandler->getValueForField($fieldName, $isForContactToBeKept);
+  }
+
+  /**
    * Get the value for the given field for the preferred conflict, using rules.
    *
    * @param string $fieldName
