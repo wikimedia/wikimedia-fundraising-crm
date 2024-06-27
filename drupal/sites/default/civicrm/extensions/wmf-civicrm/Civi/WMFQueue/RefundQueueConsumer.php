@@ -153,12 +153,12 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           ->addWhere('id', '=', $firstContribuion['contribution_recur_id'])
           ->execute()
           ->first();
-        $method = CRM_Core_Payment_SmashPig::getPaymentMethod($firstContribuion);
         /** @var IRecurringPaymentProfileProvider $provider */
-        $provider = PaymentProviderFactory::getProviderForMethod($method);
+        $provider = PaymentProviderFactory::getDefaultProvider();
         $provider->cancelSubscription(['subscr_id' => $recurRecord['trxn_id']]);
       }
       $message = [
+        'gateway' => $gateway,
         'txn_type' => 'subscr_cancel',
         'contribution_recur_id' => $firstContribuion['contribution_recur_id'],
         'cancel_reason' => 'Automatically cancelling because we received a chargeback',
