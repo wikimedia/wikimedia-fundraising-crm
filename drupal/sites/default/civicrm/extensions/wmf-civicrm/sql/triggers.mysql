@@ -1398,15 +1398,6 @@ CASE
 
 
          WHEN (
-         --  New  first donation this FY
-         MIN(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
-      , total_amount, 0), 0)) >= 0.01
-
-        ) THEN 10
-
-
-         WHEN (
          --  Consecutive  gave last financial year and this financial year to date
          SUM(COALESCE(IF( receive_date
       BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
@@ -1415,6 +1406,15 @@ CASE
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 20
+
+
+         WHEN (
+         --  New  first donation this FY
+         MIN(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 0.01
+
+        ) THEN 25
 
 
          WHEN (
@@ -1745,15 +1745,6 @@ CASE
 
 
          WHEN (
-         --  New  first donation this FY
-         MIN(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
-      , total_amount, 0), 0)) >= 0.01
-
-        ) THEN 10
-
-
-         WHEN (
          --  Consecutive  gave last financial year and this financial year to date
          SUM(COALESCE(IF( receive_date
       BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
@@ -1762,6 +1753,15 @@ CASE
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 20
+
+
+         WHEN (
+         --  New  first donation this FY
+         MIN(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 0.01
+
+        ) THEN 25
 
 
          WHEN (
@@ -2090,15 +2090,6 @@ CASE
 
 
          WHEN (
-         --  New  first donation this FY
-         MIN(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
-      , total_amount, 0), 0)) >= 0.01
-
-        ) THEN 10
-
-
-         WHEN (
          --  Consecutive  gave last financial year and this financial year to date
          SUM(COALESCE(IF( receive_date
       BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
@@ -2107,6 +2098,15 @@ CASE
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 20
+
+
+         WHEN (
+         --  New  first donation this FY
+         MIN(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 0.01
+
+        ) THEN 25
 
 
          WHEN (
@@ -2437,15 +2437,6 @@ CASE
 
 
          WHEN (
-         --  New  first donation this FY
-         MIN(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
-      , total_amount, 0), 0)) >= 0.01
-
-        ) THEN 10
-
-
-         WHEN (
          --  Consecutive  gave last financial year and this financial year to date
          SUM(COALESCE(IF( receive_date
       BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
@@ -2454,6 +2445,15 @@ CASE
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 20
+
+
+         WHEN (
+         --  New  first donation this FY
+         MIN(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 0.01
+
+        ) THEN 25
 
 
          WHEN (
