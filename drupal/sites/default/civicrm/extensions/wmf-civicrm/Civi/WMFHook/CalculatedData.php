@@ -1140,17 +1140,6 @@ class CalculatedData extends TriggerHook {
           ], $midTierAndMajorGiftsExclusionRange),
         ],
       ],
-      10 => [
-        'label' => 'New',
-        'static_description' => 'first donation this FY',
-        'value' => 10,
-        'name' => 'new',
-        'criteria' => [
-          'first_donation' => [
-            ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime(), 'total' => 0.01],
-          ],
-        ],
-      ],
       20 => [
         'label' => 'Consecutive',
         'static_description' => 'gave last financial year and this financial year to date',
@@ -1165,6 +1154,17 @@ class CalculatedData extends TriggerHook {
               'to' => $this->getFinancialYearEndDateTime(-1),
               'total' => 0.01,
             ],
+          ],
+        ],
+      ],
+      25 => [
+        'label' => 'New',
+        'static_description' => 'first donation this FY',
+        'value' => 25,
+        'name' => 'new',
+        'criteria' => [
+          'first_donation' => [
+            ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime(), 'total' => 0.01],
           ],
         ],
       ],
