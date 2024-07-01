@@ -177,13 +177,15 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * appropriately.
    */
   public function testMarkRefundCheckCustomData(): void {
+    $nextYear = date('Y', strtotime('+1 year'));
+    $yearAfterNext = date('Y', strtotime('+2 year'));
     $this->callAPISuccess('Contribution', 'create', [
       'version' => 4,
       'contact_id' => $this->ids['Contact']['default'],
       'financial_type_id:name' => 'Cash',
       'total_amount' => 50,
       'source' => 'USD 50',
-      'receive_date' => '2024-11-01',
+      'receive_date' => "$nextYear-11-01",
     ]);
     // Create an additional negative contribution. This is how they were prior to Feb 2016.
     // We want to check it is ignored for the purpose of determining the most recent donation
@@ -194,22 +196,20 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'version' => 4,
       'total_amount' => -10,
       'contribution_source' => 'USD -10',
-      'receive_date' => '2025-12-01',
+      'receive_date' => "$nextYear-12-01",
     ));
-    wmf_civicrm_mark_refund($this->original_contribution_id, 'Refunded', FALSE, '2025-09-09', 'my_special_ref');
+    wmf_civicrm_mark_refund($this->original_contribution_id, 'Refunded', FALSE, "$nextYear-09-09", 'my_special_ref');
 
 
     $this->assertContactValues($this->ids['Contact']['default'], [
       'wmf_donor.lifetime_usd_total' => 40,
-      'wmf_donor.last_donation_date' => '2024-11-01 00:00:00',
+      'wmf_donor.last_donation_date' => "$nextYear-11-01 00:00:00",
       'wmf_donor.last_donation_amount' => 50,
       'wmf_donor.last_donation_usd' => 50,
       'wmf_donor.last_donation_currency' => 'USD',
-      'wmf_donor.total_2024' => 50,
-      'wmf_donor.total_2025' => -10,
+      "wmf_donor.total_$nextYear" => 40,
       'wmf_donor.number_donations'  => 1,
-      'wmf_donor.total_2024_2025' => 50,
-      'wmf_donor.total_2025_2026' => -10,
+      "wmf_donor.total_{$nextYear}_{$yearAfterNext}" => 40,
       'wmf_donor.' . $this->financialYearTotalFieldName => 0,
     ]);
   }
