@@ -1210,7 +1210,9 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
          WHEN (
          --  Major Donor  has given 10,000+ in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
@@ -1219,8 +1221,6 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000
 
         ) THEN 100
@@ -1229,7 +1229,9 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
          WHEN (
          --  Mid Tier  has given 1,000+  in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
@@ -1238,8 +1240,6 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000
 
         ) THEN 200
@@ -1248,7 +1248,9 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
          WHEN (
          --  Mid-Value Prospect  has given 250+ in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
@@ -1257,8 +1259,6 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250
 
         ) THEN 300
@@ -1267,7 +1267,7 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
          WHEN (
          --  Recurring donor  has made a recurring donation in last 36 months
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 400
@@ -1276,7 +1276,9 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
          WHEN (
          --  Grassroots Plus Donor  has given 50+  in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
@@ -1285,8 +1287,6 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50
 
         ) THEN 500
@@ -1295,7 +1295,7 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
          WHEN (
          --  Grassroots Donor  has given in the last 5 financial years (or the current one)
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2019-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 600
@@ -1304,7 +1304,7 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
          WHEN (
          --  All other Donors  has given but not in the last 5 financial years (or the current one)
          SUM(COALESCE(IF( receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 300 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 300 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 300 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 300 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 900
@@ -1316,9 +1316,11 @@ CASE
          WHEN (
          --  Active Recurring  gave recurring within last month
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 1 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 1 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -1327,8 +1329,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 2
@@ -1337,9 +1337,11 @@ CASE
          WHEN (
          --  Delinquent Recurring  gave recurring more than 1 month & less than 4 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 3 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 1 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 3 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 1 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -1348,8 +1350,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 4
@@ -1358,9 +1358,11 @@ CASE
          WHEN (
          --  Recent lapsed Recurring  gave recurring more than 3 months & less than 7 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 6 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 3 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 6 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 3 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -1369,8 +1371,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 6
@@ -1379,9 +1379,11 @@ CASE
          WHEN (
          --  Deep lapsed Recurring  gave recurring more than 6 months & less than 37 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 6 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 6 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -1390,8 +1392,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 8
@@ -1400,9 +1400,9 @@ CASE
          WHEN (
          --  Consecutive  gave last financial year and this financial year to date
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 20
@@ -1411,7 +1411,7 @@ CASE
          WHEN (
          --  New  first donation this FY
          MIN(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 25
@@ -1420,7 +1420,7 @@ CASE
          WHEN (
          --  Active  gave in this FY
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 30
@@ -1429,7 +1429,7 @@ CASE
          WHEN (
          --  Lybunt  gave last financial year but NOT this financial year to date
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 35
@@ -1438,7 +1438,7 @@ CASE
          WHEN (
          --  Lapsed  last gave in the financial year before last
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2021-07-01 00:00:00') AND ('2022-06-30 23:59:59')
+      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 50
@@ -1447,7 +1447,7 @@ CASE
          WHEN (
          --  Deep Lapsed  last gave between 2 & 5 financial years ago
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2021-07-01 00:00:00')
+      BETWEEN ('2019-07-01 00:00:00') AND ('2022-07-01 00:00:00')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 60
@@ -1456,7 +1456,7 @@ CASE
          WHEN (
          --  Ultra lapsed  gave prior to 5 financial years ago
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('1999-06-30 23:59:59') AND ('2018-06-30 23:59:59')
+      BETWEEN ('2000-06-30 23:59:59') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 70
@@ -1557,7 +1557,9 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
          WHEN (
          --  Major Donor  has given 10,000+ in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
@@ -1566,8 +1568,6 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000
 
         ) THEN 100
@@ -1576,7 +1576,9 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
          WHEN (
          --  Mid Tier  has given 1,000+  in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
@@ -1585,8 +1587,6 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000
 
         ) THEN 200
@@ -1595,7 +1595,9 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
          WHEN (
          --  Mid-Value Prospect  has given 250+ in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
@@ -1604,8 +1606,6 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250
 
         ) THEN 300
@@ -1614,7 +1614,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
          WHEN (
          --  Recurring donor  has made a recurring donation in last 36 months
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 400
@@ -1623,7 +1623,9 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
          WHEN (
          --  Grassroots Plus Donor  has given 50+  in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
@@ -1632,8 +1634,6 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50
 
         ) THEN 500
@@ -1642,7 +1642,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
          WHEN (
          --  Grassroots Donor  has given in the last 5 financial years (or the current one)
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2019-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 600
@@ -1651,7 +1651,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
          WHEN (
          --  All other Donors  has given but not in the last 5 financial years (or the current one)
          SUM(COALESCE(IF( receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 300 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 300 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 300 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 300 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 900
@@ -1663,9 +1663,11 @@ CASE
          WHEN (
          --  Active Recurring  gave recurring within last month
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 1 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 1 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -1674,8 +1676,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 2
@@ -1684,9 +1684,11 @@ CASE
          WHEN (
          --  Delinquent Recurring  gave recurring more than 1 month & less than 4 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 3 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 1 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 3 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 1 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -1695,8 +1697,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 4
@@ -1705,9 +1705,11 @@ CASE
          WHEN (
          --  Recent lapsed Recurring  gave recurring more than 3 months & less than 7 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 6 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 3 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 6 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 3 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -1716,8 +1718,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 6
@@ -1726,9 +1726,11 @@ CASE
          WHEN (
          --  Deep lapsed Recurring  gave recurring more than 6 months & less than 37 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 6 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 6 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -1737,8 +1739,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 8
@@ -1747,9 +1747,9 @@ CASE
          WHEN (
          --  Consecutive  gave last financial year and this financial year to date
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 20
@@ -1758,7 +1758,7 @@ CASE
          WHEN (
          --  New  first donation this FY
          MIN(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 25
@@ -1767,7 +1767,7 @@ CASE
          WHEN (
          --  Active  gave in this FY
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 30
@@ -1776,7 +1776,7 @@ CASE
          WHEN (
          --  Lybunt  gave last financial year but NOT this financial year to date
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 35
@@ -1785,7 +1785,7 @@ CASE
          WHEN (
          --  Lapsed  last gave in the financial year before last
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2021-07-01 00:00:00') AND ('2022-06-30 23:59:59')
+      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 50
@@ -1794,7 +1794,7 @@ CASE
          WHEN (
          --  Deep Lapsed  last gave between 2 & 5 financial years ago
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2021-07-01 00:00:00')
+      BETWEEN ('2019-07-01 00:00:00') AND ('2022-07-01 00:00:00')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 60
@@ -1803,7 +1803,7 @@ CASE
          WHEN (
          --  Ultra lapsed  gave prior to 5 financial years ago
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('1999-06-30 23:59:59') AND ('2018-06-30 23:59:59')
+      BETWEEN ('2000-06-30 23:59:59') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 70
@@ -1902,7 +1902,9 @@ CASE
          WHEN (
          --  Major Donor  has given 10,000+ in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
@@ -1911,8 +1913,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000
 
         ) THEN 100
@@ -1921,7 +1921,9 @@ CASE
          WHEN (
          --  Mid Tier  has given 1,000+  in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
@@ -1930,8 +1932,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000
 
         ) THEN 200
@@ -1940,7 +1940,9 @@ CASE
          WHEN (
          --  Mid-Value Prospect  has given 250+ in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
@@ -1949,8 +1951,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250
 
         ) THEN 300
@@ -1959,7 +1959,7 @@ CASE
          WHEN (
          --  Recurring donor  has made a recurring donation in last 36 months
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 400
@@ -1968,7 +1968,9 @@ CASE
          WHEN (
          --  Grassroots Plus Donor  has given 50+  in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
@@ -1977,8 +1979,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50
 
         ) THEN 500
@@ -1987,7 +1987,7 @@ CASE
          WHEN (
          --  Grassroots Donor  has given in the last 5 financial years (or the current one)
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2019-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 600
@@ -1996,7 +1996,7 @@ CASE
          WHEN (
          --  All other Donors  has given but not in the last 5 financial years (or the current one)
          SUM(COALESCE(IF( receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 300 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 300 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 300 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 300 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 900
@@ -2008,9 +2008,11 @@ CASE
          WHEN (
          --  Active Recurring  gave recurring within last month
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 1 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 1 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -2019,8 +2021,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 2
@@ -2029,9 +2029,11 @@ CASE
          WHEN (
          --  Delinquent Recurring  gave recurring more than 1 month & less than 4 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 3 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 1 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 3 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 1 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -2040,8 +2042,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 4
@@ -2050,9 +2050,11 @@ CASE
          WHEN (
          --  Recent lapsed Recurring  gave recurring more than 3 months & less than 7 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 6 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 3 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 6 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 3 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -2061,8 +2063,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 6
@@ -2071,9 +2071,11 @@ CASE
          WHEN (
          --  Deep lapsed Recurring  gave recurring more than 6 months & less than 37 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 6 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 6 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -2082,8 +2084,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 8
@@ -2092,9 +2092,9 @@ CASE
          WHEN (
          --  Consecutive  gave last financial year and this financial year to date
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 20
@@ -2103,7 +2103,7 @@ CASE
          WHEN (
          --  New  first donation this FY
          MIN(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 25
@@ -2112,7 +2112,7 @@ CASE
          WHEN (
          --  Active  gave in this FY
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 30
@@ -2121,7 +2121,7 @@ CASE
          WHEN (
          --  Lybunt  gave last financial year but NOT this financial year to date
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 35
@@ -2130,7 +2130,7 @@ CASE
          WHEN (
          --  Lapsed  last gave in the financial year before last
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2021-07-01 00:00:00') AND ('2022-06-30 23:59:59')
+      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 50
@@ -2139,7 +2139,7 @@ CASE
          WHEN (
          --  Deep Lapsed  last gave between 2 & 5 financial years ago
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2021-07-01 00:00:00')
+      BETWEEN ('2019-07-01 00:00:00') AND ('2022-07-01 00:00:00')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 60
@@ -2148,7 +2148,7 @@ CASE
          WHEN (
          --  Ultra lapsed  gave prior to 5 financial years ago
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('1999-06-30 23:59:59') AND ('2018-06-30 23:59:59')
+      BETWEEN ('2000-06-30 23:59:59') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 70
@@ -2249,7 +2249,9 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
          WHEN (
          --  Major Donor  has given 10,000+ in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
@@ -2258,8 +2260,6 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 10000 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 10000
 
         ) THEN 100
@@ -2268,7 +2268,9 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
          WHEN (
          --  Mid Tier  has given 1,000+  in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
@@ -2277,8 +2279,6 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 1000 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 1000
 
         ) THEN 200
@@ -2287,7 +2287,9 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
          WHEN (
          --  Mid-Value Prospect  has given 250+ in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
@@ -2296,8 +2298,6 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 250 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 250
 
         ) THEN 300
@@ -2306,7 +2306,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
          WHEN (
          --  Recurring donor  has made a recurring donation in last 36 months
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 400
@@ -2315,7 +2315,9 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
          WHEN (
          --  Grassroots Plus Donor  has given 50+  in one of the past 5 financial years, or in the current financial year so far
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
@@ -2324,8 +2326,6 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) >= 50 OR SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 50
 
         ) THEN 500
@@ -2334,7 +2334,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
          WHEN (
          --  Grassroots Donor  has given in the last 5 financial years (or the current one)
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2019-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 600
@@ -2343,7 +2343,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
          WHEN (
          --  All other Donors  has given but not in the last 5 financial years (or the current one)
          SUM(COALESCE(IF( receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 300 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 300 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 300 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 300 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 900
@@ -2355,9 +2355,11 @@ CASE
          WHEN (
          --  Active Recurring  gave recurring within last month
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 1 MONTH)) AND ('2024-06-30 23:59:59.9999')
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 1 MONTH)) AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -2366,8 +2368,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 2
@@ -2376,9 +2376,11 @@ CASE
          WHEN (
          --  Delinquent Recurring  gave recurring more than 1 month & less than 4 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 3 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 1 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 3 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 1 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 1 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -2387,8 +2389,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 4
@@ -2397,9 +2397,11 @@ CASE
          WHEN (
          --  Recent lapsed Recurring  gave recurring more than 3 months & less than 7 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 6 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 3 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 6 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 3 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 3 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -2408,8 +2410,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 6
@@ -2418,9 +2418,11 @@ CASE
          WHEN (
          --  Deep lapsed Recurring  gave recurring more than 6 months & less than 37 months ago
          SUM(COALESCE(IF(contribution_recur_id IS NOT NULL AND  receive_date
-      BETWEEN (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND (IF (NOW() < '2024-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2024-06-30 23:59:59.9999' - INTERVAL 6 MONTH))
+      BETWEEN (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 36 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 36 MONTH)) AND (IF (NOW() < '2025-06-30 23:59:59.9999', NOW() - INTERVAL 6 MONTH, '2025-06-30 23:59:59.9999' - INTERVAL 6 MONTH))
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
+      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
@@ -2429,8 +2431,6 @@ CASE
       BETWEEN ('2020-07-01 00:00:00') AND ('2021-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
       BETWEEN ('2019-07-01 00:00:00') AND ('2020-06-30 23:59:59')
-      , total_amount, 0), 0)) < 1000 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) < 1000
 
         ) THEN 8
@@ -2439,9 +2439,9 @@ CASE
          WHEN (
          --  Consecutive  gave last financial year and this financial year to date
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01 AND SUM(COALESCE(IF( receive_date
-      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 20
@@ -2450,7 +2450,7 @@ CASE
          WHEN (
          --  New  first donation this FY
          MIN(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 25
@@ -2459,7 +2459,7 @@ CASE
          WHEN (
          --  Active  gave in this FY
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59.9999')
+      BETWEEN ('2024-07-01 00:00:00') AND ('2025-06-30 23:59:59.9999')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 30
@@ -2468,7 +2468,7 @@ CASE
          WHEN (
          --  Lybunt  gave last financial year but NOT this financial year to date
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
+      BETWEEN ('2023-07-01 00:00:00') AND ('2024-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 35
@@ -2477,7 +2477,7 @@ CASE
          WHEN (
          --  Lapsed  last gave in the financial year before last
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2021-07-01 00:00:00') AND ('2022-06-30 23:59:59')
+      BETWEEN ('2022-07-01 00:00:00') AND ('2023-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 50
@@ -2486,7 +2486,7 @@ CASE
          WHEN (
          --  Deep Lapsed  last gave between 2 & 5 financial years ago
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('2018-07-01 00:00:00') AND ('2021-07-01 00:00:00')
+      BETWEEN ('2019-07-01 00:00:00') AND ('2022-07-01 00:00:00')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 60
@@ -2495,7 +2495,7 @@ CASE
          WHEN (
          --  Ultra lapsed  gave prior to 5 financial years ago
          SUM(COALESCE(IF( receive_date
-      BETWEEN ('1999-06-30 23:59:59') AND ('2018-06-30 23:59:59')
+      BETWEEN ('2000-06-30 23:59:59') AND ('2019-06-30 23:59:59')
       , total_amount, 0), 0)) >= 0.01
 
         ) THEN 70
