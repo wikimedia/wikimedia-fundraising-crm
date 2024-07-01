@@ -405,8 +405,17 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
     // Get the text of the error
     if ($errorResponse instanceof CreatePaymentResponse) {
-      $errorMessage = $errorResponse->getErrors()[0]->getDebugMessage();
-    } else {
+      if (
+        count($errorResponse->getErrors()) &&
+        method_exists($errorResponse->getErrors()[0], 'getDebugMessage')
+      ) {
+        $errorMessage = $errorResponse->getErrors()[0]->getDebugMessage();
+      }
+      else {
+        $errorMessage = 'Unknown problem charging payment';
+      }
+    }
+    else {
       $errorMessage = $errorResponse;
     }
 
