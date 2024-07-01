@@ -75,8 +75,9 @@ class QueueHelper {
     $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi4'], [$entity, $action, $params]), $options);
     return $this;
   }
+
   /**
-    *
+   *
    *
    * public function api3(string $entity, string $action, array $params = []) {
    * $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi3'], [$entity, $action, $params]));
@@ -178,12 +179,6 @@ class QueueHelper {
    * @param string $action
    * @param array $params
    *
-   * @param \CRM_Queue_TaskContext $taskContext
-   * @param string $entity
-   * @params string $action
-   * @param array $params
-   *
-   * @return bool
    * @return bool
    * @internal only use from this class.
    */
@@ -204,7 +199,7 @@ class QueueHelper {
     return TRUE;
   }
 
-   /**
+  /**
    * Do apiv3 call in a queue context.
    *
    * @internal only use from this class.

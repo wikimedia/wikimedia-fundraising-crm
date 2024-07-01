@@ -534,8 +534,8 @@ SET
   }
 
   /**
-   * Run sql to reset the accidentally cancelled ideal recurring contributions during the token update when switching from Adyen to
-   * Adyen Checkout
+   * Run sql to reset the accidentally cancelled ideal recurring contributions during the token update when switching
+   * from Adyen to Adyen Checkout
    *
    * Bug: T277120
    *
@@ -1806,7 +1806,8 @@ AND q.id BETWEEN %1 AND %2";
    * to be being created anymore but 1550 remain to be fixed up.
    *
    * Note I found one that would be recoded possibly incorrectly through this
-   * - ie https://civicrm.wikimedia.org/civicrm/contact/view/contribution?reset=1&id=96033970&cid=26220292&action=view&context=contribution&selectedChild=contribute
+   * - ie
+   * https://civicrm.wikimedia.org/civicrm/contact/view/contribution?reset=1&id=96033970&cid=26220292&action=view&context=contribution&selectedChild=contribute
    * - perhaps the type is correct given the first in the series was a refund
    * but it is a $1 test transaction so we can ignore that I think.
    *
@@ -2247,13 +2248,14 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     ]));
     $recursToCancel = CRM_Core_DAO::executeQuery(
       'SELECT contribution_recur_id, date FROM T367451 WHERE contribution_recur_id IS NOT NULL');
-    while($recursToCancel->fetch()) {
+    while ($recursToCancel->fetch()) {
       $queue->api4('ContributionRecur', 'update', [
         'values' => [
           'cancel_date' => $recursToCancel->date,
           'cancel_reason' => 'Payment cannot be rescued: maximum failures reached',
-          'contribution_status_id' => 3, // Cancelled
-          'contribution_recur_smashpig.rescue_reference' => ''
+          // Cancelled
+          'contribution_status_id' => 3,
+          'contribution_recur_smashpig.rescue_reference' => '',
         ],
         'where' => [['id', '=', $recursToCancel->contribution_recur_id]],
         'checkPermissions' => FALSE,
