@@ -2215,6 +2215,9 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    * @return bool
    */
   public function upgrade_4511(): bool {
+    if (!CRM_Core_DAO::singleValueQuery('SHOW TABLES LIKE "T365519"')) {
+      return TRUE;
+    }
     $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
       'type' => 'Sql',
       'runner' => 'task',
@@ -2223,7 +2226,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
       'error' => 'abort',
     ]));
     $contributionsToDelete = CRM_Core_DAO::executeQuery('SELECT distinct contribution_id FROM T365519');
-    while($contributionsToDelete->fetch()) {
+    while ($contributionsToDelete->fetch()) {
       $queue->api4('Contribution', 'delete', [
         'where' => [['id', '=', $contributionsToDelete->contribution_id]],
         'checkPermissions' => FALSE,
@@ -2239,6 +2242,9 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    * @return bool
    */
   public function upgrade_4516(): bool {
+    if (!CRM_Core_DAO::singleValueQuery('SHOW TABLES LIKE "T365519"')) {
+      return TRUE;
+    }
     $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
       'type' => 'Sql',
       'runner' => 'task',
