@@ -534,8 +534,8 @@ SET
   }
 
   /**
-   * Run sql to reset the accidentally cancelled ideal recurring contributions during the token update when switching from Adyen to
-   * Adyen Checkout
+   * Run sql to reset the accidentally cancelled ideal recurring contributions during the token update when switching
+   * from Adyen to Adyen Checkout
    *
    * Bug: T277120
    *
@@ -1806,7 +1806,8 @@ AND q.id BETWEEN %1 AND %2";
    * to be being created anymore but 1550 remain to be fixed up.
    *
    * Note I found one that would be recoded possibly incorrectly through this
-   * - ie https://civicrm.wikimedia.org/civicrm/contact/view/contribution?reset=1&id=96033970&cid=26220292&action=view&context=contribution&selectedChild=contribute
+   * - ie
+   * https://civicrm.wikimedia.org/civicrm/contact/view/contribution?reset=1&id=96033970&cid=26220292&action=view&context=contribution&selectedChild=contribute
    * - perhaps the type is correct given the first in the series was a refund
    * but it is a $1 test transaction so we can ignore that I think.
    *
@@ -2214,6 +2215,9 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    * @return bool
    */
   public function upgrade_4511(): bool {
+    if (!CRM_Core_DAO::singleValueQuery('SHOW TABLES LIKE "T365519"')) {
+      return TRUE;
+    }
     $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
       'type' => 'Sql',
       'runner' => 'task',
@@ -2222,7 +2226,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
       'error' => 'abort',
     ]));
     $contributionsToDelete = CRM_Core_DAO::executeQuery('SELECT distinct contribution_id FROM T365519');
-    while($contributionsToDelete->fetch()) {
+    while ($contributionsToDelete->fetch()) {
       $queue->api4('Contribution', 'delete', [
         'where' => [['id', '=', $contributionsToDelete->contribution_id]],
         'checkPermissions' => FALSE,
@@ -2238,6 +2242,9 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    * @return bool
    */
   public function upgrade_4516(): bool {
+    if (!CRM_Core_DAO::singleValueQuery('SHOW TABLES LIKE "T365519"')) {
+      return TRUE;
+    }
     $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
       'type' => 'Sql',
       'runner' => 'task',
@@ -2247,13 +2254,14 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     ]));
     $recursToCancel = CRM_Core_DAO::executeQuery(
       'SELECT contribution_recur_id, date FROM T367451 WHERE contribution_recur_id IS NOT NULL');
-    while($recursToCancel->fetch()) {
+    while ($recursToCancel->fetch()) {
       $queue->api4('ContributionRecur', 'update', [
         'values' => [
           'cancel_date' => $recursToCancel->date,
           'cancel_reason' => 'Payment cannot be rescued: maximum failures reached',
-          'contribution_status_id' => 3, // Cancelled
-          'contribution_recur_smashpig.rescue_reference' => ''
+          // Cancelled
+          'contribution_status_id' => 3,
+          'contribution_recur_smashpig.rescue_reference' => '',
         ],
         'where' => [['id', '=', $recursToCancel->contribution_recur_id]],
         'checkPermissions' => FALSE,
@@ -2262,6 +2270,42 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     return TRUE;
   }
 
+  /**
+   * Annual upgrade for the WMF Donor segment & status.
+   *
+   * Bug: T368974
+   * @return bool
+   */
+  public function upgrade_4520(): bool {
+    // The highest contact ID at the point at which the triggers were updated.
+    // $maxContactID = 64261802;
+    // This is set low for testing - when testing is done we can re-queue with a larger number
+    // and also larger increments.
+    $maxContactID = 20000;
+    $this->queueApi4('WMFDonor', 'update', [
+      'values' => [
+        'donor_segment_id' => '',
+        'donor_status_id' => '',
+      ],
+      'where' => [
+        ['id', 'BETWEEN', ['%1', '%2']],
+      ],
+    ],
+    [
+      1 => [
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 2,
+        'max' => $maxContactID,
+      ],
+      2 => [
+        'value' => 2,
+        'type' => 'Integer',
+        'increment' => 2,
+      ],
+    ]);
+    return TRUE;
+  }
 
   /**
    * @param array $conversions
@@ -2272,6 +2316,29 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     foreach ($conversions as $variableName => $settingName) {
       Civi::settings()->set($settingName, variable_get($variableName));
     }
+  }
+
+  /**
+   * Queue up an API4 update.
+   *
+   * @param string $entity
+   * @param $action
+   * @param array $params
+   * @param array $incrementParameters
+   */
+  private function queueApi4(string $entity, $action, array $params = [], array $incrementParameters = []): void {
+    $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
+      'type' => 'Sql',
+      'runner' => 'task',
+      // This is kinda high but while debugging I was seeing sometime coworker
+      // causing this to increment too quickly while debugging. This could be
+      // due to the break point process but let's go with this for now.
+      'retry_limit' => 100,
+      'reset' => FALSE,
+      'error' => 'abort',
+    ]));
+    $queue->setRunAs(['contactId' => 1]);
+    $queue->api4($entity, $action, $params, $incrementParameters);
   }
 
   /**
