@@ -2347,6 +2347,45 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Annual upgrade for the WMF Donor segment & status.
+   *
+   * Take 2 - try a bunch more in larger batches, see how we go
+   *
+   * Bug: T368974
+   * @return bool
+   */
+  public function upgrade_4530(): bool {
+    // The highest contact ID at the point at which the triggers were updated.
+    // $maxContactID = 64261802;
+    // This is set low for testing - when testing is done we can re-queue with a larger number
+    // and also larger increments.
+    $maxContactID = 20000000;
+    $this->queueApi4('WMFDonor', 'update', [
+      'values' => [
+        'donor_segment_id' => '',
+        'donor_status_id' => '',
+      ],
+      'where' => [
+        ['id', 'BETWEEN', ['%1', '%2']],
+      ],
+    ],
+      [
+        1 => [
+          'value' => 2000000,
+          'type' => 'Integer',
+          'increment' => 100000,
+          'max' => $maxContactID,
+        ],
+        2 => [
+          'value' => 2100000,
+          'type' => 'Integer',
+          'increment' => 100000,
+        ],
+      ]);
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
