@@ -888,23 +888,6 @@ function wmf_civicrm_dao_to_list($dao) {
 }
 
 /**
- * Get options for a field.
- *
- * @param string $entity
- * @param string $field
- *
- * @return array
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_get_options($entity, $field) {
-  if (!isset(\Civi::$statics['wmf_civicrm'][$entity][$field])) {
-    $options = civicrm_api3($entity, 'getoptions', ['field' => $field]);
-    \Civi::$statics['wmf_civicrm'][$entity][$field] = $options['values'];
-  }
-  return \Civi::$statics['wmf_civicrm'][$entity][$field];
-}
-
-/**
  * Determine if a code represents a supported currency. Uses the
  * SmashPig currency list as a canonical source.
  *
