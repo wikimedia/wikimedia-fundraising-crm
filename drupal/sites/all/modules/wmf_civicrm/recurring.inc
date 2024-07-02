@@ -92,22 +92,19 @@ function wmf_civicrm_get_recurring_payment_token($gateway, $token) {
  * @throws \Civi\WMFException\WMFException
  */
 function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token, $ip) {
-  $processorId = wmf_civicrm_get_payment_processor_id($gateway);
-
   try {
-    $payment_token_result = civicrm_api3('PaymentToken', 'create', [
-      'contact_id' => $contact_id,
-      'payment_processor_id' => $processorId,
-      'token' => $token,
-      'ip_address' => $ip,
-    ]);
+    return \Civi\Api4\PaymentToken::create(FALSE)
+      ->setValues([
+        'contact_id' => $contact_id,
+        'payment_processor_id.name' => $gateway,
+        'token' => $token,
+        'ip_address' => $ip,
+      ]
+    )->execute()->first();
   }
   catch (CRM_Core_Exception $e) {
     throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
   }
-
-  //return newly created record
-  return $payment_token_result['values'][$payment_token_result['id']];
 }
 
 /**
