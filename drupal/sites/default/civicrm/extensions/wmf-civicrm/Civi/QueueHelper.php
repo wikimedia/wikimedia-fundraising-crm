@@ -30,7 +30,7 @@ class QueueHelper {
   }
 
   /**
-   * @param int|null $runAs
+   * @param int|null|array $runAs
    *
    * @return $this
    */
@@ -71,8 +71,10 @@ class QueueHelper {
    * @param array $options
    * @return $this
    */
-  public function api4(string $entity, string $action, array $params = [], array $options = []) {
-    $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi4'], [$entity, $action, $params]), $options);
+  public function api4(string $entity, string $action, array $params = [], array $incrementParameters = [], array $options = []) {
+    $task = new \CRM_Queue_Task([self::class, 'doApi4'], [$entity, $action, $params, $incrementParameters]);
+    $task->runAs = $this->runAs;
+    $this->queue->createItem($task, $options);
     return $this;
   }
 
@@ -170,21 +172,71 @@ class QueueHelper {
   }
 
   /**
-   * Api3 & 4 helpers not yet working.
+   * Queue calls using api v4, with optional increment parameters.
    *
    * Do apiv4 call in a queue context.
    *
    * @param \CRM_Queue_TaskContext $taskContext
    * @param string $entity
    * @param string $action
-   * @param array $params
+   * @param array $params api Parameters with (e.g.) '%1' in the where clause to be
+   *   replaced with the increment parameter 1
+   * @param array $incrementParameters Describe how to increment the values.
+   * 1 => [
+   *   'value' => 0,
+   *   'type' => 'Integer',
+   *   'increment' => 2,
+   *   'max' => $maxContactID,
+   *  ],
+   *  2 => [
+   *    'value' => 2,
+   *    'type' => 'Integer',
+   *    'increment' => 2,
+   *   ],
    *
    * @return bool
    * @internal only use from this class.
    */
-  public static function doApi4(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params): bool {
+  public static function doApi4(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params, $incrementParameters): bool {
     try {
-      civicrm_api4($entity, $action, $params);
+      $runParams = $params;
+      $runParams['checkPermissions'] = FALSE;
+      foreach ($incrementParameters as $incrementKey => $incrementParameter) {
+        foreach ($params['where'] ?? [] as $index => $where) {
+          if (is_array($where[2])) {
+            foreach ($where[2] as $key => $criteria) {
+              if ($criteria === '%' . $incrementKey) {
+                $runParams['where'][$index][2][$key] = $incrementParameter['value'];
+              }
+            }
+          }
+          else {
+            $criteria = $where[2];
+            if ($criteria === '%' . $incrementKey) {
+              $runParams['where'][$index][2] = $incrementParameter['value'];
+            }
+          }
+        }
+      }
+      civicrm_api4($entity, $action, $runParams);
+      $reQueue = FALSE;
+      foreach ($incrementParameters as $key => $incrementParameter) {
+        if (empty($incrementParameter['max']) || $incrementParameter['value'] < $incrementParameter['max']) {
+          $incrementParameters[$key]['value'] += $incrementParameter['increment'];
+          $reQueue = TRUE;
+        }
+      }
+      if ($reQueue) {
+        // Not finished, queue another pass.
+        $task = new \CRM_Queue_Task([self::class, 'doApi4'], [
+          $entity,
+          $action,
+          $params,
+          $incrementParameters,
+        ]);
+
+        $taskContext->queue->createItem($task);
+      }
     }
     catch (\CRM_Core_Exception $e) {
       \Civi::log('queue')->error('queued action failed {entity} {action} {params} {message} {exception}', [

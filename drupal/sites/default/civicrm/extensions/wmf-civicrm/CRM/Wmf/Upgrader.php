@@ -2270,6 +2270,42 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     return TRUE;
   }
 
+  /**
+   * Annual upgrade for the WMF Donor segment & status.
+   *
+   * Bug: T368974
+   * @return bool
+   */
+  public function upgrade_4520(): bool {
+    // The highest contact ID at the point at which the triggers were updated.
+    // $maxContactID = 64261802;
+    // This is set low for testing - when testing is done we can re-queue with a larger number
+    // and also larger increments.
+    $maxContactID = 20000;
+    $this->queueApi4('WMFDonor', 'update', [
+      'values' => [
+        'donor_segment_id' => '',
+        'donor_status_id' => '',
+      ],
+      'where' => [
+        ['id', 'BETWEEN', ['%1', '%2']],
+      ],
+    ],
+    [
+      1 => [
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 2,
+        'max' => $maxContactID,
+      ],
+      2 => [
+        'value' => 2,
+        'type' => 'Integer',
+        'increment' => 2,
+      ],
+    ]);
+    return TRUE;
+  }
 
   /**
    * @param array $conversions
@@ -2280,6 +2316,29 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     foreach ($conversions as $variableName => $settingName) {
       Civi::settings()->set($settingName, variable_get($variableName));
     }
+  }
+
+  /**
+   * Queue up an API4 update.
+   *
+   * @param string $entity
+   * @param $action
+   * @param array $params
+   * @param array $incrementParameters
+   */
+  private function queueApi4(string $entity, $action, array $params = [], array $incrementParameters = []): void {
+    $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
+      'type' => 'Sql',
+      'runner' => 'task',
+      // This is kinda high but while debugging I was seeing sometime coworker
+      // causing this to increment too quickly while debugging. This could be
+      // due to the break point process but let's go with this for now.
+      'retry_limit' => 100,
+      'reset' => FALSE,
+      'error' => 'abort',
+    ]));
+    $queue->setRunAs(['contactId' => 1]);
+    $queue->api4($entity, $action, $params, $incrementParameters);
   }
 
   /**
