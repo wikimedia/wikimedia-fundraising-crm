@@ -157,29 +157,6 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
 }
 
 /**
- * @todo - the message object normalize() function should retrieve these values as relevant - like it does with ContributionRecur, ContributionTracking)
- * @param array $msg
- *
- * @return mixed|null
- */
-function _get_recurring_payment_token(array $msg) {
-  _get_import_timer()->startImportTimer("get_recurring_payment_token");
-  $token_record = wmf_civicrm_get_recurring_payment_token(
-    $msg['gateway'], $msg['recurring_payment_token']
-  );
-  _get_import_timer()->endImportTimer("get_recurring_payment_token");
-  return $token_record;
-}
-
-/**
- * @todo - the QueueConsumer class has it's own helper for this.
- * @return \Statistics\Collector\AbstractCollector
- */
-function _get_import_timer(): \Statistics\Collector\AbstractCollector {
-  return ImportStatsCollector::getInstance();
-}
-
-/**
  * Checks for contact ID and hash match.  If mismatched unset
  * ID and hash so message is treated as a new contact.
  *

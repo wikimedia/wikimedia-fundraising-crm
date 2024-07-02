@@ -38,46 +38,6 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
 }
 
 /**
- * Get recurring token - to be moved to DonationMessage::normalize().
- *
- * @todo the message object normalize() function should retrieve these values as relevant - like it does with ContributionRecur, ContributionTracking)
- * @param $gateway
- * @param $token
- *
- * @return mixed|null
- * @throws \CRM_Core_Exception
- * @throws \Civi\WMFException\WMFException
- * @deprecated
- *
- * This code has 2 callers - but would ideally they would call a function on the
- * Message class like getPaymentToken() which would do an apiv4 call like
- *
- * PaymentToken::get(FALSE)
- * ->addWhere('payment_processor_id.name', '=', $signupMessage['gateway'])
- * ->addWhere('token', '=', $signupMessage['recurring_payment_token'])
- * ->addOrderBy('created_date', 'DESC')
- * ->execute()->first();
- *
- * The api call is trivial enough that unless the relevant Message classes easily inherit
- * it is likely not worth trying to avoid repeating it.
- */
-function wmf_civicrm_get_recurring_payment_token($gateway, $token) {
-  $processorId = wmf_civicrm_get_payment_processor_id($gateway);
-
-  $payment_token_result = civicrm_api3('PaymentToken', 'get', [
-    'payment_processor_id' => $processorId,
-    'token' => $token,
-    // Return most recent value, without this the function returns null on multiple rows in values
-    'options' => ['sort' => "created_date desc", 'limit' => 1],
-  ]);
-  if (empty($payment_token_result['values'])) {
-    return NULL;
-  }
-
-  return $payment_token_result['values'][$payment_token_result['id']];
-}
-
-/**
  * Create a recurring payment token to be used alongside a recurring
  * contribution record
  *

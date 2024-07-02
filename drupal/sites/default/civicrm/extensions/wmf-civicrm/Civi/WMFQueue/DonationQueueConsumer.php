@@ -186,12 +186,11 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     if ($message->isRecurring()) {
       if (!$message->getContributionRecurID()) {
         if (!empty($msg['recurring_payment_token'])) {
-          $token_record = _get_recurring_payment_token($msg);
-          if ($token_record) {
+          if ($message->getPaymentTokenID()) {
             \Civi::log('wmf')->info('queue2civicrm_import: Found matching recurring payment token: {token}', ['token' => $msg['recurring_payment_token']]);
-            $msg['contact_id'] = $token_record['contact_id'];
-            $msg['payment_token_id'] = $token_record['id'];
-            $msg['payment_processor_id'] = $token_record['payment_processor_id'];
+            $msg['contact_id'] = $message->getExistingPaymentTokenValue('contact_id');
+            $msg['payment_token_id'] = $message->getPaymentTokenID();
+            $msg['payment_processor_id'] = $message->getExistingPaymentTokenValue('payment_processor_id');
           }
           else {
             // When there is a token on the $msg but not in the db
