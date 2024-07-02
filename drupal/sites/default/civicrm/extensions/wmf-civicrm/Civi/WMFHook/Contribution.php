@@ -5,6 +5,7 @@ namespace Civi\WMFHook;
 use Civi;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\Database;
+use Civi\WMFTransaction;
 
 class Contribution {
 
@@ -19,7 +20,7 @@ class Contribution {
             'Native txn rolled back before running pre contribution hook'
           );
         }
-        $extra = wmf_civicrm_get_wmf_contribution_extra($contribution);
+        $extra = self::getContributionExtra($contribution);
 
         if ($extra) {
           $map = wmf_civicrm_get_custom_field_map(
@@ -46,6 +47,33 @@ class Contribution {
 
         break;
     }
+  }
+
+  /**
+   * @param array $contribution
+   *
+   * @return array
+   */
+  private static function getContributionExtra(array $contribution) {
+    $extra = [];
+
+    if (!empty($contribution['trxn_id'])) {
+      try {
+        $transaction = WMFTransaction::from_unique_id($contribution['trxn_id']);
+        $extra['gateway'] = strtolower($transaction->gateway);
+        $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
+      }
+      catch (WMFException $ex) {
+        \Civi::log('wmf')->info('wmf_civicrm: Failed to parse trxn_id: {trxn_id}, {message}',
+          ['trxn_id' => $contribution['trxn_id'], 'message' => $ex->getMessage()]
+        );
+      }
+    }
+
+    if (!empty($contribution['source'])) {
+      $extra = array_merge($extra, wmf_civicrm_get_original_currency_and_amount_from_source($contribution['source'], $contribution['total_amount']));
+    }
+    return $extra;
   }
 
 }
