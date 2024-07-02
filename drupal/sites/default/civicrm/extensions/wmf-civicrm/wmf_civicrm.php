@@ -18,6 +18,7 @@ use Civi\WMFHook\Data;
 use Civi\Api4\MessageTemplate;
 use Civi\WMFHelper\Language;
 use Civi\WMFHook\PreferencesLink;
+use Civi\WMFStatistic\PrometheusReporter;
 
 // phpcs:enable
 
@@ -597,4 +598,20 @@ function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$ou
     ]);
     $outcome = 'retry';
   }
+}
+
+
+/**
+ * Listener for hook defined in CRM_SmashPig_Hook::smashpigOutputStats
+ * @param array $stats
+ */
+function wmf_civicrm_civicrm_smashpig_stats($stats) {
+  $metrics = [];
+  foreach ($stats as $status => $count) {
+    $lcStatus = strtolower($status);
+    $metrics["recurring_smashpig_$lcStatus"] = $count;
+  }
+  $prometheusPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
+  $reporter = new PrometheusReporter($prometheusPath);
+  $reporter->reportMetrics('recurring_smashpig', $metrics);
 }
