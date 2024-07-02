@@ -53,26 +53,6 @@ class DonationMessage extends Message {
     return FALSE;
   }
 
-  public function isInvalidRecurring(): bool {
-    return FALSE;
-  }
-
-  /**
-   *
-   * @return bool
-   */
-  public function isRecurringWithSubscriberID(): bool {
-    return FALSE;
-  }
-
-  /**
-   *
-   * @return bool
-   */
-  public function isRecurringWithPaymentToken(): bool {
-    return FALSE;
-  }
-
   /**
    * @param array $message
    *
