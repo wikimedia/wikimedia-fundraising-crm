@@ -840,33 +840,6 @@ function wmf_civicrm_mark_refund(
 }
 
 /**
- * @param array $contribution
- *
- * @return array
- */
-function wmf_civicrm_get_wmf_contribution_extra($contribution) {
-  $extra = [];
-
-  if (!empty($contribution['trxn_id'])) {
-    try {
-      $transaction = WMFTransaction::from_unique_id($contribution['trxn_id']);
-      $extra['gateway'] = strtolower($transaction->gateway);
-      $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
-    }
-    catch (WMFException $ex) {
-      \Civi::log('wmf')->info('wmf_civicrm: Failed to parse trxn_id: {trxn_id}, {message}',
-        ['trxn_id' => $contribution['trxn_id'], 'message' => $ex->getMessage()]
-      );
-    }
-  }
-
-  if (!empty($contribution['source'])) {
-    $extra = array_merge($extra, wmf_civicrm_get_original_currency_and_amount_from_source($contribution['source'], $contribution['total_amount']));
-  }
-  return $extra;
-}
-
-/**
  * Get original currency & amount
  *
  * The source field holds the amount & currency - parse it out
@@ -890,29 +863,6 @@ function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_
     return ['original_currency' => 'USD', 'original_amount' => $usd_amount];
   }
   return [];
-}
-
-/**
- * @param int $contactID
- *
- * @return array
- * @throws \CRM_Core_Exception
- */
-function _wmf_civicrm_get_contact_last_donation_data(int $contactID): array {
-  $contactExistingCustomData = Contact::get(FALSE)->addWhere('id', '=', $contactID)
-    ->addSelect(
-      'wmf_donor.last_donation_currency',
-      'wmf_donor.last_donation_amount',
-      'wmf_donor.last_donation_date',
-      'wmf_donor.last_donation_usd'
-    )
-    ->execute()->first();
-  return [
-    'amount' => $contactExistingCustomData['wmf_donor.last_donation_amount'],
-    'date' => $contactExistingCustomData['wmf_donor.last_donation_date'],
-    'amount_usd' => $contactExistingCustomData['wmf_donor.last_donation_usd'],
-    'currency' => $contactExistingCustomData['wmf_donor.last_donation_currency'],
-  ];
 }
 
 /**

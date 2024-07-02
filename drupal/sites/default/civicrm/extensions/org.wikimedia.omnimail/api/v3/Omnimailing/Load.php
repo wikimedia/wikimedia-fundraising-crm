@@ -37,6 +37,8 @@ function civicrm_api3_omnimailing_load($params) {
       'number_opened_total',
       'number_bounced',
       'number_sent',
+      'number_clicked_total',
+      'number_clicked_unique',
     ],
   ];
   if (isset($params['username']) && isset($params['password'])) {
@@ -119,7 +121,8 @@ function civicrm_api3_omnimailing_load($params) {
         'suppressed' => $mailing['number_suppressed'],
         // 'forwarded'
         'blocked' => $mailing['number_blocked'],
-        // 'clicked_total' => $stats['NumGrossClick'],
+        'clicked_unique' => $mailing['number_clicked_unique'],
+        'clicked_total' => $mailing['number_clicked_total'],
         'abuse_complaints' => $mailing['number_abuse_complaints'],
         // 'clicked_contribution_page'
         // 'contribution_count'

@@ -111,7 +111,7 @@ class Contribution {
     // We could possibly 'assume' it to be the latest if on the latest day - although in that
     // case we probably lose a get query & gain an 'update' query as the extra fields are likely already
     // updated by the triggers.
-    $contactLastDonation = _wmf_civicrm_get_contact_last_donation_data((int) $contribution->contact_id);
+    $contactLastDonation = self::getContactLastDonationData((int) $contribution->contact_id);
     $extra = wmf_civicrm_get_original_currency_and_amount_from_source($contribution->source, $contribution->total_amount);
     if ($contributionStatus === 'Completed' && substr($contribution->trxn_id, 0, 4) !== 'RFD ') {
       // This is a 'valid' transaction - it's either the latest or no update is required.
@@ -169,6 +169,29 @@ class Contribution {
       $params[wmf_civicrm_get_custom_field_name('last_donation_usd')] = $latestContribution['total_amount'];
     }
     return $params;
+  }
+
+  /**
+   * @param int $contactID
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private static function getContactLastDonationData(int $contactID): array {
+    $contactExistingCustomData = \Civi\Api4\Contact::get(FALSE)->addWhere('id', '=', $contactID)
+      ->addSelect(
+        'wmf_donor.last_donation_currency',
+        'wmf_donor.last_donation_amount',
+        'wmf_donor.last_donation_date',
+        'wmf_donor.last_donation_usd'
+      )
+      ->execute()->first();
+    return [
+      'amount' => $contactExistingCustomData['wmf_donor.last_donation_amount'],
+      'date' => $contactExistingCustomData['wmf_donor.last_donation_date'],
+      'amount_usd' => $contactExistingCustomData['wmf_donor.last_donation_usd'],
+      'currency' => $contactExistingCustomData['wmf_donor.last_donation_currency'],
+    ];
   }
 
 }
