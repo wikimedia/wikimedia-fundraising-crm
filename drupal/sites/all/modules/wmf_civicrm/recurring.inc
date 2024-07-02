@@ -81,55 +81,6 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
 }
 
 /**
- * @todo - we rolled out a patch in May 2024 that should make this obsolete within a month.
- * Get a legacy PayPal subscription associated with the given email address.
- * This and the code that calls it in
- * RecurringQueueConsumer::importSubscriptionPayment should be destroyed when
- * PayPal gives us better guidance on T209008.
- *
- * @param array $msg
- *
- * @return CRM_Core_DAO|false
- */
-function wmf_civicrm_get_legacy_paypal_subscription($msg) {
-  // This is a janky way to make the test check how many times we do this.
-  // However unlike in 2018 we should REALLY be almost ready to remove this code..
-  // https://phabricator.wikimedia.org/T355448#9819521
-  \Civi::$statics[__FUNCTION__] = isset(\Civi::$statics[__FUNCTION__]) ? \Civi::$statics[__FUNCTION__] + 1 : 1;
-  // We include recently-canceled donations because PayPal has apparently
-  // not communicated about their ID migration to the team that makes their
-  // audit files, leading a ton of subscriptions to be mistakenly canceled
-  // starting around October 2018.
-  // civicrm_contribution.trxn_id is the individual payment ID prefixed with
-  // RECURRING PAYPAL
-  // civicrm_contribution_recur.trxn_id is what PayPal sends as the subscr_id
-  // field. For legacy subscriptions that was always S-%.
-  // In case someone has multiple legacy PayPal subscriptions, prefer the one
-  // with the closest amount, then the most recent.
-  $query = "SELECT ccr.*
-    FROM civicrm_contribution_recur ccr
-    INNER JOIN civicrm_email e ON ccr.contact_id = e.contact_id
-    INNER JOIN civicrm_contribution c ON c.contribution_recur_id = ccr.id
-    WHERE email = %1
-    AND c.trxn_id LIKE 'RECURRING PAYPAL %'
-    AND ccr.trxn_id LIKE 'S-%'
-    AND (ccr.cancel_date IS NULL OR ccr.cancel_date > '2018-09-01')
-    AND (ccr.end_date IS NULL OR ccr.end_date > '2018-09-01')
-    ORDER BY ABS(ccr.amount - %2) ASC, c.receive_date DESC
-    LIMIT 1";
-  $dao = CRM_Core_DAO::executeQuery($query, [
-    1 => [$msg['email'], 'String'],
-    2 => [$msg['gross'], 'Float'],
-  ]);
-
-  if (!$dao->fetch()) {
-    return FALSE;
-  }
-
-  return $dao;
-}
-
-/**
  * Get recurring token - to be moved to DonationMessage::normalize().
  *
  * @todo the message object normalize() function should retrieve these values as relevant - like it does with ContributionRecur, ContributionTracking)
