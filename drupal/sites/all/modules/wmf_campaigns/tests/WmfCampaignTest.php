@@ -83,7 +83,7 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
    * to a value outside of the expected range.
    */
   public function testNonMatchingDonation(): void {
-    $this->expectException(CiviCRM_API3_Exception::class);
+    $this->expectException(CRM_Core_Exception::class);
     $this->expectExceptionMessageMatches("/fooCamp.*NOT/");
     $result = civicrm_api3('Contribution', 'create', [
       'contact_id' => $this->contact_id,

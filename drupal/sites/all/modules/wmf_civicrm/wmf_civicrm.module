@@ -352,7 +352,7 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
   try {
     civicrm_api3('Address', 'replace', $address_params);
   }
-  catch (CiviCRM_API3_Exception $e) {
+  catch (CRM_Core_Exception $e) {
     // Constraint violations occur when data is rolled back to resolve a deadlock.
     $code = $e->getErrorCode() === 'constraint violation' ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTACT;
     throw new WMFException($code, "Couldn't store address for the contact.", $e->getExtraParams());
@@ -722,7 +722,7 @@ function wmf_civicrm_mark_refund(
       ],
     ]);
   }
-  catch (CiviCRM_API3_Exception $e) {
+  catch (CRM_Core_Exception $e) {
     throw new WMFException(
       WMFException::INVALID_MESSAGE, "Could not load contribution: $contribution_id with error " . $e->getMessage()
     );
@@ -776,7 +776,7 @@ function wmf_civicrm_mark_refund(
       'refund_trxn_id' => $refund_gateway_txn_id,
     ]);
   }
-  catch (CiviCRM_API3_Exception $e) {
+  catch (CRM_Core_Exception $e) {
     throw new WMFException(
       WMFException::IMPORT_CONTRIB,
       "Cannot mark original contribution as refunded:
@@ -815,7 +815,7 @@ function wmf_civicrm_mark_refund(
           wmf_civicrm_get_custom_field_name('no_thank_you') => 1,
         ]);
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         throw new WMFException(
           WMFException::IMPORT_CONTRIB,
           "Cannot create new contribution for the refund difference:
