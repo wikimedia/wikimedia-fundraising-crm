@@ -15,6 +15,7 @@ use Civi\WMFTransaction;
 class UpiDonationsQueueConsumer extends QueueConsumer {
 
   public function processMessage(array $message) {
+    $messageObject = new RecurDonationMessage($message);
     // Look up contribution_recur record
     $contributionRecur = $this->getExistingContributionRecur($message);
 
@@ -41,7 +42,7 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
     }
     else {
       // This is the first donation. Set up the subscription.
-      $message['contribution_recur_id'] = $this->insertContributionRecur($message);
+      $message['contribution_recur_id'] = $this->insertContributionRecur($messageObject);
     }
 
     QueueWrapper::push('donations', $message);
@@ -120,15 +121,13 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
    * Insert a new contribution_recur record, payment_token record, and if
    * necessary a new contact record.
    *
-   * @param array $message
+   * @param $recurMessage
    *
    * @return int the resulting contribution_recur record's ID
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  protected function insertContributionRecur(array $message): int {
-    $recurMessage = new RecurDonationMessage($message);
+  protected function insertContributionRecur($recurMessage): int {
 
     $normalized = $recurMessage->normalize();
     $normalized = wmf_civicrm_add_contribution_tracking_if_missing($normalized);
