@@ -840,33 +840,6 @@ function wmf_civicrm_mark_refund(
 }
 
 /**
- * @param array $contribution
- *
- * @return array
- */
-function wmf_civicrm_get_wmf_contribution_extra($contribution) {
-  $extra = [];
-
-  if (!empty($contribution['trxn_id'])) {
-    try {
-      $transaction = WMFTransaction::from_unique_id($contribution['trxn_id']);
-      $extra['gateway'] = strtolower($transaction->gateway);
-      $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
-    }
-    catch (WMFException $ex) {
-      \Civi::log('wmf')->info('wmf_civicrm: Failed to parse trxn_id: {trxn_id}, {message}',
-        ['trxn_id' => $contribution['trxn_id'], 'message' => $ex->getMessage()]
-      );
-    }
-  }
-
-  if (!empty($contribution['source'])) {
-    $extra = array_merge($extra, wmf_civicrm_get_original_currency_and_amount_from_source($contribution['source'], $contribution['total_amount']));
-  }
-  return $extra;
-}
-
-/**
  * Get original currency & amount
  *
  * The source field holds the amount & currency - parse it out
