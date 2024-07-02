@@ -797,7 +797,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       try {
         $ids = $this->getGatewayIDs();
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         $ids = [0];
       }
       $this->callAPISuccess('Contribution', 'get', [
