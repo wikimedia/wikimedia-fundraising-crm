@@ -129,45 +129,25 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $message->isPaypal() &&
       strpos($msg['subscr_id'], 'I-') === 0
     ) {
-      $recur_record = wmf_civicrm_get_legacy_paypal_subscription($msg);
-      if ($recur_record) {
-        Civi::log('wmf')->info('Updating legacy paypal contribution recur row');
-        // We found an existing legacy PayPal recurring record for the email.
-        // Update it to make sure it's not mistakenly canceled, and while we're
-        // at it, stash the new subscr_id in unused field processor_id, in case
-        // we need it later.
-        ContributionRecur::update(FALSE)
-          ->addWhere('id', '=', $recur_record->id)
-          ->setValues([
-            'contribution_status_id.name' => 'In Progress',
-            'cancel_date' => NULL,
-            'end_date' => NULL,
-            'trxn_id' => $msg['subscr_id'],
-          ])->execute();
-        $msg['gateway'] = 'paypal';
-        $message->setContributionRecurID($recur_record->id);
+      Civi::log('wmf')->info('Creating new contribution_recur record while processing a subscr_payment');
+      // PayPal has just not been sending subscr_signup messages for a lot of
+      // messages lately. Insert a whole new contribution_recur record.
+      $startMessage = [
+        'txn_type' => 'subscr_signup',
+        ] + $msg;
+      $this->importSubscriptionSignup($startMessage);
+      // @todo we shouldn't need this check - the sign up processing should
+      // fail it if ... fails & the lookup happens in the donations queue anyway
+      // (which would also fail if it needed to).
+      $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
+      if (!$recur_record) {
+        Civi::log('wmf')->notice('recurring: Fallback contribution_recur record creation failed.');
+        throw new WMFException(
+          WMFException::IMPORT_SUBSCRIPTION,
+          "Could not create the initial recurring record for subscr_id {$msg['subscr_id']}"
+        );
       }
-      else {
-        Civi::log('wmf')->info('Creating new contribution_recur record while processing a subscr_payment');
-        // PayPal has just not been sending subscr_signup messages for a lot of
-        // messages lately. Insert a whole new contribution_recur record.
-        $startMessage = [
-          'txn_type' => 'subscr_signup',
-          ] + $msg;
-        $this->importSubscriptionSignup($startMessage);
-        // @todo we shouldn't need this check - the sign up processing should
-        // fail it if ... fails & the lookup happens in the donations queue anyway
-        // (which would also fail if it needed to).
-        $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
-        if (!$recur_record) {
-          Civi::log('wmf')->notice('recurring: Fallback contribution_recur record creation failed.');
-          throw new WMFException(
-            WMFException::IMPORT_SUBSCRIPTION,
-            "Could not create the initial recurring record for subscr_id {$msg['subscr_id']}"
-          );
-        }
-        $message->setContributionRecurID($recur_record->id);
-      }
+      $message->setContributionRecurID($recur_record->id);
     }
     if (!$message->getContributionRecurID()) {
       Civi::log('wmf')->notice('recurring: Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');

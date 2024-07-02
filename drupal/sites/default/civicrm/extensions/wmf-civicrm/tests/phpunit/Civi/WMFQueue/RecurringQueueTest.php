@@ -222,57 +222,6 @@ class RecurringQueueTest extends BaseQueueTestCase {
   }
 
   /**
-   * Deal with a bad situation caused by PayPal's botched subscr_id migration.
-   * See comment on RecurringQueueConsumer::importSubscriptionPayment.
-   *
-   * @throws \CRM_Core_Exception
-   */
-  public function testRecurringPaymentPaypalScrewySubscrId(): void {
-    $email = 'test_recur_' . mt_rand() . '@example.org';
-    \Civi::$statics['wmf_civicrm_get_legacy_paypal_subscription'] = 0;
-    // Set up an old-style PayPal recurring subscription with S-XXXX subscr_id
-    $subscr_id = 'S-' . mt_rand();
-    $values = [
-      'gateway' => 'paypal',
-      'email' => $email,
-      'contribution_tracking_id' => $this->addContributionTrackingRecord(),
-      'subscr_id' => $subscr_id,
-    ];
-    $this->processRecurringSignup($values);
-
-    // Import an initial payment with consistent gateway and subscr_id
-    $values['email'] = $email;
-    $values['gateway'] = 'paypal';
-    $oldStyleMessage = $this->getRecurringPaymentMessage($values);
-
-    $this->processMessage($oldStyleMessage);
-
-    // New payment comes in with subscr ID format that we associate
-    // with paypal_ec, so we mis-tag the gateway.
-    $new_subscr_id = 'I-' . mt_rand();
-    $values['subscr_id'] = $new_subscr_id;
-    $values['gateway'] = 'paypal_ec';
-    $values['gateway_txn_id'] = 456789;
-    $newStyleMessage = $this->getRecurringPaymentMessage($values);
-
-    $this->processMessage($newStyleMessage);
-    // It should be imported as a paypal donation, not paypal_ec
-    $contribution = $this->getContributionForMessage(['gateway' => 'paypal'] + $newStyleMessage);
-
-    $contributionRecur = ContributionRecur::get(FALSE)
-      ->addWhere('id', '=', $contribution['contribution_recur_id'])
-      ->execute()->single();
-
-    // Finally, we should have stuck the new ID in the processor_id field
-    $this->assertEquals($new_subscr_id, $contributionRecur['trxn_id']);
-
-    // Now import again & make sure we find it rather than doing another loop-de-loop
-    // of our 2018 outgoing code.
-    $this->processMessage($newStyleMessage);
-    $this->assertEquals(1, \Civi::$statics['wmf_civicrm_get_legacy_paypal_subscription']);
-  }
-
-  /**
    * Test that processing more than one recurring payment creates separate contributions.
    *
    * This is to ensure that (e.g.) monthly payments each get their own records.
