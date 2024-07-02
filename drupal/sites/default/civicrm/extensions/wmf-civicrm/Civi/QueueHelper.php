@@ -219,13 +219,18 @@ class QueueHelper {
         }
       }
       civicrm_api4($entity, $action, $runParams);
-      $reQueue = FALSE;
+
+      $reQueue = TRUE;
       foreach ($incrementParameters as $key => $incrementParameter) {
         if (empty($incrementParameter['max']) || $incrementParameter['value'] < $incrementParameter['max']) {
           $incrementParameters[$key]['value'] += $incrementParameter['increment'];
-          $reQueue = TRUE;
+        }
+        else {
+          // If max is set & met on any parameter we are done.
+          $reQueue = FALSE;
         }
       }
+
       if ($reQueue) {
         // Not finished, queue another pass.
         $task = new \CRM_Queue_Task([self::class, 'doApi4'], [

@@ -270,14 +270,9 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       }
     }
 
-    // Set no_thank_you to recurring if it's the 2nd+ of any recurring payments
-    if ($message->getRecurringPriorContributionValue('id')) {
-      $msg['contribution_extra.no_thank_you'] = 'recurring';
-    }
-
     // Insert the contribution record.
     $this->startTiming('message_contribution_insert');
-    $contribution = $this->importContribution($msg);
+    $contribution = $this->importContribution($message, $msg);
     $this->stopTiming('message_contribution_insert');
 
     if ($message->getContributionTrackingID()
@@ -304,15 +299,16 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    *
    * This is an internal method, you must be looking for
    *
+   * @param \Civi\WMFQueueMessage\DonationMessage $message
    * @param array $msg
    *
    * @return array
    *
-   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
-   *
+   * @throws \Civi\Core\Exception\DBQueryException
+   * @throws \Civi\WMFException\WMFException
    */
-  private function importContribution($msg) {
+  private function importContribution(DonationMessage $message, array $msg): array {
     $transaction = WMFTransaction::from_message($msg);
     $trxn_id = $transaction->get_unique_id();
 
@@ -331,6 +327,11 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'check_number' => $msg['check_number'],
       'debug' => TRUE,
     ];
+
+    // Set no_thank_you to recurring if it's the 2nd+ of any recurring payments
+    if ($message->getRecurringPriorContributionValue('id')) {
+      $contribution['contribution_extra.no_thank_you'] = 'recurring';
+    }
 
     // Add the contribution status if its known and not completed
     if (!empty($msg['contribution_status_id'])) {
