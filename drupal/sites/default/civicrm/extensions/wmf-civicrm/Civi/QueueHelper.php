@@ -34,7 +34,7 @@ class QueueHelper {
    *
    * @return $this
    */
-  public function setRunAs(?int $runAs): QueueHelper {
+  public function setRunAs($runAs): QueueHelper {
     $this->runAs = $runAs;
     return $this;
   }
