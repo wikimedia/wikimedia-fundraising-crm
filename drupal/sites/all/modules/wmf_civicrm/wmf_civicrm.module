@@ -866,29 +866,6 @@ function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_
 }
 
 /**
- * @param int $contactID
- *
- * @return array
- * @throws \CRM_Core_Exception
- */
-function _wmf_civicrm_get_contact_last_donation_data(int $contactID): array {
-  $contactExistingCustomData = Contact::get(FALSE)->addWhere('id', '=', $contactID)
-    ->addSelect(
-      'wmf_donor.last_donation_currency',
-      'wmf_donor.last_donation_amount',
-      'wmf_donor.last_donation_date',
-      'wmf_donor.last_donation_usd'
-    )
-    ->execute()->first();
-  return [
-    'amount' => $contactExistingCustomData['wmf_donor.last_donation_amount'],
-    'date' => $contactExistingCustomData['wmf_donor.last_donation_date'],
-    'amount_usd' => $contactExistingCustomData['wmf_donor.last_donation_usd'],
-    'currency' => $contactExistingCustomData['wmf_donor.last_donation_currency'],
-  ];
-}
-
-/**
  * Expand CiviCRM DAO results object into an array of rows as array
  *
  * @param $dao CRM_Core_DAO
