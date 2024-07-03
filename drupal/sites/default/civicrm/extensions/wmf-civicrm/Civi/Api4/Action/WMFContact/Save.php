@@ -175,7 +175,7 @@ class Save extends AbstractAction {
         $phone_result = civicrm_api3('Phone', 'Create', [
           // XXX all the fields are nullable, should we set any others?
           'contact_id' => (int) $contact_result['id'],
-          'location_type_id' => wmf_civicrm_get_default_location_type_id(),
+          'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
           'phone' => $msg['phone'],
           'phone_type_id' => 'Phone',
           'is_primary' => 1,
