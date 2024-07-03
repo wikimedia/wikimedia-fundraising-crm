@@ -3,8 +3,6 @@
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Contribution;
 
-define('ImportMessageTest_campaign', 'test mail code here + ' . mt_rand());
-
 /**
  * @group Import
  * @group Pipeline
@@ -41,7 +39,6 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
 
   public function setUp(): void {
     parent::setUp();
-    wmf_civicrm_ensure_option_value_exists(wmf_civicrm_get_direct_mail_field_option_id(), ImportMessageTest_campaign);
     $geoCoders = civicrm_api3('Geocoder', 'get', ['is_active' => 1]);
     $this->assertEquals(1, $geoCoders['count']);
   }
@@ -63,7 +60,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
       'installments' => 0,
       'start_date' => '2018-06-20',
       'create_date' => '2018-06-20',
-      'cancel_date' => null,
+      'cancel_date' => NULL,
       'processor_id' => 1,
       'cycle_day' => 1,
       'trxn_id' => "RECURRING TEST_GATEWAY test" . mt_rand(0, 1000),
