@@ -10,7 +10,6 @@ use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
-require_once 'wmf_civicrm.hooks.php';
 
 /**
  * @todo - delete or migrate to a setting.
@@ -353,7 +352,7 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
   try {
     civicrm_api3('Address', 'replace', $address_params);
   }
-  catch (CiviCRM_API3_Exception $e) {
+  catch (CRM_Core_Exception $e) {
     // Constraint violations occur when data is rolled back to resolve a deadlock.
     $code = $e->getErrorCode() === 'constraint violation' ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTACT;
     throw new WMFException($code, "Couldn't store address for the contact.", $e->getExtraParams());
@@ -723,7 +722,7 @@ function wmf_civicrm_mark_refund(
       ],
     ]);
   }
-  catch (CiviCRM_API3_Exception $e) {
+  catch (CRM_Core_Exception $e) {
     throw new WMFException(
       WMFException::INVALID_MESSAGE, "Could not load contribution: $contribution_id with error " . $e->getMessage()
     );
@@ -777,7 +776,7 @@ function wmf_civicrm_mark_refund(
       'refund_trxn_id' => $refund_gateway_txn_id,
     ]);
   }
-  catch (CiviCRM_API3_Exception $e) {
+  catch (CRM_Core_Exception $e) {
     throw new WMFException(
       WMFException::IMPORT_CONTRIB,
       "Cannot mark original contribution as refunded:
@@ -816,7 +815,7 @@ function wmf_civicrm_mark_refund(
           wmf_civicrm_get_custom_field_name('no_thank_you') => 1,
         ]);
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
         throw new WMFException(
           WMFException::IMPORT_CONTRIB,
           "Cannot create new contribution for the refund difference:
@@ -886,23 +885,6 @@ function wmf_civicrm_dao_to_list($dao) {
     return FALSE;
   }
   return $result;
-}
-
-/**
- * Get options for a field.
- *
- * @param string $entity
- * @param string $field
- *
- * @return array
- * @throws \CiviCRM_API3_Exception
- */
-function wmf_civicrm_get_options($entity, $field) {
-  if (!isset(\Civi::$statics['wmf_civicrm'][$entity][$field])) {
-    $options = civicrm_api3($entity, 'getoptions', ['field' => $field]);
-    \Civi::$statics['wmf_civicrm'][$entity][$field] = $options['values'];
-  }
-  return \Civi::$statics['wmf_civicrm'][$entity][$field];
 }
 
 /**

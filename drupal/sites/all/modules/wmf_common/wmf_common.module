@@ -1,12 +1,9 @@
 <?php
 
 use SmashPig\Core\Context;
-use SmashPig\Core\DataStores\DamagedDatabase;
-use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\GlobalConfiguration;
 use SmashPig\Core\Logging\Logger;
 use SmashPig\Core\ProviderConfiguration;
-use Civi\WMFQueue\QueueConsumer;
 
 require_once 'failmail.php';
 require_once 'wmf_dates.php';
@@ -79,54 +76,10 @@ function wmf_common_settings() {
   return system_settings_form($form);
 }
 
-/**
- * Return the deployed source revision of this subsystem
- *
- * @return string
- *
- * TODO: This is a site-specific kludge.  Move to deployment configuration,
- * set a variable in settings_local.php
- */
-function wmf_common_get_my_revision() {
-  static $sourceRevision;
-
-  if (defined('WMF_SOURCE_REVISION')) {
-    return WMF_SOURCE_REVISION;
-  }
-  else {
-    if (!$sourceRevision) {
-      $versionStampPath = DRUPAL_ROOT . "/.version-stamp";
-      if (file_exists($versionStampPath)) {
-        $versionId = file_get_contents($versionStampPath);
-        $sourceRevision = trim($versionId);
-      }
-      else {
-        $sourceRevision = 'unknown';
-      }
-    }
-  }
-  return $sourceRevision;
-}
-
 function wmf_common_locale_civi_to_mediawiki($locale) {
   // FIXME: This may prevent some localization but will allow more donors
   // to see translated pages
   return strtolower(substr($locale, 0, 2));
-}
-
-/**
- * Takes a list of selected and unselected ids provided by tableselect
- * and returns just those which are selected.
- *
- * @param array $ids
- *
- * @return array
- */
-function wmf_common_get_selected($ids) {
-  $selected = array_filter($ids, function($n) {
-    return $n;
-  });
-  return array_keys($selected);
 }
 
 function wmf_common_create_smashpig_context($logPrefix, $provider = ProviderConfiguration::NO_PROVIDER) {
