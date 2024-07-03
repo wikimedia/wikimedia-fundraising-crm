@@ -1,7 +1,5 @@
 <?php
 
-use Civi\Api4\Contact;
-use Civi\Api4\CustomField;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\Database;
 use Civi\WMFStatistic\ImportStatsCollector;
@@ -526,31 +524,6 @@ function wmf_civicrm_add_contribution_tracking_if_missing($msg) {
   \Civi::log('wmf')->debug('wmf_civicrm: Newly inserted contribution tracking id: {id}', ['id' => $contribution_tracking_id]);
   $msg['contribution_tracking_id'] = $contribution_tracking_id;
   return $msg;
-}
-
-/**
- * Get the name value for the option group for direct mail.
- *
- * Note that this function should become obsolete - I wanted to use
- * the code below in the calling function instead but it didn't work and
- * I want to check with Coleman first.
- *
- * Contribution::getFields(FALSE)
- * ->setLoadOptions(TRUE)
- * ->addWhere('field_name', '=', 'Gift_Data:Campaign')
- * ->execute();
- *}
- *
- * @throws \CRM_Core_Exception
- */
-function wmf_civicrm_get_direct_mail_field_option_id() {
-  if (!isset(\Civi::$statics['wmf-civicrm']['appeal_field_id'])) {
-    \Civi::$statics['wmf-civicrm']['appeal_field_id'] = CustomField::get(FALSE)
-      ->addWhere('name', '=', 'Appeal')
-      ->setSelect(['option_group_id'])
-      ->execute()->first()['option_group_id'];
-  }
-  return \Civi::$statics['wmf-civicrm']['appeal_field_id'];
 }
 
 /**
