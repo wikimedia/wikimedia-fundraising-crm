@@ -129,7 +129,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
     $this->callAPISuccess('Address', 'Create', [
       'contact_id' => $this->ids['Contact']['existing'],
-      'country' => wmf_civicrm_get_country_id('FR'),
+      'country' => 'France',
       'street_address' => '777 Trompe L\'Oeil Boulevard',
       'location_type_id' => 1,
     ]);
@@ -186,7 +186,7 @@ class ImportMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     ]);
     $this->callAPISuccess('Address', 'Create', [
       'contact_id' => $this->ids['Contact']['existing'],
-      'country' => wmf_civicrm_get_country_id('FR'),
+      'country' => 'France',
       'street_address' => '777 Trompe L\'Oeil Boulevard',
       'location_type_id' => 1,
     ]);
