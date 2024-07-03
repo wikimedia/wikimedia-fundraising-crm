@@ -2423,6 +2423,18 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Migrate a couple more Drupal variables to Civi settings
+   * @return bool
+   */
+  public function upgrade_4540(): bool {
+    $this->convertDrupalVariableToCiviCRMSetting([
+      'wmf_common_requeue_delay' => 'wmf_requeue_delay',
+      'wmf_common_requeue_max' => 'wmf_requeue_max',
+    ]);
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void

@@ -47,4 +47,40 @@ return [
     ],
     'settings_pages' => ['wmf-queue' => ['weight' => 30]],
   ],
+  'wmf_requeue_delay' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_requeue_delay',
+    'title' => E::ts('Requeue Delay'),
+    'default' => 1200,
+    'type' => 'Integer',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts(
+      'Number of seconds to wait before trying a re-queueable failed message again'
+    ),
+    'html_type' => 'number',
+    'html_attributes' => [
+      'size' => '5',
+    ],
+    'settings_pages' => ['wmf-queue' => ['weight' => 40]],
+  ],
+  'wmf_requeue_max' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_requeue_max',
+    'title' => E::ts('Maximum retries'),
+    'default' => 10,
+    'type' => 'Integer',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts(
+      'Maximum number of times to re-queue a failed message'
+    ),
+    'html_type' => 'number',
+    'html_attributes' => [
+      'size' => '5',
+    ],
+    'settings_pages' => ['wmf-queue' => ['weight' => 50]],
+  ],
 ];
