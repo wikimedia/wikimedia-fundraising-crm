@@ -92,7 +92,7 @@ function wmf_civicrm_ensure_option_value_exists($group_name, $value) {
     civicrm_api3('OptionValue', 'create', $params);
     // It won't take much to rebuild this & we don't know the entity.
     // This should be rare.
-    wmf_civicrm_flush_cached_options();
+    \Civi::$statics['wmf_civicrm'] = [];
   }
 }
 
@@ -885,13 +885,6 @@ function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
     }
   }
   return TRUE;
-}
-
-/**
- * Flush statically cached option values.
- */
-function wmf_civicrm_flush_cached_options() {
-  \Civi::$statics['wmf_civicrm'] = [];
 }
 
 /**
