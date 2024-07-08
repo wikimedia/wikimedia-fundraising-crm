@@ -18,10 +18,11 @@
   <version>1.0</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.50</ver>
+    <ver>5.76</ver>
   </compatibility>
   <comments>Migrate from drupal in progress</comments>
   <classloader>
+    <psr0 prefix="CRM_" path="."/>
     <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
   <civix>
@@ -34,7 +35,7 @@
     <mixin>mgd-php@1.0.0</mixin>
     <mixin>setting-php@1.0.0</mixin>
     <mixin>entity-types-php@1.0.0</mixin>
-    <mixin>smarty-v2@1.0.1</mixin>
+    <mixin>smarty@1.0.3</mixin>
   </mixins>
   <upgrader>CRM_ExchangeRates_Upgrader</upgrader>
 </extension>
