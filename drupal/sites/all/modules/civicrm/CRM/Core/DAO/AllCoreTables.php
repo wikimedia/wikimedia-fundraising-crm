@@ -91,6 +91,15 @@ class CRM_Core_DAO_AllCoreTables {
   }
 
   /**
+   * Get the declared token classes.
+   * @return string[]
+   *   [table_name => token class]
+   */
+  public static function tokenClasses() {
+    return array_column(self::getEntities(), 'token_class', 'name');
+  }
+
+  /**
    * @return array
    *   List of indices.
    */
@@ -181,12 +190,19 @@ class CRM_Core_DAO_AllCoreTables {
   /**
    * Get the DAO for a BAO class.
    *
-   * @param string $baoName
+   * @param string $className
    *
    * @return string
    */
-  public static function getCanonicalClassName($baoName) {
-    return str_replace('_BAO_', '_DAO_', ($baoName ?? ''));
+  public static function getCanonicalClassName($className) {
+    while (!str_contains($className, '_DAO_')) {
+      $parent = get_parent_class($className);
+      if (!$parent || $parent === 'CRM_Core_DAO') {
+        return $className;
+      }
+      $className = $parent;
+    }
+    return $className;
   }
 
   /**
@@ -399,7 +415,7 @@ class CRM_Core_DAO_AllCoreTables {
    *   Ex: 'address'.
    * @param bool $prefix
    * @param array $foreignDAOs
-   *   Historically used for... something? Currently never set by any core BAO.
+   *   Will merge in exportable fields from other DAOs.
    * @return array
    * @internal
    */
@@ -417,7 +433,7 @@ class CRM_Core_DAO_AllCoreTables {
       }
     }
 
-    // TODO: Remove this bit; no core DAO actually uses it
+    // Merge in exportable fields from other DAOs
     foreach ($foreignDAOs as $foreignDAO) {
       $exports = array_merge($exports, $foreignDAO::export(TRUE));
     }
@@ -434,8 +450,7 @@ class CRM_Core_DAO_AllCoreTables {
    *   Ex: 'address'.
    * @param bool $prefix
    * @param array $foreignDAOs
-   *   Historically used for... something? Currently never set by any core BAO.
-   * @return array
+   *   Will merge in importable fields from other DAOs.   * @return array
    * @internal
    */
   public static function getImports($dao, $labelName, $prefix, $foreignDAOs = []): array {
@@ -452,7 +467,7 @@ class CRM_Core_DAO_AllCoreTables {
       }
     }
 
-    // TODO: Remove this bit; no core DAO actually uses it
+    // Merge in importable fields from other DAOs
     foreach ($foreignDAOs as $foreignDAO) {
       $imports = array_merge($imports, $foreignDAO::import(TRUE));
     }

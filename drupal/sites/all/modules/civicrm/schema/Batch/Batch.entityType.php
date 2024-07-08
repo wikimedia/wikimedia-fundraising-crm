@@ -9,6 +9,7 @@ return [
     'title_plural' => ts('Batches'),
     'description' => ts('Stores the details of a batch operation Used primarily when doing batch operations with an external system.'),
     'add' => '3.3',
+    'label_field' => 'title',
   ],
   'getIndices' => fn() => [
     'UI_name' => [
@@ -36,9 +37,6 @@ return [
       'input_type' => 'Text',
       'description' => ts('Variable name/programmatic handle for this batch.'),
       'add' => '3.3',
-      'input_attrs' => [
-        'maxlength' => 64,
-      ],
     ],
     'title' => [
       'title' => ts('Batch Title'),
@@ -47,9 +45,6 @@ return [
       'localizable' => TRUE,
       'description' => ts('Friendly Name.'),
       'add' => '4.2',
-      'input_attrs' => [
-        'maxlength' => 255,
-      ],
     ],
     'description' => [
       'title' => ts('Batch Description'),

@@ -2496,4 +2496,21 @@ class CRM_Utils_Date {
     return '(' . implode('|', $months) . ')';
   }
 
+  /**
+   * Sql expression to calculate the upcoming anniversary of a given date.
+   *
+   * The IF() accounts for the possibility that the date has already passed, & so skips to next year.
+   * The INTERVAL() functions correctly handle leap years.
+   *
+   * @param string $dateColumn
+   * @return string
+   */
+  public static function getAnniversarySql(string $dateColumn): string {
+    return "IF(
+      DATE_ADD($dateColumn, INTERVAL(YEAR(CURDATE()) - YEAR($dateColumn)) YEAR) < CURDATE(),
+      DATE_ADD($dateColumn, INTERVAL(1 + YEAR(CURDATE()) - YEAR($dateColumn)) YEAR),
+      DATE_ADD($dateColumn, INTERVAL(YEAR(CURDATE()) - YEAR($dateColumn)) YEAR)
+    )";
+  }
+
 }

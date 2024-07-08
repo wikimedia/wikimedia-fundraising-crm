@@ -213,7 +213,7 @@ class CRM_Utils_Token {
   /**
    * Replace all the domain-level tokens in $str
    *
-   * @deprecated
+   * @deprecated since ages ago will be removed around 5.90
    *
    * @param string $str
    *   The string with tokens to be replaced.
@@ -235,6 +235,7 @@ class CRM_Utils_Token {
     $knownTokens = NULL,
     $escapeSmarty = FALSE
   ) {
+    CRM_Core_Error::deprecatedFunctionWarning('use the Token Processor');
     $key = 'domain';
     if (
       !$knownTokens || empty($knownTokens[$key])
@@ -1742,12 +1743,28 @@ class CRM_Utils_Token {
           'receipt_text_renewal' => 'receipt_text',
           '$isAmountZero' => ts('no longer available / relevant'),
           '$dataArray' => ts('see default template for how to show this'),
+          '$mem_start_date' => 'membership.start_date',
+          '$mem_end_date' => 'membership.end_date',
+          '$mem_join_date' => 'membership.join_date',
+          '$membership_name' => 'membership.membership_type_id:name',
+          '$mem_status' => 'membership.membership_status_id:name',
+          '$contributionStatus' => 'contribution.contribution_status_id:name',
+          '$contributionStatusID' => 'contribution.contribution_status_id',
+          '$receive_date' => 'contribution.receive_date',
+          '$formValues' => 'use relevant token/s',
+          '$module' => 'unknown',
+          '$currency' => 'contribution.currency',
         ],
         'membership_online_receipt' => [
           '$dataArray' => ts('see default template for how to show this'),
           '$mem_start_date' => 'membership.start_date',
           '$mem_end_date' => 'membership.end_date',
           '$mem_join_date' => 'membership.join_date',
+          '$membership_name' => 'membership.membership_type_id:name',
+          '$mem_type_id' => 'membership.membership_type_id',
+          '$mem_status' => 'membership.membership_status_id:name',
+          '$receive_date' => 'contribution.receive_date',
+          '$currency' => 'contribution.currency',
         ],
         'event_offline_receipt' => [
           '$contributeMode' => ts('no longer available / relevant'),

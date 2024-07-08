@@ -566,7 +566,7 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
    * @param string $name
    */
   public function buildCustom($id, $name) {
-    if ($name === 'customPost') {
+    if ($name === 'customPost' || $name === 'additionalCustomPost') {
       $this->assign('postPageProfiles', []);
     }
     $this->assign($name, []);
@@ -629,7 +629,7 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
     ) {
       CRM_Core_BAO_Address::checkContactSharedAddressFields($fields, $contactID);
     }
-    if ($name === 'customPost') {
+    if ($name === 'customPost' || $name === 'additionalCustomPost') {
       $postPageProfiles = [];
       foreach ($fields as $fieldName => $field) {
         $postPageProfiles[$field['groupName']][$fieldName] = $field;
@@ -1771,7 +1771,7 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
 
         CRM_Event_Form_Registration_Confirm::fixLocationFields($value, $fields, $this);
         //for free event or additional participant, dont create billing email address.
-        if (empty($value['is_primary']) || !$this->_values['event']['is_monetary']) {
+        if (empty($value['is_primary'])) {
           unset($value["email-{$this->_bltID}"]);
         }
 

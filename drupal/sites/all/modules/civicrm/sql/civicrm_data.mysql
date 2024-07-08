@@ -10948,17 +10948,6 @@ INSERT INTO civicrm_option_group
         </td>
       </tr>
 
-      {if {participant.role_id|boolean}}
-      <tr>
-        <td {$labelStyle}>
-          {ts}Participant Role{/ts}
-        </td>
-        <td {$valueStyle}>
-         {participant.role_id:label}
-        </td>
-      </tr>
-      {/if}
-
       {if {event.is_show_location|boolean}}
             <tr>
               <td colspan="2" {$valueStyle}>
@@ -11220,17 +11209,6 @@ INSERT INTO civicrm_option_group
         </td>
       </tr>
 
-      {if {participant.role_id|boolean}}
-      <tr>
-        <td {$labelStyle}>
-          {ts}Participant Role{/ts}
-        </td>
-        <td {$valueStyle}>
-         {participant.role_id:label}
-        </td>
-      </tr>
-      {/if}
-
       {if {event.is_show_location|boolean}}
             <tr>
               <td colspan="2" {$valueStyle}>
@@ -11371,17 +11349,6 @@ INSERT INTO civicrm_option_group
        {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date}{/if}{/if}
       </td>
      </tr>
-
-     {if "{participant.role_id:label}" neq \'Attendee\'}
-      <tr>
-       <td {$labelStyle}>
-        {ts}Participant Role{/ts}
-       </td>
-       <td {$valueStyle}>
-         {participant.role_id:label}
-       </td>
-      </tr>
-     {/if}
 
      {if {event.is_show_location|boolean}}
       <tr>
@@ -11817,17 +11784,6 @@ INSERT INTO civicrm_option_group
        {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date}{/if}{/if}
       </td>
      </tr>
-
-     {if "{participant.role_id:label}" neq \'Attendee\'}
-      <tr>
-       <td {$labelStyle}>
-        {ts}Participant Role{/ts}
-       </td>
-       <td {$valueStyle}>
-         {participant.role_id:label}
-       </td>
-      </tr>
-     {/if}
 
      {if {event.is_show_location|boolean}}
       <tr>
@@ -12277,17 +12233,6 @@ INSERT INTO civicrm_option_group
             {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
           </td>
         </tr>
-
-        {if "{participant.role_id:label}" neq \'Attendee\'}
-          <tr>
-            <td {$labelStyle}>
-              {ts}Participant Role{/ts}
-            </td>
-            <td {$valueStyle}>
-              {participant.role_id:label}
-            </td>
-          </tr>
-        {/if}
 
         {if {event.is_show_location|boolean}}
           <tr>
@@ -12758,17 +12703,6 @@ INSERT INTO civicrm_option_group
             {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
           </td>
         </tr>
-
-        {if "{participant.role_id:label}" neq \'Attendee\'}
-          <tr>
-            <td {$labelStyle}>
-              {ts}Participant Role{/ts}
-            </td>
-            <td {$valueStyle}>
-              {participant.role_id:label}
-            </td>
-          </tr>
-        {/if}
 
         {if {event.is_show_location|boolean}}
           <tr>
@@ -13580,14 +13514,6 @@ INSERT INTO civicrm_option_group
        {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
       </td>
      </tr>
-     <tr>
-      <td {$labelStyle}>
-       {ts}Participant Role{/ts}:
-      </td>
-      <td {$valueStyle}>
-       {participant.role_id:label}
-      </td>
-     </tr>
     {if {event.is_show_location|boolean}}
         <tr>
           <td colspan="2" {$valueStyle}>
@@ -13737,14 +13663,6 @@ INSERT INTO civicrm_option_group
       <td colspan="2" {$valueStyle}>
        {event.title}<br />
        {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
-      </td>
-     </tr>
-     <tr>
-      <td {$labelStyle}>
-       {ts}Participant Role{/ts}:
-      </td>
-      <td {$valueStyle}>
-       {participant.role_id:label}
       </td>
      </tr>
     {if {event.is_show_location|boolean}}
@@ -13918,14 +13836,6 @@ INSERT INTO civicrm_option_group
       <td colspan="2" {$valueStyle}>
        {event.title}<br />
        {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
-      </td>
-     </tr>
-     <tr>
-      <td {$labelStyle}>
-       {ts}Participant Role{/ts}:
-      </td>
-      <td {$valueStyle}>
-        {participant.role_id:label}
       </td>
      </tr>
      {if {event.is_show_location|boolean}}
@@ -14120,14 +14030,6 @@ INSERT INTO civicrm_option_group
        {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
       </td>
      </tr>
-     <tr>
-      <td {$labelStyle}>
-       {ts}Participant Role{/ts}:
-      </td>
-      <td {$valueStyle}>
-        {participant.role_id:label}
-      </td>
-     </tr>
      {if {event.is_show_location|boolean}}
         <tr>
           <td colspan="2" {$valueStyle}>
@@ -14309,15 +14211,6 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
        {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
       </td>
      </tr>
-     <tr>
-      <td {$labelStyle}>
-       {ts}Participant Role{/ts}:
-      </td>
-      <td {$valueStyle}>
-        {participant.role_id:label}
-      </td>
-     </tr>
-
     {if {event.is_show_location|boolean}}
         <tr>
           <td colspan="2" {$valueStyle}>
@@ -14459,15 +14352,6 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
        {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
       </td>
      </tr>
-     <tr>
-      <td {$labelStyle}>
-       {ts}Participant Role{/ts}:
-      </td>
-      <td {$valueStyle}>
-        {participant.role_id:label}
-      </td>
-     </tr>
-
     {if {event.is_show_location|boolean}}
         <tr>
           <td colspan="2" {$valueStyle}>
@@ -14610,15 +14494,6 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
        {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
       </td>
      </tr>
-     <tr>
-      <td {$labelStyle}>
-       {ts}Participant Role{/ts}:
-      </td>
-      <td {$valueStyle}>
-       {participant.role_id:label}
-      </td>
-     </tr>
-
      {if {event.is_show_location|boolean}}
         <tr>
           <td colspan="2" {$valueStyle}>
@@ -14770,15 +14645,6 @@ or want to inquire about reinstating your registration for this event.{/ts}</p>
        {event.start_date|crmDate:"%A"} {event.start_date|crmDate}{if {event.end_date|boolean}}-{if \'{event.end_date|crmDate:"%Y%m%d"}\' === \'{event.start_date|crmDate:"%Y%m%d"}\'}{event.end_date|crmDate:"Time"}{else}{event.end_date|crmDate:"%A"} {event.end_date|crmDate}{/if}{/if}
       </td>
      </tr>
-     <tr>
-      <td {$labelStyle}>
-       {ts}Participant Role{/ts}:
-      </td>
-      <td {$valueStyle}>
-       {participant.role_id:label}
-      </td>
-     </tr>
-
      {if {event.is_show_location|boolean}}
         <tr>
           <td colspan="2" {$valueStyle}>
@@ -18930,7 +18796,6 @@ VALUES ( @fieldID, 'contribution_amount', 'Contribution Amount', '1', '1', '0', 
 INSERT IGNORE INTO civicrm_extension (`file`,`full_name`,`is_active`,`label`,`name`,`type`) VALUES
 ("sequentialcreditnotes","sequentialcreditnotes","1","Sequential credit notes","Sequential credit notes","module"),
 ("greenwich","greenwich","1","Theme: Greenwich","Theme: Greenwich","module"),
-("financialacls","financialacls","1","Financial ACLs","Financial ACLs","module"),
 ("recaptcha","recaptcha","1","reCAPTCHA","reCAPTCHA","module"),
 ("ckeditor4","ckeditor4","1","CKEditor4","CKEditor4","module"),
 ("flexmailer","org.civicrm.flexmailer","1","FlexMailer","FlexMailer","module"),
@@ -19734,5 +19599,5 @@ INSERT INTO `civicrm_report_instance`
 VALUES
     (  @domainID, 'Survey Details', 'survey/detail', 'Detailed report for canvassing, phone-banking, walk lists or other surveys.', 'access CiviReport', 'a:39:{s:6:"fields";a:2:{s:9:"sort_name";s:1:"1";s:6:"result";s:1:"1";}s:22:"assignee_contact_id_op";s:2:"eq";s:25:"assignee_contact_id_value";s:0:"";s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:17:"street_number_min";s:0:"";s:17:"street_number_max";s:0:"";s:16:"street_number_op";s:3:"lte";s:19:"street_number_value";s:0:"";s:14:"street_name_op";s:3:"has";s:17:"street_name_value";s:0:"";s:15:"postal_code_min";s:0:"";s:15:"postal_code_max";s:0:"";s:14:"postal_code_op";s:3:"lte";s:17:"postal_code_value";s:0:"";s:7:"city_op";s:3:"has";s:10:"city_value";s:0:"";s:20:"state_province_id_op";s:2:"in";s:23:"state_province_id_value";a:0:{}s:13:"country_id_op";s:2:"in";s:16:"country_id_value";a:0:{}s:12:"survey_id_op";s:2:"in";s:15:"survey_id_value";a:0:{}s:12:"status_id_op";s:2:"eq";s:15:"status_id_value";s:1:"1";s:11:"custom_1_op";s:2:"in";s:14:"custom_1_value";a:0:{}s:11:"custom_2_op";s:2:"in";s:14:"custom_2_value";a:0:{}s:17:"custom_3_relative";s:1:"0";s:13:"custom_3_from";s:0:"";s:11:"custom_3_to";s:0:"";s:11:"description";s:75:"Detailed report for canvassing, phone-banking, walk lists or other surveys.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviReport";s:6:"groups";s:0:"";s:9:"domain_id";i:1;}');
 
-UPDATE civicrm_domain SET version = '5.74.4';
+UPDATE civicrm_domain SET version = '5.75.0';
 

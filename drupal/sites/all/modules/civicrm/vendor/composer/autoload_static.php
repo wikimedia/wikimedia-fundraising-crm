@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitaa74d45ec227180963008c14e2673306
+class ComposerStaticInit3dbcb5da658d2c9c4d5a826c039ba1b6
 {
     public static $files = array (
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
@@ -111,6 +111,7 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
         'W' => 
         array (
             'When\\' => 5,
+            'WebSocket\\' => 10,
         ),
         'T' => 
         array (
@@ -133,6 +134,7 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
             'Symfony\\Component\\Filesystem\\' => 29,
             'Symfony\\Component\\EventDispatcher\\' => 34,
             'Symfony\\Component\\DependencyInjection\\' => 38,
+            'Symfony\\Component\\CssSelector\\' => 30,
             'Symfony\\Component\\Config\\' => 25,
             'Svg\\' => 4,
             'Soundasleep\\' => 12,
@@ -147,6 +149,8 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
             'Psr\\Http\\Client\\' => 16,
             'Psr\\Container\\' => 14,
             'Pontedilana\\PhpWeasyPrint\\' => 26,
+            'Phrity\\Util\\' => 12,
+            'Phrity\\Net\\' => 11,
             'PhpOffice\\PhpWord\\' => 18,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
             'Padaliyajay\\PHPAutoprefixer\\' => 28,
@@ -186,6 +190,7 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
         'D' => 
         array (
             'Dompdf\\' => 7,
+            'DMore\\ChromeDriver\\' => 19,
         ),
         'C' => 
         array (
@@ -199,6 +204,7 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
         array (
             'Brick\\Money\\' => 12,
             'Brick\\Math\\' => 11,
+            'Behat\\Mink\\' => 11,
         ),
     );
 
@@ -226,6 +232,10 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
         'When\\' => 
         array (
             0 => __DIR__ . '/..' . '/tplaner/when/src',
+        ),
+        'WebSocket\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phrity/websocket/lib',
         ),
         'TYPO3\\PharStreamWrapper\\' => 
         array (
@@ -291,6 +301,10 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
         array (
             0 => __DIR__ . '/..' . '/symfony/dependency-injection',
         ),
+        'Symfony\\Component\\CssSelector\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/css-selector',
+        ),
         'Symfony\\Component\\Config\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/config',
@@ -335,6 +349,15 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
         'Pontedilana\\PhpWeasyPrint\\' => 
         array (
             0 => __DIR__ . '/..' . '/pontedilana/php-weasyprint/src',
+        ),
+        'Phrity\\Util\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phrity/util-errorhandler/src',
+        ),
+        'Phrity\\Net\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phrity/net-uri/src',
+            1 => __DIR__ . '/..' . '/phrity/net-stream/src',
         ),
         'PhpOffice\\PhpWord\\' => 
         array (
@@ -421,6 +444,10 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
         array (
             0 => __DIR__ . '/..' . '/dompdf/dompdf/src',
         ),
+        'DMore\\ChromeDriver\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/dmore/chrome-mink-driver/src',
+        ),
         'Complex\\' => 
         array (
             0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
@@ -450,6 +477,10 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
         'Brick\\Math\\' => 
         array (
             0 => __DIR__ . '/..' . '/brick/math/src',
+        ),
+        'Behat\\Mink\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/behat/mink/src',
         ),
     );
 
@@ -714,11 +745,11 @@ class ComposerStaticInitaa74d45ec227180963008c14e2673306
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitaa74d45ec227180963008c14e2673306::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitaa74d45ec227180963008c14e2673306::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitaa74d45ec227180963008c14e2673306::$prefixesPsr0;
-            $loader->fallbackDirsPsr0 = ComposerStaticInitaa74d45ec227180963008c14e2673306::$fallbackDirsPsr0;
-            $loader->classMap = ComposerStaticInitaa74d45ec227180963008c14e2673306::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit3dbcb5da658d2c9c4d5a826c039ba1b6::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit3dbcb5da658d2c9c4d5a826c039ba1b6::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit3dbcb5da658d2c9c4d5a826c039ba1b6::$prefixesPsr0;
+            $loader->fallbackDirsPsr0 = ComposerStaticInit3dbcb5da658d2c9c4d5a826c039ba1b6::$fallbackDirsPsr0;
+            $loader->classMap = ComposerStaticInit3dbcb5da658d2c9c4d5a826c039ba1b6::$classMap;
 
         }, null, ClassLoader::class);
     }
