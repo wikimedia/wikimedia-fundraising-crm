@@ -1,49 +1,6 @@
 <?php
 
-use Civi\Api4\ContributionRecur;
 use Civi\WMFException\WMFException;
-
-/**
- * Link a recurring payment to the contribution record
- *
- * @param integer $contribution_id
- * @param integer $contribution_recur_id
- */
-function wmf_civicrm_update_contribution_for_recurring($contribution_id, $contribution_recur_id) {
-  // contribution_id must be set and not null or zero
-  if (empty($contribution_id)) {
-    $error_message = t('`contribution_id` must be set and not empty.');
-    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
-  }
-
-  // contribution_recur_id must be set and not null or zero
-  if (empty($contribution_recur_id)) {
-    $error_message = t('`contribution_recur_id` must be set and not empty.');
-    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
-  }
-  try {
-    $result = civicrm_api3('Contribution', 'create', [
-      'id' => $contribution_id,
-      'contribution_recur_id' => $contribution_recur_id,
-    ]);
-  }
-  catch (CRM_Core_Exception $e) {
-    $error_message = t(
-      'There was a problem linking the contribution [!contribution_id] to the recurring contribution [!contribution_recur_id]: !msg',
-      [
-        '!contribution_id' => $contribution_id,
-        '!contribution_recur_id' => $contribution_recur_id,
-        '!msg' => $e->getMessage(),
-      ]
-    );
-    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
-  }
-  \Civi::log('wmf')->notice('wmf_civicrm: Successfully linked the contribution  {contribution_id} to the recurring contribution {contribution_recur_id}', [
-    'contribution_id' => $contribution_id,
-    'contribution_recur_id' => $contribution_recur_id,
-  ]);
-  return TRUE;
-}
 
 /**
  * Get recurring record in CiviCRM for the given subscriber id

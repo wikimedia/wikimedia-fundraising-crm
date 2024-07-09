@@ -182,6 +182,10 @@ class ContributionRecur {
           wmf_common_create_smashpig_context( 'cancelRecurContribution', 'adyen' );
           $provider = PaymentProviderFactory::getProviderForMethod( 'cc' );
           $response = $provider->cancelAutoRescue( $rescueReference );
+          $rawResponse = json_encode($response->getRawResponse());
+          \Civi::log( 'wmf' )->info(
+            "Successfully send cancel auto rescue request for recurring id $id with rescueReference: $rescueReference and received raw response $rawResponse"
+          );
           if ( $response->isSuccessful() ) {
             \Civi::log( 'wmf' )->info(
               "Successfully send cancel auto rescue request for recurring id $id with rescueReference: $rescueReference"

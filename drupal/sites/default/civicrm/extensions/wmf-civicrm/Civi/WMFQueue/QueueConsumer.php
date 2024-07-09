@@ -75,8 +75,8 @@ abstract class QueueConsumer extends BaseQueueConsumer {
     $requeued = FALSE;
 
     if ($ex->isRequeue()) {
-      $delay = (int) variable_get('wmf_common_requeue_delay', 20 * 60);
-      $maxTries = (int) variable_get('wmf_common_requeue_max', 10);
+      $delay = (int) \Civi::settings()->get('wmf_requeue_delay');
+      $maxTries = (int) \Civi::settings()->get('wmf_requeue_max');
       $ageLimit = $delay * $maxTries;
       // TODO: add a requeueMessage hook that allows modifying
       // the message or the decision to requeue it. Or maybe a
