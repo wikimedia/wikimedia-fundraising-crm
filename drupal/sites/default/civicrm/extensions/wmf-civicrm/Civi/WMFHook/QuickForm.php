@@ -32,19 +32,19 @@ class QuickForm {
       case 'CRM_Contribute_Form_CancelSubscription':
         if ($form->elementExists('cancel_reason')) {
           $form->removeElement('cancel_reason');
-          $props['options'] = ['Financial Reasons' => 'Financial Reasons',
+          $props['options'] = ['Other and Unspecified' => 'Other and Unspecified',
+                                'Financial Reasons' => 'Financial Reasons',
                                 'Duplicate recurring donation' => 'Duplicate recurring donation',
                                 'Wikipedia content related complaint' => 'Wikipedia content related complaint',
                                 'Wikimedia Foundation related complaint' => 'Wikimedia Foundation related complaint',
                                 'Lack of donation management tools' => 'Lack of donation management tools',
                                 'Matching Gift' => 'Matching Gift',
                                 'Unintended recurring donation' => 'Unintended recurring donation',
-                                'Other and Unspecified' => 'Other and Unspecified',
                                 'Chapter' => 'Chapter',
-                                'Automatic Billing Failure' => 'Automatic Billing Failure',
                                 'Update' => 'Update'
                               ];
-          $form->addSelect('cancel_reason', $props);
+          // Adds the modified cancel_reason as required with TRUE
+          $form->addSelect('cancel_reason', $props, TRUE);
         }
 
       case 'CRM_Contribute_Form_Search':
