@@ -529,7 +529,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'contribution_status_id:name' => 'Cancelled',
         'end_date' => $date,
       ];
+      if ($message->isAutoRescue()) {
+        // If the payment processor has told us they gave up on the auto-rescue attempt, we should
+        // clear out the rescue_reference so we don't try to send them another auto-rescue cancel
+        // API call (see civicrm_post hook in WMFHelper\ContributionRecur::cancelRecurAutoRescue)
+        $update_params['contribution_recur_smashpig.rescue_reference'] = '';
+      }
       $this->updateContributionRecurWithErrorHandling($update_params);
+
       // Since the API4 update doesn't create the activity the api3 cancel call does, we create it here
       // Details a bit more vague and both contact IDs are the donor, but the rest should be the same.
       // Based on code in CRM_Contribute_BAO_ContributionRecur::cancelRecurContribution
