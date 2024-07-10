@@ -36,7 +36,7 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
   // while the payments detail report has the date at the end of the name
   protected function get_recon_file_sort_key($file) {
     // sort by the modified date to get the most recent files
-    $directory = $this->get_recon_dir();
+    $directory = $this->getIncomingFilesDirectory();
     $fullpath = $directory.'/'.$file;
     $key = filemtime($fullpath);
     return $key;

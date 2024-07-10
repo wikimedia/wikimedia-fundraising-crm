@@ -142,28 +142,13 @@ abstract class BaseAuditProcessor {
     return $merged;
   }
 
-  protected function getIncomingFilesDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR;
-  }
-
-  protected function getCompletedFilesDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'completed' . DIRECTORY_SEPARATOR;
-  }
-
-  protected function getWorkingLogDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_working_log') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
-  }
-
   /**
    * Returns the configurable path to the recon files
    *
    * @return string Path to the directory
    */
-  protected function get_recon_dir() {
-    if (method_exists($this, 'getIncomingFilesDirectory')) {
-      return $this->getIncomingFilesDirectory();
-    }
-    return variable_get($this->name . '_audit_recon_files_dir');
+  protected function getIncomingFilesDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR;
   }
 
   /**
@@ -171,11 +156,8 @@ abstract class BaseAuditProcessor {
    *
    * @return string Path to the directory
    */
-  protected function get_recon_completed_dir() {
-    if (method_exists($this, 'getCompletedFilesDirectory')) {
-      return $this->getCompletedFilesDirectory();
-    }
-    return variable_get($this->name . '_audit_recon_completed_dir');
+  protected function getCompletedFilesDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'completed' . DIRECTORY_SEPARATOR;
   }
 
   /**
@@ -183,11 +165,8 @@ abstract class BaseAuditProcessor {
    *
    * @return string Path to the directory
    */
-  protected function get_working_log_dir() {
-    if (method_exists($this, 'getWorkingLogDirectory')) {
-      return $this->getWorkingLogDirectory();
-    }
-    return variable_get($this->name . '_audit_working_log_dir');
+  protected function getWorkingLogDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_working_log') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
   }
 
   /**
@@ -656,7 +635,7 @@ abstract class BaseAuditProcessor {
    * @return array Full paths to all recon files
    */
   protected function get_all_recon_files() {
-    $files_directory = $this->get_recon_dir();
+    $files_directory = $this->getIncomingFilesDirectory();
     $fileFromCommandLine = $this->get_runtime_options('file');
     if ($fileFromCommandLine) {
       return [$files_directory . DIRECTORY_SEPARATOR . $fileFromCommandLine];
@@ -1007,7 +986,7 @@ abstract class BaseAuditProcessor {
     for ($i = 0; $i < $count; $i++) {
       $compressed_filename = $compressed_filenames[$i];
       $full_archive_path = wmf_audit_get_log_archive_dir() . '/' . $compressed_filename;
-      $working_directory = $this->get_working_log_dir();
+      $working_directory = $this->getWorkingLogDirectory();
       $cleanup = []; //add files we want to make sure aren't there anymore when we're done here.
       if (file_exists($full_archive_path)) {
         wmf_audit_echo("Retrieving $full_archive_path");
@@ -1075,7 +1054,7 @@ abstract class BaseAuditProcessor {
    */
   protected function read_working_logs_dir() {
     $working_logs = [];
-    $working_dir = $this->get_working_log_dir();
+    $working_dir = $this->getWorkingLogDirectory();
     //do the directory read and cache the results in the static
     if (!$handle = opendir($working_dir)) {
       throw new Exception(__FUNCTION__ . ": Can't open directory. We should have noticed earlier (in setup_required_directories) that this wasn't going to work. \n");
@@ -1104,7 +1083,7 @@ abstract class BaseAuditProcessor {
    * @return boolean true on success, otherwise false
    */
   protected function move_completed_recon_file($file) {
-    $files_directory = $this->get_recon_completed_dir();
+    $files_directory = $this->getCompletedFilesDirectory();
     $completed_dir = $files_directory;
     if (!is_dir($completed_dir)) {
       if (!mkdir($completed_dir, 0770)) {
@@ -1135,9 +1114,9 @@ abstract class BaseAuditProcessor {
   protected function setup_required_directories() {
     $directories = [
       'log_archive' => wmf_audit_get_log_archive_dir(),
-      'recon' => $this->get_recon_dir(),
-      'log_working' => $this->get_working_log_dir(),
-      'recon_completed' => $this->get_recon_completed_dir(),
+      'recon' => $this->getIncomingFilesDirectory(),
+      'log_working' => $this->getWorkingLogDirectory(),
+      'recon_completed' => $this->getCompletedFilesDirectory(),
     ];
 
     foreach ($directories as $id => $dir) {
