@@ -21,24 +21,6 @@ function braintree_audit_menu() {
  * Callback for menu
  */
 function braintree_audit_settings() {
-  $form['braintree_audit_recon_files_dir'] = [
-    '#type' => 'textfield',
-    '#title' => t('Directory containing incoming reconciliation files'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('braintree_audit_recon_files_dir'),
-  ];
-  $form['braintree_audit_recon_completed_dir'] = [
-    '#type' => 'textfield',
-    '#title' => t('Directory for completed reconciliation files'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('braintree_audit_recon_completed_dir'),
-  ];
-  $form['braintree_audit_working_log_dir'] = [
-    '#type' => 'textfield',
-    '#title' => t('Working directory for payments logs (Not the source - that is defined at the wmf_audit level)'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('braintree_audit_working_log_dir'),
-  ];
   $form['braintree_audit_test_mode'] = [
     '#type' => 'checkbox',
     '#title' => t('When this box is checked, no queue messages will be sent.'),

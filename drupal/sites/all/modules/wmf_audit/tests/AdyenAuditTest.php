@@ -59,10 +59,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->ids['Contribution']['for_refund'] = $this->getContributionForMessage($msg)['id'];
   }
 
-
-
-  public function auditTestProvider(): array
-  {
+  public function auditTestProvider(): array {
     return [
       [
         __DIR__ . '/data/Adyen/donation_recur/',
@@ -244,9 +241,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
   }
 
   public function testAlreadyRefundedTransactionIsSkipped() {
-    \Civi::settings()->set('wmf_audit_directory_audit',  __DIR__ . '/data/Adyen/refunded/');
+    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/refunded/');
     $expectedMessages = [
-      'refund' => []
+      'refund' => [],
     ];
 
     $msg = [

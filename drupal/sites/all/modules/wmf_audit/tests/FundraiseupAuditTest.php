@@ -19,18 +19,6 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $ctx = Context::get();
     $config = FundraiseupTestConfiguration::instance($ctx->getGlobalConfiguration());
     $ctx->setProviderConfiguration($config);
-
-    $dirs = [
-      'fundraiseup_audit_recon_completed_dir' => $this->getTempDir(),
-      'fundraiseup_audit_working_log_dir' => $this->getTempDir(),
-    ];
-
-    foreach ($dirs as $var => $dir) {
-      if (!is_dir($dir)) {
-        mkdir($dir);
-      }
-      variable_set($var, $dir);
-    }
   }
 
   public function auditTestProvider(): array {
@@ -343,8 +331,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles($path, $expectedMessages) {
-    variable_set('fundraiseup_audit_recon_files_dir', $path);
-
+    \Civi::settings()->set('wmf_audit_directory_audit', $path);
     $this->runAuditor();
 
     $this->assertMessages($expectedMessages);

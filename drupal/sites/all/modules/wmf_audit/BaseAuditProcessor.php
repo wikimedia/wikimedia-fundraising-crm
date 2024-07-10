@@ -142,6 +142,18 @@ abstract class BaseAuditProcessor {
     return $merged;
   }
 
+  protected function getIncomingFilesDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR;
+  }
+
+  protected function getCompletedFilesDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'completed' . DIRECTORY_SEPARATOR;
+  }
+
+  protected function getWorkingLogDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_working_log') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
+  }
+
   /**
    * Returns the configurable path to the recon files
    *

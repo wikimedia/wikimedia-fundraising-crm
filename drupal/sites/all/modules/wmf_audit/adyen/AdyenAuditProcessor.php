@@ -31,19 +31,6 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
     }
   }
 
-  // For the transition from drupal to extension
-  protected function getIncomingFilesDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR;
-  }
-
-  protected function getCompletedFilesDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'completed' . DIRECTORY_SEPARATOR;
-  }
-
-  protected function getWorkingLogDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_working_log') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
-  }
-
   // Note: the output is only used to sort files in chronological order
   // The settlement detail report is named with sequential batch numbers
   // while the payments detail report has the date at the end of the name

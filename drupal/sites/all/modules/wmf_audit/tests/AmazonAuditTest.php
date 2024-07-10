@@ -22,28 +22,6 @@ class AmazonAuditTest extends BaseAuditTestCase {
     $config = AmazonTestConfiguration::instance($ctx->getGlobalConfiguration());
     $ctx->setProviderConfiguration($config);
 
-    $dirs = [
-      'wmf_audit_log_archive_dir' => __DIR__ . '/data/logs/',
-      'amazon_audit_recon_completed_dir' => $this->getTempDir(),
-      'amazon_audit_working_log_dir' => $this->getTempDir(),
-    ];
-
-    foreach ($dirs as $var => $dir) {
-      if (!is_dir($dir)) {
-        mkdir($dir);
-      }
-      variable_set($var, $dir);
-    }
-
-    $old_working = glob($dirs['amazon_audit_working_log_dir'] . '*');
-    foreach ($old_working as $zap) {
-      if (is_file($zap)) {
-        unlink($zap);
-      }
-    }
-
-    variable_set('amazon_audit_log_search_past_days', 1);
-
     $msg = [
       'contribution_tracking_id' => 2476135333,
       'currency' => 'USD',
@@ -129,7 +107,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles(string $path, array $expectedMessages): void {
-    variable_set('amazon_audit_recon_files_dir', $path);
+    \Civi::settings()->set('wmf_audit_directory_audit', $path);
 
     $this->runAuditor();
 

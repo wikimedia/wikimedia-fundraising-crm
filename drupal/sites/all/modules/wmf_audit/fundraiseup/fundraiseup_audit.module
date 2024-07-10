@@ -21,18 +21,6 @@ function fundraiseup_audit_menu() {
  * Callback for menu
  */
 function fundraiseup_audit_settings() {
-  $form['fundraiseup_audit_recon_files_dir'] = [
-    '#type' => 'textfield',
-    '#title' => t('Directory containing incoming reconciliation files'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('fundraiseup_audit_recon_files_dir'),
-  ];
-  $form['fundraiseup_audit_recon_completed_dir'] = [
-    '#type' => 'textfield',
-    '#title' => t('Directory for completed reconciliation files'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('fundraiseup_audit_recon_completed_dir'),
-  ];
   $form['fundraiseup_audit_test_mode'] = [
     '#type' => 'checkbox',
     '#title' => t('When this box is checked, no queue messages will be sent.'),
