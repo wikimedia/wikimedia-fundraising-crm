@@ -10,6 +10,7 @@ return [
     'description' => ts('User framework groups. Each group represents a form which encompasses a set of fields defined in civicrm_uf_fields table. Initially will be used for CiviCRM Profile form(s). Subsequently we anticipate using this to define other public facing forms (e.g. online donation solicitation forms, mailing list preferences, etc.).'),
     'log' => TRUE,
     'add' => '1.1',
+    'label_field' => 'title',
   ],
   'getPaths' => fn() => [
     'add' => 'civicrm/admin/uf/group/add?action=add&reset=1',
@@ -46,9 +47,6 @@ return [
       'required' => TRUE,
       'description' => ts('Name of the UF group for directly addressing it in the codebase'),
       'add' => '3.0',
-      'input_attrs' => [
-        'maxlength' => 64,
-      ],
     ],
     'is_active' => [
       'title' => ts('Profile Is Active'),
@@ -74,9 +72,6 @@ return [
         'export',
         'duplicate_matching',
       ],
-      'input_attrs' => [
-        'maxlength' => 255,
-      ],
     ],
     'title' => [
       'title' => ts('Profile Title'),
@@ -86,9 +81,6 @@ return [
       'localizable' => TRUE,
       'description' => ts('Form title.'),
       'add' => '1.1',
-      'input_attrs' => [
-        'maxlength' => 64,
-      ],
     ],
     'frontend_title' => [
       'title' => ts('Public Title'),
@@ -98,9 +90,6 @@ return [
       'localizable' => TRUE,
       'description' => ts('Profile Form Public title'),
       'add' => '4.7',
-      'input_attrs' => [
-        'maxlength' => 64,
-      ],
     ],
     'description' => [
       'title' => ts('Profile Description'),
@@ -161,7 +150,6 @@ return [
       'add' => '1.4',
       'input_attrs' => [
         'label' => ts('Post URL'),
-        'maxlength' => 255,
       ],
     ],
     'add_to_group_id' => [
@@ -231,7 +219,6 @@ return [
       'add' => '1.4',
       'input_attrs' => [
         'label' => ts('Cancel URL'),
-        'maxlength' => 255,
       ],
     ],
     'is_cms_user' => [
@@ -297,9 +284,6 @@ return [
       'description' => ts('Custom Text to display on the Cancel button when used in create or edit mode'),
       'add' => '4.7',
       'default' => NULL,
-      'input_attrs' => [
-        'maxlength' => 64,
-      ],
     ],
     'submit_button_text' => [
       'title' => ts('Submit Button Text'),
@@ -309,9 +293,6 @@ return [
       'description' => ts('Custom Text to display on the submit button on profile edit/create screens'),
       'add' => '4.7',
       'default' => NULL,
-      'input_attrs' => [
-        'maxlength' => 64,
-      ],
     ],
     'add_cancel_button' => [
       'title' => ts('Include Cancel Button'),

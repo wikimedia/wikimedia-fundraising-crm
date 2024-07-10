@@ -10,6 +10,7 @@ return [
     'description' => ts('User Framework fields and their properties.'),
     'log' => TRUE,
     'add' => '1.1',
+    'label_field' => 'label',
   ],
   'getPaths' => fn() => [
     'add' => 'civicrm/admin/uf/group/field/add?reset=1&action=add&gid=[uf_group_id]',
@@ -65,9 +66,6 @@ return [
       'required' => TRUE,
       'description' => ts('Name for CiviCRM field which is being exposed for sharing.'),
       'add' => '1.1',
-      'input_attrs' => [
-        'maxlength' => 64,
-      ],
       'pseudoconstant' => [
         'callback' => 'CRM_Core_BAO_UFField::getAvailableFieldOptions',
       ],
@@ -134,9 +132,6 @@ return [
       'description' => ts('In what context(s) is this field visible.'),
       'add' => '1.1',
       'default' => 'User and User Admin Only',
-      'input_attrs' => [
-        'maxlength' => 32,
-      ],
       'pseudoconstant' => [
         'callback' => 'CRM_Core_SelectValues::ufVisibility',
       ],
@@ -202,9 +197,6 @@ return [
       'localizable' => TRUE,
       'description' => ts('To save label for fields.'),
       'add' => '1.4',
-      'input_attrs' => [
-        'maxlength' => 255,
-      ],
     ],
     'field_type' => [
       'title' => ts('Profile Field Type'),
@@ -212,9 +204,6 @@ return [
       'input_type' => 'Text',
       'description' => ts('This field saves field type (ie individual,household.. field etc).'),
       'add' => '1.4',
-      'input_attrs' => [
-        'maxlength' => 255,
-      ],
     ],
     'is_reserved' => [
       'title' => ts('Profile Field Is Reserved'),

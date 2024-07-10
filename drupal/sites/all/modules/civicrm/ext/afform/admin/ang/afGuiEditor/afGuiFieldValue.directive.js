@@ -6,6 +6,7 @@
   angular.module('afGuiEditor').directive('afGuiFieldValue', function(afGui) {
     return {
       bindToController: {
+        op: '<?',
         field: '<afGuiFieldValue'
       },
       require: {
@@ -23,13 +24,18 @@
             $el = $($element),
             inputType = field.input_type,
             dataType = field.data_type;
-          multi = field.serialize || dataType === 'Array';
-          $el.crmAutocomplete('destroy').crmDatepicker('destroy');
-          // Allow input_type to override dataType
-          if (inputType) {
+
+          // Decide whether the input should be multivalued
+          if (ctrl.op) {
+            multi = ['IN', 'NOT IN'].includes(ctrl.op);
+          } else if (inputType) {
             multi = (dataType !== 'Boolean' &&
               (inputType === 'CheckBox' || (field.input_attrs && field.input_attrs.multiple)));
+          } else {
+            multi = field.serialize || dataType === 'Array';
           }
+          $el.crmAutocomplete('destroy').crmDatepicker('destroy');
+          // Allow input_type to override dataType
           if (inputType === 'Date') {
             $el.crmDatepicker({time: (field.input_attrs && field.input_attrs.time) || false});
           }
@@ -38,12 +44,12 @@
               // Static options for choosing current user or other entities on the form
               options = [];
               filters = (field.input_attrs && field.input_attrs.filter) || {};
-              if (field.fk_entity === 'Contact' && (!filters.contact_type || filters.contact_type === 'Individual')) {
+              if (field.fk_entity === 'Individual' || (field.fk_entity === 'Contact' && (!filters.contact_type || filters.contact_type === 'Individual'))) {
                 options.push('user_contact_id');
               }
-              _.each(ctrl.editor ? ctrl.editor.getEntities({type: field.fk_entity}) : [], function(entity) {
+              _.each(ctrl.editor ? ctrl.editor.getEntities() : [], function(entity) {
+                let filtersMatch = (entity.type === field.fk_entity) || (field.fk_entity === 'Contact' && ['Individual', 'Household', 'Organization'].includes(entity.type));
                 // Check if field filters match entity data (e.g. contact_type)
-                var filtersMatch = true;
                 _.each(filters, function(value, key) {
                   if (entity.data && entity.data[key] && entity.data[key] != value) {
                     filtersMatch = false;

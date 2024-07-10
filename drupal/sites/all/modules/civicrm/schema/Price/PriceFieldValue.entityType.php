@@ -7,8 +7,9 @@ return [
   'getInfo' => fn() => [
     'title' => ts('Price Field Value'),
     'title_plural' => ts('Price Field Values'),
-    'description' => ts('FIXME'),
+    'description' => ts('Provides multiple options for a PriceField'),
     'add' => '3.3',
+    'label_field' => 'label',
   ],
   'getPaths' => fn() => [
     'add' => 'civicrm/admin/price/field/option/edit?reset=1&action=add&fid=[price_field_id]&sid=[price_field_id.price_set_id]',
@@ -50,9 +51,6 @@ return [
       'description' => ts('Price field option name'),
       'add' => '3.3',
       'default' => NULL,
-      'input_attrs' => [
-        'maxlength' => 255,
-      ],
     ],
     'label' => [
       'title' => ts('Label'),
@@ -62,9 +60,6 @@ return [
       'description' => ts('Price field option label'),
       'add' => '3.3',
       'default' => NULL,
-      'input_attrs' => [
-        'maxlength' => 255,
-      ],
     ],
     'description' => [
       'title' => ts('Description'),
@@ -117,7 +112,6 @@ return [
       'add' => '3.3',
       'input_attrs' => [
         'size' => '8',
-        'maxlength' => 18,
       ],
     ],
     'count' => [

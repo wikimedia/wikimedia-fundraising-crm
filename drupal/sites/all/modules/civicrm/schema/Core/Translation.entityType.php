@@ -39,9 +39,6 @@ return [
       'required' => TRUE,
       'description' => ts('Table where referenced item is stored'),
       'add' => '5.39',
-      'input_attrs' => [
-        'maxlength' => 64,
-      ],
       'pseudoconstant' => [
         'callback' => 'CRM_Core_BAO_Translation::getEntityTables',
       ],
@@ -53,9 +50,6 @@ return [
       'required' => TRUE,
       'description' => ts('Field where referenced item is stored'),
       'add' => '5.39',
-      'input_attrs' => [
-        'maxlength' => 64,
-      ],
       'pseudoconstant' => [
         'callback' => 'CRM_Core_BAO_Translation::getEntityFields',
       ],
@@ -67,9 +61,6 @@ return [
       'required' => TRUE,
       'description' => ts('ID of the relevant entity.'),
       'add' => '5.39',
-      'input_attrs' => [
-        'maxlength' => 64,
-      ],
       'entity_reference' => [
         'dynamic_entity' => 'entity_table',
         'key' => 'id',
@@ -82,9 +73,6 @@ return [
       'required' => TRUE,
       'description' => ts('Relevant language'),
       'add' => '5.39',
-      'input_attrs' => [
-        'maxlength' => 5,
-      ],
       'pseudoconstant' => [
         'option_group_name' => 'languages',
         'key_column' => 'name',
@@ -99,9 +87,6 @@ return [
       'description' => ts('Specify whether the string is active, draft, etc'),
       'add' => '5.39',
       'default' => 1,
-      'input_attrs' => [
-        'maxlength' => 3,
-      ],
       'pseudoconstant' => [
         'callback' => 'CRM_Core_BAO_Translation::getStatuses',
       ],
@@ -110,7 +95,7 @@ return [
       'title' => ts('Translated String'),
       'sql_type' => 'longtext',
       'input_type' => 'TextArea',
-      'required' => TRUE,
+      'required' => FALSE,
       'description' => ts('Translated string'),
       'add' => '5.39',
     ],
