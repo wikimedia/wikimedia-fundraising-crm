@@ -2444,10 +2444,8 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   public function upgrade_4550(): bool {
     // This delete is slightly more aggressive than the upstream ... cos.
     CRM_Core_DAO::executeQuery("DELETE FROM civicrm_msg_template WHERE workflow_name = 'event_registration_receipt'");
-    CRM_Core_DAO::executeQuery('DROP table civicrm_events_in_carts');
-    CRM_Core_DAO::executeQuery('DROP table log_civicrm_events_in_carts');
-    CRM_Core_DAO::executeQuery('DROP table civicrm_event_carts');
-    CRM_Core_DAO::executeQuery('DROP table log_civicrm_event_carts');
+    CRM_Core_DAO::executeQuery('DROP table IF EXISTS log_civicrm_event_cart_participant');
+    CRM_Core_DAO::executeQuery('DROP table IF EXISTS  log_civicrm_event_carts');
     \CRM_Core_BAO_SchemaHandler::safeRemoveFK('civicrm_participant', 'FK_civicrm_participant_cart_id');
     \CRM_Core_BAO_SchemaHandler::dropColumn('civicrm_participant', 'cart_id', FALSE, TRUE);
     return TRUE;
