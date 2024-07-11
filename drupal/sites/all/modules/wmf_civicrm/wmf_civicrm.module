@@ -345,7 +345,7 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
 
   $address_params = [
     'contact_id' => $contact_id,
-    'location_type_id' => wmf_civicrm_get_default_location_type_id(),
+    'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
     'values' => [$address],
   ];
 
@@ -372,7 +372,6 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
  * @throws \Civi\WMFException\WMFException
  */
 function wmf_civicrm_message_address_insert($msg, $contact_id) {
-  $loc_type_id = wmf_civicrm_get_default_location_type_id();
 
   // We can do these lookups a bit more efficiently than Civi
   $country_id = wmf_civicrm_get_country_id($msg['country']);
@@ -382,7 +381,7 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
   }
   $address_params = [
     'contact_id' => $contact_id,
-    'location_type_id' => $loc_type_id,
+    'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
     'is_primary' => 1,
     'street_address' => $msg['street_address'],
     'supplemental_address_1' => !empty($msg['supplemental_address_1']) ? $msg['supplemental_address_1'] : NULL,
@@ -421,15 +420,6 @@ function wmf_civicrm_message_address_insert($msg, $contact_id) {
   if (Database::isNativeTxnRolledBack()) {
     throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting address");
   }
-}
-
-/**
- * @deprecated - just do CRM_Core_BAO_LocationType::getDefault()->id in the code.
- * @return int|string|null
- */
-function wmf_civicrm_get_default_location_type_id() {
-  $default_location_type = CRM_Core_BAO_LocationType::getDefault();
-  return $default_location_type->id;
 }
 
 function wmf_civicrm_get_country_id($raw) {
