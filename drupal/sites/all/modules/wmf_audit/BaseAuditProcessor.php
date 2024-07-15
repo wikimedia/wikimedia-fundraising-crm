@@ -185,6 +185,10 @@ abstract class BaseAuditProcessor {
    * @return int Number of days
    */
   protected function get_log_days_in_past() {
+    if (isset($this->options['log_search_past_days'])) {
+      return $this->options['log_search_past_days'];
+    }
+    // @todo - remove this once process control is migrated over.
     return variable_get($this->name . '_audit_log_search_past_days');
   }
 

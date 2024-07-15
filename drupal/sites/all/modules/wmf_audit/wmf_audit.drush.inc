@@ -29,7 +29,8 @@ function wmf_audit_drush_command() {
       'charlimit' => 'Will cause echoing to line break after the given number of characters',
       'verbose' => 'Verbose output',
       'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.',
-      'file' => 'Optional, name of a file to parse (must be in the incoming directory, should not include full path)'
+      'file' => 'Optional, name of a file to parse (must be in the incoming directory, should not include full path)',
+      'log_search_past_days' => 'Number of days to go back in finding log files',
     ],
   ];
 
@@ -61,7 +62,8 @@ function drush_wmf_audit_parse_audit() {
     'run_all' => 'Running all recon files! This might take a while...',
     'verbose' => 'Outputting verbose.',
     'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.',
-    'file' => 'File argument given, only processing specified file.'
+    'file' => 'File argument given, only processing specified file.',
+    'log_search_past_days' => 'Number of days to go back in finding log files',
   ];
 
   $options = [];
