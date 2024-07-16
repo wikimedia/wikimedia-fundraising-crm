@@ -74,7 +74,7 @@ function drush_wmf_audit_parse_audit() {
   foreach ($simple_opts as $key => $message) {
     $value = drush_get_option($key);
     if ($value) {
-      echo "$message\n";
+      echo "$message : $value\n";
       $options[$key] = $value;
     }
   }
