@@ -1006,7 +1006,7 @@ abstract class BaseAuditProcessor {
     $full_distilled_paths = [];
     for ($i = 0; $i < $count; $i++) {
       $compressed_filename = $compressed_filenames[$i];
-      $full_archive_path = wmf_audit_get_log_archive_dir() . '/' . $compressed_filename;
+      $full_archive_path = $this->getLogArchiveDirectory() . '/' . $compressed_filename;
       $working_directory = $this->getWorkingLogDirectory();
       $cleanup = []; //add files we want to make sure aren't there anymore when we're done here.
       if (file_exists($full_archive_path)) {
@@ -1134,7 +1134,7 @@ abstract class BaseAuditProcessor {
    */
   protected function setup_required_directories() {
     $directories = [
-      'log_archive' => wmf_audit_get_log_archive_dir(),
+      'log_archive' => $this->getLogArchiveDirectory(),
       'recon' => $this->getIncomingFilesDirectory(),
       'log_working' => $this->getWorkingLogDirectory(),
       'recon_completed' => $this->getCompletedFilesDirectory(),
@@ -1155,6 +1155,15 @@ abstract class BaseAuditProcessor {
       }
     }
     return TRUE;
+  }
+
+  /**
+   * Get the payments log archive directory. Same across all gateways.
+   *
+   * @return string
+   */
+  protected function getLogArchiveDirectory() {
+    return \Civi::settings()->get('wmf_audit_directory_payments_log');
   }
 
   /**
