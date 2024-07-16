@@ -3,5 +3,4 @@ description = Auditing framework for contacts and contributions that come in thr
 core = 7.x
 dependencies[] = wmf_audit
 package = WMF Audit
-configure = admin/config/wmf_audit/amazon_audit
 files[] = AmazonAuditProcessor.php
