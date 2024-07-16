@@ -175,7 +175,7 @@ class Save extends AbstractAction {
         $phone_result = civicrm_api3('Phone', 'Create', [
           // XXX all the fields are nullable, should we set any others?
           'contact_id' => (int) $contact_result['id'],
-          'location_type_id' => wmf_civicrm_get_default_location_type_id(),
+          'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
           'phone' => $msg['phone'],
           'phone_type_id' => 'Phone',
           'is_primary' => 1,
@@ -405,8 +405,83 @@ class Save extends AbstractAction {
     }
     if (!empty($msg['email'])) {
       $this->startTimer('message_email_update');
-      wmf_civicrm_message_email_update($msg, $msg['contact_id']);
+      $this->emailUpdate($msg, $msg['contact_id']);
       $this->stopTimer('message_email_update');
+    }
+  }
+
+  /**
+   * Updates the email for a contact.
+   *
+   * @param array $msg
+   * @param int $contact_id
+   *
+   * @throws \Civi\WMFException\WMFException
+   */
+  private function emailUpdate($msg, $contact_id) {
+    try {
+      $loc_type_id = isset($msg['email_location_type_id']) ? $msg['email_location_type_id'] : \CRM_Core_BAO_LocationType::getDefault()->id;
+      if (!is_numeric($loc_type_id)) {
+        $loc_type_id = \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', $loc_type_id);
+      }
+      $isPrimary = isset($msg['email_location_type_id']) ? 0 : 1;
+
+      $emailParams = [
+        'email' => $msg['email'],
+        'is_primary' => $isPrimary,
+        'is_billing' => $isPrimary,
+        'contact_id' => $contact_id,
+      ];
+
+      // Look up contact's existing email to get the id and to determine
+      // if the email has changed.
+      $existingEmails = civicrm_api3("Email", 'get', [
+        'return' => ['location_type_id', 'email', 'is_primary'],
+        'contact_id' => $contact_id,
+        'sequential' => 1,
+        'options' => ['sort' => 'is_primary'],
+      ])['values'];
+
+      if (!empty($existingEmails)) {
+        foreach ($existingEmails as $prospectiveEmail) {
+          // We will update an existing one if it has the same email or the same
+          // location type it, preferring same email+location type id over
+          // same email over same location type id.
+          if ($prospectiveEmail['email'] === $msg['email']) {
+            if (empty($existingEmail)
+              || $existingEmail['email'] !== $msg['email']
+              || $prospectiveEmail['location_type_id'] == $loc_type_id
+            ) {
+              $existingEmail = $prospectiveEmail;
+            }
+          }
+          elseif ($prospectiveEmail['location_type_id'] == $loc_type_id) {
+            if (empty($existingEmail)) {
+              $existingEmail = $prospectiveEmail;
+            }
+          }
+        }
+
+        if (!empty($existingEmail)) {
+          if (strtolower($existingEmail['email']) === strtolower($msg['email'])) {
+            // If we have the email already it still may make sense
+            // to update to primary if this is (implicitly) an update of
+            // primary email
+            if (!$isPrimary || $existingEmail['is_primary']) {
+              return;
+            }
+          }
+          $emailParams['id'] = $existingEmail['id'];
+          $emailParams['on_hold'] = 0;
+        }
+      }
+
+      civicrm_api3('Email', 'create', $emailParams);
+    }
+    catch (\CRM_Core_Exception $e) {
+      // Constraint violations occur when data is rolled back to resolve a deadlock.
+      $code = (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTACT;
+      throw new WMFException($code, "Couldn't store email for the contact.", $e->getExtraParams());
     }
   }
 

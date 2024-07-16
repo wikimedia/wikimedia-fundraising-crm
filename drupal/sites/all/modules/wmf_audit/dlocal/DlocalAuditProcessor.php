@@ -10,19 +10,6 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
     return new DlocalAudit();
   }
 
-  // For the transition from drupal to extension
-  protected function getIncomingFilesDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR;
-  }
-
-  protected function getCompletedFilesDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'completed' . DIRECTORY_SEPARATOR;
-  }
-
-  protected function getWorkingLogDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_working_log') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
-  }
-
   protected function get_recon_file_sort_key($file) {
     // Example:  wikimedia_report_2015-06-16.csv
     // For that, we'd want to return 20150616
