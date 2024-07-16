@@ -12,7 +12,6 @@ class DlocalAuditTest extends BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();
-    // Fakedb doesn't fake the original txn for refunds, so add one here
     // First we need to set an exchange rate for a sickeningly specific time
     $this->setExchangeRates(1434488406, ['BRL' => 3.24]);
     $this->setExchangeRates(1434488406, ['USD' => 1]);
@@ -136,7 +135,6 @@ class DlocalAuditTest extends BaseAuditTestCase {
 
   protected function runAuditor() {
     $options = [
-      'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
       #'verbose' => 'true', # Uncomment to debug.

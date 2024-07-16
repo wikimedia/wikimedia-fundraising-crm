@@ -1,7 +1,5 @@
 <?php
 
-use Civi\Api4\ContributionTracking;
-
 /**
  * @group Ingenico
  * @group WmfAudit
@@ -11,6 +9,16 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();
+    $this->createContributionTracking([
+      'id' => 5551212,
+      'utm_medium' => 'ingenico_audit',
+      'utm_campaign' => 'ingenico_audit',
+    ]);
+    $this->createContributionTracking([
+      'id' => 55599991,
+      'utm_medium' => 'ingenico_audit',
+      'utm_campaign' => 'ingenico_audit',
+    ]);
 
     $msg = [
       'contribution_tracking_id' => 8675309,
@@ -41,16 +49,14 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
     // and another for the sparse refund
     $this->setExchangeRates(1443724034, ['EUR' => 1.5, 'USD' => 1]);
-    ContributionTracking::save(FALSE)->setRecords([
-      [
-        'id' => 48987654,
-        'country' => 'IT',
-        'utm_source' => 'something',
-        'utm_medium' => 'another_thing',
-        'utm_campaign' => 'campaign_thing',
-        'language' => 'it',
-      ],
-    ])->execute();
+    $this->createContributionTracking([
+      'id' => 48987654,
+      'country' => 'IT',
+      'utm_source' => 'something',
+      'utm_medium' => 'another_thing',
+      'utm_campaign' => 'campaign_thing',
+      'language' => 'it',
+    ]);
     $msg = [
       'contribution_tracking_id' => 48987654,
       'currency' => 'EUR',
@@ -85,7 +91,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
   public function auditTestProvider(): array {
     return [
-      [
+      'donations' => [
         __DIR__ . '/data/Ingenico/donation/',
         [
           'donations' => [
@@ -120,7 +126,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'last_day_of_month' => [
         __DIR__ . '/data/Ingenico/lastDayOfMonth/',
         [
           'donations' => [
@@ -153,7 +159,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'refund' => [
         __DIR__ . '/data/Ingenico/refund/',
         [
           'refund' => [
@@ -169,7 +175,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'sparse_refund' => [
         __DIR__ . '/data/Ingenico/sparseRefund/',
         [
           'refund' => [
@@ -185,7 +191,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'chargeback' => [
         __DIR__ . '/data/Ingenico/chargeback/',
         [
           'refund' => [
@@ -201,7 +207,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'recurring' => [
         __DIR__ . '/data/Ingenico/recurring/',
         [
           'donations' => [
@@ -236,7 +242,7 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'combined' => [
         __DIR__ . '/data/Ingenico/combined/',
         [
           'donations' => [
@@ -311,6 +317,10 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
     $this->assertMessages($expectedMessages);
   }
 
+  /**
+   * @throws \Civi\ExchangeRates\ExchangeRatesException
+   * @throws \Civi\WMFException\WMFException
+   */
   public function testAlreadyRefundedTransactionIsSkipped(): void {
     \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Ingenico/refundNoGatewayIDinCivi/');
     $expectedMessages = [
@@ -336,7 +346,6 @@ class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
 
   protected function runAuditor(): void {
     $options = [
-      'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
       #'verbose' => 'true', # Uncomment to debug.

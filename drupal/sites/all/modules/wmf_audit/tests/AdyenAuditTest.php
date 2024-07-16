@@ -14,7 +14,6 @@ class AdyenAuditTest extends BaseAuditTestCase {
     parent::setUp();
     // @todo - this needs to be moved to a setting too....
     variable_set('wmf_audit_log_archive_dir', __DIR__ . '/data/logs/',);
-    // Fakedb doesn't fake the original txn for refunds, so add one here
     $msg = [
       'contribution_tracking_id' => 92598312,
       'currency' => 'USD',
@@ -57,11 +56,16 @@ class AdyenAuditTest extends BaseAuditTestCase {
     ];
     $this->processMessage($msg, 'Donation', 'test');
     $this->ids['Contribution']['for_refund'] = $this->getContributionForMessage($msg)['id'];
+
+    $this->createContributionTracking([
+      'id' => 82431234,
+      'utm_campaign' => 'adyen_audit',
+    ]);
   }
 
   public function auditTestProvider(): array {
     return [
-      [
+      'donations' => [
         __DIR__ . '/data/Adyen/donation_recur/',
         [
           'donations' => [
@@ -97,7 +101,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'donation_new' => [
         __DIR__ . '/data/Adyen/donation_new/',
         [
           'donations' => [
@@ -264,7 +268,6 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
   protected function runAuditor() {
     $options = [
-      'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
       #'verbose' => 'true', # Uncomment to debug.

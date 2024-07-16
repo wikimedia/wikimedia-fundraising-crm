@@ -24,7 +24,6 @@ function wmf_audit_drush_command() {
     'options' => [
       'run_all' => 'Batch search for all missing transactions across all available recon files, instead of just the top three',
       'test' => 'Test the audit and rebuild job, but do not generate messages. No data will be changed.',
-      'fakedb' => 'Fake the database information. This will cause the script to avoid looking up the actual contribution tracking id.',
       'makemissing' => 'Will reconstruct the un-rebuildable transactions found in the recon file, with default values. USE WITH CAUTION: Currently this prevents real data from entering the system if we ever get it.',
       'charlimit' => 'Will cause echoing to line break after the given number of characters',
       'verbose' => 'Verbose output',
@@ -57,7 +56,6 @@ function drush_wmf_audit_parse_audit() {
 
   $simple_opts = [
     'test' => 'Running in test mode: No queue messages will be sent',
-    'fakedb' => 'Faking Database',
     'makemissing' => 'Making payments data for missing transactions',
     'run_all' => 'Running all recon files! This might take a while...',
     'verbose' => 'Outputting verbose.',

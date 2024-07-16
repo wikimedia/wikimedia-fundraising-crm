@@ -2,6 +2,7 @@
 
 namespace Civi\WMFAudit;
 
+use Civi\Api4\ContributionTracking;
 use Civi\WMFEnvironmentTrait;
 use Civi\WMFQueueTrait;
 use SmashPig\Core\ConfigurationException;
@@ -64,6 +65,12 @@ class BaseAuditTestCase extends TestCase {
     catch (ConfigurationException $e) {
       $this->fail('SmashPig configuration problem :' . $e->getMessage());
     }
+  }
+
+  protected function createContributionTracking($values) {
+    $this->ids['ContributionTracking'][] = ContributionTracking::save(FALSE)
+      ->addRecord($values)
+      ->execute()->first()['id'];
   }
 
 }

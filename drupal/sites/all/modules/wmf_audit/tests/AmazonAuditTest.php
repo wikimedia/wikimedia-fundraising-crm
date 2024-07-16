@@ -116,7 +116,6 @@ class AmazonAuditTest extends BaseAuditTestCase {
 
   protected function runAuditor() {
     $options = [
-      'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
       #'verbose' => 'true', # Uncomment to debug.

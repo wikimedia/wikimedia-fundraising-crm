@@ -250,8 +250,7 @@ function wmf_audit_error_isfatal($error) {
 
 /**
  * Returns the contribution tracking data for $record, if we can find it.
- * If we can't find it: If we're running in fakedb mode, it'll
- * stuff in placeholders, otherwise fabricate something and send it to the queue.
+ * If we can't find it fabricate something and send it to the queue.
  *
  * @param array $record The re-fused and normal transaction that doesn't yet
  * exist in civicrm.
@@ -259,10 +258,6 @@ function wmf_audit_error_isfatal($error) {
  * @return array
  */
 function wmf_audit_get_contribution_tracking_data($record) {
-
-  if (wmf_audit_runtime_options('fakedb')) {
-    return wmf_audit_make_contribution_tracking_data($record);
-  }
 
   $contributionTrackingId = $record['contribution_tracking_id'];
   $result = ContributionTracking::get(FALSE)->addWhere('id','=',$contributionTrackingId)->execute()->first();

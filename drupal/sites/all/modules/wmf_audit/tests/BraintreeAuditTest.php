@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\ContributionTracking;
 use Civi\WMFAudit\BaseAuditTestCase;
 
 /**
@@ -10,6 +11,15 @@ class BraintreeAuditTest extends BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();
+
+    ContributionTracking::save(FALSE)
+      ->addRecord([
+        'id' => 35,
+        'utm_medium' => 'braintree_audit',
+        'utm_campaign' => 'braintree_audit',
+      ])
+      ->execute();
+
     $msg = [
       'gateway' => 'braintree',
       'date' => 1656383927,
@@ -19,7 +29,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       'email' => 'donor@gmail.com',
       'gateway_txn_id' => 'dHJhbnNhY3Rpb25fMTYxZXdrMjk',
       'invoice_id' => '34.1',
-      'phone' => null,
+      'phone' => NULL,
       'first_name' => 'donor',
       'last_name' => 'Mouse',
       'payment_method' => 'paypal',
@@ -35,7 +45,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       'email' => 'fr-tech+donor@wikimedia.org',
       'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2F4eG1ycjE',
       'invoice_id' => '17.1',
-      'phone' => null,
+      'phone' => NULL,
       'first_name' => 'f',
       'last_name' => 'Mouse',
       'payment_method' => 'paypal',
@@ -51,7 +61,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       'currency' => 'USD',
       'email' => 'fr-tech+donor@wikimedia.org',
       'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2F4eG1yfff',
-      'phone' => null,
+      'phone' => NULL,
       'first_name' => 'f',
       'last_name' => 'Mouse',
       'payment_method' => 'paypal',
@@ -61,8 +71,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
     $this->ids['Contribution']['refund_test'] = $contribution['id'];
   }
 
-  public function auditTestProvider(): array
-  {
+  public function auditTestProvider(): array {
     return [
       'donation' => [
         __DIR__ . '/data/Braintree/donation/',
@@ -77,7 +86,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
               'email' => 'donor@gmail.com',
               'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2szNmZ4Y3A',
               'invoice_id' => '35.1',
-              'phone' => null,
+              'phone' => NULL,
               'first_name' => 'donor',
               'last_name' => 'test',
               'payment_method' => 'paypal',
@@ -90,7 +99,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
               'payment_submethod' => '',
               'recurring' => '',
               'user_ip' => '172.19.0.1',
-              'order_id' => '35.1'
+              'order_id' => '35.1',
             ],
           ],
         ],
@@ -107,14 +116,14 @@ class BraintreeAuditTest extends BaseAuditTestCase {
               'gateway_refund_id' => 'cmVmdW5kXzR6MXlyZ3o1',
               'type' => 'refund',
               'gross_currency' => 'USD',
-            ]
-          ]
+            ],
+          ],
         ],
       ],
       'chargeback' => [
         __DIR__ . '/data/Braintree/chargeback/',
         [
-          "refund" =>  [
+          "refund" => [
             [
               'gateway' => 'braintree',
               'date' => 1656381367,
@@ -123,8 +132,8 @@ class BraintreeAuditTest extends BaseAuditTestCase {
               'gateway_refund_id' => 'dHJhbnNhY3Rpb25fa2F4eG1ycjE',
               'gross_currency' => 'USD',
               'type' => 'chargeback',
-            ]
-          ]
+            ],
+          ],
         ],
       ],
     ];
@@ -144,7 +153,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
   public function testAlreadyRefundedTransactionIsSkipped(): void {
     \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Braintree/refundNoGatewayIDinCivi/');
     $expectedMessages = [
-      'refund' => []
+      'refund' => [],
     ];
 
     $msg = [
@@ -165,7 +174,6 @@ class BraintreeAuditTest extends BaseAuditTestCase {
 
   protected function runAuditor() {
     $options = [
-      'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
       #'verbose' => 'true', # Uncomment to debug.

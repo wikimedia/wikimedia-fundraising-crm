@@ -756,7 +756,6 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    */
   protected function runAuditor(): void {
     $options = [
-      'fakedb' => TRUE,
       'quiet' => TRUE,
       'test' => TRUE,
       #'verbose' => 'true', # Uncomment to debug.
