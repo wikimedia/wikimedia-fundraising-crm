@@ -912,7 +912,7 @@ abstract class BaseAuditProcessor {
     }
 
     //That loop has been stepping back in to the past. So, use what we have...
-    wmf_audit_remove_old_logs($log_date, $this->read_working_logs_dir());
+    $this->removeOldLogs($log_date, $this->read_working_logs_dir());
 
     //if we are running in makemissing mode: make the missing transactions.
     if ($this->get_runtime_options('makemissing')) {
@@ -954,6 +954,26 @@ abstract class BaseAuditProcessor {
     }
 
     return $tryme; //this will contain whatever's left, if we haven't errored out at this point
+  }
+
+  /**
+   * Remove all distilled logs older than the oldest date ($date)
+   * Not even a big deal if we overshoot and remove too many, because we'll just
+   * remake them next time if they're missing.
+   *
+   * @param string $date The date string for the oldest log we want to keep
+   * @param array $working_logs list of working log files by date
+   */
+  public function removeOldLogs($date, $working_logs) {
+    if (!empty($working_logs)) {
+      foreach ($working_logs as $logdate => $files) {
+        foreach($files as $file) {
+          if ((int) $logdate < (int) $date) {
+            unlink($file);
+          }
+        }
+      }
+    }
   }
 
   /**
