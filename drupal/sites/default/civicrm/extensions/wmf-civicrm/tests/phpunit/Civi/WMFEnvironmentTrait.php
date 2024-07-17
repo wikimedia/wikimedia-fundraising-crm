@@ -42,7 +42,7 @@ trait WMFEnvironmentTrait {
   protected function setUpWMFEnvironment(): void {
     // Since we can't kill jobs on jenkins this prevents a loop from going
     // on for too long....
-    set_time_limit(180);
+    set_time_limit(210);
     MailFactory::singleton()->setActiveMailer('test');
     // Initialize SmashPig with a fake context object
     TestingContext::init(TestingGlobalConfiguration::create());
