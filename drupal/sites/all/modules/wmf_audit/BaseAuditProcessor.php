@@ -186,10 +186,32 @@ abstract class BaseAuditProcessor {
    */
   protected function get_log_days_in_past() {
     if (isset($this->options['log_search_past_days'])) {
+      $this->echo('got log_search_past_days from command line: ') . $this->options['log_search_past_days'];
       return $this->options['log_search_past_days'];
     }
     // @todo - remove this once process control is migrated over.
     return variable_get($this->name . '_audit_log_search_past_days');
+  }
+
+  /**
+   * Wrapper for echo
+   * Lets us switch on things we only want to see in verbose mode.
+   * Also allows us to impose a char limit per line for the benefit of jenkins
+   * output logs.
+   * Without this, the viz blocks would just ride merrily off the right end of the
+   * screen and cause stupid amounts of side scrolling.
+   *
+   * @staticvar int $chars The number of single chars we've already added to this
+   * line.
+   * @staticvar int $limit The char limit, set at the command line
+   *
+   * @param string $string The thing you want to echo. Single chars will be added to
+   * the current line, while longer strings will get their own new line.
+   * @param boolean $verbose If true, this message will only appear when we are
+   * running in verbose mode. The verbose option is set at the command line.
+   */
+  protected function echo(string $string, bool $verbose = FALSE): void {
+    wmf_audit_echo($string, $verbose);
   }
 
   /**
@@ -462,15 +484,10 @@ abstract class BaseAuditProcessor {
 
       //If the file is empty, move it off.
       // Note that we are not archiving files that have missing transactions,
-      // which might be resolved below.	Those are archived on the next run,
+      // which might be resolved below. Those are archived on the next run,
       // once we can confirm they have hit Civi and are no longer missing.
       if (wmf_audit_count_missing($missing) <= $this->get_runtime_options('recon_complete_count')) {
-        if (wmf_audit_runtime_options('test')) {
-          wmf_audit_echo("Not moving file '{$file}' because test mode\n");
-        }
-        else {
-          $this->move_completed_recon_file($file);
-        }
+        $this->move_completed_recon_file($file);
       }
 
       //grumble...

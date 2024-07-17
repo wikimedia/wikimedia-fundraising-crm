@@ -21,12 +21,6 @@ function ingenico_audit_menu() {
  * Callback for menu
  */
 function ingenico_audit_settings() {
-  $form['ingenico_audit_test_mode'] = [
-    '#type' => 'checkbox',
-    '#title' => t('When this box is checked, no queue messages will be sent.'),
-    '#required' => FALSE,
-    '#default_value' => variable_get('ingenico_audit_test_mode'),
-  ];
   $form['ingenico_audit_log_search_past_days'] = [
     '#type' => 'textfield',
     '#title' => t('Plus or minus log search (in days)'),
