@@ -269,8 +269,7 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
     'civicrm_financial_item',
     'civicrm_financial_trxn',
     'civicrm_line_item',
-    // our queues are not the primary source for these silverpop based tables (and there is a log of data)
-    'civicrm_mailing',
+    // our queues are not the primary source for this Acoustic based table (and there is a log of data)
     'civicrm_mailing_provider_data',
     // this table is not important because we don't send from civi / need to link back
     // mailing events within civi.

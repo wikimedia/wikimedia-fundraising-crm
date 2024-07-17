@@ -453,7 +453,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         Civi::log('wmf')->info('monthly_convert: Donor language unknown.  Defaulting to English...');
         $locale = 'en';
       }
-      $locale = wmf_common_locale_civi_to_mediawiki($locale);
+      $locale = strtolower(substr($locale, 0, 2));
 
       // Using the same params sent through in thank_you.module thank_you_for_contribution
       $template = 'monthly_convert';
