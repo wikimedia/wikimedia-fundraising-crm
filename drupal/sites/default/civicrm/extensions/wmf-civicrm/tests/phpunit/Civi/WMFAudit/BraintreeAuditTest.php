@@ -1,7 +1,8 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use Civi\Api4\ContributionTracking;
-use Civi\WMFAudit\BaseAuditTestCase;
 
 /**
  * @group Braintree

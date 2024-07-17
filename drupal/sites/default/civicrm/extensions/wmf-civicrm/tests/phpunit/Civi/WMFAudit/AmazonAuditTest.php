@@ -1,6 +1,7 @@
 <?php
 
-use Civi\WMFAudit\BaseAuditTestCase;
+namespace Civi\WMFAudit;
+
 use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\Amazon\Tests\AmazonTestConfiguration;
 

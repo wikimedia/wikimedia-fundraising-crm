@@ -1,11 +1,13 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 /**
  * @group Ingenico
  * @group WmfAudit
  * @group IngenicoAudit
  */
-class IngenicoAuditTest extends \Civi\WMFAudit\BaseAuditTestCase {
+class IngenicoAuditTest extends BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();

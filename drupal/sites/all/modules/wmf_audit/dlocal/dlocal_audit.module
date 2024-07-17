@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFAudit\DlocalAuditProcessor;
+
 function dlocal_audit_create_processor($options) {
   return new DlocalAuditProcessor($options);
 }

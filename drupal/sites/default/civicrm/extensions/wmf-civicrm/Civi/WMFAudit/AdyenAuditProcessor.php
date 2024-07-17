@@ -1,10 +1,11 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\Adyen\Audit\AdyenPaymentsAccountingReport;
 use SmashPig\PaymentProviders\Adyen\Audit\AdyenSettlementDetailReport;
 use SmashPig\PaymentProviders\Adyen\Jobs\TokenizeRecurringJob;
-use Civi\WMFAudit\MultipleFileTypeParser;
 
 class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileTypeParser {
 

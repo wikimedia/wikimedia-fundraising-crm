@@ -1,6 +1,6 @@
 <?php
 
-use Civi\WMFAudit\BaseAuditTestCase;
+namespace Civi\WMFAudit;
 
 /**
  * @group Dlocal

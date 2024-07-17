@@ -1,9 +1,10 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use Civi\Api4\Contribution;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFException\WMFException;
-use Civi\WMFAudit\MultipleFileTypeParser;
 use Civi\WMFTransaction;
 
 abstract class BaseAuditProcessor {

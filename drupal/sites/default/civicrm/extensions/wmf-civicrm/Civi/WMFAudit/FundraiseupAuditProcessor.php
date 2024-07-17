@@ -1,5 +1,7 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use SmashPig\PaymentProviders\Fundraiseup\Audit\FundraiseupAudit;
 
 class FundraiseupAuditProcessor extends BaseAuditProcessor {

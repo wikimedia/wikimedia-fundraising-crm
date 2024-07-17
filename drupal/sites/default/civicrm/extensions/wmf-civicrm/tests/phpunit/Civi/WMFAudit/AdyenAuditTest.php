@@ -1,6 +1,7 @@
 <?php
 
-use Civi\WMFAudit\BaseAuditTestCase;
+namespace Civi\WMFAudit;
+
 use Civi\WMFException\WMFException;
 
 /**

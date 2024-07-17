@@ -1,10 +1,11 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
-use Civi\WMFAudit\BaseAuditTestCase;
 use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\Fundraiseup\Tests\FundraiseupTestConfiguration;
 
@@ -338,7 +339,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testImportCreditCardUsdDonationMessages() {
     $audit = $this->auditTestProvider()[0];
@@ -357,9 +358,9 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'net_amount' => 5.03,
       'trxn_id' => 'RECURRING FUNDRAISEUP ch_3NrmZLJaRQOHTfEW0zGlJw1Z',
       'source' => 'GBP 4.60',
-      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift"),
-      'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Completed"),
-      'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Credit Card: Visa"),
+      'financial_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift"),
+      'contribution_status_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Completed"),
+      'payment_instrument_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Credit Card: Visa"),
     ];
 
     $contribution = Contribution::get(FALSE)
@@ -379,7 +380,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testImportGooglePayDonationMessages() {
     $audit = $this->auditTestProvider()[0];
@@ -398,9 +399,9 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'net_amount' => 11.29,
       'trxn_id' => 'RECURRING FUNDRAISEUP ch_3NrmYWJaRQOHTfEW0IQMgfTB',
       'source' => 'GBP 10.00',
-      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift"),
-      'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Completed"),
-      'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Google Pay: Visa"),
+      'financial_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift"),
+      'contribution_status_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Completed"),
+      'payment_instrument_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Google Pay: Visa"),
     ];
 
     $contribution = Contribution::get(FALSE)
@@ -420,7 +421,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testImportBtDonationMessages() {
     $audit = $this->auditTestProvider()[0];
@@ -439,9 +440,9 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'net_amount' => 12.46,
       'trxn_id' => 'FUNDRAISEUP ch_3NrmWyJaRQOHTfEW1KdRmJIX',
       'source' => 'GBP 11.00',
-      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
-      'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Completed"),
-      'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Bank Transfer: ACH"),
+      'financial_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
+      'contribution_status_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Completed"),
+      'payment_instrument_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Bank Transfer: ACH"),
     ];
 
     $contribution = Contribution::get(FALSE)
@@ -461,7 +462,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testImportRefundDonationMessages() {
     $audit = $this->auditTestProvider();
@@ -482,9 +483,9 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'net_amount' => 62.04,
       'trxn_id' => 'FUNDRAISEUP ch_3NrfJTJaRQOHTfEW0mf8ewoL',
       'source' => 'GBP 53.70',
-      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
-      'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Refunded"),
-      'payment_instrument_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Credit Card: Visa"),
+      'financial_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
+      'contribution_status_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Refunded"),
+      'payment_instrument_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', "Credit Card: Visa"),
     ];
 
     $contribution = Contribution::get(FALSE)
@@ -498,7 +499,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testImportNewRecurring() {
     $audit = $this->auditTestProvider();
@@ -514,8 +515,8 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'currency' => $recurring['currency'],
       'amount' => $recurring['gross'],
       'trxn_id' => $recurring['subscr_id'],
-      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
-      'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Pending"),
+      'financial_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
+      'contribution_status_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Pending"),
     ];
 
     $recurRow = ContributionRecur::get(FALSE)
@@ -529,7 +530,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testImportCancelRecurring(): void {
     $audit = $this->auditTestProvider();
@@ -547,8 +548,8 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'currency' => $newRecurringMsg['currency'],
       'amount' => $newRecurringMsg['gross'],
       'trxn_id' => $newRecurringMsg['subscr_id'],
-      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
-      'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Cancelled"),
+      'financial_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
+      'contribution_status_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Cancelled"),
     ];
 
     $recurRow = ContributionRecur::get(FALSE)
@@ -562,7 +563,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testImportFailedRecurring(): void {
     $audit = $this->auditTestProvider();
@@ -580,8 +581,8 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       'currency' => $newRecurringMsg['currency'],
       'amount' => $newRecurringMsg['gross'],
       'trxn_id' => $newRecurringMsg['subscr_id'],
-      'financial_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
-      'contribution_status_id' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Cancelled"),
+      'financial_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Cash"),
+      'contribution_status_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', "Cancelled"),
       'cancel_reason' => 'Failed: Your card was declined.',
     ];
 
@@ -596,7 +597,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testRecurringPlanChange() {
     $audit = $this->auditTestProvider();
@@ -650,7 +651,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testRecurringPlanChangeModifyEmail() {
     $audit = $this->auditTestProvider();
@@ -706,7 +707,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testRecurringPlanChangeDowngrade(): void {
     $audit = $this->auditTestProvider();

@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFAudit\IngenicoAuditProcessor;
+
 function ingenico_audit_create_processor($options) {
   return new IngenicoAuditProcessor($options);
 }

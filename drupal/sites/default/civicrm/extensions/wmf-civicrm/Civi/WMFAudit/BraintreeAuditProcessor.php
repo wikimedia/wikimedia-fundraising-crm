@@ -1,5 +1,7 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use SmashPig\PaymentProviders\Braintree\Audit\BraintreeAudit;
 
 class BraintreeAuditProcessor extends BaseAuditProcessor {
@@ -13,6 +15,7 @@ class BraintreeAuditProcessor extends BaseAuditProcessor {
   /**
    * @param $file
    * Get the date from parsed file name
+   *
    * @return array|string|string[]|null
    * @throws \Exception
    */
