@@ -463,7 +463,7 @@ abstract class BaseAuditProcessor {
 
       //parce the recon files into something relatively reasonable.
       $file = array_pop($recon_files);
-      wmf_audit_echo("Parsing $file");
+      $this->echo("Parsing $file");
       $start_time = microtime(TRUE);
       $parsed = $this->parse_recon_file($file);
       $time = microtime(TRUE) - $start_time;
@@ -473,14 +473,14 @@ abstract class BaseAuditProcessor {
       else {
         $parse_count = 0;
       }
-      wmf_audit_echo($parse_count . " results found in $time seconds\n");
+      $this->echo($parse_count . " results found in $time seconds\n");
 
       //remove transactions we already know about
       $start_time = microtime(TRUE);
       $missing = $this->get_missing_transactions($parsed);
       $recon_file_stats[$file] = wmf_audit_count_missing($missing);
       $time = microtime(TRUE) - $start_time;
-      wmf_audit_echo(wmf_audit_count_missing($missing) . ' missing transactions (of a possible ' . $parse_count . ") identified in $time seconds\n");
+      $this->echo(wmf_audit_count_missing($missing) . ' missing transactions (of a possible ' . $parse_count . ") identified in $time seconds\n");
       $total_donations += $parse_count;
 
       //If the file is empty, move it off.
@@ -506,7 +506,7 @@ abstract class BaseAuditProcessor {
       }
     }
     $total_missing_count = wmf_audit_count_missing($total_missing);
-    wmf_audit_echo("$total_missing_count total missing transactions identified at start");
+    $this->echo("$total_missing_count total missing transactions identified at start");
 
     //get the date distribution on what's left... for ***main transactions only***
     //That should be to say: The things that are totally in the payments logs.
@@ -526,7 +526,7 @@ abstract class BaseAuditProcessor {
     //@TODO: Handle the recurring type, once we have a gateway that gives some of those to us.
     //
     //Handle the negatives now. That way, the parent transactions will probably exist.
-    wmf_audit_echo("Processing 'negative' transactions");
+    $this->echo("Processing 'negative' transactions");
     $this->handle_all_negatives($total_missing, $remaining);
 
     //Wrap it up and put a bow on it.
@@ -589,7 +589,7 @@ abstract class BaseAuditProcessor {
       $wrap_up .= 'Initial stats on recon files: ' . print_r($recon_file_stats, TRUE) . "\n";
     }
 
-    wmf_audit_echo($wrap_up);
+    $this->echo($wrap_up);
   }
 
   protected function handle_all_negatives($total_missing, &$remaining) {
@@ -634,7 +634,7 @@ abstract class BaseAuditProcessor {
           $normal = $this->normalize_negative($record);
           $this->send_queue_message($normal, 'negative');
           $neg_count += 1;
-          wmf_audit_echo('!');
+          $this->echo('!');
         }
         else {
           // Ignore cancels with no parents because they must have
@@ -642,11 +642,11 @@ abstract class BaseAuditProcessor {
           if (!$this->record_is_cancel($record)) {
             //@TODO: Some version of makemissing should make these, too. Gar.
             $remaining['negative'][$this->get_record_human_date($record)][] = $record;
-            wmf_audit_echo('.');
+            $this->echo('.');
           }
         }
       }
-      wmf_audit_echo("Processed $neg_count 'negative' transactions\n");
+      $this->echo("Processed $neg_count 'negative' transactions\n");
     }
   }
 
@@ -712,7 +712,7 @@ abstract class BaseAuditProcessor {
    */
   protected function log_hunt_and_send($missing_by_date) {
     if (empty($missing_by_date)) {
-      wmf_audit_echo(__FUNCTION__ . ': No missing transactions sent to this function. Aborting.');
+      $this->echo(__FUNCTION__ . ': No missing transactions sent to this function. Aborting.');
       return FALSE;
     }
 
@@ -726,9 +726,9 @@ abstract class BaseAuditProcessor {
         $earliest = $audit_date;
       }
       $latest = $audit_date;
-      wmf_audit_echo($audit_date . " : " . count($data));
+      $this->echo($audit_date . " : " . count($data));
     }
-    wmf_audit_echo("\n");
+    $this->echo("\n");
 
     //REMEMBER: Log date is a liar!
     //Stepping backwards, log date really means "Now you have all the data for
@@ -780,7 +780,7 @@ abstract class BaseAuditProcessor {
         $window_start = $this->wmf_common_date_add_days($audit_date, -1 * self::LOG_SEARCH_WINDOW);
         if ($window_end >= $log_date && $window_start <= $log_date) {
           if (!array_key_exists($audit_date, $tryme)) {
-            wmf_audit_echo("Adding date $audit_date to the date pool for log date $log_date");
+            $this->echo("Adding date $audit_date to the date pool for log date $log_date");
             $tryme[$audit_date] = $data;
           }
         }
@@ -804,7 +804,7 @@ abstract class BaseAuditProcessor {
         foreach ($display_dates as $display_date => $local_count) {
           $message .= "\n\t$display_date : $local_count";
         }
-        wmf_audit_echo($message);
+        $this->echo($message);
 
         // now actually check the log from $log_date, for the missing transactions in $tryme
         // Get the prepped log(s) with the current date, returning false if it's not there.
@@ -816,7 +816,7 @@ abstract class BaseAuditProcessor {
         //Echochar with results for each one.
         foreach ($tryme as $audit_date => $missing) {
           if (!empty($missing)) {
-            wmf_audit_echo("Log Date: $log_date: About to check " . count($missing) . " missing transactions from $audit_date", TRUE);
+            $this->echo("Log Date: $log_date: About to check " . count($missing) . " missing transactions from $audit_date", TRUE);
             $checked = 0;
             $found = 0;
             foreach ($missing as $id => $transaction) {
@@ -838,7 +838,7 @@ abstract class BaseAuditProcessor {
 
                 if (!$data) {
                   //no data found in this log, which is expected and normal and not a problem.
-                  wmf_audit_echo('.');
+                  $this->echo('.');
                   continue;
                 }
                 $data['order_id'] = $order_id;
@@ -893,7 +893,7 @@ abstract class BaseAuditProcessor {
                 //Send to queue.
                 $this->send_queue_message($all_data, 'main');
                 unset($tryme[$audit_date][$id]);
-                wmf_audit_echo('!');
+                $this->echo('!');
               }
               catch (WMFException $ex) {
                 // End of the transaction search/destroy loop. If we're here and have
@@ -902,10 +902,10 @@ abstract class BaseAuditProcessor {
                 // logs.
                 $this->logError($ex->getMessage(), $ex->getErrorName());
                 unset($tryme[$audit_date][$id]);
-                wmf_audit_echo('X');
+                $this->echo('X');
               }
             }
-            wmf_audit_echo("Log Date: $log_date: Checked $checked missing transactions from $audit_date, and found $found\n");
+            $this->echo("Log Date: $log_date: Checked $checked missing transactions from $audit_date, and found $found\n");
           }
         }
       }
@@ -918,11 +918,11 @@ abstract class BaseAuditProcessor {
     if ($this->get_runtime_options('makemissing')) {
       $missing_count = wmf_audit_count_missing($tryme);
       if ($missing_count === 0) {
-        wmf_audit_echo('No further missing transactions to make.');
+        $this->echo('No further missing transactions to make.');
       }
       else {
         //today minus three. Again: The three is because Shut Up.
-        wmf_audit_echo("Making up to $missing_count missing transactions:");
+        $this->echo("Making up to $missing_count missing transactions:");
         $made = 0;
         $cutoff = $this->wmf_common_date_add_days($this->wmf_common_date_get_today_string(), $this->cutoff);
         foreach ($tryme as $audit_date => $missing) {
@@ -944,12 +944,12 @@ abstract class BaseAuditProcessor {
               }
 
               $made += 1;
-              wmf_audit_echo('!');
+              $this->echo('!');
               unset($tryme[$audit_date][$id]);
             }
           }
         }
-        wmf_audit_echo("Made $made missing transactions\n");
+        $this->echo("Made $made missing transactions\n");
       }
     }
 
@@ -1030,7 +1030,7 @@ abstract class BaseAuditProcessor {
       $working_directory = $this->getWorkingLogDirectory();
       $cleanup = []; //add files we want to make sure aren't there anymore when we're done here.
       if (file_exists($full_archive_path)) {
-        wmf_audit_echo("Retrieving $full_archive_path");
+        $this->echo("Retrieving $full_archive_path");
         $cmd = "cp $full_archive_path " . $working_directory;
         exec(escapeshellcmd($cmd), $ret, $errorlevel);
         $full_compressed_path = $working_directory . '/' . $compressed_filename;
@@ -1042,7 +1042,7 @@ abstract class BaseAuditProcessor {
           $cleanup[] = $full_compressed_path;
         }
         //uncompress
-        wmf_audit_echo("Gunzipping $full_compressed_path");
+        $this->echo("Gunzipping $full_compressed_path");
         $cmd = "gunzip -f $full_compressed_path";
         exec(escapeshellcmd($cmd), $ret, $errorlevel);
         //now check to make sure the file you expect, actually exists
@@ -1061,7 +1061,7 @@ abstract class BaseAuditProcessor {
         //Can't escape the hard-coded string we're grepping for, because it breaks terribly.
         $cmd = "grep '" . $this->get_log_distilling_grep_string() . "' " . escapeshellcmd($full_uncompressed_path) . " > " . escapeshellcmd($full_distilled_path);
 
-        wmf_audit_echo($cmd);
+        $this->echo($cmd);
         $ret = [];
         exec($cmd, $ret, $errorlevel);
         chmod($full_distilled_path, 0770);
@@ -1143,7 +1143,7 @@ abstract class BaseAuditProcessor {
       $this->logError($message, 'FILE_PERMS');
       return FALSE;
     }
-    wmf_audit_echo("Moved $file to $newfile");
+    $this->echo("Moved $file to $newfile");
     return TRUE;
   }
 
@@ -1198,7 +1198,7 @@ abstract class BaseAuditProcessor {
    */
   protected function get_missing_transactions($transactions) {
     if (empty($transactions)) {
-      wmf_audit_echo(__FUNCTION__ . ': No transactions to find. Returning.');
+      $this->echo(__FUNCTION__ . ': No transactions to find. Returning.');
       return FALSE;
     }
     //go through the transactions and check to see if they're in civi
@@ -1216,20 +1216,20 @@ abstract class BaseAuditProcessor {
       ) { //negative
         $transaction = $this->pre_process_refund($transaction);
         if ($this->negative_transaction_exists_in_civi($transaction) === FALSE) {
-          wmf_audit_echo('-'); //add a subtraction. I am the helpfulest comment ever.
+          $this->echo('-'); //add a subtraction. I am the helpfulest comment ever.
           $missing['negative'][] = $transaction;
         }
         else {
-          wmf_audit_echo('.');
+          $this->echo('.');
         }
       }
       else { //normal type
         if ($this->main_transaction_exists_in_civi($transaction) === FALSE) {
-          wmf_audit_echo('!');
+          $this->echo('!');
           $missing['main'][] = $transaction;
         }
         else {
-          wmf_audit_echo('.');
+          $this->echo('.');
         }
       }
     }
@@ -1321,7 +1321,7 @@ abstract class BaseAuditProcessor {
     $logPaths = implode(' ', $logs);
     // -h means don't print the file name prefix when grepping multiple files
     $cmd = 'grep -h \'' . $this->get_log_line_grep_string($order_id) . '\' ' . $logPaths;
-    wmf_audit_echo(__FUNCTION__ . ' ' . $cmd, TRUE);
+    $this->echo(__FUNCTION__ . ' ' . $cmd, TRUE);
 
     $ret = [];
     exec($cmd, $ret, $errorlevel);
@@ -1329,7 +1329,7 @@ abstract class BaseAuditProcessor {
     if (count($ret) > 0) {
       //In this wonderful new world, we only expect one line.
       if (count($ret) > 1) {
-        wmf_audit_echo("Odd: More than one logline returned for $order_id. Investigation Required.");
+        $this->echo("Odd: More than one logline returned for $order_id. Investigation Required.");
       }
       $raw_data = [];
 
@@ -1481,7 +1481,7 @@ abstract class BaseAuditProcessor {
 
     if (!empty($recon_data)) {
       foreach ($recon_data as $record) {
-        wmf_audit_echo($this->audit_echochar($record));
+        $this->echo($this->audit_echochar($record));
       }
     }
     if (count($recon_data)) {

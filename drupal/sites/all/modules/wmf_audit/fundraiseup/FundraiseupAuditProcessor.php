@@ -62,9 +62,9 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
         $normal = $this->normalize_negative($record);
         $this->send_queue_message($normal, 'negative');
         $neg_count += 1;
-        wmf_audit_echo('!');
+        $this->echo('!');
       }
-      wmf_audit_echo("Processed $neg_count 'negative' transactions\n");
+      $this->echo("Processed $neg_count 'negative' transactions\n");
     }
   }
 
@@ -76,7 +76,7 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
 
   protected function log_hunt_and_send($missing_by_date) {
     $missing_count = wmf_audit_count_missing($missing_by_date);
-    wmf_audit_echo("Making up to $missing_count missing transactions:");
+    $this->echo("Making up to $missing_count missing transactions:");
     $made = 0;
 
     foreach ($missing_by_date as $date => $missing) {
@@ -92,12 +92,12 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
         }
 
         $made += 1;
-        wmf_audit_echo('!');
+        $this->echo('!');
         unset($missing_by_date[$date][$id]);
       }
     }
 
-    wmf_audit_echo("Made $made missing transactions\n");
+    $this->echo("Made $made missing transactions\n");
 
     return $missing_by_date;
   }
