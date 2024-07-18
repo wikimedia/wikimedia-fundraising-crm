@@ -12,7 +12,7 @@ use Civi\Test;
 use Civi;
 use PHPUnit\Framework\TestCase;
 
-class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, TransactionalInterface {
+class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
 
   use Api3TestTrait;
   use EntityTrait;

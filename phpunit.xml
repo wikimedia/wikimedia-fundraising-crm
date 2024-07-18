@@ -4,7 +4,14 @@
   bootstrap="drupal/sites/default/bootstrap-phpunit.php"
   printerClass="clagiordano\PhpunitResultPrinter\ResultPrinter"
   backupGlobals="false">
-
+  <php>
+    <env name="PHPUNIT_PRETTY_PRINT_PROGRESS" value="true" />
+  </php>
+  <listeners>
+    <listener class="\Civi\Test\WMFTestListener">
+      <arguments/>
+    </listener>
+  </listeners>
   <testsuites>
     <testsuite name="wmf-civicrm">
       <directory>drupal/sites/default/civicrm/extensions/wmf-civicrm/tests/phpunit</directory>
