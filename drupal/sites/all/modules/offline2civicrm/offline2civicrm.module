@@ -136,7 +136,6 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
       'fidelity' => t('Fidelity'),
       'foreign_checks' => t('Foreign Checks'),
       'generic_ind' => t('Generic Individuals'),
-      'stripe' => t('Stripe'),
     ),
     '#ajax' => array(
       'callback' => 'offline2civicrm_import_ajax',
@@ -390,8 +389,6 @@ function offline2civicrm_get_importer_class($uploadFormat, $fileUri, $additional
     case 'foreign_checks':
       return new ForeignChecksFile($fileUri, $additionalFields);
 
-    case 'stripe':
-      return new StripeFile($fileUri, $additionalFields);
 
     default:
       throw new Exception('Bad file format selection');
