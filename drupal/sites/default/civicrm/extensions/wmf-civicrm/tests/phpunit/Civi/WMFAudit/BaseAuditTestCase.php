@@ -23,6 +23,7 @@ class BaseAuditTestCase extends TestCase {
     // It is found under sites/default/files/civicrm/upload & is web-writable,
     // outside of git, and somewhat durable.
     \Civi::settings()->set('wmf_audit_directory_working_log', \CRM_Core_Config::singleton()->uploadDir);
+    \Civi::settings()->set('wmf_audit_directory_payments_log', __DIR__ . '/data/logs/');
     $this->setUpWMFEnvironment();
     parent::setUp();
   }

@@ -60,15 +60,6 @@ function wmf_audit_settings() {
 }
 
 /**
- * Get the payments log archive directory. Same across all gateways.
- *
- * @return string
- */
-function wmf_audit_get_log_archive_dir() {
-  return variable_get('wmf_audit_log_archive_dir', WMF_AUDIT_PAYMENTS_LOGS_DIR);
-}
-
-/**
  * Counts the missing transactions in the main array of missing transactions.
  * This is annoying and needed its own function, because the $missing array goes
  * $missing[$type]=> array of transactions.

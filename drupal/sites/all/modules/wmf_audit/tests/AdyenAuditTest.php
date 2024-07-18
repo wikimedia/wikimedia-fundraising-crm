@@ -12,8 +12,6 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
   public function setUp(): void {
     parent::setUp();
-    // @todo - this needs to be moved to a setting too....
-    variable_set('wmf_audit_log_archive_dir', __DIR__ . '/data/logs/',);
     $msg = [
       'contribution_tracking_id' => 92598312,
       'currency' => 'USD',
@@ -235,6 +233,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
   /**
    * @dataProvider auditTestProvider
+   * @throws \Exception
    */
   public function testParseFiles($path, $expectedMessages) {
     \Civi::settings()->set('wmf_audit_directory_audit', $path);
@@ -266,6 +265,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertMessages($expectedMessages);
   }
 
+  /**
+   * @throws \Exception
+   */
   protected function runAuditor() {
     $options = [
       'quiet' => TRUE,
@@ -275,4 +277,5 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $audit = new AdyenAuditProcessor($options);
     $audit->run();
   }
+
 }
