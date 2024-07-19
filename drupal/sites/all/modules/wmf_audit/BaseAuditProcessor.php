@@ -858,32 +858,31 @@ abstract class BaseAuditProcessor {
 
                 //Now that we've made it this far: Easy check to make sure we're even looking at the right thing...
                 //I'm not totally sure this is going to be the right thing to do, though. Intended fragility.
-                if (!$this->get_runtime_options('fakedb')) {
-                  $method = $all_data['payment_method'];
-                  // FIXME: should deal better with recurring. For now, we only
-                  // get initial recurring records for GlobalCollect via these
-                  // parsers, and we can treat those almost the same as one-time
-                  // donations, just with 'recurring' => 1 in the message.
-                  if (!empty($all_data['recurring'])) {
-                    // Limit the bandaid to ONLY deal with first installments
-                    if (!empty($all_data['installment']) && $all_data['installment'] > 1) {
-                      throw new WMFException(
-                        WMFException::INVALID_RECURRING,
-                        "Audit parser found recurring order $order_id with installment {$all_data['installment']}"
-                      );
-                    }
-                    $method = 'r' . $method;
-                  }
-                  if ((!empty($contribution_tracking_data['utm_payment_method'])) &&
-                    ($contribution_tracking_data['utm_payment_method'] !== $method)) {
-                    $message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
-                    $message .= ') and normalized log and recon data(' . $method . '). Investigation required.';
+                $method = $all_data['payment_method'];
+                // FIXME: should deal better with recurring. For now, we only
+                // get initial recurring records for GlobalCollect via these
+                // parsers, and we can treat those almost the same as one-time
+                // donations, just with 'recurring' => 1 in the message.
+                if (!empty($all_data['recurring'])) {
+                  // Limit the bandaid to ONLY deal with first installments
+                  if (!empty($all_data['installment']) && $all_data['installment'] > 1) {
                     throw new WMFException(
-                      WMFException::DATA_INCONSISTENT,
-                      $message
+                      WMFException::INVALID_RECURRING,
+                      "Audit parser found recurring order $order_id with installment {$all_data['installment']}"
                     );
                   }
+                  $method = 'r' . $method;
                 }
+                if ((!empty($contribution_tracking_data['utm_payment_method'])) &&
+                  ($contribution_tracking_data['utm_payment_method'] !== $method)) {
+                  $message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
+                  $message .= ') and normalized log and recon data(' . $method . '). Investigation required.';
+                  throw new WMFException(
+                    WMFException::DATA_INCONSISTENT,
+                    $message
+                  );
+                }
+
                 unset($contribution_tracking_data['utm_payment_method']);
                 // On the next line, the date field from all_data will win, which we totally want.
                 // I had thought we'd prefer the contribution tracking date, but that's just silly.
@@ -1007,7 +1006,7 @@ abstract class BaseAuditProcessor {
     $full_distilled_paths = [];
     for ($i = 0; $i < $count; $i++) {
       $compressed_filename = $compressed_filenames[$i];
-      $full_archive_path = wmf_audit_get_log_archive_dir() . '/' . $compressed_filename;
+      $full_archive_path = $this->getLogArchiveDirectory() . '/' . $compressed_filename;
       $working_directory = $this->getWorkingLogDirectory();
       $cleanup = []; //add files we want to make sure aren't there anymore when we're done here.
       if (file_exists($full_archive_path)) {
@@ -1135,7 +1134,7 @@ abstract class BaseAuditProcessor {
    */
   protected function setup_required_directories() {
     $directories = [
-      'log_archive' => wmf_audit_get_log_archive_dir(),
+      'log_archive' => $this->getLogArchiveDirectory(),
       'recon' => $this->getIncomingFilesDirectory(),
       'log_working' => $this->getWorkingLogDirectory(),
       'recon_completed' => $this->getCompletedFilesDirectory(),
@@ -1156,6 +1155,15 @@ abstract class BaseAuditProcessor {
       }
     }
     return TRUE;
+  }
+
+  /**
+   * Get the payments log archive directory. Same across all gateways.
+   *
+   * @return string
+   */
+  protected function getLogArchiveDirectory() {
+    return \Civi::settings()->get('wmf_audit_directory_payments_log');
   }
 
   /**
