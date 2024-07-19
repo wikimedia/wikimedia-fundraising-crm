@@ -104,7 +104,13 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         \Civi::log('wmf')->error('refund {log_id}: Could not refund due to internal error: {message}', array_merge($context, ['message' => $ex->getMessage()]));
         throw $ex;
       }
-      $this->cancelRecurringOnChargeback($contributionStatus, $contributions, $gateway);
+
+      // not all messages have a reason
+      $reason = $message['reason'] ?? '';
+      // Some chargebacks for ACH and SEPA are retryable, don't cancel the recurrings
+      if (!$this->isRetryableChargeback($reason)) {
+        $this->cancelRecurringOnChargeback($contributionStatus, $contributions, $gateway);
+      }
     }
     else {
       \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
@@ -376,6 +382,21 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       ];
       QueueWrapper::push('recurring', $message);
     }
+  }
+
+  /**
+   * Some payment methods have retryable chargebacks, SEPA and ACH
+   * SEPA retryable reasons: https://docs.adyen.com/online-payments/auto-rescue/sepa/
+   *
+   * @param string $reason
+   */
+  private function isRetryableChargeback(string $reason): bool {
+    $reasons = [
+      'AM04:InsufficientFunds',
+      'MS03: No reason specified',
+    ];
+
+    return in_array($reason,$reasons);
   }
 
 }
