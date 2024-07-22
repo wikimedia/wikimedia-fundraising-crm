@@ -3,6 +3,7 @@
 namespace Civi\WMFAudit;
 
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionTracking;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFException\WMFException;
 use Civi\WMFTransaction;
@@ -853,7 +854,7 @@ abstract class BaseAuditProcessor {
 
                 $all_data = $this->merge_data($data, $transaction);
                 //lookup contribution_tracking data, and fill it in with audit markers if there's nothing there.
-                $contribution_tracking_data = wmf_audit_get_contribution_tracking_data($all_data);
+                $contribution_tracking_data = $this->getContributionTrackingData($all_data);
 
                 if (!$contribution_tracking_data) {
                   throw new WMFException(
@@ -935,7 +936,7 @@ abstract class BaseAuditProcessor {
           if ((int) $audit_date <= (int) $cutoff) {
             foreach ($missing as $id => $message) {
               if (empty($message['contribution_tracking_id'])) {
-                $contribution_tracking_data = wmf_audit_make_contribution_tracking_data($message);
+                $contribution_tracking_data = $this->makeContributionTrackingData($message);
                 $all_data = array_merge($message, $contribution_tracking_data);
               }
               else {
@@ -960,6 +961,104 @@ abstract class BaseAuditProcessor {
     }
     //this will contain whatever is left, if we haven't errored out at this point.
     return $tryme;
+  }
+
+  /**
+   * Returns the contribution tracking data for $record, if we can find it.
+   * If we can't find it fabricate something and send it to the queue.
+   *
+   * @param array $record The re-fused and normal transaction that doesn't yet
+   * exist in civicrm.
+   *
+   * @return array
+   */
+  private function getContributionTrackingData($record) {
+
+    $contributionTrackingId = $record['contribution_tracking_id'];
+    $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $contributionTrackingId)->execute()->first();
+
+    if (!$result) {
+      wmf_audit_log_error("Missing Contribution Tracking data. Supposed ID='$contributionTrackingId'", 'DATA_INCOMPLETE');
+      $paymentMethod = $record['payment_method'] ?? '';
+      $fallbackContributionTrackingData = [
+        'id' => $contributionTrackingId,
+        'utm_medium' => 'audit',
+        'utm_source' => "audit..$paymentMethod",
+        'payment_method' => $paymentMethod,
+        'ts' => wmf_common_date_unix_to_sql(
+          $record['date'] ?? time()
+        ),
+        'language' => $record['language'] ?? NULL,
+        'country' => $record['country'] ?? NULL,
+      ];
+      QueueWrapper::push('contribution-tracking', $fallbackContributionTrackingData);
+      $fallbackContributionTrackingData['date'] = $record['date'];
+      $fallbackContributionTrackingData['utm_payment_method'] = $paymentMethod;
+      foreach (['language', 'ts', 'id', 'payment_method'] as $unsetme) {
+        unset($fallbackContributionTrackingData[$unsetme]);
+      }
+      return $fallbackContributionTrackingData;
+    }
+
+    $this->echo("Found Contribution Tracking data. ID='$contributionTrackingId'", TRUE);
+    // Some of the normalization below has been done in the civicrm contribution tracking table
+    if (!is_null($result['utm_source'])) {
+      $utm_payment_method = explode('.', $result['utm_source']);
+      //...sure.
+      $utm_payment_method = $utm_payment_method[2];
+    }
+    else {
+      //probably one of us silly people doing things in testing...
+      $utm_payment_method = NULL;
+    }
+
+    // The audit is expecting a date in Unix timestamp format
+    $result['date'] = strtotime($result['tracking_date']);
+
+    $keep = [
+      'utm_source',
+      'utm_medium',
+      'utm_campaign',
+      'language',
+      'date',
+    ];
+
+    $ret = [];
+    foreach ($keep as $thing) {
+      $ret[$thing] = $result[$thing];
+    }
+
+    //and then, so we can double-check ourselves on the outside...
+    $ret['utm_payment_method'] = $utm_payment_method;
+    return $ret;
+  }
+
+  /**
+   * Makes everything we need to fake contribution tracking data.
+   * So: Mostly the timestamp.
+   *
+   * @param array $record Transaction parsed into an array
+   *
+   * @return array utm and date data appropriate for $record
+   */
+  private function makeContributionTrackingData($record) {
+    $utm_stuffer = wmf_audit_runtime_options('submod_prefix') . '_audit';
+    //anything we don't put in here should be handled by the universal defaults on
+    //import. And that's good.
+    $return = [
+      'utm_source' => $record['utm_source'] ?? $utm_stuffer,
+      'utm_medium' => $record['utm_medium'] ?? $utm_stuffer,
+      'utm_campaign' => $record['utm_campaign'] ?? $utm_stuffer,
+    ];
+
+    if (!array_key_exists('date', $record)) {
+      wmf_audit_log_error(__FUNCTION__ . ": Record has no date field. Weirdness probably ensues", 'DATA_WEIRD');
+    }
+    else {
+      $return['date'] = $record['date'];
+    }
+
+    return $return;
   }
 
   /**
