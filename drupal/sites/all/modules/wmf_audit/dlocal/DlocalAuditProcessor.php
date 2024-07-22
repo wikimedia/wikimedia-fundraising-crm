@@ -74,4 +74,5 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
       "payments-dlocal-{$date}",
     ];
   }
+
 }
