@@ -20,9 +20,10 @@ class BraintreeAuditProcessor extends BaseAuditProcessor {
     // Example: settlement_batch_report_2022-06-21.json or
     // settlement_batch_report_2022-06-21.csv
     // For that, we'd want to return 20220621
-    if(preg_match('/[0-9]{4}[-][0-9]{2}[-][0-9]{2}/', $file, $date_piece)){
+    if (preg_match('/[0-9]{4}[-][0-9]{2}[-][0-9]{2}/', $file, $date_piece)) {
       return preg_replace('/-/', '', $date_piece[0]);
-    }else {
+    }
+    else {
       throw new Exception("Un-parseable reconciliation file name: {$file}");
     }
   }
@@ -64,4 +65,5 @@ class BraintreeAuditProcessor extends BaseAuditProcessor {
     }
     return FALSE;
   }
+
 }
