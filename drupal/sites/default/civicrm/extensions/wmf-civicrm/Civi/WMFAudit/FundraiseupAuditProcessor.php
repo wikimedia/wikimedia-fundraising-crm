@@ -79,7 +79,7 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
   }
 
   protected function log_hunt_and_send($missing_by_date) {
-    $missing_count = wmf_audit_count_missing($missing_by_date);
+    $missing_count = $this->countMissing($missing_by_date);
     $this->echo("Making up to $missing_count missing transactions:");
     $made = 0;
 

@@ -3,28 +3,6 @@
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
 
 /**
- * Counts the missing transactions in the main array of missing transactions.
- * This is annoying and needed its own function, because the $missing array goes
- * $missing[$type]=> array of transactions.
- * Naturally, we're not checking to see that $type is one of the big three that
- * we expect, so it's possible to use this badly. So, don't.
- *
- * @param array $missing An array of missing transactions by type.
- *
- * @return int The total missing transactions in a missing transaction array
- */
-function wmf_audit_count_missing($missing) {
-  $count = 0;
-  if (!is_array($missing) || empty($missing)) {
-    return 0;
-  }
-  foreach ($missing as $type => $data) {
-    $count += count($missing[$type]);
-  }
-  return $count;
-}
-
-/**
  * Wrapper for echo
  * Lets us switch on things we only want to see in verbose mode.
  * Also allows us to impose a char limit per line for the benefit of jenkins

@@ -138,6 +138,28 @@ abstract class BaseAuditProcessor {
   }
 
   /**
+   * Counts the missing transactions in the main array of missing transactions.
+   * This is annoying and needed its own function, because the $missing array goes
+   * $missing[$type]=> array of transactions.
+   * Naturally, we're not checking to see that $type is one of the big three that
+   * we expect, so it's possible to use this badly. So, don't.
+   *
+   * @param array $missing An array of missing transactions by type.
+   *
+   * @return int The total missing transactions in a missing transaction array
+   */
+  protected function countMissing($missing) {
+    $count = 0;
+    if (!is_array($missing) || empty($missing)) {
+      return 0;
+    }
+    foreach ($missing as $type => $data) {
+      $count += count($missing[$type]);
+    }
+    return $count;
+  }
+
+  /**
    * A slight twist on array_merge - don't overwrite non-blank data with blank strings.
    *
    * @param array $log_data
@@ -496,16 +518,16 @@ abstract class BaseAuditProcessor {
       //remove transactions we already know about
       $start_time = microtime(TRUE);
       $missing = $this->get_missing_transactions($parsed);
-      $recon_file_stats[$file] = wmf_audit_count_missing($missing);
+      $recon_file_stats[$file] = $this->countMissing($missing);
       $time = microtime(TRUE) - $start_time;
-      $this->echo(wmf_audit_count_missing($missing) . ' missing transactions (of a possible ' . $parse_count . ") identified in $time seconds\n");
+      $this->echo($this->countMissing($missing) . ' missing transactions (of a possible ' . $parse_count . ") identified in $time seconds\n");
       $total_donations += $parse_count;
 
       //If the file is empty, move it off.
       // Note that we are not archiving files that have missing transactions,
       // which might be resolved below. Those are archived on the next run,
       // once we can confirm they have hit Civi and are no longer missing.
-      if (wmf_audit_count_missing($missing) <= $this->get_runtime_options('recon_complete_count')) {
+      if ($this->countMissing($missing) <= $this->get_runtime_options('recon_complete_count')) {
         $this->move_completed_recon_file($file);
       }
 
@@ -523,7 +545,7 @@ abstract class BaseAuditProcessor {
         }
       }
     }
-    $total_missing_count = wmf_audit_count_missing($total_missing);
+    $total_missing_count = $this->countMissing($total_missing);
     $this->echo("$total_missing_count total missing transactions identified at start");
 
     //get the date distribution on what's left... for ***main transactions only***
@@ -555,7 +577,7 @@ abstract class BaseAuditProcessor {
     $missing_at_end = 0;
     if (is_array($remaining) && !empty($remaining)) {
       foreach ($remaining as $type => $data) {
-        $count = wmf_audit_count_missing($data);
+        $count = $this->countMissing($data);
         ${'missing_' . $type} = $count;
         $missing_at_end += $count;
       }
@@ -936,7 +958,7 @@ abstract class BaseAuditProcessor {
 
     //if we are running in makemissing mode: make the missing transactions.
     if ($this->get_runtime_options('makemissing')) {
-      $missing_count = wmf_audit_count_missing($tryme);
+      $missing_count = $this->countMissing($tryme);
       if ($missing_count === 0) {
         $this->echo('No further missing transactions to make.');
       }
