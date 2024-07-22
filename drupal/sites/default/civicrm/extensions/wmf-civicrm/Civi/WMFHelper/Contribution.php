@@ -92,9 +92,10 @@ class Contribution {
     if (empty($contribution->total_amount) && (!$contributionStatus)) {
       return [];
     }
+    $isRefund = substr($contribution->trxn_id ?? '', 0, 4) === 'RFD ';
     if ($contributionStatus === 'Completed'
       && !empty($contribution->receive_date)
-      && substr($contribution->trxn_id, 0, 4) !== 'RFD '
+      && !$isRefund
       && substr($contribution->receive_date, 0, 8) === date('Ymd')
     ) {
       // If the current donation was received today do an early return.
@@ -113,7 +114,7 @@ class Contribution {
     // updated by the triggers.
     $contactLastDonation = self::getContactLastDonationData((int) $contribution->contact_id);
     $extra = wmf_civicrm_get_original_currency_and_amount_from_source($contribution->source, $contribution->total_amount);
-    if ($contributionStatus === 'Completed' && substr($contribution->trxn_id, 0, 4) !== 'RFD ') {
+    if ($contributionStatus === 'Completed' && !$isRefund) {
       // This is a 'valid' transaction - it's either the latest or no update is required.
       if (strtotime($contactLastDonation['date']) === strtotime($contribution->receive_date)) {
         if (!empty($extra['original_currency']) && $contactLastDonation['currency'] !== \CRM_Utils_Array::value('original_currency', $extra)) {

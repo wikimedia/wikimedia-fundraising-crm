@@ -7,6 +7,7 @@ $processors = [
   'dlocal',
   'fundraiseup',
   'globalcollect',
+  'gravy',
   'ingenico',
   'paypal',
   'paypal_ec'

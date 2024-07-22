@@ -70,6 +70,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
 			x.no_thank_you,
 			x.original_amount,
 			x.original_currency,
+			x.source_type,
 			g.campaign AS gift_source,
 			s.stock_value,
 			s.description_of_stock,
@@ -199,7 +200,9 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     ]);
     thank_you_update_ty_date($mailingData);
     $counter->increment($mailingData['gateway']);
-    $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
+    if ($mailingData['source_type'] === 'payments') {
+      $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
+    }
     return TRUE;
   }
   else {

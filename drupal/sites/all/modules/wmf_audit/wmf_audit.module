@@ -6,60 +6,6 @@ use SmashPig\Core\DataStores\QueueWrapper;
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
 
 /**
- * Implementation of hook_menu()
- */
-function wmf_audit_menu() {
-  $items = [];
-
-  $items['admin/config/wmf_audit'] = [
-    'title' => 'WMF Audit',
-    'access arguments' => ['administer wmf_audit'],
-    'page callback' => 'system_admin_menu_block_page',
-    'file' => 'system.admin.inc',
-    'file path' => drupal_get_path('module', 'system'),
-  ];
-
-  $items['admin/config/wmf_audit/configure'] = [
-    'title' => 'WMF Audit',
-    'description' => t('Configure WMF audit settings.'),
-    'access arguments' => ['administer wmf_audit'],
-    'page callback' => 'drupal_get_form',
-    'page arguments' => ['wmf_audit_settings'],
-  ];
-
-  return $items;
-}
-
-/**
- * Implements hook_permission.
- *
- * Exported permissions are:
- *    administer wmf_audit
- *
- * @return array of exported permissions.
- */
-function wmf_audit_permission() {
-  return [
-    'administer wmf_audit' => [
-      'title' => 'Configure the wmf_audit module',
-    ],
-  ];
-}
-
-/**
- * Callback for menu
- */
-function wmf_audit_settings() {
-  $form['wmf_audit_log_archive_dir'] = [
-    '#type' => 'textfield',
-    '#title' => t('Path to directory containing WMF payments logs'),
-    '#required' => TRUE,
-    '#default_value' => variable_get('wmf_audit_log_archive_dir', WMF_AUDIT_PAYMENTS_LOGS_DIR),
-  ];
-  return system_settings_form($form);
-}
-
-/**
  * Counts the missing transactions in the main array of missing transactions.
  * This is annoying and needed its own function, because the $missing array goes
  * $missing[$type]=> array of transactions.
@@ -79,26 +25,6 @@ function wmf_audit_count_missing($missing) {
     $count += count($missing[$type]);
   }
   return $count;
-}
-
-/**
- * Remove all distilled logs older than the oldest date ($date)
- * Not even a big deal if we overshoot and remove too many, because we'll just
- * remake them next time if they're missing.
- *
- * @param string $date The date string for the oldest log we want to keep
- * @param array $working_logs list of working log files by date
- */
-function wmf_audit_remove_old_logs($date, $working_logs) {
-  if (!empty($working_logs)) {
-    foreach ($working_logs as $logdate => $files) {
-      foreach($files as $file) {
-        if ((int) $logdate < (int) $date) {
-          unlink($file);
-        }
-      }
-    }
-  }
 }
 
 /**
