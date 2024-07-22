@@ -26,7 +26,6 @@ abstract class BaseAuditProcessor {
 
   public function __construct($options) {
     $this->options = $options;
-    $options['submod_prefix'] = $this->name;
     \Civi::$statics['wmf_audit_runtime'] = $options;
   }
 
@@ -115,7 +114,7 @@ abstract class BaseAuditProcessor {
    */
   protected function logError($message, $drush_code) {
     \Civi::log('wmf')
-      ->error(wmf_audit_runtime_options('submod_prefix') . '_audit: {message}',
+      ->error($this->name . '_audit: {message}',
         ['message' => $message]);
 
     //Maybe explode
@@ -1077,7 +1076,7 @@ abstract class BaseAuditProcessor {
    * @return array utm and date data appropriate for $record
    */
   private function makeContributionTrackingData($record) {
-    $utm_stuffer = wmf_audit_runtime_options('submod_prefix') . '_audit';
+    $utm_stuffer = $this->name . '_audit';
     //anything we don't put in here should be handled by the universal defaults on
     //import. And that's good.
     $return = [
