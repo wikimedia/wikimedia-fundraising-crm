@@ -234,14 +234,6 @@ abstract class BaseAuditProcessor {
   /**
    * Wrapper for echo
    * Lets us switch on things we only want to see in verbose mode.
-   * Also allows us to impose a char limit per line for the benefit of jenkins
-   * output logs.
-   * Without this, the viz blocks would just ride merrily off the right end of the
-   * screen and cause stupid amounts of side scrolling.
-   *
-   * @staticvar int $chars The number of single chars we've already added to this
-   * line.
-   * @staticvar int $limit The char limit, set at the command line
    *
    * @param string $string The thing you want to echo. Single chars will be added to
    * the current line, while longer strings will get their own new line.

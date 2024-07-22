@@ -25,7 +25,6 @@ function wmf_audit_drush_command() {
       'run_all' => 'Batch search for all missing transactions across all available recon files, instead of just the top three',
       'test' => 'Test the audit and rebuild job, but do not generate messages. No data will be changed.',
       'makemissing' => 'Will reconstruct the un-rebuildable transactions found in the recon file, with default values. USE WITH CAUTION: Currently this prevents real data from entering the system if we ever get it.',
-      'charlimit' => 'Will cause echoing to line break after the given number of characters',
       'verbose' => 'Verbose output',
       'recon_complete_count' => 'Number past which we should consider a recon file to be "complete", and move it out of the working dir.',
       'file' => 'Optional, name of a file to parse (must be in the incoming directory, should not include full path)',
@@ -76,10 +75,6 @@ function drush_wmf_audit_parse_audit() {
   }
 
   //now, params that come with values
-  if (drush_get_option('charlimit')) {
-    echo "Char limit of " . drush_get_option('charlimit') . " is in effect.\n";
-    $options['charlimit'] = drush_get_option('charlimit');
-  }
   //local default
   $options['recon_complete_count'] = 0;
   if (drush_get_option('recon_complete_count')) {
