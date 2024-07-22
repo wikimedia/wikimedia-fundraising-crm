@@ -119,7 +119,20 @@ abstract class BaseAuditProcessor {
         ['message' => $message]);
 
     //Maybe explode
-    if (wmf_audit_error_isfatal($drush_code)) {
+    //All of these "nonfatal" things are meant to be nonfatal to the *job*, and
+    //not nonfatal to the contribution itself. We hit one of these,
+    //the contribution will be skipped, and we move to the next one.
+    //ALL OTHER CODES will cause the process to come to a screeching halt.
+    $nonfatal = [
+      'DATA_INCONSISTENT',
+      'DATA_INCOMPLETE',
+      'DATA_WEIRD',
+      'MISSING_PAYMENTS_LOG',
+      'MISSING_MANDATORY_DATA',
+      'UTM_DATA_MISMATCH',
+      'NORMALIZE_DATA',
+    ];
+    if (!in_array($drush_code, $nonfatal)) {
       die("\n*** Fatal Error $drush_code: $message");
     }
   }
