@@ -472,7 +472,15 @@ function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id
     1 => [$gateway, 'String'],
     2 => [$gateway_txn_id, 'String'],
   ]);
-  return wmf_civicrm_dao_to_list($dao);
+  $result = [];
+  while ($dao->fetch()) {
+    $result[] = $dao->toArray();
+  }
+  // FIXME: pick wart
+  if (empty($result)) {
+    return FALSE;
+  }
+  return $result;
 }
 
 /**
@@ -492,7 +500,15 @@ function wmf_civicrm_get_contributions_from_contribution_id($contribution_id) {
   $dao = CRM_Core_DAO::executeQuery($query, [
     1 => [$contribution_id, 'Integer'],
   ]);
-  return wmf_civicrm_dao_to_list($dao);
+  $result = [];
+  while ($dao->fetch()) {
+    $result[] = $dao->toArray();
+  }
+  // FIXME: pick wart
+  if (empty($result)) {
+    return FALSE;
+  }
+  return $result;
 }
 
 function wmf_civicrm_boost_performance() {
@@ -747,29 +763,6 @@ function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_
     return ['original_currency' => 'USD', 'original_amount' => $usd_amount];
   }
   return [];
-}
-
-/**
- * Expand CiviCRM DAO results object into an array of rows as array
- *
- * @param $dao CRM_Core_DAO
- *
- * @return array
- * @throws \Exception
- */
-function wmf_civicrm_dao_to_list($dao) {
-  if (PEAR::isError($dao)) {
-    throw new Exception($dao->getMessage());
-  }
-  $result = [];
-  while ($dao->fetch()) {
-    $result[] = $dao->toArray();
-  }
-  // FIXME: pick wart
-  if (empty($result)) {
-    return FALSE;
-  }
-  return $result;
 }
 
 /**
