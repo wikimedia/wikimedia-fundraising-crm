@@ -111,28 +111,6 @@ function wmf_audit_runtime_options($confusing_thing = NULL) {
 }
 
 /**
- * Logs the errors we get in a consistent way
- *
- * @deprecated call $this->logError() on Audit classes.
- *
- * @param string $message The message we want to log. Should be
- * descriptive enough that we can bug hunt without having to go all cowboy in
- * prod.
- * @param string $drush_code If this code is fatal (According to
- * wmf_audit_error_isfatal), this will result in the whole script dying.
- */
-function wmf_audit_log_error($message, $drush_code) {
-
-  \Civi::log('wmf')->error(wmf_audit_runtime_options('submod_prefix') . '_audit: {message}',
-    ['message' => $message]);
-
-  //Maybe explode
-  if (wmf_audit_error_isfatal($drush_code)) {
-    die("\n*** Fatal Error $drush_code: $message");
-  }
-}
-
-/**
  * Returns an array of errors that should not cause the script to blow up, but
  * which will probably still cause messages to get thrown out.
  * TODO: Use WMFException instead.

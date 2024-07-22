@@ -978,7 +978,7 @@ abstract class BaseAuditProcessor {
     $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $contributionTrackingId)->execute()->first();
 
     if (!$result) {
-      wmf_audit_log_error("Missing Contribution Tracking data. Supposed ID='$contributionTrackingId'", 'DATA_INCOMPLETE');
+      $this->logError("Missing Contribution Tracking data. Supposed ID='$contributionTrackingId'", 'DATA_INCOMPLETE');
       $paymentMethod = $record['payment_method'] ?? '';
       $fallbackContributionTrackingData = [
         'id' => $contributionTrackingId,
@@ -1052,7 +1052,7 @@ abstract class BaseAuditProcessor {
     ];
 
     if (!array_key_exists('date', $record)) {
-      wmf_audit_log_error(__FUNCTION__ . ": Record has no date field. Weirdness probably ensues", 'DATA_WEIRD');
+      $this->logError(__FUNCTION__ . ": Record has no date field. Weirdness probably ensues", 'DATA_WEIRD');
     }
     else {
       $return['date'] = $record['date'];
