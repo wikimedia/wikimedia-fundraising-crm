@@ -2,6 +2,7 @@
 
 namespace Civi\WMFAudit;
 
+use Civi\Api4\ContributionTracking;
 use Civi\WMFException\WMFException;
 
 /**
@@ -60,6 +61,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'id' => 82431234,
       'utm_campaign' => 'adyen_audit',
     ]);
+    $this->ids['ContributionTracking'][] = 43992337;
   }
 
   public function auditTestProvider(): array {
@@ -242,6 +244,65 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->runAuditor();
 
     $this->assertMessages($expectedMessages);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function testParseMissingContributionTracking(): void {
+    // The contribution tracking record does not exist.
+    $this->assertEmpty(ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', 43992337)
+      ->execute());
+
+    $this->testParseFiles(__DIR__ . '/data/Adyen/donation_new/',
+      [
+        'donations' => [
+          [
+            'contribution_tracking_id' => '43992337',
+            'city' => 'asdf',
+            'country' => 'US',
+            'currency' => 'USD',
+            'date' => 1487484651,
+            'email' => 'mouse@wikimedia.org',
+            'fee' => 0.24,
+            'first_name' => 'asdf',
+            'gateway' => 'adyen',
+            'gateway_account' => 'TestMerchant',
+            'gateway_txn_id' => '5364893193133131',
+            'gross' => '1.00',
+            'invoice_id' => '43992337.0',
+            'language' => 'en',
+            'last_name' => 'asdff',
+            'order_id' => '43992337.0',
+            'payment_method' => 'cc',
+            'payment_submethod' => 'visa',
+            'postal_code' => '11111',
+            'recurring' => '',
+            'state_province' => 'AK',
+            'street_address' => 'asdf',
+            'user_ip' => '77.177.177.77',
+            'utm_campaign' => 'C13_en.wikipedia.org',
+            'utm_medium' => 'sidebar',
+            'utm_source' => '..cc',
+            'settled_gross' => '0.76',
+            'settled_currency' => 'USD',
+            'settled_fee' => 0.24,
+          ],
+        ],
+      ]
+    );
+    $this->processContributionTrackingQueue();
+    $tracking = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', 43992337)
+      ->execute()
+      ->single();
+    $this->assertEquals('audit', $tracking['utm_medium']);
+    $this->assertEquals('audit..cc', $tracking['utm_source']);
+    $this->assertEquals('en', $tracking['language']);
+    $this->assertEquals('US', $tracking['country']);
+    $this->assertEquals('2017-02-19 06:10:51', $tracking['tracking_date']);
   }
 
   public function testAlreadyRefundedTransactionIsSkipped() {
