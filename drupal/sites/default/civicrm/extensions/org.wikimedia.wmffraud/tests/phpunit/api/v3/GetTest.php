@@ -67,8 +67,9 @@ class GetTest extends BaseWmfDrupalPhpUnitTestCase {
       'score_breakdown' => [],
     ], $params);
 
-    wmf_common_create_smashpig_context('fraud_test');
+    \CRM_SmashPig_ContextWrapper::createContext('fraud_test');
     $consumer = new AntifraudQueueConsumer('payments-antifraud');
     $consumer->processMessageWithErrorHandling($params);
   }
+
 }

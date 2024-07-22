@@ -264,7 +264,7 @@ abstract class ChecksFile {
     $this->additionalFields = $additionalFields;
 
     if (Context::get()) {
-      wmf_common_set_smashpig_message_source(
+      \CRM_SmashPig_ContextWrapper::setMessageSource(
         'direct', 'Offline importer: ' . get_class($this)
       );
     }

@@ -614,7 +614,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   }
 
   private function removeRecurringToken(array $message): void {
-    wmf_common_create_smashpig_context('donation_queue_process_message', $message['gateway']);
+    \CRM_SmashPig_ContextWrapper::createContext('donation_queue_process_message', $message['gateway']);
     $provider = PaymentProviderFactory::getProviderForMethod(
       $message['payment_method']
     );
