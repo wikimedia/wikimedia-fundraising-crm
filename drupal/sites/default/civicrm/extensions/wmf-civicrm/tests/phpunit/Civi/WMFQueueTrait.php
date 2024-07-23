@@ -222,6 +222,23 @@ trait WMFQueueTrait {
     $queueConsumer = $queueConsumer ?: $this->queueConsumer;
     QueueWrapper::push($queueName, $message);
     $result = $this->processQueue($queueName, $queueConsumer);
+    if (!empty($message['gateway_txn_id']) && !empty($message['gateway'])) {
+      try {
+        // Register the ids for clean up, if we can.
+        $contribution = Contribution::get(FALSE)
+          ->addSelect('*', 'contribution_status_id:name', 'financial_type_id:name', 'payment_instrument_id:name', 'contribution_recur_id.*', 'Gift_Data.*', 'contribution_extra.*', 'Stock_Information.*', 'Gift_Information.*')
+          ->addWhere('contribution_extra.gateway', '=', $message['gateway'])
+          ->addWhere('contribution_extra.gateway_txn_id', '=', $message['gateway_txn_id'])
+          ->execute()->first();
+        if ($contribution) {
+          $this->ids['Contribution'][] = $contribution['id'];
+          $this->ids['Contact'][] = $contribution['contact_id'];
+        }
+      }
+      catch (\CRM_Core_Exception $e) {
+        // do nothing
+      }
+    }
     if ($queueConsumer === 'Recurring' && $message['txn_type'] === 'subscr_payment') {
       $this->processQueue('donations', 'Donation');
     }
