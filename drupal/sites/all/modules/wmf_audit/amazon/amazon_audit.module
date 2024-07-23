@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFAudit\AmazonAuditProcessor;
+
 function amazon_audit_create_processor($options) {
   /**
    * To override default audit parser settings, edit the SmashPig

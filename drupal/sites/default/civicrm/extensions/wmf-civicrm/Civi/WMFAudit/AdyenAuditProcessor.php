@@ -1,11 +1,11 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\Adyen\Audit\AdyenPaymentsAccountingReport;
 use SmashPig\PaymentProviders\Adyen\Audit\AdyenSettlementDetailReport;
 use SmashPig\PaymentProviders\Adyen\Jobs\TokenizeRecurringJob;
-use Civi\WMFAudit\MultipleFileTypeParser;
-
 
 class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileTypeParser {
 
@@ -21,23 +21,28 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
     return $this->filePath;
   }
 
-  // There are two different files we use for the audit SettlementDetailReport is weekly
-  // and PaymentsAccountingReport is nightly
+  /**
+   * There are two different files we use for the audit SettlementDetailReport is weekly
+   * and PaymentsAccountingReport is nightly
+   */
   protected function get_audit_parser() {
     if (preg_match('/payments_accounting_report_/', $this->getFilePath())) {
       return new AdyenPaymentsAccountingReport();
-    } else {
+    }
+    else {
       return new AdyenSettlementDetailReport();
     }
   }
 
-  // Note: the output is only used to sort files in chronological order
-  // The settlement detail report is named with sequential batch numbers
-  // while the payments detail report has the date at the end of the name
+  /**
+   * Note: the output is only used to sort files in chronological order
+   * The settlement detail report is named with sequential batch numbers
+   * while the payments detail report has the date at the end of the name
+   */
   protected function get_recon_file_sort_key($file) {
     // sort by the modified date to get the most recent files
     $directory = $this->getIncomingFilesDirectory();
-    $fullpath = $directory.'/'.$file;
+    $fullpath = $directory . '/' . $file;
     $key = filemtime($fullpath);
     return $key;
   }
@@ -73,7 +78,6 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
     return FALSE;
   }
 
-
   /**
    * Checks to see if the transaction already exists in civi
    *
@@ -93,7 +97,8 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
         return TRUE;
       }
       return FALSE;
-    } else {
+    }
+    else {
       return TRUE;
     }
   }
@@ -111,16 +116,17 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
   protected function send_queue_message($body, $type) {
     unset($body['modification_reference']);
     // The processor_contact_id will be used for get tokenization for recurring donations.
-    if( !empty( $body['recurring'] ) ) {
+    if (!empty($body['recurring'])) {
       $body['processor_contact_id'] = $body['order_id'];
     }
     if (
       $body['gateway'] === 'adyen' && TokenizeRecurringJob::donationNeedsTokenizing($body)
     ) {
       $job = TokenizeRecurringJob::fromDonationMessage($body);
-      QueueWrapper::push('jobs-adyen', $job, true);
+      QueueWrapper::push('jobs-adyen', $job, TRUE);
       return;
     }
     parent::send_queue_message($body, $type);
   }
+
 }

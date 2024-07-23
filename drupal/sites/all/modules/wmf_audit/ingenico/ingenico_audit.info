@@ -3,4 +3,3 @@ description = Ingenico orphan rectification and audit
 core = 7.x
 dependencies[] = wmf_audit
 package = WMF Audit
-files[] = IngenicoAuditProcessor.php

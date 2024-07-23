@@ -1,5 +1,7 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\Amazon\Audit\AmazonAudit;
 use SmashPig\PaymentProviders\Amazon\RecordPaymentJob;
@@ -85,9 +87,10 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
     ) {
       $body['order_reference_id'] = substr($body['gateway_txn_id'], 0, 19);
       $job = RecordPaymentJob::fromAmazonMessage($body);
-      QueueWrapper::push('jobs-amazon', $job, true);
+      QueueWrapper::push('jobs-amazon', $job, TRUE);
       return;
     }
     parent::send_queue_message($body, $type);
   }
+
 }

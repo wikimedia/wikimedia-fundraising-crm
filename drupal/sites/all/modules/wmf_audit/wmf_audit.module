@@ -1,43 +1,10 @@
 <?php
 
-use Civi\Api4\ContributionTracking;
-use SmashPig\Core\DataStores\QueueWrapper;
-
 define('WMF_AUDIT_PAYMENTS_LOGS_DIR', '/usr/local/src/logs/');
-
-/**
- * Counts the missing transactions in the main array of missing transactions.
- * This is annoying and needed its own function, because the $missing array goes
- * $missing[$type]=> array of transactions.
- * Naturally, we're not checking to see that $type is one of the big three that
- * we expect, so it's possible to use this badly. So, don't.
- *
- * @param array $missing An array of missing transactions by type.
- *
- * @return int The total missing transactions in a missing transaction array
- */
-function wmf_audit_count_missing($missing) {
-  $count = 0;
-  if (!is_array($missing) || empty($missing)) {
-    return 0;
-  }
-  foreach ($missing as $type => $data) {
-    $count += count($missing[$type]);
-  }
-  return $count;
-}
 
 /**
  * Wrapper for echo
  * Lets us switch on things we only want to see in verbose mode.
- * Also allows us to impose a char limit per line for the benefit of jenkins
- * output logs.
- * Without this, the viz blocks would just ride merrily off the right end of the
- * screen and cause stupid amounts of side scrolling.
- *
- * @staticvar int $chars The number of single chars we've already added to this
- * line.
- * @staticvar int $limit The char limit, set at the command line
  *
  * @param string $echo The thing you want to echo. Single chars will be added to
  * the current line, while longer strings will get their own new line.
@@ -52,18 +19,9 @@ function wmf_audit_echo($echo, $verbose = FALSE) {
     return;
   }
   static $chars = 0;
-  static $limit = NULL;
-  if (is_null($limit)) {
-    $limit = wmf_audit_runtime_options('charlimit');
-  }
-
   if (strlen($echo) === 1) {
     echo $echo;
     ++$chars;
-    if ($limit > 0 && $chars > $limit) {
-      echo "\n";
-      $chars = 0;
-    }
   }
   else {
     //echo a whole line. Gets a little tricky.
@@ -111,153 +69,4 @@ function wmf_audit_runtime_options($confusing_thing = NULL) {
     return \Civi::$statics['wmf_audit_runtime'][$confusing_thing];
   }
   return FALSE;
-}
-
-/**
- * Logs the errors we get in a consistent way
- *
- * @deprecated call $this->logError() on Audit classes.
- *
- * @param string $message The message we want to log. Should be
- * descriptive enough that we can bug hunt without having to go all cowboy in
- * prod.
- * @param string $drush_code If this code is fatal (According to
- * wmf_audit_error_isfatal), this will result in the whole script dying.
- */
-function wmf_audit_log_error($message, $drush_code) {
-
-  \Civi::log('wmf')->error(wmf_audit_runtime_options('submod_prefix') . '_audit: {message}',
-    ['message' => $message]);
-
-  //Maybe explode
-  if (wmf_audit_error_isfatal($drush_code)) {
-    die("\n*** Fatal Error $drush_code: $message");
-  }
-}
-
-/**
- * Returns an array of errors that should not cause the script to blow up, but
- * which will probably still cause messages to get thrown out.
- * TODO: Use WMFException instead.
- *
- * @return boolean true if the error code is fatal, otherwise false.
- */
-function wmf_audit_error_isfatal($error) {
-  //All of these "nonfatal" things are meant to be nonfatal to the *job*, and
-  //not nonfatal to the contribution itself. We hit one of these,
-  //the contribution will be skipped, and we move to the next one.
-  //ALL OTHER CODES will cause the process to come to a screeching halt.
-  $nonfatal = [
-    'DATA_INCONSISTENT',
-    'DATA_INCOMPLETE',
-    'DATA_WEIRD',
-    'MISSING_PAYMENTS_LOG',
-    'MISSING_MANDATORY_DATA',
-    'UTM_DATA_MISMATCH',
-    'NORMALIZE_DATA',
-  ];
-
-  if (in_array($error, $nonfatal)) {
-    return FALSE;
-  }
-  else {
-    return TRUE;
-  }
-}
-
-/**
- * Returns the contribution tracking data for $record, if we can find it.
- * If we can't find it fabricate something and send it to the queue.
- *
- * @param array $record The re-fused and normal transaction that doesn't yet
- * exist in civicrm.
- *
- * @return array
- */
-function wmf_audit_get_contribution_tracking_data($record) {
-
-  $contributionTrackingId = $record['contribution_tracking_id'];
-  $result = ContributionTracking::get(FALSE)->addWhere('id','=',$contributionTrackingId)->execute()->first();
-
-  if (!$result) {
-    wmf_audit_log_error("Missing Contribution Tracking data. Supposed ID='$contributionTrackingId'", 'DATA_INCOMPLETE');
-    $paymentMethod = $record['payment_method'] ?? '';
-    $fallbackContributionTrackingData = [
-      'id' => $contributionTrackingId,
-      'utm_medium' => 'audit',
-      'utm_source' => "audit..$paymentMethod",
-      'payment_method' => $paymentMethod,
-      'ts' => wmf_common_date_unix_to_sql(
-        $record['date'] ?? time()
-      ),
-      'language' => $record['language'] ?? NULL,
-      'country' => $record['country'] ?? NULL,
-    ];
-    QueueWrapper::push('contribution-tracking', $fallbackContributionTrackingData);
-    $fallbackContributionTrackingData['date'] = $record['date'];
-    $fallbackContributionTrackingData['utm_payment_method'] = $paymentMethod;
-    foreach (['language', 'ts', 'id', 'payment_method'] as $unsetme) {
-      unset($fallbackContributionTrackingData[$unsetme]);
-    }
-    return $fallbackContributionTrackingData;
-  }
-
-  wmf_audit_echo("Found Contribution Tracking data. ID='$contributionTrackingId'", TRUE);
-  // Some of the normalization below has been done in the civicrm contribution tracking table
-  if (!is_null($result['utm_source'])) {
-    $utm_payment_method = explode('.', $result['utm_source']);
-    $utm_payment_method = $utm_payment_method[2]; //...sure.
-  }
-  else {
-    //probably one of us silly people doing things in testing...
-    $utm_payment_method = NULL;
-  }
-
-  // The audit is expecting a date in Unix timestamp format
-  $result['date'] = strtotime($result['tracking_date']);
-
-  $keep = [
-    'utm_source',
-    'utm_medium',
-    'utm_campaign',
-    'language',
-    'date',
-  ];
-
-  $ret = [];
-  foreach ($keep as $thing) {
-    $ret[$thing] = $result[$thing];
-  }
-
-  //and then, so we can double-check ourselves on the outside...
-  $ret['utm_payment_method'] = $utm_payment_method;
-  return $ret;
-}
-
-/**
- * Makes everything we need to fake contribution tracking data.
- * So: Mostly the timestamp.
- *
- * @param array $record Transaction parsed into an array
- *
- * @return array utm and date data appropriate for $record
- */
-function wmf_audit_make_contribution_tracking_data($record) {
-  $utm_stuffer = wmf_audit_runtime_options('submod_prefix') . '_audit';
-  //anything we don't put in here should be handled by the universal defaults on
-  //import. And that's good.
-  $return = [
-    'utm_source' => $record['utm_source'] ?? $utm_stuffer,
-    'utm_medium' => $record['utm_medium'] ?? $utm_stuffer,
-    'utm_campaign' => $record['utm_campaign'] ?? $utm_stuffer,
-  ];
-
-  if (!array_key_exists('date', $record)) {
-    wmf_audit_log_error(__FUNCTION__ . ": Record has no date field. Weirdness probably ensues", 'DATA_WEIRD');
-  }
-  else {
-    $return['date'] = $record['date'];
-  }
-
-  return $return;
 }

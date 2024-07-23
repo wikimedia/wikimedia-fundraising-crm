@@ -1,5 +1,7 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\Ingenico\Audit\IngenicoAudit;
 use SmashPig\PaymentProviders\Ingenico\TokenizeRecurringJob;
@@ -12,7 +14,9 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
     return new IngenicoAudit();
   }
 
-  // TODO: wx2 files should supersede wx1 files of the same name
+  /**
+   * TODO: wx2 files should supersede wx1 files of the same name
+   */
   protected function get_recon_file_sort_key($file) {
     // Example: wx1.000000123420160423.010211.xml.gz
     // For that, we'd want to return 20160423
@@ -134,13 +138,15 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
    */
   protected function send_queue_message($body, $type) {
     if (
-      $body['gateway'] === 'ingenico' && // FIXME: below fn should check this
+      // FIXME: below fn should check gateway.
+      $body['gateway'] === 'ingenico' &&
       TokenizeRecurringJob::donationNeedsTokenizing($body)
     ) {
       $job = TokenizeRecurringJob::fromDonationMessage($body);
-      QueueWrapper::push('jobs-ingenico', $job, true);
+      QueueWrapper::push('jobs-ingenico', $job, TRUE);
       return;
     }
     parent::send_queue_message($body, $type);
   }
+
 }

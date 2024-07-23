@@ -1,15 +1,18 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionTracking;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFException\WMFException;
-use Civi\WMFAudit\MultipleFileTypeParser;
 use Civi\WMFTransaction;
 
 abstract class BaseAuditProcessor {
 
   /**
-   * @var int number of days of log to search in before transaction date
+   * @var int
+   *   number of days of log to search in before transaction date
    */
   const LOG_SEARCH_WINDOW = 30;
 
@@ -23,7 +26,6 @@ abstract class BaseAuditProcessor {
 
   public function __construct($options) {
     $this->options = $options;
-    $options['submod_prefix'] = $this->name;
     \Civi::$statics['wmf_audit_runtime'] = $options;
   }
 
@@ -112,13 +114,48 @@ abstract class BaseAuditProcessor {
    */
   protected function logError($message, $drush_code) {
     \Civi::log('wmf')
-      ->error(wmf_audit_runtime_options('submod_prefix') . '_audit: {message}',
+      ->error($this->name . '_audit: {message}',
         ['message' => $message]);
 
     //Maybe explode
-    if (wmf_audit_error_isfatal($drush_code)) {
+    //All of these "nonfatal" things are meant to be nonfatal to the *job*, and
+    //not nonfatal to the contribution itself. We hit one of these,
+    //the contribution will be skipped, and we move to the next one.
+    //ALL OTHER CODES will cause the process to come to a screeching halt.
+    $nonfatal = [
+      'DATA_INCONSISTENT',
+      'DATA_INCOMPLETE',
+      'DATA_WEIRD',
+      'MISSING_PAYMENTS_LOG',
+      'MISSING_MANDATORY_DATA',
+      'UTM_DATA_MISMATCH',
+      'NORMALIZE_DATA',
+    ];
+    if (!in_array($drush_code, $nonfatal)) {
       die("\n*** Fatal Error $drush_code: $message");
     }
+  }
+
+  /**
+   * Counts the missing transactions in the main array of missing transactions.
+   * This is annoying and needed its own function, because the $missing array goes
+   * $missing[$type]=> array of transactions.
+   * Naturally, we're not checking to see that $type is one of the big three that
+   * we expect, so it's possible to use this badly. So, don't.
+   *
+   * @param array $missing An array of missing transactions by type.
+   *
+   * @return int The total missing transactions in a missing transaction array
+   */
+  protected function countMissing($missing) {
+    $count = 0;
+    if (!is_array($missing) || empty($missing)) {
+      return 0;
+    }
+    foreach ($missing as $type => $data) {
+      $count += count($missing[$type]);
+    }
+    return $count;
   }
 
   /**
@@ -197,14 +234,6 @@ abstract class BaseAuditProcessor {
   /**
    * Wrapper for echo
    * Lets us switch on things we only want to see in verbose mode.
-   * Also allows us to impose a char limit per line for the benefit of jenkins
-   * output logs.
-   * Without this, the viz blocks would just ride merrily off the right end of the
-   * screen and cause stupid amounts of side scrolling.
-   *
-   * @staticvar int $chars The number of single chars we've already added to this
-   * line.
-   * @staticvar int $limit The char limit, set at the command line
    *
    * @param string $string The thing you want to echo. Single chars will be added to
    * the current line, while longer strings will get their own new line.
@@ -312,11 +341,12 @@ abstract class BaseAuditProcessor {
    */
   protected function get_record_human_date($record) {
     if (array_key_exists('date', $record)) {
-      return date(WMF_DATEFORMAT, $record['date']); //date format defined in wmf_dates
+      //date format defined in wmf_dates
+      return date(WMF_DATEFORMAT, $record['date']);
     }
 
     echo print_r($record, TRUE);
-    throw new Exception(__FUNCTION__ . ': No date present in the record. This seems like a problem.');
+    throw new \Exception(__FUNCTION__ . ': No date present in the record. This seems like a problem.');
   }
 
   /**
@@ -350,7 +380,8 @@ abstract class BaseAuditProcessor {
       $send_message['gateway_refund_id'] = $record['gateway_refund_id'];
     }
     elseif (isset($record['gateway_txn_id'])) {
-      $send_message['gateway_refund_id'] = $record['gateway_txn_id']; //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
+      //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
+      $send_message['gateway_refund_id'] = $record['gateway_txn_id'];
     }
     if (isset($record['gateway_parent_id'])) {
       $send_message['gateway_parent_id'] = $record['gateway_parent_id'];
@@ -419,7 +450,7 @@ abstract class BaseAuditProcessor {
     if (!$contributions) {
       return FALSE;
     }
-    return CRM_Contribute_BAO_Contribution::isContributionStatusNegative(
+    return \CRM_Contribute_BAO_Contribution::isContributionStatusNegative(
       $contributions[0]['contribution_status_id']
     );
   }
@@ -444,7 +475,7 @@ abstract class BaseAuditProcessor {
 
     //make sure all the things we need are there.
     if (!$this->setup_required_directories()) {
-      throw new Exception('Missing required directories');
+      throw new \Exception('Missing required directories');
     }
 
     //find out what the situation is with the available recon files, by date
@@ -478,16 +509,16 @@ abstract class BaseAuditProcessor {
       //remove transactions we already know about
       $start_time = microtime(TRUE);
       $missing = $this->get_missing_transactions($parsed);
-      $recon_file_stats[$file] = wmf_audit_count_missing($missing);
+      $recon_file_stats[$file] = $this->countMissing($missing);
       $time = microtime(TRUE) - $start_time;
-      $this->echo(wmf_audit_count_missing($missing) . ' missing transactions (of a possible ' . $parse_count . ") identified in $time seconds\n");
+      $this->echo($this->countMissing($missing) . ' missing transactions (of a possible ' . $parse_count . ") identified in $time seconds\n");
       $total_donations += $parse_count;
 
       //If the file is empty, move it off.
       // Note that we are not archiving files that have missing transactions,
       // which might be resolved below. Those are archived on the next run,
       // once we can confirm they have hit Civi and are no longer missing.
-      if (wmf_audit_count_missing($missing) <= $this->get_runtime_options('recon_complete_count')) {
+      if ($this->countMissing($missing) <= $this->get_runtime_options('recon_complete_count')) {
         $this->move_completed_recon_file($file);
       }
 
@@ -505,7 +536,7 @@ abstract class BaseAuditProcessor {
         }
       }
     }
-    $total_missing_count = wmf_audit_count_missing($total_missing);
+    $total_missing_count = $this->countMissing($total_missing);
     $this->echo("$total_missing_count total missing transactions identified at start");
 
     //get the date distribution on what's left... for ***main transactions only***
@@ -537,7 +568,7 @@ abstract class BaseAuditProcessor {
     $missing_at_end = 0;
     if (is_array($remaining) && !empty($remaining)) {
       foreach ($remaining as $type => $data) {
-        $count = wmf_audit_count_missing($data);
+        $count = $this->countMissing($data);
         ${'missing_' . $type} = $count;
         $missing_at_end += $count;
       }
@@ -581,7 +612,7 @@ abstract class BaseAuditProcessor {
         foreach ($transactions as $date => $missing) {
           foreach ($missing as $transaction) {
             $wrap_up .= "\t" . WMFTransaction::from_message($transaction)
-                ->get_unique_id() . "\n";
+              ->get_unique_id() . "\n";
           }
         }
       }
@@ -627,7 +658,7 @@ abstract class BaseAuditProcessor {
         if ($foundParent) {
           if (
             count($parentByInvoice)
-            && CRM_Contribute_BAO_Contribution::isContributionStatusNegative($parentByInvoice['contribution_status_id'])
+            && \CRM_Contribute_BAO_Contribution::isContributionStatusNegative($parentByInvoice['contribution_status_id'])
           ) {
             continue;
           }
@@ -654,7 +685,7 @@ abstract class BaseAuditProcessor {
    * Returns an array of the full paths to all valid reconciliation files,
    * sorted in chronological order.
    *
-   * @return array Full paths to all recon files
+   * @return array|false Full paths to all recon files
    */
   protected function get_all_recon_files() {
     $files_directory = $this->getIncomingFilesDirectory();
@@ -688,7 +719,8 @@ abstract class BaseAuditProcessor {
     }
     else {
       //can't open the directory at all. Problem.
-      $this->logError("Can't open directory $files_directory", 'FILE_DIR_MISSING'); //should be fatal
+      //should be fatal
+      $this->logError("Can't open directory $files_directory", 'FILE_DIR_MISSING');
     }
     return FALSE;
   }
@@ -707,8 +739,9 @@ abstract class BaseAuditProcessor {
    * @param array $missing_by_date An array of all the missing transactions we
    * have pulled out of the nightlies, indexed by the standard WMF date format.
    *
-   * @return mixed An array of transactions we couldn't find or deal with (by
-   * date), or false on error
+   * @return mixed
+   *   An array of transactions we couldn't find or deal with (by date),
+   *   or false on error
    */
   protected function log_hunt_and_send($missing_by_date) {
     if (empty($missing_by_date)) {
@@ -847,7 +880,7 @@ abstract class BaseAuditProcessor {
 
                 $all_data = $this->merge_data($data, $transaction);
                 //lookup contribution_tracking data, and fill it in with audit markers if there's nothing there.
-                $contribution_tracking_data = wmf_audit_get_contribution_tracking_data($all_data);
+                $contribution_tracking_data = $this->getContributionTrackingData($all_data);
 
                 if (!$contribution_tracking_data) {
                   throw new WMFException(
@@ -916,7 +949,7 @@ abstract class BaseAuditProcessor {
 
     //if we are running in makemissing mode: make the missing transactions.
     if ($this->get_runtime_options('makemissing')) {
-      $missing_count = wmf_audit_count_missing($tryme);
+      $missing_count = $this->countMissing($tryme);
       if ($missing_count === 0) {
         $this->echo('No further missing transactions to make.');
       }
@@ -929,7 +962,7 @@ abstract class BaseAuditProcessor {
           if ((int) $audit_date <= (int) $cutoff) {
             foreach ($missing as $id => $message) {
               if (empty($message['contribution_tracking_id'])) {
-                $contribution_tracking_data = wmf_audit_make_contribution_tracking_data($message);
+                $contribution_tracking_data = $this->makeContributionTrackingData($message);
                 $all_data = array_merge($message, $contribution_tracking_data);
               }
               else {
@@ -952,8 +985,106 @@ abstract class BaseAuditProcessor {
         $this->echo("Made $made missing transactions\n");
       }
     }
+    //this will contain whatever is left, if we haven't errored out at this point.
+    return $tryme;
+  }
 
-    return $tryme; //this will contain whatever's left, if we haven't errored out at this point
+  /**
+   * Returns the contribution tracking data for $record, if we can find it.
+   * If we can't find it fabricate something and send it to the queue.
+   *
+   * @param array $record The re-fused and normal transaction that doesn't yet
+   * exist in civicrm.
+   *
+   * @return array
+   */
+  private function getContributionTrackingData($record) {
+
+    $contributionTrackingId = $record['contribution_tracking_id'];
+    $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $contributionTrackingId)->execute()->first();
+
+    if (!$result) {
+      $this->logError("Missing Contribution Tracking data. Supposed ID='$contributionTrackingId'", 'DATA_INCOMPLETE');
+      $paymentMethod = $record['payment_method'] ?? '';
+      $fallbackContributionTrackingData = [
+        'id' => $contributionTrackingId,
+        'utm_medium' => 'audit',
+        'utm_source' => "audit..$paymentMethod",
+        'payment_method' => $paymentMethod,
+        'ts' => wmf_common_date_unix_to_sql(
+          $record['date'] ?? time()
+        ),
+        'language' => $record['language'] ?? NULL,
+        'country' => $record['country'] ?? NULL,
+      ];
+      QueueWrapper::push('contribution-tracking', $fallbackContributionTrackingData);
+      $fallbackContributionTrackingData['date'] = $record['date'];
+      $fallbackContributionTrackingData['utm_payment_method'] = $paymentMethod;
+      foreach (['language', 'ts', 'id', 'payment_method'] as $unsetme) {
+        unset($fallbackContributionTrackingData[$unsetme]);
+      }
+      return $fallbackContributionTrackingData;
+    }
+
+    $this->echo("Found Contribution Tracking data. ID='$contributionTrackingId'", TRUE);
+    // Some of the normalization below has been done in the civicrm contribution tracking table
+    if (!is_null($result['utm_source'])) {
+      $utm_payment_method = explode('.', $result['utm_source']);
+      //...sure.
+      $utm_payment_method = $utm_payment_method[2];
+    }
+    else {
+      //probably one of us silly people doing things in testing...
+      $utm_payment_method = NULL;
+    }
+
+    // The audit is expecting a date in Unix timestamp format
+    $result['date'] = strtotime($result['tracking_date']);
+
+    $keep = [
+      'utm_source',
+      'utm_medium',
+      'utm_campaign',
+      'language',
+      'date',
+    ];
+
+    $ret = [];
+    foreach ($keep as $thing) {
+      $ret[$thing] = $result[$thing];
+    }
+
+    //and then, so we can double-check ourselves on the outside...
+    $ret['utm_payment_method'] = $utm_payment_method;
+    return $ret;
+  }
+
+  /**
+   * Makes everything we need to fake contribution tracking data.
+   * So: Mostly the timestamp.
+   *
+   * @param array $record Transaction parsed into an array
+   *
+   * @return array utm and date data appropriate for $record
+   */
+  private function makeContributionTrackingData($record) {
+    $utm_stuffer = $this->name . '_audit';
+    //anything we don't put in here should be handled by the universal defaults on
+    //import. And that's good.
+    $return = [
+      'utm_source' => $record['utm_source'] ?? $utm_stuffer,
+      'utm_medium' => $record['utm_medium'] ?? $utm_stuffer,
+      'utm_campaign' => $record['utm_campaign'] ?? $utm_stuffer,
+    ];
+
+    if (!array_key_exists('date', $record)) {
+      $this->logError(__FUNCTION__ . ": Record has no date field. Weirdness probably ensues", 'DATA_WEIRD');
+    }
+    else {
+      $return['date'] = $record['date'];
+    }
+
+    return $return;
   }
 
   /**
@@ -967,7 +1098,7 @@ abstract class BaseAuditProcessor {
   public function removeOldLogs($date, $working_logs) {
     if (!empty($working_logs)) {
       foreach ($working_logs as $logdate => $files) {
-        foreach($files as $file) {
+        foreach ($files as $file) {
           if ((int) $logdate < (int) $date) {
             unlink($file);
           }
@@ -982,8 +1113,9 @@ abstract class BaseAuditProcessor {
    *
    * @param string $date The date of the log we want to grab
    *
-   * @return string[]|false Full paths to all logs for the given date, or false
-   *  if something went wrong.
+   * @return string[]|false
+   *   Full paths to all logs for the given date, or false
+   *   if something went wrong.
    */
   protected function get_logs_by_date($date) {
     //Could be distilled already.
@@ -1028,7 +1160,8 @@ abstract class BaseAuditProcessor {
       $compressed_filename = $compressed_filenames[$i];
       $full_archive_path = $this->getLogArchiveDirectory() . '/' . $compressed_filename;
       $working_directory = $this->getWorkingLogDirectory();
-      $cleanup = []; //add files we want to make sure aren't there anymore when we're done here.
+      // Add files we want to make sure aren't there anymore when we're done here.
+      $cleanup = [];
       if (file_exists($full_archive_path)) {
         $this->echo("Retrieving $full_archive_path");
         $cmd = "cp $full_archive_path " . $working_directory;
@@ -1090,8 +1223,9 @@ abstract class BaseAuditProcessor {
    * Construct an array of all the distilled working logs we have in the working
    * directory.
    *
-   * @return array Array of date => array of full paths to file for all
-   *  distilled working logs
+   * @return array
+   *   Array of date => array of full paths to file for all
+   *   distilled working logs
    */
   protected function read_working_logs_dir() {
     $working_logs = [];
@@ -1193,7 +1327,8 @@ abstract class BaseAuditProcessor {
    * @param array $transactions An array of transactions we have already parsed
    * out from the recon files.
    *
-   * @return mixed An array of transactions that are not in the database
+   * @return array|false
+   *   An array of transactions that are not in the database
    *   already, or false if something goes wrong enough
    */
   protected function get_missing_transactions($transactions) {
@@ -1213,17 +1348,20 @@ abstract class BaseAuditProcessor {
         $this->record_is_refund($transaction) ||
         $this->record_is_chargeback($transaction) ||
         $this->record_is_cancel($transaction)
-      ) { //negative
+      ) {
+        //negative
         $transaction = $this->pre_process_refund($transaction);
         if ($this->negative_transaction_exists_in_civi($transaction) === FALSE) {
-          $this->echo('-'); //add a subtraction. I am the helpfulest comment ever.
+          //add a subtraction. I am the helpfulest comment ever.
+          $this->echo('-');
           $missing['negative'][] = $transaction;
         }
         else {
           $this->echo('.');
         }
       }
-      else { //normal type
+      else {
+        //normal type
         if ($this->main_transaction_exists_in_civi($transaction) === FALSE) {
           $this->echo('!');
           $missing['main'][] = $transaction;
@@ -1260,28 +1398,38 @@ abstract class BaseAuditProcessor {
       switch ($record['payment_method']) {
         case 'cc':
           return 'c';
+
         case 'ach':
         case 'bt':
         case 'rtbt':
         case 'obt':
           return 't';
+
         case 'cash':
           return 'h';
+
         case 'amazon':
           return 'a';
+
         case 'apple':
           return 'l';
+
         case 'google':
           return 'g';
+
         case 'paypal':
           return 'p';
+
         case 'dd':
           return 'd';
+
         case 'check':
         case 'stock':
           return 'k';
+
         case 'ew':
           return 'w';
+
         case 'venmo':
           return 'v';
       }
@@ -1309,8 +1457,9 @@ abstract class BaseAuditProcessor {
    * @param string[] $logs The full paths to the log we want to search
    * @param $audit_data array the data from the audit file.
    *
-   * @return array|bool The data we sent to the gateway for that order id, or
-   * false if we can't find it there.
+   * @return array|bool
+   *   The data we sent to the gateway for that order id, or
+   *   false if we can't find it there.
    */
   protected function get_log_data_by_order_id($order_id, $logs, $audit_data) {
     if (!$order_id) {
@@ -1364,7 +1513,8 @@ abstract class BaseAuditProcessor {
         'Inconsistent data. Skipping the following: ' . print_r($audit_data, TRUE) . "\n" . print_r($raw_data, TRUE)
       );
     }
-    return FALSE; //no big deal, it just wasn't there. This will happen most of the time.
+    //no big deal, it just wasn't there. This will happen most of the time.
+    return FALSE;
   }
 
   protected function parse_json_log_line($line) {
@@ -1469,11 +1619,11 @@ abstract class BaseAuditProcessor {
     try {
       $recon_data = $recon_parser->parseFile($file);
     }
-    catch (Exception $e) {
+    catch (\Exception $e) {
       $this->logError(
         "Something went amiss with the recon parser while "
-        . "processing $file: \"{$e->getMessage()}\""
-        , 'RECON_PARSE_ERROR'
+        . "processing $file: \"{$e->getMessage()}\"",
+        'RECON_PARSE_ERROR'
       );
     }
 
@@ -1523,7 +1673,7 @@ abstract class BaseAuditProcessor {
    * send.
    * @param string $type The type of transaction. 'main'|'negative'|'recurring'.
    *
-   * @throws Exception
+   * @throws \Exception
    */
   protected function send_queue_message($body, $type) {
     $queueNames = [
@@ -1534,7 +1684,7 @@ abstract class BaseAuditProcessor {
     ];
 
     if (!array_key_exists($type, $queueNames)) {
-      throw new Exception(__FUNCTION__ . ": Unhandled message type '$type'");
+      throw new \Exception(__FUNCTION__ . ": Unhandled message type '$type'");
     }
 
     QueueWrapper::push($queueNames[$type], $body, TRUE);
@@ -1578,7 +1728,7 @@ abstract class BaseAuditProcessor {
     $enddate = date_create_from_format(WMF_DATEFORMAT, (string) $end);
 
     $next = $startdate;
-    $interval = new DateInterval('P1D');
+    $interval = new \DateInterval('P1D');
     $ret = [];
     while ($next < $enddate) {
       $next = date_add($next, $interval);

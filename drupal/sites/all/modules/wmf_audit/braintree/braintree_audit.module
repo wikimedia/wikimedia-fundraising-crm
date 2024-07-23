@@ -1,5 +1,7 @@
 <?php
 
+use Civi\WMFAudit\BraintreeAuditProcessor;
+
 function braintree_audit_create_processor($options) {
   return new BraintreeAuditProcessor($options);
 }

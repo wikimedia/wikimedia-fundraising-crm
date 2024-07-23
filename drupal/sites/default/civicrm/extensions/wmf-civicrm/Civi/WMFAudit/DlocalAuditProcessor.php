@@ -1,5 +1,7 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use SmashPig\PaymentProviders\dlocal\Audit\DlocalAudit;
 
 class DlocalAuditProcessor extends BaseAuditProcessor {
@@ -74,4 +76,5 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
       "payments-dlocal-{$date}",
     ];
   }
+
 }

@@ -1,10 +1,13 @@
 <?php
 
+namespace Civi\WMFAudit;
+
 use SmashPig\PaymentProviders\Fundraiseup\Audit\FundraiseupAudit;
 
 class FundraiseupAuditProcessor extends BaseAuditProcessor {
 
   protected $name = 'fundraiseup';
+
   protected $cutoff = 0;
 
   /**
@@ -15,7 +18,8 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
   }
 
   /**
-   * No logs for FRUP, hence no working log dir
+   * No logs for FRUP, hence no working log dir.
+   *
    * @return false
    */
   protected function get_working_log_dir() {
@@ -75,7 +79,7 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
   }
 
   protected function log_hunt_and_send($missing_by_date) {
-    $missing_count = wmf_audit_count_missing($missing_by_date);
+    $missing_count = $this->countMissing($missing_by_date);
     $this->echo("Making up to $missing_count missing transactions:");
     $made = 0;
 
@@ -84,7 +88,8 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
         $sendme = $this->normalize_partial($message);
         if (!empty($sendme['type']) && $sendme['type'] === 'recurring') {
           $this->send_queue_message($sendme, 'recurring');
-        } else if(!empty($sendme['type']) && $sendme['type'] === 'recurring-modify') {
+        }
+        elseif (!empty($sendme['type']) && $sendme['type'] === 'recurring-modify') {
           $this->send_queue_message($sendme, 'recurring-modify');
         }
         else {
@@ -108,6 +113,7 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
 
   /**
    * @param $recon_files
+   *
    * @return int|void
    */
   protected function get_recon_files_count($recon_files) {
