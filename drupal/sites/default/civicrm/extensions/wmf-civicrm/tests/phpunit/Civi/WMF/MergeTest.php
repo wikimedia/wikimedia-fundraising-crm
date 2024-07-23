@@ -28,7 +28,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @group headless
  */
-class MergeTest extends TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
 
   use Api3TestTrait;
 
