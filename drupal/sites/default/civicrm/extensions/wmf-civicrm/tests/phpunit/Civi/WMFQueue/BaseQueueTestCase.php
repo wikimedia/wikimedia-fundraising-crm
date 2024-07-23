@@ -16,7 +16,7 @@ use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use SmashPig\Core\DataStores\DamagedDatabase;
 
-class BaseQueueTestCase extends TestCase implements HeadlessInterface, TransactionalInterface {
+class BaseQueueTestCase extends TestCase implements HeadlessInterface {
 
   use Test\EntityTrait;
   use WMFEnvironmentTrait;
