@@ -11,6 +11,8 @@ use SmashPig\PaymentProviders\Amazon\Tests\AmazonTestConfiguration;
  */
 class AmazonAuditTest extends BaseAuditTestCase {
 
+  protected string $gateway = 'amazon';
+
   /**
    * @throws \Civi\WMFException\WMFException
    * @throws CRM_Core_Exception
@@ -113,16 +115,6 @@ class AmazonAuditTest extends BaseAuditTestCase {
     $this->runAuditor();
 
     $this->assertMessages($expectedMessages);
-  }
-
-  protected function runAuditor() {
-    $options = [
-      'quiet' => TRUE,
-      'test' => TRUE,
-      #'verbose' => 'true', # Uncomment to debug.
-    ];
-    $audit = new AmazonAuditProcessor($options);
-    $audit->run();
   }
 
 }

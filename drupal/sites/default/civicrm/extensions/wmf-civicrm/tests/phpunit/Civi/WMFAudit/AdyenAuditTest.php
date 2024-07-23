@@ -13,6 +13,8 @@ use Civi\WMFException\WMFException;
 class AdyenAuditTest extends BaseAuditTestCase {
   protected $idForRefundTest;
 
+  protected string $gateway = 'adyen';
+
   public function setUp(): void {
     parent::setUp();
     $msg = [
@@ -320,19 +322,6 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->execute();
     $this->runAuditor();
     $this->assertMessages($expectedMessages);
-  }
-
-  /**
-   * @throws \Exception
-   */
-  protected function runAuditor() {
-    $options = [
-      'quiet' => TRUE,
-      'test' => TRUE,
-      #'verbose' => 'true', # Uncomment to debug.
-    ];
-    $audit = new AdyenAuditProcessor($options);
-    $audit->run();
   }
 
 }

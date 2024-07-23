@@ -8,6 +8,9 @@ namespace Civi\WMFAudit;
  * @group DlocalAudit
  */
 class DlocalAuditTest extends BaseAuditTestCase {
+
+  protected string $gateway = 'dlocal';
+
   static protected $loglines;
 
   public function setUp(): void {
@@ -131,16 +134,6 @@ class DlocalAuditTest extends BaseAuditTestCase {
 
     $this->assertMessages($expectedMessages);
     $this->assertLoglinesPresent($expectedLoglines);
-  }
-
-  protected function runAuditor() {
-    $options = [
-      'quiet' => TRUE,
-      'test' => TRUE,
-      #'verbose' => 'true', # Uncomment to debug.
-    ];
-    $audit = new DlocalAuditProcessor($options);
-    $audit->run();
   }
 
   protected function assertLoglinesPresent($expectedLines) {

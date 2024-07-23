@@ -24,8 +24,21 @@ abstract class BaseAuditProcessor {
 
   protected $cutoff = -3;
 
+
+  /**
+   * Number of file to parse per run, absent any incoming parameter.
+   *
+   * Note that 0 is equivalent to all or no limit.
+   *
+   * @var int
+   */
+  protected int $fileLimit = 3;
+
   public function __construct($options) {
     $this->options = $options;
+    if (is_numeric($options['file_limit'])) {
+      $this->fileLimit = (int) $options['file_limit'];
+    }
     \Civi::$statics['wmf_audit_runtime'] = $options;
   }
 
@@ -723,7 +736,7 @@ abstract class BaseAuditProcessor {
       //should be fatal
       $this->logError("Can't open directory $files_directory", 'FILE_DIR_MISSING');
     }
-    return FALSE;
+    return [];
   }
 
   /**
@@ -1728,12 +1741,7 @@ abstract class BaseAuditProcessor {
    * @return int|void
    */
   protected function get_recon_files_count($recon_files) {
-    //...Three, because Shut Up.
-    $count = count($recon_files);
-    if ($count > 3 && !$this->get_runtime_options('run_all')) {
-      $count = 3;
-    }
-    return $count;
+    return ($this->fileLimit === 0 || $this->fileLimit > count($recon_files)) ? count($recon_files) : $this->fileLimit;
   }
 
   /**

@@ -11,6 +11,8 @@ use Civi\Api4\Contribution;
  */
 class IngenicoAuditTest extends BaseAuditTestCase {
 
+  protected string $gateway = 'ingenico';
+
   public function setUp(): void {
     parent::setUp();
     $this->createContributionTracking([
@@ -337,16 +339,6 @@ class IngenicoAuditTest extends BaseAuditTestCase {
 
     $this->runAuditor();
     $this->assertMessages($expectedMessages);
-  }
-
-  protected function runAuditor(): void {
-    $options = [
-      'quiet' => TRUE,
-      'test' => TRUE,
-      #'verbose' => 'true', # Uncomment to debug.
-    ];
-    $audit = new IngenicoAuditProcessor($options);
-    $audit->run();
   }
 
 }

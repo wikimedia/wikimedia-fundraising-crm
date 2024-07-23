@@ -15,6 +15,8 @@ use SmashPig\PaymentProviders\Fundraiseup\Tests\FundraiseupTestConfiguration;
  */
 class FundraiseupAuditTest extends BaseAuditTestCase {
 
+  protected string $gateway = 'fundraiseup';
+
   public function setUp(): void {
     parent::setUp();
     $ctx = Context::get();
@@ -755,19 +757,6 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $convertedDifference = abs($planChangeMessage['amount'] - $newRecurringMsg['gross']);
     $this->assertEquals($this->round($convertedDifference, 'GBP'), $details['native_amount_removed']);
     $this->assertEquals($this->getConvertedAmountRounded('GBP', $convertedDifference), $details['usd_amount_removed']);
-  }
-
-  /**
-   * @noinspection PhpUnhandledExceptionInspection
-   */
-  protected function runAuditor(): void {
-    $options = [
-      'quiet' => TRUE,
-      'test' => TRUE,
-      #'verbose' => 'true', # Uncomment to debug.
-    ];
-    $audit = new FundraiseupAuditProcessor($options);
-    $audit->run();
   }
 
 }

@@ -11,6 +11,8 @@ use Civi\Api4\ContributionTracking;
  */
 class BraintreeAuditTest extends BaseAuditTestCase {
 
+  protected string $gateway = 'braintree';
+
   public function setUp(): void {
     parent::setUp();
 
@@ -169,14 +171,4 @@ class BraintreeAuditTest extends BaseAuditTestCase {
     $this->assertMessages($expectedMessages);
   }
 
-  protected function runAuditor() {
-    $options = [
-      'quiet' => TRUE,
-      'test' => TRUE,
-      #'verbose' => 'true', # Uncomment to debug.
-    ];
-
-    $audit = new BraintreeAuditProcessor($options);
-    $audit->run();
-  }
 }
