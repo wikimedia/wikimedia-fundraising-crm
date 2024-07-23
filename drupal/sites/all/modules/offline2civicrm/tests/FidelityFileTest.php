@@ -18,7 +18,10 @@ class FidelityFileTest extends BaseChecksFileTest {
    */
   public function tearDown(): void {
     Contribution::delete(FALSE)->addWhere('trxn_id', 'LIKE', 'Fidelity%')->execute();
-    Contact::delete(FALSE)->addWhere('id', '>', $this->maxContactID)->execute();
+    Contact::delete(FALSE)
+      ->addWhere('id', '>', $this->maxContactID)
+      ->setUseTrash(FALSE)
+      ->execute();
     parent::tearDown();
   }
 
