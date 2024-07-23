@@ -557,8 +557,7 @@ abstract class BaseAuditProcessor {
     //@TODO: Handle the recurring type, once we have a gateway that gives some of those to us.
     //
     //Handle the negatives now. That way, the parent transactions will probably exist.
-    $this->echo("Processing 'negative' transactions");
-    $this->handle_all_negatives($total_missing, $remaining);
+    $this->handleNegatives($total_missing, $remaining);
 
     //Wrap it up and put a bow on it.
     //@TODO much later: Make a fredge table for these things and dump some messages over there about what we just did.
@@ -623,8 +622,10 @@ abstract class BaseAuditProcessor {
     $this->echo($wrap_up);
   }
 
-  protected function handle_all_negatives($total_missing, &$remaining) {
-    $neg_count = 0;
+  protected function handleNegatives($total_missing, &$remaining) {
+    $this->echo("Processing 'negative' transactions");
+    $numberProcessed = 0;
+    $numberSkipped = 0;
     if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
       foreach ($total_missing['negative'] as $record) {
         //check to see if the parent exists. If it does, normalize and send.
@@ -664,8 +665,7 @@ abstract class BaseAuditProcessor {
           }
           $normal = $this->normalize_negative($record);
           $this->send_queue_message($normal, 'negative');
-          $neg_count += 1;
-          $this->echo('!');
+          $numberProcessed += 1;
         }
         else {
           // Ignore cancels with no parents because they must have
@@ -673,11 +673,12 @@ abstract class BaseAuditProcessor {
           if (!$this->record_is_cancel($record)) {
             //@TODO: Some version of makemissing should make these, too. Gar.
             $remaining['negative'][$this->get_record_human_date($record)][] = $record;
-            $this->echo('.');
+            $numberSkipped++;
           }
         }
       }
-      $this->echo("Processed $neg_count 'negative' transactions\n");
+      $this->echo("Processed $numberProcessed 'negative' transactions\n");
+      $this->echo("Skipped $numberSkipped 'negative' transactions (no parent record to cancel, probably cancelled before reaching CiviCRM)\n");
     }
   }
 
