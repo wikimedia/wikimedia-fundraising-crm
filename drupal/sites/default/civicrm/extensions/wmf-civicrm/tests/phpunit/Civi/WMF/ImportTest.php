@@ -85,13 +85,13 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   public function testImportOrganizationWithRelated(): void {
     $data = $this->setupImport();
 
-    $this->ids['Organization'] = Contact::create()->setValues(['contact_type' => 'Organization', 'organization_name' => 'Long legal name', 'nick_name' => 'Trading Name'])->execute()->first()['id'];
+    $this->createTestEntity('Contact', ['contact_type' => 'Organization', 'organization_name' => 'Long legal name', 'nick_name' => 'Trading Name'], 'organization');
     // Create 2 'Jane Doe' contacts - we test it finds the second one, who has an employer relationship.
-    Contact::create()->setValues(['contact_type' => 'Individual', 'first_name' => 'Jane', 'last_name' => 'Doe'])->execute()->first()['id'];
-    $this->ids['Individual'] = Contact::create()->setValues(['contact_type' => 'Individual', 'first_name' => 'Jane', 'last_name' => 'Doe', 'employer_id' => $this->ids['Organization']])->execute()->first()['id'];
+    $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Jane', 'last_name' => 'Doe'], 'jane_main');
+    $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Jane', 'last_name' => 'Doe', 'employer_id' => $this->ids['Contact']['organization']], 'jane_soft_credit');
 
     $this->runImport($data);
-    $contribution = Contribution::get()->addWhere('contact_id', '=', $this->ids['Organization'])->addSelect(
+    $contribution = Contribution::get()->addWhere('contact_id', '=', $this->ids['Contact']['organization'])->addSelect(
       'contribution_extra.gateway',
         'contribution_extra.no_thank_you',
       'source'
@@ -104,7 +104,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $softCredits = ContributionSoft::get()->addWhere('contribution_id', '=', $contribution['id'])->execute();
     $this->assertCount(1, $softCredits);
     $softCredit = $softCredits->first();
-    $this->assertEquals($this->ids['Individual'], $softCredit['contact_id']);
+    $this->assertEquals($this->ids['Contact']['jane_soft_credit'], $softCredit['contact_id']);
   }
 
   /**
@@ -292,7 +292,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportIndividualFindAmongMany(): void {
-    $organizationID = (int) $this->callAPISuccess('Contact', 'create', [
+    $organizationID = (int) $this->createTestEntity('Contact', [
       'contact_type' => 'Organization',
       'organization_name' => 'The Firm',
     ])['id'];
