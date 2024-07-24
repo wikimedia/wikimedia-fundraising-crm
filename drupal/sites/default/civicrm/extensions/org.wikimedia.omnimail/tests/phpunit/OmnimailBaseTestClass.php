@@ -14,6 +14,7 @@ use Omnimail\Omnimail;
 use Omnimail\Silverpop\Connector\SilverpopGuzzleXmlConnector;
 use Omnimail\Silverpop\Credentials;
 use Omnimail\Silverpop\Connector\SilverpopGuzzleConnector;
+use PHPUnit\Framework\TestCase;
 use SilverpopConnector\SilverpopRestConnector;
 use SilverpopConnector\SilverpopXmlConnector;
 
@@ -31,7 +32,7 @@ use SilverpopConnector\SilverpopXmlConnector;
  *
  * @group headless
  */
-class OmnimailBaseTestClass extends \PHPUnit\Framework\TestCase implements HeadlessInterface, TransactionalInterface {
+class OmnimailBaseTestClass extends TestCase implements HeadlessInterface {
 
   use Api3TestTrait;
   use GuzzleTestTrait;
