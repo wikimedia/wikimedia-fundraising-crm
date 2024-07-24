@@ -2,6 +2,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/3.7/phpunit.xsd"
   bootstrap="drupal/sites/default/bootstrap-phpunit.php"
+  printerClass="clagiordano\PhpunitResultPrinter\ResultPrinter"
   backupGlobals="false">
 
   <testsuites>
