@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Contact;
 use Civi\WMFException\WMFException;
 
 /**
@@ -124,7 +125,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Covers wmf_civicrm_mark_refund.
+   * Generic testing of refund handling.
    */
   public function testMarkRefund() {
     $message = [
@@ -173,35 +174,42 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
   }
 
   /**
-   * Check that marking a contribution as refunded updates custom data
-   * appropriately.
+   * Check that marking a contribution as refunded updates WMF Donor data.
    */
-  public function testMarkRefundCheckCustomData(): void {
+  public function testMarkRefundCheckWMFDonorData(): void {
     $nextYear = date('Y', strtotime('+1 year'));
     $yearAfterNext = date('Y', strtotime('+2 year'));
-    $this->callAPISuccess('Contribution', 'create', [
-      'version' => 4,
-      'contact_id' => $this->ids['Contact']['default'],
+    $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Maisy', 'last_name' => 'Mouse'], 'maisy');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['maisy'],
       'financial_type_id:name' => 'Cash',
       'total_amount' => 50,
       'source' => 'USD 50',
       'receive_date' => "$nextYear-11-01",
+      'contribution_extra.gateway' => 'adyen',
+      'contribution_extra.gateway_txn_id' => 345,
     ]);
     // Create an additional negative contribution. This is how they were prior to Feb 2016.
-    // We want to check it is ignored for the purpose of determining the most recent donation
+    // We want to check it is ignored for the purpose of determining the most recent donation,
     // although it should contribute to the lifetime total.
-    $this->callAPISuccess('Contribution', 'create', array(
-      'contact_id' => $this->ids['Contact']['default'],
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['maisy'],
       'financial_type_id:name' => 'Cash',
-      'version' => 4,
       'total_amount' => -10,
       'contribution_source' => 'USD -10',
       'receive_date' => "$nextYear-12-01",
-    ));
-    wmf_civicrm_mark_refund($this->original_contribution_id, 'Refunded', FALSE, "$nextYear-09-09", 'my_special_ref');
+    ]);
 
+    $this->processMessage([
+      'gateway_parent_id' => 345,
+      'gateway' => 'adyen',
+      'gateway_txn_id' => 'my_special_ref',
+      'gross' => 10,
+      'date' => "$nextYear-09-09",
+      'type' => 'refund',
+    ], 'Refund', 'refund');
 
-    $this->assertContactValues($this->ids['Contact']['default'], [
+    $this->assertContactValues($this->ids['Contact']['maisy'], [
       'wmf_donor.lifetime_usd_total' => 40,
       'wmf_donor.last_donation_date' => "$nextYear-11-01 00:00:00",
       'wmf_donor.last_donation_amount' => 50,
@@ -212,6 +220,27 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       "wmf_donor.total_{$nextYear}_{$yearAfterNext}" => 40,
       'wmf_donor.' . $this->financialYearTotalFieldName => 0,
     ]);
+  }
+
+  /**
+   * Asset the specified fields match those on the given contact.
+   *
+   * @param int $contactID
+   * @param array $expected
+   */
+  protected function assertContactValues(int $contactID, array $expected) {
+    try {
+      $contact = Contact::get(FALSE)->setSelect(
+        array_keys($expected)
+      )->addWhere('id', '=', $contactID)->execute()->first();
+    }
+    catch (CRM_Core_Exception $e) {
+      $this->fail($e->getMessage());
+    }
+
+    foreach ($expected as $key => $value) {
+      $this->assertEquals($value, $contact[$key], "wrong value for $key");
+    }
   }
 
   /**
