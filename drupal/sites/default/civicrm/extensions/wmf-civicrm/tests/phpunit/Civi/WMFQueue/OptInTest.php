@@ -37,7 +37,7 @@ class OptInTest extends BaseQueueTestCase {
     return [
       'email' => $this->email,
       'first_name' => 'Christine',
-      'last_name' => 'Test',
+      'last_name' => 'Mouse',
       'street_address' => '1 Test Street',
       'city' => 'Test-land',
       'postal_code' => '13126',
