@@ -40,11 +40,6 @@ class BlankLocationTest extends \PHPUnit\Framework\TestCase implements HeadlessI
       ->apply();
   }
 
-  public function setUp(): void {
-    civicrm_initialize();
-    parent::setUp();
-  }
-
   public function tearDown(): void {
     parent::tearDown();
     $this->callAPISuccess('Data', 'fix', ['check' => 'BlankLocation']);

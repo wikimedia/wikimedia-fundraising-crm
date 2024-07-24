@@ -26,11 +26,6 @@ class DedupeBaseTestClass extends \PHPUnit\Framework\TestCase implements Headles
       ->apply();
   }
 
-  public function setUp(): void {
-    parent::setUp();
-    civicrm_initialize();
-  }
-
   /**
    * @throws \CRM_Core_Exception
    */
