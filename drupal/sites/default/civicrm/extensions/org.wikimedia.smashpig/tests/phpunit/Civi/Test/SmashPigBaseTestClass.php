@@ -110,8 +110,8 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface, Trans
       ->addWhere('language', '=', 'en_US')
       ->addWhere('status_id:name', '=', 'active')
       ->execute();
-    $this->maxContactID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
-    $this->maxContributionID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution');
+    $this->maxContactID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
+    $this->maxContributionID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution');
     // Try reseting the time limit here to give us the full 180.
     // It this works we should investigate https://smaine-milianni.medium.com/set-a-max-timeout-for-your-phpunit-tests-ba160c7f53a5
     // https://www.php.net/manual/en/function.set-time-limit.php
