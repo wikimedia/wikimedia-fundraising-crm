@@ -1213,6 +1213,16 @@ function _wmf_civicrm_get_external_identifiers_fields(): array {
       'is_searchable' => 1,
       'is_view' => 0,
     ],
+    'gravy_id' => [
+      'name' => 'gravy_id',
+      'column_name' => 'gravy_id',
+      'label' => ts('Gravy Buyer ID'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ],
   ];
 }
 

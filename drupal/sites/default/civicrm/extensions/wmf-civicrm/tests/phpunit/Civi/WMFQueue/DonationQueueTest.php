@@ -1562,6 +1562,44 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function testGravyIdExternalIdentifierValueSetAsExpected(): void {
+    $testDonationMessage = $this->getDonationMessage([
+      'first_name' => 'John',
+      'last_name' => 'Smith',
+      'nick_name' => '',
+      'email' => 'john@example.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'cc',
+      'external_identifier' => '452a204a-2843-4856-ab37-44a9793ac103',
+      'country' => 'US',
+      'street_address' => '',
+      'city' => '',
+      'street_number' => '',
+      'postal_code' => '',
+      'state_province' => '',
+    ]);
+    $this->processDonationMessage($testDonationMessage);
+
+    $contribution = $this->getContributionForMessage($testDonationMessage);
+    $contactRecord = Contact::get(FALSE)
+      ->addSelect('External_Identifiers.gravy_id')
+      ->addWhere(
+        'id',
+        '=',
+        $contribution['contact_id']
+      )
+      ->execute()
+      ->first();
+    $this->assertEquals(
+      '452a204a-2843-4856-ab37-44a9793ac103',
+      $contactRecord['External_Identifiers.gravy_id']
+    );
+  }
+
+  /**
    * Test functionality in RecurHelper::getByGatewaySubscriptionId.
    *
    * @return void
