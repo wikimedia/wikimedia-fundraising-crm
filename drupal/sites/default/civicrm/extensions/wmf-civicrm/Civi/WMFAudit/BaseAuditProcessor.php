@@ -991,7 +991,6 @@ abstract class BaseAuditProcessor {
               }
 
               $made += 1;
-              $this->echo('!');
               unset($tryme[$audit_date][$id]);
             }
           }
