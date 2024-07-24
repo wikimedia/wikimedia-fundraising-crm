@@ -8,6 +8,7 @@ use Civi\Api4\Email;
 use Civi\Api4\Group;
 use Civi\Api4\Omnicontact;
 use Civi\Api4\Queue;
+use Civi\Test\EntityTrait;
 
 /**
  * Test Omnicontact create method.
@@ -24,22 +25,28 @@ use Civi\Api4\Queue;
  * @group headless
  */
 class OmnicontactCreateTest extends OmnimailBaseTestClass {
+  use EntityTrait;
 
   /**
    * Post test cleanup.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
     Group::delete(FALSE)->addWhere('name', '=', 'test_create_group')->execute();
     parent::tearDown();
+    if (!empty($this->ids['Contact'])) {
+      Contact::delete(FALSE)
+        ->addWhere('id', 'IN', $this->ids['Contact'])
+        ->setUseTrash(FALSE)
+        ->execute();
+    }
   }
 
   /**
    * Example: the groupMember load fn works.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testAddToGroup(): void {
     $this->getMockRequest([file_get_contents(__DIR__ . '/Responses/AddRecipient.txt')]);
@@ -62,13 +69,12 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
 
     $this->assertEquals(569624660942, $result['contact_identifier']);
     $this->assertEquals(trim(file_get_contents(__DIR__ . '/Requests/AddRecipient.txt')), $guzzleSentRequests[0]);
-
   }
 
   /**
    * Example: the groupMember load fn works.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testSnooze(): void {
     $this->getMockRequest([
@@ -77,22 +83,22 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
     ]);
     $email = 'the_don@example.org';
 
-    $contact = Contact::create(FALSE)->setValues([
+    $contact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Donald',
       'last_name' => 'Duck',
       'email_primary.email' => $email,
-    ])->execute()->first();
+    ]);
 
     $activity = Activity::create(FALSE)
-        ->addValue('activity_type_id:name', 'EmailSnoozed')
-        ->addValue('status_id:name', 'Scheduled')
-        ->addValue('subject', "Email snooze scheduled")
-        ->addValue('source_contact_id', $contact['id'])
-        ->addValue('source_record_id',$contact['id'])
-        ->addValue('activity_date_time', 'now')
-        ->execute()
-        ->first();
+      ->addValue('activity_type_id:name', 'EmailSnoozed')
+      ->addValue('status_id:name', 'Scheduled')
+      ->addValue('subject', "Email snooze scheduled")
+      ->addValue('source_contact_id', $contact['id'])
+      ->addValue('source_record_id', $contact['id'])
+      ->addValue('activity_date_time', 'now')
+      ->execute()
+      ->first();
 
     Omnicontact::create(FALSE)
       ->setEmail($email)
@@ -102,7 +108,7 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
         'last_name' => 'Donald',
         'first_name' => 'Duck',
         'snooze_end_date' => '2023-09-09',
-        'activity_id' => $activity['id']
+        'activity_id' => $activity['id'],
       ])
       ->execute()->first();
     $guzzleSentRequests = $this->getRequestBodies();
@@ -177,11 +183,11 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
     // We don't send calls in this test but get an e-notice on CI if there is
     // no Acoustic configured.
     $this->setDatabaseID(1234);
-    $contactID = Contact::create(FALSE)->setValues([
+    $contactID = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Daisy',
       'last_name' => 'Duck',
-    ])->execute()->first()['id'];
+    ])['id'];
 
     $snoozeDate = date('Y-m-d', strtotime('+ 1 week'));
     Email::create(FALSE)->setValues([
