@@ -20,6 +20,17 @@ use SmashPig\Tests\TestingGlobalConfiguration;
 
 trait WMFEnvironmentTrait {
 
+
+  /**
+   * @var int
+   */
+  protected $maxContactID;
+
+  /**
+   * @var int
+   */
+  protected int $maxContributionID;
+
   /**
    * @throws \CRM_Core_Exception
    */
@@ -49,6 +60,8 @@ trait WMFEnvironmentTrait {
     if (!file_exists(\Civi::settings()->get('metrics_reporting_prometheus_path'))) {
       \Civi::settings()->set('metrics_reporting_prometheus_path', \CRM_Core_Config::singleton()->configAndLogDir);
     }
+    $this->maxContactID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
+    $this->maxContributionID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution');
     $this->initializeSequenceGenerator();
   }
 

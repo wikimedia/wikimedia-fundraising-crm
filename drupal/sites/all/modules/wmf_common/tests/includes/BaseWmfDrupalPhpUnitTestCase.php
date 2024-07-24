@@ -31,16 +31,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
   /**
    * @var int
    */
-  protected $maxContactID;
-
-  /**
-   * @var int
-   */
-  protected int $maxContributionID;
-
-  /**
-   * @var int
-   */
   protected $trackingCount = 0;
 
   /**
@@ -71,11 +61,8 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
     $user->roles = [DRUPAL_AUTHENTICATED_RID => 'authenticated user'];
     $this->startTimestamp = time();
     civicrm_initialize();
-    MailFactory::singleton()->setActiveMailer('test');
     Civi::settings()->set('logging_no_trigger_permission', FALSE);
     Civi::settings()->set('logging', TRUE);
-    $this->maxContactID = $this->getHighestContactID();
-    $this->maxContributionID = $this->getHighestContributionID();
     $this->trackingCount = CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_contribution_tracking');
   }
 
