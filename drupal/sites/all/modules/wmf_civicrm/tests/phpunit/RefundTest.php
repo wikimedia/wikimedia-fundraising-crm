@@ -11,18 +11,9 @@ use Civi\WMFException\WMFException;
  */
 class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
 
-  /**
-   * Id of the contribution created in the setup function.
-   *
-   * @var int
-   */
-  protected $original_contribution_id;
-
   protected $gateway_txn_id;
 
   protected $contact_id;
-
-  protected $original_currency;
 
   protected $original_amount;
 
@@ -46,46 +37,6 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    */
   protected $financialYearTotalFieldName;
 
-  public function setUp(): void {
-    parent::setUp();
-
-    $this->createTestEntity('Contact', [
-      'contact_type' => 'Individual',
-      'first_name' => 'Test',
-      'last_name' => 'Es',
-      'debug' => 1,
-    ]);
-
-    $this->original_currency = 'EUR';
-    $this->original_amount = 1.23;
-    $this->gateway_txn_id = 'E-I-E-I-O';
-    $time = time();
-    $this->trxn_id = "TEST_GATEWAY E-I-E-I-O {$time}";
-    $this->setExchangeRates($time, ['USD' => 1, 'EUR' => 0.5, 'NZD' => 5]);
-    $this->setExchangeRates(strtotime('1 year ago'), array('USD' => 1, 'EUR' => 0.5, 'NZD' => 5));
-
-    $results = $this->createTestEntity('Contribution', [
-      'contact_id' => $this->ids['Contact']['default'],
-      'financial_type_id:name' => 'Cash',
-      'total_amount' => $this->original_amount,
-      'contribution_source' => $this->original_currency . ' ' . $this->original_amount,
-      'receive_date' => date('Y-m-d') . ' 04:05:06',
-      'trxn_id' => $this->trxn_id,
-      'contribution_xtra.gateway' => 'test_gateway',
-      'contribution_xtra.gateway_txn_id' => 'E-I-E-I-O',
-    ], 'original');
-    $this->original_contribution_id = $results['id'];
-    $this->financialYearEnd = (date('m') > 6) ? date('Y') + 1 : date('Y');
-    $this->financialYearTotalFieldName = 'total_' . ($this->financialYearEnd - 1) . '_' . $this->financialYearEnd;
-    $this->assertContactValues($this->ids['Contact']['default'], [
-      'wmf_donor.lifetime_usd_total' => 1.23,
-      'wmf_donor.last_donation_date' => date('Y-m-d') . ' 04:05:06',
-      'wmf_donor.last_donation_amount' => 1.23,
-      'wmf_donor.last_donation_usd' => 1.23,
-      'wmf_donor.' . $this->financialYearTotalFieldName => 1.23,
-    ]);
-  }
-
   /**
    * Check chargeback status exists.
    */
@@ -98,10 +49,11 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * Generic testing of refund handling.
    */
   public function testMarkRefund() {
+    $this->setupOriginalContribution();
     $message = [
       'gateway_parent_id' => 'E-I-E-I-O',
-      'gross_currency' => $this->original_currency,
-      'gross' => $this->original_amount,
+      'gross_currency' => 'EUR',
+      'gross' => 1.23,
       'date' => '2015-09-09',
       'gateway' => 'test_gateway',
       'gateway_refund_id' => 'my_special_ref',
@@ -114,7 +66,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('Refunded', $contribution['contribution_status_id:name'], 'Contribution not refunded');
 
     $financialTransactions = civicrm_api3('EntityFinancialTrxn', 'get', array(
-      'entity_id' => $this->original_contribution_id,
+      'entity_id' => $this->ids['Contribution']['original'],
       'entity_table' => 'civicrm_contribution',
       'api.financial_trxn.get' => 1,
       'sequential' => TRUE,
@@ -123,7 +75,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $transaction1 = $financialTransactions['values']['0']['api.financial_trxn.get']['values'][0];
     $transaction2 = $financialTransactions['values']['1']['api.financial_trxn.get']['values'][0];
 
-    $this->assertEquals($this->trxn_id, $transaction1['trxn_id']);
+    $this->assertEquals('TEST_GATEWAY E-I-E-I-O', $transaction1['trxn_id']);
     $this->assertEquals(strtotime('2015-09-09'), strtotime($transaction2['trxn_date']));
     $this->assertEquals('my_special_ref', $transaction2['trxn_id']);
 
@@ -147,6 +99,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * Check that marking a contribution as refunded updates WMF Donor data.
    */
   public function testMarkRefundCheckWMFDonorData(): void {
+    $this->setupOriginalContribution();
     $nextYear = date('Y', strtotime('+1 year'));
     $yearAfterNext = date('Y', strtotime('+2 year'));
     $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Maisy', 'last_name' => 'Mouse'], 'maisy');
@@ -217,7 +170,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * Make a refund with type set to "chargeback"
    */
   public function testMarkRefundWithType(): void {
-
+    $this->setupOriginalContribution();
     $this->processMessage([
       'gateway_parent_id' => 'E-I-E-I-O',
       'gateway' => 'test_gateway',
@@ -229,7 +182,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     ], 'Refund', 'refund');
 
     $contribution = Contribution::get(FALSE)
-      ->addWhere('id', '=', $this->original_contribution_id)
+      ->addWhere('id', '=', $this->ids['Contribution']['original'])
       ->addSelect('contribution_status_id:name')
       ->execute()->single();
 
@@ -248,8 +201,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testMakeLesserRefund(): void {
-    $lesser_amount = round($this->original_amount - 0.25, 2);
-
+    $this->setupOriginalContribution();
     $time = time();
     // Add an earlier contribution - this will be the most recent if our contribution is
     // deleted.
@@ -260,7 +212,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'total_amount' => 40,
       'source' => 'NZD' . ' ' . 200,
       'receive_date' => $receiveDate,
-      'trxn_id' => "TEST_GATEWAY {$this->gateway_txn_id} " . ($time - 200),
+      'trxn_id' => "TEST_GATEWAY" . ($time - 200),
     ]);
     $this->assertContactValues($this->ids['Contact']['default'], [
       'wmf_donor.lifetime_usd_total' => 41.23,
@@ -272,8 +224,8 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->processMessage([
       'gateway_parent_id' => 'E-I-E-I-O',
-      'gross_currency' => $this->original_currency,
-      'gross' => $lesser_amount,
+      'gross_currency' => 'EUR',
+      'gross' => 0.98,
       'date' => date('Y-m-d H:i:s'),
       'gateway' => 'test_gateway',
       'gateway_txn_id' => 'abc',
@@ -281,12 +233,12 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     ], 'Refund', 'refund');
 
     $refundContribution = Contribution::get(FALSE)
-      ->addWhere('contribution_extra.parent_contribution_id', '=', $this->original_contribution_id)
+      ->addWhere('contribution_extra.parent_contribution_id', '=', $this->ids['Contribution']['original'])
       ->execute()
       ->single();
 
     $this->assertEquals(
-      "{$this->original_currency} 0.25", $refundContribution['source'], 'Refund contribution has correct lesser amount'
+      "EUR 0.25", $refundContribution['source'], 'Refund contribution has correct lesser amount'
     );
     $this->assertContactValues($this->ids['Contact']['default'], [
       'wmf_donor.lifetime_usd_total' => 40,
@@ -302,9 +254,9 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * Make a refund in the wrong currency.
    */
   public function testMakeWrongCurrencyRefund(): void {
+    $this->setupOriginalContribution();
     $this->expectException(WMFException::class);
     $wrong_currency = 'GBP';
-    $this->assertNotEquals($this->original_currency, $wrong_currency);
     $this->processMessageWithoutQueuing([
       'gateway_parent_id' => 'E-I-E-I-O',
       'gross_currency' => $wrong_currency,
@@ -319,22 +271,24 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    * Make a refund for too much.
    */
   public function testMakeScammerRefund(): void {
+    $this->setupOriginalContribution();
     $this->processMessage([
       'gateway_parent_id' => 'E-I-E-I-O',
-      'gross_currency' => $this->original_currency,
-      'gross' => $this->original_amount + 100.00,
+      'gross_currency' => 'EUR',
+      'gross' => 101.23,
       'date' => date('Y-m-d H:i:s'),
       'gateway' => 'test_gateway',
       'type' => 'refund',
     ], 'Refund', 'refund');
     $mailing = $this->getMailing(0);
-    $this->assertStringContainsString("<p>Refund amount mismatch for : {$this->original_contribution_id}, difference is 100. See http", $mailing['html']);
+    $this->assertStringContainsString("<p>Refund amount mismatch for : {$this->ids['Contribution']['original']}, difference is 100. See http", $mailing['html']);
   }
 
   /**
    * Make a lesser refund in the wrong currency
    */
   public function testLesserWrongCurrencyRefund(): void {
+    $this->setupOriginalContribution();
     $this->setExchangeRates(time(), ['USD' => 1, 'COP' => .01]);
 
     $this->createTestEntity('Contribution', [
@@ -345,7 +299,7 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'contribution_source' => 'COP 20000',
       'contribution_extra.gateway' => 'adyen',
       'contribution_extra.gateway_txn_id' => 345,
-      'trxn_id' => "TEST_GATEWAY {$this->gateway_txn_id} " . (time() + 20),
+      'trxn_id' => "TEST_GATEWAY E-I-E-I-O " . (time() + 20),
     ]);
 
     $this->processMessage([
@@ -367,6 +321,42 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals('USD', $contributions['values'][2]['currency']);
     $this->assertEquals($contributions['values'][2]['total_amount'], 150);
     $this->assertEquals('COP 15000', $contributions['values'][2]['contribution_source']);
+  }
+
+  /**
+   * @return void
+   */
+  public function setupOriginalContribution(): void {
+    $time = time();
+    $this->setExchangeRates($time, ['USD' => 1, 'EUR' => 0.5, 'NZD' => 5]);
+    $this->setExchangeRates(strtotime('1 year ago'), ['USD' => 1, 'EUR' => 0.5, 'NZD' => 5]);
+
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Es',
+      'debug' => 1,
+    ]);
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['default'],
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 1.23,
+      'contribution_source' => 'EUR 1.23',
+      'receive_date' => date('Y-m-d') . ' 04:05:06',
+      'trxn_id' => 'TEST_GATEWAY E-I-E-I-O',
+      'contribution_xtra.gateway' => 'test_gateway',
+      'contribution_xtra.gateway_txn_id' => 'E-I-E-I-O',
+    ], 'original');
+
+    $this->financialYearEnd = (date('m') > 6) ? date('Y') + 1 : date('Y');
+    $this->financialYearTotalFieldName = 'total_' . ($this->financialYearEnd - 1) . '_' . $this->financialYearEnd;
+    $this->assertContactValues($this->ids['Contact']['default'], [
+      'wmf_donor.lifetime_usd_total' => 1.23,
+      'wmf_donor.last_donation_date' => date('Y-m-d') . ' 04:05:06',
+      'wmf_donor.last_donation_amount' => 1.23,
+      'wmf_donor.last_donation_usd' => 1.23,
+      'wmf_donor.' . $this->financialYearTotalFieldName => 1.23,
+    ]);
   }
 
 }
