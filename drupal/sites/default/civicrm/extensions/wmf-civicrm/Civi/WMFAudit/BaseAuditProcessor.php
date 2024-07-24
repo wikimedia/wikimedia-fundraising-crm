@@ -22,8 +22,11 @@ abstract class BaseAuditProcessor {
 
   protected $ready_files;
 
-  protected $cutoff = -3;
+  private array $statistics = ['total_records' => 0, 'total_missing' => 0];
 
+  private array $timings = [];
+
+  protected $cutoff = -3;
 
   /**
    * Number of file to parse per run, absent any incoming parameter.
@@ -500,20 +503,19 @@ abstract class BaseAuditProcessor {
 
     $total_missing = [];
     $recon_file_stats = [];
-    $total_donations = 0;
     for ($i = 0; $i < $count; ++$i) {
       //parce the recon files into something relatively reasonable.
       $file = array_pop($recon_files);
+      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []]];
       $parsed = $this->parseReconciliationFile($file);
-      $parse_count = count($parsed);
 
       //remove transactions we already know about
-      $start_time = microtime(TRUE);
-      $missing = $this->get_missing_transactions($parsed);
-      $recon_file_stats[$file] = $this->countMissing($missing);
-      $time = microtime(TRUE) - $start_time;
-      $this->echo($this->countMissing($missing) . ' missing transactions (of a possible ' . $parse_count . ") identified in $time seconds\n");
-      $total_donations += $parse_count;
+      $this->startTiming($file . 'get missing');
+      $missing = $this->getMissingTransactions($parsed, $file);
+
+      $recon_file_stats[$file] = $this->getFileStatistic($file, 'total_missing');
+      $time = $this->stopTiming($file . 'get missing');
+      $this->echo($this->countMissing($missing) . ' missing transactions (of a possible ' . $this->getFileStatistic($file, 'total_records') . ") identified in $time seconds\n");
 
       //If the file is empty, move it off.
       // Note that we are not archiving files that have missing transactions,
@@ -537,8 +539,7 @@ abstract class BaseAuditProcessor {
         }
       }
     }
-    $total_missing_count = $this->countMissing($total_missing);
-    $this->echo("$total_missing_count total missing transactions identified at start");
+    $this->echo($this->statistics['total_missing'] . " total missing transactions identified at start");
 
     //get the date distribution on what's left... for ***main transactions only***
     //That should be to say: The things that are totally in the payments logs.
@@ -573,10 +574,10 @@ abstract class BaseAuditProcessor {
         $missing_at_end += $count;
       }
     }
-    $total_donations_found_in_log = $total_missing_count - $missing_at_end;
+    $total_donations_found_in_log = $this->statistics['total_missing'] - $missing_at_end;
     $wrap_up = "\nDone! Final stats:\n";
-    $wrap_up .= "Total number of donations in audit file: $total_donations\n";
-    $wrap_up .= "Number missing from database: $total_missing_count\n";
+    $wrap_up .= "Total number of donations in audit file: " . $this->statistics['total_records'] . "\n";
+    $wrap_up .= "Number missing from database: {$this->statistics['total_missing']}\n";
     $wrap_up .= 'Missing transactions found in logs: ' . $total_donations_found_in_log . "\n";
     $wrap_up .= 'Missing transactions not found in logs: ' . $missing_at_end . "\n\n";
 
@@ -1332,19 +1333,29 @@ abstract class BaseAuditProcessor {
    *   An array of transactions that are not in the database
    *   already, or false if something goes wrong enough
    */
-  protected function get_missing_transactions($transactions) {
+  protected function getMissingTransactions(array $transactions, string $file) {
     if (empty($transactions)) {
       $this->echo(__FUNCTION__ . ': No transactions to find. Returning.');
       return FALSE;
     }
     //go through the transactions and check to see if they're in civi
-    //@TODO: RECURRING. Won't matter for WP initially, though, so I'm leaving that for the WX integration phase.
     $missing = [
       'main' => [],
       'negative' => [],
-      'recurring' => [],
     ];
+
+    $fileStatistics = &$this->statistics[$file];
     foreach ($transactions as $transaction) {
+      $paymentMethod = $transaction['payment_method'] ?? 'unknown';
+      $type = $transaction['type'] ?? 'main';
+      if ($type === 'donations' || $type === 'recurring' || $type === 'recurring-modify') {
+        // It seems type could be one of these others here from fundraise up (the others are unset).
+        // It might be nice to switch from main to donations but for now ...
+        $type = 'main';
+      }
+      if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
+        $fileStatistics[$type]['by_payment'][$paymentMethod] = ['missing' => 0, 'found' => 0];
+      }
       if (
         $this->record_is_refund($transaction) ||
         $this->record_is_chargeback($transaction) ||
@@ -1353,96 +1364,41 @@ abstract class BaseAuditProcessor {
         //negative
         $transaction = $this->pre_process_refund($transaction);
         if ($this->negative_transaction_exists_in_civi($transaction) === FALSE) {
-          //add a subtraction. I am the helpfulest comment ever.
-          $this->echo('-');
           $missing['negative'][] = $transaction;
+          $fileStatistics[$type]['missing']++;
+          $fileStatistics[$type]['total']++;
+          $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
         }
         else {
-          $this->echo('.');
+          $fileStatistics[$type]['found']++;
+          $fileStatistics[$type]['total']++;
+          $fileStatistics[$type]['by_payment'][$paymentMethod]['found']++;
         }
       }
       else {
         //normal type
         if ($this->main_transaction_exists_in_civi($transaction) === FALSE) {
-          $this->echo('!');
           $missing['main'][] = $transaction;
+          $fileStatistics[$type]['missing']++;
+          $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
         }
         else {
-          $this->echo('.');
+          $fileStatistics[$type]['found']++;
+          $fileStatistics[$type]['by_payment'][$paymentMethod]['found']++;
         }
       }
     }
+    $this->statistics[$file]['missing_negative'] = count($missing['negative']);
+    $this->statistics[$file]['missing_main'] = count($missing['main']);
+    $this->statistics[$file]['total_missing'] = $this->statistics[$file]['missing_negative'] + $this->statistics[$file]['missing_main'];
+    $this->statistics['total_missing'] += $this->statistics[$file]['total_missing'];
+    $this->echo('Transactions');
+    $this->echoFileSummaryRow($file, 'main');
+    $this->echoFileSummaryRow($file, 'refund');
+    $this->echoFileSummaryRow($file, 'cancel');
+    $this->echoFileSummaryRow($file, 'chargeback');
+
     return $missing;
-  }
-
-  /**
-   * Visualization helper. Returns the character we want to display for the kind
-   * of transaction we have just parsed out of a recon file.
-   *
-   * @param array $record A single transaction from a recon file
-   *
-   * @return string A single char to display in the char block.
-   */
-  protected function audit_echochar($record) {
-    if ($this->record_is_refund($record)) {
-      return 'r';
-    }
-
-    if ($this->record_is_chargeback($record)) {
-      return 'b';
-    }
-
-    if ($this->record_is_cancel($record)) {
-      return 'x';
-    }
-    if (!empty($record['payment_method'])) {
-      switch ($record['payment_method']) {
-        case 'cc':
-          return 'c';
-
-        case 'ach':
-        case 'bt':
-        case 'rtbt':
-        case 'obt':
-          return 't';
-
-        case 'cash':
-          return 'h';
-
-        case 'amazon':
-          return 'a';
-
-        case 'apple':
-          return 'l';
-
-        case 'google':
-          return 'g';
-
-        case 'paypal':
-          return 'p';
-
-        case 'dd':
-          return 'd';
-
-        case 'check':
-        case 'stock':
-          return 'k';
-
-        case 'ew':
-          return 'w';
-
-        case 'venmo':
-          return 'v';
-      }
-      if ($record) {
-        echo print_r($record, TRUE);
-      }
-      $this->logError(
-        __FUNCTION__ . " Appeareth a payment_method hitherto unknown...",
-        'DATA_WEIRD'
-      );
-    }
-    return '?';
   }
 
   /**
@@ -1515,6 +1471,53 @@ abstract class BaseAuditProcessor {
     }
     //no big deal, it just wasn't there. This will happen most of the time.
     return FALSE;
+  }
+
+  /**
+   * @param $file
+   * @param string $statistic
+   *
+   * @return mixed
+   */
+  public function getFileStatistic($file, string $statistic) {
+    return $this->statistics[$file][$statistic];
+  }
+
+  /**
+   * @param string $name
+   */
+  protected function startTiming(string $name): void {
+    $this->echo($name);
+    $this->timings[$name]['start'] = microtime(TRUE);
+  }
+
+  protected function stopTiming(string $name): float {
+    $this->timings[$name]['stop'] = microtime(TRUE);
+    return $this->timings[$name]['start'] - $this->timings[$name]['stop'];
+  }
+
+  /**
+   * Output the statistics for this type of transaction.
+   *
+   * @param string $file
+   * @param string $type
+   *
+   * @return void
+   */
+  public function echoFileSummaryRow(string $file, string $type): void {
+    $fileStatistics = $this->statistics[$file][$type];
+    $foundByType = $missingByType = [];
+    foreach ($fileStatistics['by_payment'] as $paymentType => $number) {
+      if ($number['found']) {
+        $foundByType[] = $paymentType . ': ' . $number['found'];
+      }
+      if ($number['missing']) {
+        $missingByType[] = $paymentType . ': ' . $number['missing'];
+      }
+    }
+    $foundByTypeString = $foundByType ? '(' . implode(',', $foundByType) . ')' : '';
+    $missingByTypeString = $missingByType ? '(' . implode(',', $missingByType) . ')' : '';
+    $this->echo($type . "|  total : {$fileStatistics['total']}    | found : {$fileStatistics['found']}  $foundByTypeString     | missing: {$fileStatistics['missing']} $missingByTypeString");
   }
 
   protected function parse_json_log_line($line) {
@@ -1609,9 +1612,8 @@ abstract class BaseAuditProcessor {
    * @return array An array of date loaded from the reconciliation file.
    */
   protected function parseReconciliationFile(string $file): array {
-    $this->echo("Parsing $file");
-    $start_time = microtime(TRUE);
-    $recon_data = [];
+    $this->startTiming("Parsing $file");
+    $records = [];
     // Send the file through to the processor if needed
     if ($this instanceof MultipleFileTypeParser) {
       $this->setFilePath($file);
@@ -1619,7 +1621,7 @@ abstract class BaseAuditProcessor {
     $recon_parser = $this->get_audit_parser();
 
     try {
-      $recon_data = $recon_parser->parseFile($file);
+      $records = $recon_parser->parseFile($file);
     }
     catch (\Exception $e) {
       $this->logError(
@@ -1628,16 +1630,11 @@ abstract class BaseAuditProcessor {
         'RECON_PARSE_ERROR'
       );
     }
-    $time = microtime(TRUE) - $start_time;
-    $this->echo(count($recon_data) . " results found in $time seconds\n");
-
-    //At this point, $recon_data already contains the usable portions of the file.
-    if (!empty($recon_data)) {
-      foreach ($recon_data as $record) {
-        $this->echo($this->audit_echochar($record));
-      }
-    }
-    return $recon_data;
+    $time = $this->stopTiming("Parsing $file");
+    $this->echo(count($records) . " results found in $time seconds\n");
+    $this->statistics[$file]['total_records'] = count($records);
+    $this->statistics['total_records'] += $this->statistics[$file]['total_records'];
+    return $records;
   }
 
   protected function getGatewayIdFromTracking($record = []) {
