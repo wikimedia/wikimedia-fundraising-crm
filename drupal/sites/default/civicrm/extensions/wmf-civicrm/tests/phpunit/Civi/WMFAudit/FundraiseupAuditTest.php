@@ -22,6 +22,11 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $ctx->setProviderConfiguration($config);
   }
 
+  public function tearDown(): void {
+    $this->cleanupContact(['external_identifier' => 'SUBJJCQA']);
+    parent::tearDown();
+  }
+
   public function auditTestProvider(): array {
     return [
       [
