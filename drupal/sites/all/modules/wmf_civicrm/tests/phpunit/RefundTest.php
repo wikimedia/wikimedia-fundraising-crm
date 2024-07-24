@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\WMFException\WMFException;
 
 /**
@@ -215,14 +216,24 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Make a refund with type set to "chargeback"
    */
-  public function testMarkRefundWithType() {
-    wmf_civicrm_mark_refund($this->original_contribution_id, 'Chargeback');
+  public function testMarkRefundWithType(): void {
 
-    $contribution = civicrm_api3('contribution', 'getsingle', array(
-      'id' => $this->original_contribution_id,
-    ));
+    $this->processMessage([
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => 'my_special_ref',
+      'gross' => 10,
+      'gross_currency' => 'USD',
+      'date' => date('Ymd'),
+      'type' => 'chargeback',
+    ], 'Refund', 'refund');
 
-    $this->assertEquals('Chargeback', $contribution['contribution_status'],
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('id', '=', $this->original_contribution_id)
+      ->addSelect('contribution_status_id:name')
+      ->execute()->single();
+
+    $this->assertEquals('Chargeback', $contribution['contribution_status_id:name'],
       'Refund contribution has correct type');
   }
 
@@ -234,8 +245,6 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
    *
    * The new donation gets today's date as we have not passed a refund date.
    *
-   * @throws \Civi\ExchangeRates\ExchangeRatesException;
-   * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
   public function testMakeLesserRefund(): void {
@@ -245,9 +254,8 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
     // Add an earlier contribution - this will be the most recent if our contribution is
     // deleted.
     $receiveDate = date('Y-m-d', strtotime('1 year ago'));
-    $this->callAPISuccess('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'contact_id' => $this->ids['Contact']['default'],
-      'version' => 4,
       'financial_type_id:name' => 'Cash',
       'total_amount' => 40,
       'source' => 'NZD' . ' ' . 200,
@@ -262,28 +270,23 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
       'wmf_donor.' . $this->financialYearTotalFieldName => 1.23,
     ]);
 
-    wmf_civicrm_mark_refund(
-      $this->original_contribution_id,
-      'Chargeback',
-      TRUE, NULL, NULL,
-      $this->original_currency, $lesser_amount
-    );
+    $this->processMessage([
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gross_currency' => $this->original_currency,
+      'gross' => $lesser_amount,
+      'date' => date('Y-m-d H:i:s'),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => 'abc',
+      'type' => 'refund',
+    ], 'Refund', 'refund');
 
-    $refund_contribution_id = CRM_Core_DAO::singleValueQuery("
-          SELECT entity_id FROM wmf_contribution_extra
-          WHERE
-          parent_contribution_id = %1",
-      array(1 => array($this->original_contribution_id, 'Integer'))
-    );
-
-    $refund_contribution = civicrm_api3('Contribution', 'getsingle', array(
-      'id' => $refund_contribution_id,
-    ));
+    $refundContribution = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.parent_contribution_id', '=', $this->original_contribution_id)
+      ->execute()
+      ->single();
 
     $this->assertEquals(
-      "{$this->original_currency} 0.25",
-      $refund_contribution['contribution_source'],
-      'Refund contribution has correct lesser amount'
+      "{$this->original_currency} 0.25", $refundContribution['source'], 'Refund contribution has correct lesser amount'
     );
     $this->assertContactValues($this->ids['Contact']['default'], [
       'wmf_donor.lifetime_usd_total' => 40,
