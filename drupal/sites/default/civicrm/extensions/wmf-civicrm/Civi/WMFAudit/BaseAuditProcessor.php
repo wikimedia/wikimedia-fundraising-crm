@@ -502,22 +502,10 @@ abstract class BaseAuditProcessor {
     $recon_file_stats = [];
     $total_donations = 0;
     for ($i = 0; $i < $count; ++$i) {
-      $parsed = [];
-      $missing = [];
-
       //parce the recon files into something relatively reasonable.
       $file = array_pop($recon_files);
-      $this->echo("Parsing $file");
-      $start_time = microtime(TRUE);
-      $parsed = $this->parse_recon_file($file);
-      $time = microtime(TRUE) - $start_time;
-      if ($parsed !== FALSE) {
-        $parse_count = count($parsed);
-      }
-      else {
-        $parse_count = 0;
-      }
-      $this->echo($parse_count . " results found in $time seconds\n");
+      $parsed = $this->parseReconciliationFile($file);
+      $parse_count = count($parsed);
 
       //remove transactions we already know about
       $start_time = microtime(TRUE);
@@ -1614,13 +1602,15 @@ abstract class BaseAuditProcessor {
   }
 
   /**
-   * Just parse one recon file.
+   * Parse single reconciliation file.
    *
    * @param string $file Absolute location of the recon file you want to parse
    *
-   * @return mixed An array of recon data, or false
+   * @return array An array of date loaded from the reconciliation file.
    */
-  protected function parse_recon_file($file) {
+  protected function parseReconciliationFile(string $file): array {
+    $this->echo("Parsing $file");
+    $start_time = microtime(TRUE);
     $recon_data = [];
     // Send the file through to the processor if needed
     if ($this instanceof MultipleFileTypeParser) {
@@ -1638,18 +1628,16 @@ abstract class BaseAuditProcessor {
         'RECON_PARSE_ERROR'
       );
     }
+    $time = microtime(TRUE) - $start_time;
+    $this->echo(count($recon_data) . " results found in $time seconds\n");
 
     //At this point, $recon_data already contains the usable portions of the file.
-
     if (!empty($recon_data)) {
       foreach ($recon_data as $record) {
         $this->echo($this->audit_echochar($record));
       }
     }
-    if (count($recon_data)) {
-      return $recon_data;
-    }
-    return FALSE;
+    return $recon_data;
   }
 
   protected function getGatewayIdFromTracking($record = []) {
