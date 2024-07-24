@@ -2,6 +2,8 @@
 
 namespace Civi\WMFAudit;
 
+use Civi\Api4\Contribution;
+
 /**
  * @group Ingenico
  * @group WmfAudit
@@ -320,8 +322,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * @throws \Civi\ExchangeRates\ExchangeRatesException
-   * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
    */
   public function testAlreadyRefundedTransactionIsSkipped(): void {
     \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Ingenico/refundNoGatewayIDinCivi/');
@@ -329,18 +330,10 @@ class IngenicoAuditTest extends BaseAuditTestCase {
       'refund' => [],
     ];
 
-    $msg = [
-      'currency' => 'USD',
-      'date' => 1455825706,
-      'gateway' => 'globalcollect',
-      'gateway_txn_id' => '1111662247',
-      'gross' => 1.00,
-    ];
-    wmf_civicrm_mark_refund($this->ids['Contribution']['refund'], 'Refunded', TRUE, $msg['date'],
-      $msg['gateway_txn_id'],
-      $msg['currency'],
-      $msg['gross']
-    );
+    Contribution::update(FALSE)
+      ->addValue('contribution_status_id:name', 'Refunded')
+      ->addWhere('id', '=', $this->ids['Contribution']['refund'])
+      ->execute();
 
     $this->runAuditor();
     $this->assertMessages($expectedMessages);

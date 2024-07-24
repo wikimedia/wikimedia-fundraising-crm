@@ -2,6 +2,7 @@
 
 namespace Civi\WMFAudit;
 
+use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\WMFException\WMFException;
 
@@ -305,24 +306,18 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals('2017-02-19 06:10:51', $tracking['tracking_date']);
   }
 
-  public function testAlreadyRefundedTransactionIsSkipped() {
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testAlreadyRefundedTransactionIsSkipped(): void {
     \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/refunded/');
     $expectedMessages = [
       'refund' => [],
     ];
-
-    $msg = [
-      'currency' => 'USD',
-      'date' => 1455825706,
-      'gateway' => 'adyen',
-      'gateway_txn_id' => '4522268860022701',
-      'gross' => 1.00,
-    ];
-    wmf_civicrm_mark_refund($this->ids['Contribution']['for_refund'], 'Refunded', TRUE, $msg['date'],
-      $msg['gateway_txn_id'],
-      $msg['currency'],
-      $msg['gross']
-    );
+    Contribution::update(FALSE)
+      ->addValue('contribution_status_id:name', 'Refunded')
+      ->addWhere('id', '=', $this->ids['Contribution']['for_refund'])
+      ->execute();
     $this->runAuditor();
     $this->assertMessages($expectedMessages);
   }
