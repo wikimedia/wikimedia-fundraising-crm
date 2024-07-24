@@ -333,29 +333,29 @@ class RefundTest extends BaseWmfDrupalPhpUnitTestCase {
   /**
    * Make a lesser refund in the wrong currency
    */
-  public function testLesserWrongCurrencyRefund() {
-    $epochtime = time();
-    $dbtime = wmf_common_date_unix_to_civicrm($epochtime);
-    $this->setExchangeRates($epochtime, array('USD' => 1, 'COP' => .01));
+  public function testLesserWrongCurrencyRefund(): void {
+    $this->setExchangeRates(time(), ['USD' => 1, 'COP' => .01]);
 
-    $result = $this->callAPISuccess('contribution', 'create', array(
+    $this->createTestEntity('Contribution', [
       'contact_id' => $this->ids['Contact']['default'],
-      'financial_type_id' => 'Cash',
+      'financial_type_id.name' => 'Cash',
       'total_amount' => 200,
       'currency' => 'USD',
       'contribution_source' => 'COP 20000',
+      'contribution_extra.gateway' => 'adyen',
+      'contribution_extra.gateway_txn_id' => 345,
       'trxn_id' => "TEST_GATEWAY {$this->gateway_txn_id} " . (time() + 20),
-    ));
+    ]);
 
-    wmf_civicrm_mark_refund(
-      $result['id'],
-      'Refunded',
-      TRUE,
-      $dbtime,
-      NULL,
-      'COP',
-      5000
-    );
+    $this->processMessage([
+      'gateway_parent_id' => 345,
+      'gateway' => 'adyen',
+      'gateway_txn_id' => 123,
+      'gross_currency' => 'COP',
+      'gross' => 5000,
+      'date' => date('Y-m-d H:i:s'),
+      'type' => 'refund',
+    ], 'Refund', 'refund');
 
     $contributions = $this->callAPISuccess('Contribution', 'get', array(
       'contact_id' => $this->ids['Contact']['default'],
