@@ -1,9 +1,13 @@
 <?php
 
+use Civi\Api4\Contact;
+use Civi\Test\Api3TestTrait;
+use Civi\Test\EntityTrait;
 use CRM_Datachecks_ExtensionUtil as E;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * FIXME - Add test description.
@@ -19,11 +23,14 @@ use Civi\Test\TransactionalInterface;
  *
  * @group headless
  */
-class PrimaryLocationTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
-  use \Civi\Test\Api3TestTrait;
+class PrimaryLocationTest extends TestCase implements HeadlessInterface, HookInterface {
+  use Api3TestTrait;
+  use EntityTrait;
 
-  protected $addressParams = [
-    'street_address' => '123 ABC st', 'city' => 'LeaningVille', 'location_type_id' => 'Home',
+  protected array $addressParams = [
+    'street_address' => '123 ABC st',
+    'city' => 'LeaningVille',
+    'location_type_id' => 'Home',
   ];
 
   public function setUpHeadless() {
@@ -34,23 +41,21 @@ class PrimaryLocationTest extends \PHPUnit\Framework\TestCase implements Headles
       ->apply();
   }
 
-  public function setUp(): void {
-    civicrm_initialize();
-    parent::setUp();
-  }
-
   public function tearDown(): void {
+    Contact::delete(FALSE)
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->setUseTrash(FALSE)
+      ->execute();
     parent::tearDown();
-    $this->callAPISuccess('Data', 'fix', ['check' => 'PrimaryLocation']);
   }
 
   /**
    * Test that lack of primary addresses is resolved where only one exists.
    */
   public function testCheckAndFixNoPrimaryOneAddress() {
-    $contact = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
+    $contact = $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
     $this->addressParams['contact_id'] = $contact['id'];
-    $this->callAPISuccess('Address', 'create', $this->addressParams);
+    $this->createTestEntity('Address', $this->addressParams);
     CRM_Core_DAO::executeQuery('UPDATE civicrm_address SET is_primary = 0 WHERE contact_id = ' . $contact['id']);
 
     $check = $this->callAPISuccess('Data', 'check', ['check' => 'PrimaryLocation']);
@@ -68,11 +73,11 @@ class PrimaryLocationTest extends \PHPUnit\Framework\TestCase implements Headles
    * Test that lack of primary addresses is resolved where more than one exists.
    */
   public function testCheckAndFixNoPrimaryAddresses() {
-    $contact = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
+    $contact = $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
     $this->addressParams['contact_id'] = $contact['id'];
-    $this->callAPISuccess('Address', 'create', $this->addressParams);
+    $this->createTestEntity('Address', $this->addressParams);
     $this->addressParams['location_type_id'] = 'Other';
-    $this->callAPISuccess('Address', 'create', $this->addressParams);
+    $this->createTestEntity('Address', $this->addressParams);
     CRM_Core_DAO::executeQuery('UPDATE civicrm_address SET is_primary = 0 WHERE contact_id = ' . $contact['id']);
 
     $check = $this->callAPISuccess('Data', 'check', ['check' => 'PrimaryLocation']);

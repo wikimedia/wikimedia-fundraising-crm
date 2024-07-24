@@ -13,7 +13,7 @@ function civicrm_api3_data_check($params) {
   }
   $result = array();
   foreach ($dataChecks as $dataCheck) {
-    $checkObject = new $dataCheck['class'];
+    $checkObject = new $dataCheck['class']();
     $result[$dataCheck['name']] = $checkObject->check();
   }
   return civicrm_api3_create_success($result);
