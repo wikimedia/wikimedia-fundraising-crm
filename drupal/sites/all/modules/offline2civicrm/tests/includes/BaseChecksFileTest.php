@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionTracking;
 
 class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
 
@@ -84,19 +85,20 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
    * Clean up transactions from previous test runs.
    */
   public function doCleanUp(): void {
-    $contributions = [];
     if ($this->trxn_id) {
-      // Any that are already removed will be FALSE and filtered out by array filter.
-      $contributions = array_filter((array) wmf_civicrm_get_contributions_from_gateway_id($this->gateway, $this->trxn_id));
+      ContributionTracking::delete(FALSE)->addWhere('contribution_id.contribution_extra.gateway_txn_id', '=', $this->trxn_id)->execute();
+      Contribution::delete(FALSE)
+        ->addWhere('contribution_extra.gateway_txn_id', '=', $this->trxn_id)
+        ->execute();
     }
     elseif ($this->gateway) {
       $contributions = Contribution::get(FALSE)
         ->addWhere('contact_id', '>', $this->maxContactID)
         ->addWhere('contribution_extra.gateway', '=', $this->gateway)->execute();
-    }
-    if ($contributions) {
-      foreach ($contributions as $contribution) {
-        $this->cleanupContribution($contribution['id']);
+      if ($contributions) {
+        foreach ($contributions as $contribution) {
+          $this->cleanupContribution($contribution['id']);
+        }
       }
     }
     $this->doMouseHunt();
