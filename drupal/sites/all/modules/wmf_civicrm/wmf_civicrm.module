@@ -185,16 +185,6 @@ function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
  * @return bool
  */
 function wmf_civicrm_check_language_exists($languageAbbreviation) {
-  $languages = wmf_civicrm_get_valid_languages();
-  return !empty($languages[$languageAbbreviation]);
-}
-
-/**
- * Get valid languages.
- *
- * @return array
- */
-function wmf_civicrm_get_valid_languages() {
   static $languages;
   if (empty($languages)) {
     $available_options = civicrm_api3('Contact', 'getoptions', [
@@ -202,7 +192,7 @@ function wmf_civicrm_get_valid_languages() {
     ]);
     $languages = $available_options['values'];
   }
-  return $languages;
+  return !empty($languages[$languageAbbreviation]);
 }
 
 /**
