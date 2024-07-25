@@ -178,24 +178,6 @@ function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
 }
 
 /**
- * Check if the language string exists.
- *
- * @param string $languageAbbreviation
- *
- * @return bool
- */
-function wmf_civicrm_check_language_exists($languageAbbreviation) {
-  static $languages;
-  if (empty($languages)) {
-    $available_options = civicrm_api3('Contact', 'getoptions', [
-      'field' => 'preferred_language',
-    ]);
-    $languages = $available_options['values'];
-  }
-  return !empty($languages[$languageAbbreviation]);
-}
-
-/**
  * If we're missing a contribution tracking id, insert new record to the table.
  * This can happen if a user somehow makes a donation from outside the normal workflow
  * Historically checks have been ignored as they are completely offline.

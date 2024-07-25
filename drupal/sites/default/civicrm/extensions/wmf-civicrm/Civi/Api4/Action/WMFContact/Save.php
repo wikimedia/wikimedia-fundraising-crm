@@ -284,7 +284,7 @@ class Save extends AbstractAction {
     }
     else {
       if (strlen($incomingLanguage) > 2) {
-        if (wmf_civicrm_check_language_exists($incomingLanguage)) {
+        if ($this->checkLanguageExists($incomingLanguage)) {
           // If the language is already an existing full locale, don't mangle it
           $preferredLanguage = $incomingLanguage;
         }
@@ -303,7 +303,7 @@ class Save extends AbstractAction {
       }
     }
     if ($preferredLanguage) {
-      if (!wmf_civicrm_check_language_exists($preferredLanguage)) {
+      if (!$this->checkLanguageExists($preferredLanguage)) {
         try {
           $parts = explode('_', $preferredLanguage);
           // If we don't find a locale below then an exception will be thrown.
@@ -316,6 +316,24 @@ class Save extends AbstractAction {
       }
     }
     return $preferredLanguage;
+  }
+
+  /**
+   * Check if the language string exists.
+   *
+   * @param string $languageAbbreviation
+   *
+   * @return bool
+   */
+  private function checkLanguageExists($languageAbbreviation) {
+    static $languages;
+    if (empty($languages)) {
+      $available_options = civicrm_api3('Contact', 'getoptions', [
+        'field' => 'preferred_language',
+      ]);
+      $languages = $available_options['values'];
+    }
+    return !empty($languages[$languageAbbreviation]);
   }
 
   /**
