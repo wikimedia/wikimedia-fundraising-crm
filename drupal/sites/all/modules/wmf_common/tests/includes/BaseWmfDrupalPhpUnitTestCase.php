@@ -148,19 +148,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
   }
 
   /**
-   * Get the highest contribution ID in the database.
-   *
-   * @return int
-   */
-  protected function getHighestContributionID(): int {
-    return (int) $this->callAPISuccessGetValue('Contribution', [
-      'return' => 'id',
-      'is_deleted' => '',
-      'options' => ['limit' => 1, 'sort' => 'id DESC'],
-    ]);
-  }
-
-  /**
    * Create a test contact and store the id to the $ids array.
    *
    * @param array $params
@@ -219,31 +206,6 @@ class BaseWmfDrupalPhpUnitTestCase extends PHPUnit\Framework\TestCase {
       }
     }
     $this->callAPISuccess('PaymentProcessor', 'delete', ['id' => $processorID]);
-  }
-
-  /**
-   * Asset the specified fields match those on the given contact.
-   *
-   * @param int $contactID
-   * @param array $expected
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function assertContactValues(int $contactID, array $expected) {
-    $contact = Contact::get(FALSE)->setSelect(
-      array_keys($expected)
-    )->addWhere('id', '=', $contactID)->execute()->first();
-
-    foreach ($expected as $key => $value) {
-      $this->assertEquals($value, $contact[$key], "wrong value for $key");
-    }
-  }
-
-  protected function addContributionTracking($values = []) {
-    $ctId = wmf_civicrm_insert_contribution_tracking($values);
-    $this->ids['ContributionTracking'][] = $ctId;
-    $this->processContributionTrackingQueue();
-    return $ctId;
   }
 
 }
