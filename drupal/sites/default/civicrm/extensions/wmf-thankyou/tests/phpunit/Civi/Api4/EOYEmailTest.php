@@ -3,14 +3,14 @@ namespace Civi\Api4;
 
 use Civi\Omnimail\MailFactory;
 use Civi\Test\Api3TestTrait;
+use Civi\Test\EntityTrait;
 use Civi\Test\Mailer;
 use Civi\WorkflowMessage\EOYThankYou;
 use CRM_Core_DAO;
-use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
 
 class EOYEmailTest extends TestCase {
-
+  use EntityTrait;
   use Api3TestTrait;
 
   protected $oldFromName;
@@ -36,24 +36,21 @@ class EOYEmailTest extends TestCase {
     $mailfactory->setActiveMailer(NULL, new Mailer());
   }
 
+  /**
+   * @throws \Civi\Core\Exception\DBQueryException
+   * @throws \CRM_Core_Exception
+   */
   public function tearDown(): void {
     \Civi::settings()->set('wmf_eoy_thank_you_from_name', $this->oldFromName);
     \Civi::settings()->set('wmf_eoy_thank_you_from_address', $this->oldFromAddress);
     CRM_Core_DAO::executeQuery("DELETE from wmf_eoy_receipt_donor WHERE year = 2018");
-    foreach ($this->ids as $entity => $entityIDs) {
-      foreach ($entityIDs as $entityID) {
-        if ($entity === 'Contact') {
-          $this->cleanUpContact($entityID);
-        }
-        else {
-          try {
-            civicrm_api3($entity, 'delete', ['id' => $entityID]);
-          }
-          catch (\CiviCRM_API3_Exception $e) {
-            // best effort, move along.
-          }
-        }
-      }
+    if (!empty($this->ids['Contact'])) {
+      Contribution::delete(FALSE)->addWhere('contact_id', 'IN', $this->ids['Contact'])->execute();
+      ContributionRecur::delete(FALSE)->addWhere('contact_id', 'IN', $this->ids['Contact'])->execute();
+      Contact::delete(FALSE)->addWhere('id', 'IN', $this->ids['Contact'])->setUseTrash(FALSE)->execute();
+    }
+    if (!empty($this->ids['OptionValue'])) {
+      OptionValue::delete(FALSE)->addWhere('id', 'IN', $this->ids['OptionValue'])->execute();
     }
     parent::tearDown();
   }
@@ -64,7 +61,7 @@ class EOYEmailTest extends TestCase {
    * We no longer use the Japanese template as the name is not
    * in it due to https://phabricator.wikimedia.org/T271189
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testRenderEmailInJapanese(): void {
     $this->ids['Contact']['suzuki'] = Contact::create()
@@ -99,108 +96,106 @@ class EOYEmailTest extends TestCase {
    * @throws \API_Exception
    */
   public function testCalculate(): void {
-    $contactOnetime = $this->callAPISuccess('Contact', 'create', [
+    $contactOnetime = $this->createTestEntity('Contact', [
       'first_name' => 'Onetime',
       'last_name' => 'walrus',
       'contact_type' => 'Individual',
-      'email' => 'onetime@walrus.org',
-    ]);
-    $contactRecur = $this->callAPISuccess('Contact', 'create', [
+      'email_primary.email' => 'onetime@walrus.org',
+    ], 'walrus');
+    $contactRecur = $this->createTestEntity('Contact', [
       'first_name' => 'Recurring',
       'last_name' => 'Rabbit',
       'contact_type' => 'Individual',
-      'email' => 'recurring@rabbit.org',
+      'email_primary.email' => 'recurring@rabbit.org',
       'preferred_language' => 'pt_BR',
-    ]);
-    $this->ids['Contact'][$contactOnetime['id']] = $contactOnetime['id'];
-    $this->ids['Contact'][$contactRecur['id']] = $contactRecur['id'];
+    ], 'rabbit');
+
     $processor = $this->callAPISuccessGetSingle('PaymentProcessor', [
       'name' => 'ingenico',
       'is_test' => 1,
     ]);
-    $recurring = $this->callAPISuccess('ContributionRecur', 'create', [
+    $recurring = $this->createTestEntity('ContributionRecur', [
       'contact_id' => $contactRecur['id'],
       'amount' => 200,
       'currency' => 'PLN',
       'frequency_interval' => 1,
       'frequency_unit' => 'month',
-      'trxn_id' => mt_rand(),
+      'trxn_id' => 678,
       'payment_processor_id' => $processor['id'],
     ]);
     $this->ids['ContributionRecur'][$recurring['id']] = $recurring['id'];
 
-    $originalCurrencyField = wmf_civicrm_get_custom_field_name('original_currency');
-    $originalAmountField = wmf_civicrm_get_custom_field_name('original_amount');
-    $this->callAPISuccess('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'receive_date' => '2017-12-31 22:59:00',
       'contact_id' => $contactRecur['id'],
       'total_amount' => '10',
       'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '100',
-      'contribution_status_id' => 'Completed',
-      'financial_type_id' => 'Cash',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '100',
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
     ]);
-    $this->callAPISuccess('Contribution', 'create', [
-      'receive_date' => '2018-01-01', // FIXME: edge case found?
+    $this->createTestEntity('Contribution', [
+      // FIXME: edge case found?
+      'receive_date' => '2018-01-01',
       'contact_id' => $contactRecur['id'],
       'total_amount' => '20',
       'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '200',
-      'contribution_status_id' => 'Completed',
-      'financial_type_id' => 'Cash',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '200',
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
     ]);
-    $this->callAPISuccess('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'receive_date' => '2018-08-08 22:00:00',
       'contact_id' => $contactRecur['id'],
       'total_amount' => '3',
       'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '30',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '30',
       'contribution_recur_id' => $recurring['id'],
-      'contribution_status_id' => 'Completed',
-      'financial_type_id' => 'Cash',
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
     ]);
-    $this->callAPISuccess('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'receive_date' => '2018-01-01',
       'contact_id' => $contactOnetime['id'],
       'total_amount' => '20',
       'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '200',
-      'contribution_status_id' => 'Completed',
-      'financial_type_id' => 'Cash',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '200',
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
     ]);
-    $this->callAPISuccess('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'receive_date' => '2018-02-02 08:10:00',
       'contact_id' => $contactRecur['id'],
       'total_amount' => '20',
       'currency' => 'USD',
-      $originalCurrencyField => 'USD',
-      $originalAmountField => '20',
-      'contribution_status_id' => 'Completed',
-      'financial_type_id' => 'Cash',
+      'contribution_extra.original_currency' => 'USD',
+      'contribution_extra.original_amount' => '20',
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
     ]);
-    $this->callAPISuccess('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'receive_date' => '2018-03-03',
       'contact_id' => $contactRecur['id'],
       'total_amount' => '21',
       'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '210',
-      'contribution_status_id' => 'Refunded',
-      'financial_type_id' => 'Cash',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '210',
+      'contribution_status_id:name' => 'Refunded',
+      'financial_type_id:name' => 'Cash',
     ]);
-    $this->callAPISuccess('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'receive_date' => '2018-04-04',
       'contact_id' => $contactRecur['id'],
       'total_amount' => '40',
       'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '400',
-      'contribution_status_id' => 'Completed',
-      'financial_type_id' => 'Endowment Gift',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '400',
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Endowment Gift',
     ]);
 
     EOYEmail::makeJob(FALSE)->setYear(2018)->execute();
@@ -267,7 +262,7 @@ class EOYEmailTest extends TestCase {
    * Test that we include contributions from two contact records with the same
    * email when one of them has a recurring contribution.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testCalculateDedupe(): void {
     $this->setUpContactsSharingEmail();
@@ -284,19 +279,19 @@ class EOYEmailTest extends TestCase {
       ],
     ], [
       1 => [
-          'contribution_extra.original_currency' => 'PLN',
-          'financial_type_id:name' => 'Cash',
-          'contribution_extra.original_amount' => 400.0,
-          'contribution_recur_id' => null,
-          'receive_date' => '2018-02-01',
-          'total_amount' => 400.0,
-          'currency' => 'PLN',
-          'financial_type' => 'Cash',
-          'amount' => '400,00',
-          'date' => '2018-02-01',
+        'contribution_extra.original_currency' => 'PLN',
+        'financial_type_id:name' => 'Cash',
+        'contribution_extra.original_amount' => 400.0,
+        'contribution_recur_id' => NULL,
+        'receive_date' => '2018-02-01',
+        'total_amount' => 400.0,
+        'currency' => 'PLN',
+        'financial_type' => 'Cash',
+        'amount' => '400,00',
+        'date' => '2018-02-01',
       ],
       2 => [
-          'contribution_extra.original_currency' => 'PLN',
+        'contribution_extra.original_currency' => 'PLN',
         'financial_type_id:name' => 'Cash',
         'contribution_extra.original_amount' => 30.0,
         'contribution_recur_id' => reset($this->ids['ContributionRecur']),
@@ -326,7 +321,7 @@ class EOYEmailTest extends TestCase {
    * @throws \API_Exception
    */
   public function testCalculateSingleContactId(): void {
-    $contact = $this->addTestContact(['email' => 'jimmysingle@example.com']);
+    $contact = $this->addTestContact(['email_primary.email' => 'jimmysingle@example.com']);
     $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-27 22:59:00']);
     $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-28 22:59:00']);
 
@@ -402,18 +397,14 @@ class EOYEmailTest extends TestCase {
    * Test that we don't include cancellation instructions for
    * donors whose donation is already cancelled.
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testSendWithRecurringDonationsCancelled(): void {
     $this->setUpContactsSharingEmail();
-    // the above call sets some recurring contribution IDs
-    foreach ($this->ids['ContributionRecur'] as $recurId) {
-      civicrm_api3('ContributionRecur', 'create', [
-        'id' => $recurId,
-        'contribution_status_id' => 'Cancelled',
-      ]);
-    }
+    ContributionRecur::update(FALSE)
+      ->addWhere('id', 'IN', $this->ids['ContributionRecur'])
+      ->addValue('contribution_status_id:name', 'Cancelled')
+      ->execute();
     $mailing = $this->send();
     $this->assertDoesNotMatchRegularExpression('/Cancel_or_change_recurring_giving/', $mailing['html']);
   }
@@ -434,13 +425,13 @@ class EOYEmailTest extends TestCase {
   /**
    * Test the render function.
    *
-   * @throws \Exception
+   * @throws \CRM_Core_Exception
    */
   public function testRender(): void {
     $contactID = $this->addTestContact([
       'first_name' => 'Bob',
       'preferred_language' => 'en_US',
-      'email' => 'bob@example.com',
+      'email_primary.email' => 'bob@example.com',
     ])['id'];
     $contributions = [
       ['receive_date' => '2018-02-02', 'total_amount' => 50],
@@ -606,7 +597,7 @@ class EOYEmailTest extends TestCase {
     $contactID = $this->addTestContact([
       'first_name' => 'Bob',
       'preferred_language' => 'en_US',
-      'email' => 'bob@example.com',
+      'email_primary.email' => 'bob@example.com',
     ])['id'];
     $contributions = [
       ['receive_date' => '2018-02-02', 'total_amount' => 50],
@@ -678,19 +669,19 @@ class EOYEmailTest extends TestCase {
    * We should fall back to Spanish for oddballs like 'es_NZ' which
    * our database delights in having.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testRenderHalfBakedLanguage(): void {
-    $this->ids['OptionValue'][] = OptionValue::create(FALSE)->setValues([
+    $this->ids['OptionValue'][] = $this->createTestEntity('OptionValue', [
       'option_group_id.name' => 'languages',
       'name' => 'es_NZ',
       'value' => 'es',
       'label' => 'Kiwi Spanish (of course)',
-    ])->execute()->first()['id'];
+    ], 'kiwi');
     $contactID = $this->addTestContact([
       'first_name' => 'Bob',
       'preferred_language' => 'es_NZ',
-      'email' => 'bob@example.com',
+      'email_primary.email' => 'bob@example.com',
     ])['id'];
     $this->createRecurringContributions($contactID, [['receive_date' => '2018-02-02', 'total_amount' => 50]]);
     $email = $this->send();
@@ -726,27 +717,26 @@ class EOYEmailTest extends TestCase {
   }
 
   public function setUpContactsSharingEmail(): array {
-    $olderContact = $this->callAPISuccess('Contact', 'create', [
+    $olderContact = $this->createTestEntity('Contact', [
       'first_name' => 'Cassius',
       'last_name' => 'Clay',
       'contact_type' => 'Individual',
-      'email' => 'goat@wbaboxing.com',
+      'email_primary.email' => 'goat@wbaboxing.com',
       'preferred_language' => 'en_US',
-    ]);
-    $newerContact = $this->callAPISuccess('Contact', 'create', [
+    ], 'older');
+    $newerContact = $this->createTestEntity('Contact', [
       'first_name' => 'Muhammad',
       'last_name' => 'Ali',
       'contact_type' => 'Individual',
-      'email' => 'goat@wbaboxing.com',
+      'email_primary.email' => 'goat@wbaboxing.com',
       'preferred_language' => 'ar_EG',
-    ]);
-    $this->ids['Contact'][$olderContact['id']] = $olderContact['id'];
-    $this->ids['Contact'][$newerContact['id']] = $newerContact['id'];
+    ], 'newer');
+
     $processor = $this->callAPISuccessGetSingle('PaymentProcessor', [
       'name' => 'ingenico',
       'is_test' => 1,
     ]);
-    $recurring = $this->callAPISuccess('ContributionRecur', 'create', [
+    $recurring = $this->createTestEntity('ContributionRecur', [
       'contact_id' => $olderContact['id'],
       'amount' => 200,
       'currency' => 'PLN',
@@ -755,66 +745,51 @@ class EOYEmailTest extends TestCase {
       'trxn_id' => mt_rand(),
       'payment_processor_id' => $processor['id'],
     ]);
-    $this->ids['ContributionRecur'][$recurring['id']] = $recurring['id'];
-    $financialTypeCash = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Cash'
-    );
-    $completedStatusId = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
-    );
-    $originalCurrencyField = wmf_civicrm_get_custom_field_name('original_currency');
-    $originalAmountField = wmf_civicrm_get_custom_field_name('original_amount');
-    $contribCashOlder = $this->callAPISuccess('Contribution', 'create', [
+
+    $this->createTestEntity('Contribution', [
       'receive_date' => '2018-02-02',
       'contact_id' => $olderContact['id'],
       'total_amount' => '40',
       'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '400',
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
-    ]);
-    $contribCashRecurringOlder = $this->callAPISuccess('Contribution', 'create', [
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '400',
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
+    ], 'cash_older');
+
+    $this->createTestEntity('Contribution', [
       'receive_date' => '2018-03-03',
       'contact_id' => $olderContact['id'],
       'total_amount' => '3',
       'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '30',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '30',
       'contribution_recur_id' => $recurring['id'],
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
-    ]);
-    $contribCashNewer = $this->callAPISuccess('Contribution', 'create', [
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
+    ], 'recurring_older');
+
+    $this->createTestEntity('Contribution', [
       'receive_date' => '2018-04-04',
       'contact_id' => $newerContact['id'],
       'total_amount' => '20',
       'currency' => 'USD',
-      $originalCurrencyField => 'PLN',
-      $originalAmountField => '200',
-      'contribution_status_id' => $completedStatusId,
-      'financial_type_id' => $financialTypeCash,
-    ]);
-    foreach ([
-               $contribCashOlder,
-               $contribCashNewer,
-               $contribCashRecurringOlder,
-             ] as $contrib) {
-      $this->ids['Contribution'][$contrib['id']] = $contrib['id'];
-    }
-    return [$olderContact['id'], $newerContact['id']];
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '200',
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
+    ], 'recurring_newer');
+    return [$this->ids['Contact']['older'], $this->ids['Contact']['newer']];
   }
 
-  protected function addTestContact($params = []) {
-    $contact = $this->callAPISuccess('Contact', 'create', array_merge([
+  protected function addTestContact(array $params = []): array {
+    return $this->createTestEntity('Contact', array_merge([
       'first_name' => 'Jimmy',
       'last_name' => 'Walrus',
       'contact_type' => 'Individual',
-      'email' => 'jimmy@example.com',
+      'email_primary.email' => 'jimmy@example.com',
       'preferred_language' => 'en_US',
-    ], $params));
-    $this->ids['Contact'][$contact['id']] = $contact['id'];
-    return $contact;
+    ], $params), 'jimmy');
   }
 
   /**
@@ -826,17 +801,14 @@ class EOYEmailTest extends TestCase {
    * @return array
    */
   protected function addTestContactContribution(int $contact_id, array $params = []): array {
-    $contribution = $this->callAPISuccess('Contribution', 'create', array_merge([
+    return $this->createTestEntity('Contribution', array_merge([
       'receive_date' => date("Y-m-d H:i:s"),
       'contact_id' => $contact_id,
       'total_amount' => '10',
       'currency' => 'USD',
-      'contribution_status_id' => 'Completed',
-      'financial_type_id' => 'Cash',
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
     ], $params));
-
-    $this->ids['Contribution'][$contribution['id']] = $contribution['id'];
-    return $contribution;
   }
 
   /**
@@ -844,6 +816,7 @@ class EOYEmailTest extends TestCase {
    * @param string $email
    *
    * @return mixed
+   * @throws \Civi\Core\Exception\DBQueryException
    */
   protected function getWMFReceiptDonorRows(int $year, string $email) {
     $result = CRM_Core_DAO::executeQuery("SELECT *
