@@ -174,23 +174,23 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \League\Csv\Exception
    */
   public function testImportAddressMatch(): void {
-    $contact = Contact::create(FALSE)->setValues([
+    $this->ids['Contact']['unique'] = Contact::create(FALSE)->setValues([
       'contact_type' => 'Individual',
       'first_name' => 'Very',
-      'last_name' => 'Unique'
+      'last_name' => 'Unique',
     ])->addChain('address', Address::create(FALSE)->setValues([
       'street_address' => '22 Maple Lane',
       'city' => 'Houston',
       'postal_code' => '07654',
       'location_type_id' => 1,
       'contact_id' => '$id',
-    ]))->execute()->first();
+    ]))->execute()->first()['id'];
 
     $fileUri = $this->setupFile('engage_address_match.csv');
     $importer = new EngageChecksFile($fileUri);
     $importer->import();
     // Check the contribution was added to our existing contact.
-    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $contact['id']]);
+    $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $this->ids['Contact']['unique']]);
     $this->assertEquals(1, $contributions['count']);
   }
 
