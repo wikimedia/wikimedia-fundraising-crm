@@ -19,8 +19,7 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
   /**
    * Example: Run an external SQL script when the module is installed.
    *
-   * @throws \CiviCRM_API3_Exception
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function install(): void {
     $settings = new CRM_Wmf_Upgrader_Settings();
@@ -66,7 +65,7 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
   /**
    * Create WMF specific custom fields.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function addCustomFields(): void {
     WMFConfig::syncCustomFields(FALSE)->execute();
@@ -75,7 +74,7 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
   /**
    * Create WMF specific custom fields.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function syncGeocoders(): void {
     WMFConfig::syncGeocoders(FALSE)->execute();
@@ -660,7 +659,7 @@ SET
    * Remove unused option values.
    *
    * @return true
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function upgrade_4220(): bool {
     $optionGroups = OptionGroup::get(FALSE)
@@ -998,7 +997,7 @@ SET
    * Bug: T331919 & T339067
    *
    * @return bool
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function upgrade_4305(): bool {
     $this->addCustomFields();
@@ -1013,7 +1012,7 @@ SET
    * Add the missing labels for segment fields.
    *
    * @return bool
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function upgrade_4310(): bool {
     $fieldFinder = new CalculatedData();
