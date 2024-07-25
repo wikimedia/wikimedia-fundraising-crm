@@ -2,8 +2,10 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\EntityFinancialTrxn;
 use Civi\WMFException\WMFException;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\CrmLink\Messages\SourceFields;
@@ -101,9 +103,9 @@ class RefundQueueTest extends BaseQueueTestCase {
   }
 
   /**
-   * Refunds raised by Paypal do not indicate whether the initial
-   * payment was taken using the paypal express checkout (paypal_ec) integration or
-   * the legacy paypal integration (paypal). We try to work this out by checking for
+   * Refunds raised by PayPal do not indicate whether the initial
+   * payment was taken using the PayPal express checkout (paypal_ec) integration or
+   * the legacy PayPal integration (PayPal). We try to work this out by checking for
    * the presence of specific values in messages sent over, but it appears this
    * isn't watertight as we've seen refunds failing due to incorrect mappings
    * on some occasions.
@@ -116,7 +118,7 @@ class RefundQueueTest extends BaseQueueTestCase {
     $donation_message = $this->getDonationMessage(['gateway' => 'paypal_ec']);
     $this->processMessage($donation_message, 'Donation', 'test');
 
-    // simulate a mis-mapped paypal legacy refund
+    // simulate a mis-mapped PayPal legacy refund
     $this->processMessage($this->getRefundMessage(
       [
         'gateway' => 'paypal',
@@ -129,6 +131,7 @@ class RefundQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * @throws \CRM_Core_Exception
    */
   public function testPaypalExpressCancelRecurringOnChargeback(): void {
     $signupMessage = $this->getRecurringSignupMessage();
@@ -149,7 +152,7 @@ class RefundQueueTest extends BaseQueueTestCase {
        (new CancelSubscriptionResponse())->setRawResponse([])
       );
 
-    // simulate a mis-mapped paypal legacy refund
+    // simulate a mis-mapped PayPal legacy refund
     $this->processMessage($this->getRefundMessage(
     [
       'gateway' => 'paypal',
@@ -165,7 +168,7 @@ class RefundQueueTest extends BaseQueueTestCase {
       ->addSelect('*', 'contribution_status_id:name')
       ->execute()->single();
 
-    $this->assertEquals($recurRecord['contribution_status_id:name'], 'Cancelled');
+    $this->assertEquals('Cancelled', $recurRecord['contribution_status_id:name']);
   }
 
   /**
@@ -194,7 +197,7 @@ class RefundQueueTest extends BaseQueueTestCase {
    * contribution when the contribution is edited.
    *
    * We used to implement a hook to run interference on core
-   * behaviour but the core behaviour is now fixed so we are testing that.
+   * behaviour but the core behaviour is now fixed, so we are testing that.
    *
    * @throws \CRM_Core_Exception
    */
@@ -307,6 +310,321 @@ class RefundQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Generic testing of refund handling.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMarkRefund() {
+    $this->setupOriginalContribution();
+    $message = [
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gross_currency' => 'EUR',
+      'gross' => 1.23,
+      'date' => '2015-09-09',
+      'gateway' => 'test_gateway',
+      'gateway_refund_id' => 'my_special_ref',
+      'type' => 'refund',
+    ];
+    $this->processMessage($message, 'Refund', 'refund');
+
+    $contribution = $this->getContribution('original');
+
+    $this->assertEquals('Refunded', $contribution['contribution_status_id:name'], 'Contribution not refunded');
+
+    $financialTransactions = EntityFinancialTrxn::get(FALSE)
+      ->addWhere('entity_table', '=', 'civicrm_contribution')
+      ->addWhere('entity_id', '=', $this->ids['Contribution']['original'])
+      ->addSelect('financial_trxn_id.*')
+      ->execute();
+
+    $this->assertCount(2, $financialTransactions);
+
+    $this->assertEquals('TEST_GATEWAY E-I-E-I-O', $financialTransactions[0]['financial_trxn_id.trxn_id']);
+    $this->assertEquals(strtotime('2015-09-09'), strtotime($financialTransactions[1]['financial_trxn_id.trxn_date']));
+    $this->assertEquals('my_special_ref', $financialTransactions[1]['financial_trxn_id.trxn_id']);
+
+    // With no valid donations we wind up with null not zero as no rows are selected
+    // in the calculation query.
+    // This seems acceptable. we would probably need a tricky union or extra IF to
+    // force to NULL. Field defaults are ignored in INSERT ON DUPLICATE UPDATE,
+    // seems an OK sacrifice. If one valid donation (in any year) exists we
+    // will get zeros in other years so only non-donors will have NULL values.
+    // not quite sure why some are zeros not null?
+    $this->assertContactValues($contribution['contact_id'], [
+      'wmf_donor.lifetime_usd_total' => NULL,
+      'wmf_donor.last_donation_date' => NULL,
+      'wmf_donor.last_donation_amount' => 0.00,
+      'wmf_donor.last_donation_usd' => 0.00,
+      'wmf_donor.' . $this->getCurrentFinancialYearTotalFieldName() => NULL,
+    ]);
+  }
+
+  /**
+   * Check that marking a contribution as refunded updates WMF Donor data.
+   */
+  public function testMarkRefundCheckWMFDonorData(): void {
+    $this->setupOriginalContribution();
+    $nextYear = date('Y', strtotime('+1 year'));
+    $yearAfterNext = date('Y', strtotime('+2 year'));
+    $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Maisy', 'last_name' => 'Mouse'], 'maisy');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['maisy'],
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 50,
+      'source' => 'USD 50',
+      'receive_date' => "$nextYear-11-01",
+      'contribution_extra.gateway' => 'adyen',
+      'contribution_extra.gateway_txn_id' => 345,
+    ]);
+    // Create an additional negative contribution. This is how they were prior to Feb 2016.
+    // We want to check it is ignored for the purpose of determining the most recent donation,
+    // although it should contribute to the lifetime total.
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['maisy'],
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => -10,
+      'contribution_source' => 'USD -10',
+      'receive_date' => "$nextYear-12-01",
+    ]);
+
+    $this->processMessage([
+      'gateway_parent_id' => 345,
+      'gateway' => 'adyen',
+      'gateway_txn_id' => 'my_special_ref',
+      'gross' => 10,
+      'date' => "$nextYear-09-09",
+      'type' => 'refund',
+    ], 'Refund', 'refund');
+
+    $this->assertContactValues($this->ids['Contact']['maisy'], [
+      'wmf_donor.lifetime_usd_total' => 40,
+      'wmf_donor.last_donation_date' => "$nextYear-11-01 00:00:00",
+      'wmf_donor.last_donation_amount' => 50,
+      'wmf_donor.last_donation_usd' => 50,
+      'wmf_donor.last_donation_currency' => 'USD',
+      "wmf_donor.total_$nextYear" => 40,
+      'wmf_donor.number_donations'  => 1,
+      "wmf_donor.total_{$nextYear}_{$yearAfterNext}" => 40,
+      'wmf_donor.' . $this->getCurrentFinancialYearTotalFieldName() => 0,
+    ]);
+  }
+
+  /**
+   * Asset the specified fields match those on the given contact.
+   *
+   * @param int $contactID
+   * @param array $expected
+   */
+  protected function assertContactValues(int $contactID, array $expected) {
+    try {
+      $contact = Contact::get(FALSE)->setSelect(
+        array_keys($expected)
+      )->addWhere('id', '=', $contactID)->execute()->first();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail($e->getMessage());
+    }
+
+    foreach ($expected as $key => $value) {
+      $this->assertEquals($value, $contact[$key], "wrong value for $key");
+    }
+  }
+
+  /**
+   * Make a refund with type set to "chargeback"
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMarkRefundWithType(): void {
+    $this->setupOriginalContribution();
+    $this->processMessage([
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => 'my_special_ref',
+      'gross' => 10,
+      'gross_currency' => 'USD',
+      'date' => date('Ymd'),
+      'type' => 'chargeback',
+    ], 'Refund', 'refund');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('id', '=', $this->ids['Contribution']['original'])
+      ->addSelect('contribution_status_id:name')
+      ->execute()->single();
+
+    $this->assertEquals('Chargeback', $contribution['contribution_status_id:name'],
+      'Refund contribution has correct type');
+  }
+
+  /**
+   * Make a refund for less than the original amount.
+   *
+   * The original contribution is refunded & a new contribution is created to represent
+   * the balance (.25 EUR or 13 cents) so the contact appears to have made a 13 cent donation.
+   *
+   * The new donation gets today's date as we have not passed a refund date.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMakeLesserRefund(): void {
+    $this->setupOriginalContribution();
+    $time = time();
+    // Add an earlier contribution - this will be the most recent if our contribution is
+    // deleted.
+    $receiveDate = date('Y-m-d', strtotime('1 year ago'));
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['default'],
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 40,
+      'source' => 'NZD' . ' ' . 200,
+      'receive_date' => $receiveDate,
+      'trxn_id' => "TEST_GATEWAY" . ($time - 200),
+    ]);
+    $this->assertContactValues($this->ids['Contact']['default'], [
+      'wmf_donor.lifetime_usd_total' => 41.23,
+      'wmf_donor.last_donation_date' => date('Y-m-d') . ' 04:05:06',
+      'wmf_donor.last_donation_amount' => 1.23,
+      'wmf_donor.last_donation_usd' => 1.23,
+      'wmf_donor.' . $this->getCurrentFinancialYearTotalFieldName() => 1.23,
+    ]);
+
+    $this->processMessage([
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gross_currency' => 'EUR',
+      'gross' => 0.98,
+      'date' => date('Y-m-d H:i:s'),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => 'abc',
+      'type' => 'refund',
+    ], 'Refund', 'refund');
+
+    $refundContribution = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.parent_contribution_id', '=', $this->ids['Contribution']['original'])
+      ->execute()
+      ->single();
+
+    $this->assertEquals(
+      "EUR 0.25", $refundContribution['source'], 'Refund contribution has correct lesser amount'
+    );
+    $this->assertContactValues($this->ids['Contact']['default'], [
+      'wmf_donor.lifetime_usd_total' => 40,
+      'wmf_donor.last_donation_date' => date('Y-m-d 00:00:00', strtotime('1 year ago')),
+      'wmf_donor.last_donation_usd' => 40,
+      'wmf_donor.' . $this->getCurrentFinancialYearTotalFieldName() => 0,
+      'wmf_donor.last_donation_currency' => 'NZD',
+      'wmf_donor.last_donation_amount' => 200,
+    ]);
+  }
+
+  /**
+   * Make a refund in the wrong currency.
+   */
+  public function testMakeWrongCurrencyRefund(): void {
+    $this->setupOriginalContribution();
+    $this->expectException(WMFException::class);
+    $wrong_currency = 'GBP';
+    $this->processMessageWithoutQueuing([
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gross_currency' => $wrong_currency,
+      'gross' => 1.23,
+      'date' => date('Y-m-d H:i:s'),
+      'gateway' => 'test_gateway',
+      'type' => 'refund',
+    ], 'Refund');
+  }
+
+  /**
+   * Make a refund for too much.
+   */
+  public function testMakeScammerRefund(): void {
+    $this->setupOriginalContribution();
+    $this->processMessage([
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gross_currency' => 'EUR',
+      'gross' => 101.23,
+      'date' => date('Y-m-d H:i:s'),
+      'gateway' => 'test_gateway',
+      'type' => 'refund',
+    ], 'Refund', 'refund');
+    $mailing = $this->getMailing(0);
+    $this->assertStringContainsString("<p>Refund amount mismatch for : {$this->ids['Contribution']['original']}, difference is 100. See http", $mailing['html']);
+  }
+
+  /**
+   * Make a lesser refund in the wrong currency
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testLesserWrongCurrencyRefund(): void {
+    $this->setupOriginalContribution();
+    $this->setExchangeRates(time(), ['USD' => 1, 'COP' => .01]);
+
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['default'],
+      'financial_type_id.name' => 'Cash',
+      'total_amount' => 200,
+      'currency' => 'USD',
+      'contribution_source' => 'COP 20000',
+      'contribution_extra.gateway' => 'adyen',
+      'contribution_extra.gateway_txn_id' => 345,
+      'trxn_id' => "TEST_GATEWAY E-I-E-I-O " . (time() + 20),
+    ]);
+
+    $this->processMessage([
+      'gateway_parent_id' => 345,
+      'gateway' => 'adyen',
+      'gateway_txn_id' => 123,
+      'gross_currency' => 'COP',
+      'gross' => 5000,
+      'date' => date('Y-m-d H:i:s'),
+      'type' => 'refund',
+    ], 'Refund', 'refund');
+
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('contact_id', '=', $this->ids['Contact']['default'])
+      ->execute();
+    $this->assertEquals(3, count($contributions), print_r($contributions, TRUE));
+    $this->assertEquals(200, $contributions[1]['total_amount']);
+    $this->assertEquals('USD', $contributions[2]['currency']);
+    $this->assertEquals(150, $contributions[2]['total_amount']);
+    $this->assertEquals('COP 15000', $contributions[2]['source']);
+  }
+
+  /**
+   * @return void
+   */
+  public function setupOriginalContribution(): void {
+    $time = time();
+    $this->setExchangeRates($time, ['USD' => 1, 'EUR' => 0.5, 'NZD' => 5]);
+    $this->setExchangeRates(strtotime('1 year ago'), ['USD' => 1, 'EUR' => 0.5, 'NZD' => 5]);
+
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Es',
+      'debug' => 1,
+    ]);
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['default'],
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 1.23,
+      'contribution_source' => 'EUR 1.23',
+      'receive_date' => date('Y-m-d') . ' 04:05:06',
+      'trxn_id' => 'TEST_GATEWAY E-I-E-I-O',
+      'contribution_xtra.gateway' => 'test_gateway',
+      'contribution_xtra.gateway_txn_id' => 'E-I-E-I-O',
+    ], 'original');
+
+    $this->assertContactValues($this->ids['Contact']['default'], [
+      'wmf_donor.lifetime_usd_total' => 1.23,
+      'wmf_donor.last_donation_date' => date('Y-m-d') . ' 04:05:06',
+      'wmf_donor.last_donation_amount' => 1.23,
+      'wmf_donor.last_donation_usd' => 1.23,
+      'wmf_donor.' . $this->getCurrentFinancialYearTotalFieldName() => 1.23,
+    ]);
+  }
+
+  /**
    * @param array $values
    *
    * @return array
@@ -322,6 +640,14 @@ class RefundQueueTest extends BaseQueueTestCase {
         'gross_currency' => $donation_message['original_currency'],
       ], $values
     );
+  }
+
+  /**
+   * @return string
+   */
+  public function getCurrentFinancialYearTotalFieldName(): string {
+    $financialYearEnd = (date('m') > 6) ? date('Y') + 1 : date('Y');
+    return 'total_' . ($financialYearEnd - 1) . '_' . $financialYearEnd;
   }
 
 }
