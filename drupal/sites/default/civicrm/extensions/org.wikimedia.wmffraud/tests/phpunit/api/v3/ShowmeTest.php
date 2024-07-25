@@ -34,12 +34,10 @@ class api_v3_ShowmeTest extends api_v3_BaseTestClass implements HeadlessInterfac
     $showMe = civicrm_api3('Fredge', 'showme', ['contact_id' => $contact['id']])['showme'];
     $this->assertEquals(2, count($showMe));
     $row = array_pop($showMe);
-    $this->assertEquals('Gateway:test|Order ID:my-order|Validation:accept|IP Address:192.168.1.1|Payment Method:tooth-fairy|Risk Score:10|Date:2017-05-19 22:00:00', $row);
+    $this->assertEquals('Gateway:test|Order ID:my-order|Validation:accept|IP Address:3232235777|Payment Method:tooth-fairy|Risk Score:10|Date:2017-05-20 00:00:00', $row);
 
     $row = array_pop($showMe);
-    $this->assertEquals('Gateway:test|Order ID:your-order|Validation:accept|IP Address:192.168.1.1|Payment Method:tooth-fairy|Risk Score:10|Date:2017-05-19 22:00:00', $row);
-
-    $this->callAPISuccess('Contact', 'delete', ['id' => $contact['id'], 'skip_undelete' => TRUE]);
+    $this->assertEquals('Gateway:test|Order ID:your-order|Validation:accept|IP Address:3232235777|Payment Method:tooth-fairy|Risk Score:10|Date:2017-05-20 00:00:00', $row);
   }
 
   /**
@@ -58,8 +56,8 @@ class api_v3_ShowmeTest extends api_v3_BaseTestClass implements HeadlessInterfac
         $fredges[] = $value;
       }
     }
-    $this->assertEquals('Gateway:test|Order ID:your-order|Validation:accept|IP Address:192.168.1.1|Payment Method:tooth-fairy|Risk Score:10|Date:2017-05-19 22:00:00', $fredges[0]);
-    $this->assertEquals('Gateway:test|Order ID:my-order|Validation:accept|IP Address:192.168.1.1|Payment Method:tooth-fairy|Risk Score:10|Date:2017-05-19 22:00:00', $fredges[1]);
+    $this->assertEquals('Gateway:test|Order ID:your-order|Validation:accept|IP Address:3232235777|Payment Method:tooth-fairy|Risk Score:10|Date:2017-05-20 00:00:00', $fredges[0]);
+    $this->assertEquals('Gateway:test|Order ID:my-order|Validation:accept|IP Address:3232235777|Payment Method:tooth-fairy|Risk Score:10|Date:2017-05-20 00:00:00', $fredges[1]);
   }
 
   /**

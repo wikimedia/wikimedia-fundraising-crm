@@ -198,6 +198,22 @@ trait WMFEnvironmentTrait {
     Contribution::delete(FALSE)->addWhere('id', '=', $id)->execute();
   }
 
+  protected function createContributionTracking(array $values = [], string $identifier = 'default'): array {
+    if (empty($values['id'])) {
+      $values['id'] = Factory::getSequenceGenerator('contribution-tracking')->getNext();
+    }
+    try {
+      $contributionTracking = ContributionTracking::save(FALSE)
+        ->addRecord($values)
+        ->execute()->first();
+      $this->ids['ContributionTracking'][$identifier] = $contributionTracking['id'];
+      return $contributionTracking;
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('unable to create ContributionTracking record');
+    }
+  }
+
   /**
    * Get the number of mailings sent in the test.
    *

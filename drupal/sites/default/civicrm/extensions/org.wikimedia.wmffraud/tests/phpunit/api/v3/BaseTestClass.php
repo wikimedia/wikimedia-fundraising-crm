@@ -1,11 +1,13 @@
 <?php
 
-use CRM_WMFFraud_ExtensionUtil as E;
+use Civi\Test\Api3TestTrait;
+use Civi\Test\EntityTrait;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
-use Civi\WMFQueue\ContributionTrackingQueueConsumer;
+use Civi\WMFEnvironmentTrait;
 use Civi\WMFQueue\AntifraudQueueConsumer;
+use PHPUnit\Framework\TestCase;
 
 /**
  * FIXME - Add test description.
@@ -21,20 +23,11 @@ use Civi\WMFQueue\AntifraudQueueConsumer;
  *
  * @group headless
  */
-class api_v3_BaseTestClass extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class api_v3_BaseTestClass extends TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
 
-  use \Civi\Test\Api3TestTrait;
-
-  protected $createdValues = [];
-
-  /**
-   * The setup() method is executed before the test is executed (optional).
-   */
-  public function setUp(): void {
-    parent::setUp();
-    civicrm_initialize();
-    CRM_Forgetme_Hook::testSetup();
-  }
+  use Api3TestTrait;
+  use EntityTrait;
+  use WMFEnvironmentTrait;
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -48,7 +41,7 @@ class api_v3_BaseTestClass extends \PHPUnit\Framework\TestCase implements Headle
    * @param array $params
    *  Values for the fredge payments_fraud table
    */
-  public function createFredgeTestRecord($params) {
+  public function createFredgeTestRecord(array $params) {
     if (isset($params['date'])) {
       // Mangle back to unix time. Test more readable if calling function can use a date string.
       $params['date'] = strtotime($params['date']);
@@ -88,14 +81,9 @@ class api_v3_BaseTestClass extends \PHPUnit\Framework\TestCase implements Headle
    */
   protected function createContributionEntriesWithTracking($contributionParams) {
     $contribution = $this->createContributionEntries($contributionParams);
-    // Ideally we wouldn't call a function in a module from an extension - but this extension is    very much a WMF special.
-    $tracking = wmf_civicrm_insert_contribution_tracking(['contribution_id' => $contribution['id']]);
-    $ctQueueConsumer = new ContributionTrackingQueueConsumer('contribution-tracking');
-    $ctQueueConsumer->dequeueMessages();
-    $this->createdValues['contribution_tracking'] = $tracking;
-
+    $this->createContributionTracking(['contribution_id' => $contribution['id']], 'tracking');
     $orderID = isset($contributionParams['order_id']) ? $contributionParams['order_id'] : uniqid();
-    return ['tracking_id' => $tracking, 'order_id' => $orderID];
+    return ['tracking_id' => $this->ids['ContributionTracking']['tracking'], 'order_id' => $orderID];
   }
 
   /**

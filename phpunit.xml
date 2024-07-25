@@ -57,6 +57,9 @@
     <testsuite name="datachecks_tests">
       <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.datachecks/tests/phpunit</directory>
     </testsuite>
+    <testsuite name="wmffraud_tests">
+      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.wmffraud/tests/phpunit</directory>
+    </testsuite>
     <testsuite name="email_amender_tests">
       <directory>drupal/sites/default/civicrm/extensions/Email-Amender/tests/phpunit</directory>
     </testsuite>

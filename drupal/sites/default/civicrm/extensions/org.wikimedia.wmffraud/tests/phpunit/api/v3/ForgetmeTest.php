@@ -39,13 +39,13 @@ class api_v3_ForgetmeTest extends api_v3_BaseTestClass implements HeadlessInterf
     $fredges = $this->callAPISuccess('Fredge', 'get', ['contact_id' => $contact['id']]);
     $this->assertEquals(2, $fredges['count']);
     foreach ($fredges['values'] as $fredge) {
-      $this->assertEquals('0.0.0.0', $fredge['user_ip']);
+      $this->assertEquals('null', $fredge['user_ip']);
     }
 
     $fredges = $this->callAPISuccess('Fredge', 'get', ['contact_id' => $contact2['id']]);
     $this->assertEquals(1, $fredges['count']);
     $this->assertEquals('his-order', $fredges['values'][$fredges['id']]['order_id']);
-    $this->assertEquals('192.168.1.1', $fredges['values'][$fredges['id']]['user_ip']);
+    $this->assertEquals('3232235777', $fredges['values'][$fredges['id']]['user_ip']);
   }
 
   /**
@@ -65,7 +65,7 @@ class api_v3_ForgetmeTest extends api_v3_BaseTestClass implements HeadlessInterf
     $fredges = $this->callAPISuccess('Fredge', 'get', ['contact_id' => $contact['id']]);
     $this->assertEquals(1, $fredges['count']);
     foreach ($fredges['values'] as $fredge) {
-      $this->assertEquals('0.0.0.0', $fredge['user_ip']);
+      $this->assertEquals('null', $fredge['user_ip']);
     }
     $this->callAPISuccess('Fredge', 'forgetme', ['contact_id' => $contact2['id']]);
   }

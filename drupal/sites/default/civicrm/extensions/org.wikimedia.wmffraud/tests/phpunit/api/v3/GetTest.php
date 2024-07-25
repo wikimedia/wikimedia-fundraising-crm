@@ -1,13 +1,16 @@
 <?php
 
-use Civi\Api4\ContributionTracking;
-use Civi\WMFHelper\ContributionTracking as WMFHelper;
-use SmashPig\Core\SequenceGenerators\Factory;
+use Civi\Test\ContactTestTrait;
 use Civi\WMFQueue\AntifraudQueueConsumer;
+use Civi\Test\HeadlessInterface;
+use Civi\Test\HookInterface;
+use Civi\Test\TransactionalInterface;
 
-class GetTest extends BaseWmfDrupalPhpUnitTestCase {
+require_once __DIR__ . '/BaseTestClass.php';
 
-  use \Civi\Test\ContactTestTrait;
+class GetTest extends api_v3_BaseTestClass implements HeadlessInterface, HookInterface, TransactionalInterface {
+
+  use ContactTestTrait;
 
   public function testGetRequest() {
     $contactID = $this->individualCreate();
@@ -16,37 +19,6 @@ class GetTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $fredges = $this->callAPISuccess('Fredge', 'get', ['contact_id' => $contactID]);
     $this->assertEquals(2, $fredges['count']);
-  }
-
-  private function createContributionEntriesWithFredge($params = []) {
-    $contribution = \Civi\Api4\Contribution::create(FALSE)
-      ->setValues(array_merge([
-        'financial_type_id:name' => 'Donation',
-        'receive_date' => 'now',
-        'total_amount' => 55,
-        'is_pay_later' => FALSE,
-        'is_template' => FALSE,
-      ], $params))
-      ->execute()
-      ->first();
-
-    $generator = Factory::getSequenceGenerator('contribution-tracking');
-    $contribution_tracking_id = $generator->getNext();
-    ContributionTracking::save(FALSE)->addRecord(WMFHelper::getContributionTrackingParameters([
-      'utm_source' => '..rpp',
-      'utm_medium' => 'civicrm',
-      'ts' => '',
-      'contribution_id' => $contribution['id'],
-      'id' => $contribution_tracking_id,
-    ]))->execute()->first();
-
-    $this->createFredgeTestRecord([
-      'contribution_tracking_id' => $contribution_tracking_id,
-      'validation_action' => 'accept',
-      'user_ip' => '192.168.1.1',
-      'date' => 'now',
-      'order_id' => $params['order_id'],
-    ]);
   }
 
   /**

@@ -68,10 +68,4 @@ class BaseAuditTestCase extends TestCase {
     }
   }
 
-  protected function createContributionTracking($values) {
-    $this->ids['ContributionTracking'][] = ContributionTracking::save(FALSE)
-      ->addRecord($values)
-      ->execute()->first()['id'];
-  }
-
 }
