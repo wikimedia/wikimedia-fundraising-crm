@@ -17,7 +17,7 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
   public function processMessage(array $message) {
     $messageObject = new RecurDonationMessage($message);
     // Look up contribution_recur record
-    $contributionRecur = $this->getExistingContributionRecur($message);
+    $contributionRecur = $this->getExistingContributionRecur($message, $messageObject);
 
     if ($this->isRejectionMessage($message)) {
       // The gateway has sent us a 'Wallet Disabled' IPN, so close down the subscription.
@@ -84,23 +84,21 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
    * Finds an active contribution_recur record using a particular payment_token value
    *
    * @param array $message with at least 'gateway' and 'recurring_payment_token' set
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $messageObject
    *
    * @return array|null The contribution_recur record if it exists, otherwise null
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  protected function getExistingContributionRecur(array $message): ?array {
+  protected function getExistingContributionRecur(array $message, RecurDonationMessage $messageObject): ?array {
     // Look up civicrm_payment_token record
-    $tokenRecord = wmf_civicrm_get_recurring_payment_token(
-      $message['gateway'], $message['recurring_payment_token']
-    );
-    if (!$tokenRecord) {
+    $paymentTokenID = $messageObject->getPaymentTokenID();
+    if (!$paymentTokenID) {
       return NULL;
     }
     // Look up contribution recur row using token and recur amount
     $recurs = ContributionRecur::get(FALSE)
       ->addSelect('contribution_status_id:name', '*')
-      ->addWhere('payment_token_id', '=', $tokenRecord['id'])
+      ->addWhere('payment_token_id', '=', $paymentTokenID)
       ->addWhere('amount', '=', $message['gross'])
       ->execute();
 

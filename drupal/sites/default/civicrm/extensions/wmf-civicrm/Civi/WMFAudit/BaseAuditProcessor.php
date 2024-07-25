@@ -557,8 +557,7 @@ abstract class BaseAuditProcessor {
     //@TODO: Handle the recurring type, once we have a gateway that gives some of those to us.
     //
     //Handle the negatives now. That way, the parent transactions will probably exist.
-    $this->echo("Processing 'negative' transactions");
-    $this->handle_all_negatives($total_missing, $remaining);
+    $this->handleNegatives($total_missing, $remaining);
 
     //Wrap it up and put a bow on it.
     //@TODO much later: Make a fredge table for these things and dump some messages over there about what we just did.
@@ -623,8 +622,10 @@ abstract class BaseAuditProcessor {
     $this->echo($wrap_up);
   }
 
-  protected function handle_all_negatives($total_missing, &$remaining) {
-    $neg_count = 0;
+  protected function handleNegatives($total_missing, &$remaining) {
+    $this->echo("Processing 'negative' transactions");
+    $numberProcessed = 0;
+    $numberSkipped = 0;
     if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
       foreach ($total_missing['negative'] as $record) {
         //check to see if the parent exists. If it does, normalize and send.
@@ -664,8 +665,7 @@ abstract class BaseAuditProcessor {
           }
           $normal = $this->normalize_negative($record);
           $this->send_queue_message($normal, 'negative');
-          $neg_count += 1;
-          $this->echo('!');
+          $numberProcessed += 1;
         }
         else {
           // Ignore cancels with no parents because they must have
@@ -673,11 +673,12 @@ abstract class BaseAuditProcessor {
           if (!$this->record_is_cancel($record)) {
             //@TODO: Some version of makemissing should make these, too. Gar.
             $remaining['negative'][$this->get_record_human_date($record)][] = $record;
-            $this->echo('.');
+            $numberSkipped++;
           }
         }
       }
-      $this->echo("Processed $neg_count 'negative' transactions\n");
+      $this->echo("Processed $numberProcessed 'negative' transactions\n");
+      $this->echo("Skipped $numberSkipped 'negative' transactions (no parent record to cancel, probably cancelled before reaching CiviCRM)\n");
     }
   }
 
@@ -1645,13 +1646,45 @@ abstract class BaseAuditProcessor {
     if (empty($tracking['contribution_id'])) {
       return NULL;
     }
-    $contributions = wmf_civicrm_get_contributions_from_contribution_id(
+    $contributions = $this->getContributionExtra(
       $tracking['contribution_id']
     );
     if (empty($contributions)) {
       return NULL;
     }
     return $contributions[0]['gateway_txn_id'];
+  }
+
+  /**
+   * Pulls all records in the wmf_contribution_extras table that match the civicrm
+   * contribution id.
+   *
+   * @deprecated - this is a really laborious way to load
+   * a record just to get a single value - fold into parent
+   * as an api call.
+   *
+   * @param string $contribution_id
+   *
+   * @return mixed array of result rows, or false if none present.
+   * @throws \Civi\WMFException\WMFException
+   */
+  private function getContributionExtra($contribution_id) {
+    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
+		ON cc.id = cx.entity_id
+		WHERE cc.id = %1";
+
+    $dao = \CRM_Core_DAO::executeQuery($query, [
+      1 => [$contribution_id, 'Integer'],
+    ]);
+    $result = [];
+    while ($dao->fetch()) {
+      $result[] = $dao->toArray();
+    }
+    // FIXME: pick wart
+    if (empty($result)) {
+      return FALSE;
+    }
+    return $result;
   }
 
   /**

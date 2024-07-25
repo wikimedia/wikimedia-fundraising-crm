@@ -193,7 +193,7 @@ class Save extends AbstractAction {
     // Insert the location records if this is being called as a create.
     // For update it's handled in the update routing.
     try {
-      wmf_civicrm_message_address_insert($msg, (int) $contact_result['id']);
+      $this->createAddress($msg, (int) $contact_result['id']);
     }
     catch (\CRM_Core_Exception $ex) {
       $hasContact = Contact::get(FALSE)
@@ -316,6 +316,67 @@ class Save extends AbstractAction {
       }
     }
     return $preferredLanguage;
+  }
+
+  /**
+   * Insert a new address for a contact.
+   *
+   * If updating or unsure use the marginally slower update function.
+   *
+   * @param array $msg
+   * @param int $contact_id
+   *
+   * @throws \Civi\WMFException\WMFException
+   */
+  private function createAddress(array $msg, int $contact_id) {
+
+    // We can do these lookups a bit more efficiently than Civi
+    $country_id = wmf_civicrm_get_country_id($msg['country']);
+
+    if (!$country_id) {
+      return;
+    }
+    $address_params = [
+      'contact_id' => $contact_id,
+      'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
+      'is_primary' => 1,
+      'street_address' => $msg['street_address'],
+      'supplemental_address_1' => !empty($msg['supplemental_address_1']) ? $msg['supplemental_address_1'] : NULL,
+      'city' => $msg['city'],
+      'postal_code' => $msg['postal_code'],
+      'country_id' => $country_id,
+      'country' => $msg['country'],
+      'fix_address' => isset($msg['fix_address']) ? $msg['fix_address'] : FALSE,
+      'is_billing' => 1,
+      'version' => 3,
+    ];
+
+    if (!empty($msg['state_province'])) {
+      $address_params['state_province'] = $msg['state_province'];
+      $address_params['state_province_id'] = wmf_civicrm_get_state_id($country_id, $msg['state_province']);
+    }
+    if (Database::isNativeTxnRolledBack()) {
+      throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back before inserting address");
+    }
+    try {
+      // @todo - remove this from here & do in pre like this
+      // https://issues.civicrm.org/jira/browse/CRM-21786
+      // or don't pass fix_address= 0 (but we need to understand performance reasons
+      // why we haven't done that.
+      \CRM_Core_BAO_Address::addGeocoderData($address_params);
+      civicrm_api3('Address', 'Create', $address_params);
+    }
+    catch (\CRM_Core_Exception $ex) {
+      throw new WMFException(
+        WMFException::IMPORT_CONTACT,
+        'Couldn\'t store address for the contact: ' .
+        $ex->getMessage()
+      );
+    }
+
+    if (Database::isNativeTxnRolledBack()) {
+      throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting address");
+    }
   }
 
   /**

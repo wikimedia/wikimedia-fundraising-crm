@@ -20,7 +20,7 @@ class FillSchemeId extends AbstractAction {
   protected $batch = 1000;
 
   public function _run(Result $result) {
-    wmf_common_create_smashpig_context('SchemeIdFiller', 'ingenico');
+    \CRM_SmashPig_ContextWrapper::createContext('SchemeIdFiller', 'ingenico');
     $provider = PaymentProviderFactory::getProviderForMethod('cc');
     $contributionRecurs = ContributionRecur::get(FALSE)
       ->addSelect('MAX(contribution.contribution_extra.gateway_txn_id) AS max_txn_id')

@@ -72,7 +72,7 @@ function _civicrm_api3_contribution_forgetme_getproviderobject(array $contrbutio
   try {
     // Wrap this in the try/catch as well in case of gateways like 'engage' which don't
     // correspond to anything known to SmashPig
-    wmf_common_create_smashpig_context('forgetme', $contrbution[$customFieldMap['gateway']]);
+    \CRM_SmashPig_ContextWrapper::createContext('forgetme', $contrbution[$customFieldMap['gateway']]);
     // TODO: PaymentProviderFactory::getProviderForDefaultMethod() might be nice to have
     // Use first provider defined in config - doesn't actually matter for now as the GDPR
     // method is defined on the base class.

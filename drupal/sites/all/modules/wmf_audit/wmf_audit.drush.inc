@@ -83,8 +83,8 @@ function drush_wmf_audit_parse_audit() {
   }
 
   civicrm_initialize();
-  wmf_common_create_smashpig_context("{$gateway}_audit", $gateway);
-  wmf_common_set_smashpig_message_source(
+  \CRM_SmashPig_ContextWrapper::createContext("{$gateway}_audit", $gateway);
+  \CRM_SmashPig_ContextWrapper::setMessageSource(
     'audit', $gateway . ' Recon Auditor'
   );
   $audit = module_invoke("{$gateway}_audit", 'create_processor', $options);

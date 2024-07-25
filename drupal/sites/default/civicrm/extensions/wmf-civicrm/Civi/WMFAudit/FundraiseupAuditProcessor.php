@@ -59,7 +59,7 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
     }
   }
 
-  protected function handle_all_negatives($total_missing, &$remaining) {
+  protected function handleNegatives($total_missing, &$remaining) {
     $neg_count = 0;
     if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
       foreach ($total_missing['negative'] as $record) {

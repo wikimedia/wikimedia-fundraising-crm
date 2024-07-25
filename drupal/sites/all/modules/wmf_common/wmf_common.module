@@ -1,33 +1,4 @@
 <?php
 
-use SmashPig\Core\Context;
-use SmashPig\Core\GlobalConfiguration;
-use SmashPig\Core\Logging\Logger;
-use SmashPig\Core\ProviderConfiguration;
-
 require_once 'failmail.php';
 require_once 'wmf_dates.php';
-
-function wmf_common_create_smashpig_context($logPrefix, $provider = ProviderConfiguration::NO_PROVIDER) {
-  // Initialize SmashPig, or set provider configuration if already initialized
-  $ctx = Context::get();
-  if ($ctx) {
-    $globalConfig = $ctx->getGlobalConfiguration();
-    $config = ProviderConfiguration::createForProvider($provider, $globalConfig);
-    $ctx->setProviderConfiguration($config);
-  }
-  else {
-    $globalConfig = GlobalConfiguration::create();
-    $config = ProviderConfiguration::createForProvider($provider, $globalConfig);
-    Context::init($globalConfig, $config);
-    wmf_common_set_smashpig_message_source('direct', 'CiviCRM');
-  }
-  Logger::setPrefix($logPrefix);
-}
-
-function wmf_common_set_smashpig_message_source($type, $name) {
-  $ctx = Context::get();
-  $ctx->setSourceType($type);
-  $ctx->setSourceName($name);
-  $ctx->setVersionFromFile(DRUPAL_ROOT . "/.version-stamp");
-}

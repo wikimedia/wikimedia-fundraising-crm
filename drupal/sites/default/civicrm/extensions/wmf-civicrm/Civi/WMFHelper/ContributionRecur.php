@@ -144,7 +144,7 @@ class ContributionRecur {
   }
 
   public static function gatewayManagesOwnRecurringSchedule($gateway): bool {
-    wmf_common_create_smashpig_context('RecurHelper', $gateway);
+    \CRM_SmashPig_ContextWrapper::createContext('RecurHelper', $gateway);
     $config = Context::get()->getProviderConfiguration();
     $defaultMethod = $config->val('default-method');
     if (!$config->nodeExists("payment-provider/$defaultMethod/class")) {
@@ -179,9 +179,9 @@ class ContributionRecur {
       // if auto rescue is enabled for recur donations, rescue_reference needs to be used to request adyen to cancel it to avoid further charges
       if (!empty($rescueReference)) {
         try {
-          wmf_common_create_smashpig_context( 'cancelRecurContribution', 'adyen' );
-          $provider = PaymentProviderFactory::getProviderForMethod( 'cc' );
-          $response = $provider->cancelAutoRescue( $rescueReference );
+          \CRM_SmashPig_ContextWrapper::createContext('cancelRecurContribution', 'adyen');
+          $provider = PaymentProviderFactory::getProviderForMethod('cc');
+          $response = $provider->cancelAutoRescue($rescueReference);
           $rawResponse = json_encode($response->getRawResponse());
           \Civi::log( 'wmf' )->info(
             "Successfully send cancel auto rescue request for recurring id $id with rescueReference: $rescueReference and received raw response $rawResponse"

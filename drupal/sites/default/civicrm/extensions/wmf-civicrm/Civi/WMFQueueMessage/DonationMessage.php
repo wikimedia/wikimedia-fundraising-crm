@@ -4,6 +4,7 @@ namespace Civi\WMFQueueMessage;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\Name;
+use Civi\Api4\PaymentToken;
 use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur;
@@ -535,6 +536,45 @@ class DonationMessage extends Message {
       }
     }
     return $this->parsedName;
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function getPaymentTokenID(): ?int {
+    if ($this->isDefined('PaymentToken')) {
+      return $this->lookup('PaymentToken', 'id');
+    }
+    if (empty($this->message['recurring_payment_token'])) {
+      return NULL;
+    }
+    $paymentToken = PaymentToken::get(FALSE)
+      ->addWhere('token', '=', $this->message['recurring_payment_token'])
+      ->addWhere('payment_processor_id.name', '=', $this->getGateway())
+      ->execute()->first();
+    if ($paymentToken) {
+      $this->define('PaymentToken', 'PaymentToken', $paymentToken);
+      return $paymentToken['id'];
+    }
+    return NULL;
+  }
+
+  /**
+   * @param string $value
+   *   The value to fetch, in api v4 format (e.g supports payment_processor_id.name).
+   *
+   * @return mixed|null
+   * @noinspection PhpDocMissingThrowsInspection
+   * @noinspection PhpUnhandledExceptionInspection
+   */
+  public function getExistingPaymentTokenValue(string $value) {
+    if (!$this->getPaymentTokenID()) {
+      return NULL;
+    }
+    if (!$this->isDefined('PaymentToken')) {
+      $this->define('PaymentToken', 'PaymentToken', ['id' => $this->getPaymentTokenID()]);
+    }
+    return $this->lookup('PaymentToken', $value);
   }
 
   /**

@@ -157,29 +157,6 @@ function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
 }
 
 /**
- * @todo - the message object normalize() function should retrieve these values as relevant - like it does with ContributionRecur, ContributionTracking)
- * @param array $msg
- *
- * @return mixed|null
- */
-function _get_recurring_payment_token(array $msg) {
-  _get_import_timer()->startImportTimer("get_recurring_payment_token");
-  $token_record = wmf_civicrm_get_recurring_payment_token(
-    $msg['gateway'], $msg['recurring_payment_token']
-  );
-  _get_import_timer()->endImportTimer("get_recurring_payment_token");
-  return $token_record;
-}
-
-/**
- * @todo - the QueueConsumer class has it's own helper for this.
- * @return \Statistics\Collector\AbstractCollector
- */
-function _get_import_timer(): \Statistics\Collector\AbstractCollector {
-  return ImportStatsCollector::getInstance();
-}
-
-/**
  * Checks for contact ID and hash match.  If mismatched unset
  * ID and hash so message is treated as a new contact.
  *
@@ -276,69 +253,6 @@ function wmf_civicrm_message_address_update($msg, $contact_id) {
     // Constraint violations occur when data is rolled back to resolve a deadlock.
     $code = $e->getErrorCode() === 'constraint violation' ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTACT;
     throw new WMFException($code, "Couldn't store address for the contact.", $e->getExtraParams());
-  }
-}
-
-/**
- * Insert a new address for a contact.
- *
- * @todo move to WMFContact::save
- *
- * If updating or unsure use the marginally slower update function.
- *
- * @param array $msg
- * @param int $contact_id
- *
- * @throws \Civi\WMFException\WMFException
- */
-function wmf_civicrm_message_address_insert($msg, $contact_id) {
-
-  // We can do these lookups a bit more efficiently than Civi
-  $country_id = wmf_civicrm_get_country_id($msg['country']);
-
-  if (!$country_id) {
-    return;
-  }
-  $address_params = [
-    'contact_id' => $contact_id,
-    'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
-    'is_primary' => 1,
-    'street_address' => $msg['street_address'],
-    'supplemental_address_1' => !empty($msg['supplemental_address_1']) ? $msg['supplemental_address_1'] : NULL,
-    'city' => $msg['city'],
-    'postal_code' => $msg['postal_code'],
-    'country_id' => $country_id,
-    'country' => $msg['country'],
-    'fix_address' => isset($msg['fix_address']) ? $msg['fix_address'] : FALSE,
-    'is_billing' => 1,
-    'version' => 3,
-  ];
-
-  if (!empty($msg['state_province'])) {
-    $address_params['state_province'] = $msg['state_province'];
-    $address_params['state_province_id'] = wmf_civicrm_get_state_id($country_id, $msg['state_province']);
-  }
-  if (Database::isNativeTxnRolledBack()) {
-    throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back before inserting address");
-  }
-  try {
-    // @todo - remove this from here & do in pre like this
-    // https://issues.civicrm.org/jira/browse/CRM-21786
-    // or don't pass fix_address= 0 (but we need to understand performance reasons
-    // why we haven't done that.
-    CRM_Core_BAO_Address::addGeocoderData($address_params);
-    civicrm_api3('Address', 'Create', $address_params);
-  }
-  catch (CRM_Core_Exception $ex) {
-    throw new WMFException(
-      WMFException::IMPORT_CONTACT,
-      'Couldn\'t store address for the contact: ' .
-      $ex->getMessage()
-    );
-  }
-
-  if (Database::isNativeTxnRolledBack()) {
-    throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting address");
   }
 }
 
@@ -472,27 +386,15 @@ function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id
     1 => [$gateway, 'String'],
     2 => [$gateway_txn_id, 'String'],
   ]);
-  return wmf_civicrm_dao_to_list($dao);
-}
-
-/**
- * Pulls all records in the wmf_contribution_extras table that match the civicrm
- * contribution id.
- *
- * @param string $contribution_id
- *
- * @return mixed array of result rows, or false if none present.
- * @throws \Civi\WMFException\WMFException
- */
-function wmf_civicrm_get_contributions_from_contribution_id($contribution_id) {
-  $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
-		ON cc.id = cx.entity_id
-		WHERE cc.id = %1";
-
-  $dao = CRM_Core_DAO::executeQuery($query, [
-    1 => [$contribution_id, 'Integer'],
-  ]);
-  return wmf_civicrm_dao_to_list($dao);
+  $result = [];
+  while ($dao->fetch()) {
+    $result[] = $dao->toArray();
+  }
+  // FIXME: pick wart
+  if (empty($result)) {
+    return FALSE;
+  }
+  return $result;
 }
 
 function wmf_civicrm_boost_performance() {
@@ -747,29 +649,6 @@ function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_
     return ['original_currency' => 'USD', 'original_amount' => $usd_amount];
   }
   return [];
-}
-
-/**
- * Expand CiviCRM DAO results object into an array of rows as array
- *
- * @param $dao CRM_Core_DAO
- *
- * @return array
- * @throws \Exception
- */
-function wmf_civicrm_dao_to_list($dao) {
-  if (PEAR::isError($dao)) {
-    throw new Exception($dao->getMessage());
-  }
-  $result = [];
-  while ($dao->fetch()) {
-    $result[] = $dao->toArray();
-  }
-  // FIXME: pick wart
-  if (empty($result)) {
-    return FALSE;
-  }
-  return $result;
 }
 
 /**

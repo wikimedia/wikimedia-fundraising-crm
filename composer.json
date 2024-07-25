@@ -58,7 +58,9 @@
         "wikimedia/testing-access-wrapper": "~1.0",
         "php-parallel-lint/php-console-highlighter": "^0.5.0",
         "php-parallel-lint/php-parallel-lint": "^1.2",
-        "drupal/coder": "dev-8.x-2.x-civi#5fa299b7790535b9f5098417f848a173cb6ce4d4"
+        "drupal/coder": "dev-8.x-2.x-civi#5fa299b7790535b9f5098417f848a173cb6ce4d4",
+        "johnkary/phpunit-speedtrap": "^4.0",
+        "clagiordano/phpunit-result-printer": "^3.0"
     },
     "replace": {
         "symfony/polyfill-php54": "*",

@@ -52,7 +52,7 @@ class Consume extends AbstractAction {
   public function _run(Result $result) {
     $startTime = time();
     $processed = 0;
-    wmf_common_create_smashpig_context('pending_transaction_resolver', $this->gateway);
+    \CRM_SmashPig_ContextWrapper::createContext('pending_transaction_resolver', $this->gateway);
     $pendingDb = PendingDatabase::get();
     $message = $pendingDb->fetchMessageByGatewayOldest(
       $this->gateway, PendingTransaction::getResolvableMethods()
