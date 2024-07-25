@@ -11,7 +11,6 @@ use Civi\Test\Api3TestTrait;
 use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
-use Civi\Test\TransactionalInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -29,7 +28,7 @@ use PHPUnit\Framework\TestCase;
  * @group headless
  */
 class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
-
+  use Test\EntityTrait;
   use Api3TestTrait;
 
   /**
@@ -75,12 +74,11 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    */
   public function setUp(): void {
     parent::setUp();
-    civicrm_initialize();
     $this->adminUserID = $this->imitateAdminUser();
     $this->initialContactCount = $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']);
 
-    $this->contactID = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 0]);
-    $this->contactID2 = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 1]);
+    $this->contactID = $this->breedDuck(['Communication.do_not_solicit' => 0], 'first_duck');
+    $this->contactID2 = $this->breedDuck(['Communication.do_not_solicit' => 1], 'second_duck');
     $locationTypes = array_flip(\CRM_Core_BAO_Address::buildOptions('location_type_id', 'validate'));
     $types = [];
     foreach (['Main', 'Other', 'Home', 'Mailing', 'Billing', 'Work'] as $type) {
@@ -104,7 +102,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \API_Exception
    */
   public function getCustomFieldString(string $name): string {
-    return 'custom_'  . CustomField::get(FALSE)
+    return 'custom_' . CustomField::get(FALSE)
       ->setSelect(['id'])
       ->addWhere('name', '=', $name)
       ->execute()
@@ -143,7 +141,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    *   Should we reverse the contact order for more test cover.
    *
    * @throws \CRM_Core_Exception
-   * @throws \API_Exception
+   *
    * @dataProvider isReverse
    */
   public function testMergeHook(bool $isReverse): void {
@@ -232,7 +230,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * Note that the test only uses 2 emails as 2@example.com above seems extraneous to the issue
    *
    * @param bool $isReverse
-   *   Should we reverse the contact order for more test cover.
+   *   Should we reverse the contact order for more test cover?
    *
    * @dataProvider isReverse
    *
@@ -242,12 +240,12 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
   public function testMergeEmailNonPrimary($isReverse): void {
     $this->giveADuckADonation($isReverse);
     $moreRecentlyGenerousDuck = $isReverse ? $this->contactID : $this->contactID2;
-     Email::replace()
+    Email::replace()
       ->setCheckPermissions(FALSE)
       ->setRecords([
         ['email' => 'the_don@duckland.com', 'location_type_id:name' => 'Other'],
         ['email' => 'better_duck@duckland.com', 'is_primary' => TRUE, 'location_type_id:name' => 'Work'],
-     ])
+      ])
       ->setWhere([['contact_id', '=', $moreRecentlyGenerousDuck]])
       ->addDefault('contact_id', $moreRecentlyGenerousDuck)
       ->execute();
@@ -255,12 +253,12 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
       'criteria' => ['contact' => ['id' => $this->contactID]],
     ])['values'];
     $this->assertCount(1, $result['merged']);
-    $emails = Email::get()->addSelect('*')->addWhere('contact_id', '=', $this->contactID)->setOrderBy([ 'is_primary' => 'DESC'])->execute();
+    $emails = Email::get()->addSelect('*')->addWhere('contact_id', '=', $this->contactID)->setOrderBy(['is_primary' => 'DESC'])->execute();
     $this->assertCount(2, $emails);
     $primary = $emails->first();
     $this->assertEquals('better_duck@duckland.com', $primary['email']);
     $this->assertEquals(TRUE, $primary['is_primary']);
-    $this->assertOnePrimary($emails);
+    $this->assertOnePrimary((array) $emails);
   }
 
   /**
@@ -356,9 +354,9 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    *
    * Tested scenarios: Note these apply to addresses, phones & emails.
    *
-   *  1) (Fill data) both contacts have the same primary with the same location (Home). The first has an additional address (Mailing).
-   *      Outcome: common primary is retained as the Home address & additional Mailing address is retained on the merged contact.
-   *      Notes: our behaviour is the same as core.
+   *  1) (Fill data) both contacts have the same primary with the same location (Home). The first has an additional
+   * address (Mailing). Outcome: common primary is retained as the Home address & additional Mailing address is
+   * retained on the merged contact. Notes: our behaviour is the same as core.
    *  2) (Fill data) (reverse of 1) both contacts have the same primary with the same location (Home).
    *      The second has an additional  address (Mailing).
    *      Outcome: common primary is retained & additional Mailing address is retained on the merged contact.
@@ -417,8 +415,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @dataProvider getMergeLocationData
    *
    * @param array $dataSet
-   *
-   * @throws \CRM_Core_Exception
    */
   public function testBatchMergesAddressesHook(array $dataSet): void {
     $this->contributionCreate(['contact_id' => $this->contactID, 'receive_date' => '2010-01-01', 'invoice_id' => 1, 'trxn_id' => 1]);
@@ -534,8 +530,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    *
    * This is now handled in the dedupetools extension with resolution being
    * 'keep the YES'. We continue to test here for good measure.
-   *
-   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeConflictOnHold(): void {
     $emailDuck1 = $this->callAPISuccess('Email', 'get', ['contact_id' => $this->contactID, 'return' => 'id']);
@@ -548,7 +542,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals(1, $email['on_hold']);
 
     $this->callAPISuccess('Email', 'create', ['id' => $email['id'], 'on_hold' => 0]);
-    $duck2 = $this->breedDuck([wmf_civicrm_get_custom_field_name('do_not_solicit') => 1]);
+    $duck2 = $this->breedDuck(['Communication.do_not_solicit' => 1]);
     $emailDuck2 = $this->callAPISuccess('Email', 'get', ['contact_id' => $duck2, 'return' => 'id']);
     $this->callAPISuccess('Email', 'create', ['id' => $emailDuck2['id'], 'on_hold' => 1]);
 
@@ -561,7 +555,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
 
   /**
    * Test that a conflict on communication preferences is handled.
-   * Currently, is_opt_out have logic as if any contact opt out, then we mark it opt out, doesn't matter if it's a preferred contact.
+   * Currently, is_opt_out have logic as if any contact opt out, then we mark it opt out, doesn't matter if it's a
+   * preferred contact.
    */
   public function testBatchMergeConflictCommunicationPreferences(): void {
     $this->callAPISuccess('Contact', 'create', ['id' => $this->contactID, 'do_not_email' => FALSE, 'is_opt_out' => TRUE]);
@@ -702,19 +697,17 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * our preferred contact.
    *
    * Bug T146946
-   *
-   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeConflictSource(): void {
-    $this->breedDuck(['id' => $this->contactID, 'source' => 'egg']);
-    $this->breedDuck(['id' => $this->contactID2, 'source' => 'chicken']);
+    $this->primpDuck('first_duck', ['source' => 'egg']);
+    $this->primpDuck('second_duck', ['source' => 'chicken']);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertCount(0, $result['values']['skipped']);
     $this->assertCount(1, $result['values']['merged']);
   }
 
   /**
-   * Test that we keep the opt in from the most recent donor.
+   * Test that we keep the opt-in from the most recent donor.
    *
    * The handling for this is in the dedupe tools. Testing in our code checks
    * our settings have been added.
@@ -722,16 +715,15 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @param bool $isReverse
    *
    * @dataProvider isReverse
-   * @throws \CRM_Core_Exception
    */
-  public function testBatchMergeConflictOptIn($isReverse) {
-    $this->breedGenerousDuck($this->contactID, [wmf_civicrm_get_custom_field_name('opt_in') => 1], !$isReverse);
-    $this->breedGenerousDuck($this->contactID2, [wmf_civicrm_get_custom_field_name('opt_in') => 0], $isReverse);
+  public function testBatchMergeConflictOptIn(bool $isReverse) {
+    $this->breedGenerousDuck('first_duck', ['Communication.opt_in' => 1], !$isReverse);
+    $this->breedGenerousDuck('second_duck', ['Communication.opt_in' => 0], $isReverse);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertCount(0, $result['values']['skipped'], 'skipped count is wrong');
     $this->assertCount(1, $result['values']['merged'], 'merged count is wrong');
-    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->contactID, 'return' => wmf_civicrm_get_custom_field_name('opt_in')]);
-    $this->assertEquals($isReverse ? 0 : 1, $contact[wmf_civicrm_get_custom_field_name('opt_in')]);
+    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->ids['Contact']['first_duck'], 'return' => 'Communication.opt_in', 'version' => 4]);
+    $this->assertEquals($isReverse ? 0 : 1, $contact['Communication.opt_in']);
   }
 
   /**
@@ -742,8 +734,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictWhiteSpace() {
-    $this->breedDuck(['id' => $this->contactID, 'first_name' => 'alter ego']);
-    $this->breedDuck(['id' => $this->contactID2, 'first_name' => 'alterego']);
+    $this->primpDuck('first_duck', ['first_name' => 'alter ego']);
+    $this->primpDuck('second_duck', ['first_name' => 'alterego']);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
@@ -758,8 +750,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictPunctuation() {
-    $this->breedDuck(['id' => $this->contactID, 'first_name' => 'alter. ego']);
-    $this->breedDuck(['id' => $this->contactID2, 'first_name' => 'alterego']);
+    $this->primpDuck('first_duck', ['first_name' => 'alter. ego']);
+    $this->primpDuck('second_duck', ['first_name' => 'alterego']);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
@@ -774,8 +766,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictNumbersAreNotPeople() {
-    $this->breedDuck(['id' => $this->contactID, 'first_name' => 'alter. ego']);
-    $this->breedDuck(['id' => $this->contactID2, 'first_name' => '1']);
+    $this->primpDuck('first_duck', ['first_name' => 'alter. ego']);
+    $this->primpDuck('second_duck', ['first_name' => '1']);
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertCount(1, $result['values']['merged']);
     $contact = $this->callAPISuccessGetSingle('Contact', ['email' => 'the_don@duckland.com']);
@@ -877,10 +869,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * that is the only one with a donation.
    *
    * Bug T176699
-   *
-   * @throws \CRM_Core_Exception
    */
-  public function testBatchMergeUnResolvableConflictCityLooksCountryishWithCounty() {
+  public function testBatchMergeUnResolvableConflictCityLooksCountryishWithCounty(): void {
     $this->callAPISuccess('Address', 'create', [
       'country_id' => 'US',
       'contact_id' => $this->contactID2,
@@ -913,10 +903,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * that is the only one with a donation.
    *
    * Bug T176699
-   *
-   * @throws \CRM_Core_Exception
    */
-  public function testBatchMergeUnResolvableConflictCityLooksCountryishNoCountry() {
+  public function testBatchMergeUnResolvableConflictCityLooksCountryishNoCountry():void {
     $this->callAPISuccess('Address', 'create', [
       'contact_id' => $this->contactID2,
       'city' => 'Mexico',
@@ -1484,8 +1472,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
         'conflicting_home_address_not_major_gifts' => [
           'fix_required_for_reverse' => 1,
           'comment' => 'our code needs an update as both are being kept'
-            . ' this is not an issue at the moment as it only happens in reverse from the'
-            . 'form merge - where we do not intervene',
+          . ' this is not an issue at the moment as it only happens in reverse from the'
+          . 'form merge - where we do not intervene',
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 0,
@@ -1506,7 +1494,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
             [array_merge([
               'location_type_id' => 'Main',
               'is_primary' => 0,
-            ], $locationParams1)],
+            ], $locationParams1)
+            ],
             [
               array_merge([
                 'location_type_id' => 'Home',
@@ -1561,8 +1550,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
         'conflicting_home_address__one_more_not_major_gifts' => [
           'fix_required_for_reverse' => 1,
           'comment' => 'our code needs an update as an extra 1 is being kept'
-            . ' this is not an issue at the moment as it only happens in reverse from the'
-            . 'form merge - where we do not intervene',
+          . ' this is not an issue at the moment as it only happens in reverse from the'
+          . 'form merge - where we do not intervene',
           'merged' => 1,
           'skipped' => 0,
           'is_major_gifts' => 0,
@@ -1779,20 +1768,37 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    *
    * @param array $extraParams
    *   Any overrides to be added to the create call.
+   * @param string $identifier
    *
    * @return int
    */
-  public function breedDuck(array $extraParams = []): int {
-    $contact = $this->callAPISuccess('Contact', 'create', array_merge([
+  public function breedDuck(array $extraParams = [], string $identifier = 'duck'): int {
+    $contact = $this->createTestEntity('Contact', array_merge([
       'contact_type' => 'Individual',
       'first_name' => 'Donald',
       'last_name' => 'Duck',
-      'api.email.create' => [
-        'email' => 'the_don@duckland.com',
-        'location_type_id' => 'Work',
-      ],
-    ], $extraParams));
+      'email_primary.email' => 'the_don@duckland.com',
+      'email_primary.location_type_id:name' => 'Work',
+    ], $extraParams), $identifier);
     return (int) $contact['id'];
+  }
+
+  /**
+   * @param string $identifier
+   * @param array $values
+   *
+   * @return void
+   */
+  public function primpDuck(string $identifier, array $values): void {
+    try {
+      Contact::update(FALSE)
+        ->addWhere('id', '=', $this->ids['Contact'][$identifier])
+        ->setValues($values)
+        ->execute();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('Your duck is never gonna get the ribbon ' . $e->getMessage());
+    }
   }
 
   /**
@@ -1832,22 +1838,20 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
   /**
    * Breed a donor duck.
    *
-   * @param int $contactID
+   * @param string $identifier
    * @param array $duckOverrides
    * @param bool $isLatestDonor
    *
-   * @throws \CRM_Core_Exception
    */
-  protected function breedGenerousDuck($contactID, $duckOverrides, $isLatestDonor) {
-    $params = array_merge(['id' => $contactID], $duckOverrides);
-    $this->breedDuck($params);
-    $this->callAPISuccess('Contribution', 'create', [
-      'contact_id' => $contactID,
-      'financial_type_id' => 'Donation',
+  protected function breedGenerousDuck(string $identifier, array $duckOverrides, bool $isLatestDonor): void {
+    $this->primpDuck($identifier, $duckOverrides);
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact'][$identifier],
+      'financial_type_id:name' => 'Donation',
       'total_amount' => 5,
       'receive_date' => $isLatestDonor ? '2018-09-08' : '2015-12-20',
-      'contribution_status_id' => 'Completed',
-    ]);
+      'contribution_status_id:name' => 'Completed',
+    ], 'generous');
   }
 
   /**
