@@ -1,9 +1,10 @@
 <?php
 
-use CRM_Datachecks_ExtensionUtil as E;
+use Civi\Api4\Contact;
+use Civi\Test\Api3TestTrait;
+use Civi\Test\EntityTrait;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
-use Civi\Test\TransactionalInterface;
 
 /**
  * FIXME - Add test description.
@@ -19,11 +20,14 @@ use Civi\Test\TransactionalInterface;
  *
  * @group headless
  */
-class DuplicateLocationTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
-  use \Civi\Test\Api3TestTrait;
+class DuplicateLocationTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface {
+  use Api3TestTrait;
+  use EntityTrait;
 
-  protected $addressParams = [
-    'street_address' => '123 ABC st', 'city' => 'LeaningVille', 'location_type_id' => 'Home'
+  protected array $addressParams = [
+    'street_address' => '123 ABC st',
+    'city' => 'LeaningVille',
+    'location_type_id' => 'Home',
   ];
 
   public function setUpHeadless() {
@@ -34,19 +38,26 @@ class DuplicateLocationTest extends \PHPUnit\Framework\TestCase implements Headl
       ->apply();
   }
 
+  /**
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \CRM_Core_Exception
+   */
   public function tearDown(): void {
+    Contact::delete(FALSE)
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->setUseTrash(FALSE)
+      ->execute();
     parent::tearDown();
-    $this->callAPISuccess('Data', 'fix', ['check' => 'DuplicateLocation']);
   }
 
   /**
    * Test that a duplicate address of same location is resolved through deletion where they match.
    */
   public function testCheckAndFixDuplicateIdenticalAddress() {
-    $contact = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
+    $contact = $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
     $this->addressParams['contact_id'] = $contact['id'];
-    $this->callAPISuccess('Address', 'create', $this->addressParams);
-    $this->callAPISuccess('Address', 'create', $this->addressParams);
+    $this->createTestEntity('Address', $this->addressParams);
+    $this->createTestEntity('Address', $this->addressParams);
     $check = $this->callAPISuccess('Data', 'check', ['check' => 'DuplicateLocation']);
     $this->assertEquals(['contact' => [$contact['id']]], $check['values']['DuplicateLocation']['address']['example']);
 
@@ -62,10 +73,10 @@ class DuplicateLocationTest extends \PHPUnit\Framework\TestCase implements Headl
    * Test that a duplicate address of same location is resolved through location Type change where they match.
    */
   public function testCheckAndFixDuplicateDifferentAddress() {
-    $contact = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
+    $contact = $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
     $this->addressParams['contact_id'] = $contact['id'];
-    $this->callAPISuccess('Address', 'create', $this->addressParams);
-    $this->callAPISuccess('Address', 'create', array_merge($this->addressParams, ['supplemental_address_2' => 'gremlin']));
+    $this->createTestEntity('Address', $this->addressParams);
+    $this->createTestEntity('Address', array_merge($this->addressParams, ['supplemental_address_2' => 'gremlin']));
 
     $this->callAPISuccess('Data', 'fix', ['check' => 'DuplicateLocation']);
     $check = $this->callAPISuccess('Data', 'check', ['check' => 'DuplicateLocation']);
@@ -82,8 +93,8 @@ class DuplicateLocationTest extends \PHPUnit\Framework\TestCase implements Headl
    * location type + phone_type_id
    */
   public function testCheckPhoneDuplicateCheck() {
-    $contact = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
-    $contact2 = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
+    $contact = $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant']);
+    $contact2 = $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Adam', 'last_name' => 'Ant'], 'adam_2');
     $this->callAPISuccess('Phone', 'create', [
       'phone' => 12345,
       'location_type_id' => 'Home',
