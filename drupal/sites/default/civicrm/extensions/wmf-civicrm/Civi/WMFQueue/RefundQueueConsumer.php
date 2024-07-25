@@ -4,9 +4,10 @@ namespace Civi\WMFQueue;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\ExchangeRate;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
-use CRM_Core_Payment_SmashPig;
+use Civi\WMFTransaction;
 use Exception;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\IRecurringPaymentProfileProvider;
@@ -18,6 +19,12 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
 
   const PAYPAL_EXPRESS_CHECKOUT_GATEWAY = 'paypal_ec';
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
   public function processMessage($message) {
     // Sanity checking :)
     $required_fields = [
@@ -85,7 +92,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       // Perform the refund!
       try {
         \Civi::log('wmf')->info('refund {log_id}: Marking as refunded', $context);
-        wmf_civicrm_mark_refund($contributions[0]['id'], $contributionStatus, TRUE, $message['date'],
+        $this->markRefund($contributions[0]['id'], $contributionStatus, $message['date'],
           $refundTxn,
           $message['gross_currency'],
           $message['gross']
@@ -103,6 +110,208 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
       throw new WMFException(WMFException::MISSING_PREDECESSOR, "Parent not found: " . strtoupper($gateway) . " " . $parentTxn);
     }
+  }
+
+  /**
+   * @param int $contribution_id
+   * @param string $contribution_status
+   *   'Refunded'|'Chargeback' - this will determine the new contribution status.
+   * @param null $refund_date
+   * @param null $refund_gateway_txn_id
+   * @param null $refund_currency
+   *   If provided this will be checked against the original contribution and an
+   *   exception will be thrown on mismatch.
+   * @param null $refund_amount
+   *   If provided this will be checked against the original contribution and an
+   *   exception will be thrown on mismatch.
+   *
+   * @return int
+   *   The refund's contribution id.
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   * @todo - fix tests to process via the queue consumer, move this to the queue consumer.
+   * Sets the civi records to reflect a contribution refund.
+   *
+   * The original contribution is set to status "Refunded", or "Chargeback" and a
+   * negative financial transaction record is created. If the amount refunded
+   * does not match a second contribution is added for the balance. The
+   * parent_contribution_id custom field is set on the balance contribution to
+   * connect it to the parent.
+   *
+   * Prior to the 4.6 CiviCRM upgrade refunds resulted in second contribution
+   * with a negative amount. They were linked to the original through the
+   * parent_contribution_id custom field. This was consistent with 4.2 behaviour
+   * which was the then current version.
+   *
+   * 4.3 (included in the 4.6 upgrade) introduced recording multiple financial
+   * transactions (payments) against one contribution. In order to adapt to this
+   * the markRefund function now records second financial transactions against
+   * the original contribution (using the contribution.create api). Discussion
+   * about this change is at https://phabricator.wikimedia.org/T116317
+   *
+   * Some refunds do not have the same $ amount as the original transaction.
+   * Prior to Oct 2014 these were seemingly always imported to CiviCRM. Since
+   * that time the code was changed to throw an exception when the refund
+   * exceeded the original amount, and not import it into CiviCRM. (this does
+   * have visibility as it results in fail_mail).
+   *
+   * The code suggested an intention to record mismatched refunds with a the
+   * difference in the custom fields settlement_usd. However, this returns no
+   * rows. select * from wmf_contribution_extra WHERE settlement_usd IS NOT NULL
+   * LIMIT. It would appear they have been recorded without any record of the
+   * discrepancy, or there were none.
+   *
+   * That issue should be addressed (as a separate issue). The methodology for
+   * recording the difference needs to be considered e.g T89437 - preferably in
+   * conjunction with getting the appropriate method tested within the core
+   * codebase.
+   *
+   * Note that really core CiviCRM should have a way of handling this and we
+   * should work on getting that resolved and adopting it.
+   *
+   * An earlier iteration of this function reconstructed the value of the
+   * original contribution when it had been zero'd or marked as 'RFD'. This
+   * appears to be last used several years ago & this handling has been removed
+   * now.
+   *
+   */
+  private function markRefund(
+    $contribution_id,
+    $contribution_status = 'Refunded',
+    $refund_date = NULL,
+    $refund_gateway_txn_id = NULL,
+    $refund_currency = NULL,
+    $refund_amount = NULL
+  ) {
+    $amount_scammed = 0;
+
+    try {
+      $contribution = civicrm_api3('Contribution', 'getsingle', [
+        'id' => $contribution_id,
+        'return' => [
+          'total_amount',
+          'trxn_id',
+          'contribution_source',
+          'contact_id',
+          'receive_date',
+          'contribution_status_id',
+        ],
+      ]);
+    }
+    catch (\CRM_Core_Exception $e) {
+      throw new WMFException(
+        WMFException::INVALID_MESSAGE, "Could not load contribution: $contribution_id with error " . $e->getMessage()
+      );
+    }
+
+    // Note that my usual reservation about using BAO functions from custom code is overridden by the
+    // caching problems we are hitting in testing (plus the happy knowledge the tests care about this line of
+    // code).
+    if (\CRM_Contribute_BAO_Contribution::isContributionStatusNegative($contribution['contribution_status_id'])
+    ) {
+      throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: $contribution_id");
+    }
+    // Deal with any discrepancies in the refunded amount.
+    [$original_currency, $original_amount] = explode(" ", $contribution['contribution_source']);
+
+    if ($refund_currency !== NULL) {
+      if ($refund_currency != $original_currency) {
+        if ($refund_currency === 'USD') {
+          // change original amount and currency to match refund
+          $original_amount = round((float) ExchangeRate::convert(FALSE)
+            ->setFromCurrency($original_currency)
+            ->setFromAmount($original_amount)
+            ->setTimestamp(is_int($contribution['receive_date'])
+              ? ('@' . $contribution['receive_date'])
+              : $contribution['receive_date'])
+            ->execute()
+            ->first()['amount'], 2);
+          $original_currency = 'USD';
+        }
+        else {
+          throw new WMFException(WMFException::INVALID_MESSAGE, "Refund was in a different currency.  Freaking out.");
+        }
+      }
+    }
+    else {
+      $refund_currency = $original_currency;
+    }
+    if ($refund_date === NULL) {
+      $refund_date = time();
+    }
+    elseif (!is_numeric($refund_date)) {
+      $refund_date = wmf_common_date_parse_string($refund_date);
+    }
+
+    try {
+      civicrm_api3('Contribution', 'create', [
+        'id' => $contribution_id,
+        'debug' => 1,
+        'contribution_status_id' => $contribution_status,
+        'cancel_date' => wmf_common_date_unix_to_civicrm($refund_date),
+        'refund_trxn_id' => $refund_gateway_txn_id,
+      ]);
+    }
+    catch (\CRM_Core_Exception $e) {
+      throw new WMFException(
+        WMFException::IMPORT_CONTRIB,
+        "Cannot mark original contribution as refunded:
+                $contribution_id, " . $e->getMessage() . print_r($e->getExtraParams(), TRUE)
+      );
+    }
+
+    if ($refund_amount !== NULL) {
+      $amount_scammed = round($refund_amount, 2) - round($original_amount, 2);
+      if ($amount_scammed != 0) {
+        $transaction = WMFTransaction::from_unique_id($contribution['trxn_id']);
+        if ($refund_gateway_txn_id) {
+          $transaction->gateway_txn_id = $refund_gateway_txn_id;
+        }
+        $transaction->is_refund = TRUE;
+        $refund_unique_id = $transaction->get_unique_id();
+
+        try {
+          civicrm_api3('Contribution', 'create', [
+            'total_amount' => round(
+              (float) ExchangeRate::convert(FALSE)
+                ->setFromCurrency($refund_currency)
+                ->setFromAmount(-$amount_scammed)
+                ->setTimestamp(is_int($refund_date) ? "@$refund_date" : $refund_date)
+                ->execute()
+                ->first()['amount'], 2),
+            // New type?
+            'financial_type_id' => 'Refund',
+            'contact_id' => $contribution['contact_id'],
+            'contribution_source' => $refund_currency . " " . (-$amount_scammed),
+            'trxn_id' => $refund_unique_id,
+            'receive_date' => date('Y-m-d h:i:s', $refund_date),
+            'currency' => 'USD',
+            'debug' => 1,
+            wmf_civicrm_get_custom_field_name('parent_contribution_id') => $contribution_id,
+            wmf_civicrm_get_custom_field_name('no_thank_you') => 1,
+          ]);
+        }
+        catch (\CRM_Core_Exception $e) {
+          throw new WMFException(
+            WMFException::IMPORT_CONTRIB,
+            "Cannot create new contribution for the refund difference:
+                $contribution_id, " . $e->getMessage() . print_r($e->getExtraParams(), TRUE)
+          );
+        }
+      }
+    }
+
+    $alert_factor = \Civi::settings()->get('wmf_refund_alert_factor');
+    if ($amount_scammed > $alert_factor * $original_amount) {
+      wmf_common_failmail('wmf_civicrm', "Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}. See "
+        . \CRM_Utils_System::url('civicrm/contact/view/contribution', [
+          'reset' => 1,
+          'id' => $contribution_id,
+          'action' => 'view',
+        ], TRUE));
+    }
+
+    return $contribution_id;
   }
 
   private function isPaypalRefund($gateway) {
