@@ -36,6 +36,31 @@ function wmf_civicrm_civicrm_config(&$config) {
   $dispatcher->addListener('hook_civicrm_queueActive', [Queue::class, 'isSiteBusy']);
 }
 
+
+/**
+ * Abuse the permissions hook to prevent de-duping without a limit
+ *
+ * @param string $permission
+ * @param bool $granted
+ *
+ * @return bool
+ */
+function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
+  if ($permission === 'merge duplicate contacts') {
+    $action = CRM_Utils_Request::retrieve('action', 'String');
+    $path = CRM_Utils_System::currentPath();
+    if (
+      $path === 'civicrm/contact/dedupefind' &&
+      !CRM_Utils_Request::retrieve('limit', 'Integer') &&
+      ($action != CRM_Core_Action::PREVIEW)
+    ) {
+      CRM_Core_Session::setStatus(ts('Not permitted for WMF without a limit - this is a setting (dedupe_default_limit) configured on administer->system settings -> misc'));
+      $granted = FALSE;
+    }
+  }
+  return TRUE;
+}
+
 /**
  * Implements hook_civicrm_install().
  *
