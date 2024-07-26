@@ -6,4 +6,10 @@
     <title>WMF Donor Segment Explanation</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/contact/zendesk/view</path>
+    <page_callback>CRM_Wmf_Page_Zendesk</page_callback>
+    <title>Zendesk Ticket Data</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>

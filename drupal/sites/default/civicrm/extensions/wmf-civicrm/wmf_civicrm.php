@@ -473,6 +473,46 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
  */
 function wmf_civicrm_civicrm_contactSummaryBlocks(array &$blocks) {
   PreferencesLink::contactSummaryBlocks($blocks);
+
+  $blocks += [
+      'zendesk' => [
+          'title' => ts('Zendesk Tickets'),
+          'icon' => 'fa-at',
+          'blocks' => [],
+      ]
+  ];
+
+  $blocks['zendesk']['blocks']['zendesk'] = [
+      'id' => 'zendesk',
+      'icon' => 'crm-i fa-at',
+      'title' => ts('Email Prefs Link'),
+      'tpl_file' => 'CRM/Wmf/Page/Inline/zendesk.tpl',
+      'edit' => FALSE,
+      'system_default' => [3, 1], // Add to default layout under demographics block
+      'contact_type' => ['Individual'],
+  ];
+}
+
+
+/**
+ * Add mailing event tab to contact summary screen
+ * @param string $tabsetName
+ * @param array $tabs
+ * @param array $context
+ */
+function wmf_civicrm_civicrm_tabset($tabsetName, &$tabs, $context) {
+    if ($tabsetName == 'civicrm/contact/view') {
+        $contactID = $context['contact_id'];
+        $url = CRM_Utils_System::url('civicrm/contact/zendesk/view', "reset=1&force=1&cid=$contactID");
+        $tabs[] = [
+            'title' => ts('Zendesk Tickets'),
+            'id' => 'zendesk',
+            'icon' => 'crm-i fa-envelope-open-o',
+            'url' => $url,
+            'weight' => 100,
+            'class' => 'livePage'
+        ];
+    }
 }
 
 /**
