@@ -105,27 +105,26 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     WMFTransaction::from_unique_id('TEST_GATEWAY 123 BAD_TIMESTAMP');
   }
 
-  function testGetContributionMany() {
+  public function testGetContributionMany() {
     $this->expectException(NonUniqueTransaction::class);
     $gateway_txn_id = mt_rand();
     $contactID = $this->createIndividual([
       'display_name' => 'test',
     ]);
-    $params = [
+
+    $this->createTestEntity('Contribution', [
       'contact_id' => $contactID,
-      'contribution_type' => 'Cash',
+      'financial_type_id:name' => 'Cash',
       'total_amount' => 1,
-      'version' => 3,
-    ];
-    $contribution = $this->callAPISuccess('Contribution', 'create', $params);
-    wmf_civicrm_set_custom_field_values($contribution['id'], [
-      'gateway' => 'TEST_GATEWAY',
-      'gateway_txn_id' => $gateway_txn_id,
+      'contribution_extra.gateway' => 'TEST_GATEWAY',
+      'contribution_extra.gateway_txn_id' => $gateway_txn_id,
     ]);
-    $contribution = $this->callAPISuccess('Contribution', 'create', $params);
-    wmf_civicrm_set_custom_field_values($contribution['id'], [
-      'gateway' => 'TEST_GATEWAY',
-      'gateway_txn_id' => $gateway_txn_id,
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $contactID,
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 1,
+      'contribution_extra.gateway' => 'TEST_GATEWAY',
+      'contribution_extra.gateway_txn_id' => $gateway_txn_id,
     ]);
 
     $transaction = WMFTransaction::from_unique_id('TEST_GATEWAY ' . $gateway_txn_id);
@@ -139,7 +138,6 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
    * (this is really just the 'control' for the following test.
    */
   public function testNoRollBack() {
-    civicrm_initialize();
     CRM_Core_DAO::executeQuery("UPDATE civicrm_domain SET description = 'WMF'");
 
     $this->callbackFunction(1);
@@ -158,7 +156,6 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
    * back.
    */
   public function testFullRollBack() {
-    civicrm_initialize();
     CRM_Core_DAO::executeQuery("UPDATE civicrm_domain SET description = 'WMF'");
 
     try {
@@ -185,7 +182,8 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     $this->createTestContact($contact);
     try {
       civicrm_api3('Contact', 'create', $contact);
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       // We have done nothing to roll back.
       return;
     }
