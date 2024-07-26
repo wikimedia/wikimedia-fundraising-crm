@@ -473,24 +473,6 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
  */
 function wmf_civicrm_civicrm_contactSummaryBlocks(array &$blocks) {
   PreferencesLink::contactSummaryBlocks($blocks);
-
-  $blocks += [
-      'zendesk' => [
-          'title' => ts('Zendesk Tickets'),
-          'icon' => 'fa-at',
-          'blocks' => [],
-      ]
-  ];
-
-  $blocks['zendesk']['blocks']['zendesk'] = [
-      'id' => 'zendesk',
-      'icon' => 'crm-i fa-at',
-      'title' => ts('Email Prefs Link'),
-      'tpl_file' => 'CRM/Wmf/Page/Inline/zendesk.tpl',
-      'edit' => FALSE,
-      'system_default' => [3, 1], // Add to default layout under demographics block
-      'contact_type' => ['Individual'],
-  ];
 }
 
 
