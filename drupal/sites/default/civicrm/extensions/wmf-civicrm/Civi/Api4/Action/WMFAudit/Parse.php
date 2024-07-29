@@ -10,9 +10,10 @@ use CRM_SmashPig_ContextWrapper;
 /**
  * @method string getGateway()
  * @method $this setGateway(string $gateway)
- * @method $this setIsMakeMission(bool $isMakeMissing)
+ * @method $this setIsMakeMissing(bool $isMakeMissing)
  * @method $this setFile(string $file)
- * @method $this setLogSearchPastData(int $logSearchPastDays)
+ * @method $this setLogSearchPastDays(int $logSearchPastDays)
+ * @method $this setFileLimit(?int $fileLimit)
  */
 class Parse extends AbstractAction {
 
