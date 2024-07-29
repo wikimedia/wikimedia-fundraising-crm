@@ -419,7 +419,7 @@ EOT;
   $counter = Queue2civicrmTrxnCounter::instance();
   $metrics = [];
   foreach ($counter->getTrxnCounts() as $gateway => $count) {
-    $metrics["${gateway}_thank_you_emails"] = $count;
+    $metrics["{$gateway}_thank_you_emails"] = $count;
   }
   $metrics['total_thank_you_emails'] = $counter->getCountTotal();
   $prometheusPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
@@ -427,7 +427,7 @@ EOT;
   $reporter->reportMetrics('thank_you_emails_sent', $metrics);
   $ageMetrics = [];
   foreach ($counter->getAverageAges() as $gateway => $age) {
-    $ageMetrics["${gateway}_thank_you_donation_age"] = $age;
+    $ageMetrics["{$gateway}_thank_you_donation_age"] = $age;
   }
 
   $reporter->reportMetrics('thank_you_donation_age', $ageMetrics);
