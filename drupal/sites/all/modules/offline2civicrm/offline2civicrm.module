@@ -232,6 +232,7 @@ function offline2civicrm_import_checks_form_validate($form, $form_state) {
 }
 
 function offline2civicrm_import_checks_form_submit($form, $form_state) {
+  civicrm_initialize();
   \CRM_SmashPig_ContextWrapper::createContext('offline2civicrm');
 
   if (!empty($form_state['values']['import_upload_submit'])) {
