@@ -113,6 +113,28 @@ $navigation = [
       ],
     ],
   ],
+  [
+    'name' => 'Navigation_WMF_Zendesk_Configuration',
+    'entity' => 'Navigation',
+    'cleanup' => 'always',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'label' => E::ts('WMF Zendesk configuration'),
+        'name' => 'wmf_zendesk_configuration',
+        'url' => 'civicrm/admin/setting/zendesk',
+        'icon' => NULL,
+        'permission' => 'administer CiviCRM System',
+        'permission_operator' => 'AND',
+        'parent_id.name' => 'WMF-admin',
+        'is_active' => TRUE,
+        'weight' => 2,
+        'has_separator' => NULL,
+        'domain_id' => 'current_domain',
+      ],
+    ],
+  ],
   // The below entries are duplicate menu items
   // where the extension has already created them
   // in a generic place but we ALSO add to our super special
