@@ -1471,7 +1471,6 @@ abstract class BaseAuditProcessor {
     $logPaths = implode(' ', $logs);
     // -h means don't print the file name prefix when grepping multiple files
     $cmd = 'grep -h \'' . $this->get_log_line_grep_string($order_id) . '\' ' . $logPaths;
-    $this->echo(__FUNCTION__ . ' ' . $cmd, TRUE);
 
     $ret = [];
     exec($cmd, $ret, $errorlevel);

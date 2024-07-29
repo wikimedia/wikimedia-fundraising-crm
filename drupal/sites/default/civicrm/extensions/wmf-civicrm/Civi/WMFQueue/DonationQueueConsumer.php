@@ -62,13 +62,13 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $counter = Queue2civicrmTrxnCounter::instance();
     $metrics = [];
     foreach ($counter->getTrxnCounts() as $gateway => $count) {
-      $metrics["${gateway}_donations"] = $count;
+      $metrics["{$gateway}_donations"] = $count;
     }
     $metrics['total_donations'] = $counter->getCountTotal();
     $this->recordMetric('queue2civicrm', $metrics);
     $ageMetrics = [];
     foreach ($counter->getAverageAges() as $gateway => $age) {
-      $ageMetrics["${gateway}_message_age"] = $age;
+      $ageMetrics["{$gateway}_message_age"] = $age;
     }
     $this->recordMetric('donation_message_age', $ageMetrics);
   }

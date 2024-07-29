@@ -284,7 +284,7 @@ class Save extends AbstractAction {
     }
     else {
       if (strlen($incomingLanguage) > 2) {
-        if (wmf_civicrm_check_language_exists($incomingLanguage)) {
+        if ($this->checkLanguageExists($incomingLanguage)) {
           // If the language is already an existing full locale, don't mangle it
           $preferredLanguage = $incomingLanguage;
         }
@@ -303,7 +303,7 @@ class Save extends AbstractAction {
       }
     }
     if ($preferredLanguage) {
-      if (!wmf_civicrm_check_language_exists($preferredLanguage)) {
+      if (!$this->checkLanguageExists($preferredLanguage)) {
         try {
           $parts = explode('_', $preferredLanguage);
           // If we don't find a locale below then an exception will be thrown.
@@ -319,6 +319,24 @@ class Save extends AbstractAction {
   }
 
   /**
+   * Check if the language string exists.
+   *
+   * @param string $languageAbbreviation
+   *
+   * @return bool
+   */
+  private function checkLanguageExists($languageAbbreviation) {
+    static $languages;
+    if (empty($languages)) {
+      $available_options = civicrm_api3('Contact', 'getoptions', [
+        'field' => 'preferred_language',
+      ]);
+      $languages = $available_options['values'];
+    }
+    return !empty($languages[$languageAbbreviation]);
+  }
+
+  /**
    * Insert a new address for a contact.
    *
    * If updating or unsure use the marginally slower update function.
@@ -331,7 +349,7 @@ class Save extends AbstractAction {
   private function createAddress(array $msg, int $contact_id) {
 
     // We can do these lookups a bit more efficiently than Civi
-    $country_id = wmf_civicrm_get_country_id($msg['country']);
+    $country_id = $this->getCountryID($msg['country']);
 
     if (!$country_id) {
       return;
@@ -353,7 +371,7 @@ class Save extends AbstractAction {
 
     if (!empty($msg['state_province'])) {
       $address_params['state_province'] = $msg['state_province'];
-      $address_params['state_province_id'] = wmf_civicrm_get_state_id($country_id, $msg['state_province']);
+      $address_params['state_province_id'] = $this->getStateID($country_id, $msg['state_province']);
     }
     if (Database::isNativeTxnRolledBack()) {
       throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back before inserting address");
@@ -461,7 +479,7 @@ class Save extends AbstractAction {
     // all & introducing it this conservatively feels like a safe strategy.
     if (!empty($msg['street_address'])) {
       $this->startTimer('message_location_update');
-      wmf_civicrm_message_address_update($msg, $msg['contact_id']);
+      $this->updateAddress($msg, $msg['contact_id']);
       $this->stopTimer('message_location_update');
     }
     if (!empty($msg['email'])) {
@@ -469,6 +487,107 @@ class Save extends AbstractAction {
       $this->emailUpdate($msg, $msg['contact_id']);
       $this->stopTimer('message_email_update');
     }
+  }
+
+  /**
+   * Update address for a contact.
+   *
+   * @param array $msg
+   * @param int $contact_id
+   *
+   * @throws \Civi\WMFException\WMFException|\CRM_Core_Exception
+   */
+  private function updateAddress($msg, $contact_id) {
+    // CiviCRM does a DB lookup instead of checking the pseudoconstant.
+    // @todo fix Civi to use the pseudoconstant.
+    $country_id = $this->getCountryID($msg['country']);
+    if (!$country_id) {
+      return;
+    }
+    $address = [
+      'is_primary' => 1,
+      'street_address' => $msg['street_address'],
+      'supplemental_address_1' => !empty($msg['supplemental_address_1']) ? $msg['supplemental_address_1'] : '',
+      'city' => $msg['city'],
+      'postal_code' => $msg['postal_code'],
+      'country_id' => $country_id,
+      'country' => $msg['country'],
+      'is_billing' => 1,
+      'debug' => 1,
+    ];
+    if (!empty($msg['state_province'])) {
+      $address['state_province'] = $msg['state_province'];
+      $address['state_province_id'] = $this->getStateID($country_id, $msg['state_province']);
+    }
+
+    $address_params = [
+      'contact_id' => $contact_id,
+      'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
+      'values' => [$address],
+    ];
+
+    try {
+      civicrm_api3('Address', 'replace', $address_params);
+    }
+    catch (\CRM_Core_Exception $e) {
+      // Constraint violations occur when data is rolled back to resolve a deadlock.
+      $code = $e->getErrorCode() === 'constraint violation' ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTACT;
+      throw new WMFException($code, "Couldn't store address for the contact.", $e->getExtraParams());
+    }
+  }
+
+  private function getCountryID($raw) {
+    // ISO code, or outside chance this could be a lang_COUNTRY pair
+    if (preg_match('/^([a-z]+_)?([A-Z]{2})$/', $raw, $matches)) {
+      $code = $matches[2];
+
+      $iso_cache = \CRM_Core_PseudoConstant::countryIsoCode();
+      $id = array_search(strtoupper($code), $iso_cache);
+      if ($id !== FALSE) {
+        return $id;
+      }
+    }
+    else {
+      $country_cache = \CRM_Core_PseudoConstant::country(FALSE, FALSE);
+      $id = array_search($raw, $country_cache);
+      if ($id !== FALSE) {
+        return $id;
+      }
+    }
+
+    \Civi::log('wmf')->notice('wmf_civicrm: Cannot find country: [{country}]',
+      ['country' => $raw]
+    );
+    return FALSE;
+  }
+
+  /**
+   * Get the state id for the named state in the given country.
+   *
+   * @param int $country_id
+   * @param string $state
+   *
+   * @return int|null
+   */
+  private function getStateID($country_id, $state) {
+    $stateID = \CRM_Core_DAO::singleValueQuery('
+  SELECT id
+FROM civicrm_state_province s
+WHERE
+    s.country_id = %1
+    AND ( s.abbreviation = %2 OR s.name = %3)
+  ', [
+      1 => [$country_id, 'String'],
+      2 => [$state, 'String'],
+      3 => [$state, 'String'],
+    ]);
+    if ($stateID) {
+      return (int) $stateID;
+    }
+
+    \Civi::log('wmf')->notice('wmf_civicrm: Cannot find state: {state} (country {country})',
+      ['state' => $state, 'country' => $country_id]
+    );
   }
 
   /**

@@ -164,3 +164,36 @@ function _omnimail_civicrm_get_snooze_group_id(): int {
   }
   return (int) \Civi::$statics[__FUNCTION__];
 }
+
+/**
+ * Queue wrapper for api function.
+ *
+ * I'm hoping to get this or a similar fix upstreamed - so this
+ * should be temporary - it adds a function that calls the v4 api,
+ * ignoring the ctx - which doesn't serialise well...
+ *
+ * @param $ctx
+ * @param $entity
+ * @param $action
+ * @param $params
+ *
+ * @return true
+ * @throws \API_Exception
+ * @throws \Civi\API\Exception\NotImplementedException
+ */
+function civicrm_api4_queue($ctx, $entity, $action, $params): bool {
+  try {
+    civicrm_api4($entity, $action, $params);
+  }
+  catch (CRM_Core_Exception $e) {
+    \Civi::log('wmf')->error('queued action failed {entity} {action} {params} {message} {exception}', [
+      'entity' => $entity,
+      'action' => $action,
+      'params' => $params,
+      'message' => $e->getMessage(),
+      'exception' => $e,
+    ]);
+    return FALSE;
+  }
+  return TRUE;
+}

@@ -55,6 +55,9 @@ class Database {
   }
 
   public static function isNativeTxnRolledBack() {
+    if (!empty($GLOBALS['CIVICRM_TEST_CASE'])) {
+      return FALSE;
+    }
     $frame = Manager::singleton()->getFrame();
     return $frame && $frame->isRollbackOnly();
   }

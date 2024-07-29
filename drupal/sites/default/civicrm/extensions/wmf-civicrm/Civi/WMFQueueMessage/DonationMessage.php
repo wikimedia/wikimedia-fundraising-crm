@@ -168,7 +168,7 @@ class DonationMessage extends Message {
     if ($appealValue) {
       $field = $this->getCustomFieldMetadataByFieldName('Gift_Data.Appeal');
       if (empty($field['options'][$appealValue])) {
-        wmf_civicrm_ensure_option_value_exists($field['option_group_id'], $appealValue);
+        $this->ensureOptionValueExists($field['option_group_id'], $appealValue);
       }
     }
     $msg += $this->getCustomFields();
@@ -604,6 +604,41 @@ class DonationMessage extends Message {
     }
     catch (\CRM_Core_Exception $exception) {
       return NULL;
+    }
+  }
+
+  /**
+   * Ensure the specified option value exists.
+   *
+   * @param string $group_name
+   * @param string $value
+   */
+  private function ensureOptionValueExists($group_name, $value) {
+    $params = [
+      'option_group_id' => $group_name,
+      'name' => $value,
+      'label' => $value,
+      'value' => $value,
+      'is_active' => 1,
+    ];
+    $existingValues = civicrm_api3('OptionValue', 'get', [
+      'option_group_id' => $params['option_group_id'],
+      'value' => $params['value'],
+      'sequential' => 1,
+    ]);
+    $createRequired = FALSE;
+    if ($existingValues['count'] == 0) {
+      $createRequired = TRUE;
+    }
+    elseif (!$existingValues['values'][0]['is_active']) {
+      $params['id'] = $existingValues['values'][0]['id'];
+      $createRequired = TRUE;
+    }
+    if ($createRequired) {
+      civicrm_api3('OptionValue', 'create', $params);
+      // It won't take much to rebuild this & we don't know the entity.
+      // This should be rare.
+      \Civi::$statics['wmf_civicrm'] = [];
     }
   }
 

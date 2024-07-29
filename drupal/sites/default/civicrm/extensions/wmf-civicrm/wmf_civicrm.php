@@ -36,6 +36,31 @@ function wmf_civicrm_civicrm_config(&$config) {
   $dispatcher->addListener('hook_civicrm_queueActive', [Queue::class, 'isSiteBusy']);
 }
 
+
+/**
+ * Abuse the permissions hook to prevent de-duping without a limit
+ *
+ * @param string $permission
+ * @param bool $granted
+ *
+ * @return bool
+ */
+function wmf_civicrm_civicrm_permission_check($permission, &$granted) {
+  if ($permission === 'merge duplicate contacts') {
+    $action = CRM_Utils_Request::retrieve('action', 'String');
+    $path = CRM_Utils_System::currentPath();
+    if (
+      $path === 'civicrm/contact/dedupefind' &&
+      !CRM_Utils_Request::retrieve('limit', 'Integer') &&
+      ($action != CRM_Core_Action::PREVIEW)
+    ) {
+      CRM_Core_Session::setStatus(ts('Not permitted for WMF without a limit - this is a setting (dedupe_default_limit) configured on administer->system settings -> misc'));
+      $granted = FALSE;
+    }
+  }
+  return TRUE;
+}
+
 /**
  * Implements hook_civicrm_install().
  *
@@ -448,6 +473,28 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
  */
 function wmf_civicrm_civicrm_contactSummaryBlocks(array &$blocks) {
   PreferencesLink::contactSummaryBlocks($blocks);
+}
+
+
+/**
+ * Add mailing event tab to contact summary screen
+ * @param string $tabsetName
+ * @param array $tabs
+ * @param array $context
+ */
+function wmf_civicrm_civicrm_tabset($tabsetName, &$tabs, $context) {
+    if ($tabsetName == 'civicrm/contact/view') {
+        $contactID = $context['contact_id'];
+        $url = CRM_Utils_System::url('civicrm/contact/zendesk/view', "reset=1&force=1&cid=$contactID");
+        $tabs[] = [
+            'title' => ts('Zendesk Tickets'),
+            'id' => 'zendesk',
+            'icon' => 'crm-i fa-envelope-open-o',
+            'url' => $url,
+            'weight' => 100,
+            'class' => 'livePage'
+        ];
+    }
 }
 
 /**
