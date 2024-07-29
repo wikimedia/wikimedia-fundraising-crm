@@ -11,6 +11,17 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
   protected $cutoff = 0;
 
   /**
+   * Number of file to parse per run, absent any incoming parameter.
+   *
+   * Six, for new donations, new recurring, cancellations, failed recurring, recurring updates, and refunds.
+   *
+   * Note that 0 is equivalent to all or no limit.
+   *
+   * @var int
+   */
+  protected int $fileLimit = 6;
+
+  /**
    * @inheritDoc
    */
   protected function get_audit_parser() {
@@ -109,20 +120,6 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
 
   protected function regex_for_recon() {
     return '/export_/';
-  }
-
-  /**
-   * @param $recon_files
-   *
-   * @return int|void
-   */
-  protected function get_recon_files_count($recon_files) {
-    //...Six, for new donations, new recurring, cancellations, failed recurring, recurring updates, and refunds.
-    $count = count($recon_files);
-    if ($count > 6 && !$this->get_runtime_options('run_all')) {
-      $count = 6;
-    }
-    return $count;
   }
 
 }
