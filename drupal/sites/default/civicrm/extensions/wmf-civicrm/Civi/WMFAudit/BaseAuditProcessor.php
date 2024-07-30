@@ -22,6 +22,8 @@ abstract class BaseAuditProcessor {
 
   protected $ready_files;
 
+  private array $missingTransactions = [];
+
   private array $statistics = ['total_records' => 0, 'total_missing' => 0];
 
   private array $timings = [];
@@ -524,22 +526,9 @@ abstract class BaseAuditProcessor {
       if ($this->countMissing($missing) <= $this->get_runtime_options('recon_complete_count')) {
         $this->move_completed_recon_file($file);
       }
-
-      //grumble...
-      if (!empty($missing)) {
-        foreach ($missing as $type => $data) {
-          if (!empty($missing[$type])) {
-            if (array_key_exists($type, $total_missing)) {
-              $total_missing[$type] = array_merge($total_missing[$type], $missing[$type]);
-            }
-            else {
-              $total_missing[$type] = $missing[$type];
-            }
-          }
-        }
-      }
     }
     $this->echo($this->statistics['total_missing'] . " total missing transactions identified at start");
+    $total_missing = $this->missingTransactions;
 
     //get the date distribution on what's left... for ***main transactions only***
     //That should be to say: The things that are totally in the payments logs.
@@ -1368,6 +1357,7 @@ abstract class BaseAuditProcessor {
           $fileStatistics[$type]['missing']++;
           $fileStatistics[$type]['total']++;
           $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
+          $this->missingTransactions['negative'][] = $transaction;
         }
         else {
           $fileStatistics[$type]['found']++;
@@ -1381,6 +1371,7 @@ abstract class BaseAuditProcessor {
           $missing['main'][] = $transaction;
           $fileStatistics[$type]['missing']++;
           $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
+          $this->missingTransactions['main'][] = $transaction;
         }
         else {
           $fileStatistics[$type]['found']++;
