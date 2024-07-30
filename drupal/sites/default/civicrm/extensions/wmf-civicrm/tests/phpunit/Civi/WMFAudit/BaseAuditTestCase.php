@@ -18,8 +18,6 @@ class BaseAuditTestCase extends TestCase {
   protected array $ids = [];
 
   public function setUp(): void {
-    // Reset any runtime options that may have been set by previous tests
-    unset(\Civi::$statics['wmf_audit_runtime']);
     // This sets the working log directory to the CiviCRM upload directory.
     // It is found under sites/default/files/civicrm/upload & is web-writable,
     // outside of git, and somewhat durable.
