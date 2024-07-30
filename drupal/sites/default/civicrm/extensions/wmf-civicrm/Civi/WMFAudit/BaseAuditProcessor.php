@@ -259,7 +259,12 @@ abstract class BaseAuditProcessor {
    * running in verbose mode. The verbose option is set at the command line.
    */
   protected function echo(string $string, bool $verbose = FALSE): void {
-    wmf_audit_echo($string, $verbose);
+    if ($verbose) {
+      \Civi::log('wmf')->info($string);
+    }
+    else {
+      \Civi::log('wmf')->notice($string);
+    }
   }
 
   /**
