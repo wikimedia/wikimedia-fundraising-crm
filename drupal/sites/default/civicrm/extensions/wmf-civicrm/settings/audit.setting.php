@@ -5,7 +5,7 @@ use CRM_Wmf_ExtensionUtil as E;
 return [
   'wmf_audit_directory_payments_log' => [
     'name' => 'wmf_audit_directory_payments_log',
-    'title' => E::ts('Directory for downloaded payment files'),
+    'title' => E::ts('Directory for logs from payments server'),
     'description' => '',
     'help_text' => '',
     'html_type' => 'text',
@@ -21,7 +21,7 @@ return [
   'wmf_audit_directory_working_log' => [
     'name' => 'wmf_audit_directory_working_log',
     'title' => E::ts('Working directory for audit process'),
-    'description' => E::ts('Files are copied here & unzipped for parsing'),
+    'description' => E::ts('Log files are copied here & unzipped for parsing'),
     'help_text' => '',
     'default' => '/var/log/fundraising',
     'html_type' => 'text',
@@ -35,8 +35,8 @@ return [
   ],
   'wmf_audit_directory_audit' => [
     'name' => 'wmf_audit_directory_audit',
-    'title' => E::ts('Directory where filed being processed are handled'),
-    'description' => E::ts('within this directory files are sorted into incoming and completed'),
+    'title' => E::ts('Base directory for downloaded audit files'),
+    'description' => E::ts('within are subdirectories for each gateway, and within those are incoming and completed dirs'),
     'help_text' => '',
     'default' => '/var/spool/audit/',
     'html_type' => 'text',
