@@ -1,7 +1,0 @@
-<?php
-
-use Civi\WMFAudit\AdyenAuditProcessor;
-
-function adyen_audit_create_processor($options) {
-  return new AdyenAuditProcessor($options);
-}
