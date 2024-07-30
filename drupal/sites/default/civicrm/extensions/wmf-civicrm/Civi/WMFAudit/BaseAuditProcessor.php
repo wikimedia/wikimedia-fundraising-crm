@@ -259,7 +259,12 @@ abstract class BaseAuditProcessor {
    * running in verbose mode. The verbose option is set at the command line.
    */
   protected function echo(string $string, bool $verbose = FALSE): void {
-    wmf_audit_echo($string, $verbose);
+    if ($verbose) {
+      \Civi::log('wmf')->info($string);
+    }
+    else {
+      \Civi::log('wmf')->notice($string);
+    }
   }
 
   /**
@@ -496,18 +501,9 @@ abstract class BaseAuditProcessor {
       throw new \Exception('Missing required directories');
     }
 
-    //find out what the situation is with the available recon files, by date
-    $recon_files = $this->get_all_recon_files();
-
-    //get missing transactions from one or more recon files
-    //let's just assume that the default mode will be to pop off the top three (most recent) at this point. :)
-    $count = $this->get_recon_files_count($recon_files);
-
-    $total_missing = [];
     $recon_file_stats = [];
-    for ($i = 0; $i < $count; ++$i) {
-      //parce the recon files into something relatively reasonable.
-      $file = array_pop($recon_files);
+    foreach ($this->getReconciliationFiles() as $file) {
+      //parse the recon files into something relatively reasonable.
       $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []]];
       $parsed = $this->parseReconciliationFile($file);
 
@@ -674,12 +670,15 @@ abstract class BaseAuditProcessor {
   }
 
   /**
-   * Returns an array of the full paths to all valid reconciliation files,
-   * sorted in chronological order.
+   * Returns an array of the full paths of the files to reconcile.
    *
-   * @return array|false Full paths to all recon files
+   * The files returned will be the latest files, sorted in chronological order, up
+   * to the number of files defined in the fileLimit (if it is not 0/unlimited).
+   *
+   * @return array
+   *   Full paths to the files to reconcile.
    */
-  protected function get_all_recon_files() {
+  protected function getReconciliationFiles(): array {
     $files_directory = $this->getIncomingFilesDirectory();
     $fileFromCommandLine = $this->get_runtime_options('file');
     if ($fileFromCommandLine) {
@@ -704,8 +703,15 @@ abstract class BaseAuditProcessor {
       ksort($files_by_sort_key);
       // now flatten it
       $files = [];
-      foreach ($files_by_sort_key as $key => $key_files) {
-        $files = array_merge($files, $key_files);
+
+      foreach ($files_by_sort_key as $key_files) {
+        foreach ($key_files as $file) {
+          $files[] = $file;
+          if ($this->fileLimit !== 0 && count($files) === $this->fileLimit) {
+            // Hit the limit, that's enough.
+            return $files;
+          }
+        }
       }
       return $files;
     }

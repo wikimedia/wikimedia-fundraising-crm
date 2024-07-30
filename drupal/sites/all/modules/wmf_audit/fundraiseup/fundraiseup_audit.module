@@ -1,7 +1,0 @@
-<?php
-
-use Civi\WMFAudit\FundraiseupAuditProcessor;
-
-function fundraiseup_audit_create_processor($options) {
-  return new FundraiseupAuditProcessor($options);
-}
