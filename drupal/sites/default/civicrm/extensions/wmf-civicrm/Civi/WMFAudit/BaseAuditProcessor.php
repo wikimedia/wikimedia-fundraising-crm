@@ -1717,15 +1717,6 @@ abstract class BaseAuditProcessor {
   }
 
   /**
-   * @param $recon_files
-   *
-   * @return int|void
-   */
-  protected function get_recon_files_count($recon_files) {
-    return ($this->fileLimit === 0 || $this->fileLimit > count($recon_files)) ? count($recon_files) : $this->fileLimit;
-  }
-
-  /**
    * Returns today's date string value
    *
    * @return int Today's date in the format yyyymmdd.
