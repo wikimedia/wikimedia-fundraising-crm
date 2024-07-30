@@ -8,6 +8,8 @@ require_once 'tracking.inc';
 
 /**
  * @todo - delete or migrate to a setting.
+ *
+ * @deprecated
  * @return array
  */
 function wmf_civicrm_menu() {
@@ -28,6 +30,8 @@ function wmf_civicrm_menu() {
 /**
  * @return array
  * @todo - delete or migrate to a setting.
+ *
+ * @deprecated
  */
 function wmf_civicrm_matching_gifts_form() {
   $form = [];
@@ -87,6 +91,15 @@ function wmf_civicrm_set_custom_field_values($entity_id, $map, $group_name = NUL
   }
 }
 
+/**
+ * @param $field_names
+ * @param $group_name
+ *
+ * @deprecated - should not be needed with correct api v4 useage.
+ *
+ * @return array
+ * @throws \CRM_Core_Exception
+ */
 function wmf_civicrm_get_custom_field_map($field_names, $group_name = NULL) {
   static $custom_fields = [];
   foreach ($field_names as $name) {
@@ -149,6 +162,8 @@ function wmf_civicrm_set_null_id_on_hash_mismatch(&$msg, $matchEmail = FALSE) {
  * also assume that if you are setting utm_medium or utm_source in your import you
  * intend them to be recorded.
  *
+ * @deprecated - move to Queue consumer
+ *
  * @param array $msg
  *
  * @return array same message, possibly with contribution_tracking_id set
@@ -197,6 +212,10 @@ function wmf_civicrm_add_contribution_tracking_if_missing($msg) {
  * Pulls all records in the wmf_contribution_extras table that match the gateway
  * and gateway transaction id.
  *
+ * @deprecated - function should be replaced with an api call,
+ * Audit & Queue classes can have their own variant - function is just
+ * a basic api call so it is enough to share within the sub-system.
+ *
  * @param string $gateway
  * @param string $gateway_txn_id
  *
@@ -227,12 +246,14 @@ function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id
   return $result;
 }
 
-function wmf_civicrm_boost_performance() {
-  civicrm_initialize();
-  $config = CRM_Core_Config::singleton();
-  $config->doNotResetCache = 1;
-}
-
+/**
+ * @deprecated use the api
+ *
+ * @param $contribution_id
+ * @param $reason
+ *
+ * @return void
+ */
 function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
   \Civi::log('wmf')->info('wmf_civicrm: Preventing thank-you for contribution {contribution_id} because: {reason}', ['contribution_id' => $contribution_id, 'reason' => $reason]);
 
