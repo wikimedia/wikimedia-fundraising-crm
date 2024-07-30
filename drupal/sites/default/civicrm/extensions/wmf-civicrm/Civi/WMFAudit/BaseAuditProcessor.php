@@ -764,11 +764,11 @@ abstract class BaseAuditProcessor {
     //Come up with the full range of logs to grab
     //go back the number of days we have configured to search in the past for the
     //current gateway
-    $earliest = $this->wmf_common_date_add_days($earliest, -1 * $this->get_log_days_in_past());
+    $earliest = $this->dateAddDays($earliest, -1 * $this->get_log_days_in_past());
 
     //and add one to the latest to compensate for logrotate... unless that's the future.
     $today = $this->wmf_common_date_get_today_string();
-    $latest = $this->wmf_common_date_add_days($latest, 1);
+    $latest = $this->dateAddDays($latest, 1);
     if ($today < $latest) {
       $latest = $today;
     }
@@ -801,8 +801,8 @@ abstract class BaseAuditProcessor {
       //As we're stepping backward, we should look for transactions that come
       //from the current log date, or LOG_SEARCH_WINDOW days before.
       foreach ($missing_by_date as $audit_date => $data) {
-        $window_end = $this->wmf_common_date_add_days($audit_date, 1);
-        $window_start = $this->wmf_common_date_add_days($audit_date, -1 * self::LOG_SEARCH_WINDOW);
+        $window_end = $this->dateAddDays($audit_date, 1);
+        $window_start = $this->dateAddDays($audit_date, -1 * self::LOG_SEARCH_WINDOW);
         if ($window_end >= $log_date && $window_start <= $log_date) {
           if (!array_key_exists($audit_date, $tryme)) {
             $this->echo("Adding date $audit_date to the date pool for log date $log_date");
@@ -949,7 +949,7 @@ abstract class BaseAuditProcessor {
         //today minus three. Again: The three is because Shut Up.
         $this->echo("Making up to $missing_count missing transactions:");
         $made = 0;
-        $cutoff = $this->wmf_common_date_add_days($this->wmf_common_date_get_today_string(), $this->cutoff);
+        $cutoff = $this->dateAddDays($this->wmf_common_date_get_today_string(), $this->cutoff);
         foreach ($tryme as $audit_date => $missing) {
           if ((int) $audit_date <= (int) $cutoff) {
             foreach ($missing as $id => $message) {
@@ -1775,9 +1775,9 @@ abstract class BaseAuditProcessor {
    * @param string $date Date in a format that date_create recognizes.
    * @param int $add Number of days to add
    *
-   * @return integer Date in WMF_DATEFORMAT
+   * @return string|false Date in WMF_DATEFORMAT
    */
-  private function wmf_common_date_add_days($date, $add) {
+  private function dateAddDays($date, $add) {
     $date = date_create($date);
     date_add($date, date_interval_create_from_date_string("$add days"));
 
