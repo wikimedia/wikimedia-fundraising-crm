@@ -41,7 +41,7 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
  * Create a recurring payment token to be used alongside a recurring
  * contribution record
  *
- * @todo - this should be a method on the QueueConsumer parent class.
+ * @deprecated - this is just an api call - functions could call the api directly.
  *
  * @param int $contact_id
  * @param string $gateway Short gateway identifier
