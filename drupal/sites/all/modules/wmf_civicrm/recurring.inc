@@ -41,7 +41,7 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
  * Create a recurring payment token to be used alongside a recurring
  * contribution record
  *
- * @todo - this should be a method on the QueueConsumer parent class.
+ * @deprecated - this is just an api call - functions could call the api directly.
  *
  * @param int $contact_id
  * @param string $gateway Short gateway identifier
@@ -65,27 +65,4 @@ function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token, $
   catch (CRM_Core_Exception $e) {
     throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
   }
-}
-
-/**
- * @todo - this should be handled by Message::normalize().
- * @param $processorName
- *
- * @return mixed
- * @throws \Civi\WMFException\WMFException
- */
-function wmf_civicrm_get_payment_processor_id($processorName) {
-  try {
-    $payment_processor_result = civicrm_api3('PaymentProcessor', 'getsingle', [
-      'name' => $processorName,
-      'is_test' => 0,
-    ]);
-  }
-  catch (CRM_Core_Exception $e) {
-    throw new WMFException(
-      WMFException::MISSING_PREDECESSOR,
-      "No such Payment Processor exists, name='$processorName', " . $e->getMessage()
-    );
-  }
-  return $payment_processor_result['id'];
 }
