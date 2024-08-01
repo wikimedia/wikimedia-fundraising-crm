@@ -2,6 +2,7 @@
 
 use Civi\Api4\Address;
 use Civi\Api4\OptionValue;
+use Civi\Api4\Phone;
 use Civi\Test\Api3TestTrait;
 use Civi\Api4\Email;
 use Civi\Test\EntityTrait;
@@ -32,6 +33,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function setUp(): void {
     parent::setUp();
+    $this->setSetting('deduper_resolver_field_prefer_preferred_contact', ['source']);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recent_contributor']);
     // Make sure we don't have any lingering batch-merge-able contacts in the db.
     $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
   }
@@ -72,7 +75,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->assertEquals(1, $mergedContacts[$this->ids['Contact'][0]]['do_not_mail']);
 
     // Now try merging a contact with 0 in that field into our retained contact.
-    $this->ids['Contact'][2] = $this->callAPISuccess('Contact', 'create', ['first_name' => 'bob', 'do_not_mail' => 0, 'contact_type' => 'Individual'])['id'];
+    $this->createTestEntity('Contact', ['first_name' => 'bob', 'do_not_mail' => 0, 'contact_type' => 'Individual'], 2)['id'];
     $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->ids['Contact'][0], 'to_remove_id' => $this->ids['Contact'][2]]);
     $mergedContacts = $this->callAPISuccess('Contact', 'get', ['id' => ['IN' => $this->ids['Contact'], 'is_deleted' => 0]])['values'];
 
@@ -94,8 +97,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testResolveAggressivePreferredContact(bool $isReverse) {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recently_created_contact']]);
+    $this->setSetting('deduper_resolver_field_prefer_preferred_contact', ['source']);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recently_created_contact']);
     $this->createDuplicateDonors([['first_name' => 'Sally'], []]);
     $mergedContact = $this->doMerge($isReverse, TRUE);
     $this->assertEquals('Bob', $mergedContact['first_name']);
@@ -110,8 +113,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testSafeModeDoesNotOverrideConflict(bool $isReverse) {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recently_created_contact']]);
+    $this->setSetting('deduper_resolver_field_prefer_preferred_contact', ['source']);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recently_created_contact']);
     $this->createDuplicateDonors([['first_name' => 'Sally'], []]);
     $this->doNotDoMerge($isReverse);
   }
@@ -373,7 +376,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testMergePreferNickName(bool $isReverse): void {
-    $this->callAPISuccess('Setting', 'create', ['deduper_equivalent_name_handling' => 'prefer_nick_name']);
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_nick_name');
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['earliest_created_contact']);
     $this->createDuplicateIndividuals([['first_name' => 'Theodore'], ['first_name' => 'Ted']]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Ted', $mergedContact['first_name']);
@@ -388,7 +392,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testMergePreferNonNickName(bool $isReverse): void {
-    $this->callAPISuccess('Setting', 'create', ['deduper_equivalent_name_handling' => 'prefer_non_nick_name']);
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_non_nick_name');
     $this->createDuplicateIndividuals([['first_name' => 'Theodore'], ['first_name' => 'Ted']]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Theodore', $mergedContact['first_name']);
@@ -403,7 +407,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testMergePreferNonNickNameKeepNickName(bool $isReverse): void {
-    $this->callAPISuccess('Setting', 'create', ['deduper_equivalent_name_handling' => 'prefer_non_nick_name_keep_nick_name']);
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_non_nick_name_keep_nick_name');
     $this->createDuplicateIndividuals([['first_name' => 'Theodore'], ['first_name' => 'Ted']]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Theodore', $mergedContact['first_name']);
@@ -419,8 +423,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testMergePreferredContactNonNickNameKeepNickName(bool $isReverse): void {
-    $this->callAPISuccess('Setting', 'create', ['deduper_equivalent_name_handling' => 'prefer_preferred_contact_value_keep_nick_name']);
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor']]);
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_preferred_contact_value_keep_nick_name');
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recent_contributor']);
     $this->createDuplicateDonors([['first_name' => 'Theodore'], ['first_name' => 'Ted']]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Theodore', $mergedContact['first_name']);
@@ -440,7 +444,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testMisplacedNameResolutionFullNameInFirstName(bool $isReverse): void {
-    $this->createDuplicateIndividuals([['last_name' => 'null', 'first_name' => 'Bob M Smith'], []]);
+    $this->createDuplicateIndividuals([['last_name' => NULL, 'first_name' => 'Bob M Smith'], []]);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['earliest_created_contact']);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Bob', $mergedContact['first_name']);
     $this->assertEquals('Smith', $mergedContact['last_name']);
@@ -478,15 +483,15 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $dataset = [];
     $dataset[] = [
       'contact_1' => ['last_name' => 'M J Smith'],
-      'contact_2' => ['middle_name' => 'null'],
+      'contact_2' => ['middle_name' => NULL],
       'expected' => ['middle_name' => 'M J'],
     ];
     $dataset[] = [
-      'contact_1' => ['first_name' => 'null', 'last_name' => 'Bob M Smith'],
+      'contact_1' => ['first_name' => NULL, 'last_name' => 'Bob M Smith'],
       'contact_2' => [],
     ];
     $dataset[] = [
-      'contact_1' => ['first_name' => 'null', 'last_name' => 'Bob M Smith'],
+      'contact_1' => ['first_name' => NULL, 'last_name' => 'Bob M Smith'],
       'contact_2' => ['middle_name' => 'M'],
     ];
 
@@ -544,7 +549,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testMisplacedNameResolutionWithPunctuation(bool $isReverse): void {
-    $this->createDuplicateIndividuals([['first_name' => 'null', 'last_name' => 'Bob M. Smith'], []]);
+    $this->createDuplicateIndividuals([['first_name' => NULL, 'last_name' => 'Bob M. Smith'], []]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Bob', $mergedContact['first_name']);
     $this->assertEquals('Smith', $mergedContact['last_name']);
@@ -576,9 +581,9 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testResolvePreferredContactField(bool $isReverse): void {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['earliest_created_contact']]);
-    $this->createDuplicateIndividuals([['contact_source' => 'keep me'], ['contact_source' => 'ditch me']]);
+    $this->setSetting('deduper_resolver_field_prefer_preferred_contact', ['source']);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['earliest_created_contact']);
+    $this->createDuplicateIndividuals([['source' => 'keep me'], ['source' => 'ditch me']]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
   }
@@ -594,8 +599,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testResolvePreferredContactFieldChooseLatest(bool $isReverse): void {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recently_created_contact']]);
+    $this->setSetting('deduper_resolver_field_prefer_preferred_contact', ['source']);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recently_created_contact']);
     $this->createDuplicateIndividuals([['contact_source' => 'ditch me'], ['contact_source' => 'keep me']]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
@@ -612,8 +617,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testResolvePreferredContactFieldChooseMostRecentDonor(bool $isReverse): void {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor']]);
+    $this->setSetting('deduper_resolver_field_prefer_preferred_contact', ['source']);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recent_contributor']);
     $this->createDuplicateDonors();
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('keep me', $this->callAPISuccessGetValue('Contact', ['return' => 'contact_source', 'id' => $mergedContact['id']]));
@@ -630,8 +635,8 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testResolvePreferredContactFieldChooseMostProlific(bool $isReverse): void {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_prolific_contributor']]);
+    $this->setSetting('deduper_resolver_field_prefer_preferred_contact', ['source']);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_prolific_contributor']);
     $this->createDuplicateDonors();
     // Add a second contribution to the first donor - making it more prolific.
     $this->createTestEntity('Contribution', ['financial_type_id:name' => 'Donation', 'total_amount' => 5, 'contact_id' => $this->ids['Contact'][0], 'receive_date' => '2019-08-08']);
@@ -652,9 +657,9 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testResolvePreferredContactEmail(bool $isReverse): void {
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_field_prefer_preferred_contact' => ['source']]);
-    $this->callAPISuccess('Setting', 'create', ['deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor']]);
-    $this->createDuplicateDonors([[], ['email' => 'notbob@example.com']]);
+    $this->setSetting('deduper_resolver_field_prefer_preferred_contact', ['source']);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recent_contributor']);
+    $this->createDuplicateDonors([[], ['email_primary.email' => 'notbob@example.com']]);
     $mergedContact = $this->doMerge($isReverse);
     $emails = Email::get(FALSE)->setSelect(['email', 'is_primary', 'location_type_id:name'])->addWhere('contact_id', '=', $mergedContact['contact_id'])->addOrderBy('is_primary', 'DESC')->execute();
     $this->assertCount(2, $emails);
@@ -673,7 +678,10 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testAddressMerge(bool $isReverse): void {
+    $this->setSetting('deduper_resolver_address', 'preferred_contact');
     $this->createDuplicateDonors();
+    // Delete the generic addresses & create the ones for this test.
+    Address::delete(FALSE)->addWhere('contact_id', 'IN', $this->ids['Contact'])->execute();
     $this->createTestEntity('Address', [
       'contact_id' => $this->ids['Contact'][0],
       'street_address' => '意外だね42意外だね',
@@ -724,6 +732,105 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test handling when 2 addresses with the same details are resolved.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @throws \CRM_Core_Exception
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testAddressMergeWithLocationWrangling(bool $isReverse): void {
+    $this->createDuplicateIndividuals();
+    $this->createTestEntity('LocationType', ['name' => 'Another', 'display_name' => 'Another']);
+    $this->createTestEntity('Contribution', [
+      'receive_date' => 'now',
+      'financial_type_id:name' => 'Donation',
+      'total_amount' => 5,
+      'contact_id' => $this->ids['Contact'][1],
+    ]);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', [
+      'most_recent_contributor',
+    ]);
+    $this->setSetting('deduper_location_priority_order', [
+      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Billing'),
+      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Home'),
+      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Another'),
+      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Other'),
+    ]);
+    $this->setSetting('deduper_resolver_email', 'preferred_contact_with_re-assign');
+    $this->setSetting('deduper_resolver_phone', 'preferred_contact_with_re-assign');
+    $this->setSetting('deduper_resolver_address', 'preferred_contact_with_re-assign');
+
+    $this->createTestEntity('Email', [
+      'location_type_id:name' => 'Billing',
+      'email' => 'move_mail1@example.com',
+      'contact_id' => $this->ids['Contact'][0],
+    ]);
+    $this->createTestEntity('Email', [
+      'location_type_id:name' => 'Billing',
+      'email' => 'move_mail0@example.com',
+      'contact_id' => $this->ids['Contact'][1],
+    ]);
+    $this->createTestEntity('Email', [
+      'location_type_id:name' => 'Another',
+      'email' => 'mail_3@example.com',
+      'contact_id' => $this->ids['Contact'][1],
+    ]);
+
+    $this->createTestEntity('Phone', [
+      'location_type_id:name' => 'Billing',
+      'phone' => '1234',
+      'contact_id' => $this->ids['Contact'][0],
+    ]);
+    $this->createTestEntity('Phone', [
+      'location_type_id:name' => 'Billing',
+      'phone' => '5678',
+      'contact_id' => $this->ids['Contact'][1],
+    ]);
+    $this->createTestEntity('Phone', [
+      'location_type_id:name' => 'Another',
+      'phone' => '1288',
+      'contact_id' => $this->ids['Contact'][1],
+    ]);
+
+    $this->createTestEntity('Address', [
+      'location_type_id:name' => 'Billing',
+      'street_address' => '1234 Main St',
+      'contact_id' => $this->ids['Contact'][0],
+    ]);
+    $this->createTestEntity('Address', [
+      'location_type_id:name' => 'Billing',
+      'street_address' => '5678 Main St',
+      'contact_id' => $this->ids['Contact'][1],
+    ]);
+    $this->createTestEntity('Address', [
+      'location_type_id:name' => 'Another',
+      'street_address' => '1288 Main St',
+      'contact_id' => $this->ids['Contact'][1],
+    ]);
+
+    $contact = $this->doMerge($isReverse);
+    $emails = Email::get(FALSE)
+      ->addSelect('email', 'location_type_id:name', 'contact_id')
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->execute()->indexBy('location_type_id:name');
+    $this->assertCount(4, $emails);
+    $this->assertEquals('move_mail1@example.com', $emails['Other']['email']);
+
+    $this->assertCount(4, Address::get(FALSE)
+      ->addSelect('street_address', 'location_type_id:name', 'contact_id')
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->execute());
+
+    $this->assertCount(4, Phone::get(FALSE)
+      ->addSelect('phone', 'location_type_id:name', 'contact_id')
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->execute());
+  }
+
+  /**
    * Test that we don't treat the addition of a postal suffix only as a conflict.
    *
    * Bug T177807
@@ -732,21 +839,25 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *   Should we reverse which contact we merge into?
    *
    * @dataProvider booleanDataProvider
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeResolvableConflictPostalSuffixExists(bool $isReverse): void {
+    $this->setSetting('deduper_resolver_address', 'preferred_contact');
     $this->createDuplicateDonors();
+    // Delete the generic addresses & create the ones for this test.
+    Address::delete(FALSE)->addWhere('contact_id', 'IN', $this->ids['Contact'])->execute();
     $contactIDWithPostalSuffix = ($isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0]);
     $contactIDWithOutPostalSuffix = ($isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1]);
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
+    $this->createTestEntity('Address', [
+      'country_id:name' => 'MX',
       'contact_id' => $contactIDWithPostalSuffix,
       'location_type_id' => 1,
       'street_address' => 'First on the left after you cross the border',
       'postal_code' => 90210,
       'postal_code_suffix' => 6666,
     ]);
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
+    $this->createTestEntity('Address', [
+      'country_id:name' => 'MX',
       'contact_id' => $contactIDWithOutPostalSuffix,
       'street_address' => 'First on the left after you cross the border',
       'postal_code' => 90210,
@@ -771,24 +882,25 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddress(bool $isReverse): void {
+    $this->setSetting('deduper_resolver_address', 'preferred_contact');
     $this->createDuplicateDonors();
     $contactIDWithCountryOnlyAddress = ($isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0]);
     $contactIDWithFullAddress = ($isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1]);
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
+    $this->createTestEntity('Address', [
+      'country_id:name' => 'MX',
       'contact_id' => $contactIDWithCountryOnlyAddress,
       'location_type_id' => 1,
       'is_primary' => 1,
     ]);
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
+    $this->createTestEntity('Address', [
+      'country_id:name' => 'MX',
       'contact_id' => $contactIDWithFullAddress,
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
       'is_primary' => 1,
     ]);
-    $this->callAPISuccess('Address', 'create', [
-      'country_id' => 'MX',
+    $this->createTestEntity('Address', [
+      'country_id:name' => 'MX',
       'contact_id' => $contactIDWithFullAddress,
       'street_address' => 'A different address',
       'location_type_id' => 2,
@@ -927,11 +1039,13 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
       'first_name' => 'Bob',
       'last_name' => 'Smith',
       'contact_type' => 'Individual',
-      'email' => 'bob@example.com',
+      'email_primary.email' => 'bob@example.com',
+      'phone_primary.phone' => 123,
+      'address_primary.street_address' => 'Home sweet home',
     ];
     foreach ($contactParams as $index => $contactParam) {
       $contactParam = array_merge($params, $contactParam);
-      $this->ids['Contact'][$index] = $this->callAPISuccess('Contact', 'create', $contactParam)['id'];
+      $this->createTestEntity('Contact', $contactParam, $index)['id'];
     }
   }
 
@@ -999,11 +1113,11 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *
    * @param array $overrides
    */
-  protected function createDuplicateDonors(array $overrides = [['contact_source' => 'keep me'], ['contact_source' => 'ditch me']]): void {
+  protected function createDuplicateDonors(array $overrides = [['source' => 'keep me'], ['source' => 'ditch me']]): void {
     $this->createDuplicateIndividuals($overrides);
     $receiveDate = '2017-08-09';
     foreach ($this->ids['Contact'] as $contactID) {
-      $this->callAPISuccess('Contribution', 'create', ['financial_type_id' => 'Donation', 'total_amount' => 5, 'contact_id' => $contactID, 'receive_date' => $receiveDate]);
+      $this->createTestEntity('Contribution', ['financial_type_id:name' => 'Donation', 'total_amount' => 5, 'contact_id' => $contactID, 'receive_date' => $receiveDate]);
       $receiveDate = '2016-08-09';
     }
   }

@@ -2,15 +2,18 @@
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
+use Civi\Test\Api3TestTrait;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
 
 class DedupeBaseTestClass extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
 
-  use \Civi\Test\Api3TestTrait;
+  use Api3TestTrait;
 
   protected $ids = [];
+
+  protected $settings = [];
 
   /**
    * Set up for headless tests.
@@ -41,7 +44,15 @@ class DedupeBaseTestClass extends \PHPUnit\Framework\TestCase implements Headles
           ->execute();
       }
     }
+    foreach ($this->settings as $key => $value) {
+      \Civi::settings()->set($key, $value);
+    }
     parent::tearDown();
+  }
+
+  public function setSetting($key, $value) {
+    $this->settings[$key] = \Civi::settings()->get($key);
+    \Civi::settings()->set($key, $value);
   }
 
 }
