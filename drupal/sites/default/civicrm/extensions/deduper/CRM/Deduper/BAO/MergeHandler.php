@@ -499,6 +499,9 @@ class CRM_Deduper_BAO_MergeHandler {
     $resolver = new CRM_Deduper_BAO_Resolver_InitialResolver($this);
     $resolver->resolveConflicts();
 
+    $resolver = new CRM_Deduper_BAO_Resolver_SubsetNameResolver($this);
+    $resolver->resolveConflicts();
+
     $resolver = new CRM_Deduper_BAO_Resolver_PreferredContactLocationResolver($this);
     $resolver->resolveConflicts();
 

@@ -166,6 +166,43 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test resolving contacts where the name is a subset of the other first name.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testSubsetNameResolution(bool $isReverse): void {
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recently_created_contact']);
+    $this->setSetting('deduper_subset_name_handling', ['first_name']);
+    $this->createDuplicateIndividuals([['first_name' => 'Bob  M'], ['first_name' => 'Bob Matthew']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Bob Matthew', $mergedContact['first_name']);
+    $this->assertEquals('', $mergedContact['middle_name']);
+  }
+
+  /**
+   * Test first name subset resolution does not resolve Jr.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testSubsetNameNotJuniorResolution(bool $isReverse): void {
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recently_created_contact']);
+    $this->setSetting('deduper_subset_name_handling', ['first_name']);
+    $this->setSetting('deduper_subset_name_handling_abort_strings', "jr, jr., junior, sr, sr., senior, ii");
+    $this->createDuplicateIndividuals([['first_name' => 'Bob  Jr'], ['first_name' => 'Bob']]);
+    $toKeepContactID = $isReverse ? $this->ids['Contact'][1] : $this->ids['Contact'][0];
+    $toDeleteContactID = $isReverse ? $this->ids['Contact'][0] : $this->ids['Contact'][1];
+    $mergeResult = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $toKeepContactID, 'to_remove_id' => $toDeleteContactID, 'mode' => 'safe'])['values'];
+    $this->assertCount(0, $mergeResult['merged']);
+    $this->assertCount(1, $mergeResult['skipped']);
+  }
+
+  /**
    * Test resolving an initial in the last name.
    *
    * @param bool $isReverse
