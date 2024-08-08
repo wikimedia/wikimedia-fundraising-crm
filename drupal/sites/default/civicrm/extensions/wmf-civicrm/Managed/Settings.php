@@ -74,10 +74,11 @@ $settings = [
   'deduper_resolver_email' => 'preferred_contact_with_re-assign',
   'deduper_resolver_phone' => 'preferred_contact',
   'deduper_resolver_address' => 'preferred_contact',
+  'deduper_exception_relationship_type_id' => CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_relationship_type WHERE name_a_b = 'Unknown: Shares contact information'"),
 
   // Enable smash pig queue.
   'smashpig_recurring_use_queue' => '1',
-  'smashpig_recurring_charge_descriptor' => 'Wikimedia 877 600 9454'
+  'smashpig_recurring_charge_descriptor' => 'Wikimedia 877 600 9454',
 ];
 
 $fieldsUsedInSettings = CustomField::get(FALSE)
