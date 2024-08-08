@@ -370,6 +370,17 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
       if (isset($msg['rescue_reference'])) {
         $params['contribution_recur_smashpig.rescue_reference'] = $msg['rescue_reference'];
+        // Processor retry completed successfully
+        Civi\Api4\Activity::create(FALSE)
+          ->addValue('date', $msg['create_date'])
+          ->addValue('activity_type_id:name', 'Recurring Processor Retry - Success')
+          ->addValue('status_id:name', 'Completed')
+          ->addValue('subject', 'Successful processor retry with rescue reference: ' . $msg['rescue_reference'])
+          ->addValue('details', 'Rescue reference: ' . $msg['rescue_reference'])
+          ->addValue('source_contact_id', $contactId)
+          ->addValue('target_contact_id', $contactId)
+          ->addValue('source_record_id', $msg['contribution_recur_id'])
+          ->execute();
       }
 
       $newContributionRecur = $this->createContributionRecurWithErrorHandling($params);
