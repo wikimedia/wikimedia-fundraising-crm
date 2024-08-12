@@ -4,6 +4,8 @@ namespace Civi\Api4\Action\ContributionRecur;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 /**
  * Changes status to cancelled for any recurring contributions
@@ -20,6 +22,9 @@ class CancelInactives extends AbstractAction {
   public function _run( Result $result ) {
     $limitDate = date('Y-m-d', strtotime("-$this->days days"));
     $inactives = ContributionRecur::get(FALSE)
+      ->setSelect(
+        ['id', 'contact_id', 'payment_processor_id:name', 'next_sched_contribution_date', 'start_date', 'trxn_id']
+      )
       ->addWhere('contribution_status_id', 'NOT IN', [1,3,4])
       ->addWhere('frequency_unit', '=', 'month')
       ->addWhere('frequency_interval', '=', '1')
@@ -27,6 +32,12 @@ class CancelInactives extends AbstractAction {
       ->execute();
 
     foreach($inactives as $inactive) {
+      $processor = $inactive['payment_processor_id:name'];
+      if ($processor && RecurHelper::gatewayManagesOwnRecurringSchedule($processor)) {
+        \CRM_SmashPig_ContextWrapper::createContext('cancelInactives', $processor);
+        $provider = PaymentProviderFactory::getDefaultProvider();
+        $provider->cancelSubscription(['subscr_id' => $inactive['trxn_id']]);
+      }
       ContributionRecur::update(FALSE)
         ->addWhere('id', '=', $inactive['id'])
         ->setValues([

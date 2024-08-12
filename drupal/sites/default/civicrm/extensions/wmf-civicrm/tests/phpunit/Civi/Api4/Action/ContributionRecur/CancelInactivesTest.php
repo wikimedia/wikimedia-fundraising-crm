@@ -5,6 +5,10 @@ namespace Civi\Api4\Action\ContributionRecur;
 use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
 use PHPUnit\Framework\TestCase;
+use SmashPig\PaymentProviders\Responses\CancelSubscriptionResponse;
+use SmashPig\Tests\TestingContext;
+use SmashPig\Tests\TestingGlobalConfiguration;
+use SmashPig\Tests\TestingProviderConfiguration;
 
 /**
  * This is a generic test class for the extension (implemented with PHPUnit).
@@ -34,9 +38,28 @@ class CancelInactivesTest extends TestCase {
       ->setValues([
         'amount' => 60,
         'contact_id' => $contactID,
+        'start_date' => '100 days ago',
         'next_sched_contribution_date' => '70 days ago',
         'contribution_status_id:name' => 'Pending',
+        'payment_processor_id:name' => 'paypal',
+        'trxn_id' => 'ABCD1234'
       ])->execute()->first()['id'];
+
+    $paymentProvider = $this->createMock('SmashPig\PaymentProviders\PayPal\PaymentProvider');
+    $paymentProvider->expects($this->once())
+      ->method('cancelSubscription')
+      ->with(['subscr_id' => 'ABCD1234'])
+      ->willReturn((new CancelSubscriptionResponse())->setSuccessful(TRUE));
+
+    // Initialize SmashPig with a fake context object
+    $globalConfig = TestingGlobalConfiguration::create();
+    TestingContext::init($globalConfig);
+    $ctx = TestingContext::get();
+    $providerConfig = TestingProviderConfiguration::createForProvider(
+      'paypal', $globalConfig
+    );
+    $ctx->providerConfigurationOverride = $providerConfig;
+    $providerConfig->overrideObjectInstance('payment-provider/paypal', $paymentProvider);
 
     ContributionRecur::cancelInactives(FALSE)->execute();
 
