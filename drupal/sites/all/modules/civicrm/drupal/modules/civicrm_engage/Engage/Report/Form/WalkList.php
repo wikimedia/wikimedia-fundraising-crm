@@ -240,10 +240,10 @@ class Engage_Report_Form_WalkList extends Engage_Report_Form_List {
           //echo "&nbsp;&nbsp;&nbsp;field name $fieldName<br>";
           $clause = NULL;
 
-          if (CRM_Utils_Array::value('type', $field) & CRM_Utils_Type::T_DATE) {
-            $relative = CRM_Utils_Array::value("{$fieldName}_relative", $this->_params);
-            $from     = CRM_Utils_Array::value("{$fieldName}_from", $this->_params);
-            $to       = CRM_Utils_Array::value("{$fieldName}_to", $this->_params);
+          if (($field['type'] ?? 0) & CRM_Utils_Type::T_DATE) {
+            $relative = $this->_params["{$fieldName}_relative"] ?? NULL;
+            $from = $this->_params["{$fieldName}_from"] ?? NULL;
+            $to = $this->_params["{$fieldName}_to"] ?? NULL;
 
             $clause = $this->dateClause($field['name'], $relative, $from, $to);
           }
@@ -253,16 +253,16 @@ class Engage_Report_Form_WalkList extends Engage_Report_Form_List {
             }
           }
           else {
-            $op = CRM_Utils_Array::value("{$fieldName}_op", $this->_params);
+            $op = $this->_params["{$fieldName}_op"] ?? NULL;
             if ($op == 'mand') {
               $clause = TRUE;
             }
             elseif ($op) {
               $clause = $this->whereClause($field,
                 $op,
-                CRM_Utils_Array::value("{$fieldName}_value", $this->_params),
-                CRM_Utils_Array::value("{$fieldName}_min", $this->_params),
-                CRM_Utils_Array::value("{$fieldName}_max", $this->_params)
+                $this->_params["{$fieldName}_value"] ?? NULL,
+                $this->_params["{$fieldName}_min"] ?? NULL,
+                $this->_params["{$fieldName}_max"] ?? NULL
               );
             }
           }
@@ -418,10 +418,7 @@ class Engage_Report_Form_WalkList extends Engage_Report_Form_List {
 
       $dob  = $value['civicrm_contact_birth_date'];
       $age  = empty($dob) ? 0 : $this->dob2age($dob);
-      if (!empty($value['civicrm_contact_gender_id'])) {
-        $sex = $gender[CRM_Utils_Array::value('civicrm_contact_gender_id', $value)];
-      }
-      $sex  = empty($sex) ? '' : $sex;
+      $sex = $gender[$value['civicrm_contact_gender_id']] ?? '';
       $lang = strtoupper(substr($value[$this->_demoTable . '_' . $this->_demoLangCol], 0, 2));
       $party       = substr($value["{$this->_voterInfoTable}_{$this->_partyCol}"], 0, 1);
       $vh          = substr($value["{$this->_voterInfoTable}_{$this->_vhCol}"], 0, 1);

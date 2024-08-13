@@ -1573,8 +1573,7 @@ WHERE  civicrm_membership.contact_id = civicrm_contact.id
     try {
       $membershipTypes = MembershipType::get(TRUE)
         ->execute()
-        ->indexBy('id')
-        ->column('name');
+        ->column('name', 'id');
       $addWhere = " AND membership_type_id IN (0)";
       if (!empty($membershipTypes)) {
         $addWhere = " AND membership_type_id IN (" . implode(',', array_keys($membershipTypes)) . ")";
@@ -2071,23 +2070,23 @@ WHERE {$whereClause}";
         'membership_id' => $dao2->membership_id,
         'ignore_admin_only' => TRUE,
       ]);
-      $statusId = $newStatus['id'] ?? NULL;
+      $newStatusId = $newStatus['id'] ?? NULL;
 
       // process only when status change.
-      if ($statusId &&
-        $statusId != $dao2->status_id
+      if ($newStatusId &&
+        $newStatusId != $dao2->status_id
       ) {
         // Update the status on the membership.
         self::writeRecord([
           'id' => $dao2->membership_id,
-          'status_id' => $statusId,
+          'status_id' => $newStatusId,
         ]);
 
         self::createRelatedMemberships(['action' => CRM_Core_Action::UPDATE], $dao2);
         // Now create the "Change Membership Status" activity
         $allStatusLabels = CRM_Member_BAO_Membership::buildOptions('status_id', 'get');
         $changedByContactID = CRM_Core_Session::getLoggedInContactID() ?? $dao2->contact_id;
-        self::createChangeMembershipStatusActivity($dao2, $allStatusLabels[$statusId], $allStatusLabels[$dao2->status_id], $changedByContactID);
+        self::createChangeMembershipStatusActivity($dao2, $allStatusLabels[$dao2->status_id], $allStatusLabels[$newStatusId], $changedByContactID);
         $updateCount++;
       }
     }
