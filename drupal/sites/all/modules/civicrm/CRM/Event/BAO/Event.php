@@ -330,8 +330,7 @@ WHERE  ( civicrm_event.is_template  = 0 )";
         ->addSelect('id', 'title')
         ->addWhere('is_active', '=', TRUE)
         ->execute()
-        ->indexBy('id')
-        ->column('title');
+        ->column('title', 'id');
     }
     return $options;
   }
@@ -2342,18 +2341,10 @@ WHERE  ce.loc_block_id = $locBlockId";
   }
 
   /**
-   * @param array $profileIds
-   * @param int $cid
-   * @param int $participantId
-   * @param bool $isTest Probably not required, even when true.
-   * @param array|null $groups group values from session
-   * @param string|null $note note values from session
-   *
-   * @return array
    * @throws \CRM_Core_Exception
    * @throws \Civi\Core\Exception\DBQueryException
    */
-  public static function getProfileDisplay(array $profileIds, int $cid, int $participantId, bool $isTest = FALSE, ?array $groups = NULL, ?string $note = NULL): array {
+  public static function getProfileDisplay(array $profileIds, int $cid, int $participantId, bool $isTest = FALSE, ?array $groups = NULL, ?string $note = NULL): ?array {
     foreach ($profileIds as $gid) {
       if (CRM_Core_BAO_UFGroup::filterUFGroups($gid, $cid)) {
         $values = [];

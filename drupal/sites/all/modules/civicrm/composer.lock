@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "df91f6a82815563405a574846fa2f880",
+    "content-hash": "a8980b3d6c076d374e5eb265c6560c02",
     "packages": [
         {
             "name": "adrienrn/php-mimetyper",

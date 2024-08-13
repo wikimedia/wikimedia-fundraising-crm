@@ -2485,6 +2485,37 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Fix dlocal emails that got updated to 0000@dlocal.com
+   * Bug: T371911
+   *
+   * @return bool
+   */
+  public function upgrade_4560(): bool {
+    // Get all the contacts that were affected, they are in the group 0000@dlocal email addresses
+    // 3159 in total
+    $emails = \Civi\Api4\Contact::get(TRUE)
+      ->addSelect('email_primary')
+      ->addWhere('groups:name', 'IN', ['0000_dlocal_com_email_addresses_2158'])
+      ->execute();
+
+    foreach($emails as $email) {
+      $emailAddress = CRM_Core_DAO::singleValueQuery(
+        'SELECT email FROM log_civicrm_email WHERE id='.$email['email_primary'].'
+        AND log_date < "2024-07-30" LIMIT 1');
+
+      if ($emailAddress) {
+        \Civi\Api4\Email::update(FALSE)
+          ->addWhere('id', '=', $email['email_primary'])
+          ->setValues([
+            'email' => $emailAddress,
+          ])->execute();
+      }
+    }
+
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void

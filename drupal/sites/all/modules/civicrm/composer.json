@@ -212,7 +212,7 @@
         "ignore": ["fonts", "test", "tasks", "lib"]
       },
       "font-awesome": {
-        "url": "https://github.com/FortAwesome/Font-Awesome/archive/v4.7.0.zip",
+        "url": "https://github.com/FortAwesome/Font-Awesome/releases/download/6.6.0/fontawesome-free-6.6.0-web.zip",
         "ignore": ["*/.*", "*.json", "src", "*.yml", "Gemfile", "Gemfile.lock", "*.md"]
       },
       "marked": {
@@ -252,7 +252,7 @@
         "ignore": [".*", "*.log", "*.md", "component.json", "package.json", "node_modules"]
       },
       "select2": {
-        "url": "https://github.com/colemanw/select2/archive/v3.5-civicrm-1.0.zip"
+        "url": "https://github.com/colemanw/select2/archive/v3.5-civicrm-1.1.zip"
       },
       "js-yaml": {
         "url": "https://github.com/nodeca/js-yaml/archive/3.13.1.zip",

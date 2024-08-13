@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\Activity;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\WMFContact;
@@ -265,6 +266,21 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
             'cycle_day' => $message->getExistingContributionRecurValue('cycle_day'),
           ]));
         }
+
+        if ($message->isAutoRescue()) {
+          // Processor retry completed successfully
+          Activity::create(FALSE)
+            ->addValue('date', $msg['date'])
+            ->addValue('activity_type_id:name', 'Recurring Processor Retry - Success')
+            ->addValue('status_id:name', 'Completed')
+            ->addValue('subject', 'Successful processor retry with rescue reference: ' . $msg['rescue_reference'])
+            ->addValue('details', 'Rescue reference: ' . $msg['rescue_reference'])
+            ->addValue('source_contact_id', $msg['contact_id'])
+            ->addValue('target_contact_id', $msg['contact_id'])
+            ->addValue('source_record_id', $msg['contribution_recur_id'])
+            ->execute();
+        }
+
         $recurUpdate->execute();
       }
     }
