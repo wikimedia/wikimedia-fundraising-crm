@@ -81,7 +81,7 @@ class IngenicoResolveTest extends TestCase {
         ->addWhere('contact_id', 'IN', $this->ids['Contact'])
         ->execute();
       Contact::delete(FALSE)
-        ->addWhere('id', '=', $this->ids['Contact'])
+        ->addWhere('id', 'IN', $this->ids['Contact'])
         ->setUseTrash(FALSE)
         ->execute();
     }
