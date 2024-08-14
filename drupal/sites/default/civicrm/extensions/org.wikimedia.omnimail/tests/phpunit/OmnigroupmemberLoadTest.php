@@ -91,6 +91,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    */
   public function testOmnigroupmemberLoadUseOffsetSetting(): void {
     $client = $this->setupSuccessfulDownloadClient();
+    $this->callAPISuccess('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
 
     $this->callAPISuccess('Omnigroupmember', 'load', [
