@@ -1007,8 +1007,8 @@ WHERE
     }
     else {
       // If this is not an Organization contact, freak out if Name or Title are filled.
-      if (!empty($msg['org_contact_name'])
-        || !empty($msg['org_contact_title'])
+      if (!empty($msg['Organization_Contact.Name'])
+        || !empty($msg['Organization_Contact.Title'])
       ) {
         throw new WMFException(WMFException::INVALID_MESSAGE, "Don't give a Name or Title unless this is an Organization contact.");
       }
@@ -1176,7 +1176,7 @@ WHERE
       // @todo deprecate this in favour of the more descriptive Organization Contact Name
       // If we need to use name to match a vendor do that in the specific import, not
       // generically.
-      'Name' => 'org_contact_name',
+      'Name' => 'Organization_Contact.Name',
       'No Thank You' => 'no_thank_you',
       'Notes' => 'notes',
       'Organization Name' => 'organization_name',
