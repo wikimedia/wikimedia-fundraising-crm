@@ -1090,7 +1090,7 @@ WHERE
       'do_not_mail',
       'do_not_phone',
       'do_not_sms',
-      'do_not_solicit',
+      'Communication.do_not_solicit',
       'is_opt_out',
     ];
 
@@ -1160,7 +1160,7 @@ WHERE
       'Do Not Mail' => 'do_not_mail',
       'Do Not Phone' => 'do_not_phone',
       'Do Not SMS' => 'do_not_sms',
-      'Do Not Solicit' => 'do_not_solicit',
+      'Do Not Solicit' => 'Communication.do_not_solicit',
       'Donor Specified' => 'Donor_Specified',
       'Email' => 'email',
       'External Batch Number' => 'import_batch_number',

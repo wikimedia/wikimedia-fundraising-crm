@@ -36,7 +36,7 @@ class OptInQueueConsumer extends QueueConsumer {
     $new_contact = count($contacts) === 0;
     if ($new_contact) {
       if (!empty($message['last_name'])) {
-        $message['opt_in'] = TRUE;
+        $message['Communication.opt_in'] = TRUE;
         $contact_id = WMFContact::save(FALSE)
           ->setMessage($message)
           ->execute()->first()['id'];

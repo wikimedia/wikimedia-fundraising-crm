@@ -111,18 +111,13 @@ class Save extends AbstractAction {
 
     $custom_vars = [];
     $custom_field_mangle = [
-      'opt_in' => 'opt_in',
-      'do_not_solicit' => 'do_not_solicit',
-      'org_contact_name' => 'Name',
-      'org_contact_title' => 'Title',
-      'employer' => 'Employer_Name',
+      'Communication.opt_in' => 'opt_in',
+      'Communication.do_not_solicit' => 'do_not_solicit',
+      'Organization_Contact.Name' => 'Name',
+      'Organization_Contact.Title' => 'Title',
+      'Communication.Employer_Name' => 'Employer_Name',
       'Organization_Contact.Phone' => 'Phone',
       'Organization_Contact.Email' => 'Email',
-      // These 2 fields already have aliases but adding
-      // additional ones with the new standard allows migration
-      // and means that the import file does not have to mix and match.
-      'Organization_Contact.Title' => 'Title',
-      'Organization_Contact.Name' => 'Name',
     ];
     foreach ($custom_field_mangle as $msgField => $customField) {
       if (isset($msg[$msgField])) {
