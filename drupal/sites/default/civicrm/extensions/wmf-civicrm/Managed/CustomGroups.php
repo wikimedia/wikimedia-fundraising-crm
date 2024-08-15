@@ -1287,6 +1287,17 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields(): array {
       'is_searchable' => 1,
       'is_view' => 1,
     ],
+    'backend_processor' => [
+      'name' => 'backend_processor',
+      'column_name' => 'backend_processor',
+      'label' => ts('Backend Processor'),
+      'description' => 'Underlying payment processor, when gateway is a payment orchestrator',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 1,
+    ],
     'gateway_txn_id' => [
       'name' => 'gateway_txn_id',
       'column_name' => 'gateway_txn_id',
