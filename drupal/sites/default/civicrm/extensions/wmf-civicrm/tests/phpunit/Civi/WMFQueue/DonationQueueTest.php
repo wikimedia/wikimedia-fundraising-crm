@@ -1849,6 +1849,75 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * If we get a matching contact name and email, update the preferred language
+   *
+   */
+  public function testUpdateLanguageWithContactExisting(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'email_primary.email' => 'dupe@example.org',
+      'preferred_language' => 'es_ES',
+    ], 'existing');
+
+    $msg = [
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'dupe@example.org',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      // This should be normalized to es_MX and then used to update the contact record
+      'language' => 'es-419',
+    ];
+    $this->processDonationMessage($msg);
+    $this->assertContactValue($this->ids['Contact']['existing'], 'es_MX', 'preferred_language');
+  }
+
+  /**
+   * If we get a matching contact email, add missing name fields from the message
+   */
+  public function testAddMissingNameWithContactExisting(): void {
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'email_primary.email' => 'noname@example.org',
+      'preferred_language' => 'es_ES',
+    ], 'existing');
+
+    $msg = [
+      'first_name' => 'NowIHave',
+      'last_name' => 'AName',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'noname@example.org',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      // We skip name matching for Apple Pay donors
+      'payment_method' => 'apple',
+      'payment_submethod' => 'visa',
+      // This should be normalized to es_MX and then used to update the contact record
+      'language' => 'es-419',
+    ];
+    $this->processDonationMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+    $this->assertContactValue($this->ids['Contact']['existing'], 'NowIHave', 'first_name');
+    $this->assertContactValue($this->ids['Contact']['existing'], 'AName', 'last_name');
+  }
+
+  /**
    * Test confirming that a recurring payment leads to a financial type of "Recurring Gift"
    *
    * @throws \CRM_Core_Exception
