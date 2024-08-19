@@ -344,6 +344,7 @@ class Message {
       'Fund',
       'Campaign',
       'Description_of_Stock',
+      'backend_processor',
       'gateway_status_raw',
       'Postmark_Date',
       'gateway_txn_id',
