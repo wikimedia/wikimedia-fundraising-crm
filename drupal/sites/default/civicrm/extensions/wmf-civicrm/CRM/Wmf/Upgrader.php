@@ -2516,6 +2516,20 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Add last-name, first_name index for improved dedupe queries.
+   *
+   * This took about a minute of doing a dedupe find on the first_name,
+   *
+   * Bug: T353971
+   *
+   * @return bool
+   */
+  public function upgrade_4565(): bool {
+    CRM_Core_BAO_SchemaHandler::createIndexes(['civicrm_contact' => [['last_name', 'first_name']]]);
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
