@@ -92,6 +92,59 @@ class NameParseTest extends TestCase implements HeadlessInterface, HookInterface
     foreach ($expected as $key => $value) {
       $this->assertEquals($value, $result[$key]);
     }
- }
+  }
+
+  /**
+   * Test the the full_name field added to Contact.create by this extension works.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testNameParseOnCreate(): void {
+    $fields = Contact::getFields(FALSE)
+      ->addWhere('usage', 'CONTAINS', 'import')
+      ->setAction('save')
+      ->execute()->indexBy('name');
+    $this->assertArrayHasKey('full_name', $fields);
+    $individual = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'full_name' => 'Bob M. Smith',
+    ]);
+    $this->assertEquals('Bob', $individual['first_name']);
+    $this->assertEquals('M.', $individual['middle_name']);
+    $this->assertEquals('Smith', $individual['last_name']);
+
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $individual['id'])
+      ->setValues(['full_name' => 'Robert Mathew Smith'])
+      ->execute();
+
+    $contact = Contact::get(FALSE)
+      ->addWhere('id', '=', $individual['id'])
+      ->execute()->single();
+    $this->assertEquals('Robert', $contact['first_name']);
+
+    Contact::save(FALSE)
+      ->setRecords([['id' => $individual['id']]])
+      ->setDefaults(['full_name' => 'Bobby Smith'])
+      ->execute();
+
+    $contact = Contact::get(FALSE)
+      ->addSelect('first_name', 'addressee_id:name')
+      ->addWhere('id', '=', $individual['id'])
+      ->execute()->single();
+    $this->assertEquals('Bobby', $contact['first_name']);
+    $this->assertEquals('Customized', $contact['addressee_id:name']);
+
+    Contact::save(FALSE)
+      ->setRecords([['id' => $individual['id'], 'full_name' => 'Bobby Smith']])
+      ->execute();
+
+    $contact = Contact::get(FALSE)
+      ->addSelect('first_name', 'addressee_id:name')
+      ->addWhere('id', '=', $individual['id'])
+      ->execute()->single();
+    $this->assertEquals('Bobby', $contact['first_name']);
+    $this->assertEquals('Customized', $contact['addressee_id:name']);
+  }
 
 }
