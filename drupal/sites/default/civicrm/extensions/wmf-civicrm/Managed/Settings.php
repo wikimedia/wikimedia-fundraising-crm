@@ -41,30 +41,9 @@ $settings = [
     'date.today_format_raw',
   ],
 
-  // Per live, exclude supplemental_address_3, add postal_code_suffix
-  'address_options' => CRM_Core_DAO::VALUE_SEPARATOR .
-    implode(
-      CRM_Core_DAO::VALUE_SEPARATOR,
-      array_keys(
-        (array) OptionValue::get(FALSE)
-          ->addWhere('option_group_id.name', '=', 'address_options')
-          ->addWhere('name', 'IN', [
-            'street_address',
-            'supplemental_address_1',
-            'supplemental_address_2',
-            'postal_code',
-            'postal_code_suffix',
-            'city',
-            'country',
-            'state_province',
-            'geo_code_1',
-            'geo_code_2',
-          ])
-          ->setSelect(['value'])
-          ->execute()
-          ->indexBy('value')
-      )
-    ) . CRM_Core_DAO::VALUE_SEPARATOR,
+  // Per live, exclude supplemental_address_3, add postal_code_suffix (11).
+  // core default is   '1234568910'
+  'address_options' => '123456891011',
 
   // Configure deduper per our preferences
   'deduper_resolver_preferred_contact_resolution' => ['most_recent_contributor'],
@@ -81,6 +60,9 @@ $settings = [
   'smashpig_recurring_charge_descriptor' => 'Wikimedia 877 600 9454',
 ];
 
+// @todo - it might be better to switch this to calling
+// CRM_Core_DAO::executeQuery()->fetchArray();
+// in order to avoid load order issues as this is called early-ish it startup.
 $fieldsUsedInSettings = CustomField::get(FALSE)
   ->addWhere('name', 'IN', [
     'opt_in',
