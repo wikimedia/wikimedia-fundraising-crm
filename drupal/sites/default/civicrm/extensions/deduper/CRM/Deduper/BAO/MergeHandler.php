@@ -849,7 +849,6 @@ class CRM_Deduper_BAO_MergeHandler {
         }
       }
     }
-    $this->emailConflicts[$emailBlockNumber] = ($this->emailConflictDetails[$emailBlockNumber]['fields'] ?? []);
     return $this->emailConflictDetails[$emailBlockNumber];
   }
 
