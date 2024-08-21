@@ -398,7 +398,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
     'Package' => [
       'name' => 'Package',
       'label' => 'Package',
-      'column_name' => 'package_377',
+      'column_name' => 'package',
       'html_type' => 'Autocomplete-Select',
       'is_searchable' => TRUE,
       'weight' => 326,
@@ -413,7 +413,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
     'Channel' => [
       'name' => 'Channel',
       'label' => 'Channel',
-      'column_name' => 'channel_378',
+      'column_name' => 'channel',
       'html_type' => 'Select',
       'is_searchable' => TRUE,
       'weight' => 310,
