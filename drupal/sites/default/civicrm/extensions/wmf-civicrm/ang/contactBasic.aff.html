@@ -2,7 +2,7 @@
     {{ts('No contact id provided')}}
   </div>
   <div ng-if="options.contact_id"
-    af-api4="['Contact', 'get', {select: ['first_name','last_name','email_primary.email', 'email_primary.on_hold', 'email_primary.hold_date', 'middle_name', 'display_name', 'contact_type', 'nick_name', 'address_primary.street_address', 'address_primary.city'], where: [['id', '=', options.contact_id]]}]"
+    af-api4="['Contact', 'get', {select: ['first_name','last_name','is_opt_out','email_primary.email', 'email_primary.on_hold', 'email_primary.hold_date', 'middle_name', 'display_name', 'contact_type', 'nick_name', 'address_primary.street_address', 'address_primary.city', 'Partner.Partner'], where: [['id', '=', options.contact_id]]}]"
     af-api4-ctrl="contact"
  >
 
@@ -13,8 +13,10 @@
         'values' : {
           'last_name': contact['result'][0].last_name,
           'first_name': contact['result'][0].first_name,
+          'is_opt_out': contact['result'][0].is_opt_out,
           'middle_name': contact['result'][0].middle_name,
           'nick_name': contact['result'][0].nick_name,
+          'Partner.Partner' : contact['result'][0]['Partner.Partner'],
         },
         chain: {'email':['Email', 'update', {
           'where':[['contact_id', '=', '$id'], ['is_primary', '=', true]],
@@ -31,10 +33,17 @@
     <div><strong class="basic-contact-field">{{ ts('Middle Name') }}</strong>:<span editable-text="contact['result'][0].middle_name">{{contact['result'][0].middle_name || ".."}}</span></div>
     <div><strong class="basic-contact-field">{{ ts('Last Name') }}</strong>: <span editable-text="contact['result'][0].last_name">{{contact['result'][0].last_name || ".."}}</span></div>
     <div><strong class="basic-contact-field">{{ ts('Nick Name') }}</strong>: <span editable-text="contact['result'][0].nick_name">{{contact['result'][0].nick_name || ".."}}</span></div>
-    <div ng-class="contact['result'][0]['email_primary.on_hold'] ? 'text-danger': ''"><strong class="basic-contact-field">{{ts('Email')}}</strong>: <span editable-text="contact['result'][0]['email_primary.email']">{{contact['result'][0]['email_primary.email'] || ".."}}</span>
+    <div><strong class="basic-contact-field">{{ ts('Partner') }}</strong>: <span
+        editable-text="contact['result'][0]['Partner.Partner']">{{contact['result'][0]['Partner.Partner'] ||
+      ".."}}</span></div>
+    <div ng-class="contact['result'][0]['email_primary.on_hold'] ? 'text-danger': ''"><strong class="basic-contact-field">{{ts('Email')}}</strong>:
+      <span editable-text="contact['result'][0]['email_primary.email']">{{contact['result'][0]['email_primary.email'] || ".."}}</span>
       <span ng-if="contact['result'][0]['email_primary.on_hold']">({{ts('On hold')}}) {{contact['result'][0]['email_primary.hold_date']}}</span></div>
     <div ng-show=contact['result'][0]['address_primary.street_address']><strong class="basic-contact-field">{{ts('Street Address')}}</strong>: <span>{{contact['result'][0]['address_primary.street_address']}}</span></div>
     <div ng-show=contact['result'][0]['address_primary.city']><strong class="basic-contact-field">{{ts('City')}}</strong>: <span>{{contact['result'][0]['address_primary.street_city']}}</span></div>
+    <div><strong class="basic-contact-field">{{ts('Is Opt Out')}}</strong>:
+      <span ng-style="{'display': 'inline-block !important'}" editable-checkbox="contact['result'][0]['is_opt_out']" ng-class="contact['result'][0]['is_opt_out'] ? 'text-danger': ''">{{contact['result'][0]['is_opt_out'] ? "Yes" : "No"}}</span>
+    </div>
     <div><strong class="basic-contact-field">{{ts('Contact ID')}}</strong>: <a target="_blank" ng-if="options.contact_url" href="{{options.contact_url}}{{contact['result'][0]['id']}}">{{contact['result'][0]['id']}}</a></div>
 
     <p></p>

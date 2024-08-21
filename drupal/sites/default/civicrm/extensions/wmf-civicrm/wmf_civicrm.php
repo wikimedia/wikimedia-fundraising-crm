@@ -34,8 +34,17 @@ function wmf_civicrm_civicrm_config(&$config) {
   // Ensure it runs after the first ones, since we override some core tokens.
   $dispatcher->addListener('civi.token.eval', ['CRM_Wmf_Tokens', 'onEvalTokens'], -200);
   $dispatcher->addListener('hook_civicrm_queueActive', [Queue::class, 'isSiteBusy']);
+  // Increase the weight on the angular directory in this extension so it overrides the others.
+  // This ensures our tweaks take precedence.
+  // See https://github.com/civicrm/civicrm-core/pull/30817.
+  Civi::dispatcher()->addListener('&civi.afform.searchPaths', function(&$paths) {
+    foreach ($paths as &$path) {
+      if (str_contains($path['path'], __DIR__)) {
+        $path['weight'] = 50;
+      }
+    }
+  });
 }
-
 
 /**
  * Abuse the permissions hook to prevent de-duping without a limit
