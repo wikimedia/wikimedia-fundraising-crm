@@ -744,7 +744,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
 
     $this->assertCount(3, $errors);
     $customFieldID = CRM_Core_BAO_CustomField::getCustomFieldID('Fund');
-    $this->assertEquals('"INVALID_MESSAGE Invalid value (invalid value) submitted for custom field ' . $customFieldID . ':Gift Data Restrictions - Gift_Data.Fund",B15_0601_enlvroskLVROSK_dsk_lg_nag_sd.no-LP.cc,C15_mlWW_mob_lw_FR,sitenotice,10563,Engage,24,"USD 24.00",5/9/2015,5/9/2015,Check,1,"invalid value","Corporate Gift","Carl TEST Perry","Townsend Agency","53 International Circle",Nowe,Poland,,cperry0@salon.com,,12/21/2014,,,,,,,
+    $this->assertEquals('"INVALID_MESSAGE Invalid value (invalid value) submitted for custom field ' . $customFieldID . ':Gift Data Fund - Gift_Data.Fund",B15_0601_enlvroskLVROSK_dsk_lg_nag_sd.no-LP.cc,C15_mlWW_mob_lw_FR,sitenotice,10563,Engage,24,"USD 24.00",5/9/2015,5/9/2015,Check,1,"invalid value","Corporate Gift","Carl TEST Perry","Townsend Agency","53 International Circle",Nowe,Poland,,cperry0@salon.com,,12/21/2014,,,,,,,
 ', $errors[1]);
 
     $skippedURI = str_replace('.csv', '_skipped.' . $user->uid . '.csv', $fileUri);
