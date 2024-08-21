@@ -3,7 +3,9 @@
 
 namespace Civi\Deduper;
 
+use Civi\Api4\Contact;
 use Civi\Api4\Name;
+use Civi\Api4\System;
 use Civi\Test;
 use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
@@ -15,24 +17,29 @@ use PHPUnit\Framework\TestCase;
  * FIXME - Add test description.
  *
  * Tips:
- *  - With HookInterface, you may implement CiviCRM hooks directly in the test class.
- *    Simply create corresponding functions (e.g. "hook_civicrm_post(...)" or similar).
- *  - With TransactionalInterface, any data changes made by setUp() or test****() functions will
- *    rollback automatically -- as long as you don't manipulate schema or truncate tables.
- *    If this test needs to manipulate schema or truncate tables, then either:
- *       a. Do all that using setupHeadless() and Civi\Test.
- *       b. Disable TransactionalInterface, and handle all setup/teardown yourself.
+ *  - With HookInterface, you may implement CiviCRM hooks directly in the test
+ * class. Simply create corresponding functions (e.g. "hook_civicrm_post(...)"
+ * or similar).
+ *  - With TransactionalInterface, any data changes made by setUp() or
+ * test****() functions will rollback automatically -- as long as you don't
+ * manipulate schema or truncate tables. If this test needs to manipulate
+ * schema or truncate tables, then either: a. Do all that using setupHeadless()
+ * and Civi\Test. b. Disable TransactionalInterface, and handle all
+ * setup/teardown yourself.
  *
  * @group headless
  */
 class NameParseTest extends TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
 
+  use Test\EntityTrait;
+
   /**
    * Setup used when HeadlessInterface is implemented.
    *
-   * Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
+   * Civi\Test has many helpers, like install(), uninstall(), sql(), and
+   * sqlFile().
    *
-   * @see See: https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
+   * @see https://github.com/civicrm/org.civicrm.testapalooza/blob/master/civi-test.md
    *
    * @return \Civi\Test\CiviEnvBuilder
    *
@@ -49,8 +56,8 @@ class NameParseTest extends TestCase implements HeadlessInterface, HookInterface
    *
    * @return \string[][]
    */
- public function getNameVariants(): array {
-   return [
+  public function getNameVariants(): array {
+    return [
      [
        'name' => 'Mr. Paul Fudge',
        'expected' => [
@@ -67,8 +74,8 @@ class NameParseTest extends TestCase implements HeadlessInterface, HookInterface
          'Partner.Partner' => 'Mrs Sally Smith',
        ],
      ],
-   ];
- }
+    ];
+  }
 
   /**
    * Test name passing.
@@ -78,10 +85,9 @@ class NameParseTest extends TestCase implements HeadlessInterface, HookInterface
    * @param string $name
    * @param array $expected
    *
-   * @throws \API_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \CRM_Core_Exception
    */
- public function testNameParsing(string $name, array $expected): void {
+  public function testNameParsing(string $name, array $expected): void {
     $result = Name::parse()->setNames([$name])->execute()->first();
     foreach ($expected as $key => $value) {
       $this->assertEquals($value, $result[$key]);

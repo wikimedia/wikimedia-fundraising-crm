@@ -743,25 +743,13 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    */
   public function testAddressMergeWithLocationWrangling(bool $isReverse): void {
     $this->createDuplicateIndividuals();
-    $this->createTestEntity('LocationType', ['name' => 'Another', 'display_name' => 'Another']);
     $this->createTestEntity('Contribution', [
       'receive_date' => 'now',
       'financial_type_id:name' => 'Donation',
       'total_amount' => 5,
       'contact_id' => $this->ids['Contact'][1],
     ]);
-    $this->setSetting('deduper_resolver_preferred_contact_resolution', [
-      'most_recent_contributor',
-    ]);
-    $this->setSetting('deduper_location_priority_order', [
-      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Billing'),
-      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Home'),
-      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Another'),
-      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Other'),
-    ]);
-    $this->setSetting('deduper_resolver_email', 'preferred_contact_with_re-assign');
-    $this->setSetting('deduper_resolver_phone', 'preferred_contact_with_re-assign');
-    $this->setSetting('deduper_resolver_address', 'preferred_contact_with_re-assign');
+    $this->setLocationHandlingToReassign();
 
     $this->createTestEntity('Email', [
       'location_type_id:name' => 'Billing',
@@ -828,6 +816,52 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
       ->addSelect('phone', 'location_type_id:name', 'contact_id')
       ->addWhere('contact_id', '=', $contact['id'])
       ->execute());
+  }
+
+  /**
+   * Test handling when contacts with multiple locations are resolved.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @throws \CRM_Core_Exception
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testEmailMergeWithLocationWrangling(bool $isReverse): void {
+    $this->setLocationHandlingToReassign();
+    // The first contact has their matching email in the 'another' type.
+    $this->createDuplicateIndividuals([['email_primary.email' => 'bob-another@example.com'], []]);
+
+    $this->createTestEntity('Email', [
+      'location_type_id:name' => 'Billing',
+      'email' => 'bob1-billing@example.com',
+      'contact_id' => $this->ids['Contact'][0],
+    ]);
+    $this->createTestEntity('Email', [
+      'location_type_id:name' => 'Another',
+      'email' => 'bob@example.com',
+      'contact_id' => $this->ids['Contact'][0],
+    ]);
+
+    $this->createTestEntity('Email', [
+      'location_type_id:name' => 'Billing',
+      'email' => 'bob2-billing@example.com',
+      'contact_id' => $this->ids['Contact'][1],
+    ]);
+
+    $contact = $this->doMerge($isReverse);
+    $emails = (array) Email::get(FALSE)
+      ->addSelect('email', 'location_type_id:name', 'contact_id')
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->execute()->indexBy('email');
+    $this->assertCount(4, $emails);
+    $this->assertEquals([
+      'bob-another@example.com',
+      'bob@example.com',
+      'bob1-billing@example.com',
+      'bob2-billing@example.com',
+    ], array_keys($emails));
   }
 
   /**
@@ -1034,7 +1068,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @param array $contactParams
    *   Arrays of parameters, one per contact.
    */
-  private function createDuplicateIndividuals(array $contactParams = [[], []]) {
+  private function createDuplicateIndividuals(array $contactParams = [[], []]): void {
     $params = [
       'first_name' => 'Bob',
       'last_name' => 'Smith',
@@ -1120,6 +1154,25 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
       $this->createTestEntity('Contribution', ['financial_type_id:name' => 'Donation', 'total_amount' => 5, 'contact_id' => $contactID, 'receive_date' => $receiveDate]);
       $receiveDate = '2016-08-09';
     }
+  }
+
+  /**
+   * @return void
+   */
+  public function setLocationHandlingToReassign(): void {
+    $this->createTestEntity('LocationType', ['name' => 'Another', 'display_name' => 'Another']);
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', [
+      'most_recent_contributor',
+    ]);
+    $this->setSetting('deduper_location_priority_order', [
+      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Billing'),
+      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Home'),
+      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Another'),
+      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Address', 'location_type_id', 'Other'),
+    ]);
+    $this->setSetting('deduper_resolver_email', 'preferred_contact_with_re-assign');
+    $this->setSetting('deduper_resolver_phone', 'preferred_contact_with_re-assign');
+    $this->setSetting('deduper_resolver_address', 'preferred_contact_with_re-assign');
   }
 
 }
