@@ -1,4 +1,5 @@
 <?php
+use CRM_Wmf_ExtensionUtil as E;
 
 return [
   'Holds Donor Advised Fund of' => [
@@ -47,6 +48,29 @@ return [
       'name_b_a' => 'Donates via',
       'label_b_a' => 'Donates via',
       'is_active' => 1,
+    ],
+  ],
+  [
+    'name' => 'RelationshipType_Unknown',
+    'entity' => 'RelationshipType',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'name_a_b' => 'Unknown: Shares contact information',
+        'label_a_b' => E::ts('Unknown: Shares contact information'),
+        'name_b_a' => 'Unknown: Shares contact information',
+        'label_b_a' => E::ts('Unknown: Shares contact information'),
+        'description' => E::ts('Unknown relationship - there is shared contact information'),
+        'relationship_block.relationship_block_exclude_expired' => TRUE,
+        'relationship_block.relationship_block_exclude_pending' => FALSE,
+        'relationship_block.is_relationship_block_on_summary' => TRUE,
+      ],
+      'match' => [
+        'name_a_b',
+        'name_b_a',
+      ],
     ],
   ],
 ];

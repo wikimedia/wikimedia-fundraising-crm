@@ -74,7 +74,7 @@ abstract class CRM_Deduper_BAO_Resolver {
    * @param int $block
    * @param mixed $value
    */
-  protected function setResolvedLocationValue(string $fieldName, string $location, int $block, string $value) {
+  protected function setResolvedLocationValue(string $fieldName, string $location, int $block, $value): void {
     $this->mergeHandler->setResolvedLocationValue($fieldName, $location, $block, $value);
   }
 

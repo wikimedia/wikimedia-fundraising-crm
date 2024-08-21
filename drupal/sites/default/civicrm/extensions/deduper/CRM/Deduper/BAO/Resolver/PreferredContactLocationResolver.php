@@ -24,21 +24,21 @@ class CRM_Deduper_BAO_Resolver_PreferredContactLocationResolver extends CRM_Dedu
   }
 
   /**
-   * Should we 're-home' the entity we are about to overwrite so it's not lost
+   * Should we 're-home' the entity we are about to overwrite, so it's not lost
    *
-   * If we have 2 Home emails that are different and we wish to ensure our less preferred one is not lost
-   * then we can adjust it's location and keep it. However, if the contact already has that email
+   * If we have 2 Home emails that are different, and we wish to ensure our less preferred one is not lost
+   * then we can adjust its location and keep it. However, if the contact already has that email
    * for another location no action is required. For each entity we identify a few fields that are salient to
    * whether this holds distinct information.
    *
-   * @param string[phone|address|email] $entity
+   * @param 'phone'|'address'|'email' $entity
    * @param array $entityToConsiderRehoming
    *   Copy of the blocks for this entity from the contact to be kept.
    * @param int $blockNumber
    *
    * @return bool
    */
-  protected function isReHomingRequired($entity, array $entityToConsiderRehoming, $blockNumber): bool {
+  protected function isReHomingRequired(string $entity, array $entityToConsiderRehoming, int $blockNumber): bool {
     if (Civi::settings()->get('deduper_resolver_' . $entity) !== 'preferred_contact_with_re-assign') {
       return FALSE;
     }
@@ -55,7 +55,6 @@ class CRM_Deduper_BAO_Resolver_PreferredContactLocationResolver extends CRM_Dedu
    * @return false|int
    */
   protected function getPrimaryBlockForContact(array $entities) {
-    $primaryBlockContactToKeep = NULL;
     foreach ($entities as $block => $entity) {
       if ($entity['is_primary']) {
         return (int) $block;
@@ -70,9 +69,10 @@ class CRM_Deduper_BAO_Resolver_PreferredContactLocationResolver extends CRM_Dedu
    * We need to resolve conflicts such that
    * salient data is brought over but the primary flag remains with our contact-to-keep
    *  on the address marked as primary for them.
-   * @param string[email|phone|address] $entity
+   *
+   * @param "email"|"phone"|"address" $entity
    */
-  protected function resolveLocationsPreferringContactToKeep($entity): void {
+  protected function resolveLocationsPreferringContactToKeep(string $entity): void {
     $conflicts = $this->getAllConflictsForEntity($entity);
     $entitiesContactToDelete = $this->getLocationEntities($entity, FALSE);
     $entitiesContactToKeep = $this->getLocationEntities($entity, TRUE);
@@ -84,7 +84,7 @@ class CRM_Deduper_BAO_Resolver_PreferredContactLocationResolver extends CRM_Dedu
         if ($this->isReHomingRequired($entity, $entitiesContactToDelete[$block], $block)) {
           $this->relocateLocation($entity, $block, FALSE, FALSE);
         }
-        foreach (array_keys($blockConflicts) as $fieldName) {
+        foreach (array_keys($blockConflicts['fields'] ?? []) as $fieldName) {
           // Keep the value from the contact to keep as that is preferred contact.
           $this->setResolvedLocationValue($fieldName, $entity, $block, $entitiesContactToKeep[$block][$fieldName]);
           if ($block === $primaryBlock && $entitiesContactToDelete[$block]['is_primary'] !== $entitiesContactToKeep[$block]['is_primary']) {
@@ -109,22 +109,21 @@ class CRM_Deduper_BAO_Resolver_PreferredContactLocationResolver extends CRM_Dedu
    *
    * The contact about to be deleted is our preferred contact.
    *
-   * @param string[email|phone|address] $entity
+   * @param 'email'|'phone'|'address' $entity
    */
-  protected function resolveLocationsPreferringContactToRemove($entity): void {
+  protected function resolveLocationsPreferringContactToRemove(string $entity): void {
     $conflicts = $this->getAllConflictsForEntity($entity);
     $entitiesContactToDelete = $this->getLocationEntities($entity, FALSE);
-    $entitiesContactToKeep = $this->getLocationEntities($entity, TRUE);
     // Make sure their addresses take precedence and any from the other contact get new locations, if needed.
     if (!empty($conflicts)) {
       foreach ($conflicts as $block => $blockConflicts) {
         // Potentially relocate entities from the contact to keep to avoid overwrite.
-        if ($this->isReHomingRequired($entity, $entitiesContactToKeep[$block], $block)) {
+        if ($this->isReHomingRequired($entity, $blockConflicts['to_keep'], $block)) {
           $this->relocateLocation($entity, $block, TRUE, FALSE);
         }
-        foreach (array_keys($blockConflicts) as $fieldName) {
+        foreach (array_keys($blockConflicts['fields'] ?? []) as $fieldName) {
           // Keep the value from the contact to delete as that is preferred contact.
-          $this->setResolvedLocationValue($fieldName, $entity, $block, $entitiesContactToDelete[$block][$fieldName]);
+          $this->setResolvedLocationValue($fieldName, $entity, $block, $blockConflicts['to_remove'][$fieldName]);
         }
       }
     }

@@ -68,7 +68,7 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
       $this->loadAlternatives($contact1FirstName);
       $this->loadAlternatives($contact2FirstName);
       $hasNickName = !empty($contact1['nick_name']) || !empty($contact2['nick_name']);
-      $this->resolveNamesForPair($contact1FirstName, $contact2FirstName, TRUE, $hasNickName );
+      $this->resolveNamesForPair($contact1FirstName, $contact2FirstName, TRUE, $hasNickName);
       $this->resolveNamesForPair($contact2FirstName, $contact1FirstName, FALSE, $hasNickName);
       if ($this->isResolveEquivalentNamesOnPreferredContact($contact1FirstName, $contact2FirstName)) {
         $this->setResolvedValue('first_name', $this->getPreferredContactValue('first_name'));
@@ -215,7 +215,7 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
   }
 
   /**
-   * Interpret the setting into it's components.
+   * Interpret the setting into its components.
    */
   protected function interpretSetting() {
     $this->nameHandlingSetting = $this->getSetting('deduper_equivalent_name_handling');

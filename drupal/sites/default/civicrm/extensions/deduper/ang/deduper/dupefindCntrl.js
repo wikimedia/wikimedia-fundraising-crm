@@ -24,10 +24,13 @@
             return crmApi('ruleGroup', 'get', {
             });
           },
-          setting: function(crmApi) {
-            return crmApi('setting', 'get', {
-              'return': 'deduper_equivalent_name_handling'
-            });
+          settings: function(crmApi4) {
+            return crmApi4('Setting', 'get', {
+              select: [
+                'deduper_exception_relationship_type_id',
+                'deduper_equivalent_name_handling',
+              ],
+            }, 'name');
           },
           settingLabels: function(crmApi) {
             return crmApi('setting', 'getoptions', {'field' : 'deduper_equivalent_name_handling'
@@ -44,7 +47,7 @@
 
 
 //   myContact -- The current contact, defined above in config().
-  angular.module('deduper').controller('DeduperdupefindCntrl', function($scope, $routeParams, $timeout, crmApi, crmStatus, crmUiHelp, crmApi4, contactFields, ruleGroups, setting, settingLabels) {
+  angular.module('deduper').controller('DeduperdupefindCntrl', function($scope, $routeParams, $timeout, crmApi, crmStatus, crmUiHelp, crmApi4, contactFields, ruleGroups, settings, settingLabels, crmUiAlert) {
     // Main angular function.
     // The ts() and hs() functions help load strings for this module.
     var ts = $scope.ts = CRM.ts('deduper');
@@ -97,7 +100,8 @@
     $scope.numberMatchesToFetch = 250;
     $scope.tilesToShow = 4;
     // @todo - the 1 below assumes domain id 1.
-    $scope.equivalentNameSetting = settingLabels['values'][setting['values'][1]['deduper_equivalent_name_handling']];
+
+    $scope.equivalentNameSetting = settingLabels['values'][settings['deduper_equivalent_name_handling']['value']];
     vm.showTiles = true;
 
     _.each(ruleGroups['values'], function(spec) {
@@ -108,6 +112,7 @@
     });
     $scope.hasMerged = false;
     $scope.isMerging = false;
+    $scope.exceptionRelationshipType = settings['deduper_exception_relationship_type_id']['value'];
 
     $scope.entity = $routeParams.api4entity;
 
@@ -281,14 +286,56 @@
     $scope.dedupeException = function dedupeException(mainID, otherID, currentPage) {
       $scope.currentPage = currentPage;
       $scope.isRowMerging = true;
-      crmApi('Exception', 'create', {
-        'contact_id1' : mainID,
-        'contact_id2' : otherID
+      crmApi4('DedupeException', 'create', {
+        'values' : {
+          'contact_id1': mainID,
+          'contact_id2': otherID,
+        }
       }).then(function (data) {
-        $scope.isRowMerging = false;
-          removeMergedMatch(mainID, otherID);
+        $scope.isRowMergisRowMerging = false;
+            removeMergedMatch(mainID, otherID);ing = false;
+        removeMergedMatch(mainID, otherID);
       });
     };
+
+    $scope.dedupeExceptionWithRelationship = function dedupeExceptionWithRelationship(mainID, otherID, currentPage) {
+      crmApi4('Relationship', 'get', {
+        select: ["row_count"],
+        where: [
+          ["contact_id_a", "=", mainID],
+          ["contact_id_b", "=", otherID],
+          ["relationship_type_id", "=", $scope.exceptionRelationshipType],
+          ["is_active", "=", true],
+        ],
+        limit: 1
+      }).then(function (data) {
+        if (data['countMatched'] > 0) {
+          $scope.dedupeException(mainID, otherID, currentPage);
+        }
+        else {
+          crmApi4('Relationship', 'save', {
+            'records' : [{
+              'contact_id_a': mainID,
+              'contact_id_b': otherID,
+              'start_date' : 'now',
+              'is_active' : true,
+              'relationship_type_id' : $scope.exceptionRelationshipType,
+              'description': ts('Contact marked not a duplicate'),
+            }],
+            // We do save + match in case they have an inactive relationship.
+            'match' : ['contact_id_a', 'contact_id_b', 'relationship_type_id'],
+          }).then(
+            function (data) {
+              $scope.dedupeException(mainID, otherID, currentPage);
+            },
+            function (failure){
+              crmUiAlert({text: ts('Relationship not saved but contacts marked non-duplicate') + '<br>' + failure.error_message , title: ts('Relationship not saved'), type: 'error'});
+             $scope.dedupeException(mainID, otherID, currentPage);
+            }
+          );
+        }
+      });
+    }
 
     /**
      * Move a pair out of the current set of matches.

@@ -14,14 +14,11 @@
     <url desc="Support">https://github.com/eileenmcnaughton/deduper/issues</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2024-02-14</releaseDate>
-  <version>1.9</version>
+  <releaseDate>2024-08-01</releaseDate>
+  <version>1.10</version>
   <develStage>stable</develStage>
-  <requires>
-    <ext>org.civicrm.afform</ext>
-  </requires>
   <compatibility>
-    <ver>5.67</ver>
+    <ver>5.75</ver>
   </compatibility>
   <comments>Tools to help with deduping</comments>
   <civix>
@@ -34,8 +31,8 @@
     <mixin>menu-xml@1.0.0</mixin>
     <mixin>mgd-php@1.0.0</mixin>
     <mixin>setting-php@1.0.0</mixin>
-    <mixin>smarty-v2@1.0.0</mixin>
     <mixin>entity-types-php@1.0.0</mixin>
+    <mixin>smarty@1.0.3</mixin>
   </mixins>
   <classloader>
     <psr0 prefix="CRM_" path=""/>
