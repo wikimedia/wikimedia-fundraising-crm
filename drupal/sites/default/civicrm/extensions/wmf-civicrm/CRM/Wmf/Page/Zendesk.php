@@ -22,7 +22,7 @@ class CRM_Wmf_Page_Zendesk extends CRM_Core_Page {
     $requestAuthHeaders = $this->getApiAuthHeaders($zendesk_api_user, $zendesk_api_password);
 
     // fetch Zendesk open ticket data via API
-    $openTicketSearchParams = "submitter:{$contactEmail} status<solved";
+    $openTicketSearchParams = "requester:{$contactEmail} status<solved";
     $openTicketsRequest = new Request('GET', "{$zendeskURL}/api/v2/search.json?query=$openTicketSearchParams", $requestAuthHeaders);
     $openTicketsResponse = $zendeskApiClient->sendAsync($openTicketsRequest)->wait();
     $openTickets = json_decode($openTicketsResponse->getBody(), TRUE);
@@ -31,7 +31,7 @@ class CRM_Wmf_Page_Zendesk extends CRM_Core_Page {
     }
 
     // fetch Zendesk closed ticket data via API
-    $closedTicketSearchParams = "submitter:{$contactEmail} status:solved";
+    $closedTicketSearchParams = "requester:{$contactEmail} status:solved";
     $closedTicketsRequest = new Request('GET', "{$zendeskURL}/api/v2/search.json?query=$closedTicketSearchParams", $requestAuthHeaders);
     $closedTicketsResponse = $zendeskApiClient->sendAsync($closedTicketsRequest)->wait();
     $closedTickets = json_decode($closedTicketsResponse->getBody(), TRUE);
