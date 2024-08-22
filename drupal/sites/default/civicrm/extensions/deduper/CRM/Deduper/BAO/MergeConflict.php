@@ -127,6 +127,7 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
     return Email::getFields(FALSE)
       ->setLoadOptions(TRUE)
       ->addWhere('name', '=', 'location_type_id')
+      ->addOrderBy('id')
       ->execute()->first()['options'];
   }
 
