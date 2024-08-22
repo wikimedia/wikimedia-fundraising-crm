@@ -943,6 +943,57 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test handling when contacts with multiple locations are resolved.
+   *
+   * This very specific variant had a bug... it was hard to get the exact scenario
+   * but it is the order of blocks around the matching email.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @throws \CRM_Core_Exception
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testEmailMergeWithLocationWranglingVariant(bool $isReverse): void {
+    $this->setLocationHandlingToReassign();
+
+    // The first contact has their matching email in the 'another' type.
+    $this->createDuplicateIndividuals([[], ['email_primary.email' => 'bob-shared@example.org']]);
+
+    $this->createTestEntity('Email', [
+      'location_type_id:name' => 'Billing',
+      'email' => 'bob1-billing@example.org',
+      'contact_id' => $this->ids['Contact'][0],
+    ]);
+
+    $this->createTestEntity('Email', [
+      'location_type_id:name' => 'Other',
+      'email' => 'bob-shared@example.org',
+      'contact_id' => $this->ids['Contact'][0],
+    ]);
+
+    $this->createTestEntity('Email', [
+      'location_type_id:name' => 'Billing',
+      'email' => 'bob2-billing@example.com',
+      'contact_id' => $this->ids['Contact'][1],
+    ]);
+
+    $contact = $this->doMerge($isReverse);
+    $emails = (array) Email::get(FALSE)
+      ->addSelect('email', 'location_type_id:name', 'contact_id')
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->execute()->indexBy('email');
+    $this->assertCount(4, $emails);
+    $this->assertEquals([
+      'bob@example.com',
+      'bob-shared@example.org',
+      'bob1-billing@example.org',
+      'bob2-billing@example.com',
+    ], array_keys($emails));
+  }
+
+  /**
    * Test that we don't see country only as conflicting with country plus.
    *
    * Bug T176699

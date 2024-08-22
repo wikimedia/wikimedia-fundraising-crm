@@ -701,7 +701,7 @@ class CRM_Deduper_BAO_MergeHandler {
    */
   public function isBlockUnique(string $locationEntity, array $entityToConsiderRehoming, int $blockNumber): bool {
     foreach ($this->getAllLocationBlocks($locationEntity) as $existingEntity) {
-      if ($existingEntity['block'] !== $blockNumber && $this->isBlockEquivalent($locationEntity, $existingEntity, $entityToConsiderRehoming)) {
+      if ($existingEntity['id'] !== $entityToConsiderRehoming['id'] && $this->isBlockEquivalent($locationEntity, $existingEntity, $entityToConsiderRehoming)) {
         return FALSE;
       }
     }
