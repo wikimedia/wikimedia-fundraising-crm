@@ -2585,6 +2585,23 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Finish finishing removing the fields from 4570.
+   *
+   * Bug: T353971
+   *
+   * @return bool
+   */
+  public function upgrade_4580(): bool {
+    $isAdded = CRM_Core_DAO::executeQuery("SHOW columns FROM log_civicrm_value_1_gift_data_7 WHERE Field LIKE 'package_377' OR Field LIKE 'channel_378'");
+    if ($isAdded) {
+      CRM_Core_DAO::executeQuery('ALTER TABLE log_civicrm_value_1_gift_data_7
+         DROP column package_377,
+         DROP column channel_378');
+    }
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
