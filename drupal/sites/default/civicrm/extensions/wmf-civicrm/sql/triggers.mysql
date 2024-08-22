@@ -3569,31 +3569,3 @@ UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.enti
 CREATE TRIGGER wmf_external_contact_identifiers_after_delete after delete ON wmf_external_contact_identifiers FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_wmf_external_contact_identifiers (`id`, `entity_id`, `fundraiseup_id`, `venmo_user_name`, `gravy_id`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`fundraiseup_id`, OLD.`venmo_user_name`, OLD.`gravy_id`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id; END //
 DELIMITER ;
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_email_before_insert //
-DROP TRIGGER IF EXISTS civicrm_value_email_before_update //
-DROP TRIGGER IF EXISTS civicrm_value_email_before_delete //
-DROP TRIGGER IF EXISTS civicrm_value_email_after_insert //
-DROP TRIGGER IF EXISTS civicrm_value_email_after_update //
-DROP TRIGGER IF EXISTS civicrm_value_email_after_delete //
-
-CREATE TRIGGER civicrm_value_email_after_insert after insert ON civicrm_value_email FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_email (`id`, `entity_id`, `snooze_date`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`snooze_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
-
-CREATE TRIGGER civicrm_value_email_after_update after update ON civicrm_value_email FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`snooze_date`,'') <> IFNULL(NEW.`snooze_date`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_email (`id`, `entity_id`, `snooze_date`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`snooze_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
-
-CREATE TRIGGER civicrm_value_email_after_delete after delete ON civicrm_value_email FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_email (`id`, `entity_id`, `snooze_date`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`snooze_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
-DELIMITER ;
-DELIMITER //
-DROP TRIGGER IF EXISTS civicrm_value_email_before_insert //
-DROP TRIGGER IF EXISTS civicrm_value_email_before_update //
-DROP TRIGGER IF EXISTS civicrm_value_email_before_delete //
-DROP TRIGGER IF EXISTS civicrm_value_email_after_insert //
-DROP TRIGGER IF EXISTS civicrm_value_email_after_update //
-DROP TRIGGER IF EXISTS civicrm_value_email_after_delete //
-
-CREATE TRIGGER civicrm_value_email_after_insert after insert ON civicrm_value_email FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_email (`id`, `entity_id`, `snooze_date`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`snooze_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF; END //
-
-CREATE TRIGGER civicrm_value_email_after_update after update ON civicrm_value_email FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`snooze_date`,'') <> IFNULL(NEW.`snooze_date`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_email (`id`, `entity_id`, `snooze_date`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`snooze_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
-
-CREATE TRIGGER civicrm_value_email_after_delete after delete ON civicrm_value_email FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_email (`id`, `entity_id`, `snooze_date`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`snooze_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
-DELIMITER ;
