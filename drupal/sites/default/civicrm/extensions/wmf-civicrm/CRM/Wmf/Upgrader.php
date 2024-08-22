@@ -2530,6 +2530,41 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Add last-name, first_name index for improved dedupe queries.
+   *
+   * This took about a minute of doing a dedupe find on the first_name,
+   *
+   * Bug: T353971
+   *
+   * @return bool
+   */
+  public function upgrade_4570(): bool {
+    $isAdded = CRM_Core_DAO::executeQuery("SHOW columns FROM civicrm_value_1_gift_data_7 WHERE Field LIKE 'package_377' OR Field LIKE 'channel_378'");
+    if ($isAdded->N) {
+      CRM_Core_DAO::executeQuery('ALTER TABLE  civicrm_value_1_gift_data_7
+        ADD COLUMN package varchar(255) DEFAULT NULL,
+        ADD COLUMN channel varchar(255) DEFAULT NULL,
+        ADD INDEX `index_package` (`package`),
+        ADD INDEX `index_channel` (`channel`)
+      ');
+      CRM_Core_DAO::executeQuery('UPDATE civicrm_custom_field SET column_name = "package" WHERE "column_name = package_377"');
+      CRM_Core_DAO::executeQuery('UPDATE civicrm_custom_field SET column_name = "channel" WHERE "column_name = channel_378"');
+      civicrm_api3('System', 'flush');
+      CRM_Core_DAO::executeQuery('UPDATE civicrm_value_1_gift_data_7 SET package = package_377 WHERE package_377 IS NOT NULL');
+
+      CRM_Core_DAO::executeQuery('UPDATE civicrm_value_1_gift_data_7 SET channel = channel_378 WHERE civicrm_value_1_gift_data_7.channel_378 IS NOT NULL');
+      CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_value_1_gift_data_7
+         DROP INDEX index_package_377,
+         DROP INDEX index_channel_378');
+
+      // We also want to drop columns - but AFTER triggers are re-loaded
+      // DROP COLUMN package_377,
+      // DROP COLUMN channel_378,
+    }
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
