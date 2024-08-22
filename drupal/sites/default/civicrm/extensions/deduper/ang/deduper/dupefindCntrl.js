@@ -292,7 +292,7 @@
           'contact_id2': otherID,
         }
       }).then(function (data) {
-        $scope.isRowMergisRowMerging = false;
+        $scope.isRowMerging = false;
             removeMergedMatch(mainID, otherID);ing = false;
         removeMergedMatch(mainID, otherID);
       });
