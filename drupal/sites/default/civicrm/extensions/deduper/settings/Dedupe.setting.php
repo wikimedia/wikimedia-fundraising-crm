@@ -111,6 +111,42 @@ return [
       'callback' => 'CRM_Deduper_BAO_MergeConflict::getEquivalentNameOptions',
     ],
   ],
+  'deduper_subset_name_handling' => [
+    'group_name' => 'Deduper Settings',
+    'group' => 'deduper',
+    'name' => 'deduper_subset_name_handling',
+    'type' => 'Array',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('Fields where we resolve conflicts on the preferred contact is one is a subset of the other - e.g. Bob M would merge with Bob Matthew if both are in first name & that is selected here'),
+    'default' => [],
+    'title' => E::ts('Fields for which a subset should be merged'),
+    'help_text' => '',
+    'html_type' => 'select',
+    'html_attributes' => [
+      'class' => 'crm-select2',
+      'multiple' => 1,
+    ],
+    'settings_pages' => ['deduper' => ['weight' => 120]],
+    'pseudoconstant' => [
+      'callback' => 'CRM_Deduper_BAO_MergeConflict::getContactFields',
+    ],
+  ],
+  'deduper_subset_name_handling_abort_strings' => [
+    'group_name' => 'Deduper Settings',
+    'group' => 'deduper',
+    'name' => 'deduper_subset_name_handling_abort_strings',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('Comma separated array of strings to avoid. If these are present subset name handling is skipped. This is to avoid merging Bob with Bob Jr'),
+    // This setting is only accessed if deduper_subset_name_handling is configured, but it still makes sense to have a useful default.
+    'default' => "jr, jr., junior, sr, sr., senior, ii",
+    'title' => E::ts('Strings that will cause subset name handling to not be applied'),
+    'help_text' => '',
+    'html_type' => 'text',
+    'settings_pages' => ['deduper' => ['weight' => 120]],
+  ],
   // This doesn't work very well in the UI but we can set it via the api for now which I figure that out.
   'deduper_location_priority_order' => [
     'name' => 'deduper_location_priority_order',

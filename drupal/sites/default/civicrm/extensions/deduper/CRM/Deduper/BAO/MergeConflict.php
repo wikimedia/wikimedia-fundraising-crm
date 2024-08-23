@@ -85,7 +85,7 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
     return array_intersect_key(self::getPreferredContactCriteria(),
       array_fill_keys([
         'most_recently_created_contact',
-        'earliest_created_contact'
+        'earliest_created_contact',
       ], 1)
     );
   }
