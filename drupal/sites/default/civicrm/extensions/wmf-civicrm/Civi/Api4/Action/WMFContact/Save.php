@@ -79,9 +79,8 @@ class Save extends AbstractAction {
     // Create the contact record
     $contact = [
       'contact_type' => $msg['contact_type'] ?? 'Individual',
-      'contact_source' => $msg['contact_source'] ?? 'online donation',
+      'source' => $msg['contact_source'] ?? 'online donation',
       'debug' => TRUE,
-      'addressee_id' => empty($msg['addressee_custom']) ? NULL : 'Customized',
       // Major gifts wants greeting processing - but we are not sure speedwise.
       'skip_greeting_processing' => !\Civi::settings()->get('wmf_save_process_greetings_on_create'),
     ];
@@ -100,40 +99,28 @@ class Save extends AbstractAction {
     if (!empty($msg['email'])) {
       // For updates we are still using our own process which may or may not confer benefits
       // For inserts however we can rely on the core api.
-      $contact['email'] = $msg['email'];
+      $contact['email_primary.email'] = $msg['email'];
     }
 
     $preferredLanguage = $this->getPreferredLanguage($msg);
     if ($preferredLanguage) {
       $contact['preferred_language'] = $preferredLanguage;
     }
-    $contact += $this->getApiReadyFields(3);
-
-    $custom_vars = [];
-    $custom_field_mangle = [
-      'opt_in' => 'opt_in',
-      'do_not_solicit' => 'do_not_solicit',
-      'org_contact_name' => 'Name',
-      'org_contact_title' => 'Title',
-      'employer' => 'Employer_Name',
-      'Organization_Contact.Phone' => 'Phone',
-      'Organization_Contact.Email' => 'Email',
-      // These 2 fields already have aliases but adding
-      // additional ones with the new standard allows migration
-      // and means that the import file does not have to mix and match.
-      'Organization_Contact.Title' => 'Title',
-      'Organization_Contact.Name' => 'Name',
+    $contact += $this->getApiReadyFields(4);
+    // These fields have historically been permitted for create but not
+    // update - or they would be in getApiReadyFields()
+    $allowedCreateFields = [
+      'Communication.opt_in',
+      'Communication.do_not_solicit',
+      'Organization_Contact.Name',
+      'Organization_Contact.Title',
+      'Communication.Employer_Name',
+      'Organization_Contact.Phone',
+      'Organization_Contact.Email',
     ];
-    foreach ($custom_field_mangle as $msgField => $customField) {
-      if (isset($msg[$msgField])) {
-        $custom_vars[$customField] = $msg[$msgField];
-      }
-    }
-
-    $custom_name_mapping = wmf_civicrm_get_custom_field_map(array_keys($custom_vars));
-    foreach ($custom_name_mapping as $readable => $machined) {
-      if (array_key_exists($readable, $custom_vars)) {
-        $contact[$machined] = $custom_vars[$readable];
+    foreach ($allowedCreateFields as $customField) {
+      if (isset($this->message[$customField])) {
+        $contact[$customField] = $this->message[$customField];
       }
     }
 
@@ -143,7 +130,9 @@ class Save extends AbstractAction {
     // Attempt to insert the contact
     try {
       $this->startTimer('create_contact_civi_api');
-      $contact_result = civicrm_api3('Contact', 'Create', $contact);
+      $contact_result = Contact::create(FALSE)
+        ->setValues($contact)
+        ->execute()->single();
       $this->stopTimer('create_contact_civi_api');
       \Civi::log('wmf')->debug('wmf_civicrm: Successfully created contact: {id}', ['id' => $contact_result['id']]);
       $this->createEmployerRelationshipIfSpecified($contact_result['id'], $msg);

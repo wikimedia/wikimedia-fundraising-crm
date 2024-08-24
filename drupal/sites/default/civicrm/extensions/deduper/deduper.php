@@ -1,12 +1,14 @@
 <?php
 
 require_once 'deduper.civix.php';
+use Civi\Api4\DedupeRule;
+use Civi\Api4\UserJob;
 use Symfony\Component\DependencyInjection\Definition;
 use CRM_Deduper_ExtensionUtil as E;
 use Civi\Api4\Email;
 use Civi\Api4\Phone;
 use Civi\Api4\Address;
-
+use Civi\Api4\Service\Spec\Provider\ContactFullNameSpecProvider;
 
 // checking if the file exists allows compilation elsewhere if desired.
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
@@ -352,13 +354,19 @@ function deduper_civicrm_alterLocationMergeData(&$blocksDAO, $mainId, $otherId, 
  */
 function deduper_civicrm_container($container) {
   $container->setDefinition('cache.dedupe_pairs', new Definition(
-    'CRM_Utils_Cache_Interface',
-    [[
-      'type' => ['*memory*', 'ArrayCache'],
-      'name' => 'dedupe_pairs',
-      'withArray' => 'fast',
-    ]]
+    'CRM_Utils_Cache_Interface', [
+      [
+        'type' => ['*memory*', 'ArrayCache'],
+        'name' => 'dedupe_pairs',
+        'withArray' => 'fast',
+      ],
+    ]
   ))->setPublic(TRUE)->setFactory('CRM_Utils_Cache::create');
+
+  $container->setDefinition('civi.api.prepare', new Definition(
+    ContactFullNameSpecProvider::class,
+    []
+  ))->addTag('kernel.event_subscriber')->setPublic(TRUE);
 }
 
 /**
@@ -370,4 +378,71 @@ function deduper_civicrm_container($container) {
  */
 function deduper_civicrm_entityTypes(&$entityTypes) {
   $entityTypes['CRM_Deduper_DAO_ContactNamePairFamily']['links_callback'][] = ['CRM_Deduper_BAO_ContactNamePairFamily', 'alterLinks'];
+}
+
+
+/**
+ * @param $formName
+ * @param $fields
+ * @param $files
+ * @param CRM_Contribute_Import_Form_MapField $form
+ * @param $errors
+ *
+ * @return void
+ */
+function deduper_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors): void {
+  if ($formName !== 'CRM_Contribute_Import_Form_MapField') {
+    return;
+  }
+
+  // //"Missing required contact matching fields.  first_name(weight 5) last_name(weight 5) street_address(weight 5) middle_name(weight 1) suffix_id(weight 1) (Sum of all weights should be greater than or equal to threshold: 15).<br />";
+  $requiredFieldsError = $form->getElementError('_qf_default');
+  // Regular expression pattern to extract weights and threshold. So says ChatGPT.
+  $pattern = '/first_name\(weight (\d+)\).*last_name\(weight (\d+)\).*threshold:\s*(\d+)/';
+
+  // Perform the regex match
+  if (preg_match($pattern, $requiredFieldsError, $matches)) {
+    $firstNameWeight = (int) $matches[1];
+    $lastNameWeight = (int) $matches[2];
+    $threshold = (int) $matches[3];
+    if ($threshold) {
+      $remainingThreshold = $threshold - $firstNameWeight - $lastNameWeight;
+      if ($remainingThreshold <= 0) {
+        // We can git rid of this error as we have the full_name.
+        $form->setElementError('_qf_default', NULL);
+        return;
+      }
+      $metadata = UserJob::get(FALSE)
+        ->addWhere('id', '=', $form->getUserJobID())
+        ->addSelect('metadata')
+        ->execute()->first()['metadata'];
+      $mappedValues = $fields['mapper'];
+      $mappedFields = [];
+      foreach ($mappedValues as $mappedValue) {
+        if ($mappedValue[0]) {
+          $fieldName = str_replace('__', '.', $mappedValue[0]);
+          if (str_contains($fieldName, '.')) {
+            // If the field name contains a . - eg. address_primary.street_address
+            // we just want the part after the .
+            $fieldName = substr($fieldName, strpos($fieldName, '.') + 1);
+          }
+          $mappedFields[] = $fieldName;
+        }
+      }
+      $dedupeFields = DedupeRule::get(FALSE)
+        ->addWhere('dedupe_rule_group_id.name', '=', $metadata['entity_configuration']['Contact']['dedupe_rule'])
+        ->execute();
+      foreach ($dedupeFields as $field) {
+        if (in_array($field['rule_field'], $mappedFields, TRUE)) {
+          $remainingThreshold = $remainingThreshold - $field['rule_weight'];
+          if ($remainingThreshold <= 0) {
+            // We can git rid of this error as we have the full_name.
+            $form->setElementError('_qf_default', NULL);
+            return;
+          }
+        }
+      }
+    }
+  }
+
 }

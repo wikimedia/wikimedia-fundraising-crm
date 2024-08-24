@@ -310,6 +310,9 @@ class Message {
       'stock_description' => 'Stock_Information.Description_of_Stock',
       'postmark_date' => 'contribution_extra.Postmark_Date',
       'gateway_status' => 'contribution_extra.gateway_status_raw',
+      'do_not_solicit' => 'Communication.do_not_solicit',
+      'opt_in' => 'Communication.opt_in',
+      'employer' => 'Communication.Employer_Name',
     ];
     if (!empty($fieldsToMap[$name])) {
       $name = $fieldsToMap[$name];
