@@ -700,7 +700,7 @@ abstract class BaseAuditProcessor {
         }
       }
       closedir($handle);
-      ksort($files_by_sort_key);
+      krsort($files_by_sort_key);
       // now flatten it
       $files = [];
 
