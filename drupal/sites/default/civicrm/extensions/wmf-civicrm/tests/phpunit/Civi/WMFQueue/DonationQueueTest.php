@@ -1954,6 +1954,107 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * When we get a contact ID and matching hash and email, update instead of
+   * creating new contact.
+   */
+  public function testImportWithContactIdAndHash(): void {
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+    ], 'existing');
+    $email = 'booboo' . mt_rand() . '@example.org';
+    $this->createTestEntity('Email', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'email' => $email,
+      'location_type_id' => 1,
+    ]);
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'location_type_id' => 1,
+    ]);
+    $expectedEmployer = "Subotnik's Apple Orchard";
+    $msg = [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'contact_hash' => $existingContact['hash'],
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'email' => $email,
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'employer' => $expectedEmployer,
+    ];
+    $contribution = $this->processDonationMessage($msg);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $existingContact['id'])
+      ->addWhere('location_type_id:name', '=', 'Home')
+      ->execute()->single();
+    $this->assertEquals($msg['street_address'], $address['street_address']);
+    $contact = Contact::get(FALSE)
+      ->addWhere('id', '=', $existingContact['id'])
+      ->addSelect('Communication.Employer_Name')
+      ->execute()->single();
+
+    $this->assertEquals($expectedEmployer, $contact['Communication.Employer_Name']);
+  }
+
+  /**
+   * If we get a contact ID and a bad hash, leave the existing contact alone
+   */
+  public function testImportWithContactIdAndBadHash(): void {
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+    ], 'existing');
+    $email = 'booboo' . mt_rand() . '@example.org';
+    $this->createTestEntity('Email', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'email' => $email,
+      'location_type_id' => 1,
+    ]);
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'location_type_id' => 1,
+    ]);
+    $msg = [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'first_name' => 'Lex',
+      'contact_hash' => 'This is not a valid hash',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => $email,
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $existingContact['id'])
+      ->addWhere('location_type_id:name', '=', 'Home')
+      ->execute()->single();
+    $this->assertNotEquals($msg['street_address'], $address['street_address']);
+  }
+
+  /**
    * @param string $gatewayTxnID
    * @return array|null
    */
