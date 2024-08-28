@@ -29,9 +29,6 @@
     <testsuite name="wmf_campaigns tests">
       <directory>drupal/sites/all/modules/wmf_campaigns/tests</directory>
     </testsuite>
-    <testsuite name="wmf_civicrm tests">
-      <directory>drupal/sites/all/modules/wmf_civicrm/tests/phpunit</directory>
-    </testsuite>
     <testsuite name="wmf_common tests">
       <directory>drupal/sites/all/modules/wmf_common/tests/phpunit</directory>
     </testsuite>

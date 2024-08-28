@@ -1,13 +1,14 @@
 <?php
 
-use Civi\WMFException\WMFException;
-use Civi\WMFQueueMessage\DonationMessage;
+namespace Civi\WMFQueueMessage;
 
-/**
- * @group Pipeline
- * @group WmfCivicrm
- */
-class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
+use Civi\Test\HeadlessInterface;
+use Civi\WMFEnvironmentTrait;
+use PHPUnit\Framework\TestCase;
+
+class DonationMessageTest extends TestCase implements HeadlessInterface {
+
+  use WMFEnvironmentTrait;
 
   public function testDoubleNormalization(): void {
     // Start with a message already in normal form, to make comparison easy
@@ -85,7 +86,7 @@ class NormalizeMessageTest extends BaseWmfDrupalPhpUnitTestCase {
     $this->assertEquals($original_msg, $normal_msg_2);
   }
 
-  public function testGetPaymentInstrumenReturnNullInNormalizeMsg(): void {
+  public function testGetPaymentInstrumentReturnNullInNormalizeMsg(): void {
     // Initialize message with no payment_instrument_id, payment_instrument, gateway, and payment_method set.
     $original_msg = [
       'anonymous' => 0,
