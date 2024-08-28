@@ -902,6 +902,23 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   }
 
   /**
+   * Test handling when contacts with the same primary address are resolved.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @throws \CRM_Core_Exception
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testAddressMergeWithLocationWranglingSameHomePrimary(bool $isReverse): void {
+    $this->setSetting('deduper_resolver_address', 'preferred_contact');
+    $this->createDuplicateIndividuals([['address_primary.postal_code' => '90210', 'address_primary.postal_code_suffix' => '911'], ['address_primary.postal_code' => '90210-911']]);
+    $this->doBatchMerge($this->ids['Contact'][(int) $isReverse]);
+
+  }
+
+  /**
    * Test that we don't treat the addition of a postal suffix only as a conflict.
    *
    * Bug T177807

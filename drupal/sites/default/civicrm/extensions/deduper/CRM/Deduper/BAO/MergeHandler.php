@@ -913,13 +913,16 @@ class CRM_Deduper_BAO_MergeHandler {
       if (strpos($conflictedField, 'location_' . $entity) === 0) {
         $blockNumber = (int) (str_replace('location_' . $entity . '_', '', $conflictedField));
         if ($entity === 'email') {
-          $conflicts[$blockNumber] = $this->getEmailConflictDetails($blockNumber);
+          $blockConflicts = $this->getEmailConflictDetails($blockNumber);
         }
         if ($entity === 'address') {
-          $conflicts[$blockNumber] = $this->getAddressConflictDetails($blockNumber);
+          $blockConflicts = $this->getAddressConflictDetails($blockNumber);
         }
         if ($entity === 'phone') {
-          $conflicts[$blockNumber] = $this->getPhoneConflictDetails($blockNumber);
+          $blockConflicts = $this->getPhoneConflictDetails($blockNumber);
+        }
+        if (!empty($blockConflicts)) {
+          $conflicts[$blockNumber] = $blockConflicts;
         }
       }
     }
@@ -935,7 +938,7 @@ class CRM_Deduper_BAO_MergeHandler {
    *   Conflicts in addresses.
    */
   public function getAddressConflicts(int $blockNumber):array {
-    return $this->getAddressConflictDetails($blockNumber)['fields'];
+    return $this->getAddressConflictDetails($blockNumber)['fields'] ?? [];
   }
 
   /**
