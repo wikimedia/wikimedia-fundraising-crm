@@ -1204,6 +1204,18 @@ class DonationQueueTest extends BaseQueueTestCase {
           'contribution' => $this->getBaseContribution(7272727),
         ],
       ],
+      'Backend processor fields' => [
+        'message' => array_merge(
+          $this->getMinimalImportData('1234-abcd'), [
+            'backend_processor' => 'adyen',
+            'backend_processor_txn_id' => '5678-efgh',
+        ] ),
+        'expected' => [
+          'contribution' => $this->getBaseContribution('1234-abcd'),
+          'contribution_extra.backend_processor' => 'adyen',
+          'contribution_extra.backend_processor_txn_id' => '5678-efgh',
+        ],
+      ],
     ];
   }
 
