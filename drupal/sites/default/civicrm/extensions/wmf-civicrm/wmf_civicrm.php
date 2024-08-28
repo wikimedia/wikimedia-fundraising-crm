@@ -44,6 +44,7 @@ function wmf_civicrm_civicrm_config(&$config) {
       }
     }
   });
+  Civi::dispatcher()->addListener('civi.api.prepare', ['Civi\WMFHook\Contribution', 'apiPrepare']);
 }
 
 /**

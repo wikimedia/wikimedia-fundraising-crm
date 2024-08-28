@@ -93,7 +93,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->runImport($data);
     $contribution = Contribution::get()->addWhere('contact_id', '=', $this->ids['Contact']['organization'])->addSelect(
       'contribution_extra.gateway',
-        'contribution_extra.no_thank_you',
+      'contribution_extra.no_thank_you',
       'source'
     )->execute()->single();
 
@@ -277,6 +277,40 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // Creating the soft credit should have created a relationship.
     $relationship = Relationship::get()->addWhere('contact_id_a', '=', $this->ids['Contact']['has_soft_credit'])->execute()->first();
     $this->assertEquals($this->ids['Organization'], $relationship['contact_id_b']);
+  }
+
+  /**
+   * Test that we can handling imports in non USD.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testCurrencySetsSource(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email_primary.email' => 'jane@example.com',
+    ], 'individual_1');
+    $data = $this->setupImport([
+      'trxn_id' => 'abc',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '200',
+      'total_amount' => '50',
+      'organization_name' => '',
+    ]);
+
+    $this->runImport($data, 'Individual');
+    // The contacts have 2 contributions with soft credits - use greater than filter
+    // to exclude the one that already existed.
+    $contribution = Contribution::get()
+      ->addWhere('trxn_id', '=', 'abc')
+      ->addSelect(
+        'custom.*',
+        'source',
+        'total_amount'
+      )->execute()->first();
+    $this->assertEquals('PLN 200.00', $contribution['source']);
+    $this->assertEquals(50, $contribution['total_amount']);
   }
 
   /**

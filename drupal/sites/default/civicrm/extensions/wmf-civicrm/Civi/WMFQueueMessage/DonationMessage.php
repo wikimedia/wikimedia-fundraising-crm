@@ -190,8 +190,8 @@ class DonationMessage extends Message {
         ['old' => $msg['currency'], 'new' => $this->getSettlementCurrency()]);
     }
 
-    $msg['original_gross'] = $this->getOriginalAmount();
-    $msg['original_currency'] = $this->getOriginalCurrency();;
+    $msg['original_gross'] = $msg['contribution_extra.original_amount'] = $this->getOriginalAmount();
+    $msg['original_currency'] = $msg['contribution_extra.original_currency'] = $this->getOriginalCurrency();
     $msg['currency'] = $this->getSettlementCurrency();
     $msg['fee'] = $this->getSettledFeeAmountRounded();
     $msg['gross'] = $this->getSettledAmountRounded();

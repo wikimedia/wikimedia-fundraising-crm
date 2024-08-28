@@ -471,7 +471,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
   /**
    * @throws \CRM_Core_Exception
    */
-  public function testImportRefundDonationMessages() {
+  public function testImportRefundDonationMessages(): void {
     $audit = $this->auditTestProvider();
     $donation = $audit[0][1]['donations'][3];
     $refund = $audit[1][1]['refund'][0];

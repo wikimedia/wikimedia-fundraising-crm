@@ -2,12 +2,63 @@
 
 namespace Civi\WMFHook;
 
+use Civi\API\Event\PrepareEvent;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\Contribution as ContributionHelper;
 use Civi\WMFHelper\Database;
 use Civi\WMFTransaction;
+use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class Contribution {
+
+  /**
+   * Intervene with apiv4 Contribution create & edit calls to set `source`.
+   *
+   * This ensures that on our Donation Queue processing and on imports
+   * the `source` field is populated based on the original currency &
+   * original amount, if they are present.
+   *
+   * It makes sense to consolidate this with the `pre` code below - but I kinda hate
+   * the way that works so I have created upstream GL
+   * https://lab.civicrm.org/dev/core/-/issues/5413 to see if we can come up with a
+   * cleaner interface.
+   *
+   * @param \Civi\API\Event\PrepareEvent $event
+   *
+   * @return void
+   */
+  public static function apiPrepare(PrepareEvent $event): void {
+    if ($event->getEntityName() !== 'Contribution' || !in_array($event->getActionName(), ['create', 'update'], TRUE)) {
+      return;
+    }
+    $apiRequest = $event->getApiRequest();
+    if ($apiRequest['version'] !== 4) {
+      // Just handling apiV4 here - which covers the UI imports, along with our
+      // DonationQueue. See function comment block.
+      return;
+    }
+    $values = $originalValues = $apiRequest->getValues();
+    $isCreate = $event->getActionName() === 'create';
+    if ($isCreate) {
+      // It should always be source but we have some legacy code still using the old ways.
+      $source = $values['source'] ?? $values['contribution_source'] ?? '';
+      if ($source) {
+        $originalAmountData = ContributionHelper::getOriginalCurrencyAndAmountFromSource($source, $values['total_amount']);
+        if (!isset($values['contribution_extra.original_currency'], $values['contribution_extra.original_amount'])) {
+          $values['contribution_extra.original_currency'] = $originalAmountData['original_currency'];
+          $values['contribution_extra.original_amount'] = $originalAmountData['original_amount'];
+        }
+      }
+      else {
+        $values['contribution_extra.original_currency'] = $values['contribution_extra.original_currency'] ?? 'USD';
+        $values['contribution_extra.original_amount'] = $values['contribution_extra.original_amount'] ?? $values['total_amount'];
+        $values['source'] = $values['contribution_extra.original_currency'] . ' ' . CurrencyRoundingHelper::round($values['contribution_extra.original_amount'], $values['contribution_extra.original_currency']);
+      }
+    }
+    if ($values !== $originalValues) {
+      $apiRequest->setValues($values);
+    }
+  }
 
   public static function pre($op, &$contribution): void {
     switch ($op) {
