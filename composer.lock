@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "66dfe8157496f9e579e91ea255dc0668",
+    "content-hash": "1b77072b5d503eb14df0b8d043ca291e",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -4643,16 +4643,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.8.11.2",
+            "version": "v0.8.11.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "9031b8cda222e7a24fd67c2daca66a92116367bb"
+                "reference": "4a3512c83e99cd168dcc71cad5bc472ea9240366"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/9031b8cda222e7a24fd67c2daca66a92116367bb",
-                "reference": "9031b8cda222e7a24fd67c2daca66a92116367bb",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/4a3512c83e99cd168dcc71cad5bc472ea9240366",
+                "reference": "4a3512c83e99cd168dcc71cad5bc472ea9240366",
                 "shasum": ""
             },
             "require": {
@@ -4728,9 +4728,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.11.2"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.11.6"
             },
-            "time": "2024-08-20T18:29:12+00:00"
+            "time": "2024-08-28T14:00:13+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -6941,5 +6941,5 @@
     "platform-overrides": {
         "php": "7.4.33"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.3.0"
 }
