@@ -41,7 +41,7 @@ $organizationFields = [
   'Soft Credit to First Name' => [
     'name' => 'soft_credit.contact.first_name',
     'entity_data' => [
-      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID]
+      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Soft Credit to Last Name' => [
@@ -53,7 +53,7 @@ $organizationFields = [
   'Street Address' => [
     'name' => 'soft_credit.contact.address_primary.street_address',
     'entity_data' => [
-      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID]
+      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Additional Address 1' => [
@@ -66,19 +66,19 @@ $organizationFields = [
     'name' => 'soft_credit.contact.address_primary.supplemental_address_2',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
-    ]
+    ],
   ],
   'City' => [
     'name' => 'soft_credit.contact.address_primary.city',
     'entity_data' => [
-      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID]
+      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'State/Province' => [
     'name' => 'soft_credit.contact.address_primary.state_province_id',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
-    ]
+    ],
   ],
   'Postal Code' => [
     'name' => 'soft_credit.contact.address_primary.postal_code',
@@ -89,19 +89,19 @@ $organizationFields = [
   'Country' => [
     'name' => 'soft_credit.contact.address_primary.country_id',
     'entity_data' => [
-      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID]
+      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Phone' => [
     'name' => 'soft_credit.contact.phone_primary.phone',
     'entity_data' => [
-      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID]
+      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Email' => [
     'name' => 'soft_credit.contact.email_primary.email',
     'entity_data' => [
-      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID]
+      'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'AC Flag' => ['name' => ''],
@@ -158,7 +158,7 @@ $entities = [
             'multipleCustomData' => NULL,
             'mapper' => $organizationMapper,
             'skipColumnHeader' => '1',
-            'fieldSeparator' => ','
+            'fieldSeparator' => ',',
           ],
           'template_id' => 307,
           'Template' => [],
@@ -168,12 +168,12 @@ $entities = [
           ],
           'entity_configuration' => [
             'Contribution' => [
-              'action' => 'create'
+              'action' => 'create',
             ],
             'Contact' => [
               'action' => 'select',
               'contact_type' => 'Organization',
-              'dedupe_rule' => 'OrganizationUnsupervised'
+              'dedupe_rule' => 'OrganizationUnsupervised',
             ],
             'SoftCreditContact' => [
               'contact_type' => 'Individual',
@@ -183,9 +183,9 @@ $entities = [
               'entity' => [
                 'entity_data' => [
                   'soft_credit_type_id' => $matchedTypeID,
-                ]
-              ]
-            ]
+                ],
+              ],
+            ],
           ],
           'import_mappings' => $organizationImportMappings,
         ],
@@ -537,7 +537,7 @@ foreach ($entities as $template) {
         'match' => ['mapping_id', 'column_number'],
         'values' => [
           'mapping_id.name' => substr($template['name'], 7),
-          'name' => $field[0],
+          'name' => $field[0] ?: 'do_not_import',
           'column_number' => $column,
         ],
       ],
