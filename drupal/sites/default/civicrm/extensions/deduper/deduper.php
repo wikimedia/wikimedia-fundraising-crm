@@ -401,7 +401,7 @@ function deduper_civicrm_validateForm($formName, &$fields, &$files, &$form, &$er
   $pattern = '/first_name\(weight (\d+)\).*last_name\(weight (\d+)\).*threshold:\s*(\d+)/';
 
   // Perform the regex match
-  if (preg_match($pattern, $requiredFieldsError, $matches)) {
+  if ($requiredFieldsError && preg_match($pattern, $requiredFieldsError, $matches)) {
     $firstNameWeight = (int) $matches[1];
     $lastNameWeight = (int) $matches[2];
     $threshold = (int) $matches[3];

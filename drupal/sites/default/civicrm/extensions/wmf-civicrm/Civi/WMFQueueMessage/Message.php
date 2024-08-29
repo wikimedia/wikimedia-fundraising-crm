@@ -348,6 +348,7 @@ class Message {
       'Campaign',
       'Description_of_Stock',
       'backend_processor',
+      'backend_processor_txn_id',
       'gateway_status_raw',
       'Postmark_Date',
       'gateway_txn_id',
