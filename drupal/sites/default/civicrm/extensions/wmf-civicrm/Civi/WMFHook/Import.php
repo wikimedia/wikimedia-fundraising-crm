@@ -143,7 +143,10 @@ class Import {
    * @throws \CRM_Core_Exception
    */
   private static function resolveOrganization(array &$organizationContact): string {
-    if (empty($organizationContact['id'])) {
+    if (empty($organizationContact['id']) && empty($organizationContact['organization_name'])) {
+      $organizationName = '';
+    }
+    elseif (empty($organizationContact['id'])) {
       $organizationName = Contact::resolveOrganizationName((string) $organizationContact['organization_name']);
       $organizationContact['id'] = Contact::getOrganizationID($organizationContact['organization_name']);
     }
