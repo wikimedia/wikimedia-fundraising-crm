@@ -363,7 +363,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   private function getSelectQuery($columns): string {
     $columnSQL = [];
     foreach ($columns as $column => $data) {
-      $columnSQL[] = "'$data' as $column";
+      $columnSQL[] = "'$data' as " . str_replace('.', '__', $column);
     }
     return "SELECT " . implode(',', $columnSQL) . " FROM civicrm_contact LIMIT 1";
   }
@@ -377,7 +377,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   protected function createImportTable($columns = []): void {
     $fieldSql = [];
     foreach (array_keys($columns) as $column) {
-      $fieldSql[] = "`$column` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL";
+      $fieldSql[] = "`" . str_replace('.', '__', $column) . "` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL";
     }
     \CRM_Core_DAO::executeQuery('CREATE TABLE civicrm_tmp_d_abc (
   ' . implode(',', $fieldSql) . ",
@@ -705,7 +705,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws DBQueryException
    */
   protected function fillImportRow($columns): void {
-    \CRM_Core_DAO::executeQuery('INSERT INTO civicrm_tmp_d_abc (' . implode(',', array_keys($columns)) . ') ' . $this->getSelectQuery($columns));
+    \CRM_Core_DAO::executeQuery('INSERT INTO civicrm_tmp_d_abc (' . str_replace('.', '__', implode(',', array_keys($columns))) . ') ' . $this->getSelectQuery($columns));
   }
 
   /**
