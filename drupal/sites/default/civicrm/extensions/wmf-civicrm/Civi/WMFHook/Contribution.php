@@ -2,8 +2,8 @@
 
 namespace Civi\WMFHook;
 
-use Civi;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelper\Contribution as ContributionHelper;
 use Civi\WMFHelper\Database;
 use Civi\WMFTransaction;
 
@@ -71,7 +71,7 @@ class Contribution {
     }
 
     if (!empty($contribution['source'])) {
-      $extra = array_merge($extra, wmf_civicrm_get_original_currency_and_amount_from_source($contribution['source'], $contribution['total_amount']));
+      $extra = array_merge($extra, ContributionHelper::getOriginalCurrencyAndAmountFromSource((string) $contribution['source'], $contribution['total_amount']));
     }
     return $extra;
   }

@@ -113,7 +113,7 @@ class Contribution {
     // case we probably lose a get query & gain an 'update' query as the extra fields are likely already
     // updated by the triggers.
     $contactLastDonation = self::getContactLastDonationData((int) $contribution->contact_id);
-    $extra = wmf_civicrm_get_original_currency_and_amount_from_source($contribution->source, $contribution->total_amount);
+    $extra = self::getOriginalCurrencyAndAmountFromSource((string) $contribution->source, $contribution->total_amount);
     if ($contributionStatus === 'Completed' && !$isRefund) {
       // This is a 'valid' transaction - it's either the latest or no update is required.
       if (strtotime($contactLastDonation['date']) === strtotime($contribution->receive_date)) {
@@ -170,6 +170,33 @@ class Contribution {
       $params[wmf_civicrm_get_custom_field_name('last_donation_usd')] = $latestContribution['total_amount'];
     }
     return $params;
+  }
+
+
+  /**
+   * Get original currency & amount
+   *
+   * The source field holds the amount & currency - parse it out
+   * e.g 'USD 15.25'
+   *
+   * @param string $source
+   * @param float $usd_amount
+   *
+   * @return array
+   */
+  public static function getOriginalCurrencyAndAmountFromSource(string $source, $usd_amount): array {
+    if (empty($source)) {
+      return [];
+    }
+    [$original_currency, $original_amount] = explode(" ", $source);
+    if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
+      return ['original_currency' => $original_currency, 'original_amount' => $original_amount];
+    }
+
+    if (is_numeric($original_amount)) {
+      return ['original_currency' => 'USD', 'original_amount' => $usd_amount];
+    }
+    return [];
   }
 
   /**

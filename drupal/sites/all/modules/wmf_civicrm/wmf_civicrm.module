@@ -268,32 +268,6 @@ function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
 }
 
 /**
- * Get original currency & amount
- *
- * The source field holds the amount & currency - parse it out
- * e.g 'USD 15.25'
- *
- * @param string $source
- * @param float $usd_amount
- *
- * @return array
- */
-function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_amount) {
-  if (empty($source)) {
-    return [];
-  }
-  [$original_currency, $original_amount] = explode(" ", $source);
-  if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
-    return ['original_currency' => $original_currency, 'original_amount' => $original_amount];
-  }
-
-  if (is_numeric($original_amount)) {
-    return ['original_currency' => 'USD', 'original_amount' => $usd_amount];
-  }
-  return [];
-}
-
-/**
  * Determine if a code represents a supported currency. Uses the
  * SmashPig currency list as a canonical source.
  *
