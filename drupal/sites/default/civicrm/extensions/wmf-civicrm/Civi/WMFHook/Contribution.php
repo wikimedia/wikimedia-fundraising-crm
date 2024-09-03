@@ -76,4 +76,35 @@ class Contribution {
     return $extra;
   }
 
+  /**
+   * Additional validations for the contribution form
+   *
+   * @param array $fields
+   * @param \CRM_Core_Form $form
+   *
+   * @return array of any errors in the form
+   */
+  public static function validateForm(array $fields, $form): array {
+    $errors = [];
+
+    // Only run on add or update
+    if (!($form->getAction() & (\CRM_Core_Action::UPDATE | \CRM_Core_Action::ADD))) {
+      return $errors;
+    }
+    // Source has to be of the form USD 15.25 so as not to gum up the works,
+    // and the currency code on the front should be something we understand
+    $source = $fields['source'];
+    if (preg_match('/^([a-z]{3}) -?[0-9]+(\.[0-9]+)?$/i', $source, $matches)) {
+      $currency = strtoupper($matches[1]);
+      if (!wmf_civicrm_is_valid_currency($currency)) {
+        $errors['source'] = t('Please set a supported currency code');
+      }
+    }
+    else {
+      $errors['source'] = t('Source must be in the format USD 15.25');
+    }
+
+    return $errors;
+  }
+
 }
