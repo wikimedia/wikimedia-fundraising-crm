@@ -98,7 +98,8 @@ class Import {
             if ($softCreditContact['Contact']['contact_type'] === 'Organization') {
               if (!empty($softCreditContact['Contact']['id'])) {
                 $organizationID = $softCreditContact['Contact']['id'];
-              } else {
+              }
+              else {
                 $organizationName = self::resolveOrganization($mappedRow['SoftCreditContact'][$index]['Contact']);
               }
             }
@@ -143,7 +144,10 @@ class Import {
    * @throws \CRM_Core_Exception
    */
   private static function resolveOrganization(array &$organizationContact): string {
-    if (empty($organizationContact['id'])) {
+    if (empty($organizationContact['id']) && empty($organizationContact['organization_name'])) {
+      $organizationName = '';
+    }
+    elseif (empty($organizationContact['id'])) {
       $organizationName = Contact::resolveOrganizationName((string) $organizationContact['organization_name']);
       $organizationContact['id'] = Contact::getOrganizationID($organizationContact['organization_name']);
     }

@@ -193,7 +193,7 @@ class Contact {
       $contact = $contacts->first();
       if ($email
         || ($organizationID && $contact['employer_id'] === $organizationID)
-        || self::isContactSoftCreditorOf($organizationID, $contact['id'])) {
+        || ($organizationID && self::isContactSoftCreditorOf($organizationID, $contact['id']))) {
         return $contact['id'];
       }
       return FALSE;
