@@ -3,6 +3,7 @@
 namespace Civi\WMFHook;
 
 use Civi\API\Event\PrepareEvent;
+use Civi\Api4\ExchangeRate;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\Contribution as ContributionHelper;
 use Civi\WMFHelper\Database;
@@ -55,12 +56,34 @@ class Contribution {
         $values['source'] = $values['contribution_extra.original_currency'] . ' ' . CurrencyRoundingHelper::round($values['contribution_extra.original_amount'], $values['contribution_extra.original_currency']);
       }
     }
+
+    // Now ensure source & converted total_amount are set.
+    $originalCurrency = $values['contribution_extra.original_currency'] ?? '';
+    $originalAmount = $values['contribution_extra.original_amount'] ?? NULL;
+    if ($originalCurrency && is_numeric($originalAmount)) {
+      // Fill in total_amount, if necessary.
+      if (!isset($values['total_amount']) && $isCreate) {
+        if ($originalCurrency === 'USD') {
+          $values['total_amount'] = $originalAmount;
+        }
+        else {
+          $values['total_amount'] = (float) ExchangeRate::convert(FALSE)
+            ->setFromCurrency($originalCurrency)
+            ->setFromAmount($originalAmount)
+            ->setTimestamp($values['receive_date'] ?? 'now')
+            ->execute()
+            ->first()['amount'];
+        }
+      }
+    }
     if ($values !== $originalValues) {
       $apiRequest->setValues($values);
     }
   }
 
   public static function pre($op, &$contribution): void {
+    // @todo consolidate with apiPrepare - I'm kinda holding off in the hope of
+    // https://lab.civicrm.org/dev/core/-/issues/5413 helping us here.
     switch ($op) {
       case 'create':
       case 'edit':

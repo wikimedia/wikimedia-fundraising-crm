@@ -314,6 +314,42 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * Test that we can handling imports in non USD when the USD is not specified.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Exception
+   */
+  public function testCurrencyConversion(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email_primary.email' => 'jane@example.com',
+    ], 'individual_1');
+    $data = $this->setupImport([
+      'trxn_id' => 'abc',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '200',
+      'organization_name' => '',
+      'total_amount' => '',
+    ]);
+
+    $this->setExchangeRate('PLN', .25);
+    $this->runImport($data, 'Individual');
+    // The contacts have 2 contributions with soft credits - use greater than filter
+    // to exclude the one that already existed.
+    $contribution = Contribution::get()
+      ->addWhere('trxn_id', '=', 'abc')
+      ->addSelect(
+        'custom.*',
+        'source',
+        'total_amount'
+      )->execute()->first();
+    $this->assertEquals('PLN 200.00', $contribution['source']);
+    $this->assertEquals(50, $contribution['total_amount']);
+  }
+
+  /**
    * Test when there are multiple individual matches.
    *
    * If there are 2 employed individuals with the same name then

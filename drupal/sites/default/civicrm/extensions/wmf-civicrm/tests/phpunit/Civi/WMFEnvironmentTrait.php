@@ -235,6 +235,20 @@ trait WMFEnvironmentTrait {
   }
 
   /**
+   * @param string $currency
+   * @param float $rate
+   * @param string $dateString
+   *
+   * @return void
+   * @throws \Exception
+   */
+  public function setExchangeRate(string $currency, float $rate, string $dateString = 'now'): void {
+    \CRM_ExchangeRates_BAO_ExchangeRate::addToCache(
+      $currency, (new \DateTime($dateString))->format('YmdHis'), $rate
+    );
+  }
+
+  /**
    * @return \Civi\Test\CiviEnvBuilder
    * @throws \CRM_Extension_Exception_ParseException
    */

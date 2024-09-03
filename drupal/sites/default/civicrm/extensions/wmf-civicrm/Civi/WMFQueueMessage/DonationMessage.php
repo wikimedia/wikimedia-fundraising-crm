@@ -192,6 +192,10 @@ class DonationMessage extends Message {
 
     $msg['original_gross'] = $msg['contribution_extra.original_amount'] = $this->getOriginalAmount();
     $msg['original_currency'] = $msg['contribution_extra.original_currency'] = $this->getOriginalCurrency();
+    // Note that it possibly makes sense to leave these to the apiPrepare hook,
+    // in \Civi\WMFHook\Contribution, which
+    // covers other imports (e.g via the UI). However, that code currently does not
+    // handle fees.
     $msg['currency'] = $this->getSettlementCurrency();
     $msg['fee'] = $this->getSettledFeeAmountRounded();
     $msg['gross'] = $this->getSettledAmountRounded();
