@@ -98,7 +98,8 @@ class Import {
             if ($softCreditContact['Contact']['contact_type'] === 'Organization') {
               if (!empty($softCreditContact['Contact']['id'])) {
                 $organizationID = $softCreditContact['Contact']['id'];
-              } else {
+              }
+              else {
                 $organizationName = self::resolveOrganization($mappedRow['SoftCreditContact'][$index]['Contact']);
               }
             }

@@ -214,7 +214,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   public function testImportDuplicateAnonymous(): void {
     $this->createOrganization();
     $this->ensureAnonymousUserExists();
-    $data = $this->setupImport(['contribution_extra__gateway_txn_id' => '', 'check_number' => 123456, 'first_name' => 'Anonymous', 'last_name' => 'Anonymous']);
+    $data = $this->setupImport(['contribution_extra__gateway_txn_id' => '', 'email_primary.email' => '', 'check_number' => 123456, 'first_name' => 'Anonymous', 'last_name' => 'Anonymous']);
     $this->fillImportRow($data);
     $this->runImport($data, 'Individual');
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
@@ -236,7 +236,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       'contribution_contact_id' => $this->ids['Organization'],
       'first_name' => 'Jane',
       'last_name' => 'Doe',
-      'email' => 'jane@example.com',
+      'email_primary.email' => 'jane@example.com',
     ];
     $this->createImportTable($data);
     $this->runImport($data);
@@ -256,7 +256,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportIndividualWithSoftCredit(): void {
-    $data = $this->setupImport();
+    $data = $this->setupImport(['email_primary.email' => '']);
 
     $contributionID = $this->createSoftCreditConnectedContacts();
 
@@ -316,7 +316,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       '',
       'first_name',
       'last_name',
-      'email',
+      'source',
       'organization_id',
     ], TRUE);
     $this->runImport($importFields, 'Individual');
@@ -348,7 +348,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       'contribution_contact_id' => $this->ids['Contact']['jane_doe'],
       'first_name' => 'Jane',
       'last_name' => 'Doe',
-      'email' => 'jane@example.com',
+      'email_primary.email' => 'jane@example.com',
       'receive_date' => '2024-01-31 00:00:00',
     ];
     $this->createImportTable($data);
@@ -671,7 +671,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       'organization_name' => 'Trading Name',
       'first_name' => 'Jane',
       'last_name' => 'Doe',
-      'email' => 'jane@example.com',
+      'email_primary.email' => 'jane@example.com',
     ], $data);
     $this->createImportTable($data);
     return $data;
