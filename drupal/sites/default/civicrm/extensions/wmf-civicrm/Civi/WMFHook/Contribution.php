@@ -96,7 +96,7 @@ class Contribution {
     $source = $fields['source'];
     if (preg_match('/^([a-z]{3}) -?[0-9]+(\.[0-9]+)?$/i', $source, $matches)) {
       $currency = strtoupper($matches[1]);
-      if (!wmf_civicrm_is_valid_currency($currency)) {
+      if (!ContributionHelper::isValidCurrency($currency)) {
         $errors['source'] = t('Please set a supported currency code');
       }
     }

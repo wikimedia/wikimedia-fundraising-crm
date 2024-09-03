@@ -3,6 +3,7 @@
 namespace Civi\WMFHelper;
 
 use Civi\WMFException\WMFException;
+use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 class Contribution {
 
@@ -189,7 +190,7 @@ class Contribution {
       return [];
     }
     [$original_currency, $original_amount] = explode(" ", $source);
-    if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
+    if (is_numeric($original_amount) && self::isValidCurrency($original_currency)) {
       return ['original_currency' => $original_currency, 'original_amount' => $original_amount];
     }
 
@@ -197,6 +198,19 @@ class Contribution {
       return ['original_currency' => 'USD', 'original_amount' => $usd_amount];
     }
     return [];
+  }
+
+  /**
+   * Determine if a code represents a supported currency. Uses the
+   * SmashPig currency list as a canonical source.
+   *
+   * @param string $currency should be an ISO 4217 code
+   *
+   * @return bool true if it's a real currency that we can handle
+   */
+  public static function isValidCurrency(string $currency): bool {
+    $all_currencies = array_keys(CurrencyRates::getCurrencyRates());
+    return in_array($currency, $all_currencies);
   }
 
   /**
