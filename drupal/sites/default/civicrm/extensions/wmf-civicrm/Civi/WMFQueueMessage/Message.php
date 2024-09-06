@@ -177,7 +177,7 @@ class Message {
    * @throws \Civi\ExchangeRates\ExchangeRatesException
    */
   protected function currencyConvert(string $currency, float $amount, ?int $timestamp = NULL): float {
-    return (float)ExchangeRate::convert(FALSE)
+    return (float) ExchangeRate::convert(FALSE)
       ->setFromCurrency($currency)
       ->setFromAmount($amount)
       ->setTimestamp('@' . ($timestamp ?: $this->getTimestamp()))

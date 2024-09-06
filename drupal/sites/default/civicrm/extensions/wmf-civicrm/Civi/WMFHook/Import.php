@@ -115,11 +115,6 @@ class Import {
         }
       }
 
-      $originalCurrency = $mappedRow['Contribution']['currency'] ?? 'USD';
-      // @todo handle conversion here but for now we are only dealing with US donations.
-      // Question - should we map the custom currency field or the currency field?
-      // Also, can we move this to the Contribution pre hook.
-      $mappedRow['Contribution']['source'] = $originalCurrency . ' ' . \Civi::format()->machineMoney($mappedRow['Contribution']['total_amount']);
       self::setTimeOfDayIfStockDonation($mappedRow);
     }
   }

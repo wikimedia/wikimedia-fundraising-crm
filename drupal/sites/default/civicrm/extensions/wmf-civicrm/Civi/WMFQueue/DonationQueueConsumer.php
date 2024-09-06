@@ -337,7 +337,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'trxn_id' => $trxn_id,
       'receive_date' => wmf_common_date_unix_to_civicrm($msg['date']),
       'currency' => $msg['currency'],
-      'source' => $msg['original_currency'] . ' ' . CurrencyRoundingHelper::round($msg['original_gross'], $msg['original_currency']),
       'contribution_recur_id' => $msg['contribution_recur_id'],
       'check_number' => $msg['check_number'],
       'debug' => TRUE,

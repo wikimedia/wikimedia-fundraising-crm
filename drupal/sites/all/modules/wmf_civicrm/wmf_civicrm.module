@@ -1,7 +1,6 @@
 <?php
 
 use Civi\WMFException\WMFException;
-use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
 require_once 'recurring.inc';
 require_once 'tracking.inc';
@@ -265,43 +264,4 @@ function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
   catch (WMFException $ex) {
     \Civi::log('wmf')->error('wmf_civicrm: Updating with no-thank-you failed with details: {message}', ['message' => $ex->getMessage()]);
   }
-}
-
-/**
- * Get original currency & amount
- *
- * The source field holds the amount & currency - parse it out
- * e.g 'USD 15.25'
- *
- * @param string $source
- * @param float $usd_amount
- *
- * @return array
- */
-function wmf_civicrm_get_original_currency_and_amount_from_source($source, $usd_amount) {
-  if (empty($source)) {
-    return [];
-  }
-  [$original_currency, $original_amount] = explode(" ", $source);
-  if (is_numeric($original_amount) && wmf_civicrm_is_valid_currency($original_currency)) {
-    return ['original_currency' => $original_currency, 'original_amount' => $original_amount];
-  }
-
-  if (is_numeric($original_amount)) {
-    return ['original_currency' => 'USD', 'original_amount' => $usd_amount];
-  }
-  return [];
-}
-
-/**
- * Determine if a code represents a supported currency. Uses the
- * SmashPig currency list as a canonical source.
- *
- * @param string $currency should be an ISO 4217 code
- *
- * @return bool true if it's a real currency that we can handle
- */
-function wmf_civicrm_is_valid_currency($currency) {
-  $all_currencies = array_keys(CurrencyRates::getCurrencyRates());
-  return in_array($currency, $all_currencies);
 }
