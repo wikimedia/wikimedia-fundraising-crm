@@ -338,14 +338,15 @@ class Save extends AbstractAction {
       'city' => $msg['city'],
       'postal_code' => $msg['postal_code'],
       'country_id' => $country_id,
-      'country' => $msg['country'],
-      'fix_address' => isset($msg['fix_address']) ? $msg['fix_address'] : FALSE,
       'is_billing' => 1,
-      'version' => 3,
+      // Once we are sure that the source is being specified by messages coming
+      // from Fundraise Up, Paypal & any remaining imports that use
+      // we can uncomment this source.
+      // 'address_data.address_source' => $msg['address_data.address_source'] ?? 'donor',
+      'address_data.address_update_date' => 'now',
     ];
 
     if (!empty($msg['state_province'])) {
-      $address_params['state_province'] = $msg['state_province'];
       $address_params['state_province_id'] = $this->getStateID($country_id, $msg['state_province']);
     }
     if (Database::isNativeTxnRolledBack()) {
@@ -357,7 +358,9 @@ class Save extends AbstractAction {
       // or don't pass fix_address= 0 (but we need to understand performance reasons
       // why we haven't done that.
       \CRM_Core_BAO_Address::addGeocoderData($address_params);
-      civicrm_api3('Address', 'Create', $address_params);
+      Address::save(FALSE)
+        ->addRecord($address_params)
+        ->execute();
     }
     catch (\CRM_Core_Exception $ex) {
       throw new WMFException(
