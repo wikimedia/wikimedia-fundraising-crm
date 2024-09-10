@@ -35,7 +35,12 @@ class Import {
    * @throws \CRM_Core_Exception
    * @throws \Exception
    */
-  public static function alterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID): void {
+  public static function alterMappedRow($event): void {
+    $importType = $event->importType;
+    $context = $event->context;
+    $mappedRow = $event->mappedRow;
+    $rowValues = $event->rowValues;
+    $userJobID = $event->userJobID;
     if ($context === 'import' && $importType === 'contribution_import') {
       // Provide a default, allowing the import to be configured to override.
       $isMatchingGift = in_array(self::getSoftCreditTypeIDForRow($mappedRow), ContributionSoftHelper::getEmploymentSoftCreditTypes(), TRUE);
@@ -116,6 +121,7 @@ class Import {
       }
 
       self::setTimeOfDayIfStockDonation($mappedRow);
+      $event->mappedRow = $mappedRow;
     }
   }
 

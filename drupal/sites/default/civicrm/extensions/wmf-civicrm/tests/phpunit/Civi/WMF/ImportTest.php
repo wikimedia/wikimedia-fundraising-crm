@@ -279,6 +279,38 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals($this->ids['Organization'], $relationship['contact_id_b']);
   }
 
+
+  /**
+   * Test that we can handling imports in non USD.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testImportFullName(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'full_name' => 'Jane Doe',
+    ], 'individual_1');
+    $data = $this->setupImport([
+      'trxn_id' => 'abc',
+      'full_name' => 'Jane Doe',
+      'total_amount' => '50',
+      'organization_name' => '',
+      'first_name' => '',
+      'last_name' => '',
+    ]);
+
+    $this->runImport($data, 'Individual');
+    // The contacts have 2 contributions with soft credits - use greater than filter
+    // to exclude the one that already existed.
+    $contribution = Contribution::get()
+      ->addWhere('trxn_id', '=', 'abc')
+      ->addSelect(
+        'custom.*',
+        'source',
+        'total_amount'
+      )->execute()->first();
+  }
+
   /**
    * Test that we can handling imports in non USD.
    *

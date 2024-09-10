@@ -34,6 +34,7 @@ function wmf_civicrm_civicrm_config(&$config) {
   // Ensure it runs after the first ones, since we override some core tokens.
   $dispatcher->addListener('civi.token.eval', ['CRM_Wmf_Tokens', 'onEvalTokens'], -200);
   $dispatcher->addListener('hook_civicrm_queueActive', [Queue::class, 'isSiteBusy']);
+  \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [Import::class, 'alterMappedRow']);
   // Increase the weight on the angular directory in this extension so it overrides the others.
   // This ensures our tweaks take precedence.
   // See https://github.com/civicrm/civicrm-core/pull/30817.
@@ -369,13 +370,6 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
       }
     }
   }
-}
-
-/**
- * Implements hook_civicrm_importAlterMappedRow().
- */
-function wmf_civicrm_civicrm_importAlterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID) {
-  Import::alterMappedRow($importType, $context, $mappedRow, $rowValues, $userJobID);
 }
 
 /**
