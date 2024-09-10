@@ -40,8 +40,10 @@ use CRM_Core_PseudoConstant;
  * @method int setPaymentInstrumentID(int $paymentInstrumentID)
  * @method string getGateway()
  * @method $this setGateway(string $gateway)
- * @method $this getEmailGreetingDisplay()
+ * @method string getEmailGreetingDisplay()
  * @method $this setEmailGreetingDisplay(string $emailGreetingDisplay)
+ * @method string getFrequencyUnit()
+ * @method $this setFrequencyUnit(string $frequencyUnit)
  */
 class ThankYou extends GenericWorkflowMessage {
   use UnsubscribeTrait;
@@ -143,6 +145,15 @@ class ThankYou extends GenericWorkflowMessage {
    * @scope tplParams as email_greeting_display
    */
   public $emailGreetingDisplay;
+
+  /**
+   * Frequency unit (for recurring contributions).
+   *
+   * @var string
+   *
+   * @scope tplParams as frequency_unit
+   */
+  public $frequencyUnit;
 
   /**
    * @var string
@@ -317,6 +328,7 @@ class ThankYou extends GenericWorkflowMessage {
       'Stock_Information.Stock Quantity' => 'stockQuantity',
       'Gift_Data.Campaign' => 'giftSource',
       'contribution_recur_id' => 'isRecurring',
+      'contribution_recur.frequency_unit' => 'frequencyUnit'
     ];
   }
 
