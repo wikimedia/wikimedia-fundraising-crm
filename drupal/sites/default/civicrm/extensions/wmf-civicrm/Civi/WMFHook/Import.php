@@ -41,6 +41,17 @@ class Import {
     $mappedRow = $event->mappedRow;
     $rowValues = $event->rowValues;
     $userJobID = $event->userJobID;
+    if ($context === 'validate' && empty($mappedRow['Contribution']['total_amount']) &&
+      !empty($mappedRow['Contribution']['contribution_extra.original_currency']
+      && !empty($mappedRow['Contribution']['contribution_extra.original_amount'])
+      )
+    ) {
+      // This is strictly in validate mode so the value doesn't matter (although I
+      // deliberately made it insanely large so it gets noticed if it IS used).
+      // What matters is whether it is empty, not the value. As with the validateForm hook hack
+      // I am hoping this is temporary - ref https://lab.civicrm.org/dev/core/-/issues/5456
+      $mappedRow['Contribution']['total_amount'] = 99999999;
+    }
     if ($context === 'import' && $importType === 'contribution_import') {
       // Provide a default, allowing the import to be configured to override.
       $isMatchingGift = in_array(self::getSoftCreditTypeIDForRow($mappedRow), ContributionSoftHelper::getEmploymentSoftCreditTypes(), TRUE);
@@ -121,6 +132,8 @@ class Import {
       }
 
       self::setTimeOfDayIfStockDonation($mappedRow);
+    }
+    if ($mappedRow !== $event->mappedRow) {
       $event->mappedRow = $mappedRow;
     }
   }

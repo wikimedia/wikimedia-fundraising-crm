@@ -76,6 +76,13 @@ class ThankYouExample extends WorkflowMessageExample {
       'example' =>'recurring',
     ];
     yield [
+      'name' => 'workflow/thank_you/recurring_annual',
+      'title' => 'Thank you (annual recurring)',
+      'tags' => ['preview'],
+      'workflow' => 'thank_you',
+      'example' =>'recurring_annual',
+    ];
+    yield [
       'name' => 'workflow/thank_you/restarted',
       'title' => 'Thank you (restarted recurring)',
       'tags' => ['preview'],
@@ -148,8 +155,14 @@ class ThankYouExample extends WorkflowMessageExample {
     }
     if ($example === 'recurring') {
       $messageTemplate->setIsRecurring(TRUE);
+      $messageTemplate->setFrequencyUnit('month');
+    }
+    if ($example === 'recurring_annual') {
+      $messageTemplate->setIsRecurring(TRUE);
+      $messageTemplate->setFrequencyUnit('year');
     }
     if ($example === 'restarted') {
+      $messageTemplate->setIsRecurring(TRUE);
       $messageTemplate->setIsRecurringRestarted(TRUE);
     }
     if ($example === 'delayed') {
