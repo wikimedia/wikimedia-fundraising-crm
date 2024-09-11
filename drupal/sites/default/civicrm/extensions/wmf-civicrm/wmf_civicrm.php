@@ -34,6 +34,7 @@ function wmf_civicrm_civicrm_config(&$config) {
   // Ensure it runs after the first ones, since we override some core tokens.
   $dispatcher->addListener('civi.token.eval', ['CRM_Wmf_Tokens', 'onEvalTokens'], -200);
   $dispatcher->addListener('hook_civicrm_queueActive', [Queue::class, 'isSiteBusy']);
+  \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [Import::class, 'alterMappedRow']);
   // Increase the weight on the angular directory in this extension so it overrides the others.
   // This ensures our tweaks take precedence.
   // See https://github.com/civicrm/civicrm-core/pull/30817.
@@ -372,13 +373,6 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
 }
 
 /**
- * Implements hook_civicrm_importAlterMappedRow().
- */
-function wmf_civicrm_civicrm_importAlterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID) {
-  Import::alterMappedRow($importType, $context, $mappedRow, $rowValues, $userJobID);
-}
-
-/**
  * Implements hook_civicrm_validateForm().
  *
  * @param string $formName
@@ -401,6 +395,35 @@ function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, 
   if ($formName === 'CRM_Contribute_Form_Contribution') {
     /* @var CRM_Contribute_Form_Contribution $form */
     $errors = array_merge(Contribution::validateForm($fields, $form));
+  }
+  if ($formName === 'CRM_Contribute_Import_Form_MapField') {
+    // T368998 this is a quick & dirty fix to get import form validation to accept
+    // total_amount being missing when original currency & original amount are present.
+    // A better fix would be to alter the civicrm api spec & use required-if
+    // for total_amount. However, that also requires some upstreaming in the
+    // import form so this merits a quick fix that is within our code, at least for now.
+    $requiredFieldsError = $form->getElementError('_qf_default');
+    // This could either be 'Missing required field: Total Amount' or
+    // 'Missing required field: Financial Type, Total Amount.
+    $pattern = '/Missing required field:(?:[^:]*?)\bTotal Amount\b/';
+
+    // Perform the regex match
+    if ($requiredFieldsError && preg_match($pattern, $requiredFieldsError, $matches)) {
+      $mappedFields = CRM_Utils_Array::collect(0, $fields['mapper']);
+      // If total amount is not set but original amount fields are then remove.
+      if (in_array('contribution_extra.original_currency', $mappedFields, TRUE)
+        && in_array('contribution_extra.original_amount', $mappedFields, TRUE)
+      ) {
+        $requiredFieldsError = trim(str_replace('Total Amount', '', $requiredFieldsError));
+        if (str_ends_with($requiredFieldsError, 'Missing required field:')) {
+          $requiredFieldsError = '';
+        }
+        elseif (str_ends_with($requiredFieldsError, ' and')) {
+          $requiredFieldsError = substr($requiredFieldsError, 0, -4);
+        }
+        $form->setElementError('_qf_default', $requiredFieldsError);
+      }
+    }
   }
 }
 

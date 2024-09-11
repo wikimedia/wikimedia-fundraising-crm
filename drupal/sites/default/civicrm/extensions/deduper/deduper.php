@@ -3,6 +3,7 @@
 require_once 'deduper.civix.php';
 use Civi\Api4\DedupeRule;
 use Civi\Api4\UserJob;
+use Civi\Import\FullNameHook;
 use Symfony\Component\DependencyInjection\Definition;
 use CRM_Deduper_ExtensionUtil as E;
 use Civi\Api4\Email;
@@ -22,6 +23,10 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
  */
 function deduper_civicrm_config(&$config) {
   _deduper_civix_civicrm_config($config);
+  // This listener unpacks the full_name field. It has a priority of
+  // 100 so that it will run before other listeners, which might want to
+  // know the first_name & last_name.
+  \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [FullNameHook::class, 'alterMappedImportRow'], 100);
 }
 
 /**
