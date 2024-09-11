@@ -12,7 +12,6 @@ use SmashPig\CrmLink\Messages\SourceFields;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use SmashPig\PaymentProviders\Responses\CancelSubscriptionResponse;
 use SmashPig\Tests\TestingContext;
-use SmashPig\Tests\TestingGlobalConfiguration;
 use SmashPig\Tests\TestingProviderConfiguration;
 
 /**
@@ -25,20 +24,19 @@ class RefundQueueTest extends BaseQueueTestCase {
   public function setUp() : void {
     parent::setUp();
 
-    $globalConfig = TestingGlobalConfiguration::create();
-    TestingContext::init($globalConfig);
     $ctx = TestingContext::get();
 
     $providerConfig = TestingProviderConfiguration::createForProvider(
-      'paypal', $globalConfig
+      'paypal', $ctx->getGlobalConfiguration()
     );
-    $ctx->providerConfigurationOverride = $providerConfig;
 
     $this->paypalProvider = $this->getMockBuilder(
       'SmashPig\PaymentProviders\Paypal\PaymentProvider'
     )->disableOriginalConstructor()->getMock();
 
     $providerConfig->overrideObjectInstance('payment-provider/paypal', $this->paypalProvider);
+
+    $ctx->providerConfigurationOverride = $providerConfig;
   }
 
   protected string $queueName = 'refund';
