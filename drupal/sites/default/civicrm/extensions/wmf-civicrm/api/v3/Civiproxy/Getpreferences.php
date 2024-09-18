@@ -43,21 +43,18 @@ function civicrm_api3_civiproxy_getpreferences(array $params): array {
     throw new CRM_Core_Exception(E::ts('No result found'));
   }
 
-  $result = (array) Contact::get(FALSE)
-    ->addWhere('id', '=', (int) $params['contact_id'])
-    ->setSelect([
-      'preferred_language',
-      'first_name',
-      'address.country_id:name',
-      'email.email',
-      'is_opt_out',
-      'Communication.opt_in',
-      'email_primary.email_settings.snooze_date',
-    ])
-    ->addJoin('Address AS address', 'LEFT', ['address.is_primary', '=', 1])
-    ->addJoin('Email AS email', 'LEFT', ['email.is_primary', '=', 1])
-    ->execute()->first();
+  $contactID = (int) $params['contact_id'];
+  $result = _civicrm_api3_civiproxy_getcontact($contactID);
 
+  if (empty($result)) {
+    // Try to get any merged contact ID
+    $contactID = (int) key(
+      civicrm_api3('Contact', 'getmergedto', ['contact_id' => $contactID])['values']
+    );
+    if ($contactID) {
+      $result = _civicrm_api3_civiproxy_getcontact($contactID);
+    }
+  }
   if (empty($result)) {
     throw new CRM_Core_Exception(E::ts('No result found'));
   }
@@ -72,4 +69,22 @@ function civicrm_api3_civiproxy_getpreferences(array $params): array {
     'snooze_date' => $result['email_primary.email_settings.snooze_date']
   ];
 
+}
+
+function _civicrm_api3_civiproxy_getcontact(int $contactID): array {
+  return (array) Contact::get(FALSE)
+    ->addWhere('id', '=', $contactID)
+    ->addWhere('is_deleted', '=', FALSE)
+    ->setSelect([
+      'preferred_language',
+      'first_name',
+      'address.country_id:name',
+      'email.email',
+      'is_opt_out',
+      'Communication.opt_in',
+      'email_primary.email_settings.snooze_date',
+    ])
+    ->addJoin('Address AS address', 'LEFT', ['address.is_primary', '=', 1])
+    ->addJoin('Email AS email', 'LEFT', ['email.is_primary', '=', 1])
+    ->execute()->first();
 }
