@@ -84,28 +84,49 @@ function civicrm_api3_preferences_create(array $params): array {
   if (!CRM_Contact_BAO_Contact_Utils::validChecksum($params['contact_id'], $params['checksum'])) {
     throw new CRM_Core_Exception('Checksum mismatch');
   }
+  $contactID = (int) $params['contact_id'];
+  $contactExists = !empty(Contact::get(FALSE)
+    ->addSelect('id')
+    ->addWhere('id', '=', $contactID)
+    ->addWhere('is_deleted', '=', FALSE)
+    ->setLimit(1)
+    ->execute()
+    ->first());
+
+  if (!$contactExists) {
+    // Try to get any merged contact ID
+    $contactID = (int) key(
+      civicrm_api3('Contact', 'getmergedto', ['contact_id' => $contactID])['values']
+    );
+    if (!$contactID) {
+      throw new CRM_Core_Exception("No contact found with ID {$params['contact_id']}, even after getmergedto");
+    }
+    Civi::log('wmf')->info(
+      "Contact with ID {$params['contact_id']} from preferences message has been merged into contact with ID $contactID"
+    );
+  }
 
   $contactUpdateValues = ['preferred_language' => $params['language']];
   if (array_key_exists('send_email', $params)) {
     $contactUpdateValues['Communication.opt_in'] = $params['send_email'];
   }
   $result = Contact::update(FALSE)->setValues($contactUpdateValues)
-    ->addWhere('id', '=', (int) $params['contact_id'])
+    ->addWhere('id', '=', $contactID)
     ->execute()->first();
 
   $address = Address::get(FALSE)
     ->addSelect('country_id.iso_code')
-    ->addWhere('contact_id', '=', (int) $params['contact_id'])
+    ->addWhere('contact_id', '=', $contactID)
     ->addWhere('location_type_id:name', '=', 'EmailPreference')
     ->execute();
 
   $email = Email::get(FALSE)
-    ->addWhere('contact_id', '=', (int) $params['contact_id'])
+    ->addWhere('contact_id', '=', $contactID)
     ->addWhere('is_primary', '=',1)
     ->execute();
 
   Civi::log('wmf')
-    ->info("Email Preference Center update - civicrm_contact id: {$params['contact_id']}'s preferred_language to {$params['language']}, country to {$params['country']} and civicrm_value_1_communication_4.opt_in to {$params['send_email']}.");
+    ->info("Email Preference Center update - civicrm_contact id: $contactID's preferred_language to {$params['language']}, country to {$params['country']} and civicrm_value_1_communication_4.opt_in to {$params['send_email']}.");
 
   if (count($address) === 1) {
     Address::update(FALSE)->setValues([
@@ -121,7 +142,7 @@ function civicrm_api3_preferences_create(array $params): array {
     Address::create(FALSE)->setValues([
       'location_type_id:name' => 'EmailPreference',
       'country_id.iso_code' => (string) $params['country'],
-      'contact_id' => (int) $params['contact_id'],
+      'contact_id' => $contactID,
       'is_primary' => 1,
     ])->execute();
   }
@@ -140,11 +161,11 @@ function civicrm_api3_preferences_create(array $params): array {
   else {
     Email::create(FALSE)->setValues([
       'email' => (string) $params['email'],
-      'contact_id' => (int) $params['contact_id'],
+      'contact_id' => $contactID,
       'is_primary' => 1,
     ] + $snoozeValues)->execute();
   }
 
   // TODO: add info about email and address updates to the contact update result
-  return civicrm_api3_create_success([$params['contact_id'] => (array) $result], $params, 'Preferences', 'create');
+  return civicrm_api3_create_success([$contactID => (array) $result], $params, 'Preferences', 'create');
 }
