@@ -308,6 +308,36 @@ class RefundQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Test a retryable chargeback
+   * Will not cancel the recurring
+   */
+  public function testChargebackRetryableReason(): void {
+    $signupMessage = $this->getRecurringSignupMessage();
+    $this->processMessage($signupMessage, 'Recurring', 'recurring');
+    $recurRecord = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', '=', $signupMessage['subscr_id'])
+      ->execute()->single();
+    $this->ids['ContributionRecur'][] = $recurRecord['id'];
+    $donationMessage = $this->getDonationMessage([
+      'gateway' => 'test_gateway',
+      'contribution_recur_id' => $recurRecord['id'],
+    ], TRUE, []);
+    $this->processMessage($donationMessage, 'Donation', 'test');
+
+    $refundMessage = $this->getRefundMessage([
+      'gateway' => 'test_gateway',
+      'gateway_parent_id' => $donationMessage['gateway_txn_id'],
+      'type' => 'chargeback',
+      'gross' => $donationMessage['original_gross'],
+      'gross_currency' => $donationMessage['original_currency'],
+      'reason' => 'AM04:InsufficientFunds',
+    ]);
+    $this->processMessage($refundMessage, 'Refund','refund');
+    $cancelMessage = QueueWrapper::getQueue('recurring')->pop();
+    $this->assertNull($cancelMessage);
+  }
+
+  /**
    * Generic testing of refund handling.
    *
    * @throws \CRM_Core_Exception
