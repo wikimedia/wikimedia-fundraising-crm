@@ -132,7 +132,7 @@ class CRM_Omnimail_Upgrader extends CRM_Extension_Upgrader_Base {
   }
 
   /**
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function upgrade_1003(): bool {
     $this->addCustomFields();
@@ -151,7 +151,7 @@ ADD COLUMN created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
   /**
    * Add Group custom fields.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function upgrade_1005(): bool {
     $this->ctx->log->info('Applying update 1004, adding group custom fields');
@@ -224,7 +224,7 @@ ADD COLUMN created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
   /**
    * Add our custom fields.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function addCustomFields(): void {
     CRM_Core_BAO_OptionValue::ensureOptionValueExists([

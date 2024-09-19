@@ -17,7 +17,7 @@ if (file_exists( __DIR__ . '/../../../vendor/autoload.php')) {
  * @param $params
  *
  * @return array
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_omnimailing_get($params) {
   // @todo - we should leverage the same code to do this as the Omnirecipient job.

@@ -19,7 +19,7 @@ class Check extends AbstractAction {
   *
   * @param \Civi\Api4\Generic\Result $result
   *
-  * @throws \API_Exception
+  * @throws \CRM_Core_Exception
   */
   public function _run(Result $result) {
     if (OmnimailJobProgress::get($this->getCheckPermissions())
@@ -27,7 +27,7 @@ class Check extends AbstractAction {
       ->addWhere('created_date', '<=', '1 hour ago')
       ->addWhere('job', '=', 'omnimail_privacy_erase')
       ->execute()->count()) {
-      throw new \API_Exception('Out of date omnimail_privacy_erase request found');
+      throw new \CRM_Core_Exception('Out of date omnimail_privacy_erase request found');
     }
   }
 

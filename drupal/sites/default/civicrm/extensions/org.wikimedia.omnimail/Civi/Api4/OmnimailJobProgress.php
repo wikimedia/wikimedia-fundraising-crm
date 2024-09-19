@@ -20,7 +20,7 @@ class OmnimailJobProgress extends Generic\DAOEntity {
    * @return \Civi\Api4\Action\OmnimailJobProgress\Check   *
    * @param bool $checkPermissions
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function check ($checkPermissions = TRUE): Action\OmnimailJobProgress\Check {
     return (new \Civi\Api4\Action\OmnimailJobProgress\Check(__CLASS__, __FUNCTION__))

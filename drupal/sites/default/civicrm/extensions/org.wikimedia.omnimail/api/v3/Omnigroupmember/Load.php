@@ -15,8 +15,7 @@ use Omnimail\Silverpop\Responses\Contact;
  *
  * @return array
  *
- * @throws \API_Exception
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  * @throws \League\Csv\Exception
  */
 function civicrm_api3_omnigroupmember_load($params) {

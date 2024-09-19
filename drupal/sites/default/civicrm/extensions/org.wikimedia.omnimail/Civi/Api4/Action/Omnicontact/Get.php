@@ -66,7 +66,7 @@ class Get extends AbstractAction {
    *
    * @return int
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   /**
    * Get the remote database ID.
@@ -85,8 +85,7 @@ class Get extends AbstractAction {
    *
    * @param \Civi\Api4\Generic\Result $result
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function _run(Result $result) {
     $omniObject = new \CRM_Omnimail_Omnicontact([

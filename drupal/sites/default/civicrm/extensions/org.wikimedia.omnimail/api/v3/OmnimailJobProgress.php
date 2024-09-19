@@ -5,7 +5,7 @@
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_omnimail_job_progress_create($params) {
   if (isset($params['retrieval_parameters']) && is_array($params['retrieval_parameters'])) {
@@ -19,7 +19,7 @@ function civicrm_api3_omnimail_job_progress_create($params) {
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_omnimail_job_progress_delete($params) {
   return _civicrm_api3_basic_delete(_civicrm_api3_get_BAO(__FUNCTION__), $params);
@@ -30,7 +30,7 @@ function civicrm_api3_omnimail_job_progress_delete($params) {
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_omnimail_job_progress_get($params) {
   return _civicrm_api3_basic_get(_civicrm_api3_get_BAO(__FUNCTION__), $params);
