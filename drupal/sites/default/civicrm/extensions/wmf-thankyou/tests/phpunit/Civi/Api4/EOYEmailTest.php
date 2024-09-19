@@ -931,7 +931,7 @@ WHERE
       $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
       return $this->getFirstEmail();
     }
-    catch (\API_Exception $e) {
+    catch (\CRM_Core_Exception $e) {
       $this->fail('failed to send ' . $e->getMessage() . "\n" . $e->getTraceAsString());
     }
   }

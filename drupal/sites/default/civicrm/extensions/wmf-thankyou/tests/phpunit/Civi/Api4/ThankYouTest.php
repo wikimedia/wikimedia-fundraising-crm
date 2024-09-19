@@ -1,7 +1,6 @@
 <?php
 namespace Civi\Api4;
 
-use API_Exception;
 use Civi;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\EntityTrait;
@@ -75,7 +74,7 @@ class ThankYouTest extends TestCase {
         ->execute()
         ->first()['id'];
     }
-    catch (API_Exception $e) {
+    catch (\CRM_Core_Exception $e) {
       $this->fail($e->getMessage());
     }
     return $this->ids['Contribution'][$key];
@@ -97,7 +96,7 @@ class ThankYouTest extends TestCase {
         ->setUseTrash(FALSE)
         ->execute();
     }
-    catch (API_Exception $e) {
+    catch (\CRM_Core_Exception $e) {
       $this->fail($e->getMessage());
     }
     parent::tearDown();
