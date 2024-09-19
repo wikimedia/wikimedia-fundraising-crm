@@ -35,7 +35,7 @@ class BenevityTest extends BaseChecksFileTest {
   /**
    * Delete created Benevity contributions and contacts.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function tearDown(): void {

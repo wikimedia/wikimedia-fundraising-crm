@@ -48,7 +48,7 @@ class ArchiveThankYouTest extends TestCase implements HeadlessInterface, HookInt
    *
    * This can be used for cleanup.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
     Contribution::delete(FALSE)->addWhere('contact_id.display_name', '=', 'Billy Bill')->execute();
@@ -59,7 +59,7 @@ class ArchiveThankYouTest extends TestCase implements HeadlessInterface, HookInt
   /***
    * Test purging old thank you details
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testArchiveThankYou(): void {
     $contactID = Contact::create(FALSE)

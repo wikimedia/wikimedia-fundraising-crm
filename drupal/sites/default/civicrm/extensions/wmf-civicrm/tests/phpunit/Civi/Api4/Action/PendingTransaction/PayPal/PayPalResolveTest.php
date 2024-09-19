@@ -55,7 +55,7 @@ class PayPalResolveTest extends TestCase {
   /**
    * Reset the pending database and contact and contributions in Civi
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
     TestingDatabase::clearStatics();

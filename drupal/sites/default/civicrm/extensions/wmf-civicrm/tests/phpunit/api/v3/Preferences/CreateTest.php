@@ -40,7 +40,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
   /**
    * Post test cleanup.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
     Contact::delete(FALSE)->addWhere('id', '=', $this->contactID)->setUseTrash(FALSE)->execute();

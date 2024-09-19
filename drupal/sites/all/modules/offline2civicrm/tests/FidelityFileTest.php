@@ -14,7 +14,7 @@ class FidelityFileTest extends BaseChecksFileTest {
   /**
    * Post test cleanup.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
     Contribution::delete(FALSE)->addWhere('trxn_id', 'LIKE', 'Fidelity%')->execute();

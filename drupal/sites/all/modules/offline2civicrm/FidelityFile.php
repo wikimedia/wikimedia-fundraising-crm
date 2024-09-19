@@ -16,7 +16,7 @@ class FidelityFile extends ChecksFile {
    *
    * @return int
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getSoftCreditToID(): int {
     if (!$this->softCreditToID) {
@@ -73,7 +73,7 @@ class FidelityFile extends ChecksFile {
    * Get the default values.
    *
    * @return string[]
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getDefaultValues(): array {
     return [

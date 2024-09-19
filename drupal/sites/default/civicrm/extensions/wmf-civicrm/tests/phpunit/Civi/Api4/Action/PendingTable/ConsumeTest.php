@@ -30,7 +30,7 @@ class ConsumeTest extends TestCase {
    *
    * This can be used for cleanup.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
     Contribution::delete(FALSE)->addWhere('contact_id.display_name', '=', 'Testy McTester')->execute();

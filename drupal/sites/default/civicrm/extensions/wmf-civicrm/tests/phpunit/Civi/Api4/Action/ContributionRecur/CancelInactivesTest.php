@@ -20,7 +20,7 @@ class CancelInactivesTest extends TestCase {
    *
    * This can be used for cleanup.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
     Contact::delete(FALSE)->addWhere('display_name', '=', 'Walter White')->setUseTrash(FALSE)->execute();

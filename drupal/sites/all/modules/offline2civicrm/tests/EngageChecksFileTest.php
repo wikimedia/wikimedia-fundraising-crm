@@ -168,7 +168,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   /**
    * Test that an address is made on address where email is empty.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    * @throws \League\Csv\Exception
@@ -253,7 +253,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    *
    * @throws \League\Csv\Exception
    * @throws \Civi\WMFException\WMFException
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testImportSucceedIndividualSingleContactExistsAddressMatch(): void {
 
@@ -504,7 +504,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
   /**
    * Basic import of individual contact.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
    * @throws \Civi\WMFException\WMFException
@@ -558,7 +558,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
    * @throws \Civi\WMFException\WMFException
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testImportSucceedIndividualMultipleContactExistsEmailMatchOnBestMinnie(): void {
     $minnies = $this->createContactSet([
@@ -630,7 +630,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
    * @throws \Civi\WMFException\WMFException
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testImportSucceedOrganizationMultipleContactsExistsEmailMatchNonPrimary(): void {
     $goodies = $this->createContactSet([

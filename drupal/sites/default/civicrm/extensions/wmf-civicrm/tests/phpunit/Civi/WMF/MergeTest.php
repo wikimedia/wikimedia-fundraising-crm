@@ -99,7 +99,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @param string $name e.g custom_3
    *
    * @return string
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getCustomFieldString(string $name): string {
     return 'custom_' . CustomField::get(FALSE)
@@ -235,7 +235,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @dataProvider isReverse
    *
    * @throws \CRM_Core_Exception
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testMergeEmailNonPrimary($isReverse): void {
     $this->giveADuckADonation($isReverse);
@@ -275,7 +275,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * Although a bit tangential we test calculations on deleting a contribution at the end.
    *
    * @throws \CRM_Core_Exception
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testMergeEndowmentCalculation(): void {
     $this->callAPISuccess('Contribution', 'create', [
@@ -579,7 +579,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @param array $dataSet
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeConflictPreferredLanguage($dataSet): void {
     // Can't use api if we are trying to use invalid data.
@@ -610,7 +609,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @param string $language2
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeConflictDifferentPreferredLanguage($language1, $language2): void {
     // Can't use api if we are trying to use invalid data.
@@ -641,7 +639,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @param string $language2
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeConflictDifferentPreferredLanguageReverse($language1, $language2) {
     // Can't use api if we are trying to use invalid data.
@@ -784,7 +781,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * Bug T176699
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function testBatchMergeResolvableConflictCountryVsFullAddressOutOfOrder() {
     $this->callAPISuccess('Address', 'create', [
@@ -1896,7 +1892,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @param int $contactID
    * @param array $expected
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function assertContactValues($contactID, $expected) {
     $contact = Contact::get(FALSE)->setSelect(

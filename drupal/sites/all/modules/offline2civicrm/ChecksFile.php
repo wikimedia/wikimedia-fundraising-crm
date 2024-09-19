@@ -983,7 +983,7 @@ WHERE
    *
    * @param array $msg
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
   protected function mungeMessage(&$msg) {
@@ -1683,8 +1683,7 @@ WHERE
    * @param string $organizationName
    * @param int $contact_id
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
   protected function createRelatedOrganization(string $relationshipNameAB, string $organizationName, int $contact_id): void {

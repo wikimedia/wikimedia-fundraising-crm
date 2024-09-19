@@ -57,7 +57,7 @@ class AdyenResolveTest extends TestCase {
   /**
    * Reset the pending database
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
     TestingDatabase::clearStatics();
