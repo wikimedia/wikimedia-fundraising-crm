@@ -456,7 +456,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedOrganizationMultipleContactExistsAddressMatchOnBestVillain(): void {
-    $this->sourceFileUri = __DIR__ . "/data/engage_org_import.csv";
+    $this->sourceFileUri = $this->getCsvDirectory() . "engage_org_import.csv";
 
     $villains = [];
     for ($i = 0; $i < 4; $i++) {
@@ -614,7 +614,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
         'location_type_id' => 'Home',
       ],
     ]);
-    $this->sourceFileUri = __DIR__ . "/data/engage_org_import.csv";
+    $this->sourceFileUri = $this->getCsvDirectory() . "engage_org_import.csv";
     $this->importCheckFile();
 
     $contributions = $this->callAPISuccess('Contribution', 'get', ['contact_id' => $goodie['id']]);
@@ -656,7 +656,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
     // Note that goodish is primary
     $this->assertEquals('goodish@example.com', $goody['email']);
 
-    $this->sourceFileUri = __DIR__ . "/data/engage_org_import.csv";
+    $this->sourceFileUri = $this->getCsvDirectory() . "engage_org_import.csv";
     $this->importCheckFile();
 
     $this->callAPISuccessGetSingle('Contribution', [
@@ -718,7 +718,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    */
   public function testImporterCreatesOutputFiles(): void {
-    $this->sourceFileUri = __DIR__ . '/../tests/data/engage_reduced.csv';
+    $this->sourceFileUri = $this->getCsvDirectory() . 'engage_reduced.csv';
     $fileUri = $this->setupFile('engage_reduced.csv');
 
     $importer = new EngageChecksFile($fileUri);
@@ -859,7 +859,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    */
   public function setupFile(string $inputFileName): string {
     $this->purgePreviousData();
-    $this->sourceFileUri = __DIR__ . '/../tests/data/' . $inputFileName;
+    $this->sourceFileUri = $this->getCsvDirectory() . $inputFileName;
     $this->ensureAnonymousContactExists();
 
     // copy the file to a temp dir so copies are made in the temp dir.
@@ -890,7 +890,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
    * @throws \League\Csv\Exception
    */
   protected function importCheckFile($additionalFields = []): array {
-    $fileName = $this->sourceFileUri ?: __DIR__ . "/data/engage_duplicate_testing.csv";
+    $fileName = $this->sourceFileUri ?: $this->getCsvDirectory() . "engage_duplicate_testing.csv";
     $importer = new EngageChecksFile($fileName, $additionalFields);
     $importer->import();
     return $importer->getMessages();

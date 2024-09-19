@@ -38,7 +38,7 @@ class CitibankIndividualsFileTest extends BaseChecksFileTest {
   function testImport() {
     civicrm_initialize();
 
-    $importer = new CitibankIndividualsFile(__DIR__ . "/data/citibank_individuals.csv");
+    $importer = new CitibankIndividualsFile($this->getCsvDirectory() . "citibank_individuals.csv");
     $messages = $importer->import();
     $this->assertEquals('All rows were imported', $messages['Result']);
     $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'CITIBANK 5739498974']);

@@ -170,7 +170,7 @@ class BenevityTest extends BaseChecksFileTest {
     ]);
     $this->assertEquals(0, $relationships['count']);
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity_only_match.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
+    $importer = new BenevityFile($this->getCsvDirectory() . "benevity_only_match.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
@@ -216,15 +216,14 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_id' => $thaMouseMeister['id'],
     ]);
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity_only_match.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
+    $importer = new BenevityFile($this->getCsvDirectory() . "/benevity_only_match.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
     $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED']);
     $relationship = $this->callAPISuccessGetSingle('Relationship', [
-        'contact_id_b' => $thaMouseMeister['id'],
-      ]
-    );
+      'contact_id_b' => $thaMouseMeister['id'],
+    ]);
     $this->assertEquals($relationship['contact_id_a'], $contribution['soft_credit_to']);
   }
 
@@ -323,7 +322,7 @@ class BenevityTest extends BaseChecksFileTest {
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
     ]);
-    $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
+    $importer = new BenevityFile($this->getCsvDirectory() . "benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
@@ -600,7 +599,7 @@ class BenevityTest extends BaseChecksFileTest {
       'employer_id' => $organization['id'],
     ]);
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
+    $importer = new BenevityFile($this->getCsvDirectory() . "benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
@@ -666,7 +665,7 @@ class BenevityTest extends BaseChecksFileTest {
       'email' => 'minnie@mouse.org',
     ]);
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
+    $importer = new BenevityFile($this->getCsvDirectory() . "benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);
@@ -726,7 +725,7 @@ class BenevityTest extends BaseChecksFileTest {
   public function testDuplicateDetection(): void {
     $this->createAllOrganizations();
 
-    $importer = new BenevityFile(__DIR__ . "/data/benevity.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
+    $importer = new BenevityFile($this->getCsvDirectory() . "benevity.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
 
     $messages = $this->importBenevityFile();
@@ -938,7 +937,7 @@ class BenevityTest extends BaseChecksFileTest {
     $messages = $this->importBenevityFile(['date' => ['year' => 2019, 'month' => 9, 'day' => 12], 'original_currency' => 'JPY', 'original_currency_total' => 4000, 'usd_total' => 40], 'benevity.jpy');
     global $user;
     $suffix = $user->uid . '.csv';
-    $this->assertEquals('All rows were imported', $messages['Result'], "\n" . print_r(file_get_contents(__DIR__ . '/data/benevity.jpy_errors.' . $suffix), TRUE) . "\n" . print_r($_exchange_rate_cache, TRUE));
+    $this->assertEquals('All rows were imported', $messages['Result'], "\n" . print_r(file_get_contents($this->getCsvDirectory() . 'benevity.jpy_errors.' . $suffix), TRUE) . "\n" . print_r($_exchange_rate_cache, TRUE));
     $contribution = $this->callAPISuccessGetSingle('Contribution', ['contact_id' => $minnie['id']]);
     $this->assertEquals((464 + 254) / 100, $contribution['fee_amount']);
   }
@@ -979,7 +978,7 @@ class BenevityTest extends BaseChecksFileTest {
    * @noinspection PhpDocMissingThrowsInspection
    */
   protected function importBenevityFile(array $additionalFields = ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]], string $csv = 'benevity'): array {
-    $importer = new BenevityFile(__DIR__ . '/data/' . $csv . '.csv', $additionalFields);
+    $importer = new BenevityFile($this->getCsvDirectory() . $csv . '.csv', $additionalFields);
     $importer->import();
     return $importer->getMessages();
   }

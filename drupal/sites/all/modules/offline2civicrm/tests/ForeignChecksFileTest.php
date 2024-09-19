@@ -76,7 +76,7 @@ class ForeignChecksFileTest extends BaseChecksFileTest {
    * @throws \League\Csv\Exception
    */
   public function testImportForeignCheckes(): void {
-    $importer = new ForeignChecksFile(__DIR__ . "/data/foreign_checks_trilogy.csv");
+    $importer = new ForeignChecksFile($this->getCsvDirectory() . "foreign_checks_trilogy.csv");
     $importer->import();
     $messages = $importer->getMessages();
     $this->assertEquals('All rows were imported', $messages['Result']);

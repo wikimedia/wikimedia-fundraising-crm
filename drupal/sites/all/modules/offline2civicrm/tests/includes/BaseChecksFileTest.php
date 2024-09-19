@@ -81,6 +81,10 @@ class BaseChecksFileTest extends BaseWmfDrupalPhpUnitTestCase {
     parent::tearDown();
   }
 
+  protected function getCsvDirectory(): string {
+    return __DIR__ . '/../../../../../default/civicrm/extensions/wmf-civicrm/tests/data/';
+  }
+
   /**
    * Clean up transactions from previous test runs.
    */

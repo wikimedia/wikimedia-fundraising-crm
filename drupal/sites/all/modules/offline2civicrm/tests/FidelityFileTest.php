@@ -33,7 +33,7 @@ class FidelityFileTest extends BaseChecksFileTest {
    * @throws WMFException
    */
   public function testImport(): void {
-    $importer = new FidelityFile(__DIR__ . "/data/fidelity.csv");
+    $importer = new FidelityFile($this->getCsvDirectory() . 'fidelity.csv');
     $messages = $importer->import();
     $this->assertEquals('All rows were imported', $messages['Result']);
     $contributions = Contribution::get(FALSE)->addWhere('trxn_id', 'LIKE', 'Fidelity%')
