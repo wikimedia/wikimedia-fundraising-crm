@@ -56,7 +56,7 @@ class CRM_LCD_MoveContrib_BAO_MoveContrib {
       try {
         CRM_Activity_BAO_Activity::create($activityParams);
       }
-      catch (CiviCRM_API3_Exception $e) {}
+      catch (CRM_Core_Exception $e) {}
 
       return TRUE;
     }

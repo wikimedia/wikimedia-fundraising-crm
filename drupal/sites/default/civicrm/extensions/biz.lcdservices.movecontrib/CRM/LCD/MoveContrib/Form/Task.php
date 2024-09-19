@@ -90,7 +90,7 @@ class CRM_LCD_MoveContrib_Form_Task extends CRM_Contribute_Form_Task {
           'return' => 'contact_id',
         ]);
       }
-      catch (CiviCRM_API3_Exception $e) {
+      catch (CRM_Core_Exception $e) {
       }
 
       $params = [
