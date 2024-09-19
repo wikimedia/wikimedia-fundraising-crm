@@ -136,7 +136,7 @@ class CRM_Emailamender {
       // Recalculate display name.
       civicrm_api3('Contact', 'create', ['id' => $iContactId]);
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       CRM_Core_Session::setStatus(ts("Error when correcting email - contact ID $iContactId"), ts('Email Address Corrector'), 'error');
       throw $e;
     }

@@ -19,7 +19,7 @@ function _civicrm_api3_merge_redo_spec(&$spec) {
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_merge_redo($params) {
   $newContact = civicrm_api3('Contact', 'getmergedto', [
@@ -27,7 +27,7 @@ function civicrm_api3_merge_redo($params) {
     'sequential' => 1,
   ]);
   if ($newContact['count'] == 0) {
-    throw new API_Exception(ts('Contact not re-mergeable'));
+    throw new CRM_Core_Exception(ts('Contact not re-mergeable'));
   }
   civicrm_api3('Contact', 'create', ['id' => $params['contact_id'], 'is_deleted' => 0]);
   return civicrm_api3('Contact', 'merge', ['to_remove_id' => $params['contact_id'], 'to_keep_id' => $newContact['id']]);

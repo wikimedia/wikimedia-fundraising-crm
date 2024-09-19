@@ -19,8 +19,8 @@ function _civicrm_api3_email_amender_update_corrections_spec(&$spec) {
  * @param array $params
  * @return array API result descriptor
  * @see civicrm_api3_create_success
- * @see civicrm_api3_create_error
- * @throws API_Exception
+ *
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_email_amender_update_corrections($params) {
   $aEscapedCorrections = [];
@@ -42,9 +42,8 @@ function civicrm_api3_email_amender_update_corrections($params) {
       break;
 
     default:
-      throw new API_Exception(ts('Invalid domain amender setting update'));
+      throw new CRM_Core_Exception(ts('Invalid domain amender setting update'));
   }
 
   return civicrm_api3_create_success([], $params, 'EmailAmender', 'UpdateCorrections');
 }
-
