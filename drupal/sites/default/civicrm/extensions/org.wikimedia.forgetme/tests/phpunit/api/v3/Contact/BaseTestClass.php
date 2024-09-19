@@ -59,7 +59,7 @@ class api_v3_Contact_BaseTestClass extends \PHPUnit\Framework\TestCase implement
             ]);
           }
         }
-        catch (CiviCRM_API3_Exception $e) {
+        catch (CRM_Core_Exception $e) {
           // No harm done - it was a best effort cleanup
         }
       }
