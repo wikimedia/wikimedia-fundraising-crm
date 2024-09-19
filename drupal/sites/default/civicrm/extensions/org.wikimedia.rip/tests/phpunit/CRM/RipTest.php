@@ -41,7 +41,7 @@ class CRM_RipTest extends TestCase implements HeadlessInterface, TransactionalIn
   /**
    * Test that setting is deceased sets is_opt_out.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testChanges(): void {
     $ziggy = civicrm_api3('Contact', 'create', array('first_name' => 'David', 'last_name' => 'Bowie', 'contact_type' => 'Individual', 'is_deceased' => 1));
