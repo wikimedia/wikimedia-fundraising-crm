@@ -122,9 +122,7 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
   }
 
   /**
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \CRM_Core_Exception
    */
   public function testSyncFromStart() {
     $this->setUpMockSearch();
