@@ -148,7 +148,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $result[$recurringPayment['id']]['status'] = $payment['payment_status'];
         $result[$recurringPayment['id']]['invoice_id'] = $payment['invoice_id'];
         $result[$recurringPayment['id']]['processor_id'] = $payment['processor_id'];
-      } catch (CiviCRM_API3_Exception $e) {
+      } catch (CRM_Core_Exception $e) {
         $this->recordFailedPayment($recurringPayment, $e);
         $this->addErrorStats($errorCount, $e->getCode());
         // display information in the result array
@@ -392,12 +392,11 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   /**
    * @param array $recurringPayment
-   * @param \CiviCRM_API3_Exception $exception
+   * @param \CRM_Core_Exception $exception
    *
-   * @throws \CiviCRM_API3_Exception
    * @throws \Exception
    */
-  protected function recordFailedPayment($recurringPayment, CiviCRM_API3_Exception $exception) {
+  protected function recordFailedPayment($recurringPayment, CRM_Core_Exception $exception) {
     $cancelRecurringDonation = FALSE;
     $errorData = $exception->getErrorData();
     $errorResponse = $errorData['smashpig_processor_response'] ?? $exception->getMessage();
@@ -704,7 +703,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       Civi::log('wmf')->info('Payment successful - invoice_id: '.$paymentInfo['invoice_id'].' with status: '.$paymentInfo['payment_status'].' and processor_id: '.$paymentInfo['processor_id']);
       $payment = reset($payment['values']);
       return $payment;
-    } catch (CiviCRM_API3_Exception $exception) {
+    } catch (CRM_Core_Exception $exception) {
       if (
         $failures < self::MAX_MERCHANT_REFERENCE_RETRIES &&
         $this->handleException($exception, $paymentParams)
@@ -751,14 +750,14 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * Handle an exception in a payment attempt, indicating whether retry is
    * possible and potentially mutating payment parameters.
    *
-   * @param \CiviCRM_API3_Exception $exception from PaymentProcessor::pay
+   * @param \CRM_Core_Exception $exception from PaymentProcessor::pay
    * @param array $paymentParams Same keys as argument to makePayment. Values
    *  may be mutated, depending on the recommended way of handling the error.
    *
    * @return bool TRUE if the payment should be tried again
    */
   protected function handleException(
-    CiviCRM_API3_Exception $exception,
+    CRM_Core_Exception $exception,
     &$paymentParams
   ) {
     Civi::log('wmf')->info('Error: '.$exception->getErrorCode().' invoice_id:'.$paymentParams['invoice_id']);
