@@ -29,6 +29,7 @@ use Civi\WMFThankYou\From;
  * @method $this setTemplateName(string $templateName)
  * @method string getTemplateName()
  * @method $this setEmail(string $email)
+ * @method $this setContactID(int $contactID)
  * @method $this setContributionID(int $contributionID)
  */
 class Send extends AbstractAction {
@@ -57,6 +58,11 @@ class Send extends AbstractAction {
    */
    public $contributionID;
 
+   /**
+   * @var int
+   */
+   public $contactID;
+
   /**
    * @var string
    */
@@ -74,14 +80,25 @@ class Send extends AbstractAction {
   }
 
   /**
-   * Get the contribution ID.
+   * Get the email.
+   *
+   * Transitionally look it up in params but later the calling function should set it.
+   *
+   * @return string
+   */
+  protected function getEmail(): string {
+    return $this->email ?: $this->getParameters()['recipient_address'];
+  }
+
+  /**
+   * Get the contact ID.
    *
    * Transitionally look it up in params but later the calling function should set it.
    *
    * @return int
    */
-  protected function getEmail(): string {
-    return $this->email ?: $this->getParameters()['recipient_address'];
+  protected function getContactID(): int {
+    return $this->contactID ?: $this->getParameters()['contact_id'];
   }
 
   /**
@@ -214,6 +231,7 @@ class Send extends AbstractAction {
     $links = WMFLink::getUnsubscribeURL(FALSE)
       ->setContributionID($this->getContributionID())
       ->setEmail($this->getEmail())
+      ->setContactID($this->getContactID())
       ->setLanguage($this->getLanguage())
       ->execute()->first();
     // @todo - the one_click currently is the same as the user unsubscribe but

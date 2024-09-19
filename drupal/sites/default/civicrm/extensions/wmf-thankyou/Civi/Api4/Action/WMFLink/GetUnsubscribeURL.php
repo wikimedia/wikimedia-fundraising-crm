@@ -18,6 +18,8 @@ use Civi\Api4\Generic\Result;
  * @method $this setContributionID(int $contributionID)
  * @method string getEmail()
  * @method $this setEmail(string $email)
+ * @method string getContactID()
+ * @method $this setContactID(int $contactID)
  * @method $this setMediawikiLocale(string $mediaWikiLocale)
  */
 class GetUnsubscribeURL extends AbstractAction {
@@ -45,6 +47,13 @@ class GetUnsubscribeURL extends AbstractAction {
    * @var string $email
    */
   protected $email;
+
+  /**
+   * The contact of epc url.
+   *
+   * @var int $contactID
+   */
+  public $contactID;
 
   /**
    * @var int|null
@@ -81,17 +90,21 @@ class GetUnsubscribeURL extends AbstractAction {
    * @return string
    */
   private function getUnsubscribeUrl(): string {
-     return Civi::settings()->get('wmf_unsubscribe_url') . '?' . http_build_query([
-         'p' => 'thankyou',
-         'c' => $this->getContributionID(),
-         'e' => $this->getEmail(),
-         'h' => sha1(
-           $this->getContributionID()
-           . $this->getEmail()
-           . \CRM_Utils_Constant::value('WMF_UNSUB_SALT')
-         ),
-         'uselang' => $this->getMediaWikiLocale(),
-       ], '', '&');
+    $contactID = $this->getContactID();
+    $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
+    $url = Civi::settings()->get('wmf_email_preferences_url');
+    $parsed = \CRM_Utils_Url::parseUrl($url);
+
+    // Would be nice to have a Util that just let me add query bits and figured out if the URL already had a QS
+    $queryParts = [];
+    if ($parsed->getQuery() !== '') {
+      $queryParts[] = $parsed->getQuery();
+    }
+    $queryParts[] = "contact_id=$contactID";
+    $queryParts[] = "checksum=$checksum";
+    return \CRM_Utils_Url::unparseUrl(
+      $parsed->withQuery(implode('&', $queryParts))
+    );
   }
 
   /**
