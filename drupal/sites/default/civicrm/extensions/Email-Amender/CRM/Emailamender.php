@@ -94,7 +94,7 @@ class CRM_Emailamender {
    *
    * @return bool correction took place
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function fixEmailAddress($iEmailId, $iContactId, $sRawEmail) {
 

@@ -19,8 +19,7 @@ function _civicrm_api3_email_amender_find_candidates_spec(&$spec) {
  *
  * @return array API result descriptor
  *
- * @throws \CiviCRM_API3_Exception
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  *
  * @see civicrm_api3_create_success
  */
@@ -36,7 +35,7 @@ function civicrm_api3_email_amender_find_candidates($params) {
   // edge cases like gmai@gmai.gmai.com but it feels like it can stay out of scope of this
   // api at this stage.
   $values = CRM_Core_DAO::executeQuery("
-    SELECT id, contact_id, email FROM civicrm_email 
+    SELECT id, contact_id, email FROM civicrm_email
     WHERE email REGEXP '\.({$topLevelDomainList})$'
     OR email REGEXP '@({$secondLevelDomainList})\\\.'
     LIMIT " . $options['limit']
