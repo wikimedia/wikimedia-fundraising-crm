@@ -26,7 +26,7 @@ class FailureEmail extends Generic\AbstractEntity {
   /**
    * @return \Civi\Api4\Action\FailureEmail\Render
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function render(): Action\FailureEmail\Render {
     return new \Civi\Api4\Action\FailureEmail\Render(__CLASS__, __FUNCTION__);
@@ -35,7 +35,7 @@ class FailureEmail extends Generic\AbstractEntity {
   /**
    * @return \Civi\Api4\Action\FailureEmail\Send
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function send(): Action\FailureEmail\Send {
     return new \Civi\Api4\Action\FailureEmail\Send(__CLASS__, __FUNCTION__);

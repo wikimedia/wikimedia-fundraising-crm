@@ -83,9 +83,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
   /**
    * Set up for test.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function setUp(): void {
     $existing = $this->callAPISuccess(
@@ -331,7 +329,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
   /**
    * Set up the message template for failures.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function setupFailureTemplate(): void {
@@ -371,7 +369,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    * @param int $contributionRecurID
    *
    * @return array|null
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function getLatestFailureMailActivity(int $contributionRecurID) {

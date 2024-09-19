@@ -66,7 +66,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * Setup for test.
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function setUp(): void {
     parent::setUp();
@@ -117,8 +116,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
   /**
    * Post test cleanup.
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
    * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
@@ -189,7 +186,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    * @throws \Exception
    */
   public function testRecurringChargeJob(): void {
@@ -706,7 +702,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * field
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    * @throws \Exception
    */
   public function testRecurringChargeJobInitialSchemeId() {
@@ -848,7 +843,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
    */
   public function testPaymentFails() {
@@ -891,7 +885,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * When we get a DO_NOT_RETRY error code, we should cancel the subscription
    * immediately without waiting for 3 retries.
    *
-   * @throws \CiviCRM_API3_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
    * @throws \CRM_Core_Exception
    */
@@ -919,7 +912,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * retry.rescueScheduled false, we should cancel the subscription immediately
    * without count failed retries.
    *
-   * @throws \CiviCRM_API3_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
    * @throws \CRM_Core_Exception
    */
@@ -980,9 +972,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \API_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
-   * @throws \CiviCRM_API3_Exception
    */
   public function testFailureEmailNotSentOnFirstFailedPayment() {
     Civi::settings()->set('smashpig_recurring_send_failure_email', 1);
@@ -1041,8 +1031,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function testFailureEmailNotSentOnSecondFailedPayment(): void {
@@ -1105,7 +1093,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * failed payment attempts.
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function testFailureEmailSentOnThirdFailedPayment() {
@@ -1175,7 +1162,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
   /**
    *
-   * @throws \CiviCRM_API3_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
    * @throws \CRM_Core_Exception
    */
@@ -1252,9 +1238,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
   }
 
   /**
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function testCancelMessage() {
     $this->setupFailureTemplate();
@@ -1273,7 +1257,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * Test that the recurring is cancelled after maximum retries.
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
+   *
    * @throws \PHPQueue\Exception\JobNotFoundException
    */
   public function testMaxFailures(): void {
@@ -1542,7 +1526,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * @return array
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   protected function setupAndFailRecurring(): array {
     $contributionRecur = $this->setupRecurring();
@@ -1569,7 +1552,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * We add recurring payment information to the pending queue when auto rescue
    * transaction is initialised
    *
-   * @throws \CiviCRM_API3_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
    * @throws \CRM_Core_Exception
    */

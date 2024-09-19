@@ -25,7 +25,6 @@ class FailureEmailTest extends SmashPigBaseTestClass {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \API_Exception
    */
   public function testRender(): void {
     // Make sure the define is available (not this won't override any existing define).
