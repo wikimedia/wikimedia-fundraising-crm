@@ -25,7 +25,6 @@ class OmnigroupCreateTest extends OmnimailBaseTestClass {
   /**
    * Post test cleanup.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
@@ -36,7 +35,7 @@ class OmnigroupCreateTest extends OmnimailBaseTestClass {
   /**
    * Example: the groupMember load fn works.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testOmnigroupCreate(): void {
     $this->getMockRequest([file_get_contents(__DIR__ . '/Responses/CreateContactListResponse.txt')]);

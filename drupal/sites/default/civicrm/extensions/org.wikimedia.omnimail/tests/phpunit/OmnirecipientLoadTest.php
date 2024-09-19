@@ -234,9 +234,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
   /**
    * Test the suffix works for multiple jobs..
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function testCompleteIncompleteUseSuffix(): void {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
@@ -310,8 +308,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    *
    * @return array
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getJobSettings($params = ['mail_provider' => 'Silverpop']): array {
     $omnimail = new CRM_Omnimail_Omnirecipients($params);

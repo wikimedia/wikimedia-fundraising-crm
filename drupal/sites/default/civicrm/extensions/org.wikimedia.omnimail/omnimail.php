@@ -104,8 +104,7 @@ function omnimail_civicrm_alterLogTables(&$logTableSpec) {
  * @param int|null $id
  * @param array $params
  *
- * @throws \CiviCRM_API3_Exception
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  */
 function omnimail_civicrm_pre($op, $objectName, $id, &$params) {
   if ($op === 'delete' && in_array($objectName, ['Individual', 'Organization', 'Household', 'Contact'])) {
@@ -178,7 +177,7 @@ function _omnimail_civicrm_get_snooze_group_id(): int {
  * @param $params
  *
  * @return true
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  * @throws \Civi\API\Exception\NotImplementedException
  */
 function civicrm_api4_queue($ctx, $entity, $action, $params): bool {

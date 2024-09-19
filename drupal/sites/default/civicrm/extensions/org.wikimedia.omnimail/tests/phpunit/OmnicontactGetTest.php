@@ -23,7 +23,7 @@ class OmnicontactGetTest extends OmnimailBaseTestClass {
   /**
    * Test retrieving a contact from the remote provider.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testGetRecipient(): void {
     $this->getMockRequest([file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt')]);

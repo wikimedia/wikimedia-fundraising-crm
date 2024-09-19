@@ -27,7 +27,7 @@ function _civicrm_api3_omnirecipient_forget_spec(&$spec) {
  * @return array API result descriptor
  * @see civicrm_api3_create_success
  * @see civicrm_api3_create_error
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_omnirecipient_forgetme($params) {
   $whereClause = CRM_Core_DAO::createSQLFilter('contact_id', $params['contact_id'], CRM_Utils_Type::T_INT);

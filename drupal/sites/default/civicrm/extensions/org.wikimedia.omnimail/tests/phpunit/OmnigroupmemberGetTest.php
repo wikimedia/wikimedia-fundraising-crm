@@ -28,7 +28,7 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass {
   /**
    * Example: Test that a version is returned.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testOmnigroupmemberGet() {
     $client = $this->setupSuccessfulDownloadClient();

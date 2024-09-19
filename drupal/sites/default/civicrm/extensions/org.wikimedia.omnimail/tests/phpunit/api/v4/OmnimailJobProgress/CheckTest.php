@@ -29,7 +29,7 @@ class api_v4_CheckTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
   }
 
   /**
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
     OmnimailJobProgress::delete(FALSE)->addWhere('job', '=', 'omnimail_privacy_erase')->execute();
@@ -49,7 +49,7 @@ class api_v4_CheckTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
    * Test the Check function throws an exception when the entry is one hour +
    * old.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    *
    */
   public function testCheck() {
@@ -61,7 +61,7 @@ class api_v4_CheckTest extends \PHPUnit\Framework\TestCase implements HeadlessIn
       ->addWhere('job', '=', 'omnimail_privacy_erase')
       ->execute();
 
-    $this->expectException('API_Exception');
+    $this->expectException('CRM_Core_Exception');
     OmnimailJobProgress::check(FALSE)->execute();
   }
 

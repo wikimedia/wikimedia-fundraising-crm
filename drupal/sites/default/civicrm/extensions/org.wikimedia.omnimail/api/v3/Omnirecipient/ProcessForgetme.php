@@ -12,7 +12,7 @@ require_once 'vendor/autoload.php';
  *
  * @return array
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_omnirecipient_process_forgetme($params) {
   $forgets = civicrm_api3('OmnimailJobProgress', 'get', ['job' => 'omnimail_privacy_erase', 'mailing_provider' => $params['mail_provider']]);

@@ -30,8 +30,6 @@
  *
  * @return array
  *
- * @throws \API_Exception
- * @throws \CiviCRM_API3_Exception
  * @throws \CRM_Core_Exception
  */
 function civicrm_api3_omnirecipient_load($params) {
@@ -121,7 +119,7 @@ function civicrm_api3_omnirecipient_load($params) {
  * @param int $newOffSet
  * @param string $loggingContext
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $job, $jobSettings, $newOffSet, string $loggingContext = '') {
   if (count($valueStrings)) {
@@ -143,7 +141,7 @@ function _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $j
  * @param string $loggingContext
  *
  * @return array
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $insertBatchSize, $job, $jobSettings, $newOffSet, string $loggingContext = '') {
   if (count($valueStrings) === $insertBatchSize) {

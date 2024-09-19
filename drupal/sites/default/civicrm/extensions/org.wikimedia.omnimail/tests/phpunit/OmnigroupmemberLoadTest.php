@@ -297,8 +297,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    * @param array $params
    *
    * @return array
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getJobSettings($params = ['mail_provider' => 'Silverpop']): array {
     $omnimail = new CRM_Omnimail_Omnigroupmembers($params);

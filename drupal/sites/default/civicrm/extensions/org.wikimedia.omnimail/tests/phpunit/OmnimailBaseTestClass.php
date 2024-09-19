@@ -160,7 +160,7 @@ class OmnimailBaseTestClass extends TestCase implements HeadlessInterface {
     try {
       civicrm_api3('OmnimailJobProgress', 'create', $values);
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       $this->fail(print_r($values, 1), $e->getMessage() . $e->getTraceAsString() . print_r($e->getExtraParams(), TRUE));
     }
   }
