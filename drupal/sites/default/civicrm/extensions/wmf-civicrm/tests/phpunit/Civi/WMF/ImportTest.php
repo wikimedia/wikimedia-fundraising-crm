@@ -33,14 +33,14 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   use WMFEnvironmentTrait;
 
   /**
-   * @var array
-   */
-  protected $ids = [];
-
-  /**
    * @var int
    */
   protected int $userJobID;
+
+  /**
+   * @var \CRM_Core_Controller|\CRM_Import_Controller
+   */
+  private $formController;
 
   /**
    * Clean up after test.
@@ -52,6 +52,9 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     UserJob::delete(FALSE)->addWhere('metadata', 'LIKE', '%civicrm_tmp_d_abc%')->execute();
     \CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_tmp_d_abc');
     \Civi::cache('metadata')->delete('civiimport_table_fieldscivicrm_tmp_d_abc');
+    if ($this->userJobID) {
+      UserJob::delete(FALSE)->addWhere('id', '=', $this->userJobID)->execute();
+    }
     Contribution::delete(FALSE)->addWhere('contact_id.nick_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.organization_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.last_name', '=', 'Doe')->execute();
@@ -820,6 +823,274 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
         'contact_type' => 'Individual',
         'email_primary.email' => 'fakeemail@wikimedia.org',
       ])->execute();
+    }
+  }
+
+  /**
+   * This tests some features for the Fidelity import:
+   *  - Fidelity: The Donor Advised Organization is created from the Contact
+   * reference field.
+   *  - General: is_out_out is handled.
+   *
+   * @throws \CRM_Core_Exception
+   *
+   * @return void
+   */
+  public function testImportFeatures(): void {
+    $importRows = $this->importCSV('fidelity.csv', [
+      [],
+      [],
+      [],
+      ['name' => 'receive_date'],
+      ['name' => 'total_amount'],
+      [],
+      ['name' => 'donor_advised_fund.owns_donor_advised_for'],
+      ['name' => 'full_name', 'default_value' => 'Squeaky Mouse'],
+      ['name' => 'address_primary.street_address'],
+      [],
+      ['name' => 'financial_type_id', 'default_value' => 'Engage'],
+    ], [
+      'dateFormats' => \CRM_Utils_Date::DATE_mm_dd_yy,
+    ]);
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contact_id', 'donor_advised_fund.owns_donor_advised_for')
+      ->addWhere('id', '=', $importRows[1]['_entity_id'])
+      ->execute()->single();
+    $relationship = Relationship::get(FALSE)
+      ->addSelect('relationship_type_id:name')
+      ->addWhere('contact_id_a', '=', $contribution['donor_advised_fund.owns_donor_advised_for'])
+      ->addWhere('contact_id_b', '=', $contribution['contact_id'])
+      ->execute()->single();
+    $this->assertEquals('Holds a Donor Advised Fund of', $relationship['relationship_type_id:name']);
+  }
+
+  /**
+   * Import the csv file values.
+   *
+   * This function uses a flow that mimics the UI flow.
+   *
+   * @param string $csv Name of csv file.
+   * @param array $fieldMappings
+   * @param array $submittedValues
+   */
+  protected function importCSV(string $csv, array $fieldMappings, array $submittedValues = []): array {
+    try {
+      \Civi::dispatcher()->addListener('hook_civicrm_alterRedirect', [$this, 'avoidRedirect']);
+      $this->imitateAdminUser();
+      $submittedValues = array_merge([
+        'skipColumnHeader' => TRUE,
+        'fieldSeparator' => ',',
+        'contactType' => 'Individual',
+        'mapper' => $this->getMapperFromFieldMappings($fieldMappings),
+        'dataSource' => 'CRM_Import_DataSource_CSV',
+        'file' => ['name' => $csv],
+        'dateFormats' => \CRM_Utils_Date::DATE_yyyy_mm_dd,
+        'onDuplicate' => \CRM_Import_Parser::DUPLICATE_SKIP,
+        'groups' => [],
+      ], $submittedValues);
+      $this->submitDataSourceForm($csv, $submittedValues);
+
+      $userJob = UserJob::get(FALSE)
+        ->addWhere('id', '=', $this->userJobID)
+        ->execute()->single();
+      $userJob['metadata']['entity_configuration'] = [
+        'Contribution' => ['action' => 'create'],
+        "Contact" => [
+          "action" => "save",
+          "contact_type" => "Individual",
+          "dedupe_rule" => 'IndividualGeneral',
+        ],
+      ];
+      $userJob['metadata']['import_mappings'] = $fieldMappings;
+      foreach ($userJob['metadata']['import_mappings'] as $key => $value) {
+        if (!isset($value['column_number'])) {
+          $userJob['metadata']['import_mappings'][$key]['column_number'] = $key;
+        }
+      }
+      UserJob::update(FALSE)
+        ->setValues(['metadata' => $userJob['metadata']])
+        ->addWhere('id', '=', $this->userJobID)
+        ->execute();
+      $form = $this->getMapFieldForm($submittedValues);
+      $form->setUserJobID($this->userJobID);
+      $form->buildForm();
+      $this->assertTrue($form->validate(), print_r($form->_errors, TRUE));
+      $form->postProcess();
+      $this->submitPreviewForm($submittedValues);
+      return $this->getDataSource()->getRows(FALSE);
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail($e->getMessage());
+    }
+  }
+
+  public static function avoidRedirect($parsedUrl, &$context) {
+    throw new \CRM_Core_Exception_PrematureExitException();
+  }
+
+  /**
+   * Submit the preview form, triggering the import.
+   *
+   * @param array $submittedValues
+   */
+  protected function submitPreviewForm(array $submittedValues): void {
+    $form = $this->getPreviewForm($submittedValues);
+    $form->setUserJobID($this->userJobID);
+    $form->buildForm();
+    $this->assertTrue($form->validate());
+    $this->originalSettings['enableBackgroundQueue'] = \Civi::settings()
+      ->get('enableBackgroundQueue');
+    \Civi::settings()->set('enableBackgroundQueue', 1);
+    try {
+      $form->postProcess();
+      $this->fail('Exception expected');
+    }
+    catch (\CRM_Core_Exception_PrematureExitException $e) {
+      $queue = \Civi::queue('user_job_' . $this->userJobID);
+      $this->assertGreaterThan(0, \CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_queue_item'), 'items are not queued, they may have failed validation');
+      $runner = new \CRM_Queue_Runner([
+        'queue' => $queue,
+        'errorMode' => \CRM_Queue_Runner::ERROR_ABORT,
+      ]);
+      $result = $runner->runAll();
+      $this->assertTrue($result, $result === TRUE ? '' : \CRM_Core_Error::formatTextException($result['exception']));
+    }
+  }
+
+  /**
+   * @param array $mappings
+   *
+   * @return array
+   */
+  protected function getMapperFromFieldMappings(array $mappings): array {
+    $mapper = [];
+    foreach ($mappings as $mapping) {
+      $fieldInput = [$mapping['name'] ?? ''];
+      if (!empty($mapping['soft_credit_type_id'])) {
+        $fieldInput[1] = $mapping['soft_credit_type_id'];
+      }
+      $mapper[] = $fieldInput;
+    }
+    return $mapper;
+  }
+
+  /**
+   * @return \CRM_Import_DataSource
+   */
+  protected function getDataSource(): \CRM_Import_DataSource {
+    return new \CRM_Import_DataSource_CSV($this->userJobID);
+  }
+
+  /**
+   * Submit the data source form.
+   *
+   * @param string $csv
+   * @param array $submittedValues
+   */
+  protected function submitDataSourceForm(string $csv, array $submittedValues): void {
+    $directory = __DIR__ . '/../../..';
+    $submittedValues = array_merge([
+      'uploadFile' => ['name' => $directory . '/data/' . $csv],
+      'skipColumnHeader' => TRUE,
+      'fieldSeparator' => ',',
+      'contactType' => 'Individual',
+      'dataSource' => 'CRM_Import_DataSource_CSV',
+      'file' => ['name' => $csv],
+      'dateFormats' => \CRM_Utils_Date::DATE_yyyy_mm_dd,
+      'onDuplicate' => \CRM_Import_Parser::DUPLICATE_SKIP,
+      'groups' => [],
+    ], $submittedValues);
+    $form = $this->getDataSourceForm($submittedValues);
+    $values = $_SESSION['_' . $form->controller->_name . '_container']['values'];
+    $form->buildForm();
+    $form->postProcess();
+    $this->userJobID = $form->getUserJobID();
+    // This gets reset in DataSource so re-do....
+    $_SESSION['_' . $form->controller->_name . '_container']['values'] = $values;
+  }
+
+  /**
+   * Get the import's datasource form.
+   *
+   * Defaults to contribution - other classes should override.
+   *
+   * @param array $submittedValues
+   *
+   * @return \CRM_Contribute_Import_Form_DataSource
+   */
+  protected function getDataSourceForm(array $submittedValues): \CRM_Contribute_Import_Form_DataSource {
+    return $this->getFormObject('CRM_Contribute_Import_Form_DataSource', $submittedValues);
+  }
+
+  /**
+   * Get the import's mapField form.
+   *
+   * Defaults to contribution - other classes should override.
+   *
+   * @param array $submittedValues
+   *
+   * @return \CRM_Contribute_Import_Form_MapField
+   */
+  protected function getMapFieldForm(array $submittedValues): \CRM_Contribute_Import_Form_MapField {
+    /** @var \CRM_Contribute_Import_Form_MapField $form */
+    $form = $this->getFormObject('CRM_Contribute_Import_Form_MapField', $submittedValues);
+    return $form;
+  }
+
+  /**
+   * Get the import's preview form.
+   *
+   * Defaults to contribution - other classes should override.
+   *
+   * @param array $submittedValues
+   *
+   * @return \CRM_Contribute_Import_Form_Preview
+   */
+  protected function getPreviewForm(array $submittedValues): \CRM_Contribute_Import_Form_Preview {
+    /** @var \CRM_Contribute_Import_Form_Preview $form */
+    $form = $this->getFormObject('CRM_Contribute_Import_Form_Preview', $submittedValues);
+    return $form;
+  }
+
+  /**
+   * Instantiate form object.
+   *
+   * We need to instantiate the form to run preprocess, which means we have to trick it about the request method.
+   *
+   * @param string $class
+   *   Name of form class.
+   *
+   * @param array $formValues
+   *
+   * @param array $urlParameters
+   *
+   * @return \CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField|\CRM_Contribute_Import_Form_Preview
+   */
+  public function getFormObject(string $class, array $formValues = [], array $urlParameters = []) {
+    try {
+      $_POST = $formValues;
+      /** @var \CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField|\CRM_Contribute_Import_Form_Preview $form */
+      $form = new $class();
+      $_SERVER['REQUEST_METHOD'] = 'GET';
+      $_REQUEST += $urlParameters;
+      if ($this->formController) {
+        // Add to the existing form controller.
+        $form->controller = $this->formController;
+      }
+      else {
+        $form->controller = new \CRM_Import_Controller('import contributions', ['entity' => 'Contribution']);
+        $form->controller->setStateMachine(new \CRM_Core_StateMachine($form->controller));
+        $this->formController = $form->controller;
+      }
+      // The submitted values should be set on one or the other of the forms in the flow.
+      // For test simplicity we set on all rather than figuring out which ones go where....
+      $_SESSION['_' . $form->controller->_name . '_container']['values']['DataSource'] = $formValues;
+      $_SESSION['_' . $form->controller->_name . '_container']['values']['MapField'] = $formValues;
+      $_SESSION['_' . $form->controller->_name . '_container']['values']['Preview'] = $formValues;
+      return $form;
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail('unable to construct form ' . $e->getMessage());
     }
   }
 

@@ -14,8 +14,6 @@ class ThankYouTest extends TestCase {
   use EntityTrait;
   use Api3TestTrait;
 
-  protected $originalSettings = [];
-
   /**
    * IDS of various entities created.
    *

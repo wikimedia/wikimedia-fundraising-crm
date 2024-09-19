@@ -53,6 +53,9 @@ class Import {
       $mappedRow['Contribution']['total_amount'] = 99999999;
     }
     if ($context === 'import' && $importType === 'contribution_import') {
+      if (!empty($mappedRow['Contribution']['donor_advised_fund.owns_donor_advised_for']) && !is_numeric($mappedRow['Contribution']['donor_advised_fund.owns_donor_advised_for'])) {
+        $mappedRow['Contribution']['donor_advised_fund.owns_donor_advised_for'] = Contact::getOrganizationID($mappedRow['Contribution']['donor_advised_fund.owns_donor_advised_for'], TRUE, ['source' => 'imported as Donor Advised Fund']);
+      }
       // Provide a default, allowing the import to be configured to override.
       $isMatchingGift = in_array(self::getSoftCreditTypeIDForRow($mappedRow), ContributionSoftHelper::getEmploymentSoftCreditTypes(), TRUE);
 

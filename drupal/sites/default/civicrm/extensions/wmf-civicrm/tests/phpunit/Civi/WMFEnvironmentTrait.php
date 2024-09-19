@@ -32,6 +32,11 @@ trait WMFEnvironmentTrait {
   protected int $maxContributionID;
 
   /**
+   * @var array
+   */
+  private array $originalSettings = [];
+
+  /**
    * @throws \CRM_Core_Exception
    */
   public function setUp(): void {
@@ -110,6 +115,9 @@ trait WMFEnvironmentTrait {
     Context::set();
     // Remove any function override for time handling (e.g. with \CRM_Utils_Time::setTime()).
     \CRM_Utils_Time::resetTime();
+    foreach ($this->originalSettings as $key => $value) {
+      \Civi::settings()->set($key, $value);
+    }
   }
 
   /**
