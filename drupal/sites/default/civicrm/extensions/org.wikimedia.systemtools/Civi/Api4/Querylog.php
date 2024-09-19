@@ -26,7 +26,7 @@ class Querylog extends Generic\AbstractEntity {
   /**
    * @return \Civi\Api4\Action\Querylog\Parse
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function parse() {
     return new Action\Querylog\Parse(__CLASS__, __FUNCTION__);

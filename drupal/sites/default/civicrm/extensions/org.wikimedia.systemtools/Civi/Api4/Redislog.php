@@ -26,7 +26,7 @@ class Redislog extends Generic\AbstractEntity {
   /**
    * @return \Civi\Api4\Action\Redislog\Parse
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function parse() {
     return new Action\Redislog\Parse(__CLASS__, __FUNCTION__);
