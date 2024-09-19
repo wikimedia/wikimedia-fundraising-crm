@@ -20,7 +20,7 @@ class Clean extends CleanBase {
   /**
    * Fetch the emails for the contacts.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function loadEntities() {
@@ -56,7 +56,7 @@ class Clean extends CleanBase {
    * @param int $entityID
    * @param array $values
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function update($entityID, $values) {
@@ -94,7 +94,7 @@ class Clean extends CleanBase {
   /**
    * Process deletion of duplicate entities.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function processDeletes() {
     Email::delete()->setWhere([['id', 'IN', $this->idsToDelete]])->setCheckPermissions(FALSE)->execute();

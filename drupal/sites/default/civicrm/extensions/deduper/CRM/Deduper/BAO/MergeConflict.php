@@ -121,7 +121,7 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
    *
    * @return array
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getLocationTypes() : array {
     return Email::getFields(FALSE)
@@ -136,7 +136,7 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
    *
    * @return array
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getCustomGroups() : array {
     $groups = CustomField::getFields()

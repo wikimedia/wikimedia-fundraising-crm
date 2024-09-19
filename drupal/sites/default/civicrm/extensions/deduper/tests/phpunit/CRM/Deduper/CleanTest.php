@@ -45,7 +45,7 @@ class CleanTest extends DedupeBaseTestClass {
   protected $locationTypes = [];
 
   /**
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function setUp(): void {
     parent::setUp();
@@ -61,7 +61,6 @@ class CleanTest extends DedupeBaseTestClass {
    * @param array $values
    * @param array $secondaryValues
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function testCleanMissingPrimary($entity, $values, $secondaryValues) {
@@ -90,7 +89,6 @@ class CleanTest extends DedupeBaseTestClass {
    * @param array $values
    * @param array $secondaryValues
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function testCleanExtraPrimary($entity, $values, $secondaryValues) {
@@ -121,7 +119,6 @@ class CleanTest extends DedupeBaseTestClass {
    * @param string $entity
    * @param array $values
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function testCleanDuplicateLocationSameValues($entity, $values) {
@@ -153,7 +150,6 @@ class CleanTest extends DedupeBaseTestClass {
    * @param array $values
    * @param array $secondaryValues
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   public function testCleanDuplicateLocationDifferentValues($entity, $values, $secondaryValues) {
@@ -198,7 +194,7 @@ class CleanTest extends DedupeBaseTestClass {
    *
    * @param array $values
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function createEntity($values) {
@@ -222,8 +218,7 @@ class CleanTest extends DedupeBaseTestClass {
   /**
    * Update all entities for the contact to have is or is not primary.
    *
-   *
-   *  Use a direct query as the api should block us from creating a contact with no primary.
+   * Use a direct query as the api should block us from creating a contact with no primary.
    *
    * @param int $ponyoID
    * @param int $is_primary
@@ -237,21 +232,18 @@ class CleanTest extends DedupeBaseTestClass {
    * @param int $ponyoID
    *
    * @return \Civi\Api4\Generic\Result|mixed
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getContactEntities($ponyoID) {
     switch ($this->entity) {
-      case 'Email' :
+      case 'Email':
         return Email::get()->setCheckPermissions(FALSE)->addOrderBy('is_primary', 'DESC')->addWhere('contact_id', '=', $ponyoID)->addSelect('*')->execute();
 
-      case 'Phone' ;
+      case 'Phone';
         return Phone::get()->setCheckPermissions(FALSE)->addOrderBy('is_primary', 'DESC')->addWhere('contact_id', '=', $ponyoID)->addSelect('*')->execute();
 
-
-      case 'Address' :
+      case 'Address':
         return Address::get()->setCheckPermissions(FALSE)->addOrderBy('is_primary', 'DESC')->addWhere('contact_id', '=', $ponyoID)->addSelect('*')->execute();
-
-
     }
   }
 
@@ -262,11 +254,11 @@ class CleanTest extends DedupeBaseTestClass {
    */
   protected function doClean($ponyoID) {
     switch ($this->entity) {
-      case 'Email' :
+      case 'Email':
         Email::clean()->setCheckPermissions(FALSE)->setContactIDs([$ponyoID])->execute();
         return;
 
-      case 'Phone' ;
+      case 'Phone';
         Phone::clean()->setCheckPermissions(FALSE)->setContactIDs([$ponyoID])->execute();
         return;
 
@@ -285,7 +277,7 @@ class CleanTest extends DedupeBaseTestClass {
    *
    * @param int $expectedCount
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function checkExactlyOnePrimary(int $ponyoID, $expectedCount) {
     $created = $this->getContactEntities($ponyoID);
@@ -305,7 +297,7 @@ class CleanTest extends DedupeBaseTestClass {
    * @param array $values
    *   Expected entity values.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function checkEntities(int $ponyoID, $values) {
     $entities = $this->getContactEntities($ponyoID);

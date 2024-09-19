@@ -76,7 +76,7 @@ class ImportFullNameTest extends TestCase implements HeadlessInterface, HookInte
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function testNameParseDuringImport(): void {
