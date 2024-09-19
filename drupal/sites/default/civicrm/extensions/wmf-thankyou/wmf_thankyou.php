@@ -72,7 +72,7 @@ function wmf_thankyou_civicrm_summaryActions(&$actions, $contactID) {
         'reset' => 1
       )),
     ];
-  } catch (CiviCRM_API3_Exception $e) {
+  } catch (CRM_Core_Exception $e) {
     // This would most likely happen if viewing a deleted contact since we are not forcing
     // them to be returned. Keep calm & carry on.
   }

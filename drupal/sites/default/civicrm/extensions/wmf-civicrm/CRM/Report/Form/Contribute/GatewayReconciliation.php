@@ -203,7 +203,7 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
    * @param string $field
    *
    * @return array
-   * @throws CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   function getOptions($entity, $field) {
     $options = civicrm_api3($entity, 'getoptions', ['field' => $field]);
