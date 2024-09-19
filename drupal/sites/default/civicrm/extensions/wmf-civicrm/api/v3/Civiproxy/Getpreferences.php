@@ -40,7 +40,7 @@ function _civicrm_api3_civiproxy_getpreferences_spec(&$spec) {
 function civicrm_api3_civiproxy_getpreferences(array $params): array {
   // Can check the checksum before doing our own select
   if (!CRM_Contact_BAO_Contact_Utils::validChecksum($params['contact_id'], $params['checksum'])) {
-    throw new API_Exception(E::ts('No result found'));
+    throw new CRM_Core_Exception(E::ts('No result found'));
   }
 
   $result = (array) Contact::get(FALSE)
@@ -59,7 +59,7 @@ function civicrm_api3_civiproxy_getpreferences(array $params): array {
     ->execute()->first();
 
   if (empty($result)) {
-    throw new API_Exception(E::ts('No result found'));
+    throw new CRM_Core_Exception(E::ts('No result found'));
   }
 
   // FIXME: use civicrm_api3_create_success
