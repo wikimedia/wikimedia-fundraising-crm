@@ -65,7 +65,7 @@ function _civicrm_api3_preferences_create_spec(&$spec) {
  * @return array
  *   API result descriptor
  *
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  * @see civicrm_api3_create_success
  */
 function civicrm_api3_preferences_create(array $params): array {

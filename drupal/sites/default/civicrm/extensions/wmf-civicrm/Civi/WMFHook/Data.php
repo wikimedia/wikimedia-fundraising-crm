@@ -23,7 +23,7 @@ class Data {
    * @param int $entityID
    * @param array $params
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function customPre(string $op, int $groupID, int $entityID, array &$params): void {
     if ($op !== 'delete') {
@@ -115,7 +115,7 @@ class Data {
    *
    * @return array
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getTrackableGroups() : array {
     if (!\Civi::cache('metadata')->has('trackable_groups')) {
@@ -137,7 +137,7 @@ class Data {
    * @param string $customGroupName
    *
    * @return array
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected static function getExistingValuesForFields(array $fieldValues, int $entityID, $customGroupName): array {

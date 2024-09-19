@@ -11,7 +11,7 @@ class CRM_Sendannualtyemail_AnnualThankYou {
    * @param $year
    * @see \Civi\EoySummary
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    *
    * @return bool
    */

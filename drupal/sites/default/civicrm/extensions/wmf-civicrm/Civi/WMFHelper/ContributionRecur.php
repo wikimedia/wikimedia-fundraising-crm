@@ -60,7 +60,7 @@ class ContributionRecur {
    *
    * @param object $recur_record
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public static function reactivateIfInactive(array $recur_record): void {

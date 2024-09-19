@@ -506,7 +506,7 @@ class Resolve extends AbstractAction {
    * pushing through duplicate contributions).
    *
    * @return bool True if donor found matching the conditions, false otherwise
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function matchesUnrefundedDonor(): bool {
@@ -565,7 +565,7 @@ class Resolve extends AbstractAction {
    * @param bool $includeNonCompleteDonation pass FALSE to skip a join to contribution
    *
    * @return Result
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function getDonationStatistics(bool $includeNonCompleteDonation): Result {

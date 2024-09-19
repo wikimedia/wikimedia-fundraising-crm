@@ -20,7 +20,7 @@ class PendingTable extends Generic\AbstractEntity {
    *
    * @return \Civi\Api4\Action\PendingTable\Consume
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function consume(bool $checkPermissions = FALSE): Consume {
     return (new Consume(__CLASS__, __FUNCTION__))

@@ -12,7 +12,7 @@ class QuickForm {
    * @param string $formName
    * @param CRM_Core_Form $form
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function buildForm($formName, $form) {
     switch ($formName) {
@@ -121,7 +121,7 @@ class QuickForm {
   /**
    * @param CRM_Core_Form $form
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected static function buildFormContributionForm(CRM_Core_Form $form): void {
     \CRM_Core_Resources::singleton()->addScript(self::getSourceJS());

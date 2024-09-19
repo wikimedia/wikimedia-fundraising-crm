@@ -188,7 +188,7 @@ function wmf_civicrm_civicrm_alterSettingsMetaData(&$settingsMetaData, $domainID
  * @param string $formName
  * @param CRM_Core_Form $form
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  * @noinspection PhpUnused
  */
 function wmf_civicrm_civicrm_buildForm(string $formName, $form) {
@@ -328,8 +328,7 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
 /**
  * Implements hook_civicrm_triggerInfo().
  *
- * @throws \CiviCRM_API3_Exception
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  */
 function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   $processor = new CalculatedData();
@@ -528,7 +527,7 @@ function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
  * @param string $workflowName
  *
  * @return array
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  * @throws \Civi\API\Exception\UnauthorizedException
  */
 function _wmf_civicrm_managed_get_translations(string $workflowName): array {

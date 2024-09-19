@@ -34,7 +34,7 @@ function _civicrm_api3_civiproxy_getpreferences_spec(&$spec) {
  * @return array
  *   API result descriptor
  *
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  * @see civicrm_api3_create_success
  */
 function civicrm_api3_civiproxy_getpreferences(array $params): array {
