@@ -1621,6 +1621,10 @@ abstract class CRM_Import_Parser implements UserJobInterface {
       }
       return Civi::$statics[__CLASS__][$fieldName][$importedValue] ?: 'invalid_import_value';
     }
+    if ($fieldMetadata['input_type'] ?? NULL === 'EntityRef') {
+      // We don't require a number as if this is not a number it might be possible to look it up.
+      return $importedValue;
+    }
     if ($dataType === 'Integer') {
       // We have resolved the options now so any remaining ones should be integers.
       return CRM_Utils_Rule::numeric($importedValue) ? (int) $importedValue : 'invalid_import_value';
