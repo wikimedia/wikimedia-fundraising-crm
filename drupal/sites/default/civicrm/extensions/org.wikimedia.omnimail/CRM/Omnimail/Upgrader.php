@@ -13,7 +13,7 @@ class CRM_Omnimail_Upgrader extends CRM_Extension_Upgrader_Base {
   /**
    * Example: Run an external SQL script when the module is installed.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function install(): void {
     $this->addCustomFields();

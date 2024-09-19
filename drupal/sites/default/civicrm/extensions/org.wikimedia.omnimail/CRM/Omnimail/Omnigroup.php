@@ -27,14 +27,14 @@ class CRM_Omnimail_Omnigroup extends CRM_Omnimail_Omnimail{
    * @param array $params
    *
    * @return array
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function create(array $params): array {
     /* @var \Omnimail\Silverpop\Mailer $mailer */
     $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
     $groupName = Group::get($params['check_permissions'])->addWhere('id', '=', $params['group_id'])->addSelect('name')->execute()->first()['name'];
     if (!$groupName) {
-      throw new API_Exception('invalid group ID');
+      throw new CRM_Core_Exception('invalid group ID');
     }
     /* @var \Omnimail\Silverpop\Requests\CreateContactListRequest $request */
     $request = $mailer->createGroup([
