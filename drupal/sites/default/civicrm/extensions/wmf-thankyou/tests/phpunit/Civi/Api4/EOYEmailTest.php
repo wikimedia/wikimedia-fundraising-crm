@@ -93,7 +93,7 @@ class EOYEmailTest extends TestCase {
   }
 
   /**
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testCalculate(): void {
     $contactOnetime = $this->createTestEntity('Contact', [
@@ -318,7 +318,7 @@ class EOYEmailTest extends TestCase {
   }
 
   /**
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testCalculateSingleContactId(): void {
     $contact = $this->addTestContact(['email_primary.email' => 'jimmysingle@example.com']);
@@ -410,7 +410,7 @@ class EOYEmailTest extends TestCase {
   }
 
   /**
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function testSendSpecifiedContactOnly(): void {
     // Set up some contacts that should NOT be mailed.
@@ -855,7 +855,7 @@ WHERE
    * @param $contactID
    * @param array $contributions
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function createRecurringContributions($contactID, array $contributions): void {
@@ -897,7 +897,7 @@ WHERE
    * @param array $totals
    * @param array $contributions
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function assertTemplateCalculations(array $contactIDs, array $totals, array $contributions): void {
     $template = new EOYThankYou();

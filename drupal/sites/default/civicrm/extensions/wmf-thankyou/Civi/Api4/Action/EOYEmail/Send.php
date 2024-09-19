@@ -190,7 +190,7 @@ class Send extends AbstractAction {
    *
    * @param array $email
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function recordActivities(array $email): void {
     $firstContactID = reset($email['contactIDs']);

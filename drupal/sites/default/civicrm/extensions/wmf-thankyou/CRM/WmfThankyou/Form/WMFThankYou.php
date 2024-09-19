@@ -15,7 +15,6 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
    * Build basic form.
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function buildQuickForm(): void {
     $contributionID = $this->getContributionID();

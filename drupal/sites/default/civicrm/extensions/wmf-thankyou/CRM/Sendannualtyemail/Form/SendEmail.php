@@ -21,7 +21,6 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
   protected $message;
 
   /**
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
