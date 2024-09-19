@@ -5,7 +5,7 @@
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_tutorial_create($params) {
   // Workaround for the api3 html input encoder - html IS allowed in these fields
@@ -31,7 +31,7 @@ function _civicrm_api3_tutorial_create_spec(&$fields) {
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_tutorial_delete($params) {
   CRM_Tutorial_BAO_Tutorial::delete($params);
@@ -52,7 +52,7 @@ function _civicrm_api3_tutorial_delete_spec(&$spec) {
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_tutorial_get($params) {
   $files = CRM_Tutorial_BAO_Tutorial::get();
@@ -71,11 +71,11 @@ function _civicrm_api3_tutorial_get_spec(&$fields) {
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_tutorial_mark($params) {
   if (empty($params['id'])) {
-    throw new API_Exception("Mandatory key(s) missing from params array: id", "mandatory_missing", array("fields" => ['id']));
+    throw new CRM_Core_Exception("Mandatory key(s) missing from params array: id", "mandatory_missing", array("fields" => ['id']));
   }
   CRM_Tutorial_BAO_Tutorial::mark($params);
   return civicrm_api3_create_success();
