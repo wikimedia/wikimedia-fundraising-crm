@@ -22,7 +22,7 @@ function _civicrm_api3_payment_token_showme_spec(&$spec) {
  * @return array API result descriptor
  * @see civicrm_api3_create_success
  * @see civicrm_api3_create_error
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_payment_token_showme($params) {
   return _civicrm_api3_generic_showme(['entity' => 'PaymentToken', 'params' => $params]);

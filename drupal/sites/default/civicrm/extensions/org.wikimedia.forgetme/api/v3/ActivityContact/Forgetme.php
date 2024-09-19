@@ -22,7 +22,7 @@ function _civicrm_api3_activity_contact_forgetme_spec(&$spec) {
  * @return array API result descriptor
  * @see civicrm_api3_create_success
  * @see civicrm_api3_create_error
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_activity_contact_forgetme($params) {
   $filters = CRM_Forgetme_Metadata::getMetadataForEntity('ActivityContact', 'forget_filters');

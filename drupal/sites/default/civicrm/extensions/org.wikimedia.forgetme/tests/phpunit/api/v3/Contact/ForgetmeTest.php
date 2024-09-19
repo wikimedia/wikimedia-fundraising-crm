@@ -54,10 +54,6 @@ class api_v3_Contact_ForgetmeTest extends api_v3_Contact_BaseTestClass implement
    * Test that the email is forgetten out of the sort_name & display_name, if present.
    *
    * When contacts do not have other name details their
-   *
-   * @throws API_Exception
-   * @throws CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function testForgetEmailDisplayName(): void {
     $this->ids['contact']['garlic'] = $this->callAPISuccess('Contact', 'create', [

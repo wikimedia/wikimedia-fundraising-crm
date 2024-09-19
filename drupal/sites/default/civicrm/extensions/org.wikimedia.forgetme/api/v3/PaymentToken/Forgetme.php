@@ -21,7 +21,7 @@ function _civicrm_api3_payment_token_forget_spec(&$spec) {
  *
  * @return array API result descriptor
  * @see civicrm_api3_create_success
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_payment_token_forgetme($params) {
   if (is_numeric($params['contact_id'])) {
