@@ -279,7 +279,6 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals($this->ids['Organization'], $relationship['contact_id_b']);
   }
 
-
   /**
    * Test that we can handling imports in non USD.
    *
@@ -437,7 +436,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   /**
    * @throws \CRM_Core_Exception
    */
-  public function testStockSetsTimeToNoon() {
+  public function testStockSetsTimeToNoon(): void {
     $this->imitateAdminUser();
     $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
@@ -677,7 +676,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals(FALSE, $oldAddress['is_primary']);
   }
 
-  private function doContactImport($data) {
+  private function doContactImport($data): void {
     $this->imitateAdminUser();
     $this->createImportTable($data + ['_related_contact_created' => 0, '_related_contact_matched' => 0]);
     $this->runContactImport($data);
