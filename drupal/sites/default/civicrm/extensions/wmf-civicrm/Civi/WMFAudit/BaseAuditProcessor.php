@@ -904,15 +904,6 @@ abstract class BaseAuditProcessor {
                   }
                   $method = 'r' . $method;
                 }
-                if ((!empty($contribution_tracking_data['utm_payment_method'])) &&
-                  ($contribution_tracking_data['utm_payment_method'] !== $method)) {
-                  $message = 'Payment method mismatch between utm tracking data(' . $contribution_tracking_data['utm_payment_method'];
-                  $message .= ') and normalized log and recon data(' . $method . '). Investigation required.';
-                  throw new WMFException(
-                    WMFException::DATA_INCONSISTENT,
-                    $message
-                  );
-                }
 
                 unset($contribution_tracking_data['utm_payment_method']);
                 // On the next line, the date field from all_data will win, which we totally want.
