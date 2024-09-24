@@ -19,11 +19,12 @@ class WMFLinkTest extends TestCase {
     $link = WMFLink::getUnsubscribeURL(FALSE)
       ->setEmail('me@example.com')
       ->setLanguage('es_ES')
-      ->setContactID(215)
       ->execute()->first()['unsubscribe_url'];
-    $this->assertStringContainsString('checksum=', $link);
-    $this->assertStringContainsString('contact_id=215', $link);
-    $this->assertStringContainsString(\Civi::settings()->get('wmf_email_preferences_url') , $link);
+    $this->assertStringContainsString('p=thankyou', $link);
+    $this->assertStringContainsString('c=-1', $link);
+    $this->assertStringContainsString('e=me%40example.com', $link);
+    $this->assertStringContainsString('uselang=es', $link);
+    $this->assertStringContainsString(\Civi::settings()->get('wmf_unsubscribe_url') , $link);
   }
 
 }
