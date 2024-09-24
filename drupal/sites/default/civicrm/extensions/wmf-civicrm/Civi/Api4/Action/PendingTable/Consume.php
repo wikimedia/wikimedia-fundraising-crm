@@ -7,6 +7,7 @@ use Civi\Api4\Generic\Result;
 use Civi\Api4\PendingTransaction;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\UtcDate;
+use SmashPig\PaymentData\FinalStatus;
 
 /**
  * Resolves pending transactions by completing, canceling or discarding them.
@@ -57,7 +58,7 @@ class Consume extends AbstractAction {
     $message = $pendingDb->fetchMessageByGatewayOldest(
       $this->gateway, PendingTransaction::getResolvableMethods()
     );
-    $resolvedDetails = [];
+    $emailsWithResolvedTransactions = [];
     while (
       $message &&
       $message['date'] < UtcDate::getUtcTimestamp("-{$this->minimumAge} minutes") &&
@@ -66,16 +67,19 @@ class Consume extends AbstractAction {
     ) {
       $resolveResult = PendingTransaction::resolve()
         ->setMessage($message)
-        ->setAlreadyResolved($resolvedDetails)
-        ->execute();
+        ->setAlreadyResolved($emailsWithResolvedTransactions)
+        ->execute()->first();
       Civi::log('wmf')->info(
         "Pending transaction {$message['order_id']} was " .
-        'resolved and the result is ' . json_encode($resolveResult->first())
+        'resolved and the result is ' . json_encode($resolveResult)
       );
       $pendingDb->deleteMessage($message);
       $processed++;
       $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway, PendingTransaction::getResolvableMethods());
-      $resolvedDetails[] = $resolveResult;
+      // Keep track of emails with completed transactions so we can skip duplicates
+      if ($resolveResult['status'] === FinalStatus::COMPLETE) {
+        $emailsWithResolvedTransactions[$resolveResult['email']] = TRUE;
+      }
     }
     if (!$message) {
       Civi::log('wmf')->info(
