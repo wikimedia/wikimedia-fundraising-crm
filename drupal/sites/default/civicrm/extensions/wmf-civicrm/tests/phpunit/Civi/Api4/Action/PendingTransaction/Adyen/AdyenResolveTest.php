@@ -128,7 +128,7 @@ class AdyenResolveTest extends TestCase {
     $gateway = 'adyen';
     $pending_message = $this->createTestPendingRecord($gateway);
     $this->createContributionWithTrackingRecord($pending_message['contribution_tracking_id']);
-    $this->createTestPaymentFraudRecordProcess($pending_message['contribution_tracking_id'],
+    $this->createTestPaymentFraudDatabaseRecord($pending_message['contribution_tracking_id'],
       $pending_message['order_id'],
       $gateway,
     );
@@ -175,7 +175,7 @@ class AdyenResolveTest extends TestCase {
     $gateway = 'adyen';
     $pending_message = $this->createTestPendingRecord($gateway);
     $this->createContributionWithTrackingRecord($pending_message['contribution_tracking_id']);
-    $this->createTestPaymentFraudRecordProcess($pending_message['contribution_tracking_id'],
+    $this->createTestPaymentFraudDatabaseRecord($pending_message['contribution_tracking_id'],
       $pending_message['order_id'],
       $gateway,
     );
@@ -212,7 +212,7 @@ class AdyenResolveTest extends TestCase {
     // generate a pending message to test
     $gateway = 'adyen';
     $pending_message = $this->createTestPendingRecord($gateway);
-    $this->createTestPaymentFraudRecordProcess($pending_message['contribution_tracking_id'],
+    $this->createTestPaymentFraudDatabaseRecord($pending_message['contribution_tracking_id'],
       $pending_message['order_id'],
       $gateway,
     );
@@ -302,7 +302,7 @@ class AdyenResolveTest extends TestCase {
     $gateway = 'adyen';
     $pending_message = $this->createTestPendingRecord($gateway);
     $this->createContributionWithTrackingRecord($pending_message['contribution_tracking_id']);
-    $this->createTestPaymentFraudRecordProcess($pending_message['contribution_tracking_id'],
+    $this->createTestPaymentFraudDatabaseRecord($pending_message['contribution_tracking_id'],
       $pending_message['order_id'],
       $gateway,
     );
@@ -571,7 +571,7 @@ class AdyenResolveTest extends TestCase {
     // generate a pending message to test
     $gateway = 'adyen';
     $pending_message = $this->createTestPendingRecord($gateway);
-    $this->createTestPaymentFraudRecordProcess($pending_message['contribution_tracking_id'],
+    $this->createTestPaymentFraudDatabaseRecord($pending_message['contribution_tracking_id'],
       $pending_message['order_id'],
       $gateway,
     );
@@ -654,7 +654,7 @@ class AdyenResolveTest extends TestCase {
    * @return void
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  protected function createTestPaymentFraudRecordProcess(int $contributionTrackingId, string $order_id, string $gateway): void {
+  protected function createTestPaymentFraudDatabaseRecord(int $contributionTrackingId, string $order_id, string $gateway): void {
     $message = [
       'order_id' => $order_id,
       'contribution_tracking_id' => $contributionTrackingId,
