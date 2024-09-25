@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4;
 
+use Civi\Api4\Action\Omnicontact\Upload;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 use Civi\Api4\Action\Omnicontact\Create;
 use Civi\Api4\Action\Omnicontact\Get;
@@ -31,7 +32,21 @@ class Omnicontact extends Generic\AbstractEntity {
   }
 
   /**
-   * Omnicontact create.
+   * Omnicontact upload.
+   *
+   * Add or update an Acoustic recipient.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\OmniContact\Upload
+   */
+  public static function upload(bool $checkPermissions = TRUE): Upload {
+    return (new Upload(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Omnicontact snooze.
    *
    * Add or update an Acoustic recipient.
    *

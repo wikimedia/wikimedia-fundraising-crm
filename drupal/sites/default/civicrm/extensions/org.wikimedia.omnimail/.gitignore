@@ -1,3 +1,4 @@
+vendor
 vendor/omnimail/omnimail/.gitattributes
 vendor/omnimail/omnimail/.gitignore
 vendor/omnimail/omnimail/.scrutinizer.yml
