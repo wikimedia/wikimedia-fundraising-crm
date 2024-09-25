@@ -265,10 +265,7 @@ class IngenicoResolveTest extends TestCase {
     PendingTransaction::resolve()
       ->setMessage($pending_message)
       ->setAlreadyResolved([
-        '1' => [
-          'email' => $pending_message['email'],
-          'status' => FinalStatus::COMPLETE,
-        ],
+        $pending_message['email'] => TRUE
       ])
       ->execute();
 
@@ -815,10 +812,7 @@ class IngenicoResolveTest extends TestCase {
     PendingTransaction::resolve()
       ->setMessage($pending_message)
       ->setAlreadyResolved([
-        1 => [
-          'email' => $pending_message['email'],
-          'status' => FinalStatus::COMPLETE,
-        ],
+        $pending_message['email'] => TRUE
       ])
       ->execute();
 
