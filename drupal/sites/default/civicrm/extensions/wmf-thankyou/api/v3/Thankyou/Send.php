@@ -25,7 +25,6 @@ function _civicrm_api3_thankyou_send_spec(&$spec) {
  * @return array
  *   API result descriptor
  *
- * @throws \CiviCRM_API3_Exception
  * @throws \Civi\WMFException\WMFException
  * @throws \CRM_Core_Exception
  *

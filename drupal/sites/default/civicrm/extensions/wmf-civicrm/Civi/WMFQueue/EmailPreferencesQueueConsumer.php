@@ -4,7 +4,6 @@ namespace Civi\WMFQueue;
 
 use Civi;
 use Civi\WMFException\WMFException;
-use CiviCRM_API3_Exception;
 
 class EmailPreferencesQueueConsumer extends QueueConsumer {
 
@@ -25,7 +24,7 @@ class EmailPreferencesQueueConsumer extends QueueConsumer {
         );
       }
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (\CRM_Core_Exception $e) {
       // TODO Temporarily just throwing a WMFException; See T279962.
       throw new WMFException(
         WMFException::INVALID_MESSAGE,

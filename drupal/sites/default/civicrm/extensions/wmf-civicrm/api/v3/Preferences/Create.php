@@ -65,7 +65,7 @@ function _civicrm_api3_preferences_create_spec(&$spec) {
  * @return array
  *   API result descriptor
  *
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  * @see civicrm_api3_create_success
  */
 function civicrm_api3_preferences_create(array $params): array {
@@ -78,11 +78,11 @@ function civicrm_api3_preferences_create(array $params): array {
       !preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/', $params['snooze_date'])
     )
   ) {
-    throw new API_Exception('Invalid data in e-mail preferences message.', 'invalid_message');
+    throw new CRM_Core_Exception('Invalid data in e-mail preferences message.', 'invalid_message');
   }
 
   if (!CRM_Contact_BAO_Contact_Utils::validChecksum($params['contact_id'], $params['checksum'])) {
-    throw new API_Exception('Checksum mismatch');
+    throw new CRM_Core_Exception('Checksum mismatch');
   }
 
   $contactUpdateValues = ['preferred_language' => $params['language']];

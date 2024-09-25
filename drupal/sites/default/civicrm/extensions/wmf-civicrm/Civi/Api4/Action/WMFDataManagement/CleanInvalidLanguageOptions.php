@@ -39,7 +39,7 @@ class CleanInvalidLanguageOptions extends AbstractAction {
    *
    * @param \Civi\Api4\Generic\Result $result
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
     $optionGroups = OptionGroup::get(FALSE)

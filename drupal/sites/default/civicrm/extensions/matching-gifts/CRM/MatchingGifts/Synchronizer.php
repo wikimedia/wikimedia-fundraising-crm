@@ -31,8 +31,7 @@ class CRM_MatchingGifts_Synchronizer {
    *
    * @return array
    *
-   * @throws \CiviCRM_API3_Exception
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function synchronize(array $syncParams): array {
     $this->populateCurrentJobSettings();
@@ -137,8 +136,7 @@ class CRM_MatchingGifts_Synchronizer {
    *  name_from_matching_gift_db, guide_url, online_form_url
    *  minimum_gift_matched_usd, match_policy_last_updated, and subsidiaries
    *
-   * @throws \CiviCRM_API3_Exception
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected static function addOrUpdatePolicy(array $policyDetails) {
     // Search for an existing org WITH matching gift data using

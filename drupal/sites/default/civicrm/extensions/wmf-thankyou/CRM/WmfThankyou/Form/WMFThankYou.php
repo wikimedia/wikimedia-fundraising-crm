@@ -15,7 +15,6 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
    * Build basic form.
    *
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function buildQuickForm(): void {
     $contributionID = $this->getContributionID();
@@ -28,7 +27,7 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
       $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $contributionID, 'contribution_status_id' => 'Completed']);
       $contact = civicrm_api3('Contact', 'getsingle', ['id' => $contribution['contact_id']]);
     }
-    catch (CiviCRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       $this->assign('no_go_reason', E::ts('A valid contribution ID is required'));
       return;
     }
@@ -125,7 +124,7 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
       civicrm_api3('Thankyou', 'send', ['contribution_id' => CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this), 'template' => $this->getSubmittedValue('template')]);
       CRM_Core_Session::setStatus('Message sent', E::ts('Thank you Sent'), 'success');
     }
-    catch (CiviCRM_API3_Exception $e ) {
+    catch (CRM_Core_Exception $e) {
       CRM_Core_Session::setStatus('Message failed with error ' . $e->getMessage());
     }
   }

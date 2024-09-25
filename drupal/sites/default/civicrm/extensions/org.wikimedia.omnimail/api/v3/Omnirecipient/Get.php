@@ -7,9 +7,8 @@
  *
  * @return array
  *
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  * @throws \CRM_Omnimail_IncompleteDownloadException
- * @throws \CiviCRM_API3_Exception
  */
 function civicrm_api3_omnirecipient_get($params) {
   $omnimail = new CRM_Omnimail_Omnirecipients($params);

@@ -12,7 +12,7 @@
  * @param $params
  *
  * @return array
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_omnimailing_load($params) {
   $values = [];

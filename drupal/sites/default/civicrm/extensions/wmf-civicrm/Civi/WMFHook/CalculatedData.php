@@ -226,7 +226,7 @@ class CalculatedData extends TriggerHook {
    * Get (basic) data about the wmf donor fields.
    *
    * @return \Civi\Api4\Generic\Result
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    *
    */
   public static function getCalculatedCustomFields(): Result {
@@ -278,8 +278,7 @@ class CalculatedData extends TriggerHook {
    * so we need to potentially update the fields from that record at that points,
    * with a separate trigger.
    *
-   * @throws \CiviCRM_API3_Exception
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function triggerInfo(): array {
     if (!$this->isDBReadyForTriggers()) {
@@ -367,7 +366,7 @@ class CalculatedData extends TriggerHook {
    *
    * @return false
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function isDBReadyForTriggers(): bool {
     $endowmentFinancialType = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');

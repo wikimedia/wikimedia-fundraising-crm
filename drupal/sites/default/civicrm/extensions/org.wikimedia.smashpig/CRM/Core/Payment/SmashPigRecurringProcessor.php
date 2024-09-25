@@ -70,7 +70,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    *
    * @return array
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   public function run($contributionRecurId = NULL) {
     $startTime = time();
@@ -149,7 +148,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $result[$recurringPayment['id']]['status'] = $payment['payment_status'];
         $result[$recurringPayment['id']]['invoice_id'] = $payment['invoice_id'];
         $result[$recurringPayment['id']]['processor_id'] = $payment['processor_id'];
-      } catch (CiviCRM_API3_Exception $e) {
+      } catch (CRM_Core_Exception $e) {
         $this->recordFailedPayment($recurringPayment, $e);
         $this->addErrorStats($errorCount, $e->getCode());
         // display information in the result array
@@ -224,7 +223,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param ?int $contributionRecurId
    *
    * @return \Civi\Api4\Generic\Result
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getPaymentsToCharge($contributionRecurId = NULL) {
     $getAction = ContributionRecur::get(FALSE)
@@ -302,7 +301,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param array $recurringPayment
    * @param array $previousPayment
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function recordPayment(
     $payment, $recurringPayment, $previousPayment
@@ -393,12 +392,11 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   /**
    * @param array $recurringPayment
-   * @param \CiviCRM_API3_Exception $exception
+   * @param \CRM_Core_Exception $exception
    *
-   * @throws \CiviCRM_API3_Exception
    * @throws \Exception
    */
-  protected function recordFailedPayment($recurringPayment, CiviCRM_API3_Exception $exception) {
+  protected function recordFailedPayment($recurringPayment, CRM_Core_Exception $exception) {
     $cancelRecurringDonation = FALSE;
     $errorData = $exception->getErrorData();
     $errorResponse = $errorData['smashpig_processor_response'] ?? $exception->getMessage();
@@ -499,7 +497,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param int $contributionRecurID
    * @param int $contactID
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function sendFailureEmail(int $contributionRecurID, int $contactID) {
@@ -615,7 +613,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    *
    * @return array tailored to the needs of makePayment
    * @throws \CRM_Core_Exception
-   * @throws \CiviCRM_API3_Exception
    */
   protected function getPaymentParams(
     $recurringPayment, $previousContribution
@@ -687,7 +684,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param int $failures number of times we have tried so far
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function makePayment($paymentParams, $failures = 0) {
     Civi::log('wmf')->info('Charging contribution_recur id: '.$paymentParams['contributionRecurID'].' with invoice_id: '.$paymentParams['invoice_id']);
@@ -706,7 +703,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       Civi::log('wmf')->info('Payment successful - invoice_id: '.$paymentInfo['invoice_id'].' with status: '.$paymentInfo['payment_status'].' and processor_id: '.$paymentInfo['processor_id']);
       $payment = reset($payment['values']);
       return $payment;
-    } catch (CiviCRM_API3_Exception $exception) {
+    } catch (CRM_Core_Exception $exception) {
       if (
         $failures < self::MAX_MERCHANT_REFERENCE_RETRIES &&
         $this->handleException($exception, $paymentParams)
@@ -729,7 +726,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param int $recurringID ID of recurring contribution record
    *
    * @return bool
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function hasOtherActiveRecurringContribution(int $contactID, int $recurringID) {
     $result = civicrm_api3('ContributionRecur', 'get', [
@@ -753,14 +750,14 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * Handle an exception in a payment attempt, indicating whether retry is
    * possible and potentially mutating payment parameters.
    *
-   * @param \CiviCRM_API3_Exception $exception from PaymentProcessor::pay
+   * @param \CRM_Core_Exception $exception from PaymentProcessor::pay
    * @param array $paymentParams Same keys as argument to makePayment. Values
    *  may be mutated, depending on the recommended way of handling the error.
    *
    * @return bool TRUE if the payment should be tried again
    */
   protected function handleException(
-    CiviCRM_API3_Exception $exception,
+    CRM_Core_Exception $exception,
     &$paymentParams
   ) {
     Civi::log('wmf')->info('Error: '.$exception->getErrorCode().' invoice_id:'.$paymentParams['invoice_id']);

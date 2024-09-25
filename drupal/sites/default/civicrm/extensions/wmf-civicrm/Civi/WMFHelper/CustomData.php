@@ -13,7 +13,7 @@ class CustomData {
    * @param int $id
    *
    * @return string
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getCustomFieldNameFromID(int $id): string {
     if (!\Civi::cache('metadata')->has('wmf_custom_field_name_mapping')) {

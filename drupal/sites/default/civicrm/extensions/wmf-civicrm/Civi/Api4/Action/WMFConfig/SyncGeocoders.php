@@ -21,8 +21,7 @@ class SyncGeocoders extends AbstractAction {
    *
    * @param \Civi\Api4\Generic\Result $result
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
     $geocoders = civicrm_api3('Geocoder', 'get', []);

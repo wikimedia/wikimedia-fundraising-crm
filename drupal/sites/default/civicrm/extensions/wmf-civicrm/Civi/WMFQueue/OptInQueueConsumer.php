@@ -91,7 +91,7 @@ class OptInQueueConsumer extends QueueConsumer {
    * @param string $email The email from the message
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private function getContactsFromEmail(string $email): array {
     return (array) Contact::get(FALSE)

@@ -55,7 +55,7 @@ class CRM_Omnimail_Helper {
    * enough it's not worth extra caching.
    *
    * @return array
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getSettings() {
     $settings = civicrm_api3('Setting', 'get', array('group' => 'omnimail'));
@@ -106,7 +106,7 @@ class CRM_Omnimail_Helper {
    * @param $name
    *
    * @return string
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getInputValueFromResponseWithXpath(\Psr\Http\Message\ResponseInterface $response, $name) {
     $elementWrapper = CRM_Omnimail_Helper::getValueFromResponseWithXPath($response, '//input[@name="' . $name . '"]/@value');
@@ -114,7 +114,7 @@ class CRM_Omnimail_Helper {
       return $elementWrapper->item(0)->nodeValue;
     }
     else {
-      throw new API_Exception("Input node $name not found");
+      throw new CRM_Core_Exception("Input node $name not found");
     }
   }
 
@@ -124,7 +124,7 @@ class CRM_Omnimail_Helper {
    * @param $params
    *
    * @return \GuzzleHttp\Client
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \GuzzleHttp\Exception\GuzzleException
    */
   public static function getLoggedInBrowserSimulationClient($params) {
@@ -153,7 +153,7 @@ class CRM_Omnimail_Helper {
       'allow_redirects' => FALSE,
     ]);
     if (strpos((string) $response->getBody(), 'loginForm')) {
-      throw new API_Exception('login failed');
+      throw new CRM_Core_Exception('login failed');
     }
     return $client;
   }

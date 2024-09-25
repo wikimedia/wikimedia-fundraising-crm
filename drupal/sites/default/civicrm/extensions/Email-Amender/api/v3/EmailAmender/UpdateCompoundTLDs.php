@@ -19,7 +19,7 @@ function _civicrm_api3_email_amender_update_compound_t_l_ds_spec(&$spec) {
  * @return array API result descriptor
  * @see civicrm_api3_create_success
  * @see civicrm_api3_create_error
- * @throws API_Exception
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_email_amender_update_compound_t_l_ds($params) {
 
@@ -33,4 +33,3 @@ function civicrm_api3_email_amender_update_compound_t_l_ds($params) {
 
   return civicrm_api3_create_success(array(), $params, 'EmailAmenderCompoundTLDs', 'Update');
 }
-

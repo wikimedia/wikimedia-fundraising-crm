@@ -23,14 +23,14 @@ function _civicrm_api3_contribution_forgetme_spec(array &$spec): void {
  * @param array $params
  * @return array API result descriptor
  * @see civicrm_api3_create_success
- * @see civicrm_api3_create_error
- * @throws API_Exception
+ *
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_contribution_forgetme(array $params): array {
   $customFieldMap = _civicrm_api3_contribution_forgetme_getcustomfields();
   $getParams = [
     'contact_id' => $params['contact_id'],
-    'return' => [$customFieldMap['gateway'], $customFieldMap['gateway_txn_id']]
+    'return' => [$customFieldMap['gateway'], $customFieldMap['gateway_txn_id']],
   ];
 
   $contributions = civicrm_api3('Contribution', 'get', $getParams)['values'];

@@ -11,7 +11,7 @@ use CRM_Forgetme_ExtensionUtil as E;
  * @return array API result descriptor
  * @see civicrm_api3_create_success
  * @see civicrm_api3_create_error
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function _civicrm_api3_generic_showme($apiRequest) {
   $showMe = new CRM_Forgetme_Showme($apiRequest['entity'], $apiRequest['params'], CRM_Utils_Array::value('options', $apiRequest['params'], []));

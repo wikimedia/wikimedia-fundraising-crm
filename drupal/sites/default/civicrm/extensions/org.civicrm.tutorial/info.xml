@@ -5,17 +5,16 @@
   <description>Provides walkthrough tutorials for using CiviCRM screens.</description>
   <license>AGPL-3.0</license>
   <maintainer>
-    <author>Coleman Watts</author>
-    <email>coleman@civicrm.org</email>
+    <author>CiviCRM</author>
+    <email>info@civicrm.org</email>
   </maintainer>
   <urls>
     <url desc="Main Extension Page">https://lab.civicrm.org/extensions/tutorial/</url>
     <url desc="Documentation">https://lab.civicrm.org/extensions/tutorial/-/blob/master/README.md</url>
-    <url desc="Support">https://lab.civicrm.org/extensions/tutorial/-/issues</url>
     <url desc="Licensing">https://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2022-08-20</releaseDate>
-  <version>1.5</version>
+  <releaseDate>2024-03-15</releaseDate>
+  <version>1.6</version>
   <develStage>stable</develStage>
   <compatibility>
     <ver>5.29</ver>

@@ -51,7 +51,7 @@ class Contribution {
    * @param string $op
    * @param \CRM_Contribute_BAO_Contribution $contribution
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
   public static function updateWMFDonorLastDonation(string $op, &$contribution) {
@@ -86,7 +86,7 @@ class Contribution {
    * @param \CRM_Contribute_BAO_Contribution $contribution
    *
    * @return mixed
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   private static function getLastDonationParams(&$contribution) {
     $contributionStatus = \CRM_Core_PseudoConstant::getLabel('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $contribution->contribution_status_id);

@@ -25,7 +25,7 @@ class CRM_LCD_MoveContrib_Upgrader extends CRM_Extension_Upgrader_Base {
         'weight' => 1000,
       ));
     }
-    catch (CRM_API3_Exception $e) {
+    catch (CRM_Core_Exception $e) {
       Civi::log()->error('CRM_LCD_MoveContrib_Upgrader install $e', $e);
     }
   }

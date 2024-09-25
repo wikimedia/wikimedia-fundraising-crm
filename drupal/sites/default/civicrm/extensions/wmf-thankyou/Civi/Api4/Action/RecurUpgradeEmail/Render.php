@@ -39,7 +39,7 @@ class Render extends AbstractAction {
   /**
    * Get the contact ID, doing a DB lookup if required.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getContactID() {
     if (!$this->contactID) {
@@ -54,8 +54,7 @@ class Render extends AbstractAction {
    *
    * @param \Civi\Api4\Generic\Result $result
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function _run(Result $result) {
     $email = Email::get()

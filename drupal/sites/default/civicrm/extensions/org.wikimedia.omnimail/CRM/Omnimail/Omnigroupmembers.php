@@ -29,7 +29,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
    * @return \Omnimail\Silverpop\Responses\GroupMembersResponse
    *
    * @throws \CRM_Omnimail_IncompleteDownloadException
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \League\Csv\Exception
    */
   public function getResult($params) {
@@ -86,7 +86,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
    * @param \Omnimail\Silverpop\Responses\Contact $result
    *
    * @return array
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function formatResult($params, $result) {
     $options = _civicrm_api3_get_options_from_params($params);
@@ -110,7 +110,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
    * @param array $params
    *
    * @return int
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getLimit($params) {
     $options = _civicrm_api3_get_options_from_params($params);

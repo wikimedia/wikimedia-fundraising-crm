@@ -28,7 +28,7 @@ class Clean extends CleanBase {
   /**
    * Fetch the addresses for the contacts.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function loadEntities() {
     $entities = Address::get()->setCheckPermissions(FALSE)->setOrderBy(['is_primary' => 'DESC'])->setWhere([['contact_id', 'IN', $this->getContactIDs()]])->addSelect('*')->execute();
@@ -43,7 +43,7 @@ class Clean extends CleanBase {
    * @param int $entityID
    * @param array $values
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function update($entityID, $values) {
     Address::update()->setCheckPermissions(FALSE)->addWhere('id', '=', $entityID)->setValues($values)->execute();
@@ -97,7 +97,7 @@ class Clean extends CleanBase {
   /**
    * Process deletion of duplicate entities.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function processDeletes() {
     Address::delete()->setWhere([['id', 'IN', $this->idsToDelete]])->setCheckPermissions(FALSE)->execute();

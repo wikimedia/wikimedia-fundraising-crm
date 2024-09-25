@@ -14,7 +14,7 @@ class CRM_Deduper_BAO_Resolver_SkippedFieldsResolver extends CRM_Deduper_BAO_Res
    *
    * This in particular applies to calculated fields.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function resolveConflicts(): void {
     $fieldsToByPass = $this->getFieldsToByPass();
@@ -28,7 +28,7 @@ class CRM_Deduper_BAO_Resolver_SkippedFieldsResolver extends CRM_Deduper_BAO_Res
    *
    * @return array
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getFieldsToBypass(): array {
     $groupsToSkip = (array) Civi::settings()->get('deduper_resolver_custom_groups_to_skip');

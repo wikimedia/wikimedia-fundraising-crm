@@ -24,7 +24,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
    * @param array $params
    *
    * @return array
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function create(array $params): array {
     try {
@@ -91,7 +91,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
    * @param array $params
    *
    * @return array
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function get(array $params) {
     /* @var \Omnimail\Silverpop\Mailer $mailer */
@@ -103,7 +103,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         ->addSelect('email')->execute()->first()['email'];
     }
     if (empty($params['email'])) {
-      throw new API_Exception('Valid Contact ID or email not provided');
+      throw new CRM_Core_Exception('Valid Contact ID or email not provided');
     }
     /* @var \Omnimail\Silverpop\Requests\SelectRecipientData $request */
     $request = $mailer->getContact([
@@ -127,7 +127,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       return array_merge($return, $response->getFields());
     }
     catch (Exception $e) {
-      throw new API_Exception($e->getMessage());
+      throw new CRM_Core_Exception($e->getMessage());
     }
 
   }
@@ -137,7 +137,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
    * @param array $return
    *
    * @return array
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function getReturnGroups(Contact $response, $checkPermissions): array {

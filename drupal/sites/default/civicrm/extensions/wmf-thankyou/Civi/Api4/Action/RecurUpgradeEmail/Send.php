@@ -38,7 +38,7 @@ class Send extends AbstractAction {
   /**
    * Get the contact ID, doing a DB lookup if required.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getContactID() {
     if (!$this->contactID) {

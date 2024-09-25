@@ -82,7 +82,7 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
    * @param string $value
    *
    * @throws \Civi\API\Exception\UnauthorizedException
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   public function loadAlternatives($value) {
     if (isset($this->alternatives[$value])) {

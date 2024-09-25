@@ -36,7 +36,7 @@ class MonologManager {
    * the whole system is instantiated.
    *
    * @return bool
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function isAvailable() {
     return $this->enabled &&
@@ -110,7 +110,7 @@ class MonologManager {
   /**
    * Get configured monologs.
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getMonologEntities(): array {
     if (!is_array($this->monologEntities)) {
@@ -122,7 +122,6 @@ class MonologManager {
   /**
    * Get the monolog providers to attach to the channel.
    *
-   * @throws \API_Exception
    * @throws \CRM_Core_Exception
    */
   protected function getMonologsByChannel($channel): array {
@@ -145,7 +144,7 @@ class MonologManager {
    * Get the default configured logger.
    *
    * @return array|false
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getDefaultLogger() {
     if ($this->enabled) {

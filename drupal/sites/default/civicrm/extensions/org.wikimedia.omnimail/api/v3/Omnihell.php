@@ -15,7 +15,7 @@ use GuzzleHttp\Psr7\Request;
  * @return array API result descriptor
  *
  * @throws \GuzzleHttp\Exception\GuzzleException
- * @throws \API_Exception
+ * @throws \CRM_Core_Exception
  */
 function civicrm_api3_omnihell_get($params) {
   $client = CRM_Omnimail_Helper::getLoggedInBrowserSimulationClient($params);

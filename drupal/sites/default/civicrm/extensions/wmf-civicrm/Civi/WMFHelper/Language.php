@@ -11,7 +11,7 @@ class Language {
   /**
    * Get the best language to use, based on the language information we have.
    *
-   * @throws \API_Exception|\CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function getLanguageCode(string $suppliedLanguage): string {
     $validLanguages = self::getValidLanguages();

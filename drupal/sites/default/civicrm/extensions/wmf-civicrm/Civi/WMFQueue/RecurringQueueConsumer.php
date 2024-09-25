@@ -594,7 +594,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
       $this->updateContributionRecurWithErrorHandling($params);
     }
-    catch (\CiviCRM_API3_Exception $e) {
+    catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
     }
     Civi::log('wmf')->notice('recurring: Successfully ended subscription for subscriber id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);

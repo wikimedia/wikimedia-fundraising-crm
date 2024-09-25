@@ -66,8 +66,7 @@ class Render extends AbstractAction {
    *
    * @param \Civi\Api4\Generic\Result $result
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
     if ($this->getContactID()) {
@@ -107,8 +106,7 @@ class Render extends AbstractAction {
    * @param string $email
    *
    * @return array
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function renderLetter(string $email): array {
     $contactDetails = $this->getContactDetailsForEmail($email);

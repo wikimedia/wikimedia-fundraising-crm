@@ -28,8 +28,8 @@ use SmashPig\PaymentProviders\PaymentProviderFactory;
  *
  * @method $this setMessage(array $msg) Set WMF normalised values.
  * @method array getMessage() Get WMF normalised values.
- * @method $this setAlreadyResolved(array $alreadyResolved) Set array of already-resolved transactions
- * @method array getAlreadyResolved() Get array of already-resolved transactions
+ * @method $this setAlreadyResolved(array $alreadyResolved) Set array of emails with already-resolved transactions
+ * @method array getAlreadyResolved() Get array of emails with already-resolved transactions
  *
  * @package Civi\Api4
  */
@@ -43,7 +43,7 @@ class Resolve extends AbstractAction {
   protected $message = [];
 
   /**
-   * List of transaction details that have already been resolved this run.
+   * Keys are email addresses that have completed transactions in this run.
    * We don't want to approve multiple transactions for the same email in
    * a single run, as they might not have been consumed into the database
    * yet and so not be caught by the hasDonationsInPastDay check.
@@ -261,18 +261,7 @@ class Resolve extends AbstractAction {
    * same email address.
    */
   protected function approvedDonationForSameDonorInThisRun(): bool {
-    foreach ($this->alreadyResolved as $orderId => $alreadyResolved) {
-      if (empty($alreadyResolved['email']) || empty($this->message['email'])) {
-        continue;
-      }
-      if (
-        $alreadyResolved['email'] === $this->message['email'] &&
-        $alreadyResolved['status'] === FinalStatus::COMPLETE
-      ) {
-        return TRUE;
-      }
-    }
-    return FALSE;
+    return array_key_exists($this->message['email'], $this->alreadyResolved);
   }
 
   /**
@@ -506,7 +495,7 @@ class Resolve extends AbstractAction {
    * pushing through duplicate contributions).
    *
    * @return bool True if donor found matching the conditions, false otherwise
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function matchesUnrefundedDonor(): bool {
@@ -565,7 +554,7 @@ class Resolve extends AbstractAction {
    * @param bool $includeNonCompleteDonation pass FALSE to skip a join to contribution
    *
    * @return Result
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function getDonationStatistics(bool $includeNonCompleteDonation): Result {

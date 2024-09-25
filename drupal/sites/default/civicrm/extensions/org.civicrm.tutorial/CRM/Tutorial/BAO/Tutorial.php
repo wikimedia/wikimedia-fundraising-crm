@@ -174,7 +174,7 @@ class CRM_Tutorial_BAO_Tutorial {
    * @param $tutorial
    * @param int $cid
    * @return bool
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public static function matchGroup($tutorial, $cid = NULL) {
     if (empty($tutorial['groups'])) {
@@ -233,7 +233,16 @@ class CRM_Tutorial_BAO_Tutorial {
         if (self::matchURL($urlPath, $tutorial['url']) && self::matchGroup($tutorial)) {
           // Check if user has viewed this tutorial already
           $views = (array) Civi::contactSettings($cid)->get('tutorials');
-          $tutorial['viewed'] = !empty($views[$tutorial['id']]);
+
+          $tutorial['viewed'] = TRUE;
+          $runOnEveryUniqueLogin = Civi::settings()->get('tutorial_runOnEveryUniqueLogin');
+          if (empty($runOnEveryUniqueLogin)) {
+            $tutorial['viewed'] = !empty($views[$tutorial['id']]);
+          }
+          elseif (empty($_COOKIE['civitutorial_' . $tutorial['id']])) {
+            $tutorial['viewed'] = FALSE;
+          }
+
           $matches['items'][$tutorial['id']] = $tutorial;
         }
       }
@@ -261,7 +270,15 @@ class CRM_Tutorial_BAO_Tutorial {
       /** @var Civi\Core\SettingsBag $settings */
       $settings = Civi::service('settings_manager')->getBagByContact(NULL, $cid);
       $views = (array) $settings->get('tutorials');
+
+      $runOnEveryUniqueLogin = Civi::settings()->get('tutorial_runOnEveryUniqueLogin');
       $views[$params['id']] = date('Y-m-d H:i:s');
+      if (!empty($runOnEveryUniqueLogin)) {
+        // rest every 10 days
+        $cookieExpiry = time() + (10 * 60 * 60 * 24);
+        setcookie('civitutorial_' . $params['id'], 'viewed', $cookieExpiry, '/', '', CRM_Utils_System::isSSL());
+      }
+
       $settings->set('tutorials', $views);
       return [
         'id' => $params['id'],

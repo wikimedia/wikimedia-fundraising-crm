@@ -4,7 +4,7 @@ Create and display walkthrough tutorials for CiviCRM screens.
 
 ![Screenshot](/images/view-tour.gif)
 
-View the latest version of this extension on CiviCRM's Gitlab:  
+View the latest version of this extension on CiviCRM's Gitlab:
 https://lab.civicrm.org/extensions/tutorial
 
 ## Requirements
@@ -20,6 +20,12 @@ If you are an administrator, this extension will let you edit the default tutori
 New or overridden tutorials are saved as .js files in your `files/civicrm/crm-tutorials` directory.
 
 ![Screenshot](/images/edit-tour.gif)
+
+You can also set the following CiviCRM setting using `cv` tool or API explorer:
+
+`Civi::settings()->set('tutorial_runOnEveryUniqueLogin', 1);`
+
+which is combined with "Auto run" will ensure that the tutorial will run on every unique login, which is useful for demo sites with shared account.
 
 ## Extension Authors
 

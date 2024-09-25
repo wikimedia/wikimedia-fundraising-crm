@@ -664,7 +664,7 @@ WHERE
    *
    * @return array|null
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getExistingContact(array $msg): ?array {
     if (empty($msg['first_name']) || empty($msg['last_name'])) {

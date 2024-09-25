@@ -17,7 +17,7 @@ function _civicrm_api3_mailing_provider_data_create_spec(&$spec) {
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_mailing_provider_data_create($params) {
   return _civicrm_api3_basic_create(_civicrm_api3_get_BAO(__FUNCTION__), $params);
@@ -28,7 +28,7 @@ function civicrm_api3_mailing_provider_data_create($params) {
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_mailing_provider_data_delete($params) {
   return _civicrm_api3_basic_delete(_civicrm_api3_get_BAO(__FUNCTION__), $params);
@@ -39,7 +39,7 @@ function civicrm_api3_mailing_provider_data_delete($params) {
  *
  * @param array $params
  * @return array API result descriptor
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_mailing_provider_data_get($params) {
   CRM_Core_DAO::disableFullGroupByMode();
@@ -55,7 +55,7 @@ function civicrm_api3_mailing_provider_data_get($params) {
  *
  * @param array $params
  *
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function _civicrm_api3_mailing_provider_data_get_spec(&$params) {
   $params['mailing_identifier']['FKClassName'] = 'CRM_Mailing_BAO_Mailing';

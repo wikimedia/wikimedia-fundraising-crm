@@ -26,9 +26,9 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
    * @param array $params
    * @return \Omnimail\Silverpop\Responses\RecipientsResponse
    *
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    * @throws \CRM_Omnimail_IncompleteDownloadException
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function getResult($params) {
     $settings = CRM_Omnimail_Helper::getSettings();
@@ -47,7 +47,7 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
     }
     elseif ($startTimestamp) {
       if ($this->endTimeStamp < $startTimestamp) {
-        throw new API_Exception(ts("End timestamp: " . date('Y-m-d H:i:s', $this->endTimeStamp) . " is before " . "Start timestamp: " . date('Y-m-d H:i:s', $startTimestamp)));
+        throw new CRM_Core_Exception(ts("End timestamp: " . date('Y-m-d H:i:s', $this->endTimeStamp) . " is before " . "Start timestamp: " . date('Y-m-d H:i:s', $startTimestamp)));
       }
       $request->setStartTimeStamp($startTimestamp);
       $request->setEndTimeStamp($this->endTimeStamp);

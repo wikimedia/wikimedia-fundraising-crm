@@ -66,8 +66,7 @@ class CRM_Omnimail_Omnimail {
    *
    * @param array $params
    *
-   * @throws \API_Exception
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function __construct($params) {
     $this->job_identifier = !empty($params['job_identifier']) ? $params['job_identifier'] : NULL;
@@ -80,7 +79,7 @@ class CRM_Omnimail_Omnimail {
 
     if ($this->getRetrievalParameters()) {
       if (!empty($params['end_date']) || !empty($params['start_date'])) {
-        throw new API_Exception('A prior retrieval is in progress. Do not pass in dates to complete a retrieval');
+        throw new CRM_Core_Exception('A prior retrieval is in progress. Do not pass in dates to complete a retrieval');
       }
     }
   }
@@ -184,7 +183,7 @@ class CRM_Omnimail_Omnimail {
    * @param array $params
    *   Api input parameters.
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function setJobSettings($params) {
     $this->jobSettings = array(
@@ -221,7 +220,7 @@ class CRM_Omnimail_Omnimail {
    *   Logging context - if this is not empty a debug row will be logged with the progress details.
    *   (it is good to log at the start & end of jobs, less so when we are just incrementing offset).
    *
-   * @throws \CiviCRM_API3_Exception
+   * @throws \CRM_Core_Exception
    */
   public function saveJobSetting($setting, string $loggingContext = '') {
     $setting = array_merge($this->jobSettings, $setting);

@@ -19,7 +19,7 @@ function _civicrm_api3_email_amender_fix_email_spec(&$spec) {
  *
  * @return array API result descriptor
  *
- * @throws \CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  *
  * @see civicrm_api3_create_success
  */

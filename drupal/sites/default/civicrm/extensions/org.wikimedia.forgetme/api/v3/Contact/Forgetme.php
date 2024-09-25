@@ -25,7 +25,7 @@ function _civicrm_api3_contact_forget_spec(&$spec) {
  * @return array API result descriptor
  * @see civicrm_api3_create_success
  * @see civicrm_api3_create_error
- * @throws API_Exception
+ * @throws CRM_Core_Exception
  */
 function civicrm_api3_contact_forgetme($params) {
   $result = [];
@@ -112,7 +112,7 @@ function civicrm_api3_contact_forgetme($params) {
  * for financial records requirements.
  *
  * @param array $contactIDsToForget
- * @throws CiviCRM_API3_Exception
+ * @throws \CRM_Core_Exception
  */
 function wipeEmailFromSortOrDisplayName(array $contactIDsToForget): void {
   $existingContacts = civicrm_api3('Contact', 'get', ['id' => ['IN' => $contactIDsToForget], 'return' => ['sort_name', 'display_name']])['values'];
