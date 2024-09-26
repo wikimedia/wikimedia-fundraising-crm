@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
@@ -324,15 +325,24 @@ class RefundQueueTest extends BaseQueueTestCase {
     ], TRUE, []);
     $this->processMessage($donationMessage, 'Donation', 'test');
 
+    $tempIssueReason = 'AM04:InsufficientFunds';
     $refundMessage = $this->getRefundMessage([
       'gateway' => 'test_gateway',
       'gateway_parent_id' => $donationMessage['gateway_txn_id'],
       'type' => 'chargeback',
       'gross' => $donationMessage['original_gross'],
       'gross_currency' => $donationMessage['original_currency'],
-      'reason' => 'AM04:InsufficientFunds',
+      'reason' => $tempIssueReason,
     ]);
     $this->processMessage($refundMessage, 'Refund','refund');
+    // test add reason to activity
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $donationMessage['gateway_txn_id'])
+      ->addWhere('subject', '=', 'Refund Reason')
+      ->addSelect('details')
+      ->execute()->first();
+    $this->assertEquals('Chargeback reason: ' . $tempIssueReason, $activity['details']);
+    // chargeback reason is due to temporary issue, so we should not cancel the recurring
     $cancelMessage = QueueWrapper::getQueue('recurring')->pop();
     $this->assertNull($cancelMessage);
   }
