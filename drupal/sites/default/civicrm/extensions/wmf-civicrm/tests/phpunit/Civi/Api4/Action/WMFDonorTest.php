@@ -119,6 +119,85 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * Test the insanity that is donor segmentation..
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorGetAnnualRecurSegments(): void {
+    $this->createDonor(['total_amount' => 2]);
+    $annualDonationDate = date('Y-m-d', strtotime('-10 months', strtotime($this->currentDate)));
+    $monthlyDonationDate = date('Y-m-d', strtotime('-7 months', strtotime($this->currentDate)));
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'frequency_unit' => 'year',
+      'frequency_interval' => 1,
+      'amount' => 99,
+      'start_date' => $annualDonationDate,
+    ], 'annual');
+
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 8,
+      'start_date' => $monthlyDonationDate,
+    ], 'month');
+
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'contribution_recur_id' => $this->ids['ContributionRecur']['annual'],
+      'total_amount' => 99,
+      'receive_date' => $annualDonationDate,
+      'financial_type_id:name' => 'Donation',
+    ], 'annual');
+    // Specify a field that requires an additional join.
+    $result = WMFDonor::get(FALSE)
+      ->setDebug(TRUE)
+      ->addSelect('donor_segment_id', 'donor_segment_id:label', 'donor_segment_id:description', 'donor_status_id', 'donor_status_id:label', 'lifetime_including_endowment')
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->execute();
+
+    // This shows how to get useful sql for debugging...
+    $sql = $result->debug['sql'];
+    $this->assertStringContainsString('as donor_segment_id', $sql);
+    // Annual recur donor.
+    $row = $result->first();
+    $this->assertEquals(101, $row['lifetime_including_endowment']);
+    $this->assertEquals(450, $row['donor_segment_id']);
+    $this->assertEquals(12, $row['donor_status_id']);
+    $this->assertEquals('Recurring annual donor', $row['donor_segment_id:label']);
+    $this->assertEquals('Active Annual Recurring', $row['donor_status_id:label']);
+    $this->assertStringContainsString('has made a recurring annual donation in last 13 months', $row['donor_segment_id:description']);
+
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'contribution_recur_id' => $this->ids['ContributionRecur']['month'],
+      'total_amount' => 8,
+      'receive_date' => $monthlyDonationDate,
+      'financial_type_id:name' => 'Donation',
+    ], 'month');
+
+    // Specify a field that requires an additional join.
+    $result = WMFDonor::get(FALSE)
+      ->setDebug(TRUE)
+      ->addSelect('donor_segment_id', 'donor_segment_id:label', 'donor_segment_id:description', 'donor_status_id', 'donor_status_id:label', 'lifetime_including_endowment')
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->execute();
+
+    // This shows how to get useful sql for debugging...
+    $sql = $result->debug['sql'];
+    $this->assertStringContainsString('as donor_segment_id', $sql);
+    // Annual recur donor.
+    $row = $result->first();
+    $this->assertEquals(109, $row['lifetime_including_endowment']);
+    $this->assertEquals(400, $row['donor_segment_id']);
+    $this->assertEquals(8, $row['donor_status_id']);
+    $this->assertEquals('Recurring donor', $row['donor_segment_id:label']);
+    $this->assertEquals('Deep lapsed Recurring', $row['donor_status_id:label']);
+    $this->assertStringContainsString('has made a recurring donation in last 36 months', $row['donor_segment_id:description']);
+  }
+
+  /**
    * @dataProvider segmentDataProvider
    *
    * @param $status

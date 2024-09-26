@@ -550,7 +550,7 @@ class CalculatedData extends TriggerHook {
         'is_search_range' => 1,
         'is_view' => 1,
         'default_value' => 0,
-        'select_clause' => "MAX(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS largest_donation",
+        'select_clause' => "MAX(IF(c.financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS largest_donation",
       ],
       'endowment_largest_donation' => [
         'name' => 'endowment_largest_donation',
@@ -563,7 +563,7 @@ class CalculatedData extends TriggerHook {
         'is_search_range' => 1,
         'is_view' => 1,
         'default_value' => 0,
-        'select_clause' => "MAX(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation",
+        'select_clause' => "MAX(IF(c.financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation",
       ],
       'all_funds_largest_donation' => [
         'name' => 'all_funds_largest_donation',
@@ -602,7 +602,7 @@ class CalculatedData extends TriggerHook {
         'is_search_range' => 1,
         'default_value' => 0,
         'is_view' => 1,
-        'select_clause' => "SUM(IF(financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total",
+        'select_clause' => "SUM(IF(c.financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total",
       ],
       'endowment_lifetime_usd_total' => [
         'name' => 'endowment_lifetime_usd_total',
@@ -615,7 +615,7 @@ class CalculatedData extends TriggerHook {
         'is_search_range' => 1,
         'default_value' => 0,
         'is_view' => 1,
-        'select_clause' => "SUM(IF(financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total",
+        'select_clause' => "SUM(IF(c.financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total",
       ],
       'last_donation_date' => [
         'name' => 'last_donation_date',
@@ -629,7 +629,7 @@ class CalculatedData extends TriggerHook {
         'is_view' => 1,
         'date_format' => 'M d, yy',
         'time_format' => 2,
-        'select_clause' => "MAX(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS last_donation_date",
+        'select_clause' => "MAX(IF(c.financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS last_donation_date",
       ],
       'endowment_last_donation_date' => [
         'name' => 'endowment_last_donation_date',
@@ -643,7 +643,7 @@ class CalculatedData extends TriggerHook {
         'is_view' => 1,
         'date_format' => 'M d, yy',
         'time_format' => 2,
-        'select_clause' => "MAX(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date",
+        'select_clause' => "MAX(IF(c.financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date",
       ],
       'all_funds_last_donation_date' => [
         'name' => 'all_funds_last_donation_date',
@@ -672,7 +672,7 @@ class CalculatedData extends TriggerHook {
         'date_format' => 'M d, yy',
         'time_format' => 2,
         'group_by_operator' => 'MIN',
-        'select_clause' => "MIN(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS first_donation_date",
+        'select_clause' => "MIN(IF(c.financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS first_donation_date",
       ],
       'endowment_first_donation_date' => [
         'name' => 'endowment_first_donation_date',
@@ -687,7 +687,7 @@ class CalculatedData extends TriggerHook {
         'date_format' => 'M d, yy',
         'time_format' => 2,
         'group_by_operator' => 'MIN',
-        'select_clause' => "MIN(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_first_donation_date",
+        'select_clause' => "MIN(IF(c.financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_first_donation_date",
       ],
       'all_funds_first_donation_date' => [
         'name' => 'all_funds_first_donation_date',
@@ -715,7 +715,7 @@ class CalculatedData extends TriggerHook {
         'is_search_range' => 1,
         'is_view' => 1,
         'default_value' => 0,
-        'select_clause' => "COUNT(IF(financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS number_donations",
+        'select_clause' => "COUNT(IF(c.financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS number_donations",
       ],
       'endowment_number_donations' => [
         'name' => 'endowment_number_donations',
@@ -728,7 +728,7 @@ class CalculatedData extends TriggerHook {
         'is_search_range' => 1,
         'is_view' => 1,
         'default_value' => 0,
-        'select_clause' => "COUNT(IF(financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_number_donations",
+        'select_clause' => "COUNT(IF(c.financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_number_donations",
       ],
       'all_funds_number_donations' => [
         'name' => 'all_funds_number_donations',
@@ -763,7 +763,7 @@ class CalculatedData extends TriggerHook {
         'is_view' => 1,
         'weight' => $weight,
         'is_search_range' => 1,
-        'select_clause' => "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}",
+        'select_clause' => "SUM(COALESCE(IF(c.financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}",
       ];
       // Add calendar year fields.
       if ($year >= self::WMF_MIN_CALENDER_YEAR) {
@@ -780,7 +780,7 @@ class CalculatedData extends TriggerHook {
           'is_view' => 1,
           'weight' => $weight,
           'is_search_range' => 1,
-          'select_clause' => "SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as total_{$year}",
+          'select_clause' => "SUM(COALESCE(IF(c.financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as total_{$year}",
         ];
       }
       if ($year >= 2018) {
@@ -790,7 +790,7 @@ class CalculatedData extends TriggerHook {
             'name' => "endowment_total_{$year}_{$nextYear}",
             'column_name' => "endowment_total_{$year}_{$nextYear}",
             'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total"),
-            'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}",
+            'select_clause' => "SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}",
           ]
         );
         // Endowment field total from 2018
@@ -800,7 +800,7 @@ class CalculatedData extends TriggerHook {
               'name' => "endowment_total_{$year}",
               'column_name' => "endowment_total_{$year}",
               'label' => 'Endowment ' . ts("CY {$year} total"),
-              'select_clause' => "SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}",
+              'select_clause' => "SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}",
             ]
           );
         }
@@ -849,8 +849,8 @@ class CalculatedData extends TriggerHook {
           'weight' => $weight,
           'is_search_range' => 1,
           'select_clause' => "
-             SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
-            - SUM(COALESCE(IF(financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
+             SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
+            - SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_{$year}_{$nextYear}",
         ];
         $this->calculatedFields["change_{$year}_{$nextYear}"] = [
@@ -867,8 +867,8 @@ class CalculatedData extends TriggerHook {
           'weight' => $weight,
           'is_search_range' => 1,
           'select_clause' => "
-            SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
-          - SUM(COALESCE(IF(financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
+            SUM(COALESCE(IF(c.financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
+          - SUM(COALESCE(IF(c.financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
           as change_{$year}_{$nextYear}",
         ];
       }
@@ -920,8 +920,12 @@ class CalculatedData extends TriggerHook {
       . implode(', ', $this->getTotalsFieldSelects()) . "
       FROM civicrm_contribution c
       USE INDEX(FK_civicrm_contribution_contact_id)
-      WHERE " . ($this->isTriggerContext() ? ' contact_id = NEW.contact_id ' : $this->getWhereClause()) . "
-        AND contribution_status_id = 1
+        LEFT JOIN civicrm_contribution_recur annual_recur
+           ON annual_recur.id = c.contribution_recur_id
+           AND annual_recur.frequency_unit = 'year'
+           -- contribution_status_id != cancelled?
+      WHERE " . ($this->isTriggerContext() ? ' c.contact_id = NEW.contact_id ' : $this->getWhereClause()) . "
+        AND c.contribution_status_id = 1
         AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)"
       . (!$this->isTriggerContext() ? ' GROUP BY contact_id ' : '') . "
     ) as totals" .
@@ -1086,7 +1090,7 @@ class CalculatedData extends TriggerHook {
               'from' => '1 months ago',
               'to' => $this->getFinancialYearEndDateTime(),
               'total' => 0.01,
-              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL', 'annual_recur.id IS NULL'],
             ],
           ], $midTierAndMajorGiftsExclusionRange),
         ],
@@ -1102,7 +1106,7 @@ class CalculatedData extends TriggerHook {
               'from' => '3 months ago',
               'to' => '1 months ago',
               'total' => 0.01,
-              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL', 'annual_recur.id IS NULL'],
             ],
           ], $midTierAndMajorGiftsExclusionRange),
         ],
@@ -1118,7 +1122,7 @@ class CalculatedData extends TriggerHook {
               'from' => '6 months ago',
               'to' => '3 months ago',
               'total' => 0.01,
-              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL', 'annual_recur.id IS NULL'],
             ],
           ], $midTierAndMajorGiftsExclusionRange),
         ],
@@ -1134,7 +1138,23 @@ class CalculatedData extends TriggerHook {
               'from' => '36 months ago',
               'to' => '6 months ago',
               'total' => 0.01,
-              'additional_criteria' => ['contribution_recur_id IS NOT NULL'],
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL', 'annual_recur.id IS NULL'],
+            ],
+          ], $midTierAndMajorGiftsExclusionRange),
+        ],
+      ],
+      12 => [
+        'name' => 'annual_recurring_active',
+        'label' => 'Active Annual Recurring',
+        'value' => 12,
+        'static_description' => 'gave annual recurring within last 13 months',
+        'criteria' => [
+          'multiple_range' => array_merge([
+            [
+              'from' => '13 months ago',
+              'to' => $this->getFinancialYearEndDateTime(),
+              'total' => 0.01,
+              'additional_criteria' => ['contribution_recur_id IS NOT NULL', 'annual_recur.id IS NOT NULL'],
             ],
           ], $midTierAndMajorGiftsExclusionRange),
         ],
@@ -1334,7 +1354,21 @@ class CalculatedData extends TriggerHook {
         'name' => 'recurring',
         'criteria' => [
           'range' => [
-            ['from' => '36 months ago', 'to' => $this->getFinancialYearEndDateTime(), 'total' => 0.01, 'additional_criteria' => ['contribution_recur_id IS NOT NULL']],
+            ['from' => '36 months ago', 'to' => $this->getFinancialYearEndDateTime(), 'total' => 0.01, 'additional_criteria' => ['contribution_recur_id IS NOT NULL', 'annual_recur.id IS NULL']],
+          ],
+        ],
+      ],
+      450 => [
+        'label' => 'Recurring annual donor',
+        'value' => 450,
+        'static_description' => 'has made a recurring annual donation in last 13 months',
+        'name' => 'recurring_annual',
+        'criteria' => [
+          'range' => [
+            [
+              'from' => '13 months ago', 'to' => $this->getFinancialYearEndDateTime(),
+              'total' => 0.01,
+              'additional_criteria' => ['annual_recur.id IS NOT NULL']],
           ],
         ],
       ],
@@ -1437,7 +1471,7 @@ class CalculatedData extends TriggerHook {
    * @return string
    */
   protected function getRangeClause(array $range): string {
-    $additionalCriteria = empty($range['additional_criteria']) ? '' : (implode(', ', $range['additional_criteria']) . ' AND ');
+    $additionalCriteria = empty($range['additional_criteria']) ? '' : (implode(' AND ', $range['additional_criteria']))  . ' AND ';
     return "COALESCE(IF($additionalCriteria receive_date
       BETWEEN (" . $this->convertDateOffsetToSQL($range['from']) . ") AND (" . $this->convertDateOffsetToSQL($range['to']) . ')
       , total_amount, 0), 0)';
