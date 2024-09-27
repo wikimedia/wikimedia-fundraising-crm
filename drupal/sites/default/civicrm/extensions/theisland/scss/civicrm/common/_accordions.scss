@@ -61,6 +61,12 @@ details details {
   }
 }
 
+// Exception for accordions on Administer > System Settings > Manage Extensions
+.crm-extensions-label > .crm-accordion-light > summary {
+  color: inherit !important;
+  background: inherit !important;
+}
+
 .crm-master-accordion-wrapper,
 .crm-accordion-wrapper,
 details {
