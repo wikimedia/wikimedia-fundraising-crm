@@ -49,7 +49,7 @@ function assignee_civicrm_preProcess($formName, &$form) {
 
 /**
  * Implements hook_civicrm_buildForm().
- * 
+ *
  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_buildForm
  */
 function assignee_civicrm_buildForm($formName, &$form) {
@@ -58,6 +58,7 @@ function assignee_civicrm_buildForm($formName, &$form) {
     if (Civi::settings()->get('assignee_as_source')) {
       $assignees[] = $form->_defaultValues['source_contact_id'];
     }
+    $assignees = array_unique(array_filter($assignees));
     if ($assignees) {
       $form->setDefaults(['assignee_contact_id' => implode(",", $assignees)]);
     }
@@ -77,4 +78,4 @@ function assignee_civicrm_navigationMenu(&$menu) {
     'permission' => 'administer CiviCRM',
   ]);
   _assignee_civix_navigationMenu($menu);
-} 
+}
