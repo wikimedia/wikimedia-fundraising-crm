@@ -32,8 +32,7 @@ use SilverpopConnector\SilverpopXmlConnector;
  *
  * @group headless
  */
-class OmnimailBaseTestClass extends TestCase implements HeadlessInterface {
-
+class OmnimailBaseTestClass extends TestCase {
   use Api3TestTrait;
   use GuzzleTestTrait;
 
