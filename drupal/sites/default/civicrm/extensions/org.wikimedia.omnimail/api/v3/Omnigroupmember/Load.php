@@ -43,9 +43,6 @@ function civicrm_api3_omnigroupmember_load($params) {
     return civicrm_api3_create_success(1);
   }
 
-  $defaultLocationType = CRM_Core_BAO_LocationType::getDefault();
-  $locationTypeID = $defaultLocationType->id;
-
   $offset = $job->getOffset();
   $limit = (isset($params['options']['limit'])) ? $params['options']['limit'] : NULL;
   $count = 0;
@@ -72,33 +69,20 @@ function civicrm_api3_omnigroupmember_load($params) {
       $source = (empty($params['mail_provider']) ? ts('Mail Provider') : $params['mail_provider']) . ' ' . (!empty($groupMember['source']) ? $groupMember['source'] : $groupMember['opt_in_source']);
       $source .= ' ' . $groupMember['created_date'];
 
-      $contactParams = array(
+      $contactParams = [
         'contact_type' => 'Individual',
         'email' => $groupMember['email'],
         'is_opt_out' => $groupMember['is_opt_out'],
         'source' => $source,
         'preferred_language' => _civicrm_api3_omnigroupmember_get_language($groupMember),
-      );
+        'email_primary.email' => $groupMember['email'],
+      ];
 
       $contactCreateCall = \Civi\Api4\Contact::create(FALSE)
-        ->setValues($contactParams)
-        ->addChain(
-          'emailCreate',
-          Email::create(FALSE)->setValues([
-            'contact_id' => '$id',
-            'email' => $groupMember['email']
-          ])
-        );
+        ->setValues($contactParams);
 
       if (!empty($groupMember['country']) && _civicrm_api3_omnigroupmember_is_country_valid($groupMember['country'])) {
-        $contactCreateCall->addChain(
-          'addressCreate',
-          Address::create(FALSE)->setValues([
-            'contact_id' => '$id',
-            'country_id' => array_search($groupMember['country'], CRM_Core_PseudoConstant::countryIsoCode()),
-            'location_type_id' => $locationTypeID,
-          ])
-        );
+        $contactCreateCall->addValue('address_primary.country_id:abbr', $groupMember['country']);
       }
 
       if (!empty($params['group_id'])) {

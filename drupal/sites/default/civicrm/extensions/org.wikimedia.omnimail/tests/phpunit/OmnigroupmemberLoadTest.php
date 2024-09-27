@@ -49,12 +49,12 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $this->assertEquals(3, $groupMembers['count']);
     $contacts = $this->getGroupMemberDetails($groupMembers);
     $this->assertEquals('fr_FR', $contacts['values'][0]['preferred_language']);
-    $this->assertEquals('eric@example.com', $contacts['values'][0]['email']);
-    $this->assertEquals('France', $contacts['values'][0]['country']);
+    $this->assertEquals('eric@example.com', $contacts['values'][0]['email_primary.email']);
+    $this->assertEquals('France', $contacts['values'][0]['address_primary.country_id:label']);
     $this->assertEquals(1, $contacts['values'][0]['is_opt_out']);
-    $this->assertEquals('Silverpop Added by WebForms 10/18/16', $contacts['values'][0]['contact_source']);
+    $this->assertEquals('Silverpop Added by WebForms 10/18/16', $contacts['values'][0]['source']);
 
-    $this->assertEquals('Silverpop clever place 07/04/17', $contacts['values'][2]['contact_source']);
+    $this->assertEquals('Silverpop clever place 07/04/17', $contacts['values'][2]['source']);
     $this->cleanupGroup($group);
   }
 
@@ -79,8 +79,8 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(2, $groupMembers['count']);
     $contacts = $this->getGroupMemberDetails($groupMembers);
-    $this->assertEquals('sarah@example.com', $contacts['values'][0]['email']);
-    $this->assertEquals('lisa@example.com', $contacts['values'][1]['email']);
+    $this->assertEquals('sarah@example.com', $contacts['values'][0]['email_primary.email']);
+    $this->assertEquals('lisa@example.com', $contacts['values'][1]['email_primary.email']);
     $this->cleanupGroup($group);
   }
 
@@ -106,7 +106,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(1, $groupMembers['count']);
     $contacts = $this->getGroupMemberDetails($groupMembers);
-    $this->assertEquals('eric@example.com', $contacts['values'][0]['email']);
+    $this->assertEquals('eric@example.com', $contacts['values'][0]['email_primary.email']);
 
     // Re-run. Offset is now 1 in settings & we are passing in limit =1. Sarah should be created.
     $client = $this->setupSuccessfulDownloadClient(FALSE);
@@ -122,7 +122,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(2, $groupMembers['count']);
     $contacts = $this->getGroupMemberDetails($groupMembers);
-    $this->assertEquals('sarah@example.com', $contacts['values'][1]['email']);
+    $this->assertEquals('sarah@example.com', $contacts['values'][1]['email_primary.email']);
     $this->cleanupGroup($group);
 
     $this->assertEquals([
@@ -343,10 +343,11 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     return $this->callAPISuccess('Contact', 'get', [
       'contact_id' => $contactIDs,
       'sequential' => 1,
+      'version' => 4,
       'return' => [
-        'contact_source',
-        'email',
-        'country',
+        'source',
+        'email_primary.email',
+        'address_primary.country_id:label',
         'created_date',
         'preferred_language',
         'is_opt_out',
