@@ -4,9 +4,10 @@
     "Payroll": "Payroll Deduction",
     "Donation": "Matching Gift",
     "My Rewards": "Employee Giving",
-    "BlueSnap (Apple Pay)": "Individual gift",
+    "BlueSnap (Apple Pay)": "Individual Gift",
     "Volunteer": "Volunteer Match",
     "Corporate Direct Donation": "Corporate Gift",
+    "Company Gift Card Anonymous Donation" : "Employee Giving",
     "PAC Match": "Matching Gift",
     "": "Individual Gift"
   }
