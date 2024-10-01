@@ -1,5 +1,5 @@
 Company,Project,Donation Date,Donor First Name,Donor Last Name,Email,Address,City,State/Province,Postal Code,Activity,Comment,Transaction ID,Donation Frequency,Currency,Project Remote ID,Source,Total Donation to be Acknowledged,Cause Support Fee,Match Amount,Merchant Fee,Net total,
-Donald Duck Inc,,2015-11-01T23:09:28Z,Hewey,Duck,hewey@duck.org,2 Quacker Road,Duckville,CA,90210,Wikipedia roc ks,,trxn-QUACK,One Time,USD,,,1200,11,0,0,1189,
+Donald Duck Inc,,2015-11-01T23:09:28Z,Hewey,Duck,hewey@duck.org,2 Quacker Road,Duckville,CA,90210,Wikipedia roc ks,,trxn-QUACK,One Time,USD,,BlueSnap (Apple Pay),1200,11,0,0,1189,
 Mickey Mouse Inc,WIKIPEDIA,2015-11-02T00:07:05Z,Minnie,Mouse,minnie@mouse.org,2 Cheesy Place,Mouseville,CA,90210,,,trxn-SQUEAK,Recurring,USD,,,100,0.05,"1,000",0.05,0199,
 Goofy Inc,,2015-11-02T00:09:36Z,Pluto,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,90210,,,trxn-WOOF,Unspecified,USD,,,22,1.59,25,0,45.31,
 Uncle Scrooge Inc,,2015-11-02T00:18:07Z,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,Not shared by donor,90210,,Very stingy,trxn-ARF,Recurring,USD,,,0,0.05,.5,0.28,11.42,
