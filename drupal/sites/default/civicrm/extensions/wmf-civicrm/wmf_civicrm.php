@@ -33,19 +33,24 @@ function wmf_civicrm_civicrm_config(&$config) {
   $dispatcher->addListener('civi.token.list', ['CRM_Wmf_Tokens', 'onListTokens']);
   // Ensure it runs after the first ones, since we override some core tokens.
   $dispatcher->addListener('civi.token.eval', ['CRM_Wmf_Tokens', 'onEvalTokens'], -200);
+
   $dispatcher->addListener('hook_civicrm_queueActive', [Queue::class, 'isSiteBusy']);
-  \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [Import::class, 'alterMappedRow']);
+
+  // Import hooks.
+  $dispatcher->addListener('hook_civicrm_importAlterMappedRow', [Import::class, 'alterMappedRow']);
+
   // Increase the weight on the angular directory in this extension so it overrides the others.
-  // This ensures our tweaks take precedence.
+  // This ensures our tweaks take precedence, specifically we are overriding the form from the deduper extension.
   // See https://github.com/civicrm/civicrm-core/pull/30817.
-  Civi::dispatcher()->addListener('&civi.afform.searchPaths', function(&$paths) {
+  $dispatcher->addListener('&civi.afform.searchPaths', function(&$paths) {
     foreach ($paths as &$path) {
       if (str_contains($path['path'], __DIR__)) {
         $path['weight'] = 50;
       }
     }
   });
-  Civi::dispatcher()->addListener('civi.api.prepare', ['Civi\WMFHook\Contribution', 'apiPrepare']);
+
+  $dispatcher->addListener('civi.api.prepare', ['Civi\WMFHook\Contribution', 'apiPrepare']);
 }
 
 /**
