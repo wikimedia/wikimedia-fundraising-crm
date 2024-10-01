@@ -3,14 +3,6 @@
   padding: 0 10px;
 }
 
-/* Hide the WP Menu */
-body:not(.crm-menubar-hidden) #adminmenumain {
-  display: none;
-}
-body:not(.crm-menubar-hidden) #wpcontent {
-  margin-left: 0;
-}
-
 /* Breadcrumb theming */
 #crm-container .breadcrumb {
   padding: 10px 0;

@@ -67,7 +67,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
         return $result->getData();
       }
       else {
-        sleep($settings['omnimail_job_retry_interval']);
+        sleep((int) $settings['omnimail_job_retry_interval']);
       }
     }
 

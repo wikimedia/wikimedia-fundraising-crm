@@ -6,6 +6,9 @@
  * Time: 12:46 PM
  */
 
+use Civi\Api4\Address;
+use Civi\Api4\Email;
+use Civi\Api4\GroupContact;
 use Omnimail\Silverpop\Responses\Contact;
 
 /**
@@ -40,9 +43,6 @@ function civicrm_api3_omnigroupmember_load($params) {
     return civicrm_api3_create_success(1);
   }
 
-  $defaultLocationType = CRM_Core_BAO_LocationType::getDefault();
-  $locationTypeID = $defaultLocationType->id;
-
   $offset = $job->getOffset();
   $limit = (isset($params['options']['limit'])) ? $params['options']['limit'] : NULL;
   $count = 0;
@@ -69,29 +69,33 @@ function civicrm_api3_omnigroupmember_load($params) {
       $source = (empty($params['mail_provider']) ? ts('Mail Provider') : $params['mail_provider']) . ' ' . (!empty($groupMember['source']) ? $groupMember['source'] : $groupMember['opt_in_source']);
       $source .= ' ' . $groupMember['created_date'];
 
-      $contactParams = array(
+      $contactParams = [
         'contact_type' => 'Individual',
         'email' => $groupMember['email'],
         'is_opt_out' => $groupMember['is_opt_out'],
         'source' => $source,
         'preferred_language' => _civicrm_api3_omnigroupmember_get_language($groupMember),
-      );
+        'email_primary.email' => $groupMember['email'],
+      ];
+
+      $contactCreateCall = \Civi\Api4\Contact::create(FALSE)
+        ->setValues($contactParams);
 
       if (!empty($groupMember['country']) && _civicrm_api3_omnigroupmember_is_country_valid($groupMember['country'])) {
-        $contactParams['api.address.create'] = array(
-          'country_id' => $groupMember['country'],
-          'location_type_id' => $locationTypeID,
-        );
+        $contactCreateCall->addValue('address_primary.country_id:abbr', $groupMember['country']);
       }
 
-      $contact = civicrm_api3('Contact', 'create', $contactParams);
       if (!empty($params['group_id'])) {
-        civicrm_api3('GroupContact', 'create', array(
-          'group_id' => $params['group_id'],
-          'contact_id' => $contact['id'],
-        ));
+        $contactCreateCall->addChain(
+          'groupContact',
+          GroupContact::create(FALSE)->setValues([
+            'contact_id' => '$id',
+            'group_id' => $params['group_id']
+          ])
+        );
       }
-      $values[$contact['id']] = reset($contact['values']);
+      $contact = $contactCreateCall->execute()->first();
+      $values[$contact['id']] = $contact;
     }
 
     $count++;

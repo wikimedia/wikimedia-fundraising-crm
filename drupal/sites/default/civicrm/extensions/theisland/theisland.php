@@ -13,15 +13,25 @@ use CRM_Theisland_ExtensionUtil as E;
 function theisland_civicrm_config(&$config): void {
   _theisland_civix_civicrm_config($config);
 
+  if (CRM_Utils_Request::retrieveValue('snippet', 'String') || php_sapi_name() == "cli") {
+    return;
+  }
+
   if (CIVICRM_UF == 'WordPress') {
-    if (empty(CRM_Utils_Request::retrieveValue('snippet', 'String'))) {
-      if (_theisland_isActive()) {
-        // Inline the CSS so that the page load is less glitchy
-        // See also shoreditchwpworkarounds_body_class()
-        $css = file_get_contents(E::path('css/wordpress.css'));
-        Civi::resources()->addStyle($css);
+    if (_theisland_isActive()) {
+      // Inline the CSS so that the page load is less glitchy
+      // See also theisland_body_class()
+      Civi::resources()->addStyle(file_get_contents(E::path('css/wordpress.css')));
+
+      if (Civi::settings()->get('theisland_hide_wp_menubar')) {
+        Civi::resources()->addStyle(file_get_contents(E::path('css/wordpress-menubar.css')));
       }
     }
+  }
+
+  $menubar = Civi::settings()->get('menubar_color');
+  if ($menubar == '#ffffff' || $menubar == '#fff') {
+    Civi::resources()->addStyle(file_get_contents(E::path('css/light-menu.css')));
   }
 }
 
@@ -128,6 +138,12 @@ function _theisland_isActive() {
     return FALSE;
   }
 
+  // REQUEST_URI might not be available on the CLI, and on the CLI, the theme
+  // should not be relevan
+  if (php_sapi_name() == "cli") {
+    return FALSE;
+  }
+
   // Check if it is a public page
   // we fallback on REQUEST_URI because currentPath() does not work reliably on WordPress
   $path = CRM_Utils_System::currentPath() ?: substr($_SERVER['REQUEST_URI'], 1);
@@ -173,4 +189,21 @@ function theisland_body_class($classes) {
   }
 
   return "$classes";
+}
+
+/**
+ * Implements hook_civicrm_alterBundle().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_alterBundle/
+ */
+function theisland_civicrm_alterBundle(CRM_Core_Resources_Bundle $bundle) {
+  // Avoid duplicate bootstrap div IDs on some pages
+  // https://lab.civicrm.org/extensions/theisland/-/issues/20
+  $theme = Civi::service('themes')->getActiveThemeKey();
+  switch ($theme . ':' . $bundle->name) {
+    case 'theisland:bootstrap3':
+      $bundle->clear();
+      break;
+
+  }
 }
