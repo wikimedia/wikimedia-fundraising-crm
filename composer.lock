@@ -1860,16 +1860,16 @@
         },
         {
             "name": "mrmarkfrench/silverpop-php-connector",
-            "version": "1.6.0",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
-                "reference": "6ae417e9a3f22024b87e64e88d211c6da7633fd2"
+                "reference": "8399379fc41f8d5fab8431883ed4c802790de81b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/6ae417e9a3f22024b87e64e88d211c6da7633fd2",
-                "reference": "6ae417e9a3f22024b87e64e88d211c6da7633fd2",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/8399379fc41f8d5fab8431883ed4c802790de81b",
+                "reference": "8399379fc41f8d5fab8431883ed4c802790de81b",
                 "shasum": ""
             },
             "require": {
@@ -1882,6 +1882,7 @@
             "require-dev": {
                 "phpunit/phpunit": "*"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -1904,9 +1905,9 @@
             ],
             "support": {
                 "issues": "https://github.com/mrmarkfrench/silverpop-php-connector/issues",
-                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.6.0"
+                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/master"
             },
-            "time": "2023-08-08T21:35:09+00:00"
+            "time": "2024-09-25T21:14:46+00:00"
         },
         {
             "name": "nikic/php-parser",
@@ -6996,7 +6997,8 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "drupal/coder": 20
+        "drupal/coder": 20,
+        "mrmarkfrench/silverpop-php-connector": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
