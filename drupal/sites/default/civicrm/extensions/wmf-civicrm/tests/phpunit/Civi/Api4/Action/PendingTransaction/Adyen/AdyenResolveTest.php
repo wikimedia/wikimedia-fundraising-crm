@@ -326,7 +326,7 @@ class AdyenResolveTest extends TestCase {
   }
 
   /**
-   * Test moving Adyen PendingPoke(600) to Completed(800) path.
+   * Test moving Adyen PendingPoke to Completed path.
    *
    * @throws \CRM_Core_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
@@ -418,7 +418,7 @@ class AdyenResolveTest extends TestCase {
   }
 
   /**
-   * Test moving Adyen PendingPoke(600) to Failed path.
+   * Test moving Adyen PendingPoke to Failed path.
    *
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
@@ -459,7 +459,7 @@ class AdyenResolveTest extends TestCase {
   }
 
   /**
-   * Test moving Adyen PendingPoke(600) to Failed path.
+   * Test moving Adyen PendingPoke to Failed path.
    *
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
@@ -509,7 +509,7 @@ class AdyenResolveTest extends TestCase {
   }
 
   /**
-   * Test moving Adyen PendingPoke(600) to Complete path.
+   * Test moving Adyen PendingPoke to Complete path.
    *
    * @throws \CRM_Core_Exception
    * @throws \SmashPig\Core\DataStores\DataStoreException
