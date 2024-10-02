@@ -3,6 +3,7 @@
 
 namespace Civi\WMFHook;
 
+use Civi\Api4\GroupContact;
 use Civi\Api4\UserJob;
 use Civi\WMFHelper\Contact;
 use Civi\WMFHelper\Contribution as ContributionHelper;
@@ -291,6 +292,31 @@ class Import {
       $date->setTime(12, 0);
       $mappedRow['Contribution']['receive_date'] = date_format($date, 'YmdHis');
     }
+  }
+
+  /**
+   * Creates an 'empty' dedupe contact to be populated during csv import.
+   *
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   */
+  public static function createDedupeContact() {
+    $contactID = \Civi\Api4\Contact::create(FALSE)
+      ->setValues([
+        'contact_type',
+        '=',
+        'Individual',
+        'source' => 'Import duplicate contact'
+      ])
+      ->execute()->first()['id'];
+    GroupContact::create(FALSE)
+      ->setValues([
+        'contact_id' => $contactID,
+        'group_id:name' => 'imported_duplicates',
+        'status' => 'Added',
+      ])
+      ->execute();
+    return $contactID;
   }
 
 }

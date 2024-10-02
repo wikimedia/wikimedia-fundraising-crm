@@ -6,6 +6,7 @@ use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionSoft;
+use Civi\Api4\GroupContact;
 use Civi\Api4\Import;
 use Civi\Api4\Relationship;
 use Civi\Api4\UserJob;
@@ -156,6 +157,32 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
     $this->assertEquals('soft_credit_imported', $import[0]['_status']);
     $this->assertEquals('ERROR', $import[1]['_status']);
+  }
+
+  /**
+   * Test that a new contact is
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testImportDuplicateContactMatches(): void {
+    $this->createIndividual(['email_primary.email' => 'jane@example.com']);
+    $this->createIndividual(['email_primary.email' => 'jane@example.com'], 'duplicate');
+    $data = $this->setupImport(['organization_name' => '', 'contribution_contact_id' => '']);
+    $this->runImport($data, 'Individual', 'save');
+    $import = (array) Import::get($this->userJobID)
+      ->setSelect(['_status_message', '_status'])
+      ->execute();
+    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
+    $contact = Contact::get(FALSE)
+      ->addWhere('id', '>', $this->ids['Contact']['duplicate'])
+      ->addWhere('contact_type', '=', 'Individual')
+      ->execute()->single();
+    $this->assertEquals('Import duplicate contact', $contact['source']);
+    GroupContact::get(FALSE)
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->addWhere('group_id:name', '=', 'imported_duplicates')
+      ->addWhere('status', '=', 'Added')
+      ->execute()->single();
   }
 
   /**
@@ -561,11 +588,13 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    *
    * @param array $data
    * @param string $mainContactType
-   * @param bool $useSoftCredit
+   * @param string $contactAction
    *
+   * @throws \API_Exception
    * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    */
-  private function runImport(array $data, string $mainContactType = 'Organization', bool $useSoftCredit = TRUE): void {
+  private function runImport(array $data, string $mainContactType = 'Organization', string $contactAction = 'select'): void {
     $softCreditTypeID = $this->getEmploymentSoftCreditType();
     $importMappings = [];
     foreach (array_keys($data) as $index => $columnName) {
@@ -629,7 +658,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
         'entity_configuration' => [
           'Contribution' => ['action' => 'create'],
           'Contact' => [
-            'action' => 'select',
+            'action' => $contactAction,
             'contact_type' => $mainContactType,
             'dedupe_rule' => $mainContactType . 'Unsupervised',
           ],
