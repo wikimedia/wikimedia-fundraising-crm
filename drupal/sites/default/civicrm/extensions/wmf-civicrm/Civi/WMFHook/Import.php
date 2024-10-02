@@ -3,6 +3,7 @@
 
 namespace Civi\WMFHook;
 
+use Civi\Api4\GroupContact;
 use Civi\Api4\UserJob;
 use Civi\WMFHelper\Contact;
 use Civi\WMFHelper\Contribution as ContributionHelper;
@@ -26,11 +27,7 @@ class Import {
    * to create the relationship for contacts with an employee-ish soft
    * credit type (ie workplace or matching_gifts).
    *
-   * @param string $importType
-   * @param string $context
-   * @param array $mappedRow
-   * @param array $rowValues
-   * @param int $userJobID
+   * @param \Civi\Core\Event\GenericHookEvent $event
    *
    * @throws \CRM_Core_Exception
    * @throws \Exception
@@ -66,6 +63,9 @@ class Import {
       if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
         $mappedRow['Contribution']['contribution_extra.gateway'] = $isMatchingGift ? 'Matching Gifts' : 'CiviCRM Import';
       }
+
+      // If we have only a contact ID we can use that to determine the contact type
+      // and to ensure we have any organization name loaded.
       if (
         !empty($mappedRow['Contribution']['contact_id'])
         && (
@@ -83,6 +83,7 @@ class Import {
         // If it didn't return a name we can assume it is an individual.
         $mappedRow['Contact']['contact_type'] = $organizationName ? 'Organization' : 'Individual';
       }
+
       if (empty($mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
         // Generate a transaction ID so that we don't import the same rows multiple times
         $mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
@@ -123,14 +124,16 @@ class Import {
               }
             }
           }
-
-          $mappedRow['Contact']['id'] = $mappedRow['Contribution']['contact_id'] = Contact::getIndividualID(
-            $mappedRow['Contact']['email_primary.email'] ?? NULL,
-            $mappedRow['Contact']['first_name'] ?? NULL,
-            $mappedRow['Contact']['last_name'] ?? NULL,
-            $organizationName,
-            $organizationID
-          );
+          $mappedRow['Contact']['id'] = $mappedRow['Contribution']['contact_id'] ?? FALSE;
+          if (!$mappedRow['Contact']['id']) {
+            $mappedRow['Contact']['id'] = $mappedRow['Contribution']['contact_id'] = Contact::getIndividualID(
+              $mappedRow['Contact']['email_primary.email'] ?? NULL,
+              $mappedRow['Contact']['first_name'] ?? NULL,
+              $mappedRow['Contact']['last_name'] ?? NULL,
+              $organizationName,
+              $organizationID
+            );
+          }
         }
       }
 
@@ -289,6 +292,31 @@ class Import {
       $date->setTime(12, 0);
       $mappedRow['Contribution']['receive_date'] = date_format($date, 'YmdHis');
     }
+  }
+
+  /**
+   * Creates an 'empty' dedupe contact to be populated during csv import.
+   *
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   */
+  public static function createDedupeContact() {
+    $contactID = \Civi\Api4\Contact::create(FALSE)
+      ->setValues([
+        'contact_type',
+        '=',
+        'Individual',
+        'source' => 'Import duplicate contact'
+      ])
+      ->execute()->first()['id'];
+    GroupContact::create(FALSE)
+      ->setValues([
+        'contact_id' => $contactID,
+        'group_id:name' => 'imported_duplicates',
+        'status' => 'Added',
+      ])
+      ->execute();
+    return $contactID;
   }
 
 }
