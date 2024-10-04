@@ -50,6 +50,8 @@ class Consume extends AbstractAction {
    */
   protected $timeLimit = 0;
 
+  protected array $emailsWithResolvedTransactions = [];
+
   public function _run(Result $result) {
     $startTime = time();
     $processed = 0;
@@ -58,7 +60,6 @@ class Consume extends AbstractAction {
     $message = $pendingDb->fetchMessageByGatewayOldest(
       $this->gateway, PendingTransaction::getResolvableMethods()
     );
-    $emailsWithResolvedTransactions = [];
     while (
       $message &&
       $message['date'] < UtcDate::getUtcTimestamp("-{$this->minimumAge} minutes") &&
@@ -67,7 +68,7 @@ class Consume extends AbstractAction {
     ) {
       $resolveResult = PendingTransaction::resolve()
         ->setMessage($message)
-        ->setAlreadyResolved($emailsWithResolvedTransactions)
+        ->setAlreadyResolved($this->emailsWithResolvedTransactions)
         ->execute()->first();
       Civi::log('wmf')->info(
         "Pending transaction {$message['order_id']} was " .
@@ -78,7 +79,7 @@ class Consume extends AbstractAction {
       $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway, PendingTransaction::getResolvableMethods());
       // Keep track of emails with completed transactions so we can skip duplicates
       if ($resolveResult['status'] === FinalStatus::COMPLETE) {
-        $emailsWithResolvedTransactions[$resolveResult['email']] = TRUE;
+        $this->emailsWithResolvedTransactions[$resolveResult['email']] = TRUE;
       }
     }
     if (!$message) {

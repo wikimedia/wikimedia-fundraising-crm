@@ -2326,7 +2326,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
         if ($contactType === 'Individual' && $action === 'save') {
           // This is a temporary hack for T374063.
           // I have been working on a hook fix but do not thing the challenges will be
-          // resolved in time for Melanie's sebatical so rushing this in.
+          // resolved in time for Melanie's leave so rushing this in.
           $contactID = \Civi\WMFHook\Import::createDedupeContact();
         }
         else {
