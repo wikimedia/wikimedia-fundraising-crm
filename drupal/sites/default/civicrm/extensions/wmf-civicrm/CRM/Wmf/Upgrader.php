@@ -2602,6 +2602,30 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Add labels for new status and segment options
+   * @return bool
+   * @throws CRM_Core_Exception
+   */
+  public function upgrade_4585(): bool {
+    $fieldFinder = new CalculatedData();
+    $fields = $fieldFinder->getWMFDonorFields();
+    foreach (['donor_segment_id', 'donor_status_id'] as $fieldName) {
+      $optionGroupID = CustomField::get(FALSE)
+        ->addWhere('name', '=', $fieldName)
+        ->addSelect('option_group_id')
+        ->execute()->first()['option_group_id'];
+      foreach ($fields[$fieldName]['option_values'] as $values) {
+        if (in_array($values['name'], ['recurring_annual', 'annual_recurring_active'])) {
+          $values['option_group_id'] = $optionGroupID;
+          OptionValue::create( FALSE )
+            ->setValues( $values )->execute();
+        }
+      }
+    }
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
