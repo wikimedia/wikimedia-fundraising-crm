@@ -45,7 +45,7 @@ trait SelectTrait {
    * @throws \CRM_Core_Exception
    */
   protected function getTemporaryTableSelectClause(): string {
-    return 'contact_id IN (SELECT id FROM ' . $this->getTemporaryTableName() . ')';
+    return 'c.contact_id IN (SELECT id FROM ' . $this->getTemporaryTableName() . ')';
   }
 
   /**

@@ -50,7 +50,7 @@ class Update extends DAOUpdateAction {
     $calculatedData = new CalculatedData();
     if (count($items) === 1) {
       $item = reset($items);
-      $calculatedData->setWhereClause('contact_id = ' . (int) $item['id']);
+      $calculatedData->setWhereClause('c.contact_id = ' . (int) $item['id']);
     }
     else {
       $calculatedData->setWhereClause($this->getTemporaryTableSelectClause());
