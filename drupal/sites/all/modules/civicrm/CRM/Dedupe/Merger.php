@@ -937,6 +937,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
             $type = CRM_Utils_Array::explodePadded($data['contact_sub_type']);
           }
 
+          $includeViewOnly = TRUE;
           CRM_Core_BAO_CustomField::formatCustomField($customFieldId,
             $data['custom'],
             $value,
@@ -944,7 +945,8 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
             $valueId,
             $contactID,
             FALSE,
-            FALSE
+            FALSE,
+            $includeViewOnly,
           );
         }
         elseif ($key === 'edit') {
@@ -962,27 +964,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
               }
             }
           }
-          if ($key === 'phone' && isset($params['phone_ext'])) {
-            CRM_Core_Error::deprecatedWarning('code should be unreachable, slated for removal');
-            $data[$key] = $value;
-            foreach ($value as $cnt => $phoneBlock) {
-              if ($params[$key][$cnt]['location_type_id'] == $params['phone_ext'][$cnt]['location_type_id']) {
-                $data[$key][$cnt]['phone_ext'] = CRM_Utils_Array::retrieveValueRecursive($params['phone_ext'][$cnt], 'phone_ext');
-              }
-            }
-          }
-          elseif (in_array($key, ['nick_name', 'job_title', 'middle_name', 'birth_date', 'gender_id', 'current_employer', 'prefix_id', 'suffix_id'])
-            && ($value == '' || !isset($value)) &&
-            ($session->get('authSrc') & (CRM_Core_Permission::AUTH_SRC_CHECKSUM + CRM_Core_Permission::AUTH_SRC_LOGIN)) == 0 ||
-            ($key === 'current_employer' && empty($params['current_employer']))) {
-            // CRM-10128: if auth source is not checksum / login && $value is blank, do not fill $data with empty value
-            // to avoid update with empty values
-            CRM_Core_Error::deprecatedWarning('code should be unreachable, slated for removal');
-            continue;
-          }
-          else {
-            $data[$key] = $value;
-          }
+          $data[$key] = $value;
         }
       }
     }
@@ -1746,8 +1728,6 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
       $submitted = [];
     }
 
-    // Move view only custom fields CRM-5362
-    $viewOnlyCustomFields = [];
     foreach ($submitted as $key => $value) {
       if (strpos($key, 'custom_') === 0) {
         $fieldID = (int) substr($key, 7);
@@ -1757,17 +1737,8 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
           $isSerialized = $fieldMetadata['serialize'];
           $isView = $fieldMetadata['is_view'];
           $submitted = self::processCustomFields($mainId, $key, $submitted, $value, $fieldID, $isView, $htmlType, $isSerialized);
-          if ($isView) {
-            $viewOnlyCustomFields[$key] = $submitted[$key];
-          }
         }
       }
-    }
-
-    // special case to set values for view only, CRM-5362
-    if (!empty($viewOnlyCustomFields)) {
-      $viewOnlyCustomFields['entityID'] = $mainId;
-      CRM_Core_BAO_CustomValueTable::setValues($viewOnlyCustomFields);
     }
 
     // dev/core#996 Ensure that the earliest created date is stored against the kept contact id

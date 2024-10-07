@@ -57,27 +57,7 @@
         <strong>{ts}Signature Text{/ts}</strong><br />{if !empty($item.signature_text)}{$item.signature_text|nl2br}{/if}</div>
       </div>
     </div>
-    {if $item.custom}
-      {foreach from=$item.custom item=customGroup key="cgId"}
-        <details id="address_custom_{$cgId}_{$blockId}" class="crm-email-custom-{$cgId}-{$blockId}-accordion crm-accordion-light" open>
-          <summary class="collapsible-title">
-            {$customGroup.label}
-          </summary>
-          <div class="crm-summary-block">
-            {foreach from=$customGroup.fields item=customField key=cfId}
-              <div class="crm-summary-row">
-                <div class="crm-label">
-                  {$customField.label}
-                </div>
-                <div class="crm-content">
-                  {$customField.value}
-                </div>
-              </div>
-            {/foreach}
-          </div>
-        </details>
-      {/foreach}
-    {/if}
+      {include file="CRM/Contact/Page/Inline/BlockCustomData.tpl" entity='email' customGroups=$item.custom identifier=$blockId}
     {/if}
   {/foreach}
   </div>

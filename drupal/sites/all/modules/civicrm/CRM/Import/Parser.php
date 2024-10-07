@@ -1018,7 +1018,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     if (isset($values['individual_prefix'])) {
       CRM_Core_Error::deprecatedWarning('code should be unreachable, slated for removal');
       if (!empty($params['prefix_id'])) {
-        $prefixes = CRM_Core_PseudoConstant::get('CRM_Contact_DAO_Contact', 'prefix_id');
+        $prefixes = CRM_Contact_DAO_Contact::buildOptions('prefix_id');
         $params['prefix'] = $prefixes[$params['prefix_id']];
       }
       else {
@@ -1030,7 +1030,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     if (isset($values['individual_suffix'])) {
       CRM_Core_Error::deprecatedWarning('code should be unreachable, slated for removal');
       if (!empty($params['suffix_id'])) {
-        $suffixes = CRM_Core_PseudoConstant::get('CRM_Contact_DAO_Contact', 'suffix_id');
+        $suffixes = CRM_Contact_DAO_Contact::buildOptions('suffix_id');
         $params['suffix'] = $suffixes[$params['suffix_id']];
       }
       else {
@@ -1042,7 +1042,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     if (isset($values['gender'])) {
       CRM_Core_Error::deprecatedWarning('code should be unreachable, slated for removal');
       if (!empty($params['gender_id'])) {
-        $genders = CRM_Core_PseudoConstant::get('CRM_Contact_DAO_Contact', 'gender_id');
+        $genders = CRM_Contact_DAO_Contact::buildOptions('gender_id');
         $params['gender'] = $genders[$params['gender_id']];
       }
       else {
@@ -1387,7 +1387,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
    * @param string $entity
    *
    * @return array
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getDedupeRulesForEntity(string $entity): array {
     return (array) ($this->getUserJob()['metadata']['entity_configuration'][$entity]['dedupe_rule'] ?? []);
@@ -1399,7 +1399,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
    * @param string $entity
    *
    * @return string|null
-   * @throws \API_Exception
+   * @throws \CRM_Core_Exception
    */
   protected function getContactTypeForEntity(string $entity): ?string {
     return $this->getUserJob()['metadata']['entity_configuration'][$entity]['contact_type'] ?? NULL;
@@ -1620,10 +1620,6 @@ abstract class CRM_Import_Parser implements UserJobInterface {
         Civi::$statics[__CLASS__][$fieldName][$importedValue] = $campaign['id'] ?? FALSE;
       }
       return Civi::$statics[__CLASS__][$fieldName][$importedValue] ?: 'invalid_import_value';
-    }
-    if ($fieldMetadata['input_type'] ?? NULL === 'EntityRef') {
-      // We don't require a number as if this is not a number it might be possible to look it up.
-      return $importedValue;
     }
     if ($dataType === 'Integer') {
       // We have resolved the options now so any remaining ones should be integers.
@@ -2323,15 +2319,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
         $contactID = array_key_first($possibleMatches);
       }
       elseif (count($possibleMatches) > 1) {
-        if ($contactType === 'Individual' && $action === 'save') {
-          // This is a temporary hack for T374063.
-          // I have been working on a hook fix but do not thing the challenges will be
-          // resolved in time for Melanie's leave so rushing this in.
-          $contactID = \Civi\WMFHook\Import::createDedupeContact();
-        }
-        else {
-          throw new CRM_Core_Exception(ts('Record duplicates multiple contacts: ') . implode(',', $possibleMatches));
-        }
+        throw new CRM_Core_Exception(ts('Record duplicates multiple contacts: ') . implode(',', $possibleMatches));
       }
       elseif (!in_array($action, ['create', 'ignore', 'save'], TRUE)) {
         throw new CRM_Core_Exception(ts('No matching %1 found', [$entity, 'String']));
