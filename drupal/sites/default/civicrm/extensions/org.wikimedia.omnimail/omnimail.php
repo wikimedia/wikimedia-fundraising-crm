@@ -136,18 +136,28 @@ function omnimail_civicrm_custom($op, $groupID, $entityID, &$params) {
     if ($customFieldValue['column_name'] === 'snooze_date') {
       $snoozeDate = $customFieldValue['value'];
       if (!empty($snoozeDate)) {
-        $fields = Email::get(FALSE)
-          ->addWhere('id', '=', $customFieldValue['entity_id'])
-          ->addWhere('is_primary', '=', TRUE)
-          ->addSelect('email', 'contact_id')
-          ->execute()->first();
-        $email = $fields['email'];
-        $contact_id = $fields['contact_id'];
-        if ($email) {
-          Omnicontact::snooze(FALSE)
-            ->setEmail($email)
-            ->setContactID($contact_id)
-            ->setSnoozeDate($snoozeDate)->execute();
+        try {
+          $snoozeDateObject = new DateTime($snoozeDate);
+        }
+        catch (Exception $e) {
+          Civi::log('wmf')->warning("Bad date format for email snooze field: '$snoozeDate'");
+          return;
+        }
+        // Only send snooze to mailing provider if the snooze date has not passed.
+        if ($snoozeDateObject > (new DateTime())) {
+          $fields = Email::get(FALSE)
+            ->addWhere('id', '=', $customFieldValue['entity_id'])
+            ->addWhere('is_primary', '=', TRUE)
+            ->addSelect('email', 'contact_id')
+            ->execute()->first();
+          $email = $fields['email'];
+          $contact_id = $fields['contact_id'];
+          if ($email) {
+            Omnicontact::snooze(FALSE)
+              ->setEmail($email)
+              ->setContactID($contact_id)
+              ->setSnoozeDate($snoozeDate)->execute();
+          }
         }
       }
     }
