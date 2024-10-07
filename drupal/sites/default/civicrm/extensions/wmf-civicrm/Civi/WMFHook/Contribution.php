@@ -46,6 +46,9 @@ class Contribution {
       if ($source) {
         $originalAmountData = ContributionHelper::getOriginalCurrencyAndAmountFromSource($source, $values['total_amount']);
         if (!isset($values['contribution_extra.original_currency'], $values['contribution_extra.original_amount'])) {
+          if (!isset($originalAmountData['original_amount'])) {
+            throw new \CRM_Core_Exception('unable to determine original currency and amount from source');
+          }
           $values['contribution_extra.original_currency'] = $originalAmountData['original_currency'];
           $values['contribution_extra.original_amount'] = $originalAmountData['original_amount'];
         }
