@@ -1083,7 +1083,7 @@ class CalculatedData extends TriggerHook {
         'name' => 'recurring_active',
         'label' => 'Active Recurring',
         'value' => 2,
-        'static_description' => 'gave recurring within last month',
+        'static_description' => 'gave monthly recurring within last month',
         'criteria' => [
           'multiple_range' => array_merge([
             [
@@ -1097,7 +1097,7 @@ class CalculatedData extends TriggerHook {
       ],
       4 => [
         'label' => 'Delinquent Recurring',
-        'static_description' => 'gave recurring more than 1 month & less than 4 months ago',
+        'static_description' => 'gave monthly recurring more than 1 month & less than 4 months ago',
         'value' => 4,
         'name' => 'recurring_delinquent',
         'criteria' => [
@@ -1113,7 +1113,7 @@ class CalculatedData extends TriggerHook {
       ],
       6 => [
         'label' => 'Recent lapsed Recurring',
-        'static_description' => 'gave recurring more than 3 months & less than 7 months ago',
+        'static_description' => 'gave monthly recurring more than 3 months & less than 7 months ago',
         'value' => 6,
         'name' => 'recurring_lapsed_recent',
         'criteria' => [
@@ -1129,7 +1129,7 @@ class CalculatedData extends TriggerHook {
       ],
       8 => [
         'label' => 'Deep lapsed Recurring',
-        'static_description' => 'gave recurring more than 6 months & less than 37 months ago',
+        'static_description' => 'gave monthly recurring more than 6 months & less than 37 months ago',
         'value' => 8,
         'name' => 'recurring_deep_lapsed',
         'criteria' => [
@@ -1350,7 +1350,7 @@ class CalculatedData extends TriggerHook {
       400 => [
         'label' => 'Recurring donor',
         'value' => 400,
-        'static_description' => 'has made a recurring donation in last 36 months',
+        'static_description' => 'has made a monthly recurring donation in last 36 months',
         'name' => 'recurring',
         'criteria' => [
           'range' => [
