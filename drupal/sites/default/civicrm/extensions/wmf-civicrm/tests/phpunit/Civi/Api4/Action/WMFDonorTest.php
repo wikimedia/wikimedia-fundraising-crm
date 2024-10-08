@@ -194,7 +194,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $this->assertEquals(8, $row['donor_status_id']);
     $this->assertEquals('Recurring donor', $row['donor_segment_id:label']);
     $this->assertEquals('Deep lapsed Recurring', $row['donor_status_id:label']);
-    $this->assertStringContainsString('has made a recurring donation in last 36 months', $row['donor_segment_id:description']);
+    $this->assertStringContainsString('has made a monthly recurring donation in last 36 months', $row['donor_segment_id:description']);
   }
 
   /**
