@@ -282,11 +282,24 @@ class Message {
             $customFields[$field['custom_group']['name'] . '.' . $field['name']] = array_search($value, $field['options']);
           }
           else {
-            // @todo - maybe move to validate? Might be easier once separation from import has been done.
-            $value = \CRM_Utils_Type::escape($value, 'String');
-            throw new WMFException(WMFException::INVALID_MESSAGE,
-              "Invalid value ($value) submitted for custom field {$field['id']}:"
-              . "{$field['custom_group']['title']} {$field['label']} - {$field['custom_group']['name']}.{$field['name']}");
+            $found = FALSE;
+            // Do a slower case-insensitve search before barfing
+            foreach ($field['options'] as $optionValue) {
+              if (mb_strtolower($optionValue) === mb_strtolower($value)) {
+                $found = TRUE;
+                $customFields[$field['custom_group']['name'] . '.' . $field['name']] = $optionValue;
+                break;
+              }
+            }
+            if (!$found) {
+              // @todo - maybe move to validate? Might be easier once separation from import has been done.
+              $value = \CRM_Utils_Type::escape($value, 'String');
+              throw new WMFException(
+                WMFException::INVALID_MESSAGE,
+                "Invalid value ($value) submitted for custom field {$field['id']}:"
+                . "{$field['custom_group']['title']} {$field['label']} - {$field['custom_group']['name']}.{$field['name']}"
+              );
+            }
           }
         }
       }
