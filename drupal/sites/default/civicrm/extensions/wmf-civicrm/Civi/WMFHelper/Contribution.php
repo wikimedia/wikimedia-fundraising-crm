@@ -189,7 +189,7 @@ class Contribution {
     if (empty($source)) {
       return [];
     }
-    [$original_currency, $original_amount] = explode(" ", $source);
+    [$original_currency, $original_amount] = explode(" ", str_replace('  ', ' ', trim($source)));
     if (is_numeric($original_amount) && self::isValidCurrency($original_currency)) {
       return ['original_currency' => $original_currency, 'original_amount' => $original_amount];
     }
