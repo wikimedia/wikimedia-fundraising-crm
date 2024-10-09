@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\Omnicontact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use GuzzleHttp\Client;
+use League\Csv\Reader;
 
 /**
  *  Class Check.
@@ -14,7 +15,7 @@ use GuzzleHttp\Client;
  * @method $this setCsvFile(string $csvFile)
  * @method string getCsvFile()
  * @method $this setMappingFile(string $xmlFile)
- * @method string getMappingFile()
+ * @method $this setDatabaseID(int $databaseID)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
  * @method $this setClient(Client$client) Generally Silverpop....
@@ -53,10 +54,29 @@ class Upload extends AbstractAction {
    * is used if isAlreadyUploaded is true.
    *
    * @var string
-   *
-   * @required
    */
   protected string $mappingFile = '';
+
+  /**
+   * Database ID.
+   *
+   * Defaults to the one defined in the CiviCRM setting..
+   *
+   * @var int
+   */
+  protected string $databaseID = '';
+
+  /**
+   * Get the remote database ID.
+   *
+   * @return int
+   */
+  public function getDatabaseID(): int {
+    if (!$this->databaseID) {
+      $this->databaseID = (int) (\Civi::settings()->get('omnimail_credentials')[$this->getMailProvider()]['database_id'][0] ?? 0);
+    }
+    return $this->databaseID;
+  }
 
   /**
    * Is the file already uploaded.
@@ -67,6 +87,51 @@ class Upload extends AbstractAction {
    * @var bool
    */
   protected bool $isAlreadyUploaded = FALSE;
+
+  public function getMappingFile() {
+    if (!$this->mappingFile) {
+      $this->createMappingFile();
+    }
+    return $this->mappingFile;
+  }
+
+  protected function createMappingFile(): void {
+    $reader = Reader::createFromPath($this->getCsvFile());
+    $reader->setHeaderOffset(0);
+    $headers = $reader->getHeader();
+    $temporaryDirectory = sys_get_temp_dir();
+    $this->mappingFile = $temporaryDirectory. '/' . str_replace('.csv', '.xml', basename($this->getCsvFile()));
+    $file = fopen($this->mappingFile, 'wb');
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>
+  <LIST_IMPORT>
+   <LIST_INFO>
+      <ACTION>ADD_AND_UPDATE</ACTION>
+      <LIST_ID>' . $this->getDatabaseID()  . '</LIST_ID>
+      <FILE_TYPE>0</FILE_TYPE>
+      <HASHEADERS>true</HASHEADERS>
+   </LIST_INFO>
+   <SYNC_FIELDS>
+      <SYNC_FIELD>
+         <NAME>EMAIL</NAME>
+      </SYNC_FIELD>
+   </SYNC_FIELDS>
+   <MAPPING>
+      ';
+    foreach ($headers as $index => $header) {
+      $xml .= '
+      <COLUMN>
+         <INDEX>' . $index + 1 . '</INDEX>
+         <NAME>' . $header . '</NAME>
+         <INCLUDE>true</INCLUDE>
+      </COLUMN>
+      ';
+    }
+
+    $xml .= '
+    </MAPPING>
+</LIST_IMPORT>';
+    fwrite($file, $xml);
+  }
 
   /**
    * @inheritDoc
