@@ -1,8 +1,0 @@
-<Envelope>
-   <Body>
-      <RESULT>
-         <SUCCESS>TRUE</SUCCESS>
-         <JOB_ID>108518</JOB_ID>
-      </RESULT>
-   </Body>
-</Envelope>

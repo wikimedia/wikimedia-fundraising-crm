@@ -43,6 +43,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         'databaseID' => $params['database_id'],
         'fields' => $this->mapFields($params['values']),
         'snoozeTimeStamp' => empty($snoozeEndDate) ? NULL : strtotime($snoozeEndDate),
+        'syncFields' => ['Email' => $email],
       ]);
       /* @var Contact $reponse */
       $response = $request->getResponse();
@@ -122,6 +123,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       'groupIdentifier' => $params['group_identifier'],
       'email' => $params['email'],
       'databaseID' => $params['database_id'],
+      'syncFields' => ['Email' => $params['email']],
     ]);
     /* @var \Omnimail\Silverpop\Responses\Contact $reponse */
     try {

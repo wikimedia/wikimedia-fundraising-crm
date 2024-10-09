@@ -97,7 +97,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           $message['gross_currency'],
           $message['gross']
         );
-
         \Civi::log('wmf')->info('refund {log_id}: Successfully marked as refunded', $context);
       }
       catch (Exception $ex) {
@@ -107,6 +106,21 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
 
       // not all messages have a reason
       $reason = $message['reason'] ?? '';
+      // add activity to record refund reason (e.g. why do we get chargeback),
+      // currently only adyen has this field, need to ask gr4vy if they can also pass it back
+      if (!empty($reason)) {
+        // Log the refund reason to activity
+        \Civi\Api4\Activity::create(FALSE)
+          ->addValue('date', $message['date'])
+          ->addValue('activity_type_id:name', 'Refund')
+          ->addValue('subject', ts('Refund Reason'))
+          ->addValue('status_id:name', 'Completed')
+          ->addValue('details', $contributionStatus . ' reason: ' . $message['reason'])
+          ->addValue('source_contact_id', $contributions[0]['contact_id'])
+          ->addValue('target_contact_id', $contributions[0]['contact_id'])
+          ->addValue('source_record_id', $parentTxn)
+          ->execute();
+      }
       // Some chargebacks for ACH and SEPA are retryable, don't cancel the recurrings
       if (!$this->isRetryableChargeback($reason)) {
         $this->cancelRecurringOnChargeback($contributionStatus, $contributions, $gateway);
