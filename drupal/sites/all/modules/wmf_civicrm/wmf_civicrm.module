@@ -60,37 +60,6 @@ function wmf_civicrm_matching_gifts_form() {
 }
 
 /**
- * @param $entity_id
- * @param $map
- * @param null $group_name
- *
- * @throws \Civi\WMFException\WMFException
- * @deprecated
- *
- * Phase this out as it is does some unecessary queries.
- *
- */
-function wmf_civicrm_set_custom_field_values($entity_id, $map, $group_name = NULL) {
-  $params = [
-    'entityID' => $entity_id,
-  ];
-  $custom_fields =
-    wmf_civicrm_get_custom_field_map(array_keys($map), $group_name);
-  foreach ($map as $field_name => $value) {
-    $params[$custom_fields[$field_name]] = $value;
-  }
-  $result = CRM_Core_BAO_CustomValueTable::setValues($params);
-  if (!empty($result['is_error'])) {
-    throw new WMFException(WMFException::CIVI_CONFIG,
-      t('Failed to set custom values: id !id, error: !err', [
-        '!id' => $entity_id,
-        '!err' => $result['error_message'],
-      ])
-    );
-  }
-}
-
-/**
  * @param $field_names
  * @param $group_name
  *
@@ -257,11 +226,12 @@ function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
   \Civi::log('wmf')->info('wmf_civicrm: Preventing thank-you for contribution {contribution_id} because: {reason}', ['contribution_id' => $contribution_id, 'reason' => $reason]);
 
   try {
-    wmf_civicrm_set_custom_field_values($contribution_id, [
-      'no_thank_you' => $reason,
-    ]);
+    \Civi\Api4\Contribution::update(FALSE)
+      ->addValue('contribution_extra.no_thank_you', $reason)
+      ->addWhere('id', '=', $contribution_id)
+      ->execute();
   }
-  catch (WMFException $ex) {
+  catch (CRM_Core_Exception $ex) {
     \Civi::log('wmf')->error('wmf_civicrm: Updating with no-thank-you failed with details: {message}', ['message' => $ex->getMessage()]);
   }
 }
