@@ -89,7 +89,10 @@ return [
       'pseudoconstant' => [
         'table' => 'civicrm_location_type',
         'key_column' => 'id',
+        'name_column' => 'name',
+        'description_column' => 'description',
         'label_column' => 'display_name',
+        'abbr_column' => 'vcard_name',
       ],
     ],
     'is_primary' => [
@@ -239,6 +242,7 @@ return [
       'add' => '1.1',
       'usage' => [
         'import',
+        'duplicate_matching',
       ],
       'input_attrs' => [
         'control_field' => 'state_province_id',
@@ -249,6 +253,7 @@ return [
         'key_column' => 'id',
         'label_column' => 'name',
         'abbr_column' => 'abbreviation',
+        'condition_provider' => ['CRM_Core_BAO_Address', 'alterCounty'],
         'suffixes' => [
           'label',
           'abbr',
@@ -268,6 +273,7 @@ return [
       'add' => '1.1',
       'usage' => [
         'import',
+        'duplicate_matching',
       ],
       'localize_context' => 'province',
       'input_attrs' => [
@@ -279,6 +285,7 @@ return [
         'key_column' => 'id',
         'label_column' => 'name',
         'abbr_column' => 'abbreviation',
+        'condition_provider' => ['CRM_Core_BAO_Address', 'alterStateProvince'],
         'suffixes' => [
           'label',
           'abbr',
@@ -336,6 +343,7 @@ return [
       'add' => '1.1',
       'usage' => [
         'import',
+        'duplicate_matching',
       ],
       'localize_context' => 'country',
       'input_attrs' => [
@@ -347,6 +355,7 @@ return [
         'label_column' => 'name',
         'name_column' => 'iso_code',
         'abbr_column' => 'iso_code',
+        'condition_provider' => ['CRM_Core_BAO_Address', 'alterCountry'],
         'suffixes' => [
           'label',
           'abbr',

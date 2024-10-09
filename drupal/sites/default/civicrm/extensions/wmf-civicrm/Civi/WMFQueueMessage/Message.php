@@ -256,7 +256,8 @@ class Message {
         continue;
       }
       $field = $this->getCustomFieldMetadataByFieldName($fieldName);
-      if ($field && !isset($this->message[$field['custom_group']['name'] . '.' . $field['name']])) {
+      $api4FieldName = $field ? $field['custom_group']['name'] . '.' . $field['name'] : NULL;
+      if ($field && !isset($this->message[$api4FieldName])) {
         if (!empty($field['option_group_id'])) {
           // temporary handling while I adjust the code to apiv4.
           $entity = $field['custom_group']['extends'] === 'Contribution' ? 'Contribution' : 'Contact';
@@ -272,14 +273,14 @@ class Message {
           $value = '@' . $value;
         }
         if (empty($field['options'])) {
-          $customFields[$field['custom_group']['name'] . '.' . $field['name']] = $value;
+          $customFields[$api4FieldName] = $value;
         }
         else {
           if ($value === '' || $value === NULL || !empty($field['options'][$value])) {
-            $customFields[$field['custom_group']['name'] . '.' . $field['name']] = $value;
+            $customFields[$api4FieldName] = $value;
           }
           elseif (in_array($value, $field['options'])) {
-            $customFields[$field['custom_group']['name'] . '.' . $field['name']] = array_search($value, $field['options']);
+            $customFields[$api4FieldName] = array_search($value, $field['options']);
           }
           else {
             $found = FALSE;
@@ -287,7 +288,7 @@ class Message {
             foreach ($field['options'] as $optionValue) {
               if (mb_strtolower($optionValue) === mb_strtolower($value)) {
                 $found = TRUE;
-                $customFields[$field['custom_group']['name'] . '.' . $field['name']] = $optionValue;
+                $customFields[$api4FieldName] = $optionValue;
                 break;
               }
             }

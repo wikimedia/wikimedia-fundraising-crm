@@ -19,7 +19,7 @@ class ContributionSoft {
       $employmentSoftCreditTypes = [];
       foreach ($types as $type) {
         if (in_array($type['name'], ['workplace', 'matched_gift'])) {
-          $employmentSoftCreditTypes[$type['name']] = $type['id'];
+          $employmentSoftCreditTypes[$type['name']] = (int) $type['id'];
         }
       }
       \Civi::cache('metadata')

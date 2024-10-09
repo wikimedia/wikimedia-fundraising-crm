@@ -7,8 +7,10 @@
  * named `*.aff.*`. Each item is interpreted as a form instance.
  *
  * To reduce file-scanning, we keep a cache of file paths.
+ *
+ * @service afform_scanner
  */
-class CRM_Afform_AfformScanner {
+class CRM_Afform_AfformScanner extends \Civi\Core\Service\AutoService {
 
   const METADATA_JSON = 'aff.json';
 
@@ -27,9 +29,11 @@ class CRM_Afform_AfformScanner {
 
   /**
    * CRM_Afform_AfformScanner constructor.
+   *
+   * @param \CRM_Utils_Cache_Interface $cache
    */
-  public function __construct() {
-    $this->cache = Civi::cache('long');
+  public function __construct($cache = NULL) {
+    $this->cache = $cache ?: Civi::cache('long');
   }
 
   /**

@@ -146,6 +146,11 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
         $columns[] = $this->formatColumn($column, $data);
       }
       $style = $this->getCssStyles($this->display['settings']['cssRules'] ?? [], $data);
+      // Add hierarchical styles
+      if (!empty($this->display['settings']['hierarchical'])) {
+        $style[] = 'crm-hierarchical-row crm-hierarchical-depth-' . ($data['_depth'] ?? '0');
+        $style[] = empty($data['_depth']) ? 'crm-hierarchical-parent' : 'crm-hierarchical-child';
+      }
       $row = [
         'data' => $data,
         'columns' => $columns,
@@ -355,10 +360,10 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    *
    * @param array[] $styleRules
    * @param array $data
-   * @param int $index
+   * @param int|null $index
    * @return array
    */
-  protected function getCssStyles(array $styleRules, array $data, int $index = NULL) {
+  protected function getCssStyles(array $styleRules, array $data, ?int $index = NULL) {
     $classes = [];
     foreach ($styleRules as $clause) {
       $cssClass = $clause[0] ?? '';
@@ -558,7 +563,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    * @return array|null
    * @throws \CRM_Core_Exception
    */
-  protected function formatLink(array $link, array $data, bool $allowMultiple = FALSE, string $text = NULL, $index = 0): ?array {
+  protected function formatLink(array $link, array $data, bool $allowMultiple = FALSE, ?string $text = NULL, $index = 0): ?array {
     $useApi = (!empty($link['entity']) && !empty($link['action']));
     if (isset($index)) {
       foreach ($data as $key => $value) {
@@ -1166,8 +1171,8 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    */
   protected function formatViewValue($key, $rawValue, $data, $dataType, $format = NULL) {
     if (is_array($rawValue)) {
-      return array_map(function($val) use ($key, $data, $dataType) {
-        return $this->formatViewValue($key, $val, $data, $dataType);
+      return array_map(function($val) use ($key, $data, $dataType, $format) {
+        return $this->formatViewValue($key, $val, $data, $dataType, $format);
       }, $rawValue);
     }
 
@@ -1308,6 +1313,10 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     ) {
       $this->addSelectExpression(CoreUtil::getIdFieldName($this->savedSearch['api_entity']));
     }
+    // Add `depth_` column for hierarchical entity displays
+    if (!empty($this->display['settings']['hierarchical'])) {
+      $this->addSelectExpression('_depth');
+    }
     // Add draggable column (typically "weight")
     if (!empty($this->display['settings']['draggable'])) {
       $this->addSelectExpression($this->display['settings']['draggable']);
@@ -1323,6 +1332,9 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       $possibleTokens .= ($column['title'] ?? '');
       $possibleTokens .= ($column['empty_value'] ?? '');
 
+      if (!empty($column['key'])) {
+        $this->addSelectExpression($column['key']);
+      }
       if (!empty($column['link'])) {
         foreach ($this->getLinkTokens($column['link']) as $token) {
           $this->addSelectExpression($token);
