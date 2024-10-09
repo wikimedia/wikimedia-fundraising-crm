@@ -13,7 +13,7 @@
         "wikimedia/omnimail-silverpop" : "*",
         "league/csv" : "9.6.*",
         "guzzlehttp/guzzle": "^7.0",
-        "mrmarkfrench/silverpop-php-connector" : "dev-master#75b85a4",
+        "mrmarkfrench/silverpop-php-connector" : "dev-master#1b0de1dd3660f45ea50efcf6002",
         "omnimail/omnimail" : "*",
         "ext-dom": "*",
         "ext-libxml": "*"
