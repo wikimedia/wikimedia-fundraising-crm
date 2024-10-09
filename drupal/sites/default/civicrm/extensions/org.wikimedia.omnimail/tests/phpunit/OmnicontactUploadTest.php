@@ -38,8 +38,8 @@ class OmnicontactUploadTest extends OmnimailBaseTestClass {
       ->setClient($client)
       // For the test, do not do the sftp as it is not mocked.
       ->setIsAlreadyUploaded(TRUE)
-      ->setCsvFile(__DIR__ . '/ImportFiles/example.csv')
-      ->setMappingFile(__DIR__ . '/ImportFiles/example.xml')
+      ->setCsvFile(__DIR__ . '/Requests/ImportFiles/example.csv')
+      ->setMappingFile(__DIR__ . '/Requests/ImportFiles/example.xml')
       // ->setDatabaseID(12345678)
       ->execute()->first();
     $this->assertEquals(trim(file_get_contents(__DIR__ . '/Requests/ImportListRequest.txt')), $this->getRequestBodies()[0]);
