@@ -132,4 +132,16 @@ return [
     'is_contact' => 0,
     'description' => 'Enable this for data scraped from silverpop',
   ],
+  'omnimail_allowed_upload_folders' => [
+    'group_name' => 'Omnimail Preferences',
+    'group' => 'omnimail',
+    'name' => 'omnimail_allowed_upload_folders',
+    'type' => 'Array',
+    'default' => [],
+    'title' => 'Omnimail Allowed Upload Folders',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'Files uploaded with Omnicontact.Upload must be in one of these folders',
+    'help_text' => 'You can set these using the $civicrm_settings global',
+  ],
 ];

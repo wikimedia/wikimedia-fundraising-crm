@@ -339,7 +339,7 @@ class OmnimailBaseTestClass extends TestCase {
    * @param array $temporarySettings
    */
   protected function setSetting(string $setting, array $temporarySettings): void {
-    $this->existingSettings['omnimail_credentials'] = Civi::settings()->get($setting);
+    $this->existingSettings[$setting] = Civi::settings()->get($setting);
     Civi::settings()->set($setting, $temporarySettings);
     // Settings stored in the global are 'mandatory' - ie override the db.
     global $civicrm_setting;
