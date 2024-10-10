@@ -13,12 +13,13 @@ use League\Csv\Reader;
  *
  * @method $this setIsAlreadyUploaded(bool $isAlreadyUploaded)
  * @method $this setCsvFile(string $csvFile)
- * @method string getCsvFile()
+ * @method $this setPrefix(string $prefix)
+ * @method $this setSourceFolder(string $sourceFolder)
  * @method $this setMappingFile(string $xmlFile)
  * @method $this setDatabaseID(int $databaseID)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client$client) Generally Silverpop....
+ * @method $this setClient(Client $client) Generally Silverpop....
  * @method null|Client getClient()
  *
  * @package Civi\Api4
@@ -42,8 +43,6 @@ class Upload extends AbstractAction {
    * is used if isAlreadyUploaded is true.
    *
    * @var string
-   *
-   * @required
    */
   protected string $csvFile = '';
 
@@ -56,6 +55,22 @@ class Upload extends AbstractAction {
    * @var string
    */
   protected string $mappingFile = '';
+
+  /**
+   * Folder containing CSV files. If not explicitly specifying a single file with $csvFile,
+   * the 'last' file in this folder with a matching $prefix will be selected.
+   *
+   * @var string
+   */
+  protected string $sourceFolder = '';
+
+  /**
+   * Prefix for CSV file names. Ignored when a single file is specified with $csvFile.
+   * See $sourceFolder.
+   *
+   * @var string
+   */
+  protected string $prefix = '';
 
   /**
    * Database ID.
@@ -93,6 +108,18 @@ class Upload extends AbstractAction {
       $this->createMappingFile();
     }
     return $this->mappingFile;
+  }
+
+  public function getCsvFile() {
+    if (!$this->csvFile) {
+      if (!$this->prefix || !$this->sourceFolder) {
+        throw new \CRM_Core_Exception('Must set either csvFile or both prefix and sourceFolder');
+      }
+      $matchedFiles = \CRM_Utils_File::findFiles($this->sourceFolder, $this->prefix . '-*.csv');
+      sort($matchedFiles);
+      return array_pop($matchedFiles);
+    }
+    return $this->csvFile;
   }
 
   protected function createMappingFile(): void {
