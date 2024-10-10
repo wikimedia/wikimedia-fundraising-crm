@@ -116,8 +116,11 @@ class Upload extends AbstractAction {
         throw new \CRM_Core_Exception('Must set either csvFile or both prefix and sourceFolder');
       }
       $matchedFiles = \CRM_Utils_File::findFiles($this->sourceFolder, $this->prefix . '-*.csv');
+      if (!$matchedFiles) {
+        throw new \CRM_Core_Exception('No files found matching prefix inside sourceFolder');
+      }
       sort($matchedFiles);
-      return array_pop($matchedFiles);
+      $this->csvFile = array_pop($matchedFiles);
     }
     return $this->csvFile;
   }
