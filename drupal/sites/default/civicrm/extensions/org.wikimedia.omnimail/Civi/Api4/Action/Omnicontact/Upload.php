@@ -120,7 +120,7 @@ class Upload extends AbstractAction {
     foreach ($headers as $index => $header) {
       $xml .= '
       <COLUMN>
-         <INDEX>' . $index + 1 . '</INDEX>
+         <INDEX>' . ($index + 1) . '</INDEX>
          <NAME>' . $header . '</NAME>
          <INCLUDE>true</INCLUDE>
       </COLUMN>
