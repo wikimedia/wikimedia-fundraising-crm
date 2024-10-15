@@ -8,6 +8,8 @@
     "smtpPort" : "1025",
     "outBound_option" : 0,
     "smtpAuth" : ""
-  }
-
+  },
+  "omnimail_allowed_upload_folders" : [
+    "/tmp"
+  ]
 }
