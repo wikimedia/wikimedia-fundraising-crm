@@ -81,6 +81,8 @@ class Upload extends AbstractAction {
    */
   protected string $databaseID = '';
 
+  private bool $mappingFileWasGenerated = FALSE;
+
   /**
    * Get the remote database ID.
    *
@@ -107,18 +109,25 @@ class Upload extends AbstractAction {
     if (!$this->mappingFile) {
       $this->createMappingFile();
     }
+    if (!$this->mappingFileWasGenerated) {
+      $this->throwIfNotInAllowedFolder($this->mappingFile);
+    }
     return $this->mappingFile;
   }
 
-  public function getCsvFile() {
+  public function getCsvFile(): string {
     if (!$this->csvFile) {
       if (!$this->prefix || !$this->sourceFolder) {
         throw new \CRM_Core_Exception('Must set either csvFile or both prefix and sourceFolder');
       }
       $matchedFiles = \CRM_Utils_File::findFiles($this->sourceFolder, $this->prefix . '-*.csv');
+      if (!$matchedFiles) {
+        throw new \CRM_Core_Exception('No files found matching prefix inside sourceFolder');
+      }
       sort($matchedFiles);
-      return array_pop($matchedFiles);
+      $this->csvFile = array_pop($matchedFiles);
     }
+    $this->throwIfNotInAllowedFolder($this->csvFile);
     return $this->csvFile;
   }
 
@@ -158,6 +167,7 @@ class Upload extends AbstractAction {
     </MAPPING>
 </LIST_IMPORT>';
     fwrite($file, $xml);
+    $this->mappingFileWasGenerated = TRUE;
   }
 
   /**
@@ -186,6 +196,18 @@ class Upload extends AbstractAction {
 
   public function fields(): array {
     return [];
+  }
+
+  protected function throwIfNotInAllowedFolder(string $csvFile): void {
+    foreach(\Civi::settings()->get('omnimail_allowed_upload_folders') as $folder) {
+      if (\CRM_Utils_File::isChildPath($folder, $csvFile)) {
+        return;
+      }
+    }
+    throw new \CRM_Core_Exception(
+      "The csv file '$csvFile' is not in one of the allowed folders. " .
+      'Please check omnimail_allowed_upload_folders in CiviCRM settings'
+    );
   }
 
 }
