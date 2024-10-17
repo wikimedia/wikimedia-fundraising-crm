@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitbaf0cd001c24c798722f70b9e0edadad
+class ComposerStaticInit67d5b54760cb416aa2f08dc43dbb11b6
 {
     public static $files = array (
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
@@ -53,7 +53,6 @@ class ComposerStaticInitbaf0cd001c24c798722f70b9e0edadad
         ),
         'T' => 
         array (
-            'Tests\\PhpOffice\\Math\\' => 21,
             'TYPO3\\PharStreamWrapper\\' => 24,
         ),
         'S' => 
@@ -175,10 +174,6 @@ class ComposerStaticInitbaf0cd001c24c798722f70b9e0edadad
         'WebSocket\\' => 
         array (
             0 => __DIR__ . '/..' . '/phrity/websocket/lib',
-        ),
-        'Tests\\PhpOffice\\Math\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/phpoffice/math/tests/Math',
         ),
         'TYPO3\\PharStreamWrapper\\' => 
         array (
@@ -689,11 +684,11 @@ class ComposerStaticInitbaf0cd001c24c798722f70b9e0edadad
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitbaf0cd001c24c798722f70b9e0edadad::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitbaf0cd001c24c798722f70b9e0edadad::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitbaf0cd001c24c798722f70b9e0edadad::$prefixesPsr0;
-            $loader->fallbackDirsPsr0 = ComposerStaticInitbaf0cd001c24c798722f70b9e0edadad::$fallbackDirsPsr0;
-            $loader->classMap = ComposerStaticInitbaf0cd001c24c798722f70b9e0edadad::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit67d5b54760cb416aa2f08dc43dbb11b6::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit67d5b54760cb416aa2f08dc43dbb11b6::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit67d5b54760cb416aa2f08dc43dbb11b6::$prefixesPsr0;
+            $loader->fallbackDirsPsr0 = ComposerStaticInit67d5b54760cb416aa2f08dc43dbb11b6::$fallbackDirsPsr0;
+            $loader->classMap = ComposerStaticInit67d5b54760cb416aa2f08dc43dbb11b6::$classMap;
 
         }, null, ClassLoader::class);
     }
