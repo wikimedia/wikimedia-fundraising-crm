@@ -54,7 +54,34 @@ return [
         // Note this minimum severity can be escalated with command line switches.
         'minimum_severity' => 'warning',
         'description' => ('Output to terminal for command line scripts.') . "\n" .
-          ('Command line options can increase (-v --verbose, -d, --debug) or decrease (-q, --quiet) the verbosity')
+          ('Command line options can increase (-v --verbose, -d, --debug) or decrease (-q, --quiet) the verbosity'),
+      ],
+    ],
+  ],
+  [
+    'name' => 'acoustic_info',
+    'entity' => 'Monolog',
+    'cleanup' => 'never',
+    'update' => 'always',
+    'params' => [
+      'debug' => TRUE,
+      'version' => 4,
+      'checkPermissions' => FALSE,
+      'values' => [
+        'name' => 'acoustic_info',
+        'type' => 'mail',
+        'channel' => 'Silverpop',
+        'is_default' => FALSE,
+        'is_active' => TRUE,
+        'is_final' => FALSE,
+        'weight' => 1,
+        'minimum_severity' => 'info',
+        'description' => ('Send emails on acoustic job progress.'),
+        'configuration_options' => [
+          'to' => \Civi::settings()->get('wmf_acoustic_notice_recipient'),
+          'from' => \Civi::settings()->get('wmf_failmail_recipient'),
+          'subject' => 'Acoustic job %context.job_id% status %context.type%',
+        ],
       ],
     ],
   ],

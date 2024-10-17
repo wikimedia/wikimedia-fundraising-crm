@@ -47,6 +47,21 @@ return [
     ],
     'settings_pages' => ['wmf-queue' => ['weight' => 30]],
   ],
+  'wmf_acoustic_notice_recipient' => [
+    'name' => 'wmf_acoustic_notice_recipient',
+    'title' => E::ts('Acoustic Notice Recipient Address'),
+    'description' => E::ts('Acoustic Notice contact address.'),
+    'help_text' => '',
+    'html_type' => 'text',
+    'type' => 'String',
+    'is_domain' => 1,
+    'default' => 'fr-tech@wikimedia.org',
+    'is_contact' => 0,
+    'html_attributes' => [
+      'size' => 80,
+    ],
+    'settings_pages' => ['wmf-queue' => ['weight' => 10]],
+  ],
   'wmf_requeue_delay' => [
     'group_name' => 'wmf Settings',
     'group' => 'wmf',

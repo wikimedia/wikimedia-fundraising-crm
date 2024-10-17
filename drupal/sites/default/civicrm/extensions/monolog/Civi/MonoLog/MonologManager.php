@@ -4,6 +4,9 @@ namespace Civi\MonoLog;
 
 use Civi\Api4\Entity;
 use Civi\Core\LogManager;
+use Monolog\Formatter\HtmlFormatter;
+use Monolog\Handler\NativeMailerHandler;
+use Monolog\Handler\SymfonyMailerHandler;
 use sgoettsch\monologRotatingFileHandler\Handler\monologRotatingFileHandler;
 use Monolog\Logger;
 use Monolog\Handler\SyslogHandler;
@@ -13,6 +16,7 @@ use Monolog\Handler\StreamHandler;
 use Psr\Log\LoggerInterface;
 use Monolog\Handler\FirePHPHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
+use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 
 class MonologManager {
 
@@ -97,6 +101,9 @@ class MonologManager {
           }
           if ($monolog['type'] === 'std_err') {
             $this->addStdErrLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final']);
+          }
+          if ($monolog['type'] === 'mail') {
+            $this->addSymfonyLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final'], $monolog['configuration_options']);
           }
         }
       }
@@ -303,6 +310,52 @@ class MonologManager {
       $handler = new StreamHandler('php://stderr', $minimumLevel, !$isFinal);
       $handler->setFormatter($formatter);
       $logger->pushHandler($handler);
+    }
+  }
+
+  /**
+   * Add mail logger.
+   *
+   * @param string $channel
+   * @param \Monolog\Logger $logger
+   * @param string $minimumLevel
+   * @param bool $isFinal
+   * @param array $configurationOptions
+   *
+   * @noinspection PhpUnusedParameterInspection
+   */
+  protected function addMailLogger(string $channel, Logger $logger, string $minimumLevel, bool $isFinal, array $configurationOptions): void {
+    $handler = new NativeMailerHandler($configurationOptions['to'], $configurationOptions['subject'], $configurationOptions['from'], $minimumLevel, !$isFinal);
+    $logger->pushHandler($handler);
+  }
+
+  /**
+   * Add mail logger.
+   *
+   * @param string $channel
+   * @param \Monolog\Logger $logger
+   * @param string $minimumLevel
+   * @param bool $isFinal
+   * @param array $configurationOptions
+   *
+   * @noinspection PhpUnusedParameterInspection
+   */
+  protected function addSymfonyLogger(string $channel, Logger $logger, string $minimumLevel, bool $isFinal, array $configurationOptions): void {
+    try {
+      /* @var \Civi\SymfonyEmail\SymfonyMailProvider $symfonyMailFactory */
+      $symfonyMailFactory = \Civi::service('symfony_mail_factory');
+      $message = $symfonyMailFactory->getEmail();
+      $message->from($configurationOptions['from'] ?: \CRM_Core_BAO_Domain::getFromEmail())
+        ->to($configurationOptions['to'])
+        ->subject($configurationOptions['subject']);
+
+      $handler = new SymfonyMailerHandler($symfonyMailFactory->getMailer(), $message, $minimumLevel, !$isFinal);
+      $formatter = new HtmlFormatter();
+      $handler->setFormatter($formatter);
+      $logger->pushHandler($handler);
+    }
+    catch (ServiceNotFoundException $e) {
+      $this->addMailLogger($channel, $logger, $minimumLevel, $isFinal, $configurationOptions);
     }
   }
 
