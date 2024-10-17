@@ -5,12 +5,12 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 
 /**
-*  Class OmnimailJobProgress.
-*
-* Provided by the  extension.
-*
-* @package Civi\Api4
-*/
+ *  Class OmnimailJobProgress.
+ *
+ * Provided by the  extension.
+ *
+ * @package Civi\Api4
+ */
 class MailingProviderData extends Generic\DAOEntity {
 
  /**

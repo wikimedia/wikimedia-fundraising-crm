@@ -3,6 +3,7 @@ namespace Civi\Api4\Action\Omnicontact;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\OmnimailJobProgress;
 use GuzzleHttp\Client;
 use League\Csv\Reader;
 
@@ -191,7 +192,26 @@ class Upload extends AbstractAction {
     if (!$response->getIsSuccess()) {
       throw new \CRM_Core_Exception('csv mapping upload failed');
     }
+
+    \Civi::log($this->getMailProvider())
+      ->notice('Import {job_id} started with file: {csv}', [
+        'job_id' => $response->getJobId(),
+        'type' => 'job initiated',
+        'csv' => basename($this->getCsvFile()),
+        'url' => $this->getUrlBase() . $response->getJobId(),
+      ]);
+    OmnimailJobProgress::create(FALSE)
+      ->setValues([
+        'mailing_provider' => $this->getMailProvider(),
+        'job' => 'data_upload',
+        'job_identifier' => $response->getJobId(),
+      ])
+      ->execute();
     $result[] = ['job_id' => $response->getJobId()];
+  }
+
+  public function getUrlBase(): string {
+    return 'https://cloud.goacoustic.com/campaign-automation/Data/Data_jobs?cuiOverrideSrc=https%253A%252F%252Fcampaign-us-4.goacoustic.com%252FdataJobs.do%253FisShellUser%253D1%2526action%253DdataJobsDetail%2526triggerId%253D';
   }
 
   public function fields(): array {
@@ -199,7 +219,7 @@ class Upload extends AbstractAction {
   }
 
   protected function throwIfNotInAllowedFolder(string $csvFile): void {
-    foreach(\Civi::settings()->get('omnimail_allowed_upload_folders') as $folder) {
+    foreach (\Civi::settings()->get('omnimail_allowed_upload_folders') as $folder) {
       if (\CRM_Utils_File::isChildPath($folder, $csvFile)) {
         return;
       }
