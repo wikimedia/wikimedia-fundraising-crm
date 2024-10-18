@@ -41,6 +41,8 @@ class CRM_Rpow_StateMachine {
    */
   private $buffer;
 
+  private CRM_Rpow_Classifier $classifier;
+
   public function __construct() {
     $this->state = self::READ_ONLY;
     $this->buffer = [];
