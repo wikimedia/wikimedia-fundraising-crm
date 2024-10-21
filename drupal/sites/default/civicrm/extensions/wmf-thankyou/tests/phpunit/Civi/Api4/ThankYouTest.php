@@ -126,7 +126,7 @@ class ThankYouTest extends TestCase {
     $this->assertDoesNotMatchRegularExpression('/Wikimedia Endowment/', $sent['html']);
 
     // 2021 email has name in the subject, switching to check for the content
-    $this->assertMatchesRegularExpression('/donation is one more reason to celebrate./', $sent['subject']);
+    $this->assertMatchesRegularExpression('/Thank you for your donation, Test/', $sent['subject']);
 
     // Check for tax information, DAF emails have this removed
     $this->assertMatchesRegularExpression('/tax-exempt number/', $sent['html']);
@@ -311,7 +311,7 @@ class ThankYouTest extends TestCase {
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals($this->getExpectedReplyTo(), $sent['reply_to']);
     $this->assertMatchesRegularExpression('/\$50.00/', $sent['html']);
-    $this->assertMatchesRegularExpression('/\Test Stock Description/', $sent['html']);
+    $this->assertMatchesRegularExpression('/Test Stock Description/', $sent['html']);
 
   }
 
@@ -397,8 +397,8 @@ class ThankYouTest extends TestCase {
    * @param string $secondCurrency
    */
   protected function assertCurrencyString(string $html, string $firstCurrency, string $secondCurrency): void {
-    $this->assertStringContainsString('one-time gift of ' . $firstCurrency . ' to support', $html);
-    $this->assertStringContainsString('For your records: Your donation, number 123, on 2022-08-08 was ' . $secondCurrency . '.', $html);
+    $this->assertStringContainsString('Thank you so much for your ' . $firstCurrency . ' donation', $html);
+    $this->assertStringContainsString('For your records: Your donation, number 123, on Monday, August  8, 2022 was ' . $secondCurrency . '.', $html);
   }
 
   /**
@@ -411,11 +411,21 @@ class ThankYouTest extends TestCase {
    */
   protected function renderEnglishVariant(?string $language, string $currency, string $firstCurrencyString, string $secondCurrencyString): ?array {
     $result = $this->renderMessage($language, ['currency' => $currency]);
-    $this->assertEquals('Mickey, your  donation is one more reason to celebrate.', $result['subject']);
+    $this->assertEquals('Thank you for your donation, Mickey', $result['subject']);
     $this->assertStringContainsString('Dear Mickey,', $result['html']);
-    $this->assertStringContainsString('Your donation, number 123', $result['html']);
+    // New template has different formatting for USD vs non-USD receipts
+    if ($currency === 'USD') {
+      $this->assertStringContainsString(
+        'Thank you so much for your ' . $firstCurrencyString . ' donation',
+        $result['html']
+      );
+      $this->assertStringContainsString( $secondCurrencyString, $result['html'] );
+    }
+    else {
+      $this->assertStringContainsString( 'Your donation, number 123', $result['html'] );
+      $this->assertCurrencyString($result['html'], $firstCurrencyString, $secondCurrencyString);
+    }
     $this->assertStringNotContainsString('We recently resolved a small technical issue', $result['html']);
-    $this->assertCurrencyString($result['html'], $firstCurrencyString, $secondCurrencyString);
     return $result;
   }
 

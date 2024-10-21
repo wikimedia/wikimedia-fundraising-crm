@@ -1,5 +1,1 @@
-{if $first_name and $last_name}
-   {$first_name}, your
-{else}
-  Your
-{/if} donation is one more reason to celebrate.
+Thank you for your {if $frequency_unit && $frequency_unit==='month'}monthly {elseif $frequency_unit && $frequency_unit==='year'}annual {/if}donation{if $first_name}, {$first_name}{/if}

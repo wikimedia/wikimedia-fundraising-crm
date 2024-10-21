@@ -1,72 +1,346 @@
-<span style="max-height: 0px; font-size: 0; display: none; color: #ffffff;">Wikipedia will always belong to you</span>
-<div style="display: none; max-height: 0px; overflow: hidden;">&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
-
-<p>
-{if $first_name and $last_name}
-Dear {$first_name},
-{elseif $contact_type === 'Organization' && $email_greeting_display}
-{$email_greeting_display},
-{else}
-Dear donor,
-{/if}
-</p>
-
-{if $stock_ticker || $stock_value}
-<p>I'm so grateful to be the one who thanks you for the one-time gift of {if $stock_ticker}{$stock_quantity} shares of {$stock_ticker} stock{else}{$description_of_stock}{/if} received {$receive_date} valued at {if $currency === 'USD'}{$currency} {/if}{$stock_value} you made in support of Wikipedia. I want to take this opportunity to celebrate your generosity and your exceptional willingness to take part in creating a better future for the world.</p>
-{else}
- {if $recurring} </p>Thank you for committing to give {if $currency === 'USD'}{$currency} {/if}{$amount} to support Wikipedia every month - that is real dedication and I am endlessly grateful. You make a world where knowledge is free for everyone possible.</p>
-
-<p>Your donation will be debited once a month, until you ask us to stop. Each January, you will receive a summary of your contributions for the previous year. If for whatever reason you wish to cancel your donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}">easy cancellation instructions.</a></p>
-
-<p>Recurring donors like you are the engine behind our people-powered movement. You help us plan ahead, set bigger goals and broaden our horizons, because we know we have a foundation of support to count on.</p>
-
-<p>Every single donation helps us to improve people’s access to accurate and reliable information, especially in a rapidly changing world. We are determined to extend this access as far as possible to make sure that no matter where you are born or where you live, the ability to access free knowledge is always within your reach. I hope you will continue to support us in building a future where Wikipedia exists everywhere, with people across the world contributing to the sum of all knowledge.</p>
-
-<p>Thank you again for supporting this remarkable mission; it is a privilege for me to be part of the largest collaborative project in human history. Wikipedia will always belong to you.</p>
-
-{else}
-<p>Thank you so much for the one-time gift of {if $currency === 'USD'}{$currency} {/if}{$amount} to support Wikipedia and a world where knowledge is free for everyone.</p>
-
-<p>Every single donation helps us to improve people’s access to accurate and reliable information, especially in a rapidly changing world. I’m truly grateful for your support in enabling billions of people to experience the gift of knowledge through Wikipedia.</p>
-
-<p>We are determined to extend this access as far as possible to make sure that no matter where you are born or where you live, the ability to access free knowledge is always within your reach. I hope you will continue to support us in building a future where Wikipedia exists everywhere, with people across the world contributing to the sum of all knowledge.</p>
-
-<p>Thank you again for supporting this remarkable mission; it is a privilege for me to be part of the largest collaborative project in human history. Wikipedia will always belong to you.</p>
-
-{/if}
-{/if}
-
-{if $isRecurringRestarted}
-<p>We recently resolved a small technical issue which paused some monthly recurring donations. We have reinstated your recurring donation, and it will process normally going forward. We will not charge you for the months that were skipped. Thank you for your patience and your support, and please feel free to email donate@wikimedia.org if you have any questions.</p>
-{/if}
-
-{if $isDelayed}
-<p>We recently resolved a technical issue which caused a small number of donors to not receive a confirmation of their donation. Please accept this email as a thank you for your donation on {$receive_date}. We truly appreciate your patience and your support, and please feel free to email donate@wikimedia.org if you have any questions.</p>
-{/if}
-
-<p>
-With gratitude,
-<br>
-Maryana
-<br>
-<br>
-Maryana Iskander
-<br>
-CEO, Wikimedia Foundation
-</p>
-
-<p>If you are employed, please check with your employer to see if they have a <a href="https://donate.wikimedia.org/wiki/Matching_Gifts">corporate matching gift program</a>. Many employers will generously match employee contributions.</p>
-
-{if $gift_source != "Donor Advised Fund"}
-  {if !$stock_ticker && !$stock_value}
-  <p>For your records: Your donation, number {$transaction_id}, on {$receive_date} was {$amount} ({$currency}).</p>
+{capture assign=colorBg}{if $recurring}#F9FFFD{else}#F9F7FF{/if}{/capture}
+{capture assign=colorText}{if $recurring}#0D4F2B{else}#2C245B{/if}{/capture}
+{capture assign=colorBorder}{if $recurring}#DBF3EC{else}#D5D1EC{/if}{/capture}
+{capture assign=imgDivider}{if $recurring}2/27/Divider-dotted-green.png{else}4/43/Divider-dotted-purple.png{/if}{/capture}
+{capture assign=txtPreheader}
+  Your {if $recurring}gift{else}donation{/if} receipt enclosed
+{/capture}
+{capture assign=txtSalutation}
+  {if $first_name}
+    Dear {$first_name},
+  {elseif $contact_type === 'Organization' && $email_greeting_display}
+    {$email_greeting_display},
+  {else}
+    Dear donor,
   {/if}
-  <p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
-{/if}
-{if $venmo_user_name}
-  <p>Donated with venmo username: {$venmo_user_name}.</p>
-{/if}
+{/capture}
+{capture assign=txtFrequency}
+  {if $frequency_unit && $frequency_unit==='month'}
+    monthly
+  {elseif $frequency_unit && $frequency_unit==='year'}
+    annual
+  {/if}
+{/capture}
+{capture assign=txtCurrency}{if $currency === 'USD'}{$currency} {/if}{/capture}
+{capture assign=txtReceivedDate}{$receive_date|crmDate:"%A, %B %e, %Y"}{/capture}
+{capture assign=txtMatchingGifts}
+  If you are employed, please check with your employer to see if they have a <a href="https://donate.wikimedia.org/wiki/Workplace_giving" style="color:{if $currency === 'USD' && $gift_source != "Donor Advised Fund"}{$colorText}{else}#202122{/if}; text-decoration:underline;">corporate matching gift program</a>. Many employers will generously match employee contributions.
+{/capture}
+{capture assign=txtLetterAsRecord}
+  This email may serve as a record of your donation. Please keep it in your records, and feel free to reach out if you have any other questions. No goods or services were provided, in whole or in part, for this contribution.
+{/capture}
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+  <meta name="x-apple-disable-message-reformatting">
+  <title></title>
+  <style>
+    * { box-sizing: border-box; }
+    table { border-collapse: collapse; mso-table-lspace: 0; mso-table-rspace: 0; }
+    u + .body a { color: inherit; text-decoration: none; font-size: inherit; font-weight: inherit; line-height: inherit; }
+    div[style*="margin: 16px 0"] { margin: 0 !important; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+    a { color:inherit; mso-color-alt: windowtext; text-decoration: none; }
+    span.MsoHyperlink { color: inherit !important; mso-style-priority: 99 !important; }
+    span.MsoHyperlinkFollowed { color: inherit !important; mso-style-priority: 99 !important; }
+    @font-face {
+      font-family: 'Source Serif Pro';
+      font-style: italic;
+      font-weight: 600;
+      font-display: swap;
+      src: url("https://tools-static.wmflabs.org/fontcdn/s/sourceserif4/v8/vEF02_tTDB4M7-auWDN0ahZJW1ge6NmXpVAHV83Bfb_US2D2QYxoUKIkn98pmFhtDMQCjDDUXmAz.woff2") format('woff2');
+      mso-generic-font-family: roman;
+    }
+    @font-face {
+      font-family: 'Source Serif Pro';
+      font-style: normal;
+      font-weight: 600;
+      font-display: swap;
+      src: url("https://tools-static.wmflabs.org/fontcdn/s/sourceserif4/v8/vEFy2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6OAVIJmeUDygwjisltnhtdDs4DrjTMXw.woff2") format('woff2');
+      mso-generic-font-family: roman;
+    }
+  </style>
+  <style>
+    @media only screen and (max-width:480px) {
+      .w-full { width: 100% !important; }
+      .px-20 { padding-left: 20px !important; padding-right: 20px !important; }
+    }
+    @media print {
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#FFFFFF;" class="body">
+<div style="display:none">
+  {$txtPreheader}
+  &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+</div>
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+  <tr>
+    <td align="center" bgcolor="#FFFFFF">
+      <!-- Email Content -->
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="width:600px;min-width:360px;border-collapse:separate;" class="w-full">
+        <!-- Header -->
+        <tr>
+          <td align="left" style="padding:16px 0 8px 0;">
+            <img src="https://upload.wikimedia.org/wikipedia/donate/7/7a/Header-wiki-logos.png" alt="Wikipedia & Wikimedia Foundation Logo" width="600" style="width:600px;display:block;" class="w-full">
+          </td>
+        </tr>
+        <!-- End of Header -->
+        <!-- Body -->
+        <tr>
+          <td align="center" class="px-20">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="520" style="width:520px;" class="w-full">
+              <tr>
+                <td align="left" style="padding-bottom:16px;">
+                  <h1 style="margin: 0; font-family: 'Source Serif Pro', Georgia, 'Times New Roman', Times, serif; font-weight: 600; font-size: 24px; line-height: 32px; color: #202122;">
+                    Thank <i>you</i> for your {if $recurring}{$txtFrequency} {/if}donation
+                  </h1>
+                </td>
+              </tr>
+              <tr>
+                <td align="left" style="padding-bottom:24px;">
+                  <img src="https://upload.wikimedia.org/wikipedia/donate/e/e0/Wikipedia-tiles.png" alt="Wikipedia Tiles" width="520" style="width:520px;display:block;" class="no-print">
+                </td>
+              </tr>
+              <tr>
+                <td align="left" style="padding-bottom:32px;">
+                  <p style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:#202122;">
+                    {$txtSalutation}
+                    <br><br>
+                    {if $stock_ticker || $stock_value}
+                      I'm so grateful to be the one who thanks you for the one-time gift of {if $stock_ticker}{$stock_quantity} shares of {$stock_ticker} stock{else}{$description_of_stock}{/if} received {$txtReceivedDate} valued at {$txtCurrency}{$stock_value} you made in support of Wikipedia. I want to take this opportunity to celebrate your generosity and your exceptional willingness to take part in creating a better future for the&nbsp;world.
+                    {else}
+                      {if $recurring}
+                        Thank you so much for your {$txtCurrency}{$amount} {$txtFrequency} donation to support Wikipedia and the Wikimedia Foundation. The ongoing contributions of our rare {$txtFrequency} donors create lasting impact, allowing us to continue our work and expand the reach of knowledge worldwide. We&rsquo;ll work to make sure you know how your gifts are making a&nbsp;difference.
+                        <br><br>
+                        Your donation will be debited once a {$frequency_unit}. Each January, you will receive a summary of your contributions for the previous year. If for whatever reason you wish to cancel your donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&basic=true&language={$locale}" style="color:#202122; text-decoration:underline;">easy cancellation&nbsp;instructions.</a>
+                        <br><br>
+                        Wikipedia only works because of the hundreds of thousands of humans  who dedicate their time and energy to making it one of the most trusted sources of information online. The tireless efforts of these volunteers are what makes this website invaluable to billions of readers worldwide. This is even more important today with the changes in technology and artificial intelligence shaping our&nbsp;world.
+                        <br><br>
+                        So the next time you visit Wikipedia, I hope you take pride in knowing that you help make this possible. Wikipedia is a collective labor of love, and you&rsquo;re a part of it. Thank you again for your dedication to this remarkable&nbsp;mission.
+                      {else}
+                        Thank you so much for your {$txtCurrency}{$amount} donation to support Wikipedia and the Wikimedia Foundation. With this support, you help strengthen our nonprofit mission to ensure people everywhere can access the information they need, whenever they need it, for&nbsp;free.
+                        <br><br>
+                        Wikipedia only works because of the hundreds of thousands of humans  who dedicate their time and energy to making it one of the most trusted sources of information online. The tireless efforts of these volunteers are what makes this website invaluable to billions of readers worldwide. This is even more important today with the changes in technology and artificial intelligence shaping our&nbsp;world.
+                        <br><br>
+                        So the next time you visit Wikipedia, I hope you take pride in knowing that you help make this possible. Wikipedia is a collective labor of love, and you&rsquo;re a part of it. Thank you again for your dedication to this remarkable&nbsp;mission.
+                      {/if}
+                    {/if}
+                    {if $isRecurringRestarted}
+                      <br><br>
+                      We recently resolved a small technical issue which paused some {$txtFrequency} recurring donations. We have reinstated your recurring donation, and it will process normally going forward. We will not charge you for the {$frequency_unit}s that were skipped. Thank you for your patience and your support, and please feel free to email <a href="mailto:donate@wikimedia.org" style="color:#202122; text-decoration:underline;">donate@wikimedia.org</a> if you have any&nbsp;questions.
+                    {/if}
+                    {if $isDelayed}
+                      <br><br>
+                      We recently resolved a technical issue which caused a small number of donors to not receive a confirmation of their donation. Please accept this email as a thank you for your donation on {$receive_date}. We truly appreciate your patience and your support, and please feel free to email <a href="mailto:donate@wikimedia.org" style="color:#202122; text-decoration:underline;">donate@wikimedia.org</a> if you have any&nbsp;questions.
+                    {/if}
+                    <br><br>
+                    With gratitude,<br>
+                    Maryana Iskander<br>
+                    CEO, Wikimedia Foundation
+                  </p>
+                </td>
+              </tr>
 
-<p>If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{$unsubscribe_link}">unsubscribe</a>. Please note we will still send you receipts, like this one, for future donations.</p>
-
-<!-- TI_BEGIN["name":"thank_you.en.html","revision":20210323,"currency":"{$currency}"]TI_END -->
+              {if $currency === 'USD' && $gift_source != "Donor Advised Fund"}
+              <!-- Receipt -->
+              <tr>
+                <td align="center" bgcolor="{$colorBg}" style="padding:32px 0; background-color:{$colorBg};" class="px-20">
+                  <img src="https://upload.wikimedia.org/wikipedia/donate/{$imgDivider}" alt="- - -" width="456" style="width:456px; display:block;" class="w-full">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="456" style="width:456px;" class="w-full">
+                    <tr>
+                      <td style="padding:24px 0;">
+                        <p style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:{$colorText};">
+                          <b>For your records</b>
+                          <br><br>
+                          Donation to the Wikimedia Foundation, Inc.<br>
+                          P.O. Box 98204<br>
+                          Washington, DC 20090-8204, USA.<br>
+                          U.S. tax-exempt number: 20-0049703
+                          <br>
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding-bottom:24px;">
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                          {if $first_name}
+                          <tr>
+                            <td width="50%" style="padding:4px 0; font-size:12px; font-weight:bold; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; line-height:24px; color:{$colorText};">
+                              DONOR NAME
+                            </td>
+                            <td width="50%" style="padding:4px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:{$colorText};">
+                              {$first_name} {$last_name}
+                            </td>
+                          </tr>
+                          {/if}
+                          <tr>
+                            <td width="50%" style="padding:4px 0; font-size:12px; font-weight:bold; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; line-height:24px; color:{$colorText};{if $first_name}border-top:1px solid {$colorBorder};{/if}">
+                              DATE
+                            </td>
+                            <td width="50%" style="padding:4px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:{$colorText};{if $first_name}border-top:1px solid {$colorBorder};{/if}">
+                              {$txtReceivedDate}
+                            </td>
+                          </tr>
+                          {if !$stock_value}
+                            <tr>
+                              <td style="padding:4px 0; font-size:12px; font-weight:bold; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; line-height:24px; color:{$colorText}; border-top:1px solid {$colorBorder};">
+                                AMOUNT
+                              </td>
+                              <td style="padding:4px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:{$colorText}; border-top:1px solid {$colorBorder};">
+                                {$amount} ({$currency})
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding:4px 0; font-size:12px; font-weight:bold; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; line-height:24px; color:{$colorText}; border-top:1px solid {$colorBorder};">
+                                TRANSACTION ID
+                              </td>
+                              <td style="padding:4px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:{$colorText}; border-top:1px solid {$colorBorder};">
+                                {$transaction_id}
+                              </td>
+                            </tr>
+                          {else}
+                            <tr>
+                              <td style="padding:4px 0; font-size:12px; font-weight:bold; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; line-height:24px; color:{$colorText}; border-top:1px solid {$colorBorder};">
+                                DESCRIPTION
+                              </td>
+                              <td style="padding:4px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:{$colorText}; border-top:1px solid {$colorBorder};">
+                                {if $stock_ticker}
+                                  {$stock_quantity} shares of {$stock_ticker} stock
+                                {else}
+                                  {$description_of_stock}
+                                {/if}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding:4px 0; font-size:12px; font-weight:bold; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; line-height:24px; color:{$colorText}; border-top:1px solid {$colorBorder};">
+                                VALUED AT
+                              </td>
+                              <td style="padding:4px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:{$colorText}; border-top:1px solid {$colorBorder};">
+                                {$txtCurrency}{$stock_value}
+                              </td>
+                            </tr>
+                          {/if}
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                  <img src="https://upload.wikimedia.org/wikipedia/donate/{$imgDivider}" alt="- - -" width="456" style="width:456px; display:block;" class="w-full">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="456" style="width:456px;" class="w-full">
+                    <tr>
+                      <td style="padding-top:24px;">
+                        <p style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:14px; line-height:24px; color:{$colorText};">
+                          {$txtMatchingGifts}
+                          {if $gift_source != "Donor Advised Fund"}
+                            <br><br>
+                            {$txtLetterAsRecord}
+                          {/if}
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- End of Receipt -->
+              {else}
+              <!-- Small Print -->
+              <tr>
+                <td align="left">
+                  <img src="https://upload.wikimedia.org/wikipedia/donate/{$imgDivider}" alt="- - -" width="456" style="width:456px; display:block;" class="w-full">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td style="padding-top:24px;">
+                        <p style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:#202122;">
+                          {$txtMatchingGifts}
+                          <br><br>
+                          {if $gift_source != "Donor Advised Fund"}
+                            {if !$stock_value}
+                              For your records: Your donation, number {$transaction_id}, on {$txtReceivedDate} was {$amount} ({$currency}).
+                              <br><br>
+                            {/if}
+                            {$txtLetterAsRecord} Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
+                          {/if}
+                        </p>
+                        {if $venmo_user_name}
+                          <p>Donated with venmo username: {$venmo_user_name}.</p>
+                        {/if}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- End of Small Print -->
+              {/if}
+            </table>
+          </td>
+        </tr>
+        <!-- End of Body -->
+        <!-- Footer -->
+        <tr>
+          <td class="px-20" style="padding:32px 40px;">
+            <!-- WYMG -->
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td align="center" bgcolor="#F0F9FF" style="padding:32px 0 26px 0; background-color:#F0F9FF;" class="px-20">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="456" style="width:456px;" class="w-full">
+                    <tr>
+                      <td style="padding-bottom:18px;">
+                        <h2 style="margin: 0; font-family: 'Source Serif Pro', Georgia, 'Times New Roman', Times, serif; font-weight: 600; font-size: 20px; line-height: 28px; color: #202122;">
+                          What does my donation do?
+                        </h2>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                          <tr>
+                            <td width="80" style="padding: 6px 0;">
+                              <img src="https://upload.wikimedia.org/wikipedia/donate/3/30/Icon-wiki.png" alt="Icon Wikipedia" width="64" style="width: 64px; display: block;">
+                            </td>
+                            <td style="padding: 6px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:#202122;">
+                              <b>Sustains</b> and improves the technology that runs Wikipedia and the other Wikimedia knowledge projects.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td width="80" style="padding: 6px 0;">
+                              <img src="https://upload.wikimedia.org/wikipedia/donate/b/b5/Icon-editors.png" alt="Icon Editors" width="64" style="width: 64px; display: block;">
+                            </td>
+                            <td style="padding: 6px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:#202122;">
+                              <b>Empowers</b> the 265,000+ volunteers, organizations, and groups who share their knowledge with the world.
+                            </td>
+                          </tr>
+                          <tr>
+                            <td width="80" style="padding: 6px 0;">
+                              <img src="https://upload.wikimedia.org/wikipedia/donate/2/20/Icon-earth.png" alt="Icon Earth" width="64" style="width: 64px; display: block;">
+                            </td>
+                            <td style="padding: 6px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:#202122;">
+                              <b>Advances</b> our global mission of sharing the sum of all knowledge with everyone, everywhere.
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+            <!-- End of Receipt -->
+            <p style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight:400; font-size:12px; line-height:20px; color:#202122;">
+              <br><br>
+              If you do not wish to receive any future fundraising emails from the Wikimedia Foundation, you can <a href="{$unsubscribe_link}" style="color:#202122; text-decoration:underline;">unsubscribe</a>. Please note we will still send you receipts, like this one, for future donations.
+            </p>
+          </td>
+        </tr>
+        <!-- End of Footer -->
+      </table>
+      <!-- End of Email Content -->
+    </td>
+  </tr>
+</table>
+</body>
+</html>
