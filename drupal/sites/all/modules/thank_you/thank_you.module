@@ -76,11 +76,13 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
 			s.description_of_stock,
 			s.stock_ticker,
 			s.stock_qty,
-			eci.venmo_user_name
+			eci.venmo_user_name,
+			recur.frequency_unit
 		FROM civicrm_contribution cntr
 		INNER JOIN civicrm_contact cntc ON cntr.contact_id = cntc.id
 		LEFT JOIN civicrm_financial_type f ON f.id = cntr.financial_type_id
 		LEFT JOIN civicrm_email e ON e.contact_id = cntc.id AND e.is_primary = 1
+		LEFT JOIN civicrm_contribution_recur recur ON cntr.contribution_recur_id = recur.id
 		INNER JOIN wmf_contribution_extra x ON cntr.id = x.entity_id
 		LEFT JOIN $giftTable g ON cntr.id = g.entity_id
 		LEFT JOIN $stockTable s ON cntr.id = s.entity_id
@@ -169,6 +171,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     'contact_type' => $mailingData['contact_type'],
     'organization_name' => $mailingData['organization_name'],
     'email_greeting_display' => $mailingData['email_greeting_display'],
+    'frequency_unit' => $mailingData['frequency_unit'],
     'language' => $mailingData['preferred_language'] ?: 'en_US',
     'name' => $mailingData['display_name'],
     'receive_date' => $mailingData['receive_date'],
