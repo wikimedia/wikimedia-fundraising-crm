@@ -1209,11 +1209,25 @@ class DonationQueueTest extends BaseQueueTestCase {
           $this->getMinimalImportData('1234-abcd'), [
             'backend_processor' => 'adyen',
             'backend_processor_txn_id' => '5678-efgh',
-        ] ),
+          ]
+        ),
         'expected' => [
           'contribution' => $this->getBaseContribution('1234-abcd'),
           'contribution_extra.backend_processor' => 'adyen',
           'contribution_extra.backend_processor_txn_id' => '5678-efgh',
+        ],
+      ],
+      'Payment Orchestrator Reconciliation ID present' => [
+        'message' => array_merge(
+          $this->getMinimalImportData('TEST0123-c891-4b50-8aba-14db5f00d533'), [
+            'payment_orchestrator_reconciliation_id' => '7jZXl4gBUNl0CnaLEnfXbt',
+          ]
+        ),
+        'expected' => [
+          'contribution' => array_merge(
+            $this->getBaseContribution('TEST0123-c891-4b50-8aba-14db5f00d533'),
+            ['contribution_extra.payment_orchestrator_reconciliation_id' => '7jZXl4gBUNl0CnaLEnfXbt']
+          ),
         ],
       ],
     ];
