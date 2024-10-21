@@ -202,7 +202,7 @@ class Contact {
     if (count($contacts) > 1) {
       $possibleContacts = [];
       foreach ($contacts as $contact) {
-        if (($organizationID && $contact['employer_id'] === $organizationID) || self::isContactSoftCreditorOf($organizationID, $contact['id'])) {
+        if ($organizationID && ($contact['employer_id'] === $organizationID || self::isContactSoftCreditorOf($organizationID, $contact['id']))) {
           $possibleContacts[] = $contact['id'];
         }
       }
