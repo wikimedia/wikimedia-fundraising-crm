@@ -102,12 +102,14 @@ class Send extends AbstractAction {
     // Loop ends with 'break' or 'throw'
     while (TRUE) {
       try {
+        \Civi::log('wmf')->info('thank_you: Calling ThankYou::render');
         $rendered = ThankYou::render(FALSE)
           // @todo switch to passing in 'raw' contact language.
           ->setLanguage($params['language'])
           ->setTemplateName($this->getTemplateName())
           ->setTemplateParameters($params)
           ->execute()->first();
+        \Civi::log('wmf')->info('thank_you: Done ThankYou::render');
         $html = $rendered['html'];
         $subject = $rendered['subject'];
 
@@ -130,12 +132,14 @@ class Send extends AbstractAction {
       $create_civi_mail = \Civi::settings()->get('thank_you_add_civimail_records');
       $rate = \Civi::settings()->get('thank_you_civimail_rate');
       if ($create_civi_mail && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id']) && $params['contact_id'] > 0) {
+        \Civi::log('wmf')->info('thank_you: Creating CiviMail record');
         $civi_queue_record = $this->trackMessage(
           $this->getEmail(),
           $params['contact_id'],
           $subject,
           $html
         );
+        \Civi::log('wmf')->info('thank_you: Done creating CiviMail record');
       }
     }
     catch (\Exception $ex) {
