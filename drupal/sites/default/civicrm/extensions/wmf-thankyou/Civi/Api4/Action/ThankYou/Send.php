@@ -132,14 +132,12 @@ class Send extends AbstractAction {
       $create_civi_mail = \Civi::settings()->get('thank_you_add_civimail_records');
       $rate = \Civi::settings()->get('thank_you_civimail_rate');
       if ($create_civi_mail && mt_rand(0, 10000) <= $rate * 10000 && isset($params['contact_id']) && $params['contact_id'] > 0) {
-        \Civi::log('wmf')->info('thank_you: Creating CiviMail record');
         $civi_queue_record = $this->trackMessage(
           $this->getEmail(),
           $params['contact_id'],
           $subject,
           $html
         );
-        \Civi::log('wmf')->info('thank_you: Done creating CiviMail record');
       }
     }
     catch (\Exception $ex) {
@@ -254,8 +252,11 @@ class Send extends AbstractAction {
           'thank_you: Thank you mailing missing - wtf'
         );
       }
+      \Civi::log('wmf')->info('thank_you: Creating CiviMail record');
       $civi_queue_record = $civimail_store->addQueueRecord($civi_mailing, $email, $contact_id);
+      \Civi::log('wmf')->info('thank_you: Done creating CiviMail record');
 
+      \Civi::log('wmf')->info('thank_you: Creating Activity');
       Activity::create(FALSE)->setValues([
         'source_contact_id' => $civi_queue_record->getContactID(),
         'target_contact_id' => $civi_queue_record->getContactID(),
@@ -265,6 +266,7 @@ class Send extends AbstractAction {
         'details' => $html,
         'status_id' => 2,
       ])->execute();
+      \Civi::log('wmf')->info('thank_you: Done creating Activity');
     }
     catch (CiviQueueInsertException $e) {
       \Civi::log('wmf')->info(
