@@ -625,6 +625,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       ->addSelect('contribution_status_id:name')
       ->execute()->first()['contribution_status_id:name'];
 
+    if ($currentStatus === 'Cancelled') {
+      Civi::log('wmf')->notice(
+        'Skipped recorded failed payment for subscription id: {subscriber_id} on an already-cancelled subscription',
+        ['subscriber_id' => $msg['subscr_id']]
+      );
+      return;
+    }
+
     if (in_array($currentStatus, ['In Progress', 'Pending', 'Processing'])) {
       $updateParams['contribution_status_id:name'] = 'Failing';
     }

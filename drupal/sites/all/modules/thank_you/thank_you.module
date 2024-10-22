@@ -47,6 +47,9 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     ]);
   }
   $stockTable = Civi::$statics['thank_you']['StockTableName'];
+  \Civi::log('wmf')->info(
+    'thank_you: Selecting data for TY mail'
+  );
   $mailingData = CRM_Core_DAO::executeQuery("
 		SELECT
 			cntr.id AS contribution_id,
@@ -95,7 +98,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     ],
   ]);
   $found = $mailingData->fetch();
-
+  \Civi::log('wmf')->info('thank_you: Got data');
   // check that the API result is a valid contribution result
   if (!$found || !$mailingData->contact_id) {
     // the API result is bad
@@ -192,6 +195,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
   if ( $mailingData['gateway'] === 'braintree' && 'Venmo' === CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $mailingData['payment_instrument_id']) ) {
     $params['venmo_user_name'] = $mailingData['venmo_user_name'];
   }
+  \Civi::log('wmf')->info('thank_you: Calling thank_you_send_mail');
   $success = thank_you_send_mail($params);
   $counter = Queue2civicrmTrxnCounter::instance();
 
