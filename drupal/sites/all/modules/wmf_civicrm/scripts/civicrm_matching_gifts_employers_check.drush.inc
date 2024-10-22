@@ -248,10 +248,7 @@ function update_matching_gifts_employer_data(
  * @throws \Civi\WMFException\WMFException
  */
 function send_matching_gifts_update_email($currentEmployerFilePath) {
-  $toAddress = variable_get(
-    'matching_gifts_employer_data_update_email',
-    'fr-tech@wikimedia.org'
-  );
+  $toAddress = \Civi::settings()->get('wmf_matching_gifts_employer_data_update_email');
 
   $mailer = MailFactory::singleton()->getMailer();
   $email['to_address'] = $toAddress;

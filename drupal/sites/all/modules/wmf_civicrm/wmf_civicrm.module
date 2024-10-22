@@ -46,16 +46,6 @@ function wmf_civicrm_matching_gifts_form() {
     '#description' => 'File path for matching gifts employer data file',
   ];
 
-  $form['matching_gifts_employer_data_update_email'] = [
-    '#type' => 'textfield',
-    '#title' => 'Email address to send updates to',
-    '#required' => TRUE,
-    '#default_value' => variable_get(
-      'matching_gifts_employer_data_update_email', 'fr-tech@wikimedia.org'
-    ),
-    '#description' => 'Email address to send matching gifts employer data updates to',
-  ];
-
   return system_settings_form($form);
 }
 
