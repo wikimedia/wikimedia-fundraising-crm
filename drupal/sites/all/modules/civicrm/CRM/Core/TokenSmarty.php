@@ -46,6 +46,8 @@ class CRM_Core_TokenSmarty {
       'controller' => __CLASS__,
       'smarty' => TRUE,
     ];
+
+    Civi::log('wmf')->info('calling token processor');
     $tokenProcessor = new TokenProcessor(\Civi::dispatcher(), array_merge($tokenContextDefaults, $tokenContext));
     $tokenProcessor->addRow([]);
     $useSmarty = !empty($tokenProcessor->context['smarty']);
@@ -61,10 +63,18 @@ class CRM_Core_TokenSmarty {
       if ($useSmarty) {
         CRM_Core_Smarty::singleton()->pushScope($smartyAssigns);
       }
+
+      Civi::log('wmf')->info('calling evaluate');
       $tokenProcessor->evaluate();
+
+      Civi::log('wmf')->info('called evaluate');
       foreach ($messages as $messageId => $ign) {
         foreach ($tokenProcessor->getRows() as $row) {
+
+          Civi::log('wmf')->info('calling render');
           $result[$messageId] = $row->render($messageId);
+
+          Civi::log('wmf')->info('called render');
         }
       }
     }
