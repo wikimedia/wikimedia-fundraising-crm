@@ -122,7 +122,10 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
   // check for contacts without an email address
   if (empty($mailingData['email'])) {
     \Civi::log('wmf')->info('thank_you: No usable email address found');
-    wmf_civicrm_set_no_thank_you($contribution_id, 'no email');
+    \Civi\Api4\Contribution::update(FALSE)
+      ->addValue('contribution_extra.no_thank_you', 'no email')
+      ->addWhere('id', '=', $contribution_id)
+      ->execute();
     return FALSE;
   }
 
@@ -386,7 +389,17 @@ EOT;
 
       $logMessage = $ex->getMessage()
         . "<br/>Setting no_thank_you to '$noThankYou'";
-      wmf_civicrm_set_no_thank_you($contribution->id, $noThankYou);
+      \Civi::log('wmf')->info('wmf_civicrm: Preventing thank-you for contribution {contribution_id} because: {reason}', ['contribution_id' => $contribution_id, 'reason' => $reason]);
+
+      try {
+        \Civi\Api4\Contribution::update(FALSE)
+          ->addValue('contribution_extra.no_thank_you', $noThankYou)
+          ->addWhere('id', '=', $contribution->id)
+          ->execute();
+      }
+      catch (CRM_Core_Exception $ex) {
+        \Civi::log('wmf')->error('wmf_civicrm: Updating with no-thank-you failed with details: {message}', ['message' => $ex->getMessage()]);
+      }
 
       $consecutiveFailures++;
       $msg = "Disabling thank you job after $consecutiveFailures consecutive failures";

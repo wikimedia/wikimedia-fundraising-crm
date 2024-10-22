@@ -213,25 +213,3 @@ function wmf_civicrm_get_contributions_from_gateway_id($gateway, $gateway_txn_id
   }
   return $result;
 }
-
-/**
- * @deprecated use the api
- *
- * @param $contribution_id
- * @param $reason
- *
- * @return void
- */
-function wmf_civicrm_set_no_thank_you($contribution_id, $reason) {
-  \Civi::log('wmf')->info('wmf_civicrm: Preventing thank-you for contribution {contribution_id} because: {reason}', ['contribution_id' => $contribution_id, 'reason' => $reason]);
-
-  try {
-    \Civi\Api4\Contribution::update(FALSE)
-      ->addValue('contribution_extra.no_thank_you', $reason)
-      ->addWhere('id', '=', $contribution_id)
-      ->execute();
-  }
-  catch (CRM_Core_Exception $ex) {
-    \Civi::log('wmf')->error('wmf_civicrm: Updating with no-thank-you failed with details: {message}', ['message' => $ex->getMessage()]);
-  }
-}
