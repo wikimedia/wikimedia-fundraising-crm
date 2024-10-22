@@ -56,13 +56,21 @@ trait TemplateTrait {
 
   public function resolveContent(): array {
     $model = $this;
+    \Civi::log('wmf')->info('resolving content');
     $language = $model->getLocale();
+
+    \Civi::log('wmf')->info('resolved locale' . $language);
     if (empty($language) && !empty($model->getContactID())) {
       $language = Contact::get(FALSE)->addWhere('id', '=', $this->getContactID())->addSelect('preferred_language')->execute()->first()['preferred_language'];
     }
+    \Civi::log('wmf')->info('loading template' . $language);
+
     [$mailContent, $translatedLanguage] = self::loadTemplate((string) $model->getWorkflowName(), $model->getIsTest(), $model->getTemplateId(), $model->getGroupName(), $model->getTemplate(), $language);
+    \Civi::log('wmf')->info('loaded template' . $language);
+
     $model->setLocale($translatedLanguage ?? $model->getLocale());
     $model->setRequestedLocale($language);
+    \Civi::log('wmf')->info('exiting resolve' . $language);
     return $mailContent;
   }
 
