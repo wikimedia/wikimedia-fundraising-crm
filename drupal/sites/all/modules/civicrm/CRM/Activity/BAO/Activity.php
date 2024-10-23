@@ -262,7 +262,6 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
     // CRM-20958 - These fields are managed by MySQL triggers. Watch out for clients resaving stale timestamps.
     unset($params['created_date']);
     unset($params['modified_date']);
-    \Civi::log('wmf')->info('creating activity');
 
     // check required params
     if (!self::dataExists($params)) {
@@ -517,7 +516,6 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
     CRM_Contact_BAO_GroupContactCache::opportunisticCacheFlush();
 
     CRM_Utils_Hook::post($action, 'Activity', $activity->id, $activity, $params);
-    \Civi::log('wmf')->info('created activity');
     return $result;
   }
 
