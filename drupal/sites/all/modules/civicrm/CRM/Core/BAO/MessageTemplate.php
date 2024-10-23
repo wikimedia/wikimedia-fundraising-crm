@@ -347,46 +347,31 @@ class CRM_Core_BAO_MessageTemplate extends CRM_Core_DAO_MessageTemplate implemen
       // filename of optional PDF version to add as attachment (do not include path)
       'PDFFilename' => NULL,
     ];
-    Civi::log('wmf')->info('Thunderbirds are go');
 
     self::synchronizeLegacyParameters($params);
     $params = array_merge($modelDefaults, $viewDefaults, $envelopeDefaults, $params);
 
     self::synchronizeLegacyParameters($params);
-    // Allow WorkflowMessagrendere to run any filters/mappings/cleanups.
+    // Allow WorkflowMessage to run any filters/mappings/cleanups.
     /** @var \Civi\WorkflowMessage\GenericWorkflowMessage $model */
     $model = $params['model'] ?? WorkflowMessage::create($params['workflow'] ?? 'UNKNOWN');
     WorkflowMessage::importAll($model, $params);
-
-    Civi::log('wmf')->info('model imported');
     $mailContent = $model->resolveContent();
-
-    Civi::log('wmf')->info('content resolved');
     $params = WorkflowMessage::exportAll($model);
-
-    Civi::log('wmf')->info('exported');
     unset($params['model']);
     // Subsequent hooks use $params. Retaining the $params['model'] might be nice - but don't do it unless you figure out how to ensure data-consistency (eg $params['tplParams'] <=> $params['model']).
     // If you want to expose the model via hook, consider interjecting a new Hook::alterWorkflowMessage($model) between `importAll()` and `exportAll()`.
 
     self::synchronizeLegacyParameters($params);
-
-    Civi::log('wmf')->info('calling hooks');
     CRM_Utils_Hook::alterMailParams($params, 'messageTemplate');
     CRM_Utils_Hook::alterMailContent($mailContent);
-
-    Civi::log('wmf')->info('called hooks');
     if (!empty($params['subject'])) {
       CRM_Core_Error::deprecatedWarning('CRM_Core_BAO_MessageTemplate: $params[subject] is deprecated. Use $params[messageTemplate][msg_subject] instead.');
       $mailContent['subject'] = $params['subject'];
     }
 
     self::synchronizeLegacyParameters($params);
-
-    Civi::log('wmf')->info('calling smarty render');
     $rendered = CRM_Core_TokenSmarty::render(CRM_Utils_Array::subset($mailContent, ['text', 'html', 'subject']), $params['tokenContext'], $params['tplParams']);
-
-    Civi::log('wmf')->info('called smarty render');
     if (isset($rendered['subject'])) {
       $rendered['subject'] = trim(preg_replace('/[\r\n]+/', ' ', $rendered['subject']));
     }
