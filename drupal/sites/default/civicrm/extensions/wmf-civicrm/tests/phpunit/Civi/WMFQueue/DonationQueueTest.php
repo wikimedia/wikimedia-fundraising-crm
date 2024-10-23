@@ -1212,9 +1212,13 @@ class DonationQueueTest extends BaseQueueTestCase {
           ]
         ),
         'expected' => [
-          'contribution' => $this->getBaseContribution('1234-abcd'),
-          'contribution_extra.backend_processor' => 'adyen',
-          'contribution_extra.backend_processor_txn_id' => '5678-efgh',
+          'contribution' => array_merge(
+            $this->getBaseContribution('1234-abcd'),
+            [
+              'contribution_extra.backend_processor' => 'adyen',
+              'contribution_extra.backend_processor_txn_id' => '5678-efgh',
+            ]
+          ),
         ],
       ],
       'Payment Orchestrator Reconciliation ID present' => [
