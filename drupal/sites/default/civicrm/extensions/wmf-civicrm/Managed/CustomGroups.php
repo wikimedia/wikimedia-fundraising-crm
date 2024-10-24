@@ -265,7 +265,8 @@ return [
       'name' => 'activity_tracking',
       'title' => 'Activity Tracking',
       'extends' => 'Activity',
-      'extends_entity_column_value' => [165, 166, 168], // Values hardcoded above
+  // Values hardcoded above
+      'extends_entity_column_value' => [165, 166, 168],
       'style' => 'Inline',
       'is_active' => TRUE,
       'table_name' => 'civicrm_activity_tracking',
@@ -1353,6 +1354,17 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields(): array {
       'column_name' => 'backend_processor_txn_id',
       'label' => ts('Backend Processor Transaction ID'),
       'description' => 'ID of transaction at the underlying payment processor, when gateway is a payment orchestrator',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 1,
+    ],
+    'payment_orchestrator_reconciliation_id' => [
+      'name' => 'payment_orchestrator_reconciliation_id',
+      'column_name' => 'payment_orchestrator_reconciliation_id',
+      'label' => ts('Payment Orchestrator Reconciliation ID'),
+      'description' => 'cross-system reconciliation/shared ID of transaction at the payment orchestrator and underlying payment processor',
       'data_type' => 'String',
       'html_type' => 'Text',
       'is_active' => 1,
