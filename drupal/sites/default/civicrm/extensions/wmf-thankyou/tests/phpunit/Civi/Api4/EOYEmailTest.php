@@ -56,6 +56,53 @@ class EOYEmailTest extends TestCase {
   }
 
   /**
+   * Test rendering an EOY email without a specific year set.
+   *
+   * @return void
+   */
+  public function testRenderNoYear(): void {
+    $contact = $this->setupEOYRecipient();
+
+    $email = (array) EOYEmail::render(FALSE)
+      ->setContactID($contact['id'])
+      ->execute()->first();
+    // This text would not start with a capital W if the year token were present.
+    $this->assertStringContainsString("We've kept track", $email['html']);
+    // Since it's html the double space will not render, but it happens where the year would - but
+    $this->assertStringContainsString('Your  total was USD 30.00.', $email['html']);
+
+    // This date range will just get the last 2 - ie $20
+    $email = (array) EOYEmail::render(FALSE)
+      ->setContactID($contact['id'])
+      ->setStartDateTime('2019-11-28 22:58:00')
+      ->execute()->first();
+    $this->assertStringContainsString('Your  total was USD 20.00.', $email['html']);
+    $this->assertStringContainsString('between November 28th, 2019 10:58 PM and October 30th, 2024 11:59 PM', $email['html']);
+
+    // This date range will just get the middle 1 - ie $10
+    $email = (array) EOYEmail::render(FALSE)
+      ->setContactID($contact['id'])
+      ->setStartDateTime('2019-11-28 22:58:00')
+      ->setEndDateTime('2019-11-28 23:58:00')
+      ->execute()->first();
+    $this->assertStringContainsString('Your  total was USD 10.00.', $email['html']);
+
+    try {
+      // This date range will get no results.
+      EOYEmail::render(FALSE)
+        ->setContactID($contact['id'])
+        ->setDateRelative('this.year')
+        ->execute()->first();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->assertEquals('No contributions in the given time from - ' . date('Y') . '0101 to ' . date('Y') . '1231 for contact/s ' . $contact['id'], $e->getMessage());
+      return;
+    }
+    $this->fail('an exception was expected');
+
+  }
+
+  /**
    * Test that Japanese characters in a name are rendered correctly.
    *
    * We no longer use the Japanese template as the name is not
@@ -321,9 +368,7 @@ class EOYEmailTest extends TestCase {
    * @throws \CRM_Core_Exception
    */
   public function testCalculateSingleContactId(): void {
-    $contact = $this->addTestContact(['email_primary.email' => 'jimmysingle@example.com']);
-    $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-27 22:59:00']);
-    $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-28 22:59:00']);
+    $contact = $this->setupEOYRecipient();
 
     $email = EOYEmail::render(FALSE)->setYear(2019)->setContactID($contact['id'])->execute();
     $this->assertCount(1, $email);
@@ -341,8 +386,9 @@ class EOYEmailTest extends TestCase {
   This past year, we’ve kept track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
-  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2019
-</p>
+  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made
+  in 2019
+  </p>
 
 <p><b>
   Your 2019 total was USD 20.00.
@@ -485,8 +531,9 @@ class EOYEmailTest extends TestCase {
   This past year, we’ve kept track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
-  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2018
-</p>
+  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made
+  in 2018
+  </p>
 
 <p><b>
   Your 2018 total was USD 9,800.00.
@@ -629,8 +676,9 @@ class EOYEmailTest extends TestCase {
   This past year, we’ve kept track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
-  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2018
-</p>
+  Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made
+  in 2018
+  </p>
 
 <p><b>
   Your 2018 total was USD 70.00.
@@ -943,6 +991,17 @@ WHERE
     catch (\CRM_Core_Exception $e) {
       $this->fail('failed to send ' . $e->getMessage() . "\n" . $e->getTraceAsString());
     }
+  }
+
+  /**
+   * @return array
+   */
+  public function setupEOYRecipient(): array {
+    $contact = $this->addTestContact(['email_primary.email' => 'jimmysingle@example.com']);
+    $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-27 22:59:00']);
+    $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-28 22:59:00']);
+    $this->addTestContactContribution($contact['id'], ['receive_date' => '2020-11-28 22:59:00']);
+    return $contact;
   }
 
 }
