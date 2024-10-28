@@ -332,12 +332,13 @@ class EOYEmailTest extends TestCase {
       'to_address' => 'jimmysingle@example.com',
       'subject' => 'A record of your support for Wikipedia',
       'contactIDs' => [$contact['id']],
-      'html' => "<p>
-      Dear Jimmy,
+      'html' => "<img alt=\"Wikimedia Foundation\" src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Wikimedia_Foundation_logo_-_horizontal.svg/320px-Wikimedia_Foundation_logo_-_horizontal.svg.png\" width=\"150\" style=\"display: block; width: 30%; margin: auto;\" />
+<p>
+    Dear Jimmy,
   </p>
 
 <p>
-  This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
+  This past year, we’ve kept track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
   Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2019
@@ -364,7 +365,9 @@ class EOYEmailTest extends TestCase {
 
 <p>The Wikimedia Endowment ensures Wikimedia Foundation's free knowledge resources remain accessible and valuable for generations to come.</p>
 <p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href=\"mailto:legacy@wikimedia.org\">Contact us to learn how to make a legacy gift.</a></p>
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+<p>Jimmy Walrus, this letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+<p>CNTCT-{$contact['id']}</p>
+<!-- TI_BEGIN[“name”:“End_of_Year.en.html”,“revision”:20230331,“currency”:““]TI_END -->
 ",
     ], $email->first());
   }
@@ -473,12 +476,13 @@ class EOYEmailTest extends TestCase {
       'to_address' => 'bob@example.com',
       'subject' => 'A record of your support for Wikipedia',
       'contactIDs' => [$contactID],
-      'html' => '<p>
-      Dear Bob,
+      'html' => '<img alt="Wikimedia Foundation" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Wikimedia_Foundation_logo_-_horizontal.svg/320px-Wikimedia_Foundation_logo_-_horizontal.svg.png" width="150" style="display: block; width: 30%; margin: auto;" />
+<p>
+    Dear Bob,
   </p>
 
 <p>
-  This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
+  This past year, we’ve kept track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
   Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2018
@@ -573,7 +577,7 @@ class EOYEmailTest extends TestCase {
 
 
 <p>
-  If you’d like to cancel your monthly donation, follow these easy <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&amp;basic=true&amp;language=en">easy cancellation instructions</a>.
+  If you’d like to update or cancel your monthly donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&amp;basic=true&amp;language=en">easy instructions</a>.
 </p>
 
 <p>With gratitude,</p>
@@ -583,7 +587,9 @@ class EOYEmailTest extends TestCase {
 
 <p>The Wikimedia Endowment ensures Wikimedia Foundation\'s free knowledge resources remain accessible and valuable for generations to come.</p>
 <p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href="mailto:legacy@wikimedia.org">Contact us to learn how to make a legacy gift.</a></p>
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+<p>Bob Walrus, this letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+<p>CNTCT-' . $contactID . '</p>
+<!-- TI_BEGIN[“name”:“End_of_Year.en.html”,“revision”:20230331,“currency”:““]TI_END -->
 ',
     ], $email);
   }
@@ -614,12 +620,13 @@ class EOYEmailTest extends TestCase {
       'to_address' => 'bob@example.com',
       'contactIDs' => [$contactID],
       'subject' => 'A record of your support for Wikipedia',
-      'html' => '<p>
-      Dear Bob,
+      'html' => '<img alt="Wikimedia Foundation" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Wikimedia_Foundation_logo_-_horizontal.svg/320px-Wikimedia_Foundation_logo_-_horizontal.svg.png" width="150" style="display: block; width: 30%; margin: auto;" />
+<p>
+    Dear Bob,
   </p>
 
 <p>
-  This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
+  This past year, we’ve kept track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
   Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in 2018
@@ -648,7 +655,7 @@ class EOYEmailTest extends TestCase {
 
 
 <p>
-  If you’d like to cancel your monthly donation, follow these easy <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&amp;basic=true&amp;language=en">easy cancellation instructions</a>.
+  If you’d like to update or cancel your monthly donation, follow these <a href="https://donate.wikimedia.org/wiki/Special:LandingCheck?landing_page=Cancel_or_change_recurring_giving&amp;basic=true&amp;language=en">easy instructions</a>.
 </p>
 
 <p>With gratitude,</p>
@@ -658,7 +665,9 @@ class EOYEmailTest extends TestCase {
 
 <p>The Wikimedia Endowment ensures Wikimedia Foundation\'s free knowledge resources remain accessible and valuable for generations to come.</p>
 <p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href="mailto:legacy@wikimedia.org">Contact us to learn how to make a legacy gift.</a></p>
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+<p>Bob Walrus, this letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+<p>CNTCT-' . $contactID . '</p>
+<!-- TI_BEGIN[“name”:“End_of_Year.en.html”,“revision”:20230331,“currency”:““]TI_END -->
 ',
     ], $email);
   }
@@ -672,7 +681,7 @@ class EOYEmailTest extends TestCase {
    * @throws \CRM_Core_Exception
    */
   public function testRenderHalfBakedLanguage(): void {
-    $this->ids['OptionValue'][] = $this->createTestEntity('OptionValue', [
+    $this->createTestEntity('OptionValue', [
       'option_group_id.name' => 'languages',
       'name' => 'es_NZ',
       'value' => 'es',

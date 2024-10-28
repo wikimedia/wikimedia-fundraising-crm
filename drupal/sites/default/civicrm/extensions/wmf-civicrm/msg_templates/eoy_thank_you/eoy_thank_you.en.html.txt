@@ -1,5 +1,6 @@
+<img alt="Wikimedia Foundation" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Wikimedia_Foundation_logo_-_horizontal.svg/320px-Wikimedia_Foundation_logo_-_horizontal.svg.png" width="150" style="display: block; width: 30%; margin: auto;" />
 <p>
-  {if $isValidDonorName}
+{if '{contact.first_name|boolean}' && '{contact.last_name|boolean}'}
     Dear {contact.first_name},
   {else}
 
@@ -7,7 +8,7 @@
 </p>
 
 <p>
-  This past year, we’ve kept meticulous track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
+  This past year, we’ve kept track of the generous contributions you made in support of Wikipedia, not only because we’re extremely grateful, but also because we knew you’d appreciate having a copy of this record. This includes gifts to the Wikimedia Foundation as well as gifts to the Wikimedia Endowment, if any.
 </p>
 <p>
   Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made in {$year}
@@ -44,7 +45,7 @@
 
 {if $active_recurring}
 <p>
-  If you’d like to cancel your monthly donation, follow these easy <a href="{wmf_url.cancel}">easy cancellation instructions</a>.
+  If you’d like to update or cancel your monthly donation, follow these <a href="{wmf_url.cancel}">easy instructions</a>.
 </p>
 {/if}
 
@@ -55,4 +56,6 @@
 
 <p>The Wikimedia Endowment ensures Wikimedia Foundation's free knowledge resources remain accessible and valuable for generations to come.</p>
 <p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href="mailto:legacy@wikimedia.org">Contact us to learn how to make a legacy gift.</a></p>
-<p>This letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+<p>{if '{contact.first_name|boolean}' && '{contact.last_name|boolean}'}{contact.first_name} {contact.last_name}, this{else}This{/if} letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
+<p>CNTCT-{contact.id}</p>
+<!-- TI_BEGIN[“name”:“End_of_Year.en.html”,“revision”:20230331,“currency”:“{$currency}“]TI_END -->
