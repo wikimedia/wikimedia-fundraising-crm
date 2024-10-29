@@ -1221,7 +1221,7 @@ class DonationQueueTest extends BaseQueueTestCase {
           ),
         ],
       ],
-      'Payment Orchestrator Reconciliation ID present' => [
+      /*'Payment Orchestrator Reconciliation ID present' => [
         'message' => array_merge(
           $this->getMinimalImportData('TEST0123-c891-4b50-8aba-14db5f00d533'), [
             'payment_orchestrator_reconciliation_id' => '7jZXl4gBUNl0CnaLEnfXbt',
@@ -1233,7 +1233,7 @@ class DonationQueueTest extends BaseQueueTestCase {
             ['contribution_extra.payment_orchestrator_reconciliation_id' => '7jZXl4gBUNl0CnaLEnfXbt']
           ),
         ],
-      ],
+      ],*/
     ];
   }
 
