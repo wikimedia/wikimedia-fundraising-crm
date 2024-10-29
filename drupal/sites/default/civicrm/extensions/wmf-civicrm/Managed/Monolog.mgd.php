@@ -79,7 +79,7 @@ return [
         'description' => ('Send emails on acoustic job progress.'),
         'configuration_options' => [
           'to' => \Civi::settings()->get('wmf_acoustic_notice_recipient'),
-          'from' => \Civi::settings()->get('wmf_failmail_recipient'),
+          'from' => \Civi::settings()->get('wmf_failmail_from'),
           'subject' => 'Acoustic job %context.job_id% status %context.type%',
         ],
       ],
