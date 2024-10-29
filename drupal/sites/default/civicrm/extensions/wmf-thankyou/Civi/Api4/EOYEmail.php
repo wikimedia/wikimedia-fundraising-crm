@@ -53,7 +53,7 @@ class EOYEmail extends Generic\AbstractEntity {
    *
    * @return \Civi\Api4\Action\EOYEmail\MakeJob
    */
-  public static function makeJob(bool $checkPermissions = TRUE): Action\EOYEmail\MakeJob{
+  public static function makeJob(bool $checkPermissions = TRUE): Action\EOYEmail\MakeJob {
     return (new MakeJob(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
