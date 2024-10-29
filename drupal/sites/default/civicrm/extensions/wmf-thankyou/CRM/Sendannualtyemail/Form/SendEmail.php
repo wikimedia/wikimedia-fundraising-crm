@@ -49,14 +49,14 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
 });",
       ]);
     $this->setDefaults(['year' => date('Y') - 1]);
-    $this->addButtons(array(
-      array(
+    $this->addButtons([
+      [
         'type' => 'submit',
         'name' => E::ts('Submit'),
         'class' => 'email-send-submit',
         'isDefault' => TRUE,
-      ),
-    ));
+      ],
+    ]);
 
     // export form elements
     $this->assign('elementNames', $this->getRenderableElementNames());
@@ -105,9 +105,9 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
   }
 
   public function getYearOptions(): array {
-    $options = array(
+    $options = [
       '' => E::ts('- select -'),
-    );
+    ];
     $current_year = date('Y');
     $last_seven_years = array_reverse(range($current_year - 7, $current_year));
     foreach ($last_seven_years as $year) {
