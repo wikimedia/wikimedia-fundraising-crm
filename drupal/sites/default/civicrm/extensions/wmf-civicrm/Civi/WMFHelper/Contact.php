@@ -198,6 +198,7 @@ class Contact {
       }
       return FALSE;
     }
+
     if (count($contacts) > 1) {
       $possibleContacts = [];
       foreach ($contacts as $contact) {

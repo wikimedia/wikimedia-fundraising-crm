@@ -116,7 +116,7 @@ class Send extends AbstractAction {
           ->setContactID($this->getContactID())
           ->execute();
       }
-      catch (NoEmailException| NoContributionException $e) {
+      catch (NoEmailException | NoContributionException $e) {
         // Invalid email address or something
         $this->markFailed($e->getExtraParams()['email'], 'wmf_eoy_receipt send error', $e->getMessage());
         $failed++;

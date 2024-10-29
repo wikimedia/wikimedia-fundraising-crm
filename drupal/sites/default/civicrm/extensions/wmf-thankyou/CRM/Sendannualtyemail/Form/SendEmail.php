@@ -18,7 +18,7 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
    *
    * @var array
    */
-  protected $message;
+  protected array $message;
 
   /**
    * @throws \CRM_Core_Exception
@@ -28,16 +28,17 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
 
     // add form elements
     $this->add(
-      'select', // field type
-      'year', // field name
-      'Year', // field label
-      $this->getYearOptions(), // list of options
+      'select',
+      'year',
+      'Year',
+      $this->getYearOptions(),
       TRUE,
-      ['onChange' => "CRM.api4('EOYEmail', 'render', {
-  contactID: " . $this->getContactID() .",
+      [
+        'onChange' => "CRM.api4('EOYEmail', 'render', {
+  contactID: " . $this->getContactID() . ",
   year: this.value
 }).then(function(results) {
-  for (key in results) {
+  for (key in results) {z
      CRM.$('#eoy_message_message').html(results[key]['html']);
      CRM.$('#eoy_message_subject').html(results[key]['subject']);
      break;
@@ -45,17 +46,17 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
 
 }, function(failure) {
   CRM.$('#eoy_message_message').html(failure['error_message']);
-});"]
-    );
-    $this->setDefaults(['year' => date('Y') -1]);
-    $this->addButtons(array(
-      array(
+});",
+      ]);
+    $this->setDefaults(['year' => date('Y') - 1]);
+    $this->addButtons([
+      [
         'type' => 'submit',
         'name' => E::ts('Submit'),
         'class' => 'email-send-submit',
         'isDefault' => TRUE,
-      ),
-    ));
+      ],
+    ]);
 
     // export form elements
     $this->assign('elementNames', $this->getRenderableElementNames());
@@ -97,20 +98,20 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
    * @throws \CRM_Core_Exception
    */
   public function postProcess(): void {
-      // send_email
+    // send_email
     AnnualThankYou::send($this->getContactID(), $this->getSubmittedValue('year'));
     CRM_Core_Session::setStatus('An email with all contributions from ' . $this->getSubmittedValue('year') . '  will be sent to this contact if they contributed that year.');
     parent::postProcess();
   }
 
-  public function getYearOptions() {
-    $options = array(
+  public function getYearOptions(): array {
+    $options = [
       '' => E::ts('- select -'),
-    );
+    ];
     $current_year = date('Y');
     $last_seven_years = array_reverse(range($current_year - 7, $current_year));
     foreach ($last_seven_years as $year) {
-        $options[$year] = $year;
+      $options[$year] = $year;
     }
     return $options;
   }
@@ -119,7 +120,6 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
    * Set form defaults.
    *
    * @return array
-   * @throws \CRM_Core_Exception
    */
   public function setDefaultValues(): array {
     if (!empty($this->message)) {
@@ -133,12 +133,12 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
    *
    * @return array (string)
    */
-  public function getRenderableElementNames() {
+  public function getRenderableElementNames(): array {
     // The _elements list includes some items which should not be
     // auto-rendered in the loop -- such as "qfKey" and "buttons".  These
     // items don't have labels.  We'll identify renderable by filtering on
     // the 'label'.
-    $elementNames = array();
+    $elementNames = [];
     foreach ($this->_elements as $element) {
       /** @var HTML_QuickForm_Element $element */
       $label = $element->getLabel();

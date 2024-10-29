@@ -18,7 +18,7 @@
   <version>1.1</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.45</ver>
+    <ver>5.79</ver>
   </compatibility>
   <comments>This is a intended as something of a catchall for wmf functionality.
     It is intended to replace the wmf_civicrm module over time
@@ -63,6 +63,7 @@
     <ext>biz.lcdservices.movecontrib</ext>
     <ext>theisland</ext>
     <ext>damaged</ext>
+    <ext>symfony_email</ext>
   </requires>
   <civix>
     <namespace>CRM/Wmf</namespace>

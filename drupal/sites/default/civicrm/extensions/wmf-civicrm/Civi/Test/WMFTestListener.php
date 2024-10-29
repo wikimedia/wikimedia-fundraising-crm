@@ -2,6 +2,8 @@
 
 namespace Civi\Test;
 
+use Civi\Api4\Monolog;
+
 /**
  * Class WMFTestListener
  * @package Civi\Test
@@ -48,10 +50,12 @@ class WMFTestListener implements \PHPUnit\Framework\TestListener {
     else {
       $this->tx = NULL;
     }
+    \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 0 WHERE type = "mail"');
     set_time_limit(210);
   }
 
   public function endTest(\PHPUnit\Framework\Test $test, float $time): void {
+    \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 1 WHERE type = "mail"');
     if ($test instanceof TransactionalInterface) {
       $this->tx->rollback()->commit();
       $this->tx = NULL;
