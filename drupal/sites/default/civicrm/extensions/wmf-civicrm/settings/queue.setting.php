@@ -55,7 +55,7 @@ return [
     'html_type' => 'text',
     'type' => 'String',
     'is_domain' => 1,
-    'default' => 'fr-tech@wikimedia.org',
+    'default' => 'fundraisingemail@wikimedia.org',
     'is_contact' => 0,
     'html_attributes' => [
       'size' => 80,
