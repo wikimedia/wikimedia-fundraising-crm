@@ -23,7 +23,6 @@ use Civi\Api4\Exception\EOYEmail\NoContributionException;
  * @method $this setContributions(array $contributions)
  * @method $this setIsValidDonorName(bool $isValidDonorName)
  * @method array setTotals()
- * @method ?int getYear()
  * @method $this setYear(?int $year)
  */
 class EOYThankYou extends GenericWorkflowMessage {
@@ -90,7 +89,6 @@ class EOYThankYou extends GenericWorkflowMessage {
     if ($this->year) {
       return FALSE;
     }
-    // Ie is the property set as opposed to will the getter get something.
     return $this->startDateTime || $this->endDateTime;
   }
 
@@ -101,12 +99,48 @@ class EOYThankYou extends GenericWorkflowMessage {
     if ($this->getYear()) {
       return $this->getYear() . '-01-01 10:00:00';
     }
+    return '';
+  }
 
-    // They want to know since the beginning of time... or
-    // at least since the beginning of our database.
-    // let's use 2000 as a stand in cos nothing really happened in the
-    // universe before then.
-    return '2000-01-01 12:00:00';
+  public function getYear(): string {
+    if ($this->year) {
+      return $this->year;
+    }
+    $lastYear = date('Y') - 1;
+    if (date('Ymd', strtotime($this->startDateTime)) === ($lastYear . '0101')
+      &&
+      (date('Ymd', strtotime($this->endDateTime)) === $lastYear . '1231')
+    ) {
+      return $lastYear;
+    }
+    return '';
+  }
+
+  /**
+   * Get the start date for querying purposes.
+   *
+   * They want to know since the beginning of time... or at least since the beginning of our database.
+   * Let's use 2000 as a stand in cos nothing really happened in the
+   * universe before then.
+   *
+   * @return string
+   */
+  private function getQueryStartDateTime(): string {
+    return $this->getStartDateTime() ?: '2000-01-01';
+  }
+
+  /**
+   * Get the end date for querying purposes.
+   *
+   * Currently this is this is the same as the display date as
+   * I made an executive decision people would want to see when their
+   * letters cover up to - but that might be replaced by a real decision
+   * in future so it seemed worth keeping the symetry.
+   *
+   * @return string
+   */
+  private function getQueryEndDateTime(): string {
+    return $this->getEndDateTime();
   }
 
   public function getEndDateTime(): string {
@@ -286,14 +320,14 @@ class EOYThankYou extends GenericWorkflowMessage {
         ->addWhere('financial_type_id:name', '!=', 'Refund')
         ->addWhere('contact_id.is_deleted', '=', FALSE)
         ->addWhere('receive_date', 'BETWEEN', [
-          $this->getStartDateTime(),
-          $this->getEndDateTime(),
+          $this->getQueryStartDateTime(),
+          $this->getQueryEndDateTime(),
         ])
         ->addSelect('id', 'contribution_extra.original_currency', 'financial_type_id:name', 'contribution_extra.original_amount', 'contribution_recur_id', 'receive_date', 'total_amount')
         ->addOrderBy('receive_date', 'ASC')
         ->execute();
       if (empty($this->contributions)) {
-        throw new NoContributionException('No contributions in the given time from - ' . $this->getStartDateTime() . ' to ' . $this->getEndDateTime() . ' for contact/s ' . implode(',', $this->getContactIDs()));
+        throw new NoContributionException('No contributions in the given time from - ' . $this->getQueryStartDateTime() . ' to ' . $this->getQueryEndDateTime() . ' for contact/s ' . implode(',', $this->getContactIDs()));
       }
     }
     if (isset($this->contributions[0])) {

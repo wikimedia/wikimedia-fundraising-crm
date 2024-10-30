@@ -14,11 +14,13 @@
   Thank you for demonstrating your support for our mission to make free and reliable information accessible to everyone in the world. Here’s a summary of the donations you made
   {if $year}in {$year}
   {elseif isShowStartAndEndDates}
+    {* Using the format 'full' gives the 'full' date but not the default DateTime - which could be time-zone-confusing *}
     {if $startDateTime && $endDateTime}
-    between {$startDateTime|crmDate} and {$endDateTime|crmDate}
+    between {$startDateTime|crmDate:"Full"} and {$endDateTime|crmDate:"Full"}
     {elseif $startDateTime}
-    since {$startDateTime|crmDate}
+    since {$startDateTime|crmDate:"Full"}
     {elseif $endDateTime}
+    before {$endDateTime|crmDate:"Full"}
     {/if}
   {/if}
 </p>

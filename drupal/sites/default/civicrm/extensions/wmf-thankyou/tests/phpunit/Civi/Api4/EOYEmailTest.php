@@ -32,8 +32,7 @@ class EOYEmailTest extends TestCase {
     $this->oldFromAddress = \Civi::settings()->get('wmf_eoy_thank_you_from_address');
     \Civi::settings()->set('wmf_eoy_thank_you_from_name', 'Bobita');
     \Civi::settings()->set('wmf_eoy_thank_you_from_address', 'bobita@example.org');
-    $mailfactory = MailFactory::singleton();
-    $mailfactory->setActiveMailer(NULL, new Mailer());
+    $this->resetMailTracking();
   }
 
   /**
@@ -77,7 +76,7 @@ class EOYEmailTest extends TestCase {
       ->setStartDateTime('2019-11-28 22:58:00')
       ->execute()->first();
     $this->assertStringContainsString('Your  total was USD 20.00.', $email['html']);
-    $this->assertStringContainsString('between November 28th, 2019 10:58 PM and October 30th, 2024 11:59 PM', $email['html']);
+    $this->assertStringContainsString('between November 28th, 2019 and ' . $this->getFormattedNow(), $email['html']);
 
     // This date range will just get the middle 1 - ie $10
     $email = (array) EOYEmail::render(FALSE)
@@ -469,6 +468,45 @@ class EOYEmailTest extends TestCase {
     $this->addTestContactContribution($contact['id'], ['receive_date' => '2018-11-27 22:59:00']);
     $this->send(2018, $contact['id']);
     $this->assertEquals(1, MailFactory::singleton()->getMailer()->count());
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testSendWithDateRange(): void {
+    // Set up the contact to email.
+    $contact = $this->addTestContact(['email' => 'jimmysingle@example.com']);
+    $this->addTestContactContribution($contact['id'], ['receive_date' => '2018-11-27 22:59:00']);
+
+    // Test with start and end.
+    $email = $this->send(NULL, $contact['id'], '2018-10-22', '2018-11-30');
+    $this->assertStringContainsString('between October 22nd, 2018 and November 30th, 2018', $email['html']);
+    $this->resetMailTracking();
+
+    // Test here is an end time on start-only emails - today shows up as the end time so the
+    // letter makes sense if they look back on it after donating next week.
+    $email = $this->send(NULL, $contact['id'], '2018-10-22');
+    $this->assertStringContainsString('between October 22nd, 2018 and ' . $this->getFormattedNow(), $email['html']);
+    $this->resetMailTracking();
+
+    // There is an end date only. Currently the time is truncated which seems cleaner although
+    // there is a hypothetical edge case where the user gets confused cos a donation is
+    // on 30 Nov - I suspect nailing best behaviour there is too weedsy.
+    $email = $this->send(NULL, $contact['id'], '', '2018-11-30');
+    $this->assertStringContainsString('before November 30th, 2018', $email['html']);
+    $this->resetMailTracking();
+
+    // This is an interesting one - let's specifically treat 1 Jan to 31 Dec last year
+    // the same as if year were passed in.
+    $lastYear = date('Y') - 1;
+    $this->addTestContactContribution($contact['id'], ['receive_date' => $lastYear . '-11-27 22:59:00']);
+    $email = $this->send(NULL, $contact['id'], $lastYear . '-01-01', $lastYear . '-12-31');
+    $this->assertStringContainsString('in ' . $lastYear, $email['html']);
+    $this->resetMailTracking();
+
+    // And here is that year-passed-in for comparison.
+    $email = $this->send($lastYear, $contact['id']);
+    $this->assertStringContainsString('in ' . $lastYear, $email['html']);
   }
 
   /**
@@ -973,15 +1011,19 @@ WHERE
   /**
    * Send the email/s.
    *
-   * @param int $year
+   * @param int|null $year
    * @param int|null $contactID
+   * @param string $startDateTime
+   * @param string $endDateTime
    *
    * @return array
    */
-  protected function send(int $year = 2018, ?int $contactID = NULL): array {
+  protected function send(?int $year = 2018, ?int $contactID = NULL, $startDateTime = '', $endDateTime = ''): array {
     try {
       EOYEmail::makeJob(FALSE)->setYear($year)->execute();
       EOYEmail::send(FALSE)
+        ->setStartDateTime($startDateTime)
+        ->setEndDateTime($endDateTime)
         ->setYear($year)
         ->setContactID($contactID)
         ->execute();
@@ -1002,6 +1044,24 @@ WHERE
     $this->addTestContactContribution($contact['id'], ['receive_date' => '2019-11-28 22:59:00']);
     $this->addTestContactContribution($contact['id'], ['receive_date' => '2020-11-28 22:59:00']);
     return $contact;
+  }
+
+  /**
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function resetMailTracking(): void {
+    $mailfactory = MailFactory::singleton();
+    $mailfactory->setActiveMailer(NULL, new Mailer());
+  }
+
+  /**
+   * @return string
+   */
+  public function getFormattedNow(): string {
+    $formattedNow = \CRM_Utils_Date::customFormat(date('Y-m-d'), \Civi::settings()
+      ->get('dateformatFull'));
+    return $formattedNow;
   }
 
 }
