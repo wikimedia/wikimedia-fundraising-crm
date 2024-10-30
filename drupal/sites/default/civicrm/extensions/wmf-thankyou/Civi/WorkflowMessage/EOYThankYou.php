@@ -327,7 +327,7 @@ class EOYThankYou extends GenericWorkflowMessage {
         ->addOrderBy('receive_date', 'ASC')
         ->execute();
       if (empty($this->contributions)) {
-        throw new NoContributionException('No contributions in the given time from - ' . $this->getQueryStartDateTime() . ' to ' . $this->getQueryEndDateTime() . ' for contact/s ' . implode(',', $this->getContactIDs()));
+        throw new NoContributionException('No contributions in the given time from - ' . date('Y-m-d H:i:s', strtotime($this->getQueryStartDateTime())) . ' to ' . date('Y-m-d H:i:s', strtotime($this->getQueryEndDateTime())) . ' for contact/s ' . implode(',', $this->getContactIDs()));
       }
     }
     if (isset($this->contributions[0])) {

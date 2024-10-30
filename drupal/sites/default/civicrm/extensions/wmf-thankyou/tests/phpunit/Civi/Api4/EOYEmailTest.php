@@ -94,7 +94,7 @@ class EOYEmailTest extends TestCase {
         ->execute()->first();
     }
     catch (\CRM_Core_Exception $e) {
-      $this->assertEquals('No contributions in the given time from - ' . date('Y') . '0101 to ' . date('Y') . '1231 for contact/s ' . $contact['id'], $e->getMessage());
+      $this->assertEquals('No contributions in the given time from - ' . date('Y') . '-01-01 00:00:00 to ' . date('Y') . '-12-31 23:59:59 for contact/s ' . $contact['id'], $e->getMessage());
       return;
     }
     $this->fail('an exception was expected');

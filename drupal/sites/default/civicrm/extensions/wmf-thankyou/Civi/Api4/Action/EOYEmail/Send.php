@@ -161,14 +161,14 @@ class Send extends AbstractAction {
             2 => [$this->getYear(), 'Integer'],
           ]);
         }
-          // Should be just phpMailer exception but need to test post changes in phpmailer to remove wmf exception.
+        // Should be just phpMailer exception but need to test post changes in phpmailer to remove wmf exception.
         catch (Exception $e) {
           // Invalid email address or something
           $this->markFailed($email['to_address'], 'wmf_eoy_receipt send error', $e->getMessage());
           ++$failed;
         }
       }
-      $attempted ++;
+      $attempted++;
     }
 
     Civi::log('wmf')->info('wmf_eoy_receipt Successfully sent {succeeded} messages, failed to send {failed} messages.', [

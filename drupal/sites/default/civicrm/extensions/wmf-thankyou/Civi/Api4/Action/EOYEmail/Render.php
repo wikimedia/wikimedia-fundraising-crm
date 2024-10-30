@@ -89,7 +89,7 @@ class Render extends AbstractAction {
   protected function getEndDate(): string {
     if ($this->dateRelative) {
       [$relativeTerm, $unit] = explode('.', $this->dateRelative);
-      return \CRM_Utils_Date::relativeToAbsolute($relativeTerm, $unit)['to'];
+      return \CRM_Utils_Date::relativeToAbsolute($relativeTerm, $unit)['to'] . ' 23:59:59';
     }
     return (string) $this->endDateTime;
   }
