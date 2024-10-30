@@ -55,7 +55,7 @@ class EOYThankYouExample extends WorkflowMessageExample {
       ['receive_date' => (date('Y') - 1) . '-03-03', 'total_amount' => 800.10, 'contribution_extra.original_currency' => 'CAD'],
       ['receive_date' => (date('Y') - 1) . '-05-04', 'total_amount' => 20.00],
       ['receive_date' => (date('Y') - 1) . '-10-21', 'total_amount' => 50.00, 'contribution_extra.original_currency' => 'CAD'],
-      ['receive_date' => (date('Y') - 1) . '-05-04', 'total_amount' => 20.00,  'financial_type_id:name' => 'Endowment Gift'],
+      ['receive_date' => (date('Y') - 1) . '-05-04', 'total_amount' => 20.00, 'financial_type_id:name' => 'Endowment Gift'],
     ];
     foreach ($contributions as $index => $contribution) {
       $contributions[$index] = array_merge([

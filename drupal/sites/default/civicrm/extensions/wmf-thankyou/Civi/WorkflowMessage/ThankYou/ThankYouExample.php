@@ -27,14 +27,14 @@ class ThankYouExample extends WorkflowMessageExample {
       ];
       yield [
         'name' => 'workflow/' . $workflow . '/EUR',
-        'title' => $label  . ' (EUR)',
+        'title' => $label . ' (EUR)',
         'tags' => ['preview'],
         'workflow' => $workflow,
         'example' => 'EUR',
       ];
       yield [
         'name' => 'workflow/' . $workflow . '/CAD',
-        'title' => $label  . ' (CAD)',
+        'title' => $label . ' (CAD)',
         'tags' => ['preview'],
         'workflow' => $workflow,
         'example' => 'CAD',
@@ -52,49 +52,49 @@ class ThankYouExample extends WorkflowMessageExample {
       'title' => 'Thank you for stock',
       'tags' => ['preview'],
       'workflow' => 'thank_you',
-      'example' =>'stock',
+      'example' => 'stock',
     ];
     yield [
       'name' => 'workflow/endowment_thank_you/stock',
       'title' => 'Thank you for stock',
       'tags' => ['preview'],
       'workflow' => 'endowment_thank_you',
-      'example' =>'stock',
+      'example' => 'stock',
     ];
     yield [
       'name' => 'workflow/thank_you/delayed',
       'title' => 'Thank you (delayed)',
       'tags' => ['preview'],
       'workflow' => 'thank_you',
-      'example' =>'delayed',
+      'example' => 'delayed',
     ];
     yield [
       'name' => 'workflow/thank_you/recurring',
       'title' => 'Thank you (recurring)',
       'tags' => ['preview'],
       'workflow' => 'thank_you',
-      'example' =>'recurring',
+      'example' => 'recurring',
     ];
     yield [
       'name' => 'workflow/thank_you/recurring_annual',
       'title' => 'Thank you (annual recurring)',
       'tags' => ['preview'],
       'workflow' => 'thank_you',
-      'example' =>'recurring_annual',
+      'example' => 'recurring_annual',
     ];
     yield [
       'name' => 'workflow/thank_you/restarted',
       'title' => 'Thank you (restarted recurring)',
       'tags' => ['preview'],
       'workflow' => 'thank_you',
-      'example' =>'restarted',
+      'example' => 'restarted',
     ];
     yield [
       'name' => 'workflow/endowment_thank_you/retirement',
       'title' => 'Endowment Thank you (retirement gift source)',
       'tags' => ['preview'],
       'workflow' => 'endowment_thank_you',
-      'example' =>'retirement',
+      'example' => 'retirement',
     ];
   }
 
@@ -129,6 +129,7 @@ class ThankYouExample extends WorkflowMessageExample {
    * Add relevant example data.
    *
    * @param \Civi\WorkflowMessage\ThankYou|\Civi\WorkflowMessage\EndowmentThankYou|\Civi\WorkflowMessage\MonthlyConvert $messageTemplate
+   * @param $example
    *
    * @throws \CRM_Core_Exception
    */
