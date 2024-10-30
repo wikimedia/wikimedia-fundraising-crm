@@ -24,6 +24,8 @@ use Civi\Api4\Exception\EOYEmail\NoContributionException;
  * @method $this setIsValidDonorName(bool $isValidDonorName)
  * @method array setTotals()
  * @method $this setYear(?int $year)
+ * @method $this setStartDateTime(?string $startDateTime)
+ * @method $this setEndDateTime(?string $endDateTime)
  */
 class EOYThankYou extends GenericWorkflowMessage {
   public const WORKFLOW = 'eoy_thank_you';

@@ -13,9 +13,40 @@ class EOYThankYouExample extends WorkflowMessageExample {
       'name' => implode('/', [
         'workflow',
         $this->getWorkflowName(),
-        $this->getExampleName()
+        $this->getExampleName(),
       ]),
       'title' => ts('End of year'),
+      'tags' => ['preview'],
+    ];
+    yield [
+      'name' => implode('/', [
+        'workflow',
+        $this->getWorkflowName(),
+        'custom_range',
+      ]),
+      'start_date' => '2023-04-09 12:34:78',
+      'end_date' => '2023-04-09 12:34:78',
+      'title' => ts('Custom Range'),
+      'tags' => ['preview'],
+    ];
+    yield [
+      'name' => implode('/', [
+        'workflow',
+        $this->getWorkflowName(),
+        'fron_date',
+      ]),
+      'start_date' => '2023-04-09 12:34:78',
+      'title' => ts('From specific date (note it adds today as the end here)'),
+      'tags' => ['preview'],
+    ];
+    yield [
+      'name' => implode('/', [
+        'workflow',
+        $this->getWorkflowName(),
+        'before_date',
+      ]),
+      'end_date' => '2023-04-09 12:34:78',
+      'title' => ts('Before specific date'),
       'tags' => ['preview'],
     ];
   }
@@ -39,7 +70,11 @@ class EOYThankYouExample extends WorkflowMessageExample {
   public function build(array &$example): void {
     $message = new EOYThankYou();
     $message->setContact(DemoData::example('entity/Contact/Alex'));
-    $message->setYear(date('Y') - 1);
+    $message->setStartDateTime($example['start_date'] ?? '');
+    $message->setEndDateTime($example['end_date'] ?? '');
+    if (empty($example['end_date']) && empty($example['start_date'])) {
+      $message->setYear(date('Y') - 1);
+    }
     $message->setActiveRecurring(TRUE);
     $message->setCancelledRecurring(TRUE);
     $message->setContributions($this->getContributions());
