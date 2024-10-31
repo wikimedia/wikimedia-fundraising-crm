@@ -33,7 +33,7 @@ class EOYThankYouExample extends WorkflowMessageExample {
       'name' => implode('/', [
         'workflow',
         $this->getWorkflowName(),
-        'fron_date',
+        'from_date',
       ]),
       'start_date' => '2023-04-09 12:34:78',
       'title' => ts('From specific date (note it adds today as the end here)'),
