@@ -21,6 +21,9 @@ use Civi\Api4\WorkflowMessage;
  * @method $this setYear(int $year) Set the year
  * @method int getLimit() Get the limit
  * @method $this setLimit(int $limit) Set the limit
+ * @method $this setStartDateTime(string $dateTime)
+ * @method $this setEndDateTime(string $dateTime)
+ * @method $this setDateRelative(string $dateString)
  */
 class Render extends AbstractAction {
 
@@ -36,11 +39,24 @@ class Render extends AbstractAction {
   /**
    * Year.
    *
-   * Required.
-   *
    * @var int
    */
   protected $year;
+
+  /**
+   * @var string
+   */
+  protected $startDateTime;
+
+  /**
+   * @var string
+   */
+  protected $dateRelative;
+
+  /**
+   * @var string
+   */
+  protected $endDateTime;
 
   /**
    * Limit.
@@ -55,10 +71,36 @@ class Render extends AbstractAction {
   /**
    * Get the year, defaulting to last year.
    *
-   * @return int
+   * @return string
    */
-  protected function getYear(): int {
-    return $this->year ?? (date('Y') - 1);
+  protected function getStartDate(): string {
+    if ($this->dateRelative) {
+      [$relativeTerm, $unit] = explode('.', $this->dateRelative);
+      return \CRM_Utils_Date::relativeToAbsolute($relativeTerm, $unit)['from'];
+    }
+    return (string) $this->startDateTime;
+  }
+
+  /**
+   * Get the year, defaulting to last year.
+   *
+   * @return string
+   */
+  protected function getEndDate(): string {
+    if ($this->dateRelative) {
+      [$relativeTerm, $unit] = explode('.', $this->dateRelative);
+      return \CRM_Utils_Date::relativeToAbsolute($relativeTerm, $unit)['to'] . ' 23:59:59';
+    }
+    return (string) $this->endDateTime;
+  }
+
+  /**
+   * Get the year, defaulting to last year.
+   *
+   * @return null|int
+   */
+  protected function getYear(): ?int {
+    return $this->year ?? NULL;
   }
 
   /**
@@ -116,6 +158,8 @@ class Render extends AbstractAction {
       'contactIDs' => $contactDetails['ids'],
       'contactID' => end($contactDetails['ids']),
       'locale' => $contactDetails['language'],
+      'startDateTime' => $this->getStartDate(),
+      'endDateTime' => $this->getEndDate(),
     ];
 
     try {

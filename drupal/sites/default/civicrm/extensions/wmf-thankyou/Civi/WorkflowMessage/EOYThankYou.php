@@ -23,8 +23,9 @@ use Civi\Api4\Exception\EOYEmail\NoContributionException;
  * @method $this setContributions(array $contributions)
  * @method $this setIsValidDonorName(bool $isValidDonorName)
  * @method array setTotals()
- * @method int getYear()
- * @method $this setYear(int $year)
+ * @method $this setYear(?int $year)
+ * @method $this setStartDateTime(?string $startDateTime)
+ * @method $this setEndDateTime(?string $endDateTime)
  */
 class EOYThankYou extends GenericWorkflowMessage {
   public const WORKFLOW = 'eoy_thank_you';
@@ -52,10 +53,109 @@ class EOYThankYou extends GenericWorkflowMessage {
    *
    * @var int
    * @scope tplParams
+   */
+  public $year;
+
+  /**
+   * The start date-time to send emails for.
+   *
+   * @var string
+   * @scope tplParams
    *
    * @required
    */
-  public $year;
+  public string $startDateTime = '';
+
+  /**
+   * The end date-time to send emails for.
+   *
+   * @var string
+   * @scope tplParams
+   *
+   * @required
+   */
+  public string $endDateTime = '';
+
+  /**
+   * Should the start and end date be shown.
+   *
+   * @var bool
+   * @scope tplParams
+   */
+  public bool $isShowStartAndEndDates = FALSE;
+
+  public function getIsShowStartAndEndDates(): bool {
+    if ($this->isShowStartAndEndDates) {
+      return TRUE;
+    }
+    if ($this->year) {
+      return FALSE;
+    }
+    return $this->startDateTime || $this->endDateTime;
+  }
+
+  public function getStartDateTime(): string {
+    if ($this->startDateTime) {
+      return $this->startDateTime;
+    }
+    if ($this->getYear()) {
+      return $this->getYear() . '-01-01 10:00:00';
+    }
+    return '';
+  }
+
+  public function getYear(): string {
+    if ($this->year) {
+      return $this->year;
+    }
+    $lastYear = date('Y') - 1;
+    if (date('Ymd', strtotime($this->startDateTime)) === ($lastYear . '0101')
+      &&
+      (date('Ymd', strtotime($this->endDateTime)) === $lastYear . '1231')
+    ) {
+      return $lastYear;
+    }
+    return '';
+  }
+
+  /**
+   * Get the start date for querying purposes.
+   *
+   * They want to know since the beginning of time... or at least since the beginning of our database.
+   * Let's use 2000 as a stand in cos nothing really happened in the
+   * universe before then.
+   *
+   * @return string
+   */
+  private function getQueryStartDateTime(): string {
+    return $this->getStartDateTime() ?: '2000-01-01';
+  }
+
+  /**
+   * Get the end date for querying purposes.
+   *
+   * Currently this is this is the same as the display date as
+   * I made an executive decision people would want to see when their
+   * letters cover up to - but that might be replaced by a real decision
+   * in future so it seemed worth keeping the symetry.
+   *
+   * @return string
+   */
+  private function getQueryEndDateTime(): string {
+    return $this->getEndDateTime();
+  }
+
+  public function getEndDateTime(): string {
+    if ($this->endDateTime) {
+      return $this->endDateTime;
+    }
+    if ($this->getYear()) {
+      return ($this->getYear() + 1) . '-01-01 10:00:00';
+    }
+    // It is open-ended - but
+    // not into the future...
+    return date('Y-m-d 23:59:59');
+  }
 
   /**
    * Contributions to be receipted.
@@ -222,14 +322,14 @@ class EOYThankYou extends GenericWorkflowMessage {
         ->addWhere('financial_type_id:name', '!=', 'Refund')
         ->addWhere('contact_id.is_deleted', '=', FALSE)
         ->addWhere('receive_date', 'BETWEEN', [
-          $this->getYear() . '-01-01 10:00:00',
-          ($this->getYear() + 1). '-01-01 10:00:00',
+          $this->getQueryStartDateTime(),
+          $this->getQueryEndDateTime(),
         ])
         ->addSelect('id', 'contribution_extra.original_currency', 'financial_type_id:name', 'contribution_extra.original_amount', 'contribution_recur_id', 'receive_date', 'total_amount')
         ->addOrderBy('receive_date', 'ASC')
         ->execute();
       if (empty($this->contributions)) {
-        throw new NoContributionException('No contributions in the given year - ' . $this->getYear() . ' for contact/s ' . implode(',', $this->getContactIDs()));
+        throw new NoContributionException('No contributions in the given time from - ' . date('Y-m-d H:i:s', strtotime($this->getQueryStartDateTime())) . ' to ' . date('Y-m-d H:i:s', strtotime($this->getQueryEndDateTime())) . ' for contact/s ' . implode(',', $this->getContactIDs()));
       }
     }
     if (isset($this->contributions[0])) {

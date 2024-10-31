@@ -12,6 +12,12 @@ use CRM_Sendannualtyemail_AnnualThankYou as AnnualThankYou;
  * @see https://wiki.civicrm.org/confluence/display/CRMDOC/QuickForm+Reference
  */
 class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
+  private int $contactID;
+
+  public function preProcess(): void {
+    $this->contactID = (int) CRM_Utils_Request::retrieve('cid', 'Int', $this, TRUE);
+    CRM_Core_Resources::singleton()->addVars('coreForm', ['contact_id' => (int) $this->contactID]);
+  }
 
   /**
    * Rendered message.
@@ -25,30 +31,19 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function buildQuickForm(): void {
-
     // add form elements
     $this->add(
       'select',
       'year',
       'Year',
       $this->getYearOptions(),
-      TRUE,
-      [
-        'onChange' => "CRM.api4('EOYEmail', 'render', {
-  contactID: " . $this->getContactID() . ",
-  year: this.value
-}).then(function(results) {
-  for (key in results) {z
-     CRM.$('#eoy_message_message').html(results[key]['html']);
-     CRM.$('#eoy_message_subject').html(results[key]['subject']);
-     break;
-  }
+      FALSE,
+    );
 
-}, function(failure) {
-  CRM.$('#eoy_message_message').html(failure['error_message']);
-});",
-      ]);
-    $this->setDefaults(['year' => date('Y') - 1]);
+    $this->addDatePickerRange('date_range', 'Specify date range');
+    $this->setDefaults([
+      'date_range_relative' => 'previous.year',
+    ]);
     $this->addButtons([
       [
         'type' => 'submit',
@@ -58,8 +53,6 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
       ],
     ]);
 
-    // export form elements
-    $this->assign('elementNames', $this->getRenderableElementNames());
     $this->setMessage();
     parent::buildQuickForm();
   }
@@ -98,9 +91,17 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
    * @throws \CRM_Core_Exception
    */
   public function postProcess(): void {
-    // send_email
-    AnnualThankYou::send($this->getContactID(), $this->getSubmittedValue('year'));
-    CRM_Core_Session::setStatus('An email with all contributions from ' . $this->getSubmittedValue('year') . '  will be sent to this contact if they contributed that year.');
+    $sent = Civi\Api4\EOYEmail::send(FALSE)
+      ->setContactID($this->getContactID())
+      ->setStartDateTime($this->getStartDate())
+      ->setEndDateTime($this->getEndDate())
+      ->execute()->first();
+    if ($sent['sent']) {
+      CRM_Core_Session::setStatus('An email with all contributions from ' . date('Y-m-d H:i:s', strtotime($this->getStartDate())) . ' to ' . date('Y-m-d H:i:s', strtotime($this->getEndDate() ?: 'now')) . '  has been sent.');
+    }
+    else {
+      CRM_Core_Session::setStatus('Unable to send email as contributions not found from  ' . date('Y-m-d H:i:s', strtotime($this->getStartDate())) . ' to ' . date('Y-m-d H:i:s', strtotime($this->getEndDate() ?: 'now')));
+    }
     parent::postProcess();
   }
 
@@ -116,45 +117,33 @@ class CRM_Sendannualtyemail_Form_SendEmail extends CRM_Core_Form {
     return $options;
   }
 
-  /**
-   * Set form defaults.
-   *
-   * @return array
-   */
-  public function setDefaultValues(): array {
-    if (!empty($this->message)) {
-      return ['year' => date('Y') - 1];
+  private function getStartDate() {
+    if ($this->isRelativeDate()) {
+      $dateParts = explode('.', $this->getSubmittedValue('date_range_relative'));
+      $dateRange = \CRM_Utils_Date::relativeToAbsolute($dateParts[0], $dateParts[1]);
+      return $dateRange['from'];
     }
-    return [];
+    return $this->getSubmittedValue('date_range_low');
   }
 
-  /**
-   * Get the fields/elements defined in this form.
-   *
-   * @return array (string)
-   */
-  public function getRenderableElementNames(): array {
-    // The _elements list includes some items which should not be
-    // auto-rendered in the loop -- such as "qfKey" and "buttons".  These
-    // items don't have labels.  We'll identify renderable by filtering on
-    // the 'label'.
-    $elementNames = [];
-    foreach ($this->_elements as $element) {
-      /** @var HTML_QuickForm_Element $element */
-      $label = $element->getLabel();
-      if (!empty($label)) {
-        $elementNames[] = $element->getName();
-      }
+  private function getEndDate() {
+    if ($this->isRelativeDate()) {
+      $dateParts = explode('.', $this->getSubmittedValue('date_range_relative'));
+      $dateRange = \CRM_Utils_Date::relativeToAbsolute($dateParts[0], $dateParts[1]);
+      return $dateRange['to'];
     }
-    return $elementNames;
+    return $this->getSubmittedValue('date_range_high');
+  }
+
+  private function isRelativeDate(): bool {
+    return (bool) $this->getSubmittedValue('date_range_relative');
   }
 
   /**
    * @return int
-   * @throws \CRM_Core_Exception
    */
   public function getContactID(): int {
-    return CRM_Utils_Request::retrieveValue('cid', 'Integer', NULL, TRUE);
+    return $this->contactID;
   }
 
 }

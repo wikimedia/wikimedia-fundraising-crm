@@ -26,17 +26,27 @@ use Exception;
  * @method $this setTimeLimit(int $timeLimit) Set the time limit in seconds
  * @method int getLimit() Get the limit
  * @method $this setLimit(int $limit) Set the limit
+ * @method $this setStartDateTime(string $dateTime)
+ * @method $this setEndDateTime(string $dateTime)
  */
 class Send extends AbstractAction {
 
   /**
    * Year.
    *
-   * Required.
-   *
    * @var int
    */
   protected $year;
+
+  /**
+   * @var string
+   */
+  protected $startDateTime;
+
+  /**
+   * @var string
+   */
+  protected $endDateTime;
 
   /**
    * @var array
@@ -65,12 +75,12 @@ class Send extends AbstractAction {
   protected $contactID;
 
   /**
-   * Get the year, defaulting to last year.
+   * Get the year, if set.
    *
-   * @return int
+   * @return int|null
    */
-  protected function getYear(): int {
-    return $this->year ?? (date('Y') - 1);
+  protected function getYear(): ?int {
+    return $this->year;
   }
 
   /**
@@ -113,6 +123,8 @@ class Send extends AbstractAction {
         $emails = (array) EOYEmail::render(FALSE)
           ->setLimit(1)
           ->setYear($this->getYear())
+          ->setStartDateTime($this->startDateTime)
+          ->setEndDateTime($this->endDateTime)
           ->setContactID($this->getContactID())
           ->execute();
       }
@@ -149,14 +161,14 @@ class Send extends AbstractAction {
             2 => [$this->getYear(), 'Integer'],
           ]);
         }
-          // Should be just phpMailer exception but need to test post changes in phpmailer to remove wmf exception.
+        // Should be just phpMailer exception but need to test post changes in phpmailer to remove wmf exception.
         catch (Exception $e) {
           // Invalid email address or something
           $this->markFailed($email['to_address'], 'wmf_eoy_receipt send error', $e->getMessage());
           ++$failed;
         }
       }
-      $attempted ++;
+      $attempted++;
     }
 
     Civi::log('wmf')->info('wmf_eoy_receipt Successfully sent {succeeded} messages, failed to send {failed} messages.', [
@@ -167,7 +179,7 @@ class Send extends AbstractAction {
       'sent' => $succeeded,
       'failed' => $failed,
       'total_attempted' => $succeeded + $failed,
-      'remaining' => CRM_Core_DAO::singleValueQuery("SELECT COUNT(*) FROM wmf_eoy_receipt_donor WHERE status = 'queued' AND year = " . $this->getYear()),
+      'remaining' => $this->getContactID() ? 0 : CRM_Core_DAO::singleValueQuery("SELECT COUNT(*) FROM wmf_eoy_receipt_donor WHERE status = 'queued' AND year = " . $this->getYear()),
       'year' => $this->getYear(),
       'time_taken' => time() - $initialTime,
       // May as well return this if set in case they think they passed it & didn't.
