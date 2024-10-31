@@ -17,21 +17,6 @@
       <Visibility>Shared</Visibility>
       <ParentTemplateId>419</ParentTemplateId>
     </Mailing>
-    <Mailing>
-      <MailingId>737</MailingId>
-      <ReportId>841</ReportId>
-      <ScheduledTS>2017-06-02 08:00:00.0</ScheduledTS>
-      <MailingName><![CDATA[Another riveting email]]></MailingName>
-      <ListName><![CDATA[another list)]]></ListName>
-      <ListId>824</ListId>
-      <ParentListId>238</ParentListId>
-      <UserName>Mickey Mouse</UserName>
-      <SentTS>2017-06-02 08:02:20.0</SentTS>
-      <NumSent>6041</NumSent>
-      <Subject><![CDATA[Whatsup doc]]></Subject>
-      <Visibility>Shared</Visibility>
-      <ParentTemplateId>323</ParentTemplateId>
-    </Mailing>
   </RESULT>
 
 

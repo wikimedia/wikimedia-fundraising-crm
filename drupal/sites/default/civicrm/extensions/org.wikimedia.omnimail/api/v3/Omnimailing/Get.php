@@ -32,7 +32,14 @@ function civicrm_api3_omnimailing_get($params) {
     'EndTimeStamp' => strtotime($params['end_date']),
   ];
 
-  $mailings = $mailer->getMailings($mailerParameters)->getResponse();
+  $mailings = (array) $mailer->getMailings($mailerParameters)->getResponse();
+  // Now do the fetch again getting the 'non campaign' (their jargon) mailings.
+  // This is slightly explained at https://phabricator.wikimedia.org/T361621
+  // The subset of mailings returned with no status passed in does not intersect with the
+  // status when it is passed in - I opted to always get both types rather than use
+  // a variable to choose which type - given we barely understand the difference.
+  $mailerParameters['statuses'] = ['CAMPAIGN_ACTIVE', 'CAMPAIGN_COMPLETED', 'CAMPAIGN_CANCELLED'];
+  $mailings = array_merge($mailings, (array) $mailer->getMailings($mailerParameters)->getResponse());
   $results = [];
   foreach ($mailings as $mailing) {
     /* @var \Omnimail\Silverpop\Responses\Mailing $mailing */

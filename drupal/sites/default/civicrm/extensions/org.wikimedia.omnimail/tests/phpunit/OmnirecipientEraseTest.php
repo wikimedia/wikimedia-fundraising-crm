@@ -29,7 +29,7 @@ class OmnirecipientEraseTest extends OmnimailBaseTestClass {
   /**
    * Example: Test that a version is returned.
    */
-  public function testOmnirecipientErase() {
+  public function testOmnirecipientErase(): void {
     $this->setUpForErase(2);
 
     $this->callAPISuccess('Omnirecipient', 'erase', [
