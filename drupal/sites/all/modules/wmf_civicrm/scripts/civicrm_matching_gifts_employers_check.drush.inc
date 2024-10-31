@@ -264,7 +264,7 @@ function send_matching_gifts_update_email($currentEmployerFilePath) {
   $email['html'] .= $currentEmployerFilePath;
   $email['html'] .= '<br/>You may find it convenient to run updateemployer.sh ';
   $email['html'] .= 'checked into the /var/lib/git/tools.git repo on the puppetmaster host.<br/>';
-  $email['html'] .= '<a href="https://www.mediawiki.org/wiki/Fundraising_tech/Deployment#Matching_gifts_employers_list">';
+  $email['html'] .= '<a href="https://wikitech.wikimedia.org/wiki/Fundraising/Cluster/Deployments#Matching_gifts_employers_list">';
   $email['html'] .= 'Deploy instructions</a>';
 
 
