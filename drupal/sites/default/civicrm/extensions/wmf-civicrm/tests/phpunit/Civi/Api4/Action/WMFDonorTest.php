@@ -125,7 +125,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    */
   public function testWMFDonorGetAnnualRecurSegments(): void {
     $this->createDonor(['total_amount' => 2]);
-    $annualDonationDate = date('Y-m-d', strtotime('-10 months', strtotime($this->currentDate)));
+    $annualDonationDate = date('Y-m-d', strtotime('-8 months', strtotime($this->currentDate)));
     $monthlyDonationDate = date('Y-m-d', strtotime('-7 months', strtotime($this->currentDate)));
     $this->createTestEntity('ContributionRecur', [
       'contact_id' => $this->ids['Contact']['donor'],
