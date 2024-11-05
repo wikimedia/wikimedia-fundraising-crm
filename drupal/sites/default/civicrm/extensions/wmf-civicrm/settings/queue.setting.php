@@ -32,6 +32,21 @@ return [
     ],
     'settings_pages' => ['wmf-queue' => ['weight' => 20]],
   ],
+  'wmf_matching_gifts_employer_data_update_email' => [
+    'name' => 'wmf_matching_gifts_employer_data_update_email',
+    'title' => E::ts('Email address to send updates to'),
+    'description' => E::ts('Email address to send matching gifts employer data updates to.'),
+    'help_text' => '',
+    'html_type' => 'text',
+    'type' => 'String',
+    'is_domain' => 1,
+    'default' => 'fr-tech@wikimedia.org',
+    'is_contact' => 0,
+    'html_attributes' => [
+      'size' => 80,
+    ],
+    'settings_pages' => ['wmf-queue' => ['weight' => 50]],
+  ],
   'wmf_failmail_from' => [
     'name' => 'wmf_failmail_from',
     'title' => E::ts('FailMail from address'),
