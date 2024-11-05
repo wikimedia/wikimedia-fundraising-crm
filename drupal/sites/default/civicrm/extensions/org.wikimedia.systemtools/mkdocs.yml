@@ -1,0 +1,31 @@
+site_name: CiviCRM System tools
+repo_url: https://lab.civicrm.org/extensions/systemtools
+site_description: 'Helpers for investigating performance issues.'
+site_author: 'Eileen'
+theme:
+  name:
+    material
+
+nav:
+  - Home: index.md
+  - Redis: redis.md
+  - SQL query parsing: sql-parsing.md
+  - SQL user information: sql-user-information.md
+
+markdown_extensions:
+  - attr_list
+  - admonition
+  - def_list
+  - pymdownx.highlight:
+      guess_lang: False
+  - toc:
+      permalink: True
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.tilde
+  - pymdownx.betterem
+  - pymdownx.mark
+
+plugins:
+  - search:
+      lang: en
