@@ -58,13 +58,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
     // route the message to the appropriate handler depending on transaction type
     if ($messageObject->isPayment()) {
-      if (wmf_civicrm_get_contributions_from_gateway_id($message['gateway'], $message['gateway_txn_id'])) {
-        Civi::log('wmf')->notice('recurring: Duplicate contribution: {gateway}-{gateway_txn_id}.', [
-          'gateway' => $message['gateway'],
-          'gateway_txn_id' => $message['gateway_txn_id'],
-        ]);
-        throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution already exists. Ignoring message.");
-      }
       $this->importSubscriptionPayment($messageObject, $message);
     }
     else {
