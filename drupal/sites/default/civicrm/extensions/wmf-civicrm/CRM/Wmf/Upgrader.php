@@ -2626,6 +2626,21 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Fix value for 'Other Offline' gift data option
+   * @return bool
+   * @throws CRM_Core_Exception
+   */
+  public function upgrade_4590(): bool {
+    CRM_Core_DAO::executeQuery(
+      "UPDATE civicrm_value_1_gift_data_7 SET channel='Other Offline' WHERE channel='1'"
+    );
+    CRM_Core_DAO::executeQuery(
+      "UPDATE civicrm_option_value SET value='Other Offline' WHERE name='Other Offline'"
+    );
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
