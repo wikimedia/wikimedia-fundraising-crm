@@ -55,7 +55,7 @@ class PreferencesLink {
     }
   }
 
-  protected static function addContactAndChecksumToUrl(string $url, int $contactID, string $checksum): string {
+  public static function addContactAndChecksumToUrl(string $url, int $contactID, string $checksum): string {
     $parsed = \CRM_Utils_Url::parseUrl($url);
 
     // Would be nice to have a Util that just let me add query bits and figured out if the URL already had a QS
