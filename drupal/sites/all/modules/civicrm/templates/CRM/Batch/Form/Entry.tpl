@@ -52,7 +52,7 @@
       {/if}
       {foreach from=$fields item=field key=fieldName}
         <div class="crm-grid-cell">
-          {if $field.name|substr:0:11 ne 'soft_credit' and $field.name ne 'trxn_id'}
+          {if $field.name ne 'trxn_id' && $field.name ne 'soft_credit_amount' && $field.name ne 'soft_credit'}
           {copyIcon name=$field.name title=$field.title}
           {/if}{$field.title}
         </div>
