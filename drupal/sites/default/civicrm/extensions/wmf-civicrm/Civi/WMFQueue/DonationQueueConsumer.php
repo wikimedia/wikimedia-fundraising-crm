@@ -100,6 +100,8 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
     // If the contribution has already been imported, this check will
     // throw an exception that says to drop it entirely, not re-queue.
+    // @todo - remove this line - the same check is done in `doImport()`
+    // when validate is called on the message.
     $this->checkForDuplicates($message);
 
     // If more information is available, find it from the pending database
@@ -592,8 +594,8 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Throw an exception if a contribution already exists
    *
-   * @todo - perhaps this could be a function on the message class
-   * e.g validateNotExists().
+   * @todo - remove this function - the same check is done in `doImport()`
+   * when validate is called on the message.
    *
    * @param array $message
    *
