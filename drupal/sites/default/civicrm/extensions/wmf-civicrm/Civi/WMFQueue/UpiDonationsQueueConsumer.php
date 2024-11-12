@@ -119,7 +119,7 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
    * Insert a new contribution_recur record, payment_token record, and if
    * necessary a new contact record.
    *
-   * @param $recurMessage
+   * @param RecurDonationMessage $recurMessage
    *
    * @return int the resulting contribution_recur record's ID
    * @throws \CRM_Core_Exception
@@ -128,7 +128,7 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
   protected function insertContributionRecur($recurMessage): int {
 
     $normalized = $recurMessage->normalize();
-    $normalized = wmf_civicrm_add_contribution_tracking_if_missing($normalized);
+    $normalized = $this->addContributionTrackingIfMissing($normalized);
     $recurMessage->validate();
 
     // Create (or update) the contact
