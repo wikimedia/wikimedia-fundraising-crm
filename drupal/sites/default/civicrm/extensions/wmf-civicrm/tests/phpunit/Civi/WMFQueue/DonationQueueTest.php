@@ -85,6 +85,25 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecipientID(): void {
+    $message = $this->processDonationMessage([
+      'recipient_id' => 1234567891011,
+    ]);
+    $contribution = $this->getContributionForMessage($message);
+    $phones = Phone::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->addSelect('phone', 'phone_data.*')
+      ->execute();
+    $this->assertCount(1, $phones);
+    $phone = $phones->first();
+    $this->assertEquals(1234567891011, $phone['phone_data.recipient_id']);
+    $this->assertEquals('Acoustic', $phone['phone_data.phone_source']);
+  }
+
+  /**
    * If 'invoice_id' is in the message, don't stuff that field with order_id
    *
    * @throws \CRM_Core_Exception

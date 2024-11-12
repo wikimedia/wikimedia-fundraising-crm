@@ -314,6 +314,18 @@ class Message {
       $phoneFields['phone_primary.phone'] = $this->message['phone'];
       $phoneFields['phone_primary.phone_type_id:name'] = 'Phone';
     }
+    // The recipient ID is a value sent from Acoustic which can be used to look
+    // up the actual phone number.
+    if (!empty($this->message['recipient_id'])) {
+      $phoneFields['phone_primary.phone_data.recipient_id'] = $this->message['recipient_id'];
+      $phoneFields['phone_primary.phone_data.phone_source'] = 'Acoustic';
+      $phoneFields['phone_primary.phone_type_id:name'] = 'Mobile';
+      // Use a dummy value for the mandatory phone field.
+      $phoneFields['phone_primary.phone'] = $phoneFields['phone_primary.phone'] ?? 99999;
+    }
+    if (!empty($phoneFields)) {
+      $phoneFields['phone_primary.phone_data.update_date'] = 'now';
+    }
     return $phoneFields;
   }
 
