@@ -266,7 +266,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
           'ts' => $date,
           'contribution_id' => $contribution_id,
         ];
-        $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking($tracking);
+        $contribution_tracking_id = $this->generateContributionTracking($tracking);
         \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Got new contribution tracking id, {contribution_tracking_id}', ['contribution_tracking_id' => $contribution_tracking_id]);
       }
       return $contribution_tracking_id;
