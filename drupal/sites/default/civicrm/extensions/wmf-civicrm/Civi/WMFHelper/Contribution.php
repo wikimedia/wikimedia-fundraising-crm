@@ -183,8 +183,7 @@ class Contribution {
    *
    */
   private static function api3FieldName($field_name, $group_name = NULL) {
-    $custom_fields = wmf_civicrm_get_custom_field_map([$field_name], $group_name);
-    return $custom_fields[$field_name];
+    return 'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID($field_name, $group_name);
   }
 
   /**
