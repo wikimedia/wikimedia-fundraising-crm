@@ -24,6 +24,12 @@ CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'label' => ts('Relationship'),
   'value' => 'Relationship',
 ]);
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'cg_extend_objects',
+  'name' => 'civicrm_phone',
+  'label' => ts('Phone'),
+  'value' => 'Phone',
+]);
 // FIXME: Should we do these in an ActivityType.mgd.php?
 $mg_year_end_appeal_activity_type = CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'option_group_id' => 'activity_type',
@@ -285,6 +291,17 @@ return [
       'table_name' => 'civicrm_value_address_data',
     ],
     'fields' => _wmf_civicrm_get_address_data_fields(),
+  ],
+  'phone_data' => [
+    'group' => [
+      'name' => 'phone_data',
+      'title' => 'Phone Data',
+      'extends' => 'Phone',
+      'style' => 'Inline',
+      'is_active' => TRUE,
+      'table_name' => 'civicrm_value_phone_data',
+    ],
+    'fields' => _wmf_civicrm_get_phone_data_fields(),
   ],
   'donor_advised_fund' => [
     'group' => [
@@ -2120,6 +2137,44 @@ function _wmf_civicrm_get_activity_tracking_fields(): array {
       'text_length' => 255,
       'column_name' => 'source',
       'is_view' => 1,
+    ],
+  ];
+}
+
+function _wmf_civicrm_get_phone_data_fields(): array {
+  return [
+    'phone_source' => [
+      'name' => 'phone_source',
+      'label' => 'Source',
+      'html_type' => 'Select',
+      'data_type' => 'String',
+      'text_length' => 255,
+      'column_name' => 'source',
+      'option_values' => [
+        'acoustic' => 'Acoustic',
+        'staff' => 'Staff Supplied',
+        'donor' => 'Donor Supplied',
+        'paypal' => 'PayPal Account',
+        'fundraiseup' => 'Fundraise Up',
+      ],
+    ],
+    'recipient_id' => [
+      'name' => 'recipient_id',
+      'label' => 'Acoustic recipient ID',
+      'data_type' => 'Float',
+      'html_type' => 'Text',
+      'column_name' => 'recipient_id',
+    ],
+    'phone_update_date' => [
+      'name' => 'phone_update_date',
+      'label' => 'Update date',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'text_length' => 255,
+      'date_format' => 'yy-mm-dd',
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'column_name' => 'update_date',
     ],
   ];
 }
