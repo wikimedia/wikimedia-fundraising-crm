@@ -522,6 +522,20 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertEquals(1, $phone['is_primary']);
     $this->assertEquals(\CRM_Core_BAO_LocationType::getDefault()->id, $phone['location_type_id']);
     $this->assertEquals('Phone', $phone['phone_type_id:name']);
+
+    $msg['phone'] = 911;
+    $msg['gateway_txn_id'] = 111;
+    $this->processDonationMessage($msg);
+    $contribution2 = $this->getContributionForMessage($msg);
+    $this->assertEquals($contribution2['contact_id'], $contribution['contact_id']);
+
+    // Now check the phone is unchanged - this is historical behaviour, for better or worse.
+    $phone = Phone::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->addSelect('location_type_id', 'phone', 'is_primary', 'phone_type_id:name')
+      ->execute()->single();
+
+    $this->assertEquals($phoneNumber, $phone['phone']);
   }
 
   /**

@@ -172,6 +172,7 @@ class DonationMessage extends Message {
       }
     }
     $msg += $this->getCustomFields();
+    $msg += $this->getPhoneFields();
 
     if ($this->isEndowmentGift()) {
       $msg['Gift_Data.Fund'] = 'Endowment Fund';
