@@ -9,7 +9,7 @@ require_once 'wmf_civicrm.civix.php';
 use Civi\WMFHook\Activity;
 use Civi\WMFHook\CalculatedData;
 use Civi\WMFHook\Contribution;
-use Civi\WMFHook\ContributionRecurTrigger;
+use Civi\WMFHook\ContactModifiedTrigger;
 use Civi\WMFHook\ContributionSoft;
 use Civi\WMFHook\Import;
 use Civi\WMFHook\ProfileDynamic;
@@ -339,7 +339,7 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   $processor = new CalculatedData();
   $wmfTriggerInfo = $processor->setTableName($tableName)->triggerInfo();
   $info = array_merge($info, $wmfTriggerInfo);
-  $recurProcessor = new ContributionRecurTrigger();
+  $recurProcessor = new ContactModifiedTrigger();
   $recurTriggerInfo = $recurProcessor->setTableName($tableName)->triggerInfo();
   $info = array_merge($info, $recurTriggerInfo);
   $info = Activity::alterTriggerSql($info);
