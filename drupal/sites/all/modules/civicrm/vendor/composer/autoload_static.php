@@ -269,8 +269,8 @@ class ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-message/src',
-            1 => __DIR__ . '/..' . '/psr/http-factory/src',
+            0 => __DIR__ . '/..' . '/psr/http-factory/src',
+            1 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -294,8 +294,8 @@ class ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0
         ),
         'Phrity\\Net\\' => 
         array (
-            0 => __DIR__ . '/..' . '/phrity/net-uri/src',
-            1 => __DIR__ . '/..' . '/phrity/net-stream/src',
+            0 => __DIR__ . '/..' . '/phrity/net-stream/src',
+            1 => __DIR__ . '/..' . '/phrity/net-uri/src',
         ),
         'PhpOffice\\PhpWord\\' => 
         array (
@@ -448,8 +448,8 @@ class ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0
         array (
             'Net' => 
             array (
-                0 => __DIR__ . '/..' . '/pear/net_socket',
-                1 => __DIR__ . '/..' . '/pear/net_smtp',
+                0 => __DIR__ . '/..' . '/pear/net_smtp',
+                1 => __DIR__ . '/..' . '/pear/net_socket',
             ),
         ),
         'M' => 
