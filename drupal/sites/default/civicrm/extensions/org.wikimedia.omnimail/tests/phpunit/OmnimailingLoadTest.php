@@ -30,8 +30,7 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
     $this->assertEquals(2, $mailings['count']);
     $mailing = $this->callAPISuccess('Mailing', 'getsingle', ['hash' => 'sp7877']);
     $this->assertEquals(1, $mailing['is_completed']);
-
-    $this->loadMailings();
+    $this->loadMailings(TRUE);
 
     $mailingReloaded = $this->callAPISuccess('Mailing', 'getsingle', ['hash' => 'sp7877']);
     $this->assertEquals($mailingReloaded['id'], $mailing['id']);
@@ -42,12 +41,12 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
   /**
    * Load mailings for test.
    *
-   * @return array
+   * @param bool $isCached
    *
-   * @throws \CRM_Core_Exception
+   * @return array
    */
-  protected function loadMailings(): array {
-    $responses = $this->getResponses();
+  protected function loadMailings(bool $isCached = FALSE): array {
+    $responses = $this->getResponses($isCached);
     $mailings = $this->callAPISuccess('Omnimailing', 'load', [
       'mail_provider' => 'Silverpop',
       'client' => $this->getMockRequest($responses),
@@ -58,22 +57,30 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
   }
 
   /**
-   * Get the responses with Omnihell enabled.
+   *
+   * @param bool $isCached
    *
    * @return array
    */
-  protected function getResponses(): array {
-    return [
+  protected function getResponses(bool $isCached = FALSE): array {
+    $calls = [
       file_get_contents(__DIR__ . '/Responses/MailingGetResponse1.txt'),
-      file_get_contents(__DIR__ . '/Responses/MailingGetResponse2.txt'),
       file_get_contents(__DIR__ . '/Responses/AggregateGetResponse1.txt'),
-      file_get_contents(__DIR__ . '/Responses/AggregateGetResponse2.txt'),
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse.txt'),
+      // Second 'non-campaign' call.
+      file_get_contents(__DIR__ . '/Responses/MailingGetResponse2.txt'),
+      file_get_contents(__DIR__ . '/Responses/AggregateGetResponse2.txt'),
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
+      // The query look ups are at the end.
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
+    if ($isCached) {
+      // Because these have been retrieved there is no outgoing call here.
+      unset ($calls[2], $calls[5]);
+    }
+    return $calls;
   }
 
 }
