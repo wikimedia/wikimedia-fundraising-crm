@@ -200,4 +200,59 @@ abstract class QueueConsumer extends BaseQueueConsumer {
     ImportStatsCollector::getInstance()->endImportTimer($action);
   }
 
+
+  /**
+   * If we're missing a contribution tracking id, insert new record to the table.
+   * This can happen if a user somehow makes a donation from outside the normal workflow
+   * Historically checks have been ignored as they are completely offline.
+   * T146295 has raised some questions about this.
+   * We respect the recognition of 'payment_method' as being a little bit magic, but
+   * also assume that if you are setting utm_medium or utm_source in your import you
+   * intend them to be recorded.
+   *
+   * @deprecated - needs some more thought / clean up
+   *
+   * @param array $msg
+   *
+   * @return array same message, possibly with contribution_tracking_id set
+   * @throws WMFException
+   */
+  protected function addContributionTrackingIfMissing($msg) {
+    if (isset($msg['contribution_tracking_id'])) {
+      return $msg;
+    }
+    $paymentMethodIsCheckOrEmpty = empty($msg['payment_method']) || strtoupper($msg['payment_method']) == 'CHECK';
+    $hasUtmInfo = !empty($msg['utm_medium']) || !empty($msg['utm_source']);
+    if ($paymentMethodIsCheckOrEmpty && !$hasUtmInfo) {
+      return $msg;
+    }
+    \Civi::log('wmf')->debug('wmf_civicrm: Contribution missing contribution_tracking_id');
+
+    $source = isset($msg['utm_source']) ? $msg['utm_source'] : '..' . $msg['payment_method'];
+    $medium = isset($msg['utm_medium']) ? $msg['utm_medium'] : 'civicrm';
+    $campaign = isset($msg['utm_campaign']) ? $msg['utm_campaign'] : NULL;
+
+    $tracking = [
+      'utm_source' => $source,
+      'utm_medium' => $medium,
+      'utm_campaign' => $campaign,
+      'ts' => wmf_common_date_unix_to_sql($msg['date']),
+    ];
+    if (
+      !empty($msg['country']) &&
+      array_search($msg['country'], \CRM_Core_PseudoConstant::countryIsoCode()) !== FALSE
+    ) {
+      $tracking['country'] = $msg['country'];
+    }
+    try {
+      $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking($tracking);
+    }
+    catch (Exception $e) {
+      throw new WMFException(WMFException::INVALID_MESSAGE, $e->getMessage());
+    }
+    \Civi::log('wmf')->debug('wmf_civicrm: Newly inserted contribution tracking id: {id}', ['id' => $contribution_tracking_id]);
+    $msg['contribution_tracking_id'] = $contribution_tracking_id;
+    return $msg;
+  }
+
 }
