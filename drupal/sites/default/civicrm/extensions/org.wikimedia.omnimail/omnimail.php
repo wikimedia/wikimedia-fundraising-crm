@@ -40,25 +40,6 @@ function omnimail_civicrm_enable() {
 }
 
 /**
- * Implements hook_civicrm_entityTypes.
- *
- * @param array $entityTypes
- *   Registered entity types.
- */
-function omnimail_civicrm_entityTypes(&$entityTypes) {
-  $entityTypes['CRM_Omnimail_DAO_MailingProviderData'] = array(
-    'name' => 'MailingProviderData',
-    'class' => 'CRM_Omnimail_DAO_MailingProviderData',
-    'table' => 'civicrm_mailing_provider_data',
-  );
-  $entityTypes['CRM_Omnimail_DAO_OmnimailJobProgress'] = array (
-    'name' => 'OmnimailJobProgress',
-    'class' => 'CRM_Omnimail_DAO_OmnimailJobProgress',
-    'table' => 'civicrm_omnimail_job_progress',
-  );
-}
-
-/**
  * Add mailing event tab to contact summary screen
  * @param string $tabsetName
  * @param array $tabs
