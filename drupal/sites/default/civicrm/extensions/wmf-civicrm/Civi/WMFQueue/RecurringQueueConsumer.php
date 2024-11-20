@@ -10,6 +10,7 @@ use Civi\Api4\WMFContact;
 use Civi\Core\Exception\DBQueryException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\ContributionTracking;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFQueueMessage\RecurDonationMessage;
@@ -266,7 +267,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
           'ts' => $date,
           'contribution_id' => $contribution_id,
         ];
-        $contribution_tracking_id = wmf_civicrm_insert_contribution_tracking($tracking);
+        $contribution_tracking_id = $this->generateContributionTracking($tracking);
         \Civi::log('wmf')->debug('recurring: recurring_get_contribution_tracking_id: Got new contribution tracking id, {contribution_tracking_id}', ['contribution_tracking_id' => $contribution_tracking_id]);
       }
       return $contribution_tracking_id;
@@ -288,7 +289,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     if (!empty($msg['contribution_recur_id'])) {
       throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, 'Subscription account already exists');
     }
-    $ctRecord = wmf_civicrm_get_contribution_tracking($msg);
+    $ctRecord = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $msg['contribution_tracking_id'])
+      ->execute()
+      ->first();
     try {
       if (empty($ctRecord['contribution_id'])) {
         // create contact record

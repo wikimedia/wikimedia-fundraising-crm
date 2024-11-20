@@ -119,13 +119,13 @@ class Contribution {
       // This is a 'valid' transaction - it's either the latest or no update is required.
       if (strtotime($contactLastDonation['date']) === strtotime($contribution->receive_date)) {
         if (!empty($extra['original_currency']) && $contactLastDonation['currency'] !== \CRM_Utils_Array::value('original_currency', $extra)) {
-          $params[wmf_civicrm_get_custom_field_name('last_donation_currency')] = $extra['original_currency'];
+          $params[self::api3FieldName('last_donation_currency')] = $extra['original_currency'];
         }
         if (!empty($extra['original_amount']) && round($contactLastDonation['amount'], 2) !== round(\CRM_Utils_Array::value('original_amount', $extra), 2)) {
-          $params[wmf_civicrm_get_custom_field_name('last_donation_amount')] = $extra['original_amount'];
+          $params[self::api3FieldName('last_donation_amount')] = $extra['original_amount'];
         }
         if (round($contactLastDonation['amount_usd'], 2) !== round($contribution->total_amount, 2)) {
-          $params[wmf_civicrm_get_custom_field_name('last_donation_usd')] = $contribution->total_amount;
+          $params[self::api3FieldName('last_donation_usd')] = $contribution->total_amount;
         }
       }
       if (!empty($params)) {
@@ -149,8 +149,8 @@ class Contribution {
       'options' => ['limit' => 1, 'sort' => 'receive_date DESC'],
       'trxn_id' => ['NOT LIKE' => 'RFD %'],
       'return' => [
-        wmf_civicrm_get_custom_field_name('original_currency'),
-        wmf_civicrm_get_custom_field_name('original_amount'),
+        self::api3FieldName('original_currency'),
+        self::api3FieldName('original_amount'),
         'total_amount',
       ],
     ]);
@@ -158,21 +158,34 @@ class Contribution {
       return $params;
     }
     $latestContribution = $existing['values'][$existing['id']];
-    $latestContributionCurrency = \CRM_Utils_Array::value(wmf_civicrm_get_custom_field_name('original_currency'), $latestContribution);
-    $latestContributionAmount = \CRM_Utils_Array::value(wmf_civicrm_get_custom_field_name('original_amount'), $latestContribution);
+    $latestContributionCurrency = \CRM_Utils_Array::value(self::api3FieldName('original_currency'), $latestContribution);
+    $latestContributionAmount = \CRM_Utils_Array::value(self::api3FieldName('original_amount'), $latestContribution);
 
     if ($latestContributionCurrency !== \CRM_Utils_Array::value('original_currency', $extra)) {
-      $params[wmf_civicrm_get_custom_field_name('last_donation_currency')] = $latestContributionCurrency;
+      $params[self::api3FieldName('last_donation_currency')] = $latestContributionCurrency;
     }
     if (round($contactLastDonation['amount'], 2) !== round($latestContributionAmount, 2)) {
-      $params[wmf_civicrm_get_custom_field_name('last_donation_amount')] = $latestContributionAmount;
+      $params[self::api3FieldName('last_donation_amount')] = $latestContributionAmount;
     }
     if (round($contactLastDonation['amount_usd'], 2) !== round($latestContribution['total_amount'], 2)) {
-      $params[wmf_civicrm_get_custom_field_name('last_donation_usd')] = $latestContribution['total_amount'];
+      $params[self::api3FieldName('last_donation_usd')] = $latestContribution['total_amount'];
     }
     return $params;
   }
 
+  /**
+   * @param $field_name
+   * @param null $group_name
+   *
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   * @deprecated - try ot use apiv4 instead.
+   *
+   */
+  private static function api3FieldName($field_name, $group_name = NULL) {
+    $custom_fields = wmf_civicrm_get_custom_field_map([$field_name], $group_name);
+    return $custom_fields[$field_name];
+  }
 
   /**
    * Get original currency & amount

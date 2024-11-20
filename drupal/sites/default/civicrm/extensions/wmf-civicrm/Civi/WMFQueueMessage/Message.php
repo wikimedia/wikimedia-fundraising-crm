@@ -308,6 +308,15 @@ class Message {
     return $customFields;
   }
 
+  public function getPhoneFields() : array {
+    $phoneFields = [];
+    if (!empty($this->message['phone'])) {
+      $phoneFields['phone_primary.phone'] = $this->message['phone'];
+      $phoneFields['phone_primary.phone_type_id:name'] = 'Phone';
+    }
+    return $phoneFields;
+  }
+
   /**
    * @throws \CRM_Core_Exception
    */

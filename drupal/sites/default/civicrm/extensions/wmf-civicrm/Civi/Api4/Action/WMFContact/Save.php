@@ -117,6 +117,8 @@ class Save extends AbstractAction {
       'Communication.Employer_Name',
       'Organization_Contact.Phone',
       'Organization_Contact.Email',
+      'phone_primary.phone',
+      'phone_primary.phone_type_id:name',
     ];
     foreach ($allowedCreateFields as $customField) {
       if (isset($this->message[$customField])) {
@@ -156,27 +158,6 @@ class Save extends AbstractAction {
         . ' Details: ' . print_r($ex->getErrorData(), TRUE),
         $ex->getErrorData()
       );
-    }
-
-    // Add phone number
-    if (isset($msg['phone'])) {
-      try {
-        $phone_result = civicrm_api3('Phone', 'Create', [
-          // XXX all the fields are nullable, should we set any others?
-          'contact_id' => (int) $contact_result['id'],
-          'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
-          'phone' => $msg['phone'],
-          'phone_type_id' => 'Phone',
-          'is_primary' => 1,
-          'debug' => TRUE,
-        ]);
-      }
-      catch (\CRM_Core_Exception $ex) {
-        throw new WMFException(
-          WMFException::IMPORT_CONTACT,
-          "Failed to add phone for contact ID {$contact_result['id']} contact_id}: {$ex->getMessage()} " . print_r($ex->getErrorData(), TRUE)
-        );
-      }
     }
 
     // Insert the location records if this is being called as a create.
