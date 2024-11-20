@@ -179,7 +179,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $msg = $message->normalize();
     $message->validate();
     if (!$message->getContributionTrackingID()) {
-      $msg = wmf_civicrm_add_contribution_tracking_if_missing($msg);
+      $msg = $this->addContributionTrackingIfMissing($msg);
       $message->setContributionTrackingID($msg['contribution_tracking_id'] ?? NULL);
     }
     $this->stopTiming('verify_and_stage');
