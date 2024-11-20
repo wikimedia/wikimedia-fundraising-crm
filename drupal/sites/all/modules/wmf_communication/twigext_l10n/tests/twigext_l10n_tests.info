@@ -1,7 +1,0 @@
-name = Twig Localization Test Cases
-description = Tests the twigext_l10n code
-core = 7.x
-dependencies[] = wmf_common
-package = wmf_common
-files[] = TwigLocalizationTest.test
-files[] = ../TwigLocalization.php

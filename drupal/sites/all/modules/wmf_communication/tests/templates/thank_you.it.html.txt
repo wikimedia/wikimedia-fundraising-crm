@@ -1,7 +1,0 @@
-<p>Caro {{name}},</p>
-
-<p>Grazie per la tua donazione alla Wikimedia Foundation. È stata davvero apprezzata di
-cuore!</p>
-
-<p>Per le tue registrazioni: La tua donazione il {{receive_date}} è stata
-{{ (currency ~ " " ~ amount) | l10n_currency(locale) }}.</p>

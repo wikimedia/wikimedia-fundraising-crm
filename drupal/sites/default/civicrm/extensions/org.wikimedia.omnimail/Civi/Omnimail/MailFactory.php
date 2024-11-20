@@ -2,8 +2,6 @@
 
 namespace Civi\Omnimail;
 
-use wmf_communication\TestMailer;
-
 /**
  * Class Mailer
  *
