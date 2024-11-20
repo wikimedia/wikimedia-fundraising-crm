@@ -1,1 +1,0 @@
-<p>Contribution for campaign {{ campaignKey }}: Contact ID {{ contribution.contact_id }}, [link to <a href="{{ civiUrl|raw }}">Civi console</a>]</p>
