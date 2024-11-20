@@ -9,7 +9,7 @@ return array(
     'Validate' => array($vendorDir . '/pear/validate_finance_creditcard'),
     'TOGoS_GitIgnore_' => array($vendorDir . '/civicrm/gitignore/src/main/php'),
     'PHPUnit_' => array($baseDir . '/packages'),
-    'Net' => array($vendorDir . '/pear/net_socket', $vendorDir . '/pear/net_smtp'),
+    'Net' => array($vendorDir . '/pear/net_smtp', $vendorDir . '/pear/net_socket'),
     'Mail' => array($vendorDir . '/pear/mail', $vendorDir . '/pear/mail_mime'),
     'Lurker' => array($vendorDir . '/totten/lurkerlite/src'),
     'Log' => array($vendorDir . '/pear/log'),
