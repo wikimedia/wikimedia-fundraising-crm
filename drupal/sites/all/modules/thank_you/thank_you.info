@@ -3,6 +3,5 @@ description = Automatically emails thank you notes to contributors.
 core = 7.x
 dependencies[] = wmf_common
 dependencies[] = wmf_civicrm
-dependencies[] = wmf_communication
 package = Wikimedia
 configure = admin/config/thank_you
