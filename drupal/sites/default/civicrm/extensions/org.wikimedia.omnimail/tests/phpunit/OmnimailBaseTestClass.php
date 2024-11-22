@@ -122,7 +122,10 @@ class OmnimailBaseTestClass extends TestCase {
     $mock = new MockHandler($responses);
     $handler = HandlerStack::create($mock);
     $client = new Client(['handler' => $handler]);
-    Omnimail::create('Silverpop', ['client' => $client, 'credentials' => new Credentials(['username' => 'Shrek', 'password' => 'Fiona'])])->getMailings();
+    Omnimail::create('Silverpop', [
+      'client' => $client,
+      'credentials' => new Credentials(['username' => 'Shrek', 'password' => 'Fiona']),
+    ])->getMailings();
   }
 
   /**

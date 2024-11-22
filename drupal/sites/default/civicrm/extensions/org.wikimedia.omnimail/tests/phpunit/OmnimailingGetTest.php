@@ -27,8 +27,6 @@ class OmnimailingGetTest extends OmnimailBaseTestClass {
 
   /**
    * Example: Test that a version is returned.
-   *
-   * @throws \CRM_Core_Exception
    */
   public function testOmnimailingGet(): void {
     $responses = [
@@ -43,7 +41,12 @@ class OmnimailingGetTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
     Civi::settings()->set('omnimail_omnihell_enabled', 0);
-    $mailings = $this->callAPISuccess('Omnimailing', 'get', ['mail_provider' => 'Silverpop', 'client' => $this->getMockRequest($responses), 'username' => 'Donald', 'password' => 'quack']);
+    $mailings = $this->callAPISuccess('Omnimailing', 'get', [
+      'mail_provider' => 'Silverpop',
+      'client' => $this->getMockRequest($responses),
+      'username' => 'Donald',
+      'password' => 'quack'
+    ]);
     $this->assertEquals(2, $mailings['count']);
     $firstMailing = $mailings['values'][0];
     $this->assertEquals('cool email 🌻', $firstMailing['subject']);
