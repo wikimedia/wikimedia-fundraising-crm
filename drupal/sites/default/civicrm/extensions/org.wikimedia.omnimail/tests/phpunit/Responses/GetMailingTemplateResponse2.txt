@@ -3,8 +3,8 @@
 		<RESULT>
 <SUCCESS>TRUE</SUCCESS>
 <Mailing>
-<MailingId>724</MailingId>
-<ReportId>435</ReportId>
+<MailingId>737</MailingId>
+<ReportId>89109911119</ReportId>
 <MailingName><![CDATA[My mail]]></MailingName>
 <SentDateTime>2017-06-02 08:01:39.0</SentDateTime>
 <NumSent>6047</NumSent>
