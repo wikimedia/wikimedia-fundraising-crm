@@ -18,8 +18,6 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  */
 class OmnimailingLoadTest extends OmnimailBaseTestClass {
 
-  protected $isOmniHellEnabled = FALSE;
-
   /**
    * Test that Mailings load using the Omnimailing.load api.
    *
@@ -47,8 +45,8 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   protected function loadMailings(): array {
-    $responses = $this->isOmniHellEnabled ? $this->getWithHell() : $this->getWithoutHell();
-    Civi::settings()->set('omnimail_omnihell_enabled', $this->isOmniHellEnabled);
+    $responses = $this->getWithoutHell();
+    Civi::settings()->set('omnimail_omnihell_enabled', FALSE);
     $mailings = $this->callAPISuccess('Omnimailing', 'load', array(
       'mail_provider' => 'Silverpop',
       'client' => $this->getMockRequest($responses),
@@ -72,32 +70,6 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
-    ];
-  }
-
-  /**
-   * Get the responses with Omnihell enabled.
-   *
-   * @return array
-   */
-  protected function getWithHell(): array {
-    return [
-      file_get_contents(__DIR__ . '/Responses/MailingGetResponse1.txt'),
-      file_get_contents(__DIR__ . '/Responses/MailingGetResponse2.txt'),
-      file_get_contents(__DIR__ . '/Responses/AggregateGetResponse1.txt'),
-      file_get_contents(__DIR__ . '/Responses/AggregateGetResponse2.txt'),
-      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
-      file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
-      file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
-      '',
-      file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
-      file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/LoginHtml.html'),
-      '',
-      file_get_contents(__DIR__ . '/Responses/QueryListHtml.html'),
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
