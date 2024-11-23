@@ -37,10 +37,13 @@ class WMFTestListener implements \PHPUnit\Framework\TestListener {
    */
   private $tx;
 
+  private array $originalStatic;
+
   public function endTestSuite(\PHPUnit\Framework\TestSuite $suite): void {}
 
   public function startTest(\PHPUnit\Framework\Test $test): void {
     error_reporting(E_ALL);
+    $this->originalStatic = \Civi::$statics;
     $GLOBALS['CIVICRM_TEST_CASE'] = $test;
     \CRM_Core_Session::singleton()->set('userID', NULL);
     if ($test instanceof TransactionalInterface) {
@@ -62,6 +65,7 @@ class WMFTestListener implements \PHPUnit\Framework\TestListener {
     }
     \CRM_Utils_Time::resetTime();
     unset($GLOBALS['CIVICRM_TEST_CASE']);
+    \Civi::$statics = $this->originalStatic;
   }
 
 }
