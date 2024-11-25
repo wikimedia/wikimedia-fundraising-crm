@@ -28,7 +28,6 @@
         "phpmailer/phpmailer": "^6",
         "phpseclib/phpseclib":  "~2.0",
         "predis/predis": "1.*",
-        "twig/twig": "1.*",
         "wikimedia/composer-merge-plugin": "^2",
         "jackgleeson/stats-collector": "^1.4",
         "ext-json": "*",
