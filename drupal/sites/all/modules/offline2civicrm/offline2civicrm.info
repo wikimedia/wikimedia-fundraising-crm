@@ -4,7 +4,6 @@ package = offline2civicrm
 core = 7.x
 dependencies[] = wmf_civicrm
 dependencies[] = wmf_common
-dependencies[] = wmf_communication
 dependencies[] = civicrm
 # configure = admin/config/offline2civicrm/settings
 files[] = EngageChecksFile.php

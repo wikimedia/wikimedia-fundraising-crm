@@ -1,7 +1,6 @@
 <?php
 
 use Civi\Omnimail\MailFactory;
-use wmf_communication\Templating;
 
 /**
  * Implementation of hook_menu().
@@ -286,13 +285,9 @@ function wmf_campaigns_civicrm_custom($action, $groupId, $entityId, $params) {
           ],
           TRUE // absolute link
         );
-        $params = [
-          'civiUrl' => $civiUrl,
-          'campaignKey' => $campaignKey,
-          'contribution' => $contribution,
-        ];
-        $template = new Templating(__DIR__ . '/templates', 'notification', 'en', $params, 'html');
-        $letter['html'] = $template->render();
+
+        $letter['html'] = "<p>Contribution for campaign $campaignKey: Contact ID {$contribution['contact_id']}, " .
+          "[link to <a href=\"$civiUrl\">Civi console</a>]</p>";
         $mailer->send($letter, []);
       }
   }

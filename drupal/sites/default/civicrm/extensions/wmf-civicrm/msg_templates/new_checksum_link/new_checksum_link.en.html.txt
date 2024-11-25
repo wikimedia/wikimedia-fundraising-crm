@@ -1,0 +1,14 @@
+{if '{contact.first_name|boolean}'}
+<p>Dear {contact.first_name},</p>
+{else}
+<p>Dear donor,</p>
+{/if}
+<p>Here is the link you requested: </p>
+
+<a href="{$url}">{$url}</a>
+
+<p>Thank you again for your support of this mission.</p>
+
+<p>Sincerely,<br>
+Michael Beattie<br>
+Wikimedia Foundation Fundraising Team</p>
