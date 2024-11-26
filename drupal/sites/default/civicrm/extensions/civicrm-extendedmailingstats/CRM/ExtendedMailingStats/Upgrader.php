@@ -24,12 +24,16 @@ class CRM_ExtendedMailingStats_Upgrader extends CRM_Extension_Upgrader_Base {
    *
    * @return TRUE on success
    * @throws Exception
+   */
   public function upgrade_4201() {
     $this->ctx->log->info('Applying update 4201');
-    // this path is relative to the extension base dir
-    $this->executeSqlFile('sql/upgrade_4201.sql');
+    CRM_Core_DAO::executeQuery(
+      'ALTER TABLE civicrm_mailing_stats
+      ADD COLUMN report_id BIGINT(20) unsigned,
+      ADD COLUMN is_multiple_report TINYINT(4) DEFAULT 0
+    ');
     return TRUE;
-  } // */
+  }
 
 
   /**

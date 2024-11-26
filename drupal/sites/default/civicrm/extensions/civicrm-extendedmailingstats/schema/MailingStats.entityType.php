@@ -44,6 +44,22 @@ return [
       'required' => TRUE,
       'description' => E::ts('Mailing ID'),
     ],
+    'report_id' => [
+      'title' => E::ts('Report ID'),
+      'sql_type' => 'bigint unsigned',
+      'input_type' => 'Number',
+      'description' => E::ts('Report ID'),
+      'add' => '1.2',
+    ],
+    'is_multiple_report' => [
+      'title' => E::ts('Does the mailing use multiple reports?'),
+      'sql_type' => 'boolean',
+      'input_type' => 'CheckBox',
+      'default' => FALSE,
+      'default_value' => 0,
+      'add' => '1.2',
+      'description' => E::ts('Acoustic has multiple (daily) reports for "non campaign" emails like RML emails'),
+    ],
     'mailing_name' => [
       'title' => E::ts('Mailing Name'),
       'sql_type' => 'varchar(255)',

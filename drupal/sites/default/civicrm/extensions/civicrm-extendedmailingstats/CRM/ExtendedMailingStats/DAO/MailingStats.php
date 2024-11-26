@@ -10,6 +10,8 @@
  * substantive way. Property annotations may be added, but are not required.
  * @property string $id
  * @property string $mailing_id
+ * @property string $report_id
+ * @property bool $is_multiple_record
  * @property string $mailing_name
  * @property bool|string $is_completed
  * @property string $created_date
