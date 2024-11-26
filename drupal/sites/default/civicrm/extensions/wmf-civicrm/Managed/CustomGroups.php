@@ -1633,7 +1633,7 @@ function _wmf_civicrm_get_communication_fields(): array {
     'no_direct_mail' => [
       'name' => 'no_direct_mail',
       'column_name' => 'no_direct_mail',
-      'label' => ts('No Direct Mail'),
+      'label' => ts('Exclude from direct mail'),
       'data_type' => 'Boolean',
       'html_type' => 'Radio',
       'is_active' => 1,
@@ -1644,7 +1644,7 @@ function _wmf_civicrm_get_communication_fields(): array {
     'no_paper_ty' => [
       'name' => 'no_paper_ty',
       'column_name' => 'no_paper_ty',
-      'label' => ts('No Paper TY'),
+      'label' => ts('Exclude from paper receipt'),
       'help_pre' => 'No Paper Thank You',
       'data_type' => 'Boolean',
       'html_type' => 'Radio',
