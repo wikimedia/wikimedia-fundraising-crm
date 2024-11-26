@@ -8,25 +8,25 @@
     <author>Andrew McNaughton</author>
     <email>andrew@mcnaughty.com</email>
   </maintainer>
-  <releaseDate>2017-07-26</releaseDate>
-  <version>1</version>
+  <releaseDate>2024-11-22</releaseDate>
+  <version>1.1</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.45</ver>
+    <ver>5.79</ver>
   </compatibility>
   <comments>Developed for the Australian Greens, http://greens.org.au/</comments>
   <civix>
     <namespace>CRM/ExtendedMailingStats</namespace>
-    <format>23.02.1</format>
+    <format>24.09.1</format>
   </civix>
   <mixins>
     <mixin>mgd-php@1.0.0</mixin>
-    <mixin>smarty-v2@1.0.0</mixin>
-    <mixin>entity-types-php@1.0.0</mixin>
+    <mixin>entity-types-php@2.0.0</mixin>
+    <mixin>smarty@1.0.3</mixin>
   </mixins>
   <classloader>
     <psr0 prefix="CRM_" path="."/>
     <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
-  <upgrader>CRM_ExtendedMailingStats_Upgrader</upgrader>
+  <upgrader>CiviMix\Schema\Extendedmailingstats\AutomaticUpgrader</upgrader>
 </extension>

@@ -520,20 +520,6 @@ END;
   _extendedmailingstats_do_query($params, $sql);
 }
 
-/**
- * Implements hook_civicrm_entityTypes.
- *
- * @param array $entityTypes
- *   Registered entity types.
- */
-function extendedmailingstats_civicrm_entityTypes(&$entityTypes) {
-  $entityTypes['CRM_ExtendedMailingStats_DAO_MailingStats'] = array(
-    'name' => 'MailingStats',
-    'class' => 'CRM_ExtendedMailingStats_DAO_MailingStats',
-    'table' => 'civicrm_mailingstats',
-  );
-}
-
 // /**
 //  * Implements hook_civicrm_entityTypes().
 //  *

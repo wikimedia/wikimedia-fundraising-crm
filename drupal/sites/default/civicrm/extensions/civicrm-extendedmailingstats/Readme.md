@@ -23,12 +23,12 @@ You then go to:
 
     'Reports' -> 'Create Reports from Templates'
 
-And you'll see  'Extended Mailing Stats' in the list.  
+And you'll see  'Extended Mailing Stats' in the list.
 
 
 ## Cron job setup
 
-Stats are collected by a cron job rather than when the report is collected.  The cron job 
+Stats are collected by a cron job rather than when the report is collected.  The cron job
 needs to be set up to run a command along the lines of:
 
     drush -r /var/www/example.org/htdocs -l example.org -u 1 civicrm-api extendedmailingstats.cron auth=0 -y
@@ -37,24 +37,24 @@ The cron job should run as the web server user.
 
 ## Data Provided
 
- * Mailing Name 
- * Date Created 
- * Start Date 
- * End Date 
- * recipients 
- * delivered 
- * bounced 
+ * Mailing Name
+ * Date Created
+ * Start Date
+ * End Date
+ * recipients
+ * delivered
+ * bounced
  * blocked
  * suppressed
  * abuse_complaints
  * opened_total
- * opened_unique 
- * unsubscribed 
- * forwarded 
- * clicked_total 
- * clicked_unique 
- * trackable_urls 
- * clicked_contribution_page 
+ * opened_unique
+ * unsubscribed
+ * forwarded
+ * clicked_total
+ * clicked_unique
+ * trackable_urls
+ * clicked_contribution_page
  * contributions_count
  * contributions_total
 
@@ -71,7 +71,7 @@ The date on which the Mailing was created.  It may be sent significantly later, 
 
 ### Start Date
 
-The time when the first non-test mailing job associated with the mailing began to be processed.  
+The time when the first non-test mailing job associated with the mailing began to be processed.
 
 Note that in other reports, CiviCRM uses the scheduled time as the start date.  This will typically be a little earlier than the stat date of the first mailing job, as the job doesn't start until the next cron run.  (We run them every 2 minutes).
 
@@ -80,7 +80,7 @@ Possible change: use the scheduled date for consistency with other reports, or d
 
 ### End Date
 
-The time when the last non-test mailing job associated with the mailing finished being processed.  
+The time when the last non-test mailing job associated with the mailing finished being processed.
 
 ### recipients
 
@@ -95,7 +95,7 @@ The number of actual deliveries made which are associated with non-test jobs for
 
 The number of deliveries which bounce, as recorded by civicrm.
 
-When an external provider is used to deliver mail they are likely to provide more accurate 
+When an external provider is used to deliver mail they are likely to provide more accurate
 figures for this than CiviCRM will determine itself as not all bounces may reach CiviCRM.
 
 ### blocked
@@ -159,7 +159,7 @@ Exactly as for the non-gmail equivalents, except that reporting is only for thos
 
 ### unsubscribed
 
-Civicrm records unsubscribe events associated with the mailing.  
+Civicrm records unsubscribe events associated with the mailing.
 
 [Presumably this works in much the same manner as other click throughs?, with an unsubscribe link at the bottom?]
 
