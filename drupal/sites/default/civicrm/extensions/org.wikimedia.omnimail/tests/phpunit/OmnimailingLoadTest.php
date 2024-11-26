@@ -45,8 +45,7 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   protected function loadMailings(): array {
-    $responses = $this->getWithoutHell();
-    Civi::settings()->set('omnimail_omnihell_enabled', FALSE);
+    $responses = $this->getResponses();
     $mailings = $this->callAPISuccess('Omnimailing', 'load', array(
       'mail_provider' => 'Silverpop',
       'client' => $this->getMockRequest($responses),
@@ -61,7 +60,7 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
    *
    * @return array
    */
-  protected function getWithoutHell(): array {
+  protected function getResponses(): array {
     return [
       file_get_contents(__DIR__ . '/Responses/MailingGetResponse1.txt'),
       file_get_contents(__DIR__ . '/Responses/MailingGetResponse2.txt'),

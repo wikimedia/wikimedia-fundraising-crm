@@ -84,13 +84,6 @@ function civicrm_api3_omnimailing_get($params) {
   foreach ($results as $index => $result) {
     $results[$index]['list_criteria'] = '';
     if (!empty($result['list_id'])) {
-      if (Civi::settings()->get('omnimail_omnihell_enabled')) {
-        // This is kinda just hacked in because it doesn't feel generic at the
-        // moment .. pondering....
-        $results[$index]['list_criteria'] = civicrm_api3('Omnihell', 'get', array_merge($params, [
-          'list_id' => $result['list_id'],
-        ]))['values'][0];
-      }
       try {
         // There are still some mysteries around the data retrievable this way.
         // Lets get & store both while both work. We can consolidate when we are comfortable.

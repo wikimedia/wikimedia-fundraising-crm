@@ -40,7 +40,7 @@ class OmnimailingGetTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
-    Civi::settings()->set('omnimail_omnihell_enabled', 0);
+
     $mailings = $this->callAPISuccess('Omnimailing', 'get', [
       'mail_provider' => 'Silverpop',
       'client' => $this->getMockRequest($responses),
