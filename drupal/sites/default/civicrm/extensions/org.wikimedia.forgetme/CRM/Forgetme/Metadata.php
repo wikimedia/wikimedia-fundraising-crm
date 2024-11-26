@@ -250,7 +250,9 @@ class CRM_Forgetme_Metadata {
    * @return string
    */
   public static function getTableName($entity) {
-    return CRM_Core_DAO_AllCoreTables::getTableForClass(CRM_Core_DAO_AllCoreTables::getDAONameForEntity($entity));
+    // If there is no DAO its not a 'real' entity so won't have a table.
+    $dao = CRM_Core_DAO_AllCoreTables::getDAONameForEntity($entity);
+    return !$dao ? '' : CRM_Core_DAO_AllCoreTables::getTableForClass($dao);
   }
 
   public static function getContactFieldMetadata($fields) {
