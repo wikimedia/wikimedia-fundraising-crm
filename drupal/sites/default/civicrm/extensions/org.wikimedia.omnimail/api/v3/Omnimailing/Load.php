@@ -86,7 +86,7 @@ function civicrm_api3_omnimailing_load($params) {
     if (!empty(trim($mailing['list_criteria']))) {
       $mailingParams[$criteriaField] = $mailing['list_criteria'];
     }
-    if (!empty(trim($mailing['list_string']))) {
+    if (isset($mailing['list_string']) && !empty(trim($mailing['list_string']))) {
       $mailingParams[$listField] = $mailing['list_string'];
     }
     $result = _civicrm_api3_omnimailing_load_api_replace(
@@ -103,9 +103,11 @@ function civicrm_api3_omnimailing_load($params) {
 
     _civicrm_api3_omnimailing_load_api_replace(
       'MailingStats',
-      ['mailing_id' => $result['id']],
+      ['mailing_id' => $result['id'], 'report_id' => $mailing['report_id']],
       [
         'mailing_id' => $result['id'],
+        'report_id' => $mailing['report_id'],
+        'is_multiple_report' => (int) $mailing['is_multiple_report'],
         'mailing_name' => !empty($mailing['name']) ? $mailing['name'] : 'sp' . $mailing['external_identifier'],
         'is_completed' => TRUE,
         'created_date' => date('Y-m-d H:i:s', $mailing['scheduled_date']),
@@ -179,9 +181,14 @@ function _civicrm_api3_omnimailing_load_spec(&$params) {
  */
 function _civicrm_api3_omnimailing_load_api_replace($entity, $retrieveParams, $updateParams, $extraParams = []) {
   $retrieveParams['return'] = array_keys($updateParams);
-  $preExisting = civicrm_api3($entity, 'get', $retrieveParams);
+  $retrieveParams['sequential'] = 1;
+  $preExisting = civicrm_api3($entity, 'get', $retrieveParams)['values'][0] ?? [];
+  if (!$preExisting && !empty($retrieveParams['report_id'])) {
+    // We might be repairing an old record from before we saved report_id
+    $retrieveParams['report_id'] = ['IS NULL' => TRUE];
+    $preExisting = civicrm_api3($entity, 'get', $retrieveParams)['values'][0] ?? [];
+  }
   if (isset($preExisting['id'])) {
-    $preExisting = $preExisting['values'][$preExisting['id']];
     foreach ($updateParams as $key => $updateParam) {
       if (CRM_Utils_Array::value($key, $preExisting) === $updateParam) {
         unset($updateParams[$key]);

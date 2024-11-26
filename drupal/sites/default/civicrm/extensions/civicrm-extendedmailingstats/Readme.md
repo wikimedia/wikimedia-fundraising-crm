@@ -1,5 +1,12 @@
 # ExtendedMailingStats CiviCRM extension
 
+@todo - This was originally an extension from the Australian Greens butmerge this into Omnimail - we aren't really getting updates
+they are not actively maintaining it & we should probably rationalise it
+into our own extensions now. Having added additional columns report_id
+and is_multiple_report to the civicrm_mailing_stats we have added Acoustic
+specific fields - meaning we have forked it. This could all live in the
+Omnimail extension - which is increasingly the Acoustic extension anyway.
+
 This extension provides extended summary reports on CiviCRM mailings
 
 ## Status

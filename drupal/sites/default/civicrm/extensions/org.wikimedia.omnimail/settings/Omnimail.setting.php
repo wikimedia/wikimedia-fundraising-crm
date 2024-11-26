@@ -121,17 +121,6 @@ return [
     'description' => 'Mapping of fields to sync with Acoustic',
     'help_text' => 'You can set these using the $civicrm_settings global',
   ],
-  'omnimail_omnihell_enabled' => [
-    'group_name' => 'Omnimail Preferences',
-    'group' => 'omnimail',
-    'name' => 'omnimail_omnihell_enabled',
-    'type' => 'Bool',
-    'default' => 0,
-    'title' => 'Enable fetching query data (Omnihell.get api)',
-    'is_domain' => '1',
-    'is_contact' => 0,
-    'description' => 'Enable this for data scraped from silverpop',
-  ],
   'omnimail_allowed_upload_folders' => [
     'group_name' => 'Omnimail Preferences',
     'group' => 'omnimail',
