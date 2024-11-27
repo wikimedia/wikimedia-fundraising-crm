@@ -1102,6 +1102,69 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * Test that when two contacts are merged, the state part of the address from
+   * the merged contact is retained.
+   *
+   * This test assigns different addresses with different states to two
+   * existing contacts created in setUp(), merges them, and checks that the
+   * state from the merged contact's address is retained in the remaining
+   * contact.
+   */
+  public function testMergeRetainsStateInAddress(): void {
+    // Add addresses to existing contacts
+    $this->callAPISuccess('Address', 'create', [
+      'contact_id' => $this->contactID,
+      'location_type_id' => 1,
+      'street_address' => '123',
+      'city' => 'Springfield',
+      'state_province' => 'NY',
+      'country' => 'US',
+      'is_primary' => 1,
+    ]);
+
+    $address1 = $this->callAPISuccessGetSingle('Address', [
+      'contact_id' => $this->contactID,
+      'is_primary' => 1,
+    ]);
+
+    $this->callAPISuccess('Address', 'create', [
+      'contact_id' => $this->contactID2,
+      'location_type_id' => 1,
+      'street_address' => '123 Oak Avenue',
+      'city' => 'Springfield',
+      'state_province' => 'NY',
+      'country_id' => 'US',
+      'is_primary' => 1,
+      'is_billing' => 0,
+    ]);
+
+    $address2 = $this->callAPISuccessGetSingle('Address', [
+      'contact_id' => $this->contactID2,
+      'is_primary' => 1,
+    ]);
+
+    // Merge the two contacts
+    $this->callAPISuccess('Contact', 'merge', [
+      'to_keep_id' => $this->contactID,
+      'to_remove_id' => $this->contactID2,
+      'mode' => 'aggressive',
+    ]);
+
+    // Fetch the primary address of the remaining contact
+    $address = $this->callAPISuccessGetSingle('Address', [
+      'contact_id' => $this->contactID,
+      'is_primary' => 1,
+    ]);
+
+    // Pull the state name using the state_province_id
+    $state = \CRM_Core_PseudoConstant::stateProvinceAbbreviation($address['state_province_id']);
+
+    // Confirm that the state from the merged/deleted contact ($this->contactID2) is retained
+    // as it was added most recently.
+    $this->assertEquals('NY', $state, 'The state from the merged address was not retained.');
+  }
+
+  /**
    * Get address combinations for the merge test.
    *
    * @return array
