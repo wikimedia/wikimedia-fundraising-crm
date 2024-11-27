@@ -3,13 +3,17 @@
     {
       "type": "git",
       "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git"
+    },
+    {
+      "type": "git",
+      "url": "https://github.com/eileenmcnaughton/silverpop-php-connector"
     }
-    ],
+  ],
     "require": {
         "wikimedia/omnimail-silverpop" : "*",
         "league/csv" : "9.6.*",
         "guzzlehttp/guzzle": "^7.0",
-        "mrmarkfrench/silverpop-php-connector" : "*",
+        "mrmarkfrench/silverpop-php-connector" : "dev-master",
         "omnimail/omnimail" : "*",
         "ext-dom": "*",
         "ext-libxml": "*"
