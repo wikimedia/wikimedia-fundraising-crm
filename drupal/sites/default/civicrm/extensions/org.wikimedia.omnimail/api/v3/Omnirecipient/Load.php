@@ -74,7 +74,7 @@ function civicrm_api3_omnirecipient_load($params) {
           (string) $recipient->getRecipientActionIsoDateTime(),
           'String',
         ],
-        6 => [(string) $recipient->getContactReference(), 'String'],
+        6 => [(string) $recipient->getContactReference() ?: 'NULL', 'String'],
       ];
       $rowsLeftBeforeThrottle--;
       $count++;
@@ -145,10 +145,12 @@ function _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $j
  */
 function _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $insertBatchSize, $job, $jobSettings, $newOffSet, string $loggingContext = '') {
   if (count($valueStrings) === $insertBatchSize) {
+    $values = implode(',', $valueStrings);
+    $values = str_replace("'NULL'", 'NULL', $values);
     CRM_Core_DAO::executeQuery('
          INSERT IGNORE INTO civicrm_mailing_provider_data
          (`contact_identifier`, `mailing_identifier`, `email`, `event_type`, `recipient_action_datetime`, `contact_id`)
-         values' . implode(',', $valueStrings)
+         values' . $values
     );
     $job->saveJobSetting(array_merge($jobSettings, ['offset' => $newOffSet]), $loggingContext);
     $valueStrings = [];
