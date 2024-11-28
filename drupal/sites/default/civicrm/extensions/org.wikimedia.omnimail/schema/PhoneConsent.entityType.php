@@ -4,6 +4,7 @@ return [
   'name' => 'PhoneConsent',
   'table' => 'civicrm_phone_consent',
   'class' => 'CRM_Omnimail_DAO_PhoneConsent',
+  'added' => 5.79,
   'getInfo' => fn() => [
     'title' => E::ts('PhoneConsent'),
     'title_plural' => E::ts('PhoneConsents'),

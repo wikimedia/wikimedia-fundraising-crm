@@ -2052,17 +2052,11 @@
         },
         {
             "name": "mrmarkfrench/silverpop-php-connector",
-            "version": "1.6.2",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
-                "reference": "b00143d47ed8a0f97d514e82423d69b2979459e4"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/b00143d47ed8a0f97d514e82423d69b2979459e4",
-                "reference": "b00143d47ed8a0f97d514e82423d69b2979459e4",
-                "shasum": ""
+                "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
+                "reference": "0ac84b2d736ed698d2637e128414d0c03948ea6c"
             },
             "require": {
                 "ext-curl": "*",
@@ -2074,13 +2068,18 @@
             "require-dev": {
                 "phpunit/phpunit": "*"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
                     "SilverpopConnector\\": "src/SilverpopConnector"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "SilverpopConnector\\Tests\\": "test/tests"
+                }
+            },
             "license": [
                 "MIT"
             ],
@@ -2094,11 +2093,7 @@
             "keywords": [
                 "Silverpop"
             ],
-            "support": {
-                "issues": "https://github.com/mrmarkfrench/silverpop-php-connector/issues",
-                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.6.2"
-            },
-            "time": "2024-10-14T19:51:18+00:00"
+            "time": "2024-11-27T21:57:14+00:00"
         },
         {
             "name": "nikic/php-parser",
@@ -3533,16 +3528,16 @@
         },
         {
             "name": "symfony/deprecation-contracts",
-            "version": "v2.5.3",
+            "version": "v2.5.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/deprecation-contracts.git",
-                "reference": "80d075412b557d41002320b96a096ca65aa2c98d"
+                "reference": "605389f2a7e5625f273b53960dc46aeaf9c62918"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/80d075412b557d41002320b96a096ca65aa2c98d",
-                "reference": "80d075412b557d41002320b96a096ca65aa2c98d",
+                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/605389f2a7e5625f273b53960dc46aeaf9c62918",
+                "reference": "605389f2a7e5625f273b53960dc46aeaf9c62918",
                 "shasum": ""
             },
             "require": {
@@ -3580,7 +3575,7 @@
             "description": "A generic function and convention to trigger deprecation notices",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/deprecation-contracts/tree/v2.5.3"
+                "source": "https://github.com/symfony/deprecation-contracts/tree/v2.5.4"
             },
             "funding": [
                 {
@@ -3596,7 +3591,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-01-24T14:02:46+00:00"
+            "time": "2024-09-25T14:11:13+00:00"
         },
         {
             "name": "symfony/event-dispatcher",
@@ -5161,11 +5156,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.10",
+            "version": "1.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "80a9bfa206c9d2949f48577afb971db442c62701"
+                "reference": "b8ad092fd1e39de97d2ece3a9fb2fff73474860d"
             },
             "require": {
                 "league/csv": "^9",
@@ -5205,7 +5200,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2024-11-20T00:37:09+00:00"
+            "time": "2024-11-27T19:41:53+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -7503,7 +7498,8 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "drupal/coder": 20
+        "drupal/coder": 20,
+        "mrmarkfrench/silverpop-php-connector": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
@@ -7518,5 +7514,5 @@
     "platform-overrides": {
         "php": "7.4.33"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.3.0"
 }
