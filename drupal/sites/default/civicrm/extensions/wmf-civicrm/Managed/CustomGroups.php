@@ -24,6 +24,12 @@ CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'label' => ts('Relationship'),
   'value' => 'Relationship',
 ]);
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'cg_extend_objects',
+  'name' => 'civicrm_phone',
+  'label' => ts('Phone'),
+  'value' => 'Phone',
+]);
 // FIXME: Should we do these in an ActivityType.mgd.php?
 $mg_year_end_appeal_activity_type = CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'option_group_id' => 'activity_type',
@@ -88,6 +94,12 @@ CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'visibility_id' => NULL,
   'icon' => 'fa-thumbs-o-down',
   'color' => NULL,
+]);
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'label' => 'Direct Mail',
+  'name' => 'Direct Mail',
+  'icon' => 'fa-envelopes-bulk',
 ]);
 
 return [
@@ -286,6 +298,17 @@ return [
     ],
     'fields' => _wmf_civicrm_get_address_data_fields(),
   ],
+  'phone_data' => [
+    'group' => [
+      'name' => 'phone_data',
+      'title' => 'Phone Data',
+      'extends' => 'Phone',
+      'style' => 'Inline',
+      'is_active' => TRUE,
+      'table_name' => 'civicrm_value_phone_data',
+    ],
+    'fields' => _wmf_civicrm_get_phone_data_fields(),
+  ],
   'donor_advised_fund' => [
     'group' => [
       'name' => 'donor_advised_fund',
@@ -296,6 +319,16 @@ return [
       'table_name' => 'civicrm_relationship_donor_advised',
     ],
     'fields' => _wmf_civicrm_get_donor_advised_fields(),
+  ],
+  'direct_mail_data' => [
+    'group' => [
+      'name' => 'direct_mail_data',
+      'title' => 'Direct Mail',
+      'table_name' => 'civicrm_value_direct_mail_data',
+      'extends' => 'Activity',
+      'extends_entity_column_value' => [CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'direct_mail')],
+      'fields' => _wmf_civicrm_get_direct_mail_fields(),
+    ],
   ],
 ];
 
@@ -2124,6 +2157,44 @@ function _wmf_civicrm_get_activity_tracking_fields(): array {
   ];
 }
 
+function _wmf_civicrm_get_phone_data_fields(): array {
+  return [
+    'phone_source' => [
+      'name' => 'phone_source',
+      'label' => 'Source',
+      'html_type' => 'Select',
+      'data_type' => 'String',
+      'text_length' => 255,
+      'column_name' => 'source',
+      'option_values' => [
+        'acoustic' => 'Acoustic',
+        'staff' => 'Staff Supplied',
+        'donor' => 'Donor Supplied',
+        'paypal' => 'PayPal Account',
+        'fundraiseup' => 'Fundraise Up',
+      ],
+    ],
+    'recipient_id' => [
+      'name' => 'recipient_id',
+      'label' => 'Acoustic recipient ID',
+      'data_type' => 'Float',
+      'html_type' => 'Text',
+      'column_name' => 'recipient_id',
+    ],
+    'phone_update_date' => [
+      'name' => 'phone_update_date',
+      'label' => 'Update date',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'text_length' => 255,
+      'date_format' => 'yy-mm-dd',
+      'note_columns' => 60,
+      'note_rows' => 4,
+      'column_name' => 'update_date',
+    ],
+  ];
+}
+
 function _wmf_civicrm_get_address_data_fields(): array {
   return [
     'address_source' => [
@@ -2167,6 +2238,27 @@ function _wmf_civicrm_get_donor_advised_fields(): array {
       'column_name' => 'owns_donor_advised_for',
       'filter' => 'contact_type=Organization',
       'fk_entity' => 'Contact',
+    ],
+  ];
+}
+
+function _wmf_civicrm_get_direct_mail_fields(): array {
+  return [
+    'direct_mail_appeal' => [
+      'name' => 'direct_mail_appeal',
+      'label' => 'Appeal',
+      'html_type' => 'Text',
+      'data_type' => 'String',
+      'text_length' => 255,
+      'column_name' => 'direct_mail_appeal',
+    ],
+    'direct_mail_package' => [
+      'name' => 'direct_mail_package',
+      'label' => 'Package',
+      'html_type' => 'Text',
+      'data_type' => 'String',
+      'text_length' => 255,
+      'column_name' => 'direct_mail_package',
     ],
   ];
 }
