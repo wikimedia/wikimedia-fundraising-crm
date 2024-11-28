@@ -26,14 +26,6 @@
  */
 
 /**
- *
- * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2017
- * $Id$
- *
- */
-
-/**
  * Settings metadata file
  */
 return [
@@ -132,5 +124,14 @@ return [
     'is_contact' => 0,
     'description' => 'Files uploaded with Omnicontact.Upload must be in one of these folders',
     'help_text' => 'You can set these using the $civicrm_settings global',
+  ],
+  'omnimail_sms_short_code' => [
+    'name' => 'omnimail_sms_short_code',
+    'type' => 'Integer',
+    'default' => NULL,
+    'title' => 'SMS short code',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'SMS number used for texting donors. This is the number they receive texts from.',
   ],
 ];
