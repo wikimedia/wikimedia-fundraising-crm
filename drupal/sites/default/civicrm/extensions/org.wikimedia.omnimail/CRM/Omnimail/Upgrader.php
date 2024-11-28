@@ -159,6 +159,14 @@ ADD COLUMN created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
     return TRUE;
   }
 
+  public function upgrade_1010(): bool {
+    $this->ctx->log->info('Applying update 1010, adding phone_consent fields');
+    $entityDefn = include __DIR__ . '/../../schema/PhoneConsent.entityType.php';
+    $sql = Civi::schemaHelper()->arrayToSql($entityDefn);
+    CRM_Core_DAO::executeQuery($sql);
+    return TRUE;
+  }
+
   /**
    * Example: Run an external SQL script.
    *
