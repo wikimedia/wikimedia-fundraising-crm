@@ -95,6 +95,12 @@ CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'icon' => 'fa-thumbs-o-down',
   'color' => NULL,
 ]);
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'label' => 'Direct Mail',
+  'name' => 'Direct Mail',
+  'icon' => 'fa-envelopes-bulk',
+]);
 
 return [
   'wmf_donor' => [
@@ -313,6 +319,16 @@ return [
       'table_name' => 'civicrm_relationship_donor_advised',
     ],
     'fields' => _wmf_civicrm_get_donor_advised_fields(),
+  ],
+  'direct_mail_data' => [
+    'group' => [
+      'name' => 'direct_mail_data',
+      'title' => 'Direct Mail',
+      'table_name' => 'civicrm_value_direct_mail_data',
+      'extends' => 'Activity',
+      'extends_entity_column_value' => [CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'direct_mail')],
+      'fields' => _wmf_civicrm_get_direct_mail_fields(),
+    ],
   ],
 ];
 
@@ -2222,6 +2238,27 @@ function _wmf_civicrm_get_donor_advised_fields(): array {
       'column_name' => 'owns_donor_advised_for',
       'filter' => 'contact_type=Organization',
       'fk_entity' => 'Contact',
+    ],
+  ];
+}
+
+function _wmf_civicrm_get_direct_mail_fields(): array {
+  return [
+    'direct_mail_appeal' => [
+      'name' => 'direct_mail_appeal',
+      'label' => 'Appeal',
+      'html_type' => 'Text',
+      'data_type' => 'String',
+      'text_length' => 255,
+      'column_name' => 'direct_mail_appeal',
+    ],
+    'direct_mail_package' => [
+      'name' => 'direct_mail_package',
+      'label' => 'Package',
+      'html_type' => 'Text',
+      'data_type' => 'String',
+      'text_length' => 255,
+      'column_name' => 'direct_mail_package',
     ],
   ];
 }
