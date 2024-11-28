@@ -2641,6 +2641,21 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Adjust stock_qty to float to deal with fractional amounts.
+   *
+   * Bug: T380804
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4595(): bool {
+    CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_value_1_stock_information_10 MODIFY COLUMN stock_qty DOUBLE DEFAULT NULL");
+    CRM_Core_DAO::executeQuery("ALTER TABLE log_civicrm_value_1_stock_information_10 MODIFY COLUMN stock_qty DOUBLE DEFAULT NULL");
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_custom_field SET data_type= 'FLOAT' WHERE column_name = 'stock_qty'");
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
