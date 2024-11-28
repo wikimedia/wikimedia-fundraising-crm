@@ -16,6 +16,8 @@ use GuzzleHttp\Client;
  * @method string|null getEmail()
  * @method $this setContactID(int $contactID)
  * @method int getContactID()
+ * @method $this setRecipientID(int $contactID)
+ * @method int getRecipientID()
  * @method $this setGroupIdentifier(array $groupIdentifier)
  * @method array getGroupIdentifier()
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
@@ -46,6 +48,11 @@ class Get extends AbstractAction {
    * @var string
    */
   protected $email;
+
+  /**
+   * @var int
+   */
+  protected $recipientID;
 
   /**
    * For staging use id from docs - buildkit should configure this.
@@ -99,6 +106,7 @@ class Get extends AbstractAction {
       'contact_id' => $this->getContactID(),
       'group_identifier' => $this->getGroupIdentifier(),
       'check_permissions' => $this->getCheckPermissions(),
+      'recipient_id' => $this->getRecipientID(),
     ]);
   }
 

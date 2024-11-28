@@ -109,21 +109,22 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
   public function get(array $params) {
     /* @var \Omnimail\Silverpop\Mailer $mailer */
     $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
-    if (empty($params['email'])) {
+    if (empty($params['email']) && !empty($params['contact_id'])) {
       $params['email'] = Email::get()
         ->addWhere('contact_id', '=', $params['contact_id'])
         ->addWhere('is_primary', '=', TRUE)
         ->addSelect('email')->execute()->first()['email'];
-    }
-    if (empty($params['email'])) {
-      throw new CRM_Core_Exception('Valid Contact ID or email not provided');
+      if (empty($params['email'])) {
+        throw new CRM_Core_Exception('Valid Contact ID or email not provided');
+      }
     }
     /* @var \Omnimail\Silverpop\Requests\SelectRecipientData $request */
     $request = $mailer->getContact([
       'groupIdentifier' => $params['group_identifier'],
-      'email' => $params['email'],
+      'email' => $params['email'] ?? '',
+      'recipient_id' => $params['recipient_id'],
       'databaseID' => $params['database_id'],
-      'syncFields' => ['Email' => $params['email']],
+      'syncFields' => $params['recipient_id'] ? ['recipient_id' => $params['recipient_id']] : ['Email' => $params['email']],
     ]);
     /* @var \Omnimail\Silverpop\Responses\Contact $reponse */
     try {
@@ -138,7 +139,26 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         'last_modified_date' => $response->getLastModifiedIsoDateTime()?: NULL,
         'url' => 'https://cloud.goacoustic.com/campaign-automation/Data/Databases?cuiOverrideSrc=https%253A%252F%252Fcampaign-us-4.goacoustic.com%252FsearchRecipient.do%253FisShellUser%253D1%2526action%253Dedit%2526listId%253D9644238%2526recipientId%253D' . $response->getContactIdentifier() . '&listId=' . $params['database_id'],
       ];
-      return array_merge($return, $response->getFields());
+      $return = array_merge($return, $response->getFields());
+      if (!empty($return['mobile_phone'])) {
+        /* @var \Omnimail\Silverpop\Responses\Consent $consent */
+        $consent = $mailer->consentInformationRequest([
+          'database_id' => $params['database_id'],
+          'short_code' => $this->getShortCode(),
+          'phone' => $return['mobile_phone'],
+        ])->getResponse();
+        $return['sms_consent_status'] = $consent->getStatus();
+        $return['sms_consent_source'] = $consent->getSource();
+        $return['sms_consent_timestamp'] = $consent->getTimestamp();
+        $return['sms_consent_datetime'] = date('Y-m-d H:i:s', $consent->getTimestamp());
+      }
+      else {
+        $return['sms_consent_status'] = NULL;
+        $return['sms_consent_source'] = NULL;
+        $return['sms_consent_timestamp'] = NULL;
+        $return['sms_consent_datetime'] = NULL;
+      }
+      return $return;
     }
     catch (Exception $e) {
       throw new CRM_Core_Exception($e->getMessage());
@@ -170,6 +190,13 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       }
     }
     return $return;
+  }
+
+  /**
+   * @return int
+   */
+  public function getShortCode(): int {
+    return \Civi::settings()->get('omnimail_sms_short_code');
   }
 
 }
