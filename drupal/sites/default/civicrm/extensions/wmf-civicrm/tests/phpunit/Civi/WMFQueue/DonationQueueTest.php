@@ -93,6 +93,7 @@ class DonationQueueTest extends BaseQueueTestCase {
       'recipient_id' => 1234567891011,
     ]);
     $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals('SMS', $contribution['Gift_Data.Channel']);
     $phones = Phone::get(FALSE)
       ->addWhere('contact_id', '=', $contribution['contact_id'])
       ->addSelect('phone', 'phone_data.*')

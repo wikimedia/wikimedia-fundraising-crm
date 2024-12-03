@@ -249,7 +249,7 @@ class Message {
    * @throws \CRM_Core_Exception
    */
   public function getCustomFields(): array {
-    $customFields = [];
+    $customFields = array_filter(['Gift_Data.Channel' => $this->getChannel()]);
     foreach ($this->message as $fieldName => $value) {
       if ($fieldName === 'direct_mail_appeal' && !empty($this->message['utm_campaign'])) {
         // This is a weird one, utm_campaign beats direct_mail_appeal because ... code history.
@@ -306,6 +306,19 @@ class Message {
       }
     }
     return $customFields;
+  }
+
+  public function getChannel(): string {
+    if (!empty($this->message['Gift_Data.Channel'])) {
+      return (string) $this->message['Gift_Data.Channel'];
+    }
+    if (!empty($this->message['channel'])) {
+      return $this->message['channel'];
+    }
+    if (!empty($this->message['recipient_id'])) {
+      return 'SMS';
+    }
+    return '';
   }
 
   public function getPhoneFields() : array {
