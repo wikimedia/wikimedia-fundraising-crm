@@ -249,7 +249,7 @@ class Message {
    * @throws \CRM_Core_Exception
    */
   public function getCustomFields(): array {
-    $customFields = [];
+    $customFields = array_filter(['Gift_Data.Channel' => $this->getChannel()]);
     foreach ($this->message as $fieldName => $value) {
       if ($fieldName === 'direct_mail_appeal' && !empty($this->message['utm_campaign'])) {
         // This is a weird one, utm_campaign beats direct_mail_appeal because ... code history.
@@ -308,11 +308,36 @@ class Message {
     return $customFields;
   }
 
+  public function getChannel(): string {
+    if (!empty($this->message['Gift_Data.Channel'])) {
+      return (string) $this->message['Gift_Data.Channel'];
+    }
+    if (!empty($this->message['channel'])) {
+      return $this->message['channel'];
+    }
+    if (!empty($this->message['recipient_id'])) {
+      return 'SMS';
+    }
+    return '';
+  }
+
   public function getPhoneFields() : array {
     $phoneFields = [];
     if (!empty($this->message['phone'])) {
       $phoneFields['phone_primary.phone'] = $this->message['phone'];
       $phoneFields['phone_primary.phone_type_id:name'] = 'Phone';
+    }
+    // The recipient ID is a value sent from Acoustic which can be used to look
+    // up the actual phone number.
+    if (!empty($this->message['recipient_id'])) {
+      $phoneFields['phone_primary.phone_data.recipient_id'] = $this->message['recipient_id'];
+      $phoneFields['phone_primary.phone_data.phone_source'] = 'Acoustic';
+      $phoneFields['phone_primary.phone_type_id:name'] = 'Mobile';
+      // Use a dummy value for the mandatory phone field.
+      $phoneFields['phone_primary.phone'] = $phoneFields['phone_primary.phone'] ?? 99999;
+    }
+    if (!empty($phoneFields)) {
+      $phoneFields['phone_primary.phone_data.update_date'] = 'now';
     }
     return $phoneFields;
   }
