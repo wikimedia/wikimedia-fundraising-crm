@@ -44,6 +44,7 @@ class QuickForm {
             'Unintended recurring donation' => 'Unintended recurring donation',
             'Chapter' => 'Chapter',
             'Update' => 'Update',
+            'Frequency' => 'Frequency',
           ];
           // Adds the modified cancel_reason as required with TRUE
           $form->addSelect('cancel_reason', $props, TRUE);
