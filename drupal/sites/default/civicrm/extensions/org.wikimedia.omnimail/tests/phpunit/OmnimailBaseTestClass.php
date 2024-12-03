@@ -2,6 +2,8 @@
 
 require_once __DIR__ . '/GuzzleTestTrait.php';
 
+use Civi\Api4\Contact;
+use Civi\Api4\Phone;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
@@ -77,6 +79,17 @@ class OmnimailBaseTestClass extends TestCase {
     foreach ($this->contactIDs as $contactID) {
       $this->callAPISuccess('Contact', 'delete', ['id' => $contactID, 'skip_undelete' => 1]);
     }
+    $phones = (array) Phone::get(FALSE)
+      ->addWhere('phone_data.recipient_id', '=', 12345)
+      ->execute()
+      ->indexBy('contact_id');
+    if (count($phones) > 0) {
+      Contact::delete(FALSE)
+        ->addWhere('id', 'IN', array_keys($phones))
+        ->setUseTrash(FALSE)
+        ->execute();
+    }
+
     $this->cleanupMailingData();
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_omnimail_job_progress');
     SilverpopGuzzleConnector::getInstance()->logout();
