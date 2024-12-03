@@ -133,12 +133,14 @@ class DonationMessage extends Message {
       'effort_id' => NULL,
     ];
     $msg = $msg + $defaults;
-
     $this->removeKnownBadStringsFromAddressFields($msg);
 
     $msg['financial_type_id'] = $this->getFinancialTypeID();
     $msg['contribution_recur_id'] = $this->getContributionRecurID();
     $msg['contact_id'] = $this->getContactID();
+    if (empty($msg['contact_id']) && !empty($this->message['contact_id'])) {
+      $msg['referral_id'] = $this->message['contact_id'];
+    }
     $msg['payment_instrument_id'] = $this->getPaymentInstrumentID();
     $msg['date'] = $this->getTimestamp();
     $msg['thankyou_date'] = $this->getThankYouDate();

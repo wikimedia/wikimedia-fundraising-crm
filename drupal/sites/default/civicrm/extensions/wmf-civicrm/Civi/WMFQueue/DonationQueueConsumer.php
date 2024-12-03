@@ -330,6 +330,9 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
 
     if (!$existing || $existing['hash'] !== $msg['contact_hash'] ||
       ($existing['email'] !== $msg['email'] && $matchEmail)) {
+      if (!empty($existing)) {
+        $msg['referral_id'] = $existing['contact_id'];
+      }
       $msg['contact_id'] = NULL;
       unset($msg['contact_hash']);
     }
@@ -411,6 +414,26 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         'contribution_id' => $contribution_result['id'],
         'contact_id' => $contribution['contact_id'],
       ]);
+      if (!empty($msg['referral_id']) && $msg['referral_id'] != $contribution['contact_id']) {
+        \Civi::log('wmf')->debug('wmf_civicrm: Contribution {contribution_id} on Contact ID {contribution_contact_id} was referred by Contact ID {original_contact_id}', [
+          'contribution_id' => $contribution_result['id'],
+          'contribution_contact_id' => $contribution['contact_id'],
+          'original_contact_id' => $msg['referral_id'],
+        ]);
+        Activity::create(FALSE)
+          ->addValue('activity_type_id:name', 'Contact referral')
+          ->addValue('source_contact_id', $msg['referral_id'])
+          ->addValue('status_id:name', 'Completed')
+          ->addValue('subject', 'Donor was referred')
+          ->addValue('details', json_encode([
+            'contribution_id' => $contribution_result['id'],
+            'referral_contact_id' =>  $msg['referral_id'],
+            'contact_id' => $contribution['contact_id']
+          ]))
+          ->addValue('target_contact_id', $contribution['contact_id'])
+          ->addValue('source_record_id', $contribution_result['id'])
+          ->execute();
+      }
       return $contribution_result;
     }
     catch (DBQueryException $e) {
