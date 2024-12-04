@@ -85,7 +85,6 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
   /**
-   * @throws \Civi\API\Exception\UnauthorizedException
    * @throws \CRM_Core_Exception
    */
   public function testRecipientID(): void {
@@ -96,12 +95,14 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertEquals('SMS', $contribution['Gift_Data.Channel']);
     $phones = Phone::get(FALSE)
       ->addWhere('contact_id', '=', $contribution['contact_id'])
-      ->addSelect('phone', 'phone_data.*')
+      ->addSelect('phone', 'phone_data.*', 'location_type_id:name')
       ->execute();
     $this->assertCount(1, $phones);
     $phone = $phones->first();
     $this->assertEquals(1234567891011, $phone['phone_data.recipient_id']);
     $this->assertEquals('Acoustic', $phone['phone_data.phone_source']);
+    $this->assertEquals('sms_mobile', $phone['location_type_id:name']);
+    $this->assertNotEmpty($phone['phone_data.phone_update_date']);
   }
 
   /**

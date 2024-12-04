@@ -333,11 +333,12 @@ class Message {
       $phoneFields['phone_primary.phone_data.recipient_id'] = $this->message['recipient_id'];
       $phoneFields['phone_primary.phone_data.phone_source'] = 'Acoustic';
       $phoneFields['phone_primary.phone_type_id:name'] = 'Mobile';
+      $phoneFields['phone_primary.location_type_id:name'] = 'sms_mobile';
       // Use a dummy value for the mandatory phone field.
       $phoneFields['phone_primary.phone'] = $phoneFields['phone_primary.phone'] ?? 99999;
     }
     if (!empty($phoneFields)) {
-      $phoneFields['phone_primary.phone_data.update_date'] = 'now';
+      $phoneFields['phone_primary.phone_data.phone_update_date'] = 'now';
     }
     return $phoneFields;
   }
