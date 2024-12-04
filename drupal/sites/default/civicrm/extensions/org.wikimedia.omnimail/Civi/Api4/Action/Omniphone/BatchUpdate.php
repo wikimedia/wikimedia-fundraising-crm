@@ -100,7 +100,7 @@ class BatchUpdate extends AbstractAction {
    */
   public function _run(Result $result) {
     $phoneGet = Phone::get(FALSE)
-      ->addWhere('phone', '=', 99999)
+      ->addWhere('phone', '=', \CRM_Omnimail_Omnicontact::DUMMY_PHONE)
       ->addWhere('phone_data.recipient_id', 'IS NOT NULL')
       ->addSelect('phone_data.*')
       ->setLimit($this->limit);

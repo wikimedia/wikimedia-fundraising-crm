@@ -5,6 +5,7 @@ namespace Civi\Api4\Action\WMFContact;
 use Civi\Api4\Address;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\Phone;
 use Civi\Api4\Relationship;
 use Civi\WMFException\WMFException;
 use Civi\Api4\Email;
@@ -460,6 +461,25 @@ class Save extends AbstractAction {
       $this->startTimer('message_email_update');
       $this->emailUpdate($msg, $msg['contact_id']);
       $this->stopTimer('message_email_update');
+    }
+    $phoneFields = \CRM_Utils_Array::filterByPrefix($msg, 'phone_primary.');
+    // Only save the phone number if is has location type SMS Mobile. This is consistent
+    // with historical behaviour and as of writing there would not be others coming in
+    // so better to make a conscious choice if we want to change this in the future.
+    // The testPhoneImport() test locks this in.
+    if (!empty($phoneFields['location_type_id:name']) && $phoneFields['location_type_id:name'] === 'sms_mobile') {
+      $phoneFields['contact_id'] = $msg['contact_id'];
+      // In practice as of late 2024 these would all be incoming SMS consent numbers.
+      // We have historically not brought in phones from banners or emails and the support for
+      // phones in create probably dates back to the old offline2civicrm manual imports.
+      // I went back and forth on whether to check for existing or just overwrite - but
+      // have opted to overwrite (possibly replacing a good number with the dummy number temporarily)
+      // because it would also cause us to get any updates to consent data - which we otherwise would not
+      // get.
+      Phone::save(FALSE)
+        ->addRecord($phoneFields)
+        ->setMatch(['contact_id', 'location_type_id:name', 'phone_type_id:name'])
+        ->execute();
     }
   }
 
