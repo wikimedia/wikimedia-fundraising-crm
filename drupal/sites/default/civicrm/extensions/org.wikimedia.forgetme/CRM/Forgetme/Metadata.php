@@ -49,7 +49,9 @@ class CRM_Forgetme_Metadata {
     if (!isset(\Civi::$statics[__CLASS__]['forget_entities'])) {
       $forgets = _civicrm_api3_showme_get_entities_with_action('forgetme');
       unset($forgets[array_search('Contact', $forgets)]);
-      uasort($forgets, function($a, $b) { return($b !== 'Logging'); });
+      uasort($forgets, function($a, $b) {
+        return ($b === 'Logging') ? -1 : ($a === 'Logging' ? 1 : 0);
+      });
       \Civi::$statics[__CLASS__]['forget_entities'] = $forgets;
     }
     return \Civi::$statics[__CLASS__]['forget_entities'];
