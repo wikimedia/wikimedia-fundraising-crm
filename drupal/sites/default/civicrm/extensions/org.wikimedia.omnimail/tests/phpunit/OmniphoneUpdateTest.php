@@ -40,6 +40,7 @@ class OmniphoneUpdateTest extends OmnimailBaseTestClass {
         'email_primary.email' => 'john@mouse.com',
         'phone_primary.phone' => \CRM_Omnimail_Omnicontact::DUMMY_PHONE,
         'phone_primary.phone_data.recipient_id' => 12345,
+        'phone_primary.location_type_id:name' => 'sms_mobile',
       ])
       ->execute();
     $this->getMockRequest([
