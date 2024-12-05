@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
@@ -2094,7 +2095,8 @@ class DonationQueueTest extends BaseQueueTestCase {
       'payment_submethod' => 'visa',
       'employer' => $expectedEmployer,
     ];
-    $contribution = $this->processDonationMessage($msg);
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
     $address = Address::get(FALSE)
       ->addWhere('contact_id', '=', $existingContact['id'])
@@ -2107,6 +2109,15 @@ class DonationQueueTest extends BaseQueueTestCase {
       ->execute()->single();
 
     $this->assertEquals($expectedEmployer, $contact['Communication.Employer_Name']);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_contact_id', '=', $this->ids['Contact']['existing'])
+      ->addWhere('target_contact_id', '=', $contribution['contact_id'])
+      ->addWhere('source_record_id', '=', $contribution['id'])
+      ->addWhere('activity_type_id:name', '=', 'Contact referral')
+      ->execute()
+      ->last();
+    $this->assertNull($activity);
   }
 
   /**
@@ -2154,6 +2165,264 @@ class DonationQueueTest extends BaseQueueTestCase {
       ->addWhere('location_type_id:name', '=', 'Home')
       ->execute()->single();
     $this->assertNotEquals($msg['street_address'], $address['street_address']);
+  }
+
+  /**
+   * If contact record from contact_id and hash has different email to import, create new record and activity
+   * that links the contacts and the contribution.
+   */
+  public function testImportWithDifferentEmailFromContactIdAndHash(): void {
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+    ], 'existing');
+    $email = 'booboo' . mt_rand() . '@example.org';
+    $this->createTestEntity('Email', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'email' => $email,
+      'location_type_id' => 1,
+    ]);
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'location_type_id' => 1,
+    ]);
+    $msg = [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'contact_hash' => $existingContact['hash'],
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'mouse@example.org',
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_contact_id', '=', $this->ids['Contact']['existing'])
+      ->addWhere('target_contact_id', '=', $contribution['contact_id'])
+      ->addWhere('source_record_id', '=', $contribution['id'])
+      ->addWhere('activity_type_id:name', '=', 'Contact referral')
+      ->execute()
+      ->last();
+    $this->assertNotNull($activity);
+  }
+
+   /**
+   * Civi does not create a new contact record if contact record hash is different from that specified 
+   * in the import but everyother field (name, address, email) remains the same.
+   * As such, do not add referral activity.
+   */
+  public function testImportWithHashmismatch(): void {
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+    ], 'existing');
+    $email = 'booboo' . mt_rand() . '@example.org';
+    $this->createTestEntity('Email', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'email' => $email,
+      'location_type_id' => 1,
+    ]);
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'location_type_id' => 1,
+    ]);
+    $msg = [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'contact_hash' => 'random-mismatch-hash',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => $email,
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_contact_id', '=', $this->ids['Contact']['existing'])
+      ->addWhere('source_record_id', '=', $contribution['id'])
+      ->addWhere('activity_type_id:name', '=', 'Contact referral')
+      ->execute()
+      ->last();
+    $this->assertNull($activity);
+  }
+
+  /**
+   * If contact record hash is different from that specified in the import, create new record and activity
+   * that links the contacts and the contribution.
+   */
+  public function testImportWithHashmismatchNamemismatch(): void {
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+    ], 'existing');
+    $email = 'booboo' . mt_rand() . '@example.org';
+    $this->createTestEntity('Email', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'email' => $email,
+      'location_type_id' => 1,
+    ]);
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'location_type_id' => 1,
+    ]);
+    $msg = [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'first_name' => 'Testy',
+      'last_name' => 'Mouse',
+      'contact_hash' => 'random-mismatch-hash',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => $email,
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_contact_id', '=', $this->ids['Contact']['existing'])
+      ->addWhere('target_contact_id', '=', $contribution['contact_id'])
+      ->addWhere('source_record_id', '=', $contribution['id'])
+      ->addWhere('activity_type_id:name', '=', 'Contact referral')
+      ->execute()
+      ->last();
+    $this->assertNotNull($activity);
+  }
+
+  /**
+   * If contact record from contact_id and hash has different email to import and if email already exists in
+   * a different contact record, create activity to link both contacts to the contribution
+   */
+  public function testImportWithDifferentContactsEmailFromImportedContactIdAndHash(): void {
+    $existingContact1 = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+    ], 'existing1');
+    $email = 'booboo' . mt_rand() . '@example.org';
+    $this->createTestEntity('Email', [
+      'contact_id' => $this->ids['Contact']['existing1'],
+      'email' => $email,
+      'location_type_id' => 1,
+    ]);
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact']['existing1'],
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'location_type_id' => 1,
+    ]);
+
+    $existingContact2 = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+    ], 'existing2');
+    $email2 = 'booboo2' . mt_rand() . '@example.org';
+    $this->createTestEntity('Email', [
+      'contact_id' => $this->ids['Contact']['existing2'],
+      'email' => $email2,
+      'location_type_id' => 1,
+    ]);
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact']['existing2'],
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'location_type_id' => 1,
+    ]);
+    $msg = [
+      'contact_id' => $this->ids['Contact']['existing1'],
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'contact_hash' => $existingContact1['hash'],
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => $email2,
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertNotEquals($existingContact1['id'], $contribution['contact_id']);
+    $this->assertEquals($existingContact2['id'], $contribution['contact_id']);
+
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_contact_id', '=', $this->ids['Contact']['existing1'])
+      ->addWhere('target_contact_id', '=', $this->ids['Contact']['existing2'])
+      ->addWhere('source_record_id', '=', $contribution['id'])
+      ->addWhere('activity_type_id:name', '=', 'Contact referral')
+      ->execute()
+      ->last();
+    $this->assertNotNull($activity);
+  }
+
+   /**
+   * Ensure the referral activity is not created for new contact record.
+   */
+  public function testImportNewContactNoReferralActivity(): void {
+    $msg = [
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'mouse@example.org',
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+    $this->setTestEntityID('Contact', $contribution['contact_id'], 'donation_contact');
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $contribution['id'])
+      ->addWhere('activity_type_id:name', '=', 'Contact referral')
+      ->execute()
+      ->last();
+    $this->assertNull($activity);
   }
 
   /**
