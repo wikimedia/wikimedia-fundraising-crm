@@ -335,7 +335,7 @@ class Message {
       $phoneFields['phone_primary.phone_type_id:name'] = 'Mobile';
       $phoneFields['phone_primary.location_type_id:name'] = 'sms_mobile';
       // Use a dummy value for the mandatory phone field.
-      $phoneFields['phone_primary.phone'] = $phoneFields['phone_primary.phone'] ?? 99999;
+      $phoneFields['phone_primary.phone'] = $phoneFields['phone_primary.phone'] ?? \CRM_Omnimail_Omnicontact::DUMMY_PHONE;
     }
     if (!empty($phoneFields)) {
       $phoneFields['phone_primary.phone_data.phone_update_date'] = 'now';

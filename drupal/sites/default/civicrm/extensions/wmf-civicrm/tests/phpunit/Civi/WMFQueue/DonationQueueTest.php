@@ -16,6 +16,7 @@ use Civi\Api4\Phone;
 use Civi\Api4\Relationship;
 use Civi\Api4\StateProvince;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use Civi\WMFStatistic\ImportStatsCollector;
 use SmashPig\Core\DataStores\PendingDatabase;
@@ -103,6 +104,40 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertEquals('Acoustic', $phone['phone_data.phone_source']);
     $this->assertEquals('sms_mobile', $phone['location_type_id:name']);
     $this->assertNotEmpty($phone['phone_data.phone_update_date']);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecipientIDUpdate(): void {
+    $this->processDonationMessage();
+    Phone::create(FALSE)
+      ->setValues([
+        'phone' => 911,
+        'contact_id' => $this->getContactID(0),
+      ])
+      ->execute();
+    $message = $this->processDonationMessage([
+      'recipient_id' => 1234567891011,
+    ]);
+    $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals('SMS', $contribution['Gift_Data.Channel']);
+    $phones = Phone::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->addSelect('phone', 'is_primary', 'phone_data.*', 'location_type_id:name')
+      ->execute()->indexBy('location_type_id:name');
+    $this->assertCount(2, $phones);
+    $phone = $phones['sms_mobile'];
+    $this->assertEquals(1234567891011, $phone['phone_data.recipient_id']);
+    $this->assertEquals('Acoustic', $phone['phone_data.phone_source']);
+    $this->assertNotEmpty($phone['phone_data.phone_update_date']);
+    $this->assertEquals(\CRM_Omnimail_Omnicontact::DUMMY_PHONE, $phone['phone']);
+
+    $phone = $phones['Home'];
+    $this->assertEmpty($phone['phone_data.recipient_id']);
+    $this->assertEmpty($phone['phone_data.phone_source']);
+    $this->assertTrue($phone['is_primary']);
+    $this->assertEquals(911, $phone['phone']);
   }
 
   /**

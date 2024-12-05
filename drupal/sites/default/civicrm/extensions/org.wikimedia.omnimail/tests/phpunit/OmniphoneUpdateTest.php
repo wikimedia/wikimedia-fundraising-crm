@@ -38,7 +38,7 @@ class OmniphoneUpdateTest extends OmnimailBaseTestClass {
         'first_name' => 'John',
         'last_name' => 'Mouse',
         'email_primary.email' => 'john@mouse.com',
-        'phone_primary.phone' => 99999,
+        'phone_primary.phone' => \CRM_Omnimail_Omnicontact::DUMMY_PHONE,
         'phone_primary.phone_data.recipient_id' => 12345,
       ])
       ->execute();

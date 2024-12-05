@@ -12,7 +12,7 @@ use Omnimail\Silverpop\Responses\Contact;
  */
 
 class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
-
+  public const DUMMY_PHONE = 99999;
   /**
    * @var
    */
