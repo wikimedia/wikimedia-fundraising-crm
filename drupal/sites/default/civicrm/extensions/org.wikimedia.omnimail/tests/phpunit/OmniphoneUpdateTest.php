@@ -2,6 +2,7 @@
 
 namespace phpunit;
 
+use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Omniphone;
 use Civi\Api4\Phone;
@@ -67,9 +68,15 @@ class OmniphoneUpdateTest extends OmnimailBaseTestClass {
 
     $phone = Phone::get(FALSE)
       ->addWhere('phone', '=', 9099909021)
-      ->addSelect('contact_id.email_primary.email')
+      ->addSelect('contact_id.email_primary.email', 'contact_id')
       ->execute()->first();
     $this->assertEquals('john@mouse.com', $phone['contact_id.email_primary.email']);
+
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_contact_id', '=', $phone['contact_id'])
+      ->addWhere('activity_type_id:name', '=', 'sms_consent_given')
+      ->execute()->single();
+    $this->assertEquals('SMS consent given for 19099909021', $activity['subject']);
   }
 
 }
