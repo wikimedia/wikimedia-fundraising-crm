@@ -406,6 +406,9 @@ class OmnimailBaseTestClass extends TestCase {
    * @return array
    */
   public function createSnoozyDuck(string $snoozeDate): array {
+    // These values are passed into the api call in other tests. But, because in this
+    // case the hook queues up the database update we need a more 'global' approach.
+    $this->setDatabaseID(1234);
     return $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Donald',

@@ -137,9 +137,6 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/AddRecipient.txt'),
       file_get_contents(__DIR__ . '/Responses/UpdateRecipient.txt'),
     ]);
-    // These values are passed into the api call in other tests. But, because in this
-    // case the hook queues up the database update we need a more 'global' approach.
-    $this->setDatabaseID(1234);
     $this->addTestClientToXMLSingleton();
 
     $snoozeDate = date('Y-m-d', strtotime('+ 1 week'));
