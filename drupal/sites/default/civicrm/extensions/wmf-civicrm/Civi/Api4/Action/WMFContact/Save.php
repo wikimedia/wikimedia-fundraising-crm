@@ -119,9 +119,10 @@ class Save extends AbstractAction {
       'Organization_Contact.Email',
       'phone_primary.phone',
       'phone_primary.phone_type_id:name',
+      'phone_primary.location_type_id:name',
       'phone_primary.phone_data.recipient_id',
       'phone_primary.phone_data.phone_source',
-      'phone_primary.phone_data.update_date',
+      'phone_primary.phone_data.phone_update_date',
     ];
     foreach ($allowedCreateFields as $customField) {
       if (isset($this->message[$customField])) {
