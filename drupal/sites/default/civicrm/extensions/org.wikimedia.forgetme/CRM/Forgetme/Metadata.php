@@ -241,7 +241,11 @@ class CRM_Forgetme_Metadata {
    * @return NULL|string
    */
   public static function getEntityName($tableName) {
-    return CRM_Core_DAO_AllCoreTables::getEntityNameForClass(CRM_Core_DAO_AllCoreTables::getClassForTable($tableName));
+    $entity = CRM_Core_DAO_AllCoreTables::getClassForTable($tableName);
+    if (!$entity) {
+      return NULL;
+    }
+    return CRM_Core_DAO_AllCoreTables::getEntityNameForClass($entity);
   }
 
   /**
