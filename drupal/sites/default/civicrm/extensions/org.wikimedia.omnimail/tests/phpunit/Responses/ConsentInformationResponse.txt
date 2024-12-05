@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "attributes": {},
+    "generalErrors": [],
+    "fieldErrors": {},
+    "links": [],
+    "nextPageUrl": null
+  },
+  "data": {
+    "status": "OPTED-IN",
+    "consentDate": "2024-11-27T00:08:59.000+00:00",
+    "consentSource": "Sms Consent Kafka Streams",
+    "destination": null,
+    "attributes": null
+  }
+}

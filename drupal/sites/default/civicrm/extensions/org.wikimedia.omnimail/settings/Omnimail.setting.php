@@ -133,5 +133,15 @@ return [
     'is_domain' => '1',
     'is_contact' => 0,
     'description' => 'SMS number used for texting donors. This is the number they receive texts from.',
+    'help_text' => 'We are now using the campaign_code as the qualifier in rest calls and this is currently unused',
+  ],
+  'omnimail_sms_campaign_id' => [
+    'name' => 'omnimail_sms_campaign_id',
+    'type' => 'String',
+    'default' => 'af111b1f-bc8b-4edc-a743-408594312f99',
+    'title' => 'SMS campaign id',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'SMS campaign ID, which donors are consented into.',
   ],
 ];
