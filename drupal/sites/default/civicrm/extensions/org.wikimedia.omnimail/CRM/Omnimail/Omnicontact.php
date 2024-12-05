@@ -12,7 +12,7 @@ use Omnimail\Silverpop\Responses\Contact;
  */
 
 class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
-
+  public const DUMMY_PHONE = 99999;
   /**
    * @var
    */
@@ -144,7 +144,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         /* @var \Omnimail\Silverpop\Responses\Consent $consent */
         $consent = $mailer->consentInformationRequest([
           'database_id' => $params['database_id'],
-          'short_code' => $this->getShortCode(),
+          'short_code' => $this->getCampaignID(),
           'phone' => $return['mobile_phone'],
         ])->getResponse();
         $return['sms_consent_status'] = $consent->getStatus();
@@ -193,10 +193,10 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
   }
 
   /**
-   * @return int
+   * @return string
    */
-  public function getShortCode(): int {
-    return \Civi::settings()->get('omnimail_sms_short_code');
+  public function getCampaignID(): string {
+    return \Civi::settings()->get('omnimail_sms_campaign_id');
   }
 
 }

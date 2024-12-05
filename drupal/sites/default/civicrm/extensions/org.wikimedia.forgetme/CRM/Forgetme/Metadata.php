@@ -49,7 +49,9 @@ class CRM_Forgetme_Metadata {
     if (!isset(\Civi::$statics[__CLASS__]['forget_entities'])) {
       $forgets = _civicrm_api3_showme_get_entities_with_action('forgetme');
       unset($forgets[array_search('Contact', $forgets)]);
-      uasort($forgets, function($a, $b) { return($b !== 'Logging'); });
+      uasort($forgets, function($a, $b) {
+        return ($b === 'Logging') ? -1 : ($a === 'Logging' ? 1 : 0);
+      });
       \Civi::$statics[__CLASS__]['forget_entities'] = $forgets;
     }
     return \Civi::$statics[__CLASS__]['forget_entities'];
@@ -239,7 +241,11 @@ class CRM_Forgetme_Metadata {
    * @return NULL|string
    */
   public static function getEntityName($tableName) {
-    return CRM_Core_DAO_AllCoreTables::getEntityNameForClass(CRM_Core_DAO_AllCoreTables::getClassForTable($tableName));
+    $entity = CRM_Core_DAO_AllCoreTables::getClassForTable($tableName);
+    if (!$entity) {
+      return NULL;
+    }
+    return CRM_Core_DAO_AllCoreTables::getEntityNameForClass($entity);
   }
 
   /**
