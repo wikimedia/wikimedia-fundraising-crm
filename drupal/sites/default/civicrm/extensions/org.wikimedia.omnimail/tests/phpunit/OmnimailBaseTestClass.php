@@ -5,9 +5,7 @@ require_once __DIR__ . '/GuzzleTestTrait.php';
 use Civi\Api4\Contact;
 use Civi\Api4\Phone;
 use Civi\Test\Api3TestTrait;
-use Civi\Test\HeadlessInterface;
-use Civi\Test\HookInterface;
-use Civi\Test\TransactionalInterface;
+use Civi\Test\EntityTrait;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -37,6 +35,7 @@ use SilverpopConnector\SilverpopXmlConnector;
 class OmnimailBaseTestClass extends TestCase {
   use Api3TestTrait;
   use GuzzleTestTrait;
+  use EntityTrait;
 
   protected $existingSettings = [];
 
@@ -56,6 +55,8 @@ class OmnimailBaseTestClass extends TestCase {
 
   /**
    * IDs of contacts created for the test.
+   *
+   * @deprecated set $this->ids['Contact'] to align with the EntityTrait.
    *
    * @var array
    */
@@ -77,7 +78,14 @@ class OmnimailBaseTestClass extends TestCase {
    */
   public function tearDown(): void {
     foreach ($this->contactIDs as $contactID) {
-      $this->callAPISuccess('Contact', 'delete', ['id' => $contactID, 'skip_undelete' => 1]);
+      // $this->contactIDs is the old format.
+      $this->ids['Contact'][] = $contactID;
+    }
+    if (!empty($this->ids['Contact'])) {
+      Contact::delete(FALSE)
+        ->addWhere('id', 'IN', $this->ids['Contact'])
+        ->setUseTrash(FALSE)
+        ->execute();
     }
     $phones = (array) Phone::get(FALSE)
       ->addWhere('phone_data.recipient_id', '=', 12345)
@@ -389,6 +397,22 @@ class OmnimailBaseTestClass extends TestCase {
     /** @var SilverpopXmlConnector $connector */
     $connector = SilverpopGuzzleXmlConnector::getInstance();
     $connector->setClient($this->getGuzzleClient());
+  }
+
+
+  /**
+   * @param string $snoozeDate
+   *
+   * @return array
+   */
+  public function createSnoozyDuck(string $snoozeDate): array {
+    return $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Donald',
+      'last_name' => 'Duck',
+      'email_primary.email' => 'the_don@example.com',
+      'email_primary.email_settings.snooze_date' => $snoozeDate,
+    ], 'snoozy');
   }
 
 }
