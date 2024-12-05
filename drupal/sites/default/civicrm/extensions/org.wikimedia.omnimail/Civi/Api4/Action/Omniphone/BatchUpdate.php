@@ -103,7 +103,7 @@ class BatchUpdate extends AbstractAction {
       ->addWhere('phone', '=', \CRM_Omnimail_Omnicontact::DUMMY_PHONE)
       ->addWhere('phone_data.recipient_id', 'IS NOT NULL')
       ->addWhere('location_type_id:name', '=', 'sms_mobile')
-      ->addSelect('phone_data.*')
+      ->addSelect('phone_data.*', 'contact_id')
       ->setLimit($this->limit);
     if ($this->getRecipientID()) {
       $phoneGet->addWhere('recipient_id', '=', $this->getRecipientID());
@@ -122,6 +122,7 @@ class BatchUpdate extends AbstractAction {
         ->setDatabaseID($this->getDatabaseID())
         ->setRecipientID($phone['phone_data.recipient_id'])
         ->setPhoneID($phone['id'])
+        ->setContactID($phone['contact_id'])
         ->execute()->first();
       $result[] = $record;
     }

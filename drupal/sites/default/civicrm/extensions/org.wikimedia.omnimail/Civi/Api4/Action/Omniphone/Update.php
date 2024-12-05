@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4\Action\Omniphone;
 
+use Civi\Api4\Activity;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Omnicontact;
@@ -17,6 +18,7 @@ use Civi\Api4\PhoneConsent;
  * @method int getPhoneID()
  * @method $this setRecipientID(int $recipientID)
  * @method int getRecipientID()
+ * @method $this setContactID(int $contactID)
  * @method $this setLimit(int $limit)
  * @method int getLimit()
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
@@ -42,6 +44,11 @@ class Update extends AbstractAction {
    * @var int
    */
   protected $phoneID;
+
+  /**
+   * @var int
+   */
+  protected $contactID;
 
   /**
    * For staging use id from docs - buildkit should configure this.
@@ -70,6 +77,21 @@ class Update extends AbstractAction {
   }
 
   /**
+   * Get the contact ID, loading it from the phone if not provided.
+   *
+   * @return int
+   */
+  public function getContactID(): int {
+    if (!$this->contactID) {
+      $this->contactID = Phone::get(FALSE)
+        ->addWhere('id', '=', $this->getPhoneID())
+        ->addSelect('contact_id')
+        ->execute()->first()['contact_id'];
+    }
+    return $this->contactID;
+  }
+
+  /**
    * @inheritDoc
    *
    * @param \Civi\Api4\Generic\Result $result
@@ -84,6 +106,7 @@ class Update extends AbstractAction {
       ->setCheckPermissions($this->getCheckPermissions())
       ->setRecipientID($this->getRecipientID())
       ->execute()->first();
+
     // This if is cos it feels like we should check 'something'
     if (!empty($details['sms_consent_status'])) {
       // So far we can assume the number is from US & leads with a 1.
@@ -108,6 +131,21 @@ class Update extends AbstractAction {
         ->setMatch(['phone_number'])
         ->addRecord($record)
         ->execute();
+
+      Activity::create(FALSE)
+        ->setValues([
+          'activity_type_id:name' => $details['sms_consent_status'] === 'OPTED-IN' ? 'sms_consent_given' : 'sms_consent_revoked',
+          'activity_date_time' => $details['sms_consent_datetime'],
+          'status_id:name' => 'Completed',
+          'source_contact_id' => $this->getContactID(),
+          'subject' => $details['sms_consent_status'] === 'OPTED-IN' ? 'SMS consent given for ' . $details['mobile_phone'] : 'SMS consent revoked for ' . $details['mobile_phone'],
+          'details' => 'Acoustic opt in information : ' . $details['sms_consent_source'],
+          // These fields are kinda legacy but since they exist I guess we stick data in them.
+          'phone_number' => $details['mobile_phone'],
+          'phone_id' => $this->getPhoneID(),
+        ])
+        ->execute();
+
       $result[] = $record;
     }
   }
