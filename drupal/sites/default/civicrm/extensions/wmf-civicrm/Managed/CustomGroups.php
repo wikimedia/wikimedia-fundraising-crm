@@ -327,8 +327,8 @@ return [
       'table_name' => 'civicrm_value_direct_mail_data',
       'extends' => 'Activity',
       'extends_entity_column_value' => [CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'direct_mail')],
-      'fields' => _wmf_civicrm_get_direct_mail_fields(),
     ],
+    'fields' => _wmf_civicrm_get_direct_mail_fields(),
   ],
 ];
 
@@ -2246,7 +2246,7 @@ function _wmf_civicrm_get_direct_mail_fields(): array {
   return [
     'direct_mail_appeal' => [
       'name' => 'direct_mail_appeal',
-      'label' => 'Appeal',
+      'label' => 'Direct Mail Appeal',
       'html_type' => 'Text',
       'data_type' => 'String',
       'text_length' => 255,
@@ -2254,7 +2254,7 @@ function _wmf_civicrm_get_direct_mail_fields(): array {
     ],
     'direct_mail_package' => [
       'name' => 'direct_mail_package',
-      'label' => 'Package',
+      'label' => 'Direct Mail Package',
       'html_type' => 'Text',
       'data_type' => 'String',
       'text_length' => 255,
