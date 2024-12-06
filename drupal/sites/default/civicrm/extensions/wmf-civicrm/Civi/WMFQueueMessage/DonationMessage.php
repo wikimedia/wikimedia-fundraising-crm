@@ -301,19 +301,21 @@ class DonationMessage extends Message {
   }
 
   /**
+   * Get the amount of the donation in the currency it is settled in.
+   *
+   * @return float
+   */
+  public function getSettledAmount(): float {
+    return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
+  }
+
+  /**
    * Get the currency the donation is settled in.
    *
    * Currency it is always converted to USD.
    */
   public function getSettlementCurrency(): string {
     return 'USD';
-  }
-
-  /**
-   * Get the donation amount as we receive it in the settled currency.
-   */
-  public function getSettledAmount(): float {
-    return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
   }
 
   public function getSettledAmountRounded(): string {

@@ -18,7 +18,6 @@ use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
 use Civi\WMFTransaction;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
