@@ -31,7 +31,7 @@ class RecurringUpgradeExample extends WorkflowMessageExample {
     return [
       'id' => 0,
       'amount' => '12.30',
-      'frequency_unit' => 'monthly',
+      'frequency_unit' => 'month',
       'currency' => 'USD',
     ];
   }
