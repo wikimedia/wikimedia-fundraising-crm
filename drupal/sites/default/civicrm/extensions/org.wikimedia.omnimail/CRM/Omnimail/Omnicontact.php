@@ -150,7 +150,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         $return['sms_consent_status'] = $consent->getStatus();
         $return['sms_consent_source'] = $consent->getSource();
         $return['sms_consent_timestamp'] = $consent->getTimestamp();
-        $return['sms_consent_datetime'] = date('Y-m-d H:i:s', $consent->getTimestamp());
+        $return['sms_consent_datetime'] = $consent->getTimestamp() ? date('Y-m-d H:i:s', $consent->getTimestamp()) : NULL;
       }
       else {
         $return['sms_consent_status'] = NULL;

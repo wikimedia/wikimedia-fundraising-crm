@@ -102,6 +102,24 @@ CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'icon' => 'fa-envelopes-bulk',
 ]);
 
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'label' => 'Contact referral',
+  'value' => 190,
+  'name' => 'Contact referral',
+  'grouping' => NULL,
+  'filter' => 1,
+  'is_default' => FALSE,
+  'description' => 'Contribution was made by referral from another contact record',
+  'is_optgroup' => FALSE,
+  'is_reserved' => FALSE,
+  'is_active' => TRUE,
+  'component_id' => NULL,
+  'domain_id' => NULL,
+  'visibility_id' => NULL,
+  'color' => NULL,
+]);
+
 return [
   'wmf_donor' => [
     'group' => [

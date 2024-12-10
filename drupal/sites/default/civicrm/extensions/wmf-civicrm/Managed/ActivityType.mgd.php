@@ -252,5 +252,35 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'OptionValue_Referral',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'activity_type',
+        'label' => 'Contact referral',
+        'value' => 190,
+        'name' => 'Contact referral',
+        'grouping' => NULL,
+        'filter' => 1,
+        'is_default' => FALSE,
+        'description' => 'Contribution was made by referral from another contact record',
+        'is_optgroup' => FALSE,
+        'is_reserved' => TRUE,
+        'is_active' => TRUE,
+        'component_id' => NULL,
+        'domain_id' => NULL,
+        'visibility_id' => NULL,
+        'color' => NULL,
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ],
 ];
 
