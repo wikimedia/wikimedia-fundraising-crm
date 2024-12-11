@@ -110,6 +110,27 @@ class DonationQueueTest extends BaseQueueTestCase {
   /**
    * @throws \CRM_Core_Exception
    */
+  public function testEncodedRecipientID(): void {
+    $message = $this->processDonationMessage([
+      'recipient_id' => 'MTIzNDU2Nzg5MTAxMQ==',
+    ]);
+    $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals('SMS', $contribution['Gift_Data.Channel']);
+    $phones = Phone::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->addSelect('phone', 'phone_data.*', 'location_type_id:name')
+      ->execute();
+    $this->assertCount(1, $phones);
+    $phone = $phones->first();
+    $this->assertEquals(1234567891011, $phone['phone_data.recipient_id']);
+    $this->assertEquals('Acoustic', $phone['phone_data.phone_source']);
+    $this->assertEquals('sms_mobile', $phone['location_type_id:name']);
+    $this->assertNotEmpty($phone['phone_data.phone_update_date']);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
   public function testRecipientIDUpdate(): void {
     $this->processDonationMessage();
     Phone::create(FALSE)
@@ -2220,7 +2241,7 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
    /**
-   * Civi does not create a new contact record if contact record hash is different from that specified 
+   * Civi does not create a new contact record if contact record hash is different from that specified
    * in the import but everyother field (name, address, email) remains the same.
    * As such, do not add referral activity.
    */
