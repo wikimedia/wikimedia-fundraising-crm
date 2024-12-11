@@ -9,6 +9,7 @@ use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFHelper\FinanceInstrument;
+use CRM_Core_Exception;
 
 class DonationMessage extends Message {
 
@@ -215,8 +216,15 @@ class DonationMessage extends Message {
     $contactID = parent::getContactID();
     // Override parent to ensure that the email address matches too.
     // This is not applied to the OptInConsumer
-    if ($contactID && !empty($this->message['contact_hash'])
-      && !empty($this->message['email']) && $this->message['email'] !== $this->lookup('Contact', 'email_primary.email')) {
+    try {
+      if ($contactID && !empty($this->message['contact_hash'])
+        && !empty($this->message['email']) && $this->message['email'] !== $this->lookup('Contact', 'email_primary.email')) {
+        return NULL;
+      }
+    }
+    catch (CRM_Core_Exception $e) {
+      // An exception would be thrown if there is no existing contact with this as their
+      // primary email.
       return NULL;
     }
     return $contactID;
