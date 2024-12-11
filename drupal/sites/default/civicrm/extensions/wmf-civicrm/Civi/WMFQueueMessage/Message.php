@@ -330,6 +330,20 @@ class Message {
     // The recipient ID is a value sent from Acoustic which can be used to look
     // up the actual phone number.
     if (!empty($this->message['recipient_id'])) {
+      $original_recipient_id = $this->message['recipient_id'];
+      // Depending on how the message originates from acoustic it can be numeric or base64 encoded
+      if (!is_numeric($original_recipient_id)) {
+        // There is a random? S0 at the end, remove it (it might not always be S0) T381931
+        $this->message['recipient_id'] = substr($original_recipient_id, 0, -2);
+        $this->message['recipient_id'] = base64_decode($this->message['recipient_id'],'true');
+        if (!$this->message['recipient_id']) {
+          throw new WMFException(
+            WMFException::INVALID_MESSAGE,
+            "Invalid value ($original_recipient_id) for recipient_id"
+          );
+        }
+      }
+
       $phoneFields['phone_primary.phone_data.recipient_id'] = $this->message['recipient_id'];
       $phoneFields['phone_primary.phone_data.phone_source'] = 'Acoustic';
       $phoneFields['phone_primary.phone_type_id:name'] = 'Mobile';
