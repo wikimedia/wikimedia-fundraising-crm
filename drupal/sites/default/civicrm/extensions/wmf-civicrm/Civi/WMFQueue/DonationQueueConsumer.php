@@ -372,7 +372,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     ];
 
     // Set no_thank_you to recurring if it's the 2nd+ of any recurring payments
-    if ($message->getRecurringPriorContributionValue('id')) {
+    if ($message->getRecurringPriorContributionValue('id') && $message->getExistingContributionRecurValue('frequency_unit') !== 'year') {
       $contribution['contribution_extra.no_thank_you'] = 'recurring';
     }
 
