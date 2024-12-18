@@ -95,6 +95,10 @@ LEFT JOIN wmf_eoy_receipt_donor eoy ON email.email = eoy.email AND eoy.year = " 
 WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
   AND contribution.contribution_status_id = $completedStatusId
   AND eoy.email IS NULL
+-- We exclude annual recurring contributions when deciding WHO to email.
+-- if they have an annual recurring AND a monthly then both (all) donations
+-- will still be included in the WHAT to email.
+  AND contribution_recur.frequency_unit != 'year'
 ";
 
     CRM_Core_DAO::executeQuery($email_insert_sql);

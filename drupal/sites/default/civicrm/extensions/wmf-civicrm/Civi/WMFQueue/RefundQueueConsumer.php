@@ -9,6 +9,7 @@ use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFTransaction;
 use Exception;
+use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\PaymentProviders\IRecurringPaymentProfileProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
@@ -88,6 +89,8 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       );
     }
     $context = ['log_id' => $logId];
+    // not all messages have a reason
+    $reason = $message['reason'] ?? '';
     if ($contributions) {
       // Perform the refund!
       try {
@@ -104,8 +107,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         throw $ex;
       }
 
-      // not all messages have a reason
-      $reason = $message['reason'] ?? '';
       // add activity to record refund reason (e.g. why do we get chargeback),
       // currently only adyen has this field, need to ask gr4vy if they can also pass it back
       if (!empty($reason)) {
@@ -127,9 +128,17 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       }
     }
     else {
-      \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
-      throw new WMFException(WMFException::MISSING_PREDECESSOR, "Parent not found: " . strtoupper($gateway) . " " . $parentTxn);
-    }
+      // For SEPA and iDEAL, we may not have a contribution in CiviCRM yet
+      // because the payment is pending, and if failed due to RetryableChargeback, will rescue later
+      if (!empty($message['payment_method']) && in_array($message['payment_method'], ['rtbt_ideal', 'sepadirectdebit'])) {
+          // delete message from pending table
+          PendingDatabase::get()->deleteMessage($message);
+          \Civi::log('wmf')->info( 'Deleting pending contribution for ' . strtoupper($gateway) . " " . $parentTxn . ' ('. $message['payment_method'] . ') due to' . $reason, $context);
+      } else {
+        \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
+        throw new WMFException(WMFException::MISSING_PREDECESSOR, "Parent not found: " . strtoupper($gateway) . " " . $parentTxn);
+      }
+     }
   }
 
   /**
