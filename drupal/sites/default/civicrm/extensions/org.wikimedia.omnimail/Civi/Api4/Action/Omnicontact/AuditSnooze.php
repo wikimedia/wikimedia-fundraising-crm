@@ -80,15 +80,20 @@ class AuditSnooze extends AbstractAction {
         // or does not have a future snooze date then skip.
         continue;
       }
-      // if (date($snoozedEmails['email_settings']['snooze_date']) < ) {}
-      $remoteRecord = Omnicontact::get(FALSE)
-        ->setClient($this->getClient())
-        ->setEmail($snoozedEmail['email'])
-        ->execute()->first();
-      if (!$remoteRecord || empty($remoteRecord['snooze_end_date'])
-        || strtotime($remoteRecord['snooze_end_date']) < strtotime($snoozedEmail['email_settings.snooze_date'])
-      ) {
-        $result[] = $snoozedEmail + $remoteRecord;
+      try {
+        // if (date($snoozedEmails['email_settings']['snooze_date']) < ) {}
+        $remoteRecord = Omnicontact::get(FALSE)
+          ->setClient($this->getClient())
+          ->setEmail($snoozedEmail['email'])
+          ->execute()->first();
+        if (!$remoteRecord || empty($remoteRecord['snooze_end_date'])
+          || strtotime($remoteRecord['snooze_end_date']) < strtotime($snoozedEmail['email_settings.snooze_date'])
+        ) {
+          $result[] = $snoozedEmail + $remoteRecord;
+        }
+      }
+      catch (\Exception $e) {
+        \Civi::log('wmf')->info($snoozedEmail['email']) . $e->getMessage();
       }
     }
   }
