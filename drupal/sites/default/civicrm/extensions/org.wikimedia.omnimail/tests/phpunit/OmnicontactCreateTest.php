@@ -143,13 +143,7 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
     $this->addTestClientToXMLSingleton();
 
     $snoozeDate = date('Y-m-d', strtotime('+ 1 week'));
-    $contact = Contact::create(FALSE)->setValues([
-      'contact_type' => 'Individual',
-      'first_name' => 'Donald',
-      'last_name' => 'Duck',
-      'email_primary.email' => 'the_don@example.com',
-      'email_primary.email_settings.snooze_date' => $snoozeDate,
-    ])->execute()->first();
+    $contact = $this->createSnoozyDuck($snoozeDate);
     $queue = Queue::get(FALSE)
       ->addWhere('name', '=', 'omni-snooze')
       ->addWhere('status', '=', 'active')
