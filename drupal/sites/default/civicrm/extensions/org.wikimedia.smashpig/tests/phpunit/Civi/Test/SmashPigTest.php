@@ -840,6 +840,179 @@ class SmashPigTest extends SmashPigBaseTestClass {
     ], $contributionMessage);
   }
 
+
+  public function testRecurringChargeJobAddsGravyFieldsToContributionDirectlyIfNeeded(): void {
+    // Do not use queue. Instead, write straight to database directly.
+    \Civi::settings()->set(
+      'smashpig_recurring_use_queue', '0'
+    );
+    \Civi::settings()->set(
+      'smashpig_recurring_catch_up_days', '1'
+    );
+
+    // simulate a Gravy payment
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id'], ['payment_processor_id.name' => 'gravy']);
+    $contributionRecur = $this->createContributionRecur($token, [
+      'gateway' => 'GRAVY',
+      'payment_processor_id.name' => 'gravy',
+    ]);
+
+    $contribution = $this->createContribution($contributionRecur);
+    [, $expectedPaymentInvoiceId] = $this->getExpectedIds($contribution);
+    $expectedDescription = $this->getExpectedDescription();
+
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->with([
+        'recurring_payment_token' => $token['token'],
+        'amount' => 12.34,
+        'country' => 'US',
+        'currency' => 'USD',
+        'first_name' => 'Harry',
+        'last_name' => 'Henderson',
+        'email' => 'harry@hendersons.net',
+        'order_id' => $expectedPaymentInvoiceId,
+        'installment' => 'recurring',
+        'description' => $expectedDescription,
+        'processor_contact_id' => $contributionRecur['invoice_id'],
+        'fiscal_number' => '1122334455',
+        'recurring' => TRUE,
+        'user_ip' => '12.34.56.78',
+      ])
+      ->willReturn(
+        (new CreatePaymentResponse())
+          ->setGatewayTxnId('7ed31062-9f2a-4e94-8a0b-10fd155dda49')
+          ->setBackendProcessor('adyen')
+          ->setBackendProcessorTransactionId('FB88G3H5Z5LTWBV5')
+          ->setPaymentOrchestratorReconciliationId('3rJUMU18JhgMybJNc5OlIX')
+          ->setStatus(FinalStatus::PENDING_POKE)
+          ->setSuccessful(TRUE)
+      );
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->with([
+        'amount' => 12.34,
+        'currency' => 'USD',
+        'gateway_txn_id' => '7ed31062-9f2a-4e94-8a0b-10fd155dda49',
+      ])
+      ->willReturn(
+        (new ApprovePaymentResponse())
+          ->setGatewayTxnId('7ed31062-9f2a-4e94-8a0b-10fd155dda49')
+          ->setBackendProcessor('adyen')
+          ->setBackendProcessorTransactionId('FB88G3H5Z5LTWBV5')
+          ->setPaymentOrchestratorReconciliationId('3rJUMU18JhgMybJNc5OlIX')
+          ->setStatus(FinalStatus::COMPLETE)
+          ->setSuccessful(TRUE)
+      );
+
+    $result = civicrm_api3('Job', 'process_smashpig_recurring', []);
+
+    $this->assertEquals(
+      ['ids' => [$contributionRecur['id']]],
+      $result['values']['success']
+    );
+
+    $contributions = Contribution::get(FALSE)
+      ->addSelect('*', 'Gift_Data.*', 'contribution_extra.*', 'contribution_status_id:name')
+      ->addWhere('contribution_recur_id', '=', $contributionRecur['id'])
+      ->addOrderBy('id')->execute();
+    $this->assertCount(2, $contributions);
+
+    $expectedBackendProcessor = 'adyen';
+    $expectedBackendProcessorTxnId = 'FB88G3H5Z5LTWBV5';
+    $expectedPaymentOrchestratorReconciliationId = '3rJUMU18JhgMybJNc5OlIX';
+
+    $this->assertEquals($expectedBackendProcessor, $contributions[1]['contribution_extra.backend_processor']);
+    $this->assertEquals($expectedBackendProcessorTxnId, $contributions[1]['contribution_extra.backend_processor_txn_id']);
+    $this->assertEquals($expectedPaymentOrchestratorReconciliationId, $contributions[1]['contribution_extra.payment_orchestrator_reconciliation_id']);
+  }
+
+  public function testRecurringChargeJobAddsGravyFieldsToQueueMessageIfNeeded(): void {
+    // Use the queue rather than table insert
+    \Civi::settings()->set(
+      'smashpig_recurring_use_queue', '1'
+    );
+    \Civi::settings()->set(
+      'smashpig_recurring_catch_up_days', '1'
+    );
+
+    // simulate a Gravy payment
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id'], ['payment_processor_id.name' => 'gravy']);
+    $contributionRecur = $this->createContributionRecur($token, [
+      'gateway' => 'GRAVY',
+      'payment_processor_id.name' => 'gravy',
+    ]);
+
+    $contribution = $this->createContribution($contributionRecur);
+    [, $expectedNextPaymentInvoiceId] = $this->getExpectedIds($contribution);
+    $expectedDescription = $this->getExpectedDescription();
+
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->with([
+        'recurring_payment_token' => $token['token'],
+        'amount' => 12.34,
+        'country' => 'US',
+        'currency' => 'USD',
+        'first_name' => 'Harry',
+        'last_name' => 'Henderson',
+        'email' => 'harry@hendersons.net',
+        'order_id' => $expectedNextPaymentInvoiceId,
+        'installment' => 'recurring',
+        'description' => $expectedDescription,
+        'processor_contact_id' => $contributionRecur['invoice_id'],
+        'fiscal_number' => '1122334455',
+        'recurring' => TRUE,
+        'user_ip' => '12.34.56.78',
+      ])
+      ->willReturn(
+        (new CreatePaymentResponse())
+          ->setGatewayTxnId('7ed31062-9f2a-4e94-8a0b-10fd155dda49')
+          ->setBackendProcessor('adyen')
+          ->setBackendProcessorTransactionId('FB88G3H5Z5LTWBV5')
+          ->setPaymentOrchestratorReconciliationId('3rJUMU18JhgMybJNc5OlIX')
+          ->setStatus(FinalStatus::PENDING_POKE)
+          ->setSuccessful(TRUE)
+      );
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->with([
+        'amount' => 12.34,
+        'currency' => 'USD',
+        'gateway_txn_id' => '7ed31062-9f2a-4e94-8a0b-10fd155dda49',
+      ])
+      ->willReturn(
+        (new ApprovePaymentResponse())
+          ->setGatewayTxnId('7ed31062-9f2a-4e94-8a0b-10fd155dda49')
+          ->setBackendProcessor('adyen')
+          ->setBackendProcessorTransactionId('FB88G3H5Z5LTWBV5')
+          ->setPaymentOrchestratorReconciliationId('3rJUMU18JhgMybJNc5OlIX')
+          ->setStatus(FinalStatus::COMPLETE)
+          ->setSuccessful(TRUE)
+      );
+
+    $result = civicrm_api3('Job', 'process_smashpig_recurring', []);
+
+    $this->assertEquals(
+      ['ids' => [$contributionRecur['id']]],
+      $result['values']['success']
+    );
+
+    $testDonationQueue = QueueWrapper::getQueue('donations');
+    $recurringChargeDonationMessage = $testDonationQueue->pop();
+    $this->assertNotNull($recurringChargeDonationMessage, 'Donation message not added!');
+
+    $expectedBackendProcessor = 'adyen';
+    $expectedBackendProcessorTxnId = 'FB88G3H5Z5LTWBV5';
+    $expectedPaymentOrchestratorReconciliationId = '3rJUMU18JhgMybJNc5OlIX';
+
+    $this->assertEquals($expectedBackendProcessor, $recurringChargeDonationMessage['backend_processor']);
+    $this->assertEquals($expectedBackendProcessorTxnId, $recurringChargeDonationMessage['backend_processor_txn_id']);
+    $this->assertEquals($expectedPaymentOrchestratorReconciliationId, $recurringChargeDonationMessage['payment_orchestrator_reconciliation_id']);
+  }
+
   /**
    * @throws \CRM_Core_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException

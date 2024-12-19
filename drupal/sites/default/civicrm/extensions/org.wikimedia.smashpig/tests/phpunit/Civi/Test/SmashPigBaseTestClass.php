@@ -298,7 +298,8 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    * @return array
    */
   protected function createContributionRecur(array $token, array $overrides = []): array {
-    $trxn_id = ($overrides['trxn_id'] ?? NULL) ?: $this->trxn_id;
+    $gateway = $overrides['gateway'] ?? 'INGENICO';
+    $trxn_id = $overrides['trxn_id'] ?? $this->trxn_id;
     $invoice_id = 678000 . '.' . $trxn_id;
     $params = $overrides + [
       'contact_id' => $token['contact_id'],
@@ -315,7 +316,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
       'cycle_day' => gmdate('d', strtotime('-12 hours')),
       'payment_processor_id.name' => $this->processorName,
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
-      'trxn_id' => 'RECURRING INGENICO ' . $trxn_id,
+      'trxn_id' => 'RECURRING ' . $gateway . $trxn_id,
       'processor_id' => $trxn_id,
       'invoice_id' => $invoice_id,
       'contribution_status_id:name' => 'Pending',

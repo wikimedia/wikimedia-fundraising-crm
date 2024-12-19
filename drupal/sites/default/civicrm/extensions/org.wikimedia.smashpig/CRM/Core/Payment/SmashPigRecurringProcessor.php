@@ -315,10 +315,12 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       // to treat the contribution as the first one.
       $financialTypeID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift");
     }
+
+    $pid = $recurringPayment['payment_processor_id'];
+    $processorName = $this->smashPigProcessors[$pid]['name'];
+
     if ($this->useQueue) {
       $ctId = explode('.', $invoiceId)[0];
-      $pid = $recurringPayment['payment_processor_id'];
-      $processorName = $this->smashPigProcessors[$pid]['name'];
       $queueMessage = [
         'contact_id' => $recurringPayment['contact_id'],
         'financial_type_id' => $financialTypeID,
@@ -341,11 +343,15 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'direct_mail_appeal' => $previousPayment['Gift_Data.Appeal'],
       ];
 
-      QueueWrapper::push('donations', $queueMessage, true);
+      if ($this->isProcessorGravy($processorName)) {
+        $queueMessage = $this->addProcessorSpecificFieldsToQueueMessage($queueMessage, $payment);
+      }
+
+      QueueWrapper::push('donations', $queueMessage, TRUE);
     }
     else {
       // Create the contribution
-      Contribution::create(FALSE)->setValues([
+      $contributionValues = [
         'financial_type_id' => $financialTypeID,
         'payment_instrument_id' => $previousPayment['payment_instrument_id'],
         'total_amount' => $recurringPayment['amount'],
@@ -362,7 +368,15 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'Gift_Data.Campaign' => $previousPayment['Gift_Data.Campaign'],
         // Direct Mail Appeal field
         'Gift_Data.Appeal' => $previousPayment['Gift_Data.Appeal'],
-      ])->execute();
+      ];
+
+      if ($this->isProcessorGravy($processorName)) {
+        $contributionValues = $this->addProcessorSpecificFieldsToContribution($contributionValues, $payment);
+      }
+
+      Contribution::create(FALSE)
+        ->setValues($contributionValues)
+        ->execute();
     }
   }
 
@@ -536,7 +550,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    */
   public static function getPreviousContributionByRecurringId($recurringId, $isTest) {
     return Contribution::get(FALSE)
-      ->addSelect('*', 'Gift_Data.*', 'payment_instrument_id:name')
+      ->addSelect('*', 'Gift_Data.*', 'payment_instrument_id:name', 'contribution_extra.*' )
       ->addWhere('contribution_recur_id', '=', $recurringId)
       ->addWhere('is_test', '=', $isTest)
       ->addOrderBy('receive_date', 'DESC')
@@ -811,6 +825,57 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'contribution_status_id' => 'In Progress',
       'next_sched_contribution_date' => CRM_Core_Payment_Scheduler::getNextContributionDate($recurringPayment),
     ]);
+  }
+
+  /**
+   * When making a recurring charge for a subscription added via Gravy, we need
+   * to add in some additional backend-processor fields to the queue message
+   *
+   * @See T381866
+   *
+   * @param array $queueMessage
+   * @param array $payment
+   *
+   * @return array
+   */
+  protected function addProcessorSpecificFieldsToQueueMessage(
+    array $queueMessage,
+    array $payment
+  ): array {
+    return array_merge($queueMessage, [
+      'backend_processor' => $payment['backend_processor'],
+      'backend_processor_txn_id' => $payment['backend_processor_txn_id'],
+      'payment_orchestrator_reconciliation_id' => $payment['payment_orchestrator_reconciliation_id'],
+    ]);
+  }
+
+  /**
+   * When making a recurring charge for a subscription added via Gravy, we need
+   * to add in some additional backend-processor fields to the contribution
+   * record
+   *
+   * @See T381866
+   *
+   * @param array $contributionValues
+   * @param array $payment
+   *
+   * @return []|array
+   */
+  protected function addProcessorSpecificFieldsToContribution(array $contributionValues, array $payment): array {
+    return array_merge($contributionValues, [
+      'contribution_extra.backend_processor' => $payment['backend_processor'],
+      'contribution_extra.backend_processor_txn_id' => $payment['backend_processor_txn_id'],
+      'contribution_extra.payment_orchestrator_reconciliation_id' => $payment['payment_orchestrator_reconciliation_id'],
+    ]);
+  }
+
+  /**
+   * @param $processorName
+   *
+   * @return bool
+   */
+  protected function isProcessorGravy($processorName): bool {
+    return $processorName === 'gravy';
   }
 
 }
