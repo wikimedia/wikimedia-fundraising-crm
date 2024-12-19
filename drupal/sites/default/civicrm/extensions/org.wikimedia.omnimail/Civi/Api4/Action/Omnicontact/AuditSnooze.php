@@ -93,7 +93,7 @@ class AuditSnooze extends AbstractAction {
         }
       }
       catch (\Exception $e) {
-        \Civi::log('wmf')->info($snoozedEmail['email']) . $e->getMessage();
+        \Civi::log('wmf')->info('unable to retrieve from Acoustic: ' . $snoozedEmail['email']) . $e->getMessage();
       }
     }
   }
