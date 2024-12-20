@@ -585,7 +585,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @return array
    * @throws \CRM_Core_Exception
    */
-  public static function getPreviousContribution($recurringPayment) {
+  public static function getPreviousContribution($recurringPayment): array {
     // throw an error if parameters required to find a matching contribution are not available
     if (empty($recurringPayment['id']) && empty($recurringPayment['invoice_id'])) {
       throw new CRM_Core_Exception('Missing required parameters to find a matching contribution');
