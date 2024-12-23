@@ -315,8 +315,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    * Checks for contact ID and hash match.  If mismatched unset
    * ID and hash so message is treated as a new contact.
    *
-   * @todo - I think Message::normalize() already prunes invalid contact IDs so can probably just go.
-   * @deprecated
+   * normalize() is used for check if both hash and email exist and the passing email is not primary, so can still keep this
    * @param $msg
    * @param $matchEmail
    *
@@ -328,8 +327,10 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'return' => ['hash', 'email'],
     ]);
 
+    // if no email passed, but matched hash and id, no need to create a new contact
     if (!$existing || $existing['hash'] !== $msg['contact_hash'] ||
-      ($existing['email'] !== $msg['email'] && $matchEmail)) {
+      ($msg['email'] && $existing['email'] !== $msg['email'] && $matchEmail)) {
+      // Only add referral_id if the email or hash is different, otherwise it's the same person
       if (!empty($existing)) {
         $msg['referral_id'] = $existing['contact_id'];
       }

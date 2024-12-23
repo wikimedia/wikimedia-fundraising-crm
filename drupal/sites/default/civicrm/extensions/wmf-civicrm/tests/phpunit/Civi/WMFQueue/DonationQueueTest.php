@@ -2416,6 +2416,53 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertNotNull($activity);
   }
 
+  /**
+   * If we lost email during but still have contact_id and contact_hash and they matched
+   * we should use the contact_id instead of creating a new donor record
+   *
+   * @return void
+   */
+  public function testImportWithMatchedContactHashButNoEmail(): void {
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+    ], 'existing');
+    $email = 'booboo' . mt_rand() . '@example.org';
+    $this->createTestEntity('Email', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'email' => $email,
+      'location_type_id' => 1,
+    ]);
+    $this->createTestEntity('Address', [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'country' => 'France',
+      'street_address' => '777 Trompe L\'Oeil Boulevard',
+      'location_type_id' => 1,
+    ]);
+
+    $msg = [
+      'contact_id' => $this->ids['Contact']['existing'],
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'contact_hash' => $existingContact['hash'],
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => '',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+  }
+
    /**
    * Ensure the referral activity is not created for new contact record.
    */
