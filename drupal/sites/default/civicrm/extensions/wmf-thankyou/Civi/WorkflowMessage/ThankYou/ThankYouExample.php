@@ -148,6 +148,7 @@ class ThankYouExample extends WorkflowMessageExample {
     $messageTemplate->setPaymentInstrumentID(107);
     $messageTemplate->setVenmoUserName('venmojoe');
     $messageTemplate->setReceiveDate(date('Y-m-d'), strtotime('One month ago'));
+    $messageTemplate->setFrequencyUnit('month');
     if ($example === 'stock') {
       $messageTemplate->setStockValue(5200);
       $messageTemplate->setStockQuantity(10);

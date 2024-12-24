@@ -211,9 +211,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         }
       }
     }
-    if ($msg['contact_id'] && isset($msg['contact_hash'])) {
-      $this->setNullOnHashMismatch($msg, TRUE);
-    }
+
     $this->startTiming('create_contact');
     $contact = WMFContact::save(FALSE)
       ->setMessage($msg)
@@ -309,33 +307,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       ->addStat("message_import_timers", ImportStatsCollector::getInstance()->getTimerDiff($uniqueTimerName));
 
     return $contribution;
-  }
-
-  /**
-   * Checks for contact ID and hash match.  If mismatched unset
-   * ID and hash so message is treated as a new contact.
-   *
-   * @todo - I think Message::normalize() already prunes invalid contact IDs so can probably just go.
-   * @deprecated
-   * @param $msg
-   * @param $matchEmail
-   *
-   * @throws \CRM_Core_Exception
-   */
-  private function setNullOnHashMismatch(&$msg, $matchEmail = FALSE) {
-    $existing = civicrm_api3('Contact', 'getSingle', [
-      'id' => $msg['contact_id'],
-      'return' => ['hash', 'email'],
-    ]);
-
-    if (!$existing || $existing['hash'] !== $msg['contact_hash'] ||
-      ($existing['email'] !== $msg['email'] && $matchEmail)) {
-      if (!empty($existing)) {
-        $msg['referral_id'] = $existing['contact_id'];
-      }
-      $msg['contact_id'] = NULL;
-      unset($msg['contact_hash']);
-    }
   }
 
   /**
