@@ -39,12 +39,12 @@ class CRM_Omnimail_Omnimail {
   /**
    * @var array
    */
-  protected $jobSettings = array();
+  protected array $jobSettings = [];
 
   /**
    * @var array
    */
-  protected $settings = array();
+  protected array $settings = [];
 
   /**
    * @var array
@@ -167,11 +167,9 @@ class CRM_Omnimail_Omnimail {
    * This is the row in the csv file to start from in csv jobs.
    *
    * @param array $params
-   *
-   * @return mixed
    */
-  protected function setOffset($params) {
-    $this->offset = CRM_Utils_Array::value('offset', $this->jobSettings, 0);
+  protected function setOffset(array $params): void {
+    $this->offset = $this->jobSettings['offset'] ?? 0;
     if (isset($params['options']['offset'])) {
       $this->offset = $params['options']['offset'];
     }
