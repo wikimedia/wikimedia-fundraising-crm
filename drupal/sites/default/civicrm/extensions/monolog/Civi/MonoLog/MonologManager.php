@@ -72,6 +72,9 @@ class MonologManager {
   public function getLog($channel = 'default'): LoggerInterface {
     try {
       if (!isset($this->channels[$channel])) {
+        if (!class_exists('Monolog\Logger')) {
+          throw new \RuntimeException('error triggered before stack fully loaded');
+        }
         // Temporarily set the channel to the built in logger
         // to avoid a loop if logging is called while
         // retrieving the monologs.
