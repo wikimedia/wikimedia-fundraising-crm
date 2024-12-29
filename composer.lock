@@ -2052,11 +2052,17 @@
         },
         {
             "name": "mrmarkfrench/silverpop-php-connector",
-            "version": "dev-master",
+            "version": "1.6.5",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/silverpop-php-connector",
-                "reference": "0ac84b2d736ed698d2637e128414d0c03948ea6c"
+                "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
+                "reference": "c028d0fbb3554224e61f4514aef70dd7a014ed70"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/c028d0fbb3554224e61f4514aef70dd7a014ed70",
+                "reference": "c028d0fbb3554224e61f4514aef70dd7a014ed70",
+                "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
@@ -2068,18 +2074,13 @@
             "require-dev": {
                 "phpunit/phpunit": "*"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
                     "SilverpopConnector\\": "src/SilverpopConnector"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "SilverpopConnector\\Tests\\": "test/tests"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -2093,7 +2094,11 @@
             "keywords": [
                 "Silverpop"
             ],
-            "time": "2024-11-27T21:57:14+00:00"
+            "support": {
+                "issues": "https://github.com/mrmarkfrench/silverpop-php-connector/issues",
+                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.6.5"
+            },
+            "time": "2024-12-29T03:42:51+00:00"
         },
         {
             "name": "nikic/php-parser",
@@ -2743,16 +2748,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "2.0.47",
+            "version": "2.0.48",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "b7d7d90ee7df7f33a664b4aea32d50a305d35adb"
+                "reference": "eaa7be704b8b93a6913b69eb7f645a59d7731b61"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/b7d7d90ee7df7f33a664b4aea32d50a305d35adb",
-                "reference": "b7d7d90ee7df7f33a664b4aea32d50a305d35adb",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/eaa7be704b8b93a6913b69eb7f645a59d7731b61",
+                "reference": "eaa7be704b8b93a6913b69eb7f645a59d7731b61",
                 "shasum": ""
             },
             "require": {
@@ -2833,7 +2838,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/2.0.47"
+                "source": "https://github.com/phpseclib/phpseclib/tree/2.0.48"
             },
             "funding": [
                 {
@@ -2849,7 +2854,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-02-26T04:55:38+00:00"
+            "time": "2024-12-14T21:03:54+00:00"
         },
         {
             "name": "predis/predis",
@@ -3545,12 +3550,12 @@
             },
             "type": "library",
             "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/contracts",
+                    "name": "symfony/contracts"
+                },
                 "branch-alias": {
                     "dev-main": "2.5-dev"
-                },
-                "thanks": {
-                    "name": "symfony/contracts",
-                    "url": "https://github.com/symfony/contracts"
                 }
             },
             "autoload": {
@@ -4158,8 +4163,8 @@
             "type": "library",
             "extra": {
                 "thanks": {
-                    "name": "symfony/polyfill",
-                    "url": "https://github.com/symfony/polyfill"
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
                 }
             },
             "autoload": {
@@ -4240,8 +4245,8 @@
             "type": "library",
             "extra": {
                 "thanks": {
-                    "name": "symfony/polyfill",
-                    "url": "https://github.com/symfony/polyfill"
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
                 }
             },
             "autoload": {
@@ -4324,8 +4329,8 @@
             "type": "library",
             "extra": {
                 "thanks": {
-                    "name": "symfony/polyfill",
-                    "url": "https://github.com/symfony/polyfill"
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
                 }
             },
             "autoload": {
@@ -5156,11 +5161,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.14",
+            "version": "1.15",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "5f64c3f68cec0654a3e4ee9a7de6f3fd815b4ba2"
+                "reference": "a580e5a4110b20932263c45f9316aa67592661c8"
             },
             "require": {
                 "league/csv": "^9",
@@ -5200,7 +5205,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2024-12-10T20:01:38+00:00"
+            "time": "2024-12-29T04:02:41+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -7498,8 +7503,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "drupal/coder": 20,
-        "mrmarkfrench/silverpop-php-connector": 20
+        "drupal/coder": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
