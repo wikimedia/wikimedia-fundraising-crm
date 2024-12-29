@@ -169,9 +169,9 @@ class CRM_Omnimail_Omnimail {
    * @param array $params
    */
   protected function setOffset(array $params): void {
-    $this->offset = $this->jobSettings['offset'] ?? 0;
+    $this->offset = (int) ($this->jobSettings['offset'] ?? 0);
     if (isset($params['options']['offset'])) {
-      $this->offset = $params['options']['offset'];
+      $this->offset = (int) $params['options']['offset'];
     }
   }
 
