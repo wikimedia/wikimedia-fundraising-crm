@@ -75,7 +75,7 @@ class CRM_Omnimail_Omnimail {
     $this->settings = CRM_Omnimail_Helper::getSettings();
     $this->setJobSettings($params);
     $this->setOffset($params);
-    $this->setRetrievalParameters(CRM_Utils_Array::value('retrieval_parameters', $this->jobSettings));
+    $this->setRetrievalParameters($this->jobSettings['retrieval_parameters'] ?? NULL);
 
     if ($this->getRetrievalParameters()) {
       if (!empty($params['end_date']) || !empty($params['start_date'])) {
