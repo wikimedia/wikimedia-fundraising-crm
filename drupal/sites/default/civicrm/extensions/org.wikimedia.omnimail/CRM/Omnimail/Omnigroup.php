@@ -19,7 +19,7 @@ class CRM_Omnimail_Omnigroup extends CRM_Omnimail_Omnimail{
   /**
    * @var string
    */
-  protected $job = 'omnigroup';
+  protected string $job = 'omnigroup';
 
   /**
    * Create a group (list) in Acoustic DB.

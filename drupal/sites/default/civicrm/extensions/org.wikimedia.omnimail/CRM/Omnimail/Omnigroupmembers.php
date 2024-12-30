@@ -21,7 +21,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
   /**
    * @var string
    */
-  protected $job = 'omnigroupmembers';
+  protected string $job = 'omnigroupmembers';
 
   /**
    * @param array $params

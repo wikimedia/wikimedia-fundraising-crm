@@ -6,7 +6,6 @@
  * Date: 5/16/17
  * Time: 5:53 PM
  */
-
 class CRM_Omnimail_Omnimail {
 
   /**
@@ -16,7 +15,7 @@ class CRM_Omnimail_Omnimail {
    *
    * @var string
    */
-  protected $job;
+  protected string $job = '';
 
   /**
    * @var string
