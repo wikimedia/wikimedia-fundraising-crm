@@ -71,6 +71,7 @@ class OmnimailBaseTestClass extends TestCase {
     // would be replaced to a call to `$this->getMockRequest()` which loads the
     // mock response rather than doing a live call.
     $this->setBaseUri('https://api-campaign-us-4.goacoustic.com/');
+    $this->setSetting('omnimail_job_retry_interval', 0.01);
   }
 
   /**
@@ -360,9 +361,9 @@ class OmnimailBaseTestClass extends TestCase {
    * civicrm.settings.php or, in our case, in fundraising-dev/config/civicrm/settings.d
    *
    * @param string $setting
-   * @param array $temporarySettings
+   * @param mixed $temporarySettings
    */
-  protected function setSetting(string $setting, array $temporarySettings): void {
+  protected function setSetting(string $setting, $temporarySettings): void {
     $this->existingSettings[$setting] = Civi::settings()->get($setting);
     Civi::settings()->set($setting, $temporarySettings);
     // Settings stored in the global are 'mandatory' - ie override the db.

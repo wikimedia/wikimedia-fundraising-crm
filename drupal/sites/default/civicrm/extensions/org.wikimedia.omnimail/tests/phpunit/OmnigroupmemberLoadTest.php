@@ -91,7 +91,6 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    */
   public function testOmnigroupmemberLoadUseOffsetSetting(): void {
     $client = $this->setupSuccessfulDownloadClient();
-    $this->callAPISuccess('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
 
     $this->callAPISuccess('Omnigroupmember', 'load', [
@@ -156,7 +155,6 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     for ($i = 0; $i < 15; $i++) {
       $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
     }
-    $this->callAPISuccess('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers2', 'title' => 'Omni2']);
 
     $this->callAPISuccess('Omnigroupmember', 'load', [
@@ -201,7 +199,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
     }
     $responses[] = file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt');
-    $this->callAPISuccess('setting', 'create', ['omnimail_job_retry_interval' => 0.01]);
+
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers2', 'title' => 'Omni2']);
 
     $this->callAPISuccess('Omnigroupmember', 'load', [
