@@ -1,8 +1,5 @@
 <?php
 
-use Omnimail\Silverpop\Responses\RecipientsResponse;
-use Omnimail\Omnimail;
-
 /**
  * Created by IntelliJ IDEA.
  * User: emcnaughton
@@ -183,12 +180,12 @@ class CRM_Omnimail_Omnimail {
    *
    * @throws \CRM_Core_Exception
    */
-  protected function setJobSettings($params) {
-    $this->jobSettings = array(
+  protected function setJobSettings(array $params): void {
+    $this->jobSettings = [
       'mailing_provider' => $params['mail_provider'],
       'job' => 'omnimail_' . $this->job . '_load',
-      'job_identifier' => $this->job_identifier ? : NULL,
-    );
+      'job_identifier' => $this->job_identifier ?: NULL,
+    ];
     $savedSettings = civicrm_api3('OmnimailJobProgress', 'get', $this->jobSettings);
 
     if ($savedSettings['count']) {
