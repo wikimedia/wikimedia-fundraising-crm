@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\Omniactivity;
 use Civi\Api4\Action\Omniaction;
 use Civi\Api4\Activity;
 use Civi\Api4\Contact;
+use Civi\Api4\Email;
 use Civi\Api4\Generic\Result;
 
 /**
@@ -125,6 +126,16 @@ class Load extends Omniaction {
           'activity_date_time' => $row['recipient_action_datetime'],
         ])
         ->execute()->single()['id'];
+      if ($activityType === 'EmailSnoozed') {
+        $snoozedUntil = date('Y-m-d', strtotime('+ 90 days', strtotime($row['recipient_action_datetime'])));
+        if ($snoozedUntil > time()) {
+          // Update the snooze date - this could re-snooze some, not a bad thing.
+          Email::update(FALSE)
+            ->addWhere('email', '=', $row['email'])
+            ->addValue('email_settings.snooze_date', $snoozedUntil)
+            ->execute();
+        }
+      }
       $result[] = $row;
     }
     if (empty($rows) || count($rows) < $this->limit) {
