@@ -54,9 +54,9 @@ class OmnicontactGetTest extends OmnimailBaseTestClass {
    * @return void
    * @throws \CRM_Core_Exception
    */
-  public function testAuditSnooze(): void {
+  public function testVerifySnooze(): void {
     $this->createSnoozyDuck(date('Y-m-d H:i:s', strtotime('+ 1 week')));
-    $lazyBones = Omnicontact::auditSnooze(FALSE)
+    $lazyBones = Omnicontact::verifySnooze(FALSE)
       ->setClient($this->getMockRequest([
         file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt'),
         file_get_contents(__DIR__ . '/Responses/AuthenticateRestResponse.txt'),
