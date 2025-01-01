@@ -80,6 +80,7 @@ class MakeJob extends AbstractAction {
       'CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'
     );
 
+    CRM_Core_DAO::executeQuery('DELETE FROM wmf_eoy_receipt_donor WHERE year < ' . $this->getYear());
     $email_insert_sql = "
 INSERT INTO wmf_eoy_receipt_donor (year, email, status)
 SELECT DISTINCT " . $this->getYear() . ", email.email, 'queued'
@@ -91,7 +92,10 @@ INNER JOIN civicrm_email email
   AND email.is_primary
 INNER JOIN civicrm_contact contact ON contact.id = email.contact_id
   AND contact.is_deleted = 0
-LEFT JOIN wmf_eoy_receipt_donor eoy ON email.email = eoy.email AND eoy.year = " . $this->getYear() ."
+LEFT JOIN wmf_eoy_receipt_donor eoy ON email.email = eoy.email
+-- ideally we want to fully remove the year thing - tracking the intent
+-- to send emails across the years is just cruft.
+AND eoy.year = " . $this->getYear() ."
 WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
   AND contribution.contribution_status_id = $completedStatusId
   AND eoy.email IS NULL
