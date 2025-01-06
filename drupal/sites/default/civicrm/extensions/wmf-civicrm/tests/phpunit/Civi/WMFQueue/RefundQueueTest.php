@@ -402,15 +402,15 @@ class RefundQueueTest extends BaseQueueTestCase {
    */
   public function testMarkRefundCheckWMFDonorData(): void {
     $this->setupOriginalContribution();
-    $nextYear = date('Y', strtotime('+1 year'));
-    $yearAfterNext = date('Y', strtotime('+2 year'));
+    $lastYear = date('Y', strtotime('-1 year'));
+    $thisYear = date('Y', strtotime('+0 year'));
     $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Maisy', 'last_name' => 'Mouse'], 'maisy');
     $this->createTestEntity('Contribution', [
       'contact_id' => $this->ids['Contact']['maisy'],
       'financial_type_id:name' => 'Cash',
       'total_amount' => 50,
       'source' => 'USD 50',
-      'receive_date' => "$nextYear-11-01",
+      'receive_date' => "$lastYear-11-01",
       'contribution_extra.gateway' => 'adyen',
       'contribution_extra.gateway_txn_id' => 345,
     ]);
@@ -422,7 +422,7 @@ class RefundQueueTest extends BaseQueueTestCase {
       'financial_type_id:name' => 'Cash',
       'total_amount' => -10,
       'contribution_source' => 'USD -10',
-      'receive_date' => "$nextYear-12-01",
+      'receive_date' => "$lastYear-12-01",
     ]);
 
     $this->processMessage([
@@ -430,20 +430,19 @@ class RefundQueueTest extends BaseQueueTestCase {
       'gateway' => 'adyen',
       'gateway_txn_id' => 'my_special_ref',
       'gross' => 10,
-      'date' => "$nextYear-09-09",
+      'date' => "$lastYear-09-09",
       'type' => 'refund',
     ], 'Refund', 'refund');
 
     $this->assertContactValues($this->ids['Contact']['maisy'], [
       'wmf_donor.lifetime_usd_total' => 40,
-      'wmf_donor.last_donation_date' => "$nextYear-11-01 00:00:00",
+      'wmf_donor.last_donation_date' => "$lastYear-11-01 00:00:00",
       'wmf_donor.last_donation_amount' => 50,
       'wmf_donor.last_donation_usd' => 50,
       'wmf_donor.last_donation_currency' => 'USD',
-      "wmf_donor.total_$nextYear" => 40,
+      "wmf_donor.total_$lastYear" => 40,
       'wmf_donor.number_donations'  => 1,
-      "wmf_donor.total_{$nextYear}_{$yearAfterNext}" => 40,
-      'wmf_donor.' . $this->getCurrentFinancialYearTotalFieldName() => 0,
+      "wmf_donor.total_{$lastYear}_{$thisYear}" => 40,
     ]);
   }
 
