@@ -49,6 +49,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       $this->currentDate = (date('Y') - 1) . '-08-01';
     }
 
+    // This setTime works for the tests that check the php level calculation but not the triggers.
     \CRM_Utils_Time::setTime($this->currentDate);
     parent::setUp();
   }
@@ -125,8 +126,8 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    */
   public function testWMFDonorGetAnnualRecurSegments(): void {
     $this->createDonor(['total_amount' => 2]);
-    $annualDonationDate = date('Y-m-d', strtotime('-8 months', strtotime($this->currentDate)));
-    $monthlyDonationDate = date('Y-m-d', strtotime('-7 months', strtotime($this->currentDate)));
+    $annualDonationDate = date('Y-m-d', strtotime('-8 months'));
+    $monthlyDonationDate = date('Y-m-d', strtotime('-7 months'));
     $this->createTestEntity('ContributionRecur', [
       'contact_id' => $this->ids['Contact']['donor'],
       'frequency_unit' => 'year',
