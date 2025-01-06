@@ -204,6 +204,17 @@ class EOYEmailTest extends TestCase {
       'financial_type_id:name' => 'Cash',
     ]);
     $this->createTestEntity('Contribution', [
+      'receive_date' => '2018-09-08 22:00:00',
+      'contact_id' => $contactRecur['id'],
+      'total_amount' => '3',
+      'currency' => 'USD',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '30',
+      'contribution_recur_id' => $recurring['id'],
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
+    ]);
+    $this->createTestEntity('Contribution', [
       'receive_date' => '2018-01-01',
       'contact_id' => $contactOnetime['id'],
       'total_amount' => '20',
@@ -260,7 +271,7 @@ class EOYEmailTest extends TestCase {
         'currency' => 'USD',
       ],
       'PLN' => [
-        'amount' => '430,00',
+        'amount' => '460,00',
         'currency' => 'PLN',
       ],
     ];
@@ -301,6 +312,18 @@ class EOYEmailTest extends TestCase {
         'amount' => '30,00',
         'date' => '2018-08-08',
       ],
+      4 => [
+        'contribution_extra.original_currency' => 'PLN',
+        'financial_type_id:name' => 'Cash',
+        'contribution_extra.original_amount' => 30.0,
+        'contribution_recur_id' => $recurring['id'],
+        'receive_date' => '2018-09-08',
+        'total_amount' => 30.0,
+        'currency' => 'PLN',
+        'financial_type' => 'Cash',
+        'amount' => '30,00',
+        'date' => '2018-09-08',
+      ],
     ]);
   }
 
@@ -320,7 +343,7 @@ class EOYEmailTest extends TestCase {
     $this->assertEquals('queued', $result['status']);
     $this->assertTemplateCalculations($this->ids['Contact'], [
       'PLN' => [
-        'amount' => '630,00',
+        'amount' => '660,00',
         'currency' => 'PLN',
       ],
     ], [
@@ -349,6 +372,18 @@ class EOYEmailTest extends TestCase {
         'date' => '2018-03-02',
       ],
       3 => [
+        'contribution_extra.original_currency' => 'PLN',
+        'financial_type_id:name' => 'Cash',
+        'contribution_extra.original_amount' => 30.0,
+        'contribution_recur_id' => reset($this->ids['ContributionRecur']),
+        'receive_date' => '2018-04-02',
+        'total_amount' => 30.0,
+        'currency' => 'PLN',
+        'financial_type' => 'Cash',
+        'amount' => '30,00',
+        'date' => '2018-04-02',
+      ],
+      4 => [
         'contribution_extra.original_currency' => 'PLN',
         'financial_type_id:name' => 'Cash',
         'contribution_extra.original_amount' => 200.0,
@@ -778,7 +813,7 @@ class EOYEmailTest extends TestCase {
       'preferred_language' => 'es_NZ',
       'email_primary.email' => 'bob@example.com',
     ])['id'];
-    $this->createRecurringContributions($contactID, [['receive_date' => '2018-02-02', 'total_amount' => 50]]);
+    $this->createRecurringContributions($contactID, [['receive_date' => '2018-02-02', 'total_amount' => 50], ['receive_date' => '2018-03-02', 'total_amount' => 50]]);
     $email = $this->send();
     $this->assertEquals('Registro de tu apoyo a Wikipedia', $email['subject']);
     $this->assertStringContainsString('¡Hola, Bob!', $email['html']);
@@ -863,6 +898,18 @@ class EOYEmailTest extends TestCase {
       'contribution_status_id:name' => 'Completed',
       'financial_type_id:name' => 'Cash',
     ], 'recurring_older');
+
+    $this->createTestEntity('Contribution', [
+      'receive_date' => '2018-04-03',
+      'contact_id' => $olderContact['id'],
+      'total_amount' => '3',
+      'currency' => 'USD',
+      'contribution_extra.original_currency' => 'PLN',
+      'contribution_extra.original_amount' => '30',
+      'contribution_recur_id' => $recurring['id'],
+      'contribution_status_id:name' => 'Completed',
+      'financial_type_id:name' => 'Cash',
+    ], 'recurring_second');
 
     $this->createTestEntity('Contribution', [
       'receive_date' => '2018-04-04',
