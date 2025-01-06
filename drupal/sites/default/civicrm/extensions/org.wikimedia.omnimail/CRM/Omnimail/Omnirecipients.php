@@ -20,7 +20,7 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
   /**
    * @var string
    */
-  protected $job = 'omnirecipient';
+  protected string $job = 'omnirecipient';
 
   /**
    * @param array $params
