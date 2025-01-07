@@ -60,7 +60,7 @@ class GetUnsubscribeURL extends AbstractAction {
    * @return string
    */
   public function getMediaWikiLocale(): string {
-    return $this->mediawikiLocale ?: strtolower(substr($this->getLanguage(), 0, 2 ));
+    return $this->mediawikiLocale ?: strtolower(substr((string) $this->getLanguage(), 0, 2 ));
   }
 
   /**
