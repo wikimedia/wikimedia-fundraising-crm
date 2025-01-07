@@ -181,7 +181,7 @@ class Send extends AbstractAction {
       }
     }
     catch (\Exception $e) {
-      $debug = array_merge($email, ["html" => '', "plaintext" => '']);
+      $debug = array_merge($email ?? [], ["html" => '', "plaintext" => '']);
       \Civi::log('wmf')->error('thank_you: Sending thank you message failed with generic exception for contribution: {params} {debug} {error_message}', [
         'params' => $params,
         'debug' => $debug,
