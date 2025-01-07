@@ -2656,6 +2656,21 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Fix invalid receipt dates.
+   *
+   * I checked a couple of these & the are old & we don't really use receipt_date anyway.
+   *
+   * Bug: T383162
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4600(): bool {
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution SET receipt_date = NULL
+      WHERE day(receipt_date) = 0");
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
