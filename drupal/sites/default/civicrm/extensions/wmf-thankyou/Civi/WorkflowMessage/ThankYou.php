@@ -458,7 +458,7 @@ class ThankYou extends GenericWorkflowMessage {
    * Get the short locale required for media wiki use - e.g 'en'
    */
   public function getShortLocale(): string {
-    return $this->shortLocale ?: substr($this->getLocale(), 0, 2);
+    return $this->shortLocale ?: substr((string) $this->getLocale(), 0, 2);
   }
 
   /**
