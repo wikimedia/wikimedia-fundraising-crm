@@ -18,11 +18,6 @@ function thank_you_drush_command() {
     ],
   ];
 
-  $items['thank-you-send-test'] = [
-    'description' =>
-      'Simulates sending 1000 thank you emails for donations, to test DB performance',
-    'aliases' => ['tyt'],
-  ];
   return $items;
 }
 
@@ -62,13 +57,3 @@ function drush_thank_you_send() {
   }
 }
 
-
-/**
- * Fires the 'batch_process' method in the thank_you module.
- *
- * This simply executes the code necessary to run the thank you modules.
- * All configuration happens in the module.
- */
-function drush_thank_you_send_test() {
-  module_invoke('thank_you', 'batch_test');
-}
