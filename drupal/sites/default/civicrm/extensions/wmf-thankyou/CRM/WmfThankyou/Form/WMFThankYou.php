@@ -77,13 +77,13 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
    */
   protected function setMessage(string $preferredLanguage): void {
     try {
-      $this->message = ThankYou::render()
+      $message = ThankYou::render()
         ->setContributionID($this->getContributionID())
         ->setTemplateName($this->getTemplateName())
         ->setLanguage($preferredLanguage)
         ->execute()->first();
-      $this->assign('subject', $this->message['subject']);
-      $this->assign('message', $this->message['html']);
+      $this->assign('subject', $message['subject']);
+      $this->assign('message', $message['html']);
     }
     catch (CRM_Core_Exception $e) {
       // No valid contributions - probably our local dev doesn't have wmf donor data
@@ -116,10 +116,8 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
 
   /**
    * Submit form.
-   *
-   * @throws \CRM_Core_Exception
    */
-  public function postProcess() {
+  public function postProcess(): void {
     try {
       civicrm_api3('Thankyou', 'send', ['contribution_id' => CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this), 'template' => $this->getSubmittedValue('template')]);
       CRM_Core_Session::setStatus('Message sent', E::ts('Thank you Sent'), 'success');
@@ -134,7 +132,7 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
    *
    * @return array (string)
    */
-  public function getRenderableElementNames() {
+  public function getRenderableElementNames(): array {
     // The _elements list includes some items which should not be
     // auto-rendered in the loop -- such as "qfKey" and "buttons".  These
     // items don't have labels.  We'll identify renderable by filtering on
@@ -151,7 +149,7 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
   }
 
   /**
-   * @return int|mixed|string|null
+   * @return int
    * @throws \CRM_Core_Exception
    */
   protected function getContributionID(): int {
@@ -159,17 +157,16 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
   }
 
   /**
-   * @return mixed
+   * @return string
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  protected function getFinancialType() {
-    $financialType = Contribution::get()
+  protected function getFinancialType(): string {
+    return (string) Contribution::get()
       ->addWhere('id', '=', $this->getContributionID())
       ->addSelect('financial_type_id:name')
       ->execute()
       ->first()['financial_type_id:name'];
-    return $financialType;
   }
 
   /**
