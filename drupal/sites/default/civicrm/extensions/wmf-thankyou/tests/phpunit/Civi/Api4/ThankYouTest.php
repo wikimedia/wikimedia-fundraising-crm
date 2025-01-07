@@ -113,12 +113,13 @@ class ThankYouTest extends TestCase {
   }
 
   /**
+   * @dataProvider booleanDataProvider
    * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
-  public function testSendThankYou(): void {
+  public function testSendThankYou($isUseApi): void {
     $this->setSetting('thank_you_add_civimail_records', FALSE);
-    $sent = $this->sendThankYou();
+    $sent = $this->sendThankYou($isUseApi);
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals($this->getExpectedReplyTo(), $sent['reply_to']);
@@ -130,6 +131,15 @@ class ThankYouTest extends TestCase {
 
     // Check for tax information, DAF emails have this removed
     $this->assertMatchesRegularExpression('/tax-exempt number/', $sent['html']);
+  }
+
+  /**
+   * Data provider for tests with 2 options
+   *
+   * @return array
+   */
+  public function booleanDataProvider(): array {
+    return [[FALSE], [TRUE]];
   }
 
   /**
@@ -357,9 +367,17 @@ class ThankYouTest extends TestCase {
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  protected function sendThankYou(): array {
-    $result = thank_you_for_contribution($this->getContributionID());
-    $this->assertTrue($result);
+  protected function sendThankYou($isUseApi = FALSE): array {
+    if ($isUseApi) {
+      $result = ThankYou::send(FALSE)
+        ->setContributionID($this->getContributionID())
+        ->setTemplateName('thank_you')
+        ->execute();
+    }
+    else {
+      $result = thank_you_for_contribution($this->getContributionID());
+      $this->assertTrue($result);
+    }
     $this->assertEquals(1, $this->getMailingCount());
     return $this->getMailing(0);
   }
