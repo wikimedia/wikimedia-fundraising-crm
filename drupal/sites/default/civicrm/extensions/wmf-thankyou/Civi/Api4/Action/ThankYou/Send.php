@@ -64,6 +64,8 @@ class Send extends AbstractAction {
 
    private $contactID;
 
+   private $preferredLanguage;
+
   /**
    * @return mixed
    */
@@ -130,9 +132,6 @@ class Send extends AbstractAction {
    */
   public function _run(Result $result): void {
     $params = $this->getParameters();
-    if (empty($params['language'])) {
-      $params['language'] = Civi\WMFHelper\Language::getLanguageCode($params['locale'] ?? 'en_US');
-    }
     $renderAttempts = 0;
     $email_success = FALSE;
 
@@ -142,7 +141,7 @@ class Send extends AbstractAction {
         \Civi::log('wmf')->info('thank_you: Calling ThankYou::render');
         $rendered = ThankYou::render(FALSE)
           // @todo switch to passing in 'raw' contact language.
-          ->setLanguage($params['language'])
+          ->setLanguage($this->getLanguage())
           ->setTemplateName($this->getTemplateName())
           ->setTemplateParameters($params)
           ->setContributionID($this->getContributionID())
@@ -187,7 +186,7 @@ class Send extends AbstractAction {
         'from_address' => From::getFromAddress($this->getTemplateName()),
         'to_name' => $this->getDisplayName(),
         'to_address' => $this->getEmail(),
-        'locale' => $params['language'],
+        'locale' => $this->getLanguage(),
         'html' => $html,
         'subject' => $subject,
         'reply_to' => $civi_queue_record ? $civi_queue_record->getVerp() : "ty." . $this->getContactID() . '.' . $this->getContributionID() . "@donate.wikimedia.org",
@@ -333,6 +332,7 @@ class Send extends AbstractAction {
       ->addSelect('contact_id.email_primary.email')
       ->addSelect('contact_id')
       ->addSelect('contact_id.display_name')
+      ->addSelect('contact_id.preferred_language')
       ->execute()->first();
     if (!isset($this->contactID)) {
       $this->contactID = $contact['contact_id'];
@@ -343,7 +343,27 @@ class Send extends AbstractAction {
     if (!isset($this->displayName)) {
       $this->displayName = (string) $contact['contact_id.display_name'];
     }
+    if (!isset($this->preferredLanguage)) {
+      $this->preferredLanguage = (string) $contact['contact_id.preferred_language'];
+    }
     return ['id' => $contact['contact_id'], 'email_primary.email' => $contact['contact_id.email_primary.email']];
+  }
+
+  /**
+   * @return string
+   */
+  public function getLanguage(): string {
+    if (isset($this->getParameters()['language'])) {
+      return $this->getParameters()['language'];
+    }
+    if (isset($params['locale'])) {
+      return Civi\WMFHelper\Language::getLanguageCode($params['locale']);
+    }
+    if (isset($this->preferredLanguage)) {
+      return $this->preferredLanguage;
+    }
+    $this->getContact();
+    return $this->preferredLanguage ?? 'en_US';
   }
 
 }

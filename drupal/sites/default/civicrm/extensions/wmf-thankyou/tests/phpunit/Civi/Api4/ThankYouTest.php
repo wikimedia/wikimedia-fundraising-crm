@@ -229,6 +229,21 @@ class ThankYouTest extends TestCase {
   }
 
   /**
+   * Test the email is sent in the contact's preferred language when not set on the api.
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function testSendThankYouContactLocale(): void {
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact'][0])
+      ->addValue('preferred_language', 'es_MX')
+      ->execute();
+    $mail = $this->sendThankYou(TRUE);
+    $this->assertEquals('Test - Gracias por tu donativo', $mail['subject']);
+   }
+
+  /**
    * Test how the thank yous render currency.
    *
    * Note there is some advantage in running them like this rather than a
@@ -369,7 +384,7 @@ class ThankYouTest extends TestCase {
    */
   protected function sendThankYou($isUseApi = FALSE): array {
     if ($isUseApi) {
-      $result = ThankYou::send(FALSE)
+      ThankYou::send(FALSE)
         ->setContributionID($this->getContributionID())
         ->setTemplateName('thank_you')
         ->execute();
