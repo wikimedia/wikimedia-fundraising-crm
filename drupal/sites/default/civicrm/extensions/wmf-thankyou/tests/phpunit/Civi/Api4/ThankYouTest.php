@@ -80,6 +80,8 @@ class ThankYouTest extends TestCase {
 
   /**
    * Post test cleanup.
+   *
+   * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
     try {
@@ -138,7 +140,7 @@ class ThankYouTest extends TestCase {
    *
    * @return array
    */
-  public function booleanDataProvider(): array {
+  public static function booleanDataProvider(): array {
     return [[FALSE], [TRUE]];
   }
 
@@ -241,7 +243,7 @@ class ThankYouTest extends TestCase {
       ->execute();
     $mail = $this->sendThankYou(TRUE);
     $this->assertEquals('Test - Gracias por tu donativo', $mail['subject']);
-   }
+  }
 
   /**
    * Test how the thank yous render currency.
@@ -277,6 +279,9 @@ class ThankYouTest extends TestCase {
     $this->assertStringContainsString(' del 2022-08-08, fue de USD 10.00 (USD).', $result['html']);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   public function testRenderVenmoContainsUsername() {
     $result = $this->renderMessage('en_US', [
       'gateway' => 'braintree',
@@ -378,11 +383,13 @@ class ThankYouTest extends TestCase {
   }
 
   /**
+   * @param bool $isUseApi
+   *
    * @return array
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  protected function sendThankYou($isUseApi = FALSE): array {
+  protected function sendThankYou(bool $isUseApi = FALSE): array {
     if ($isUseApi) {
       ThankYou::send(FALSE)
         ->setContributionID($this->getContributionID())
@@ -406,7 +413,7 @@ class ThankYouTest extends TestCase {
    */
   protected function renderMessage(?string $language = NULL, array $parameters = []): ?array {
     $contributionID = $this->getContributionID();
-    $result = ThankYou::render(FALSE)
+    return ThankYou::render(FALSE)
       ->setLanguage($language)
       ->setTemplateParameters(array_merge([
         'first_name' => 'Mickey',
@@ -421,7 +428,6 @@ class ThankYouTest extends TestCase {
         'contribution_id' => $contributionID,
       ], $parameters))
       ->setTemplateName('thank_you')->execute()->first();
-    return $result;
   }
 
   /**
@@ -441,6 +447,7 @@ class ThankYouTest extends TestCase {
    * @param string $secondCurrencyString
    *
    * @return array|null
+   * @throws \CRM_Core_Exception
    */
   protected function renderEnglishVariant(?string $language, string $currency, string $firstCurrencyString, string $secondCurrencyString): ?array {
     $result = $this->renderMessage($language, ['currency' => $currency]);
@@ -452,10 +459,10 @@ class ThankYouTest extends TestCase {
         'Thank you so much for your ' . $firstCurrencyString . ' donation',
         $result['html']
       );
-      $this->assertStringContainsString( $secondCurrencyString, $result['html'] );
+      $this->assertStringContainsString($secondCurrencyString, $result['html']);
     }
     else {
-      $this->assertStringContainsString( 'Your donation, number 123', $result['html'] );
+      $this->assertStringContainsString('Your donation, number 123', $result['html']);
       $this->assertCurrencyString($result['html'], $firstCurrencyString, $secondCurrencyString);
     }
     $this->assertStringNotContainsString('We recently resolved a small technical issue', $result['html']);
@@ -471,6 +478,56 @@ class ThankYouTest extends TestCase {
   protected function setSetting(string $name, $value): void {
     $this->originalSettings[$name] = \Civi::settings()->get($name);
     \Civi::settings()->set($name, $value);
+  }
+
+  /**
+   * Basic test for sending a thank you.
+   *
+   * We might want to add an override parameter on the date range for the UI but for now this tests the basics.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testThankYouSend() {
+    $this->setupThankyouAbleContribution();
+    ThankYou::send(FALSE)
+      ->setContributionID($this->ids['Contribution']['thanks'])
+      ->execute();
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['id' => $this->ids['Contribution']['thanks']]);
+    $this->assertEquals(date('Y-m-d'), date('Y-m-d', strtotime($contribution['thankyou_date'])));
+  }
+
+  /**
+   * Test that we are still able to force an old thank you to send.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testThankYouTooLate(): void {
+    $this->setupThankyouAbleContribution();
+    $this->callAPISuccess('Contribution', 'create', ['id' => $this->ids['Contribution']['thanks'], 'receive_date' => '2016-01-01']);
+    ThankYou::send(FALSE)
+      ->setContributionID($this->ids['Contribution']['thanks'])
+      ->execute();
+  }
+
+  /**
+   * Set up a contribution with minimum detail for a thank you.
+   */
+  protected function setupThankYouAbleContribution(): void {
+    $wmfFields = $this->callAPISuccess('CustomField', 'get', ['custom_group_id' => 'contribution_extra'])['values'];
+    $fieldMapping = [];
+    foreach ($wmfFields as $field) {
+      $fieldMapping[$field['name']] = $field['id'];
+    }
+    $this->ids['Contact'][0] = $this->callAPISuccess('Contact', 'create', ['first_name' => 'bob', 'contact_type' => 'Individual', 'email' => 'bob@example.com'])['id'];
+    $this->createContribution([
+      'contact_id' => $this->ids['Contact'][0],
+      'financial_type_id' => 'Donation',
+      'total_amount' => 60,
+      'custom_' . $fieldMapping['total_usd'] => 60,
+      'custom_' . $fieldMapping['original_amount'] => 60,
+      'custom_' . $fieldMapping['original_currency'] => 'USD',
+      'currency' => 'USD',
+    ], 'thanks');
   }
 
 }
