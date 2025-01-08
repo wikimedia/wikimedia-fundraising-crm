@@ -24,14 +24,11 @@ const MAX_RENDER_ATTEMPTS = 3;
  *
  * @param int $contribution_id
  *
- * @param bool $manualSend
- *   Manual send functions as an override -ignoring the time limit, previous thank yous and no_thankyou reason.
- *
  * @return bool
  * @throws \CRM_Core_Exception
  * @throws \Civi\WMFException\WMFException
  */
-function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $template = NULL) {
+function thank_you_for_contribution(int $contribution_id) {
   if (!isset(Civi::$statics['thank_you']['giftTableName'])) {
     Civi::$statics['thank_you']['giftTableName'] = civicrm_api3('CustomGroup', 'getvalue', [
       'name' => 'Gift_Data',
@@ -107,13 +104,13 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
   $mailingData = $mailingData->toArray();
 
   // don't send a Thank You email if one has already been sent
-  if (!empty($mailingData['thankyou_date']) && !$manualSend) {
+  if (!empty($mailingData['thankyou_date'])) {
     \Civi::log('wmf')->info('thank_you: Thank you email already sent for this transaction.');
     return FALSE;
   }
   // only send a Thank You email if we are within the specified window
   $ageInSeconds = UtcDate::getUtcTimestamp() - UtcDate::getUtcTimestamp($mailingData['receive_date']);
-  if (!$manualSend && $ageInSeconds > 86400 * Civi::settings()->get('thank_you_days')) {
+  if ($ageInSeconds > 86400 * Civi::settings()->get('thank_you_days')) {
     \Civi::log('wmf')->info('thank_you: Contribution is older than limit, ignoring.');
     return FALSE;
   }
@@ -128,7 +125,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     return FALSE;
   }
 
-  if (!$manualSend && $mailingData['no_thank_you']) {
+  if ($mailingData['no_thank_you']) {
     \Civi::log('wmf')->info('thank_you: Contribution has been marked no_thank_you={no_thank_you_reason}, skipping.', ['no_thank_you_reason' => $mailingData['no_thank_you']]);
     return FALSE;
   }
@@ -158,13 +155,11 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
   }
 
   // Select the email template
-  if (!$template) {
-    if ($mailingData['financial_type'] === 'Endowment Gift') {
-      $template = 'endowment_thank_you';
-    }
-    else {
-      $template = 'thank_you';
-    }
+  if ($mailingData['financial_type'] === 'Endowment Gift') {
+    $template = 'endowment_thank_you';
+  }
+  else {
+    $template = 'thank_you';
   }
 
   $params = [
