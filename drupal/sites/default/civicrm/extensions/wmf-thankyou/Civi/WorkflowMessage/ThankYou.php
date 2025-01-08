@@ -135,7 +135,7 @@ class ThankYou extends GenericWorkflowMessage {
   /**
    * @var array
    */
-  public $contribution;
+  public array $contribution = [];
 
   /**
    * Email greeting display.
@@ -303,7 +303,8 @@ class ThankYou extends GenericWorkflowMessage {
    * @throws \CRM_Core_Exception
    */
   public function getContribution(): array {
-    if (!$this->contribution) {
+    $missingKeys = array_diff_key($this->getContributionParameters(), $this->contribution);
+    if ($missingKeys) {
       $this->setContribution(Contribution::get(FALSE)
         ->setSelect(array_keys($this->getContributionParameters()))
         ->addWhere('id', '=', $this->getContributionID())
@@ -328,7 +329,7 @@ class ThankYou extends GenericWorkflowMessage {
       'Stock_Information.Stock Quantity' => 'stockQuantity',
       'Gift_Data.Campaign' => 'giftSource',
       'contribution_recur_id' => 'isRecurring',
-      'contribution_recur.frequency_unit' => 'frequencyUnit'
+      'contribution_recur.frequency_unit' => 'frequencyUnit',
     ];
   }
 

@@ -42,6 +42,8 @@ class Render extends AbstractAction {
 
   /**
    * @var int
+   *
+   * @required
    */
   protected $contributionID;
 
@@ -55,7 +57,7 @@ class Render extends AbstractAction {
   protected $templateName;
 
   public function getContributionID() {
-    return $this->contributionID ?: $this->getTemplateParameters()['contribution_id'];
+    return $this->contributionID;
   }
 
   /**
@@ -163,7 +165,7 @@ class Render extends AbstractAction {
         $parameters[$contributionKey] = $this->getTemplateParameter($incomingKey);
       }
     }
-    return $parameters;
+    return $parameters + ['id' => $this->getContributionID()];
   }
 
   protected function getTemplateParameter($parameter) {

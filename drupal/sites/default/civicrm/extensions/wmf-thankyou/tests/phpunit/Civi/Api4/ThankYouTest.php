@@ -415,6 +415,7 @@ class ThankYouTest extends TestCase {
     $contributionID = $this->getContributionID();
     return ThankYou::render(FALSE)
       ->setLanguage($language)
+      ->setContributionID($contributionID)
       ->setTemplateParameters(array_merge([
         'first_name' => 'Mickey',
         'amount' => 10,
@@ -425,7 +426,6 @@ class ThankYouTest extends TestCase {
         'transaction_id' => 123,
         'receive_date' => '2022-08-09',
         'contact_id' => $this->ids['Contact'][0],
-        'contribution_id' => $contributionID,
       ], $parameters))
       ->setTemplateName('thank_you')->execute()->first();
   }
