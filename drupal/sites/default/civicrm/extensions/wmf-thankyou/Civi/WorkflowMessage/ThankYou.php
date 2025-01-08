@@ -292,7 +292,7 @@ class ThankYou extends GenericWorkflowMessage {
 
     // For tax reasons, any donation made in the US on Jan 1 UTC should have a time string in HST.
     // So do 'em all that way.
-    $this->receiveDate =  strftime('%Y-%m-%d', $date - (60 * 60 * 10));
+    $this->receiveDate = date('Y-m-d', $date - (60 * 60 * 10));
     return $this;
   }
 
@@ -458,7 +458,7 @@ class ThankYou extends GenericWorkflowMessage {
    * Get the short locale required for media wiki use - e.g 'en'
    */
   public function getShortLocale(): string {
-    return $this->shortLocale ?: substr($this->getLocale(), 0, 2);
+    return $this->shortLocale ?: substr((string) $this->getLocale(), 0, 2);
   }
 
   /**
