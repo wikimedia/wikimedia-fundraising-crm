@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "51e99afef2a2aee58d61c3861c63d2fc",
+    "content-hash": "3d9202b3c6c69d291e5edbe64d8ab62a",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -5207,16 +5207,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.8.24",
+            "version": "v0.8.25.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "69f35198b91d1ef0fe96fe6429b08a7cb82a0c3c"
+                "reference": "b026b0a6eaaee1914684e738ca75e228e2cce20d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/69f35198b91d1ef0fe96fe6429b08a7cb82a0c3c",
-                "reference": "69f35198b91d1ef0fe96fe6429b08a7cb82a0c3c",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/b026b0a6eaaee1914684e738ca75e228e2cce20d",
+                "reference": "b026b0a6eaaee1914684e738ca75e228e2cce20d",
                 "shasum": ""
             },
             "require": {
@@ -5292,9 +5292,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.24"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.25.1"
             },
-            "time": "2024-11-26T16:52:26+00:00"
+            "time": "2025-01-08T16:29:46+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -7516,5 +7516,5 @@
     "platform-overrides": {
         "php": "7.4.33"
     },
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.6.0"
 }
