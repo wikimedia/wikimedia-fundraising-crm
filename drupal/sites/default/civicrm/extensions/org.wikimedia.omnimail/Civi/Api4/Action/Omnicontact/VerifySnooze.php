@@ -19,7 +19,7 @@ use GuzzleHttp\Client;
  * @method $this setClient(Client $client) Generally Silverpop....
  * @method null|Client getClient()
  */
-class AuditSnooze extends AbstractAction {
+class VerifySnooze extends AbstractAction {
 
   /**
    * @var object
