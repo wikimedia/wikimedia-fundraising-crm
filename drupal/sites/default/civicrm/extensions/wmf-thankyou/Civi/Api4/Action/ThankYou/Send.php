@@ -40,7 +40,7 @@ class Send extends AbstractAction {
    *
    * @var array
    */
-   public $parameters;
+   public array $parameters = [];
 
   /**
    * @var string
