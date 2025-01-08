@@ -171,6 +171,23 @@ class OmnimailBaseTestClass extends TestCase {
   }
 
   /**
+   * Set up the mock client to imitate a success result.
+   *
+   * @return \GuzzleHttp\Client
+   */
+  protected function setupSuccessfulWebTrackingDownloadClient(): Client {
+    $responses = [
+      file_get_contents(__DIR__ . '/Responses/WebTrackingDataExportResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
+    ];
+    //Raw Recipient Data Export Jul 02 2017 21-46-49 PM 758.zip
+    copy(__DIR__ . '/Responses/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv', sys_get_temp_dir() . '/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv');
+    fopen(sys_get_temp_dir() . '/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv.complete', 'c');
+    return $this->getMockRequest($responses);
+  }
+
+  /**
    * Create a CiviCRM setting with some extra debugging if it fails.
    *
    * @param array $values

@@ -30,7 +30,21 @@ class CRM_Omnimail_Omnimail {
   /**
    * @var int
    */
-  protected $offset;
+  protected int $offset = 0;
+
+  /**
+   * @var int
+   */
+  protected int $limit = 0;
+
+  /**
+   * @var int
+   */
+  protected int $skippedRows = 0;
+
+  public function getSkippedRows(): int {
+    return $this->skippedRows;
+  }
 
   /**
    * @var array
@@ -153,7 +167,7 @@ class CRM_Omnimail_Omnimail {
   /**
    * @return int
    */
-  public function getOffset() {
+  public function getOffset(): int {
     return $this->offset;
   }
 
