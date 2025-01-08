@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\ThankYou;
 
 use Civi;
 use Civi\Api4\Activity;
+use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\ThankYou;
@@ -25,7 +26,6 @@ use Civi\WMFThankYou\From;
  * @method array getParameters() Get the parameters.
  * @method $this setParameters(array $params) Get the parameters.
  * @method $this setDisplayName(string $displayName)
- * @method string getDisplayName()
  * @method $this setTemplateName(string $templateName)
  * @method string getTemplateName()
  * @method $this setEmail(string $email)
@@ -62,6 +62,20 @@ class Send extends AbstractAction {
    */
    public $email;
 
+   private $contactID;
+
+   private $preferredLanguage;
+
+  /**
+   * @return mixed
+   */
+  private function getContactID(): int {
+    if (!isset($this->contactID)) {
+      $this->contactID = $this->getParameters()['contact_id'] ?? $this->getContact()['id'];
+    }
+    return $this->contactID;
+  }
+
   /**
    * Get the contribution ID.
    *
@@ -74,14 +88,39 @@ class Send extends AbstractAction {
   }
 
   /**
-   * Get the contribution ID.
+   * Get the email.
    *
    * Transitionally look it up in params but later the calling function should set it.
+   * Fall back to getting it based on the contribution ID (if the calling function does
+   * not already know it then the preference is to look it up here.)
    *
-   * @return int
+   * @return string
+   * @throws \CRM_Core_Exception
    */
   protected function getEmail(): string {
-    return $this->email ?: $this->getParameters()['recipient_address'];
+    if (!isset($this->email)) {
+      $this->email = $this->getParameters()['recipient_address'] ?? NULL;
+      if (!$this->email) {
+        $this->getContact();
+      }
+    }
+    if (!$this->email) {
+      throw new \CRM_Core_Exception('no valid email');
+    }
+    return $this->email;
+  }
+
+  /**
+   * Get the display name.
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  protected function getDisplayName(): string {
+    if (!isset($this->displayName)) {
+      $this->getContact();
+    }
+    return $this->displayName;
   }
 
   /**
@@ -93,9 +132,6 @@ class Send extends AbstractAction {
    */
   public function _run(Result $result): void {
     $params = $this->getParameters();
-    if (empty($params['language'])) {
-      $params['language'] = Civi\WMFHelper\Language::getLanguageCode($params['locale'] ?? 'en_US');
-    }
     $renderAttempts = 0;
     $email_success = FALSE;
 
@@ -105,9 +141,10 @@ class Send extends AbstractAction {
         \Civi::log('wmf')->info('thank_you: Calling ThankYou::render');
         $rendered = ThankYou::render(FALSE)
           // @todo switch to passing in 'raw' contact language.
-          ->setLanguage($params['language'])
+          ->setLanguage($this->getLanguage())
           ->setTemplateName($this->getTemplateName())
           ->setTemplateParameters($params)
+          ->setContributionID($this->getContributionID())
           ->execute()->first();
         \Civi::log('wmf')->info('thank_you: Done ThankYou::render');
         $html = $rendered['html'];
@@ -148,11 +185,11 @@ class Send extends AbstractAction {
         'from_name' => From::getFromName($this->getTemplateName()),
         'from_address' => From::getFromAddress($this->getTemplateName()),
         'to_name' => $this->getDisplayName(),
-        'to_address' => $params['recipient_address'],
-        'locale' => $params['language'],
+        'to_address' => $this->getEmail(),
+        'locale' => $this->getLanguage(),
         'html' => $html,
         'subject' => $subject,
-        'reply_to' => $civi_queue_record ? $civi_queue_record->getVerp() : "ty.{$params['contact_id']}.{$params['contribution_id']}@donate.wikimedia.org",
+        'reply_to' => $civi_queue_record ? $civi_queue_record->getVerp() : "ty." . $this->getContactID() . '.' . $this->getContributionID() . "@donate.wikimedia.org",
       ];
 
       \Civi::log('wmf')->info('thank_you: Sending ty email to: {to_address}', ['to_address' => $email['to_address']]);
@@ -181,7 +218,7 @@ class Send extends AbstractAction {
       }
     }
     catch (\Exception $e) {
-      $debug = array_merge($email, ["html" => '', "plaintext" => '']);
+      $debug = array_merge($email ?? [], ["html" => '', "plaintext" => '']);
       \Civi::log('wmf')->error('thank_you: Sending thank you message failed with generic exception for contribution: {params} {debug} {error_message}', [
         'params' => $params,
         'debug' => $debug,
@@ -283,5 +320,50 @@ class Send extends AbstractAction {
     return $civi_queue_record;
   }
 
+  /**
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function getContact(): ?array {
+    $contact = Contribution::get(FALSE)
+      ->addWhere('id', '=', $this->getContributionID())
+      ->addWhere('contact_id.email_primary.on_hold', '=', FALSE)
+      ->addSelect('contact_id.email_primary.email')
+      ->addSelect('contact_id')
+      ->addSelect('contact_id.display_name')
+      ->addSelect('contact_id.preferred_language')
+      ->execute()->first();
+    if (!isset($this->contactID)) {
+      $this->contactID = $contact['contact_id'];
+    }
+    if (!isset($this->email)) {
+      $this->email = $contact['contact_id.email_primary.email'];
+    }
+    if (!isset($this->displayName)) {
+      $this->displayName = (string) $contact['contact_id.display_name'];
+    }
+    if (!isset($this->preferredLanguage)) {
+      $this->preferredLanguage = (string) $contact['contact_id.preferred_language'];
+    }
+    return ['id' => $contact['contact_id'], 'email_primary.email' => $contact['contact_id.email_primary.email']];
+  }
+
+  /**
+   * @return string
+   */
+  public function getLanguage(): string {
+    if (isset($this->getParameters()['language'])) {
+      return $this->getParameters()['language'];
+    }
+    if (isset($params['locale'])) {
+      return Civi\WMFHelper\Language::getLanguageCode($params['locale']);
+    }
+    if (isset($this->preferredLanguage)) {
+      return $this->preferredLanguage;
+    }
+    $this->getContact();
+    return $this->preferredLanguage ?? 'en_US';
+  }
 
 }

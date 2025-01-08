@@ -478,7 +478,7 @@ class ThankYou extends GenericWorkflowMessage {
     // for everyone getting the email in English.
     // @see https://wikitech.wikimedia.org/wiki/Fundraising/Internal-facing/CiviCRM#Money_formatting_in_emails
     if (!is_numeric($this->amount) || !$this->getRequestedLocale()) {
-      return $this->amount;
+      return (string) $this->amount;
     }
     return \Civi::format()->money($this->amount, $this->currency, $this->locale);
   }
