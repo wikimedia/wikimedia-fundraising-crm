@@ -135,8 +135,7 @@ class Render extends AbstractAction {
       FROM wmf_eoy_receipt_donor
       WHERE
       status = 'queued'
-      AND year = %1
-      LIMIT %2", [1 => [$this->getYear(), 'Integer'], 2 => [$this->getLimit(), 'Integer']]);
+      LIMIT %1", [1 => [$this->getLimit(), 'Integer']]);
     while ($row->fetch()) {
       try {
         $result[$row->email] = $this->renderLetter($row->email);
