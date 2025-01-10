@@ -155,7 +155,7 @@ class CRM_Omnimail_Omniactivity extends CRM_Omnimail_Omnimail {
       return 'Unsubscribed via ' . $method;
     }
     if ($this->getActivityType($recipient) === 'EmailSnoozed') {
-      return 'Snoozed via ' . $method;
+      return 'Snoozed via ' . $method . ' until ' . date('Y-m-d', strtotime($recipient->getRecipientActionIsoDateTime()));
     }
     $this->throwException('unidentified flying object', $recipient);
   }

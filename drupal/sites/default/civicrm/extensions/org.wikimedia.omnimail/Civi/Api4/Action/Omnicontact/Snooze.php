@@ -54,7 +54,7 @@ class Snooze extends AbstractAction {
       $activity_id = Activity::create(FALSE)
         ->addValue('activity_type_id:name', 'EmailSnoozed')
         ->addValue('status_id:name', 'Scheduled')
-        ->addValue('subject', "Email snooze scheduled")
+        ->addValue('subject', "Email snooze scheduled - until " . date('Y-m-d', strtotime($this->getSnoozeDate())))
         ->addValue('details', "Snoozing email - $email")
         ->addValue('source_contact_id', $contact_id)
         ->addValue('source_record_id', $contact_id)
