@@ -25,37 +25,33 @@ function civicrm_api3_omnirecipient_process_unsubscribes($params) {
     'count' => $result['count']
   ]);
 
-
   foreach ($result['values'] as $unsubscribes) {
-    CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(
-      1 => array(
-        uniqid() . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4),
-        'String'
-      )
-    ));
-    civicrm_api3('Activity', 'create', array(
-      'activity_type_id' => 'Unsubscribe',
-      'campaign_id' => CRM_Utils_Array::value('mailing_identifier.campaign_id.name', $unsubscribes),
+    CRM_Core_DAO::executeQuery('SET @uniqueID = %1', [
+      1 => [
+        uniqid() . CRM_Utils_String::createRandom(4, CRM_Utils_String::ALPHANUMERIC),
+        'String',
+      ],
+    ]);
+    \Civi\Api4\Activity::create(FALSE)->setValues([
+      'activity_type_id:name' => 'unsubscribe',
+      'campaign_id.name' => $unsubscribes['mailing_identifier.campaign_id.name'] ?? NULL,
       'target_contact_id' => $unsubscribes['contact_id'],
-      'source_contact_id' =>  $unsubscribes['contact_id'],
+      'source_contact_id' => $unsubscribes['contact_id'],
       'activity_date_time' => $unsubscribes['recipient_action_datetime'],
-      'subject' => ts('Unsubscribed via ' . (isset($params['mail_provider']) ? $params['mail_provider'] : ts('Mailing provider')))
-    ));
-    civicrm_api3('Contact', 'create', array(
-      'is_opt_out' => 1,
-      'id' => $unsubscribes['contact_id']
-    ));
+      'subject' => ts('Unsubscribed via ' . (isset($params['mail_provider']) ? $params['mail_provider'] : ts('Mailing provider'))),
+    ])->execute();
+
+    \Civi\Api4\Contact::update(FALSE)
+      ->addValue('is_opt_out', TRUE)
+      ->addWhere('id', '=', $unsubscribes['contact_id'])
+      ->execute();
+
     if (!empty($unsubscribes['email'])) {
-      $emails = civicrm_api3('Email', 'get', array(
-        'email' => $unsubscribes['email'],
-        'is_bulkmail' => 1
-      ));
-      foreach ($emails['values'] as $email) {
-        civicrm_api3('Email', 'create', array(
-          'id' => $email['id'],
-          'is_bulkmail' => 0
-        ));
-      }
+      \Civi\Api4\Email::update(FALSE)
+        ->addWhere('email', '=', $unsubscribes['email'])
+        ->addWhere('is_bulkmail', '=', TRUE)
+        ->addValue('is_bulkmail', FALSE)
+        ->execute();
     }
 
     CRM_Core_DAO::executeQuery('

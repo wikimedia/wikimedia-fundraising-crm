@@ -127,12 +127,12 @@ class Load extends Omniaction {
         ])
         ->execute()->single()['id'];
       if ($activityType === 'EmailSnoozed') {
-        $snoozedUntil = date('Y-m-d', strtotime('+ 90 days', strtotime($row['recipient_action_datetime'])));
+        $snoozedUntil = strtotime('+ 90 days', strtotime($row['recipient_action_datetime']));
         if ($snoozedUntil > time()) {
           // Update the snooze date - this could re-snooze some, not a bad thing.
           Email::update(FALSE)
             ->addWhere('email', '=', $row['email'])
-            ->addValue('email_settings.snooze_date', $snoozedUntil)
+            ->addValue('email_settings.snooze_date', date('Y-m-d', $snoozedUntil))
             ->execute();
         }
       }
