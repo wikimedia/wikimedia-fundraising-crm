@@ -52,7 +52,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       if ($activity_id) {
         Activity::update(FALSE)
           ->addValue('status_id:name', 'Completed')
-          ->addValue('subject', "Email snoozed")
+          ->addValue('subject', "Email snoozed until " . date('Y-m-d', strtotime($snoozeEndDate)))
           ->addValue('details', $activityDetail)
           ->addWhere('id', '=', $activity_id)
           ->execute();
