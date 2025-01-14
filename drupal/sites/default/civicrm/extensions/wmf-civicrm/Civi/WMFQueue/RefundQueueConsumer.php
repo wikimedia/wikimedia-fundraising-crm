@@ -60,7 +60,15 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       $message['gross'] = abs($message['gross']);
     }
 
-    $originalContribution = wmf_civicrm_get_contributions_from_gateway_id($gateway, $parentTxn)[0] ?? NULL;
+    // @todo move all these lookups to RefundMessage - add functions
+    // ->getOriginalContributionID() and `->getOriginalContributionValue()`
+    // similar to getRecurringPriorContributionValue on the RecurringQueue class.
+    // The message class is responsible for interpreting the message - this
+    // class should only be 'doing' with the interpreted message.
+    $originalContribution = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway', '=', $messageObject->getGateway())
+      ->addWhere('contribution_extra.gateway_txn_id', '=', $parentTxn)
+      ->execute()->first();
     // Fall back to searching by invoice ID, generally for Ingenico recurring
     if (!$originalContribution && !empty($message['invoice_id'])) {
       $originalContribution = Contribution::get(FALSE)
@@ -83,10 +91,10 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
        * on some occasions. To mitigate this we now fall back to the alternative
        * gateway if no match is found for the gateway supplied.
        */
-      $originalContribution = wmf_civicrm_get_contributions_from_gateway_id(
-        $this->getAlternativePaypalGateway($gateway)
-        , $parentTxn
-      )[0] ?? NULL;
+      $originalContribution = Contribution::get(FALSE)
+        ->addWhere('contribution_extra.gateway', 'IN', [static::PAYPAL_GATEWAY, static::PAYPAL_EXPRESS_CHECKOUT_GATEWAY])
+        ->addWhere('contribution_extra.gateway_txn_id', '=', $parentTxn)
+        ->execute()->first();
     }
     $context = ['log_id' => $logId];
     // not all messages have a reason
