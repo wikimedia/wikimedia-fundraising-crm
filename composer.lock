@@ -5159,11 +5159,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.15",
+            "version": "1.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "a580e5a4110b20932263c45f9316aa67592661c8"
+                "reference": "73d177ae1cc526cd388ee7ed288b6554433245ad"
             },
             "require": {
                 "league/csv": "^9",
@@ -5203,7 +5203,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2024-12-29T04:02:41+00:00"
+            "time": "2025-01-14T22:01:40+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -7516,5 +7516,5 @@
     "platform-overrides": {
         "php": "7.4.33"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.3.0"
 }
