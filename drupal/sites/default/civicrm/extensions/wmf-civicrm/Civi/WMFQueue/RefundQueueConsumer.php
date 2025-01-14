@@ -124,7 +124,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       }
       // Some chargebacks for ACH and SEPA are retryable, don't cancel the recurrings
       if (!$this->isRetryableChargeback($reason)) {
-        $this->cancelRecurringOnChargeback($contributionStatus, $contributions, $gateway);
+        $this->cancelRecurringOnChargeback($contributionStatus, $contributions[0], $gateway);
       }
     }
     else {
@@ -374,21 +374,22 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * as soon as we get a chargeback.
    *
    * @param string $contributionStatus
-   * @param array $contributions
+   * @param array $firstContribution
    * @param string $gateway
+   *
    * @return void
+   * @throws \CRM_Core_Exception
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  private function cancelRecurringOnChargeback(string $contributionStatus, array $contributions, string $gateway): void {
+  private function cancelRecurringOnChargeback(string $contributionStatus, array $firstContribution, string $gateway): void {
     if (
       $contributionStatus === 'Chargeback' &&
-      !empty($contributions[0]['contribution_recur_id'])
+      !empty($firstContribution['contribution_recur_id'])
     ) {
-      $firstContribuion = $contributions[0];
       if (RecurHelper::gatewayManagesOwnRecurringSchedule($gateway)) {
         $recurRecord = ContributionRecur::get(FALSE)
-          ->addWhere('id', '=', $firstContribuion['contribution_recur_id'])
+          ->addWhere('id', '=', $firstContribution['contribution_recur_id'])
           ->execute()
           ->first();
         /** @var IRecurringPaymentProfileProvider $provider */
@@ -398,10 +399,10 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       $message = [
         'gateway' => $gateway,
         'txn_type' => 'subscr_cancel',
-        'contribution_recur_id' => $firstContribuion['contribution_recur_id'],
+        'contribution_recur_id' => $firstContribution['contribution_recur_id'],
         'cancel_reason' => 'Automatically cancelling because we received a chargeback',
         // We add this to satisfy a check in the common message normalization function.
-        'payment_instrument_id' => $firstContribuion['payment_instrument_id'],
+        'payment_instrument_id' => $firstContribution['payment_instrument_id'],
       ];
       QueueWrapper::push('recurring', $message);
     }
