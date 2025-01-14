@@ -100,7 +100,7 @@ class Contribution {
         $extra = self::getContributionExtra($contribution);
 
         if ($extra) {
-          $map = wmf_civicrm_get_custom_field_map(
+          $map = self::wmf_civicrm_get_custom_field_map(
             array_keys($extra), 'contribution_extra'
           );
           $mapped = [];
@@ -126,6 +126,29 @@ class Contribution {
     }
   }
 
+  /**
+   * @param $field_names
+   * @param $group_name
+   *
+   * @deprecated - should not be needed with correct api v4 useage.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private static function wmf_civicrm_get_custom_field_map($field_names, $group_name = NULL) {
+    static $custom_fields = [];
+    foreach ($field_names as $name) {
+      if (empty($custom_fields[$name])) {
+        $id = \CRM_Core_BAO_CustomField::getCustomFieldID($name, $group_name);
+        if (!$id) {
+          throw new \CRM_Core_Exception('id is missing: ' . $name . ' ' . $group_name);
+        }
+        $custom_fields[$name] = "custom_{$id}";
+      }
+    }
+
+    return $custom_fields;
+  }
   /**
    * @param array $contribution
    *
