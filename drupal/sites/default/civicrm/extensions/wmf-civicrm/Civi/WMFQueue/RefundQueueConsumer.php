@@ -308,7 +308,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         $refund_unique_id = $transaction->get_unique_id();
 
         try {
-          civicrm_api3('Contribution', 'create', [
+          Contribution::create(FALSE) ->setValues([
             'total_amount' => round(
               (float) ExchangeRate::convert(FALSE)
                 ->setFromCurrency($refund_currency)
@@ -317,16 +317,16 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
                 ->execute()
                 ->first()['amount'], 2),
             // New type?
-            'financial_type_id' => 'Refund',
+            'financial_type_id:name' => 'Refund',
             'contact_id' => $contribution['contact_id'],
             'contribution_source' => $refund_currency . " " . (-$amount_scammed),
             'trxn_id' => $refund_unique_id,
             'receive_date' => date('Y-m-d h:i:s', $refund_date),
             'currency' => 'USD',
             'debug' => 1,
-            wmf_civicrm_get_custom_field_name('parent_contribution_id') => $contribution_id,
-            wmf_civicrm_get_custom_field_name('no_thank_you') => 1,
-          ]);
+            'contribution_extra.parent_contribution_id' => $contribution_id,
+            'contribution_extra.no_thank_you' => 1,
+          ])->execute();
         }
         catch (\CRM_Core_Exception $e) {
           throw new WMFException(
