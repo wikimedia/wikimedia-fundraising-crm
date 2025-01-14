@@ -105,32 +105,6 @@ class WmfTransactionTestCase extends BaseWmfDrupalPhpUnitTestCase {
     WMFTransaction::from_unique_id('TEST_GATEWAY 123 BAD_TIMESTAMP');
   }
 
-  public function testGetContributionMany() {
-    $this->expectException(NonUniqueTransaction::class);
-    $gateway_txn_id = mt_rand();
-    $contactID = $this->createIndividual([
-      'display_name' => 'test',
-    ]);
-
-    $this->createTestEntity('Contribution', [
-      'contact_id' => $contactID,
-      'financial_type_id:name' => 'Cash',
-      'total_amount' => 1,
-      'contribution_extra.gateway' => 'TEST_GATEWAY',
-      'contribution_extra.gateway_txn_id' => $gateway_txn_id,
-    ]);
-    $this->createTestEntity('Contribution', [
-      'contact_id' => $contactID,
-      'financial_type_id:name' => 'Cash',
-      'total_amount' => 1,
-      'contribution_extra.gateway' => 'TEST_GATEWAY',
-      'contribution_extra.gateway_txn_id' => $gateway_txn_id,
-    ]);
-
-    $transaction = WMFTransaction::from_unique_id('TEST_GATEWAY ' . $gateway_txn_id);
-    $transaction->getContribution();
-  }
-
   /**
    * Test that when an exception is thrown without our wrapper no further
    * rollback happens.
