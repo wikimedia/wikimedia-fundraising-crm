@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\Activity;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ExchangeRate;
@@ -58,22 +59,20 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       $message['gross'] = abs($message['gross']);
     }
 
-    $contributions = wmf_civicrm_get_contributions_from_gateway_id($gateway, $parentTxn);
+    $originalContribution = wmf_civicrm_get_contributions_from_gateway_id($gateway, $parentTxn)[0] ?? NULL;
     // Fall back to searching by invoice ID, generally for Ingenico recurring
-    if (empty($contributions) && !empty($message['invoice_id'])) {
-      $contributions = Contribution::get(FALSE)
+    if (!$originalContribution && !empty($message['invoice_id'])) {
+      $originalContribution = Contribution::get(FALSE)
         ->addClause(
           'OR',
           ['invoice_id', '=', $message['invoice_id']],
           // For recurring payments, we sometimes append a | and a random number after the invoice ID
           ['invoice_id', 'LIKE', $message['invoice_id'] . '|%']
         )
-        ->execute()
-        // Flatten it to an array so it's false-y if no result
-        ->getArrayCopy();
+        ->execute()->first();
     }
 
-    if ($this->isPaypalRefund($gateway) && empty($contributions)) {
+    if ($this->isPaypalRefund($gateway) && !$originalContribution) {
       /**
        * Refunds raised by Paypal do not indicate whether the initial
        * payment was taken using the paypal express checkout (paypal_ec) integration or
@@ -83,19 +82,19 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
        * on some occasions. To mitigate this we now fall back to the alternative
        * gateway if no match is found for the gateway supplied.
        */
-      $contributions = wmf_civicrm_get_contributions_from_gateway_id(
+      $originalContribution = wmf_civicrm_get_contributions_from_gateway_id(
         $this->getAlternativePaypalGateway($gateway)
         , $parentTxn
-      );
+      )[0] ?? NULL;
     }
     $context = ['log_id' => $logId];
     // not all messages have a reason
     $reason = $message['reason'] ?? '';
-    if ($contributions) {
+    if ($originalContribution) {
       // Perform the refund!
       try {
         \Civi::log('wmf')->info('refund {log_id}: Marking as refunded', $context);
-        $this->markRefund($contributions[0]['id'], $contributionStatus, $message['date'],
+        $this->markRefund($originalContribution['id'], $contributionStatus, $message['date'],
           $refundTxn,
           $message['gross_currency'],
           $message['gross']
@@ -111,20 +110,20 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       // currently only adyen has this field, need to ask gr4vy if they can also pass it back
       if (!empty($reason)) {
         // Log the refund reason to activity
-        \Civi\Api4\Activity::create(FALSE)
+        Activity::create(FALSE)
           ->addValue('date', $message['date'])
           ->addValue('activity_type_id:name', 'Refund')
           ->addValue('subject', ts('Refund Reason'))
           ->addValue('status_id:name', 'Completed')
           ->addValue('details', $contributionStatus . ' reason: ' . $message['reason'])
-          ->addValue('source_contact_id', $contributions[0]['contact_id'])
-          ->addValue('target_contact_id', $contributions[0]['contact_id'])
+          ->addValue('source_contact_id', $originalContribution['contact_id'])
+          ->addValue('target_contact_id', $originalContribution['contact_id'])
           ->addValue('source_record_id', $parentTxn)
           ->execute();
       }
       // Some chargebacks for ACH and SEPA are retryable, don't cancel the recurrings
       if (!$this->isRetryableChargeback($reason)) {
-        $this->cancelRecurringOnChargeback($contributionStatus, $contributions[0], $gateway);
+        $this->cancelRecurringOnChargeback($contributionStatus, $originalContribution, $gateway);
       }
     }
     else {
