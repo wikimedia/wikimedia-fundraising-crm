@@ -2,11 +2,13 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\Activity;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ExchangeRate;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use Civi\WMFQueueMessage\RefundMessage;
 use Civi\WMFTransaction;
 use Exception;
 use SmashPig\Core\DataStores\PendingDatabase;
@@ -26,7 +28,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  public function processMessage($message) {
+  public function processMessage($message): void {
     // Sanity checking :)
     $required_fields = [
       "gateway_parent_id",
@@ -42,7 +44,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         throw new WMFException(WMFException::CIVI_REQ_FIELD, $error);
       }
     }
-
+    $messageObject = new RefundMessage($message);
     $contributionStatus = $this->mapRefundTypeToContributionStatus($message['type']);
     $gateway = $message['gateway'];
     $parentTxn = $message['gateway_parent_id'];
@@ -58,22 +60,20 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       $message['gross'] = abs($message['gross']);
     }
 
-    $contributions = wmf_civicrm_get_contributions_from_gateway_id($gateway, $parentTxn);
+    $originalContribution = wmf_civicrm_get_contributions_from_gateway_id($gateway, $parentTxn)[0] ?? NULL;
     // Fall back to searching by invoice ID, generally for Ingenico recurring
-    if (empty($contributions) && !empty($message['invoice_id'])) {
-      $contributions = Contribution::get(FALSE)
+    if (!$originalContribution && !empty($message['invoice_id'])) {
+      $originalContribution = Contribution::get(FALSE)
         ->addClause(
           'OR',
           ['invoice_id', '=', $message['invoice_id']],
           // For recurring payments, we sometimes append a | and a random number after the invoice ID
           ['invoice_id', 'LIKE', $message['invoice_id'] . '|%']
         )
-        ->execute()
-        // Flatten it to an array so it's false-y if no result
-        ->getArrayCopy();
+        ->execute()->first();
     }
 
-    if ($this->isPaypalRefund($gateway) && empty($contributions)) {
+    if ($messageObject->isPaypal() && !$originalContribution) {
       /**
        * Refunds raised by Paypal do not indicate whether the initial
        * payment was taken using the paypal express checkout (paypal_ec) integration or
@@ -83,19 +83,19 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
        * on some occasions. To mitigate this we now fall back to the alternative
        * gateway if no match is found for the gateway supplied.
        */
-      $contributions = wmf_civicrm_get_contributions_from_gateway_id(
+      $originalContribution = wmf_civicrm_get_contributions_from_gateway_id(
         $this->getAlternativePaypalGateway($gateway)
         , $parentTxn
-      );
+      )[0] ?? NULL;
     }
     $context = ['log_id' => $logId];
     // not all messages have a reason
     $reason = $message['reason'] ?? '';
-    if ($contributions) {
+    if ($originalContribution) {
       // Perform the refund!
       try {
         \Civi::log('wmf')->info('refund {log_id}: Marking as refunded', $context);
-        $this->markRefund($contributions[0]['id'], $contributionStatus, $message['date'],
+        $this->markRefund($originalContribution['id'], $contributionStatus, $message['date'],
           $refundTxn,
           $message['gross_currency'],
           $message['gross']
@@ -111,20 +111,20 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       // currently only adyen has this field, need to ask gr4vy if they can also pass it back
       if (!empty($reason)) {
         // Log the refund reason to activity
-        \Civi\Api4\Activity::create(FALSE)
+        Activity::create(FALSE)
           ->addValue('date', $message['date'])
           ->addValue('activity_type_id:name', 'Refund')
           ->addValue('subject', ts('Refund Reason'))
           ->addValue('status_id:name', 'Completed')
           ->addValue('details', $contributionStatus . ' reason: ' . $message['reason'])
-          ->addValue('source_contact_id', $contributions[0]['contact_id'])
-          ->addValue('target_contact_id', $contributions[0]['contact_id'])
-          ->addValue('source_record_id', $parentTxn)
+          ->addValue('source_contact_id', $originalContribution['contact_id'])
+          ->addValue('target_contact_id', $originalContribution['contact_id'])
+          ->addValue('source_record_id', $originalContribution['id'])
           ->execute();
       }
       // Some chargebacks for ACH and SEPA are retryable, don't cancel the recurrings
       if (!$this->isRetryableChargeback($reason)) {
-        $this->cancelRecurringOnChargeback($contributionStatus, $contributions, $gateway);
+        $this->cancelRecurringOnChargeback($contributionStatus, $originalContribution, $gateway);
       }
     }
     else {
@@ -343,13 +343,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     return $contribution_id;
   }
 
-  private function isPaypalRefund($gateway) {
-    return in_array($gateway, [
-      static::PAYPAL_EXPRESS_CHECKOUT_GATEWAY,
-      static::PAYPAL_GATEWAY,
-    ]);
-  }
-
   private function getAlternativePaypalGateway($gateway) {
     return ($gateway == static::PAYPAL_GATEWAY) ? static::PAYPAL_EXPRESS_CHECKOUT_GATEWAY : static::PAYPAL_GATEWAY;
   }
@@ -374,21 +367,22 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * as soon as we get a chargeback.
    *
    * @param string $contributionStatus
-   * @param array $contributions
+   * @param array $firstContribution
    * @param string $gateway
+   *
    * @return void
+   * @throws \CRM_Core_Exception
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  private function cancelRecurringOnChargeback(string $contributionStatus, array $contributions, string $gateway): void {
+  private function cancelRecurringOnChargeback(string $contributionStatus, array $firstContribution, string $gateway): void {
     if (
       $contributionStatus === 'Chargeback' &&
-      !empty($contributions[0]['contribution_recur_id'])
+      !empty($firstContribution['contribution_recur_id'])
     ) {
-      $firstContribuion = $contributions[0];
       if (RecurHelper::gatewayManagesOwnRecurringSchedule($gateway)) {
         $recurRecord = ContributionRecur::get(FALSE)
-          ->addWhere('id', '=', $firstContribuion['contribution_recur_id'])
+          ->addWhere('id', '=', $firstContribution['contribution_recur_id'])
           ->execute()
           ->first();
         /** @var IRecurringPaymentProfileProvider $provider */
@@ -398,10 +392,10 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       $message = [
         'gateway' => $gateway,
         'txn_type' => 'subscr_cancel',
-        'contribution_recur_id' => $firstContribuion['contribution_recur_id'],
+        'contribution_recur_id' => $firstContribution['contribution_recur_id'],
         'cancel_reason' => 'Automatically cancelling because we received a chargeback',
         // We add this to satisfy a check in the common message normalization function.
-        'payment_instrument_id' => $firstContribuion['payment_instrument_id'],
+        'payment_instrument_id' => $firstContribution['payment_instrument_id'],
       ];
       QueueWrapper::push('recurring', $message);
     }

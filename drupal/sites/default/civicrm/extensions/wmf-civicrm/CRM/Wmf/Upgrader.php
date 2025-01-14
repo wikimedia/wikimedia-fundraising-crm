@@ -2670,6 +2670,51 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     return TRUE;
   }
 
+
+  /**
+   * Fix invalid source_record_id.
+   *
+   * As of writing we have around 23,000 activity records with the invalid value of 0 in the source record_id column
+   * SELECT activity_type_id, MIN(activity_date_time), MAX(activity_date_time),
+   * count(*) FROM civicrm_activity WHERE source_record_id = 0 GROUP BY activity_type_id;
+   * +------------------+-------------------------+-------------------------+----------+
+   * | activity_type_id | MIN(activity_date_time) | MAX(activity_date_time) | count(*) |
+   * +------------------+-------------------------+-------------------------+----------+
+   * |               80 | 2024-10-09 07:40:02     | 2025-01-14 00:08:03     |     2141 |
+   * |              129 | 2020-10-28 00:00:00     | 2020-10-28 00:00:00     |    21604 |
+   *
+   * The 2 activity types have different origin stories. The ones that have activity_type_id are old. End of.
+   *
+   * The ones with activity_type_id = 80 started in October last year after
+   * 35b0ba5ddd29879a730d4b3d6b8003f18b675c92 was deployed. That commit mistakenly mapped
+   * the transaction id value to source_record_id instead of the contribution_id (fixed in prior patch).
+   * In most cases the transaction ID was not also a valid contribution ID - however as of writing there are 4 instances
+   * where it is - ie - the 2141 above is 2155 below.
+   *
+   * select count(*),max(activity_date_time), MIN(activity_date_time), MAX(source_record_id), MIN(source_record_id) FROM civicrm_activity WHERE subject = 'refund reason';
+   * +----------+-------------------------+-------------------------+-----------------------+-----------------------+
+   * | count(*) | max(activity_date_time) | MIN(activity_date_time) | MAX(source_record_id) | MIN(source_record_id) |
+   * +----------+-------------------------+-------------------------+-----------------------+-----------------------+
+   * |     2145 | 2025-01-14 00:08:03     | 2024-10-09 07:40:02     |               7569094 |                     0 |
+   *
+   * I did a spot check and in these cases the non-NULL value is A valid contribution ID but not THE valid
+   * contribution ID - so they should be set to NULL too - hence the query does an OR to pick these up too.
+   *
+   * Bug: T383162
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4605(): bool {
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_activity SET source_record_id = NULL
+      WHERE activity_date_time > '2024-10-09'
+      AND (subject = 'refund reason' OR source_record_id = 0)
+      AND activity_type_id IN (80, 129)
+    ");
+    return TRUE;
+  }
+
   /**
    * @param array $conversions
    *
