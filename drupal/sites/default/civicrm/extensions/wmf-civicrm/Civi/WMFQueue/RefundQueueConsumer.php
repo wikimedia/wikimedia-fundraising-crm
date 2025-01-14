@@ -8,6 +8,7 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\ExchangeRate;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use Civi\WMFQueueMessage\RefundMessage;
 use Civi\WMFTransaction;
 use Exception;
 use SmashPig\Core\DataStores\PendingDatabase;
@@ -27,7 +28,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  public function processMessage($message) {
+  public function processMessage($message): void {
     // Sanity checking :)
     $required_fields = [
       "gateway_parent_id",
@@ -43,7 +44,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         throw new WMFException(WMFException::CIVI_REQ_FIELD, $error);
       }
     }
-
+    $messageObject = new RefundMessage($message);
     $contributionStatus = $this->mapRefundTypeToContributionStatus($message['type']);
     $gateway = $message['gateway'];
     $parentTxn = $message['gateway_parent_id'];
@@ -72,7 +73,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         ->execute()->first();
     }
 
-    if ($this->isPaypalRefund($gateway) && !$originalContribution) {
+    if ($messageObject->isPaypal() && !$originalContribution) {
       /**
        * Refunds raised by Paypal do not indicate whether the initial
        * payment was taken using the paypal express checkout (paypal_ec) integration or
@@ -340,13 +341,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     }
 
     return $contribution_id;
-  }
-
-  private function isPaypalRefund($gateway) {
-    return in_array($gateway, [
-      static::PAYPAL_EXPRESS_CHECKOUT_GATEWAY,
-      static::PAYPAL_GATEWAY,
-    ]);
   }
 
   private function getAlternativePaypalGateway($gateway) {
