@@ -334,10 +334,10 @@ class RefundQueueTest extends BaseQueueTestCase {
       'gross_currency' => $donationMessage['original_currency'],
       'reason' => $tempIssueReason,
     ]);
-    $this->processMessage($refundMessage, 'Refund','refund');
+    $this->processMessage($refundMessage, 'Refund', 'refund');
     // test add reason to activity
     $activity = Activity::get(FALSE)
-      ->addWhere('source_record_id', '=', $donationMessage['gateway_txn_id'])
+      ->addWhere('source_record_id', '=', $this->ids['Contribution'][0])
       ->addWhere('subject', '=', 'Refund Reason')
       ->addSelect('details')
       ->execute()->first();

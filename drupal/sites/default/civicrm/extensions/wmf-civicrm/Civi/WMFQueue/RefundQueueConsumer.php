@@ -118,7 +118,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           ->addValue('details', $contributionStatus . ' reason: ' . $message['reason'])
           ->addValue('source_contact_id', $originalContribution['contact_id'])
           ->addValue('target_contact_id', $originalContribution['contact_id'])
-          ->addValue('source_record_id', $parentTxn)
+          ->addValue('source_record_id', $originalContribution['id'])
           ->execute();
       }
       // Some chargebacks for ACH and SEPA are retryable, don't cancel the recurrings
