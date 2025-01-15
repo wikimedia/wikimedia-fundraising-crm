@@ -31,8 +31,8 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
   private $hostedCheckoutProvider;
 
   public function setUp() : void {
-    parent::setUp();
     $this->processorName = 'test-dlocal';
+    parent::setUp();
 
     \Civi::settings()->set(
       'smashpig_recurring_use_queue', '1'
@@ -96,7 +96,7 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
         'order_id' => $expectedNextOrderIdWithSequence,
         'installment' => 'recurring',
         'description' => Civi::settings()->get('smashpig_recurring_charge_descriptor'),
-        'recurring' => true,
+        'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
         'payment_submethod' => 'upi',
         'processor_contact_id' => '123456.1',

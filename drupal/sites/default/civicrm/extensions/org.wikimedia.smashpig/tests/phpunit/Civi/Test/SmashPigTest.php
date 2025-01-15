@@ -139,8 +139,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
    */
   public function testDoDirectPayment(): void {
     $processor = Civi\Payment\System::singleton()
-      ->getById($this->processorId);
-    $processor->setPaymentProcessor(civicrm_api3('PaymentProcessor', 'getsingle', ['id' => $this->processorId]));
+      ->getById($this->getPaymentProcessorID());
     $params = [
       'amount' => 12.34,
       'currency' => 'USD',
@@ -518,7 +517,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     // will confirm the previous contribution lookup by  kicks in.
     $params = [
       'id' => $contributionRecur['id'],
-      'payment_processor_id' => $this->processorId,
+      'payment_processor_id.name' => $this->processorName,
       // FIXME: We're putting this 28 days in the past to fool the too-soon
       // contribution filter. Instead we should set this to now and update
       // the contribution record created in the previous run to set it to

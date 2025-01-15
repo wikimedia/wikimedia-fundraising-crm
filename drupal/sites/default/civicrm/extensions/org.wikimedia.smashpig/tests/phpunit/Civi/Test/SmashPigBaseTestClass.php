@@ -25,13 +25,6 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    */
   protected $processorName = 'testSmashPig';
 
-  /**
-   * Id of processor created for the test.
-   *
-   * @var int
-   */
-  protected $processorId;
-
   protected $maxContactID;
 
   protected int $maxContributionID;
@@ -78,16 +71,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    * @throws \CRM_Core_Exception
    */
   public function setUp(): void {
-    $existing = $this->callAPISuccess(
-      'PaymentProcessor', 'get', ['name' => $this->processorName, 'is_test' => 0]
-    );
-    if ($existing['values']) {
-      $this->processorId = $existing['id'];
-    }
-    else {
-      $processor = $this->createPaymentProcessor($this->processorName);
-      $this->processorId = $processor['id'];
-    }
+    $this->getPaymentProcessorID($this->processorName);
     // Ensure site is set to put mail into civicrm_mailing_spool table.
     Civi::settings()->set('mailing_backend', ['outBound_option' => \CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB]);
     $this->originalFailureMessageTemplate = MessageTemplate::get(FALSE)
@@ -177,6 +161,23 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
     ContributionRecur::delete(FALSE)
       ->addWhere('id', 'IN', $ids)
       ->execute();
+  }
+
+  /**
+   * @param string $name
+   *
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public function getPaymentProcessorID(string $name = 'testSmashPig'): int {
+    $existing = PaymentProcessor::get(FALSE)
+      ->addWhere('name', '=', $name)
+      ->addWhere('is_test', '=', FALSE)
+      ->execute()->first();
+    if ($existing) {
+      return $existing['id'];
+    }
+    return $this->createPaymentProcessor($name)['id'];
   }
 
   /**
@@ -279,14 +280,13 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    *
    * @return array
    */
-  protected function createToken(int $contactId): array {
-    $result = $this->createTestEntity('PaymentToken', [
+  protected function createToken(int $contactId, $overrides = []): array {
+    return $this->createTestEntity('PaymentToken', $overrides + [
       'contact_id' => $contactId,
-      'payment_processor_id' => $this->processorId,
+      'payment_processor_id.name' => $this->processorName,
       'token' => 'abc123-456zyx-test12',
       'ip_address' => '12.34.56.78',
     ]);
-    return $result;
   }
 
   /**
@@ -313,7 +313,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
       'payment_token_id' => $token['id'],
       'cancel_date' => NULL,
       'cycle_day' => gmdate('d', strtotime('-12 hours')),
-      'payment_processor_id' => $this->processorId,
+      'payment_processor_id.name' => $this->processorName,
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
       'trxn_id' => 'RECURRING INGENICO ' . $trxn_id,
       'processor_id' => $trxn_id,
