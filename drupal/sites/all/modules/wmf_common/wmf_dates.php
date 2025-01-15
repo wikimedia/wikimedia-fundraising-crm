@@ -38,13 +38,3 @@ function wmf_common_date_unix_to_civicrm($unixtime) {
   return wmf_common_date_format_using_utc("Y-m-d H:i:s", $unixtime);
 }
 
-/**
- * Used to format dates for MySQL datetime columns.
- *
- * @param string $unixtime unix timestamp in seconds since epoch
- *
- * @return string Formatted time
- */
-function wmf_common_date_unix_to_sql($unixtime) {
-  return wmf_common_date_format_using_utc("YmdHis", $unixtime);
-}
