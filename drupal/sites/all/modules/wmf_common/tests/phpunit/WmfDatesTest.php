@@ -17,16 +17,6 @@ class WmfDatesTest extends BaseWmfDrupalPhpUnitTestCase {
 	/**
 	 * @dataProvider WmfDatesTest::dateProvider
 	 */
-	public function testDateParseString( $text, $expectedSeconds, $_utc ) {
-		$actual = wmf_common_date_parse_string( $text );
-
-		$this->assertEquals( $expectedSeconds, $actual,
-			'Date parsed as expected' );
-	}
-
-	/**
-	 * @dataProvider WmfDatesTest::dateProvider
-	 */
 	public function testDateFormatUsingUtc( $_text, $seconds, $expectedUtc ) {
 		$actual = wmf_common_date_format_using_utc( 'c', $seconds );
 

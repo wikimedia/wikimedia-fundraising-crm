@@ -3,25 +3,6 @@
 define('WMF_DATEFORMAT', 'Ymd');
 
 /**
- * Run strtotime in UTC
- *
- * @param string $date Random date format you hope is parseable by PHP, and is
- * in UTC.
- *
- * @return int Seconds since Unix epoch
- */
-function wmf_common_date_parse_string($date) {
-  try {
-    $obj = wmf_common_make_datetime($date);
-    return $obj->getTimestamp();
-  }
-  catch (Exception $ex) {
-    \Civi::log('wmf')->error('wmf_common: Caught date exception in ' . __METHOD__ . ': ' . $ex->getMessage());
-    return NULL;
-  }
-}
-
-/**
  * Convert a unix timestamp to formatted date, in UTC.
  *
  * Ordinarily, you will want to use the pre-formatted functions below to ensure
