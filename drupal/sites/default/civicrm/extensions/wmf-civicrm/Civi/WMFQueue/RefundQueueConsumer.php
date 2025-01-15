@@ -299,15 +299,15 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         $refund_unique_id = $transaction->get_unique_id();
 
         try {
-          Contribution::create(FALSE) ->setValues([
-            'total_amount' => round(
-              (float) ExchangeRate::convert(FALSE)
-                ->setFromCurrency($refund_currency)
-                ->setFromAmount(-$amount_scammed)
-                ->setTimestamp('@' . $messageObject->getTimestamp())
-                ->execute()
-                ->first()['amount'], 2),
-            // New type?
+          $convertedTotalAmount = ExchangeRate::convert(FALSE)
+            ->setFromCurrency($refund_currency)
+            ->setFromAmount(-$amount_scammed)
+            ->setTimestamp('@' . $messageObject->getTimestamp())
+            ->execute()
+            ->first()['amount'];
+
+          Contribution::create(FALSE)->setValues([
+            'total_amount' => round((float) $convertedTotalAmount, 2),
             'financial_type_id:name' => 'Refund',
             'contact_id' => $contribution['contact_id'],
             'contribution_source' => $refund_currency . " " . (-$amount_scammed),
