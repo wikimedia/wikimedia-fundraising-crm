@@ -1080,7 +1080,7 @@ WHERE
 
     foreach ($this->getDatetimeFields() as $field) {
       if (!empty($msg[$field]) && !is_numeric($msg[$field])) {
-        $msg[$field] = wmf_common_date_parse_string($msg[$field]);
+        $msg[$field] = strtotime($msg[$field]);
       }
     }
 
