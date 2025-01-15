@@ -107,7 +107,7 @@ class Save extends AbstractAction {
     if ($preferredLanguage) {
       $contact['preferred_language'] = $preferredLanguage;
     }
-    $contact += $this->getApiReadyFields(4);
+    $contact += $this->getApiReadyFields();
     // These fields have historically been permitted for create but not
     // update - or they would be in getApiReadyFields()
     $allowedCreateFields = [
@@ -836,10 +836,9 @@ WHERE
   }
 
   /**
-   * @param int $destinationApiVersion
    * @return array
    */
-  public function getApiReadyFields(int $destinationApiVersion = 4): array {
+  public function getApiReadyFields(): array {
     $values = [];
     // Copy some fields, if they exist
     // Why do this rather than just do pattern based conversion?
@@ -863,12 +862,11 @@ WHERE
       $this->getApiv3FieldName('Partner') => 'Partner.Partner',
     ] + $this->getExternalIdentifierFields();
 
-    foreach ($apiFields as $api3Field => $api4Field) {
+    foreach ($apiFields as $api3Field => $destinationField) {
       // We are currently calling apiv3 here but aim to call v4.
       // We can map either incoming, but prefer v4.
-      $destinationField = $destinationApiVersion === 4 ? $api4Field : $api3Field;
-      if (isset($this->message[$api4Field])) {
-        $values[$destinationField] = $this->message[$api4Field];
+      if (isset($this->message[$destinationField])) {
+        $values[$destinationField] = $this->message[$destinationField];
       }
       elseif (isset($this->message[$api3Field])) {
         $values[$destinationField] = $this->message[$api3Field];
