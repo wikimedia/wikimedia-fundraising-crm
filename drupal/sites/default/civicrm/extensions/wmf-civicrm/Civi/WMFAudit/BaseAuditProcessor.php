@@ -9,7 +9,6 @@ use Civi\WMFException\WMFException;
 use Civi\WMFTransaction;
 
 abstract class BaseAuditProcessor {
-
   /**
    * @var int
    *   number of days of log to search in before transaction date
@@ -365,7 +364,7 @@ abstract class BaseAuditProcessor {
   protected function get_record_human_date($record) {
     if (array_key_exists('date', $record)) {
       //date format defined in wmf_dates
-      return date(WMF_DATEFORMAT, $record['date']);
+      return date('Ymd', $record['date']);
     }
 
     echo print_r($record, TRUE);
@@ -1727,8 +1726,8 @@ abstract class BaseAuditProcessor {
    * @return array all date strings between the $start and $end values
    */
   private function wmf_common_date_get_date_gap($start, $end) {
-    $startdate = date_create_from_format(WMF_DATEFORMAT, (string) $start);
-    $enddate = date_create_from_format(WMF_DATEFORMAT, (string) $end);
+    $startdate = date_create_from_format('Ymd', (string) $start);
+    $enddate = date_create_from_format('Ymd', (string) $end);
 
     $next = $startdate;
     $interval = new \DateInterval('P1D');
@@ -1750,10 +1749,10 @@ abstract class BaseAuditProcessor {
    */
   private function wmf_common_date_format_string($date) {
     if (is_numeric($date)) {
-      return date(WMF_DATEFORMAT, $date);
+      return date('Ymd', $date);
     }
     elseif (is_object($date)) {
-      return date_format($date, WMF_DATEFORMAT);
+      return date_format($date, 'Ymd');
     }
   }
 
@@ -1763,13 +1762,13 @@ abstract class BaseAuditProcessor {
    * @param string $date Date in a format that date_create recognizes.
    * @param int $add Number of days to add
    *
-   * @return string|false Date in WMF_DATEFORMAT
+   * @return string|false Date in 'Ymd'
    */
   private function dateAddDays($date, $add) {
     $date = date_create($date);
     date_add($date, date_interval_create_from_date_string("$add days"));
 
-    return date_format($date, WMF_DATEFORMAT);
+    return date_format($date, 'Ymd');
   }
 
 

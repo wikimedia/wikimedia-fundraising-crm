@@ -1,7 +1,5 @@
 <?php
 
-define('WMF_DATEFORMAT', 'Ymd');
-
 /**
  * Convert a unix timestamp to formatted date, in UTC.
  *
