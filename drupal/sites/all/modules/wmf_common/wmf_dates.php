@@ -13,7 +13,10 @@
  */
 function wmf_common_date_format_using_utc($format, $unixtime) {
   try {
-    $obj = wmf_common_make_datetime('@' . $unixtime);
+    // Funky hack to trim decimal timestamp.  More normalizations may follow.
+    $text = preg_replace('/^(@\d+)\.\d+$/', '$1', '@' . $unixtime);
+
+    $obj = new DateTime($text, new DateTimeZone('UTC'));
     $formatted = $obj->format($format);
   }
   catch (Exception $ex) {
@@ -22,19 +25,6 @@ function wmf_common_date_format_using_utc($format, $unixtime) {
   }
 
   return $formatted;
-}
-
-/**
- * Normalize a date string and attempt to parse into a DateTime object.
- *
- * @return DateTime
- * @throws Exception when the string is unparsable.
- */
-function wmf_common_make_datetime($text) {
-  // Funky hack to trim decimal timestamp.  More normalizations may follow.
-  $text = preg_replace('/^(@\d+)\.\d+$/', '$1', $text);
-
-  return new DateTime($text, new DateTimeZone('UTC'));
 }
 
 /**
