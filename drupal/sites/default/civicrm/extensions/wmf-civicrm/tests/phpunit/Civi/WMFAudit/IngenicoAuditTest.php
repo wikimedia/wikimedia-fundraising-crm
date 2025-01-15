@@ -161,6 +161,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'street_address' => 'N0NE PROVIDED',
               'city' => 'NOCITY',
               'invoice_id' => '57123456.84401',
+              'tracking_date' => '2018-04-30 18:51:24',
             ],
           ],
         ],
@@ -277,6 +278,7 @@ class IngenicoAuditTest extends BaseAuditTestCase {
               'street_address' => 'N0NE PROVIDED',
               'city' => 'NOCITY',
               'invoice_id' => '57123456.84401',
+              'tracking_date' => '2018-06-03 18:51:24',
             ],
             [
               'contribution_tracking_id' => '5551212',

@@ -985,7 +985,7 @@ abstract class BaseAuditProcessor {
    *
    * @return array
    */
-  private function getContributionTrackingData($record) {
+  private function getContributionTrackingData($record): array {
 
     $contributionTrackingId = $record['contribution_tracking_id'];
     $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $contributionTrackingId)->execute()->first();
@@ -998,9 +998,7 @@ abstract class BaseAuditProcessor {
         'utm_medium' => 'audit',
         'utm_source' => "audit..$paymentMethod",
         'payment_method' => $paymentMethod,
-        'ts' => wmf_common_date_unix_to_sql(
-          $record['date'] ?? time()
-        ),
+        'tracking_date' => date('Y-m-d H:i:s', $record['date'] ?? time()),
         'language' => $record['language'] ?? NULL,
         'country' => $record['country'] ?? NULL,
       ];
@@ -1026,7 +1024,7 @@ abstract class BaseAuditProcessor {
     }
 
     // The audit is expecting a date in Unix timestamp format
-    $result['date'] = strtotime($result['tracking_date']);
+    $result['date'] = strtotime($result['tracking_date'] ?? 'now');
 
     $keep = [
       'utm_source',
