@@ -270,19 +270,13 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     else {
       $refund_currency = $original_currency;
     }
-    if ($refund_date === NULL) {
-      $refund_date = time();
-    }
-    elseif (!is_numeric($refund_date)) {
-      $refund_date = wmf_common_date_parse_string($refund_date);
-    }
 
     try {
       civicrm_api3('Contribution', 'create', [
         'id' => $contribution_id,
         'debug' => 1,
         'contribution_status_id' => $messageObject->getContributionStatus(),
-        'cancel_date' => wmf_common_date_unix_to_civicrm($refund_date),
+        'cancel_date' => $messageObject->getDate(),
         'refund_trxn_id' => $refund_gateway_txn_id,
       ]);
     }
@@ -310,7 +304,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
               (float) ExchangeRate::convert(FALSE)
                 ->setFromCurrency($refund_currency)
                 ->setFromAmount(-$amount_scammed)
-                ->setTimestamp(is_int($refund_date) ? "@$refund_date" : $refund_date)
+                ->setTimestamp('@' . $messageObject->getTimestamp())
                 ->execute()
                 ->first()['amount'], 2),
             // New type?
@@ -318,7 +312,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
             'contact_id' => $contribution['contact_id'],
             'contribution_source' => $refund_currency . " " . (-$amount_scammed),
             'trxn_id' => $refund_unique_id,
-            'receive_date' => date('Y-m-d h:i:s', $refund_date),
+            'receive_date' => $messageObject->getDate(),
             'currency' => 'USD',
             'debug' => 1,
             'contribution_extra.parent_contribution_id' => $contribution_id,
