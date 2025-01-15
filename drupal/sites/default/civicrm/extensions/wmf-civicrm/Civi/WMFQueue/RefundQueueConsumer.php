@@ -45,7 +45,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       }
     }
     $messageObject = new RefundMessage($message);
-    $contributionStatus = $this->mapRefundTypeToContributionStatus($message['type']);
+    $contributionStatus = $messageObject->getContributionStatus();
     $gateway = $message['gateway'];
     $parentTxn = $message['gateway_parent_id'];
     $refundTxn = isset($message['gateway_refund_id']) ? $message['gateway_refund_id'] : NULL;
@@ -103,7 +103,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       // Perform the refund!
       try {
         \Civi::log('wmf')->info('refund {log_id}: Marking as refunded', $context);
-        $this->markRefund($originalContribution['id'], $contributionStatus, $message['date'],
+        $this->markRefund($originalContribution['id'], $messageObject, $message['date'],
           $refundTxn,
           $message['gross_currency'],
           $message['gross']
@@ -151,8 +151,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
 
   /**
    * @param int $contribution_id
-   * @param string $contribution_status
-   *   'Refunded'|'Chargeback' - this will determine the new contribution status.
+   * @param \Civi\WMFQueueMessage\RefundMessage $messageObject
    * @param string $refund_date
    * @param null $refund_gateway_txn_id
    * @param null $refund_currency
@@ -211,8 +210,8 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    *
    */
   private function markRefund(
-    $contribution_id,
-    $contribution_status,
+    int $contribution_id,
+    RefundMessage $messageObject,
     $refund_date,
     $refund_gateway_txn_id,
     $refund_currency,
@@ -282,7 +281,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       civicrm_api3('Contribution', 'create', [
         'id' => $contribution_id,
         'debug' => 1,
-        'contribution_status_id' => $contribution_status,
+        'contribution_status_id' => $messageObject->getContributionStatus(),
         'cancel_date' => wmf_common_date_unix_to_civicrm($refund_date),
         'refund_trxn_id' => $refund_gateway_txn_id,
       ]);
@@ -349,21 +348,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
 
   private function getAlternativePaypalGateway($gateway) {
     return ($gateway == static::PAYPAL_GATEWAY) ? static::PAYPAL_EXPRESS_CHECKOUT_GATEWAY : static::PAYPAL_GATEWAY;
-  }
-
-  private function mapRefundTypeToContributionStatus(string $type): string {
-    $validTypes = [
-      'refund' => 'Refunded',
-      'chargeback' => 'Chargeback',
-      'cancel' => 'Cancelled',
-      'reversal' => 'Chargeback', // from the audit processor
-      'admin_fraud_reversal' => 'Chargeback', // raw IPN code
-    ];
-
-    if (!array_key_exists($type, $validTypes)) {
-      throw new WMFException(WMFException::IMPORT_CONTRIB, "Unknown refund type '{$type}'");
-    }
-    return $validTypes[$type];
   }
 
   /**
