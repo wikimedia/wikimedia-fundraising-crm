@@ -21,7 +21,7 @@ class WmfCampaignTest extends BaseWmfDrupalPhpUnitTestCase {
     parent::setUp();
     civicrm_initialize();
     unset(Civi::$statics['wmf_campaigns']['campaigns']);
-    $this->campaign_custom_field_name = wmf_civicrm_get_custom_field_name('Appeal');
+    $this->campaign_custom_field_name = 'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID('Appeal');
 
     $this->campaign_key = 'fooCamp' . mt_rand();
     $this->notification_email = 'notifee@localhost.net';
