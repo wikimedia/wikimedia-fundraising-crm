@@ -802,7 +802,7 @@ class EngageChecksFileTest extends BaseChecksFileTest {
       }
       $this->callAPISuccess('Contribution', 'get', [
         'api.Contribution.delete' => 1,
-        wmf_civicrm_get_custom_field_name('gateway_txn_id') => ['IN' => $ids],
+        'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID('gateway_txn_id') => ['IN' => $ids],
         'api.contact.delete' => ['skip_undelete' => 1],
       ]);
     }
