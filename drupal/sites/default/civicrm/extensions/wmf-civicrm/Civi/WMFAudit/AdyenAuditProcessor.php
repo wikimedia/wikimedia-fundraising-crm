@@ -92,8 +92,8 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
     // there are Adyen situations where the $positive_txn_id is not what is stored in civi
     // look for modification_reference instead
     // T306944
-    if (wmf_civicrm_get_contributions_from_gateway_id($gateway, $positive_txn_id) === FALSE) {
-      if (isset($transaction['modification_reference']) && wmf_civicrm_get_contributions_from_gateway_id($gateway, $transaction['modification_reference']) !== FALSE) {
+    if ($this->getContributions($gateway, $positive_txn_id) === FALSE) {
+      if (isset($transaction['modification_reference']) && $this->getContributions($gateway, $transaction['modification_reference']) !== FALSE) {
         return TRUE;
       }
       return FALSE;
