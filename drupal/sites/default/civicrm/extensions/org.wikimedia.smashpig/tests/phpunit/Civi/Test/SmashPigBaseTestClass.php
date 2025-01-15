@@ -2,11 +2,14 @@
 
 namespace Civi\Test;
 
+use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\PaymentProcessor;
+use Civi\Api4\PaymentToken;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\Api4\Translation;
-use \Civi\Api4\MessageTemplate;
+use Civi\Api4\MessageTemplate;
 use Civi\Api4\Activity;
 use Civi\Test;
 use Civi;
@@ -57,17 +60,6 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
   protected $trxn_id = 123456789;
 
   /**
-   * Things to cleanup.
-   *
-   * @var array
-   */
-  protected $deleteThings = [
-    'PaymentToken' => [],
-    'PaymentProcessor' => [],
-    'Contact' => [],
-  ];
-
-  /**
    * @return \Civi\Test\CiviEnvBuilder
    *
    * @throws \CRM_Extension_Exception_ParseException
@@ -93,7 +85,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
       $this->processorId = $existing['id'];
     }
     else {
-      $processor = $this->createPaymentProcessor();
+      $processor = $this->createPaymentProcessor($this->processorName);
       $this->processorId = $processor['id'];
     }
     // Ensure site is set to put mail into civicrm_mailing_spool table.
@@ -132,19 +124,59 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
     foreach ($this->originalFailureTranslation as $translation) {
       Translation::update(FALSE)->setValues($translation)->execute();
     }
-    if ($this->createdMessageTemplate) {
-      $this->deleteThings['MessageTemplate'][] = $this->createdMessageTemplate['id'];
-    }
     Contribution::delete(FALSE)->addWhere('invoice_id', 'LIKE', '%12345%')->execute();
-    ContributionRecur::delete(FALSE)->addWhere('id', '=', $this->trxn_id)->execute();
-    foreach ($this->deleteThings as $type => $ids) {
-      foreach ($ids as $id) {
-        $this->callAPISuccess($type, 'delete', ['id' => $id, 'skip_undelete' => TRUE]);
+
+    foreach ($this->ids as $type => $ids) {
+      if ($type === 'Contact') {
+        Contact::delete(FALSE)
+          ->addWhere('id', 'IN', $this->ids['Contact'])
+          ->setUseTrash(FALSE)
+          ->execute();
+      }
+      if ($type === 'ContributionRecur') {
+        $this->cleanupRecurringContributions($this->ids['ContributionRecur']);
+      }
+      if ($type === 'PaymentProcessor') {
+        PaymentToken::delete(FALSE)
+          ->addWhere('payment_processor_id', 'IN', $this->ids['PaymentProcessor'])
+          ->execute();
+        $recurring = (array) ContributionRecur::get(FALSE)
+          ->addWhere('payment_processor_id', 'IN', $this->ids['PaymentProcessor'])
+          ->execute()->indexBy('id');
+        if ($recurring) {
+          $this->cleanupRecurringContributions(array_keys($recurring));
+        }
+        PaymentProcessor::delete(FALSE)
+          ->addWhere('id', 'IN', $this->ids['PaymentProcessor'])
+          ->execute();
+      }
+      else {
+        try {
+          civicrm_api4($type, 'delete', ['debug' => TRUE, 'checkPermissions' => FALSE, 'where' => [['id', 'IN', $this->ids[$type]]]]);
+        }
+        catch (\CRM_Core_Exception $e) {
+          $this->fail('Failed to delete ' . $type . ' with ids ' . print_r($ids, TRUE) . ' and error ' . $e->getMessage());
+        }
       }
     }
     // Ensure cleanup has been done!
     $this->assertEquals($this->maxContactID, $this->maxContactID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact'));
     parent::tearDown();
+  }
+
+  /**
+   * @param array $ids
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function cleanupRecurringContributions(array $ids): void {
+    Contribution::delete(FALSE)
+      ->addWhere('contribution_recur_id', 'IN', $ids)
+      ->execute();
+    ContributionRecur::delete(FALSE)
+      ->addWhere('id', 'IN', $ids)
+      ->execute();
   }
 
   /**
@@ -182,27 +214,18 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    * @return array
    */
   protected function createContact(): array {
-    $result = $this->callApiSuccess('Contact', 'create', [
+    $result = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Harry',
       'last_name' => 'Henderson',
       'preferred_language' => 'en_US',
       'legal_identifier' => '1122334455',
-    ]);
-    $this->callAPISuccess('Email', 'create', [
-      'contact_id' => $result['id'],
-      'location_type_id' => 'Home',
-      'is_primary' => 1,
-      'email' => 'harry@hendersons.net',
-    ]);
-    $this->callAPISuccess('Address', 'create', [
-      'contact_id' => $result['id'],
-      'location_type_id' => 'Billing',
-      'is_primary' => 1,
-      'country_id' => 'US',
-    ]);
-    $this->deleteThings['Contact'][] = $result['id'];
-    return $result['values'][$result['id']];
+      'email_primary.email' => 'harry@hendersons.net',
+      'email_primary.location_type_id:name' => 'Home',
+      'address_primary.country_id:abbr' => 'US',
+      'address_primary.location_type_id:name' => 'Billing',
+    ], 'harry');
+    return $result;
   }
 
   /**
@@ -232,10 +255,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    *
    * @throws \CRM_Core_Exception
    */
-  protected function createPaymentProcessor(): array {
-    $typeRecord = $this->callAPISuccess(
-      'PaymentProcessorType', 'getSingle', ['name' => 'smashpig_ingenico']
-    );
+  protected function createPaymentProcessor(string $name): array {
     $accountType = key(\CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL,
       " AND v.name = 'Asset' "));
     $query = "
@@ -246,14 +266,10 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
       ";
     $financialAccountId = \CRM_Core_DAO::singleValueQuery($query);
     $params = [];
-    $params['payment_processor_type_id'] = $typeRecord['id'];
-    $params['name'] = $this->processorName;
-    $params['domain_id'] = \CRM_Core_Config::domainID();
-    $params['is_active'] = TRUE;
+    $params['payment_processor_type_id:name'] = 'smashpig_ingenico';
+    $params['name'] = $name;
     $params['financial_account_id'] = $financialAccountId;
-    $result = $this->callAPISuccess('PaymentProcessor', 'create', $params);
-    $this->deleteThings['PaymentProcessor'][] = $result['id'];
-    return $result['values'][$result['id']];
+    return $this->createTestEntity('PaymentProcessor', $params, $name);
   }
 
   /**
@@ -262,21 +278,19 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    * @param int $contactId
    *
    * @return array
-   * @throws \CRM_Core_Exception
    */
   protected function createToken(int $contactId): array {
-    $result = $this->callAPISuccess('PaymentToken', 'create', [
+    $result = $this->createTestEntity('PaymentToken', [
       'contact_id' => $contactId,
       'payment_processor_id' => $this->processorId,
       'token' => 'abc123-456zyx-test12',
       'ip_address' => '12.34.56.78',
     ]);
-    $this->deleteThings['PaymentToken'][] = $result['id'];
-    return $result['values'][$result['id']];
+    return $result;
   }
 
   /**
-   * Create recurring contributionn.
+   * Create recurring contribution.
    *
    * @param array $token
    * @param array $overrides
@@ -287,27 +301,27 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
     $trxn_id = ($overrides['trxn_id'] ?? NULL) ?: $this->trxn_id;
     $invoice_id = 678000 . '.' . $trxn_id;
     $params = $overrides + [
-        'contact_id' => $token['contact_id'],
-        'amount' => 12.34,
-        'currency' => 'USD',
-        'frequency_unit' => 'month',
-        'frequency_interval' => 1,
-        'installments' => 0,
-        'failure_count' => 0,
-        'start_date' => gmdate('Y-m-d H:i:s', strtotime('-1 month')),
-        'create_date' => gmdate('Y-m-d H:i:s', strtotime('-1 month')),
-        'payment_token_id' => $token['id'],
-        'cancel_date' => NULL,
-        'cycle_day' => gmdate('d', strtotime('-12 hours')),
-        'payment_processor_id' => $this->processorId,
-        'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
-        'trxn_id' => 'RECURRING INGENICO ' . $trxn_id,
-        'processor_id' => $trxn_id,
-        'invoice_id' => $invoice_id,
-        'contribution_status_id:name' => 'Pending',
-        'contribution_recur_smashpig.processor_contact_id' => $invoice_id,
-        'contribution_recur_smashpig.rescue_reference' => NULL,
-      ];
+      'contact_id' => $token['contact_id'],
+      'amount' => 12.34,
+      'currency' => 'USD',
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'installments' => 0,
+      'failure_count' => 0,
+      'start_date' => gmdate('Y-m-d H:i:s', strtotime('-1 month')),
+      'create_date' => gmdate('Y-m-d H:i:s', strtotime('-1 month')),
+      'payment_token_id' => $token['id'],
+      'cancel_date' => NULL,
+      'cycle_day' => gmdate('d', strtotime('-12 hours')),
+      'payment_processor_id' => $this->processorId,
+      'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
+      'trxn_id' => 'RECURRING INGENICO ' . $trxn_id,
+      'processor_id' => $trxn_id,
+      'invoice_id' => $invoice_id,
+      'contribution_status_id:name' => 'Pending',
+      'contribution_recur_smashpig.processor_contact_id' => $invoice_id,
+      'contribution_recur_smashpig.rescue_reference' => NULL,
+    ];
     return $this->createTestEntity('ContributionRecur', $params);
   }
 
@@ -357,9 +371,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
       }
     }
     else {
-      $this->createdMessageTemplate = MessageTemplate::create()
-        ->setCheckPermissions(FALSE)
-        ->setValues(['workflow_name' => 'recurring_failed_message', 'msg_subject' => $subject, 'msg_text' => $msgHtml])->execute()->first();
+      $this->createTestEntity('MessageTemplate', ['workflow_name' => 'recurring_failed_message', 'msg_subject' => $subject, 'msg_text' => $msgHtml]);
     }
   }
 
@@ -380,7 +392,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
       ->addOrderBy('activity_date_time', 'DESC')
       ->execute()->first();
     if ($activity) {
-      $this->deleteThings['Activity'][] = $activity['id'];
+      $this->ids['Activity'][] = $activity['id'];
     }
     return $activity;
   }
