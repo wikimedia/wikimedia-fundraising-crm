@@ -153,7 +153,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * @param int $contribution_id
    * @param string $contribution_status
    *   'Refunded'|'Chargeback' - this will determine the new contribution status.
-   * @param null $refund_date
+   * @param string $refund_date
    * @param null $refund_gateway_txn_id
    * @param null $refund_currency
    *   If provided this will be checked against the original contribution and an
@@ -162,8 +162,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    *   If provided this will be checked against the original contribution and an
    *   exception will be thrown on mismatch.
    *
-   * @return int
-   *   The refund's contribution id.
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    * @todo - fix tests to process via the queue consumer, move this to the queue consumer.
@@ -214,11 +212,11 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    */
   private function markRefund(
     $contribution_id,
-    $contribution_status = 'Refunded',
-    $refund_date = NULL,
-    $refund_gateway_txn_id = NULL,
-    $refund_currency = NULL,
-    $refund_amount = NULL
+    $contribution_status,
+    $refund_date,
+    $refund_gateway_txn_id,
+    $refund_currency,
+    $refund_amount
   ) {
     $amount_scammed = 0;
 
@@ -347,8 +345,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'action' => 'view',
         ], TRUE));
     }
-
-    return $contribution_id;
   }
 
   private function getAlternativePaypalGateway($gateway) {
