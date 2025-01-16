@@ -28,7 +28,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  public function processMessage($message): void {
+  public function processMessage(array $message): void {
     // Sanity checking :)
     $required_fields = [
       "gateway_parent_id",
@@ -154,15 +154,16 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
   /**
    * @param int $contribution_id
    * @param \Civi\WMFQueueMessage\RefundMessage $messageObject
-   * @param null $refund_gateway_txn_id
-   * @param null $refund_currency
+   * @param string|null $refund_gateway_txn_id
+   * @param string|null $refund_currency
    *   If provided this will be checked against the original contribution and an
    *   exception will be thrown on mismatch.
-   * @param null $refund_amount
+   * @param float|null $refund_amount
    *   If provided this will be checked against the original contribution and an
    *   exception will be thrown on mismatch.
    *
    * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    * @throws \Civi\WMFException\WMFException
    * @todo - fix tests to process via the queue consumer, move this to the queue consumer.
    * Sets the civi records to reflect a contribution refund.
@@ -208,15 +209,14 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * original contribution when it had been zero'd or marked as 'RFD'. This
    * appears to be last used several years ago & this handling has been removed
    * now.
-   *
    */
   private function markRefund(
     int $contribution_id,
     RefundMessage $messageObject,
-    $refund_gateway_txn_id,
-    $refund_currency,
-    $refund_amount
-  ) {
+    ?string $refund_gateway_txn_id,
+    ?string $refund_currency,
+    ?float $refund_amount
+  ): void {
     $amount_scammed = 0;
 
     try {
