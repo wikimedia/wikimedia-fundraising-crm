@@ -340,10 +340,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     }
   }
 
-  private function getAlternativePaypalGateway($gateway) {
-    return ($gateway == static::PAYPAL_GATEWAY) ? static::PAYPAL_EXPRESS_CHECKOUT_GATEWAY : static::PAYPAL_GATEWAY;
-  }
-
   /**
    * For gateways where we can unilaterally decide to stop charging the donor, cancel any recurring donation
    * as soon as we get a chargeback.
