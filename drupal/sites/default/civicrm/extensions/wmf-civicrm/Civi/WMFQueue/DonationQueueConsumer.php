@@ -241,7 +241,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
 
         \Civi::log('wmf')->info('queue2civicrm_import: Attempting to insert new recurring subscription: {recurring_transaction_id}', ['recurring_transaction_id' => $recurring_transaction_id]);
         $this->startTiming('message_contribution_recur_insert');
-        $this->importContributionRecur($msg, $msg['contact_id']);
+        $this->importContributionRecur($message, $msg, $msg['contact_id']);
         $this->stopTiming('message_contribution_recur_insert');
         $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $recurring_transaction_id);
         $msg['contribution_recur_id'] = $recur_record->id;
@@ -334,7 +334,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'fee_amount' => $msg['fee'],
       'net_amount' => $msg['net'],
       'trxn_id' => $trxn_id,
-      'receive_date' => wmf_common_date_unix_to_civicrm($msg['date']),
+      'receive_date' => $message->getDate(),
       'currency' => $msg['currency'],
       'contribution_recur_id' => $msg['contribution_recur_id'],
       'check_number' => $msg['check_number'],
@@ -460,8 +460,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Insert the recurring contribution record
    *
-   * @todo Are the dates being set with the correct value?
-   *
+   * @param \Civi\WMFQueueMessage\DonationMessage $message
    * @param array $msg
    * @param integer $contact_id
    *
@@ -469,7 +468,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    * @throws \CRM_Core_Exception
    *
    */
-  private function importContributionRecur($msg, $contact_id) {
+  private function importContributionRecur(DonationMessage $message, $msg, $contact_id): void {
     $msg['frequency_unit'] = $msg['frequency_unit'] ?? 'month';
     $msg['frequency_interval'] = isset($msg['frequency_interval']) ? (integer) $msg['frequency_interval'] : 1;
     $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
@@ -588,8 +587,8 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'frequency_unit' => $msg['frequency_unit'],
       'frequency_interval' => $msg['frequency_interval'],
       'installments' => $msg['installments'],
-      'start_date' => wmf_common_date_unix_to_civicrm($msg['date']),
-      'create_date' => wmf_common_date_unix_to_civicrm($msg['date']),
+      'start_date' => $message->getDate(),
+      'create_date' => $message->getDate(),
       'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),
       'cycle_day' => $msg['cycle_day'],
       'next_sched_contribution_date' => $next_sched_contribution,
