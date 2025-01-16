@@ -6,6 +6,7 @@ use Civi;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
+use Civi\Api4\ThankYou;
 use Civi\Api4\WMFContact;
 use Civi\Core\Exception\DBQueryException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
@@ -434,6 +435,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
   protected function sendSuccessThankYouMail($contributionRecur, $ctRecord, $msg, $contactId, $contact) {
     // Send an email that the recurring donation has been created
+    // @todo - it' not clear that there is any benefit in loading the contact
+    // here as it will be loaded in the ThankYou.send if not present.
     if (isset($msg['recurring_payment_token']) && isset($contributionRecur['id'])) {
       // Get the contact information if not already there
       if (empty($contact)) {
@@ -453,7 +456,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $locale = strtolower(substr($locale, 0, 2));
 
       // Using the same params sent through in thank_you.module thank_you_for_contribution
-      $template = 'monthly_convert';
       $start_date = $contributionRecur['start_date'];
 
       // Get the day of the month
@@ -466,7 +468,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $day_of_month = $ordinal->format($day_of_month);
 
       $params = [
-        'template' => $template,
         'amount' => $msg['original_gross'],
         'contact_id' => $contactId,
         'currency' => $msg['original_currency'],
@@ -478,7 +479,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'locale' => $locale,
         // Preferred language is as stored in the civicrm database - eg. 'en_US'.
         'language' => $contact['preferred_language'],
-        'name' => $contact['display_name'],
         'receive_date' => $start_date,
         'day_of_month' => $day_of_month,
         'recipient_address' => $contact['email'],
@@ -488,7 +488,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'contribution_id' => $ctRecord['contribution_id'],
       ];
 
-      $success = thank_you_send_mail($params);
+      $success = ThankYou::send(FALSE)
+        ->setDisplayName($contact['display_name'])
+        ->setLanguage($params['language'])
+        ->setTemplateName('monthly_convert')
+        ->setContributionID($ctRecord['contribution_id'])
+        ->setParameters($params)
+        ->execute()->first()['is_success'];
+
       $context = [
         'contribution_recur_id' => $contributionRecur['id'],
         'recipient_address' => $params['recipient_address'],
