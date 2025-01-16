@@ -2,8 +2,6 @@
 namespace Civi;
 
 use Civi\WMFException\WMFException;
-use Civi\WMFException\NonUniqueTransaction;
-use Civi\WMFException\NoTransactionExists;
 
 /**
  * Contain assumptions about our transactions.
