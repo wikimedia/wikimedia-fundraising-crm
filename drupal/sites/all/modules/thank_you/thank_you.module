@@ -203,45 +203,12 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
   $counter = Queue2civicrmTrxnCounter::instance();
 
   if ($success) {
-    \Civi::log('wmf')->info('thank_you: Thank you mail sent successfully to contact_id {contact_id} for contribution id: {contribution_id} to {recipient_address}', [
-      'contact_id' => $mailingData['contact_id'],
-      'contribution_id' => $contribution_id,
-      'recipient_address' => $params['recipient_address'],
-    ]);
-    thank_you_update_ty_date($mailingData);
     $counter->increment($mailingData['gateway']);
     if ($mailingData['source_type'] === 'payments') {
       $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
     }
     return TRUE;
   }
-  else {
-    $msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
-    throw new WMFException(WMFException::BAD_EMAIL, $msg);
-  }
-}
-
-function thank_you_update_ty_date($contribution) {
-  $date = wmf_common_date_unix_to_civicrm(time());
-  \Civi::log('wmf')->info('thank_you: Updating TY send date to: {date}', ['date' => $date]);
-
-  // We go directly to the database table here to avoid setting off a cascade
-  // of line item updates and recalculations.
-  $query = 'UPDATE civicrm_contribution
-		SET thankyou_date = %1
-		WHERE id = %2';
-
-  try {
-    CRM_Core_DAO::executeQuery($query, [
-      1 => [$date, 'String'],
-      2 => [$contribution['contribution_id'], 'Integer'],
-    ]);
-    return TRUE;
-  }
-  catch (Exception $ex) {
-    \Civi::log('wmf')->error('thank_you: Updating successful TY send failed with details: {message}', ['message' => $ex->getMessage()]);
-  }
-  return FALSE;
 }
 
 /**

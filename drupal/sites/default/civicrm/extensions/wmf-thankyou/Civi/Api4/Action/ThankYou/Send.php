@@ -27,7 +27,6 @@ use Civi\WMFThankYou\From;
  * @method $this setParameters(array $params) Get the parameters.
  * @method $this setDisplayName(string $displayName)
  * @method $this setTemplateName(string $templateName)
- * @method string getTemplateName()
  * @method $this setEmail(string $email)
  * @method $this setContributionID(int $contributionID)
  */
@@ -85,6 +84,14 @@ class Send extends AbstractAction {
    */
   protected function getContributionID(): int {
     return $this->contributionID ?: $this->getParameters()['contribution_id'];
+  }
+
+  protected function getTemplateName() : string {
+    if (isset($this->templateName)) {
+      return $this->templateName;
+    }
+    $this->getContact();
+    return $this->templateName;
   }
 
   /**
@@ -197,6 +204,20 @@ class Send extends AbstractAction {
         $email,
         $this->getHeaders()
       );
+      if (!$email_success) {
+        $msg = "Thank you mail failed for contribution id: " . $this->getContributionID() . " to " . $this->getEmail();
+        throw new WMFException(WMFException::BAD_EMAIL, $msg);
+      }
+      \Civi::log('wmf')->info('thank_you: Thank you mail sent successfully to contact_id {contact_id} for contribution id: {contribution_id} to {recipient_address}', [
+        'contact_id' => $this->getContactID(),
+        'contribution_id' => $this->getContributionID(),
+        'recipient_address' => $this->getEmail(),
+      ]);
+      \Civi::log('wmf')->info('thank_you: Updating TY send date to: {date}', ['date' => date('Y-m-d H:i:s')]);
+      Contribution::update(FALSE)
+        ->addWhere('id', '=', $this->getContributionID())
+        ->addValue('thankyou_date', 'now')
+        ->execute();
     }
     catch (\PHPMailer\PHPMailer\Exception $e) {
       //TODO: don't assume phpmailer
@@ -332,6 +353,7 @@ class Send extends AbstractAction {
       ->addSelect('contact_id.email_primary.email')
       ->addSelect('contact_id')
       ->addSelect('contact_id.display_name')
+      ->addSelect('financial_type_id:name')
       ->addSelect('contact_id.preferred_language')
       ->execute()->first();
     if (!isset($this->contactID)) {
@@ -345,6 +367,9 @@ class Send extends AbstractAction {
     }
     if (!isset($this->preferredLanguage)) {
       $this->preferredLanguage = (string) $contact['contact_id.preferred_language'];
+    }
+    if (!isset($this->templateName)) {
+      $this->templateName = $contact['financial_type_id:name'] === 'Endowment Gift' ? 'endowment_thank_you' : 'thank_you';
     }
     return ['id' => $contact['contact_id'], 'email_primary.email' => $contact['contact_id.email_primary.email']];
   }
