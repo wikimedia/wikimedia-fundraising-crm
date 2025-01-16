@@ -290,7 +290,7 @@ abstract class ChecksFile {
         throw $e;
       }
       catch (Exception $e) {
-        throw new WMFException(WMFException::FILE_NOT_FOUND, 'Import checks: Could not open file for reading: ' . $this->file_uri);
+        throw new WMFException(15, 'Import checks: Could not open file for reading: ' . $this->file_uri);
       }
     }
   }
