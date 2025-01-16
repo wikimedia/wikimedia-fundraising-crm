@@ -103,7 +103,9 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       // Perform the refund!
       try {
         \Civi::log('wmf')->info('refund {log_id}: Marking as refunded', $context);
-        $this->markRefund($originalContribution['id'], $messageObject, $message['date'],
+        $this->markRefund(
+          $originalContribution['id'],
+          $messageObject,
           $refundTxn,
           $message['gross_currency'],
           $message['gross']
@@ -152,7 +154,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
   /**
    * @param int $contribution_id
    * @param \Civi\WMFQueueMessage\RefundMessage $messageObject
-   * @param string $refund_date
    * @param null $refund_gateway_txn_id
    * @param null $refund_currency
    *   If provided this will be checked against the original contribution and an
@@ -212,7 +213,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
   private function markRefund(
     int $contribution_id,
     RefundMessage $messageObject,
-    $refund_date,
     $refund_gateway_txn_id,
     $refund_currency,
     $refund_amount
