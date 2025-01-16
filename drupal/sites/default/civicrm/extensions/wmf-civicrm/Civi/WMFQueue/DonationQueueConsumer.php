@@ -73,7 +73,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $this->recordMetric('donation_message_age', $ageMetrics);
   }
 
-  protected function recordMetric($namespace, $metrics) {
+  protected function recordMetric(string $namespace, array $metrics): void {
     $prometheusPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
     $reporter = new PrometheusReporter($prometheusPath);
     $reporter->reportMetrics($namespace, $metrics);
@@ -468,7 +468,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    * @throws \CRM_Core_Exception
    *
    */
-  private function importContributionRecur(DonationMessage $message, $msg, $contact_id): void {
+  private function importContributionRecur(DonationMessage $message, array $msg, int $contact_id): void {
     $msg['frequency_unit'] = $msg['frequency_unit'] ?? 'month';
     $msg['frequency_interval'] = isset($msg['frequency_interval']) ? (integer) $msg['frequency_interval'] : 1;
     $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
@@ -618,7 +618,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    * @throws \CRM_Core_Exception
    */
-  private function checkForDuplicates(array $message) {
+  private function checkForDuplicates(array $message): void {
     if (
       empty($message['gateway']) ||
       empty($message['gateway_txn_id'])
