@@ -1474,10 +1474,10 @@ class DonationQueueTest extends BaseQueueTestCase {
    */
   public function getVoidValues(): array {
     return [
-      ['0'],
-      [0],
-      ['NoCity'],
-      ['City/Town'],
+      'string_0' => ['0'],
+      'int_0' => [0],
+      'no_city' => ['NoCity'],
+      'city_town' => ['City/Town'],
     ];
   }
 
