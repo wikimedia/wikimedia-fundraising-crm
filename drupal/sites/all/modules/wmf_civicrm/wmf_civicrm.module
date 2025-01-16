@@ -72,17 +72,3 @@ function wmf_civicrm_get_custom_field_map($field_names, $group_name = NULL) {
 
   return $custom_fields;
 }
-
-/**
- * @param $field_name
- * @param null $group_name
- *
- * @return mixed
- * @throws \CRM_Core_Exception
- * @deprecated - try ot use apiv4 instead.
- *
- */
-function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
-  return 'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID($field_name, $group_name);
-}
-
