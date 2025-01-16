@@ -448,7 +448,7 @@ abstract class BaseAuditProcessor {
     $positive_txn_id = $this->get_parent_order_id($transaction);
     $gateway = $transaction['gateway'];
     //go through the transactions and check to see if they're in civi
-    if (wmf_civicrm_get_contributions_from_gateway_id($gateway, $positive_txn_id) === FALSE) {
+    if ($this->getContributions($gateway, $positive_txn_id) === FALSE) {
       return FALSE;
     }
     else {
@@ -469,7 +469,7 @@ abstract class BaseAuditProcessor {
     $positive_txn_id = $this->get_parent_order_id($transaction);
     $gateway = $transaction['gateway'];
 
-    $contributions = wmf_civicrm_get_contributions_from_gateway_id($gateway, $positive_txn_id);
+    $contributions = $this->getContributions($gateway, $positive_txn_id);
     if (!$contributions) {
       return FALSE;
     }
@@ -1770,6 +1770,45 @@ abstract class BaseAuditProcessor {
     date_add($date, date_interval_create_from_date_string("$add days"));
 
     return date_format($date, WMF_DATEFORMAT);
+  }
+
+
+  /**
+   * @todo - in most places this becomes obsolete when Message::normlize() is used.
+   * Pulls all records in the wmf_contribution_extras table that match the gateway
+   * and gateway transaction id.
+   *
+   * @deprecated - in many cases \Civi\WMFHelper\Contribution::exists() is more appropriate
+   * - this has a weird return signature.g
+   *
+   * @param string $gateway
+   * @param string $gateway_txn_id
+   *
+   * @return mixed array of result rows, or false if none present.
+   * TODO: return empty set rather than false.
+   * @throws \Civi\WMFException\WMFException
+   */
+  protected function getContributions($gateway, $gateway_txn_id) {
+    // If you only want to know if it exists then call \Civi\WMFHelper\Contribution::exists()
+    // Use apiv4
+    $gateway = strtolower($gateway);
+    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
+		ON cc.id = cx.entity_id
+		WHERE gateway = %1 AND gateway_txn_id = %2";
+
+    $dao = \CRM_Core_DAO::executeQuery($query, [
+      1 => [$gateway, 'String'],
+      2 => [$gateway_txn_id, 'String'],
+    ]);
+    $result = [];
+    while ($dao->fetch()) {
+      $result[] = $dao->toArray();
+    }
+    // FIXME: pick wart
+    if (empty($result)) {
+      return FALSE;
+    }
+    return $result;
   }
 
 }

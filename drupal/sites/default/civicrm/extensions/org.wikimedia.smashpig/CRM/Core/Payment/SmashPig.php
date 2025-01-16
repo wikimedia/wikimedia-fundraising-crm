@@ -97,7 +97,6 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     $gatewayTxnId = $createPaymentResponse->getGatewayTxnId();
 
     if ($createPaymentResponse->getStatus() === FinalStatus::PENDING_POKE) {
-      /** @var ApprovePaymentResponse $approvePaymentResponse */
       $approvePaymentResponse = $provider->approvePayment([
         'amount' => $params['amount'],
         'currency' => $params['currency'],
@@ -110,12 +109,20 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
 
     }
 
-    return [
+    $paymentResponse = isset($approvePaymentResponse) && $approvePaymentResponse->isSuccessful() ? $approvePaymentResponse : $createPaymentResponse;
+
+    $result = [
       'processor_id' => $gatewayTxnId,
       'invoice_id' => $params['invoice_id'],
       'payment_status_id' => $completedStatusID,
       'payment_status' => 'Completed',
     ];
+
+    if ($this->isProcessorGravy()) {
+      $result = $this->addProcessorSpecificFieldsToPaymentResult($result, $paymentResponse);
+    }
+
+    return $result;
   }
 
   protected function setContext() {
@@ -384,4 +391,26 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     }
     return TRUE;
   }
+
+  /**
+   * @param array $result
+   * @param $paymentResponse
+   *
+   * @return array
+   */
+  protected function addProcessorSpecificFieldsToPaymentResult(array $result, $paymentResponse): array {
+    return array_merge($result, [
+      'backend_processor' => $paymentResponse->getBackendProcessor(),
+      'backend_processor_txn_id' => $paymentResponse->getBackendProcessorTransactionId(),
+      'payment_orchestrator_reconciliation_id' => $paymentResponse->getPaymentOrchestratorReconciliationId(),
+    ]);
+  }
+
+  /**
+   * @return bool
+   */
+  protected function isProcessorGravy(): bool {
+    return $this->_paymentProcessor['name'] === 'gravy';
+  }
+
 }

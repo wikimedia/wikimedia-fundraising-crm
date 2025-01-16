@@ -107,7 +107,7 @@ class Save extends AbstractAction {
     if ($preferredLanguage) {
       $contact['preferred_language'] = $preferredLanguage;
     }
-    $contact += $this->getApiReadyFields(4);
+    $contact += $this->getApiReadyFields();
     // These fields have historically been permitted for create but not
     // update - or they would be in getApiReadyFields()
     $allowedCreateFields = [
@@ -836,10 +836,9 @@ WHERE
   }
 
   /**
-   * @param int $destinationApiVersion
    * @return array
    */
-  public function getApiReadyFields(int $destinationApiVersion = 4): array {
+  public function getApiReadyFields(): array {
     $values = [];
     // Copy some fields, if they exist
     // Why do this rather than just do pattern based conversion?
@@ -858,36 +857,22 @@ WHERE
       'legal_identifier' => 'legal_identifier',
       'addressee_custom' => 'addressee_custom',
       'addressee_display' => 'addressee_display',
-      $this->getApiv3FieldName('first_name_phonetic') => 'Communication.first_name_phonetic',
-      $this->getApiv3FieldName('last_name_phonetic') => 'Communication.last_name_phonetic',
-      $this->getApiv3FieldName('Partner') => 'Partner.Partner',
+      'first_name_phonetic' => 'Communication.first_name_phonetic',
+      'last_name_phonetic' => 'Communication.last_name_phonetic',
+      'Partner' => 'Partner.Partner',
     ] + $this->getExternalIdentifierFields();
 
-    foreach ($apiFields as $api3Field => $api4Field) {
+    foreach ($apiFields as $api3Field => $destinationField) {
       // We are currently calling apiv3 here but aim to call v4.
       // We can map either incoming, but prefer v4.
-      $destinationField = $destinationApiVersion === 4 ? $api4Field : $api3Field;
-      if (isset($this->message[$api4Field])) {
-        $values[$destinationField] = $this->message[$api4Field];
+      if (isset($this->message[$destinationField])) {
+        $values[$destinationField] = $this->message[$destinationField];
       }
       elseif (isset($this->message[$api3Field])) {
         $values[$destinationField] = $this->message[$api3Field];
       }
     }
     return $values;
-  }
-
-  /**
-   * Get the apiv3 name - e.g custom_6
-   *
-   * This should be short term enough it can just wrap the legacy function...
-   *
-   * @param string $name
-   * @return string
-   * @throws \CRM_Core_Exception
-   */
-  private function getApiv3FieldName(string $name): string {
-    return wmf_civicrm_get_custom_field_name($name);
   }
 
   /**
@@ -899,7 +884,7 @@ WHERE
     $externalIdentifierFields = [];
     foreach (array_keys($this->message) as $field) {
       if (str_starts_with($field, 'External_Identifiers.')) {
-        $externalIdentifierFields[$this->getApiv3FieldName(substr($field, 21))] = $field;
+        $externalIdentifierFields[substr($field, 21)] = $field;
       }
     }
     return $externalIdentifierFields;
