@@ -260,7 +260,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
               : $contribution['receive_date'])
             ->execute()
             ->first()['amount'], 2);
-          $original_currency = 'USD';
         }
         else {
           throw new WMFException(WMFException::INVALID_MESSAGE, "Refund was in a different currency.  Freaking out.");

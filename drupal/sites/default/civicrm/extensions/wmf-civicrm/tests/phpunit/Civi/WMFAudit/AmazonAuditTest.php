@@ -67,6 +67,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
               'utm_campaign' => 'C13_en.wikipedia.org',
               'utm_medium' => 'sidebar',
               'utm_source' => '..amazon',
+              'tracking_date' => '2015-10-01 18:10:34',
             ],
           ],
         ],

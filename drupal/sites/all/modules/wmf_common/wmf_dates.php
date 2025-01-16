@@ -1,26 +1,5 @@
 <?php
 
-define('WMF_DATEFORMAT', 'Ymd');
-
-/**
- * Run strtotime in UTC
- *
- * @param string $date Random date format you hope is parseable by PHP, and is
- * in UTC.
- *
- * @return int Seconds since Unix epoch
- */
-function wmf_common_date_parse_string($date) {
-  try {
-    $obj = wmf_common_make_datetime($date);
-    return $obj->getTimestamp();
-  }
-  catch (Exception $ex) {
-    \Civi::log('wmf')->error('wmf_common: Caught date exception in ' . __METHOD__ . ': ' . $ex->getMessage());
-    return NULL;
-  }
-}
-
 /**
  * Convert a unix timestamp to formatted date, in UTC.
  *
@@ -34,7 +13,10 @@ function wmf_common_date_parse_string($date) {
  */
 function wmf_common_date_format_using_utc($format, $unixtime) {
   try {
-    $obj = wmf_common_make_datetime('@' . $unixtime);
+    // Funky hack to trim decimal timestamp.  More normalizations may follow.
+    $text = preg_replace('/^(@\d+)\.\d+$/', '$1', '@' . $unixtime);
+
+    $obj = new DateTime($text, new DateTimeZone('UTC'));
     $formatted = $obj->format($format);
   }
   catch (Exception $ex) {
@@ -43,19 +25,6 @@ function wmf_common_date_format_using_utc($format, $unixtime) {
   }
 
   return $formatted;
-}
-
-/**
- * Normalize a date string and attempt to parse into a DateTime object.
- *
- * @return DateTime
- * @throws Exception when the string is unparsable.
- */
-function wmf_common_make_datetime($text) {
-  // Funky hack to trim decimal timestamp.  More normalizations may follow.
-  $text = preg_replace('/^(@\d+)\.\d+$/', '$1', $text);
-
-  return new DateTime($text, new DateTimeZone('UTC'));
 }
 
 /**
@@ -69,13 +38,3 @@ function wmf_common_date_unix_to_civicrm($unixtime) {
   return wmf_common_date_format_using_utc("Y-m-d H:i:s", $unixtime);
 }
 
-/**
- * Used to format dates for MySQL datetime columns.
- *
- * @param string $unixtime unix timestamp in seconds since epoch
- *
- * @return string Formatted time
- */
-function wmf_common_date_unix_to_sql($unixtime) {
-  return wmf_common_date_format_using_utc("YmdHis", $unixtime);
-}

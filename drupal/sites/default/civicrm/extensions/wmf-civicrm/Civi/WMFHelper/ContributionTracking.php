@@ -118,6 +118,7 @@ class ContributionTracking {
       'utm_key',
       'utm_medium',
       'utm_source',
+      'tracking_date',
     ];
     foreach ($fieldsToCopy as $field) {
       if (isset($rawData[$field])) {

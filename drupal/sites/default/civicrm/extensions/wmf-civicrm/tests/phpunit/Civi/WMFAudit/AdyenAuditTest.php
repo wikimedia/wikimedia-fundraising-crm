@@ -139,6 +139,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'settled_gross' => '0.76',
               'settled_currency' => 'USD',
               'settled_fee' => 0.24,
+              'tracking_date' => '2017-02-19 06:10:51',
             ],
           ],
         ],
@@ -146,7 +147,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       // The corresponding log file for the following is missing a
       // payment_submethod. We should take the submethod from the
       // audit parser.
-      [
+      'donation_ideal' => [
         __DIR__ . '/data/Adyen/donation_ideal/',
         [
           'donations' => [
@@ -177,11 +178,12 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'settled_currency' => 'USD',
               'settled_fee' => 0.27,
               'opt_in' => '0',
+              'tracking_date' => '2020-02-23 20:14:04',
             ],
           ],
         ],
       ],
-      [
+      'refund' => [
         __DIR__ . '/data/Adyen/refund/',
         [
           'refund' => [
@@ -197,7 +199,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'chargeback' => [
         __DIR__ . '/data/Adyen/chargeback/',
         [
           'refund' => [
@@ -292,6 +294,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
             'settled_gross' => '0.76',
             'settled_currency' => 'USD',
             'settled_fee' => 0.24,
+            'tracking_date' => '2017-02-19 06:10:51',
           ],
         ],
       ]

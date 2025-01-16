@@ -238,7 +238,7 @@ abstract class QueueConsumer extends BaseQueueConsumer {
       'utm_source' => $source,
       'utm_medium' => $medium,
       'utm_campaign' => $campaign,
-      'ts' => wmf_common_date_unix_to_sql($msg['date']),
+      'tracking_date' => date('Y-m-d H:i:s', $msg['date']),
     ];
     if (
       !empty($msg['country']) &&

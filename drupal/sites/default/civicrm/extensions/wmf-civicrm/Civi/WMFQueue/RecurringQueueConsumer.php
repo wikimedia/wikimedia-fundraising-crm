@@ -260,12 +260,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       // if we still don't have a contribution tracking id (but we do have previous contributions),
       // we're gonna have to add new contribution tracking.
       if ($contribution_id && !$contribution_tracking_id) {
-        $rawDate = empty($msg['payment_date']) ? $msg['date'] : $msg['payment_date'];
-        $date = wmf_common_date_unix_to_sql(strtotime($rawDate));
         $tracking = [
-          'utm_source' => '..rpp', // FIXME: recurring donations are not all paypal
           'utm_medium' => 'civicrm',
-          'ts' => $date,
+          'tracking_date' => empty($msg['payment_date']) ? $msg['date'] : $msg['payment_date'],
           'contribution_id' => $contribution_id,
         ];
         $contribution_tracking_id = $this->generateContributionTracking($tracking);
