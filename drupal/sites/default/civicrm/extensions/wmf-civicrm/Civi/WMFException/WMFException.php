@@ -32,8 +32,6 @@ class WMFException extends Exception {
 
   const MISSING_PREDECESSOR = 14;
 
-  const FILE_NOT_FOUND = 15;
-
   const INVALID_FILE_FORMAT = 16;
 
   const FREDGE = 17;
@@ -116,10 +114,6 @@ class WMFException extends Exception {
       'no-email' => TRUE,
     ],
 
-    // other errors
-    self::FILE_NOT_FOUND => [
-      'fatal' => TRUE,
-    ],
     self::INVALID_FILE_FORMAT => [
       'fatal' => TRUE,
     ],
