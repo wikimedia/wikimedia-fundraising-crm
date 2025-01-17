@@ -53,6 +53,8 @@ class Send extends AbstractAction {
 
   /**
    * @var int
+   *
+   * @required
    */
    public $contributionID;
 
@@ -83,7 +85,7 @@ class Send extends AbstractAction {
    * @return int
    */
   protected function getContributionID(): int {
-    return $this->contributionID ?: $this->getParameters()['contribution_id'];
+    return $this->contributionID;
   }
 
   protected function getTemplateName() : string {

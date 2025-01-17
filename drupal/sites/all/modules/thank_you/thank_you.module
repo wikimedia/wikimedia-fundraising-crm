@@ -178,7 +178,6 @@ function thank_you_for_contribution(int $contribution_id) {
     'recurring' => $is_recurring,
     'transaction_id' => "CNTCT-{$mailingData['contact_id']}",
     // shown in the body of the text
-    'contribution_id' => $contribution_id,
     'gift_source' => $mailingData['gift_source'],
     'stock_value' => $mailingData['stock_value'],
     'stock_ticker' => $mailingData['stock_ticker'],
@@ -193,7 +192,6 @@ function thank_you_for_contribution(int $contribution_id) {
 
   $require_params = [
     'amount',
-    'contribution_id',
     'currency',
     'receive_date',
     'recipient_address',
@@ -218,6 +216,7 @@ function thank_you_for_contribution(int $contribution_id) {
     ->setLanguage($params['language'])
     ->setTemplateName($template)
     ->setParameters($params)
+    ->setContributionID($contribution_id)
     ->execute()->first()['is_success'];
   $counter = Queue2civicrmTrxnCounter::instance();
 
