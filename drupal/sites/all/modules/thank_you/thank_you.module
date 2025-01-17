@@ -7,13 +7,6 @@ use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
 use Civi\WMFTransaction;
 use SmashPig\Core\UtcDate;
 
-// TODO:
-// * use more exceptions in place of logging/return false
-// * encapsulate template params structure and validation
-// * implement 'specials' contingency passthru
-// * reconsider need for twig extensions, we already do calculated values
-// * give template fragments a named key rather than using integers
-
 // FIXME: this constant is for test code
 const DUMB_BIG_TY_DAYS = 100000;
 const MAX_RENDER_ATTEMPTS = 3;
@@ -99,6 +92,7 @@ function thank_you_for_contribution(int $contribution_id) {
   if (!$found || !$mailingData->contact_id) {
     // the API result is bad
     $msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r($mailingData, TRUE) . '</pre>';
+    // WMFException::GET_CONTRIBUTION is only used here & not 'handled' - we could ditch it - not very meaningful
     throw new WMFException(WMFException::GET_CONTRIBUTION, $msg);
   }
   $mailingData = $mailingData->toArray();
@@ -209,6 +203,7 @@ function thank_you_for_contribution(int $contribution_id) {
     $as_list = implode(', ', $missing);
     \Civi::log('wmf')->error('thank_you: Missing stuff from the TY params: {missing} {params}', ['missing' => $missing, 'params' => $params]);
     $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
+    // Actually using WMFException only actually is better than CRM_Core_Exception in queue processing context (sometimes).
     throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
   }
   $success = ThankYou::send(FALSE)
@@ -324,6 +319,8 @@ EOT;
       thank_you_for_contribution($contribution->id);
       $consecutiveFailures = 0;
     } catch (WMFException $ex) {
+      // let's get rid of this `gerErrorName()` & move this code towards
+      // working with CRM_Core_Exception & leave the WMF_Exception for the queue processors
       $errName = $ex->getErrorName();
       $noThankYou = "failed: $errName";
 
