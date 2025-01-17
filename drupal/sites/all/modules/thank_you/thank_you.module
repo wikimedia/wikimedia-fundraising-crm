@@ -188,10 +188,11 @@ function thank_you_for_contribution(int $contribution_id) {
     'stock_qty' => $mailingData['stock_qty'],
     'description_of_stock' => $mailingData['description_of_stock'],
   ];
-  // if this transaction is braintree venmo, add template var venmo_user_name for additional reference
-  if ( $mailingData['gateway'] === 'braintree' && 'Venmo' === CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $mailingData['payment_instrument_id']) ) {
+
+  if (!empty($mailingData['venmo_user_name'])) {
     $params['venmo_user_name'] = $mailingData['venmo_user_name'];
   }
+
   \Civi::log('wmf')->info('thank_you: Calling thank_you_send_mail');
 
   $require_params = [
