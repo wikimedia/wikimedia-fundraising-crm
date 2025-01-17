@@ -1,7 +1,6 @@
 <?php
 
 use Civi\Api4\ThankYou;
-use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
@@ -179,15 +178,12 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     'email_greeting_display' => $mailingData['email_greeting_display'],
     'frequency_unit' => $mailingData['frequency_unit'],
     'language' => $mailingData['preferred_language'] ?: 'en_US',
-    'name' => $mailingData['display_name'],
     'receive_date' => $mailingData['receive_date'],
     'recipient_address' => $mailingData['email'],
     'recurring' => $is_recurring,
     'transaction_id' => "CNTCT-{$mailingData['contact_id']}",
     // shown in the body of the text
     'contribution_id' => $contribution_id,
-    // used for the bounce header
-    'template' => $template,
     'gift_source' => $mailingData['gift_source'],
     'stock_value' => $mailingData['stock_value'],
     'stock_ticker' => $mailingData['stock_ticker'],
@@ -199,33 +195,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     $params['venmo_user_name'] = $mailingData['venmo_user_name'];
   }
   \Civi::log('wmf')->info('thank_you: Calling thank_you_send_mail');
-  $success = thank_you_send_mail($params);
-  $counter = Queue2civicrmTrxnCounter::instance();
 
-  if ($success) {
-    $counter->increment($mailingData['gateway']);
-    if ($mailingData['source_type'] === 'payments') {
-      $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
-    }
-    return TRUE;
-  }
-}
-
-/**
- * Just send the letter
- *
- * @param array $params
- *
- * @deprecated we can start to move to calling the send api directly.
- *
- * @return bool
- * @throws \Civi\WMFException\WMFException
- * @throws \Exception
- */
-function thank_you_send_mail($params) {
-  $templateName = $params['template'];
-  $displayName = $params['name'];
-  unset($params['template'], $params['name']);
   $require_params = [
     'amount',
     'contribution_id',
@@ -248,12 +218,21 @@ function thank_you_send_mail($params) {
     $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
     throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
   }
-  return ThankYou::send(FALSE)
-    ->setDisplayName($displayName)
+  $success = ThankYou::send(FALSE)
+    ->setDisplayName($mailingData['display_name'])
     ->setLanguage($params['language'])
-    ->setTemplateName($templateName)
+    ->setTemplateName($template)
     ->setParameters($params)
     ->execute()->first()['is_success'];
+  $counter = Queue2civicrmTrxnCounter::instance();
+
+  if ($success) {
+    $counter->increment($mailingData['gateway']);
+    if ($mailingData['source_type'] === 'payments') {
+      $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
+    }
+    return TRUE;
+  }
 }
 
 /**
