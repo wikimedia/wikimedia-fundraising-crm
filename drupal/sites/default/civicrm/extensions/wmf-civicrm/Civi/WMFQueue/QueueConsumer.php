@@ -17,7 +17,7 @@ use Civi\WMFException\WMFException;
  */
 abstract class QueueConsumer extends BaseQueueConsumer {
 
-  protected function handleError($message, Exception $ex) {
+  protected function handleError(array $message, Exception $ex) {
     if (isset($message['gateway']) && isset($message['order_id'])) {
       $logId = "{$message['gateway']}-{$message['order_id']}";
     }
@@ -69,9 +69,11 @@ abstract class QueueConsumer extends BaseQueueConsumer {
    * @throws \Civi\WMFException\WMFException when we want to halt the dequeue loop
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  protected function handleWMFException(
-    $message, WMFException $ex, $logId
-  ) {
+  private function handleWMFException(
+    array $message,
+    WMFException $ex,
+    string $logId
+  ): void {
     $mailableDetails = '';
     $reject = FALSE;
     $requeued = FALSE;
@@ -144,7 +146,7 @@ abstract class QueueConsumer extends BaseQueueConsumer {
     parent::processMessageWithErrorHandling($message);
   }
 
-  protected function logMessage($message) {
+  protected function logMessage(array $message): void {
     \Civi::log('wmf')->info('{class_name} {message}', [
       'class_name' => preg_replace('/.*\\\/', '', get_called_class()),
       'message' => $message,
@@ -158,13 +160,13 @@ abstract class QueueConsumer extends BaseQueueConsumer {
    *
    * @return string
    */
-  public static function itemUrl($damagedId) {
+  public static function itemUrl(int $damagedId): string {
     global $base_url;
     // Example URL https://civicrm.wikimedia.org/civicrm/damaged/?action=update&id=1234&reset=1
     return "$base_url/civicrm/damaged/edit?action=update&id=$damagedId&reset=1";
   }
 
-  protected function modifyDuplicateInvoice($message) {
+  protected function modifyDuplicateInvoice(array $message) {
     if (empty($message['invoice_id']) && isset ($message['order_id'])) {
       $message['invoice_id'] = $message['order_id'];
     }
@@ -271,7 +273,7 @@ abstract class QueueConsumer extends BaseQueueConsumer {
    *
    * @throws \Exception
    */
-  protected function generateContributionTracking($values) {
+  protected function generateContributionTracking(array $values): int {
     $generator = Factory::getSequenceGenerator('contribution-tracking');
     $contribution_tracking_id = $generator->getNext();
     $values['id'] = $contribution_tracking_id;
