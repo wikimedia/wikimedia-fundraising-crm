@@ -6,6 +6,7 @@ use Civi;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
+use Civi\Api4\PaymentToken;
 use Civi\Api4\ThankYou;
 use Civi\Api4\WMFContact;
 use Civi\Core\Exception\DBQueryException;
@@ -343,11 +344,15 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         }
 
         // Create a token
-        $payment_token_result = wmf_civicrm_recur_payment_token_create(
-          $contactId, $msg['gateway'], $msg['recurring_payment_token'], $msg['user_ip']
-        );
-        // Set up the params to have the token
-        $params['payment_token_id'] = $payment_token_result['id'];
+        $params['payment_token_id'] = PaymentToken::create(FALSE)
+          ->setValues([
+            'contact_id' => $contactId,
+            'payment_processor_id.name' => $msg['gateway'],
+            'token' => $msg['recurring_payment_token'],
+            'ip_address' => $msg['user_ip'],
+          ]
+          )->execute()->first()['id'];
+
         // Create a non paypal style trxn_id
         $params['trxn_id'] = WMFTransaction::from_message($msg)
           ->get_unique_id();
