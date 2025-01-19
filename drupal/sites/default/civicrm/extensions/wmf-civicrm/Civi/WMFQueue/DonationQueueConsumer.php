@@ -184,6 +184,16 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
     $this->stopTiming('verify_and_stage');
 
+    if ($message->isRecurring() && $message->getContributionRecurID()) {
+      // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
+      if (ContributionRecurHelper::gatewayManagesOwnRecurringSchedule($message->getGateway())) {
+        ContributionRecurHelper::reactivateIfInactive([
+          'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
+          'id' => $message->getContributionRecurID(),
+        ]);
+      }
+    }
+
     $createRecurringToken = FALSE;
     // Associate with existing recurring records
     if ($message->isRecurring()) {
@@ -199,15 +209,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
             // When there is a token on the $msg but not in the db
             $createRecurringToken = TRUE;
           }
-        }
-      }
-      else {
-        // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
-        if (ContributionRecurHelper::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
-          ContributionRecurHelper::reactivateIfInactive([
-            'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
-            'id' => $message->getContributionRecurID(),
-          ]);
         }
       }
     }
