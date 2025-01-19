@@ -5,6 +5,7 @@ namespace Civi\WMFQueue;
 use Civi\Api4\Activity;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFContact;
 use Civi\Core\Exception\DBQueryException;
 use Civi\WMFException\WMFException;
@@ -531,72 +532,73 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $msg['cycle_day'] = (int) (gmdate('j', $msg['date']));
 
     $next_sched_contribution = \CRM_Core_Payment_Scheduler::getNextContributionDate($msg);
-
-    if (!empty($msg['payment_processor_id']) && !empty($msg['payment_token_id'])) {
-      // copy existing payment token and processor IDs from message
-      $extra_recurring_params = [
-        'payment_token_id' => $msg['payment_token_id'],
-        'payment_processor_id' => $msg['payment_processor_id'],
-        'processor_id' => $gateway_subscr_id,
-        'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
-      ];
-    }
-    elseif (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
-      // create a recurring payment token record if token is present
-      $payment_token_result = wmf_civicrm_recur_payment_token_create(
-        $contact_id,
-        $msg['gateway'],
-        $msg['recurring_payment_token'],
-        $msg['user_ip'] ?? NULL
-      );
-      $extra_recurring_params = [
-        'payment_token_id' => $payment_token_result['id'],
-        'payment_processor_id' => $payment_token_result['payment_processor_id'],
-        'processor_id' => $gateway_subscr_id,
-        'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
-      ];
-    }
-    elseif (PaymentProcessorHelper::getPaymentProcessorID($msg['gateway'])) {
-      $extra_recurring_params = [
-        'payment_processor_id' => PaymentProcessorHelper::getPaymentProcessorID($msg['gateway']),
-        'processor_id' => $gateway_subscr_id,
-      ];
-    }
-    else {
-      // Old-style recurring, initialize processor_id to 1 for use as effort ID
-      $extra_recurring_params = [
-        'processor_id' => 1,
-      ];
-    }
-
-    // Using custom field to hold the processor_contact_id for Adyen.
-    if (!empty($msg['processor_contact_id'])) {
-      $extra_recurring_params['contribution_recur_smashpig.processor_contact_id'] = $msg['processor_contact_id'];
-    }
-
-    if (!empty($msg['initial_scheme_transaction_id'])) {
-      $extra_recurring_params['contribution_recur_smashpig.initial_scheme_transaction_id'] = $msg['initial_scheme_transaction_id'];
-    }
-
-    $insert_params = [
-      'payment_instrument_id' => $msg['payment_instrument_id'],
-      'contact_id' => $contact_id,
-      'amount' => $msg['original_gross'],
-      'currency' => $msg['original_currency'],
-      'financial_type_id:name' => 'Cash',
-      'frequency_unit' => $msg['frequency_unit'],
-      'frequency_interval' => $msg['frequency_interval'],
-      'installments' => $msg['installments'],
-      'start_date' => $message->getDate(),
-      'create_date' => $message->getDate(),
-      'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),
-      'cycle_day' => $msg['cycle_day'],
-      'next_sched_contribution_date' => $next_sched_contribution,
-      'trxn_id' => $gateway_subscr_id,
-      'contribution_status_id:name' => 'Pending',
-    ] + $extra_recurring_params;
-
     try {
+      if (!empty($msg['payment_processor_id']) && !empty($msg['payment_token_id'])) {
+        // copy existing payment token and processor IDs from message
+        $extra_recurring_params = [
+          'payment_token_id' => $msg['payment_token_id'],
+          'payment_processor_id' => $msg['payment_processor_id'],
+          'processor_id' => $gateway_subscr_id,
+          'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
+        ];
+      }
+      elseif (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
+        // create a recurring payment token record if token is present
+        $payment_token_result = PaymentToken::create(FALSE)
+          ->setValues([
+            'contact_id' => $contact_id,
+            'payment_processor_id.name' => $msg['gateway'],
+            'token' => $msg['recurring_payment_token'],
+            'ip_address' => $msg['user_ip'] ?? NULL,
+          ]
+          )->execute()->first();
+        $extra_recurring_params = [
+          'payment_token_id' => $payment_token_result['id'],
+          'payment_processor_id' => $payment_token_result['payment_processor_id'],
+          'processor_id' => $gateway_subscr_id,
+          'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
+        ];
+      }
+      elseif (PaymentProcessorHelper::getPaymentProcessorID($msg['gateway'])) {
+        $extra_recurring_params = [
+          'payment_processor_id' => PaymentProcessorHelper::getPaymentProcessorID($msg['gateway']),
+          'processor_id' => $gateway_subscr_id,
+        ];
+      }
+      else {
+        // Old-style recurring, initialize processor_id to 1 for use as effort ID
+        $extra_recurring_params = [
+          'processor_id' => 1,
+        ];
+      }
+
+      // Using custom field to hold the processor_contact_id for Adyen.
+      if (!empty($msg['processor_contact_id'])) {
+        $extra_recurring_params['contribution_recur_smashpig.processor_contact_id'] = $msg['processor_contact_id'];
+      }
+
+      if (!empty($msg['initial_scheme_transaction_id'])) {
+        $extra_recurring_params['contribution_recur_smashpig.initial_scheme_transaction_id'] = $msg['initial_scheme_transaction_id'];
+      }
+
+      $insert_params = [
+        'payment_instrument_id' => $msg['payment_instrument_id'],
+        'contact_id' => $contact_id,
+        'amount' => $msg['original_gross'],
+        'currency' => $msg['original_currency'],
+        'financial_type_id:name' => 'Cash',
+        'frequency_unit' => $msg['frequency_unit'],
+        'frequency_interval' => $msg['frequency_interval'],
+        'installments' => $msg['installments'],
+        'start_date' => $message->getDate(),
+        'create_date' => $message->getDate(),
+        'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),
+        'cycle_day' => $msg['cycle_day'],
+        'next_sched_contribution_date' => $next_sched_contribution,
+        'trxn_id' => $gateway_subscr_id,
+        'contribution_status_id:name' => 'Pending',
+      ] + $extra_recurring_params;
+
       ContributionRecur::create(FALSE)
         ->setValues($insert_params)
         ->execute()
