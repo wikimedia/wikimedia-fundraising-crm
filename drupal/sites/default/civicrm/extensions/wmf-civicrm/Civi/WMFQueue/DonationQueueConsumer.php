@@ -233,9 +233,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         $this->startTiming('message_contribution_recur_insert');
         $this->importContributionRecur($message, $msg, $msg['contact_id']);
         $this->stopTiming('message_contribution_recur_insert');
-        $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $recurring_transaction_id);
-        $msg['contribution_recur_id'] = $recur_record->id;
-        $message->setContributionRecurID($recur_record->id);
       }
       elseif ($message->isPaypal() || $message->isAutoRescue()) {
         // We are looking at a PayPal or auto-rescue payment
@@ -266,7 +263,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
             ->addValue('details', 'Rescue reference: ' . $msg['rescue_reference'])
             ->addValue('source_contact_id', $msg['contact_id'])
             ->addValue('target_contact_id', $msg['contact_id'])
-            ->addValue('source_record_id', $msg['contribution_recur_id'])
+            ->addValue('source_record_id', $message->getContributionRecurID())
             ->execute();
         }
 
@@ -326,7 +323,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'trxn_id' => $trxn_id,
       'receive_date' => $message->getDate(),
       'currency' => $msg['currency'],
-      'contribution_recur_id' => $msg['contribution_recur_id'],
+      'contribution_recur_id' => $message->getContributionRecurID(),
       'check_number' => $msg['check_number'],
       'debug' => TRUE,
     ];
@@ -580,10 +577,11 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         'contribution_status_id:name' => 'Pending',
       ] + $extra_recurring_params;
 
-      ContributionRecur::create(FALSE)
+      $recur = ContributionRecur::create(FALSE)
         ->setValues($insert_params)
         ->execute()
         ->first();
+      $message->setContributionRecurID($recur['id']);
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
