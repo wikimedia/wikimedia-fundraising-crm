@@ -51,8 +51,10 @@ class RecurDonationMessage extends DonationMessage {
     }
     $message['subscr_id'] = $this->getSubscriptionID();
     $message['contribution_recur_id'] = $this->getContributionRecurID();
+    $message['payment_token_id'] = $this->getPaymentTokenID();
+    $message['payment_processor_id'] = $this->getExistingPaymentTokenValue('payment_processor_id');
     if (isset($message['txn_type']) && $message['txn_type'] == 'subscr_failed') {
-      if(empty($message['failure_count'])) {
+      if (empty($message['failure_count'])) {
         $message['failure_count'] = $this->getRecurringFailCount();
       }
     }
@@ -228,7 +230,14 @@ class RecurDonationMessage extends DonationMessage {
    * @throws \CRM_Core_Exception
    */
   public function getContactID(): ?int {
-    return $this->getExistingContributionRecurValue('contact_id') ?: parent::getContactID();
+    // We prefer these existing contact look ups over the parent derived one as they would pick up merges better.
+    if ($this->getExistingContributionRecurValue('contact_id')) {
+      return $this->getExistingContributionRecurValue('contact_id');
+    }
+    if ($this->getPaymentTokenID()) {
+      return $this->getExistingPaymentTokenValue('contact_id');
+    }
+    return parent::getContactID();
   }
 
   /**

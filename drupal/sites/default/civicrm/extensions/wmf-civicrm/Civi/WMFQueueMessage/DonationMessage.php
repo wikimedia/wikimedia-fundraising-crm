@@ -527,6 +527,7 @@ class DonationMessage extends Message {
       ->addWhere('payment_processor_id.name', '=', $this->getGateway())
       ->execute()->first();
     if ($paymentToken) {
+      \Civi::log('wmf')->info('wmf_civicrm: Found matching recurring payment token: {token}', ['token' => $this->message['recurring_payment_token']]);
       $this->define('PaymentToken', 'PaymentToken', $paymentToken);
       return $paymentToken['id'];
     }
