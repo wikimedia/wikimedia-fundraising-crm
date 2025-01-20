@@ -12,6 +12,7 @@ use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
 use Civi\WMFHelper\PaymentProcessor as PaymentProcessorHelper;
 use Civi\WMFQueueMessage\DonationMessage;
+use Civi\WMFQueueMessage\RecurDonationMessage;
 use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
 use Civi\WMFStatistic\PrometheusReporter;
@@ -449,7 +450,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Insert the recurring contribution record
    *
-   * @param \Civi\WMFQueueMessage\DonationMessage $message
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
    * @param array $msg
    * @param integer $contact_id
    *
@@ -457,7 +458,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    * @throws \CRM_Core_Exception
    *
    */
-  private function importContributionRecur(DonationMessage $message, array $msg, int $contact_id): void {
+  private function importContributionRecur(RecurDonationMessage $message, array $msg, int $contact_id): void {
     $msg['frequency_unit'] = $msg['frequency_unit'] ?? 'month';
     $msg['frequency_interval'] = isset($msg['frequency_interval']) ? (integer) $msg['frequency_interval'] : 1;
     $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
