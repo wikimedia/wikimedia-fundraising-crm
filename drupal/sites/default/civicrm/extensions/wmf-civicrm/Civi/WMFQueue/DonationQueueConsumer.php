@@ -463,14 +463,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
     $msg['cancel'] = isset($msg['cancel']) ? (integer) $msg['cancel'] : 0;
 
-    if (!isset($msg['recurring']) || $msg['recurring'] != 1) {
-      $error_message = t(
-        'Payment is not marked as recurring, with the contact_id [!contact_id]',
-        ["!contact_id" => $contact_id]
-      );
-      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
-    }
-
     // Allowed frequency_units
     $frequency_units = ['month', 'year'];
     if (!in_array($msg['frequency_unit'], $frequency_units)) {
