@@ -4,6 +4,7 @@ namespace Civi\WMFQueue;
 
 use Civi;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFContact;
 use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFQueueMessage\RecurDonationMessage;
@@ -11,6 +12,7 @@ use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use Civi\WMFTransaction;
+use Civi\WMFException\WMFException;
 
 class UpiDonationsQueueConsumer extends QueueConsumer {
 
@@ -137,9 +139,18 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
       ->execute()->first();
 
     // Create a token
-    $paymentToken = wmf_civicrm_recur_payment_token_create(
-      $contact['id'], $normalized['gateway'], $normalized['recurring_payment_token'], $normalized['user_ip']
-    );
+    try {
+      $paymentToken = PaymentToken::create(FALSE)
+        ->setValues([
+          'contact_id' => $contact['id'],
+          'payment_processor_id.name' => $normalized['gateway'],
+          'token' => $normalized['recurring_payment_token'],
+          'ip_address' => $normalized['user_ip'],
+        ])->execute()->first();
+    }
+    catch (\CRM_Core_Exception $e) {
+      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
+    }
 
     // Create the recurring record
     $params = [

@@ -1,7 +1,5 @@
 <?php
 
-use Civi\WMFException\WMFException;
-
 /**
  * Get recurring record in CiviCRM for the given subscriber id
  *
@@ -35,34 +33,4 @@ function wmf_civicrm_get_gateway_subscription($gateway, $subscr_id) {
   }
 
   return $dao;
-}
-
-/**
- * Create a recurring payment token to be used alongside a recurring
- * contribution record
- *
- * @deprecated - this is just an api call - functions could call the api directly.
- *
- * @param int $contact_id
- * @param string $gateway Short gateway identifier
- * @param string $token Token provided by payment processor
- * @param string $ip Donor's IP address
- *
- * @return array $payment_token_record
- * @throws \Civi\WMFException\WMFException
- */
-function wmf_civicrm_recur_payment_token_create($contact_id, $gateway, $token, $ip) {
-  try {
-    return \Civi\Api4\PaymentToken::create(FALSE)
-      ->setValues([
-        'contact_id' => $contact_id,
-        'payment_processor_id.name' => $gateway,
-        'token' => $token,
-        'ip_address' => $ip,
-      ]
-    )->execute()->first();
-  }
-  catch (CRM_Core_Exception $e) {
-    throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
-  }
 }
