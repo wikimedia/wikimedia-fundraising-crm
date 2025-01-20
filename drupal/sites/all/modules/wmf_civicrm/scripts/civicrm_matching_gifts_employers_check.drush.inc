@@ -53,10 +53,7 @@ function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
     $newExportFilePath = TEMP_EXPORT_PATH . DIRECTORY_SEPARATOR . 'employers-' . UtcDate::getUtcDatabaseString() . '.csv';
     generate_new_export($newExportFilePath);
 
-    $currentEmployerFilePath = variable_get(
-      'matching_gifts_employer_data_file_path',
-      '/srv/matching_gifts/employers.csv'
-    );
+    $currentEmployerFilePath = \Civi::settings()->get('matching_gifts_employer_data_file_path');
     // now lets compare the new employer data against our current version
     // and overwrite the current verson if we find employer updates in the new export
     if (new_export_contains_updates(
