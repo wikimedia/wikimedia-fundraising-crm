@@ -439,12 +439,12 @@ class ThankYou extends GenericWorkflowMessage {
   }
 
   /**
-   * if current donation is venmo, which via braintree not fundraiseUp will return username
+   * if current donation is venmo, which via braintree/gravy not fundraiseUp will return username
    *
    * @return ?string
    */
   public function getVenmoUserName(): ?string {
-    if (($this->gateway == 'braintree' && CRM_Core_PseudoConstant::getName(
+    if ((in_array($this->gateway, ['braintree', 'gravy']) && CRM_Core_PseudoConstant::getName(
       'CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $this->paymentInstrumentID) === 'Venmo')
     || (!$this->gateway && !$this->paymentInstrumentID))
     {

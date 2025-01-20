@@ -19,7 +19,25 @@ const MAX_RENDER_ATTEMPTS = 3;
  * @throws \Civi\WMFException\WMFException
  * @return array
  */
-function get_mailing_data(int $contribution_id, string $giftTable, string $stockTable): array {
+function get_mailing_data(int $contribution_id): array {
+  if (!isset(Civi::$statics['thank_you']['giftTableName'])) {
+    Civi::$statics['thank_you']['giftTableName'] = civicrm_api3('CustomGroup', 'getvalue', [
+      'name' => 'Gift_Data',
+      'return' => 'table_name',
+    ]);
+  }
+  $giftTable = Civi::$statics['thank_you']['giftTableName'];
+  if (!isset(Civi::$statics['thank_you']['StockTableName'])) {
+    Civi::$statics['thank_you']['StockTableName'] = civicrm_api3('CustomGroup', 'getvalue', [
+      'name' => 'Stock_Information',
+      'return' => 'table_name',
+    ]);
+  }
+  $stockTable = Civi::$statics['thank_you']['StockTableName'];
+  \Civi::log('wmf')->info(
+    'thank_you: Selecting data for TY mail'
+  );
+
   $mailingData = CRM_Core_DAO::executeQuery("
     SELECT
       cntr.id AS contribution_id,
@@ -89,24 +107,8 @@ function get_mailing_data(int $contribution_id, string $giftTable, string $stock
  * @throws \Civi\WMFException\WMFException
  */
 function thank_you_for_contribution(int $contribution_id) {
-  if (!isset(Civi::$statics['thank_you']['giftTableName'])) {
-    Civi::$statics['thank_you']['giftTableName'] = civicrm_api3('CustomGroup', 'getvalue', [
-      'name' => 'Gift_Data',
-      'return' => 'table_name',
-    ]);
-  }
-  $giftTable = Civi::$statics['thank_you']['giftTableName'];
-  if (!isset(Civi::$statics['thank_you']['StockTableName'])) {
-    Civi::$statics['thank_you']['StockTableName'] = civicrm_api3('CustomGroup', 'getvalue', [
-      'name' => 'Stock_Information',
-      'return' => 'table_name',
-    ]);
-  }
-  $stockTable = Civi::$statics['thank_you']['StockTableName'];
-  \Civi::log('wmf')->info(
-    'thank_you: Selecting data for TY mail'
-  );
-  $mailingData = get_mailing_data($contribution_id, $giftTable, $stockTable);
+  // get contact mailing data from records
+  $mailingData = get_mailing_data($contribution_id);
   // don't send a Thank You email if one has already been sent
   if (!empty($mailingData['thankyou_date'])) {
     \Civi::log('wmf')->info('thank_you: Thank you email already sent for this transaction.');
