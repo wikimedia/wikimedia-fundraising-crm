@@ -549,7 +549,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         'installments' => $msg['installments'],
         'start_date' => $message->getDate(),
         'create_date' => $message->getDate(),
-        'cancel_date' => ($msg['cancel'] ? wmf_common_date_unix_to_civicrm($msg['cancel']) : NULL),
+        'cancel_date' => $message->getCancelDate(),
         'cycle_day' => $msg['cycle_day'],
         'next_sched_contribution_date' => $next_sched_contribution,
         'trxn_id' => $gateway_subscr_id,

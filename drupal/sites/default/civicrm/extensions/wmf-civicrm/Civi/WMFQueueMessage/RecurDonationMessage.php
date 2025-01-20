@@ -330,10 +330,24 @@ class RecurDonationMessage extends DonationMessage {
     return $this->message['cancel_reason'] ?? NULL;
   }
 
+  /**
+   * Get the formatted cancel date.
+   *
+   * @todo Our code has handling for 'cancel' and 'cancel_date'
+   * with slightly different timestamp nuance - this feels like an
+   * error we should fix & consolidate.
+   *
+   * @return string|null
+   * @throws \DateMalformedStringException
+   */
   public function getCancelDate(): ?string {
-    if (empty($this->message['cancel_date'])) {
-      return NULL;
+    if (!empty($this->message['cancel_date'])) {
+      return date('Y-m-d H:i:s', $this->message['cancel_date']);
     }
-    return date('Y-m-d H:i:s', $this->message['cancel_date']);
+    if (!empty($this->message['cancel'])) {
+      return $this->parseDateString($this->message['cancel']);
+    }
+    return NULL;
   }
+
 }
