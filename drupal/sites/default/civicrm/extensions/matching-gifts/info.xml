@@ -14,11 +14,11 @@
     <url desc="Support">irc://irc.libera.chat/%23wikimedia-fundraising</url>
     <url desc="Licensing">http://www.gnu.org/licenses/gpl-3.0.html</url>
   </urls>
-  <releaseDate>2020-04-07</releaseDate>
-  <version>1.0</version>
-  <develStage>alpha</develStage>
+  <releaseDate>2025-01-0720</releaseDate>
+  <version>1.1</version>
+  <develStage>stable</develStage>
   <compatibility>
-    <ver>5.38</ver>
+    <ver>5.79</ver>
   </compatibility>
   <comments>This is a new, undeveloped module. Our MVP should support pulling data from HEPData (now part of SSBInfo).</comments>
   <classloader>
@@ -27,7 +27,10 @@
   </classloader>
   <civix>
     <namespace>CRM/MatchingGifts</namespace>
-    <format>23.02.1</format>
+    <format>24.09.1</format>
   </civix>
-  <upgrader>CRM_MatchingGifts_Upgrader</upgrader>
+  <upgrader>CiviMix\Schema\MatchingGifts\AutomaticUpgrader</upgrader>
+  <mixins>
+    <mixin>entity-types-php@2.0.0</mixin>
+  </mixins>
 </extension>

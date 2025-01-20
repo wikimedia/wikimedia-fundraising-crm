@@ -75,16 +75,19 @@ class CRM_MatchingGifts_ExtensionUtil {
     return self::CLASS_PREFIX . '_' . str_replace('\\', '_', $suffix);
   }
 
+  /**
+   * @return \CiviMix\Schema\SchemaHelperInterface
+   */
+  public static function schema() {
+    if (!isset($GLOBALS['CiviMixSchema'])) {
+      pathload()->loadPackage('civimix-schema@5', TRUE);
+    }
+    return $GLOBALS['CiviMixSchema']->getHelper(static::LONG_NAME);
+  }
+
 }
 
 use CRM_MatchingGifts_ExtensionUtil as E;
-
-function _matching_gifts_civix_mixin_polyfill() {
-  if (!class_exists('CRM_Extension_MixInfo')) {
-    $polyfill = __DIR__ . '/mixin/polyfill.php';
-    (require $polyfill)(E::LONG_NAME, E::SHORT_NAME, E::path());
-  }
-}
 
 /**
  * (Delegated) Implements hook_civicrm_config().
@@ -101,7 +104,7 @@ function _matching_gifts_civix_civicrm_config($config = NULL) {
   $extRoot = __DIR__ . DIRECTORY_SEPARATOR;
   $include_path = $extRoot . PATH_SEPARATOR . get_include_path();
   set_include_path($include_path);
-  _matching_gifts_civix_mixin_polyfill();
+  // Based on <compatibility>, this does not currently require mixin/polyfill.php.
 }
 
 /**
@@ -111,7 +114,7 @@ function _matching_gifts_civix_civicrm_config($config = NULL) {
  */
 function _matching_gifts_civix_civicrm_install() {
   _matching_gifts_civix_civicrm_config();
-  _matching_gifts_civix_mixin_polyfill();
+  // Based on <compatibility>, this does not currently require mixin/polyfill.php.
 }
 
 /**
@@ -121,7 +124,7 @@ function _matching_gifts_civix_civicrm_install() {
  */
 function _matching_gifts_civix_civicrm_enable(): void {
   _matching_gifts_civix_civicrm_config();
-  _matching_gifts_civix_mixin_polyfill();
+  // Based on <compatibility>, this does not currently require mixin/polyfill.php.
 }
 
 /**
