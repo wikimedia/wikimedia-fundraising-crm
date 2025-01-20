@@ -357,7 +357,7 @@ abstract class ChecksFile {
       'fee_amount' => $msg['fee'],
       'net_amount' => $msg['net'],
       'trxn_id' => $trxn_id,
-      'receive_date' => wmf_common_date_unix_to_civicrm($msg['date']),
+      'receive_date' => $this->wmf_common_date_unix_to_civicrm($msg['date']),
       'currency' => $msg['currency'],
       'source' => $msg['original_currency'] . ' ' . CurrencyRoundingHelper::round($msg['original_gross'], $msg['original_currency']),
       'contribution_recur_id' => $msg['contribution_recur_id'],
@@ -373,7 +373,7 @@ abstract class ChecksFile {
 
     // Add the thank you date when it exists and is not null (e.g.: we're importing from a check)
     if (array_key_exists('thankyou_date', $msg) && is_numeric($msg['thankyou_date'])) {
-      $contribution['thankyou_date'] = wmf_common_date_unix_to_civicrm($msg['thankyou_date']);
+      $contribution['thankyou_date'] = $this->wmf_common_date_unix_to_civicrm($msg['thankyou_date']);
     }
 
     // Store the identifier we generated on payments
@@ -473,6 +473,33 @@ abstract class ChecksFile {
         );
       }
     }
+  }
+
+
+  /**
+   * Convert a unix timestamp to formatted date, in UTC.
+   *
+   * Ordinarily, you will want to use the pre-formatted functions below to ensure
+   * standardized behavior.
+   *
+   * @param integer $unixtime timestamp, seconds since epoch
+   *
+   * @return string Formatted time
+   */
+  private function wmf_common_date_unix_to_civicrm($unixtime) {
+    try {
+      // Funky hack to trim decimal timestamp.  More normalizations may follow.
+      $text = preg_replace('/^(@\d+)\.\d+$/', '$1', '@' . $unixtime);
+
+      $obj = new DateTime($text, new DateTimeZone('UTC'));
+      $formatted = $obj->format("Y-m-d H:i:s");
+    }
+    catch (Exception $ex) {
+      \Civi::log('wmf')->error('wmf_common: Caught date exception in ' . __METHOD__ . ': ' . $ex->getMessage());
+      return '';
+    }
+
+    return $formatted;
   }
 
   /**
