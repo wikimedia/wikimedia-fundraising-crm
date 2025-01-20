@@ -42,8 +42,7 @@ class VerifyEmployerFile extends AbstractAction {
       if ($this->newExportContainsUpdates(
         $currentEmployerFilePath
       )) {
-        update_matching_gifts_employer_data(
-          $this->getExportFilePath(),
+        $this->updateMatchingGiftsEmployerData(
           $currentEmployerFilePath
         );
         send_matching_gifts_update_email($currentEmployerFilePath);
@@ -178,6 +177,27 @@ class VerifyEmployerFile extends AbstractAction {
         );
       }
     }
+  }
+
+  /**
+   * Update the matching gifts employers data file to the newest version and
+   * backup the old
+   *
+   * @param string $currentEmployerFilePath
+   */
+  private function updateMatchingGiftsEmployerData(string $currentEmployerFilePath): void {
+    $newEmployerFilePath = $this->getExportFilePath();
+    // backup current version if it exists
+    // note: this will also remove any previous backup files created.
+    if (file_exists($currentEmployerFilePath)) {
+      rename($currentEmployerFilePath, $currentEmployerFilePath . ".bk");
+    }
+    // update file to latest
+    rename($newEmployerFilePath, $currentEmployerFilePath);
+    \Civi::log('matching_gifts')->info(
+      'civicrm_matching_gifts_employers_check: Latest employers file created at {path}',
+      ['path' => $currentEmployerFilePath]
+    );
   }
 
 }
