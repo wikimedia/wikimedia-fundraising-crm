@@ -504,7 +504,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
           'payment_token_id' => $msg['payment_token_id'],
           'payment_processor_id' => $msg['payment_processor_id'],
           'processor_id' => $gateway_subscr_id,
-          'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
         ];
       }
       elseif (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
@@ -521,7 +520,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
           'payment_token_id' => $payment_token_result['id'],
           'payment_processor_id' => $payment_token_result['payment_processor_id'],
           'processor_id' => $gateway_subscr_id,
-          'trxn_id' => WMFTransaction::from_message($msg)->get_unique_id(),
         ];
       }
       elseif (PaymentProcessorHelper::getPaymentProcessorID($msg['gateway'])) {
