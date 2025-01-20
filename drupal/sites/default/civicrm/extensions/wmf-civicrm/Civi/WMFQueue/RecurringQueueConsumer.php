@@ -268,9 +268,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Import a subscription signup message
    *
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
    * @param array $msg
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \Civi\WMFException\WMFException
    */
-  protected function importSubscriptionSignup(RecurDonationMessage $message, array $msg) {
+  protected function importSubscriptionSignup(RecurDonationMessage $message, array $msg): void {
     $contact = NULL;
     // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
     if (!empty($msg['contribution_recur_id'])) {
