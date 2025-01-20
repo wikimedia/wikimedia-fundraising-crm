@@ -1622,53 +1622,16 @@ abstract class BaseAuditProcessor {
     return $records;
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   protected function getGatewayIdFromTracking(int $contributionTrackingID) {
     $tracking = ContributionTracking::get(FALSE)
       ->addWhere('id', '=', $contributionTrackingID)
+      ->addSelect('contribution_id.contribution_extra.gateway_txn_id')
       ->execute()
       ->first();
-    if (empty($tracking['contribution_id'])) {
-      return NULL;
-    }
-    $contributions = $this->getContributionExtra(
-      $tracking['contribution_id']
-    );
-    if (empty($contributions)) {
-      return NULL;
-    }
-    return $contributions[0]['gateway_txn_id'];
-  }
-
-  /**
-   * Pulls all records in the wmf_contribution_extras table that match the civicrm
-   * contribution id.
-   *
-   * @deprecated - this is a really laborious way to load
-   * a record just to get a single value - fold into parent
-   * as an api call.
-   *
-   * @param string $contribution_id
-   *
-   * @return mixed array of result rows, or false if none present.
-   * @throws \Civi\WMFException\WMFException
-   */
-  private function getContributionExtra($contribution_id) {
-    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
-		ON cc.id = cx.entity_id
-		WHERE cc.id = %1";
-
-    $dao = \CRM_Core_DAO::executeQuery($query, [
-      1 => [$contribution_id, 'Integer'],
-    ]);
-    $result = [];
-    while ($dao->fetch()) {
-      $result[] = $dao->toArray();
-    }
-    // FIXME: pick wart
-    if (empty($result)) {
-      return FALSE;
-    }
-    return $result;
+    return $tracking ? $tracking['contribution_id.contribution_extra.gateway_txn_id'] : NULL;
   }
 
   /**
