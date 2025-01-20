@@ -1622,8 +1622,11 @@ abstract class BaseAuditProcessor {
     return $records;
   }
 
-  protected function getGatewayIdFromTracking($record = []) {
-    $tracking = wmf_civicrm_get_contribution_tracking($record);
+  protected function getGatewayIdFromTracking(int $contributionTrackingID) {
+    $tracking = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $contributionTrackingID)
+      ->execute()
+      ->first();
     if (empty($tracking['contribution_id'])) {
       return NULL;
     }

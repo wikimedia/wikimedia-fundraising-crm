@@ -115,7 +115,7 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
       empty($transaction['gateway_txn_id']) &&
       !empty($transaction['contribution_tracking_id'])
     ) {
-      $transaction['gateway_parent_id'] = $this->getGatewayIdFromTracking($transaction);
+      $transaction['gateway_parent_id'] = $this->getGatewayIdFromTracking($transaction['contribution_tracking_id']);
     }
     if (empty($transaction['gateway_refund_id'])) {
       // This stinks, but Ingenico doesn't give refunds their own ID,

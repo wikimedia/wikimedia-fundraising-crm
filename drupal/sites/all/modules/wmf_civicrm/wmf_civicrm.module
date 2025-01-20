@@ -1,9 +1,5 @@
 <?php
 
-use Civi\WMFException\WMFException;
-
-require_once 'tracking.inc';
-
 /**
  * @todo - delete or migrate to a setting.
  *
