@@ -394,6 +394,13 @@ class DonationMessage extends Message {
     return $this->getThankYouTimestamp() ? date('Y-m-d H:i:s', $this->getThankYouTimestamp()) : NULL;
   }
 
+  public function getInvoiceID(): ?string {
+    if (!empty($this->message['invoice_id'])) {
+      return (string) $this->message['invoice_id'];
+    }
+    return $this->message['order_id'] ?? NULL;
+  }
+
   /**
    * Get the financial Type ID.
    *

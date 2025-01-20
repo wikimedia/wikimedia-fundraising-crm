@@ -302,6 +302,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'check_number' => $msg['check_number'],
       'debug' => TRUE,
       'thankyou_date' => $message->getThankYouDateTime(),
+      'invoice_id' => $message->getInvoiceID(),
     ];
 
     // Set no_thank_you to recurring if it's the 2nd+ of any recurring payments
@@ -312,19 +313,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     // Add the contribution status if its known and not completed
     if (!empty($msg['contribution_status_id'])) {
       $contribution['contribution_status_id'] = $msg['contribution_status_id'];
-    }
-
-    // Store the identifier we generated on payments
-    $invoice_fields = ['invoice_id', 'order_id'];
-    foreach ($invoice_fields as $invoice_field) {
-      if (!empty($msg[$invoice_field])) {
-        $contribution['invoice_id'] = $msg[$invoice_field];
-        // The invoice_id column has a unique constraint
-        if ($msg['recurring']) {
-          $contribution['invoice_id'] .= '|recur-' . UtcDate::getUtcTimestamp();
-        }
-        break;
-      }
     }
 
     $customFields = (array) Contribution::getFields(FALSE)

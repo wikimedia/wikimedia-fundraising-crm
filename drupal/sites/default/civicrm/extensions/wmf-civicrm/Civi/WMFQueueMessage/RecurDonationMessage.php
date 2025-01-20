@@ -414,4 +414,13 @@ class RecurDonationMessage extends DonationMessage {
     return $this->getFailureRetryTimeStamp() ? date('Y-m-d H:i:s', $this->getFailureRetryTimeStamp()) : NULL;
   }
 
+  public function getInvoiceID(): ?string {
+    $invoiceID = parent::getInvoiceID();
+    if (!$invoiceID) {
+      return NULL;
+    }
+    // The invoice_id column has a unique constraint.
+    return $invoiceID . '|recur-' . time();
+  }
+
 }
