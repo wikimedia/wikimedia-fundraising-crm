@@ -545,17 +545,16 @@ class RecurringQueueTest extends BaseQueueTestCase {
     $failed_trxn_message = $this->getRecurringFailedMessage();
     $failed_trxn_message['failure_retry_date'] = strtotime('03:00:00 May 27, 2024 PDT');
     $signupMessage = $this->processRecurringSignup([
-      'subscr_id' => $failed_trxn_message['subscr_id']
+      'subscr_id' => $failed_trxn_message['subscr_id'],
     ]);
-    $contributionRecur = $this->getContributionRecurForMessage($signupMessage);
+    $this->getContributionRecurForMessage($signupMessage);
     $this->processMessage($failed_trxn_message);
     $contributionRecur = $this->getContributionRecurForMessage($signupMessage);
 
     $this->assertEquals(1, $contributionRecur['failure_count']);
-    $this->assertEquals( wmf_common_date_unix_to_civicrm($failed_trxn_message['failure_retry_date']), $contributionRecur['failure_retry_date']);
+    $this->assertEquals('2024-05-27 10:00:00', $contributionRecur['failure_retry_date']);
     $this->assertEquals('Failing', $contributionRecur['contribution_status_id:name']);
   }
-
 
   /**
    * Test processing EOT (end of term) message from paypal.

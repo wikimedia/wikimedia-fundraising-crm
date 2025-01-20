@@ -204,7 +204,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         throw new \CRM_Core_Exception('unexpected subscr_modify message');
 
       case 'subscr_failed':
-        $this->importSubscriptionPaymentFailed($msg);
+        $this->importSubscriptionPaymentFailed($message, $msg);
         break;
 
       default:
@@ -312,12 +312,12 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'payment_instrument_id' => $msg['payment_instrument_id'] ?? NULL,
         // Set installments to 0 - they should all be open ended
         'installments' => 0,
-        'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
-        'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
+        'start_date' => $message->getStartDate(),
+        'create_date' => $message->getCreateDate(),
         'trxn_id' => $msg['subscr_id'],
         'financial_type_id:name' => 'Cash',
-        'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
-        'cycle_day' => date('j', strtotime(wmf_common_date_unix_to_civicrm($msg['start_date']))),
+        'next_sched_contribution_date' => $message->getStartDate(),
+        'cycle_day' => date('j', strtotime($message->getStartDate())),
       ];
       if (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {
         // We could pass the gateway name to the api for resolution but it would reject
@@ -598,11 +598,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Process failed subscription payment
    *
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
    * @param array $msg
    *
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \DateMalformedStringException
    */
-  protected function importSubscriptionPaymentFailed($msg) {
+  protected function importSubscriptionPaymentFailed(RecurDonationMessage $message, array $msg): void {
     // ensure we have a record of the subscription
     if (empty($msg['contribution_recur_id'])) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
@@ -632,8 +635,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $updateParams['contribution_status_id:name'] = 'Failing';
     }
 
-    if (!empty($msg['failure_retry_date'])) {
-      $updateParams['failure_retry_date'] = wmf_common_date_unix_to_civicrm($msg['failure_retry_date']);
+    if ($message->getFailureRetryDate()) {
+      $updateParams['failure_retry_date'] = $message->getFailureRetryDate();
     }
 
     try {

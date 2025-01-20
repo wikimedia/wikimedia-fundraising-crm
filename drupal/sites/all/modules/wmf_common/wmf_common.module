@@ -1,4 +1,3 @@
 <?php
 
 require_once 'failmail.php';
-require_once 'wmf_dates.php';
