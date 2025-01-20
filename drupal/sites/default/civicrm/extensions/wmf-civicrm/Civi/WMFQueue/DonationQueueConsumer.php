@@ -220,16 +220,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     // Make new recurring record if necessary
     if ($message->isRecurring()) {
       if (!$message->getContributionRecurID()) {
-        $recurring_transaction_id = "";
-        if ($msg['subscr_id']) {
-          $recurring_transaction_id = $msg['subscr_id'];
-        }
-
-        if (!empty($msg['recurring_payment_token'])) {
-          $recurring_transaction_id = $msg['gateway_txn_id'];
-        }
-
-        \Civi::log('wmf')->info('queue2civicrm_import: Attempting to insert new recurring subscription: {recurring_transaction_id}', ['recurring_transaction_id' => $recurring_transaction_id]);
         $this->startTiming('message_contribution_recur_insert');
         $this->importContributionRecur($message, $msg, $msg['contact_id']);
         $this->stopTiming('message_contribution_recur_insert');
@@ -456,6 +446,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    *
    */
   private function importContributionRecur(RecurDonationMessage $message, array $msg, int $contact_id): void {
+    \Civi::log('wmf')->info('wmf_civicrm_import: Attempting to insert new recurring subscription: {recurring_transaction_id}', ['recurring_transaction_id' => $message->getSubscriptionID() ?: $msg['gateway_txn_id']]);
     $msg['frequency_unit'] = $msg['frequency_unit'] ?? 'month';
     $msg['frequency_interval'] = isset($msg['frequency_interval']) ? (integer) $msg['frequency_interval'] : 1;
     $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
