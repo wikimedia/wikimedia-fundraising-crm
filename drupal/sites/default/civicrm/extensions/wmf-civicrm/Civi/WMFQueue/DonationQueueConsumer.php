@@ -469,10 +469,13 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
     }
 
-    if (!empty($msg['subscr_id'])) {
-      $gateway_subscr_id = $msg['subscr_id'];
+    if ($message->getSubscriptionID()) {
+      $gateway_subscr_id = $message->getSubscriptionID();
     }
     elseif (!empty($msg['gateway_txn_id'])) {
+      // @todo - do we need this? getSubscriptionID() already looks in here
+      // it it is Amazon - if it could be valid for other
+      // processors too then maybe we need to fix there.
       $gateway_subscr_id = $msg['gateway_txn_id'];
     }
     else {
@@ -489,6 +492,9 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     try {
       if (!empty($msg['payment_processor_id']) && !empty($msg['payment_token_id'])) {
         // copy existing payment token and processor IDs from message
+        // @todo - it's not really clear if this is reachable - the call that
+        // set payment_token_id is now in the follow-on else-if and
+        // I suspect that it is never passed in & hence this is never hit.
         $extra_recurring_params = [
           'payment_token_id' => $msg['payment_token_id'],
           'payment_processor_id' => $msg['payment_processor_id'],
@@ -501,7 +507,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         $payment_token_result = PaymentToken::create(FALSE)
           ->setValues([
             'contact_id' => $contact_id,
-            'payment_processor_id.name' => $msg['gateway'],
+            'payment_processor_id.name' => $message->getGateway(),
             'token' => $msg['recurring_payment_token'],
             'ip_address' => $msg['user_ip'] ?? NULL,
           ]
