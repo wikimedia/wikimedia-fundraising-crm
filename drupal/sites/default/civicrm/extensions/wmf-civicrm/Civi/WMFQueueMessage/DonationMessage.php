@@ -116,7 +116,7 @@ class DonationMessage extends Message {
     }
     $msg['payment_instrument_id'] = $this->getPaymentInstrumentID();
     $msg['date'] = $this->getTimestamp();
-    $msg['thankyou_date'] = $this->getThankYouDate();
+    $msg['thankyou_date'] = $this->getThankYouTimestamp();
     $parsed = $this->getParsedName();
     if (!empty($parsed)) {
       $msg = array_merge(array_filter((array) $parsed), $msg);
@@ -362,10 +362,11 @@ class DonationMessage extends Message {
   }
 
   /**
+   * Get the unix-style timestamp for the thank you date.
    *
-   * @return array
+   * @return int|null
    */
-  public function getThankYouDate(): ?int {
+  public function getThankYouTimestamp(): ?int {
     if (empty($this->message['thankyou_date'])) {
       return NULL;
     }
@@ -382,6 +383,15 @@ class DonationMessage extends Message {
       ]);
     }
     return NULL;
+  }
+
+  /**
+   * Get the date time for the thank you date.
+   *
+   * @return string|null
+   */
+  public function getThankYouDateTime(): ?string {
+    return $this->getThankYouTimestamp() ? date('Y-m-d H:i:s', $this->getThankYouTimestamp()) : NULL;
   }
 
   /**

@@ -301,6 +301,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'contribution_recur_id' => $message->getContributionRecurID(),
       'check_number' => $msg['check_number'],
       'debug' => TRUE,
+      'thankyou_date' => $message->getThankYouDateTime(),
     ];
 
     // Set no_thank_you to recurring if it's the 2nd+ of any recurring payments
@@ -311,11 +312,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     // Add the contribution status if its known and not completed
     if (!empty($msg['contribution_status_id'])) {
       $contribution['contribution_status_id'] = $msg['contribution_status_id'];
-    }
-
-    // Add the thank you date when it exists and is not null (e.g.: we're importing from a check)
-    if (array_key_exists('thankyou_date', $msg) && is_numeric($msg['thankyou_date'])) {
-      $contribution['thankyou_date'] = wmf_common_date_unix_to_civicrm($msg['thankyou_date']);
     }
 
     // Store the identifier we generated on payments
