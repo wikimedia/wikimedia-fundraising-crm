@@ -21,11 +21,14 @@ class VerifyEmployerFile extends AbstractAction {
    *
    * @var int
    */
-  protected $limit = 0;
+  protected int $limit = 0;
 
-  public function _run(Result $result) {
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function _run(Result $result): void {
     // download the latest updates via the matching gifts civicrm ext sync
-    $syncResult = sync_matching_gifts_employer_data($this->getLimit());
+    $syncResult = $this->syncMatchingGiftsEmployerData();
 
     if ($syncResult['count'] > 0) {
       // the sync pulled down new data so let's export the new employer data
@@ -53,6 +56,41 @@ class VerifyEmployerFile extends AbstractAction {
         );
       }
     }
+  }
+
+  /**
+   * Call matching gifts sync api action.
+   *
+   * $syncBatchSize defaults to 0 which means unlimited. This is so we sync all
+   * available updates.
+   *
+   * @return array $syncResult
+   * @throws \CRM_Core_Exception
+   * @see sites/default/civicrm/extensions/matching-gifts/api/v3/MatchingGiftPolicies/Sync.php
+   */
+  private function syncMatchingGiftsEmployerData(): array {
+    \Civi::log('matching_gifts')->info(
+      'civicrm_matching_gifts_employers_check: Initiating matching gift employers sync'
+    );
+
+    $syncParams = [
+      'batch' => $this->getLimit(),
+    ];
+    $syncResult = civicrm_api3('MatchingGiftPolicies', 'Sync', $syncParams);
+
+    if ($syncResult['count'] == 0) {
+      \Civi::log('matching_gifts')->info(
+        'civicrm_matching_gifts_employers_check: No new employers available to sync since the last update'
+      );
+    }
+    else {
+      \Civi::log('matching_gifts')->info(
+        'civicrm_matching_gifts_employers_check: {count} updated employer records found',
+        ['count' => $syncResult['count']]
+      );
+    }
+
+    return $syncResult;
   }
 
 }

@@ -53,51 +53,6 @@ function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
 }
 
 /**
- * Call matching gifts sync api action.
- *
- * $syncBatchSize defaults to 0 which means unlimited. This is so we sync all
- * available updates.
- *
- * @param int $syncBatchSize sync api call batch size
- *
- * @return array $syncResult
- * @throws \CRM_Core_Exception
- * @throws \Civi\WMFException\WMFException
- * @see sites/default/civicrm/extensions/matching-gifts/api/v3/MatchingGiftPolicies/Sync.php
- */
-function sync_matching_gifts_employer_data($syncBatchSize) {
-  \Civi::log('wmf')->info(
-    'civicrm_matching_gifts_employers_check: Initiating matching gift employers sync'
-  );
-
-  $syncParams = [
-    'batch' => $syncBatchSize,
-  ];
-  $syncResult = civicrm_api3('MatchingGiftPolicies', 'Sync', $syncParams);
-
-  if ($syncResult['is_error']) {
-    throw new WMFException(
-      WMFException::MISSING_MANDATORY_DATA,
-      'There was a problem syncing matching gift employers: ' . $syncResult['error_message']
-    );
-  }
-
-  if ($syncResult['count'] == 0) {
-    \Civi::log('wmf')->info(
-      'civicrm_matching_gifts_employers_check: No new employers available to sync since the last update'
-    );
-  }
-  else {
-    \Civi::log('wmf')->info(
-      'civicrm_matching_gifts_employers_check: {count} updated employer records found',
-      ['count' => $syncResult['count']]
-    );
-  }
-
-  return $syncResult;
-}
-
-/**
  * Call matching gifts export api action and write file to a tmp location
  *
  * @param string $exportFilePath file path to write export to
