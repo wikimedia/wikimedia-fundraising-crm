@@ -11,6 +11,8 @@ use Civi\Api4\Generic\Result;
  */
 class VerifyEmployerFile extends AbstractAction {
 
+  protected $newFile;
+
   /**
    * Number of employers to process.
    *
@@ -32,25 +34,24 @@ class VerifyEmployerFile extends AbstractAction {
 
     if ($syncResult['count'] > 0) {
       // the sync pulled down new data so let's export the new employer data
-      $newExportFilePath = TEMP_EXPORT_PATH . DIRECTORY_SEPARATOR . 'employers-' . date('YmdHis') . '.csv';
-      generate_new_export($newExportFilePath);
+      $this->generateNewExport();
 
       $currentEmployerFilePath = \Civi::settings()->get('matching_gifts_employer_data_file_path');
       // now lets compare the new employer data against our current version
-      // and overwrite the current verson if we find employer updates in the new export
+      // and overwrite the current version if we find employer updates in the new export
       if (new_export_contains_updates(
-        $newExportFilePath,
+        $this->getExportFilePath(),
         $currentEmployerFilePath
       )) {
         update_matching_gifts_employer_data(
-          $newExportFilePath,
+          $this->getExportFilePath(),
           $currentEmployerFilePath
         );
         send_matching_gifts_update_email($currentEmployerFilePath);
       }
       else {
         // clean up our new data file if there are no updates to employer data
-        unlink($newExportFilePath);
+        unlink($this->getExportFilePath());
         \Civi::log('wmf')->info(
           'civicrm_matching_gifts_employers_check: Removing new employers data file. No employer updates found'
         );
@@ -91,6 +92,34 @@ class VerifyEmployerFile extends AbstractAction {
     }
 
     return $syncResult;
+  }
+
+  /**
+   * Call matching gifts export api action and write file to a tmp location
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function generateNewExport(): void {
+    $exportParams = [
+      'path' => $this->getExportFilePath(),
+    ];
+
+    civicrm_api3('MatchingGiftPolicies', 'Export', $exportParams);
+
+    \Civi::log('matching_gifts')->info(
+      'civicrm_matching_gifts_employers_check: New employers data file created at {path}',
+      ['path' => $this->getExportFilePath()]
+    );
+  }
+
+  /**
+   * @return string
+   */
+  public function getExportFilePath(): string {
+    if (!isset($this->newFile)) {
+      $this->newFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'employers-' . date('YmdHis') . '.csv';
+    }
+    return $this->newFile;
   }
 
 }
