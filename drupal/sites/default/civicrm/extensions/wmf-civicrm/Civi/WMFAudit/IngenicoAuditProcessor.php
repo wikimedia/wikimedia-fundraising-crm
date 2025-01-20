@@ -107,6 +107,9 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
     return "/\d{8}_(globalcollect|ingenico)/";
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   protected function pre_process_refund($transaction) {
     // We get woefully sparse records from some audit files.
     // Try to reconstruct missing/false-y gateway_parent_id from ct_id
@@ -115,7 +118,7 @@ class IngenicoAuditProcessor extends BaseAuditProcessor {
       empty($transaction['gateway_txn_id']) &&
       !empty($transaction['contribution_tracking_id'])
     ) {
-      $transaction['gateway_parent_id'] = $this->getGatewayIdFromTracking($transaction['contribution_tracking_id']);
+      $transaction['gateway_parent_id'] = $this->getGatewayIdFromTracking((int) $transaction['contribution_tracking_id']);
     }
     if (empty($transaction['gateway_refund_id'])) {
       // This stinks, but Ingenico doesn't give refunds their own ID,
