@@ -3,6 +3,7 @@
 namespace Civi\Api4\Action\WMFContact;
 
 use Civi\Api4\Address;
+use Civi\Api4\ContributionTracking;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Phone;
@@ -237,8 +238,10 @@ class Save extends AbstractAction {
       // TODO: use LanguageTag to prevent truncation of >2 char lang codes
       // guess from contribution_tracking data
       if (isset($msg['contribution_tracking_id']) && is_numeric($msg['contribution_tracking_id'])) {
-        $contributionTrackingID = (int) $msg['contribution_tracking_id'];
-        $tracking = wmf_civicrm_get_contribution_tracking(['contribution_tracking_id' => $contributionTrackingID]);
+        $tracking = ContributionTracking::get(FALSE)
+          ->addWhere('id', '=', (int) $msg['contribution_tracking_id'])
+          ->execute()
+          ->first();
         if ($tracking and !empty($tracking['language'])) {
           if (strpos($tracking['language'], '-')) {
             // If we are already tracking variant, use that
