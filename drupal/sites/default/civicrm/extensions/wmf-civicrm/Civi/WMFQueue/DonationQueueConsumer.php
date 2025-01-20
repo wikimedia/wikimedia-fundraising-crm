@@ -202,21 +202,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $msg['contact_id'] = $contact['id'];
     $this->stopTiming("create_contact");
 
-    // Associate with existing recurring records
-    if ($message->isRecurring() && !$message->getContributionRecurID()) {
-      if (!empty($msg['recurring_payment_token'])) {
-        if (!$message->getPaymentTokenID()) {
-          // When there is a token on the $msg but not in the db
-          // Create recurring token if it isn't already there
-          // Audit files bring in recurrings that we have the token for but were never created
-          $token_record = wmf_civicrm_recur_payment_token_create($msg['contact_id'], $msg['gateway'], $msg['recurring_payment_token'], $msg['user_ip']);
-          \Civi::log('wmf')->info('queue2civicrm_import: No payment token found. Creating : {token}', ['token' => $token_record['id']]);
-          $msg['payment_token_id'] = $token_record['id'];
-          $msg['payment_processor_id'] = $token_record['payment_processor_id'];
-        }
-      }
-    }
-
     // Make new recurring record if necessary
     if ($message->isRecurring()) {
       if (!$message->getContributionRecurID()) {
@@ -501,6 +486,17 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $msg['cycle_day'] = (int) (gmdate('j', $msg['date']));
 
     $next_sched_contribution = \CRM_Core_Payment_Scheduler::getNextContributionDate($msg);
+    if (!empty($msg['recurring_payment_token'])) {
+      if (!$message->getPaymentTokenID()) {
+        // When there is a token on the $msg but not in the db
+        // Create recurring token if it isn't already there
+        // Audit files bring in recurrings that we have the token for but were never created
+        $token_record = wmf_civicrm_recur_payment_token_create($msg['contact_id'], $msg['gateway'], $msg['recurring_payment_token'], $msg['user_ip']);
+        \Civi::log('wmf')->info('queue2civicrm_import: No payment token found. Creating : {token}', ['token' => $token_record['id']]);
+        $msg['payment_token_id'] = $token_record['id'];
+        $msg['payment_processor_id'] = $token_record['payment_processor_id'];
+      }
+    }
     try {
       if (!empty($msg['payment_processor_id']) && !empty($msg['payment_token_id'])) {
         // copy existing payment token and processor IDs from message
