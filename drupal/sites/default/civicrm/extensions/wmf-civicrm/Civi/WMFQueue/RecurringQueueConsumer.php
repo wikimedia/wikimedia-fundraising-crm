@@ -131,19 +131,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $startMessage = [
         'txn_type' => 'subscr_signup',
         ] + $msg;
-      $this->importSubscriptionSignup($startMessage);
-      // @todo we shouldn't need this check - the sign up processing should
-      // fail it if ... fails & the lookup happens in the donations queue anyway
-      // (which would also fail if it needed to).
-      $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
-      if (!$recur_record) {
-        Civi::log('wmf')->notice('recurring: Fallback contribution_recur record creation failed.');
-        throw new WMFException(
-          WMFException::IMPORT_SUBSCRIPTION,
-          "Could not create the initial recurring record for subscr_id {$msg['subscr_id']}"
-        );
-      }
-      $message->setContributionRecurID($recur_record->id);
+      $this->importSubscriptionSignup($message, $startMessage);
     }
     if (!$message->getContributionRecurID()) {
       Civi::log('wmf')->notice('recurring: Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
@@ -201,7 +189,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   protected function importSubscriptionAccount(RecurDonationMessage $message, $msg) {
     switch ($msg['txn_type']) {
       case 'subscr_signup':
-        $this->importSubscriptionSignup($msg);
+        $this->importSubscriptionSignup($message, $msg);
         break;
 
       case 'subscr_cancel':
@@ -282,7 +270,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    *
    * @param array $msg
    */
-  protected function importSubscriptionSignup($msg) {
+  protected function importSubscriptionSignup(RecurDonationMessage $message, array $msg) {
     $contact = NULL;
     // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
     if (!empty($msg['contribution_recur_id'])) {
@@ -373,6 +361,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       }
 
       $newContributionRecur = $this->createContributionRecurWithErrorHandling($params);
+      $message->setContributionRecurID($newContributionRecur['id']);
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());

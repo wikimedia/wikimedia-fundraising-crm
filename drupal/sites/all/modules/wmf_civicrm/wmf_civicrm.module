@@ -2,7 +2,6 @@
 
 use Civi\WMFException\WMFException;
 
-require_once 'recurring.inc';
 require_once 'tracking.inc';
 
 /**
