@@ -486,17 +486,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $msg['cycle_day'] = (int) (gmdate('j', $msg['date']));
 
     $next_sched_contribution = \CRM_Core_Payment_Scheduler::getNextContributionDate($msg);
-    if (!empty($msg['recurring_payment_token'])) {
-      if (!$message->getPaymentTokenID()) {
-        // When there is a token on the $msg but not in the db
-        // Create recurring token if it isn't already there
-        // Audit files bring in recurrings that we have the token for but were never created
-        $token_record = wmf_civicrm_recur_payment_token_create($msg['contact_id'], $msg['gateway'], $msg['recurring_payment_token'], $msg['user_ip']);
-        \Civi::log('wmf')->info('queue2civicrm_import: No payment token found. Creating : {token}', ['token' => $token_record['id']]);
-        $msg['payment_token_id'] = $token_record['id'];
-        $msg['payment_processor_id'] = $token_record['payment_processor_id'];
-      }
-    }
     try {
       if (!empty($msg['payment_processor_id']) && !empty($msg['payment_token_id'])) {
         // copy existing payment token and processor IDs from message
@@ -506,8 +495,9 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
           'processor_id' => $gateway_subscr_id,
         ];
       }
-      elseif (!empty($msg['recurring_payment_token']) && $msg['gateway']) {
-        // create a recurring payment token record if token is present
+      elseif (!empty($msg['recurring_payment_token']) && !$message->getPaymentTokenID()) {
+        // When there is a token on the $msg but not in the db
+        // Create recurring token if it isn't already there
         $payment_token_result = PaymentToken::create(FALSE)
           ->setValues([
             'contact_id' => $contact_id,
@@ -516,6 +506,8 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
             'ip_address' => $msg['user_ip'] ?? NULL,
           ]
           )->execute()->first();
+        // Audit files bring in recurrings that we have the token for but were never created
+        \Civi::log('wmf')->info('queue2civicrm_import: No payment token found. Creating : {token}', ['token' => $payment_token_result['id']]);
         $extra_recurring_params = [
           'payment_token_id' => $payment_token_result['id'],
           'payment_processor_id' => $payment_token_result['payment_processor_id'],
