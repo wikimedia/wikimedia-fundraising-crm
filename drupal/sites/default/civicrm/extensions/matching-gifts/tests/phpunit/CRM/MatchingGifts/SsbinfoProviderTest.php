@@ -1,26 +1,17 @@
 <?php
 
-use GuzzleHttp\Middleware;
-use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
+use Civi\BaseTestClass;
 
 /**
  * @group MatchingGifts
  */
-class CRM_MatchingGifts_SsbInfoProviderTest extends PHPUnit\Framework\TestCase
+class CRM_MatchingGifts_SsbInfoProviderTest extends BaseTestClass
   implements \Civi\Test\HeadlessInterface {
 
   /**
    * @var \CRM_MatchingGifts_SsbinfoProvider
    */
   protected $provider;
-
-  /**
-   * @var array
-   */
-  protected $requests;
 
   public function setUp(): void {
     parent::setUp();
@@ -44,25 +35,11 @@ class CRM_MatchingGifts_SsbInfoProviderTest extends PHPUnit\Framework\TestCase
       ->apply();
   }
 
-  protected function setUpMockResponse($responseBodies) {
-    $this->requests = [];
-    $history = Middleware::history($this->requests);
-    $responses = [];
-    foreach ($responseBodies as $responseBody) {
-      $responses[] = new Response(200, [], $responseBody);
-    }
-    $mock = new MockHandler($responses);
-    $handler = HandlerStack::create($mock);
-    $handler->push($history);
-    $httpClient = new Client(['handler' => $handler]);
-    CRM_MatchingGifts_SsbinfoProvider::setClient($httpClient);
-  }
-
   public function testFetchOneCategory() {
     $this->setUpMockResponse([
-      file_get_contents(__DIR__ . '/Responses/searchResult01.json'),
-      file_get_contents(__DIR__ . '/Responses/detail01.json'),
-      file_get_contents(__DIR__ . '/Responses/detail02.json'),
+      $this->getResponseContents('searchResult01.json'),
+      $this->getResponseContents('detail01.json'),
+      $this->getResponseContents('detail02.json'),
     ]);
 
     $result = $this->provider->fetchMatchingGiftPolicies([
@@ -106,11 +83,11 @@ class CRM_MatchingGifts_SsbInfoProviderTest extends PHPUnit\Framework\TestCase
 
   public function testFetchMultipleCategories() {
     $this->setUpMockResponse([
-      file_get_contents(__DIR__ . '/Responses/searchResult01.json'),
-      file_get_contents(__DIR__ . '/Responses/searchResult02.json'),
-      file_get_contents(__DIR__ . '/Responses/detail01.json'),
-      file_get_contents(__DIR__ . '/Responses/detail02.json'),
-      file_get_contents(__DIR__ . '/Responses/detail03.json'),
+      $this->getResponseContents('searchResult01.json'),
+      $this->getResponseContents('searchResult02.json'),
+      $this->getResponseContents('detail01.json'),
+      $this->getResponseContents('detail02.json'),
+      $this->getResponseContents('detail03.json'),
     ]);
 
     $result = $this->provider->fetchMatchingGiftPolicies([
@@ -179,7 +156,7 @@ class CRM_MatchingGifts_SsbInfoProviderTest extends PHPUnit\Framework\TestCase
         'online_form_url' => 'https://advideamech.benevity.com/',
         'minimum_gift_matched_usd' => 25,
         'match_policy_last_updated' => '2018-01-04',
-        'subsidiaries' => '["Targo Corporation","International Data and Control","Cadenza Industries","Koenig and Strey","Pacific Vista Laboratories","Omnitech"]'
+        'subsidiaries' => '["Targo Corporation","International Data and Control","Cadenza Industries","Koenig and Strey","Pacific Vista Laboratories","Omnitech"]',
       ],
       $result[56780404]
     );
@@ -192,7 +169,7 @@ class CRM_MatchingGifts_SsbInfoProviderTest extends PHPUnit\Framework\TestCase
         'online_form_url' => 'https://aperture.benevity.com/',
         'minimum_gift_matched_usd' => 35,
         'match_policy_last_updated' => '2018-08-24',
-        'subsidiaries' => '["Aperture Laboratories","Aperture Fixtures","Aperture Enrichment Centers"]'
+        'subsidiaries' => '["Aperture Laboratories","Aperture Fixtures","Aperture Enrichment Centers"]',
       ],
       $result[75751100]
     );
