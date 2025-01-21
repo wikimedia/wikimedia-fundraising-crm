@@ -45,35 +45,9 @@ function civicrm_matching_gifts_employers_check_drush_help($section) {
 function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
   civicrm_initialize();
 
-  // download the latest updates via the matching gifts civicrm ext sync
-  $syncResult = sync_matching_gifts_employer_data($syncBatchSize);
-
-  if ($syncResult['count'] > 0) {
-    // the sync pulled down new data so let's export the new employer data
-    $newExportFilePath = TEMP_EXPORT_PATH . DIRECTORY_SEPARATOR . 'employers-' . UtcDate::getUtcDatabaseString() . '.csv';
-    generate_new_export($newExportFilePath);
-
-    $currentEmployerFilePath = \Civi::settings()->get('matching_gifts_employer_data_file_path');
-    // now lets compare the new employer data against our current version
-    // and overwrite the current verson if we find employer updates in the new export
-    if (new_export_contains_updates(
-      $newExportFilePath,
-      $currentEmployerFilePath
-    )) {
-      update_matching_gifts_employer_data(
-        $newExportFilePath,
-        $currentEmployerFilePath
-      );
-      send_matching_gifts_update_email($currentEmployerFilePath);
-    }
-    else {
-      // clean up our new data file if there are no updates to employer data
-      unlink($newExportFilePath);
-      \Civi::log('wmf')->info(
-        'civicrm_matching_gifts_employers_check: Removing new employers data file. No employer updates found'
-      );
-    }
-  }
+  \Civi\Api4\MatchingGift::verifyEmployerFile(FALSE)
+    ->setLimit($syncBatchSize)
+    ->execute();
 
   drush_print('Matching Gifts employers data check complete');
 }
