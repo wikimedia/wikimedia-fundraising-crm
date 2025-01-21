@@ -28,7 +28,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  public function processMessage($message): void {
+  public function processMessage(array $message): void {
     // Sanity checking :)
     $required_fields = [
       "gateway_parent_id",
@@ -45,7 +45,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       }
     }
     $messageObject = new RefundMessage($message);
-    $contributionStatus = $this->mapRefundTypeToContributionStatus($message['type']);
+    $contributionStatus = $messageObject->getContributionStatus();
     $gateway = $message['gateway'];
     $parentTxn = $message['gateway_parent_id'];
     $refundTxn = isset($message['gateway_refund_id']) ? $message['gateway_refund_id'] : NULL;
@@ -103,7 +103,9 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       // Perform the refund!
       try {
         \Civi::log('wmf')->info('refund {log_id}: Marking as refunded', $context);
-        $this->markRefund($originalContribution['id'], $contributionStatus, $message['date'],
+        $this->markRefund(
+          $originalContribution['id'],
+          $messageObject,
           $refundTxn,
           $message['gross_currency'],
           $message['gross']
@@ -151,20 +153,17 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
 
   /**
    * @param int $contribution_id
-   * @param string $contribution_status
-   *   'Refunded'|'Chargeback' - this will determine the new contribution status.
-   * @param null $refund_date
-   * @param null $refund_gateway_txn_id
-   * @param null $refund_currency
+   * @param \Civi\WMFQueueMessage\RefundMessage $messageObject
+   * @param string|null $refund_gateway_txn_id
+   * @param string|null $refund_currency
    *   If provided this will be checked against the original contribution and an
    *   exception will be thrown on mismatch.
-   * @param null $refund_amount
+   * @param float|null $refund_amount
    *   If provided this will be checked against the original contribution and an
    *   exception will be thrown on mismatch.
    *
-   * @return int
-   *   The refund's contribution id.
    * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
    * @throws \Civi\WMFException\WMFException
    * @todo - fix tests to process via the queue consumer, move this to the queue consumer.
    * Sets the civi records to reflect a contribution refund.
@@ -210,16 +209,14 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * original contribution when it had been zero'd or marked as 'RFD'. This
    * appears to be last used several years ago & this handling has been removed
    * now.
-   *
    */
   private function markRefund(
-    $contribution_id,
-    $contribution_status = 'Refunded',
-    $refund_date = NULL,
-    $refund_gateway_txn_id = NULL,
-    $refund_currency = NULL,
-    $refund_amount = NULL
-  ) {
+    int $contribution_id,
+    RefundMessage $messageObject,
+    ?string $refund_gateway_txn_id,
+    ?string $refund_currency,
+    ?float $refund_amount
+  ): void {
     $amount_scammed = 0;
 
     try {
@@ -263,7 +260,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
               : $contribution['receive_date'])
             ->execute()
             ->first()['amount'], 2);
-          $original_currency = 'USD';
         }
         else {
           throw new WMFException(WMFException::INVALID_MESSAGE, "Refund was in a different currency.  Freaking out.");
@@ -273,19 +269,13 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     else {
       $refund_currency = $original_currency;
     }
-    if ($refund_date === NULL) {
-      $refund_date = time();
-    }
-    elseif (!is_numeric($refund_date)) {
-      $refund_date = wmf_common_date_parse_string($refund_date);
-    }
 
     try {
       civicrm_api3('Contribution', 'create', [
         'id' => $contribution_id,
         'debug' => 1,
-        'contribution_status_id' => $contribution_status,
-        'cancel_date' => wmf_common_date_unix_to_civicrm($refund_date),
+        'contribution_status_id' => $messageObject->getContributionStatus(),
+        'cancel_date' => $messageObject->getDate(),
         'refund_trxn_id' => $refund_gateway_txn_id,
       ]);
     }
@@ -308,20 +298,20 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         $refund_unique_id = $transaction->get_unique_id();
 
         try {
-          Contribution::create(FALSE) ->setValues([
-            'total_amount' => round(
-              (float) ExchangeRate::convert(FALSE)
-                ->setFromCurrency($refund_currency)
-                ->setFromAmount(-$amount_scammed)
-                ->setTimestamp(is_int($refund_date) ? "@$refund_date" : $refund_date)
-                ->execute()
-                ->first()['amount'], 2),
-            // New type?
+          $convertedTotalAmount = ExchangeRate::convert(FALSE)
+            ->setFromCurrency($refund_currency)
+            ->setFromAmount(-$amount_scammed)
+            ->setTimestamp('@' . $messageObject->getTimestamp())
+            ->execute()
+            ->first()['amount'];
+
+          Contribution::create(FALSE)->setValues([
+            'total_amount' => round((float) $convertedTotalAmount, 2),
             'financial_type_id:name' => 'Refund',
             'contact_id' => $contribution['contact_id'],
             'contribution_source' => $refund_currency . " " . (-$amount_scammed),
             'trxn_id' => $refund_unique_id,
-            'receive_date' => date('Y-m-d h:i:s', $refund_date),
+            'receive_date' => $messageObject->getDate(),
             'currency' => 'USD',
             'debug' => 1,
             'contribution_extra.parent_contribution_id' => $contribution_id,
@@ -347,27 +337,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'action' => 'view',
         ], TRUE));
     }
-
-    return $contribution_id;
-  }
-
-  private function getAlternativePaypalGateway($gateway) {
-    return ($gateway == static::PAYPAL_GATEWAY) ? static::PAYPAL_EXPRESS_CHECKOUT_GATEWAY : static::PAYPAL_GATEWAY;
-  }
-
-  private function mapRefundTypeToContributionStatus(string $type): string {
-    $validTypes = [
-      'refund' => 'Refunded',
-      'chargeback' => 'Chargeback',
-      'cancel' => 'Cancelled',
-      'reversal' => 'Chargeback', // from the audit processor
-      'admin_fraud_reversal' => 'Chargeback', // raw IPN code
-    ];
-
-    if (!array_key_exists($type, $validTypes)) {
-      throw new WMFException(WMFException::IMPORT_CONTRIB, "Unknown refund type '{$type}'");
-    }
-    return $validTypes[$type];
   }
 
   /**

@@ -51,8 +51,10 @@ class RecurDonationMessage extends DonationMessage {
     }
     $message['subscr_id'] = $this->getSubscriptionID();
     $message['contribution_recur_id'] = $this->getContributionRecurID();
+    $message['payment_token_id'] = $this->getPaymentTokenID();
+    $message['payment_processor_id'] = $this->getExistingPaymentTokenValue('payment_processor_id');
     if (isset($message['txn_type']) && $message['txn_type'] == 'subscr_failed') {
-      if(empty($message['failure_count'])) {
+      if (empty($message['failure_count'])) {
         $message['failure_count'] = $this->getRecurringFailCount();
       }
     }
@@ -72,7 +74,7 @@ class RecurDonationMessage extends DonationMessage {
           'day',
           'week',
           'month',
-          'year'
+          'year',
         ])) {
         throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency unit: " . $this->getFrequencyUnit());
       }
@@ -228,7 +230,14 @@ class RecurDonationMessage extends DonationMessage {
    * @throws \CRM_Core_Exception
    */
   public function getContactID(): ?int {
-    return $this->getExistingContributionRecurValue('contact_id') ?: parent::getContactID();
+    // We prefer these existing contact look ups over the parent derived one as they would pick up merges better.
+    if ($this->getExistingContributionRecurValue('contact_id')) {
+      return $this->getExistingContributionRecurValue('contact_id');
+    }
+    if ($this->getPaymentTokenID()) {
+      return $this->getExistingPaymentTokenValue('contact_id');
+    }
+    return parent::getContactID();
   }
 
   /**
@@ -321,10 +330,97 @@ class RecurDonationMessage extends DonationMessage {
     return $this->message['cancel_reason'] ?? NULL;
   }
 
+  /**
+   * Get the formatted cancel date.
+   *
+   * @todo Our code has handling for 'cancel' and 'cancel_date'
+   * with slightly different timestamp nuance - this feels like an
+   * error we should fix & consolidate.
+   *
+   * @return string|null
+   * @throws \DateMalformedStringException
+   */
   public function getCancelDate(): ?string {
-    if (empty($this->message['cancel_date'])) {
+    if (!empty($this->message['cancel_date'])) {
+      return date('Y-m-d H:i:s', $this->message['cancel_date']);
+    }
+    if (!empty($this->message['cancel'])) {
+      return $this->parseDateString($this->message['cancel']);
+    }
+    return NULL;
+  }
+
+  /**
+   * Get the start date unix timestamp.
+   *
+   * @return null|int
+   */
+  public function getStartTimeStamp(): ?int {
+    if (!empty($this->message['start_date'])) {
+      return $this->message['start_date'];
+    }
+    return NULL;
+  }
+
+  /**
+   * Get the create date unix timestamp.
+   *
+   * @return null|int
+   */
+  public function getCreateTimeStamp(): ?int {
+    if (!empty($this->message['create_date'])) {
+      return $this->message['create_date'];
+    }
+    return NULL;
+  }
+
+
+  /**
+   * Get the failure_retry_date unix timestamp.
+   *
+   * @return null|int
+   */
+  public function getFailureRetryTimeStamp(): ?int {
+    if (!empty($this->message['failure_retry_date'])) {
+      return $this->message['failure_retry_date'];
+    }
+    return NULL;
+  }
+
+  /**
+   * Get formatted start date.
+   *
+   * @return string|null
+   */
+  public function getStartDate (): ?string {
+    return $this->getStartTimeStamp() ? date('Y-m-d H:i:s', $this->getStartTimeStamp()) : NULL;
+  }
+
+  /**
+   * Get formatted create date.
+   *
+   * @return string|null
+   */
+  public function getCreateDate (): ?string {
+    return $this->getCreateTimeStamp() ? date('Y-m-d H:i:s', $this->getCreateTimeStamp()) : NULL;
+  }
+
+  /**
+   * Get the formatted failure retry date.
+   *
+   * @return string|null
+   */
+  public function getFailureRetryDate(): ?string {
+    return $this->getFailureRetryTimeStamp() ? date('Y-m-d H:i:s', $this->getFailureRetryTimeStamp()) : NULL;
+  }
+
+  public function getInvoiceID(): ?string {
+    $invoiceID = parent::getInvoiceID();
+    if (!$invoiceID) {
       return NULL;
     }
-    return date('Y-m-d H:i:s', $this->message['cancel_date']);
+    // The invoice_id column has a unique constraint.
+    return $invoiceID . '|recur-' . time();
   }
+
 }

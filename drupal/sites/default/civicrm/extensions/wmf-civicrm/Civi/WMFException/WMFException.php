@@ -8,10 +8,6 @@ use Twig\Error\RuntimeError;
 
 class WMFException extends Exception {
 
-  const CIVI_CONFIG = 1;
-
-  const STOMP_BAD_CONNECTION = 2;
-
   const INVALID_MESSAGE = 3;
 
   const INVALID_RECURRING = 4;
@@ -35,8 +31,6 @@ class WMFException extends Exception {
   const UNSUBSCRIBE = 13;
 
   const MISSING_PREDECESSOR = 14;
-
-  const FILE_NOT_FOUND = 15;
 
   const INVALID_FILE_FORMAT = 16;
 
@@ -73,12 +67,6 @@ class WMFException extends Exception {
    * @var array
    */
   static $error_types = [
-    self::CIVI_CONFIG => [
-      'fatal' => TRUE,
-    ],
-    self::STOMP_BAD_CONNECTION => [
-      'fatal' => TRUE,
-    ],
     self::INVALID_MESSAGE => [
       'reject' => TRUE,
     ],
@@ -126,10 +114,6 @@ class WMFException extends Exception {
       'no-email' => TRUE,
     ],
 
-    // other errors
-    self::FILE_NOT_FOUND => [
-      'fatal' => TRUE,
-    ],
     self::INVALID_FILE_FORMAT => [
       'fatal' => TRUE,
     ],

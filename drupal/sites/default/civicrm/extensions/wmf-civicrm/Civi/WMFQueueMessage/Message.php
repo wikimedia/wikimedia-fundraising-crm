@@ -185,13 +185,52 @@ class Message {
       ->first()['amount'];
   }
 
+
   /**
    * Get the time stamp for the message.
    *
    * @return int
    */
   public function getTimestamp(): int {
-    return time();
+    $date = $this->message['date'] ?? NULL;
+    if (is_numeric($date)) {
+      return $date;
+    }
+    if (!$date) {
+      // Fall back to now.
+      return time();
+    }
+    try {
+      // Convert strings to Unix timestamps.
+      return $this->parseDateString($date);
+    }
+    catch (\Exception $e) {
+      \Civi::log('wmf')->debug('wmf_civicrm: Could not parse date: {date} from {id}', [
+        'date' => $this->message['date'],
+        'id' => $this->message['contribution_tracking_id'],
+      ]);
+      // Fall back to now.
+      return time();
+    }
+  }
+
+  public function getDate(): string {
+    return date('Y-m-d H:i:s', $this->getTimestamp());
+  }
+
+  /**
+   * Run strtotime in UTC
+   *
+   * @param string $date Random date format you hope is parseable by PHP, and is
+   * in UTC.
+   *
+   * @return int Seconds since Unix epoch
+   * @throws \DateMalformedStringException
+   */
+  protected function parseDateString(string $date): int {
+    // Funky hack to trim decimal timestamp.  More normalizations may follow.
+    $text = preg_replace('/^(@\d+)\.\d+$/', '$1', $date);
+    return (new \DateTime($text, new \DateTimeZone('UTC')))->getTimestamp();
   }
 
   public function isAmazon(): bool {

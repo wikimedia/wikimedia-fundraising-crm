@@ -4,17 +4,24 @@ namespace Civi\WMFQueue;
 
 use Civi;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFContact;
 use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\Core\UtcDate;
 use Civi\WMFTransaction;
+use Civi\WMFException\WMFException;
 
 class UpiDonationsQueueConsumer extends QueueConsumer {
 
-  public function processMessage(array $message) {
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  public function processMessage(array $message): void {
     $messageObject = new RecurDonationMessage($message);
     // Look up contribution_recur record
     $contributionRecur = $this->getExistingContributionRecur($message, $messageObject);
@@ -75,6 +82,9 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
     }
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   protected function refundPayment($refundMessage): array {
     $result = civicrm_api3('PaymentProcessor', 'refund', $refundMessage);
     return $result['values'][0];
@@ -119,13 +129,13 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
    * Insert a new contribution_recur record, payment_token record, and if
    * necessary a new contact record.
    *
-   * @param RecurDonationMessage $recurMessage
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $recurMessage
    *
    * @return int the resulting contribution_recur record's ID
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  protected function insertContributionRecur($recurMessage): int {
+  protected function insertContributionRecur(RecurDonationMessage $recurMessage): int {
 
     $normalized = $recurMessage->normalize();
     $normalized = $this->addContributionTrackingIfMissing($normalized);
@@ -137,15 +147,24 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
       ->execute()->first();
 
     // Create a token
-    $paymentToken = wmf_civicrm_recur_payment_token_create(
-      $contact['id'], $normalized['gateway'], $normalized['recurring_payment_token'], $normalized['user_ip']
-    );
+    try {
+      $paymentToken = PaymentToken::create(FALSE)
+        ->setValues([
+          'contact_id' => $contact['id'],
+          'payment_processor_id.name' => $normalized['gateway'],
+          'token' => $normalized['recurring_payment_token'],
+          'ip_address' => $normalized['user_ip'],
+        ])->execute()->first();
+    }
+    catch (\CRM_Core_Exception $e) {
+      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
+    }
 
     // Create the recurring record
     $params = [
       'amount' => $normalized['original_gross'],
       'contact_id' => $contact['id'],
-      'create_date' => UtcDate::getUtcDatabaseString($normalized['date']),
+      'create_date' => $recurMessage->getDate(),
       'currency' => $normalized['original_currency'],
       'cycle_day' => date('j', $normalized['date']),
       'financial_type_id' => 'Cash',
@@ -156,7 +175,7 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
       'payment_processor_id' => PaymentProcessor::getPaymentProcessorID($normalized['gateway']),
       'payment_token_id' => $paymentToken['id'],
       'processor_id' => $normalized['gateway_txn_id'],
-      'start_date' => UtcDate::getUtcDatabaseString($normalized['date']),
+      'start_date' => $recurMessage->getDate(),
       'trxn_id' => WMFTransaction::from_message($normalized)->get_unique_id(),
     ];
 
@@ -169,15 +188,15 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
   }
 
   /**
-   * @param $id
+   * @param int $id
    *
-   * @return array|int
+   * @return array
    * @throws \CRM_Core_Exception
    */
-  protected function cancelRecurringContribution($id) {
+  protected function cancelRecurringContribution(int $id): array {
     $params['id'] = $id;
     $params['contribution_status_id'] = 'Cancelled';
-    $params['cancel_date'] = UtcDate::getUtcDatabaseString();
+    $params['cancel_date'] = 'now';
     $params['cancel_reason'] = 'Subscription cancelled at gateway';
     return civicrm_api3('ContributionRecur', 'create', $params);
   }

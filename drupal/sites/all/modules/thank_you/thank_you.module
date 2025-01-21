@@ -1,38 +1,25 @@
 <?php
 
 use Civi\Api4\ThankYou;
-use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
 use Civi\WMFTransaction;
 use SmashPig\Core\UtcDate;
 
-// TODO:
-// * use more exceptions in place of logging/return false
-// * encapsulate template params structure and validation
-// * implement 'specials' contingency passthru
-// * reconsider need for twig extensions, we already do calculated values
-// * give template fragments a named key rather than using integers
-
 // FIXME: this constant is for test code
 const DUMB_BIG_TY_DAYS = 100000;
 const MAX_RENDER_ATTEMPTS = 3;
 
 /**
- * Send a TY letter, and do bookkeeping on the Civi records
- * TODO: rewrite the civi api stuff to work like other code
- *
+ * Retrieve full contribution and contact record for mailing
  * @param int $contribution_id
- *
- * @param bool $manualSend
- *   Manual send functions as an override -ignoring the time limit, previous thank yous and no_thankyou reason.
- *
- * @return bool
- * @throws \CRM_Core_Exception
+ * @param string $giftTable
+ * @param string $stockTable
  * @throws \Civi\WMFException\WMFException
+ * @return array
  */
-function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $template = NULL) {
+function get_mailing_data(int $contribution_id): array {
   if (!isset(Civi::$statics['thank_you']['giftTableName'])) {
     Civi::$statics['thank_you']['giftTableName'] = civicrm_api3('CustomGroup', 'getvalue', [
       'name' => 'Gift_Data',
@@ -50,48 +37,49 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
   \Civi::log('wmf')->info(
     'thank_you: Selecting data for TY mail'
   );
+
   $mailingData = CRM_Core_DAO::executeQuery("
-		SELECT
-			cntr.id AS contribution_id,
-			cntr.currency,
-			cntr.receive_date,
-			cntr.thankyou_date,
-			cntr.total_amount,
-			cntr.trxn_id,
-			cntr.payment_instrument_id,
-			cntc.id AS contact_id,
-			cntc.display_name,
-			cntc.first_name,
-			cntc.last_name,
-			cntc.organization_name,
-			cntc.contact_type,
-			cntc.email_greeting_display,
-			cntc.preferred_language,
-			f.name AS financial_type,
-			e.email,
-			x.gateway,
-			x.no_thank_you,
-			x.original_amount,
-			x.original_currency,
-			x.source_type,
-			g.campaign AS gift_source,
-			s.stock_value,
-			s.description_of_stock,
-			s.stock_ticker,
-			s.stock_qty,
-			eci.venmo_user_name,
-			recur.frequency_unit
-		FROM civicrm_contribution cntr
-		INNER JOIN civicrm_contact cntc ON cntr.contact_id = cntc.id
-		LEFT JOIN civicrm_financial_type f ON f.id = cntr.financial_type_id
-		LEFT JOIN civicrm_email e ON e.contact_id = cntc.id AND e.is_primary = 1
-		LEFT JOIN civicrm_contribution_recur recur ON cntr.contribution_recur_id = recur.id
-		INNER JOIN wmf_contribution_extra x ON cntr.id = x.entity_id
-		LEFT JOIN $giftTable g ON cntr.id = g.entity_id
-		LEFT JOIN $stockTable s ON cntr.id = s.entity_id
-		LEFT JOIN wmf_external_contact_identifiers eci ON cntr.contact_id = eci.entity_id
-		WHERE cntr.id = %1
-	", [
+    SELECT
+      cntr.id AS contribution_id,
+      cntr.currency,
+      cntr.receive_date,
+      cntr.thankyou_date,
+      cntr.total_amount,
+      cntr.trxn_id,
+      cntr.payment_instrument_id,
+      cntc.id AS contact_id,
+      cntc.display_name,
+      cntc.first_name,
+      cntc.last_name,
+      cntc.organization_name,
+      cntc.contact_type,
+      cntc.email_greeting_display,
+      cntc.preferred_language,
+      f.name AS financial_type,
+      e.email,
+      x.gateway,
+      x.no_thank_you,
+      x.original_amount,
+      x.original_currency,
+      x.source_type,
+      g.campaign AS gift_source,
+      s.stock_value,
+      s.description_of_stock,
+      s.stock_ticker,
+      s.stock_qty,
+      eci.venmo_user_name,
+      recur.frequency_unit
+    FROM civicrm_contribution cntr
+    INNER JOIN civicrm_contact cntc ON cntr.contact_id = cntc.id
+    LEFT JOIN civicrm_financial_type f ON f.id = cntr.financial_type_id
+    LEFT JOIN civicrm_email e ON e.contact_id = cntc.id AND e.is_primary = 1
+    LEFT JOIN civicrm_contribution_recur recur ON cntr.contribution_recur_id = recur.id
+    INNER JOIN wmf_contribution_extra x ON cntr.id = x.entity_id
+    LEFT JOIN $giftTable g ON cntr.id = g.entity_id
+    LEFT JOIN $stockTable s ON cntr.id = s.entity_id
+    LEFT JOIN wmf_external_contact_identifiers eci ON cntr.contact_id = eci.entity_id
+    WHERE cntr.id = %1
+  ", [
     1 => [
       $contribution_id,
       'Int',
@@ -105,16 +93,30 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     $msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r($mailingData, TRUE) . '</pre>';
     throw new WMFException(WMFException::GET_CONTRIBUTION, $msg);
   }
-  $mailingData = $mailingData->toArray();
+  return $mailingData->toArray();
+}
 
+/**
+ * Send a TY letter, and do bookkeeping on the Civi records
+ * TODO: rewrite the civi api stuff to work like other code
+ *
+ * @param int $contribution_id
+ *
+ * @return bool
+ * @throws \CRM_Core_Exception
+ * @throws \Civi\WMFException\WMFException
+ */
+function thank_you_for_contribution(int $contribution_id) {
+  // get contact mailing data from records
+  $mailingData = get_mailing_data($contribution_id);
   // don't send a Thank You email if one has already been sent
-  if (!empty($mailingData['thankyou_date']) && !$manualSend) {
+  if (!empty($mailingData['thankyou_date'])) {
     \Civi::log('wmf')->info('thank_you: Thank you email already sent for this transaction.');
     return FALSE;
   }
   // only send a Thank You email if we are within the specified window
   $ageInSeconds = UtcDate::getUtcTimestamp() - UtcDate::getUtcTimestamp($mailingData['receive_date']);
-  if (!$manualSend && $ageInSeconds > 86400 * Civi::settings()->get('thank_you_days')) {
+  if ($ageInSeconds > 86400 * Civi::settings()->get('thank_you_days')) {
     \Civi::log('wmf')->info('thank_you: Contribution is older than limit, ignoring.');
     return FALSE;
   }
@@ -129,7 +131,7 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     return FALSE;
   }
 
-  if (!$manualSend && $mailingData['no_thank_you']) {
+  if ($mailingData['no_thank_you']) {
     \Civi::log('wmf')->info('thank_you: Contribution has been marked no_thank_you={no_thank_you_reason}, skipping.', ['no_thank_you_reason' => $mailingData['no_thank_you']]);
     return FALSE;
   }
@@ -159,13 +161,11 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
   }
 
   // Select the email template
-  if (!$template) {
-    if ($mailingData['financial_type'] === 'Endowment Gift') {
-      $template = 'endowment_thank_you';
-    }
-    else {
-      $template = 'thank_you';
-    }
+  if ($mailingData['financial_type'] === 'Endowment Gift') {
+    $template = 'endowment_thank_you';
+  }
+  else {
+    $template = 'thank_you';
   }
 
   $params = [
@@ -179,89 +179,26 @@ function thank_you_for_contribution($contribution_id, $manualSend = FALSE, $temp
     'email_greeting_display' => $mailingData['email_greeting_display'],
     'frequency_unit' => $mailingData['frequency_unit'],
     'language' => $mailingData['preferred_language'] ?: 'en_US',
-    'name' => $mailingData['display_name'],
     'receive_date' => $mailingData['receive_date'],
     'recipient_address' => $mailingData['email'],
     'recurring' => $is_recurring,
     'transaction_id' => "CNTCT-{$mailingData['contact_id']}",
     // shown in the body of the text
-    'contribution_id' => $contribution_id,
-    // used for the bounce header
-    'template' => $template,
     'gift_source' => $mailingData['gift_source'],
     'stock_value' => $mailingData['stock_value'],
     'stock_ticker' => $mailingData['stock_ticker'],
     'stock_qty' => $mailingData['stock_qty'],
     'description_of_stock' => $mailingData['description_of_stock'],
   ];
-  // if this transaction is braintree venmo, add template var venmo_user_name for additional reference
-  if ( $mailingData['gateway'] === 'braintree' && 'Venmo' === CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $mailingData['payment_instrument_id']) ) {
+
+  if (!empty($mailingData['venmo_user_name'])) {
     $params['venmo_user_name'] = $mailingData['venmo_user_name'];
   }
+
   \Civi::log('wmf')->info('thank_you: Calling thank_you_send_mail');
-  $success = thank_you_send_mail($params);
-  $counter = Queue2civicrmTrxnCounter::instance();
 
-  if ($success) {
-    \Civi::log('wmf')->info('thank_you: Thank you mail sent successfully to contact_id {contact_id} for contribution id: {contribution_id} to {recipient_address}', [
-      'contact_id' => $mailingData['contact_id'],
-      'contribution_id' => $contribution_id,
-      'recipient_address' => $params['recipient_address'],
-    ]);
-    thank_you_update_ty_date($mailingData);
-    $counter->increment($mailingData['gateway']);
-    if ($mailingData['source_type'] === 'payments') {
-      $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
-    }
-    return TRUE;
-  }
-  else {
-    $msg = "Thank you mail failed for contribution id: $contribution_id to " . $params['recipient_address'];
-    throw new WMFException(WMFException::BAD_EMAIL, $msg);
-  }
-}
-
-function thank_you_update_ty_date($contribution) {
-  $date = wmf_common_date_unix_to_civicrm(time());
-  \Civi::log('wmf')->info('thank_you: Updating TY send date to: {date}', ['date' => $date]);
-
-  // We go directly to the database table here to avoid setting off a cascade
-  // of line item updates and recalculations.
-  $query = 'UPDATE civicrm_contribution
-		SET thankyou_date = %1
-		WHERE id = %2';
-
-  try {
-    CRM_Core_DAO::executeQuery($query, [
-      1 => [$date, 'String'],
-      2 => [$contribution['contribution_id'], 'Integer'],
-    ]);
-    return TRUE;
-  }
-  catch (Exception $ex) {
-    \Civi::log('wmf')->error('thank_you: Updating successful TY send failed with details: {message}', ['message' => $ex->getMessage()]);
-  }
-  return FALSE;
-}
-
-/**
- * Just send the letter
- *
- * @param array $params
- *
- * @deprecated we can start to move to calling the send api directly.
- *
- * @return bool
- * @throws \Civi\WMFException\WMFException
- * @throws \Exception
- */
-function thank_you_send_mail($params) {
-  $templateName = $params['template'];
-  $displayName = $params['name'];
-  unset($params['template'], $params['name']);
   $require_params = [
     'amount',
-    'contribution_id',
     'currency',
     'receive_date',
     'recipient_address',
@@ -279,14 +216,25 @@ function thank_you_send_mail($params) {
     $as_list = implode(', ', $missing);
     \Civi::log('wmf')->error('thank_you: Missing stuff from the TY params: {missing} {params}', ['missing' => $missing, 'params' => $params]);
     $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
+    // Actually using WMFException only actually is better than CRM_Core_Exception in queue processing context (sometimes).
     throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
   }
-  return ThankYou::send(FALSE)
-    ->setDisplayName($displayName)
+  $success = ThankYou::send(FALSE)
+    ->setDisplayName($mailingData['display_name'])
     ->setLanguage($params['language'])
-    ->setTemplateName($templateName)
+    ->setTemplateName($template)
     ->setParameters($params)
+    ->setContributionID($contribution_id)
     ->execute()->first()['is_success'];
+  $counter = Queue2civicrmTrxnCounter::instance();
+
+  if ($success) {
+    $counter->increment($mailingData['gateway']);
+    if ($mailingData['source_type'] === 'payments') {
+      $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
+    }
+    return TRUE;
+  }
 }
 
 /**
@@ -384,6 +332,8 @@ EOT;
       thank_you_for_contribution($contribution->id);
       $consecutiveFailures = 0;
     } catch (WMFException $ex) {
+      // let's get rid of this `gerErrorName()` & move this code towards
+      // working with CRM_Core_Exception & leave the WMF_Exception for the queue processors
       $errName = $ex->getErrorName();
       $noThankYou = "failed: $errName";
 

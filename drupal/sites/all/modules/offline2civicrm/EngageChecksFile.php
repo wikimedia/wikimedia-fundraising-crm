@@ -105,8 +105,8 @@ class EngageChecksFile extends ChecksFile {
       'contact_id.contact_type' => $msg['contact_type'],
       'contact_id.is_deleted' => 0,
       // we need to return the custom field (for now) as a core bug is not adding the table on sort only.
-      'return' => ['contact_id.id', 'contact_id.' . wmf_civicrm_get_custom_field_name('last_donation_date')],
-      'options' => ['sort' => 'contact_id.' . wmf_civicrm_get_custom_field_name('last_donation_date') . ' DESC'],
+      'return' => ['contact_id.id', 'contact_id.' . $this->wmf_civicrm_get_custom_field_name('last_donation_date')],
+      'options' => ['sort' => 'contact_id.' . $this->wmf_civicrm_get_custom_field_name('last_donation_date') . ' DESC'],
     ];
     if ($msg['contact_type'] === 'Individual') {
       if (empty($msg['first_name']) || empty($msg['last_name'])) {
@@ -155,6 +155,20 @@ class EngageChecksFile extends ChecksFile {
     if ($contacts['count']) {
       return $contacts['values'][0]['contact_id.id'];
     }
+  }
+
+
+  /**
+   * @param $field_name
+   * @param null $group_name
+   *
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   * @deprecated - try ot use apiv4 instead.
+   *
+   */
+  private function wmf_civicrm_get_custom_field_name($field_name, $group_name = NULL) {
+    return 'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID($field_name, $group_name);
   }
 
 }

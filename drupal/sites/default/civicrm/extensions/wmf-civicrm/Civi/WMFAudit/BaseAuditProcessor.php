@@ -9,7 +9,6 @@ use Civi\WMFException\WMFException;
 use Civi\WMFTransaction;
 
 abstract class BaseAuditProcessor {
-
   /**
    * @var int
    *   number of days of log to search in before transaction date
@@ -365,7 +364,7 @@ abstract class BaseAuditProcessor {
   protected function get_record_human_date($record) {
     if (array_key_exists('date', $record)) {
       //date format defined in wmf_dates
-      return date(WMF_DATEFORMAT, $record['date']);
+      return date('Ymd', $record['date']);
     }
 
     echo print_r($record, TRUE);
@@ -986,7 +985,7 @@ abstract class BaseAuditProcessor {
    *
    * @return array
    */
-  private function getContributionTrackingData($record) {
+  private function getContributionTrackingData($record): array {
 
     $contributionTrackingId = $record['contribution_tracking_id'];
     $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $contributionTrackingId)->execute()->first();
@@ -999,9 +998,7 @@ abstract class BaseAuditProcessor {
         'utm_medium' => 'audit',
         'utm_source' => "audit..$paymentMethod",
         'payment_method' => $paymentMethod,
-        'ts' => wmf_common_date_unix_to_sql(
-          $record['date'] ?? time()
-        ),
+        'tracking_date' => date('Y-m-d H:i:s', $record['date'] ?? time()),
         'language' => $record['language'] ?? NULL,
         'country' => $record['country'] ?? NULL,
       ];
@@ -1027,7 +1024,7 @@ abstract class BaseAuditProcessor {
     }
 
     // The audit is expecting a date in Unix timestamp format
-    $result['date'] = strtotime($result['tracking_date']);
+    $result['date'] = strtotime($result['tracking_date'] ?? 'now');
 
     $keep = [
       'utm_source',
@@ -1625,50 +1622,16 @@ abstract class BaseAuditProcessor {
     return $records;
   }
 
-  protected function getGatewayIdFromTracking($record = []) {
-    $tracking = wmf_civicrm_get_contribution_tracking($record);
-    if (empty($tracking['contribution_id'])) {
-      return NULL;
-    }
-    $contributions = $this->getContributionExtra(
-      $tracking['contribution_id']
-    );
-    if (empty($contributions)) {
-      return NULL;
-    }
-    return $contributions[0]['gateway_txn_id'];
-  }
-
   /**
-   * Pulls all records in the wmf_contribution_extras table that match the civicrm
-   * contribution id.
-   *
-   * @deprecated - this is a really laborious way to load
-   * a record just to get a single value - fold into parent
-   * as an api call.
-   *
-   * @param string $contribution_id
-   *
-   * @return mixed array of result rows, or false if none present.
-   * @throws \Civi\WMFException\WMFException
+   * @throws \CRM_Core_Exception
    */
-  private function getContributionExtra($contribution_id) {
-    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
-		ON cc.id = cx.entity_id
-		WHERE cc.id = %1";
-
-    $dao = \CRM_Core_DAO::executeQuery($query, [
-      1 => [$contribution_id, 'Integer'],
-    ]);
-    $result = [];
-    while ($dao->fetch()) {
-      $result[] = $dao->toArray();
-    }
-    // FIXME: pick wart
-    if (empty($result)) {
-      return FALSE;
-    }
-    return $result;
+  protected function getGatewayIdFromTracking(int $contributionTrackingID) {
+    $tracking = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $contributionTrackingID)
+      ->addSelect('contribution_id.contribution_extra.gateway_txn_id')
+      ->execute()
+      ->first();
+    return $tracking ? $tracking['contribution_id.contribution_extra.gateway_txn_id'] : NULL;
   }
 
   /**
@@ -1727,8 +1690,8 @@ abstract class BaseAuditProcessor {
    * @return array all date strings between the $start and $end values
    */
   private function wmf_common_date_get_date_gap($start, $end) {
-    $startdate = date_create_from_format(WMF_DATEFORMAT, (string) $start);
-    $enddate = date_create_from_format(WMF_DATEFORMAT, (string) $end);
+    $startdate = date_create_from_format('Ymd', (string) $start);
+    $enddate = date_create_from_format('Ymd', (string) $end);
 
     $next = $startdate;
     $interval = new \DateInterval('P1D');
@@ -1750,10 +1713,10 @@ abstract class BaseAuditProcessor {
    */
   private function wmf_common_date_format_string($date) {
     if (is_numeric($date)) {
-      return date(WMF_DATEFORMAT, $date);
+      return date('Ymd', $date);
     }
     elseif (is_object($date)) {
-      return date_format($date, WMF_DATEFORMAT);
+      return date_format($date, 'Ymd');
     }
   }
 
@@ -1763,13 +1726,13 @@ abstract class BaseAuditProcessor {
    * @param string $date Date in a format that date_create recognizes.
    * @param int $add Number of days to add
    *
-   * @return string|false Date in WMF_DATEFORMAT
+   * @return string|false Date in 'Ymd'
    */
   private function dateAddDays($date, $add) {
     $date = date_create($date);
     date_add($date, date_interval_create_from_date_string("$add days"));
 
-    return date_format($date, WMF_DATEFORMAT);
+    return date_format($date, 'Ymd');
   }
 
 

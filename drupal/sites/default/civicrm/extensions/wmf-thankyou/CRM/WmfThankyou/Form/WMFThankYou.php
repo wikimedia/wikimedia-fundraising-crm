@@ -119,7 +119,10 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
    */
   public function postProcess(): void {
     try {
-      civicrm_api3('Thankyou', 'send', ['contribution_id' => CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this), 'template' => $this->getSubmittedValue('template')]);
+      ThankYou::send(FALSE)
+        ->setContributionID(CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this))
+        ->setTemplateName($this->getTemplateName())
+        ->execute();
       CRM_Core_Session::setStatus('Message sent', E::ts('Thank you Sent'), 'success');
     }
     catch (CRM_Core_Exception $e) {

@@ -6,6 +6,8 @@ use Civi;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
+use Civi\Api4\PaymentToken;
+use Civi\Api4\ThankYou;
 use Civi\Api4\WMFContact;
 use Civi\Core\Exception\DBQueryException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
@@ -129,19 +131,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $startMessage = [
         'txn_type' => 'subscr_signup',
         ] + $msg;
-      $this->importSubscriptionSignup($startMessage);
-      // @todo we shouldn't need this check - the sign up processing should
-      // fail it if ... fails & the lookup happens in the donations queue anyway
-      // (which would also fail if it needed to).
-      $recur_record = wmf_civicrm_get_gateway_subscription($msg['gateway'], $msg['subscr_id']);
-      if (!$recur_record) {
-        Civi::log('wmf')->notice('recurring: Fallback contribution_recur record creation failed.');
-        throw new WMFException(
-          WMFException::IMPORT_SUBSCRIPTION,
-          "Could not create the initial recurring record for subscr_id {$msg['subscr_id']}"
-        );
-      }
-      $message->setContributionRecurID($recur_record->id);
+      $this->importSubscriptionSignup($message, $startMessage);
     }
     if (!$message->getContributionRecurID()) {
       Civi::log('wmf')->notice('recurring: Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
@@ -199,7 +189,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   protected function importSubscriptionAccount(RecurDonationMessage $message, $msg) {
     switch ($msg['txn_type']) {
       case 'subscr_signup':
-        $this->importSubscriptionSignup($msg);
+        $this->importSubscriptionSignup($message, $msg);
         break;
 
       case 'subscr_cancel':
@@ -214,7 +204,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         throw new \CRM_Core_Exception('unexpected subscr_modify message');
 
       case 'subscr_failed':
-        $this->importSubscriptionPaymentFailed($msg);
+        $this->importSubscriptionPaymentFailed($message, $msg);
         break;
 
       default:
@@ -259,12 +249,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       // if we still don't have a contribution tracking id (but we do have previous contributions),
       // we're gonna have to add new contribution tracking.
       if ($contribution_id && !$contribution_tracking_id) {
-        $rawDate = empty($msg['payment_date']) ? $msg['date'] : $msg['payment_date'];
-        $date = wmf_common_date_unix_to_sql(strtotime($rawDate));
         $tracking = [
-          'utm_source' => '..rpp', // FIXME: recurring donations are not all paypal
           'utm_medium' => 'civicrm',
-          'ts' => $date,
+          'tracking_date' => empty($msg['payment_date']) ? $msg['date'] : $msg['payment_date'],
           'contribution_id' => $contribution_id,
         ];
         $contribution_tracking_id = $this->generateContributionTracking($tracking);
@@ -281,9 +268,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Import a subscription signup message
    *
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
    * @param array $msg
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \Civi\WMFException\WMFException
    */
-  protected function importSubscriptionSignup($msg) {
+  protected function importSubscriptionSignup(RecurDonationMessage $message, array $msg): void {
     $contact = NULL;
     // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
     if (!empty($msg['contribution_recur_id'])) {
@@ -325,12 +317,12 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'payment_instrument_id' => $msg['payment_instrument_id'] ?? NULL,
         // Set installments to 0 - they should all be open ended
         'installments' => 0,
-        'start_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
-        'create_date' => wmf_common_date_unix_to_civicrm($msg['create_date']),
+        'start_date' => $message->getStartDate(),
+        'create_date' => $message->getCreateDate(),
         'trxn_id' => $msg['subscr_id'],
         'financial_type_id:name' => 'Cash',
-        'next_sched_contribution_date' => wmf_common_date_unix_to_civicrm($msg['start_date']),
-        'cycle_day' => date('j', strtotime(wmf_common_date_unix_to_civicrm($msg['start_date']))),
+        'next_sched_contribution_date' => $message->getStartDate(),
+        'cycle_day' => date('j', strtotime($message->getStartDate())),
       ];
       if (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {
         // We could pass the gateway name to the api for resolution but it would reject
@@ -345,11 +337,15 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         }
 
         // Create a token
-        $payment_token_result = wmf_civicrm_recur_payment_token_create(
-          $contactId, $msg['gateway'], $msg['recurring_payment_token'], $msg['user_ip']
-        );
-        // Set up the params to have the token
-        $params['payment_token_id'] = $payment_token_result['id'];
+        $params['payment_token_id'] = PaymentToken::create(FALSE)
+          ->setValues([
+            'contact_id' => $contactId,
+            'payment_processor_id.name' => $msg['gateway'],
+            'token' => $msg['recurring_payment_token'],
+            'ip_address' => $msg['user_ip'],
+          ]
+          )->execute()->first()['id'];
+
         // Create a non paypal style trxn_id
         $params['trxn_id'] = WMFTransaction::from_message($msg)
           ->get_unique_id();
@@ -370,6 +366,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       }
 
       $newContributionRecur = $this->createContributionRecurWithErrorHandling($params);
+      $message->setContributionRecurID($newContributionRecur['id']);
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
@@ -434,6 +431,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
   protected function sendSuccessThankYouMail($contributionRecur, $ctRecord, $msg, $contactId, $contact) {
     // Send an email that the recurring donation has been created
+    // @todo - it' not clear that there is any benefit in loading the contact
+    // here as it will be loaded in the ThankYou.send if not present.
     if (isset($msg['recurring_payment_token']) && isset($contributionRecur['id'])) {
       // Get the contact information if not already there
       if (empty($contact)) {
@@ -453,7 +452,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $locale = strtolower(substr($locale, 0, 2));
 
       // Using the same params sent through in thank_you.module thank_you_for_contribution
-      $template = 'monthly_convert';
       $start_date = $contributionRecur['start_date'];
 
       // Get the day of the month
@@ -466,7 +464,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $day_of_month = $ordinal->format($day_of_month);
 
       $params = [
-        'template' => $template,
         'amount' => $msg['original_gross'],
         'contact_id' => $contactId,
         'currency' => $msg['original_currency'],
@@ -478,7 +475,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'locale' => $locale,
         // Preferred language is as stored in the civicrm database - eg. 'en_US'.
         'language' => $contact['preferred_language'],
-        'name' => $contact['display_name'],
         'receive_date' => $start_date,
         'day_of_month' => $day_of_month,
         'recipient_address' => $contact['email'],
@@ -488,7 +484,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'contribution_id' => $ctRecord['contribution_id'],
       ];
 
-      $success = thank_you_send_mail($params);
+      $success = ThankYou::send(FALSE)
+        ->setDisplayName($contact['display_name'])
+        ->setLanguage($params['language'])
+        ->setTemplateName('monthly_convert')
+        ->setContributionID($ctRecord['contribution_id'])
+        ->setParameters($params)
+        ->execute()->first()['is_success'];
+
       $context = [
         'contribution_recur_id' => $contributionRecur['id'],
         'recipient_address' => $params['recipient_address'],
@@ -600,11 +603,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Process failed subscription payment
    *
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
    * @param array $msg
    *
+   * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
+   * @throws \DateMalformedStringException
    */
-  protected function importSubscriptionPaymentFailed($msg) {
+  protected function importSubscriptionPaymentFailed(RecurDonationMessage $message, array $msg): void {
     // ensure we have a record of the subscription
     if (empty($msg['contribution_recur_id'])) {
       // PayPal has recently been sending lots of invalid cancel and fail notifications
@@ -634,8 +640,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $updateParams['contribution_status_id:name'] = 'Failing';
     }
 
-    if (!empty($msg['failure_retry_date'])) {
-      $updateParams['failure_retry_date'] = wmf_common_date_unix_to_civicrm($msg['failure_retry_date']);
+    if ($message->getFailureRetryDate()) {
+      $updateParams['failure_retry_date'] = $message->getFailureRetryDate();
     }
 
     try {

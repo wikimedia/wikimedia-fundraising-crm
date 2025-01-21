@@ -71,34 +71,6 @@ class DonationMessage extends Message {
   }
 
   /**
-   * Get the time stamp for the message.
-   *
-   * @return int
-   */
-  public function getTimestamp(): int {
-    $date = $this->message['date'] ?? NULL;
-    if (is_numeric($date)) {
-      return $date;
-    }
-    if (!$date) {
-      // Fall back to now.
-      return time();
-    }
-    try {
-      // Convert strings to Unix timestamps.
-      return $this->parseDateString($date);
-    }
-    catch (\Exception $e) {
-      \Civi::log('wmf')->debug('wmf_civicrm: Could not parse date: {date} from {id}', [
-        'date' => $this->message['date'],
-        'id' => $this->message['contribution_tracking_id'],
-      ]);
-      // Fall back to now.
-      return time();
-    }
-  }
-
-  /**
    * Normalize the queued message
    *
    * The goal is to break this up into multiple functions (mostly of the
@@ -144,7 +116,7 @@ class DonationMessage extends Message {
     }
     $msg['payment_instrument_id'] = $this->getPaymentInstrumentID();
     $msg['date'] = $this->getTimestamp();
-    $msg['thankyou_date'] = $this->getThankYouDate();
+    $msg['thankyou_date'] = $this->getThankYouTimestamp();
     $parsed = $this->getParsedName();
     if (!empty($parsed)) {
       $msg = array_merge(array_filter((array) $parsed), $msg);
@@ -390,25 +362,11 @@ class DonationMessage extends Message {
   }
 
   /**
-   * Run strtotime in UTC
+   * Get the unix-style timestamp for the thank you date.
    *
-   * @param string $date Random date format you hope is parseable by PHP, and is
-   * in UTC.
-   *
-   * @return int Seconds since Unix epoch
-   * @throws \Exception
+   * @return int|null
    */
-  private function parseDateString(string $date): ?int {
-    // Funky hack to trim decimal timestamp.  More normalizations may follow.
-    $text = preg_replace('/^(@\d+)\.\d+$/', '$1', $date);
-    return (new \DateTime($text, new \DateTimeZone('UTC')))->getTimestamp();
-  }
-
-  /**
-   *
-   * @return array
-   */
-  public function getThankYouDate(): ?int {
+  public function getThankYouTimestamp(): ?int {
     if (empty($this->message['thankyou_date'])) {
       return NULL;
     }
@@ -425,6 +383,22 @@ class DonationMessage extends Message {
       ]);
     }
     return NULL;
+  }
+
+  /**
+   * Get the date time for the thank you date.
+   *
+   * @return string|null
+   */
+  public function getThankYouDateTime(): ?string {
+    return $this->getThankYouTimestamp() ? date('Y-m-d H:i:s', $this->getThankYouTimestamp()) : NULL;
+  }
+
+  public function getInvoiceID(): ?string {
+    if (!empty($this->message['invoice_id'])) {
+      return (string) $this->message['invoice_id'];
+    }
+    return $this->message['order_id'] ?? NULL;
   }
 
   /**
@@ -570,6 +544,7 @@ class DonationMessage extends Message {
       ->addWhere('payment_processor_id.name', '=', $this->getGateway())
       ->execute()->first();
     if ($paymentToken) {
+      \Civi::log('wmf')->info('wmf_civicrm: Found matching recurring payment token: {token}', ['token' => $this->message['recurring_payment_token']]);
       $this->define('PaymentToken', 'PaymentToken', $paymentToken);
       return $paymentToken['id'];
     }

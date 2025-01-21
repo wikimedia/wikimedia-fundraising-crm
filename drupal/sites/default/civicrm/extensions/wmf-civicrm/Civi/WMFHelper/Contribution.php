@@ -117,7 +117,11 @@ class Contribution {
     $extra = self::getOriginalCurrencyAndAmountFromSource((string) $contribution->source, $contribution->total_amount);
     if ($contributionStatus === 'Completed' && !$isRefund) {
       // This is a 'valid' transaction - it's either the latest or no update is required.
-      if (strtotime($contactLastDonation['date']) === strtotime($contribution->receive_date)) {
+      if (
+        !empty($contactLastDonation['date']) &&
+        !empty($contribution->receive_date) &&
+        strtotime($contactLastDonation['date']) === strtotime($contribution->receive_date)
+      ) {
         if (!empty($extra['original_currency']) && $contactLastDonation['currency'] !== \CRM_Utils_Array::value('original_currency', $extra)) {
           $params[self::api3FieldName('last_donation_currency')] = $extra['original_currency'];
         }
