@@ -47,6 +47,9 @@ class MailFactory {
       return;
     }
     switch ($name) {
+      case 'phpmailer':
+        $this->activeMailer = new MailerPHPMailer();
+        break;
 
       case 'smtp':
         $this->activeMailer = new SMTPMailer();
