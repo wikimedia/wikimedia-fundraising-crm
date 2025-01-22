@@ -4,7 +4,6 @@ use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use SmashPig\Core\UtcDate;
 
-define("TEMP_EXPORT_PATH", "/tmp");
 /**
  * Implementation of hook_drush_command()
  */
@@ -50,33 +49,6 @@ function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
     ->execute();
 
   drush_print('Matching Gifts employers data check complete');
-}
-
-/**
- * Call matching gifts export api action and write file to a tmp location
- *
- * @param string $exportFilePath file path to write export to
- *
- * @throws \CRM_Core_Exception
- * @throws \Civi\WMFException\WMFException
- */
-function generate_new_export($exportFilePath) {
-  $exportParams = [
-    'path' => $exportFilePath,
-  ];
-
-  $exportResult = civicrm_api3('MatchingGiftPolicies', 'Export', $exportParams);
-  if ($exportResult['is_error']) {
-    throw new WMFException(
-      WMFException::MISSING_MANDATORY_DATA,
-      'There was a problem exporting matching gift employers data: ' . $exportResult['error_message']
-    );
-  }
-
-  \Civi::log('wmf')->info(
-    'civicrm_matching_gifts_employers_check: New employers data file created at {path}',
-    ['path' => $exportFilePath]
-  );
 }
 
 /**
