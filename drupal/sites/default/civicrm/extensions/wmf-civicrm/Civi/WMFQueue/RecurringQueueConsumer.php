@@ -307,6 +307,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         }
       }
 
+      $cycle_day = !empty($message->getStartDate()) ? date('j', strtotime($message->getStartDate())) : NULL;
       $params = [
         'contact_id' => $contactId,
         'currency' => $msg['original_currency'],
@@ -322,7 +323,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         'trxn_id' => $msg['subscr_id'],
         'financial_type_id:name' => 'Cash',
         'next_sched_contribution_date' => $message->getStartDate(),
-        'cycle_day' => date('j', strtotime($message->getStartDate())),
+        'cycle_day' => $cycle_day,
       ];
       if (PaymentProcessor::getPaymentProcessorID($msg['gateway'])) {
         // We could pass the gateway name to the api for resolution but it would reject
