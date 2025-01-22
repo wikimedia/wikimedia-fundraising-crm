@@ -185,16 +185,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
     $this->stopTiming('verify_and_stage');
 
-    if ($message->isRecurring() && $message->getContributionRecurID()) {
-      // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
-      if (ContributionRecurHelper::gatewayManagesOwnRecurringSchedule($message->getGateway())) {
-        ContributionRecurHelper::reactivateIfInactive([
-          'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
-          'id' => $message->getContributionRecurID(),
-        ]);
-      }
-    }
-
     $this->startTiming('create_contact');
     $contact = WMFContact::save(FALSE)
       ->setMessage($msg)
@@ -204,6 +194,13 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
 
     // Make new recurring record if necessary
     if ($message->isRecurring()) {
+      if ($message->getContributionRecurID() && ContributionRecurHelper::gatewayManagesOwnRecurringSchedule($message->getGateway())) {
+        // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
+        ContributionRecurHelper::reactivateIfInactive([
+          'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
+          'id' => $message->getContributionRecurID(),
+        ]);
+      }
       if (!$message->getContributionRecurID()) {
         $this->startTiming('message_contribution_recur_insert');
         $this->importContributionRecur($message, $msg, $msg['contact_id']);
