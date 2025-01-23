@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\MatchingGift;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Omnimail\MailFactory;
 
 /**
  * @method int getLimit()
@@ -11,7 +12,9 @@ use Civi\Api4\Generic\Result;
  */
 class VerifyEmployerFile extends AbstractAction {
 
-  protected $newFile;
+  private string $newFile;
+
+  private string $currentFile;
 
   /**
    * Number of employers to process.
@@ -36,23 +39,20 @@ class VerifyEmployerFile extends AbstractAction {
       // the sync pulled down new data so let's export the new employer data
       $this->generateNewExport();
 
-      $currentEmployerFilePath = \Civi::settings()->get('matching_gifts_employer_data_file_path');
       // now lets compare the new employer data against our current version
       // and overwrite the current version if we find employer updates in the new export
-      if ($this->newExportContainsUpdates(
-        $currentEmployerFilePath
-      )) {
-        $this->updateMatchingGiftsEmployerData(
-          $currentEmployerFilePath
-        );
-        send_matching_gifts_update_email($currentEmployerFilePath);
+      if ($this->newExportContainsUpdates()) {
+        $this->updateMatchingGiftsEmployerData();
+        $this->sendUpdateNotification();
+        $result[] = ['is_update' => TRUE];
       }
       else {
         // clean up our new data file if there are no updates to employer data
         unlink($this->getExportFilePath());
-        \Civi::log('wmf')->info(
+        \Civi::log('matching_gifts')->info(
           'civicrm_matching_gifts_employers_check: Removing new employers data file. No employer updates found'
         );
+        $result[] = ['is_update' => FALSE];
       }
     }
   }
@@ -123,15 +123,12 @@ class VerifyEmployerFile extends AbstractAction {
   /**
    * Check for changes between the new and current employer data files.
    *
-   * @param string $currentEmployerFilePath
-   *
    * @return bool
    * @throws \CRM_Core_Exception(
    */
-  private function newExportContainsUpdates(
-    string $currentEmployerFilePath
-  ): bool {
+  private function newExportContainsUpdates(): bool {
     $newEmployerFilePath = $this->getExportFilePath();
+    $currentEmployerFilePath = $this->getCurrentEmployerFilePath();
     $currentFileExists = file_exists($currentEmployerFilePath);
     $newFileExists = file_exists($newEmployerFilePath);
 
@@ -182,11 +179,10 @@ class VerifyEmployerFile extends AbstractAction {
   /**
    * Update the matching gifts employers data file to the newest version and
    * backup the old
-   *
-   * @param string $currentEmployerFilePath
    */
-  private function updateMatchingGiftsEmployerData(string $currentEmployerFilePath): void {
+  private function updateMatchingGiftsEmployerData(): void {
     $newEmployerFilePath = $this->getExportFilePath();
+    $currentEmployerFilePath = $this->getCurrentEmployerFilePath();
     // backup current version if it exists
     // note: this will also remove any previous backup files created.
     if (file_exists($currentEmployerFilePath)) {
@@ -198,6 +194,56 @@ class VerifyEmployerFile extends AbstractAction {
       'civicrm_matching_gifts_employers_check: Latest employers file created at {path}',
       ['path' => $currentEmployerFilePath]
     );
+  }
+
+  /**
+   * @return string
+   */
+  public function getCurrentEmployerFilePath(): string {
+    if (!isset($this->currentFile)) {
+      $this->currentFile = \Civi::settings()->get('matching_gifts_employer_data_file_path');
+    }
+    return $this->currentFile;
+  }
+
+  /**
+   * Email fr-tech about the updated employer data file so that it can be
+   * deployed.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function sendUpdateNotification(): void {
+    $toAddress = \Civi::settings()->get('wmf_matching_gifts_employer_data_update_email');
+    $currentEmployerFilePath = $this->getCurrentEmployerFilePath();
+    // @todo - switch to native civi function - this is not a dependency & is weird.
+    $mailer = MailFactory::singleton()->getMailer();
+    $email['to_address'] = $toAddress;
+    $email['to_name'] = $toAddress;
+    $email['from_address'] = 'fr-tech@wikimedia.org';
+    $email['from_name'] = 'Employer File Updater';
+    $email['subject'] = 'Matching Gifts employer file updated';
+
+    $email['html'] = 'Matching Gifts employer file has been updated: ';
+    $email['html'] .= $currentEmployerFilePath;
+    $email['html'] .= '<br/>You may find it convenient to run updateemployer.sh ';
+    $email['html'] .= 'checked into the /var/lib/git/tools.git repo on the puppetmaster host.<br/>';
+    $email['html'] .= '<a href="https://wikitech.wikimedia.org/wiki/Fundraising/Cluster/Deployments#Matching_gifts_employers_list">';
+    $email['html'] .= 'Deploy instructions</a>';
+
+    try {
+      $mailer->send($email);
+      \Civi::log('matching_gifts')->info(
+        'civicrm_matching_gifts_employers_check: Update notification email sent to {to_address}',
+        ['to_address' => $toAddress]
+      );
+    }
+    catch (\Exception $e) {
+      // something bad happened :(
+      throw new \CRM_Core_Exception(
+        'Error when attempting to send matching gifts update email:  ' . $e->getMessage(
+        )
+      );
+    }
   }
 
 }

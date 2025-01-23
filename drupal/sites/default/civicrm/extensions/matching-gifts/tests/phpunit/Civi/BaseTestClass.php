@@ -19,6 +19,27 @@ class BaseTestClass extends TestCase {
    */
   protected array $requests;
 
+  protected array $originalSettings = [];
+
+  protected function tearDown(): void {
+    foreach ($this->originalSettings as $key => $value) {
+      \Civi::settings()->set($key, $value);
+    }
+    parent::tearDown();
+  }
+
+  protected function setSetting(string $key, $value): void {
+    $this->originalSettings[$key] = \Civi::settings()->get($key);
+    \Civi::settings()->set($key, $value);
+  }
+
+  public function setDataFilePath(): void {
+    $this->setSetting('matching_gifts_employer_data_file_path', sys_get_temp_dir() . '/employers.csv');
+    if (file_exists(sys_get_temp_dir() . '/employers.csv')) {
+      unlink(sys_get_temp_dir() . '/employers.csv');
+    }
+  }
+
   protected function setUpMockResponse(array $responseBodies): void {
     $this->requests = [];
     $history = Middleware::history($this->requests);
