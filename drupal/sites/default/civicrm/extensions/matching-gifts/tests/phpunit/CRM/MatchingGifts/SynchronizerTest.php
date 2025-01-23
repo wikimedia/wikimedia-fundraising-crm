@@ -1,11 +1,12 @@
 <?php
 
 use Civi\Api4\Contact;
+use Civi\BaseTestClass;
 
 /**
  * @group MatchingGifts
  */
-class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
+class CRM_MatchingGifts_SynchronizerTest extends BaseTestClass
   implements \Civi\Test\HeadlessInterface {
 
   /**
@@ -27,7 +28,7 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
       'online_form_url' => 'https://yoyodyne.yourcause.com/auth',
       'minimum_gift_matched_usd' => 25,
       'match_policy_last_updated' => '2019-10-31',
-      'subsidiaries' => '["Yoyodyne Aerospace Company","Yoyodyne Mortgage","Yoyodyne Defense Logistics"]'
+      'subsidiaries' => '["Yoyodyne Aerospace Company","Yoyodyne Mortgage","Yoyodyne Defense Logistics"]',
     ],
     '56780404' => [
       'matching_gifts_provider_id' => '56780404',
@@ -37,7 +38,7 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
       'online_form_url' => 'https://advideamech.benevity.com/',
       'minimum_gift_matched_usd' => 25,
       'match_policy_last_updated' => '2018-01-04',
-      'subsidiaries' => '["Targo Corporation","International Data and Control","Cadenza Industries","Koenig and Strey","Pacific Vista Laboratories","Omnitech"]'
+      'subsidiaries' => '["Targo Corporation","International Data and Control","Cadenza Industries","Koenig and Strey","Pacific Vista Laboratories","Omnitech"]',
     ],
     '75751100' => [
       'matching_gifts_provider_id' => '75751100',
@@ -47,7 +48,7 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
       'online_form_url' => 'https://aperture.benevity.com/',
       'minimum_gift_matched_usd' => 35,
       'match_policy_last_updated' => '2018-08-24',
-      'subsidiaries' => '["Aperture Laboratories","Aperture Fixtures","Aperture Enrichment Centers"]'
+      'subsidiaries' => '["Aperture Laboratories","Aperture Fixtures","Aperture Enrichment Centers"]',
     ]
   ];
 
@@ -69,11 +70,12 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
         $providerCompanyIdFieldId => $companyId,
       ]);
       if ($contacts['count']) {
-        foreach ($contacts['values'] as $id => $contact)
-        civicrm_api3('Contact', 'delete', [
-          'id' => $id,
-          'skip_undelete' => 1,
-        ]);
+        foreach ($contacts['values'] as $id => $contact) {
+          civicrm_api3('Contact', 'delete', [
+            'id' => $id,
+            'skip_undelete' => 1,
+          ]);
+        }
       }
     }
   }
@@ -98,17 +100,17 @@ class CRM_MatchingGifts_SynchronizerTest extends PHPUnit\Framework\TestCase
         '12340000' => [
           'matching_gifts_provider_id' => '12340000',
           'name_from_matching_gift_db' => 'Yoyodyne Corporation',
-          'match_policy_last_updated' => '2019-10-31'
+          'match_policy_last_updated' => '2019-10-31',
         ],
         '56780404' => [
           'matching_gifts_provider_id' => '56780404',
           'name_from_matching_gift_db' => 'Advanced Idea Mechanics',
-          'match_policy_last_updated' => '2018-01-04'
+          'match_policy_last_updated' => '2018-01-04',
         ],
         '75751100' => [
           'matching_gifts_provider_id' => '75751100',
           'name_from_matching_gift_db' => 'Aperture Science, Inc.',
-          'match_policy_last_updated' => '2018-01-04'
+          'match_policy_last_updated' => '2018-01-04',
         ],
     ]);
   }
