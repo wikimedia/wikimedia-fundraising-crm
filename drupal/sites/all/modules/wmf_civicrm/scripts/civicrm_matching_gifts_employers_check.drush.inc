@@ -52,30 +52,6 @@ function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
 }
 
 /**
- * Update the matching gifts employers data file to the newest version and
- * backup the old
- *
- * @param string $newEmployerFilePath
- * @param string $currentEmployerFilePath
- */
-function update_matching_gifts_employer_data(
-  $newEmployerFilePath,
-  $currentEmployerFilePath
-) {
-  // backup current version if it exists
-  // note: this will also remove any previous backup files created.
-  if (file_exists($currentEmployerFilePath)) {
-    rename($currentEmployerFilePath, $currentEmployerFilePath . ".bk");
-  }
-  // update file to latest
-  rename($newEmployerFilePath, $currentEmployerFilePath);
-  \Civi::log('wmf')->info(
-    'civicrm_matching_gifts_employers_check: Latest employers file created at {path}',
-    ['path' => $currentEmployerFilePath]
-  );
-}
-
-/**
  * Email fr-tech about the updated employer data file so that it can be
  * deployed.
  *
