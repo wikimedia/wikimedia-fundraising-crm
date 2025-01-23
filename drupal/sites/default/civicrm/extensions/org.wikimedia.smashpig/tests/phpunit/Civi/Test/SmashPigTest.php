@@ -4,6 +4,7 @@ namespace Civi\Test;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
+use Civi\Helper\SmashPigPaymentError;
 use Psr\Log\LogLevel;
 use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\QueueWrapper;
@@ -1477,6 +1478,40 @@ class SmashPigTest extends SmashPigBaseTestClass {
     );
     $this->assertEquals('3', $newContributionRecur['failure_count']);
   }
+
+  /**
+   * When pulling out the actual error message for the activity
+   * be able to handle weird formatting
+   *
+   */
+  public function testGetErrorMessageText(): void {
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+    );
+
+    $response = (new ApprovePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DECLINED,
+        'No doughnuts for you!',
+        LogLevel::ERROR
+      )
+    )->setSuccessful(FALSE);
+
+    $errorMessageText = SmashPigPaymentError::getErrorText($response);
+    $this->assertEquals('No doughnuts for you!', $errorMessageText);
+
+    $response = (new CreatePaymentResponse())->addErrors(
+      new PaymentError(
+        ErrorCode::DECLINED,
+        'Its broken :(',
+        LogLevel::ERROR
+      )
+    )->setSuccessful(FALSE);
+
+    $errorMessageText = SmashPigPaymentError::getErrorText($response);
+    $this->assertEquals('Its broken :(', $errorMessageText);
+  }
+
 
   /**
    * If the payment processor rejects our attempt because we're repeating the
