@@ -52,68 +52,6 @@ function drush_civicrm_matching_gifts_employers_check($syncBatchSize = 0) {
 }
 
 /**
- * Check for changes between the new and current employer data files.
- *
- * @param string $newEmployerFilePath
- * @param string $currentEmployerFilePath
- *
- * @return bool
- * @throws \Civi\WMFException\WMFException
- */
-function new_export_contains_updates(
-  $newEmployerFilePath,
-  $currentEmployerFilePath
-) {
-  $currentFileExists = file_exists($currentEmployerFilePath);
-  $newFileExists = file_exists($newEmployerFilePath);
-
-  // check if a current version of the data exists
-  if ($currentFileExists) {
-    // check if the new data file also exists
-    if ($newFileExists) {
-      // compare file data
-      if (sha1_file($newEmployerFilePath) !== sha1_file(
-          $currentEmployerFilePath
-        )) {
-        //updates detected
-        \Civi::log('wmf')->info(
-          'civicrm_matching_gifts_employers_check: Changes found in new employer data file'
-        );
-        return TRUE;
-      }
-      else {
-        // no updates found between new and current
-        \Civi::log('wmf')->info(
-          'civicrm_matching_gifts_employers_check: No updates present in new employer file'
-        );
-        return FALSE;
-      }
-    }
-    else {
-      // the new employer data file doesn't exist
-      throw new WMFException(
-        WMFException::MISSING_MANDATORY_DATA,
-        'New employer data file not found ' . $newEmployerFilePath
-      );
-    }
-  }
-  else {
-    // a current file doesn't exist so the new export takes its rightful
-    // place as the current export. It feels proud but is modest with the press.
-    if ($newFileExists) {
-      return TRUE;
-    }
-    else {
-      // we can't find the new or current employer data file!
-      throw new WMFException(
-        WMFException::MISSING_MANDATORY_DATA,
-        'No employer data files found! ' . $newEmployerFilePath . " - " . $currentEmployerFilePath
-      );
-    }
-  }
-}
-
-/**
  * Update the matching gifts employers data file to the newest version and
  * backup the old
  *

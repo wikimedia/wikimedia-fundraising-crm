@@ -39,8 +39,7 @@ class VerifyEmployerFile extends AbstractAction {
       $currentEmployerFilePath = \Civi::settings()->get('matching_gifts_employer_data_file_path');
       // now lets compare the new employer data against our current version
       // and overwrite the current version if we find employer updates in the new export
-      if (new_export_contains_updates(
-        $this->getExportFilePath(),
+      if ($this->newExportContainsUpdates(
         $currentEmployerFilePath
       )) {
         update_matching_gifts_employer_data(
@@ -120,6 +119,65 @@ class VerifyEmployerFile extends AbstractAction {
       $this->newFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'employers-' . date('YmdHis') . '.csv';
     }
     return $this->newFile;
+  }
+
+  /**
+   * Check for changes between the new and current employer data files.
+   *
+   * @param string $currentEmployerFilePath
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception(
+   */
+  private function newExportContainsUpdates(
+    string $currentEmployerFilePath
+  ): bool {
+    $newEmployerFilePath = $this->getExportFilePath();
+    $currentFileExists = file_exists($currentEmployerFilePath);
+    $newFileExists = file_exists($newEmployerFilePath);
+
+    // check if a current version of the data exists
+    if ($currentFileExists) {
+      // check if the new data file also exists
+      if ($newFileExists) {
+        // compare file data
+        if (sha1_file($newEmployerFilePath) !== sha1_file(
+            $currentEmployerFilePath
+          )) {
+          //updates detected
+          \Civi::log('matching_gifts')->info(
+            'civicrm_matching_gifts_employers_check: Changes found in new employer data file'
+          );
+          return TRUE;
+        }
+        else {
+          // no updates found between new and current
+          \Civi::log('matching_gifts')->info(
+            'civicrm_matching_gifts_employers_check: No updates present in new employer file'
+          );
+          return FALSE;
+        }
+      }
+      else {
+        // the new employer data file doesn't exist
+        throw new \CRM_Core_Exception(
+          'New employer data file not found ' . $newEmployerFilePath
+        );
+      }
+    }
+    else {
+      // a current file doesn't exist so the new export takes its rightful
+      // place as the current export. It feels proud but is modest with the press.
+      if ($newFileExists) {
+        return TRUE;
+      }
+      else {
+        // we can't find the new or current employer data file!
+        throw new \CRM_Core_Exception(
+          'No employer data files found! ' . $newEmployerFilePath . " - " . $currentEmployerFilePath
+        );
+      }
+    }
   }
 
 }
