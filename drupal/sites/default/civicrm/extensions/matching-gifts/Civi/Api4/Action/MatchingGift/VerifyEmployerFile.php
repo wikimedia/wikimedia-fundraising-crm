@@ -132,48 +132,34 @@ class VerifyEmployerFile extends AbstractAction {
     $currentFileExists = file_exists($currentEmployerFilePath);
     $newFileExists = file_exists($newEmployerFilePath);
 
-    // check if a current version of the data exists
-    if ($currentFileExists) {
-      // check if the new data file also exists
-      if ($newFileExists) {
-        // compare file data
-        if (sha1_file($newEmployerFilePath) !== sha1_file(
-            $currentEmployerFilePath
-          )) {
-          //updates detected
-          \Civi::log('matching_gifts')->info(
-            'civicrm_matching_gifts_employers_check: Changes found in new employer data file'
-          );
-          return TRUE;
-        }
-        else {
-          // no updates found between new and current
-          \Civi::log('matching_gifts')->info(
-            'civicrm_matching_gifts_employers_check: No updates present in new employer file'
-          );
-          return FALSE;
-        }
-      }
-      else {
-        // the new employer data file doesn't exist
-        throw new \CRM_Core_Exception(
-          'New employer data file not found ' . $newEmployerFilePath
-        );
-      }
+    // If we don't have the new file at all, we can't proceed.
+    if (!$newFileExists) {
+      throw new \CRM_Core_Exception(
+        'New employer data file not found ' . $newEmployerFilePath
+      );
     }
-    else {
-      // a current file doesn't exist so the new export takes its rightful
-      // place as the current export. It feels proud but is modest with the press.
-      if ($newFileExists) {
-        return TRUE;
-      }
-      else {
-        // we can't find the new or current employer data file!
-        throw new \CRM_Core_Exception(
-          'No employer data files found! ' . $newEmployerFilePath . " - " . $currentEmployerFilePath
-        );
-      }
+
+    // If we have a new file and don't have a current file, then the new file is definitely an update.
+    if (!$currentFileExists) {
+      return TRUE;
     }
+
+    // If both files exist, compare them.
+    $newFileHash = sha1_file($newEmployerFilePath);
+    $currentFileHash = sha1_file($currentEmployerFilePath);
+
+    if ($newFileHash !== $currentFileHash) {
+      \Civi::log('matching_gifts')->info(
+        'civicrm_matching_gifts_employers_check: Changes found in new employer data file'
+      );
+      return TRUE;
+    }
+
+    // If they match, no updates.
+    \Civi::log('matching_gifts')->info(
+      'civicrm_matching_gifts_employers_check: No updates present in new employer file'
+    );
+    return FALSE;
   }
 
   /**
