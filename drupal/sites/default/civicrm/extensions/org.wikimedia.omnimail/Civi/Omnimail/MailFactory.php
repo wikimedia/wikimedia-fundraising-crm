@@ -2,6 +2,8 @@
 
 namespace Civi\Omnimail;
 
+use Civi\WMFException\WMFException;
+
 /**
  * Class Mailer
  *
@@ -47,9 +49,6 @@ class MailFactory {
       return;
     }
     switch ($name) {
-      case 'phpmailer':
-        $this->activeMailer = new MailerPHPMailer();
-        break;
 
       case 'smtp':
         $this->activeMailer = new SMTPMailer();
@@ -70,17 +69,16 @@ class MailFactory {
    */
   public function getMailer() {
     if (!$this->activeMailer) {
-      // Short term huckery config - this can be set in civicrm.settings.php
-      if (getenv('CIVICRM_SMTP_HOST')) {
-        if (!defined('CIVICRM_SMTP_HOST')) {
-          define('CIVICRM_SMTP_HOST', getenv('CIVICRM_SMTP_HOST'));
-        }
-        $this->setActiveMailer('smtp');
+      if (!getenv('CIVICRM_SMTP_HOST') && !defined('CIVICRM_SMTP_HOST')) {
+        throw new WMFException(
+          WMFException::EMAIL_SYSTEM_FAILURE,
+          'CIVICRM_SMTP_HOST is not defined or set as env variable'
+        );
       }
-      else {
-        // deprecated.
-        $this->setActiveMailer('phpmailer');
+      if (!defined('CIVICRM_SMTP_HOST')) {
+        define('CIVICRM_SMTP_HOST', getenv('CIVICRM_SMTP_HOST'));
       }
+      $this->setActiveMailer('smtp');
     }
     return $this->activeMailer;
   }
