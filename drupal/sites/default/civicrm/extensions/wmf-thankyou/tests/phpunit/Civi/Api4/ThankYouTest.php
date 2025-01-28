@@ -8,6 +8,8 @@ use Civi\WMFEnvironmentTrait;
 use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
 use Civi\Omnimail\MailFactory;
+use Civi\WMFException\WMFException;
+use CRM_Core_DAO;
 
 class ThankYouTest extends TestCase {
   use WMFEnvironmentTrait;
@@ -21,6 +23,19 @@ class ThankYouTest extends TestCase {
    */
   protected $ids = [];
 
+  protected $testContact = [
+    'contact_type' => 'Individual',
+    'email_primary.email' => 'generousdonor@example.org',
+    'city' => 'Somerville',
+    'country_id:name' => 'US',
+    'postal_code' => '02144',
+    'state_province_id:name' => 'MA',
+    'street_address' => '1 Davis Square',
+    'first_name' => 'Test',
+    'last_name' => 'Contact',
+    'preferred_language' => 'en_US',
+  ];
+
   /**
    * @throws \CRM_Core_Exception
    */
@@ -31,18 +46,7 @@ class ThankYouTest extends TestCase {
     parent::setUp();
     MailFactory::singleton()->setActiveMailer('test');
 
-    $this->createTestEntity('Contact', [
-      'contact_type' => 'Individual',
-      'email_primary.email' => 'generousdonor@example.org',
-      'city' => 'Somerville',
-      'country_id:name' => 'US',
-      'postal_code' => '02144',
-      'state_province_id:name' => 'MA',
-      'street_address' => '1 Davis Square',
-      'first_name' => 'Test',
-      'last_name' => 'Contact',
-      'preferred_language' => 'en_US',
-    ], 0);
+    $this->createTestEntity('Contact',  $this->testContact, 0);
   }
 
   /**
@@ -152,13 +156,14 @@ class ThankYouTest extends TestCase {
     // Set up functions create an individual 0 & later tear it down. To re-use them
     // we need to punt that individual out of the 0 key.
     $this->ids['Contact'][1] = $this->ids['Contact'][0];
-    $this->ids['Contact'][0] = Contact::create(FALSE)->setValues([
+    $contact_details = [
       'contact_type' => 'Organization',
       'organization_name' => 'Big Rich Bank',
       'email_primary.email' => 'money_pit@example.com',
       'email_greeting_custom' => 'Dear Friend at the Big Rich Bank',
-    ])->execute()->first()['id'];
-    $sent = $this->sendThankYou();
+    ];
+    $this->ids['Contact'][0] = Contact::create(FALSE)->setValues($contact_details)->execute()->first()['id'];
+    $sent = $this->sendThankYou($contact_details);
 
     $this->assertStringContainsString('Dear Friend at the Big Rich Bank', $sent['html']);
   }
@@ -170,8 +175,8 @@ class ThankYouTest extends TestCase {
   public function testSendThankYouAddCiviMailActivity(): void {
     $this->setSetting('thank_you_add_civimail_records', TRUE);
     $this->setSetting('thank_you_civimail_rate', 1.0);
-    $result = thank_you_for_contribution($this->getContributionID());
-    $this->assertTrue($result);
+    $result = $this->sendThankYou();
+    $this->assertNotEmpty($result);
     $activity = $this->callAPISuccess(
       'Activity',
       'getSingle',
@@ -197,7 +202,7 @@ class ThankYouTest extends TestCase {
     $this->setSetting('thank_you_add_civimail_records', FALSE);
     $this->setSetting('wmf_endowment_thank_you_from_name', 'Endowment TY Sender');
     $this->createContribution(['financial_type_id:name' => 'Endowment Gift'], 0);
-    $sent = $this->sendThankYou();
+    $sent = $this->sendThankYou(['financial_type_id:name' => 'Endowment Gift']);
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals('Endowment TY Sender', $sent['from_name']);
@@ -237,11 +242,14 @@ class ThankYouTest extends TestCase {
    * @throws \Civi\WMFException\WMFException
    */
   public function testSendThankYouContactLocale(): void {
+    $preferred_language = 'es_MX';
     Contact::update(FALSE)
       ->addWhere('id', '=', $this->ids['Contact'][0])
-      ->addValue('preferred_language', 'es_MX')
+      ->addValue('preferred_language', $preferred_language)
       ->execute();
-    $mail = $this->sendThankYou(TRUE);
+    $mail = $this->sendThankYou([
+      'preferred_language' => $preferred_language
+    ]);
     $this->assertEquals('Test - Gracias por tu donativo', $mail['subject']);
   }
 
@@ -336,7 +344,9 @@ class ThankYouTest extends TestCase {
       'Stock_Information.Description_of_Stock' => 'Test Stock Description',
     ]);
 
-    $sent = $this->sendThankYou();
+    $sent = $this->sendThankYou(
+      ['financial_type_id:name' => 'Stock']
+    );
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
     $this->assertEquals('Test Contact', $sent['to_name']);
     $this->assertEquals($this->getExpectedReplyTo(), $sent['reply_to']);
@@ -383,23 +393,52 @@ class ThankYouTest extends TestCase {
   }
 
   /**
-   * @param bool $isUseApi
+   * @param array $parameters customise parameters used in the ThankYou send function
    *
    * @return array
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  protected function sendThankYou(bool $isUseApi = FALSE): array {
-    if ($isUseApi) {
-      ThankYou::send(FALSE)
-        ->setContributionID($this->getContributionID())
-        ->setTemplateName('thank_you')
-        ->execute();
+  protected function sendThankYou($parameters = []): array {
+    $mailingData = $this->getMailingData($this->getContributionID());
+    $params = [
+      'amount' => $mailingData['total_amount'],
+      'contact_id' => $mailingData['contact_id'],
+      'currency' => $mailingData['currency'],
+      'first_name' => $mailingData['first_name'],
+      'last_name' => $mailingData['last_name'],
+      'contact_type' => $parameters['contact_type'] ?? $mailingData['contact_type'],
+      'email_greeting_display' => $parameters['email_greeting_custom'] ?? $mailingData['email_greeting_display'] ?? '',
+      'frequency_unit' => $mailingData['contribution_recur.frequency_unit'],
+      'language' => $parameters['preferred_language'] ?? $mailingData['preferred_language'] ?? 'en_US',
+      'receive_date' => $mailingData['receive_date'],
+      'recipient_address' => $parameters['email_primary.email'] ?? $mailingData['email'],
+      'recurring' => "1",
+      'transaction_id' => "CNTCT-{$mailingData['contact_id']}",
+      // shown in the body of the text
+      'gift_source' => $mailingData['Gift_Data.Campaign'],
+      'stock_value' => $mailingData['Stock_Information.Stock Value'],
+      'stock_ticker' => $mailingData['Stock_Information.Stock Ticker'],
+      'stock_qty' => $mailingData['Stock_Information.Stock Quantity'],
+      'description_of_stock' => $mailingData['Stock_Information.Description_of_Stock'],
+      'preferred_language' => $parameters['preferred_language'] ?? $mailingData['preferred_language'],
+      'organization_name' => $parameters['organization_name'] ?? $mailingData['organization_name'] ?? '',
+      'financial_type' => $parameters['financial_type_id:name'] ?? 'Donations'
+    ];
+    $templateName = 'thank_you';
+    if ($params['financial_type'] == 'Endowment Gift') {
+      $templateName = 'endowment_thank_you';
     }
-    else {
-      $result = thank_you_for_contribution($this->getContributionID());
-      $this->assertTrue($result);
+    if ($params['contact_type'] == "Organization") {
+        $params['first_name'] = '';
+        $params['last_name'] = '';
     }
+    ThankYou::send(FALSE)
+      ->setLanguage($params['language'])
+      ->setContributionID($this->getContributionID())
+      ->setTemplateName($templateName)
+      ->setParameters($params)
+      ->execute();
     $this->assertEquals(1, $this->getMailingCount());
     return $this->getMailing(0);
   }
@@ -529,5 +568,40 @@ class ThankYouTest extends TestCase {
       'currency' => 'USD',
     ], 'thanks');
   }
+
+/**
+ * Retrieve full contribution and contact record for mailing
+ * @param int $contribution_id
+ * @throws \Civi\WMFException\WMFException
+ * @return array
+ */
+function getMailingData(int $contributionId): array{
+  $mailingData = Contribution::get(FALSE)
+  ->addSelect(
+     '*',
+    'Gift_Data.Campaign',
+    'Stock_Information.Stock Value',
+    'Stock_Information.Description_of_Stock',
+    'Stock_Information.Stock Ticker',
+    'Stock_Information.Stock Quantity',
+    'contribution_recur.frequency_unit',
+    'financial_type_id:name',
+  )
+  ->addJoin('ContributionRecur AS contribution_recur', 'LEFT', ['contribution_recur_id', '=', 'contribution_recur.id'])
+  ->addWhere('id', '=', $contributionId)
+  ->execute()
+  ->first();
+
+  $mailingData = array_merge(array_merge($this->testContact, [
+    'contribution_id' => $mailingData['id'],
+    'gateway' => 'thank_you_test_gateway',
+    'no_thank_you' => '',
+    "original_amount" => $mailingData['net_amount'],
+    "original_currency" => $mailingData['currency'],
+    "email" => $this->testContact["email_primary.email"],
+    "source_type" => ""
+  ]), $mailingData);
+  return $mailingData;
+}
 
 }
