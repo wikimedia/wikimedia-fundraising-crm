@@ -42,39 +42,9 @@ function civicrm_cleanup_old_deleted_contacts_drush_command() {
  */
 function drush_civicrm_cleanup_old_deleted_contacts_civicrm_cleanup_contacts() {
   module_invoke('civicrm', 'initialize');
-
-  $batch_size = (integer) drush_get_option('batch', 1000);
-  $last_modified_date = \Civi::settings()->get('wmf_last_delete_deleted_contact_modified_date');
   $date_cut_off = drush_get_option('date_cutoff', '2017-01-01');
-  $contactsGet = Contact::get(FALSE)
-    ->addWhere('is_deleted', '=', TRUE)
-    ->setLimit($batch_size)
-    ->addSelect('id', 'modified_date', 'is_deleted')
-    ->addOrderBy('modified_date');
-
-  if ($last_modified_date) {
-    $contactsGet->addWhere('modified_date', 'BETWEEN', [$last_modified_date, $date_cut_off]);
-  }
-  else {
-    $contactsGet->addWhere('modified_date', '<', $date_cut_off);
-  }
-  $contacts = $contactsGet->execute()->indexBy('id');
-  $modifiedDate = '';
-  $count = 0;
-  foreach ($contacts as $contactID => $contact) {
-    $modifiedDate = $contact['modified_date'];
-    try {
-      civicrm_api3('Contact', 'delete', ['skip_undelete' => 1, 'id' => $contactID]);
-      $count++;
-    }
-    catch (Exception $e) {
-      \Civi::log('wmf')->warning('civicrm_cleanup_logs: This contact id is not able to be deleted: {contact_id}', ['contact_id' => $contactID]);
-    }
-  }
-  if ($modifiedDate) {
-    \Civi::settings()->set('wmf_last_delete_deleted_contact_modified_date', $modifiedDate);
-  }
-  $message = !$modifiedDate ? "No deleted contact found to delete" : "Deleted $count deleted contacts, most recent modified_date: " . $modifiedDate;
-  drush_print($message);
-  \Civi::log('wmf')->notice('civicrm_cleanup_logs: {message}', ['message' => $message]);
+  \Civi\Api4\WMFDataManagement::deleteDeletedContacts()
+    ->setEndDateTime($date_cut_off)
+    ->setLimit((integer) drush_get_option('batch', 1000))
+    ->execute();
 }

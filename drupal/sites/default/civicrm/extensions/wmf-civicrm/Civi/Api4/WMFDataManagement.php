@@ -3,7 +3,7 @@ namespace Civi\Api4;
 
 use Civi\Api4\Action\WMFDataManagement\ArchiveThankYou;
 use Civi\Api4\Action\WMFDataManagement\CleanInvalidLanguageOptions;
-use Civi\Api4\Action\WMFDataManagement\UpdateWMFDonor;
+use Civi\Api4\Action\WMFDataManagement\DeleteDeletedContacts;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
@@ -14,6 +14,21 @@ use Civi\Api4\Generic\BasicGetFieldsAction;
  * @package Civi\Api4
  */
 class WMFDataManagement extends Generic\AbstractEntity {
+
+  /**
+   * Delete deleted contacts.
+   *
+   * This fully deletes soft deleted contacts based on how long ago they were deleted.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\WMFDataManagement\DeleteDeletedContacts
+   *
+   */
+  public static function deleteDeletedContacts(bool $checkPermissions = TRUE): DeleteDeletedContacts {
+    return (new DeleteDeletedContacts(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
 
   /**
    * Archive thank you emails.
