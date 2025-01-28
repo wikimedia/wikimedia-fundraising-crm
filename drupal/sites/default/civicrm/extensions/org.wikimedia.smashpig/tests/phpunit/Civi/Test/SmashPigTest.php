@@ -1512,6 +1512,14 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $this->assertEquals('Its broken :(', $errorMessageText);
   }
 
+  /**
+   * If $response is null, handle it gracefully.
+   */
+  public function testGetErrorMessageTextWithBrokenInput(): void {
+    $response = NULL;
+    $errorMessage = SmashPigPaymentError::getErrorText($response);
+    $this->assertEquals('An unknown payment error occurred', $errorMessage);
+  }
 
   /**
    * If the payment processor rejects our attempt because we're repeating the
