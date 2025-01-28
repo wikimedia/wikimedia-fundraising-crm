@@ -33,9 +33,9 @@ class BaseTestClass extends TestCase {
     \Civi::settings()->set($key, $value);
   }
 
-  public function setDataFilePath(): void {
+  public function setEmployerDataFilePathToTmp($purgeExistingFile=true): void {
     $this->setSetting('matching_gifts_employer_data_file_path', sys_get_temp_dir() . '/employers.csv');
-    if (file_exists(sys_get_temp_dir() . '/employers.csv')) {
+    if ($purgeExistingFile && file_exists(sys_get_temp_dir() . '/employers.csv')) {
       unlink(sys_get_temp_dir() . '/employers.csv');
     }
   }
