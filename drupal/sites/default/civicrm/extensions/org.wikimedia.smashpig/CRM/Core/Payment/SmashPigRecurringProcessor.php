@@ -2,14 +2,15 @@
 
 use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
+use Civi\Helper\SmashPigPaymentError;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\FailureEmail;
-use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
 use SmashPig\PaymentProviders\Responses\CreatePaymentWithProcessorRetryResponse;
+use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
 use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
@@ -416,20 +417,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $errorResponse = $errorData['smashpig_processor_response'] ?? $exception->getMessage();
 
     // Get the text of the error
-    if ($errorResponse instanceof CreatePaymentResponse) {
-      if (
-        count($errorResponse->getErrors()) &&
-        method_exists($errorResponse->getErrors()[0], 'getDebugMessage')
-      ) {
-        $errorMessage = $errorResponse->getErrors()[0]->getDebugMessage();
-      }
-      else {
-        $errorMessage = 'Unknown problem charging payment';
-      }
-    }
-    else {
-      $errorMessage = $errorResponse;
-    }
+    $errorMessage = SmashPigPaymentError::getErrorText($errorResponse);
 
     $this->createActivity($recurringPayment, $errorResponse, $errorMessage, 'failure');
 
