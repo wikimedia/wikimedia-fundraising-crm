@@ -220,10 +220,13 @@ class CRM_Omnimail_Omniactivity extends CRM_Omnimail_Omnimail {
    */
   public function throwException(string $message, WebUser $recipient) {
     throw new CRM_Core_Exception($message
-      . ' : action ' . $recipient->getRecipientAction() . ' ' . $recipient->getRecipientActionName()
-      . ' date ' . $recipient->getRecipientActionIsoDateTime()
-      . ' recipient ' . $recipient->getContactReference()
-      . ' referrer ' . $recipient->getRecipientReferrerType()
+      . ' : action "' . $recipient->getRecipientAction() . '", '
+      . 'action name "' . $recipient->getRecipientActionName() . '", '
+      . 'action URL name "' . $recipient->getRecipientActionUrlName() . '", '
+      . 'action URL "' . $recipient->getRecipientActionUrl() . '", '
+      . 'date "' . $recipient->getRecipientActionIsoDateTime() . '", '
+      . 'recipient ID ' . $recipient->getContactReference() . ', '
+      . 'referrer ' . $recipient->getRecipientReferrerType()
     );
   }
 
