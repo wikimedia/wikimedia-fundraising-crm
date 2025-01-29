@@ -133,8 +133,8 @@ class CRM_Omnimail_Omniactivity extends CRM_Omnimail_Omnimail {
     ) {
       return 'unsubscribe';
     }
-    if ($recipient->getRecipientActionUrlName() === 'Remind Me Later'
-    || $recipient->getRecipientActionName() === 'RML - Phone') {
+    if (preg_match('/remind/i', $recipient->getRecipientActionUrlName())
+    || preg_match('/RML/i', $recipient->getRecipientActionName())) {
       return 'remind_me_later';
     }
     $this->throwException('omni-mystery', $recipient);

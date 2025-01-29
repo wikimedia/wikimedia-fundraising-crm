@@ -91,13 +91,13 @@ class OmniactivityGetTest extends OmnimailBaseTestClass {
       ->setClient($this->getGuzzleClient())
       // This would be picked up from settings if not set here.
       ->setDatabaseID(345)
-      ->setLimit(5)
+      ->setLimit(6)
       ->execute();
-    $this->assertCount(3, $result);
+    $this->assertCount(5, $result);
     $activities = Activity::get(FALSE)
       ->addWhere('activity_type_id:name', '=', 'remind_me_later')
       ->execute();
-    $this->assertCount(2, $activities);
+    $this->assertCount(3, $activities);
 
     $progress = OmnimailJobProgress::get(FALSE)
       ->addWhere('job', '=', 'omnimail_omniactivity_load')
@@ -114,7 +114,7 @@ class OmniactivityGetTest extends OmnimailBaseTestClass {
    * @return array
    */
   public function usedContactIDs(): array {
-    return [12, 15, 56];
+    return [12, 15, 56, 57];
   }
 
 }
