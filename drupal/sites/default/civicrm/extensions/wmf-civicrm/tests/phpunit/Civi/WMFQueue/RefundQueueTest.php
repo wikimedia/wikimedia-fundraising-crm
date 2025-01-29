@@ -628,6 +628,98 @@ class RefundQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Ensure that Civi imports updates failed Trustly transactions as chargebacks on the contribution record
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testTrustlyRefund(): void {
+    $randomGravyTxnId = "random_txn_id";
+    // We import authorized trustly ach transactions before they are captured
+    $initialDonation = [
+      "backend_processor" => "trustly",
+      "backend_processor_txn_id" => mt_rand(),
+      "city" => "San Francisco",
+      "contribution_tracking_id" => "421",
+      "country" => "US",
+      "currency" => "USD",
+      "date" => 1738155464,
+      "email" => "jwales@example.com",
+      "fee" => 0,
+      "first_name" => "Jimmy",
+      "gateway" => "gravy",
+      "gateway_account" => "WikimediaDonations",
+      "gateway_txn_id" => $randomGravyTxnId,
+      "gross" => "12.23",
+      "language" => "en",
+      "last_name" => "Mouse",
+      "order_id" => "421.2",
+      "payment_method" => "dd",
+      "payment_orchestrator_reconciliation_id" => mt_rand(),
+      "payment_submethod" => "ach",
+      "postal_code" => "94104",
+      "recurring" => "",
+      "response" => false,
+      "source_enqueued_time" => 1738155464,
+      "source_host" => "d6f9cdb3c64a",
+      "source_name" => "DonationInterface",
+      "source_run_id" => 34,
+      "source_type" => "payments",
+      "source_version" => "unknown",
+      "state_province" => "CA",
+      "street_address" => "1 Montgomery Street",
+      "user_ip" => "172.0.0.1",
+      "utm_source" => "..dd"
+    ];
+
+    $this->processMessage($initialDonation, 'Donation', 'test');
+
+    $contribution = $this->getContributionForMessage($initialDonation);
+
+    $this->assertNotNull($contribution);
+    # If capture fails, send a chargeback message to deduct contribution from Civi
+    $refundMessage = [
+      "gateway_parent_id" => $randomGravyTxnId,
+      "gateway_refund_id" => $randomGravyTxnId,
+      "currency" => "USD",
+      "amount" => 12.23,
+      "reason" => "Payment failed",
+      "status" => "complete",
+      "raw_status" => "authorization_failed",
+      "type" => "chargeback",
+      "backend_processor" => "trustly",
+      "code" => 1000009,
+      "message" => "authorization_failed",
+      "description" => "",
+      "date" => "1721678182",
+      "gateway" => "gravy",
+      "gross_currency" => "USD",
+      "gross" => 12.23,
+      "source_name" => "SmashPig",
+      "source_type" => "listener",
+      "source_host" => "facdc61a96f0",
+      "source_run_id" => 34,
+      "source_version" => "unknown",
+      "source_enqueued_time" => 1738157374
+    ];
+    $this->processMessage($refundMessage);
+
+    $updatedRecord = Contribution::get(FALSE)
+      ->addWhere('id', '=', $contribution['id'])
+      ->addSelect('contribution_status_id:label')
+      ->execute()->first();
+
+    # Assert that the contribution status is updated to Chargeback
+    $this->assertEquals('Chargeback', $updatedRecord['contribution_status_id:label']);
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $this->ids['Contribution'][0])
+      ->addWhere('subject', '=', 'Refund Reason')
+      ->addSelect('details')
+      ->execute()->first();
+    # Assert that the chargeback reason is saved in the activity
+    $this->assertEquals('Chargeback reason: Payment failed', $activity['details']);
+  }
+
+  /**
    * @return void
    */
   public function setupOriginalContribution(): void {
