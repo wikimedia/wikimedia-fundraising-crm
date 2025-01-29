@@ -133,8 +133,8 @@ class CRM_Omnimail_Omniactivity extends CRM_Omnimail_Omnimail {
     ) {
       return 'unsubscribe';
     }
-    if ($recipient->getRecipientActionUrlName() === 'Remind Me Later'
-    || $recipient->getRecipientActionName() === 'RML - Phone') {
+    if (preg_match('/remind/i', $recipient->getRecipientActionUrlName())
+    || preg_match('/RML/i', $recipient->getRecipientActionName())) {
       return 'remind_me_later';
     }
     $this->throwException('omni-mystery', $recipient);
@@ -220,10 +220,13 @@ class CRM_Omnimail_Omniactivity extends CRM_Omnimail_Omnimail {
    */
   public function throwException(string $message, WebUser $recipient) {
     throw new CRM_Core_Exception($message
-      . ' : action ' . $recipient->getRecipientAction() . ' ' . $recipient->getRecipientActionName()
-      . ' date ' . $recipient->getRecipientActionIsoDateTime()
-      . ' recipient ' . $recipient->getContactReference()
-      . ' referrer ' . $recipient->getRecipientReferrerType()
+      . ' : action "' . $recipient->getRecipientAction() . '", '
+      . 'action name "' . $recipient->getRecipientActionName() . '", '
+      . 'action URL name "' . $recipient->getRecipientActionUrlName() . '", '
+      . 'action URL "' . $recipient->getRecipientActionUrl() . '", '
+      . 'date "' . $recipient->getRecipientActionIsoDateTime() . '", '
+      . 'recipient ID ' . $recipient->getContactReference() . ', '
+      . 'referrer ' . $recipient->getRecipientReferrerType()
     );
   }
 

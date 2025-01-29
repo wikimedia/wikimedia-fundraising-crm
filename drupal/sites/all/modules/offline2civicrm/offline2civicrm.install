@@ -21,7 +21,7 @@ function offline2civicrm_schema() {
         // Too bad, this only has 1s resolution
         'mysql_type' => 'timestamp',
         // FIXME: will drupal one day add a stupidly redundant and breaking null check?
-        'not null' => TRUE,
+        'not null' => FALSE,
       ],
       'who' => [
         'type' => 'char',
