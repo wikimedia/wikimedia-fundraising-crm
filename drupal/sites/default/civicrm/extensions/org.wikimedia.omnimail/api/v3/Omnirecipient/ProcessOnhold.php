@@ -36,7 +36,7 @@ function civicrm_api3_omnirecipient_process_onhold($params) {
   foreach ($result['values'] as $unsubscribes) {
     CRM_Core_DAO::executeQuery('SET @uniqueID = %1', [
       1 => [
-        uniqid() . CRM_Utils_String::createRandom(CRM_Utils_String::ALPHANUMERIC, 4),
+        uniqid() . CRM_Utils_String::createRandom(4, CRM_Utils_String::ALPHANUMERIC),
         'String',
       ],
     ]);
