@@ -635,9 +635,9 @@ class Date_Span
         }
         $output = '';
         for ($i = 0; $i < strlen($format); $i++) {
-            $char = $format{$i};
+            $char = $format[$i];
             if ($char == '%') {
-                $nextchar = $format{++$i};
+                $nextchar = $format[++$i];
                 switch ($nextchar) {
                     case 'C':
                         $output .= sprintf(
