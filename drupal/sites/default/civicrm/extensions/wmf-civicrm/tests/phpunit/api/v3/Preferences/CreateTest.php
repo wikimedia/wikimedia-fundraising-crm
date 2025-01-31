@@ -113,8 +113,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
       'checksum' => $checksum,
       'language' => 'pt-br',
       "country" => 'AF',
-      "email" => 'test2@gmail.com',
-      'send_email' => 'false',
+      "email" => 'test2@gmail.com'
     ]);
 
     $contact2 = Contact::get(FALSE)->addWhere('id', '=', (int) $this->contactID)
@@ -135,10 +134,53 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
       ->execute()
       ->first();
 
-    $this->assertEquals(0, $contact2['Communication.opt_in']);
+    $this->assertEquals(1, $contact2['Communication.opt_in']);
     $this->assertEquals('pt-br', $contact2['preferred_language']);
     $this->assertEquals('AF', $address2['country_id.iso_code']);
     $this->assertEquals('test2@gmail.com', $email2['email']);
-  }
 
+    // only update send_email
+    $this->callAPISuccess('Preferences', 'create', [
+      'contact_id' => $this->contactID,
+      'checksum' => $checksum,
+      "email" => 'test2@gmail.com',
+      'send_email' => 'false',
+    ]);
+
+    $contact3 = Contact::get(FALSE)->addWhere('id', '=', (int) $this->contactID)
+      ->setSelect(['preferred_language', 'Communication.opt_in'])
+      ->execute()->first();
+
+    $address3 = Address::get(FALSE)
+      ->addWhere('contact_id', '=', (int) $this->contactID)
+      ->addWhere('is_primary', '=', 1)
+      ->addWhere('location_type_id:name', '=', 'EmailPreference')
+      ->addSelect('country_id.iso_code')
+      ->execute()
+      ->first();
+
+    $email3 = Email::get(FALSE)
+      ->addWhere('contact_id', '=', (int) $this->contactID)
+      ->addWhere('is_primary', '=', 1)
+      ->execute()
+      ->first();
+
+    $this->assertEquals(0, $contact3['Communication.opt_in']);
+    // others remain the same
+    $this->assertEquals('pt-br', $contact3['preferred_language']);
+    $this->assertEquals('AF', $address3['country_id.iso_code']);
+    $this->assertEquals('test2@gmail.com', $email3['email']);
+
+    // no email which is required
+    $this->callAPIFailure('Preferences', 'create', [
+      'contact_id' => $this->contactID,
+      'checksum' => $checksum
+    ]);
+    // invalid email
+    $this->callAPIFailure('Preferences', 'create', [
+      'contact_id' => $this->contactID,
+      'checksum' => $checksum,
+      'email' => '123',
+    ]);
+  }
 }
