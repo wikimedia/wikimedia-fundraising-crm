@@ -1478,7 +1478,7 @@ abstract class BaseAuditProcessor {
 
   protected function stopTiming(string $name): float {
     $this->timings[$name]['stop'] = microtime(TRUE);
-    return $this->timings[$name]['start'] - $this->timings[$name]['stop'];
+    return $this->timings[$name]['stop'] - $this->timings[$name]['start'];
   }
 
   /**
