@@ -238,7 +238,7 @@ class WMFException extends Exception {
         preg_match('/Database lock encountered/', $flattened)
         // @todo not treating constraints as deadlocks here at this stage - doing that
         // more specifically but something to keep considering.
-        || $this->extra['error_code'] === 'deadlock'
+        || ( $this->extra['error_code'] ?? null ) === 'deadlock'
       ) {
         return TRUE;
       }
