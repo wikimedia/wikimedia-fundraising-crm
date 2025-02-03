@@ -720,6 +720,91 @@ class RefundQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Ensure that recurring started on a failed trustly contribution is cancelled
+   * @throws \CRM_Core_Exception
+   */
+  public function testTrustlyCancelRecurringOnChargeback(): void {
+    $randomGravyTxnId = "random_txn_id";
+    $randomPaymentToken = "random_payment_token";
+    $initialDonation = [
+      "gateway_txn_id" => $randomGravyTxnId,
+      "response" => false,
+      "gateway_account" => "WikimediaDonations",
+      "fee" => 0,
+      "gross" => "12.23",
+      "backend_processor" => "trustly",
+      "backend_processor_txn_id" => "1025630064",
+      "city" => "San Francisco",
+      "contribution_tracking_id" => "431",
+      "country" => "US",
+      "currency" => "USD",
+      "email" => "jwales@example.com",
+      "first_name" => "Jimmy",
+      "gateway" => "gravy",
+      "language" => "en",
+      "last_name" => "Wales",
+      "order_id" => "431.1",
+      "payment_method" => "dd",
+      "payment_orchestrator_reconciliation_id" => mt_rand(),
+      "payment_submethod" => "ach",
+      "postal_code" => "94104",
+      "recurring" => "1",
+      "recurring_payment_token" => $randomPaymentToken,
+      "state_province" => "CA",
+      "street_address" => "1 Montgomery Street",
+      "user_ip" => "192.168.65.1",
+      "utm_source" => "..rdd",
+      "date" => 1738606196,
+      "source_name" => "DonationInterface",
+      "source_type" => "payments",
+      "source_host" => "d6f9cdb3c64a",
+      "source_run_id" => 93,
+      "source_version" => "unknown",
+      "source_enqueued_time" => 1738606196
+    ];
+
+    $this->processMessage($initialDonation, 'Donation', 'test');
+
+    $contribution = $this->getContributionForMessage($initialDonation);
+
+    $this->assertNotEmpty($contribution['contribution_recur_id']);
+    $this->assertNotNull($contribution);
+  # If capture fails, send a chargeback message to deduct contribution from Civi
+    $refundMessage = [
+      "gateway_parent_id" => $randomGravyTxnId,
+      "gateway_refund_id" => $randomGravyTxnId,
+      "currency" => "USD",
+      "amount" => 12.23,
+      "reason" => "Payment failed",
+      "status" => "complete",
+      "raw_status" => "authorization_failed",
+      "type" => "chargeback",
+      "backend_processor" => "trustly",
+      "code" => 1000009,
+      "message" => "authorization_failed",
+      "description" => "",
+      "date" => "1721678182",
+      "gateway" => "gravy",
+      "gross_currency" => "USD",
+      "gross" => 12.23,
+      "source_name" => "SmashPig",
+      "source_type" => "listener",
+      "source_host" => "facdc61a96f0",
+      "source_run_id" => 34,
+      "source_version" => "unknown",
+      "source_enqueued_time" => 1738157374
+    ];
+    $this->processMessage($refundMessage);
+    $this->processQueue('recurring', 'Recurring');
+    $recurRecord = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $contribution['contribution_recur_id'])
+      ->addSelect('*', 'contribution_status_id:name')
+      ->execute()->single();
+
+    $this->assertEquals('Cancelled', $recurRecord['contribution_status_id:name']);
+  }
+
+  /**
    * @return void
    */
   public function setupOriginalContribution(): void {
