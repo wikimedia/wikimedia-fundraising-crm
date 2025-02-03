@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3d9202b3c6c69d291e5edbe64d8ab62a",
+    "content-hash": "0baf21be509fe83e1db8b0a59a2549cf",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -1301,16 +1301,16 @@
         },
         {
             "name": "gr4vy/gr4vy-php",
-            "version": "v0.21.4",
+            "version": "v0.23.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/gr4vy/gr4vy-php.git",
-                "reference": "5fd242eb7b6c2434cd40b16d4e5b27b1152aad17"
+                "reference": "1b0ece57c02f99536f8986d34685d2fa94e95ba3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gr4vy/gr4vy-php/zipball/5fd242eb7b6c2434cd40b16d4e5b27b1152aad17",
-                "reference": "5fd242eb7b6c2434cd40b16d4e5b27b1152aad17",
+                "url": "https://api.github.com/repos/gr4vy/gr4vy-php/zipball/1b0ece57c02f99536f8986d34685d2fa94e95ba3",
+                "reference": "1b0ece57c02f99536f8986d34685d2fa94e95ba3",
                 "shasum": ""
             },
             "require": {
@@ -1353,9 +1353,9 @@
                 "sdk"
             ],
             "support": {
-                "source": "https://github.com/gr4vy/gr4vy-php/tree/v0.21.4"
+                "source": "https://github.com/gr4vy/gr4vy-php/tree/v0.23.2"
             },
-            "time": "2024-08-06T16:53:49+00:00"
+            "time": "2025-01-07T17:40:18+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -5207,16 +5207,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.8.25.1",
+            "version": "v0.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "b026b0a6eaaee1914684e738ca75e228e2cce20d"
+                "reference": "0e250b6518fd0c71b4650d1f315260455e721274"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/b026b0a6eaaee1914684e738ca75e228e2cce20d",
-                "reference": "b026b0a6eaaee1914684e738ca75e228e2cce20d",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/0e250b6518fd0c71b4650d1f315260455e721274",
+                "reference": "0e250b6518fd0c71b4650d1f315260455e721274",
                 "shasum": ""
             },
             "require": {
@@ -5226,8 +5226,8 @@
                 "ext-curl": "*",
                 "ext-json": "*",
                 "ext-pdo": "*",
-                "gr4vy/gr4vy-php": "0.21.4",
-                "php": ">=7.4",
+                "gr4vy/gr4vy-php": "0.23.2",
+                "php": ">=8.0",
                 "phpmailer/phpmailer": "^6",
                 "predis/predis": "^1.1",
                 "psr/cache": "^1.0",
@@ -5237,7 +5237,7 @@
             },
             "require-dev": {
                 "ext-sqlite3": "*",
-                "mediawiki/mediawiki-codesniffer": "^31.0",
+                "mediawiki/mediawiki-codesniffer": "^34.0",
                 "php-parallel-lint/php-parallel-lint": "^1.2",
                 "phpunit/phpunit": "^9.5"
             },
@@ -5292,9 +5292,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.8.25.1"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.9.0"
             },
-            "time": "2025-01-08T16:29:46+00:00"
+            "time": "2025-01-29T22:01:38+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -7282,23 +7282,24 @@
         },
         {
             "name": "seld/jsonlint",
-            "version": "1.7.0",
+            "version": "1.11.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Seldaek/jsonlint.git",
-                "reference": "9b355654ea99460397b89c132b5c1087b6bf4473"
+                "reference": "1748aaf847fc731cfad7725aec413ee46f0cc3a2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/jsonlint/zipball/9b355654ea99460397b89c132b5c1087b6bf4473",
-                "reference": "9b355654ea99460397b89c132b5c1087b6bf4473",
+                "url": "https://api.github.com/repos/Seldaek/jsonlint/zipball/1748aaf847fc731cfad7725aec413ee46f0cc3a2",
+                "reference": "1748aaf847fc731cfad7725aec413ee46f0cc3a2",
                 "shasum": ""
             },
             "require": {
-                "php": "^5.3 || ^7.0"
+                "php": "^5.3 || ^7.0 || ^8.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "^4.8.35 || ^5.7 || ^6.0"
+                "phpstan/phpstan": "^1.11",
+                "phpunit/phpunit": "^4.8.35 || ^5.7 || ^6.0 || ^8.5.13"
             },
             "bin": [
                 "bin/jsonlint"
@@ -7317,7 +7318,7 @@
                 {
                     "name": "Jordi Boggiano",
                     "email": "j.boggiano@seld.be",
-                    "homepage": "http://seld.be"
+                    "homepage": "https://seld.be"
                 }
             ],
             "description": "JSON Linter",
@@ -7329,9 +7330,19 @@
             ],
             "support": {
                 "issues": "https://github.com/Seldaek/jsonlint/issues",
-                "source": "https://github.com/Seldaek/jsonlint/tree/master"
+                "source": "https://github.com/Seldaek/jsonlint/tree/1.11.0"
             },
-            "time": "2018-01-03T12:13:57+00:00"
+            "funding": [
+                {
+                    "url": "https://github.com/Seldaek",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/seld/jsonlint",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2024-07-11T14:55:45+00:00"
         },
         {
             "name": "squizlabs/php_codesniffer",
@@ -7512,9 +7523,9 @@
         "ext-dom": "*",
         "ext-libxml": "*"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "platform-overrides": {
-        "php": "7.4.33"
+        "php": "8.2.26"
     },
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.6.0"
 }

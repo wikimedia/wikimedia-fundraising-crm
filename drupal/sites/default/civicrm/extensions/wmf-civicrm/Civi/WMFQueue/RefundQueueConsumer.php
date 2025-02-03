@@ -144,6 +144,8 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           // delete message from pending table
           PendingDatabase::get()->deleteMessage($message);
           \Civi::log('wmf')->info( 'Deleting pending contribution for ' . strtoupper($gateway) . " " . $parentTxn . ' ('. $message['payment_method'] . ') due to' . $reason, $context);
+      } else if(!empty($message['backend_processor']) && $message['backend_processor'] == "trustly"){
+        \Civi::log('wmf')->error('refund {log_id}: Skipping failed trustly transaction, as contribution not found in Civi!', $context);
       } else {
         \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
         throw new WMFException(WMFException::MISSING_PREDECESSOR, "Parent not found: " . strtoupper($gateway) . " " . $parentTxn);
