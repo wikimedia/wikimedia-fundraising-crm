@@ -2,7 +2,7 @@
 
 namespace Civi\riverlea;
 
-use \CRM_riverlea_ExtensionUtil as E;
+use CRM_riverlea_ExtensionUtil as E;
 
 /**
  * This class generates a `river.css` file for Riverlea themes containing
@@ -40,7 +40,7 @@ class DynamicCss implements \Symfony\Component\EventDispatcher\EventSubscriberIn
   /**
    * Generate asset content (when accessed via AssetBuilder).
    *
-   * @param \Civi\Core\Event\GenericHookEvent $event
+   * @param \Civi\Core\Event\GenericHookEvent $e
    *
    * @see CRM_Utils_hook::buildAsset()
    * @see \Civi\Core\AssetBuilder
@@ -62,17 +62,22 @@ class DynamicCss implements \Symfony\Component\EventDispatcher\EventSubscriberIn
 
     switch ($params['dark'] ?? NULL) {
       case 'light':
-        // nothing more to do
+        // tell OS we want light for system elements
+        $content[] = ":root { color-scheme: light; }";
         break;
 
       case 'dark':
-        // add dark vars unconditionally
+        // tell OS we want dark for system elements
+        $content[] = ":root { color-scheme: dark; }";
+        // add stream dark vars unconditionally
         $content[] = self::getCSSFromFile('_dark.css', $stream);
         break;
 
       case 'inherit':
       default:
-        // add dark vars wrapped inside a media query
+        // tell OS we are happy with light or dark for system elements
+        $content[] = ":root { color-scheme: light dark; }";
+        // add stream dark vars wrapped inside a media query
         $content[] = '@media (prefers-color-scheme: dark) {';
         $content[] = self::getCSSFromFile('_dark.css', $stream);
         $content[] = '}';

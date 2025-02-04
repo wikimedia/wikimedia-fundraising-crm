@@ -1068,8 +1068,8 @@ ORDER BY   civicrm_email.is_bulkmail DESC
         'url_tracking' => Civi::settings()->get('url_tracking_default'),
         'visibility' => 'Public Pages',
         'replyto_email' => $domain_email,
-        'header_id' => CRM_Mailing_PseudoConstant::defaultComponent('Header', ''),
-        'footer_id' => CRM_Mailing_PseudoConstant::defaultComponent('Footer', ''),
+        'header_id' => NULL,
+        'footer_id' => NULL,
         'from_email' => $domain_email,
         'from_name' => $domain_name,
         'msg_template_id' => NULL,
@@ -1079,7 +1079,14 @@ ORDER BY   civicrm_email.is_bulkmail DESC
         'created_date' => date('YmdHis'),
         'scheduled_date' => NULL,
         'approval_date' => NULL,
+        'status' => 'Draft',
+        'start_date' => NULL,
+        'end_date' => NULL,
       ];
+      if (CRM_Utils_System::isNull($params['sms_provider_id'] ?? NULL)) {
+        $defaults['header_id'] = CRM_Mailing_PseudoConstant::defaultComponent('Header', '');
+        $defaults['footer_id'] = CRM_Mailing_PseudoConstant::defaultComponent('Footer', '');
+      }
 
       // Get the default from email address, if not provided.
       if (empty($defaults['from_email'])) {
@@ -1232,16 +1239,19 @@ ORDER BY   civicrm_email.is_bulkmail DESC
    *   The mailing id to report.
    * @param bool $skipDetails
    *   Whether return all detailed report.
-   *
    * @param bool $isSMS
+   *   Deprecated argument, will be removed.
    *
    * @return array
    *   Associative array of reporting data
    */
-  public static function &report($id, $skipDetails = FALSE, $isSMS = FALSE) {
+  public static function report($id, $skipDetails = FALSE, $isSMS = FALSE) {
     $mailing_id = CRM_Utils_Type::escape($id, 'Integer');
-
     $mailing = new CRM_Mailing_BAO_Mailing();
+
+    if ($isSMS) {
+      CRM_Core_Error::deprecatedFunctionWarning("isSMS param is deprecated");
+    }
 
     $t = [
       'mailing' => self::getTableName(),
@@ -1261,31 +1271,21 @@ ORDER BY   civicrm_email.is_bulkmail DESC
       'spool' => CRM_Mailing_BAO_Spool::getTableName(),
     ];
 
-    $report = [];
-    $additionalWhereClause = " AND ";
-    if (!$isSMS) {
-      $additionalWhereClause .= " {$t['mailing']}.sms_provider_id IS NULL ";
-    }
-    else {
-      $additionalWhereClause .= " {$t['mailing']}.sms_provider_id IS NOT NULL ";
-    }
-
-    /* Get the mailing info */
-
+    // Get the mailing info
     $mailing->query("
             SELECT          {$t['mailing']}.*
             FROM            {$t['mailing']}
-            WHERE           {$t['mailing']}.id = $mailing_id {$additionalWhereClause}");
-
+            WHERE           {$t['mailing']}.id = $mailing_id");
     $mailing->fetch();
 
+    $report = [];
     $report['mailing'] = [];
     foreach (array_keys(self::fields()) as $field) {
       $field = self::fields()[$field]['name'];
       $report['mailing'][$field] = $mailing->$field;
     }
 
-    //get the campaign
+    // Get the campaign
     $campaignId = $report['mailing']['campaign_id'] ?? NULL;
     if ($campaignId) {
       $campaigns = CRM_Campaign_BAO_Campaign::getCampaigns($campaignId);
@@ -1298,8 +1298,7 @@ ORDER BY   civicrm_email.is_bulkmail DESC
       return $report;
     }
 
-    /* Get the component info */
-
+    // Get the component info
     $query = [];
 
     $components = [
@@ -1332,8 +1331,7 @@ ORDER BY   civicrm_email.is_bulkmail DESC
       ];
     }
 
-    /* Get the recipient group info */
-
+    // Get the recipient group info
     $mailing->query("
             SELECT          {$t['mailing_group']}.group_type as group_type,
                             {$t['group']}.id as group_id,
@@ -1374,8 +1372,7 @@ ORDER BY   civicrm_email.is_bulkmail DESC
         );
       }
 
-      /* Rename hidden groups */
-
+      // Rename hidden groups
       if ($mailing->group_hidden == 1) {
         $row['name'] = "Search Results";
       }
@@ -1391,8 +1388,7 @@ ORDER BY   civicrm_email.is_bulkmail DESC
       }
     }
 
-    /* Get the event totals, grouped by job (retries) */
-
+    // Get the event totals, grouped by job (retries)
     $mailing->query("
             SELECT          {$t['job']}.*,
                             COUNT(DISTINCT {$t['queue']}.id) as queue,
@@ -1531,8 +1527,7 @@ ORDER BY   civicrm_email.is_bulkmail DESC
       $report['event_totals']['clickthrough_rate'] = 0;
     }
 
-    /* Get the click-through totals, grouped by URL */
-
+    // Get the click-through totals, grouped by URL
     $mailing->query("
             SELECT      {$t['url']}.url,
                         {$t['url']}.id,
@@ -1924,13 +1919,18 @@ LEFT JOIN civicrm_mailing_group g ON g.mailing_id   = m.id
       $params['dedupe_email'] ??= Civi::settings()->get('dedupe_email_default');
       $params['open_tracking'] ??= Civi::settings()->get('open_tracking_default');
       $params['url_tracking'] ??= Civi::settings()->get('url_tracking_default');
-      $params['header_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Header', '');
-      $params['footer_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Footer', '');
+      if (CRM_Utils_System::isNull($params['sms_provider_id'] ?? NULL)) {
+        $params['header_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Header', '');
+        $params['footer_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Footer', '');
+      }
       $params['optout_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('OptOut', '');
       $params['reply_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Reply', '');
       $params['resubscribe_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Resubscribe', '');
       $params['unsubscribe_id'] ??= CRM_Mailing_PseudoConstant::defaultComponent('Unsubscribe', '');
       $params['mailing_type'] ??= 'standalone';
+      $params['status'] ??= 'Draft';
+      $params['start_date'] ??= 'null';
+      $params['end_date'] ??= 'null';
     }
     if ($event->action === 'delete' && $event->id) {
       // Delete all file attachments

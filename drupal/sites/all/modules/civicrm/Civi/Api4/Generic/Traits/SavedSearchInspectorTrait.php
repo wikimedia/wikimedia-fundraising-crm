@@ -4,6 +4,7 @@ namespace Civi\Api4\Generic\Traits;
 
 use Civi\API\Exception\UnauthorizedException;
 use Civi\API\Request;
+use Civi\Api4\Action\SearchDisplay\AbstractRunAction;
 use Civi\Api4\Query\SqlEquation;
 use Civi\Api4\Query\SqlExpression;
 use Civi\Api4\Query\SqlField;
@@ -229,6 +230,16 @@ trait SavedSearchInspectorTrait {
       return FALSE;
     }
 
+    // If this is an implicit join, use the parent field
+    if (str_ends_with($fieldPath, '.' . $field['name'])) {
+      $baseFieldPath = substr($fieldPath, 0, -strlen('.' . $field['name']));
+      $baseField = $this->getField($baseFieldPath);
+      if ($baseField) {
+        $fieldPath = $baseFieldPath;
+        $field = $baseField;
+      }
+    }
+
     // If the entity this column belongs to is being grouped by id, then also no
     $idField = substr($fieldPath, 0, 0 - strlen($field['name'])) . CoreUtil::getIdFieldName($field['entity']);
     return !in_array($idField, $apiParams['groupBy']);
@@ -403,6 +414,10 @@ trait SavedSearchInspectorTrait {
     }
     elseif ($expr instanceof SqlField) {
       $field = $this->getField($expr->getExpr());
+      if (!$field) {
+        $pseudoFields = array_column(AbstractRunAction::getPseudoFields(), NULL, 'name');
+        $field = $pseudoFields[$expr->getExpr()] ?? NULL;
+      }
       $label = '';
       if (!empty($field['explicit_join'])) {
         $label = $this->getJoinLabel($field['explicit_join']) . ': ';
@@ -435,7 +450,7 @@ trait SavedSearchInspectorTrait {
           $joinCount[$entityName] = 1;
         }
         $label = CoreUtil::getInfoItem($entityName, 'title');
-        $this->_joinMap[$alias] = $label . $num;
+        $this->_joinMap[$alias] = $this->savedSearch['form_values']['join'][$alias] ?? "$label$num";
       }
     }
     return $this->_joinMap[$joinAlias];
