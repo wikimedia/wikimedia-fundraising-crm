@@ -78,11 +78,11 @@ function offline2civicrm_import_checks_form($form, &$form_state) {
   $headers = array('Time', 'Who', 'Done');
   $rows = array();
   foreach ($log_events as $event) {
-    $rows[] = array(
-      $event->time,
-      $event->who,
-      $event->done,
-    );
+    $rows[] = [
+      $event['time'],
+      $event['who'],
+      $event['done'],
+    ];
   }
   $log_html = theme_table(array(
       'header' => $headers,
