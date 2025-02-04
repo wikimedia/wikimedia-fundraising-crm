@@ -333,7 +333,7 @@ function offline2civicrm_import_batch($offset, $limit, $importer, &$context) {
 
   $messages = $importer->import($offset, $limit);
   $context['results'] = $importer->getProgress();
-  $context['message'] = implode($messages, '<br>');
+  $context['message'] = implode('<br>', $messages);
   $lock->release();
 
 }
