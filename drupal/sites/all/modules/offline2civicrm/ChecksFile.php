@@ -256,11 +256,13 @@ abstract class ChecksFile {
     $this->file_uri = $file_uri;
     global $user;
     $suffix = $user->uid . '.csv';
-    $this->error_file_uri = str_replace('.csv', '_errors.' . $suffix, $file_uri);
-    $this->skipped_file_uri = str_replace('.csv', '_skipped.' . $suffix, $file_uri);
-    $this->ignored_file_uri = str_replace('.csv', '_ignored.' . $suffix, $file_uri);
-    $this->all_missed_file_uri = str_replace('.csv', '_all_missed.' . $suffix, $file_uri);
-    $this->all_not_matched_to_existing_contacts_file_uri = str_replace('.csv', '_all_not_matched.' . $suffix, $file_uri);
+    $this->error_file_uri = str_replace('.csv', '_errors.' . $suffix, $file_uri ?? '');
+    $this->skipped_file_uri = str_replace('.csv', '_skipped.' . $suffix, $file_uri ?? '');
+    $this->ignored_file_uri = str_replace('.csv', '_ignored.' . $suffix, $file_uri ?? '');
+    $this->all_missed_file_uri = str_replace('.csv', '_all_missed.' . $suffix, $file_uri ?? '');
+    $this->all_not_matched_to_existing_contacts_file_uri = str_replace(
+      '.csv', '_all_not_matched.' . $suffix, $file_uri ?? ''
+    );
     $this->additionalFields = $additionalFields;
 
     if (Context::get()) {

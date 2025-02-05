@@ -40,7 +40,7 @@ class CRM_Wmf_Tokens {
       if (isset($tokens['now'])) {
         // CiviCRM doesn't do full locale date handling. It relies on .pot files
         // and just translates the words. We add our own 'now.MMMM' token for the now-date.
-        $dateFormatter = new \IntlDateFormatter($row->context['locale'], NULL, NULL);
+        $dateFormatter = new \IntlDateFormatter($row->context['locale']);
         foreach ($tokens['now'] as $token) {
           $dateFormatter->setPattern($token);
           $row->tokens('now', $token, $dateFormatter->format(new \DateTime()));
