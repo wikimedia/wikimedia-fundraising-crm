@@ -11,7 +11,8 @@ class ChecksImportLog {
 
     $events = array();
     while ( $row = $result->fetchAssoc() ) {
-      $events[] = CheckImportLogEvent::loadFromRow( $row );
+      $row['done'] = filter_xss($row['done'], ['a']);
+      $events[] = $row;
     }
     return $events;
   }
@@ -22,15 +23,5 @@ class ChecksImportLog {
       'who' => $user->name,
       'done' => $description,
     ) )->execute();
-  }
-}
-
-class CheckImportLogEvent {
-  static function loadFromRow( $data ) {
-    $event = new CheckImportLogEvent();
-    $event->time = $data['time'];
-    $event->who = $data['who'];
-    $event->done = filter_xss($data['done'], ['a']);
-    return $event;
   }
 }
