@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0
+class ComposerStaticInit15381296e6681dbb131b018a598b4865
 {
     public static $files = array (
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
@@ -269,8 +269,8 @@ class ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-factory/src',
-            1 => __DIR__ . '/..' . '/psr/http-message/src',
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            1 => __DIR__ . '/..' . '/psr/http-factory/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -294,8 +294,8 @@ class ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0
         ),
         'Phrity\\Net\\' => 
         array (
-            0 => __DIR__ . '/..' . '/phrity/net-stream/src',
-            1 => __DIR__ . '/..' . '/phrity/net-uri/src',
+            0 => __DIR__ . '/..' . '/phrity/net-uri/src',
+            1 => __DIR__ . '/..' . '/phrity/net-stream/src',
         ),
         'PhpOffice\\PhpWord\\' => 
         array (
@@ -448,8 +448,8 @@ class ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0
         array (
             'Net' => 
             array (
-                0 => __DIR__ . '/..' . '/pear/net_smtp',
-                1 => __DIR__ . '/..' . '/pear/net_socket',
+                0 => __DIR__ . '/..' . '/pear/net_socket',
+                1 => __DIR__ . '/..' . '/pear/net_smtp',
             ),
         ),
         'M' => 
@@ -684,11 +684,11 @@ class ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0::$prefixesPsr0;
-            $loader->fallbackDirsPsr0 = ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0::$fallbackDirsPsr0;
-            $loader->classMap = ComposerStaticInit94f1c4b4e9243b72cc38f2abba09b6a0::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit15381296e6681dbb131b018a598b4865::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit15381296e6681dbb131b018a598b4865::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit15381296e6681dbb131b018a598b4865::$prefixesPsr0;
+            $loader->fallbackDirsPsr0 = ComposerStaticInit15381296e6681dbb131b018a598b4865::$fallbackDirsPsr0;
+            $loader->classMap = ComposerStaticInit15381296e6681dbb131b018a598b4865::$classMap;
 
         }, null, ClassLoader::class);
     }
