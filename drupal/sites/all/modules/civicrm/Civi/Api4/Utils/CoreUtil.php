@@ -44,17 +44,7 @@ class CoreUtil {
     if (!$dao && self::isContact($entityName)) {
       $dao = 'CRM_Contact_DAO_Contact';
     }
-    $entity = $dao ? AllCoreTables::getBAOClassName($dao) : NULL;
-    if (!$entity) {
-      \Civi::log('wmff')->warning('something crazy happening loading ' . $entity);
-      if ($entityName === 'OmnimailJobProgress') {
-        return 'CRM_Omnimail_BAO_OmnimailJobProgress';
-      }
-      if ($entityName === 'MailingProviderData') {
-        return 'CRM_Omnimail_BAO_MailingProviderData';
-      }
-    }
-    return $entity;
+    return $dao ? AllCoreTables::getBAOClassName($dao) : NULL;
   }
 
   /**

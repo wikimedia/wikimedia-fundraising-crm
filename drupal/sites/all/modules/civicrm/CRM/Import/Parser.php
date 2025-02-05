@@ -121,15 +121,6 @@ abstract class CRM_Import_Parser implements UserJobInterface {
   }
 
   /**
-   * An array of Custom field mappings for api formatting
-   *
-   * e.g ['custom_7' => 'IndividualData.Marriage_date']
-   *
-   * @var array
-   */
-  protected $customFieldNameMap = [];
-
-  /**
    * Get User Job.
    *
    * API call to retrieve the userJob row.
@@ -1621,10 +1612,6 @@ abstract class CRM_Import_Parser implements UserJobInterface {
       }
       return Civi::$statics[__CLASS__][$fieldName][$importedValue] ?: 'invalid_import_value';
     }
-    if ($fieldMetadata['input_type'] ?? NULL === 'EntityRef') {
-      // We don't require a number as if this is not a number it might be possible to look it up.
-      return $importedValue;
-    }
     if ($dataType === 'Integer') {
       // We have resolved the options now so any remaining ones should be integers.
       return CRM_Utils_Rule::numeric($importedValue) ? (int) $importedValue : 'invalid_import_value';
@@ -2234,7 +2221,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
       }
       foreach ($params as $key => $value) {
         if (strpos($key, 'custom_') === 0) {
-          $params[$this->getApi4Name($key)] = $value;
+          $params[CRM_Core_BAO_CustomField::getLongNameFromShortName($key)] = $value;
           unset($params[$key]);
         }
       }
@@ -2271,25 +2258,6 @@ abstract class CRM_Import_Parser implements UserJobInterface {
   }
 
   /**
-   * Get the Api4 name of a custom field.
-   *
-   * @param string $key
-   *
-   * @return string
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function getApi4Name(string $key): string {
-    if (!isset($this->customFieldNameMap[$key])) {
-      $this->customFieldNameMap[$key] = Contact::getFields(FALSE)
-        ->addWhere('custom_field_id', '=', str_replace('custom_', '', $key))
-        ->addSelect('name')
-        ->execute()->first()['name'];
-    }
-    return $this->customFieldNameMap[$key];
-  }
-
-  /**
    * Get the contact ID for the imported row.
    *
    * If we have a contact ID we check it is valid and, if there is also
@@ -2323,15 +2291,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
         $contactID = array_key_first($possibleMatches);
       }
       elseif (count($possibleMatches) > 1) {
-        if ($contactType === 'Individual' && $action === 'save') {
-          // This is a temporary hack for T374063.
-          // I have been working on a hook fix but do not thing the challenges will be
-          // resolved in time for Melanie's leave so rushing this in.
-          $contactID = \Civi\WMFHook\Import::createDedupeContact();
-        }
-        else {
-          throw new CRM_Core_Exception(ts('Record duplicates multiple contacts: ') . implode(',', $possibleMatches));
-        }
+        throw new CRM_Core_Exception(ts('Record duplicates multiple contacts: ') . implode(',', $possibleMatches));
       }
       elseif (!in_array($action, ['create', 'ignore', 'save'], TRUE)) {
         throw new CRM_Core_Exception(ts('No matching %1 found', [$entity, 'String']));
@@ -2408,9 +2368,6 @@ abstract class CRM_Import_Parser implements UserJobInterface {
         }
       }
       $fieldName = $prefix . $fieldName;
-      if (!empty($field['custom_field_id'])) {
-        $this->customFieldNameMap['custom_' . $field['custom_field_id']] = $fieldName;
-      }
       $prefixedFields[$fieldName] = $field;
     }
 
