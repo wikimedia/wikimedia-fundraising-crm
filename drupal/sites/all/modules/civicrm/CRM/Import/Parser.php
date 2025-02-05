@@ -1612,6 +1612,10 @@ abstract class CRM_Import_Parser implements UserJobInterface {
       }
       return Civi::$statics[__CLASS__][$fieldName][$importedValue] ?: 'invalid_import_value';
     }
+    if ($fieldMetadata['input_type'] ?? NULL === 'EntityRef') {
+      // We don't require a number as if this is not a number it might be possible to look it up.
+      return $importedValue;
+    }
     if ($dataType === 'Integer') {
       // We have resolved the options now so any remaining ones should be integers.
       return CRM_Utils_Rule::numeric($importedValue) ? (int) $importedValue : 'invalid_import_value';
@@ -2291,7 +2295,15 @@ abstract class CRM_Import_Parser implements UserJobInterface {
         $contactID = array_key_first($possibleMatches);
       }
       elseif (count($possibleMatches) > 1) {
-        throw new CRM_Core_Exception(ts('Record duplicates multiple contacts: ') . implode(',', $possibleMatches));
+        if ($contactType === 'Individual' && $action === 'save') {
+          // This is a temporary hack for T374063.
+          // I have been working on a hook fix but do not thing the challenges will be
+          // resolved in time for Melanie's leave so rushing this in.
+          $contactID = \Civi\WMFHook\Import::createDedupeContact();
+        }
+        else {
+          throw new CRM_Core_Exception(ts('Record duplicates multiple contacts: ') . implode(',', $possibleMatches));
+        }
       }
       elseif (!in_array($action, ['create', 'ignore', 'save'], TRUE)) {
         throw new CRM_Core_Exception(ts('No matching %1 found', [$entity, 'String']));
