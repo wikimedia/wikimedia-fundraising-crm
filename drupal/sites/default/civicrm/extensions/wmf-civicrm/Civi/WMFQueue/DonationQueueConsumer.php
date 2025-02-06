@@ -181,7 +181,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $message->validate();
     if (!$message->getContributionTrackingID()) {
       $msg = $this->addContributionTrackingIfMissing($msg);
-      $message->setContributionTrackingID($msg['contribution_tracking_id'] ?? NULL);
+      $message->setContributionTrackingID(empty($msg['contribution_tracking_id']) ? NULL : $msg['contribution_tracking_id']);
     }
     $this->stopTiming('verify_and_stage');
 
