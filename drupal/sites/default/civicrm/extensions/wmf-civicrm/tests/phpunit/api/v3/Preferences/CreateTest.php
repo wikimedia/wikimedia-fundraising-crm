@@ -143,7 +143,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
     $this->callAPISuccess('Preferences', 'create', [
       'contact_id' => $this->contactID,
       'checksum' => $checksum,
-      "email" => 'test2@gmail.com',
+      "email" => 'test3@gmail.com',
       'send_email' => 'false',
     ]);
 
@@ -169,7 +169,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
     // others remain the same
     $this->assertEquals('pt-br', $contact3['preferred_language']);
     $this->assertEquals('AF', $address3['country_id.iso_code']);
-    $this->assertEquals('test2@gmail.com', $email3['email']);
+    $this->assertEquals('test3@gmail.com', $email3['email']);
 
     // no email which is required
     $this->callAPIFailure('Preferences', 'create', [
@@ -181,6 +181,12 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
       'contact_id' => $this->contactID,
       'checksum' => $checksum,
       'email' => '123',
+    ]);
+    // mismatch checksum
+    $this->callAPIFailure('Preferences', 'create', [
+      'contact_id' => $this->contactID,
+      'checksum' => $checksum . 'xx',
+      'email' => 'test@gmail.com'
     ]);
   }
 }

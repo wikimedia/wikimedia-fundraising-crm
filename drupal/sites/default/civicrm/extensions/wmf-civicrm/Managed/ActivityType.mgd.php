@@ -282,5 +282,37 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'OptionValue_Email_Preference_Center',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'activity_type',
+        'label' => 'Email Preference Center',
+        'value' => 194,
+        'name' => 'Email Preference Center',
+        'grouping' => NULL,
+        'filter' => 0,
+        'weight' => 78,
+        'is_default' => FALSE,
+        'description' => 'Email Preference Center Queue Consumed',
+        'is_optgroup' => FALSE,
+        'is_reserved' => FALSE,
+        'is_active' => TRUE,
+        'component_id' => NULL,
+        'domain_id' => NULL,
+        'visibility_id' => NULL,
+        'icon' => 'fa-heart',
+        'color' => NULL,
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ]
 ];
 
