@@ -329,7 +329,7 @@ class ThankYou extends GenericWorkflowMessage {
       'Stock_Information.Stock Quantity' => 'stockQuantity',
       'Gift_Data.Campaign' => 'giftSource',
       'contribution_recur_id' => 'isRecurring',
-      'contribution_recur.frequency_unit' => 'frequencyUnit',
+      'contribution_recur_id.frequency_unit' => 'frequencyUnit',
     ];
   }
 
