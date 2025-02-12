@@ -60,7 +60,7 @@ function civicrm_api3_logging_forgetme($params) {
       'SELECT group_concat(activity_id) FROM log_civicrm_activity_contact WHERE activity_id IN (' . implode(',', $activities) . ') AND contact_id NOT IN (' . implode(',', $nonKeeperContactIds) . ')'
     );
 
-    $activitiesToDelete = array_diff($activities, explode(',', $activitiesToKeep));
+    $activitiesToDelete = array_diff($activities, explode(',', $activitiesToKeep ?? ''));
     if (!empty($activitiesToDelete)) {
       CRM_Core_DAO::executeQuery("DELETE FROM log_civicrm_activity WHERE id IN (" . implode(',', $activitiesToDelete) . ")");
     }

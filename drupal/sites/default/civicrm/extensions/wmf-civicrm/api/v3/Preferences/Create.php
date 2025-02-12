@@ -28,7 +28,7 @@ function _civicrm_api3_preferences_create_spec(&$spec) {
   $spec['language'] = [
     'name' => 'language',
     'title' => 'Language',
-    'api.required' => TRUE,
+    'api.required' => FALSE,
     'type' => CRM_Utils_Type::T_STRING,
   ];
   $spec['email'] = [
@@ -40,7 +40,7 @@ function _civicrm_api3_preferences_create_spec(&$spec) {
   $spec['country'] = [
     'name' => 'country',
     'title' => 'Country',
-    'api.required' => TRUE,
+    'api.required' => FALSE,
     'type' => CRM_Utils_Type::T_STRING,
   ];
   $spec['send_email'] = [
@@ -69,11 +69,21 @@ function _civicrm_api3_preferences_create_spec(&$spec) {
  * @see civicrm_api3_create_success
  */
 function civicrm_api3_preferences_create(array $params): array {
+  // validate passing params
   if (
-    !preg_match('/^[0-9a-f_]*$/', $params['checksum']) ||
-    !preg_match('/^[0-9a-zA-Z_-]*$/', $params['language']) ||
-    !preg_match('/^[a-zA-Z]*$/', $params['country']) ||
     (
+      !empty($params['checksum']) &&
+      !preg_match('/^[0-9a-f_]*$/', $params['checksum'])
+    ) || (
+      !empty($params['email']) &&
+      !filter_var($params['email'], FILTER_VALIDATE_EMAIL)
+    ) || (
+      !empty($params['language']) &&
+      !preg_match('/^[0-9a-zA-Z_-]*$/', $params['language'])
+    ) || (
+      !empty($params['country']) &&
+      !preg_match('/^[a-zA-Z]*$/', $params['country'])
+    ) || (
       !empty($params['snooze_date']) &&
       !preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/', $params['snooze_date'])
     )
@@ -81,6 +91,7 @@ function civicrm_api3_preferences_create(array $params): array {
     throw new CRM_Core_Exception('Invalid data in e-mail preferences message.', 'invalid_message');
   }
 
+  // validate checksum (for queue with fallback unsubscribe still need these two value to validate)
   if (!CRM_Contact_BAO_Contact_Utils::validChecksum($params['contact_id'], $params['checksum'])) {
     throw new CRM_Core_Exception('Checksum mismatch');
   }
@@ -105,67 +116,87 @@ function civicrm_api3_preferences_create(array $params): array {
       "Contact with ID {$params['contact_id']} from preferences message has been merged into contact with ID $contactID"
     );
   }
-
-  $contactUpdateValues = ['preferred_language' => $params['language']];
+  $result = [];
+  $contactUpdateValues = [];
+  $message = "Email Preference Center update - civicrm_contact id: $contactID";
   if (array_key_exists('send_email', $params)) {
     $contactUpdateValues['Communication.opt_in'] = $params['send_email'];
+    $message .= ", opt_in to {$params['send_email']}";
   }
-  $result = Contact::update(FALSE)->setValues($contactUpdateValues)
-    ->addWhere('id', '=', $contactID)
-    ->execute()->first();
 
-  $address = Address::get(FALSE)
-    ->addSelect('country_id.iso_code')
-    ->addWhere('contact_id', '=', $contactID)
-    ->addWhere('location_type_id:name', '=', 'EmailPreference')
-    ->execute();
+  if (!empty($params['language'])) {
+    $contactUpdateValues['preferred_language'] = $params['language'];
+    $message .= ", preferred_language to {$params['language']}";
+  }
+  if ($contactUpdateValues !== []) {
+    $contactResult = Contact::update(FALSE)->setValues($contactUpdateValues)
+      ->addWhere('id', '=', $contactID)
+      ->execute()->first();
+    $result = array_merge($result,$contactResult);
+  }
 
-  $email = Email::get(FALSE)
-    ->addWhere('contact_id', '=', $contactID)
-    ->addWhere('is_primary', '=',1)
-    ->execute();
-
-  Civi::log('wmf')
-    ->info("Email Preference Center update - civicrm_contact id: $contactID's preferred_language to {$params['language']}, country to {$params['country']} and civicrm_value_1_communication_4.opt_in to {$params['send_email']}.");
-
-  if (count($address) === 1) {
-    Address::update(FALSE)->setValues([
-      'country_id.iso_code' => (string) $params['country'],
-      'is_primary' => 1,
-    ])
-      ->addWhere('id', '=', $address->first()['id'])
+  if (!empty($params['country'])) {
+    $address = Address::get(FALSE)
+      ->addSelect('country_id.iso_code')
+      ->addWhere('contact_id', '=', $contactID)
+      ->addWhere('location_type_id:name', '=', 'EmailPreference')
       ->execute();
-  }
-  else {
-    // Our UI currently use is_primary = 1's country, so do we update the EmailPreference is_primary to 1 and others to 0
-    // Or we do not update the is_primary just check if emailPreference exist for UI?
-    Address::create(FALSE)->setValues([
-      'location_type_id:name' => 'EmailPreference',
-      'country_id.iso_code' => (string) $params['country'],
-      'contact_id' => $contactID,
-      'is_primary' => 1,
-    ])->execute();
+
+    if (count($address) === 1) {
+      $addressResult = Address::update(FALSE)->setValues([
+        'country_id.iso_code' => (string) $params['country'],
+        'is_primary' => 1,
+      ])
+        ->addWhere('id', '=', $address->first()['id'])
+        ->execute()->first();
+    } else {
+      // Our UI currently use is_primary = 1's country, so do we update the EmailPreference is_primary to 1 and others to 0
+      // Or we do not update the is_primary just check if emailPreference exist for UI?
+      $addressResult = Address::create(FALSE)->setValues([
+        'location_type_id:name' => 'EmailPreference',
+        'country_id.iso_code' => (string) $params['country'],
+        'contact_id' => $contactID,
+        'is_primary' => 1,
+      ])->execute()->first();
+    }
+    $result = array_merge($result, $addressResult);
+    $message .= ", country to {$params['country']}";
   }
 
   // We just need to set this value here. The omnimail_civicrm_custom hook will pick up
   // the change and queue up an API request to Acoustic to actually snooze it.
-  $snoozeValues = empty($params['snooze_date']) ? [] : ['email_settings.snooze_date' => $params['snooze_date']];
-
-  if (count($email) === 1) {
-    Email::update(FALSE)->setValues([
-      'email' => (string) $params['email']
-    ] + $snoozeValues)
-      ->addWhere('id', '=', $email->first()['id'])
-      ->execute();
+  $email = Email::get(FALSE)
+    ->addWhere('contact_id', '=', $contactID)
+    ->addWhere('is_primary', '=',1)
+    ->execute();
+  $isEmailUpdated = (count($email) === 1 ? $email->first()['email'] : NULL) !== $params['email'];
+  if ($isEmailUpdated) {
+    $message .= ", email to {$params['email']}";
   }
-  else {
-    Email::create(FALSE)->setValues([
-      'email' => (string) $params['email'],
-      'contact_id' => $contactID,
-      'is_primary' => 1,
-    ] + $snoozeValues)->execute();
+  $snoozeValues = [];
+  if (!empty($params['snooze_date'])) {
+    $snoozeValues = ['email_settings.snooze_date' => $params['snooze_date']];
+    $message .= ", snooze date to {$params['snooze_date']}";
   }
 
-  // TODO: add info about email and address updates to the contact update result
-  return civicrm_api3_create_success([$contactID => (array) $result], $params, 'Preferences', 'create');
+  if ($isEmailUpdated || $snoozeValues !== []) {
+    if (count($email) === 1) {
+      $emailResult = Email::update(FALSE)->setValues([
+          'email' => (string) $params['email']
+        ] + $snoozeValues)
+        ->addWhere('id', '=', $email->first()['id'])
+        ->execute()->first();
+    } else {
+      $emailResult = Email::create(FALSE)->setValues([
+          'email' => (string) $params['email'],
+          'contact_id' => $contactID,
+          'is_primary' => 1,
+        ] + $snoozeValues)->execute()->first();
+    }
+    $result = array_merge($result, $emailResult);
+  }
+
+  Civi::log('wmf')->info($message. '.');
+
+  return civicrm_api3_create_success([$contactID => $result], $params, 'Preferences', 'create');
 }
