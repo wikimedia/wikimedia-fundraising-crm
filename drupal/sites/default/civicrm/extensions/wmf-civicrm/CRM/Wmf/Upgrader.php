@@ -2716,6 +2716,28 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Clean up empty website records.
+   *
+   * select count(*) FROM civicrm_website WHERE url IS NULL OR url = '';
+   * +----------+
+   * | count(*) |
+   * +----------+
+   * |    10693 |
+   * +----------+
+   *
+   * Bug: T385898
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4610(): bool {
+    CRM_Core_DAO::executeQuery("
+      DELETE FROM civicrm_website WHERE url IS NULL OR url = ''
+    ");
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
