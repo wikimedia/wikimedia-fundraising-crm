@@ -2738,6 +2738,31 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Fix the data type of the original_amount field.
+   *
+   * Note that on our locals this is already 'Money' and the
+   * data type of the field in wmf_contribution_extra and
+   * log_wmf_contribution_extra is already correct - ie.
+   * `original_amount` decimal(20,2) DEFAULT NULL,
+   *
+   * I avoided the api as the underlying table field is correct already.
+   *
+   * Also note that some cache clearing was required on staging before the notices
+   * disappeared.
+   *
+   * Bug: T385898
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4615(): bool {
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_custom_field SET data_type = 'Money' WHERE name = 'original_amount'
+    ");
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
