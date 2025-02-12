@@ -199,7 +199,7 @@ class Render extends AbstractAction {
       'contribution_extra.gateway' => 'gateway',
       'contribution_extra.original_amount' => 'amount',
       'contribution_extra.original_currency' => 'currency',
-      'contribution_recur.frequency_unit' => 'frequency_unit',
+      'contribution_recur_id.frequency_unit' => 'frequency_unit',
       'Stock_Information.Description_of_Stock' => 'description_of_stock',
       'Stock_Information.Stock Value' => 'stock_value',
       'Stock_Information.Stock Ticker' => 'stock_ticker',
