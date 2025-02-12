@@ -74,7 +74,9 @@ class VerifySnooze extends AbstractAction {
         ->addWhere('id', '=', $email['entity_id'])
         ->execute()->first();
       if (!$snoozedEmail || empty($snoozedEmail['email_settings.snooze_date'])
-        || strtotime($snoozedEmail['email_settings.snooze_date']) < time()
+        // If the snooze is less than a day into the future then leave it - it's on it's way out
+        // & who wants to calculate timezones!!
+        || strtotime($snoozedEmail['email_settings.snooze_date']) < strtotime('+ 1 day')
       ) {
         // If the 'real' email (as opposed to the log email) does not exist
         // or does not have a future snooze date then skip.
