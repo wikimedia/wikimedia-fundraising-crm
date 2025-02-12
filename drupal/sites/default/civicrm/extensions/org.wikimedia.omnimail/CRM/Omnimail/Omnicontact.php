@@ -41,11 +41,11 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         'groupIdentifier' => array_keys($groupIdentifier),
         'email' => $email,
         'databaseID' => $params['database_id'],
-        'fields' => $this->mapFields($params['values']),
+        'fields' => $this->mapFields($params['values']) + ($snoozeEndDate ? ['snooze_end_date' => date('Y-m-d H:i:s', strtotime($snoozeEndDate))] : []),
         'snoozeTimeStamp' => empty($snoozeEndDate) ? NULL : strtotime($snoozeEndDate),
         'syncFields' => ['Email' => $email],
       ]);
-      /* @var Contact $reponse */
+      /* @var Contact $response */
       $response = $request->getResponse();
       $activityDetail = "Email $email was successfully snoozed till $snoozeEndDate";
       $activity_id = $params['values']['activity_id'] ?? NULL;
@@ -135,7 +135,9 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         'contact_identifier' => $response->getContactIdentifier(),
         'opt_in_date' => $response->getOptInIsoDateTime() ?: NULL,
         'opt_out_date' => $response->getOptOutIsoDateTime() ?: NULL,
-        'snooze_end_date' => $response->getSnoozeEndIsoDateTime() ?: NULL,
+        'snooze_end_date' => NULL,
+        'internal_system_snooze_end_date' => $response->getSnoozeEndIsoDateTime() ?: NULL,
+        'snooze_fields_match' => FALSE,
         'last_modified_date' => $response->getLastModifiedIsoDateTime()?: NULL,
         'url' => 'https://cloud.goacoustic.com/campaign-automation/Data/Databases?cuiOverrideSrc=https%253A%252F%252Fcampaign-us-4.goacoustic.com%252FsearchRecipient.do%253FisShellUser%253D1%2526action%253Dedit%2526listId%253D9644238%2526recipientId%253D' . $response->getContactIdentifier() . '&listId=' . $params['database_id'],
       ];
@@ -158,6 +160,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         $return['sms_consent_timestamp'] = NULL;
         $return['sms_consent_datetime'] = NULL;
       }
+      $return['snooze_fields_match'] = ($return['snooze_end_date'] ?: FALSE) === ($return['internal_system_snooze_end_date'] ?: FALSE);
       return $return;
     }
     catch (Exception $e) {
