@@ -71,9 +71,9 @@ function civicrm_api3_omnirecipient_process_unsubscribes($params) {
  * @param $params
  */
 function _civicrm_api3_omnirecipient_process_unsubscribes_spec(&$params) {
-  $params['event_type'] = array(
-    'api.default' => array('IN' => array('Opt Out', 'Reply Abuse')),
-    'options' => array(
+  $params['event_type'] = [
+    'api.default' => ['IN' => ['Opt Out', 'Reply Abuse']],
+    'options' => [
       'Opt Out' => 'Opt Out',
       'Hard Bounce' => 'Hard Bounce',
       'Reply Abuse' => 'Reply Abuse',
@@ -83,6 +83,6 @@ function _civicrm_api3_omnirecipient_process_unsubscribes_spec(&$params) {
       'Reply Other' => 'Reply Other',
       'Soft Bounce ' => 'Soft Bounce',
       'Suppressed' => 'Suppressed',
-    ),
-  );
+    ],
+  ];
 }

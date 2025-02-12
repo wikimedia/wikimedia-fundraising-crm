@@ -71,7 +71,7 @@ function civicrm_api3_omnirecipient_process_onhold($params) {
  */
 function _civicrm_api3_omnirecipient_process_onhold_spec(&$params) {
   $params['event_type'] = [
-    'api.default' => ['IN' => ['Hard Bounce', 'Reply Mail Block']],
+    'api.default' => ['IN' => ['Hard Bounce']],
     'options' => [
       'Opt Out' => 'Opt Out',
       'Hard Bounce' => 'Hard Bounce',
