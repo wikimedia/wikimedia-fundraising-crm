@@ -14,23 +14,32 @@
     <url desc="Support">https://github.com/lcdservices/biz.lcdservices.movecontrib/issues</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2024-06-06</releaseDate>
-  <version>2.13</version>
+  <releaseDate>2025-02-13</releaseDate>
+  <version>2.14</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.60</ver>
+    <ver>5.82</ver>
   </compatibility>
+  <smarty_compatibility>
+    <ver>5.0</ver>
+  </smarty_compatibility>
+  <php_compatibility>
+    <ver>8.1</ver>
+    <ver>8.2</ver>
+    <ver>8.3</ver>
+    <ver>8.4</ver>
+  </php_compatibility>
   <civix>
     <namespace>CRM/LCD/MoveContrib</namespace>
-    <format>23.02.1</format>
+    <format>25.01.1</format>
   </civix>
   <mixins>
     <mixin>menu-xml@1.0.0</mixin>
-    <mixin>smarty-v2@1.0.1</mixin>
+    <mixin>mgd-php@1.0.0</mixin>
+    <mixin>smarty@1.0.3</mixin>
   </mixins>
   <classloader>
     <psr0 prefix="CRM_" path="."/>
     <psr4 prefix="Civi\" path="Civi"/>
   </classloader>
-  <upgrader>CRM_LCD_MoveContrib_Upgrader</upgrader>
 </extension>
