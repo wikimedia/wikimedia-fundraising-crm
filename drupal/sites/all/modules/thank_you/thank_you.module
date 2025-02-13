@@ -339,7 +339,8 @@ EOT;
 
       $logMessage = $ex->getMessage()
         . "<br/>Setting no_thank_you to '$noThankYou'";
-      \Civi::log('wmf')->info('wmf_civicrm: Preventing thank-you for contribution {contribution_id} because: {reason}', ['contribution_id' => $contribution_id, 'reason' => $reason]);
+      \Civi::log('wmf')->info('wmf_civicrm: Preventing thank-you for contribution {contribution_id} because: {reason}',
+        ['contribution_id' => $contribution->id, 'reason' => $noThankYou]);
 
       try {
         \Civi\Api4\Contribution::update(FALSE)
@@ -347,8 +348,8 @@ EOT;
           ->addWhere('id', '=', $contribution->id)
           ->execute();
       }
-      catch (CRM_Core_Exception $ex) {
-        \Civi::log('wmf')->error('wmf_civicrm: Updating with no-thank-you failed with details: {message}', ['message' => $ex->getMessage()]);
+      catch (CRM_Core_Exception $coreEx) {
+        \Civi::log('wmf')->error('wmf_civicrm: Updating with no-thank-you failed with details: {message}', ['message' => $coreEx->getMessage()]);
       }
 
       $consecutiveFailures++;
