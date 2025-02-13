@@ -372,25 +372,11 @@ function offline2civicrm_get_gateway_specific_fields($form_state) {
 function offline2civicrm_get_importer_class($uploadFormat, $fileUri, $additionalFields = array()) {
   switch ($uploadFormat) {
 
-    case 'citibank_individuals':
-      return new CitibankIndividualsFile($fileUri, $additionalFields);
-      break;
-
-    case 'engage':
-      return new EngageChecksFile($fileUri, $additionalFields);
-
-    case 'generic_ind':
-      return new WmfImportFile($fileUri, $additionalFields);
-
     case 'benevity':
       return new BenevityFile($fileUri, $additionalFields);
 
     case 'fidelity':
       return new FidelityFile($fileUri, $additionalFields);
-
-    case 'foreign_checks':
-      return new ForeignChecksFile($fileUri, $additionalFields);
-
 
     default:
       throw new Exception('Bad file format selection');
