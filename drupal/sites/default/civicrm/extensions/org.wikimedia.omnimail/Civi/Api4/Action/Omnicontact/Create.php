@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\Omnicontact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use GuzzleHttp\Client;
+use CRM_Omnimail_ExtensionUtil as E;
 
 /**
  *  Class Check.
@@ -106,7 +107,14 @@ class Create extends AbstractAction {
   }
 
   public function fields(): array {
-    return [];
+    return [
+      [
+        'name' => 'snooze_end_date',
+        'required' => FALSE,
+        'description' => E::ts('Snooze End Date'),
+        'data_type' => 'Datetime',
+      ],
+    ];
   }
 
 }

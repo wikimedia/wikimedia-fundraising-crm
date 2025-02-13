@@ -61,7 +61,7 @@
     <ext>import_extensions</ext>
     <ext>civicrm_admin_ui</ext>
     <ext>biz.lcdservices.movecontrib</ext>
-    <ext>theisland</ext>
+    <ext>riverlea</ext>
     <ext>damaged</ext>
     <ext>symfony_email</ext>
   </requires>
