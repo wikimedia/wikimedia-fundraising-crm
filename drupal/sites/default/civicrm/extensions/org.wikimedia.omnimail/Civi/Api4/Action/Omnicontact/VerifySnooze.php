@@ -11,6 +11,8 @@ use GuzzleHttp\Client;
 /**
  * Audit whether snoozed contacts are correctly snoozed remotely.
  *
+ * @see https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_Integrated_Processes/Acoustic_Integration/Snooze
+ *
  * @method $this setDatabaseID(int $databaseID)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
