@@ -569,9 +569,9 @@ class CRM_Deduper_BAO_MergeHandler {
    * @param string $fieldName
    * @param string $entity
    * @param int $block
-   * @param mixed $value
+   * @param string $value
    */
-  public function setResolvedLocationValue(string $fieldName, string $entity, int $block, $value) {
+  public function setResolvedLocationValue(string $fieldName, string $entity, int $block, string $value) {
     $key = $entity . 'ConflictDetails';
     unset($this->$key[$block]['fields'][$fieldName]);
     $this->locationConflictResolutions[$entity][$block][$fieldName] = $value;
