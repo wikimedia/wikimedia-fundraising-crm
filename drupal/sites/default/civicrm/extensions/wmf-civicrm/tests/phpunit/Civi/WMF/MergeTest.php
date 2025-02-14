@@ -2,6 +2,7 @@
 
 namespace Civi\WMF;
 
+use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\CustomField;
 use Civi\Api4\Email;
@@ -772,6 +773,37 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * Test that having city set to NULL does not cause problems.
+   *
+   * A recent upstream fix started returning NULL fields as conflicts which caused
+   * problems with a type hint.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testBatchMergeAddressNullCity(): void {
+    $this->breedGenerousDuck('first_duck', ['address_primary.city' => 'Duckville', 'address_primary.postal_code' => 90210, 'address_primary.country_id.name' => 'Mexico'], FALSE);
+    $this->breedGenerousDuck('second_duck', ['address_primary.address_data.address_update_date' => '2024-02-19', 'address_primary.country_id.name' => 'New Zealand'], TRUE);
+
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $this->ids['Contact']['second_duck'])
+      ->setSelect(['city', 'country_id:name', 'country_id.name', 'address_data.address_update_date'])
+      ->execute()->single();
+
+    $this->callAPISuccess('Contact', 'merge', [
+      'mode' => 'safe',
+      'to_remove_id' => $this->ids['Contact']['second_duck'],
+      'to_keep_id' => $this->ids['Contact']['first_duck'],
+    ]);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $this->ids['Contact']['first_duck'])
+      ->setSelect(['city', 'country_id:name', 'country_id.name', 'address_data.address_update_date'])
+      ->execute()->single();
+    $this->assertEquals(NULL, $address['city']);
+    $this->assertEquals('NZ', $address['country_id:name']);
+    $this->assertEquals('2024-02-19', $address['address_data.address_update_date']);
+  }
+
+  /**
    * Test that we don't see country only as conflicting with country plus.
    *
    * In this variant the most recent donor is the one with the lower contact
@@ -795,6 +827,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
       'street_address' => 'First on the left after you cross the border',
       'location_type_id' => 1,
       'is_primary' => 1,
+      'address_source.address_update_date' => '2024-02-19',
     ]);
     $this->callAPISuccess('Address', 'create', [
       'country_id' => 'MX',
@@ -1490,7 +1523,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
             [array_merge([
               'location_type_id' => 'Main',
               'is_primary' => 0,
-            ], $locationParams1)
+            ], $locationParams1),
             ],
             [
               array_merge([

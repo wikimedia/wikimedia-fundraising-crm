@@ -961,9 +961,11 @@ class CRM_Deduper_BAO_MergeHandler {
       ];
       foreach ($otherContactAddress as $field => $value) {
         if (
-          isset($mainContactAddress[$field])
+          $value !== NULL
+          && isset($mainContactAddress[$field])
           && $mainContactAddress[$field] !== $value
-          && !in_array($field, $keysToIgnore, TRUE)) {
+          && !in_array($field, $keysToIgnore, TRUE)
+        ) {
           $this->addressConflictDetails[$blockNumber]['fields'][$field] = $value;
           $this->addressConflictDetails[$blockNumber]['to_keep'] = $mainContactAddress;
           $this->addressConflictDetails[$blockNumber]['to_remove'] = $otherContactAddress;
