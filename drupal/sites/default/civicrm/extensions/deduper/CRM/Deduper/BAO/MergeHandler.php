@@ -569,9 +569,9 @@ class CRM_Deduper_BAO_MergeHandler {
    * @param string $fieldName
    * @param string $entity
    * @param int $block
-   * @param mixed $value
+   * @param string $value
    */
-  public function setResolvedLocationValue(string $fieldName, string $entity, int $block, $value) {
+  public function setResolvedLocationValue(string $fieldName, string $entity, int $block, string $value) {
     $key = $entity . 'ConflictDetails';
     unset($this->$key[$block]['fields'][$fieldName]);
     $this->locationConflictResolutions[$entity][$block][$fieldName] = $value;
@@ -961,9 +961,11 @@ class CRM_Deduper_BAO_MergeHandler {
       ];
       foreach ($otherContactAddress as $field => $value) {
         if (
-          isset($mainContactAddress[$field])
+          $value !== NULL
+          && isset($mainContactAddress[$field])
           && $mainContactAddress[$field] !== $value
-          && !in_array($field, $keysToIgnore, TRUE)) {
+          && !in_array($field, $keysToIgnore, TRUE)
+        ) {
           $this->addressConflictDetails[$blockNumber]['fields'][$field] = $value;
           $this->addressConflictDetails[$blockNumber]['to_keep'] = $mainContactAddress;
           $this->addressConflictDetails[$blockNumber]['to_remove'] = $otherContactAddress;

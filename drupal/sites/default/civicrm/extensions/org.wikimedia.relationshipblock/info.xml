@@ -18,12 +18,20 @@
   <version>1.8</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.68</ver>
+    <ver>5.82</ver>
   </compatibility>
+  <smarty_compatibility>
+    <ver>5.0</ver>
+  </smarty_compatibility>
+  <php_compatibility>
+    <ver>8.2</ver>
+    <ver>8.3</ver>
+    <ver>8.4</ver>
+  </php_compatibility>
   <comments/>
   <civix>
     <namespace>CRM/Relationshipblock</namespace>
-    <format>23.02.1</format>
+    <format>25.01.1</format>
   </civix>
   <classloader>
     <psr0 prefix="CRM_" path="."/>
@@ -31,6 +39,6 @@
   </classloader>
   <upgrader>CRM_Relationshipblock_Upgrader</upgrader>
   <mixins>
-    <mixin>smarty-v2@1.0.0</mixin>
+    <mixin>smarty@1.0.3</mixin>
   </mixins>
 </extension>
