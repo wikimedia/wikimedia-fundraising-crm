@@ -29,7 +29,7 @@ class UpdateTimezones extends AbstractAction {
    */
   protected string $apiKey;
 
-  public function _run( Result $result ) {
+  public function _run(Result $result) {
     $alreadyFound = [];
     $query = CRM_Core_DAO::executeQuery(
       'SELECT postal_code, latitude, longitude FROM civicrm_geocoder_zip_dataset WHERE timezone IS NULL'
@@ -44,7 +44,7 @@ class UpdateTimezones extends AbstractAction {
         $decoded = json_decode($fetched, true);
         $msOffset = (int)$decoded['data'][0]['TimeZone']['CurrentOffsetMs'];
         $hourOffset = $msOffset / 3600000;
-        $tz = 'UTC' . ($hourOffset > 0 ? '+' : '') . $hourOffset;
+        $tz = 'UTC' . ($hourOffset >= 0 ? '+' : '') . $hourOffset;
         $alreadyFound[$pointString] = $tz;
       }
       CRM_Core_DAO::executeQuery(
