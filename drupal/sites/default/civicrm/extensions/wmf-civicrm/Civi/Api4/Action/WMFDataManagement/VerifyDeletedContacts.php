@@ -19,7 +19,12 @@ class VerifyDeletedContacts extends AbstractAction {
     $output = [];
     foreach ($recurrings as $recur) {
       $result[] = $recur;
-      $output[] = 'Recurring contribution: started on ' . $recur['start_date'] . ' trxn: ' . $recur['trxn_id'] . ' ' . \CRM_Utils_System::url('civicrm/contact', ['cid' => $recur['contact_id']], TRUE);
+      $output[] = 'Recurring contribution: started on ' . $recur['start_date'] . ' trxn: ' . $recur['trxn_id'] . ' '
+        . \CRM_Utils_System::url('civicrm/contact/view', [
+          'cid' => $recur['contact_id'],
+          'reset' => 1,
+        ],
+      TRUE);
     }
     if (!empty($output)) {
       \Civi::log('wmf')->alert(implode("\n", $output), [
