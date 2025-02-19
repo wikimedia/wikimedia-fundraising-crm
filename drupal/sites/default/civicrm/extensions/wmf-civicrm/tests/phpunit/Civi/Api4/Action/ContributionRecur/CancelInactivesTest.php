@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\ContributionRecur;
 
 use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
+use Civi\WMFEnvironmentTrait;
 use PHPUnit\Framework\TestCase;
 use SmashPig\PaymentProviders\Responses\CancelSubscriptionResponse;
 use SmashPig\Tests\TestingContext;
@@ -14,6 +15,7 @@ use SmashPig\Tests\TestingProviderConfiguration;
  * This is a generic test class for the extension (implemented with PHPUnit).
  */
 class CancelInactivesTest extends TestCase {
+  use WMFEnvironmentTrait;
 
   /**
    * The tearDown() method is executed after the test was executed (optional).
@@ -25,6 +27,18 @@ class CancelInactivesTest extends TestCase {
   public function tearDown(): void {
     Contact::delete(FALSE)->addWhere('display_name', '=', 'Walter White')->setUseTrash(FALSE)->execute();
     parent::tearDown();
+  }
+
+  /**
+   * Temporary test to see if being the first helps with logging test that passes locally
+   * but not remotely - arg jenkins! Let's try to rule out 'some other test' & then
+   * just hate on you.
+   *
+   * @return void
+   */
+  public function testBeingTheFirst(): void {
+    \Civi::log('wmf')->alert('boo');
+    $this->assertLoggedAlertThatContains('boo');
   }
 
   /**
