@@ -96,58 +96,6 @@ function wmf_civicrm_civicrm_enable() {
 }
 
 /**
- * Implements hook_civicrm_managed().
- *
- * Generate a list of entities to create/deactivate/delete when this module
- * is installed, disabled, uninstalled.
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_managed
- */
-function wmf_civicrm_civicrm_managed(&$entities) {
-  // In order to transition existing types to managed types we
-  // have a bit of a routine to insert managed rows if
-  // they already exist. Hopefully this is temporary and can
-  // go once the module installs are transitioned.
-  $tempEntities = [];
-  foreach ($tempEntities as $index => $tempEntity) {
-    // WMF only uses our own geocoder ...
-    if ($tempEntity['entity'] === 'Geocoder' && $tempEntity['name'] !== 'uk_postcode') {
-      $tempEntities[$index]['params']['is_active'] = 0;
-    }
-    if ($tempEntity['entity'] === 'Monolog' || $tempEntity['entity'] === 'MessageTemplate' || $tempEntity['entity'] === 'Translation') {
-      // We are not transitioning monologs or Message Templates & this will fail due to there not being
-      // a v3 api.
-      $entities[] = $tempEntity;
-      continue;
-    }
-    if ($tempEntity['entity'] === 'RelationshipType') {
-      $lookupParams = ['name_a_b' => $tempEntity['params']['name_a_b'], 'sequential' => 1];
-    }
-    else {
-      $lookupParams = ['name' => $tempEntity['params']['name'], 'sequential' => 1];
-    }
-    $existing = civicrm_api3($tempEntity['entity'], 'get', $lookupParams);
-    if ($existing['count'] === 1 && !CRM_Core_DAO::singleValueQuery("
-      SELECT count(*) FROM civicrm_managed
-      WHERE entity_type = '{$tempEntity['entity']}'
-      AND module = 'wmf-civicrm'
-      AND name = '{$tempEntity['name']}'
-    ")) {
-      if (!isset($tempEntity['cleanup'])) {
-        $tempEntity['cleanup'] = '';
-      }
-      CRM_Core_DAO::executeQuery("
-        INSERT INTO civicrm_managed (module, name, entity_type, entity_id, cleanup)
-        VALUES('wmf-civicrm', '{$tempEntity['name']}', '{$tempEntity['entity']}', {$existing['id']}, '{$tempEntity['cleanup']}')
-      ");
-    }
-    $entities[] = $tempEntity;
-  }
-  // Once the above is obsolete remove & uncomment this line.
-  // _wmf_civicrm_civix_civicrm_managed($entities);
-}
-
-/**
  * Intercede in searches to unset 'force' when it appears to be accidentally set.
  *
  * This is a long standing wmf hack & it's not sure when the url would be hit by
