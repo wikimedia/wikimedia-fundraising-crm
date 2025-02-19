@@ -86,6 +86,33 @@ return [
     ],
   ],
   [
+    'name' => 'alert_failmail',
+    'entity' => 'Monolog',
+    'cleanup' => 'never',
+    'update' => 'always',
+    'params' => [
+      'debug' => TRUE,
+      'version' => 4,
+      'checkPermissions' => FALSE,
+      'values' => [
+        'name' => 'alert_failmail',
+        'type' => 'mail',
+        'channel' => '*',
+        'is_default' => FALSE,
+        'is_active' => TRUE,
+        'is_final' => FALSE,
+        'weight' => 1,
+        'minimum_severity' => 'alert',
+        'description' => ('Send FailMail on alert +.'),
+        'configuration_options' => [
+          'to' => \Civi::settings()->get('wmf_failmail_recipient'),
+          'from' => \Civi::settings()->get('wmf_failmail_from'),
+          'subject' => 'Failmail alert %context.subject%',
+        ],
+      ],
+    ],
+  ],
+  [
     'name' => 'test_all',
     'entity' => 'Monolog',
     'cleanup' => 'never',
