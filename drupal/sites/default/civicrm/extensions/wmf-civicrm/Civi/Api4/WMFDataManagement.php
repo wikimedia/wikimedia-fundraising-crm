@@ -4,6 +4,7 @@ namespace Civi\Api4;
 use Civi\Api4\Action\WMFDataManagement\ArchiveThankYou;
 use Civi\Api4\Action\WMFDataManagement\CleanInvalidLanguageOptions;
 use Civi\Api4\Action\WMFDataManagement\DeleteDeletedContacts;
+use Civi\Api4\Action\WMFDataManagement\VerifyDeletedContacts;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
@@ -42,6 +43,20 @@ class WMFDataManagement extends Generic\AbstractEntity {
    */
   public static function archiveThankYou(bool $checkPermissions = TRUE): ArchiveThankYou {
     return (new ArchiveThankYou(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Verify deleted contacts.
+   *
+   * Check deleted contacts do not have 'live' assets attached (e.g contributions).
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\WMFDataManagement\VerifyDeletedContacts
+   */
+  public static function verifyDeletedContacts(bool $checkPermissions = TRUE): VerifyDeletedContacts {
+    return (new VerifyDeletedContacts(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
