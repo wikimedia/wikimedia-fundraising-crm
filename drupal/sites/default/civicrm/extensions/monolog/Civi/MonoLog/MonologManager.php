@@ -7,6 +7,7 @@ use Civi\Core\LogManager;
 use Monolog\Formatter\HtmlFormatter;
 use Monolog\Handler\NativeMailerHandler;
 use Monolog\Handler\SymfonyMailerHandler;
+use Monolog\Handler\TestHandler;
 use sgoettsch\monologRotatingFileHandler\Handler\monologRotatingFileHandler;
 use Monolog\Logger;
 use Monolog\Handler\SyslogHandler;
@@ -19,6 +20,25 @@ use Monolog\Processor\PsrLogMessageProcessor;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 
 class MonologManager {
+
+  /**
+   * @var \Monolog\Handler\TestHandler|null
+   */
+  private static ?TestHandler $testHandlerSingleton;
+
+  /**
+   * @return \Monolog\Handler\TestHandler
+   */
+  public static function testHandlerSingleton(): TestHandler {
+    if (!isset(self::$testHandlerSingleton)) {
+      self::$testHandlerSingleton = new TestHandler();
+    }
+    return self::$testHandlerSingleton;
+  }
+
+  public static function flush(): void {
+    self::$testHandlerSingleton = NULL;
+  }
 
   /**
    * @var array
@@ -108,6 +128,9 @@ class MonologManager {
           if ($monolog['type'] === 'mail') {
             $this->addSymfonyLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final'], $monolog['configuration_options']);
           }
+          if ($monolog['type'] === 'test') {
+            $this->addTestLogger($channel, $this->channels[$channel], $monolog['minimum_severity'], (bool) $monolog['is_final'], $monolog['configuration_options'] ?? []);
+          }
         }
       }
       return $this->channels[$channel];
@@ -140,7 +163,7 @@ class MonologManager {
       throw new \CRM_Core_Exception('monolog not installed yet');
     }
     foreach ($this->getMonologEntities() as $monolog) {
-      if ($monolog['channel'] === $channel) {
+      if ($monolog['channel'] === $channel || $monolog['channel'] === '*') {
         $return[] = $monolog;
       }
     }
@@ -360,6 +383,13 @@ class MonologManager {
     catch (ServiceNotFoundException $e) {
       $this->addMailLogger($channel, $logger, $minimumLevel, $isFinal, $configurationOptions);
     }
+  }
+
+  protected function addTestLogger(string $channel, Logger $logger, string $minimumLevel, bool $isFinal, array $configurationOptions): void {
+    $handler = self::testHandlerSingleton();
+    $handler->setBubble(!$isFinal);
+    $handler->setLevel($minimumLevel);
+    $logger->pushHandler($handler);
   }
 
   /**
