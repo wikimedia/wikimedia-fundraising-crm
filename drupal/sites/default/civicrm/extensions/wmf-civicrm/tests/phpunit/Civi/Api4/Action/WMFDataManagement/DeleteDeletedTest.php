@@ -42,6 +42,7 @@ class DeleteDeletedTest extends TestCase {
       ->addWhere('id', 'IN', $this->ids['Contact'])
       ->execute();
     $this->assertCount(1, $contacts);
+    // $this->assertLoggedWarningThatContains('civicrm_cleanup_logs: This contact id is not able to be deleted: ' . $this->ids['Contact']['first']);
   }
 
 }

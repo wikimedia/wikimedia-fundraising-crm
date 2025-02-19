@@ -6,9 +6,11 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
+use Civi\Api4\Monolog;
 use Civi\Api4\OptionValue;
 use Civi\Api4\PaymentProcessor;
 use Civi\Api4\PaymentToken;
+use Civi\MonoLog\MonologManager;
 use Civi\Omnimail\MailFactory;
 use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
@@ -118,6 +120,52 @@ trait WMFEnvironmentTrait {
     foreach ($this->originalSettings as $key => $value) {
       \Civi::settings()->set($key, $value);
     }
+  }
+
+  /**
+   * @return \Monolog\Handler\TestHandler
+   */
+  public function getLogger(): \Monolog\Handler\TestHandler {
+    return MonologManager::testHandlerSingleton();
+  }
+
+  public function assertLoggedCriticalThatContains($contains): void {
+    $result = $this->getLogger()->hasCriticalThatContains($contains);
+    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+  }
+
+  public function assertLoggedAlertThatContains($contains): void {
+    $result = $this->getLogger()->hasAlertThatContains($contains);
+    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+  }
+
+  public function assertLoggedErrorThatContains($contains): void {
+    $result = $this->getLogger()->hasErrorThatContains($contains);
+    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+  }
+
+  public function assertLoggedWarningThatContains($contains): void {
+    $result = $this->getLogger()->hasWarningThatContains($contains);
+    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+  }
+
+  public function assertLoggedNoticeThatContains($contains): void {
+    $result = $this->getLogger()->hasNoticeThatContains($contains);
+    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+  }
+
+  public function assertLoggedInfoThatContains($contains): void {
+    $result = $this->getLogger()->hasInfoThatContains($contains);
+    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+  }
+
+  public function assertLoggedDebugThatContains($contains): void {
+    $result = $this->getLogger()->hasDebugThatContains($contains);
+    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+  }
+
+  public function getLoggerRecordsAsString(): string {
+    return print_r($this->getLogger()->getRecords(), TRUE);
   }
 
   /**
