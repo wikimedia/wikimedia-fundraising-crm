@@ -116,6 +116,7 @@ class Message {
       $contact = Contact::get(FALSE)
         ->addWhere('id', '=', $contactID)
         ->addWhere('hash', '=', $this->message['contact_hash'])
+        ->addWhere('is_deleted', '=', FALSE)
         ->addSelect('email_primary.email')
         ->execute()->first();
       if ($contact) {

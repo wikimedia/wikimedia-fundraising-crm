@@ -3,6 +3,7 @@
 namespace Civi\Test;
 
 use Civi\Api4\Monolog;
+use Civi\MonoLog\MonologManager;
 
 /**
  * Class WMFTestListener
@@ -53,12 +54,15 @@ class WMFTestListener implements \PHPUnit\Framework\TestListener {
     else {
       $this->tx = NULL;
     }
-    \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 0 WHERE type = "mail"');
+    // Our main test logger has a higher weight than the other loggers
+    // and runs first, blocking them.
+    \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 1 WHERE type = "test"');
     set_time_limit(210);
   }
 
   public function endTest(\PHPUnit\Framework\Test $test, float $time): void {
-    \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 1 WHERE type = "mail"');
+    \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 0 WHERE type = "test"');
+    MonologManager::flush();
     if ($test instanceof TransactionalInterface) {
       $this->tx->rollback()->commit();
       $this->tx = NULL;
