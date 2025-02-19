@@ -2,6 +2,8 @@
 
 namespace Civi\WMFHook;
 
+use Civi\Api4\WMFLink;
+
 class PreferencesLink {
 
   public static function contactSummaryBlocks(array &$blocks) {
@@ -35,10 +37,9 @@ class PreferencesLink {
       $contactID !== 0
     ) {
       $page->assign('expiryDays', \Civi::settings()->get('checksum_timeout'));
-      $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
-      $preferencesLink = self::getPreferenceUrl($contactID, $checksum);
+      $preferencesLink = self::getPreferenceUrl($contactID);
       $page->assign('preferencesLink', $preferencesLink);
-
+      $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
       $upgradeableRecur = \Civi\WMFHelper\ContributionRecur::getUpgradeable($contactID, $checksum);
       if ($upgradeableRecur) {
         $recurringUpgradeBaseUrl = (string) \Civi::settings()->get('wmf_recurring_upgrade_url');
@@ -79,19 +80,18 @@ class PreferencesLink {
    * into this extension maybe?
    *
    * @param int $contactID
-   * @param string|null $checksum
    * @return string
    * @throws \CRM_Core_Exception
    */
-  public static function getPreferenceUrl(int $contactID, ?string $checksum = NULL): string {
-    if (!$checksum) {
-      if (!isset(\Civi::$statics[__CLASS__ . __FUNCTION__][$contactID])) {
-        \Civi::$statics[__CLASS__ . __FUNCTION__][$contactID] = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
-      }
-      $checksum = \Civi::$statics[__CLASS__ . __FUNCTION__][$contactID];
-    }
-    $emailPreferencesBaseUrl = (string) \Civi::settings()->get('wmf_email_preferences_url');
-    return self::addContactAndChecksumToUrl($emailPreferencesBaseUrl, $contactID, $checksum);
+  public static function getPreferenceUrl(int $contactID): string {
+    $email = \Civi\Api4\Contact::get(FALSE)
+      ->addWhere('id', '=', $contactID)
+      ->addSelect('email_primary.email')
+      ->execute()->single()['email_primary.email'];
+    return WMFLink::getUnsubscribeURL(FALSE)
+      ->setContactID($contactID)
+      ->setEmail($email)
+      ->execute()->first()['unsubscribe_url'];
   }
 
 }
