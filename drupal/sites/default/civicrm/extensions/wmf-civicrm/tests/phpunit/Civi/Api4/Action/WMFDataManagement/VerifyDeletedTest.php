@@ -43,4 +43,27 @@ class VerifyDeletedTest extends TestCase {
     // $this->assertLoggedAlertThatContains($this->ids['Contact']['danger_mouse']);
   }
 
+  /**
+   * Test that we can detect a soft-deleted contact with a contribution.
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testVerifyDeletedWithContribution(): void {
+    $this->createIndividual();
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['danger_mouse'],
+      'total_amount' => 5,
+      'receive_date' => 'now',
+      'financial_type_id:name' => 'Donation',
+    ]);
+    Contact::delete(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['danger_mouse'])
+      ->execute();
+    $result = WMFDataManagement::verifyDeletedContacts(FALSE)
+      ->execute();
+    $this->assertGreaterThanOrEqual(1, count($result));
+    // $this->assertLoggedAlertThatContains($this->ids['Contact']['danger_mouse']);
+  }
+
 }
