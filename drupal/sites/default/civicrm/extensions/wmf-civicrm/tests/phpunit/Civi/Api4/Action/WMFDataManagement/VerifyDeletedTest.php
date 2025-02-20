@@ -39,8 +39,7 @@ class VerifyDeletedTest extends TestCase {
     $result = WMFDataManagement::verifyDeletedContacts(FALSE)
       ->execute();
     $this->assertGreaterThanOrEqual(1, count($result));
-    // Argh only passing locally at the moment ... wip.
-    // $this->assertLoggedAlertThatContains($this->ids['Contact']['danger_mouse']);
+    $this->assertLoggedAlertThatContains($this->ids['Contact']['danger_mouse']);
   }
 
   /**
@@ -63,7 +62,7 @@ class VerifyDeletedTest extends TestCase {
     $result = WMFDataManagement::verifyDeletedContacts(FALSE)
       ->execute();
     $this->assertGreaterThanOrEqual(1, count($result));
-    // $this->assertLoggedAlertThatContains($this->ids['Contact']['danger_mouse']);
+    $this->assertLoggedAlertThatContains($this->ids['Contact']['danger_mouse']);
   }
 
 }

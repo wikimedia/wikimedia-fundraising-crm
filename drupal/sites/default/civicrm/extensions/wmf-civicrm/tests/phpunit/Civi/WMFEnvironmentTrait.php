@@ -131,37 +131,37 @@ trait WMFEnvironmentTrait {
 
   public function assertLoggedCriticalThatContains($contains): void {
     $result = $this->getLogger()->hasCriticalThatContains($contains);
-    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+    $this->assertTrue($result, $contains . ' not in ' . $this->getLoggerRecordsAsString());
   }
 
   public function assertLoggedAlertThatContains($contains): void {
     $result = $this->getLogger()->hasAlertThatContains($contains);
-    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+    $this->assertTrue($result, $contains . ' not in ' . $this->getLoggerRecordsAsString());
   }
 
   public function assertLoggedErrorThatContains($contains): void {
     $result = $this->getLogger()->hasErrorThatContains($contains);
-    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+    $this->assertTrue($result, $contains . ' not in ' . $this->getLoggerRecordsAsString());
   }
 
   public function assertLoggedWarningThatContains($contains): void {
     $result = $this->getLogger()->hasWarningThatContains($contains);
-    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+    $this->assertTrue($result, $contains . ' not in ' . $this->getLoggerRecordsAsString());
   }
 
   public function assertLoggedNoticeThatContains($contains): void {
     $result = $this->getLogger()->hasNoticeThatContains($contains);
-    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+    $this->assertTrue($result, $contains . ' not in ' . $this->getLoggerRecordsAsString());
   }
 
   public function assertLoggedInfoThatContains($contains): void {
     $result = $this->getLogger()->hasInfoThatContains($contains);
-    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+    $this->assertTrue($result, $contains . ' not in ' . $this->getLoggerRecordsAsString());
   }
 
   public function assertLoggedDebugThatContains($contains): void {
     $result = $this->getLogger()->hasDebugThatContains($contains);
-    $this->assertTrue($result, $this->getLoggerRecordsAsString());
+    $this->assertTrue($result, $contains . ' not in ' . $this->getLoggerRecordsAsString());
   }
 
   public function getLoggerRecordsAsString(): string {
