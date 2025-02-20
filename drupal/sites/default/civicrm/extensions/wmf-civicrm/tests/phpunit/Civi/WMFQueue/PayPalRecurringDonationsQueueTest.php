@@ -310,7 +310,7 @@ class PayPalRecurringDonationsQueueTest extends BaseQueueTestCase {
    * @return void
    */
   public function testRecurringPaymentPaypalMissingPredecessor(): void {
-    $this->markTestIncomplete("this one is failing due to the issue documented here https://phabricator.wikimedia.org/T240581#9353558");
+    // $this->markTestIncomplete("this one is failing due to the issue documented here https://phabricator.wikimedia.org/T240581#9353558");
 
     $this->expectExceptionCode(WMFException::MISSING_PREDECESSOR);
     $this->expectException(WMFException::class);

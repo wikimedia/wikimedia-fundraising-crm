@@ -202,6 +202,12 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         ]);
       }
       if (!$message->getContributionRecurID()) {
+        // This logic was copied from the old RecurringQueueConsumer for PayPal subscription payments created before the contribution recur row is created
+        if ($message->isPaypal() && strpos($msg['subscr_id'], 'I-') === FALSE) {
+          \Civi::log('wmf')->notice('recurring: Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
+          throw new WMFException(WMFException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$msg['subscr_id']}");
+        }
+        \Civi::log('wmf')->info('Creating new contribution_recur record while processing a subscr_payment');
         $this->startTiming('message_contribution_recur_insert');
         $this->importContributionRecur($message, $msg, $msg['contact_id']);
         $this->stopTiming('message_contribution_recur_insert');
