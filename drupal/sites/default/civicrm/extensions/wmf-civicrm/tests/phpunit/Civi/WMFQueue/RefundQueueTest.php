@@ -583,8 +583,7 @@ class RefundQueueTest extends BaseQueueTestCase {
       'gateway' => 'test_gateway',
       'type' => 'refund',
     ], 'Refund', 'refund');
-    $mailing = $this->getMailing(0);
-    $this->assertStringContainsString("<p>Refund amount mismatch for : {$this->ids['Contribution']['original']}, difference is 100. See http", $mailing['html']);
+    $this->assertLoggedAlertThatContains("Refund amount mismatch for : {$this->ids['Contribution']['original']}, difference is 100. See http");
   }
 
   /**
