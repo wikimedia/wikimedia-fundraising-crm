@@ -7,12 +7,12 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 
 /**
- * Class ArchiveThankYou.
+ * Class DeleteDeletedContacts.
  *
- * Delete details from old thank you emails.
+ * Fully deleted soft deleted contacts after a period in soft delete.
  *
- * @method setLimit(int $limit) Set the number of activities to hit in the run.
- * @method getLimit(): int Get the number of activities
+ * @method setLimit(int $limit) Set the number of contacts to delete in the run.
+ * @method getLimit(): int Get the number of contacts to delete
  * @method setEndDateTime(string $endDateTime) Set the time to purge up to.
  * @method getEndDateTime(): string Get the time to purge up to.
  *

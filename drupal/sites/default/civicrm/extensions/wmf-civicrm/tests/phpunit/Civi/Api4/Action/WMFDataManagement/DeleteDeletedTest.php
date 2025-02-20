@@ -9,7 +9,7 @@ use Civi\WMFEnvironmentTrait;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Import tests for WMF user cases.
+ * Import tests for WMF DeleteDeletedContact.
  *
  * Tips:
  *  - With HookInterface, you may implement CiviCRM hooks directly in the test
