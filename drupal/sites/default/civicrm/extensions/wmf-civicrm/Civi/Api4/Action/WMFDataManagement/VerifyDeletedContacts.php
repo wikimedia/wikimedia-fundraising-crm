@@ -33,7 +33,9 @@ class VerifyDeletedContacts extends AbstractAction {
       ->execute();
     foreach ($contributions as $contribution) {
       $result[] = $contribution;
-      $output[] = 'Contribution: received on ' . $contribution['receive_date'] . ' trxn: ' . $contribution['trxn_id'] . ' '
+      $output[] = 'Contribution: received on ' . $contribution['receive_date']
+        . ' amount: ' . $contribution['total_amount']
+        . $contribution['check_number'] ? ' By Check ' : (' trxn: ' . $contribution['trxn_id'] . ' ')
         . \CRM_Utils_System::url('civicrm/contact/view', [
           'cid' => $contribution['contact_id'],
           'reset' => 1,
