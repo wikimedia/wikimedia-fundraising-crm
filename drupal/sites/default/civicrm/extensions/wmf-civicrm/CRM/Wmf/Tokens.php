@@ -71,6 +71,7 @@ class CRM_Wmf_Tokens {
       case 'unsubscribe':
         return WMFLink::getUnsubscribeURL(FALSE)
           ->setEmail($email)
+          ->setContactID($contactID)
           ->setLanguage($language)
           ->execute()->first()['unsubscribe_url'];
 
