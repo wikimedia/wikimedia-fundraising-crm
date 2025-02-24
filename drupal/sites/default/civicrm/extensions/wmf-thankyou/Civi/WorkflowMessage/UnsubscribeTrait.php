@@ -27,6 +27,7 @@ trait UnsubscribeTrait {
     return WMFLink::getUnsubscribeURL(FALSE)
       ->setContributionID($this->getContributionID())
       ->setEmail($this->getEmail())
+      ->setContactID($this->getContactID())
       ->setMediawikiLocale($this->getShortLocale())
       ->execute()->first()['unsubscribe_url'];
   }
