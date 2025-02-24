@@ -18,6 +18,8 @@ use Civi\Api4\Generic\Result;
  * @method $this setContributionID(int $contributionID)
  * @method string getEmail()
  * @method $this setEmail(string $email)
+ * @method string getContactID()
+ * @method $this setContactID(int $contactID)
  * @method $this setMediawikiLocale(string $mediaWikiLocale)
  */
 class GetUnsubscribeURL extends AbstractAction {
@@ -45,6 +47,13 @@ class GetUnsubscribeURL extends AbstractAction {
    * @var string $email
    */
   protected $email;
+
+  /**
+   * The contact of epc url.
+   *
+   * @var int $contactID
+   */
+  public $contactID;
 
   /**
    * @var int|null
@@ -76,22 +85,52 @@ class GetUnsubscribeURL extends AbstractAction {
   }
 
   /**
-   * Get the main unsubscribe url.
+   * @deprecated
+   * T223330
+   * this function will go away when we delete old fundraiseUnsubscribe Extension
+   *
+   * @return string
+   */
+  public function getOldUnsubscribeUrl(): string {
+    return Civi::settings()->get('wmf_unsubscribe_url') . '?' . http_build_query([
+        'p' => 'thankyou',
+        'c' => $this->getContributionID(),
+        'e' => $this->getEmail(),
+        'h' => sha1(
+          $this->getContributionID()
+          . $this->getEmail()
+          . \CRM_Utils_Constant::value('WMF_UNSUB_SALT')
+        ),
+        'uselang' => $this->getMediaWikiLocale(),
+      ], '', '&');
+  }
+
+  /**
+   * Get the main unsubscribe url
+   * (
+   * mainly use checksum to validate user,
+   * have hash and email are used for backup
+   * ).
    *
    * @return string
    */
   private function getUnsubscribeUrl(): string {
-     return Civi::settings()->get('wmf_unsubscribe_url') . '?' . http_build_query([
-         'p' => 'thankyou',
-         'c' => $this->getContributionID(),
-         'e' => $this->getEmail(),
-         'h' => sha1(
-           $this->getContributionID()
-           . $this->getEmail()
-           . \CRM_Utils_Constant::value('WMF_UNSUB_SALT')
-         ),
-         'uselang' => $this->getMediaWikiLocale(),
-       ], '', '&');
+    $contactID = $this->getContactID();
+    $urls = [
+      'contact_id' => $contactID,
+      'checksum' => \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID),
+      'email' => $this->getEmail(),
+      'hash' => sha1(
+        $contactID
+        . $this->getEmail()
+        . \CRM_Utils_Constant::value('WMF_UNSUB_SALT')
+      )
+    ];
+    $lang = $this->getMediaWikiLocale();
+    if (!empty($lang)) {
+      $urls['uselang'] = $lang;
+    }
+    return Civi::settings()->get('wmf_email_preferences_url') . '&' . http_build_query($urls, '', '&');
   }
 
   /**
@@ -105,6 +144,7 @@ class GetUnsubscribeURL extends AbstractAction {
     $result[] = [
       // We don't have all these urls .... yet.
       'unsubscribe_url' => $this->getUnsubscribeUrl(),
+      'unsubscribe_url_old' => $this->getOldUnsubscribeUrl(),
       'unsubscribe_url_one_click' => $this->getUnsubscribeUrl(),
       'unsubscribe_url_post' => '',
     ];

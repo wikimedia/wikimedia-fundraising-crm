@@ -91,6 +91,7 @@ class VerifySnooze extends AbstractAction {
           ->setEmail($snoozedEmail['email'])
           ->execute()->first();
         if (!$remoteRecord || empty($remoteRecord['snooze_end_date'])
+          || !$remoteRecord['snooze_fields_match']
           || strtotime($remoteRecord['snooze_end_date']) < strtotime($snoozedEmail['email_settings.snooze_date'])
         ) {
           $result[] = $snoozedEmail + $remoteRecord;
