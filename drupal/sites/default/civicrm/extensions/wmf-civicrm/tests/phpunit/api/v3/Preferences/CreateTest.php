@@ -81,7 +81,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
       'checksum' => $checksum,
       'language' => 'es',
       "country" => 'US',
-      "email" => 'test1@gmail.com',
+      "email" => 'test1@example.org',
       'send_email' => 'true',
     ]);
 
@@ -106,14 +106,14 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
     $this->assertEquals(1, $contact['Communication.opt_in']);
     $this->assertEquals('es', $contact['preferred_language']);
     $this->assertEquals('US', $address['country_id.iso_code']);
-    $this->assertEquals('test1@gmail.com', $email['email']);
+    $this->assertEquals('test1@example.org', $email['email']);
 
     $this->callAPISuccess('Preferences', 'create', [
       'contact_id' => $this->contactID,
       'checksum' => $checksum,
       'language' => 'pt-br',
       "country" => 'AF',
-      "email" => 'test2@gmail.com'
+      "email" => 'test2@example.org'
     ]);
 
     $contact2 = Contact::get(FALSE)->addWhere('id', '=', (int) $this->contactID)
@@ -137,13 +137,13 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
     $this->assertEquals(1, $contact2['Communication.opt_in']);
     $this->assertEquals('pt-br', $contact2['preferred_language']);
     $this->assertEquals('AF', $address2['country_id.iso_code']);
-    $this->assertEquals('test2@gmail.com', $email2['email']);
+    $this->assertEquals('test2@example.org', $email2['email']);
 
     // only update send_email
     $this->callAPISuccess('Preferences', 'create', [
       'contact_id' => $this->contactID,
       'checksum' => $checksum,
-      "email" => 'test3@gmail.com',
+      "email" => 'test3@example.org',
       'send_email' => 'false',
     ]);
 
@@ -169,7 +169,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
     // others remain the same
     $this->assertEquals('pt-br', $contact3['preferred_language']);
     $this->assertEquals('AF', $address3['country_id.iso_code']);
-    $this->assertEquals('test3@gmail.com', $email3['email']);
+    $this->assertEquals('test3@example.org', $email3['email']);
 
     // no email which is required
     $this->callAPIFailure('Preferences', 'create', [
@@ -186,7 +186,7 @@ class api_v3_Preferences_CreateTest extends \PHPUnit\Framework\TestCase implemen
     $this->callAPIFailure('Preferences', 'create', [
       'contact_id' => $this->contactID,
       'checksum' => $checksum . 'xx',
-      'email' => 'test@gmail.com'
+      'email' => 'test@example.org'
     ]);
   }
 }
