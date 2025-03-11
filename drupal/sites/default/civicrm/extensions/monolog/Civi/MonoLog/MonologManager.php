@@ -37,7 +37,9 @@ class MonologManager {
   }
 
   public static function flush(): void {
-    self::$testHandlerSingleton = NULL;
+    if (isset(self::$testHandlerSingleton)) {
+      self::$testHandlerSingleton->clear();
+    }
   }
 
   /**

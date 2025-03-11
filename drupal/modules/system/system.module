@@ -2142,7 +2142,10 @@ function system_admin_menu_block($item) {
   }
 
   if (!isset($item['mlid'])) {
-    $item += db_query("SELECT mlid, menu_name FROM {menu_links} ml WHERE ml.router_path = :path AND module = 'system'", array(':path' => $item['path']))->fetchAssoc();
+    $result = db_query("SELECT mlid, menu_name FROM {menu_links} ml WHERE ml.router_path = :path AND module = 'system'", array(':path' => $item['path']))->fetchAssoc();
+    if(is_array($result)){
+      $item = array_merge($item, $result);
+    }
   }
 
   if (isset($cache[$item['mlid']])) {
