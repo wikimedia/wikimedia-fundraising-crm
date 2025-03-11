@@ -8,22 +8,24 @@ use Civi\Omnimail\MailFactory;
  * @param string $module
  * @param string $message
  * @param Exception $error
- * @param string $source
+ * @param string $source - In practice this is only even the gateway + trxn_id (log_id)
  */
 function wmf_common_failmail($module, $message, $error = NULL, $source = NULL) {
-  \Civi::log('wmf')->error(
-    'failmail: What\'s that? Something wrong: {message}',
-    ['message' => $message]
+  $isRemoved = (is_callable([$error, 'isRejectMessage'])) ? $error->isRejectMessage() : FALSE;
+  $subject = _wmf_common_get_subject($error, $module, $isRemoved);
+  \Civi::log('wmf')->alert(
+    'failmail: What\'s that? Something wrong: {message}. Message was ' . ($isRemoved ? '' : ' not ') . 'removed. {log_id}',
+    ['message' => $message, 'subject' => $subject, 'log_id' => $source]
   );
 
-  $isRemoved = (is_callable([$error, 'isRejectMessage'])) ? $error->isRejectMessage() : FALSE;
+
   $mailer = MailFactory::singleton()->getMailer();
   $mailer->send([
     'from_address' => \Civi::settings()->get('wmf_failmail_from'),
     'from_name' => 'Fail Mail',
     'html' => wmf_common_get_body($message, $error, $source, $isRemoved),
     'reply_to' => '',
-    'subject' => _wmf_common_get_subject($error, $module, $isRemoved),
+    'subject' => $subject,
     'to' => \Civi::settings()->get('wmf_failmail_recipient'),
   ]);
 }
