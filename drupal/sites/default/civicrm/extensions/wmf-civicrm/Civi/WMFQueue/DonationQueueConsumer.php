@@ -99,11 +99,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       $this->removeRecurringToken($message);
       return;
     }
-    // If the contribution has already been imported, this check will
-    // throw an exception that says to drop it entirely, not re-queue.
-    // @todo - remove this line - the same check is done in `doImport()`
-    // when validate is called on the message.
-    $this->checkForDuplicates($message);
 
     // If more information is available, find it from the pending database
     // FIXME: combine the information in a SmashPig job a la Adyen, not here
@@ -555,44 +550,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
-    }
-  }
-
-  /**
-   * Throw an exception if a contribution already exists
-   *
-   * @todo - remove this function - the same check is done in `doImport()`
-   * when validate is called on the message.
-   *
-   * @param array $message
-   *
-   * @throws \Civi\WMFException\WMFException
-   * @throws \CRM_Core_Exception
-   */
-  private function checkForDuplicates(array $message): void {
-    if (
-      empty($message['gateway']) ||
-      empty($message['gateway_txn_id'])
-    ) {
-      throw new WMFException(
-        WMFException::CIVI_REQ_FIELD,
-        'Missing required field: ' .
-        (empty($message['gateway']) ? 'gateway, ' : '') .
-        (empty($message['gateway_trxn_id']) ? 'gateway_trxn_id, ' : '')
-      );
-    }
-
-    if (\CRM_Core_DAO::singleValueQuery(
-      'SELECT count(*)
-    FROM wmf_contribution_extra cx
-    WHERE gateway = %1 AND gateway_txn_id = %2', [
-      1 => [$message['gateway'], 'String'],
-      2 => [$message['gateway_txn_id'], 'String'],
-    ])) {
-      throw new WMFException(
-        WMFException::DUPLICATE_CONTRIBUTION,
-        'Contribution already exists. Ignoring message.'
-      );
     }
   }
 
