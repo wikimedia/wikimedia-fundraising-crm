@@ -132,7 +132,7 @@ class Admin {
   public static function getSchema(): array {
     $schema = [];
     $entities = Entity::get()
-      ->addSelect('name', 'title', 'title_plural', 'bridge_title', 'type', 'primary_key', 'description', 'label_field', 'search_fields', 'icon', 'dao', 'bridge', 'ui_join_filters', 'searchable', 'order_by')
+      ->addSelect('name', 'title', 'title_plural', 'bridge_title', 'type', 'primary_key', 'description', 'label_field', 'parent_field', 'search_fields', 'icon', 'dao', 'bridge', 'ui_join_filters', 'searchable', 'order_by')
       ->addWhere('searchable', '!=', 'none')
       ->addOrderBy('title_plural')
       ->setChain([
@@ -190,7 +190,7 @@ class Admin {
   private static function getDefaultColumns(array $entity, iterable $getFields): array {
     // Start with id & label
     $defaultColumns = array_merge(
-      $entity['primary_key'],
+      $entity['primary_key'] ?? [],
       $entity['search_fields'] ?? []
     );
     $possibleColumns = [];

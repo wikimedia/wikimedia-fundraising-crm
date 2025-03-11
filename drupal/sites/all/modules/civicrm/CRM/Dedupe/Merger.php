@@ -834,7 +834,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
           if (isset($params[$key . '-provider_id'])) {
             $data['im'][$loc]['provider_id'] = $params[$key . '-provider_id'];
           }
-          if (strpos($key, '-provider_id') !== FALSE) {
+          if (str_contains($key, '-provider_id')) {
             $data['im'][$loc]['provider_id'] = $params[$key];
           }
           else {
@@ -1697,7 +1697,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
     }
 
     foreach ($submitted as $key => $value) {
-      if (strpos($key, 'custom_') === 0) {
+      if (str_starts_with($key, 'custom_')) {
         $fieldID = (int) substr($key, 7);
         $fieldMetadata = CRM_Core_BAO_CustomField::getField($fieldID);
         if ($fieldMetadata) {
@@ -2304,7 +2304,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
       }
       elseif ($mode === 'aggressive') {
         unset($conflicts[$key]);
-        if (strpos($key, 'move_location_') !== 0) {
+        if (!str_starts_with($key, 'move_location_')) {
           // @todo - just handling plain contact fields for now because I think I need a bigger refactor
           // of the below to handle locations & will do as a follow up.
           $resolved['contact'][substr($key, 5)] = $migrationInfo[$key]['main'];
@@ -2585,7 +2585,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
 
     // Now, build the table rows appropriately, based off the information on
     // the 'other' contact
-    if (!empty($locations['other']) && !empty($locations['other'][$blockName])) {
+    if (!empty($locations['other'][$blockName])) {
       foreach ($locations['other'][$blockName] as $count => $value) {
 
         $displayValue = $value[$blockInfo['displayField']];
@@ -2704,7 +2704,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
 
           // Put this field's location type at the top of the list
           $tmpIdList = $typeOptions['values'];
-          $defaultTypeId = [$thisTypeId => CRM_Utils_Array::value($thisTypeId, $tmpIdList)];
+          $defaultTypeId = [$thisTypeId => $tmpIdList[$thisTypeId] ?? NULL];
           unset($tmpIdList[$thisTypeId]);
 
           // Add the element

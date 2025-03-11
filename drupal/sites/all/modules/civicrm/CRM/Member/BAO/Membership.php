@@ -224,7 +224,7 @@ class CRM_Member_BAO_Membership extends CRM_Member_DAO_Membership {
     if (empty($params['skipStatusCal'])) {
       $fieldsToLoad = [];
       foreach (['start_date', 'end_date', 'join_date'] as $dateField) {
-        if (!empty($params[$dateField]) && $params[$dateField] !== 'null' && strpos($params[$dateField], date('Ymd', CRM_Utils_Time::strtotime(trim($params[$dateField])))) !== 0) {
+        if (!empty($params[$dateField]) && $params[$dateField] !== 'null' && !str_starts_with($params[$dateField], date('Ymd', CRM_Utils_Time::strtotime(trim($params[$dateField]))))) {
           $params[$dateField] = date('Ymd', CRM_Utils_Time::strtotime(trim($params[$dateField])));
           // @todo enable this once core is using the api.
           // CRM_Core_Error::deprecatedWarning('Relying on the BAO to clean up dates is deprecated. Call membership create via the api');
@@ -312,16 +312,10 @@ class CRM_Member_BAO_Membership extends CRM_Member_DAO_Membership {
     // once we are rid of direct calls to the BAO::create from core
     // we will deprecate this stuff into the v3 api.
     if (($params['version'] ?? 0) !== 4) {
-      // @todo further cleanup required to remove use of $ids['contribution'] from here
       if (isset($ids['membership'])) {
-        $contributionID = CRM_Core_DAO::getFieldValue('CRM_Member_DAO_MembershipPayment',
-          $membership->id,
-          'contribution_id',
-          'membership_id'
-        );
-        // @todo this is a temporary step to removing $ids['contribution'] completely
-        if (empty($params['contribution_id']) && !empty($contributionID)) {
-          $params['contribution_id'] = $contributionID;
+        $latestContributionID = CRM_Member_BAO_MembershipPayment::getLatestContributionIDFromLineitemAndFallbackToMembershipPayment($membership->id);
+        if (empty($params['contribution_id']) && !empty($latestContributionID)) {
+          $params['contribution_id'] = $latestContributionID;
         }
       }
 
@@ -341,7 +335,7 @@ class CRM_Member_BAO_Membership extends CRM_Member_DAO_Membership {
       // If the membership has no associated contribution then we ensure
       // the line items are 'correct' here. This is a lazy legacy
       // hack whereby they are deleted and recreated
-      if (empty($contributionID)) {
+      if (empty($latestContributionID)) {
         if (!empty($params['lineItems'])) {
           $params['line_item'] = $params['lineItems'];
         }
@@ -878,72 +872,6 @@ INNER JOIN  civicrm_membership_type type ON ( type.id = membership.membership_ty
   }
 
   /**
-   * Combine all the importable fields from the lower levels object.
-   *
-   * @param string $contactType
-   *   Contact type.
-   * @param bool $status
-   *
-   * @return array
-   *   array of importable Fields
-   * @throws \CRM_Core_Exception
-   *
-   * @deprecated
-   */
-  public static function importableFields($contactType = 'Individual', $status = TRUE) {
-    CRM_Core_Error::deprecatedFunctionWarning('api');
-    $fields = Civi::cache('fields')->get('membership_importable_fields' . $contactType . $status);
-    if (!$fields) {
-      if (!$status) {
-        $fields = ['' => ['title' => '- ' . ts('do not import') . ' -']];
-      }
-      else {
-        $fields = ['' => ['title' => '- ' . ts('Membership Fields') . ' -']];
-      }
-
-      $tmpFields = CRM_Member_DAO_Membership::import();
-      $contactFields = CRM_Contact_BAO_Contact::importableFields($contactType, NULL);
-
-      // Using new Dedupe rule.
-      $ruleParams = [
-        'contact_type' => $contactType,
-        'used' => 'Unsupervised',
-      ];
-      $fieldsArray = CRM_Dedupe_BAO_DedupeRule::dedupeRuleFields($ruleParams);
-
-      $tmpContactField = [];
-      if (is_array($fieldsArray)) {
-        foreach ($fieldsArray as $value) {
-          $customFieldId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_CustomField',
-            $value,
-            'id',
-            'column_name'
-          );
-          $value = $customFieldId ? 'custom_' . $customFieldId : $value;
-          $tmpContactField[trim($value)] = $contactFields[trim($value)] ?? NULL;
-          if (!$status) {
-            $title = $tmpContactField[trim($value)]['title'] . " " . ts('(match to contact)');
-          }
-          else {
-            $title = $tmpContactField[trim($value)]['title'];
-          }
-          $tmpContactField[trim($value)]['title'] = $title;
-        }
-      }
-      $tmpContactField['external_identifier'] = $contactFields['external_identifier'];
-      $tmpContactField['external_identifier']['title'] = $contactFields['external_identifier']['title'] . ' ' . ts('(match to contact)');
-
-      $tmpFields['membership_contact_id']['title'] .= ' ' . ts('(match to contact)');
-
-      $fields = array_merge($fields, $tmpContactField);
-      $fields = array_merge($fields, $tmpFields);
-      $fields = array_merge($fields, CRM_Core_BAO_CustomField::getFieldsForImport('Membership'));
-      Civi::cache('fields')->set('membership_importable_fields' . $contactType . $status, $fields);
-    }
-    return $fields;
-  }
-
-  /**
    * Get all exportable fields.
    *
    * @return array return array of all exportable fields
@@ -1181,7 +1109,7 @@ AND civicrm_membership.is_test = %2";
           $currentMembership['end_date'],
           $format
         ),
-        'modified_date' => date('Y-m-d H:i:s', CRM_Utils_Time::strtotime($today)),
+        'modified_date' => date('YmdHis', CRM_Utils_Time::strtotime($today)),
         'membership_type_id' => $currentMembership['membership_type_id'],
         'max_related' => $currentMembership['max_related'] ?? 0,
       ];
@@ -2490,7 +2418,7 @@ WHERE {$whereClause}";
           'start_date' => CRM_Utils_Date::isoToMysql($dao->start_date),
           'end_date' => CRM_Utils_Date::isoToMysql($dao->end_date),
           'modified_id' => $userId,
-          'modified_date' => CRM_Utils_Time::date('Ymd'),
+          'modified_date' => CRM_Utils_Time::date('YmdHis'),
           'membership_type_id' => $dao->membership_type_id,
           'max_related' => $dao->max_related,
         ];
@@ -2576,7 +2504,7 @@ WHERE {$whereClause}";
       'status_id' => $membership->status_id,
       'start_date' => $logStartDate,
       'end_date' => CRM_Utils_Date::isoToMysql($membership->end_date),
-      'modified_date' => CRM_Utils_Time::date('Ymd'),
+      'modified_date' => CRM_Utils_Time::date('YmdHis'),
       'membership_type_id' => $membershipTypeID ?? $membership->membership_type_id,
       'max_related' => $membership->max_related,
     ];

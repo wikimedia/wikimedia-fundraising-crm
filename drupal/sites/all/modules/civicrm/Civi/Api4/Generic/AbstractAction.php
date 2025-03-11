@@ -130,11 +130,6 @@ abstract class AbstractAction implements \ArrayAccess {
   /**
    * @var array
    */
-  private $_entityFields;
-
-  /**
-   * @var array
-   */
   private $_arrayStorage = [];
 
   /**
@@ -455,20 +450,22 @@ abstract class AbstractAction implements \ArrayAccess {
    * @return array
    */
   public function entityFields() {
-    if (!$this->_entityFields) {
+    $entityName = $this->getEntityName();
+    $actionName = $this->getActionName();
+    if (empty(\Civi::$statics['Api4EntityFields'][$entityName][$actionName])) {
       $allowedTypes = ['Field', 'Filter', 'Extra'];
-      $getFields = \Civi\API\Request::create($this->getEntityName(), 'getFields', [
+      $getFields = \Civi\API\Request::create($entityName, 'getFields', [
         'version' => 4,
         'checkPermissions' => FALSE,
-        'action' => $this->getActionName(),
+        'action' => $actionName,
         'where' => [['type', 'IN', $allowedTypes]],
       ]);
       $result = new Result();
       // Pass TRUE for the private $isInternal param
       $getFields->_run($result, TRUE);
-      $this->_entityFields = (array) $result->indexBy('name');
+      \Civi::$statics['Api4EntityFields'][$entityName][$actionName] = (array) $result->indexBy('name');
     }
-    return $this->_entityFields;
+    return \Civi::$statics['Api4EntityFields'][$entityName][$actionName];
   }
 
   /**
@@ -563,7 +560,7 @@ abstract class AbstractAction implements \ArrayAccess {
    * @throws \Exception
    */
   public static function evaluateCondition($expr, $vars) {
-    if (strpos($expr, '}') !== FALSE || strpos($expr, '{') !== FALSE) {
+    if (str_contains($expr, '}') || str_contains($expr, '{')) {
       throw new \CRM_Core_Exception('Illegal character in expression');
     }
     $tpl = "{if $expr}1{else}0{/if}";
