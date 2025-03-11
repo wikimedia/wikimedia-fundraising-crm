@@ -385,14 +385,14 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
           throw new WMFException(
             WMFException::DUPLICATE_INVOICE,
             'Duplicate invoice ID, should modify and retry',
-            $e->getExtraParams()
+            $e->getErrorData()
           );
         }
         else {
           throw new WMFException(
             WMFException::INVALID_MESSAGE,
             'Cannot create contribution, civi error!',
-            $e->getExtraParams()
+            $e->getErrorData()
           );
         }
       }
@@ -400,7 +400,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         throw new WMFException(
           WMFException::INVALID_MESSAGE,
           'Cannot create contribution, civi error!',
-          $eInner->getExtraParams()
+          $eInner->getErrorData()
         );
       }
     }
