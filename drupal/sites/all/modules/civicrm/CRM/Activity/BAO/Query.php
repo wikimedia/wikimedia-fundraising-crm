@@ -617,11 +617,11 @@ class CRM_Activity_BAO_Query {
   public static function whereClauseSingleActivityText(&$values, &$query) {
     [$name, $op, $value, $grouping, $wildcard] = $values;
     $activityOptionValues = $query->getWhereValues('activity_option', $grouping);
-    $activityOption = $activityOptionValues[2] ?? 6;
+    $activityOption = CRM_Utils_Array::value(2, $activityOptionValues, 6);
 
     $query->_useDistinct = TRUE;
 
-    $label = ts('Activity Text (%1)', [1 => CRM_Core_SelectValues::activityTextOptions()[$activityOption] ?? '']);
+    $label = ts('Activity Text (%1)', [1 => CRM_Utils_Array::value($activityOption, CRM_Core_SelectValues::activityTextOptions())]);
     $clauses = [];
     if ($activityOption % 2 == 0) {
       $clauses[] = $query->buildClause('civicrm_activity.details', $op, $value, 'String');

@@ -11,7 +11,6 @@
 
 namespace Civi\Api4\Subscriber;
 
-use Civi\Api4\SavedSearch;
 use Civi\Core\Service\AutoService;
 use Civi\Afform\FormDataModel;
 use Civi\Api4\Afform;
@@ -83,19 +82,9 @@ class AfformAutocompleteSubscriber extends AutoService implements EventSubscribe
     // If no model entity, it's a search display
     if (!$entity) {
       $searchDisplay = $formDataModel->getSearchDisplay($entityName);
-      $savedSearch = SavedSearch::get(FALSE)
-        ->addWhere('name', '=', $searchDisplay['searchName'])
-        ->addSelect('api_entity', 'api_params')
-        ->execute()
-        ->single();
-      $searchEntities = FormDataModel::getSearchEntities($savedSearch);
-      $fieldEntities = FormDataModel::getSearchFieldEntityType($fieldName, $searchEntities);
-      // If getSearchFieldEntityType returns > 1 entity we only need to consider the first, as the 2nd would be from a bridge join
-      [$apiEntity, $explicitJoin] = array_pad(explode(' AS ', $fieldEntities[0]), 2, '');
+      $apiEntity = civicrm_api4('SavedSearch', 'get', ['where' => [['name', '=', $searchDisplay['searchName']]]])
+        ->first()['api_entity'] ?? NULL;
       $formField = $searchDisplay['fields'][$fieldName]['defn'] ?? [];
-      if (str_starts_with($fieldName, "$explicitJoin.")) {
-        $fieldName = substr($fieldName, strlen($explicitJoin) + 1);
-      }
     }
     // If using a join (e.g. Contact -> Email)
     elseif ($joinEntity) {

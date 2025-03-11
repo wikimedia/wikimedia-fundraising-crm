@@ -235,21 +235,22 @@ class CRM_Core_BAO_CustomValueTable {
    * Given a field return the mysql data type associated with it.
    *
    * @param string $type
-   * @param int|null $maxLength
+   * @param int $maxLength
    *
    * @return string
    *   the mysql data store placeholder
    */
-  public static function fieldToSQLType(string $type, $maxLength = NULL) {
+  public static function fieldToSQLType($type, $maxLength = 255) {
+    if (!isset($maxLength) ||
+      !is_numeric($maxLength) ||
+      $maxLength <= 0
+    ) {
+      $maxLength = 255;
+    }
+
     switch ($type) {
       case 'String':
-        $maxLength = $maxLength ?: 255;
-        return "varchar($maxLength)";
-
       case 'Link':
-        // URLs can be up to 2047 characters
-        // according to https://www.sitemaps.org/protocol.html#locdef
-        $maxLength = $maxLength ?: 2047;
         return "varchar($maxLength)";
 
       case 'Boolean':

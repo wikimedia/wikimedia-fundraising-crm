@@ -117,15 +117,6 @@ class Afform extends Generic\AbstractEntity {
 
   /**
    * @param bool $checkPermissions
-   * @return Action\Afform\SubmitDraft
-   */
-  public static function submitDraft($checkPermissions = TRUE) {
-    return (new Action\Afform\SubmitDraft('Afform', __FUNCTION__))
-      ->setCheckPermissions($checkPermissions);
-  }
-
-  /**
-   * @param bool $checkPermissions
    * @return Action\Afform\GetOptions
    */
   public static function getOptions($checkPermissions = TRUE) {
@@ -194,29 +185,20 @@ class Afform extends Generic\AbstractEntity {
           'data_type' => 'Array',
         ],
         [
-          'name' => 'placement_filters',
-          'title' => E::ts('Placement Filters'),
+          'name' => 'summary_contact_type',
+          'title' => E::ts('Summary Contact Type'),
           'data_type' => 'Array',
-          'description' => 'E.g. contact_type, case_type, event_type, etc.',
+          'options' => \CRM_Contact_BAO_ContactType::contactTypePairs(),
         ],
         [
-          'name' => 'placement_weight',
-          'title' => E::ts('Placement Order'),
+          'name' => 'summary_weight',
+          'title' => E::ts('Order'),
           'data_type' => 'Integer',
-        ],
-        [
-          'name' => 'tags',
-          'title' => E::ts('Tags'),
-          'pseudoconstant' => [
-            'callback' => [Utils\AfformTags::class, 'getTagOptions'],
-          ],
-          'data_type' => 'Array',
-          'input_type' => 'Select',
         ],
         [
           'name' => 'icon',
           'title' => E::ts('Icon'),
-          'description' => 'Icon shown in the placement',
+          'description' => 'Icon shown in the contact summary tab',
         ],
         [
           'name' => 'server_route',
@@ -260,7 +242,6 @@ class Afform extends Generic\AbstractEntity {
           'name' => 'create_submission',
           'title' => E::ts('Log Submissions'),
           'data_type' => 'Boolean',
-          'description' => E::ts('Keep a log of the date, time, user, and items saved by each form submission.'),
         ],
         [
           'name' => 'manual_processing',
@@ -273,12 +254,6 @@ class Afform extends Generic\AbstractEntity {
         [
           'name' => 'email_confirmation_template_id',
           'data_type' => 'Integer',
-        ],
-        [
-          'title' => E::ts('Autosave Draft'),
-          'name' => 'autosave_draft',
-          'data_type' => 'Boolean',
-          'description' => E::ts('For authenticated users, form will auto-save periodically.'),
         ],
         [
           'name' => 'navigation',
@@ -386,7 +361,6 @@ class Afform extends Generic\AbstractEntity {
       'prefill' => [],
       'submit' => [],
       'submitFile' => [],
-      'submitDraft' => [],
     ];
   }
 

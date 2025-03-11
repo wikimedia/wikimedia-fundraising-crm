@@ -79,11 +79,6 @@ class GenericProvider extends AbstractProvider
     private $responseResourceOwnerId = 'id';
 
     /**
-     * @var string|null
-     */
-    private $pkceMethod = null;
-
-    /**
      * @param array $options
      * @param array $collaborators
      */
@@ -119,7 +114,6 @@ class GenericProvider extends AbstractProvider
             'responseCode',
             'responseResourceOwnerId',
             'scopes',
-            'pkceMethod',
         ]);
     }
 
@@ -209,14 +203,6 @@ class GenericProvider extends AbstractProvider
     protected function getScopeSeparator()
     {
         return $this->scopeSeparator ?: parent::getScopeSeparator();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getPkceMethod()
-    {
-        return $this->pkceMethod ?: parent::getPkceMethod();
     }
 
     /**

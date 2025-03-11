@@ -91,7 +91,7 @@ class CRM_Member_ActionMapping extends \Civi\ActionSchedule\MappingBase {
 
     // Options currently are just 'join_date', 'start_date', and 'end_date':
     // they need an alias
-    if (!str_starts_with($query['casDateField'], 'e.')) {
+    if (strpos($query['casDateField'], 'e.') !== 0) {
       $query['casDateField'] = 'e.' . $query['casDateField'];
     }
 

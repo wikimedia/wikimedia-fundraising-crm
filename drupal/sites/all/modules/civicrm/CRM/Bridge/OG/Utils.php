@@ -66,7 +66,7 @@ class CRM_Bridge_OG_Utils {
       'source'
     );
 
-    if (str_contains($source, 'OG Sync Group')) {
+    if (strpos($source, 'OG Sync Group') !== FALSE) {
       preg_match('/:(\d+):$/', $source, $matches);
       if (is_numeric($matches[1])) {
         return $matches[1];

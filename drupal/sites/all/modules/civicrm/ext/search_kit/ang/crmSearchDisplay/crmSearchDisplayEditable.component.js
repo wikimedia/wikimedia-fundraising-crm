@@ -7,6 +7,7 @@
   angular.module('crmSearchDisplay').component('crmSearchDisplayEditable', {
     bindings: {
       row: '<?',
+      rowIndex: '<',
       display: '<',
       colKey: '<',
       isFullRowMode: '<',
@@ -61,15 +62,15 @@
       this.save = function() {
         const value = ctrl.display.editValues[ctrl.colKey];
         if (value !== initialValue || ctrl.isFullRowMode) {
-          ctrl.display.saveEditing(ctrl.row, ctrl.colKey);
+          ctrl.display.saveEditing(ctrl.rowIndex, ctrl.colKey);
         }
         else {
-          ctrl.display.cancelEditing(ctrl.row);
+          ctrl.display.cancelEditing();
         }
       };
 
       this.cancel = function() {
-        ctrl.display.cancelEditing(ctrl.row);
+        ctrl.display.cancelEditing();
       };
 
       // Used to dynamically load options for fields whose options are not static

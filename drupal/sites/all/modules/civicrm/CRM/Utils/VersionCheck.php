@@ -346,7 +346,7 @@ class CRM_Utils_VersionCheck {
       'api_action' => "version_check",
       'api_entity' => "job",
     ]);
-    $this->cronJob = $jobs['values'][0] ?? [];
+    $this->cronJob = CRM_Utils_Array::value(0, $jobs['values'], []);
   }
 
 }

@@ -165,7 +165,7 @@ WHERE  id IN ( $idString )
       // to avoid breaking things elsewhere
       // See lab issue #5541
       do {
-        $hash = bin2hex(random_bytes(16));
+        $hash = md5(uniqid(rand(), TRUE));
         if ($hashSize) {
           $hash = substr($hash, 0, $hashSize);
         }

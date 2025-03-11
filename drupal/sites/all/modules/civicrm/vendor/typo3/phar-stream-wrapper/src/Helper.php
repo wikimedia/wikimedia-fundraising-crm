@@ -27,13 +27,13 @@ class Helper
      *
      * @see https://bugs.php.net/bug.php?id=66569
      */
-    public static function resetOpCache(): void
+    public static function resetOpCache()
     {
         if (function_exists('opcache_reset')
             && function_exists('opcache_get_status')
-            && !empty(@opcache_get_status()['opcache_enabled'])
+            && !empty(opcache_get_status()['opcache_enabled'])
         ) {
-            @opcache_reset();
+            opcache_reset();
         }
     }
 
@@ -41,8 +41,11 @@ class Helper
      * Determines base file that can be accessed using the regular file system.
      * For e.g. "phar:///home/user/bundle.phar/content.txt" that would result
      * into "/home/user/bundle.phar".
+     *
+     * @param string $path
+     * @return string|null
      */
-    public static function determineBaseFile(string $path): ?string
+    public static function determineBaseFile(string $path)
     {
         $parts = explode('/', static::normalizePath($path));
 
@@ -57,11 +60,19 @@ class Helper
         return null;
     }
 
+    /**
+     * @param string $path
+     * @return bool
+     */
     public static function hasPharPrefix(string $path): bool
     {
         return stripos($path, 'phar://') === 0;
     }
 
+    /**
+     * @param string $path
+     * @return string
+     */
     public static function removePharPrefix(string $path): string
     {
         $path = trim($path);
@@ -73,7 +84,10 @@ class Helper
 
     /**
      * Normalizes a path, removes phar:// prefix, fixes Windows directory
-     * separators. The result is without a trailing slash.
+     * separators. Result is without trailing slash.
+     *
+     * @param string $path
+     * @return string
      */
     public static function normalizePath(string $path): string
     {
@@ -87,6 +101,9 @@ class Helper
 
     /**
      * Fixes a path for windows-backslashes and reduces double-slashes to single slashes
+     *
+     * @param string $path File path to process
+     * @return string
      */
     public static function normalizeWindowsPath(string $path): string
     {
@@ -96,9 +113,10 @@ class Helper
     /**
      * Resolves all dots, slashes and removes spaces after or before a path...
      *
+     * @param string $path Input string
      * @return string Canonical path, always without trailing slash
      */
-    private static function getCanonicalPath(string $path): string
+    private static function getCanonicalPath($path): string
     {
         $path = static::normalizeWindowsPath($path);
 
@@ -155,8 +173,11 @@ class Helper
     /**
      * Checks if the $path is absolute or relative (detecting either '/' or
      * 'x:/' as first part of string) and returns TRUE if so.
+     *
+     * @param string $path File path to evaluate
+     * @return bool
      */
-    private static function isAbsolutePath(string $path): bool
+    private static function isAbsolutePath($path): bool
     {
         // Path starting with a / is always absolute, on every system
         // On Windows also a path starting with a drive letter is absolute: X:/

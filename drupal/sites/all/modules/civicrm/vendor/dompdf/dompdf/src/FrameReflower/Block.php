@@ -273,9 +273,9 @@ class Block extends AbstractFrameReflower
      *
      * @return float
      */
-    protected function _calculate_content_height(): float
+    protected function _calculate_content_height()
     {
-        $height = 0.0;
+        $height = 0;
         $lines = $this->_frame->get_line_boxes();
         if (count($lines) > 0) {
             $last_line = end($lines);
@@ -776,9 +776,9 @@ class Block extends AbstractFrameReflower
     }
 
     /**
-     * @param BlockFrameDecorator|null $block
+     * @param BlockFrameDecorator $block
      */
-    function reflow(?BlockFrameDecorator $block = null)
+    function reflow(BlockFrameDecorator $block = null)
     {
 
         // Check if a page break is forced

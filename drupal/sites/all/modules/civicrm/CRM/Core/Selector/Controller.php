@@ -192,7 +192,7 @@ class CRM_Core_Selector_Controller {
     $this->_case = $case;
 
     // fix sortID
-    if ($this->_sortID && !str_contains($this->_sortID, '_')) {
+    if ($this->_sortID && strpos($this->_sortID, '_') === FALSE) {
       $this->_sortID .= '_u';
     }
 

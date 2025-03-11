@@ -289,9 +289,9 @@ class CRM_Utils_System_Backdrop extends CRM_Utils_System_DrupalBase {
   public function authenticate($name, $password, $loadCMSBootstrap = FALSE, $realPath = NULL) {
     $config = CRM_Core_Config::singleton();
 
-    $ufDSN = $config->userFrameworkDSN;
+    $ufDSN = CRM_Utils_SQL::autoSwitchDSN($config->userFrameworkDSN);
     try {
-      $dbBackdrop = CRM_Utils_SQL::connect($ufDSN);
+      $dbBackdrop = DB::connect($ufDSN);
     }
     catch (Exception $e) {
       throw new CRM_Core_Exception("Cannot connect to Backdrop database via $ufDSN, " . $e->getMessage());
@@ -567,7 +567,7 @@ AND    u.status = 1
     }
 
     // For Backdrop multi-site CRM-11313
-    if ($realPath && !str_contains($realPath, 'sites/all/modules/')) {
+    if ($realPath && strpos($realPath, 'sites/all/modules/') === FALSE) {
       preg_match('@sites/([^/]*)/modules@s', $realPath, $matches);
       if (!empty($matches[1])) {
         $_SERVER['HTTP_HOST'] = $matches[1];
@@ -1021,7 +1021,7 @@ AND    u.status = 1
     // Handle absolute urls
     // compares $url (which is some unknown/untrusted value from a third-party dev) to the CMS's base url (which is independent of civi's url)
     // to see if the url is within our Backdrop dir, if it is we are able to treated it as an internal url
-    if (str_starts_with($url, $base_url)) {
+    if (strpos($url, $base_url) === 0) {
       $file = trim(str_replace($base_url, '', $url), '/');
       // CRM-18130: Custom CSS URL not working if aliased or rewritten
       if (file_exists(BACKDROP_ROOT . $file)) {
@@ -1030,7 +1030,7 @@ AND    u.status = 1
       }
     }
     // Handle relative urls that are within the CiviCRM module directory
-    elseif (str_starts_with($url, $base)) {
+    elseif (strpos($url, $base) === 0) {
       $internal = TRUE;
       $url = $this->appendCoreDirectoryToResourceBase(dirname(backdrop_get_path('module', 'civicrm')) . '/') . trim(substr($url, strlen($base)), '/');
     }
@@ -1245,10 +1245,6 @@ AND    u.status = 1
     // still have legacy ipn methods that reach this point without bootstrapping
     // hence the check that the fn exists.
     return function_exists('ip_address') ? ip_address() : ($_SERVER['REMOTE_ADDR'] ?? NULL);
-  }
-
-  public function isMaintenanceMode(): bool {
-    return state_get('maintenance_mode', FALSE);
   }
 
 }

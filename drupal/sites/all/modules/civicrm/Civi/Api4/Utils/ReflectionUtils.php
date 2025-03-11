@@ -71,14 +71,14 @@ class ReflectionUtils {
     $info = [];
     $param = NULL;
     foreach (preg_split("/((\r?\n)|(\r\n?))/", $comment) as $num => $line) {
-      if (!$num || str_contains($line, '*/')) {
+      if (!$num || strpos($line, '*/') !== FALSE) {
         continue;
       }
       $line = ltrim(trim($line), '*');
       if (strlen($line) && $line[0] === ' ') {
         $line = substr($line, 1);
       }
-      if (str_starts_with(ltrim($line), '@')) {
+      if (strpos(ltrim($line), '@') === 0) {
         $words = explode(' ', ltrim($line, ' @'));
         $key = array_shift($words);
         $param = NULL;
@@ -190,7 +190,7 @@ class ReflectionUtils {
   public static function isMethodDeprecated(string $className, string $methodName): bool {
     $reflection = new \ReflectionClass($className);
     $docBlock = $reflection->getMethod($methodName)->getDocComment();
-    return str_contains($docBlock, "@deprecated");
+    return strpos($docBlock, "@deprecated") !== FALSE;
   }
 
   /**

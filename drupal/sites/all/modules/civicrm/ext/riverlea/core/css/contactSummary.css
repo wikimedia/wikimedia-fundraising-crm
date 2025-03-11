@@ -61,12 +61,12 @@
   width: fit-content;
   z-index: 99;
   position: absolute;
-  left: calc(var(--crm-dash-panel-padding) + var(--crm-side-tabs-width));
+  left: 0;
 }
-.crm-contact-summary-layout-col-2 .crm-inline-edit.form, /* CLE */
-.contactCardRight .crm-inline-edit.form {
-  right: var(--crm-dash-panel-padding);
+#mainTabContainer:not(.narrowpage) .contactCardRight div.crm-inline-edit.form {
+  right: 0;
   left: initial;
+  position: absolute;
 }
 .crm-container .crm-inline-edit.add-new {
   min-height: 2.5em;
@@ -80,33 +80,25 @@
   opacity: .6;
   padding: var(--crm-padding-small);
 }
+.crm-container .crm-address-block+.crm-address-block .add-new .crm-edit-help {
+  display: block;
+  background-color: transparent;
+}
 .crm-container #crm-contactname-content .crm-edit-help:hover,
-.crm-edit-ready .crm-summary-block .crm-inline-edit:hover .crm-edit-help,
-.crm-container .crm-summary-block .address.add-new .crm-edit-help {
+.crm-edit-ready .crm-summary-block .crm-inline-edit:hover .crm-edit-help {
   color: var(--crm-c-text);
   display: block;
   opacity: 1;
   background-color: var(--crm-dash-summary-row-bg);
   z-index: 3;
 }
-.crm-contact-page .crm-edit-help .crm-i.fa-pencil {
+#contact-summary .crm-edit-help .crm-i.fa-pencil {
   float: right;
   color: var(--crm-c-text);
   margin: var(--crm-xs) 0 0 var(--crm-m);
 }
-.crm-container .address.add-new .crm-i.fa-pencil::before {
-  content: "\f055";
-}
 .crm-container div.crm-inline-edit.form .crm-edit-help {
   display: none !important;
-}
-.crm-container .crm-summary-block .address.add-new .crm-edit-help {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: right;
-  flex-direction: row-reverse;
 }
 .crm-container .crm-address-block+.crm-address-block .add-new .crm-summary-row {
   display: none;
@@ -138,7 +130,6 @@
   white-space: nowrap;
   padding: var(--crm-dash-block-padding);
   display: flex;
-  flex-wrap: wrap;
   color: var(--crm-c-text);
   background-color: var(--crm-inline-edit-bg);
 }
@@ -151,10 +142,6 @@ div.crm-inline-edit-form div.crm-clear {
   border: 0 solid transparent;
   width: 100%;
 }
-#contactname-block .crm-inline-edit.form {
-  left: 0;
-  box-shadow: var(--crm-popup-shadow);
-}
 #contactname-block .crm-inline-edit .crm-container {
   overflow: scroll !important; /* vs inline css */
 }
@@ -166,8 +153,8 @@ div.crm-inline-edit-form div.crm-clear {
   display: table-cell;
   padding: 0;
 }
-.crm-contact-page .crm-inline-button,
-.crm-contact-page .crm-submit-buttons {
+#contact-summary .crm-inline-button,
+#contact-summary .crm-submit-buttons {
   margin-bottom: 0;
   padding-bottom: var(--crm-m2);
 }
@@ -349,16 +336,16 @@ div.crm-inline-edit-form div.crm-clear {
 #crm-main-content-wrapper:has(.crm-contact-page) {
   box-shadow: var(--crm-block-shadow);
 }
-.crm-contact-page .crm-summary-block {
+#contact-summary .crm-summary-block {
   background: var(--crm-dash-block-bg);
   border-radius: var(--crm-roundness);
   box-shadow: var(--crm-block-shadow);
   margin-bottom: var(--crm-dash-panel-padding);
 }
-.crm-contact-page .crm-summary-block .crm-summary-block {
+#contact-summary .crm-summary-block .crm-summary-block {
   box-shadow: none;
 }
-.crm-contact-page div.crm-clear {
+#contact-summary div.crm-clear {
   padding: var(--crm-dash-block-padding);
 }
 #mainTabContainer .crm-summary-block .crm-container-snippet table {
@@ -393,23 +380,9 @@ div.crm-summary-contactname-block + .crm-actions-ribbon {
 }
 /* Contact dashboard responsive (using Bootstrap viewports) */
 
-@media (max-width: 991px) {
-  .crm-container div.contact_panel {
-    display: block;
-  }
-  .crm-container .contact_panel.crm-contact-summary-layout-row {
-    flex-direction: column;
-  }
-  .crm-contact-summary-layout-col-2 .crm-inline-edit.form,
-  .contactCardRight .crm-inline-edit.form {
-    right: inherit;
-    left: calc(var(--crm-dash-panel-padding) + var(--crm-side-tabs-width));
-  }
-}
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   #crm-main-content-wrapper {
     --crm-dash-heading-inset: 0; /* resets any inset on the title/action links */
-    --crm-side-tabs-width: auto; /* resets offset inline edit */
   }
   .crm-container #mainTabContainer,
   .crm-container div.crm-summary-row {
@@ -423,16 +396,18 @@ div.crm-summary-contactname-block + .crm-actions-ribbon {
   .crm-actions-ribbon .crm-previous-action {
     margin-left: 0;
   }
+}
+@media (max-width: 500px) { /* shows only icons for contact dashboard */
   .crm-contact-page #mainTabContainer.ui-tabs {
     grid-template-columns: auto 1fr;
   }
   .crm-contact-page #mainTabContainer .crm-contact-tabs-list {
     width: fit-content;
   }
-  .crm-container #mainTabContainer ul.ui-tabs-nav a span {
-    display: none;
-  }
   .crm-container #mainTabContainer .ui-tabs-nav li .ui-tabs-anchor i {
     font-size: var(--crm-font-size);
+  }
+  .crm-container #mainTabContainer ul.ui-tabs-nav a span {
+    display: none;
   }
 }

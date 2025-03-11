@@ -25,28 +25,38 @@ class XMLConverter
 {
     /**
      * XML Root name.
+     *
+     * @var string
      */
-    protected string $root_name = 'csv';
+    protected $root_name = 'csv';
 
     /**
      * XML Node name.
+     *
+     * @var string
      */
-    protected string $record_name = 'row';
+    protected $record_name = 'row';
 
     /**
      * XML Item name.
+     *
+     * @var string
      */
-    protected string $field_name = 'cell';
+    protected $field_name = 'cell';
 
     /**
      * XML column attribute name.
+     *
+     * @var string
      */
-    protected string $column_attr = '';
+    protected $column_attr = '';
 
     /**
      * XML offset attribute name.
+     *
+     * @var string
      */
-    protected string $offset_attr = '';
+    protected $offset_attr = '';
 
     public static function create(): self
     {

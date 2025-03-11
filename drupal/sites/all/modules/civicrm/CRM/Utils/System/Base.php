@@ -38,6 +38,13 @@ abstract class CRM_Utils_System_Base {
   public $is_wordpress = FALSE;
 
   /**
+   * Does this CMS / UF support a CMS specific logging mechanism?
+   * @var bool
+   * @todo - we should think about offering up logging mechanisms in a way that is also extensible by extensions
+   */
+  public $supports_UF_Logging = FALSE;
+
+  /**
    * @var bool
    *   TRUE, if the CMS allows CMS forms to be extended by hooks.
    */
@@ -188,15 +195,15 @@ abstract class CRM_Utils_System_Base {
   public function getRouteUrl(string $scheme, string $path, ?string $query): ?string {
     switch ($scheme) {
       case 'frontend':
-        return $this->url($path, $query, TRUE, NULL, TRUE, FALSE);
+        return $this->url($path, $query, TRUE, NULL, TRUE, FALSE, FALSE);
 
       case 'service':
         // The original `url()` didn't have an analog for "service://". But "frontend" is probably the closer bet?
         // Or maybe getNotifyUrl() makes sense?
-        return $this->url($path, $query, TRUE, NULL, TRUE, FALSE);
+        return $this->url($path, $query, TRUE, NULL, TRUE, FALSE, FALSE);
 
       case 'backend':
-        return $this->url($path, $query, TRUE, NULL, FALSE, TRUE);
+        return $this->url($path, $query, TRUE, NULL, FALSE, TRUE, FALSE);
 
       // If the UF defines other major UI/URL conventions, then you might hypothetically handle
       // additional schemes.
@@ -1249,27 +1256,6 @@ abstract class CRM_Utils_System_Base {
    * Container is up (only used in Standalone currently)
    */
   public function postContainerBoot(): void {
-  }
-
-  /**
-   * Does this CMS / UF support a CMS specific logging mechanism?
-   * @todo - we should think about offering up logging mechanisms in a way that is also extensible by extensions
-   * @todo - it would be nice to provide UF specific meta for the userFrameworkLogging setting
-   *
-   * @return bool
-   */
-  public function supportsUfLogging(): bool {
-    return FALSE;
-  }
-
-  /**
-   * Does the userSystem think we are in maintenance mode?
-   *
-   * @return bool
-   */
-  public function isMaintenanceMode(): bool {
-    // if not implemented at CMS level, we assume FALSE
-    return FALSE;
   }
 
 }

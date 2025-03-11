@@ -21,19 +21,6 @@
 class CRM_Activity_Import_Form_MapField extends CRM_Import_Form_MapField {
 
   /**
-   * Should contact fields be filtered which determining fields to show.
-   *
-   * This applies to Participant import as we put all contact fields in the metadata
-   * but only present those used for a match in QuickForm - the civiimport extension has
-   * more functionality to update and create.
-   *
-   * @return bool
-   */
-  protected function isFilterContactFields() : bool {
-    return TRUE;
-  }
-
-  /**
    * Get the name of the type to be stored in civicrm_user_job.type_id.
    *
    * @return string
@@ -52,23 +39,35 @@ class CRM_Activity_Import_Form_MapField extends CRM_Import_Form_MapField {
    *
    * @param array $importKeys
    *
-   * return array|null
+   * return string|null
    */
-  protected function validateRequiredFields(array $importKeys): ?array {
-    $errors = [];
+  protected static function validateRequiredFields(array $importKeys): ?string {
+    $fieldMessage = NULL;
+    if (in_array('activity_id', $importKeys, TRUE)) {
+      return NULL;
+    }
     $requiredFields = [
+      'target_contact_id' => ts('Contact ID'),
       'activity_date_time' => ts('Activity Date'),
-      'subject' => ts('Activity Subject'),
+      'activity_subject' => ts('Activity Subject'),
       'activity_type_id' => ts('Activity Type ID'),
     ];
 
+    $contactFieldsBelowWeightMessage = self::validateRequiredContactMatchFields('Individual', $importKeys);
     foreach ($requiredFields as $field => $title) {
-      $field = str_replace('__', '.', $field);
       if (!in_array($field, $importKeys, TRUE)) {
-        $errors[] = ts('Missing required field: %1', [1 => $title]) . '<br />';
+        if ($field === 'target_contact_id') {
+          if (!$contactFieldsBelowWeightMessage || in_array('external_identifier', $importKeys, TRUE)) {
+            continue;
+          }
+          $fieldMessage .= ts('Missing required contact matching fields.')
+            . $contactFieldsBelowWeightMessage
+            . '<br />';
+        }
+        $fieldMessage .= ts('Missing required field: %1', [1 => $title]) . '<br />';
       }
     }
-    return $errors;
+    return $fieldMessage;
   }
 
   /**
@@ -78,44 +77,70 @@ class CRM_Activity_Import_Form_MapField extends CRM_Import_Form_MapField {
    */
   public function buildQuickForm(): void {
     $this->addSavedMappingFields();
-    $this->addFormRule(['CRM_Activity_Import_Form_MapField', 'formRule'], $this);
+    $this->addFormRule(['CRM_Activity_Import_Form_MapField', 'formRule']);
 
-    foreach ($this->getColumnHeaders() as $i => $columnHeader) {
-      $this->add('select', "mapper[$i]", ts('Mapper for Field %1', [1 => $i]), $this->getAvailableFields(), FALSE, ['class' => 'big', 'placeholder' => ts('- do not import -')]);
+    //-------- end of saved mapping stuff ---------
+
+    $defaults = [];
+    $headerPatterns = $this->getHeaderPatterns();
+    $fieldMappings = $this->getFieldMappings();
+    $columnHeaders = $this->getColumnHeaders();
+    $hasHeaders = $this->getSubmittedValue('skipColumnHeader');
+
+    $sel1 = $this->_mapperFields;
+
+    $js = "<script type='text/javascript'>\n";
+    $formName = 'document.forms.' . $this->_name;
+
+    foreach ($columnHeaders as $i => $columnHeader) {
+      $sel = &$this->addElement('hierselect', "mapper[$i]", ts('Mapper for Field %1', [1 => $i]), NULL);
+      $jsSet = FALSE;
+      if ($this->getSubmittedValue('savedMapping')) {
+        $fieldMapping = $fieldMappings[$i] ?? NULL;
+        if (isset($fieldMappings[$i])) {
+          if ($fieldMapping['name'] !== ts('do_not_import')) {
+            $js .= "{$formName}['mapper[$i][3]'].style.display = 'none';\n";
+            $defaults["mapper[$i]"] = [$fieldMapping['name']];
+            $jsSet = TRUE;
+          }
+          else {
+            $defaults["mapper[$i]"] = [];
+          }
+          if (!$jsSet) {
+            for ($k = 1; $k < 4; $k++) {
+              $js .= "{$formName}['mapper[$i][$k]'].style.display = 'none';\n";
+            }
+          }
+        }
+        else {
+          // this load section to help mapping if we ran out of saved columns when doing Load Mapping
+          $js .= "swapOptions($formName, 'mapper[$i]', 0, 3, 'hs_mapper_" . $i . "_');\n";
+
+          if ($hasHeaders) {
+            $defaults["mapper[$i]"] = [$this->defaultFromHeader($columnHeader, $headerPatterns)];
+          }
+        }
+        // End of load mapping.
+      }
+      else {
+        $js .= "swapOptions($formName, 'mapper[$i]', 0, 3, 'hs_mapper_" . $i . "_');\n";
+        if ($hasHeaders) {
+          // Infer the default from the skipped headers if we have them
+          $defaults["mapper[$i]"] = [
+            $this->defaultFromHeader($columnHeader, $headerPatterns),
+            0,
+          ];
+        }
+      }
+
+      $sel->setOptions([$sel1]);
     }
+    $js .= "</script>\n";
+    $this->assign('initHideBoxes', $js);
 
-    $this->setDefaults($this->getDefaults());
+    $this->setDefaults($defaults);
 
     $this->addFormButtons();
-  }
-
-  /**
-   * Get the fields available for import selection.
-   *
-   * @return array
-   *   e.g ['first_name' => 'First Name', 'last_name' => 'Last Name'....
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function getAvailableFields(): array {
-    $return = [];
-    foreach ($this->getFields() as $name => $field) {
-      if (($field['entity'] ?? '') === 'Contact' && $this->isFilterContactFields() && empty($field['match_rule'])) {
-        // Filter out metadata that is intended for create & update - this is not available in the quick-form
-        // but is now loaded in the Parser for the LexIM variant.
-        continue;
-      }
-      $prefix = '';
-      $entityInstance = $field['entity_instance'] ?? '';
-      if ($entityInstance === 'TargetContact' && !str_starts_with($name, 'target_contact.')) {
-        $prefix = 'target_contact.';
-      }
-      if ($entityInstance === 'SourceContact' && !str_starts_with($name, 'source_contact.')) {
-        $prefix = 'source_contact.';
-      }
-      $return[$prefix . $name] = $field['title'];
-    }
-    return $return;
   }
 
   /**
@@ -123,30 +148,21 @@ class CRM_Activity_Import_Form_MapField extends CRM_Import_Form_MapField {
    *
    * @param array $fields
    *   Posted values of the form.
-   * @param array $files
-   * @param self $self
    *
    * @return array|bool
    *   list of errors to be posted back to the form
-   * @throws \CRM_Core_Exception
    */
-  public static function formRule(array $fields, $files, $self): bool|array {
+  public static function formRule(array $fields) {
     $errors = [];
 
     if (!array_key_exists('savedMapping', $fields)) {
-      if (!in_array('id', $fields['mapper'], TRUE)) {
-        $importKeys = [];
-        foreach ($fields['mapper'] as $field) {
-          $importKeys[] = [$field];
-        }
-        $parser = $self->getParser();
-        $rule = $parser->getDedupeRule('Individual', $self->getUserJob()['metadata']['entity_configuration']['TargetContact']['dedupe_rule'] ?? NULL);
-        $errors = $self->validateContactFields($rule, $importKeys, ['target_contact.external_identifier', 'target_contact.id']);
-
-        $missingFields = $self->validateRequiredFields($fields['mapper']);
-        if ($missingFields) {
-          $errors['_qf_default'] = implode(',', $missingFields);
-        }
+      $importKeys = [];
+      foreach ($fields['mapper'] as $mapperPart) {
+        $importKeys[] = $mapperPart[0];
+      }
+      $missingFields = self::validateRequiredFields($importKeys);
+      if ($missingFields) {
+        $errors['_qf_default'] = $missingFields;
       }
     }
     return $errors ?: TRUE;

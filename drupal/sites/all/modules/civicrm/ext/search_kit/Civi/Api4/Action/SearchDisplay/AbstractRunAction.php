@@ -156,6 +156,20 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
         'columns' => $columns,
       ];
       $style = $this->getCssStyles($this->display['settings']['cssRules'] ?? [], $data);
+      // Add hierarchical styles
+      if (!empty($this->display['settings']['hierarchical'])) {
+        $depth = $data['_depth'] ?? 0;
+        $style[] = 'crm-hierarchical-row crm-hierarchical-depth-' . $depth;
+        if ($depth) {
+          $style[] = 'crm-hierarchical-child';
+        }
+        if (!empty($data['_descendents'])) {
+          $style[] = 'crm-hierarchical-parent';
+          if (($this->display['settings']['collapsible'] ?? FALSE) === 'closed') {
+            $row['collapsed'] = TRUE;
+          }
+        }
+      }
       if ($style) {
         $row['cssClass'] = implode(' ', $style);
       }
@@ -186,11 +200,33 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
         if (!empty($data[$key])) {
           $item = $this->getSelectExpression($key);
           if ($item['expr'] instanceof SqlField && isset($item['fields'][$key]) && $item['fields'][$key]['fk_entity'] === 'File') {
-            return (string) \CRM_Core_BAO_File::getFileUrl($data[$key]);
+            return $this->generateFileUrl($data[$key]);
           }
         }
         return $data[$key] ?? NULL;
     }
+  }
+
+  /**
+   * Convert file id to a readable url
+   *
+   * @param $fileID
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  private function generateFileUrl($fileID) {
+    $entityId = \CRM_Core_DAO::getFieldValue('CRM_Core_DAO_EntityFile',
+      $fileID,
+      'entity_id',
+      'file_id'
+    );
+    $fileHash = \CRM_Core_BAO_File::generateFileHash($entityId, $fileID);
+    return $this->getUrl('civicrm/file', [
+      'reset' => 1,
+      'id' => $fileID,
+      'eid' => $entityId,
+      'fcs' => $fileHash,
+    ]);
   }
 
   /**
@@ -303,8 +339,8 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    * @return string
    */
   protected function rewrite(string $rewrite, array $data, string $format = 'view'): string {
-    // Cheap str_contains to skip Smarty processing if not needed
-    $hasSmarty = str_contains($rewrite, '{');
+    // Cheap strpos to skip Smarty processing if not needed
+    $hasSmarty = strpos($rewrite, '{') !== FALSE;
     $output = $this->replaceTokens($rewrite, $data, $format);
     if ($hasSmarty) {
       $vars = [];
@@ -683,7 +719,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     if (empty($link['path']) && empty($link['task'])) {
       return FALSE;
     }
-    if (!empty($link['entity']) && !empty($link['action']) && !in_array($link['action'], ['view', 'preview', 'get'], TRUE) && $this->getCheckPermissions()) {
+    if (!empty($link['entity']) && !empty($link['action']) && !in_array($link['action'], ['view', 'preview'], TRUE) && $this->getCheckPermissions()) {
       $actionName = $this->getPermittedLinkAction($link['entity'], $link['action']);
       if (!$actionName) {
         return FALSE;
@@ -906,8 +942,6 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
           }
           // Fill in the api action if known, for the sake of $this->checkLinkAccess
           $link['action'] = $task['apiBatch']['action'] ?? NULL;
-          // Used by inlineEdit action when running inline tasks
-          $link['api_params'] = $task['apiBatch']['params'] ?? [];
         }
       }
       $link['key'] = $link['prefix'] . $idKey;
@@ -973,7 +1007,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    * @return string
    */
   private function getUrl(string $path, $query = NULL) {
-    if ($path[0] === '/' || str_contains($path, 'http://') || str_contains($path, 'https://')) {
+    if ($path[0] === '/' || strpos($path, 'http://') !== FALSE || strpos($path, 'https://') !== FALSE) {
       return $path;
     }
     // Use absolute urls when downloading spreadsheet
@@ -1010,7 +1044,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
         if (is_array($clause) && count($clause) === 3 && $clause[1] === '=') {
           // Because clauses are reversible, check both directions to see which side has a fieldName belonging to this join
           foreach ([0 => 2, 2 => 0] as $field => $value) {
-            if (str_starts_with($clause[$field], $editable['explicit_join'] . '.')) {
+            if (strpos($clause[$field], $editable['explicit_join'] . '.') === 0) {
               $fieldName = substr($clause[$field], strlen($editable['explicit_join']) + 1);
               // If the value is a field, get it from the data
               if (isset($data[$clause[$value]])) {
@@ -1099,14 +1133,9 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       return $this->editableInfo[$key];
     }
     $getModeField = $this->getField($key);
-    // If field is an implicit join to another entity, use the original fk field
-    // UNLESS it's a custom field (which the api treats the same as core fields) or a virtual join like `address_primary.city`
+    // If field is an implicit join to another entity (not a custom group), use the original fk field
     if (!empty($getModeField['implicit_join']) && empty($getModeField['custom_field_id'])) {
-      $baseFieldName = substr($key, 0, -1 - strlen($getModeField['name']));
-      $baseField = $this->getField($baseFieldName);
-      if ($baseField && !empty($baseField['fk_entity']) && $baseField['type'] === 'Field') {
-        return $this->getEditableInfo($baseFieldName);
-      }
+      return $this->getEditableInfo(substr($key, 0, -1 - strlen($getModeField['name'])));
     }
     $result = NULL;
     if ($getModeField) {
@@ -1121,8 +1150,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       $field = $createModeField + $getModeField;
       $idKey = CoreUtil::getIdFieldName($field['entity']);
       $path = (!empty($field['explicit_join']) ? $field['explicit_join'] . '.' : '');
-      // $baseFieldName is used for virtual joins e.g. email_primary.email
-      $idPath = $path . ($baseFieldName ?? $idKey);
+      $idPath = $path . $idKey;
       // Hack to support editing relationships
       if ($field['entity'] === 'RelationshipCache') {
         $field['entity'] = 'Relationship';
@@ -1214,20 +1242,13 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    * @param string|null $format
    * @return array|string
    */
-  protected function formatViewValue(string $key, $rawValue, $data, $dataType, $format = NULL) {
+  protected function formatViewValue($key, $rawValue, $data, $dataType, $format = NULL) {
     if (is_array($rawValue)) {
       return array_map(function($val) use ($key, $data, $dataType, $format) {
         return $this->formatViewValue($key, $val, $data, $dataType, $format);
       }, $rawValue);
     }
 
-    if (!isset($rawValue) || $rawValue === '') {
-      return '';
-    }
-    // Do not reformat pseudoconstant suffixes
-    if (FormattingUtil::getSuffix($key)) {
-      return $rawValue;
-    }
     $formatted = $rawValue;
 
     switch ($dataType) {
@@ -1241,10 +1262,6 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
         $currencyField = $this->getCurrencyField($key);
         $currency = is_string($data[$currencyField] ?? NULL) ? $data[$currencyField] : NULL;
         $formatted = \Civi::format()->money($rawValue, $currency);
-        break;
-
-      case 'Float':
-        $formatted = \CRM_Utils_Number::formatLocaleNumeric($rawValue);
         break;
 
       case 'Date':
@@ -1363,18 +1380,14 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     if ($this->savedSearch['api_entity'] === 'EntitySet') {
       return;
     }
-    // Add `depth_` column for hierarchical entity displays (but not during inline-edit)
-    if (!empty($this->display['settings']['hierarchical']) && !is_a($this, 'Civi\Api4\Action\SearchDisplay\InlineEdit')) {
+    // Add `depth_` column for hierarchical entity displays
+    if (!empty($this->display['settings']['hierarchical'])) {
       $this->addSelectExpression('_depth');
       $this->addSelectExpression('_descendents');
     }
     // Add draggable column (typically "weight")
     if (!empty($this->display['settings']['draggable'])) {
       $this->addSelectExpression($this->display['settings']['draggable']);
-    }
-    // Add parent_field column for tree displays
-    if (!empty($this->display['settings']['parent_field'])) {
-      $this->addSelectExpression($this->display['settings']['parent_field']);
     }
     // Add style conditions for the display
     foreach ($this->getCssRulesSelect($this->display['settings']['cssRules'] ?? []) as $addition) {
@@ -1562,7 +1575,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
   protected function addSelectExpression(string $expr):void {
     if (!$this->getSelectExpression($expr)) {
       // Tokens for aggregated columns start with 'GROUP_CONCAT_'
-      if (str_starts_with($expr, 'GROUP_CONCAT_')) {
+      if (strpos($expr, 'GROUP_CONCAT_') === 0) {
         $expr = 'GROUP_CONCAT(UNIQUE ' . $this->getJoinFromAlias(explode('_', $expr, 3)[2]) . ') AS ' . $expr;
       }
       $this->_apiParams['select'][] = $expr;
@@ -1581,7 +1594,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     $result = '';
     foreach ($this->_apiParams['join'] ?? [] as $join) {
       $joinName = explode(' AS ', $join[0])[1];
-      if (str_starts_with($alias, $joinName)) {
+      if (strpos($alias, $joinName) === 0) {
         $parsed = $joinName . '.' . substr($alias, strlen($joinName) + 1);
         // Ensure we are using the longest match
         if (strlen($parsed) > strlen($result)) {
@@ -1809,7 +1822,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
   private function getWhereClauseValues(): array {
     $values = [];
     foreach ($this->_apiParams['where'] as $clause) {
-      if (count($clause) > 2 && $clause[1] === '=' && empty($clause[3]) && !str_contains('(', $clause[0])) {
+      if (count($clause) > 2 && $clause[1] === '=' && empty($clause[3]) && strpos('(', $clause[0]) === FALSE) {
         $values[$clause[0]] = $clause[2];
       }
     }

@@ -27,7 +27,7 @@ class IdentityProviderException extends \Exception
     /**
      * @param string $message
      * @param int $code
-     * @param mixed $response The response body
+     * @param array|string $response The response body
      */
     public function __construct($message, $code, $response)
     {
@@ -39,7 +39,7 @@ class IdentityProviderException extends \Exception
     /**
      * Returns the exception's response body.
      *
-     * @return mixed
+     * @return array|string
      */
     public function getResponseBody()
     {

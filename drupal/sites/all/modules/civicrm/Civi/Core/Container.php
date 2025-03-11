@@ -159,6 +159,12 @@ class Container {
     ))
       ->setFactory([new Reference(self::SELF), 'createApiKernel'])->setPublic(TRUE);
 
+    $container->setDefinition('cxn_reg_client', new Definition(
+      'Civi\Cxn\Rpc\RegistrationClient',
+      []
+    ))
+      ->setFactory('CRM_Cxn_BAO_Cxn::createRegistrationClient')->setPublic(TRUE);
+
     $container->setDefinition('psr_log', new Definition('CRM_Core_Error_Log', []))->setPublic(TRUE);
     $container->setDefinition('psr_log_manager', new Definition('Civi\Core\LogManager', []))->setPublic(TRUE);
     // With the default log-manager, you may overload a channel by defining a service, e.g.
@@ -173,14 +179,13 @@ class Container {
       // Putting session-cache in global scope means that QF form-state will endure across upgrades.
       // (*For better or worse -- mostly better.*)
       'session' => ['name' => 'CiviCRM Session', 'scope' => 'global'],
-      'long' => ['withArray' => 'fast'],
+      'long' => [],
       'groups' => ['name' => 'contact groups', 'withArray' => 'fast'],
       'navigation' => ['withArray' => 'fast'],
       'customData' => ['name' => 'custom data', 'withArray' => 'fast'],
       'fields' => ['name' => 'contact fields', 'withArray' => 'fast'],
       'contactTypes' => ['withArray' => 'fast'],
       'metadata' => ['withArray' => 'fast'],
-      'angular' => ['withArray' => 'fast'],
     ];
     // Use the FastArrayDecorator on caches where (1) we don't really care about TTL,
     // (2) they're accessed frequently, (3) there's not much risk of concurrency issues.

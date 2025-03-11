@@ -31,7 +31,7 @@ class CRM_Mailing_BAO_MailingTrackableURL extends CRM_Mailing_DAO_MailingTrackab
    *   The redirect/tracking url
    */
   public static function getTrackerURL($url, $mailing_id, $queue_id) {
-    if (str_contains($url, '{')) {
+    if (strpos($url, '{') !== FALSE) {
       return self::getTrackerURLForUrlWithTokens($url, $mailing_id, $queue_id);
     }
     else {
@@ -60,34 +60,19 @@ class CRM_Mailing_BAO_MailingTrackableURL extends CRM_Mailing_DAO_MailingTrackab
 
       $hrefExists = FALSE;
 
+      $tracker = new CRM_Mailing_BAO_MailingTrackableURL();
       if (preg_match('/^href/i', $url)) {
         $url = preg_replace('/^href[ ]*=[ ]*[\'"](.*?)[\'"]$/i', '$1', $url);
         $hrefExists = TRUE;
       }
 
-      $turl = CRM_Utils_Type::escape(CRM_Mailing_BAO_MailingTrackableURL::getTableName(), 'MysqlColumnNameOrAlias');
+      $tracker->url = $url;
+      $tracker->mailing_id = $mailing_id;
 
-      // search for an existing identical url using the BINARY operator to avoid
-      // matching an entry which differs only by case or by trailing whitespace
-      $search = CRM_Core_DAO::executeQuery(
-        "SELECT `url`, `id` FROM $turl
-          WHERE BINARY $turl.`url` = %1 AND $turl.`mailing_id` = %2",
-        [
-          1 => [$url, 'String'],
-          2 => [$mailing_id, 'Integer'],
-        ]
-      );
-
-      if (!$search->fetch()) {
-        $tracker = new CRM_Mailing_BAO_MailingTrackableURL();
-        $tracker->url = $url;
-        $tracker->mailing_id = $mailing_id;
+      if (!$tracker->find(TRUE)) {
         $tracker->save();
-        $id = $tracker->id;
       }
-      else {
-        $id = $search->id;
-      }
+      $id = $tracker->id;
 
       $redirect = CRM_Utils_System::externUrl('extern/url', "u=$id");
       $urlCache[$mailing_id . $url] = $redirect;
@@ -123,7 +108,7 @@ class CRM_Mailing_BAO_MailingTrackableURL extends CRM_Mailing_DAO_MailingTrackab
     }
 
     // If we have a token in the URL + path section, we can't tokenise.
-    if (str_contains($parsed[1], '{')) {
+    if (strpos($parsed[1], '{') !== FALSE) {
       return $url;
     }
 
@@ -137,7 +122,7 @@ class CRM_Mailing_BAO_MailingTrackableURL extends CRM_Mailing_DAO_MailingTrackab
 
       // Separate the tokenised from the static parts.
       foreach ($query_key_value_pairs as $_) {
-        if (!str_contains($_, '{')) {
+        if (strpos($_, '{') === FALSE) {
           $static_params[] = $_;
         }
         else {

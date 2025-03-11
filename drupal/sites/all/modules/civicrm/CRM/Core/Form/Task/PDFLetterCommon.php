@@ -201,11 +201,8 @@ class CRM_Core_Form_Task_PDFLetterCommon {
    *
    * @return bool
    *   TRUE if no errors, else array of errors.
-   *
-   * @deprecated since 5.80 will be removed around 6.12
    */
   public static function formRule($fields, $files, $self) {
-    CRM_Core_Error::deprecatedFunctionWarning('no supported alternative for non-core code');
     $errors = [];
     $deprecatedTokens = [
       '{case.status_id}' => '{case.status_id:label}',
@@ -219,7 +216,7 @@ class CRM_Core_Form_Task_PDFLetterCommon {
     ];
     $tokenErrors = [];
     foreach ($deprecatedTokens as $token => $replacement) {
-      if (str_contains($fields['html_message'], $token)) {
+      if (strpos($fields['html_message'], $token) !== FALSE) {
         $tokenErrors[] = ts('Token %1 is no longer supported - use %2 instead', [$token, $replacement]);
       }
     }
@@ -295,7 +292,7 @@ class CRM_Core_Form_Task_PDFLetterCommon {
         CRM_Core_BAO_MessageTemplate::add($messageTemplate);
       }
     }
-    elseif (($formValues['template'] ?? 0) > 0) {
+    elseif (CRM_Utils_Array::value('template', $formValues) > 0) {
       if (!empty($formValues['bind_format']) && $formValues['format_id']) {
         $query = "UPDATE civicrm_msg_template SET pdf_format_id = {$formValues['format_id']} WHERE id = {$formValues['template']}";
       }

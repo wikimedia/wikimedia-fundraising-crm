@@ -43,7 +43,9 @@ class CRM_Contact_Form_Search_Custom_PriceSet extends CRM_Contact_Form_Search_Cu
   public function __construct(&$formValues) {
     parent::__construct($formValues);
 
-    $this->eventID = (int) ($this->_formValues['event_id'] ?? 0);
+    $this->eventID = (int) CRM_Utils_Array::value('event_id',
+      $this->_formValues
+    );
 
     $this->setColumns();
 

@@ -160,8 +160,8 @@ abstract class CRM_Core_Task {
       $value = key(self::$_tasks);
     }
     return [
-      self::$_tasks[$value]['class'] ?? NULL,
-      self::$_tasks[$value]['result'] ?? NULL,
+      CRM_Utils_Array::value('class', self::$_tasks[$value]),
+      CRM_Utils_Array::value('result', self::$_tasks[$value]),
     ];
   }
 
@@ -224,7 +224,7 @@ abstract class CRM_Core_Task {
       if ((!empty($value['url']) || $task == self::TASK_EXPORT)
           && ((is_array($value['class']) && in_array($className, $value['class']))
           || ($value['class'] == $className))) {
-        return [$task, $value['title'] ?? NULL];
+        return [$task, CRM_Utils_Array::value('title', $value)];
       }
     }
     return [];

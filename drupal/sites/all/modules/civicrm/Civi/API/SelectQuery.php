@@ -243,7 +243,7 @@ abstract class SelectQuery {
 
       $this->join($side, $fkTable, $tableAlias, $joinCondition);
 
-      if (str_starts_with($fieldName, 'custom_')) {
+      if (strpos($fieldName, 'custom_') === 0) {
         [$tableAlias, $fieldName] = $this->addCustomField($fieldInfo, $side, $tableAlias);
       }
 
@@ -349,12 +349,12 @@ abstract class SelectQuery {
     $prefix = implode('.', $fieldStack) . '.';
     $len = strlen($prefix);
     foreach ($this->select as $key => $ret) {
-      if (str_starts_with($key, $prefix)) {
+      if (strpos($key, $prefix) === 0) {
         $params['return'][substr($key, $len)] = $ret;
       }
     }
     foreach ($this->where as $key => $param) {
-      if (str_starts_with($key, $prefix)) {
+      if (strpos($key, $prefix) === 0) {
         $params[substr($key, $len)] = $param;
       }
     }
@@ -454,7 +454,7 @@ abstract class SelectQuery {
     $return = $return_all_fields ? $this->entityFieldNames : $this->select;
     if ($return_all_fields || in_array('custom', $this->select)) {
       foreach (array_keys($this->apiFieldSpec) as $fieldName) {
-        if (str_starts_with($fieldName, 'custom_')) {
+        if (strpos($fieldName, 'custom_') === 0) {
           $return[] = $fieldName;
         }
       }
@@ -477,7 +477,7 @@ abstract class SelectQuery {
           $this->selectFields[implode('.', $fkField)] = $fieldName;
         }
       }
-      elseif ($field && str_starts_with($fieldName, 'custom_')) {
+      elseif ($field && strpos($fieldName, 'custom_') === 0) {
         [$table_name, $column_name] = $this->addCustomField($field, 'LEFT');
 
         if ($field['data_type'] != 'ContactReference') {

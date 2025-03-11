@@ -47,7 +47,7 @@ class LocaleUtil {
     // Is there anything else that looks remotely close? (e.g. `cy` => `cy_GB`)
     ksort($availLangs);
     foreach ($availLangs as $availLang => $availLabel) {
-      if (str_starts_with($availLang, $first)) {
+      if (strpos($availLang, $first) === 0) {
         return $availLang;
       }
     }

@@ -15,8 +15,6 @@
  * @copyright CiviCRM LLC https://civicrm.org/licensing
  */
 
-use Civi\Api4\Utils\CoreUtil;
-
 /**
  * Business object for managing custom data groups.
  */
@@ -26,13 +24,8 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
    * @param \Civi\Core\Event\PostEvent $e
    * @see CRM_Utils_Hook::post()
    */
-  public static function on_hook_civicrm_post(\Civi\Core\Event\PostEvent $e): void {
-    if ($e->entity === 'CustomGroup') {
-      Civi::cache('metadata')->clear();
-    }
-    elseif ($e->action === 'delete') {
-      self::onDeleteEntity($e->entity, (array) $e->object);
-    }
+  public static function self_hook_civicrm_post(\Civi\Core\Event\PostEvent $e): void {
+    Civi::cache('metadata')->clear();
   }
 
   /**
@@ -84,13 +77,6 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
       }
       $permittedIds = CRM_Core_Permission::customGroup($permissionType, FALSE, $userId);
       $allGroups = array_intersect_key($allGroups, array_flip($permittedIds));
-    }
-    // Boolean filters e.g. is_active should be unset if NULL
-    // For other types of fields, NULL is a valid comparison value, but not booleans
-    foreach ($filters as $filterKey => $filterValue) {
-      if (str_starts_with($filterKey, 'is_') && $filterValue === NULL) {
-        unset($filters[$filterKey]);
-      }
     }
     if (!$filters) {
       return $allGroups;
@@ -215,13 +201,13 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
       if (is_array($extendsChildType)) {
         foreach ($extendsChildType as $childType) {
           if (!array_key_exists($childType, $registeredSubTypes) && !in_array($childType, $registeredSubTypes, TRUE)) {
-            throw new CRM_Core_Exception(ts('The Sub Type ID %1 is not valid for the specified entity or it has been disabled. If the Sub Type was disabled, re-enable it temporarily and re-save this form in order to remove the setting.', [1 => $childType]));
+            throw new CRM_Core_Exception('Supplied Sub type is not valid for the specified entity');
           }
         }
       }
       else {
         if (!array_key_exists($extendsChildType, $registeredSubTypes) && !in_array($extendsChildType, $registeredSubTypes, TRUE)) {
-          throw new CRM_Core_Exception(ts('The Sub Type ID %1 is not valid for the specified entity or it has been disabled. If the Sub Type was disabled, re-enable it temporarily and re-save this form in order to remove the setting.', [1 => $childType]));
+          throw new CRM_Core_Exception('Supplied Sub type is not valid for the specified entity');
         }
         $extendsChildType = [$extendsChildType];
       }
@@ -244,7 +230,7 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
 
     // Assign new weight
     if (empty($params['id'])) {
-      $group->weight = CRM_Utils_Weight::updateOtherWeights('CRM_Core_DAO_CustomGroup', NULL, $params['weight'] ?? CRM_Utils_Weight::getMax('CRM_Core_DAO_CustomGroup'));
+      $group->weight = CRM_Utils_Weight::updateOtherWeights('CRM_Core_DAO_CustomGroup', 0, $params['weight'] ?? CRM_Utils_Weight::getMax('CRM_Core_DAO_CustomGroup'));
     }
     // Update weight
     if (isset($params['weight']) && !empty($params['id'])) {
@@ -1240,7 +1226,7 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
                 $checkedValue = $value;
               }
               // Serialized values from db
-              elseif ($value === '' || str_contains($value, CRM_Core_DAO::VALUE_SEPARATOR)) {
+              elseif ($value === '' || strpos($value, CRM_Core_DAO::VALUE_SEPARATOR) !== FALSE) {
                 $checkedValue = CRM_Utils_Array::explodePadded($value);
               }
               // Comma-separated values e.g. from a select2 widget during reload on form error
@@ -1284,6 +1270,105 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
               $defaults[$elementName] = $value;
             }
           }
+        }
+      }
+    }
+  }
+
+  /**
+   * @deprecated since 5.71 will be remvoed around 5.77
+   * @see CRM_Dedupe_Finder::formatParams
+   *
+   * @param array $groupTree
+   * @param array $params
+   * @param bool $skipFile
+   */
+  public static function postProcess(&$groupTree, &$params, $skipFile = FALSE) {
+    CRM_Core_Error::deprecatedFunctionWarning('no alternative');
+    // Get the Custom form values and groupTree
+    foreach ($groupTree as $groupID => $group) {
+      if ($groupID === 'info') {
+        continue;
+      }
+      foreach ($group['fields'] as $field) {
+        $fieldId = $field['id'];
+        $serialize = CRM_Core_BAO_CustomField::isSerialized($field);
+
+        // Reset all checkbox, radio and multiselect data
+        if ($field['html_type'] == 'Radio' || $serialize) {
+          $groupTree[$groupID]['fields'][$fieldId]['customValue']['data'] = 'NULL';
+        }
+
+        $v = NULL;
+        foreach ($params as $key => $val) {
+          if (preg_match('/^custom_(\d+)_?(-?\d+)?$/', $key, $match) &&
+            $match[1] == $field['id']
+          ) {
+            $v = $val;
+          }
+        }
+
+        if (!isset($groupTree[$groupID]['fields'][$fieldId]['customValue'])) {
+          // field exists in db so populate value from "form".
+          $groupTree[$groupID]['fields'][$fieldId]['customValue'] = [];
+        }
+
+        // Serialize checkbox and multi-select data (using array keys for checkbox)
+        if ($serialize) {
+          $v = ($v && $field['html_type'] === 'Checkbox') ? array_keys($v) : $v;
+          $v = $v ? CRM_Utils_Array::implodePadded($v) : NULL;
+        }
+
+        switch ($field['html_type']) {
+
+          case 'Select Date':
+            $date = CRM_Utils_Date::processDate($v);
+            $groupTree[$groupID]['fields'][$fieldId]['customValue']['data'] = $date;
+            break;
+
+          case 'File':
+            if ($skipFile) {
+              break;
+            }
+
+            // store the file in d/b
+            $entityId = explode('=', $groupTree['info']['where'][0]);
+            $fileParams = ['upload_date' => date('YmdHis')];
+
+            if ($groupTree[$groupID]['fields'][$fieldId]['customValue']['fid']) {
+              $fileParams['id'] = $groupTree[$groupID]['fields'][$fieldId]['customValue']['fid'];
+            }
+            if (!empty($v)) {
+              $fileParams['uri'] = $v['name'];
+              $fileParams['mime_type'] = $v['type'];
+              CRM_Core_BAO_File::filePostProcess($v['name'],
+                $groupTree[$groupID]['fields'][$fieldId]['customValue']['fid'],
+                $groupTree[$groupID]['table_name'],
+                trim($entityId[1]),
+                FALSE,
+                TRUE,
+                $fileParams,
+                'custom_' . $fieldId,
+                $v['type']
+              );
+            }
+            $defaults = [];
+            $paramsFile = [
+              'entity_table' => $groupTree[$groupID]['table_name'],
+              'entity_id' => $entityId[1],
+            ];
+
+            CRM_Core_DAO::commonRetrieve('CRM_Core_DAO_EntityFile',
+              $paramsFile,
+              $defaults
+            );
+
+            $groupTree[$groupID]['fields'][$fieldId]['customValue']['data'] = $defaults['file_id'];
+            break;
+
+          default:
+            $groupTree[$groupID]['fields'][$fieldId]['customValue']['data'] = $v;
+            break;
         }
       }
     }
@@ -1811,11 +1896,18 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
       if (!$grouping) {
         return [];
       }
+      $getFieldsValues = [];
+      // For contact types
+      if (in_array($extends, CRM_Contact_BAO_ContactType::basicTypes(TRUE), TRUE)) {
+        $getFieldsValues['contact_type'] = $extends;
+        $extends = 'Contact';
+      }
       try {
         $field = civicrm_api4($extends, 'getFields', [
           'checkPermissions' => FALSE,
           'loadOptions' => ['id', 'name', 'label'],
           'where' => [['name', '=', $grouping]],
+          'values' => $getFieldsValues,
         ])->first();
         if ($field['options']) {
           return $field['options'];
@@ -1825,8 +1917,8 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
           $fkFields = civicrm_api4($field['entity'], 'getFields', [
             'checkPermissions' => FALSE,
           ])->indexBy('name');
-          $fkIdField = CoreUtil::getIdFieldName($field['fk_entity']);
-          $fkLabelField = CoreUtil::getInfoItem($field['fk_entity'], 'label_field');
+          $fkIdField = \Civi\Api4\Utils\CoreUtil::getIdFieldName($field['fk_entity']);
+          $fkLabelField = \Civi\Api4\Utils\CoreUtil::getInfoItem($field['fk_entity'], 'label_field');
           $fkNameField = isset($fkFields['name']) ? 'name' : 'id';
           $select = [$fkIdField, $fkNameField, $fkLabelField];
           $where = [];
@@ -1879,7 +1971,7 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
     // "Participant" but that would prevent extensions from creating enties with complex custom fields.
     $getEntityName = function($optionValueName) use ($extendsEntities) {
       foreach ($extendsEntities as $entityName) {
-        if (str_starts_with($optionValueName, $entityName)) {
+        if (strpos($optionValueName, $entityName) === 0) {
           return $entityName;
         }
       }
@@ -2158,18 +2250,16 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
     $ogId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_OptionGroup', 'cg_extend_objects', 'id', 'name');
     $ogValues = CRM_Core_BAO_OptionValue::getOptionValuesArray($ogId);
     foreach ($ogValues as $ogValue) {
-      if ($ogValue['is_active']) {
-        $options[] = [
-          'id' => $ogValue['value'],
-          'label' => $ogValue['label'],
-          'grouping' => $ogValue['grouping'] ?? NULL,
-          'table_name' => $ogValue['name'],
-          'allow_is_multiple' => !empty($ogValue['filter']),
-        ];
-      }
+      $options[] = [
+        'id' => $ogValue['value'],
+        'label' => $ogValue['label'],
+        'grouping' => $ogValue['grouping'] ?? NULL,
+        'table_name' => $ogValue['name'],
+        'allow_is_multiple' => !empty($ogValue['filter']),
+      ];
     }
     foreach ($options as &$option) {
-      $option['icon'] ??= CoreUtil::getInfoItem($option['id'], 'icon');
+      $option['icon'] ??= \Civi\Api4\Utils\CoreUtil::getInfoItem($option['id'], 'icon');
     }
     return $options;
   }
@@ -2282,100 +2372,6 @@ class CRM_Core_BAO_CustomGroup extends CRM_Core_DAO_CustomGroup implements \Civi
       $permittedIds = CRM_Core_Permission::customGroup(CRM_Core_Permission::VIEW, FALSE, $hook->userId) ?: [0];
       $hook->clauses[$idField][] = 'IN (' . implode(', ', $permittedIds) . ')';
     }
-  }
-
-  /**
-   * When deleting an entity, remove any references from custom groups' extends_entity_column_value.
-   * If there are no references left, disable the custom group.
-   */
-  private static function onDeleteEntity(string $entityName, array $entityValues): void {
-    if (CoreUtil::isContact($entityName)) {
-      // There's no such thing as a custom field extending a specific contact
-      return;
-    }
-    // E.g. activity_type_id, event_type_id, etc.
-    if ($entityName === 'OptionValue' && !empty($entityValues['option_group_id'])) {
-      $mode = 'pseudoconstant';
-      $property = [
-        'option_group_name' => CRM_Core_DAO::getFieldValue('CRM_Core_DAO_OptionGroup', $entityValues['option_group_id']),
-      ];
-    }
-    // E.g. event_id, financial_type_id, etc.
-    else {
-      $mode = 'entity_reference';
-      $property = [
-        'entity' => $entityName,
-      ];
-    }
-
-    $customEntityMap = self::getCustomEntityTypeMap();
-    foreach ($customEntityMap as $customEntity) {
-      // Go by table_name for the sake of contact types and complex entities with alternate tables
-      $field = Civi::table($customEntity['table_name'])->getField($customEntity['grouping']);
-      if (array_intersect_assoc($field[$mode] ?? [], $property)) {
-        $key = $mode === 'pseudoconstant' ? 'value' : 'id';
-        // This shouldn't happen, but some calls to hook_civicrm_post are weird.
-        if (empty($entityValues[$key])) {
-          return;
-        }
-        $customGroups = self::getAll([
-          'extends' => $customEntity['id'],
-          'extends_entity_column_value' => [$entityValues[$key]],
-          'extends_entity_column_id' => $customEntity['extends_entity_column_id'] ?? NULL,
-        ]);
-        foreach ($customGroups as $customGroup) {
-          $newExtendsEntityColumnValue = array_diff($customGroup['extends_entity_column_value'], [$entityValues[$key]]);
-          self::writeRecord([
-            'id' => $customGroup['id'],
-            'extends_entity_column_value' => $newExtendsEntityColumnValue,
-            // If the value is empty, disable the group; otherwise the empty set would be interpreted as "all".
-            'is_active' => !$newExtendsEntityColumnValue ? FALSE : $customGroup['is_active'],
-          ]);
-        }
-      }
-    }
-  }
-
-  /**
-   * Gets a combined map of extendsOptions and extendsEntityColumnIdOptions
-   *
-   * Currently this is only used for finding custom groups that reference a deleted entity
-   * @see self::onDeleteEntity()
-   *
-   * If needed for other purposes, the combining of the 2 maps could be a tad more complete
-   * (missing labels, confusing hijack of table_name, etc), so keeping private for now.
-   */
-  private static function getCustomEntityTypeMap(): array {
-    $customEntityMap = Civi::$statics[__CLASS__][__FUNCTION__] ?? NULL;
-    if ($customEntityMap !== NULL) {
-      return $customEntityMap;
-    }
-    $customEntityMap = self::getCustomGroupExtendsOptions();
-    // Remove any without a grouping
-    $customEntityMap = array_filter($customEntityMap, fn($customEntity) => !empty($customEntity['grouping']));
-    // Get complex entities (at time of writing, only applies to Participant)
-    $complexEntities = self::getExtendsEntityColumnIdOptions();
-    // Merge in complex entities
-    foreach ($complexEntities as $complexEntity) {
-      if ($complexEntity['grouping']) {
-        $entityName = $complexEntity['extends'];
-        $grouping = $complexEntity['grouping'];
-        // Grouping uses an FK like 'event_id.event_type_id'
-        if (str_contains($grouping, '.')) {
-          [$entityNameField, $grouping] = explode('.', $complexEntity['grouping']);
-          $entityName = Civi::entity($entityName)->getField($entityNameField)['entity_reference']['entity'];
-        }
-        $customEntityMap[] = [
-          'id' => $complexEntity['extends'],
-          'grouping' => $grouping,
-          // If grouping pointed to a different entity, table_name will point to the alternate entity
-          'table_name' => Civi::entity($entityName)->getMeta('table'),
-          'extends_entity_column_id' => $complexEntity['id'],
-        ];
-      }
-    }
-    Civi::$statics[__CLASS__][__FUNCTION__] = $customEntityMap;
-    return $customEntityMap;
   }
 
 }

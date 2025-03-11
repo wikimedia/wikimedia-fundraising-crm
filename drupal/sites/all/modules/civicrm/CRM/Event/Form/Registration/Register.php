@@ -163,7 +163,7 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
     //here we can't use parent $this->_allowWaitlist as user might
     //walk back and we might set this value in this postProcess.
     //(we set when spaces < group count and want to allow become part of waiting )
-    $eventFull = CRM_Event_BAO_Participant::eventFull($this->_eventId, FALSE, $this->_values['event']['has_waitlist'] ?? NULL);
+    $eventFull = CRM_Event_BAO_Participant::eventFull($this->_eventId, FALSE, CRM_Utils_Array::value('has_waitlist', $this->_values['event']));
 
     // Get payment processors if appropriate for this event
     $this->_noFees = $suppressPayment = $this->isSuppressPayment();
@@ -250,7 +250,9 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
     if (!empty($this->_fields)) {
       //load default campaign from page.
       if (array_key_exists('participant_campaign_id', $this->_fields)) {
-        $this->_defaults['participant_campaign_id'] = $this->_values['event']['campaign_id'] ?? NULL;
+        $this->_defaults['participant_campaign_id'] = CRM_Utils_Array::value('campaign_id',
+          $this->_values['event']
+        );
       }
 
       foreach ($this->_fields as $name => $field) {
@@ -598,7 +600,7 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
     /// see https://lab.civicrm.org/dev/core/-/issues/5168
     if ($form->getPriceSetID() && !empty($fields['bypass_payment']) && $form->_allowConfirmation) {
       if ($spacesAvailable === 0 ||
-        (empty($fields['priceSetId']) && ($fields['additional_participants'] ?? 0) < $spacesAvailable)
+        (empty($fields['priceSetId']) && CRM_Utils_Array::value('additional_participants', $fields) < $spacesAvailable)
       ) {
         $errors['bypass_payment'] = ts("You have not been added to the waiting list because there are spaces available for this event. We recommend registering yourself for an available space instead.");
       }
@@ -615,7 +617,7 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
       $primaryParticipantCount = $form->getParticipantCount($ppParams);
 
       //get price set fields errors in.
-      $errors = array_merge($errors, $priceSetErrors[0] ?? []);
+      $errors = array_merge($errors, CRM_Utils_Array::value(0, $priceSetErrors, []));
 
       $totalParticipants = $primaryParticipantCount;
       if ($numberAdditionalParticipants) {
@@ -833,7 +835,7 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
       $this->set('amount_level', $params['amount_level']);
 
       // generate and set an invoiceID for this transaction
-      $invoiceID = bin2hex(random_bytes(16));
+      $invoiceID = md5(uniqid(rand(), TRUE));
       $this->set('invoiceID', $invoiceID);
 
       if ($this->_paymentProcessor) {

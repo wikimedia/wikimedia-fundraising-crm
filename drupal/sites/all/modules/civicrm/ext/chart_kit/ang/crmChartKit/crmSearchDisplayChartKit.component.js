@@ -15,7 +15,7 @@
             afFieldset: '?^^afFieldset'
         },
         templateUrl: '~/crmChartKit/chartKitCanvas.html',
-        controller: function ($scope, $element, searchDisplayBaseTrait, chartKitChartTypes, chartKitReduceTypes) {
+        controller: function ($scope, $element, searchDisplayBaseTrait, chartKitTypes) {
             const ts = $scope.ts = CRM.ts('chart_kit');
 
             // Mix in base display trait
@@ -94,7 +94,7 @@
             };
 
             this.initChartType = () => {
-                const type = chartKitChartTypes.find((type) => type.key === this.settings.chartType);
+                const type = chartKitTypes.find((type) => type.key === this.settings.chartType);
                 this.chartType = type.service;
             };
 
@@ -176,18 +176,76 @@
                     return;
                 }
 
-                const cols = this.getColumnsWithReducers();
+                // define our custom reducer functions based on the reduceType of each column
+                const reduceAdd = (p, v) => this.getColumns().map((col) => {
+                    switch (col.reduceType) {
+                        case 'mean':
+                            const previous = p[col.index];
+                            return [
+                                previous[0] + v[col.index],
+                                previous[1] + 1
+                            ];
+                        case 'list':
+                            // add the new value if we dont already have it
+                            if (p[col.index].indexOf(v[col.index]) < 0) {
+                                p[col.index].push(v[col.index]);
+                            }
 
-                // reduce every coordinate using the functions from its column reduce type
-                const reduceAdd = (p, v) => cols.map((col) => {
-                    return col.reducer.add(p[col.index], v[col.index]);
+                            return p[col.index];
+                        // we track the same value for percentages
+                        // we'll just divide by the total across all
+                        // records when displaying
+                        case 'percentage_count':
+                        case 'count':
+                            // just increment the record counter
+                            return p[col.index] + 1;
+                        case 'percentage_sum':
+                        case 'sum':
+                        default:
+                            // default reduce type is SUM
+                            return p[col.index] + v[col.index];
+                    }
                 });
-                const reduceSub = (p, v) => cols.map((col) => {
-                    return col.reducer.sub(p[col.index], v[col.index]);
+                const reduceSub = (p, v) => this.getColumns().map((col) => {
+                    switch (col.reduceType) {
+                        case 'mean':
+                            // increment the SUM and COUNT sub-coordinates
+                            const previous = p[col.index];
+                            return [
+                                previous[0] - v[col.index],
+                                previous[1] - 1
+                            ];
+                        case 'list':
+                            // remove value from the list
+                            return p[col.index].filter((item) => (item !== v[col.index]));
+                        case 'percentage_count':
+                        case 'count':
+                            // just decrement the record counter
+                            return p[col.index] - 1;
+                        case 'percentage_sum':
+                        case 'sum':
+                        default:
+                            // default reduce type is SUM
+                            return p[col.index] - v[col.index];
+                    }
                 });
-                const reduceStart = () => cols.map((col) => {
-                    return col.reducer.start();
+                // start with an array of "zeroes"
+                // though what zero is depends on the reduce type...
+                // NOTE we dont use getColumns because we need to leave gaps
+                // in the starting array for unset columns (which are excluded from getColumns)
+                const reduceStart = () => this.settings.columns.map((col) => {
+                    switch (col.reduceType) {
+                        case 'mean':
+                            // sub-coordinates for SUM and COUNT
+                            return [0, 0];
+                        case 'list':
+                            return [];
+                        default:
+                            // COUNT or SUM
+                            return 0;
+                    }
                 });
+
 
                 this.group = this.dimension.group().reduce(reduceAdd, reduceSub, reduceStart);
 
@@ -353,6 +411,7 @@
                     .clipPadding(this.settings.format.padding.clip ? this.settings.format.padding.clip : 20);
             };
 
+
             this.addLegend = () => {
                 const legend = dc.legend();
 
@@ -389,22 +448,6 @@
 
             this.getColumnsForAxis = (axisKey) => this.getColumns().filter((col) => col.axis === axisKey);
 
-            /**
-             * Get the reducer for a column, based on its reduceType key
-             * ( defaults to returning the "list" reducer if reduceType isn't set )
-             */
-            this.getReducerForColumn = (col) => {
-                if (col.reduceType) {
-                  return chartKitReduceTypes.find((type) => type.key === col.reduceType);
-                }
-                return chartKitReduceTypes.find((type) => type.key === 'list');
-            };
-
-            this.getColumnsWithReducers = () => this.getColumns().map((col) => {
-                col.reducer = this.getReducerForColumn(col);
-                return col;
-            });
-
             this.getXColumn = () => this.getColumnsForAxis('x')[0];
 
             this.getOrderColumn = () => this.getColumns()[parseInt(this.settings.chartOrderColIndex ? this.settings.chartOrderColIndex : 0)];
@@ -421,9 +464,17 @@
             this.getValueAccessor = (col) => ((d) => {
                 const columnData = d.value[col.index];
 
-                const reducer = this.getReducerForColumn(col);
-
-                return reducer.final(columnData, this.columnTotals[col.index]);
+                switch (col.reduceType) {
+                    case 'mean':
+                        return columnData[0] / columnData[1];
+                    case 'percentage_count':
+                    case 'percentage_sum':
+                        return columnData / this.columnTotals[col.index];
+                    case 'list':
+                    case 'count':
+                    case 'sum':
+                        return columnData;
+                }
             });
 
 
@@ -490,20 +541,17 @@
             };
 
             this.renderReduceTypeValue = (value, col) => {
-                const reducer = this.getReducerForColumn(col);
-
-                value = reducer.final(value, this.columnTotals[col.index]);
-
-                // list and percentage are special cases
-                // for how we apply data value renderer
                 switch (col.reduceType) {
                     case 'list':
-                        // we need to apply the datavalue rendering to each element
+                        // we need to apply the datavalue mapping to each element
                         return value.map((item) => this.renderDataValue(item, col)).join(', ');
+                    case 'mean':
+                        const mean = value[0] / value[1];
+                        return this.renderDataValue(mean, col);
                     case 'percentage_sum':
                     case 'percentage_count':
                         // TODO would we ever need to call renderDataValue here? before or after division?
-                        const percentage = Math.floor(100 * value);
+                        const percentage = Math.floor(100 * value / this.columnTotals[col.index]);
                         return `${percentage}%`;
                     default:
                         return this.renderDataValue(value, col);

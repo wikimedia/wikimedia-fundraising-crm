@@ -20,7 +20,7 @@
             'y': {
                 key: 'y',
                 label: ts('Values'),
-                sourceDataTypes: ['Integer', 'Money', 'Boolean', 'Float', 'Double'],
+                sourceDataTypes: ['Integer', 'Money', 'Boolean'],
                 seriesTypes: ['bar', 'line', 'area'],
                 multiColumn: true,
                 colorType: 'one-per-column',

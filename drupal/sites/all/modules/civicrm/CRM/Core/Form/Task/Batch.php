@@ -141,7 +141,7 @@ class CRM_Core_Form_Task_Batch extends CRM_Core_Form_Task {
               $customValue['extends_entity_column_value']
             );
           }
-          if (!empty($entityColumnValue[$typeId]) ||
+          if ((CRM_Utils_Array::value($typeId, $entityColumnValue)) ||
             CRM_Utils_System::isNull($entityColumnValue[$typeId])
           ) {
             CRM_Core_BAO_UFGroup::buildProfile($this, $field, NULL, $entityId);

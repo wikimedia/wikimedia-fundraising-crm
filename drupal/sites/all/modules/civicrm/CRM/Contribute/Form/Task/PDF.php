@@ -94,13 +94,6 @@ AND    {$this->_componentClause}";
     $this->setDefaults($defaults);
   }
 
-  protected function getFieldsToExcludeFromPurification(): array {
-    return [
-      // Because value contains <angle brackets>
-      'from_email_address',
-    ];
-  }
-
   /**
    * Build the form object.
    */

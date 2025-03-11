@@ -19,7 +19,6 @@ use Civi\Core\Event\GenericHookEvent;
 use Civi\Core\Event\PostEvent;
 use Civi\Core\Event\PreEvent;
 use Civi\Core\Service\AutoService;
-use Civi\Search\SKEntityGenerator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -37,8 +36,8 @@ class SKEntitySubscriber extends AutoService implements EventSubscriberInterface
   public static function getSubscribedEvents(): array {
     return [
       'civi.api4.entityTypes' => 'on_civi_api4_entityTypes',
-      'hook_civicrm_pre::SearchDisplay' => 'onPreSaveDisplay',
-      'hook_civicrm_post::SearchDisplay' => 'onPostSaveDisplay',
+      'hook_civicrm_pre' => 'onPreSaveDisplay',
+      'hook_civicrm_post' => 'onPostSaveDisplay',
     ];
   }
 
@@ -55,6 +54,7 @@ class SKEntitySubscriber extends AutoService implements EventSubscriberInterface
         'title' => $display['label'],
         'title_plural' => $display['label'],
         'description' => $display['settings']['description'] ?? NULL,
+        'primary_key' => ['_row'],
         'type' => ['SavedSearch'],
         'table_name' => $display['tableName'],
         'class_args' => [$display['name']],
@@ -83,7 +83,6 @@ class SKEntitySubscriber extends AutoService implements EventSubscriberInterface
     // Drop the old table if it exists
     if ($oldName) {
       \CRM_Core_BAO_SchemaHandler::dropTable(_getSearchKitDisplayTableName($oldName));
-      \CRM_Core_DAO::executeQuery(sprintf('DROP VIEW IF EXISTS `%s`', _getSearchKitDisplayTableName($oldName)));
     }
     if ($event->action === 'delete') {
       // Delete scheduled jobs when deleting entity
@@ -101,6 +100,15 @@ class SKEntitySubscriber extends AutoService implements EventSubscriberInterface
       'attributes' => 'ENGINE=InnoDB',
       'fields' => [],
     ];
+    // Primary key field
+    $table['fields'][] = [
+      'name' => '_row',
+      'type' => 'int unsigned',
+      'primary' => TRUE,
+      'required' => TRUE,
+      'attributes' => 'AUTO_INCREMENT',
+      'comment' => 'Row number',
+    ];
     foreach ($newSettings['columns'] as &$column) {
       $expr = $this->getSelectExpression($column['key']);
       if (!$expr) {
@@ -111,31 +119,9 @@ class SKEntitySubscriber extends AutoService implements EventSubscriberInterface
     }
     // Store new settings with added column spec
     $event->params['settings'] = $newSettings;
-
-    $mode = $event->params['settings']['data_mode'] ?? 'table';
-    switch ($mode) {
-      case 'table':
-      case '':
-        $sql = \CRM_Core_BAO_SchemaHandler::buildTableSQL($table);
-        // do not i18n-rewrite
-        \CRM_Core_DAO::executeQuery($sql, [], TRUE, NULL, FALSE, FALSE);
-        break;
-
-      case 'view':
-        $tableName = _getSearchKitDisplayTableName($newName);
-        $tempSettings = $event->params['settings'];
-        $query = (new SKEntityGenerator())->createQuery($this->savedSearch['api_entity'], $this->savedSearch['api_params'], $tempSettings);
-        $columnSpecs = array_column($tempSettings['columns'], 'spec');
-        $columns = implode(', ', array_column($columnSpecs, 'name'));
-        $sql = "CREATE VIEW `$tableName` ($columns) AS " . $query->getSql();
-
-        // do not i18n-rewrite
-        \CRM_Core_DAO::executeQuery($sql, [], TRUE, NULL, FALSE, FALSE);
-        break;
-
-      default:
-        throw new \LogicException("Search display $event->id has invalid mode ($mode)");
-    }
+    $sql = \CRM_Core_BAO_SchemaHandler::buildTableSQL($table);
+    // do not i18n-rewrite
+    \CRM_Core_DAO::executeQuery($sql, [], TRUE, NULL, FALSE, FALSE);
   }
 
   /**
@@ -144,8 +130,17 @@ class SKEntitySubscriber extends AutoService implements EventSubscriberInterface
    * @return array
    */
   private function formatFieldSpec(array $column, array $expr): array {
-    [$name, $suffix] = \Civi\Search\Meta::createSqlName($column['key'], $column['name'] ?? NULL);
-
+    // Strip the pseuoconstant suffix
+    [$name, $suffix] = array_pad(explode(':', $column['key']), 2, NULL);
+    // Sanitize the name and limit to 58 characters.
+    // 64 characters is the max for some versions of SQL, minus the length of "index_" = 58.
+    if (strlen($name) <= 58) {
+      $name = \CRM_Utils_String::munge($name, '_', NULL);
+    }
+    // Append a hash of the full name to trimmed names to keep them unique but predictable
+    else {
+      $name = \CRM_Utils_String::munge($name, '_', 42) . substr(md5($name), 0, 16);
+    }
     $spec = [
       'name' => $name,
       'data_type' => $expr['dataType'],

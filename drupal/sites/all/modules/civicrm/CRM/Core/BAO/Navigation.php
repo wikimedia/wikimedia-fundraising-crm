@@ -94,7 +94,7 @@ class CRM_Core_BAO_Navigation extends CRM_Core_DAO_Navigation {
         $params['name'] = $navLabel;
       }
 
-      $params['weight'] = self::calculateWeight($params['parent_id'] ?? NULL);
+      $params['weight'] = self::calculateWeight(CRM_Utils_Array::value('parent_id', $params));
     }
 
     return self::writeRecord($params);
@@ -437,7 +437,7 @@ ORDER BY weight";
       return CRM_Utils_System::url($path, $q, FALSE, $fragment);
     }
 
-    if (!str_contains($url, '&amp;')) {
+    if (strpos($url, '&amp;') === FALSE) {
       return htmlspecialchars($url);
     }
 
@@ -876,28 +876,6 @@ ORDER BY weight";
   }
 
   /**
-   * Count all nested child items (including sub-children and sub-sub-children, etc).
-   *
-   * @param int $id
-   *   The ID of the parent item.
-   *
-   * @return int
-   *   The total number of children.
-   */
-  public static function getChildCount(int $id): int {
-    $childCount = 0;
-    $parentIds = [$id];
-    while ($parentIds) {
-      $parentIds = \Civi\Api4\Navigation::get(FALSE)
-        ->addWhere('parent_id', 'IN', $parentIds)
-        ->addSelect('id')
-        ->execute()->column('id');
-      $childCount += count($parentIds);
-    }
-    return $childCount;
-  }
-
-  /**
    * @param array $menu
    */
   public static function buildHomeMenu(&$menu) {
@@ -912,7 +890,6 @@ ORDER BY weight";
             'label' => ts('CiviCRM Home'),
             'name' => 'CiviCRM Home',
             'url' => 'civicrm/dashboard?reset=1',
-            'icon' => 'crm-i fa-house-user',
             'weight' => 1,
           ],
         ];
@@ -922,7 +899,6 @@ ORDER BY weight";
               'label' => ts('Hide Menu'),
               'name' => 'Hide Menu',
               'url' => '#hidemenu',
-              'icon' => 'crm-i fa-minus',
               'weight' => 2,
             ],
           ];
@@ -933,7 +909,6 @@ ORDER BY weight";
               'label' => ts('Change Password'),
               'name' => 'Change Password',
               'url' => 'civicrm/admin/user/password',
-              'icon' => 'crm-i fa-keyboard',
               'weight' => 2,
             ],
           ];
@@ -943,7 +918,6 @@ ORDER BY weight";
             'label' => ts('Log out'),
             'name' => 'Log out',
             'url' => 'civicrm/logout?reset=1',
-            'icon' => 'crm-i fa-person-walking-arrow-right',
             'weight' => 3,
           ],
         ];

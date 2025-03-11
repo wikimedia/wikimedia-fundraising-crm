@@ -7,10 +7,10 @@ return [
   'placement' => [
     'contact_summary_tab',
   ],
-  'placement_filters' => [
-    ['contact_type' => 'Organization'],
+  'summary_contact_type' => [
+    'Organization',
   ],
-  'placement_weight' => 30,
+  'summary_weight' => 30,
   'icon' => 'fa-id-badge',
   'permission' => [
     'access CiviCRM',

@@ -386,7 +386,7 @@ class CRM_Core_Form_RecurringEntity {
           ];
           $opGroup = CRM_Core_BAO_OptionGroup::add($optionGroupParams);
           if ($opGroup->id) {
-            $oldWeight = NULL;
+            $oldWeight = 0;
             $fieldValues = ['option_group_id' => $opGroup->id];
             foreach ($excludeDates as $val) {
               $optionGroupValue = [
@@ -395,7 +395,7 @@ class CRM_Core_Form_RecurringEntity {
                 'value' => CRM_Utils_Date::processDate($val),
                 'name' => $opGroup->name,
                 'description' => 'Used for recurring ' . $type,
-                'weight' => CRM_Utils_Weight::updateOtherWeights('CRM_Core_DAO_OptionValue', $oldWeight, $params['weight'] ?? NULL, $fieldValues),
+                'weight' => CRM_Utils_Weight::updateOtherWeights('CRM_Core_DAO_OptionValue', $oldWeight, CRM_Utils_Array::value('weight', $params), $fieldValues),
                 'is_active' => 1,
               ];
               $excludeDateList[] = $optionGroupValue['value'];

@@ -96,8 +96,6 @@
       </tr>
     </table>
 
-    {include file="CRM/common/customDataBlock.tpl" customDataType='PriceFieldValue' cid=''}
-
   {literal}
     <script type="text/javascript">
 
@@ -110,8 +108,8 @@
 
         }, 'json');
       }
+      {/literal}
     </script>
-  {/literal}
   {/if}
 
 

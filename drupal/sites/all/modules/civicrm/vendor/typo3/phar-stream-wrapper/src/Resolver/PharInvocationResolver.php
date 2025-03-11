@@ -20,9 +20,9 @@ use TYPO3\PharStreamWrapper\Resolvable;
 
 class PharInvocationResolver implements Resolvable
 {
-    public const RESOLVE_REALPATH = 1;
-    public const RESOLVE_ALIAS = 2;
-    public const ASSERT_INTERNAL_INVOCATION = 32;
+    const RESOLVE_REALPATH = 1;
+    const RESOLVE_ALIAS = 2;
+    const ASSERT_INTERNAL_INVOCATION = 32;
 
     /**
      * @var string[]
@@ -52,8 +52,12 @@ class PharInvocationResolver implements Resolvable
      * one $baseName is referring to multiple aliases.
      * @see https://secure.php.net/manual/en/phar.setalias.php
      * @see https://secure.php.net/manual/en/phar.mapphar.php
+     *
+     * @param string $path
+     * @param int|null $flags
+     * @return null|PharInvocation
      */
-    public function resolve(string $path, ?int $flags = null): ?PharInvocation
+    public function resolve(string $path, int $flags = null)
     {
         $hasPharPrefix = Helper::hasPharPrefix($path);
         $flags = $flags ?? static::RESOLVE_REALPATH | static::RESOLVE_ALIAS;
@@ -103,7 +107,12 @@ class PharInvocationResolver implements Resolvable
         return $invocation;
     }
 
-    private function resolveBaseName(string $path, int $flags): ?string
+    /**
+     * @param string $path
+     * @param int $flags
+     * @return null|string
+     */
+    private function resolveBaseName(string $path, int $flags)
     {
         $baseName = $this->findInBaseNames($path);
         if ($baseName !== null) {
@@ -153,13 +162,21 @@ class PharInvocationResolver implements Resolvable
         return null;
     }
 
-    private function resolvePossibleAlias(string $path): ?string
+    /**
+     * @param string $path
+     * @return null|string
+     */
+    private function resolvePossibleAlias(string $path)
     {
         $normalizedPath = Helper::normalizePath($path);
         return strstr($normalizedPath, '/', true) ?: null;
     }
 
-    private function findByBaseName(string $baseName): ?PharInvocation
+    /**
+     * @param string $baseName
+     * @return null|PharInvocation
+     */
+    private function findByBaseName(string $baseName)
     {
         return Manager::instance()->getCollection()->findByCallback(
             function (PharInvocation $candidate) use ($baseName) {
@@ -169,7 +186,11 @@ class PharInvocationResolver implements Resolvable
         );
     }
 
-    private function findInBaseNames(string $path): ?string
+    /**
+     * @param string $path
+     * @return null|string
+     */
+    private function findInBaseNames(string $path)
     {
         // return directly if the resolved base name was submitted
         if (in_array($path, $this->baseNames, true)) {
@@ -189,7 +210,10 @@ class PharInvocationResolver implements Resolvable
         return null;
     }
 
-    private function addBaseName(string $baseName): void
+    /**
+     * @param string $baseName
+     */
+    private function addBaseName(string $baseName)
     {
         if (isset($this->baseNames[$baseName])) {
             return;
@@ -202,9 +226,11 @@ class PharInvocationResolver implements Resolvable
     /**
      * Finds confirmed(!) invocations by alias.
      *
+     * @param string $path
+     * @return null|PharInvocation
      * @see \TYPO3\PharStreamWrapper\PharStreamWrapper::collectInvocation()
      */
-    private function findByAlias(string $path): ?PharInvocation
+    private function findByAlias(string $path)
     {
         $possibleAlias = $this->resolvePossibleAlias($path);
         if ($possibleAlias === null) {

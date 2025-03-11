@@ -108,6 +108,8 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
     $showView = TRUE;
     $showUpdate = $showDelete = FALSE;
     $qsUpdate = NULL;
+    $url = NULL;
+    $qsView = NULL;
 
     $activityTypeName = CRM_Core_PseudoConstant::getName('CRM_Activity_BAO_Activity', 'activity_type_id', $activityTypeId);
 
@@ -420,7 +422,7 @@ class CRM_Activity_Selector_Activity extends CRM_Core_Selector_Base implements C
 
       $engagementLevel = $row['engagement_level'] ?? NULL;
       if ($engagementLevel) {
-        $row['engagement_level'] = $engagementLevels[$engagementLevel] ?? $engagementLevel;
+        $row['engagement_level'] = CRM_Utils_Array::value($engagementLevel, $engagementLevels, $engagementLevel);
       }
 
       $actionLinks = $this->actionLinks($row['activity_type_id'],

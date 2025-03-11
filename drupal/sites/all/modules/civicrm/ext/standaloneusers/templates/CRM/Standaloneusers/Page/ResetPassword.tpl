@@ -1,6 +1,6 @@
 <div class="standalone-auth-form">
   <div class="standalone-auth-box">
-    {include file='CRM/common/logo.tpl'}
+    <img class="crm-logo" src="{$logoUrl}" alt="logo for CiviCRM, with an intersecting blue and green triangle">
     <crm-angular-js modules="crmResetPassword">
     <crm-reset-password
         hibp="{$hibp|escape}"

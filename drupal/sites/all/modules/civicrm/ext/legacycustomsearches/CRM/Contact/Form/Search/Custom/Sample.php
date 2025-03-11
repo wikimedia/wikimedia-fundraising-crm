@@ -147,9 +147,11 @@ LEFT JOIN civicrm_state_province state_province ON state_province.id = address.s
 
     $count = 1;
     $clause = [];
-    $name = $this->_formValues['household_name'] ?? NULL;
+    $name = CRM_Utils_Array::value('household_name',
+      $this->_formValues
+    );
     if ($name != NULL) {
-      if (!str_contains($name, '%')) {
+      if (strpos($name, '%') === FALSE) {
         $name = "%{$name}%";
       }
       $params[$count] = [$name, 'String'];
@@ -157,7 +159,9 @@ LEFT JOIN civicrm_state_province state_province ON state_province.id = address.s
       $count++;
     }
 
-    $state = $this->_formValues['state_province_id'] ?? NULL;
+    $state = CRM_Utils_Array::value('state_province_id',
+      $this->_formValues
+    );
     if (!$state &&
       $this->_stateID
     ) {

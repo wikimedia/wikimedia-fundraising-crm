@@ -220,72 +220,6 @@ class CRM_Core_DAO extends DB_DataObject {
   }
 
   /**
-   * Set the sql maximum execution time value.
-   *
-   * Note the preferred way to access this is via
-   * `$autoClean = CRM_Utils_AutoClean::swapMaxExecutionTime(800);`
-   *
-   * It can then be reverted with
-   * `$autoClean->cleanup()`
-   * Note that the auto clean will do the clean up itself on `__destruct`
-   * but formally doing it makes it clear that it is being done and, importantly,
-   * avoids the situation where someone just calls
-   * `CRM_Utils_AutoClean::swapMaxExecutionTime(800);`
-   * without assigning it to a variable (because `__destruct` is implicitly called)
-   *
-   * https://mariadb.com/kb/en/aborting-statements/
-   */
-  public static function setMaxExecutionTime(int $time): int {
-    $version = CRM_Utils_SQL::getDatabaseVersion();
-    $originalTimeLimit = self::getMaxExecutionTime();
-    if (stripos($version, 'mariadb') !== FALSE) {
-      // MariaDB variable has a certain name, and value is in seconds.
-      $sql = "SET SESSION MAX_STATEMENT_TIME={$time}";
-    }
-    else {
-      // MySQL variable has a different name, and value is in milliseconds.
-      $sql = "SET SESSION MAX_EXECUTION_TIME=" . ($time * 1000);
-    }
-    try {
-      CRM_Core_DAO::executeQuery($sql);
-    }
-    catch (CRM_Core_Exception $e) {
-      \Civi::log()->warning('failed to adjust maximum query execution time {sql}', [
-        'sql' => $sql,
-        'exception' => $e,
-      ]);
-    }
-    finally {
-      return $originalTimeLimit;
-    }
-  }
-
-  /**
-   * Get the mysql / mariaDB maximum execution time variable.
-   *
-   * https://mariadb.com/kb/en/aborting-statements/
-   *
-   * @return int
-   * @throws \Civi\Core\Exception\DBQueryException
-   */
-  public static function getMaxExecutionTime(): int {
-    $version = CRM_Utils_SQL::getDatabaseVersion();
-    if (stripos($version, 'mariadb') !== FALSE) {
-      $originalSql = 'SHOW VARIABLES LIKE "MAX_STATEMENT_TIME"';
-      $variableDao = CRM_Core_DAO::executeQuery($originalSql);
-      $variableDao->fetch();
-      return (int) $variableDao->Value;
-    }
-    else {
-      $originalSql = 'SHOW VARIABLES LIKE "MAX_EXECUTION_TIME"';
-      $variableDao = CRM_Core_DAO::executeQuery($originalSql);
-      $variableDao->fetch();
-      return ((int) $variableDao->Value) / 1000;
-    }
-
-  }
-
-  /**
    * Returns the list of fields that can be imported
    *
    * @param bool $prefix
@@ -398,7 +332,7 @@ class CRM_Core_DAO extends DB_DataObject {
     }
     else {
       //if it is required we need to generate the dependency object first
-      $depObject = CRM_Core_DAO::createTestObject($FKClassName, $params[$dbName] ?? 1);
+      $depObject = CRM_Core_DAO::createTestObject($FKClassName, CRM_Utils_Array::value($dbName, $params, 1));
       $this->$dbName = $depObject->id;
     }
   }
@@ -590,9 +524,6 @@ class CRM_Core_DAO extends DB_DataObject {
 
     if ($i18nRewrite and $dbLocale) {
       $query = CRM_Core_I18n_Schema::rewriteQuery($query);
-    }
-    if (CIVICRM_UF === 'UnitTests' && CRM_Utils_Time::isOverridden()) {
-      $query = CRM_Utils_Time::rewriteQuery($query);
     }
 
     $ret = parent::query($query);
@@ -1632,7 +1563,7 @@ LIKE %1
 
     self::$_dbColumnValueCache ??= [];
 
-    while (str_contains($daoName, '_BAO_')) {
+    while (strpos($daoName, '_BAO_') !== FALSE) {
       $daoName = get_parent_class($daoName);
     }
 
@@ -1855,6 +1786,11 @@ LIKE %1
       $dao = new $daoName();
     }
 
+    if ($trapException) {
+      CRM_Core_Error::deprecatedFunctionWarning('calling functions should handle exceptions');
+      $errorScope = CRM_Core_TemporaryErrorScope::ignoreException();
+    }
+
     if ($dao->isValidOption($options)) {
       $dao->setOptions($options);
     }
@@ -1864,6 +1800,11 @@ LIKE %1
     // since it is unbuffered, ($dao->N==0) is true.  This blocks the standard fetch() mechanism.
     if (($options['result_buffering'] ?? NULL) === 0) {
       $dao->N = TRUE;
+    }
+
+    if (is_a($result, 'DB_Error')) {
+      CRM_Core_Error::deprecatedFunctionWarning('calling functions should handle exceptions');
+      return $result;
     }
 
     return $dao;
@@ -2996,7 +2937,6 @@ SELECT contact_id
   public static function buildOptions($fieldName, $context = NULL, $values = []) {
     $entityName = CRM_Core_DAO_AllCoreTables::getEntityNameForClass(get_called_class());
     $entity = Civi::entity($entityName);
-    $legacyFieldName = $fieldName;
     // Legacy handling for custom field names in `custom_123` format
     if (str_starts_with($fieldName, 'custom_') && is_numeric($fieldName[7] ?? '')) {
       $fieldName = CRM_Core_BAO_CustomField::getLongNameFromShortName($fieldName) ?? $fieldName;
@@ -3005,10 +2945,6 @@ SELECT contact_id
     elseif (!$entity->getField($fieldName)) {
       $uniqueNames = static::fieldKeys();
       $fieldName = array_search($fieldName, $uniqueNames) ?: $fieldName;
-    }
-    // Legacy handling for hook-based fields from `fields_callback`
-    if (!$entity->getField($fieldName)) {
-      return CRM_Core_PseudoConstant::get(static::class, $legacyFieldName, [], $context);
     }
     $checkPermissions = (bool) ($values['check_permissions'] ?? ($context == 'create' || $context == 'search'));
     $includeDisabled = ($context == 'validate' || $context == 'get');
@@ -3392,21 +3328,23 @@ SELECT contact_id
    *
    * With acls from related entities + additional clauses from hook_civicrm_selectWhereClause
    *
+   * DO NOT OVERRIDE THIS FUNCTION
+   *
+   * @TODO: ADD `final` keyword to function signature
+   *
    * @param string|null $tableAlias
    * @param string|null $entityName
    * @param array $conditions
    *   Values from WHERE or ON clause
-   * @param int|null $userId
-   *
-   * @return string[]
+   * @return array
    */
-  final public static function getSelectWhereClause(?string $tableAlias = NULL, ?string $entityName = NULL, array $conditions = [], ?int $userId = NULL) {
+  public static function getSelectWhereClause($tableAlias = NULL, $entityName = NULL, $conditions = []) {
     $bao = new static();
     $tableAlias ??= $bao->tableName();
     $entityName ??= CRM_Core_DAO_AllCoreTables::getEntityNameForClass(get_class($bao));
     $finalClauses = [];
     $fields = static::getSupportedFields();
-    $selectWhereClauses = $bao->addSelectWhereClause($entityName, $userId, $conditions);
+    $selectWhereClauses = $bao->addSelectWhereClause($entityName, NULL, $conditions);
     foreach ($selectWhereClauses as $fieldName => $fieldClauses) {
       $finalClauses[$fieldName] = NULL;
       if ($fieldClauses) {
@@ -3561,7 +3499,7 @@ SELECT contact_id
    */
   private function clearDbColumnValueCache() {
     $daoName = get_class($this);
-    while (str_contains($daoName, '_BAO_')) {
+    while (strpos($daoName, '_BAO_') !== FALSE) {
       $daoName = get_parent_class($daoName);
     }
     if (isset($this->id)) {

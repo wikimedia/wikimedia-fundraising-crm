@@ -6,15 +6,8 @@
  */
 namespace Dompdf\FrameReflower;
 
-use Dompdf\Css\Content\Attr;
-use Dompdf\Css\Content\CloseQuote;
-use Dompdf\Css\Content\Counter;
-use Dompdf\Css\Content\Counters;
-use Dompdf\Css\Content\NoCloseQuote;
-use Dompdf\Css\Content\NoOpenQuote;
-use Dompdf\Css\Content\OpenQuote;
-use Dompdf\Css\Content\StringPart;
 use Dompdf\Dompdf;
+use Dompdf\Helpers;
 use Dompdf\Frame;
 use Dompdf\Frame\Factory;
 use Dompdf\FrameDecorator\AbstractFrameDecorator;
@@ -113,16 +106,7 @@ abstract class AbstractFrameReflower
                     break;
                 }
             case "fixed":
-                $root = $frame->get_root();
-                $parent = $frame->get_parent();
-                do {
-                    $parents_parent = $parent->get_parent();
-                    if ($parents_parent == $root) {
-                        break;
-                    }
-                    $parent = $parents_parent;
-                } while ($parent);
-                $initial_cb = $parent->get_containing_block();
+                $initial_cb = $frame->get_root()->get_first_child()->get_containing_block();
                 $frame->set_containing_block($initial_cb["x"], $initial_cb["y"], $initial_cb["w"], $initial_cb["h"]);
                 break;
             default:
@@ -303,7 +287,7 @@ abstract class AbstractFrameReflower
     /**
      * @param Block|null $block
      */
-    abstract function reflow(?Block $block = null);
+    abstract function reflow(Block $block = null);
 
     /**
      * Resolve the `min-width` property.
@@ -492,69 +476,185 @@ abstract class AbstractFrameReflower
     }
 
     /**
-     * Resolves the `content` property to string.
+     * Parses a CSS string containing quotes and escaped hex characters
+     *
+     * @param $string string The CSS string to parse
+     * @param $single_trim
+     * @return string
+     */
+    protected function _parse_string($string, $single_trim = false)
+    {
+        if ($single_trim) {
+            $string = preg_replace('/^[\"\']/', "", $string);
+            $string = preg_replace('/[\"\']$/', "", $string);
+        } else {
+            $string = trim($string, "'\"");
+        }
+
+        $string = str_replace(["\\\n", '\\"', "\\'"],
+            ["", '"', "'"], $string);
+
+        // Convert escaped hex characters into ascii characters (e.g. \A => newline)
+        $string = preg_replace_callback("/\\\\([0-9a-fA-F]{0,6})/",
+            function ($matches) { return \Dompdf\Helpers::unichr(hexdec($matches[1])); },
+            $string);
+        return $string;
+    }
+
+    /**
+     * Parses a CSS "quotes" property
+     *
+     * https://www.w3.org/TR/css-content-3/#quotes
+     *
+     * @return array An array of pairs of quotes
+     */
+    protected function _parse_quotes(): array
+    {
+        $quotes = $this->_frame->get_style()->quotes;
+
+        if ($quotes === "none") {
+            return [];
+        }
+
+        if ($quotes === "auto") {
+            // TODO: Use typographically appropriate quotes for the current
+            // language here
+            return [['"', '"'], ["'", "'"]];
+        }
+
+        // Matches quote types
+        $re = '/(\'[^\']*\')|(\"[^\"]*\")/';
+
+        // Split on spaces, except within quotes
+        if (!preg_match_all($re, $quotes, $matches, PREG_SET_ORDER)) {
+            return [];
+        }
+
+        $quotes_array = [];
+        foreach ($matches as $_quote) {
+            $quotes_array[] = $this->_parse_string($_quote[0], true);
+        }
+
+        return array_chunk($quotes_array, 2);
+    }
+
+    /**
+     * Parses the CSS "content" property
      *
      * https://www.w3.org/TR/CSS21/generate.html#content
      *
      * @return string The resulting string
      */
-    protected function resolve_content(): ?string
+    protected function _parse_content(): string
     {
-        $frame = $this->_frame;
-        $style = $frame->get_style();
+        $style = $this->_frame->get_style();
         $content = $style->content;
 
         if ($content === "normal" || $content === "none") {
-            return null;
+            return "";
         }
 
-        $quotes = $style->quotes;
+        $quotes = $this->_parse_quotes();
         $text = "";
 
         foreach ($content as $val) {
-            if ($val instanceof StringPart) {
-                $text .= $val->string;
+            // String
+            if (in_array(mb_substr($val, 0, 1), ['"', "'"], true)) {
+                $text .= $this->_parse_string($val);
+                continue;
             }
 
-            elseif ($val instanceof OpenQuote) {
+            $val = mb_strtolower($val);
+
+            // Keywords
+            if ($val === "open-quote") {
                 // FIXME: Take quotation depth into account
-                if ($quotes !== "none" && isset($quotes[0][0])) {
+                if (isset($quotes[0][0])) {
                     $text .= $quotes[0][0];
                 }
-            }
-
-            elseif ($val instanceof CloseQuote) {
+                continue;
+            } elseif ($val === "close-quote") {
                 // FIXME: Take quotation depth into account
-                if ($quotes !== "none" && isset($quotes[0][1])) {
+                if (isset($quotes[0][1])) {
                     $text .= $quotes[0][1];
                 }
-            }
-            
-            elseif ($val instanceof NoOpenQuote) {
+                continue;
+            } elseif ($val === "no-open-quote") {
                 // FIXME: Increment quotation depth
-            }
-
-            elseif ($val instanceof NoCloseQuote) {
+                continue;
+            } elseif ($val === "no-close-quote") {
                 // FIXME: Decrement quotation depth
+                continue;
             }
 
-            elseif ($val instanceof Attr) {
-                $text .= $frame->get_parent()->get_node()->getAttribute($val->attribute);
-            }
-
-            elseif ($val instanceof Counter) {
-                $p = $frame->lookup_counter_frame($val->name, true);
-                $text .= $p->counter_value($val->name, $val->style);
-            }
-
-            elseif ($val instanceof Counters) {
-                $p = $frame->lookup_counter_frame($val->name, true);
-                $tmp = [];
-                while ($p) {
-                    array_unshift($tmp, $p->counter_value($val->name, $val->style));
-                    $p = $p->lookup_counter_frame($val->name);
+            // attr()
+            if (mb_substr($val, 0, 5) === "attr(") {
+                $i = mb_strpos($val, ")");
+                if ($i === false) {
+                    continue;
                 }
-                $text .= implode($val->string, $tmp);
+
+                $attr = trim(mb_substr($val, 5, $i - 5));
+                if ($attr === "") {
+                    continue;
+                }
+
+                $text .= $this->_frame->get_parent()->get_node()->getAttribute($attr);
+                continue;
+            }
+
+            // counter()/counters()
+            if (mb_substr($val, 0, 7) === "counter") {
+                // Handle counter() references:
+                // http://www.w3.org/TR/CSS21/generate.html#content
+
+                $i = mb_strpos($val, ")");
+                if ($i === false) {
+                    continue;
+                }
+
+                preg_match('/(counters?)(^\()*?\(\s*([^\s,]+)\s*(,\s*["\']?([^"\'\)]*)["\']?\s*(,\s*([^\s)]+)\s*)?)?\)/i', $val, $args);
+                $counter_id = $args[3];
+
+                if (strtolower($args[1]) === "counter") {
+                    // counter(name [,style])
+                    if (isset($args[5])) {
+                        $type = trim($args[5]);
+                    } else {
+                        $type = "decimal";
+                    }
+                    $p = $this->_frame->lookup_counter_frame($counter_id);
+
+                    $text .= $p->counter_value($counter_id, $type);
+                } elseif (strtolower($args[1]) === "counters") {
+                    // counters(name, string [,style])
+                    if (isset($args[5])) {
+                        $string = $this->_parse_string($args[5]);
+                    } else {
+                        $string = "";
+                    }
+
+                    if (isset($args[7])) {
+                        $type = trim($args[7]);
+                    } else {
+                        $type = "decimal";
+                    }
+
+                    $p = $this->_frame->lookup_counter_frame($counter_id);
+                    $tmp = [];
+                    while ($p) {
+                        // We only want to use the counter values when they actually increment the counter
+                        if (array_key_exists($counter_id, $p->_counters)) {
+                            array_unshift($tmp, $p->counter_value($counter_id, $type));
+                        }
+                        $p = $p->lookup_counter_frame($counter_id);
+                    }
+                    $text .= implode($string, $tmp);
+                } else {
+                    // countertops?
+                }
+
+                continue;
             }
         }
 
@@ -584,9 +684,9 @@ abstract class AbstractFrameReflower
         }
 
         if ($frame->get_node()->nodeName === "dompdf_generated") {
-            $content = $this->resolve_content();
+            $content = $this->_parse_content();
 
-            if ($content !== null) {
+            if ($content !== "") {
                 $node = $frame->get_node()->ownerDocument->createTextNode($content);
 
                 $new_style = $style->get_stylesheet()->create_style();

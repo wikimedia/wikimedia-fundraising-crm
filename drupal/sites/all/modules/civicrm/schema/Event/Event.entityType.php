@@ -104,7 +104,7 @@ return [
       'unique_name' => 'event_type_id',
       'default' => 0,
       'input_attrs' => [
-        'label' => ts('Event Type'),
+        'label' => ts('Type'),
       ],
       'pseudoconstant' => [
         'option_group_name' => 'event_type',

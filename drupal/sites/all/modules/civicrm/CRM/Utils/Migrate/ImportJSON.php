@@ -215,7 +215,10 @@ class CRM_Utils_Migrate_ImportJSON {
         foreach ($columns as $k => $column) {
           if ($column == 'id') {
             $childID = $value[$k];
-            $masterID = $this->_lookupCache[$tableName][$value[$k]] ?? NULL;
+            $masterID = CRM_Utils_Array::value($value[$k],
+              $this->_lookupCache[$tableName],
+              NULL
+            );
             if ($masterID) {
               $object->id = $masterID;
             }

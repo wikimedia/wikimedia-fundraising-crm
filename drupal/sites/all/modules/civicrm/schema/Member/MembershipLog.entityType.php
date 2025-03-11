@@ -85,7 +85,7 @@ return [
     ],
     'modified_date' => [
       'title' => ts('Membership Change Date'),
-      'sql_type' => 'timestamp',
+      'sql_type' => 'date',
       'input_type' => 'Select Date',
       'description' => ts('Date this membership modification action was logged.'),
       'add' => '1.5',

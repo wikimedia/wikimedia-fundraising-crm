@@ -33,25 +33,24 @@
 .crm-container ul.crm-checkbox-list li input {
   margin: 0;
 }
-.crm-container ul.crm-checkbox-list li:nth-child(2n) {
-  background-color: var(--crm-c-background3);
-}
 .crm-container ul.crm-checkbox-list li:has(input:checked) label {
   color: var(--crm-checkbox-list-col);
 }
-.crm-container ul.crm-checkbox-list li:has(input:checked) {
-  background-color: var(--crm-checkbox-list-bg);
-}
-.crm-container ul.crm-checkbox-list li:nth-child(2n):has(input:checked) {
-  background-color: var(--crm-checkbox-list-bg2);
-}
-
 .listing-box input.crm-form-checkbox {
   margin: 0 0 0 var(--crm-s);
 }
 tbody.scrollContent tr.alternateRow {
   background-color: var(--crm-c-background3);
   padding-inline: var(--crm-s) var(--crm-m2);
+}
+.crm-container ul.crm-checkbox-list li:nth-child(2n) {
+  background-color: var(--crm-c-background3);
+}
+.crm-container ul.crm-checkbox-list li:has(input:checked) {
+  background-color: var(--crm-c-yellow-light);
+}
+.crm-container ul.crm-checkbox-list li:nth-child(2n):has(input:checked) {
+  background-color: var(--crm-c-yellow-less-light);
 }
 
 /* Action Links */
@@ -61,9 +60,8 @@ tbody.scrollContent tr.alternateRow {
   line-height: 1;
   background: unset;
   display: flex;
-  column-gap: var(--crm-m);
+  gap: var(--crm-m);
   padding: var(--crm-padding-reg) 0;
-  flex-wrap: wrap;
 }
 .crm-container .CRM_Event_Form_SearchEvent .action-link {
   padding: 0 0 var(--crm-padding-reg) 0;
@@ -118,7 +116,6 @@ table.advmultiselect {
 }
 .crm-container ul.crm-wizard-nav {
   margin-bottom: var(--crm-r);
-  box-shadow: var(--crm-wizard-box-shadow);
 }
 .crm-wizard-step .ui-tabs {
   margin-bottom: var(--crm-m);
@@ -168,7 +165,7 @@ table.advmultiselect {
   content: "";
   height: 0;
   position: absolute;
-  right: calc(-21px + var(--crm-wizard-arrow-thickness));
+  right: -20px;
   top: calc(-0.5 * var(--crm-wizard-height));
   width: 0;
   z-index: 11;
@@ -322,7 +319,7 @@ table.advmultiselect {
   min-width: 10px;
   padding: var(--crm-s) var(--crm-m);
   line-height: 1;
-  color: var(--crm-c-primary-text);
+  color: var(--crm-c-page-background);
   text-align: center;
   white-space: nowrap;
   vertical-align: middle;
@@ -375,11 +372,10 @@ table.advmultiselect {
   text-align: center;
   font-size: var(--crm-m2);
 }
-/* Outputs stream + version number
 #civicrm-footer::after {
   content: var(--crm-version);
   float: right;
-}*/
+}
 .crm-container #civicrm-footer .status {
   border-radius: var(--crm-roundness);
   padding: var(--crm-btn-small-padding);
@@ -404,8 +400,8 @@ table.advmultiselect {
 }
 .crm-upgrade-box-outer.crm-upgrade-success {
   margin: var(--crm-page-padding);
-  background: var(--crm-alert-background-help) !important; /* vs inline css */
-  border: var(--crm-alert-border-width) solid var(--crm-alert-border-help) !important; /* vs inline css */
+  background: var(--crm-alert-background-help);
+  border: 1px solid var(--crm-alert-border-help);
 }
 .crm-upgrade-box-inner {
   padding: 1rem;
@@ -416,14 +412,14 @@ table.advmultiselect {
 }
 p.crm-upgrade-large-text {
   grid-column: 2;
-  color: var(--crm-alert-text-help);
+  color: var(--crm-c-success);
 }
 .crm-upgrade-box-inner a {
   color: var(--crm-c-link) !important  /* vs inline */;
 }
 p.crm-upgrade-large-text:first-of-type {
   font-size: var(--crm-r1);
-  color: var(--crm-alert-text-help);
+  color: var(--crm-c-success);
   font-family: var(--crm-font-bold);
   font-weight: bold;
 }
@@ -432,7 +428,7 @@ p.crm-upgrade-large-text:first-of-type {
   padding: 0 2rem 0 0 !important /* vs inline */;
   font-size: var(--crm-l);
   line-height: 1.35;
-  color: var(--crm-alert-text-help);
+  color: var(--crm-c-success);
   grid-column: 1;
   grid-row: 1 / span 3;
 }
@@ -644,15 +640,4 @@ div.civicrm-community-messages a.civicrm-community-message-dismiss::before {
 }
 #crm-quick-create input {
   max-width: 100%;
-}
-
-/* Charts */
-
-.dc-chart .dc-legend text,
-.dc-chart .axis text {
-  fill: var(--crm-c-text);
-}
-.crm-container .dc-chart .axis line,
-.dc-chart .axis path {
-  stroke: var(--crm-c-gray-500) !important;
 }

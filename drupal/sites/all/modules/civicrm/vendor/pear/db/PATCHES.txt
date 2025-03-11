@@ -5,7 +5,3 @@ Apply CiviCRM Customisations for the pear:db package
 Source: https://raw.githubusercontent.com/civicrm/civicrm-core/2ad420c394/tools/scripts/composer/pear_db_civicrm_changes.patch
 
 
-Ensure that error messages about MySQL-SSL connections are reported
-Source: https://gist.githubusercontent.com/totten/f491faadc95c43bf7750596c79b6fbba/raw/69d24ef6b136656a5fdb6398bf2e491a6c659e48/DB_mysqli.patch
-
-

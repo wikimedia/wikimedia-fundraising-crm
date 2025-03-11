@@ -16,13 +16,12 @@
   background: var(--crm-panel-background);
 }
 .api4-explorer-page .panel-heading {
+  /* height: 48px; */
   display: flex;
   align-items: center;
   padding: var(--crm-m);
 }
-#bootstrap-theme .api4-explorer-row .panel-heading h3 {
-  background-color: transparent;
-  color: var(--crm-alert-text-info);
+.api4-explorer-row .panel-heading h3 {
   background: transparent;
   margin: 0 !important /* vs bootstrap3 */;
   padding: 0 !important /* vs bootstrap3 */;

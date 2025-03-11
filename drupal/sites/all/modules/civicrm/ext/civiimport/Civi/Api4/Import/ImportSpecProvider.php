@@ -72,7 +72,7 @@ class ImportSpecProvider extends AutoService implements SpecProviderInterface {
 
     $userJobType = $this->getJobType($spec);
     foreach ($columns as $column) {
-      $isInternalField = str_starts_with($column['name'], '_');
+      $isInternalField = strpos($column['name'], '_') === 0;
       $exists = $isInternalField && $spec->getFieldByName($column['name']);
       if ($exists) {
         continue;

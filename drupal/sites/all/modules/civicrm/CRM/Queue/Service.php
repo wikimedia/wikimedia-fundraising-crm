@@ -115,7 +115,8 @@ class CRM_Queue_Service {
       $queue->createQueue();
     }
     elseif (@$queueSpec['reset']) {
-      $queue->resetQueue();
+      $queue->deleteQueue();
+      $queue->createQueue();
     }
     else {
       $queue->loadQueue();

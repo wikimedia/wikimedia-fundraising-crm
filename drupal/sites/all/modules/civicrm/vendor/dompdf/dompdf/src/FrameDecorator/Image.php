@@ -43,9 +43,7 @@ class Image extends AbstractFrameDecorator
     function __construct(Frame $frame, Dompdf $dompdf)
     {
         parent::__construct($frame, $dompdf);
-
-        $node = $frame->get_node();
-        $url = $node->getAttribute("src");
+        $url = $frame->get_node()->getAttribute("src");
 
         $debug_png = $dompdf->getOptions()->getDebugPng();
         if ($debug_png) {
@@ -60,7 +58,9 @@ class Image extends AbstractFrameDecorator
             $dompdf->getOptions()
         );
 
-        if (Cache::is_broken($this->_image_url) && ($alt = $node->getAttribute("alt")) !== "") {
+        if (Cache::is_broken($this->_image_url) &&
+            $alt = $frame->get_node()->getAttribute("alt")
+        ) {
             $fontMetrics = $dompdf->getFontMetrics();
             $style = $frame->get_style();
             $font = $style->font_family;
@@ -68,7 +68,7 @@ class Image extends AbstractFrameDecorator
             $word_spacing = $style->word_spacing;
             $letter_spacing = $style->letter_spacing;
 
-            $style->width = $fontMetrics->getTextWidth($alt, $font, $size, $word_spacing, $letter_spacing);
+            $style->width = (4 / 3) * $fontMetrics->getTextWidth($alt, $font, $size, $word_spacing, $letter_spacing);
             $style->height = $fontMetrics->getFontHeight($font, $size);
         }
     }

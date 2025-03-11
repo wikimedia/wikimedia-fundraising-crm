@@ -14,7 +14,6 @@ namespace Civi\Api4\Generic;
 
 use Civi\API\Exception\NotImplementedException;
 use Civi\Api4\Utils\CoreUtil;
-use Civi\Api4\Utils\FormattingUtil;
 
 /**
  * @inheritDoc
@@ -107,15 +106,15 @@ class CachedDAOGetAction extends \Civi\Api4\Generic\DAOGetAction {
 
     $cachedFields = $this->getCachedFields();
 
-    foreach ($this->select as $fieldName) {
-      $fieldName = FormattingUtil::removeSuffix($fieldName);
-      if (!isset($cachedFields[$fieldName])) {
+    foreach ($this->select as $field) {
+      [$field] = explode(':', $field);
+      if (!isset($cachedFields[$field])) {
         return TRUE;
       }
     }
     foreach ($this->where as $clause) {
-      $fieldName = FormattingUtil::removeSuffix($clause[0] ?? '');
-      if (!$fieldName || !isset($cachedFields[$fieldName])) {
+      [$field] = explode(':', $clause[0] ?? '');
+      if (!$field || !isset($cachedFields[$field])) {
         return TRUE;
       }
       // ArrayQueryTrait doesn't yet support field-to-field comparisons
@@ -123,9 +122,9 @@ class CachedDAOGetAction extends \Civi\Api4\Generic\DAOGetAction {
         return TRUE;
       }
     }
-    foreach ($this->orderBy as $fieldName => $dir) {
-      $fieldName = FormattingUtil::removeSuffix($fieldName);
-      if (!isset($cachedFields[$fieldName])) {
+    foreach ($this->orderBy as $field => $dir) {
+      [$field] = explode(':', $field);
+      if (!isset($cachedFields[$field])) {
         return TRUE;
       }
     }

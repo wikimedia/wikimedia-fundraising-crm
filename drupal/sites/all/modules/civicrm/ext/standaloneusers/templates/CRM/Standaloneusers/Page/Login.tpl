@@ -1,26 +1,24 @@
-{crmScope extensionKey="standaloneusers"}
 <div class="standalone-auth-form">
   <div class="standalone-auth-box">
     <form id=login-form>
-      {include file='CRM/common/logo.tpl'}
+      <img class="crm-logo" src="{$logoUrl}" alt="logo for CiviCRM, with an intersecting blue and green triangle">
+      {$statusMessages}
       <div class="input-wrapper">
-        <label for="usernameInput" name=username class="form-label">{ts}Username{/ts}</label>
+        <label for="usernameInput" name=username class="form-label">Username</label>
         <input type="text" class="form-control crm-form-text" id="usernameInput" >
       </div>
       <div class="input-wrapper">
-        <label for="passwordInput" class="form-label">{ts}Password{/ts}</label>
+        <label for="passwordInput" class="form-label">Password</label>
         <input type="password" class="form-control crm-form-text" id="passwordInput">
       </div>
+      <div id="error" style="display:none;" class="form-alert">Your username and password do not match</div>
       <div class="login-or-forgot">
-        <a href="{$forgottenPasswordURL}">{ts}Forgotten password?{/ts}</a>
-        <button id="loginSubmit" type="submit" class="btn btn-primary crm-button">{ts}Log In{/ts}</button>
+        <a href="{$forgottenPasswordURL}">Forgotten password?</a>
+        <button id="loginSubmit" type="submit" class="btn btn-primary crm-button">Submit</button>
       </div>
     </form>
   </div>
 </div>
-
-{* The notification template is not loaded when the user is logged out. And we need this for CRM.alert *}
-{include file="CRM/common/notifications.tpl"}
 
 {literal}
 <script>
@@ -33,11 +31,9 @@
     form.addEventListener('submit', async e => {
       e.preventDefault();
 
-      let errorMsg = '{/literal}{ts escape="js"}Unexpected error{/ts}{literal}';
+      let errorMsg = 'Unexpected error';
       try {
         let originalUrl = location.href;
-        // Remove the current status popup messages.
-        CRM.$('#crm-notification-container .ui-notify-message').remove();
         const response = await CRM.api4('User', 'login', {
           username: username.value,
           password: password.value,
@@ -47,14 +43,13 @@
           window.location = response.url;
           return;
         }
-        errorMsg = response.publicError || "{/literal}{ts escape="js"}Unexpected error{/ts}{literal}";
+        errorMsg = response.publicError || "Unexpected error";
       }
       catch (e) {
         console.error('caught', e);
       }
-      CRM.alert('', errorMsg, 'error', {'expires': 10000});
+      alert(errorMsg);
     });
   });
 </script>
 {/literal}
-{/crmScope}

@@ -174,7 +174,7 @@ class CRM_Utils_QueryFormatter {
 
     $strtolower = function_exists('mb_strtolower') ? 'mb_strtolower' : 'strtolower';
 
-    if (!str_contains($table, ' ')) {
+    if (strpos($table, ' ') === FALSE) {
       $tableName = $tableAlias = $table;
     }
     else {
@@ -232,7 +232,7 @@ class CRM_Utils_QueryFormatter {
     if (empty($text)) {
       $result = '*';
     }
-    elseif (str_contains($text, '*')) {
+    elseif (strpos($text, '*') !== FALSE) {
       // if user supplies their own wildcards, then don't do any sophisticated changes
       $result = $text;
     }
@@ -297,11 +297,11 @@ class CRM_Utils_QueryFormatter {
     if (empty($text)) {
       $result = '*';
     }
-    elseif (str_contains($text, '+') || str_contains($text, '-')) {
+    elseif (strpos($text, '+') !== FALSE || strpos($text, '-') !== FALSE) {
       // if user supplies their own include/exclude operators, use text as is (with trailing wildcard)
       $result = $this->mapWords($text, 'word*');
     }
-    elseif (str_contains($text, '*')) {
+    elseif (strpos($text, '*') !== FALSE) {
       // if user supplies their own wildcards, then don't do any sophisticated changes
       $result = $this->mapWords($text, '+word');
     }
@@ -353,7 +353,7 @@ class CRM_Utils_QueryFormatter {
     if (empty($text)) {
       $result = '%';
     }
-    elseif (str_contains($text, '%')) {
+    elseif (strpos($text, '%') !== FALSE) {
       // if user supplies their own wildcards, then don't do any sophisticated changes
       $result = $text;
     }
@@ -435,7 +435,7 @@ class CRM_Utils_QueryFormatter {
     }
 
     // don't use preg_replace because $wildcard might be special char
-    while (str_contains($text, "{$wildcard}{$wildcard}")) {
+    while (strpos($text, "{$wildcard}{$wildcard}") !== FALSE) {
       $text = str_replace("{$wildcard}{$wildcard}", "{$wildcard}", $text);
     }
     return $text;

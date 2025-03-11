@@ -296,7 +296,7 @@ class CRM_Profile_Selector_Listings extends CRM_Core_Selector_Base implements CR
           !in_array($name, $skipFields)
         ) {
 
-          if (str_contains($name, '-')) {
+          if (strpos($name, '-') !== FALSE) {
             $value = explode('-', $name);
             $fieldName = $value[0] ?? NULL;
             $lType = $value[1] ?? NULL;
@@ -498,7 +498,7 @@ class CRM_Profile_Selector_Listings extends CRM_Core_Selector_Base implements CR
       if (!empty($field['in_selector']) &&
         !in_array($key, $skipFields)
       ) {
-        if (str_contains($key, '-')) {
+        if (strpos($key, '-') !== FALSE) {
           $value = explode('-', $key);
           $fieldName = $value[0] ?? NULL;
           $id = $value[1] ?? NULL;

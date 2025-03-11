@@ -55,7 +55,7 @@ class CRM_Utils_Hook_UnitTests extends CRM_Utils_Hook {
    */
   public function setHook(string $hook, $callable): void {
     $this->adhocHooks[$hook] = $callable;
-    if (str_contains($hook, 'token')) {
+    if (strpos($hook, 'token') !== FALSE) {
       unset(Civi::$statics['CRM_Contact_Tokens']['hook_tokens']);
     }
   }

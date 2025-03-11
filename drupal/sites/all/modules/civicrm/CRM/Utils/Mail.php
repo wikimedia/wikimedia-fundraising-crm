@@ -60,7 +60,15 @@ class CRM_Utils_Mail {
        * Use the host name of the web server, falling back to the base URL
        * (eg when using the PHP CLI), and then falling back to localhost.
        */
-      $params['localhost'] = $_SERVER['SERVER_NAME'] ?? parse_url(CIVICRM_UF_BASEURL)['host'] ?? 'localhost';
+      $params['localhost'] = CRM_Utils_Array::value(
+        'SERVER_NAME',
+        $_SERVER,
+        CRM_Utils_Array::value(
+          'host',
+          parse_url(CIVICRM_UF_BASEURL),
+          'localhost'
+        )
+      );
 
       // also set the timeout value, lets set it to 30 seconds
       // CRM-7510
@@ -337,12 +345,12 @@ class CRM_Utils_Mail {
     $headers['Return-Path'] = $params['returnPath'] ?? $defaultReturnPath;
 
     // CRM-11295: Omit reply-to headers if empty; this avoids issues with overzealous mailservers
-    $replyTo = $params['Reply-To'] ?? ($params['replyTo'] ?? NULL);
+    // dev/core#5301: Allow Reply-To to be set directly.
+    $replyTo = $params['Reply-To'] ?? ($params['replyTo'] ?? ($params['from'] ?? NULL));
 
     if (!empty($replyTo)) {
       $headers['Reply-To'] = $replyTo;
     }
-
     $headers['Date'] = date('r');
     if ($includeMessageId) {
       $headers['Message-ID'] = $params['messageId'] ?? '<' . uniqid('civicrm_', TRUE) . "@$emailDomain>";
@@ -359,18 +367,13 @@ class CRM_Utils_Mail {
     }
 
     // quote FROM, if comma is detected AND is not already quoted. CRM-7053
-    if (str_contains($headers['From'], ',')) {
+    if (strpos($headers['From'], ',') !== FALSE) {
       $from = explode(' <', $headers['From']);
       $headers['From'] = self::formatRFC822Email(
         $from[0],
         substr(trim($from[1]), 0, -1),
         TRUE
       );
-    }
-
-    // dev/core#5301: Allow Reply-To to be set directly.
-    if (empty($replyTo)) {
-      $headers['Reply-To'] = $headers['From'];
     }
 
     require_once 'Mail/mime.php';
@@ -392,7 +395,7 @@ class CRM_Utils_Mail {
           TRUE,
           'base64',
           'attachment',
-          ($attach['charset'] ?? ''),
+          (isset($attach['charset']) ? $attach['charset'] : ''),
           '',
           '',
           NULL,
@@ -427,7 +430,7 @@ class CRM_Utils_Mail {
       $message .= '<ul>' . '<li>' . ts('Your Sendmail path is incorrect.') . '</li>' . '<li>' . ts('Your Sendmail argument is incorrect.') . '</li>';
     }
 
-    $message .= '<li>' . ts('The Site Email Address configured for this feature may not be a valid sender based on your email service provider rules.') . '</li>' . '</ul>' . '<p>' . ts('Check <a href="%1">this page</a> for more information.', [
+    $message .= '<li>' . ts('The FROM Email Address configured for this feature may not be a valid sender based on your email service provider rules.') . '</li>' . '</ul>' . '<p>' . ts('Check <a href="%1">this page</a> for more information.', [
       1 => CRM_Utils_System::docURL2('user/advanced-configuration/email-system-configuration', TRUE),
     ]) . '</p>';
 
@@ -534,7 +537,7 @@ class CRM_Utils_Mail {
         ['\<', '\"', '\>'],
         $name
       );
-      if (str_contains($name, ',') ||
+      if (strpos($name, ',') !== FALSE ||
         $useQuote
       ) {
         // quote the string if it has a comma
@@ -646,16 +649,12 @@ class CRM_Utils_Mail {
    * If it's numeric, look up the display name and email of the corresponding
    * contact ID in RFC822 format.
    *
-   * @param string|array $from
+   * @param string $from
    *   civicrm_email.id or formatted "From address", eg. 12 or "Fred Bloggs" <fred@example.org>
-   *   or array containing 'display_name' and 'email' keys.
    * @return string
    *   The RFC822-formatted email header (display name + address)
    */
   public static function formatFromAddress($from) {
-    if (is_array($from)) {
-      return "\"{$from['display_name']}\" <{$from['email']}>";
-    }
     if (is_numeric($from)) {
       $result = civicrm_api3('Email', 'get', [
         'id' => $from,

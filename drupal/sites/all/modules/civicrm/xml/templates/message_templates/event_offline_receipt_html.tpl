@@ -325,6 +325,17 @@
             </tr>
           {/if}
 
+          {if {contribution.financial_type_id|boolean}}
+            <tr>
+              <td {$labelStyle}>
+                  {ts}Financial Type{/ts}
+              </td>
+              <td {$valueStyle}>
+                {contribution.financial_type_id:label}
+              </td>
+            </tr>
+          {/if}
+
           {if {contribution.trxn_id|boolean}}
             <tr>
               <td {$labelStyle}>
@@ -361,7 +372,7 @@
           {if {contribution.address_id.display|boolean}}
             <tr>
               <th {$headerStyle}>
-                {ts}Billing Address{/ts}
+                {ts}Billing Name and Address{/ts}
               </th>
             </tr>
             <tr>

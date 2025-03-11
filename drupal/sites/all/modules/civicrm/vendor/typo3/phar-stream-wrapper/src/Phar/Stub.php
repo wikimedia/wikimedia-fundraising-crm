@@ -17,6 +17,10 @@ namespace TYPO3\PharStreamWrapper\Phar;
  */
 class Stub
 {
+    /**
+     * @param string $content
+     * @return self
+     */
     public static function fromContent(string $content): self
     {
         $target = new static();
@@ -35,20 +39,26 @@ class Stub
     }
 
     /**
-     * @var null|string
+     * @var string
      */
-    private $content = null;
+    private $content;
 
     /**
      * @var string
      */
     private $mappedAlias = '';
 
-    public function getContent(): ?string
+    /**
+     * @return string
+     */
+    public function getContent()
     {
         return $this->content;
     }
 
+    /**
+     * @return string
+     */
     public function getMappedAlias(): string
     {
         return $this->mappedAlias;

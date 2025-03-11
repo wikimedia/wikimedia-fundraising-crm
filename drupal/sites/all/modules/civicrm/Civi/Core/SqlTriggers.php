@@ -250,7 +250,7 @@ class SqlTriggers extends \Civi\Core\Service\AutoService {
     if (!empty($this->enqueuedQueries) && $this->getFile()) {
       $buf = "DELIMITER //\n";
       foreach ($this->enqueuedQueries as $query) {
-        if (str_starts_with($query, 'CREATE TRIGGER')) {
+        if (strpos($query, 'CREATE TRIGGER') === 0) {
           // The create triggers are long so put spaces between them. For the drops
           // condensed is more readable.
           $buf .= "\n";

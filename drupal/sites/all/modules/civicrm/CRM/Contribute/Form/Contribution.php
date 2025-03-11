@@ -87,11 +87,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
 
   /**
    * The contribution values if an existing contribution
-   *
    * @var array
-   *
-   * @deprecated - try to use getContributionValue() instead as it is strictly a
-   * cached lookup on the contribution values, rather than a grab-bag.
    */
   public $_values;
 
@@ -684,9 +680,9 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       if ($buildRecurBlock) {
         $this->buildRecur();
         $this->setDefaults(['is_recur' => 0]);
+        $this->assign('buildRecurBlock', TRUE);
       }
     }
-    $this->assign('buildRecurBlock', $buildRecurBlock);
     $this->addPaymentProcessorSelect(FALSE, $buildRecurBlock);
 
     $qfKey = $this->controller->_key;
@@ -866,7 +862,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       );
     }
 
-    $this->add('text', 'source', ts('Contribution Source'), $attributes['source'] ?? NULL);
+    $this->add('text', 'source', ts('Contribution Source'), CRM_Utils_Array::value('source', $attributes));
 
     // CRM-7362 --add campaigns.
     CRM_Campaign_BAO_Campaign::addCampaign($this, $this->_values['campaign_id'] ?? NULL);
@@ -934,10 +930,6 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     if ($this->_action & CRM_Core_Action::VIEW) {
       $this->freeze();
     }
-  }
-
-  protected function isUpdate(): bool {
-    return $this->getAction() === CRM_Core_Action::UPDATE && $this->getContributionID();
   }
 
   /**
@@ -1058,24 +1050,24 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     CRM_Contribute_BAO_ContributionRecur::validateRecurContribution($fields, $files, $self, $errors);
 
     // Form rule for status http://wiki.civicrm.org/confluence/display/CRM/CiviAccounts+4.3+Data+Flow
-    if ($self->isUpdate()
-      && $self->getContributionValue('contribution_status_id') != $fields['contribution_status_id']
-      && !$self->getContributionValue('is_template')
+    if (($self->_action & CRM_Core_Action::UPDATE)
+      && $self->_id
+      && $self->_values['contribution_status_id'] != $fields['contribution_status_id']
+      && $self->_values['is_template'] != 1
     ) {
       try {
-        CRM_Contribute_BAO_Contribution::checkStatusValidation([
-          'contribution_status_id' => $self->getContributionValue('contribution_status_id'),
-        ], $fields);
+        CRM_Contribute_BAO_Contribution::checkStatusValidation($self->_values, $fields);
       }
       catch (CRM_Core_Exception $e) {
         $errors['contribution_status_id'] = $e->getMessage();
       }
     }
     // CRM-16015, add form-rule to restrict change of financial type if using price field of different financial type
-    if ($self->isUpdate()
-      && $self->getContributionValue('financial_type_id') != $fields['financial_type_id']
+    if (($self->_action & CRM_Core_Action::UPDATE)
+      && $self->_id
+      && $self->_values['financial_type_id'] != $fields['financial_type_id']
     ) {
-      CRM_Contribute_BAO_Contribution::checkFinancialTypeChange(NULL, $self->getContributionID(), $errors);
+      CRM_Contribute_BAO_Contribution::checkFinancialTypeChange(NULL, $self->_id, $errors);
     }
     //FIXME FOR NEW DATA FLOW http://wiki.civicrm.org/confluence/display/CRM/CiviAccounts+4.3+Data+Flow
     if (!empty($fields['fee_amount']) && !empty($fields['financial_type_id']) && $financialType = CRM_Contribute_BAO_Contribution::validateFinancialType($fields['financial_type_id'])) {
@@ -1156,10 +1148,9 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     }
     $this->ajaxResponse['updateTabs']['#tab_activity'] = TRUE;
     if (!empty($this->_id) && CRM_Core_Permission::access('CiviMember')) {
-      $membershipCount = CRM_Contact_BAO_Contact::getCountComponent('membership', $this->_contactID);
-      // @fixme: Probably don't need a variable here but the old code counted MembershipPayment records and only returned a count if > 0
-      if ($membershipCount) {
-        $this->ajaxResponse['updateTabs']['#tab_member'] = $membershipCount;
+      $membershipPaymentCount = civicrm_api3('MembershipPayment', 'getCount', ['contribution_id' => $this->_id]);
+      if ($membershipPaymentCount) {
+        $this->ajaxResponse['updateTabs']['#tab_member'] = CRM_Contact_BAO_Contact::getCountComponent('membership', $this->_contactID);
       }
     }
     if (!empty($this->_id) && CRM_Core_Permission::access('CiviEvent')) {
@@ -1225,7 +1216,10 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     // @todo - stop setting amount level in this function - use $this->order->getAmountLevel()
     $this->_params['amount_level'] = 0;
     $this->_params['description'] = ts("Contribution submitted by a staff person using contributor's credit card");
-    $this->_params['currencyID'] = $this->_params['currency'] ?? CRM_Core_Config::singleton()->defaultCurrency;
+    $this->_params['currencyID'] = CRM_Utils_Array::value('currency',
+      $this->_params,
+      CRM_Core_Config::singleton()->defaultCurrency
+    );
 
     $this->_params['pcp_display_in_roll'] = $params['pcp_display_in_roll'] ?? NULL;
     $this->_params['pcp_roll_nickname'] = $params['pcp_roll_nickname'] ?? NULL;
@@ -1235,7 +1229,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     CRM_Contribute_Form_AdditionalInfo::postProcessCommon($params, $this->_params, $this);
 
     if (empty($this->_params['invoice_id'])) {
-      $this->_params['invoiceID'] = bin2hex(random_bytes(16));
+      $this->_params['invoiceID'] = md5(uniqid(rand(), TRUE));
     }
     else {
       $this->_params['invoiceID'] = $this->_params['invoice_id'];
@@ -1300,6 +1294,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       $this->_params,
       $contributionParams,
       $financialType,
+      $this->_bltID,
       $this->_params['is_recur'] ?? NULL
     );
 
@@ -1394,6 +1389,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
    *   - thankyou_date (not all forms will set this)
    *
    * @param CRM_Financial_DAO_FinancialType $financialType
+   * @param int $billingLocationID
    *   ID of billing location type.
    * @param bool $isRecur
    *   Is this recurring?
@@ -1406,6 +1402,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     $params,
     $contributionParams,
     $financialType,
+    $billingLocationID,
     $isRecur
   ) {
     $form = $this;
@@ -1807,129 +1804,83 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       $this->assign('showAdditionalInfo', TRUE);
       $pane['open'] = 'true';
     }
-    if ($type === 'AdditionalDetail') {
-      $this->buildAdditionalDetail();
-    }
-    if ($type === 'Premium') {
-      $this->buildPremium();
-    }
+    $additionalInfoFormFunction = 'build' . $type;
+    CRM_Contribute_Form_AdditionalInfo::$additionalInfoFormFunction($this);
     return $pane;
   }
 
   /**
-   * Build the form object for Premium Information.
+   * Wrapper for unit testing the post process submit function.
+   *
+   * (If we expose through api we can get default additions 'for free').
+   *
+   * @param array $params
+   * @param int $action
+   * @param string|null $creditCardMode
+   *
+   * @return CRM_Contribute_BAO_Contribution
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\Payment\Exception\PaymentProcessorException
+   *
+   * @deprecated since 5.68 will be removed around 5.80.
+   *
+   * Try something like
+   *  use   use \Civi\Test\FormTrait;
+   *  $form = $this->getTestForm('CRM_Contribute_Form_Contribution', $submittedValues, [
+   *   'id' =>  4;
+   *   'action' => 'update',
+   * ]);
+   * $form->processForm();
    */
-  private function buildPremium(): void {
-    $form = $this;
-    //premium section
-    $form->add('hidden', 'hidden_Premium', 1);
-    $sel1 = $sel2 = [];
-
-    $dao = new CRM_Contribute_DAO_Product();
-    $dao->is_active = 1;
-    $dao->find();
-    $min_amount = [];
-    $sel1[0] = ts('-select product-');
-    while ($dao->fetch()) {
-      $sel1[$dao->id] = $dao->name . " ( " . $dao->sku . " )";
-      $min_amount[$dao->id] = $dao->min_contribution;
-      $options = CRM_Contribute_BAO_Premium::parseProductOptions($dao->options);
-      if (!empty($options)) {
-        $options = ['' => ts('- select -')] + $options;
-        $sel2[$dao->id] = $options;
+  public function testSubmit($params, $action, $creditCardMode = NULL) {
+    // Note that this is really used from tests - so adding noisy deprecations would make them
+    // fail straight away.
+    $defaults = [
+      'soft_credit_contact_id' => [],
+      'receive_date' => date('Y-m-d H:i:s'),
+      'receipt_date' => '',
+      'cancel_date' => '',
+      'hidden_Premium' => 1,
+    ];
+    $this->_bltID = 5;
+    if (!empty($params['id'])) {
+      $existingContribution = civicrm_api3('contribution', 'getsingle', [
+        'id' => $params['id'],
+      ]);
+      $this->_id = $params['id'];
+      $this->_values = $existingContribution;
+      if (\Civi::settings()->get('invoicing')) {
+        $this->_values['tax_amount'] = civicrm_api3('contribution', 'getvalue', [
+          'id' => $params['id'],
+          'return' => 'tax_amount',
+        ]);
       }
-      $form->assign('premiums', TRUE);
-    }
-    $form->_options = $sel2;
-    $form->assign('mincontribution', $min_amount);
-    $sel = &$form->addElement('hierselect', "product_name", ts('Premium'), 'onclick="showMinContrib();"');
-    $js = "<script type='text/javascript'>\n";
-    $formName = 'document.forms.' . $form->getName();
-
-    for ($k = 1; $k < 2; $k++) {
-      if (!isset($defaults['product_name'][$k]) || (!$defaults['product_name'][$k])) {
-        $js .= "{$formName}['product_name[$k]'].style.display = 'none';\n";
-      }
-    }
-
-    $sel->setOptions([$sel1, $sel2]);
-    $js .= "</script>\n";
-    $form->assign('initHideBoxes', $js);
-
-    $form->add('datepicker', 'fulfilled_date', ts('Fulfilled'), [], FALSE, ['time' => FALSE]);
-    $form->addElement('text', 'min_amount', ts('Minimum Contribution Amount'));
-  }
-
-  /**
-   * Build the form object for Additional Details.
-   */
-  private function buildAdditionalDetail(): void {
-    $form = $this;
-    //Additional information section
-    $form->add('hidden', 'hidden_AdditionalDetail', 1);
-
-    $attributes = CRM_Core_DAO::getAttribute('CRM_Contribute_DAO_Contribution');
-
-    $form->addField('thankyou_date', ['entity' => 'contribution'], FALSE, FALSE);
-
-    // add various amounts
-    $nonDeductAmount = &$form->add('text', 'non_deductible_amount', ts('Non-deductible Amount'),
-      $attributes['non_deductible_amount']
-    );
-    $form->addRule('non_deductible_amount', ts('Please enter a valid monetary value for Non-deductible Amount.'), 'money');
-
-    if ($form->_online) {
-      $nonDeductAmount->freeze();
-    }
-    $feeAmount = &$form->add('text', 'fee_amount', ts('Fee Amount'),
-      $attributes['fee_amount']
-    );
-    $form->addRule('fee_amount', ts('Please enter a valid monetary value for Fee Amount.'), 'money');
-    if ($form->_online) {
-      $feeAmount->freeze();
-    }
-
-    $element = &$form->add('text', 'invoice_id', ts('Invoice ID'),
-      $attributes['invoice_id']
-    );
-    if ($form->_online) {
-      $element->freeze();
     }
     else {
-      $form->addRule('invoice_id',
-        ts('This Invoice ID already exists in the database.'),
-        'objectExists',
-        ['CRM_Contribute_DAO_Contribution', $form->_id, 'invoice_id']
-      );
-    }
-    $element = $form->add('text', 'creditnote_id', ts('Credit Note ID'),
-      $attributes['creditnote_id']
-    );
-    if ($form->_online) {
-      $element->freeze();
-    }
-    else {
-      $form->addRule('creditnote_id',
-        ts('This Credit Note ID already exists in the database.'),
-        'objectExists',
-        ['CRM_Contribute_DAO_Contribution', $form->_id, 'creditnote_id']
-      );
+      $existingContribution = [];
     }
 
-    $form->add('select', 'contribution_page_id',
-      ts('Contribution Page'),
-      ['' => ts('- select -')] + CRM_Contribute_PseudoConstant::contributionPage(),
-      FALSE,
-      ['class' => 'crm-select2']
+    $this->_defaults['contribution_status_id'] = CRM_Utils_Array::value('contribution_status_id',
+      $existingContribution
     );
 
-    $form->add('textarea', 'note', ts('Notes'), ["rows" => 4, "cols" => 60]);
+    $this->_defaults['total_amount'] = CRM_Utils_Array::value('total_amount',
+      $existingContribution
+    );
 
-    $statusName = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-    if ($form->_id && $form->_values['contribution_status_id'] == array_search('Cancelled', $statusName)) {
-      $feeAmount->freeze();
+    if ($creditCardMode) {
+      $this->_mode = $creditCardMode;
     }
 
+    // Required because processCreditCard calls set method on this.
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $this->controller = new CRM_Core_Controller();
+
+    CRM_Contribute_Form_AdditionalInfo::buildPremium($this);
+
+    $this->_fields = [];
+    return $this->submit(array_merge($defaults, $params), $action, CRM_Utils_Array::value('pledge_payment_id', $params));
   }
 
   /**
@@ -2657,11 +2608,22 @@ WHERE  contribution_id = {$id}
   private function buildRecur(): void {
     $form = $this;
     $attributes = CRM_Core_DAO::getAttribute('CRM_Contribute_DAO_ContributionRecur');
+    $className = 'CRM_Contribute_Form_Contribution';
 
-    // @todo - this is previously shared code and it feels  like the recur_frequency_unit would always be NULL here.
+    $form->assign('is_recur_interval', $form->_values['is_recur_interval'] ?? NULL);
+    $form->assign('is_recur_installments', $form->_values['is_recur_installments'] ?? NULL);
+    $paymentObject = $this->getPaymentProcessorObject();
+    if ($paymentObject) {
+      $form->assign('recurringHelpText', $paymentObject->getText('contributionPageRecurringHelp', [
+        'is_recur_installments' => !empty($form->_values['is_recur_installments']),
+        'is_email_receipt' => !empty($form->_values['is_email_receipt']),
+      ]));
+    }
+
     $frUnits = $form->_values['recur_frequency_unit'] ?? NULL;
     $frequencyUnits = CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, TRUE);
-    if (empty($frUnits)
+    if (empty($frUnits) &&
+      $className == 'CRM_Contribute_Form_Contribution'
     ) {
       $frUnits = implode(CRM_Core_DAO::VALUE_SEPARATOR,
         CRM_Core_OptionGroup::values('recur_frequency_units', FALSE, FALSE, FALSE, NULL, 'value')
@@ -2669,6 +2631,12 @@ WHERE  contribution_id = {$id}
     }
 
     $unitVals = explode(CRM_Core_DAO::VALUE_SEPARATOR, $frUnits);
+
+    // FIXME: Ideally we should freeze select box if there is only
+    // one option but looks there is some problem /w QF freeze.
+    //if ( count( $units ) == 1 ) {
+    //$frequencyUnit->freeze( );
+    //}
 
     $form->add('text', 'installments', ts('installments'),
       $attributes['installments'] + ['class' => 'two']
@@ -2679,23 +2647,42 @@ WHERE  contribution_id = {$id}
 
     // CRM 10860, display text instead of a dropdown if there's only 1 frequency unit
     if (count($unitVals) == 1) {
+      $form->assign('one_frequency_unit', TRUE);
       $form->add('hidden', 'frequency_unit', $unitVals[0]);
-      $unit = CRM_Contribute_BAO_Contribution::getUnitLabelWithPlural($unitVals[0]);
+      if (!empty($form->_values['is_recur_interval']) || $className == 'CRM_Contribute_Form_Contribution') {
+        $unit = CRM_Contribute_BAO_Contribution::getUnitLabelWithPlural($unitVals[0]);
+        $form->assign('frequency_unit', $unit);
+      }
+      else {
+        $is_recur_label = ts('I want to contribute this amount every %1',
+          [1 => $frequencyUnits[$unitVals[0]]]
+        );
+        $form->assign('all_text_recur', TRUE);
+      }
     }
     else {
+      $form->assign('one_frequency_unit', FALSE);
       $units = [];
       foreach ($unitVals as $key => $val) {
         if (array_key_exists($val, $frequencyUnits)) {
           $units[$val] = $frequencyUnits[$val];
-          $units[$val] = CRM_Contribute_BAO_Contribution::getUnitLabelWithPlural($val);
-          $unit = ts('Every');
+          if (!empty($form->_values['is_recur_interval']) || $className == 'CRM_Contribute_Form_Contribution') {
+            $units[$val] = CRM_Contribute_BAO_Contribution::getUnitLabelWithPlural($val);
+            $unit = ts('Every');
+          }
         }
       }
       $frequencyUnit = &$form->add('select', 'frequency_unit', NULL, $units, FALSE, ['aria-label' => ts('Frequency Unit'), 'class' => 'crm-select2 eight']);
     }
 
-    $form->add('text', 'frequency_interval', $unit, $attributes['frequency_interval'] + ['aria-label' => ts('Every'), 'class' => 'two']);
-    $form->addRule('frequency_interval', ts('Frequency must be a whole number (EXAMPLE: Every 3 months).'), 'integer');
+    if (!empty($form->_values['is_recur_interval']) || $className == 'CRM_Contribute_Form_Contribution') {
+      $form->add('text', 'frequency_interval', $unit, $attributes['frequency_interval'] + ['aria-label' => ts('Every'), 'class' => 'two']);
+      $form->addRule('frequency_interval', ts('Frequency must be a whole number (EXAMPLE: Every 3 months).'), 'integer');
+    }
+    else {
+      // make sure frequency_interval is submitted as 1 if given no choice to user.
+      $form->add('hidden', 'frequency_interval', 1);
+    }
 
     $form->add('checkbox', 'is_recur', $is_recur_label, NULL);
   }

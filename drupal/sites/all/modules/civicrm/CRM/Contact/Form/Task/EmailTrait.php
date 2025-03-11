@@ -291,7 +291,7 @@ trait CRM_Contact_Form_Task_EmailTrait {
           $this->addEntityRef($field, $values['label'], $attribute, $required);
         }
         else {
-          $this->add($values['type'], $field, $values['label'], $attribute, $required, $values['extra'] ?? NULL);
+          $this->add($values['type'], $field, $values['label'], $attribute, $required, CRM_Utils_Array::value('extra', $values));
         }
       }
     }
@@ -322,13 +322,6 @@ trait CRM_Contact_Form_Task_EmailTrait {
       $defaults['from_email_address'] = CRM_Core_BAO_Domain::getFromEmail();
     }
     return $defaults;
-  }
-
-  protected function getFieldsToExcludeFromPurification(): array {
-    return [
-      // Because value contains <angle brackets>
-      'from_email_address',
-    ];
   }
 
   /**
@@ -653,7 +646,7 @@ trait CRM_Contact_Form_Task_EmailTrait {
     ];
     $tokenErrors = [];
     foreach ($deprecatedTokens as $token => $replacement) {
-      if (str_contains($fields['html_message'], $token)) {
+      if (strpos($fields['html_message'], $token) !== FALSE) {
         $tokenErrors[] = ts('Token %1 is no longer supported - use %2 instead', [$token, $replacement]);
       }
     }

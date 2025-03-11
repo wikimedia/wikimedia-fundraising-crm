@@ -35,12 +35,8 @@
 
     this.onSuccess = function(result) {
       var entityTitle = this.getEntityTitle(result.batchCount);
-      if (result.action === 'inlineEdit') {
-        CRM.status(ts('Saved'));
-      } else {
-        CRM.alert(ts(ctrl.apiBatch.successMsg, {1: result.batchCount, 2: entityTitle}), ts('%1 Complete', {1: ctrl.taskTitle}), 'success');
-      }
-      this.close(result);
+      CRM.alert(ts(ctrl.apiBatch.successMsg, {1: result.batchCount, 2: entityTitle}), ts('%1 Complete', {1: ctrl.taskTitle}), 'success');
+      this.close();
     };
 
     this.onError = function() {

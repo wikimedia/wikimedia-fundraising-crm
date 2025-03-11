@@ -285,9 +285,13 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
       }
     }
 
-    // Set the default priority for Auto-populated activities (for Cases)
-    if (!isset($params['priority_id']) && empty($params['id'])) {
-      $params['priority_id'] = CRM_Core_OptionGroup::getDefaultValue('priority');
+    // Set priority to Normal for Auto-populated activities (for Cases)
+    if (!isset($params['priority_id']) &&
+      // if not set and not 0
+      empty($params['id'])
+    ) {
+      $priority = CRM_Activity_DAO_Activity::buildOptions('priority_id');
+      $params['priority_id'] = array_search('Normal', $priority);
     }
 
     if (!empty($params['target_contact_id']) && is_array($params['target_contact_id'])) {

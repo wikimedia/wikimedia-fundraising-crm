@@ -8,6 +8,7 @@ namespace Dompdf\FrameDecorator;
 
 use Dompdf\Dompdf;
 use Dompdf\Frame;
+use Dompdf\Helpers;
 use Dompdf\Image\Cache;
 
 /**

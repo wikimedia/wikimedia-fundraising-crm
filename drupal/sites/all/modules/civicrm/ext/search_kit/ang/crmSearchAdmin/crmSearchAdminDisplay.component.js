@@ -94,10 +94,6 @@
         return selectExpr.split(' AS ').slice(-1)[0];
       }
 
-      this.getMainEntity = function() {
-        return searchMeta.getEntity(this.savedSearch.api_entity);
-      };
-
       this.addCol = function(type) {
         var col = _.cloneDeep(this.colTypes[type].defaults);
         col.type = type;
@@ -387,9 +383,10 @@
       };
 
       this.getDefaultSort = function() {
-        const sort = [];
-        if (this.getMainEntity().order_by) {
-          sort.push([this.getMainEntity().order_by, 'ASC']);
+        var apiEntity = ctrl.savedSearch.api_entity,
+          sort = [];
+        if (searchMeta.getEntity(apiEntity).order_by) {
+          sort.push([searchMeta.getEntity(apiEntity).order_by, 'ASC']);
         }
         return sort;
       };
@@ -414,19 +411,10 @@
         };
       };
 
-      this.toggleDraggable = function() {
-        if (this.display.settings.draggable) {
-          this.display.settings.draggable = false;
-        } else {
-          this.display.settings.sort = [];
-          this.display.settings.draggable = this.getMainEntity().order_by;
-        }
-      };
-
       // Generic function to add to a setting array if the item is not already there
       this.pushSetting = function(name, value) {
         ctrl.display.settings[name] = ctrl.display.settings[name] || [];
-        if (!ctrl.display.settings[name].includes(value)) {
+        if (_.findIndex(ctrl.display.settings[name], value) < 0) {
           ctrl.display.settings[name].push(value);
         }
       };

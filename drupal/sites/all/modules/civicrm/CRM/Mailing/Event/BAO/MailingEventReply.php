@@ -175,7 +175,8 @@ class CRM_Mailing_Event_BAO_MailingEventReply extends CRM_Mailing_Event_DAO_Mail
       $h = $message->headers($headers);
     }
 
-    CRM_Mailing_BAO_Mailing::addMessageIdHeader($h, 'r', NULL, $queue_id, $eq->hash);
+    CRM_Mailing_BAO_Mailing::addMessageIdHeader($h, 'r', $eq->job_id, $queue_id, $eq->hash);
+    $config = CRM_Core_Config::singleton();
     $mailer = \Civi::service('pear_mail');
 
     if (is_object($mailer)) {
@@ -199,8 +200,7 @@ class CRM_Mailing_Event_BAO_MailingEventReply extends CRM_Mailing_Event_DAO_Mail
     $eq = CRM_Core_DAO::executeQuery(
       'SELECT
                   email.email as email,
-                  queue.hash as hash,
-                  queue.contact_id as contact_id
+                  queue.hash as hash
         FROM civicrm_contact contact
         INNER JOIN  civicrm_mailing_event_queue queue ON queue.contact_id = contact.id
         INNER JOIN  civicrm_email email ON queue.email_id = email.id
@@ -222,7 +222,6 @@ class CRM_Mailing_Event_BAO_MailingEventReply extends CRM_Mailing_Event_DAO_Mail
       'from' => "\"{$domainEmailName}\" <{$domainEmailAddress}>",
       'replyTo' => CRM_Core_BAO_Domain::getNoReplyEmailAddress(),
       'returnPath' => CRM_Core_BAO_Domain::getNoReplyEmailAddress(),
-      'contactId' => $eq->contact_id,
     ];
 
     $html = $component->body_html;

@@ -321,7 +321,9 @@ class CRM_Activity_Selector_Search extends CRM_Core_Selector_Base implements CRM
 
       $engagementLevel = $row['activity_engagement_level'] ?? NULL;
       if ($engagementLevel) {
-        $row['activity_engagement_level'] = $engagementLevels[$engagementLevel] ?? $engagementLevel;
+        $row['activity_engagement_level'] = CRM_Utils_Array::value($engagementLevel,
+          $engagementLevels, $engagementLevel
+        );
       }
 
       // Check if recurring activity.

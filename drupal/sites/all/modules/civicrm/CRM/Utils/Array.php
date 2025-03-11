@@ -566,17 +566,32 @@ class CRM_Utils_Array {
   /**
    * Sorts an array and maintains index association (with localization).
    *
+   * Uses Collate from the PECL "intl" package, if available, for UTF-8
+   * sorting (e.g. list of countries). Otherwise calls PHP's asort().
+   *
+   * On Debian/Ubuntu: apt-get install php5-intl
+   *
    * @param array $array
-   *   Array to be sorted.
+   *   (optional) Array to be sorted.
    *
    * @return array
    *   Sorted array.
    */
-  public static function asort(array $array) {
-    $lcMessages = CRM_Core_I18n::getLocale();
+  public static function asort($array = []) {
+    $lcMessages = CRM_Utils_System::getUFLocale();
 
-    $collator = new Collator($lcMessages . '.utf8');
-    $collator->asort($array);
+    if ($lcMessages && $lcMessages != 'en_US' && class_exists('Collator')) {
+      $collator = new Collator($lcMessages . '.utf8');
+      $collator->asort($array);
+    }
+    elseif (version_compare(PHP_VERSION, '8', '<') && class_exists('Collator')) {
+      $collator = new Collator('en_US.utf8');
+      $collator->asort($array);
+    }
+    else {
+      // This calls PHP's built-in asort().
+      asort($array);
+    }
 
     return $array;
   }
@@ -1394,7 +1409,7 @@ class CRM_Utils_Array {
   public static function filterByPrefix(array &$collection, string $prefix): array {
     $filtered = [];
     foreach (array_keys($collection) as $key) {
-      if (!$prefix || str_starts_with($key, $prefix)) {
+      if (!$prefix || strpos($key, $prefix) === 0) {
         $filtered[substr($key, strlen($prefix))] = $collection[$key];
         unset($collection[$key]);
       }
@@ -1421,9 +1436,9 @@ class CRM_Utils_Array {
       if (!empty($option['children'])) {
         $option['children'] = self::formatForSelect2($option['children'], $label, $id);
       }
-      $option = array_intersect_key($option, array_flip(['id', 'text', 'children', 'color', 'icon', 'description', 'grouping', 'filter']));
+      $option = array_intersect_key($option, array_flip(['id', 'text', 'children', 'color', 'icon', 'description']));
     }
-    return array_values($options);
+    return $options;
   }
 
 }

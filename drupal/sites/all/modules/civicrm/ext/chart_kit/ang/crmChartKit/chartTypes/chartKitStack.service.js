@@ -18,7 +18,7 @@
             'y': {
                 key: 'y',
                 label: ts('Values'),
-                sourceDataTypes: ['Integer', 'Money', 'Boolean', 'Float', 'Double'],
+                sourceDataTypes: ['Integer', 'Money', 'Boolean'],
                 multiColumn: true,
                 colorType: 'one-per-column',
             },

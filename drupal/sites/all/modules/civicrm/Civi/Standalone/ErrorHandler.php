@@ -47,7 +47,7 @@ class ErrorHandler {
             $_ = htmlspecialchars("$item[function]() ");
           }
         }
-        $_ .= "<code>" . htmlspecialchars($item['file'] ?? '(internal)') . '</code> line ' . ($item['line'] ?? '(none)');
+        $_ .= "<code>" . htmlspecialchars($item['file']) . '</code> line ' . $item['line'];
         $trace[] = $_;
       }
       $trace = '<pre class=backtrace>' . implode("\n", $trace) . '</pre>';
@@ -62,7 +62,7 @@ class ErrorHandler {
     . '</li>';
     \CRM_Core_Smarty::singleton()->assign('standaloneErrors', implode("\n", \Civi::$statics[__FUNCTION__]));
 
-    self::$handlingError = FALSE;
+    $handlingError = FALSE;
   }
 
 }

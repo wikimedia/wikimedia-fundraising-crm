@@ -132,15 +132,15 @@ class CRM_Custom_Form_Field extends CRM_Core_Form {
 
       if ($defaults['data_type'] == 'ContactReference' && !empty($defaults['filter'])) {
         $contactRefFilter = 'Advance';
-        if (str_contains($defaults['filter'], 'action=lookup') &&
-          str_contains($defaults['filter'], 'group=')
+        if (strpos($defaults['filter'], 'action=lookup') !== FALSE &&
+          strpos($defaults['filter'], 'group=') !== FALSE
         ) {
           $filterParts = explode('&', $defaults['filter']);
 
           if (count($filterParts) == 2) {
             $contactRefFilter = 'Group';
             foreach ($filterParts as $part) {
-              if (!str_contains($part, 'group=')) {
+              if (strpos($part, 'group=') === FALSE) {
                 continue;
               }
               $groups = substr($part, strpos($part, '=') + 1);
@@ -601,10 +601,10 @@ SELECT count(*)
 
         case 'ContactReference':
           if ($fields['filter_selected'] == 'Advance' && !empty($fields['filter'])) {
-            if (str_contains($fields['filter'], 'entity=')) {
+            if (strpos($fields['filter'], 'entity=') !== FALSE) {
               $errors['filter'] = ts("Please do not include entity parameter (entity is always 'contact')");
             }
-            elseif (!str_contains($fields['filter'], 'action=get')) {
+            elseif (strpos($fields['filter'], 'action=get') === FALSE) {
               $errors['filter'] = ts("Only 'get' action is supported.");
             }
           }
@@ -878,10 +878,6 @@ AND    option_group_id = %2";
     // are different label, help text and default value than for other type fields
     if ($params['data_type'] == "Memo") {
       $params['text_length'] = $params['note_length'];
-    }
-    // Urls can be up to 2047 characters according to https://www.sitemaps.org/protocol.html#locdef
-    if ($params['data_type'] == 'Link') {
-      $params['text_length'] = 2047;
     }
 
     // need the FKEY - custom group id

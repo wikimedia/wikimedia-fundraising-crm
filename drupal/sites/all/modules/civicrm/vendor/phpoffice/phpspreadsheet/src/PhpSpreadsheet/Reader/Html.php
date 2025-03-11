@@ -1084,10 +1084,7 @@ class Html extends BaseReader
         $name = $attributes['alt'] ?? null;
 
         $drawing = new Drawing();
-        $drawing->setPath($src, false);
-        if ($drawing->getPath() === '') {
-            return;
-        }
+        $drawing->setPath($src);
         $drawing->setWorksheet($sheet);
         $drawing->setCoordinates($column . $row);
         $drawing->setOffsetX(0);

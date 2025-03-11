@@ -29,6 +29,9 @@ class Reader
      */
     private $fileType;
 
+    /**
+     * @param string $fileName
+     */
     public function __construct(string $fileName)
     {
         if (strpos($fileName, '://') !== false) {
@@ -42,6 +45,9 @@ class Reader
         $this->fileType = $this->determineFileType();
     }
 
+    /**
+     * @return Container
+     */
     public function resolveContainer(): Container
     {
         $data = $this->extractData($this->resolveStream() . $this->fileName);
@@ -77,6 +83,7 @@ class Reader
 
     /**
      * @param string $fileName e.g. '/path/file.phar' or 'compress.zlib:///path/file.phar'
+     * @return array
      */
     private function extractData(string $fileName): array
     {
@@ -94,10 +101,6 @@ class Reader
 
         while (!feof($resource)) {
             $line = fgets($resource);
-            // stop processing in case the system fails to read from a stream
-            if ($line === false) {
-                break;
-            }
             // stop reading file when manifest can be extracted
             if ($manifestLength !== null && $manifestContent !== null && strlen($manifestContent) >= $manifestLength) {
                 break;
@@ -136,24 +139,28 @@ class Reader
     }
 
     /**
-     * Resolves the stream to handle compressed Phar archives.
+     * Resolves stream in order to handle compressed Phar archives.
+     *
+     * @return string
      */
     private function resolveStream(): string
     {
         if ($this->fileType === 'application/x-gzip' || $this->fileType === 'application/gzip') {
             return 'compress.zlib://';
-        }
-        if ($this->fileType === 'application/x-bzip2') {
+        } elseif ($this->fileType === 'application/x-bzip2') {
             return 'compress.bzip2://';
         }
         return '';
     }
 
-    private function determineFileType(): string
+    /**
+     * @return string
+     */
+    private function determineFileType()
     {
         if (class_exists('\\finfo')) {
             $fileInfo = new \finfo();
-            return (string)$fileInfo->file($this->fileName, FILEINFO_MIME_TYPE);
+            return $fileInfo->file($this->fileName, FILEINFO_MIME_TYPE);
         }
         return $this->determineFileTypeByHeader();
     }
@@ -161,6 +168,8 @@ class Reader
     /**
      * In case ext-fileinfo is not present only the relevant types
      * 'application/x-gzip' and 'application/x-bzip2' are resolved.
+     *
+     * @return string
      */
     private function determineFileTypeByHeader(): string
     {
@@ -173,16 +182,20 @@ class Reader
         }
         $header = fgets($resource, 4);
         fclose($resource);
+        $mimeType = '';
         if (strpos($header, "\x42\x5a\x68") === 0) {
-            return 'application/x-bzip2';
+            $mimeType = 'application/x-bzip2';
+        } elseif (strpos($header, "\x1f\x8b") === 0) {
+            $mimeType = 'application/x-gzip';
         }
-        if (strpos($header, "\x1f\x8b") === 0) {
-            return 'application/x-gzip';
-        }
-        return '';
+        return $mimeType;
     }
 
-    private function resolveManifestLength(string $content): ?int
+    /**
+     * @param string $content
+     * @return int|null
+     */
+    private function resolveManifestLength(string $content)
     {
         if (strlen($content) < 4) {
             return null;
@@ -190,6 +203,11 @@ class Reader
         return static::resolveFourByteLittleEndian($content, 0);
     }
 
+    /**
+     * @param string $content
+     * @param int $start
+     * @return int
+     */
     public static function resolveFourByteLittleEndian(string $content, int $start): int
     {
         $payload = substr($content, $start, 4);
@@ -210,6 +228,11 @@ class Reader
         return $value[1];
     }
 
+    /**
+     * @param string $content
+     * @param int $start
+     * @return int
+     */
     public static function resolveTwoByteBigEndian(string $content, int $start): int
     {
         $payload = substr($content, $start, 2);

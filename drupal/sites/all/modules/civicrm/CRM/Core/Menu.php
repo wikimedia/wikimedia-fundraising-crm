@@ -629,7 +629,7 @@ UNION (
       foreach (self::$_serializedElements as $element) {
         self::$_menuCache[$menu->path][$element] = CRM_Utils_String::unserialize($menu->$element);
 
-        if (str_contains($path, $menu->path)) {
+        if (strpos($path, $menu->path) !== FALSE) {
           $menuPath = &self::$_menuCache[$menu->path];
         }
       }

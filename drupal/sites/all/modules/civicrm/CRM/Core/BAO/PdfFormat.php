@@ -240,13 +240,13 @@ class CRM_Core_BAO_PdfFormat extends CRM_Core_DAO_OptionValue {
    *
    * @param null $default
    *
-   * @return mixed
+   * @return value
    */
   public static function getValue($field, $values, $default = NULL) {
     if (array_key_exists($field, self::$optionValueFields)) {
       switch (self::$optionValueFields[$field]['type']) {
         case CRM_Utils_Type::T_INT:
-          return (int) ($values[$field] ?? $default);
+          return (int) CRM_Utils_Array::value($field, $values, $default);
 
         case CRM_Utils_Type::T_FLOAT:
           // Round float values to three decimal places and trim trailing zeros.
@@ -325,7 +325,7 @@ class CRM_Core_BAO_PdfFormat extends CRM_Core_DAO_OptionValue {
     }
     // copy the supplied form values to the corresponding Option Value fields in the base class
     foreach ($this->fields() as $name => $field) {
-      $this->$name = trim($values[$name] ?? $this->$name);
+      $this->$name = trim(CRM_Utils_Array::value($name, $values, $this->$name));
       if (empty($this->$name)) {
         $this->$name = 'null';
       }
@@ -338,7 +338,7 @@ class CRM_Core_BAO_PdfFormat extends CRM_Core_DAO_OptionValue {
     // serialize PDF Page Format fields into a single string to store in the 'value' column of the Option Value table
     $v = json_decode($this->value, TRUE);
     foreach (self::$optionValueFields as $name => $field) {
-      $v[$name] = self::getValue($name, $values, $v[$name] ?? NULL);
+      $v[$name] = self::getValue($name, $values, CRM_Utils_Array::value($name, $v));
     }
     $this->value = json_encode($v);
 

@@ -89,7 +89,7 @@ foreach ($importEntities as $importEntity) {
       'dataType' => $field['data_type'] ?? 'String',
       'label' => $field['title'] ?? $field['label'],
       'sortable' => TRUE,
-      'editable' => !str_starts_with($field['name'], '_'),
+      'editable' => strpos($field['name'], '_') !== 0,
       'link' => $field['link'] ?? NULL,
     ];
   }

@@ -56,19 +56,12 @@ class Color extends CSSFunction
                         $oParserState->currentLine()
                     ),
                 ];
-            } elseif ($oParserState->strlen($sValue) === 6) {
+            } else {
                 $aColor = [
                     'r' => new Size(intval($sValue[0] . $sValue[1], 16), null, true, $oParserState->currentLine()),
                     'g' => new Size(intval($sValue[2] . $sValue[3], 16), null, true, $oParserState->currentLine()),
                     'b' => new Size(intval($sValue[4] . $sValue[5], 16), null, true, $oParserState->currentLine()),
                 ];
-            } else {
-                throw new UnexpectedTokenException(
-                    'Invalid hex color value',
-                    $sValue,
-                    'custom',
-                    $oParserState->currentLine()
-                );
             }
         } else {
             $sColorMode = $oParserState->parseIdentifier(true);
@@ -160,11 +153,9 @@ class Color extends CSSFunction
     }
 
     /**
-     * @param OutputFormat|null $oOutputFormat
-     *
      * @return string
      */
-    public function render($oOutputFormat)
+    public function render(OutputFormat $oOutputFormat)
     {
         // Shorthand RGB color values
         if ($oOutputFormat->getRGBHashNotation() && implode('', array_keys($this->aComponents)) === 'rgb') {

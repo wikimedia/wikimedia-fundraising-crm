@@ -189,7 +189,7 @@ class CRM_Contact_Form_Search extends CRM_Core_Form_Search {
    * @return bool
    */
   public static function isSearchContext($context) {
-    $searchContext = self::validContext()[$context] ?? FALSE;
+    $searchContext = CRM_Utils_Array::value($context, self::validContext());
     return (bool) $searchContext;
   }
 
@@ -329,7 +329,7 @@ class CRM_Contact_Form_Search extends CRM_Core_Form_Search {
     $enabledComponents = CRM_Core_Component::getEnabledComponents();
     $componentModes = [];
     foreach (self::$_modeValues as $id => & $value) {
-      if (str_contains($value['component'], 'Civi')
+      if (strpos($value['component'], 'Civi') !== FALSE
         && !array_key_exists($value['component'], $enabledComponents)
       ) {
         continue;
@@ -585,10 +585,10 @@ class CRM_Contact_Form_Search extends CRM_Core_Form_Search {
       $this->set('uf_group_id', $ufGroupID);
 
       // also get the object mode directly from the post value
-      $this->_componentMode = $_POST['component_mode'] ?? $this->_componentMode;
+      $this->_componentMode = CRM_Utils_Array::value('component_mode', $_POST, $this->_componentMode);
 
       // also get the operator from the post value if set
-      $this->_operator = $_POST['operator'] ?? $this->_operator;
+      $this->_operator = CRM_Utils_Array::value('operator', $_POST, $this->_operator);
       $this->_formValues['operator'] = $this->_operator;
       $this->set('operator', $this->_operator);
     }
@@ -669,7 +669,7 @@ class CRM_Contact_Form_Search extends CRM_Core_Form_Search {
       }
     }
     $this->assign('id', $ufGroupID);
-    $operator = $this->_formValues['operator'] ?? CRM_Contact_BAO_Query::SEARCH_OPERATOR_AND;
+    $operator = CRM_Utils_Array::value('operator', $this->_formValues, CRM_Contact_BAO_Query::SEARCH_OPERATOR_AND);
     $this->set('queryOperator', $operator);
     if ($operator == CRM_Contact_BAO_Query::SEARCH_OPERATOR_OR) {
       $this->assign('operator', ts('OR'));
@@ -693,7 +693,7 @@ class CRM_Contact_Form_Search extends CRM_Core_Form_Search {
     self::setModeValues();
 
     $setDynamic = FALSE;
-    if (str_contains(self::$_selectorName, 'CRM_Contact_Selector')) {
+    if (strpos(self::$_selectorName, 'CRM_Contact_Selector') !== FALSE) {
       $selector = new self::$_selectorName(
         $this->_customSearchClass,
         $this->_formValues,
@@ -816,7 +816,7 @@ class CRM_Contact_Form_Search extends CRM_Core_Form_Search {
 
       $setDynamic = FALSE;
 
-      if (str_contains(self::$_selectorName, 'CRM_Contact_Selector')) {
+      if (strpos(self::$_selectorName, 'CRM_Contact_Selector') !== FALSE) {
         $selector = new self::$_selectorName(
           $this->_customSearchClass,
           $this->_formValues,

@@ -129,9 +129,9 @@ class FlexMailer {
    *     - mailing: \CRM_Mailing_BAO_Mailing
    *     - job: \CRM_Mailing_BAO_MailingJob
    *     - attachments: array
-   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface|null $dispatcher
+   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $dispatcher
    */
-  public function __construct($context = [], ?EventDispatcherInterface $dispatcher = NULL) {
+  public function __construct($context = [], EventDispatcherInterface $dispatcher = NULL) {
     $this->context = $context;
     $this->dispatcher = $dispatcher ?: \Civi::service('dispatcher');
   }

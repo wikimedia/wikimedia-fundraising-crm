@@ -25,14 +25,10 @@ class DAOSaveAction extends AbstractSaveAction {
    */
   public function _run(Result $result) {
     $idField = CoreUtil::getIdFieldName($this->getEntityName());
-
-    // Keep track of the number of records updated vs created
-    $matched = 0;
-
     foreach ($this->records as &$record) {
       $record += $this->defaults;
       $this->formatWriteValues($record);
-      $matched += $this->matchExisting($record);
+      $this->matchExisting($record);
       if (empty($record[$idField])) {
         $this->fillDefaults($record);
       }
@@ -42,7 +38,6 @@ class DAOSaveAction extends AbstractSaveAction {
     $resultArray = $this->writeObjects($this->records);
 
     $result->exchangeArray($resultArray);
-    $result->setCountMatched($matched);
   }
 
 }

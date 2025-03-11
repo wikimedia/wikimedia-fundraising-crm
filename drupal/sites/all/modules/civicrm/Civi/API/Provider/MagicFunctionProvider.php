@@ -156,10 +156,10 @@ class MagicFunctionProvider implements EventSubscriberInterface, ProviderInterfa
     $prefix = 'civicrm_api' . $version . '_' . _civicrm_api_get_entity_name_from_camel($entity) . '_';
     $prefixGeneric = 'civicrm_api' . $version . '_generic_';
     foreach ($functions['user'] as $fct) {
-      if (str_starts_with($fct, $prefix)) {
+      if (strpos($fct, $prefix) === 0) {
         $actions[] = substr($fct, strlen($prefix));
       }
-      elseif (str_starts_with($fct, $prefixGeneric)) {
+      elseif (strpos($fct, $prefixGeneric) === 0) {
         $actions[] = substr($fct, strlen($prefixGeneric));
       }
     }

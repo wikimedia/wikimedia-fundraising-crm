@@ -46,16 +46,11 @@ class LoginEvent extends GenericHookEvent {
    *   'wrongMFA' (about to reject login)' or NULL (login about to happen).
    *   Example use: identify suspicious activity?
    *
-   * - 'login_success'
+   * - 'post_login'
    *
-   *   userID is set; password was correct. MFA was correct if used.
-   *   User is successfully logged in. Setting stopReason would have
-   *   no effect. Example use: monitor logins.
-   *
-   * - 'pre_send_password_reset'
-   *
-   *   userID is set if the entered username/email matched, otherwise NULL.
-   *   Throwing an exception will (silently) prevent the email being sent.
+   *   userID is set; password and possibly MFA were correct. User is
+   *   successfully logged in. Setting stopReason would have no effect.
+   *   Example use: monitor logins.
    *
    * @var string
    */

@@ -94,6 +94,12 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
    * Load all entities
    */
   protected function loadEntities() {
+    // if submission id is passed then we should display the submission data
+    if ($this->fillMode === 'form' && !empty($this->args['sid'])) {
+      $this->prePopulateSubmissionData();
+      return;
+    }
+
     // When loading a single join for an entity, only that entity needs to be processed
     if ($this->fillMode === 'join') {
       $entityNames = array_keys(array_intersect_key($this->args, $this->_formDataModel->getEntities()));
@@ -139,6 +145,27 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
       }
       $event = new AfformPrefillEvent($this->_afform, $this->_formDataModel, $this, $entity['type'], $entityName, $this->_entityIds);
       \Civi::dispatcher()->dispatch('civi.afform.prefill', $event);
+    }
+  }
+
+  /**
+   * Load the data from submission table
+   */
+  protected function prePopulateSubmissionData() {
+    // if submission id is passed then get the data from submission
+    $afformSubmissionData = \Civi\Api4\AfformSubmission::get(TRUE)
+      ->addSelect('data')
+      ->addWhere('id', '=', $this->args['sid'])
+      ->addWhere('afform_name', '=', $this->name)
+      ->execute()->first();
+
+    $this->_entityValues = $this->_formDataModel->getEntities();
+    foreach ($this->_entityValues as $entity => &$values) {
+      foreach ($afformSubmissionData['data'] as $e => $submission) {
+        if ($entity === $e) {
+          $values = $submission ?? [];
+        }
+      }
     }
   }
 
@@ -252,7 +279,7 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
       $items = array_column($joinResult, NULL, 'location_type_id');
       $joinResult = [];
       foreach ($join['data']['location_type_id'] as $locationType) {
-        $joinResult[] = $items[$locationType] ?? NULL;
+        $joinResult[] = $items[$locationType] ?? [];
       }
     }
     $this->_entityIds[$afEntity['name']][$index]['joins'][$joinEntity] = \CRM_Utils_Array::filterColumns($joinResult, [$joinIdField]);
@@ -636,15 +663,7 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
             }
 
             // Merge in pre-set data
-            foreach ($entity['joins'][$joinEntity]['data'] ?? [] as $dataKey => $dataVal) {
-              // For multiple location blocks, values will be in an array (see FormDataModel::parseFields)
-              if (is_array($dataVal) && array_key_exists($index, $dataVal)) {
-                $joinValues[$index][$dataKey] = $dataVal[$index];
-              }
-              else {
-                $joinValues[$index][$dataKey] = $dataVal;
-              }
-            }
+            $joinValues[$index] = array_merge($joinValues[$index], $entity['joins'][$joinEntity]['data'] ?? []);
           }
         }
         $entityValues[$entityName][] = $values;

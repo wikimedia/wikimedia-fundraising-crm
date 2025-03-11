@@ -273,7 +273,6 @@ dl dl {
 .crm-container .cancelled td,
 .crm-container li.disabled a.ui-tabs-anchor {
   color: var(--crm-c-inactive);
-  opacity: 1;
 }
 
 /* BS3 type styles */
@@ -334,14 +333,7 @@ dl dl {
 .crm-container h6 {
   color: var(--crm-c-text);
 }
-.crm-container code {
-  display: inline;
-  background-color: var(--crm-c-code-background);
-  border: 1px solid var(--crm-c-background4);
-  color: var(--crm-c-text);
-  border-radius: 2px;
-  padding: 2px;
-}
+.crm-container code,
 .crm-container kbd,
 .crm-container samp,
 .crm-container pre {
@@ -351,28 +343,26 @@ dl dl {
   font-size: var(--crm-font-size) !important /* vs inline css on api3 */;
   line-height: 1.4  !important /* vs inline css on api3 */;
   color: var(--crm-c-text);
+  word-break: break-all;
+  word-wrap: break-word;
   background-color: var(--crm-c-code-background);
   border: 1px solid var(--crm-c-background4);
   border-radius: var(--crm-roundness);
 }
+.crm-container pre {
+  white-space: normal;
+  word-break: normal;
+}
 .crm-container pre code {
-  display: block;
   padding: 0;
   font-size: inherit;
   color: inherit;
+  white-space: pre-wrap;
   background-color: transparent;
   border-radius: 0;
 }
-.crm-container pre.prettyprint {
-  background: var(--crm-c-text-light); /* method to force light bg on prettyprint code as inverting is too complex */
-  white-space: normal;
-}
-.crm-container pre.linenums {
-  background: var(--crm-c-text-light);
-  color: var(--crm-c-text-dark);
-}
-.crm-container td > code {
-  display: block;
+.crm-container p code {
+  display: inline-block;
 }
 .crm-container .pre-scrollable {
   max-height: 340px;
@@ -438,7 +428,7 @@ dl dl {
 }
 /* Responsive  */
 
-@media (max-width: 991px) {
+@media (max-width: 989px) {
   .crm-container .crm-flex-box,
   .api4-input /* sections/api4-explorer */ {
     flex-direction: column;

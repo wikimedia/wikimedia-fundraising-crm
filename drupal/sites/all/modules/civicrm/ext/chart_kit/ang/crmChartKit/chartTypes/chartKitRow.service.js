@@ -14,7 +14,7 @@
         },
         'y': {
           label: ts('Values'),
-          sourceDataTypes: ['Integer', 'Money', 'Boolean', 'Float', 'Double'],
+          sourceDataTypes: ['Integer', 'Money', 'Boolean'],
         },
         'z': {
           label: ts('Additional labels'),

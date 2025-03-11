@@ -16,5 +16,10 @@ use TYPO3\PharStreamWrapper\Resolver\PharInvocation;
 
 interface Resolvable
 {
-    public function resolve(string $path, ?int $flags = null): ?PharInvocation;
+    /**
+     * @param string $path
+     * @param null|int $flags
+     * @return null|PharInvocation
+     */
+    public function resolve(string $path, int $flags = null);
 }

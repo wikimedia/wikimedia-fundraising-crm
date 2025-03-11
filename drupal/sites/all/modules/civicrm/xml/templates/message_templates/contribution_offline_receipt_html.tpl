@@ -43,6 +43,17 @@
        {contact.display_name}
       </td>
      </tr>
+     <tr>
+      {if '{contribution.financial_type_id}'}
+        <td {$labelStyle}>
+         {ts}Financial Type{/ts}
+        </td>
+        <td {$valueStyle}>
+         {contribution.financial_type_id:label}
+        </td>
+      {/if}
+     </tr>
+
      {if $isShowLineItems}
        <tr>
         <td colspan="2" {$valueStyle}>
@@ -190,7 +201,7 @@
      {if !empty($ccContribution)}
       <tr>
        <th {$headerStyle}>
-        {ts}Billing Address{/ts}
+        {ts}Billing Name and Address{/ts}
        </th>
       </tr>
       <tr>

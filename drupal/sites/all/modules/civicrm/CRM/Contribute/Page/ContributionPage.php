@@ -495,7 +495,7 @@ ORDER BY is_active desc, title asc
       }
 
       //build the configure links.
-      $sectionsInfo = $contriPageSectionInfo[$dao->id] ?? [];
+      $sectionsInfo = CRM_Utils_Array::value($dao->id, $contriPageSectionInfo, []);
       $contributions[$dao->id]['configureActionLinks'] = CRM_Core_Action::formLink(self::formatConfigureLinks($sectionsInfo),
         $action,
         ['id' => $dao->id],
@@ -583,7 +583,7 @@ ORDER BY is_active desc, title asc
 
     if ($title) {
       $clauses[] = "title LIKE %1";
-      if (str_contains($title, '%')) {
+      if (strpos($title, '%') !== FALSE) {
         $params[1] = [trim($title), 'String', FALSE];
       }
       else {

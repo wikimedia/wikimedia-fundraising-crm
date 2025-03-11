@@ -8,6 +8,6 @@ return [
   ],
   'placement' => ['contact_summary_tab'],
   'icon' => 'fa-handshake-o',
-  'placement_weight' => 80,
+  'summary_weight' => 80,
   'permission_operator' => 'AND',
 ];

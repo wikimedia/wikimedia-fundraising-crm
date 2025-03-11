@@ -107,7 +107,6 @@ class Rule implements Renderable, Commentable
         while ($oParserState->comes(';')) {
             $oParserState->consume(';');
         }
-
         $oParserState->consumeWhiteSpace();
 
         return $oRule;
@@ -344,11 +343,9 @@ class Rule implements Renderable, Commentable
     }
 
     /**
-     * @param OutputFormat|null $oOutputFormat
-     *
      * @return string
      */
-    public function render($oOutputFormat)
+    public function render(OutputFormat $oOutputFormat)
     {
         $sResult = "{$oOutputFormat->comments($this)}{$this->sRule}:{$oOutputFormat->spaceAfterRuleName()}";
         if ($this->mValue instanceof Value) { // Can also be a ValueList

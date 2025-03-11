@@ -5,8 +5,9 @@ return [
   'title' => ts('Notes'),
   'description' => '',
   'placement' => ['contact_summary_tab'],
-  'placement_weight' => 100,
+  'summary_weight' => 100,
   'icon' => 'fa-sticky-note-o',
+  'summary_contact_type' => NULL,
   'permission' => [
     'access CiviCRM',
   ],

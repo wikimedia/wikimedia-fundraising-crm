@@ -12,8 +12,7 @@
 
     this.download = function() {
       ctrl.progress = 0;
-      // Hide dialog-titlebar buttons so the user doesn't close the dialog
-      $('div.ui-dialog').last().find('.ui-dialog-titlebar .ui-button').hide();
+      $('.ui-dialog-titlebar button').hide();
       // Show the user something is happening (even though it doesn't accurately reflect progress)
       var incrementer = $interval(function() {
         if (ctrl.progress < 90) {

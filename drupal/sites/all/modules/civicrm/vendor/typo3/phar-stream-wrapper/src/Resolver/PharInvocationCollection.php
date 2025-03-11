@@ -16,9 +16,9 @@ use TYPO3\PharStreamWrapper\Collectable;
 
 class PharInvocationCollection implements Collectable
 {
-    public const UNIQUE_INVOCATION = 1;
-    public const UNIQUE_BASE_NAME = 2;
-    public const DUPLICATE_ALIAS_WARNING = 32;
+    const UNIQUE_INVOCATION = 1;
+    const UNIQUE_BASE_NAME = 2;
+    const DUPLICATE_ALIAS_WARNING = 32;
 
     /**
      * @var PharInvocation[]
@@ -39,7 +39,7 @@ class PharInvocationCollection implements Collectable
      * @param null|int $flags
      * @return bool
      */
-    public function collect(PharInvocation $invocation, ?int $flags = null): bool
+    public function collect(PharInvocation $invocation, int $flags = null): bool
     {
         if ($flags === null) {
             $flags = static::UNIQUE_INVOCATION | static::DUPLICATE_ALIAS_WARNING;
@@ -59,7 +59,12 @@ class PharInvocationCollection implements Collectable
         return true;
     }
 
-    public function findByCallback(callable $callback, bool $reverse = false): ?PharInvocation
+    /**
+     * @param callable $callback
+     * @param bool $reverse
+     * @return null|PharInvocation
+     */
+    public function findByCallback(callable $callback, $reverse = false)
     {
         foreach ($this->getInvocations($reverse) as $invocation) {
             if (call_user_func($callback, $invocation) === true) {
@@ -112,9 +117,10 @@ class PharInvocationCollection implements Collectable
     /**
      * Triggers warning for invocations with same alias and same confirmation state.
      *
+     * @param PharInvocation $invocation
      * @see \TYPO3\PharStreamWrapper\PharStreamWrapper::collectInvocation()
      */
-    private function triggerDuplicateAliasWarning(PharInvocation $invocation): void
+    private function triggerDuplicateAliasWarning(PharInvocation $invocation)
     {
         $sameAliasInvocation = $this->findByCallback(
             function (PharInvocation $candidate) use ($invocation) {

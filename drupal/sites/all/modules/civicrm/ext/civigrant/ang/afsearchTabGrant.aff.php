@@ -5,7 +5,7 @@ return [
   'type' => 'search',
   'title' => E::ts('Grants'),
   'placement' => ['contact_summary_tab'],
-  'placement_weight' => 60,
+  'summary_weight' => 60,
   'icon' => 'fa-money',
   'server_route' => '',
   'permission' => ['access CiviGrant'],

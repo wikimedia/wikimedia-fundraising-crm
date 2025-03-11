@@ -130,7 +130,7 @@ trait CRM_Admin_Form_SettingTrait {
    * @return mixed
    */
   protected function getSettingMetadataItem($setting, $item) {
-    return $this->getSettingsMetaData()[$setting][$item] ?? NULL;
+    return CRM_Utils_Array::value($item, $this->getSettingsMetaData()[$setting]);
   }
 
   /**

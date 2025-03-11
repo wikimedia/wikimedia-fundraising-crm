@@ -498,7 +498,7 @@ ORDER BY start_date desc
 
     if ($title) {
       $clauses[] = "title LIKE %1";
-      if (str_contains($title, '%')) {
+      if (strpos($title, '%') !== FALSE) {
         $params[1] = [trim($title), 'String', FALSE];
       }
       else {

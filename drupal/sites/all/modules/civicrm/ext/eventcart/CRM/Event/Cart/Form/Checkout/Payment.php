@@ -65,7 +65,7 @@ class CRM_Event_Cart_Form_Checkout_Payment extends CRM_Event_Cart_Form_Cart {
     $this->assign('isOnWaitlist', $participant->must_wait);
 
     $participantParams['is_test'] = 0;
-    if ($this->_action & CRM_Core_Action::PREVIEW || ($params['mode'] ?? NULL) == 'test') {
+    if ($this->_action & CRM_Core_Action::PREVIEW || CRM_Utils_Array::value('mode', $params) == 'test') {
       $participantParams['is_test'] = 1;
     }
 
@@ -88,7 +88,7 @@ class CRM_Event_Cart_Form_Checkout_Payment extends CRM_Event_Cart_Form_Cart {
     CRM_Core_DAO::storeValues($event, $event_values);
 
     $location = [];
-    if (($event_values['is_show_location'] ?? NULL) == 1) {
+    if (CRM_Utils_Array::value('is_show_location', $event_values) == 1) {
       $locationParams = [
         'entity_id' => $participant->event_id,
         'entity_table' => 'civicrm_event',
@@ -335,7 +335,7 @@ class CRM_Event_Cart_Form_Checkout_Payment extends CRM_Event_Cart_Form_Cart {
     $send_template_params = [
       'table' => 'civicrm_msg_template',
       'contactId' => $this->payer_contact_id,
-      'from' => CRM_Core_BAO_Domain::getFromEmail(),
+      'from' => current(CRM_Core_BAO_Domain::getNameAndEmail(TRUE, TRUE)),
       'groupName' => 'msg_tpl_workflow_event',
       'isTest' => FALSE,
       'toEmail' => $contact_details[1],
@@ -408,7 +408,7 @@ class CRM_Event_Cart_Form_Checkout_Payment extends CRM_Event_Cart_Form_Cart {
    */
   public function preProcess() {
     $params = $this->_submitValues;
-    $this->is_pay_later = !empty($params['is_pay_later']) && empty($params['payment_completed']);
+    $this->is_pay_later = CRM_Utils_Array::value('is_pay_later', $params, FALSE) && !CRM_Utils_Array::value('payment_completed', $params);
 
     parent::preProcess();
   }
@@ -457,7 +457,7 @@ class CRM_Event_Cart_Form_Checkout_Payment extends CRM_Event_Cart_Form_Cart {
         "email-{$billingID}" => 1,
       ];
 
-      $params["address_name-{$billingID}"] = ($params['billing_first_name'] ?? '') . ' ' . ($params['billing_middle_name'] ?? '') . ' ' . ($params['billing_last_name'] ?? '');
+      $params["address_name-{$billingID}"] = CRM_Utils_Array::value('billing_first_name', $params) . ' ' . CRM_Utils_Array::value('billing_middle_name', $params) . ' ' . CRM_Utils_Array::value('billing_last_name', $params);
 
       $params["email-{$billingID}"] = $params['billing_contact_email'];
       CRM_Contact_BAO_Contact::createProfileContact(
@@ -474,7 +474,7 @@ class CRM_Event_Cart_Form_Checkout_Payment extends CRM_Event_Cart_Form_Cart {
     }
 
     $params['now'] = date('YmdHis');
-    $params['invoiceID'] = bin2hex(random_bytes(16));
+    $params['invoiceID'] = md5(uniqid(rand(), TRUE));
     $params['amount'] = $this->total;
     $params['financial_type_id'] = $this->financial_type_id;
     if ($this->payment_required && empty($params['is_pay_later'])) {

@@ -141,7 +141,7 @@ class CRM_Core_BAO_Cache extends CRM_Core_DAO_Cache {
         'CRM_Event_Controller_Registration',
       ];
       foreach ($transactionPages as $transactionPage) {
-        if (str_contains($sessionKey, $transactionPage)) {
+        if (strpos($sessionKey, $transactionPage) !== FALSE) {
           return $secureSessionTimeoutMinutes * 60;
         }
       }
@@ -219,7 +219,7 @@ class CRM_Core_BAO_Cache extends CRM_Core_DAO_Cache {
   public static function decode($string) {
     // Upgrade support -- old records (serialize) always have this punctuation,
     // and new records (base64) never do.
-    if (str_contains($string, ':') || str_contains($string, ';')) {
+    if (strpos($string, ':') !== FALSE || strpos($string, ';') !== FALSE) {
       return unserialize($string);
     }
     else {

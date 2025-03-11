@@ -20,6 +20,8 @@
  */
 class CRM_Admin_Form_Preferences_Display extends CRM_Admin_Form_Preferences {
 
+  protected array $_settings;
+
   /**
    * Build the form object.
    */

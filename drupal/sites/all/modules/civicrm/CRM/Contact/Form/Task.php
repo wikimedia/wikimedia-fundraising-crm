@@ -192,7 +192,7 @@ class CRM_Contact_Form_Task extends CRM_Core_Form_Task {
         $selectedTypes = explode(' ', $selectedTypes);
       }
       foreach ($selectedTypes as $ct => $dontcare) {
-        if (!str_contains($ct, CRM_Core_DAO::VALUE_SEPARATOR)) {
+        if (strpos($ct, CRM_Core_DAO::VALUE_SEPARATOR) === FALSE) {
           $form->_contactTypes[] = $ct;
         }
         else {
@@ -447,7 +447,7 @@ class CRM_Contact_Form_Task extends CRM_Core_Form_Task {
     if ($searchParams['radio_ts'] == 'ts_sel') {
       // Create a static group.
       // groups require a unique name
-      $randID = bin2hex(random_bytes(16));
+      $randID = md5(time() . rand(1, 1000));
       $grpTitle = "Hidden Group {$randID}";
       $grpID = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Group', $grpTitle, 'id', 'title');
 

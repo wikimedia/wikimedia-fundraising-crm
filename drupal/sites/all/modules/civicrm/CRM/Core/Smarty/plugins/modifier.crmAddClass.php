@@ -29,7 +29,7 @@
 function smarty_modifier_crmAddClass($string, $class) {
   // Standardize white space
   $string = str_replace(['class ="', 'class= "', 'class = "'], 'class="', $string);
-  if (str_contains($string, 'class="')) {
+  if (strpos($string, 'class="') !== FALSE) {
     $string = str_replace('class="', 'class="' . "$class ", $string);
   }
   else {

@@ -53,9 +53,6 @@ class CRM_Utils_Address {
       CRM_Core_Error::deprecatedFunctionWarning('CRM_Utils_Address::formatVCard (not recommended outside core - figure out a token way)');
       self::formatVCard($fields);
     }
-    if ($format) {
-      CRM_Core_Error::deprecatedWarning('passing format is deprecated, use the token processor directly');
-    }
     if (!$format) {
       $format = Civi::settings()->get('address_format');
     }
@@ -130,7 +127,6 @@ class CRM_Utils_Address {
 
     // also sub all token fields
     if ($tokenFields) {
-      CRM_Core_Error::deprecatedWarning('passing tokenFields is deprecated, use the token processor directly');
       foreach ($tokenFields as $token) {
         $replacements["{$token}"] = $fields["{$token}"] ?? NULL;
       }

@@ -7,12 +7,8 @@ namespace League\OAuth2\Client\Exception;
  */
 class HostedDomainException extends \Exception
 {
-    /**
-     * @param $configuredDomain
-     *
-     * @return static
-     */
-    public static function notMatchingDomain($configuredDomain): self
+
+    public static function notMatchingDomain($configuredDomain)
     {
         return new static("User is not part of domain '$configuredDomain'");
     }

@@ -57,7 +57,7 @@ class CRM_Core_Page_Redirect extends CRM_Core_Page {
       $urlParts['path'],
       $urlParts['query'] ?? NULL,
       $absolute,
-      $urlParts['fragment'] ?? NULL
+      CRM_Utils_Array::value('fragment', $urlParts, NULL)
     );
 
     return $url;

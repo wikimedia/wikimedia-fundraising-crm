@@ -187,7 +187,7 @@ class CRM_Core_BAO_MessageTemplate extends CRM_Core_DAO_MessageTemplate implemen
    */
   public static function getMessageTemplates($all = TRUE, $isSMS = FALSE) {
 
-    $messageTemplates = MessageTemplate::get(FALSE)
+    $messageTemplates = MessageTemplate::get()
       ->addSelect('id', 'msg_title')
       ->addWhere('is_active', '=', TRUE)
       ->addWhere('is_sms', '=', $isSMS);

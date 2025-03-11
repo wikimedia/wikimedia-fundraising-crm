@@ -20,13 +20,6 @@
  */
 class CRM_Admin_Form_Preferences_Address extends CRM_Admin_Form_Preferences {
 
-  /**
-   * This should only be populated programmatically via the settings metadata.
-   *
-   * DO NOT add new settings to these - they need to be migrated to being declared in metadata.
-   *
-   * @var array
-   */
   protected $_settings = [
     'address_options' => CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
     'address_format' => CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,

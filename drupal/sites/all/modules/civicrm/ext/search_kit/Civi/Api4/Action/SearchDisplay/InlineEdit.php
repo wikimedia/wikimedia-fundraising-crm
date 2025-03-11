@@ -9,10 +9,10 @@ use Civi\Api4\Utils\CoreUtil;
 /**
  * Perform an inline-edit to a search display row, then re-run the search to return created/updated row.
  *
- * @method $this setValues(array $values)
- * @method array getValues()
- * @method $this setRowKey(int $rowKey)
- * @method int getRowKey()
+ * @method $this setValues(mixed $values)
+ * @method mixed getValues()
+ * @method $this setRowKey(mixed $rowKey)
+ * @method mixed getRowKey()
  * @package Civi\Api4\Action\SearchDisplay
  */
 class InlineEdit extends Run {
@@ -35,10 +35,7 @@ class InlineEdit extends Run {
   protected $values;
 
   protected function processResult(SearchDisplayRunResult $result) {
-    if (isset($this->rowKey) && $this->return === 'draggableWeight') {
-      $this->updateDraggableWeight();
-    }
-    elseif (isset($this->rowKey)) {
+    if (isset($this->rowKey)) {
       $this->updateExistingRow();
     }
     elseif (!empty($this->display['settings']['editableRow']['create'])) {
@@ -60,14 +57,8 @@ class InlineEdit extends Run {
    */
   public function updateExistingRow(): void {
     // Apply rowKey to filters
-    $entityName = $this->savedSearch['api_entity'];
-    $keyName = $filterKey = CoreUtil::getIdFieldName($entityName);
-    // Hack to support relationships
-    if ($entityName === 'RelationshipCache') {
-      $filterKey = 'relationship_id';
-      $entityName = 'Relationship';
-    }
-    $this->applyFilter($filterKey, $this->rowKey);
+    $keyName = CoreUtil::getIdFieldName($this->savedSearch['api_entity']);
+    $this->applyFilter($keyName, $this->rowKey);
     $this->return = NULL;
     $this->_apiParams['offset'] = 0;
 
@@ -82,9 +73,11 @@ class InlineEdit extends Run {
     // Gather tasks from values; group by entity+action+id
     $columns = $this->display['settings']['columns'];
     foreach ($columns as $columnIndex => $column) {
-      // Editable column
-      $editableInfo = $existingValues['columns'][$columnIndex]['edit'] ?? NULL;
-      if ($editableInfo && array_key_exists($column['key'], $this->values)) {
+      if (array_key_exists($column['key'], $this->values)) {
+        $editableInfo = $existingValues['columns'][$columnIndex]['edit'] ?? NULL;
+        if (!$editableInfo) {
+          throw new \CRM_Core_Exception('Cannot edit column ' . $column['key']);
+        }
         $value = $this->values[$column['key']];
         if (empty($editableInfo['nullable']) && ($value === NULL || $value === '')) {
           continue;
@@ -96,35 +89,13 @@ class InlineEdit extends Run {
         }
         $tasks[$editableInfo['entity']][$taskKey]['record'][$editableInfo['value_key']] = $value;
       }
-      // Links column - check for matching apBatch tasks
-      elseif (!empty($column['links']) || !empty($column['link'])) {
-        $links = !empty($column['links']) ? $column['links'] : [$column['link']];
-        foreach ($links as $link) {
-          if (!empty($link['task']) && ($link['action'] === 'update') && ($link['api_params']['values'] ?? NULL) === $this->values) {
-            $taskKey = 'update' . $this->rowKey;
-            if (empty($tasks[$entityName][$taskKey]['record'])) {
-              $tasks[$entityName][$taskKey]['action'] = 'update';
-              $tasks[$entityName][$taskKey]['record'] = [
-                $keyName => $this->rowKey,
-              ];
-              foreach ($this->values as $key => $value) {
-                $tasks[$entityName][$taskKey]['record'][$key] = $value;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (!$tasks) {
-      throw new \CRM_Core_Exception('Inline edit failed.');
     }
 
     $checkPermissions = empty($this->display['settings']['acl_bypass']);
     // Run create/update tasks
-    foreach ($tasks as $editableEntity => $editableItems) {
+    foreach ($tasks as $editableItems) {
       foreach ($editableItems as $editableItem) {
-        civicrm_api4($editableEntity, $editableItem['action'], [
+        civicrm_api4($editableItem['entity'], $editableItem['action'], [
           'checkPermissions' => $checkPermissions,
           'values' => $editableItem['record'],
         ]);
@@ -225,34 +196,6 @@ class InlineEdit extends Run {
     // Apply id of newly saved row to filters
     $keyName = CoreUtil::getIdFieldName($this->savedSearch['api_entity']);
     $this->applyFilter($keyName, $saved[''][$keyName]);
-  }
-
-  private function updateDraggableWeight(): void {
-    $weightField = $this->display['settings']['draggable'];
-    if (!$weightField) {
-      throw new \CRM_Core_Exception('Search display is not configured for draggable sorting.');
-    }
-    if (!isset($this->values[$weightField])) {
-      throw new \CRM_Core_Exception('Cannot update draggable weight: no value provided.');
-    }
-    $entityName = $this->savedSearch['api_entity'];
-    $keyName = CoreUtil::getIdFieldName($entityName);
-    // For security, do not accept arbitrary values; only update weight.
-    $values = [
-      $weightField => $this->values[$weightField],
-    ];
-    // For hierarchical entities, also allow parent_field to be updated.
-    $parentField = CoreUtil::getInfoItem($entityName, 'parent_field');
-    if ($parentField && array_key_exists($parentField, $this->values)) {
-      $values[$parentField] = $this->values[$parentField];
-    }
-    civicrm_api4($entityName, 'update', [
-      'checkPermissions' => empty($this->display['settings']['acl_bypass']),
-      'where' => [
-        [$keyName, '=', $this->rowKey],
-      ],
-      'values' => $values,
-    ]);
   }
 
 }

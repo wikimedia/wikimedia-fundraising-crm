@@ -266,10 +266,9 @@ class CRM_Report_Form extends CRM_Core_Form {
   protected $groupTempTable = '';
 
   /**
-   * Table aliases. May be altered by hook_civicrm_alterReportVar.
    * @var array
    */
-  public $_aliases = [];
+  protected $_aliases = [];
 
   /**
    * SQL where clause. May be altered by hook_civicrm_alterReportVar.
@@ -1025,7 +1024,7 @@ class CRM_Report_Form extends CRM_Core_Form {
               }
             }
             else {
-              if ((($field['type'] ?? NULL) & CRM_Utils_Type::T_INT) && is_array($field['default'])) {
+              if ((CRM_Utils_Array::value('type', $field) & CRM_Utils_Type::T_INT) && is_array($field['default'])) {
                 $this->_defaults["{$fieldName}_min"] = $field['default']['min'] ?? NULL;
                 $this->_defaults["{$fieldName}_max"] = $field['default']['max'] ?? NULL;
               }
@@ -1065,7 +1064,7 @@ class CRM_Report_Form extends CRM_Core_Form {
         }
         foreach ($table['order_bys'] as $fieldName => $field) {
           if (!empty($field['default']) || !empty($field['default_order']) ||
-            !empty($field['default_is_section']) ||
+            CRM_Utils_Array::value('default_is_section', $field) ||
             !empty($field['default_weight'])
           ) {
             $order_by = [
@@ -2050,7 +2049,7 @@ class CRM_Report_Form extends CRM_Core_Form {
    */
   public function whereClause(&$field, $op, $value, $min, $max) {
 
-    $type = CRM_Utils_Type::typeToString($field['type'] ?? NULL);
+    $type = CRM_Utils_Type::typeToString(CRM_Utils_Array::value('type', $field));
 
     // CRM-18010: Ensure type of each report filters
     if (!$type) {
@@ -2099,7 +2098,7 @@ class CRM_Report_Form extends CRM_Core_Form {
       case 'nhas':
         if ($value !== NULL && strlen($value) > 0) {
           $value = CRM_Utils_Type::escape($value, $type);
-          if (!str_contains($value, '%')) {
+          if (strpos($value, '%') === FALSE) {
             $value = "'%{$value}%'";
           }
           else {
@@ -2157,7 +2156,7 @@ class CRM_Report_Form extends CRM_Core_Form {
       case 'ew':
         if ($value !== NULL && strlen($value) > 0) {
           $value = CRM_Utils_Type::escape($value, $type);
-          if (!str_contains($value, '%')) {
+          if (strpos($value, '%') === FALSE) {
             if ($op == 'sw') {
               $value = "'{$value}%'";
             }
@@ -2820,7 +2819,8 @@ class CRM_Report_Form extends CRM_Core_Form {
             continue;
           }
 
-          if (!empty($this->_params['group_bys'][$fieldName]) &&
+          if (!empty($this->_params['group_bys']) &&
+            !empty($this->_params['group_bys'][$fieldName]) &&
             !empty($this->_params['group_bys_freq'])
           ) {
             switch ($this->_params['group_bys_freq'][$fieldName] ?? NULL) {
@@ -3152,7 +3152,7 @@ class CRM_Report_Form extends CRM_Core_Form {
           }
           elseif (array_key_exists('extends', $table)) {
             // For custom fields referenced in $this->_customGroupExtends
-            $fields = $table['fields'] ?? [];
+            $fields = CRM_Utils_Array::value('fields', $table, []);
           }
           else {
             continue;
@@ -3514,7 +3514,7 @@ class CRM_Report_Form extends CRM_Core_Form {
                 $value = $pair[$op];
               }
               elseif (is_array($val) && (!empty($val))) {
-                $options = $field['options'] ?? [];
+                $options = CRM_Utils_Array::value('options', $field, []);
                 foreach ($val as $key => $valIds) {
                   if (isset($options[$valIds])) {
                     $val[$key] = $options[$valIds];
@@ -4116,7 +4116,7 @@ class CRM_Report_Form extends CRM_Core_Form {
         }
 
         if (!array_key_exists('type', $curFields[$fieldName])) {
-          $curFields[$fieldName]['type'] = $curFilters[$fieldName]['type'] ?? [];
+          $curFields[$fieldName]['type'] = CRM_Utils_Array::value('type', $curFilters[$fieldName], []);
         }
 
         if ($addFields) {
@@ -5144,7 +5144,7 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
       'String',
       CRM_Core_DAO::$_nullObject,
       FALSE,
-      $this->_params['task'] ?? NULL
+      CRM_Utils_Array::value('task', $this->_params)
     ) ?? ''));
     // if contacts are added to group
     if (!empty($this->_params['groups']) && empty($this->_outputMode)) {
@@ -6051,9 +6051,9 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
       if ($op) {
         return $this->whereClause($field,
           $op,
-          $this->_params["{$fieldName}_value"] ?? NULL,
-          $this->_params["{$fieldName}_min"] ?? NULL,
-          $this->_params["{$fieldName}_max"] ?? NULL
+          CRM_Utils_Array::value("{$fieldName}_value", $this->_params),
+          CRM_Utils_Array::value("{$fieldName}_min", $this->_params),
+          CRM_Utils_Array::value("{$fieldName}_max", $this->_params)
         );
       }
     }

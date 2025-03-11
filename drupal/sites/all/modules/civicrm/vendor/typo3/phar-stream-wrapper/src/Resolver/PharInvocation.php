@@ -88,12 +88,13 @@ class PharInvocation
         return $this->confirmed;
     }
 
-    public function confirm(): void
+    public function confirm()
     {
         $this->confirmed = true;
     }
 
     /**
+     * @param string $name
      * @return mixed|null
      */
     public function getVariable(string $name)
@@ -102,9 +103,10 @@ class PharInvocation
     }
 
     /**
+     * @param string $name
      * @param mixed $value
      */
-    public function setVariable(string $name, $value): void
+    public function setVariable(string $name, $value)
     {
         $this->variables[$name] = $value;
     }

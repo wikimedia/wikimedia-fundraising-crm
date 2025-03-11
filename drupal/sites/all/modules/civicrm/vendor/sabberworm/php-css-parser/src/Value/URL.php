@@ -86,11 +86,9 @@ class URL extends PrimitiveValue
     }
 
     /**
-     * @param OutputFormat|null $oOutputFormat
-     *
      * @return string
      */
-    public function render($oOutputFormat)
+    public function render(OutputFormat $oOutputFormat)
     {
         return "url({$this->oURL->render($oOutputFormat)})";
     }

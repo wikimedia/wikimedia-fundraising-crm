@@ -16,7 +16,6 @@
  */
 
 use Civi\Api4\Address;
-use Civi\Token\TokenProcessor;
 
 /**
  * This is class to handle address related functions.
@@ -1047,11 +1046,13 @@ SELECT is_primary,
       }
 
       // CRM-15120
-      $tokenProcessor = new TokenProcessor(\Civi::dispatcher(), ['schema' => ['contactId'], 'smarty' => FALSE]);
-      $tokenProcessor->addMessage('name', Civi::settings()->get('display_name_format'), 'text/plain');
-      $tokenProcessor->addRow(['contact' => ['id' => $rowID] + $rows[$rowID]]);
-      $tokenProcessor->evaluate();
-      $firstNameWithPrefix = trim($tokenProcessor->getRow(0)->render('name'));
+      $formatted = [
+        'first_name' => $rows[$rowID]['first_name'],
+        'individual_prefix' => $rows[$rowID]['individual_prefix'],
+      ];
+      $format = Civi::settings()->get('display_name_format');
+      $firstNameWithPrefix = CRM_Utils_Address::format($formatted, $format, FALSE, FALSE);
+      $firstNameWithPrefix = trim($firstNameWithPrefix);
 
       // fill uniqueAddress array with last/first name tree
       if (isset($uniqueAddress[$address])) {

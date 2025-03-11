@@ -168,7 +168,7 @@ class CRM_Utils_GuzzleMiddleware {
     // Copy the old ?query-params and #fragment-params on top of $newBase.
     $copyParams = function ($newBase) use ($oldUri) {
       if ($oldUri->getQuery()) {
-        $newBase .= str_contains($newBase, '?') ? '&' : '?';
+        $newBase .= strpos($newBase, '?') !== FALSE ? '&' : '?';
         $newBase .= $oldUri->getQuery();
       }
       if ($oldUri->getFragment()) {

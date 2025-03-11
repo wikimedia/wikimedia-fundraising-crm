@@ -21,7 +21,6 @@ return [
             'description',
             'placement:label',
             'server_route',
-            'tags:label',
           ],
           'orderBy' => [],
           'where' => [
@@ -70,20 +69,13 @@ return [
               'sortable' => TRUE,
             ],
             [
-              'type' => 'field',
-              'key' => 'tags:label',
-              'dataType' => 'Array',
-              'label' => E::ts('Tags'),
-              'sortable' => TRUE,
-            ],
-            [
               'size' => 'btn-xs',
               'links' => [
                 [
-                  'path' => 'civicrm/admin/afform#/edit/[name]',
-                  'icon' => 'fa-pen-to-square',
-                  'text' => E::ts('Edit'),
-                  'style' => 'warning',
+                  'path' => '[server_route]',
+                  'icon' => 'fa-external-link',
+                  'text' => E::ts('Open'),
+                  'style' => 'info',
                   'condition' => [],
                   'task' => '',
                   'entity' => '',
@@ -92,10 +84,10 @@ return [
                   'target' => '',
                 ],
                 [
-                  'path' => '[server_route]',
-                  'icon' => 'fa-external-link',
-                  'text' => E::ts('Open'),
-                  'style' => 'info',
+                  'path' => 'civicrm/admin/afform#/edit/[name]',
+                  'icon' => 'fa-pen-to-square',
+                  'text' => E::ts('Edit'),
+                  'style' => 'warning',
                   'condition' => [],
                   'task' => '',
                   'entity' => '',

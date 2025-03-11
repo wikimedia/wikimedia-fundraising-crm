@@ -52,7 +52,7 @@
       };
 
       this.sortableOptions = {
-        containment: $element,
+        containment: 'tbody',
         axis: 'y',
         helper: function(e, ui) {
           // Prevent table row width from changing during drag

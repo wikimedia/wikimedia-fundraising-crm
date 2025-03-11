@@ -184,22 +184,22 @@ class CRM_Core_Form_Renderer extends HTML_QuickForm_Renderer_ArraySmarty {
       $type = 'multiselect';
     }
     // Add widget-specific class
-    if (!$class || !str_contains($class, 'crm-form-')) {
+    if (!$class || strpos($class, 'crm-form-') === FALSE) {
       $class = ($class ? "$class " : '') . 'crm-form-' . $type;
     }
-    elseif (str_contains($class, 'crm-form-entityref')) {
+    elseif (strpos($class, 'crm-form-entityref') !== FALSE) {
       self::preProcessEntityRef($element);
     }
     elseif (str_contains($class, 'crm-form-autocomplete')) {
       self::preProcessAutocomplete($element);
     }
-    elseif (str_contains($class, 'crm-form-contact-reference')) {
+    elseif (strpos($class, 'crm-form-contact-reference') !== FALSE) {
       self::preprocessContactReference($element);
     }
     // Hack to support html5 fields (number, url, etc)
     else {
       foreach (CRM_Core_Form::$html5Types as $type) {
-        if (str_contains($class, "crm-form-$type")) {
+        if (strpos($class, "crm-form-$type") !== FALSE) {
           $element->setAttribute('type', $type);
           // Also add the "base" class for consistent styling
           $class .= ' crm-form-text';

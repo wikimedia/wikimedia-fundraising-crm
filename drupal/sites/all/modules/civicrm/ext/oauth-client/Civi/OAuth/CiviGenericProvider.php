@@ -69,7 +69,7 @@ class CiviGenericProvider extends \League\OAuth2\Client\Provider\GenericProvider
    * @return string
    */
   private function replaceTenantToken($str) {
-    if (str_contains($str, '{{tenant}}')) {
+    if (strpos($str, '{{tenant}}') !== FALSE) {
       $tenant = !empty($this->tenant) ? $this->tenant : 'common';
       $str = str_replace('{{tenant}}', $tenant, $str);
     }

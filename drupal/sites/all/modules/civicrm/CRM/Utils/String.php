@@ -108,9 +108,7 @@ class CRM_Utils_String {
    * @return string
    */
   public static function convertStringToSnakeCase(string $str): string {
-    // Use regular expression to replace uppercase with underscore + lowercase, avoiding duplicates
-    $str = preg_replace('/(?<!^|_)(?=[A-Z])/', '_', $str);
-    return strtolower($str);
+    return strtolower(ltrim(preg_replace('/(?=[A-Z])/', '_$0', $str), '_'));
   }
 
   /**
@@ -467,7 +465,7 @@ class CRM_Utils_String {
     $name = str_replace('\'', '', $name);
 
     // check for comma in name
-    if (str_contains($name, ',')) {
+    if (strpos($name, ',') !== FALSE) {
 
       // name has a comma - assume lname, fname [mname]
       $names = explode(',', $name);
@@ -997,7 +995,7 @@ class CRM_Utils_String {
    * @return bool
    */
   public static function stringContainsTokens(string $string) {
-    return str_contains($string, '{');
+    return strpos($string, '{') !== FALSE;
   }
 
   /**

@@ -29,7 +29,6 @@ class SqlFunctionIFNULL extends SqlFunction {
         'optional' => FALSE,
         'must_be' => ['SqlField', 'SqlFunction', 'SqlString', 'SqlNumber', 'SqlNull'],
         'label' => ts('Fallback value'),
-        'can_be_empty' => TRUE,
       ],
     ];
   }

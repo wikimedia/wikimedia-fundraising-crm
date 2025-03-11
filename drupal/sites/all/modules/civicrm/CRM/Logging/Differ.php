@@ -118,7 +118,7 @@ LEFT JOIN civicrm_activity_contact source ON source.activity_id = lt.id AND sour
           if (empty($contactIdClause)) {
             $contactIdClause = "AND contact_id = %3";
           }
-          if (str_contains($table, 'civicrm_value')) {
+          if (strpos($table, 'civicrm_value') !== FALSE) {
             $contactIdClause = "AND entity_id = %3";
           }
       }

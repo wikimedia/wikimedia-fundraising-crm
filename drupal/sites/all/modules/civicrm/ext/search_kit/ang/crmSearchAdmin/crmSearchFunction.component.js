@@ -11,10 +11,10 @@
     },
     templateUrl: '~/crmSearchAdmin/crmSearchFunction.html',
     controller: function($scope, formatForSelect2, searchMeta) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.search_kit');
-      const ctrl = this;
+      var ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
+        ctrl = this;
 
-      const allTypes = {
+      var allTypes = {
         aggregate: ts('Aggregate'),
         comparison: ts('Comparison'),
         date: ts('Date'),
@@ -22,17 +22,14 @@
         string: ts('Text')
       };
 
-      this.sqlExprTypes = [
-        {type: 'SqlField', label: ts('Field'), name: 'field', icon: 'fa-database'},
-        {type: 'SqlString', label: ts('Text'), name: 'string', icon: 'fa-i-cursor'},
-        {type: 'SqlNumber', label: ts('Number'), name: 'number', icon: 'fa-hashtag'},
-      ];
-
-      this.exprTypesByType = this.sqlExprTypes.reduce((acc, item) => (acc[item.type] = item, acc), {});
-      this.exprTypesByName = this.sqlExprTypes.reduce((acc, item) => (acc[item.name] = item, acc), {});
+      this.exprTypes = {
+        SqlField: {label: ts('Field'), type: 'field'},
+        SqlString: {label: ts('Text'), type: 'string'},
+        SqlNumber: {label: ts('Number'), type: 'number'},
+      };
 
       this.$onInit = function() {
-        const info = searchMeta.parseExpr(ctrl.expr);
+        var info = searchMeta.parseExpr(ctrl.expr);
         ctrl.fieldArg = _.findWhere(info.args, {type: 'field'});
         ctrl.args = info.args;
         ctrl.fn = info.fn;
@@ -47,16 +44,23 @@
         }
       });
 
-      this.addArg = function(sqlExprType, optional) {
-        const param = ctrl.getParam(ctrl.args.length);
+      this.addArg = function(exprType, optional) {
+        var param = ctrl.getParam(ctrl.args.length),
+          val = '';
+        if (exprType === 'SqlNumber') {
+          // Number: default to 0
+          val = 0;
+        } else if (exprType === 'SqlField' && !optional) {
+          // Field: Default to first available field, making it easier to delete the value
+          val = ctrl.getFields().results[0].children[0].id;
+        }
         ctrl.args.push({
-          type: ctrl.exprTypesByType[sqlExprType].name,
+          type: ctrl.exprTypes[exprType].type,
           flag_before: _.filter(_.keys(param.flag_before))[0],
           flag_after: _.filter(_.keys(param.flag_after))[0],
           name: param.name,
-          value: '',
+          value: val
         });
-        this.writeExpr();
       };
 
       function initFunction() {
@@ -93,17 +97,6 @@
           return false;
         }
         return ctrl.args.length - index < param.max_expr;
-      };
-
-      this.canRemoveArg = function(index) {
-        if (!ctrl.fn) {
-          return false;
-        }
-        // If this param accepts multiple values, all but the first are always removable
-        if (!ctrl.fn.params[index]) {
-          return true;
-        }
-        return ctrl.fn.params[index].optional;
       };
 
       // On-demand options for dropdown function selector
@@ -166,7 +159,7 @@
           while (!_.includes(ctrl.fn.params[pos].must_be, 'SqlField')) {
             exprType = _.first(ctrl.fn.params[pos].must_be);
             ctrl.args.splice(pos, 0, {
-              type: exprType ? ctrl.exprTypesByType[exprType].name : null,
+              type: exprType ? ctrl.exprTypes[exprType].type : null,
               flag_before: _.filter(_.keys(ctrl.fn.params[pos].flag_before))[0],
               flag_after: _.filter(_.keys(ctrl.fn.params[pos].flag_after))[0],
               name: ctrl.fn.params[pos].name,
@@ -184,17 +177,13 @@
         ctrl.writeExpr();
       };
 
-      this.changeArgType = function(arg, type) {
-        if (arg.type === type.name) {
-          return;
+      this.changeArg = function(index) {
+        var val = ctrl.args[index].value,
+          param = ctrl.getParam(index);
+        // Delete empty value if allowed
+        if (index && !val && val !== 0 && !param.optional && ctrl.args.length > param.min_expr) {
+          ctrl.args.splice(index, 1);
         }
-        arg.type = type.name;
-        arg.value = '';
-        this.writeExpr();
-      };
-
-      this.removeArg = function(index) {
-        ctrl.args.splice(index, 1);
         ctrl.writeExpr();
       };
 
@@ -206,15 +195,12 @@
 
       this.writeExpr = function() {
         if (ctrl.fnName) {
-          const args = ctrl.args.map((arg, index) => {
-            const value = arg.value === undefined ? '' : arg.value;
-            const prefix = arg.flag_before || arg.name ? (index ? ' ' : '') + (arg.flag_before || arg.name) + (value === '' ? '' : ' ') : (index ? ', ' : '');
-            const suffix = arg.flag_after ? ' ' + arg.flag_after : '';
-            let content = '';
-            if (ctrl.getParam(index).max_expr) {
-              content = (arg.type === 'string' || value === '' ? JSON.stringify(value) : value);
+          var args = _.transform(ctrl.args, function(args, arg, index) {
+            if (arg.value || arg.value === 0 || arg.flag_before) {
+              var prefix = arg.flag_before || arg.name ? (index ? ' ' : '') + (arg.flag_before || arg.name) + (arg.value ? ' ' : '') : (index ? ', ' : '');
+              var suffix = arg.flag_after ? ' ' + arg.flag_after : '';
+              args.push(prefix + (arg.type === 'string' ? JSON.stringify(arg.value) : arg.value) + suffix);
             }
-            return prefix + content + suffix;
           });
           // Replace fake function "e"
           ctrl.expr = (ctrl.fnName === 'e' ? '' : ctrl.fnName) + '(';

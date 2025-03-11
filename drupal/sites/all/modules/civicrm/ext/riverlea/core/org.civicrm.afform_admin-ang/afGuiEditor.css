@@ -149,16 +149,12 @@
   position: absolute;
   top: var(--crm-padding-reg);
   right: var(--crm-padding-reg);
-  padding: 0 !important /* vs buttons.css */;
-  background: transparent;
-  color: var(--crm-c-text);
 }
 #afGuiEditor-palette .af-gui-entity-values .form-inline {
   margin-bottom: var(--crm-m);
   display: flex;
   align-items: center;
   gap: var(--crm-flex-gap);
-  flex-wrap: wrap;
 }
 #afGuiEditor-palette .af-gui-entity-values .select2-container {
   width: 100% !important /* vs inline */;
@@ -405,13 +401,13 @@ af-gui-container > .af-gui-bar,
 #afGuiEditor #afGuiEditor-canvas .af-entity-selected > .af-gui-bar > .form-inline > .btn-group > .btn-group > button:hover > span,
 #afGuiEditor #afGuiEditor-canvas .af-entity-selected > .af-gui-bar > .form-inline > .btn-group > .btn-group > button[aria-expanded=true] > span,
 #afGuiEditor #afGuiEditor-canvas .af-entity-selected > .af-gui-bar > .form-inline > .btn-group > .btn-group > button:focus > span {
-  color: var(--crm-c-link);
+  color: var(--crm-c-info);
 }
 #afGuiEditor .af-gui-add-element-button span {
   display: inline-block;
   width: 18px;
   height: 18px;
-  color: var(--crm-c-link);
+  color: var(--crm-c-info);
 }
 #bootstrap-theme #afGuiEditor .af-gui-button > .btn.disabled .crm-editable-enabled:hover:not(:focus) {
   border-color: var(--crm-c-background2) !important;
@@ -430,7 +426,7 @@ af-gui-container > .af-gui-bar,
 }
 /* For editing field placeholder text */
 #afGuiEditor .af-gui-field-input input[type=text].form-control {
-  color: var(--crm-c-text);
+  color: var(--crm-c-background5);
 }
 #afGuiEditor .af-gui-field-input-type-number input[type=text].form-control {
   background-image: url('../images/number.png');
@@ -666,7 +662,7 @@ i.crm-i.af-gui-conditional-dialog-move-icon {
   background-color: var(--crm-c-background5);
 }
 #afGuiEditor .af-gui-bar > .form-inline > span {
-  color: var(--crm-c-text);
+  color: var(--crm-c-background5);
   font-style: italic;
 }
 #afGuiEditor .ui-sortable-helper .af-gui-palette-item {

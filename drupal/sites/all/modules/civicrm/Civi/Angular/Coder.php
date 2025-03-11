@@ -74,7 +74,7 @@ class Coder {
 
     switch ($attr) {
       case 'href':
-        if (str_contains($value, '%7B%7B') && str_contains($value, '%7D%7D')) {
+        if (strpos($value, '%7B%7B') !== FALSE && strpos($value, '%7D%7D') !== FALSE) {
           $value = urldecode($value);
         }
         break;

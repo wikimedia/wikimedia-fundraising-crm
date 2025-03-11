@@ -686,7 +686,7 @@ WHERE  table_schema IN ('{$this->db}', '{$civiDB}')";
           $parValue = substr(
             $dao->COLUMN_TYPE, $first + 1, strpos($dao->COLUMN_TYPE, ')') - $first - 1
           );
-          if (!str_contains($parValue, "'")) {
+          if (strpos($parValue, "'") === FALSE) {
             // no quote in value means column length
             \Civi::$statics[__CLASS__]['columnSpecs'][$dao->TABLE_NAME][$dao->COLUMN_NAME]['LENGTH'] = $parValue;
           }
@@ -730,7 +730,7 @@ WHERE  table_schema IN ('{$this->db}', '{$civiDB}')";
           // ignore 'id' column for any spec changes, to avoid any auto-increment mysql errors
           if ($civiTableSpecs[$col]['DATA_TYPE'] != ($logTableSpecs[$col]['DATA_TYPE'] ?? NULL)
             // We won't alter the log if the length is decreased in case some of the existing data won't fit.
-            || ($civiTableSpecs[$col]['LENGTH'] ?? 0) > ($logTableSpecs[$col]['LENGTH'] ?? 0)
+            || CRM_Utils_Array::value('LENGTH', $civiTableSpecs[$col]) > CRM_Utils_Array::value('LENGTH', $logTableSpecs[$col])
           ) {
             // if data-type is different, surely consider the column
             $diff['MODIFY'][] = $col;
@@ -831,7 +831,7 @@ COLS;
     $query = preg_replace("/^  [^`].*$/m", '', $query);
     $engine = strtoupper(empty($this->logTableSpec[$table]['engine']) ? self::ENGINE : $this->logTableSpec[$table]['engine']);
     $engine .= " " . ($this->logTableSpec[$table]['engine_config'] ?? '');
-    if (str_contains($engine, 'ROW_FORMAT')) {
+    if (strpos($engine, 'ROW_FORMAT') !== FALSE) {
       $query = preg_replace("/ROW_FORMAT=\w+/m", '', $query);
     }
     $query = preg_replace("/^\) ENGINE=[^ ]+ /im", ') ENGINE=' . $engine . ' ', $query);

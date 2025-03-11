@@ -96,7 +96,7 @@ function financialacls_civicrm_selectWhereClause($entity, &$clauses) {
       if ($entity === 'Contribution') {
         $unavailableTypes = _financialacls_civicrm_get_inaccessible_financial_types();
         if (!empty($unavailableTypes)) {
-          $clauses['id'][] = 'AND NOT EXISTS (SELECT 1 FROM civicrm_line_item WHERE contribution_id = {id} AND financial_type_id IN (' . implode(',', $unavailableTypes) . '))';
+          $clauses['id'][] = 'NOT IN (SELECT contribution_id FROM civicrm_line_item WHERE contribution_id IS NOT NULL AND financial_type_id IN (' . implode(',', $unavailableTypes) . '))';
         }
       }
       break;
@@ -283,12 +283,12 @@ function financialacls_civicrm_permission(&$permissions) {
       'description' => E::ts('%1 contributions of all types', [1 => $action_ts]),
     ];
   }
-  $financialTypes = CRM_Core_DAO::executeQuery('SELECT id, `name`, label FROM civicrm_financial_type')->fetchAll();
+  $financialTypes = \CRM_Contribute_BAO_Contribution::buildOptions('financial_type_id', 'validate', ['check_permissions' => FALSE]);
   foreach ($financialTypes as $type) {
     foreach ($actions as $action => $action_ts) {
-      $permissions[$action . ' contributions of type ' . $type['name']] = [
-        'label' => E::ts("CiviCRM: %1 contributions of type %2", [1 => $action_ts, 2 => $type['label']]),
-        'description' => E::ts('%1 contributions of type %2', [1 => $action_ts, 2 => $type['label']]),
+      $permissions[$action . ' contributions of type ' . $type] = [
+        'label' => E::ts("CiviCRM: %1 contributions of type %2", [1 => $action_ts, 2 => $type]),
+        'description' => E::ts('%1 contributions of type %2', [1 => $action_ts, 2 => $type]),
         'implied_by' => [$action . ' contributions of all types'],
       ];
     }
@@ -410,7 +410,8 @@ function financialacls_civicrm_fieldOptions($entity, $field, &$options, $params)
       $cacheKey = 'available_types_' . $context;
       if (!isset(\Civi::$statics['CRM_Financial_BAO_FinancialType'][$cacheKey])) {
         foreach ($options as $finTypeId => $option) {
-          $type = is_string($option) ? $option : $option['name'];
+          // FIXME: Translated labels as names === very bad. See https://lab.civicrm.org/dev/core/-/issues/5419
+          $type = is_string($option) ? $option : $option['label'];
           if (!CRM_Core_Permission::check($actions[$action] . ' contributions of type ' . $type)) {
             unset($options[$finTypeId]);
           }

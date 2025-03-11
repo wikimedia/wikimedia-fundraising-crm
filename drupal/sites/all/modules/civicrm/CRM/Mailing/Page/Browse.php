@@ -314,7 +314,7 @@ class CRM_Mailing_Page_Browse extends CRM_Core_Page {
     $title = $this->get('mailing_name');
     if ($title) {
       $clauses[] = 'name LIKE %1';
-      if (str_contains($title, '%')) {
+      if (strpos($title, '%') !== FALSE) {
         $params[1] = [$title, 'String', FALSE];
       }
       else {

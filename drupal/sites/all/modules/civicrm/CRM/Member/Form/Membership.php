@@ -785,10 +785,14 @@ DESC limit 1");
         );
 
         if (!$startDate) {
-          $startDate = $defaultDates['start_date'] ?? NULL;
+          $startDate = CRM_Utils_Array::value('start_date',
+            $defaultDates
+          );
         }
         if (!$endDate) {
-          $endDate = $defaultDates['end_date'] ?? NULL;
+          $endDate = CRM_Utils_Array::value('end_date',
+            $defaultDates
+          );
         }
 
         //CRM-3724, check for availability of valid membership status.
@@ -908,7 +912,7 @@ DESC limit 1");
    * the selected override option is not 'until date'.
    */
   private function setOverrideDateValue() {
-    if (!CRM_Member_StatusOverrideTypes::isUntilDate($this->_params['is_override'] ?? NULL)) {
+    if (!CRM_Member_StatusOverrideTypes::isUntilDate(CRM_Utils_Array::value('is_override', $this->_params))) {
       $this->_params['status_override_end_date'] = '';
     }
   }
@@ -1394,8 +1398,12 @@ DESC limit 1");
       }
 
       // retrieve the related contribution ID
-      $contributionID = CRM_Member_BAO_MembershipPayment::getLatestContributionIDFromLineitemAndFallbackToMembershipPayment($this->getMembershipID());
-
+      $contributionID = CRM_Core_DAO::getFieldValue(
+        'CRM_Member_DAO_MembershipPayment',
+        $this->getMembershipID(),
+        'contribution_id',
+        'membership_id'
+      );
       // get price fields of chosen price-set
       $priceSetDetails = CRM_Utils_Array::value(
         $this->_priceSetId,

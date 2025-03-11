@@ -15,7 +15,6 @@ use Civi\API\Event\Event;
 use Civi\API\Event\PrepareEvent;
 use Civi\API\Event\RespondEvent;
 use Civi\Api4\Utils\CoreUtil;
-use Civi\Api4\Utils\FormattingUtil;
 use Civi\Core\Service\AutoService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -94,7 +93,7 @@ class HierarchicalEntitySubscriber extends AutoService implements EventSubscribe
         foreach ($whereClause as $index => $clause) {
           if (is_array($clause) && !empty($clause[2]) && empty($clause[3]) && in_array($clause[1], ['=', 'IN'], TRUE) && $clause[0] === $dfkControlName || str_starts_with($clause[0], "$dfkControlName:")) {
             // Lookup pseudoconstant for dfk options
-            $suffix = FormattingUtil::getSuffix($clause[0]) ?? 'id';
+            [, $suffix] = array_pad(explode(':', $clause[0]), 2, 'id');
             $needsExtraDfkQuery = !in_array($dfkOptions[$entityName][$suffix], (array) $clause[2], TRUE);
             $whereClause[$index] = [$dfkControlName, '=', $dfkValue];
           }

@@ -38,10 +38,8 @@ trait MatchParamTrait {
    * Find existing record based on $this->match param
    *
    * @param $record
-   * @return int
-   *   Returns number of existing records (1 or 0)
    */
-  protected function matchExisting(&$record): int {
+  protected function matchExisting(&$record) {
     $primaryKey = CoreUtil::getIdFieldName($this->getEntityName());
     if (empty($record[$primaryKey]) && !empty($this->match)) {
       $where = [];
@@ -68,7 +66,6 @@ trait MatchParamTrait {
         }
       }
     }
-    return empty($record[$primaryKey]) ? 0 : 1;
   }
 
   /**

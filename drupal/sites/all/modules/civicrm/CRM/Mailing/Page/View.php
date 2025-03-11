@@ -138,7 +138,7 @@ class CRM_Mailing_Page_View extends CRM_Core_Page {
     if (!empty($mailing['body_html']) && empty($_GET['text'])) {
       $header = 'text/html; charset=utf-8';
       $content = $mailing['body_html'];
-      if (!str_contains($content, '<head>') && !str_contains($content, '<title>')) {
+      if (strpos($content, '<head>') === FALSE && strpos($content, '<title>') === FALSE) {
         $title = '<head><title>' . $mailing['subject'] . '</title></head>';
       }
     }

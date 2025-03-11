@@ -43,19 +43,15 @@
     {/if}
     {if $rows}
       <div id='mainTabContainer'>
-        <ul role="tablist">
-          <li id='tab_user-profiles' role="tab">
-            <a href='#user-profiles' title='{ts escape='htmlattribute'}User-defined Profile{/ts}'>{ts}User-defined Profiles{/ts}</a>
-          </li>
-          <li id='tab_reserved-profiles' role="tab">
-            <a href='#reserved-profiles' title='{ts escape='htmlattribute'}Reserved Profiles{/ts}'>{ts}Reserved Profiles{/ts}</a>
-          </li>
+        <ul>
+          <li id='tab_user-profiles'>    <a href='#user-profiles'     title='{ts}User-defined Profile{/ts}'>{ts}User-defined Profiles{/ts}</a></li>
+          <li id='tab_reserved-profiles'><a href='#reserved-profiles' title='{ts}Reserved Profiles{/ts}'>{ts}Reserved Profiles{/ts}</a></li>
         </ul>
 
         {* handle enable/disable actions*}
         {include file="CRM/common/enableDisableApi.tpl"}
         {include file="CRM/common/jsortable.tpl"}
-        <div id="user-profiles" role="tabpanel">
+        <div id="user-profiles">
           <div class="crm-content-block">
             <table class="display">
               <thead>
@@ -100,7 +96,7 @@
           </div>
         </div>{* user profile*}
 
-        <div id="reserved-profiles" role="tabpanel">
+        <div id="reserved-profiles">
           <div class="crm-content-block">
             <table class="display">
               <thead>

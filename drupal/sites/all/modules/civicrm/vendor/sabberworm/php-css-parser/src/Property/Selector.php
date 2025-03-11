@@ -12,8 +12,6 @@ class Selector
      * regexp for specificity calculations
      *
      * @var string
-     *
-     * @internal
      */
     const NON_ID_ATTRIBUTES_AND_PSEUDO_CLASSES_RX = '/
         (\.[\w]+)                   # classes
@@ -38,8 +36,6 @@ class Selector
      * regexp for specificity calculations
      *
      * @var string
-     *
-     * @internal
      */
     const ELEMENTS_AND_PSEUDO_ELEMENTS_RX = '/
         ((^|[\s\+\>\~]+)[\w]+   # elements
@@ -53,8 +49,6 @@ class Selector
      * regexp for specificity calculations
      *
      * @var string
-     *
-     * @internal since 8.5.2
      */
     const SELECTOR_VALIDATION_RX = '/
         ^(

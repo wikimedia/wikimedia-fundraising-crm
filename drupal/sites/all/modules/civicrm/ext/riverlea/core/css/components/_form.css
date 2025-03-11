@@ -98,7 +98,6 @@
   border: var(--crm-c-divider);
 }
 .crm-container fieldset:not(.collapsed,
-.crm-collapsible,
 .crm-inactive-dashlet-fieldset,
 .crm-search-admin-edit-columns) {
   padding: var(--crm-fieldset-padding);
@@ -200,10 +199,8 @@ select.crm-error {
   justify-content: center;
   float: left;
 }
-.crm-container .crm-form-number,
-.crm-container select.crm-form-select {
+.crm-container .crm-form-number {
   width: auto; /* resets fixed width on input field with browser default */
-  min-width: auto !important /* vs front.css */;
 }
 
 /* Input size modifiers */
@@ -388,15 +385,6 @@ input.crm-form-checkbox) + label {
   padding: var(--crm-s);
 }
 
-/* Contact dashboard form */
-
-@media (max-width: 991px) {
-  .contact_basic_information-section tr,
-  .contact_basic_information-section td {
-    display: block;
-  }
-}
-
 /* Select2 */
 
 .crm-container .select2-container:not(.select2-container-multi,
@@ -495,13 +483,6 @@ input.crm-form-checkbox) + label {
   border-left: 0;
   background: var(--crm-c-background);
 }
-.select2-results .select2-disabled {
-  background: var(--crm-c-background2);
-  cursor: not-allowed;
-}
-.select2-results .select2-disabled > * {
-  cursor: not-allowed;
-}
 .crm-container .select2-container-multi .select2-choices {
   display: flex;
   flex-flow: wrap;
@@ -564,15 +545,13 @@ input.crm-form-checkbox) + label {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
-.select2-search {
-  padding: var(--crm-s);
-}
 .select2-search::after {
   font-family: "FontAwesome";
   font-style: normal;
   text-rendering: auto;
   font-size: .8em;
-  color: var(--crm-c-text);
+  color: #4d4d69;
+  color: #464354;
   content: "";
   font-size: 14px;
   position: relative;
@@ -584,7 +563,6 @@ input.crm-form-checkbox) + label {
   font-family: var(--crm-font);
   line-height: 20px;
   max-width: 100%;
-  width: 100%;
 }
 .crm-container .select2-results {
   font-size: var(--crm-m2);
@@ -674,6 +652,7 @@ input.crm-form-checkbox) + label {
   padding: 0;
 }
 
+
 /* Dates */
 
 .form-inline:has(.crm-form-date-wrapper) {
@@ -687,8 +666,7 @@ input.crm-form-checkbox) + label {
   flex-flow: wrap;
   gap: var(--crm-flex-gap);
 }
-.crm-container input.crm-form-time,
-#bootstrap-theme .input-group input.crm-form-time {
+.crm-container input.crm-form-time {
   width: 9ch;
 }
 .crm-container input.dateplugin,
@@ -795,7 +773,6 @@ input.crm-form-checkbox) + label {
   cursor: var(--crm-hover-clickable);
   padding: var(--crm-s);
   text-align: center;
-  color: var(--crm-c-text);
 }
 
 /* JQ spinner */
@@ -814,7 +791,7 @@ input.crm-form-checkbox) + label {
 }
 .crm-container .ui-spinner a.ui-spinner-button:hover,
 .crm-container .ui-spinner a.ui-spinner-button:focus {
-  color: var(--crm-c-text-light);
+  color: var(--crm-c-light-text);
 }
 .crm-container .ui-spinner a.ui-spinner-button span::before {
   font-family: "FontAwesome";

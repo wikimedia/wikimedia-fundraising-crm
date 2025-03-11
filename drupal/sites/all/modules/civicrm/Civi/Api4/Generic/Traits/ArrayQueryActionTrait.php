@@ -34,14 +34,16 @@ trait ArrayQueryActionTrait {
     if (in_array('row_count', $this->getSelect())) {
       $result->setCountMatched(count($values));
     }
-    // Set total count before applying limit
-    //
-    // This is kept here for backward compatibility, but could be confusing because
-    // the API behaviour is different with ArrayQueryActionTrait than with DAO
-    // queries. With DAO queries, the rowCount is only the same as the total
-    // matched count in specific cases, whereas with the implementation here we are
-    // setting rowCount explicitly to the matches count, before we apply limit.
-    $result->rowCount = count($values);
+    else {
+      // Set total count before applying limit
+      //
+      // This is kept here for backward compatibility, but could be confusing because
+      // the API behaviour is different with ArrayQueryActionTrait than with DAO
+      // queries. With DAO queries, the rowCount is only the same as the total
+      // matched count in specific cases, whereas with the implementation here we are
+      // setting rowCount explicitly to the matches count, before we apply limit.
+      $result->rowCount = count($values);
+    }
 
     $values = $this->limitArray($values);
     $values = $this->selectArray($values);
@@ -243,24 +245,21 @@ trait ArrayQueryActionTrait {
    * @return array
    */
   protected function selectArray($values) {
-    $select = $this->getSelect();
-    if ($select === ['row_count']) {
+    if ($this->getSelect() === ['row_count']) {
       $values = [['row_count' => count($values)]];
     }
-    elseif ($values && $select) {
+    elseif ($this->getSelect()) {
       // Return only fields specified by SELECT
-      $keys = array_flip($select);
       foreach ($values as &$value) {
-        $value = array_intersect_key($value, $keys);
+        $value = array_intersect_key($value, array_flip($this->getSelect()));
       }
     }
-    elseif ($values) {
+    else {
       // With no SELECT specified, return all values that are keyed by plain field name; omit those with :pseudoconstant suffixes
-      $keysWithSuffixes = array_filter(array_keys(\CRM_Utils_Array::first($values)), fn($key) => str_contains($key, ':'));
-      if ($keysWithSuffixes) {
-        foreach ($values as &$value) {
-          \CRM_Utils_Array::remove($value, $keysWithSuffixes);
-        }
+      foreach ($values as &$value) {
+        $value = array_filter($value, function($key) {
+          return strpos($key, ':') === FALSE;
+        }, ARRAY_FILTER_USE_KEY);
       }
     }
     return $values;

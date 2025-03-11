@@ -171,7 +171,7 @@ class Api4SelectQuery extends Api4Query {
 
       // Expand wildcards in joins (the api wrapper already expanded non-joined wildcards)
       $wildFields = array_filter($select, function($item) {
-        return str_contains($item, '*') && str_contains($item, '.') && !str_contains($item, '(') && !str_contains($item, ' ');
+        return strpos($item, '*') !== FALSE && strpos($item, '.') !== FALSE && strpos($item, '(') === FALSE && strpos($item, ' ') === FALSE;
       });
 
       foreach ($wildFields as $wildField) {
@@ -564,7 +564,7 @@ class Api4SelectQuery extends Api4Query {
         if ($field['entity'] !== $joinEntity && $field['fk_entity'] === $joinEntity) {
           $conditions[] = $this->treeWalkClauses([$name, '=', "$alias.id"], 'ON');
         }
-        elseif (str_starts_with($name, "$alias.") && substr_count($name, '.') === 1 && $field['fk_entity'] === $this->getEntity()) {
+        elseif (strpos($name, "$alias.") === 0 && substr_count($name, '.') === 1 && $field['fk_entity'] === $this->getEntity()) {
           $conditions[] = $this->treeWalkClauses([$name, '=', 'id'], 'ON');
           $aclStack = ['id'];
         }

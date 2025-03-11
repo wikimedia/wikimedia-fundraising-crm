@@ -502,7 +502,7 @@ LEFT JOIN  civicrm_contact scheduledContact ON ( $mailing.scheduled_id = schedul
     $title = $this->_parent->get('mailing_name');
     if ($title) {
       $clauses[] = 'name LIKE %1';
-      if (str_contains($title, '%')) {
+      if (strpos($title, '%') !== FALSE) {
         $params[1] = [$title, 'String', FALSE];
       }
       else {

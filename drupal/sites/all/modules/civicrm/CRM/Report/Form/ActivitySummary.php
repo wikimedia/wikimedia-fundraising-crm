@@ -375,9 +375,9 @@ class CRM_Report_Form_ActivitySummary extends CRM_Report_Form {
             if ($op) {
               $clause = $this->whereClause($field,
                 $op,
-                $this->_params["{$fieldName}_value"] ?? NULL,
-                $this->_params["{$fieldName}_min"] ?? NULL,
-                $this->_params["{$fieldName}_max"] ?? NULL
+                CRM_Utils_Array::value("{$fieldName}_value", $this->_params),
+                CRM_Utils_Array::value("{$fieldName}_min", $this->_params),
+                CRM_Utils_Array::value("{$fieldName}_max", $this->_params)
               );
             }
           }
@@ -686,9 +686,9 @@ class CRM_Report_Form_ActivitySummary extends CRM_Report_Form {
           if (!empty($this->_params['activity_date_time_' . $suffix])) {
             list($from, $to)
               = $this->getFromTo(
-                $this->_params["activity_date_time_relative"] ?? NULL,
-                $this->_params["activity_date_time_from"] ?? NULL,
-                $this->_params["activity_date_time_to"] ?? NULL
+                CRM_Utils_Array::value("activity_date_time_relative", $this->_params),
+                CRM_Utils_Array::value("activity_date_time_from", $this->_params),
+                CRM_Utils_Array::value("activity_date_time_to", $this->_params)
                 );
             $url[] = "activity_date_time_from={$from}&activity_date_time_to={$to}";
             break;

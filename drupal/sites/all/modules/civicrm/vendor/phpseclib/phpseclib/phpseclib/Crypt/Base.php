@@ -611,6 +611,7 @@ abstract class Base
      *
      * @access public
      * @param string $key
+     * @internal Could, but not must, extend by the child Crypt_* class
      */
     function setKey($key)
     {

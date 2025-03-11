@@ -38,7 +38,7 @@ class CRM_Core_I18n_NativeGettext {
     $key = $context . chr(4) . $text;
     $ret = $this->translate($key);
 
-    if (str_contains($ret, "\004")) {
+    if (strpos($ret, "\004") !== FALSE) {
       return $text;
     }
     else {

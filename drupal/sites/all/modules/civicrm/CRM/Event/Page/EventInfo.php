@@ -69,11 +69,11 @@ class CRM_Event_Page_EventInfo extends CRM_Core_Page {
     }
 
     // Add Event Type to $values in case folks want to display it
-    $values['event']['event_type'] = CRM_Event_PseudoConstant::eventType($values['event']['event_type_id']);
+    $values['event']['event_type'] = CRM_Utils_Array::value($values['event']['event_type_id'], CRM_Event_PseudoConstant::eventType());
 
     $this->assign('isShowLocation', $values['event']['is_show_location'] ?? NULL);
 
-    $eventCurrency = $values['event']['currency'] ?? $config->defaultCurrency;
+    $eventCurrency = CRM_Utils_Array::value('currency', $values['event'], $config->defaultCurrency);
     $this->assign('eventCurrency', $eventCurrency);
 
     // show event fees.

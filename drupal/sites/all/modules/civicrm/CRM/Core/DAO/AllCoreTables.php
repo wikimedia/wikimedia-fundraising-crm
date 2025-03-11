@@ -223,7 +223,7 @@ class CRM_Core_DAO_AllCoreTables {
 
   /**
    * Convert possibly underscore separated words to camel case with special handling for 'UF'
-   * e.g custom_field returns CustomField
+   * e.g membership_payment returns MembershipPayment
    *
    * @param string $name
    * @param bool $legacyV3
@@ -244,7 +244,7 @@ class CRM_Core_DAO_AllCoreTables {
     foreach ($fragments as & $fragment) {
       $fragment = ucfirst($fragment);
       // Special case: UFGroup, UFJoin, UFMatch, UFField (if passed in without underscores)
-      if (str_starts_with($fragment, 'Uf') && strlen($name) > 2) {
+      if (strpos($fragment, 'Uf') === 0 && strlen($name) > 2) {
         $fragment = 'UF' . ucfirst(substr($fragment, 2));
       }
     }

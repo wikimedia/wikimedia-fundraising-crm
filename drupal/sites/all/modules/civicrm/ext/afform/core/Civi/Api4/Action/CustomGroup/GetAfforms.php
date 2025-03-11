@@ -48,7 +48,6 @@ class GetAfforms extends \Civi\Api4\Generic\BasicBatchAction {
   protected function getSelect() {
     return ['id', 'name', 'title', 'is_multiple',
       'help_pre', 'help_post', 'extends', 'icon', 'style',
-      'extends_entity_column_value', 'weight',
     ];
   }
 
@@ -62,14 +61,6 @@ class GetAfforms extends \Civi\Api4\Generic\BasicBatchAction {
       ->addWhere('is_active', '=', TRUE)
       ->execute()
       ->column('name');
-
-    // Custom group has no enabled fields; nothing to generate.
-    if (!$item['field_names']) {
-      return [
-        'id' => $item['id'],
-        'forms' => $forms,
-      ];
-    }
 
     // restrict forms other than block to if Admin UI is enabled
     $hasAdminUi = \CRM_Extension_System::singleton()->getMapper()->isActiveModule('civicrm_admin_ui');
@@ -294,34 +285,18 @@ class GetAfforms extends \Civi\Api4\Generic\BasicBatchAction {
       'permission' => ['access all custom data'],
       'title' => $item['title'],
       'icon' => $item['icon'],
-      'summary_weight' => 100 + ($item['weight'] ?? 0),
-      'placement_filters' => [],
     ];
-    $entityIdFilter = \CRM_Utils_String::convertStringToSnakeCase($item['extends']) . '_id';
-    // Place in Contact Summary Tabs
-    if (CoreUtil::isContact($item['extends'])) {
-      // override e.g. "individual_id", we want "contact_id"
-      $entityIdFilter = 'contact_id';
+    if ($item['extends'] === 'Contact') {
       $afform['placement'] = ['contact_summary_tab'];
-      // Add contact_type filter (extends == contact_type, extends_entity_column_value == contact_sub_type)
-      // Note: Afform placement_filters mixes contact_subtype in with contact_type
-      if (!empty($item['extends_entity_column_value'])) {
-        $afform['placement_filters']['contact_type'] = (array) $item['extends_entity_column_value'];
-      }
-      // Only add contact_type if a sub_type wasn't specified
-      elseif ($item['extends'] !== 'Contact') {
-        $afform['placement_filters']['contact_type'] = (array) $item['extends'];
-      }
     }
-    elseif ($item['extends'] === 'Event') {
-      $afform['placement'] = ['event_manage_tab'];
-      // Add event_type filter (extends_entity_column_value == event_type_id)
-      if (!empty($item['extends_entity_column_value'])) {
-        // Convert event_type_id to "event_type" (id -> name)
-        $eventTypes = \Civi::entity('Event')->getOptions('event_type_id');
-        $eventTypes = array_column($eventTypes, 'id', 'name');
-        $afform['placement_filters']['event_type'] = array_keys(array_intersect($eventTypes, $item['extends_entity_column_value']));
-      }
+    elseif (CoreUtil::isContact($item['extends'])) {
+      $afform['placement'] = ['contact_summary_tab'];
+      $afform['summary_contact_type'] = [$item['extends']];
+    }
+    else {
+      // tabs for other entities are placed without any
+      // additional afform meta
+      // @see civicrm_admin_ui_civicrm_tabset
     }
     if ($this->getLayout) {
       // TODO: the template should be a table or grid depending
@@ -333,8 +308,6 @@ class GetAfforms extends \Civi\Api4\Generic\BasicBatchAction {
           'saved_search' => 'Custom_' . $item['name'] . '_Search',
           'display_type' => 'table',
           'search_display' => 'Custom_' . $item['name'] . '_Tab',
-          // 'contact_id', 'event_id', etc.
-          'entity_id_filter' => $entityIdFilter,
         ]
       );
     }

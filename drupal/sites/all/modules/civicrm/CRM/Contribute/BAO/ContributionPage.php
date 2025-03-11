@@ -396,14 +396,11 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
 
       // use either the contribution or membership receipt, based on whether it’s a membership-related contrib or not
       $tokenContext = ['contactId' => (int) $contactID];
-      $modelProps = $values['modelProps'] ?? [];
-      $modelProps['contactID'] = (int) $contactID;
-      if (!empty($values['contribution_id'])) {
-        $modelProps['contributionID'] = $tokenContext['contributionId'] = (int) $values['contribution_id'];
+      if (!empty($tplParams['contributionID'])) {
+        $tokenContext['contributionId'] = $tplParams['contributionID'];
       }
       if (!empty($values['membership_id'])) {
         $tokenContext['membershipId'] = $values['membership_id'];
-        $modelProps['membershipID'] = (int) $values['membership_id'];
       }
       $sendTemplateParams = [
         'workflow' => !empty($values['membership_id']) ? 'membership_online_receipt' : 'contribution_online_receipt',
@@ -412,7 +409,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
         'tokenContext' => $tokenContext,
         'isTest' => $isTest,
         'PDFFilename' => 'receipt.pdf',
-        'modelProps' => $modelProps,
+        'modelProps' => $values['modelProps'] ?? [],
       ];
 
       if ($returnMessageText) {

@@ -121,14 +121,18 @@ class CRM_Contact_Form_Search_Custom_EventAggregate extends CRM_Contact_Form_Sea
 
     $from = $this->from();
 
-    $onLine = $this->_formValues['paid_online'] ?? NULL;
+    $onLine = CRM_Utils_Array::value('paid_online',
+      $this->_formValues
+    );
     if ($onLine) {
       $from .= "
         inner join civicrm_entity_financial_trxn
         on (civicrm_entity_financial_trxn.entity_id = civicrm_participant_payment.contribution_id and civicrm_entity_financial_trxn.entity_table='civicrm_contribution')";
     }
 
-    $showPayees = $this->_formValues['show_payees'] ?? NULL;
+    $showPayees = CRM_Utils_Array::value('show_payees',
+      $this->_formValues
+    );
     if ($showPayees) {
       $select .= ",  GROUP_CONCAT(DISTINCT(civicrm_contact.display_name)) as participant ";
       $from .= " inner join civicrm_contact
@@ -211,7 +215,9 @@ class CRM_Contact_Form_Search_Custom_EventAggregate extends CRM_Contact_Form_Sea
     $clauses[] = "civicrm_participant.status_id in ( 1 )";
     $clauses[] = "civicrm_contribution.is_test = 0";
     $clauses[] = "civicrm_contribution.is_template = 0";
-    $onLine = $this->_formValues['paid_online'] ?? NULL;
+    $onLine = CRM_Utils_Array::value('paid_online',
+      $this->_formValues
+    );
     if ($onLine) {
       $clauses[] = "civicrm_contribution.payment_instrument_id <> 0";
     }
@@ -268,7 +274,9 @@ class CRM_Contact_Form_Search_Custom_EventAggregate extends CRM_Contact_Form_Sea
 
     $from = $this->from();
 
-    $onLine = $this->_formValues['paid_online'] ?? NULL;
+    $onLine = CRM_Utils_Array::value('paid_online',
+      $this->_formValues
+    );
     if ($onLine) {
       $from .= "
         inner join civicrm_entity_financial_trxn

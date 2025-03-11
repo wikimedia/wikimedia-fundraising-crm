@@ -107,6 +107,16 @@ class CRM_Profile_Page_View extends CRM_Core_Page {
           )
         );
       }
+      if (CRM_Core_Permission::ufGroupValid($this->_gid,
+        CRM_Core_Permission::SEARCH
+      )
+      ) {
+        $this->assign('listingURL',
+          CRM_Utils_System::url("civicrm/profile",
+            "force=1&gid={$gidString}"
+          )
+        );
+      }
     }
     else {
       $ufGroups = CRM_Core_BAO_UFGroup::getModuleUFGroup('Profile');
@@ -122,15 +132,20 @@ class CRM_Profile_Page_View extends CRM_Core_Page {
         }
         $profileGroups[] = $profileGroup;
       }
+      $this->assign('listingURL',
+        CRM_Utils_System::url("civicrm/profile",
+          "force=1"
+        )
+      );
     }
 
     $this->assign('groupID', $this->_gid);
+
     $this->assign('profileGroups', $profileGroups);
     $this->assign('recentlyViewed', FALSE);
-    // This is being phased out, but could be set by extensions
-    $this->assign('listingURL', NULL);
 
-    // CRM-6081 Do not set title if there is no content
+    // do not set title if there is no content
+    // CRM-6081
     if (!$anyContent) {
       CRM_Utils_System::setTitle('');
     }

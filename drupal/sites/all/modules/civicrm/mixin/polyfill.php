@@ -74,7 +74,7 @@ return function ($longName, $shortName, $basePath) {
       }
       else {
         $data = $callback();
-        file_put_contents($file, '<' . "?php\nreturn " . var_export($data, TRUE) . ';');
+        file_put_contents($file, '<' . "?php\nreturn " . var_export($data, 1) . ';');
         return $data;
       }
     }

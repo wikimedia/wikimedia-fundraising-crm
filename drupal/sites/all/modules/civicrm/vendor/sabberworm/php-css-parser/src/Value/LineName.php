@@ -56,11 +56,9 @@ class LineName extends ValueList
     }
 
     /**
-     * @param OutputFormat|null $oOutputFormat
-     *
      * @return string
      */
-    public function render($oOutputFormat)
+    public function render(OutputFormat $oOutputFormat)
     {
         return '[' . parent::render(OutputFormat::createCompact()) . ']';
     }

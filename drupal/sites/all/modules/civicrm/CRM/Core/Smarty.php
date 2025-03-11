@@ -348,7 +348,7 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
       $this->assign($name, $value);
     }
     else {
-      if (!str_contains($currentValue, $value)) {
+      if (strpos($currentValue, $value) === FALSE) {
         $this->assign($name, $currentValue . $value);
       }
     }
@@ -512,30 +512,30 @@ class CRM_Core_Smarty extends CRM_Core_SmartyCompatibility {
     if ($esc_type === 'htmlall') {
       // 'htmlall' is the nothing-specified default.
       // Don't escape things we think quickform added.
-      if (str_starts_with($string, '<input')
-        || str_starts_with($string, '<select')
+      if (strpos($string, '<input') === 0
+        || strpos($string, '<select') === 0
         // Not handling as yet but these ones really should get some love.
-        || str_starts_with($string, '<label')
-        || str_starts_with($string, '<button')
-        || str_starts_with($string, '<span class="crm-frozen-field">')
-        || str_starts_with($string, '<textarea')
+        || strpos($string, '<label') === 0
+        || strpos($string, '<button') === 0
+        || strpos($string, '<span class="crm-frozen-field">') === 0
+        || strpos($string, '<textarea') === 0
 
         // The ones below this point are hopefully here short term.
-        || str_starts_with($string, '<a')
+        || strpos($string, '<a') === 0
         // Message templates screen
-        || str_starts_with($string, '<span><a href')
+        || strpos($string, '<span><a href') === 0
         // Not sure how big a pattern this is - used in Pledge view tab
         // not sure if it needs escaping
-        || str_starts_with($string, ' action="/civicrm/')
+        || strpos($string, ' action="/civicrm/') === 0
         // eg. Tag edit page, civicrm/admin/financial/financialType/accounts?action=add&reset=1&aid=1
-        || str_starts_with($string, ' action="" method="post"')
+        || strpos($string, ' action="" method="post"') === 0
         // This seems to be urls...
-        || str_starts_with($string, '/civicrm/')
+        || strpos($string, '/civicrm/') === 0
         // Validation error message - eg. <span class="crm-error">Tournament Fees is a required field.</span>
         || strpos($string, '
     <span class="crm-error">') === 0
         // e.g from participant tab class="action-item" href=/civicrm/contact/view/participant?reset=1&amp;action=add&amp;cid=142&amp;context=participant
-        || str_starts_with($string, 'class="action-item" href=/civicrm/"')
+        || strpos($string, 'class="action-item" href=/civicrm/"') === 0
       ) {
         // Do not escape the above common patterns.
         return $string;

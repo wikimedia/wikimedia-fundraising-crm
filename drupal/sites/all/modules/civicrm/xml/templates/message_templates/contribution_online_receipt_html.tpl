@@ -291,7 +291,7 @@
      {if !empty($billingName)}
        <tr>
         <th {$headerStyle}>
-         {ts}Billing Address{/ts}
+         {ts}Billing Name and Address{/ts}
         </th>
        </tr>
        <tr>

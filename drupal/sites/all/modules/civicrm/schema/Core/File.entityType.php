@@ -43,7 +43,7 @@ return [
       'title' => ts('Path'),
       'sql_type' => 'varchar(255)',
       'input_type' => 'Text',
-      'description' => ts('Location of file on disk relative to $config.customFileUploadDir'),
+      'description' => ts('uri of the file on disk'),
       'add' => '1.5',
     ],
     'document' => [

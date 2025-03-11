@@ -768,7 +768,7 @@ class CRM_Export_BAO_ExportProcessor {
       return $this->getQueryFields()[$field]['title'];
     }
     elseif ($this->isExportPaymentFields() && array_key_exists($field, $this->getcomponentPaymentFields())) {
-      return $this->getcomponentPaymentFields()[$field]['title'];
+      return CRM_Utils_Array::value($field, $this->getcomponentPaymentFields())['title'];
     }
     else {
       return $field;
@@ -840,7 +840,7 @@ class CRM_Export_BAO_ExportProcessor {
       // always add contact_a.id to the ORDER clause
       // so the order is deterministic
       //CRM-15301
-      if (!str_contains('contact_a.id', $order)) {
+      if (strpos('contact_a.id', $order) === FALSE) {
         $order .= ", contact_a.id";
       }
 
@@ -1182,7 +1182,7 @@ class CRM_Export_BAO_ExportProcessor {
         'componentPaymentField_transaction_id' => 'trxn_id',
         'componentPaymentField_received_date' => 'receive_date',
       ];
-      return $paymentData[$payFieldMapper[$field]] ?? '';
+      return CRM_Utils_Array::value($payFieldMapper[$field], $paymentData, '');
     }
     else {
       // if field is empty or null
@@ -1360,10 +1360,11 @@ class CRM_Export_BAO_ExportProcessor {
    */
   public function setRelationshipReturnProperties($value, $relationshipKey) {
     $relationField = $value['name'];
+    $relIMProviderId = NULL;
     $relLocTypeId = $value['location_type_id'] ?? NULL;
     $locationName = CRM_Core_PseudoConstant::getName('CRM_Core_BAO_Address', 'location_type_id', $relLocTypeId);
-    $relPhoneTypeId = $value['phone_type_id'] ?? ($locationName ? 'Primary' : NULL);
-    $relIMProviderId = $value['im_provider_id'] ?? ($locationName ? 'Primary' : NULL);
+    $relPhoneTypeId = CRM_Utils_Array::value('phone_type_id', $value, ($locationName ? 'Primary' : NULL));
+    $relIMProviderId = CRM_Utils_Array::value('im_provider_id', $value, ($locationName ? 'Primary' : NULL));
     if (in_array($relationField, $this->getValidLocationFields()) && $locationName) {
       if ($relationField === 'phone') {
         $this->relationshipReturnProperties[$relationshipKey]['location'][$locationName]['phone-' . $relPhoneTypeId] = 1;
@@ -1448,7 +1449,7 @@ class CRM_Export_BAO_ExportProcessor {
       switch ($type) {
         case CRM_Utils_Type::T_INT:
         case CRM_Utils_Type::T_BOOLEAN:
-          if (in_array($fieldSpec['data_type'] ?? NULL, ['Country', 'StateProvince', 'ContactReference'])) {
+          if (in_array(CRM_Utils_Array::value('data_type', $fieldSpec), ['Country', 'StateProvince', 'ContactReference'])) {
             return "`$fieldName` text";
           }
           // some of those will be exported as a (localisable) string
@@ -1464,7 +1465,7 @@ class CRM_Export_BAO_ExportProcessor {
           switch ($dataType) {
             case 'String':
               // May be option labels, which could be up to 512 characters
-              $length = max(512, $fieldSpec['text_length'] ?? 0);
+              $length = max(512, CRM_Utils_Array::value('text_length', $fieldSpec));
               return "`$fieldName` varchar($length)";
 
             case 'Memo':
@@ -1682,7 +1683,7 @@ class CRM_Export_BAO_ExportProcessor {
             foreach ($relationValue as $ltype => $val) {
               foreach (array_keys($val) as $fld) {
                 $type = explode('-', $fld);
-                $this->addOutputSpecification($type[0], $key, $ltype, $type[1] ?? NULL);
+                $this->addOutputSpecification($type[0], $key, $ltype, CRM_Utils_Array::value(1, $type));
               }
             }
           }
@@ -1699,7 +1700,7 @@ class CRM_Export_BAO_ExportProcessor {
             if (!empty($type[1])) {
               $daoFieldName .= "-" . $type[1];
             }
-            $this->addOutputSpecification($actualDBFieldName, NULL, $locationType, $type[1] ?? NULL);
+            $this->addOutputSpecification($actualDBFieldName, NULL, $locationType, CRM_Utils_Array::value(1, $type));
             $outputColumns[$daoFieldName] = TRUE;
           }
         }
@@ -1821,7 +1822,7 @@ class CRM_Export_BAO_ExportProcessor {
     $exportMode = $this->getExportMode();
     $queryMode = $this->getQueryMode();
     if (!empty($returnProperties['tags']) || !empty($returnProperties['groups']) ||
-      !empty($returnProperties['notes']) ||
+      CRM_Utils_Array::value('notes', $returnProperties) ||
       // CRM-9552
       ($queryMode & CRM_Contact_BAO_Query::MODE_CONTACTS && $query->_useGroupBy)
     ) {

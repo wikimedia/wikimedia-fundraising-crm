@@ -97,15 +97,12 @@ class BasicReplaceAction extends AbstractBatchAction {
     $idField = $this->getSelect()[0];
     $toDelete = array_diff_key(array_column($items, NULL, $idField), array_flip(array_column($this->records, $idField)));
 
-    /** @var AbstractSaveAction $saveAction */
     $saveAction = \Civi\API\Request::create($this->getEntityName(), 'save', ['version' => 4]);
-    $saveResult = $saveAction
+    $saveAction
       ->setCheckPermissions($this->getCheckPermissions())
       ->setReload($this->reload)
-      ->setRecords($this->records)
-      ->execute();
-    $result->exchangeArray((array) $saveResult);
-    $result->setCountMatched($saveResult->countMatched());
+      ->setRecords($this->records);
+    $result->exchangeArray((array) $saveAction->execute());
 
     if ($toDelete) {
       $result->deleted = (array) civicrm_api4($this->getEntityName(), 'delete', [

@@ -766,7 +766,7 @@ class CRM_Financial_BAO_Order {
    */
   public function setPriceSelectionFromUnfilteredInput(array $input): void {
     foreach ($input as $fieldName => $value) {
-      if (str_starts_with($fieldName, 'price_')) {
+      if (strpos($fieldName, 'price_') === 0) {
         $fieldID = substr($fieldName, 6);
         if (is_numeric($fieldID)) {
           $this->priceSelection[$fieldName] = $value;

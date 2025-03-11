@@ -264,7 +264,9 @@ class CRM_Price_Page_Set extends CRM_Core_Page {
       $priceSet[$dao->id] = [];
       CRM_Core_DAO::storeValues($dao, $priceSet[$dao->id]);
 
-      $compIds = explode(CRM_Core_DAO::VALUE_SEPARATOR, $priceSet[$dao->id]['extends'] ?? '');
+      $compIds = explode(CRM_Core_DAO::VALUE_SEPARATOR,
+        CRM_Utils_Array::value('extends', $priceSet[$dao->id])
+      );
       $extends = [];
       //CRM-10225
       foreach ($compIds as $compId) {

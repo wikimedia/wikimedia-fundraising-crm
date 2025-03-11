@@ -41,7 +41,7 @@ class CRM_Upgrade_Page_Upgrade extends CRM_Core_Page {
       CRM_Utils_System::url('civicrm/dashboard', 'reset=1')
     );
 
-    $action = $_REQUEST['action'] ?? 'intro';
+    $action = CRM_Utils_Array::value('action', $_REQUEST, 'intro');
     switch ($action) {
       case 'intro':
         $this->runIntro();
@@ -105,6 +105,11 @@ class CRM_Upgrade_Page_Upgrade extends CRM_Core_Page {
         [1 => $currentVer, 2 => $latestVer]
       ));
       $template->assign('upgraded', FALSE);
+    }
+
+    // Render page header
+    if (!defined('CIVICRM_UF_HEAD') && $region = CRM_Core_Region::instance('html-header', FALSE)) {
+      CRM_Utils_System::addHTMLHead($region->render(''));
     }
 
     $content = $template->fetch('CRM/common/success.tpl');
@@ -179,6 +184,11 @@ class CRM_Upgrade_Page_Upgrade extends CRM_Core_Page {
     $template->assign('upgraded', TRUE);
     $template->assign('newVersion', $latestVer);
     $template->assign('sid', CRM_Utils_System::getSiteID());
+
+    // Render page header
+    if (!defined('CIVICRM_UF_HEAD') && $region = CRM_Core_Region::instance('html-header', FALSE)) {
+      CRM_Utils_System::addHTMLHead($region->render(''));
+    }
 
     $content = $template->fetch('CRM/common/success.tpl');
     echo CRM_Utils_System::theme($content, $this->_print, TRUE);

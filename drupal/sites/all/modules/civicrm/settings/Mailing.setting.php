@@ -34,7 +34,6 @@ return [
     'is_contact' => 0,
     'description' => ts('When CiviMail is enabled, users who "subscribe" to a group from a profile Group(s) checkbox will receive a confirmation email. They must respond (opt-in) before they are added to the group.'),
     'help_text' => NULL,
-    'settings_pages' => ['mailing' => ['weight' => 10]],
   ],
   'no_reply_email_address' => [
     'group_name' => 'Mailing Preferences',
@@ -51,7 +50,6 @@ return [
     'description' => '',
     'help_text' => NULL,
     'help' => ['id' => 'no_reply_email_address'],
-    'settings_pages' => ['mailing' => ['weight' => 20]],
   ],
   'track_civimail_replies' => [
     'group_name' => 'Mailing Preferences',
@@ -67,7 +65,6 @@ return [
     'description' => ts('If checked, mailings will default to tracking replies using VERP-ed Reply-To.'),
     'help_text' => NULL,
     'validate_callback' => 'CRM_Core_BAO_Setting::validateBoolSetting',
-    'settings_pages' => ['mailing' => ['weight' => 30]],
   ],
   'civimail_workflow' => [
     'group_name' => 'Mailing Preferences',
@@ -82,7 +79,6 @@ return [
     'is_contact' => 0,
     'description' => ts('Drupal-only. Rules module must be enabled (beta feature - use with caution).'),
     'help_text' => NULL,
-    'settings_pages' => ['mailing' => ['weight' => 40]],
   ],
   'civimail_server_wide_lock' => [
     'group_name' => 'Mailing Preferences',
@@ -96,7 +92,6 @@ return [
     'is_domain' => 1,
     'is_contact' => 0,
     'help_text' => NULL,
-    'settings_pages' => ['mailing' => ['weight' => 60]],
   ],
   'civimail_unsubscribe_methods' => [
     'group_name' => 'Mailing Preferences',
@@ -176,7 +171,6 @@ return [
     'is_contact' => 0,
     'description' => ts('Don\'t check for presence of mandatory tokens (domain address; unsubscribe/opt-out) before sending mailings. WARNING: Mandatory tokens are a safe-guard which facilitate compliance with the US CAN-SPAM Act. They should only be disabled if your organization adopts other mechanisms for compliance or if your organization is not subject to CAN-SPAM.'),
     'help_text' => NULL,
-    'settings_pages' => ['mailing' => ['weight' => 90]],
   ],
   'dedupe_email_default' => [
     'group_name' => 'Mailing Preferences',
@@ -191,7 +185,6 @@ return [
     'is_contact' => 0,
     'description' => ts('Set the "dedupe e-mail" option when sending a new mailing to "true" by default.'),
     'help_text' => NULL,
-    'settings_pages' => ['mailing' => ['weight' => 100]],
   ],
   'hash_mailing_url' => [
     'group_name' => 'Mailing Preferences',
@@ -206,7 +199,6 @@ return [
     'is_contact' => 0,
     'description' => ts('If enabled, a randomized hash key will be used to reference the mailing URL in the mailing.viewUrl token, instead of the mailing ID.'),
     'help_text' => NULL,
-    'settings_pages' => ['mailing' => ['weight' => 110]],
   ],
   'civimail_multiple_bulk_emails' => [
     'group_name' => 'Mailing Preferences',
@@ -221,7 +213,6 @@ return [
     'is_contact' => 0,
     'description' => ts('CiviMail will deliver a copy of the email to each bulk email listed for the contact. Enabling this setting will also change the options for the "Email on Hold" field in Advanced Search.'),
     'help_text' => NULL,
-    'settings_pages' => ['mailing' => ['weight' => 60]],
   ],
   'include_message_id' => [
     'group_name' => 'Mailing Preferences',
@@ -235,7 +226,6 @@ return [
     'is_domain' => 1,
     'is_contact' => 0,
     'help_text' => NULL,
-    'settings_pages' => ['mailing' => ['weight' => 70]],
   ],
   'mailerBatchLimit' => [
     'group_name' => 'Mailing Preferences',
@@ -350,7 +340,6 @@ return [
     'is_domain' => 1,
     'is_contact' => 0,
     'help_text' => NULL,
-    'settings_pages' => ['mailing' => ['weight' => 80]],
   ],
   'simple_mail_limit' => [
     'group_name' => 'Mailing Preferences',
@@ -385,7 +374,6 @@ return [
     'description' => ts('Enable this setting to rebuild recipient list automatically during composing mail. Disable will allow you to rebuild recipient manually.'),
     'help_text' => ts('CiviMail automatically fetches recipient list and count whenever mailing groups are included or excluded while composing bulk mail. This phenomena may degrade performance for large sites, so disable this setting to build and fetch recipients for selected groups, manually.'),
     'add' => '4.7.30',
-    'settings_pages' => ['mailing' => ['weight' => 120]],
   ],
   'allow_mail_from_logged_in_contact' => [
     'group_name' => 'Mailing Preferences',
@@ -415,7 +403,6 @@ return [
     'description' => ts('If checked, mailings will have click-through tracking enabled by default.'),
     'help_text' => NULL,
     'add' => '5.27.0',
-    'settings_pages' => ['mailing' => ['weight' => 130]],
   ],
   'open_tracking_default' => [
     'group_name' => 'Mailing Preferences',
@@ -431,7 +418,6 @@ return [
     'description' => ts('If checked, mailings will have open tracking enabled by default.'),
     'help_text' => NULL,
     'add' => '5.27.0',
-    'settings_pages' => ['mailing' => ['weight' => 140]],
   ],
   // dev/cor#1768 Allow mailer sync interval to be configured by the
   // adminstrator.
@@ -468,7 +454,6 @@ return [
     'is_contact' => 0,
     'description' => ts('Controls whether scheduled reminders will attempt to process smarty tokens.'),
     'help_text' => NULL,
-    'settings_pages' => ['mailing' => ['weight' => 150]],
   ],
   'smtp_450_is_permanent' => [
     'group_name' => 'Mailing Preferences',
@@ -485,6 +470,5 @@ return [
     'description' => ts('Consider domains that will not resolve (SMTP Error 450 - class 4.1.2 "Domain not found") as permanent failures.'),
     'help_text' => NULL,
     'help' => ['id' => 'smtp_450_is_permanent'],
-    'settings_pages' => ['mailing' => ['weight' => 160]],
   ],
 ];

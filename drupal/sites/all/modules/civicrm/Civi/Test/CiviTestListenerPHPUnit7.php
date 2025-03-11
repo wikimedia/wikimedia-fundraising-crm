@@ -60,7 +60,7 @@ class CiviTestListenerPHPUnit7 implements \PHPUnit\Framework\TestListener {
       $this->tx = NULL;
     }
 
-    if ($this->isCiviTest($test)) {
+    if ($this->isCiviTest($test) || $test instanceof \CiviUnitTestCase) {
       \Civi\Test::eventChecker()->start($test);
     }
   }
@@ -68,7 +68,7 @@ class CiviTestListenerPHPUnit7 implements \PHPUnit\Framework\TestListener {
   public function endTest(\PHPUnit\Framework\Test $test, float $time): void {
     $exception = NULL;
 
-    if ($this->isCiviTest($test)) {
+    if ($this->isCiviTest($test) || $test instanceof \CiviUnitTestCase) {
       try {
         \Civi\Test::eventChecker()->stop($test);
       }
@@ -127,7 +127,7 @@ class CiviTestListenerPHPUnit7 implements \PHPUnit\Framework\TestListener {
    * @return bool
    */
   protected function isCiviTest(\PHPUnit\Framework\Test $test) {
-    return $test instanceof HookInterface || $test instanceof HeadlessInterface || $test instanceof \CiviUnitTestCase;
+    return $test instanceof HookInterface || $test instanceof HeadlessInterface;
   }
 
   /**
@@ -251,20 +251,20 @@ class CiviTestListenerPHPUnit7 implements \PHPUnit\Framework\TestListener {
     foreach ($byInterface['HeadlessInterface'] as $className => $nonce) {
       $clazz = new \ReflectionClass($className);
       $docComment = str_replace("\r\n", "\n", $clazz->getDocComment());
-      if (!str_contains($docComment, "@group headless\n")) {
+      if (strpos($docComment, "@group headless\n") === FALSE) {
         echo "WARNING: Class $className implements HeadlessInterface. It should declare \"@group headless\".\n";
       }
-      if (str_contains($docComment, "@group e2e\n")) {
+      if (strpos($docComment, "@group e2e\n") !== FALSE) {
         echo "WARNING: Class $className implements HeadlessInterface. It should not declare \"@group e2e\".\n";
       }
     }
     foreach ($byInterface['EndToEndInterface'] as $className => $nonce) {
       $clazz = new \ReflectionClass($className);
       $docComment = str_replace("\r\n", "\n", $clazz->getDocComment());
-      if (!str_contains($docComment, "@group e2e\n")) {
+      if (strpos($docComment, "@group e2e\n") === FALSE) {
         echo "WARNING: Class $className implements EndToEndInterface. It should declare \"@group e2e\".\n";
       }
-      if (str_contains($docComment, "@group headless\n")) {
+      if (strpos($docComment, "@group headless\n") !== FALSE) {
         echo "WARNING: Class $className implements EndToEndInterface. It should not declare \"@group headless\".\n";
       }
     }

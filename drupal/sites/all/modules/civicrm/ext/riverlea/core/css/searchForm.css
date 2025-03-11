@@ -30,14 +30,12 @@
 
 /* Advanced Search - basic criteria */
 
-@media (min-width: 480px) {
-  .advanced-search-fields {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    width: 100%;
-    column-gap: var(--crm-r);
-    row-gap: var(--crm-s);
-  }
+.advanced-search-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  column-gap: var(--crm-r);
+  row-gap: var(--crm-s);
 }
 .advanced-search-fields .search-field__span-2 {
   grid-column: 1 / span 2;

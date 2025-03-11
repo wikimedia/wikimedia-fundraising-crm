@@ -226,7 +226,6 @@ class CRM_Financial_Form_PaymentEdit extends CRM_Core_Form {
       $newFinancialTrxn['total_amount'] = $this->_values['total_amount'];
       $newFinancialTrxn['currency'] = $this->_values['currency'];
       $newFinancialTrxn['contribution_id'] = $this->getContributionID();
-      $newFinancialTrxn['is_send_contribution_notification'] = FALSE;
       $newFinancialTrxn += $this->getSubmittedCustomFields();
       civicrm_api3('Payment', 'create', $newFinancialTrxn);
     }

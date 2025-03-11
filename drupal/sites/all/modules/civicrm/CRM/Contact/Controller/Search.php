@@ -66,10 +66,10 @@ class CRM_Contact_Controller_Search extends CRM_Core_Controller {
     $qString = CRM_Utils_System::currentPath();
     $args = "reset=1";
     $path = 'civicrm/contact/search/advanced';
-    if (str_contains($qString, 'basic')) {
+    if (strpos($qString, 'basic') !== FALSE) {
       $path = 'civicrm/contact/search/basic';
     }
-    elseif (str_contains($qString, 'builder')) {
+    elseif (strpos($qString, 'builder') !== FALSE) {
       $path = 'civicrm/contact/search/builder';
     }
     $url = CRM_Utils_System::url($path, $args);

@@ -237,7 +237,7 @@ class CRM_Core_EntityTokens extends AbstractTokenSubscriber {
    * @return bool
    */
   protected function isPseudoField(string $fieldName): bool {
-    return str_contains($fieldName, ':');
+    return strpos($fieldName, ':') !== FALSE;
   }
 
   /**

@@ -10,7 +10,6 @@
  */
 
 use Civi\Api4\Contact;
-use Civi\Api4\DedupeRuleGroup;
 use Civi\Api4\Event\AuthorizeRecordEvent;
 use Civi\Token\TokenProcessor;
 
@@ -191,7 +190,7 @@ class CRM_Contact_BAO_Contact extends CRM_Contact_DAO_Contact implements Civi\Co
     // Fixed in 1.5 by making hash optional, only do this in create mode, not update.
     if ((!isset($contact->hash) || !$contact->hash) && !$contact->id) {
       $allNull = FALSE;
-      $contact->hash = bin2hex(random_bytes(16));
+      $contact->hash = md5(uniqid(rand(), TRUE));
     }
 
     // Even if we don't need $employerId, it's important to call getFieldValue() before
@@ -1661,7 +1660,7 @@ WHERE     civicrm_contact.id = " . CRM_Utils_Type::escape($id, 'Integer');
 
     $multipleFields = ['website' => 'url'];
     foreach ($fields as $name => $dontCare) {
-      if (str_contains($name, '-')) {
+      if (strpos($name, '-') !== FALSE) {
         [$fieldName, $id, $type] = CRM_Utils_System::explode('-', $name, 3);
 
         if (!in_array($fieldName, $multipleFields)) {
@@ -2190,7 +2189,7 @@ ORDER BY civicrm_email.is_primary DESC";
           if (isset($params[$key . '-provider_id'])) {
             $data['im'][$loc]['provider_id'] = $params[$key . '-provider_id'];
           }
-          if (str_contains($key, '-provider_id')) {
+          if (strpos($key, '-provider_id') !== FALSE) {
             $data['im'][$loc]['provider_id'] = $params[$key];
           }
           else {
@@ -3077,9 +3076,9 @@ LEFT JOIN civicrm_email    ON ( civicrm_contact.id = civicrm_email.contact_id )
         if (in_array($values['ref'], ['view-contact', 'edit-contact'])) {
           $contextMenu['primaryActions'][$key] = [
             'title' => $values['title'],
-            'ref' => $values['ref'] ?? $key,
+            'ref' => $values['ref'],
             'class' => $values['class'] ?? NULL,
-            'key' => $values['key'] ?? $key,
+            'key' => $values['key'],
             'weight' => $values['weight'],
           ];
           continue;
@@ -3093,11 +3092,11 @@ LEFT JOIN civicrm_email    ON ( civicrm_contact.id = civicrm_email.contact_id )
         }
         $contextMenu['moreActions'][$values['weight']] = [
           'title' => $values['title'],
-          'ref' => $values['ref'] ?? $key,
+          'ref' => $values['ref'],
           'href' => $values['href'] ?? NULL,
           'tab' => $values['tab'] ?? NULL,
           'class' => $values['class'] ?? NULL,
-          'key' => $values['key'] ?? $key,
+          'key' => $values['key'],
           'weight' => $values['weight'],
         ];
       }
@@ -3116,12 +3115,12 @@ LEFT JOIN civicrm_email    ON ( civicrm_contact.id = civicrm_email.contact_id )
           }
           $contextMenu['otherActions'][$value['weight']] = [
             'title' => $value['title'],
-            'ref' => $value['ref'] ?? $key,
+            'ref' => $value['ref'],
             'href' => $value['href'] ?? NULL,
             'tab' => $value['tab'] ?? NULL,
             'class' => $value['class'] ?? NULL,
             'icon' => $value['icon'] ?? NULL,
-            'key' => $value['key'] ?? $key,
+            'key' => $value['key'],
             'weight' => $value['weight'],
           ];
         }
@@ -3471,33 +3470,16 @@ LEFT JOIN civicrm_address ON ( civicrm_address.contact_id = civicrm_contact.id )
       'ids' => [],
       'handled' => FALSE,
     ];
-    $checkPermission = $dedupeParams['check_permission'] ?? TRUE;
-    // This may no longer be required - see https://github.com/civicrm/civicrm-core/pull/13176
-    $dedupeParams = array_filter($dedupeParams);
-    if (empty($dedupeParams)) {
-      // If $params is empty there is zero reason to proceed.
-      return [];
-    }
-    if (empty($dedupeParams['rule_group_id'])) {
-      $dedupeParams['rule_group_id'] = DedupeRuleGroup::get(FALSE)
-        ->addWhere('contact_type', '=', $dedupeParams['contact_type'])
-        ->addWhere('used', '=', $dedupeParams['rule'])
-        ->addSelect('id')
-        ->execute()->first()['id'];
-    }
-    $nonMatchFields = ['contact_type', 'rule', 'excluded_contact_ids', 'rule_group_id', 'check_permission'];
-    $matchParams = $dedupeParams['match_params'] ?? array_diff_key($dedupeParams, array_fill_keys($nonMatchFields, TRUE));
-    // Although dedupe_params is a += that is not because it might have additional data but
-    // rather because the legacy array was less nested (ie everything in match_params was at the top level).
-    $dedupeParams += [
-      'contact_type' => NULL,
-      'rule' => NULL,
-      'excluded_contact_ids' => [],
-      'check_permission' => (bool) $checkPermission,
-      'match_params' => $matchParams,
-    ];
-    $dedupeParams += $dedupeParams['match_params'];
     CRM_Utils_Hook::findDuplicates($dedupeParams, $dedupeResults, $contextParams);
+    if (!$dedupeResults['handled']) {
+      $dedupeParams += [
+        'contact_type' => NULL,
+        'rule' => NULL,
+        'rule_group_id' => NULL,
+        'excluded_contact_ids' => [],
+      ];
+      $dedupeResults['ids'] = CRM_Dedupe_Finder::dupesByParams($dedupeParams, $dedupeParams['contact_type'], $dedupeParams['rule'], $dedupeParams['excluded_contact_ids'], $dedupeParams['rule_group_id']);
+    }
     return $dedupeResults['ids'] ?? [];
   }
 

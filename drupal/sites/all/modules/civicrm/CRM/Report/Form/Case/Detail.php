@@ -471,7 +471,7 @@ class CRM_Report_Form_Case_Detail extends CRM_Report_Form {
                 $op,
                 $this->_params["{$fieldName}_value"] ?? NULL,
                 $this->_params["{$fieldName}_min"] ?? NULL,
-                $this->_params["{$fieldName}_max"] ?? NULL
+                CRM_Utils_Array::value("{$fieldName}_max", $this->_params)
               );
             }
           }
