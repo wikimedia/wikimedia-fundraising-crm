@@ -83,17 +83,19 @@ class Import {
         $mappedRow['Contact']['contact_type'] = $organizationName ? 'Organization' : 'Individual';
       }
 
-      if (empty($mappedRow['Contribution']['id']) && empty($mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
-        // Generate a transaction ID so that we don't import the same rows multiple times
-        $mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
-      }
+      if (empty($mappedRow['Contribution']['id'])) {
+        if (empty($mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
+          // Generate a transaction ID so that we don't import the same rows multiple times
+          $mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
+        }
 
-      if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
-        $mappedRow['Contribution']['contribution_extra.gateway'] = self::getGateway($userJobID);
-      }
-      $existingContributionID = ContributionHelper::exists($mappedRow['Contribution']['contribution_extra.gateway'], $mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
-      if ($existingContributionID) {
-        throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
+        if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
+          $mappedRow['Contribution']['contribution_extra.gateway'] = self::getGateway($userJobID);
+        }
+        $existingContributionID = ContributionHelper::exists($mappedRow['Contribution']['contribution_extra.gateway'], $mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
+        if ($existingContributionID) {
+          throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
+        }
       }
 
       if (!empty($mappedRow['SoftCreditContact'])) {
