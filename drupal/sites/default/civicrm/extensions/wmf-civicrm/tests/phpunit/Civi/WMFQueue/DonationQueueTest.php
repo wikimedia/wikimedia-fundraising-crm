@@ -272,6 +272,14 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertNull($pendingEntry, 'Should have deleted pending DB entry');
   }
 
+  public function testDuplicateTrxnIDHandling(): void {
+    $existing = $this->createContribution(['trxn_id' => 'GLOBALCOLLECT abc']);
+    \CRM_Core_DAO::executeQuery('UPDATE wmf_contribution_extra SET gateway = "" WHERE gateway_txn_id = "abc"');
+    $this->processDonationMessage(['gateway_txn_id' => 'abc']);
+    $this->assertLoggedAlertThatContains('Message was removed from queue `test` and sent to the damaged message queue');
+    $this->assertStringContainsString('Duplicate error - existing contribution record(s) have a matching Transaction ID or Invoice ID. Contribution record ID(s) are: ' . $existing['id'], $this->getLoggerRecordsAsString());
+  }
+
   /**
    * @throws \JsonException
    */

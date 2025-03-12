@@ -130,7 +130,16 @@ abstract class QueueConsumer extends BaseQueueConsumer {
     }
 
     if (!$ex->isNoEmail() && !$requeued) {
-      wmf_common_failmail('wmf_common', '', $ex, $mailableDetails);
+      \Civi::log('wmf')->alert(
+        'Message was removed from queue `{queue}` and sent to the damaged message queue', [
+          'message' => $ex->getMessage(),
+          'original_message' => $ex->getPrevious() ? $ex->getPrevious()->getMessage() : '',
+          'subject' => 'Removal : of ' . $ex->type . ' from ' . $this->queueName . " " . gethostname() . " " . __CLASS__,
+          'details' => $mailableDetails,
+          'queue' => $this->queueName,
+          'consumer' => __CLASS__,
+        ]
+      );
     }
 
     if ($ex->isFatal()) {

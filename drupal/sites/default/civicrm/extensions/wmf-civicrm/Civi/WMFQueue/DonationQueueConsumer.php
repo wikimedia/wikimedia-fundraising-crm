@@ -382,8 +382,9 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       }
       throw new WMFException(
         WMFException::INVALID_MESSAGE,
-        'Cannot create contribution, civi error!',
-        $e->getErrorData()
+        'Cannot create contribution',
+        $e->getErrorData(),
+        $e
       );
     }
   }
