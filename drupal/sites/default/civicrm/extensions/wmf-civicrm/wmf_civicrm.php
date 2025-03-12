@@ -582,13 +582,20 @@ function find_damaged_queue(\CRM_Queue_Queue $original): \CRM_Queue_Queue {
   ]);
 }
 
-function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$outcome, ?\Throwable $exception) {
+/**
+ * @throws \Civi\Core\Exception\DBQueryException
+ */
+function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$outcome, ?\Throwable $exception): void {
   $message = "Queue item from {$queue->getName()} with id={$item->id} failed with exception=\"{$exception->getMessage()}\"";
   Civi::log('wmf')->error($message);
 
   if ($outcome === 'abort' && !empty($item)) {
     $mailableDetails = $message . ", aborted and moved to the dedicated damaged queue";
-    wmf_common_failmail('WMFQueues', '', $exception, $mailableDetails);
+    $subject = 'Fail Mail from coworker queue ' . $queue->getName() . ' item ' . $item->id . ': ' . gethostname();
+    \Civi::log('wmf')->alert(
+      $subject,
+      ['message' => $mailableDetails, 'subject' => $subject]
+    );
 
     \CRM_Core_DAO::executeQuery('UPDATE civicrm_queue_item SET queue_name = %1 WHERE id = %2', [
       1 => [find_damaged_queue($queue)->getName(), 'String'],
@@ -597,7 +604,6 @@ function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$ou
     $outcome = 'retry';
   }
 }
-
 
 /**
  * Listener for hook defined in CRM_SmashPig_Hook::smashpigOutputStats
