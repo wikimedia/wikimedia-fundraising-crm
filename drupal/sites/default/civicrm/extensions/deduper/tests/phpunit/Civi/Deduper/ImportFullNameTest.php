@@ -84,7 +84,7 @@ class ImportFullNameTest extends TestCase implements HeadlessInterface, HookInte
     $this->createImportSource();
     $importMappings = [
       [
-        'name' => 'full_name',
+        'name' => 'contact.full_name',
         'default_value' => NULL,
         'column_number' => 0,
         'entity_data' => [],

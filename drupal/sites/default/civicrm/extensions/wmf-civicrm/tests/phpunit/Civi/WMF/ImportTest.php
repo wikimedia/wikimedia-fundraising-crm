@@ -167,7 +167,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   public function testImportDuplicateContactMatches(): void {
     $this->createIndividual(['email_primary.email' => 'jane@example.com']);
     $this->createIndividual(['email_primary.email' => 'jane@example.com'], 'duplicate');
-    $data = $this->setupImport(['organization_name' => '', 'contribution_contact_id' => '']);
+    $data = $this->setupImport(['organization_name' => '', 'contact_id' => '']);
     $this->runImport($data, 'Individual', 'save');
     $import = (array) Import::get($this->userJobID)
       ->setSelect(['_status_message', '_status'])
@@ -202,7 +202,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       'last_name' => 'Doe',
       'employer_id' => $this->ids['Contact']['organization'],
     ], 'individual_2');
-    $data = $this->setupImport(['contact_id' => ""]);
+    $data = $this->setupImport(['soft_credit.contact.id' => ""]);
     $this->fillImportRow($data);
     $this->runImport($data);
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
@@ -210,7 +210,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertStringContainsString('Multiple contact matches with employer connection: ', $import[0]['_status_message']);
 
     // Re-run with the contact ID specified
-    Import::update($this->userJobID)->setValues(['contact_id' => $this->ids['Contact']['individual_2']])->addWhere('_id', '=', 1)->execute();
+    Import::update($this->userJobID)->setValues(['soft_credit__contact__id' => $this->ids['Contact']['individual_2']])->addWhere('_id', '=', 1)->execute();
     $this->runImport($data);
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
     $this->assertEquals('soft_credit_imported', $import[0]['_status']);
@@ -244,7 +244,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   public function testImportDuplicateAnonymous(): void {
     $this->createOrganization();
     $this->ensureAnonymousUserExists();
-    $data = $this->setupImport(['contribution_extra__gateway_txn_id' => '', 'email_primary.email' => '', 'check_number' => 123456, 'first_name' => 'Anonymous', 'last_name' => 'Anonymous']);
+    $data = $this->setupImport(['contribution_extra__gateway_txn_id' => '', 'contact.email_primary.email' => '', 'check_number' => 123456, 'first_name' => 'Anonymous', 'last_name' => 'Anonymous']);
     $this->fillImportRow($data);
     $this->runImport($data, 'Individual');
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
@@ -263,10 +263,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $data = [
       'financial_type_id' => 'Engage',
       'total_amount' => 50,
-      'contribution_contact_id' => $this->ids['Organization'],
+      'contact_id' => $this->ids['Organization'],
       'first_name' => 'Jane',
       'last_name' => 'Doe',
-      'email_primary.email' => 'jane@example.com',
+      'contact.email_primary.email' => 'jane@example.com',
     ];
     $this->createImportTable($data);
     $this->runImport($data);
@@ -286,7 +286,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportIndividualWithSoftCredit(): void {
-    $data = $this->setupImport(['email_primary.email' => '']);
+    $data = $this->setupImport(['contact.email_primary.email' => '']);
 
     $contributionID = $this->createSoftCreditConnectedContacts();
 
@@ -321,7 +321,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     ], 'individual_1');
     $data = $this->setupImport([
       'trxn_id' => 'abc',
-      'full_name' => 'Jane Doe',
+      'contact.full_name' => 'Jane Doe',
       'total_amount' => '50',
       'organization_name' => '',
       'first_name' => '',
@@ -447,7 +447,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       '',
       'first_name',
       'last_name',
-      'source',
+      'contact.source',
       'organization_id',
     ], TRUE);
     $this->runImport($importFields, 'Individual');
@@ -476,10 +476,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $data = [
       'financial_type_id' => 'Stock',
       'total_amount' => 50,
-      'contribution_contact_id' => $this->ids['Contact']['jane_doe'],
+      'contact_id' => $this->ids['Contact']['jane_doe'],
       'first_name' => 'Jane',
       'last_name' => 'Doe',
-      'email_primary.email' => 'jane@example.com',
+      'contact.email_primary.email' => 'jane@example.com',
       'receive_date' => '2024-01-31 00:00:00',
     ];
     $this->createImportTable($data);
@@ -596,36 +596,35 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    */
   private function runImport(array $data, string $mainContactType = 'Organization', string $contactAction = 'select'): void {
     $softCreditTypeID = $this->getEmploymentSoftCreditType();
+    $softCreditEntityParams = ['soft_credit' => ['soft_credit_type_id' => $softCreditTypeID]];
     $importMappings = [];
     foreach (array_keys($data) as $index => $columnName) {
       switch ($columnName) {
         case 'organization_name':
           $importMappings[] = [
-            'name' => $mainContactType === 'Organization' ? 'organization_name' : 'soft_credit.contact.organization_name',
+            'name' => $mainContactType === 'Organization' ? 'contact.organization_name' : 'soft_credit.contact.organization_name',
             'default_value' => NULL,
             'column_number' => $index,
-            'entity_data' => $mainContactType === 'Organization' ? [] : ['soft_credit' => ['soft_credit_type_id' => $softCreditTypeID]],
+            'entity_data' => $mainContactType === 'Organization' ? [] : $softCreditEntityParams,
           ];
           break;
 
         case 'organization_id':
           $importMappings[] = [
-            'name' => $mainContactType === 'Organization' ? 'id' : 'soft_credit.contact.id',
+            'name' => $mainContactType === 'Organization' ? 'contact.id' : 'soft_credit.contact.id',
             'default_value' => NULL,
             'column_number' => $index,
             'entity_data' => $mainContactType === 'Organization' ? [] : ['soft_credit' => ['soft_credit_type_id' => $softCreditTypeID]],
           ];
           break;
 
-        case 'contact_id':
-          $columnName = 'id';
         case 'first_name':
         case 'last_name':
           $importMappings[] = [
-            'name' => $mainContactType === 'Organization' ? 'soft_credit.contact.' . $columnName : $columnName,
+            'name' => $mainContactType === 'Organization' ? 'soft_credit.contact.' . $columnName : 'contact.' . $columnName,
             'default_value' => NULL,
             'column_number' => $index,
-            'entity_data' => $mainContactType === 'Organization' ? ['soft_credit' => ['soft_credit_type_id' => $softCreditTypeID]] : [],
+            'entity_data' => $mainContactType === 'Organization' ? $softCreditEntityParams : [],
           ];
           break;
 
@@ -634,7 +633,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
             'name' => $columnName,
             'default_value' => NULL,
             'column_number' => $index,
-            'entity_data' => [],
+            'entity_data' => str_starts_with($columnName, 'soft_credit.contact.') ?$softCreditEntityParams : [],
           ];
       }
     }
@@ -804,7 +803,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       'organization_name' => 'Trading Name',
       'first_name' => 'Jane',
       'last_name' => 'Doe',
-      'email_primary.email' => 'jane@example.com',
+      'contact.email_primary.email' => 'jane@example.com',
     ], $data);
     $this->createImportTable($data);
     return $data;
@@ -874,8 +873,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ['name' => 'total_amount'],
       [],
       ['name' => 'donor_advised_fund.owns_donor_advised_for'],
-      ['name' => 'full_name', 'default_value' => 'Squeaky Mouse'],
-      ['name' => 'address_primary.street_address'],
+      ['name' => 'contact.full_name', 'default_value' => 'Squeaky Mouse'],
+      ['name' => 'contact.address_primary.street_address'],
       [],
       ['name' => 'financial_type_id', 'default_value' => 'Engage'],
     ], [
