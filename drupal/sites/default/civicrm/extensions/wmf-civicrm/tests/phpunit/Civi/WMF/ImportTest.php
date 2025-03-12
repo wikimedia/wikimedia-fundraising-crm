@@ -172,7 +172,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $import = (array) Import::get($this->userJobID)
       ->setSelect(['_status_message', '_status'])
       ->execute();
-    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
+    $this->assertEquals('soft_credit_imported', $import[0]['_status'], 'maybe our hack/patch got lost?');
     $contact = Contact::get(FALSE)
       ->addWhere('id', '>', $this->ids['Contact']['duplicate'])
       ->addWhere('contact_type', '=', 'Individual')
@@ -460,7 +460,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     Relationship::update()->setValues(['is_active' => FALSE])->addWhere('contact_id_a', '=', $individualID2)->execute();
     $this->runImport($importFields, 'Individual');
     $import = Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute()->first();
-    $this->assertEquals('soft_credit_imported', $import['_status']);
+    $this->assertEquals('soft_credit_imported', $import['_status'], $import['_status_message']);
   }
 
   /**
