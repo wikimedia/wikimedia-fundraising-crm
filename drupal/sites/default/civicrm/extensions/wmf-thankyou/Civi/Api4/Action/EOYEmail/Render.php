@@ -89,7 +89,12 @@ class Render extends AbstractAction {
   protected function getEndDate(): string {
     if ($this->dateRelative) {
       [$relativeTerm, $unit] = explode('.', $this->dateRelative);
-      return \CRM_Utils_Date::relativeToAbsolute($relativeTerm, $unit)['to'] . ' 23:59:59';
+      $date = \CRM_Utils_Date::relativeToAbsolute($relativeTerm, $unit)['to'];
+      if (strlen($date) === 8) {
+        // Probably never true after https://github.com/civicrm/civicrm-core/commit/2dd704eb980eda359d5dd282b7cf63ff825a3d2b
+        $date .= '235959';
+      }
+      return $date;
     }
     return (string) $this->endDateTime;
   }
