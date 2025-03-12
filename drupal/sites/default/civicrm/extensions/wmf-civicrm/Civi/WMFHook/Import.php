@@ -39,9 +39,8 @@ class Import {
     $rowValues = $event->rowValues;
     $userJobID = $event->userJobID;
     if ($context === 'validate' && empty($mappedRow['Contribution']['total_amount']) &&
-      !empty($mappedRow['Contribution']['contribution_extra.original_currency']
+      !empty($mappedRow['Contribution']['contribution_extra.original_currency'])
       && !empty($mappedRow['Contribution']['contribution_extra.original_amount'])
-      )
     ) {
       // This is strictly in validate mode so the value doesn't matter (although I
       // deliberately made it insanely large so it gets noticed if it IS used).
