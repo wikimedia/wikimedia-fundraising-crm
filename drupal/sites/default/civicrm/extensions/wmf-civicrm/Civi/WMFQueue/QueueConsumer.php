@@ -23,7 +23,7 @@ abstract class QueueConsumer extends BaseQueueConsumer {
     }
     else {
       foreach ($message as $key => $value) {
-        if (substr($key, -2, 2) === 'id') {
+        if (str_ends_with($key, 'id')) {
           $logId = "$key-$value";
           break;
         }
@@ -241,9 +241,9 @@ abstract class QueueConsumer extends BaseQueueConsumer {
     }
     \Civi::log('wmf')->debug('wmf_civicrm: Contribution missing contribution_tracking_id');
 
-    $source = isset($msg['utm_source']) ? $msg['utm_source'] : '..' . $msg['payment_method'];
-    $medium = isset($msg['utm_medium']) ? $msg['utm_medium'] : 'civicrm';
-    $campaign = isset($msg['utm_campaign']) ? $msg['utm_campaign'] : NULL;
+    $source = $msg['utm_source'] ?? '..' . $msg['payment_method'];
+    $medium = $msg['utm_medium'] ?? 'civicrm';
+    $campaign = $msg['utm_campaign'] ?? NULL;
 
     $tracking = [
       'utm_source' => $source,
