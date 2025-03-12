@@ -170,22 +170,22 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     $message = DonationMessage::getWMFMessage($msg);
     $message->setIsPayment(TRUE);
     $importTimerName = $message->isRecurring() ? 'wmf_civicrm_recurring_message_import' : 'wmf_civicrm_contribution_message_import';
-    $this->startTiming($importTimerName);
-    $this->startTiming('verify_and_stage');
+    $this->startAction($importTimerName);
+    $this->startAction('verify_and_stage');
     $msg = $message->normalize();
     $message->validate();
     if (!$message->getContributionTrackingID()) {
       $msg = $this->addContributionTrackingIfMissing($msg);
       $message->setContributionTrackingID(empty($msg['contribution_tracking_id']) ? NULL : $msg['contribution_tracking_id']);
     }
-    $this->stopTiming('verify_and_stage');
+    $this->stopAction('verify_and_stage');
 
-    $this->startTiming('create_contact');
+    $this->startAction('create_contact');
     $contact = WMFContact::save(FALSE)
       ->setMessage($msg)
       ->execute()->first();
     $msg['contact_id'] = $contact['id'];
-    $this->stopTiming("create_contact");
+    $this->stopAction("create_contact");
 
     // Make new recurring record if necessary
     if ($message->isRecurring()) {
@@ -203,9 +203,9 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
           throw new WMFException(WMFException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$msg['subscr_id']}");
         }
         \Civi::log('wmf')->info('Creating new contribution_recur record while processing a subscr_payment');
-        $this->startTiming('message_contribution_recur_insert');
+        $this->startAction('message_contribution_recur_insert');
         $this->importContributionRecur($message, $msg, $msg['contact_id']);
-        $this->stopTiming('message_contribution_recur_insert');
+        $this->stopAction('message_contribution_recur_insert');
       }
       elseif ($message->isPaypal() || $message->isAutoRescue()) {
         // We are looking at a PayPal or auto-rescue payment
@@ -245,9 +245,9 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
 
     // Insert the contribution record.
-    $this->startTiming('message_contribution_insert');
+    $this->startAction('message_contribution_insert');
     $contribution = $this->importContribution($message, $msg);
-    $this->stopTiming('message_contribution_insert');
+    $this->stopAction('message_contribution_insert');
 
     if ($message->getContributionTrackingID()
       && !$message->getRecurringPriorContributionValue('id')) {
@@ -260,7 +260,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
 
     // Need to get this full name before ending the timer
     $uniqueTimerName = ImportStatsCollector::getInstance()->getUniqueNamespace($importTimerName);
-    $this->stopTiming($importTimerName);
+    $this->stopAction($importTimerName);
 
     DonationStatsCollector::getInstance()
       ->addStat("message_import_timers", ImportStatsCollector::getInstance()->getTimerDiff($uniqueTimerName));
@@ -350,17 +350,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       }
       return $contribution_result;
     }
-    catch (DBQueryException $e) {
-      \Civi::log('wmf')->info('wmf_civicrm: SQL Error inserting contribution: {message} {code}', ['message' => $e->getMessage(), 'code' => $e->getCode()]);
-      // Constraint violations occur when data is rolled back to resolve a deadlock.
-      if (in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
-        // @todo - consider just re-throwing here.... it will be caught higher up.
-        throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
-      }
-      // Rethrowing this here will cause it to be caught by the next catch
-      // as it extends CRM_Core_Exception.
-      throw $e;
-    }
     catch (\CRM_Core_Exception $e) {
       \Civi::log('wmf')->info('wmf_civicrm: Error inserting contribution: {message} {code}', ['message' => $e->getMessage(), 'code' => $e->getCode()]);
 
@@ -380,12 +369,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
           );
         }
       }
-      throw new WMFException(
-        WMFException::INVALID_MESSAGE,
-        'Cannot create contribution',
-        $e->getErrorData(),
-        $e
-      );
+      throw $e;
     }
   }
 

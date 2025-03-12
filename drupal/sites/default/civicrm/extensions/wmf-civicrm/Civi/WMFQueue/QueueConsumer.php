@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\WMFHelper\QueueContext;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\SequenceGenerators\Factory;
 use Civi\Core\Exception\DBQueryException;
@@ -18,6 +19,7 @@ use Civi\WMFException\WMFException;
 abstract class QueueConsumer extends BaseQueueConsumer {
 
   protected function handleError(array $message, Exception $ex) {
+    $context = QueueContext::singleton()->pop();
     if (isset($message['gateway']) && isset($message['order_id'])) {
       $logId = "{$message['gateway']}-{$message['order_id']}";
     }
@@ -32,22 +34,28 @@ abstract class QueueConsumer extends BaseQueueConsumer {
         $logId = 'Odd message type';
       }
     }
+    if ($ex instanceof DBQueryException && in_array($ex->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+      $newException = new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $ex->getErrorData());
+      \Civi::log('wmf')->error(
+        'WMFQueue: Message not saved due to database load: {message}',
+        ['message' => $ex->getMessage()]
+      );
+      $this->handleWMFException($message, $newException, $logId, $context);
+      throw $ex;
+    }
+    if ($context && $ex instanceof \CRM_Core_Exception) {
+      // If this was initiated in a queue context then we can use that to generate a WMFException.
+      // We used to require the lower level functions to do this conversion but it only
+      // makes sense for them to do specific handling if they have specific information.
+      $ex = new WMFException(WMFException::INVALID_MESSAGE,  (empty($context['on_error_message']) ? $context['action'] : $context['on_error_message']), $ex->getErrorData(), $ex);
+    }
     if ($ex instanceof WMFException) {
       \Civi::log('wmf')->error(
         'wmf_common: Failure while processing message: {message}',
         ['message' => $ex->getMessage()]
       );
 
-      $this->handleWMFException($message, $ex, $logId);
-    }
-    elseif ($ex instanceof DBQueryException && in_array($ex->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
-      $newException = new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $ex->getErrorData());
-      \Civi::log('wmf')->error(
-        'wmf_common: Message not saved due to database load: {message}',
-        ['message' => $ex->getMessage()]
-      );
-      $this->handleWMFException($message, $newException, $logId);
-      throw $ex;
+      $this->handleWMFException($message, $ex, $logId, NULL, $context);
     }
     else {
       \Civi::log('wmf')->alert(
@@ -205,8 +213,9 @@ abstract class QueueConsumer extends BaseQueueConsumer {
    *
    * @return void
    */
-  public function startTiming(string $action): void {
+  public function startAction(string $action): void {
     ImportStatsCollector::getInstance()->startImportTimer($action);
+    QueueContext::singleton()->push(['action' => $action, 'on_error_message' => 'failure during ' . $action]);
   }
 
   /**
@@ -214,8 +223,9 @@ abstract class QueueConsumer extends BaseQueueConsumer {
    *
    * @return void
    */
-  public function stopTiming(string $action): void {
+  public function stopAction(string $action): void {
     ImportStatsCollector::getInstance()->endImportTimer($action);
+    QueueContext::singleton()->pop();
   }
 
 
