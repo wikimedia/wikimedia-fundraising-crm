@@ -363,33 +363,29 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
     catch (\CRM_Core_Exception $e) {
       \Civi::log('wmf')->info('wmf_civicrm: Error inserting contribution: {message} {code}', ['message' => $e->getMessage(), 'code' => $e->getCode()]);
-      $duplicate = 0;
 
       try {
         if (array_key_exists('invoice_id', $contribution)) {
           \Civi::log('wmf')->info('wmf_civicrm : Checking for duplicate on invoice ID {invoice_id}', ['invoice_id' => $contribution['invoice_id']]);
           $invoice_id = $contribution['invoice_id'];
-          $duplicate = civicrm_api3("Contribution", "getcount", ["invoice_id" => $invoice_id]);
+          if (Contribution::get(FALSE)->addWhere('invoice_id', '=', $invoice_id)->execute()->first()){
+            // We can't retry the insert here because the original API
+            // error has marked the Civi transaction for rollback.
+            // This WMFException code has special handling in the
+            // WmfQueueConsumer that will alter the invoice_id before
+            // re-queueing the message.
+            throw new WMFException(
+              WMFException::DUPLICATE_INVOICE,
+              'Duplicate invoice ID, should modify and retry',
+              $e->getErrorData()
+            );
+          }
         }
-        if ($duplicate > 0) {
-          // We can't retry the insert here because the original API
-          // error has marked the Civi transaction for rollback.
-          // This WMFException code has special handling in the
-          // WmfQueueConsumer that will alter the invoice_id before
-          // re-queueing the message.
-          throw new WMFException(
-            WMFException::DUPLICATE_INVOICE,
-            'Duplicate invoice ID, should modify and retry',
-            $e->getErrorData()
-          );
-        }
-        else {
-          throw new WMFException(
-            WMFException::INVALID_MESSAGE,
-            'Cannot create contribution, civi error!',
-            $e->getErrorData()
-          );
-        }
+        throw new WMFException(
+          WMFException::INVALID_MESSAGE,
+          'Cannot create contribution, civi error!',
+          $e->getErrorData()
+        );
       }
       catch (\CRM_Core_Exception $eInner) {
         throw new WMFException(
