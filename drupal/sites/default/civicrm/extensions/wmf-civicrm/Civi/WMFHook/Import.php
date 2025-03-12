@@ -84,7 +84,7 @@ class Import {
         $mappedRow['Contact']['contact_type'] = $organizationName ? 'Organization' : 'Individual';
       }
 
-      if (empty($mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
+      if (empty($mappedRow['Contribution']['id']) && empty($mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
         // Generate a transaction ID so that we don't import the same rows multiple times
         $mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
       }
