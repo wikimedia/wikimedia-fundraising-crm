@@ -168,8 +168,11 @@ class WMFException extends Exception {
    *   'debug' => 1). Any data in the $extra array will be rendered in fail
    *   mails - but only 'error_message' is used for user messages (provided the
    *   getUserMessage function is used).
+   * @param \Throwable|null $previous
+   *    A previous exception which caused this new exception.
    */
-  public function __construct($code, $message, $extra = []) {
+  public function __construct($code, $message, $extra = [], ?\Throwable $previous = NULL) {
+    parent::__construct($message, $code, $previous);
     if (!array_key_exists($code, self::$error_types)) {
       $message .= ' -- ' . t('Warning, throwing an unknown exception: "%code"', ['%code' => $code]);
       $code = self::UNKNOWN;
