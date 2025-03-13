@@ -22,8 +22,6 @@ class Database {
    */
   static function transactionalCall($callback, $params) {
     \Civi::log('wmf')->info('Beginning DB transaction');
-    $drupal_transaction = Drupal::getTransaction('drupal');
-    $crm_transaction = Drupal::getTransaction('civicrm');
     $native_civi_transaction = new \CRM_Core_Transaction();
 
     try {
@@ -41,16 +39,11 @@ class Database {
     catch (\Exception $ex) {
       \Civi::log('wmf')->info('wmf_common: Aborting DB transaction.');
       $native_civi_transaction->rollback();
-      $crm_transaction->rollback();
-      $drupal_transaction->rollback();
-
       throw $ex;
     }
 
     \Civi::log('wmf')->info('wmf_common: Committing DB transaction');
     $native_civi_transaction->commit();
-    unset($crm_transaction);
-    unset($drupal_transaction);
     return $result;
   }
 
