@@ -50,12 +50,17 @@ abstract class QueueConsumer extends BaseQueueConsumer {
       throw $ex;
     }
     else {
-      $error = 'UNHANDLED ERROR. Halting dequeue loop. Exception: ' .
-        $ex->getMessage() . "\nStack Trace: " .
-        $ex->getTraceAsString();
-      \Civi::log('wmf')->error(
-        'wmf_common: {error}', ['error' => $error]);
-      wmf_common_failmail('wmf_common', $error, NULL, $logId);
+      \Civi::log('wmf')->alert(
+        'UNHANDLED ERROR. Message was removed from queue `{queue}` and sent to the damaged message queue', [
+          'message' => $ex->getMessage(),
+          'details' => $logId,
+          'original_message' => $ex->getPrevious() ? $ex->getPrevious()->getMessage() : '',
+          'subject' => 'Removal : of message from ' . $this->queueName . " " . gethostname() . " " . __CLASS__,
+          'back_trace' => $ex->getTraceAsString(),
+          'queue' => $this->queueName,
+          'consumer' => __CLASS__,
+        ]
+      );
       $this->sendToDamagedStore($message, $ex);
       throw $ex;
     }
