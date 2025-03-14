@@ -332,12 +332,14 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
 
     $alert_factor = \Civi::settings()->get('wmf_refund_alert_factor');
     if ($amount_scammed > $alert_factor * $original_amount) {
-      wmf_common_failmail('wmf_civicrm', "Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}. See "
+      \Civi::log('wmf')->alert("Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}. See "
         . \CRM_Utils_System::url('civicrm/contact/view/contribution', [
           'reset' => 1,
           'id' => $contribution_id,
           'action' => 'view',
-        ], TRUE));
+        ], TRUE),
+        ['subject' => "Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}."]
+      );
     }
   }
 

@@ -366,13 +366,18 @@ EOT;
       }
       else {
         try {
-          // Make an exception for failmail with the updated message,
-          // but avoid doubling the type prefix.
-          $logMessage = substr($logMessage, strlen($errName) + 1);
-          $mailException = new WMFException($ex->getCode(), $logMessage);
-
-          // Failmail also logs an ERROR
-          wmf_common_failmail('thank_you', '', $mailException);
+            \Civi::log('wmf')->alert(
+            "Thank you mail failed for contribution {contribution_id}", [
+              'url' => \CRM_Utils_System::url('civicrm/contact/view/contribution', [
+                'reset' => 1,
+                'id' => $contribution->id,
+                'action' => 'view',
+              ], TRUE),
+              'message' => $logMessage,
+              'contribution_id' => $contribution->id,
+              'subject' => 'Thank you mail failed for contribution ' . $contribution->id . " " . gethostname(),
+            ]
+          );
         }
         catch (Exception $innerEx) {
           \Civi::log('wmf')->alert('thank_you: Can\'t even send failmail, disabling thank you job');
