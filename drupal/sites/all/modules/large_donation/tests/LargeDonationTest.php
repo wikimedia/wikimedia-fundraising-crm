@@ -1,11 +1,16 @@
 <?php
 
-use Civi\Omnimail\MailFactory;
+use Civi\Test\Api3TestTrait;
+use Civi\Test\EntityTrait;
+use Civi\WMFEnvironmentTrait;
 
 /**
  * @group LargeDonation
  */
-class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
+class LargeDonationTest extends PHPUnit\Framework\TestCase {
+  use WMFEnvironmentTrait;
+  use Api3TestTrait;
+  use EntityTrait;
 
   protected $threshold;
 
@@ -16,6 +21,7 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
   public function setUp(): void {
     parent::setUp();
     civicrm_initialize();
+    $this->setUpWMFEnvironment();
 
     $this->threshold = 100;
     $this->threshold_high = 1000;
@@ -54,6 +60,7 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
       ->execute();
     drupal_static_reset('large_donation_get_minimum_threshold');
     drupal_static_reset('large_donation_get_notification_thresholds');
+    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 
@@ -129,4 +136,19 @@ class LargeDonationTest extends BaseWmfDrupalPhpUnitTestCase {
 
     $this->assertEquals( 0, $this->getMailingCount());
   }
+
+
+  /**
+   * Create a test contact and store the id to the $ids array.
+   *
+   * @param array $params
+   *
+   * @return int
+   */
+  public function createTestContact($params): int {
+    $id = (int) $this->createTestEntity('Contact', $params)['id'];
+    $this->ids['Contact'][$id] = $id;
+    return $id;
+  }
+
 }
