@@ -21,9 +21,6 @@
     <testsuite name="exchange_rates tests">
       <directory>drupal/sites/default/civicrm/extensions/exchange_rates/tests/phpunit</directory>
     </testsuite>
-    <testsuite name="wmf_campaigns tests">
-      <directory>drupal/sites/all/modules/wmf_campaigns/tests</directory>
-    </testsuite>
     <testsuite name="contacteditor_tests">
       <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.contacteditor/tests/phpunit</directory>
     </testsuite>
