@@ -1,7 +1,0 @@
-name = WMF Campaigns
-description = Manage Fundraising campaigns and configure notifications
-core = 7.x
-dependencies[] = civicrm
-package = Wikimedia
-configure = admin/config/wmf_campaigns/configure
-files[] = WmfCampaign.php
