@@ -43,7 +43,7 @@ class CRM_Upgrade_Incremental_php_SixZero extends CRM_Upgrade_Incremental_Base {
       FALSE
     );
     $this->addTask('Set a default activity priority', 'addActivityPriorityDefault');
-    $this->addSimpleExtensionTask('Enable dedupe backward compatibility', ['legacydedupefinder']);
+    // $this->addSimpleExtensionTask('Enable dedupe backward compatibility', ['legacydedupefinder']);
     $this->addTask('Increase field length of civicrm_action_schedule.entity_status', 'alterSchemaField', 'ActionSchedule', 'entity_status', [
       'title' => ts('Entity Status'),
       'sql_type' => 'varchar(255)',
