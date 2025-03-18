@@ -34,8 +34,22 @@ abstract class QueueConsumer extends BaseQueueConsumer {
         $logId = 'Odd message type';
       }
     }
-    if ($ex instanceof DBQueryException && in_array($ex->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
-      $newException = new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $ex->getErrorData());
+    if ($ex instanceof DBQueryException && in_array($ex->getDBErrorMessage(), ['constraint violation'], TRUE)) {
+      // This may or may not be a deadlock....
+      $constraint = substr($ex->getUserInfo(), strpos($ex->getUserInfo(), "[nativecode"));
+      $newException = new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to constraint error, possibly load related ' . $constraint, $ex->getErrorData(), $ex);
+      \Civi::log('wmf')->error(
+        // In some cases these relate to a partial rollback but they might be another bug.
+        'WMFQueue: Message not saved due to db constraint, possibly DB load related: {message} {error}', [
+          'message' => $ex->getMessage(),
+          'error' => $ex->getUserInfo()
+        ]
+      );
+      $this->handleWMFException($message, $newException, $logId);
+      throw $newException;
+    }
+    if ($ex instanceof DBQueryException && in_array($ex->getDBErrorMessage(), ['deadlock', 'database lock timeout'], TRUE)) {
+      $newException = new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $ex->getErrorData(), $ex);
       \Civi::log('wmf')->error(
         'WMFQueue: Message not saved due to database load: {message}',
         ['message' => $ex->getMessage()]

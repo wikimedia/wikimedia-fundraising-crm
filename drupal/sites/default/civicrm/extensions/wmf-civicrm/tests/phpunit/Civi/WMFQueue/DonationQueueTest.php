@@ -86,6 +86,18 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertExpectedContributionValues($expected, $message2['gateway_txn_id']);
   }
 
+  public function testImportToDeletedContact(): void {
+    $this->processDonationMessage([
+      'contact_id' => 9999999,
+      'contact_hash' => 788999,
+      'gateway' => 'adyen',
+      'language' => '',
+      'street_address' => '',
+      'email' => '',
+    ]);
+    $this->assertEquals(1, 1);
+  }
+
   /**
    * @throws \CRM_Core_Exception
    */

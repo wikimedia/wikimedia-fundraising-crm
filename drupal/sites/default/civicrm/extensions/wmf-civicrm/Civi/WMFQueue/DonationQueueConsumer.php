@@ -353,7 +353,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     catch (\CRM_Core_Exception $e) {
       \Civi::log('wmf')->info('wmf_civicrm: Error inserting contribution: {message} {code}', ['message' => $e->getMessage(), 'code' => $e->getCode()]);
 
-      if (array_key_exists('invoice_id', $contribution)) {
+      if (empty($contribution_result) && array_key_exists('invoice_id', $contribution)) {
         \Civi::log('wmf')->info('wmf_civicrm : Checking for duplicate on invoice ID {invoice_id}', ['invoice_id' => $contribution['invoice_id']]);
         $invoice_id = $contribution['invoice_id'];
         if (Contribution::get(FALSE)->addWhere('invoice_id', '=', $invoice_id)->execute()->first()){
