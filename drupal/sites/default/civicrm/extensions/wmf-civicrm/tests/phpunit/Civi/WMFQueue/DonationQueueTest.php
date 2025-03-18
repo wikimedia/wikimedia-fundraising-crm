@@ -97,7 +97,26 @@ class DonationQueueTest extends BaseQueueTestCase {
     ]);
     $contribution = $this->getContributionForMessage($donation);
     $this->assertEquals(476.17, $contribution['total_amount']);
+
+    // Now try re-importing but to soft deleted contact.
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $contribution['contact_id'])
+      ->addValue('is_deleted', TRUE)
+      ->addValue('hash', 788999)
+      ->execute();
+    $donation = $this->processDonationMessage([
+      'contact_id' => $contribution['contact_id'],
+      'contact_hash' => 788999,
+      'gateway_txn_id' => 123,
+      'gateway' => 'adyen',
+      'language' => '',
+      'street_address' => '',
+      'email' => '',
+    ]);
+    $newContribution = $this->getContributionForMessage($donation);
+    $this->assertGreaterThan($contribution['contact_id'], $newContribution['contact_id']);
   }
+
 
   /**
    * @throws \CRM_Core_Exception
