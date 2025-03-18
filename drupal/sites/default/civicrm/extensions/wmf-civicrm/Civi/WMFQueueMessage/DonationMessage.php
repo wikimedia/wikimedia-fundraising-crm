@@ -112,7 +112,14 @@ class DonationMessage extends Message {
     $msg['contribution_recur_id'] = $this->getContributionRecurID();
     $msg['contact_id'] = $this->getContactID();
     if (empty($msg['contact_id']) && !empty($this->message['contact_id'])) {
-      $msg['referral_id'] = $this->message['contact_id'];
+      if (\CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_contact WHERE id = %1 AND is_deleted = 0', [
+        1 => [$this->message['contact_id'], 'Integer']
+      ])) {
+        $msg['referral_id'] = $this->message['contact_id'];
+      }
+      else {
+        \Civi::log('wmf')->warning('unavailable contact ID provided {contact_id}', ['contact_id' => $this->message['contact_id']]);
+      }
     }
     $msg['payment_instrument_id'] = $this->getPaymentInstrumentID();
     $msg['date'] = $this->getTimestamp();

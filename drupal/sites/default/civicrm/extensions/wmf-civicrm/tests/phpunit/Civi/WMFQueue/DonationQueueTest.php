@@ -87,7 +87,7 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
   public function testImportToDeletedContact(): void {
-    $this->processDonationMessage([
+    $donation = $this->processDonationMessage([
       'contact_id' => 9999999,
       'contact_hash' => 788999,
       'gateway' => 'adyen',
@@ -95,7 +95,8 @@ class DonationQueueTest extends BaseQueueTestCase {
       'street_address' => '',
       'email' => '',
     ]);
-    $this->assertEquals(1, 1);
+    $contribution = $this->getContributionForMessage($donation);
+    $this->assertEquals(476.17, $contribution['total_amount']);
   }
 
   /**
