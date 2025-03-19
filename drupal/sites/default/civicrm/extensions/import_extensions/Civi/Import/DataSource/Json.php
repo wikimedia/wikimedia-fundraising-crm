@@ -121,18 +121,13 @@ class Json extends \CRM_Import_DataSource {
      ]);
   }
 
-
   /**
-   * Download the remote zipfile.
+   * Download the remote json.
    *
-   * @param string $remoteFile
-   *   URL of a .zip file.
-   * @param string $localFile
-   *   Path at which to store the .zip file.
    * @return array|false
    *   Whether the download was successful.
    */
-  protected function fetch() {
+  protected function fetch(): false|array {
     $client = $this->getGuzzleClient();
     $response = $client->request('GET', '', [
       'headers' => $this->getHeaders(),
@@ -151,14 +146,16 @@ class Json extends \CRM_Import_DataSource {
   protected function getHeaders(): array {
     $values = explode(':', $this->getSubmittedValue('header'));
     return [$values[0] => $values[1]];
-  }/**
- * @param $columns
- * @param $dataRows
- *
- * @return array
- * @throws \CRM_Core_Exception
- * @throws \Civi\Core\Exception\DBQueryException
- */
+  }
+
+  /**
+   * @param $columns
+   * @param $dataRows
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
   protected function uploadToTable(): array {
     $dataRows = $this->fetch();
     if ($dataRows === FALSE) {

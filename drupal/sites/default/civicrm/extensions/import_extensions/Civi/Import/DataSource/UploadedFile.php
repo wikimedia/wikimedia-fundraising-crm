@@ -32,6 +32,10 @@ class UploadedFile extends \CRM_Import_DataSource {
    */
   private Reader $reader;
 
+  private string $importTableName;
+
+  private array $sqlFieldNames;
+
   /**
    * Provides information about the data source.
    *
@@ -65,7 +69,7 @@ class UploadedFile extends \CRM_Import_DataSource {
     $form->add('text', 'number_of_rows_to_validate', E::ts('Number of rows to upload & validate initially'));
     $fullPathFiles = \CRM_Utils_File::findFiles($this->getResolvedFilePath(), '*.csv');
     foreach ($fullPathFiles as $file) {
-      $fileName = basename($file);
+      $fileName = str_replace($this->getResolvedFilePath() . '/', '', $file);
       $availableFiles[$fileName] = $fileName;
     }
     $form->assign('upload_message', $this->hasConfiguredFilePath() ? '' : E::ts(
