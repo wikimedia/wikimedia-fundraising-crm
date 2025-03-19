@@ -265,10 +265,17 @@
      <weight>10</weight>
   </item>
   <item>
+     <!--
+        Ideally, civicrm/admin/options/site_email_address would register directly in
+        "Administration Console" (e.g. setting <adminGroup> and <weight>). This legacy redirect would be hidden.
+        But for quick-fix, this entry does double-duty: providing the "Administration Console"
+        stub along with the legacy redirect.
+     -->
      <path>civicrm/admin/options/from_email_address</path>
-     <title>From Email Addresses</title>
-     <desc>List of Email Addresses which can be used when sending emails to contacts.</desc>
-     <page_callback>CRM_Admin_Page_Options</page_callback>
+     <title>Site Email Addresses</title>
+     <desc>List of email addresses which can be used when sending emails to contacts.</desc>
+     <page_callback>CRM_Core_Page_Redirect</page_callback>
+     <page_arguments>url=civicrm/admin/options/site_email_address</page_arguments>
      <adminGroup>Communications</adminGroup>
      <weight>20</weight>
   </item>
@@ -507,14 +514,6 @@
      <page_callback>CRM_Admin_Form_Setting_Url</page_callback>
      <adminGroup>System Settings</adminGroup>
      <weight>70</weight>
-  </item>
-  <item>
-     <path>civicrm/admin/setting/updateConfigBackend</path>
-     <title>Cleanup Caches and Update Paths</title>
-     <desc>Reset the Base Directory Path and Base URL settings - generally when a CiviCRM site is moved to another location in the file system and/or to another domain.</desc>
-     <page_callback>CRM_Admin_Form_Setting_UpdateConfigBackend</page_callback>
-     <adminGroup>System Settings</adminGroup>
-     <weight>80</weight>
   </item>
   <item>
      <path>civicrm/admin/setting/uf</path>

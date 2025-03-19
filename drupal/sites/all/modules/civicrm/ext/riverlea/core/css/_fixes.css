@@ -144,6 +144,7 @@ a.crm-expand-row:focus {
   padding: var(--crm-expand-body-padding);
   background-color: var(--crm-expand-body-bg);
   box-shadow: var(--crm-expand-body-box-shadow);
+  color: var(--crm-c-text); /* specified for Drupal Claro Darkmode */
 }
 .crm-container .widget-content .crm-accordion-body,
 .crm-container .crm-collapsible .crm-summary-block {
@@ -243,6 +244,7 @@ a.crm-expand-row:focus {
   gap: var(--crm-btn-icon-spacing);
   align-items: center;
   margin: var(--crm-btn-margin);
+  width: max-content; /* front-end width bug when inside a td */
 }
 .crm-container a.button span {
   display: flex;
@@ -467,7 +469,7 @@ body[class*="page-civicrm-report-"] #report-tab-order-by-elements #optionFieldLi
   padding: var(--crm-padding-small);
   border-radius: var(--crm-btn-radius);
 }
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .crm-container .tag-tree-wrapper {
     display: block;
   }
@@ -486,7 +488,6 @@ body[class*="page-civicrm-report-"] #report-tab-order-by-elements #optionFieldLi
   box-shadow: var(--crm-block-shadow);
 }
 .crm-container #ContributionCharts .ui-tabs-nav {
-  align-items: center;
   gap: 1px; /* to handle white space in markup */
 }
 .crm-container #ContributionCharts .ui-tabs-nav .float-right td {
@@ -516,6 +517,7 @@ body[class*="page-civicrm-report-"] #report-tab-order-by-elements #optionFieldLi
 }
 #ContributionCharts ul.ui-tabs-nav .float-right table a.button {
   max-height: 36px;
+  margin-block: 0;
 }
 #ContributionCharts #chartData {
   padding: var(--crm-padding-reg);
@@ -576,6 +578,11 @@ body[class*="page-civicrm-report-"] #report-tab-order-by-elements #optionFieldLi
 }
 /* API3 explorer */
 
+.crm-container .select2-highlighted .api-field-desc,
+.crm-container .select2-highlighted .crm-marker,
+.crm-container .api-field-desc {
+  color: inherit;
+}
 #api-generated caption {
   font-weight: var(--crm-bold-weight);
   font-family: var(--crm-font-bold);
@@ -583,6 +590,7 @@ body[class*="page-civicrm-report-"] #report-tab-order-by-elements #optionFieldLi
 #api-generated tr td:first-of-type {
   width: var(--crm-input-label-width);
 }
+
 /* Display Preferences */
 
 tr.crm-preferences-display-form-block-contact_edit_options td:has(table) {
@@ -754,7 +762,7 @@ details + .crm-content-block:has(.dataTables_wrapper) {
 
 /* Contact dashboard */
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .crm-container div.contact_panel {
     display: block;
   }
@@ -785,8 +793,12 @@ details + .crm-content-block:has(.dataTables_wrapper) {
     COMMON EXTENSIONS
 *******************/
 
-/* Contact Dashboard Editor */
+/* Style rules for Contact Layout Editor extension */
 
+#contact-summary .crm-contact-summary-layout-col {
+  flex: 1 1 250px;
+  padding: 0;
+}
 .crm-actions-ribbon ul#actions:has(.crm-contact-summary-edit-layout) {
   grid-template-columns: min-content min-content min-content auto min-content min-content;
 }

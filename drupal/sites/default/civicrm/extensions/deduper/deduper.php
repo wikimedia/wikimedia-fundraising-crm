@@ -431,6 +431,10 @@ function deduper_civicrm_validateForm($formName, &$fields, &$files, &$form, &$er
             // we just want the part after the .
             $fieldName = substr($fieldName, strpos($fieldName, '.') + 1);
           }
+          if (str_contains($fieldName, '.')) {
+            // Sorry for the hack - regex another day... We might have contact.primary_address.street_address...
+            $fieldName = substr($fieldName, strpos($fieldName, '.') + 1);
+          }
           $mappedFields[] = $fieldName;
         }
       }

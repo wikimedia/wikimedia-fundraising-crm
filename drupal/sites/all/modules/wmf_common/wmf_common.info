@@ -1,5 +1,0 @@
-name = WMF Common
-description = Module for common files, functions and resources for WMF modules
-core = 7.x
-package = Wikimedia
-configure = admin/config/wmf_common

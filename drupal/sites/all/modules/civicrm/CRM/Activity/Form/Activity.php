@@ -575,8 +575,7 @@ class CRM_Activity_Form_Activity extends CRM_Contact_Form_Task {
       $defaults += $className::setDefaultValues($this);
     }
     if (empty($defaults['priority_id'])) {
-      $priority = CRM_Activity_DAO_Activity::buildOptions('priority_id');
-      $defaults['priority_id'] = CRM_Core_PseudoConstant::getKey('CRM_Activity_DAO_Activity', 'priority_id', 'Normal');
+      $defaults['priority_id'] = CRM_Core_OptionGroup::getDefaultValue('priority');
     }
     if (empty($defaults['status_id'])) {
       $defaults['status_id'] = CRM_Core_OptionGroup::getDefaultValue('activity_status');
@@ -846,7 +845,7 @@ class CRM_Activity_Form_Activity extends CRM_Contact_Form_Task {
     // Check that a value has been set for the "activity separation" field if needed
     $separationIsPossible = $self->supportsActivitySeparation;
     $actionIsAdd = $self->_action == CRM_Core_Action::ADD;
-    $hasMultipleTargetContacts = !empty($fields['target_contact_id']) && strpos($fields['target_contact_id'], ',') !== FALSE;
+    $hasMultipleTargetContacts = !empty($fields['target_contact_id']) && str_contains($fields['target_contact_id'], ',');
     $separationFieldIsEmpty = empty($fields['separation']);
     if ($separationIsPossible && $actionIsAdd && $hasMultipleTargetContacts && $separationFieldIsEmpty) {
       $errors['separation'] = ts('Activity Separation is a required field.');
