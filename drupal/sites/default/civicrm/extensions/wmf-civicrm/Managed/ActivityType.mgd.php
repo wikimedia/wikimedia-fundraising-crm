@@ -313,6 +313,38 @@ return [
         'name',
       ],
     ],
+  ],
+  [
+    'name' => 'OptionValue_MajorGiftsEngagement',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'activity_type',
+        'label' => 'Major Gifts Engagement',
+        'value' => 196,
+        'name' => 'MajorGiftsEngagement',
+        'grouping' => NULL,
+        'filter' => 1,
+        'weight' => 196,
+        'is_default' => FALSE,
+        'description' => 'Engagement by a major gifts officer',
+        'is_optgroup' => FALSE,
+        'is_reserved' => FALSE,
+        'is_active' => TRUE,
+        'component_id' => NULL,
+        'domain_id' => NULL,
+        'visibility_id' => NULL,
+        'icon' => 'fa-sack-dollar',
+        'color' => NULL,
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
   ]
 ];
 
