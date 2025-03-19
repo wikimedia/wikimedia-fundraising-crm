@@ -85,7 +85,7 @@ class PreviousImport extends \CRM_Import_DataSource {
    * @return array
    */
   public function getDefaultValues(): array {
-    return ['isFirstRowHeader' => 1];
+    return ['skipColumnHeader' => 1];
   }
 
   /**

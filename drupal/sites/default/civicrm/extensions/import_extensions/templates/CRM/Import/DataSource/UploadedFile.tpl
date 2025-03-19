@@ -6,8 +6,8 @@
       <td>{$form.file_name.html}</td>
     </tr>
     <tr>
-      <td class="label">{$form.isFirstRowHeader.label}</td>
-      <td>{$form.isFirstRowHeader.html}</td>
+      <td class="label">{$form.skipColumnHeader.label}</td>
+      <td>{$form.skipColumnHeader.html}</td>
     </tr>
     <tr>
       <td class="label">{$form.number_of_rows_to_validate.label}</td>
