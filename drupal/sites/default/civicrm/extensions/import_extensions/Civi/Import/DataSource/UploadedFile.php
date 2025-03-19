@@ -32,6 +32,10 @@ class UploadedFile extends \CRM_Import_DataSource {
    */
   private Reader $reader;
 
+  private string $importTableName;
+
+  private array $sqlFieldNames;
+
   /**
    * Provides information about the data source.
    *
@@ -61,11 +65,11 @@ class UploadedFile extends \CRM_Import_DataSource {
       $this->setUserJobID(\CRM_Utils_Request::retrieveValue('user_job_id', 'Integer'));
     }
     $form->add('hidden', 'hidden_dataSource', 'CRM_Import_DataSource_UploadedFile');
-    $form->addElement('checkbox', 'isFirstRowHeader', ts('First row contains column headers'));
+    $form->addElement('checkbox', 'skipColumnHeader', ts('First row contains column headers'));
     $form->add('text', 'number_of_rows_to_validate', E::ts('Number of rows to upload & validate initially'));
     $fullPathFiles = \CRM_Utils_File::findFiles($this->getResolvedFilePath(), '*.csv');
     foreach ($fullPathFiles as $file) {
-      $fileName = basename($file);
+      $fileName = str_replace($this->getResolvedFilePath() . '/', '', $file);
       $availableFiles[$fileName] = $fileName;
     }
     $form->assign('upload_message', $this->hasConfiguredFilePath() ? '' : E::ts(
@@ -86,7 +90,7 @@ class UploadedFile extends \CRM_Import_DataSource {
    * @return array
    */
   public function getDefaultValues(): array {
-    return ['isFirstRowHeader' => 1, 'number_of_rows_to_validate' => 10];
+    return ['skipColumnHeader' => 1, 'number_of_rows_to_validate' => 10];
   }
 
   /**
@@ -141,7 +145,7 @@ class UploadedFile extends \CRM_Import_DataSource {
   }
 
   private function getColumnNames(): array {
-    if ($this->getSubmittedValue('isFirstRowHeader')) {
+    if ($this->getSubmittedValue('skipColumnHeader')) {
       $header = $this->getReader()->getHeader();
       return array_values($header);
     }
@@ -155,7 +159,7 @@ class UploadedFile extends \CRM_Import_DataSource {
   }
 
   private function getColumnTitles(): array {
-    if ($this->getSubmittedValue('isFirstRowHeader')) {
+    if ($this->getSubmittedValue('skipColumnHeader')) {
       $this->reader->setHeaderOffset(0);
       $header = $this->reader->getHeader();
       return array_values($header);
@@ -181,7 +185,7 @@ class UploadedFile extends \CRM_Import_DataSource {
    * @return array
    */
   public function getSubmittableFields(): array {
-    return ['file_name', 'isFirstRowHeader', 'number_of_rows_to_validate'];
+    return ['file_name', 'skipColumnHeader', 'number_of_rows_to_validate'];
   }
 
   public function getRow(): ?array {
@@ -338,7 +342,7 @@ class UploadedFile extends \CRM_Import_DataSource {
       $filePath = $this->getResolvedFilePath() . DIRECTORY_SEPARATOR . $this->getSubmittedValue('file_name');
       $this->reader = Reader::createFromPath($filePath);
       // Remove the header
-      if ($this->getSubmittedValue('isFirstRowHeader')) {
+      if ($this->getSubmittedValue('skipColumnHeader')) {
         $this->reader->setHeaderOffset(0);
       }
     }
