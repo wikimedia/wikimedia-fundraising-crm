@@ -163,7 +163,7 @@ class WMFException extends Exception {
    * @param array $extra Extra parameters.
    *   If error_message is included then it will be included in the User Error
    *   message. If you are working with a CiviCRM Exception ($e) then you can
-   *   pass in $e->getExtraParams() which will include the api error message
+   *   pass in $e->getErrorData() which will include the api error message
    *   and message and potentially backtrace & sql details (if you passed in
    *   'debug' => 1). Any data in the $extra array will be rendered in fail
    *   mails - but only 'error_message' is used for user messages (provided the
