@@ -158,7 +158,12 @@ class PreviousImport extends \CRM_Import_DataSource {
    */
   protected function getTableName(): ?string {
     if (!isset($this->importTableName)) {
-      $this->importTableName = parent::getTableName();
+      $importTableName = parent::getTableName();
+      if ($importTableName) {
+        // Only set if not NULL, due to type hint.
+        $this->importTableName = $importTableName;
+      }
+      return $importTableName;
     }
     return $this->importTableName;
   }
