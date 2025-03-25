@@ -586,20 +586,24 @@ function find_damaged_queue(\CRM_Queue_Queue $original): \CRM_Queue_Queue {
  * @throws \Civi\Core\Exception\DBQueryException
  */
 function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$outcome, ?\Throwable $exception): void {
-  $message = "Queue item from {$queue->getName()} with id={$item->id} failed with exception=\"{$exception->getMessage()}\"";
-  Civi::log('wmf')->error($message);
-
-  if ($outcome === 'abort' && !empty($item)) {
+  // Can this be NULL - that feels incorrect but we had handling for it??
+  $itemID = empty($item) ? NULL : $item->id;
+  // Log an alert on the first & last fail & if that weird 'no item' scenario occurs.
+  if ($outcome === 'abort' || !$itemID || ((int) $item->run_count) === 1) {
+    $message = "Queue item from {$queue->getName()} with id={$itemID} failed with exception=\"{$exception->getMessage()}\"";
+    $subject = 'Fail Mail from coworker queue ' . $queue->getName() . ' item ' . $itemID . ': ' . gethostname();
     $mailableDetails = $message . ", aborted and moved to the dedicated damaged queue";
-    $subject = 'Fail Mail from coworker queue ' . $queue->getName() . ' item ' . $item->id . ': ' . gethostname();
+
     \Civi::log('wmf')->alert(
       $subject,
       ['message' => $mailableDetails, 'subject' => $subject]
     );
+  }
 
+  if ($outcome === 'abort' && $itemID) {
     \CRM_Core_DAO::executeQuery('UPDATE civicrm_queue_item SET queue_name = %1 WHERE id = %2', [
       1 => [find_damaged_queue($queue)->getName(), 'String'],
-      2 => [$item->id, 'Positive'],
+      2 => [$itemID, 'Positive'],
     ]);
     $outcome = 'retry';
   }
