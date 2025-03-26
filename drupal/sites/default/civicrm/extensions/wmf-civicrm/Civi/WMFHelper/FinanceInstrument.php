@@ -44,6 +44,7 @@ class FinanceInstrument {
     'pse' => 'PSE', // Colombia
     'santander' => 'Santander', // Brazil
     'santander_rio' => 'Santander', // Argentina (same bank as above)
+    'stitch' => 'Stitch', // South Africa
     'upi' => 'UPI', // India
     'webpay_bt' => 'Webpay' // Chile
   ];
