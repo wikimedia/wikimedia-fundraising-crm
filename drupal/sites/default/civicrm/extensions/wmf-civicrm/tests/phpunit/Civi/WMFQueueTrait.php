@@ -138,7 +138,7 @@ trait WMFQueueTrait {
       'state_province_2' => 'AL',
       'state_province' => 'Haifa',
       'street_address_2' => 'st 2nd.',
-      'street_address' => 'ss',
+      'street_address' => 'street address that is longer than 128 characters long because sometimes you need a little field size and sometimes you need a lot',
       'supplemental_address_1' => '',
       'supplemental_address_2' => '',
       'user_ip' => '127.0.0.2',
