@@ -131,7 +131,9 @@ $instruments = [
   'Bank Transfer: PayTM Wallet' => 'Bank Transfer: PayTM Wallet',
   'Credit Card: RuPay' => 'Credit Card: RuPay',
   'Bank Transfer: UPI' => 'Bank Transfer: UPI',
+  // Mobile payment methods
   'Venmo' => 'Venmo',
+  'Vipps' => 'Vipps'
 ];
 
 $paymentInstruments = [];

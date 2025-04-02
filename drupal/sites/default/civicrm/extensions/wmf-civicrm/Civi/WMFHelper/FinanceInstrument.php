@@ -96,6 +96,7 @@ class FinanceInstrument {
     'ew_cashu' => 'Cashu',
     'ew_yandex' => 'Yandex',
     'ew_alipay' => 'Alipay',
+    'vipps' => 'Vipps',
   ];
 
   public const OBT_SUBMETHOD_LIST = [
@@ -201,6 +202,12 @@ class FinanceInstrument {
           break;
         case 'eft':
           $payment_instrument = 'EFT';
+          break;
+        case 'ew':
+          if (!empty($payment_submethod)
+            && array_key_exists($payment_submethod, self::EW_SUBMETHOD_LIST)) {
+            $payment_instrument = self::EW_SUBMETHOD_LIST[$payment_submethod];
+          }
           break;
         case 'obt':
           if (!empty($payment_submethod)
