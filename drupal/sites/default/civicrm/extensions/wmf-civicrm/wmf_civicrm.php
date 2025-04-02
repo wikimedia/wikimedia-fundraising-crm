@@ -395,7 +395,7 @@ function wmf_civicrm_civicrm_customPre(string $op, int $groupID, int $entityID, 
 
 /**
  * Implementation of hook_civicrm_post, used to update contribution_extra fields
- * and wmf_donor rollup fields.
+ * and wmf_donor rollup fields as well as send large donation notifications
  *
  * @implements hook_civicrm_post
  *
@@ -411,6 +411,7 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
   switch ($type) {
     case 'Contribution':
       \Civi\WMFHelper\Contribution::updateWMFDonorLastDonation($op, $entity);
+      \Civi\WMFHook\Contribution::post($op, $entity);
       break;
     case 'ContributionRecur':
       \Civi\WMFHelper\ContributionRecur::cancelRecurAutoRescue($op, $id, $entity);

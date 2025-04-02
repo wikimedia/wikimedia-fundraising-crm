@@ -256,8 +256,6 @@ class BaseChecksFileTest extends PHPUnit\Framework\TestCase {
     }
     // Another test cleanup check...
     $this->assertEquals($this->trackingCount, CRM_Core_DAO::singleValueQuery('SELECT COUNT(*) FROM civicrm_contribution_tracking'));
-    drupal_static_reset('large_donation_get_minimum_threshold');
-    drupal_static_reset('large_donation_get_notification_thresholds');
   }
 
   protected function getCsvDirectory(): string {

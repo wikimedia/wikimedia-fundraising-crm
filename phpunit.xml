@@ -11,9 +11,6 @@
     <testsuite name="wmf-civicrm">
       <directory>drupal/sites/default/civicrm/extensions/wmf-civicrm/tests/phpunit</directory>
     </testsuite>
-    <testsuite name="large_donation tests">
-      <directory>drupal/sites/all/modules/large_donation/tests</directory>
-    </testsuite>
     <testsuite name="offline2civicrm tests">
       <directory>drupal/sites/all/modules/offline2civicrm/tests</directory>
       <exclude>drupal/sites/all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php</exclude>
