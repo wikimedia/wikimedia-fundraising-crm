@@ -2,18 +2,16 @@
 
 namespace Civi\WMFHook;
 
-use Civi\Test\Api3TestTrait;
 use Civi\Test\EntityTrait;
 use Civi\WMFEnvironmentTrait;
 use CRM_Core_PseudoConstant;
-use PHPUnit;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @group LargeDonation
  */
-class LargeDonationTest extends PHPUnit\Framework\TestCase {
+class LargeDonationTest extends TestCase {
   use WMFEnvironmentTrait;
-  use Api3TestTrait;
   use EntityTrait;
 
   protected $threshold;
@@ -24,7 +22,6 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
 
   public function setUp(): void {
     parent::setUp();
-    civicrm_initialize();
     $this->setUpWMFEnvironment();
 
     $this->threshold = 100;
@@ -63,25 +60,25 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
   }
 
   public function testUnderThreshold(): void {
-    civicrm_api3('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'contact_id' => $this->contact_id,
-      'financial_type_id' => 'Cash',
+      'financial_type_id:name' => 'Cash',
       'currency' => 'USD',
-      'payment_instrument' => 'Credit Card',
+      'payment_instrument_id:name' => 'Credit Card',
       'total_amount' => $this->threshold - 0.01,
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
     ]);
 
-    $this->assertEquals( 0, $this->getMailingCount() );
+    $this->assertEquals(0, $this->getMailingCount());
   }
 
   public function testAboveThreshold(): void {
     $amount = $this->threshold + 0.01;
-    $this->callAPISuccess('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'contact_id' => $this->contact_id,
-      'financial_type_id' => 'Cash',
+      'financial_type_id:name' => 'Cash',
       'currency' => 'USD',
-      'payment_instrument' => 'Credit Card',
+      'payment_instrument_id:name' => 'Credit Card',
       'total_amount' => $amount,
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
       'source' => 'EUR 2020',
@@ -100,17 +97,17 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
 
   public function testAboveHighThreshold(): void {
     $amount = $this->threshold_high + 0.01;
-    $this->callAPISuccess('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'contact_id' => $this->contact_id,
-      'financial_type_id' => 'Cash',
+      'financial_type_id:name' => 'Cash',
       'currency' => 'USD',
-      'payment_instrument' => 'Credit Card',
+      'payment_instrument_id:name' => 'Credit Card',
       'total_amount' => $amount,
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
       'source' => 'EUR 2020',
     ]);
 
-    $this->assertEquals( 2, $this->getMailingCount() );
+    $this->assertEquals(2, $this->getMailingCount());
 
     $mailing = $this->getMailing(0);
     $mailing2 = $this->getMailing(1);
@@ -126,19 +123,18 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
    */
   public function testAboveThresholdExcludedType(): void {
     $amount = $this->threshold + 0.01;
-    $this->callAPISuccess('Contribution', 'create', [
+    $this->createTestEntity('Contribution', [
       'contact_id' => $this->contact_id,
-      'financial_type_id' => 'Endowment Gift',
+      'financial_type_id:name' => 'Endowment Gift',
       'currency' => 'USD',
-      'payment_instrument' => 'Credit Card',
+      'payment_instrument_id:name' => 'Credit Card',
       'total_amount' => $amount,
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
       'source' => 'EUR 2020',
     ]);
 
-    $this->assertEquals( 0, $this->getMailingCount() );
+    $this->assertEquals(0, $this->getMailingCount());
   }
-
 
   /**
    * Create a test contact and store the id to the $ids array.
@@ -147,7 +143,7 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
    *
    * @return int
    */
-  public function createTestContact( $params ): int {
+  public function createTestContact($params): int {
     $id = (int) $this->createTestEntity( 'Contact', $params )['id'];
     $this->ids['Contact'][$id] = $id;
     return $id;

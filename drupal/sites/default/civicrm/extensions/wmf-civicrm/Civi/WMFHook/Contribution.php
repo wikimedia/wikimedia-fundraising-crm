@@ -238,9 +238,8 @@ class Contribution {
   /**
    * Get large donation thresholds.
    */
-  private static function getLargeDonationThresholds() {
-    $notifications = \Civi::settings()->get('large_donation_notifications') ?? [];
-    return $notifications;
+  private static function getLargeDonationThresholds(): array {
+    return \Civi::settings()->get('large_donation_notifications') ?? [];
   }
 
   /**
@@ -248,7 +247,7 @@ class Contribution {
    *
    * @return float
    */
-  private static function getMinimumLargeDonationThreshold() {
+  private static function getMinimumLargeDonationThreshold(): float {
     if (!isset( \Civi::$statics[__CLASS__]['large_donation_minimum_threshold'])) {
       $minThreshold = 100000000000000;
       $notifications = self::getLargeDonationThresholds();
@@ -272,7 +271,7 @@ class Contribution {
    * @param \CRM_Contribute_BAO_Contribution $contribution
    * @param array $notification
    */
-  private static function sendLargeDonationNotification($contribution, $notification) {
+  private static function sendLargeDonationNotification($contribution, $notification): void {
     $contact_link = \CRM_Utils_System::url(
       'civicrm/contact/view',
       [
@@ -304,14 +303,14 @@ class Contribution {
       'contribution_link' => $contribution_link,
     ];
 
-    if ( !$to ) {
+    if (!$to) {
       \Civi::log('wmf')->error('large_donation: Notification recipient address is not set up!');
       return;
     }
 
     $mailer = MailFactory::singleton()->getMailer();
 
-    $message = self::getLargeDonationMessage( $params );
+    $message = self::getLargeDonationMessage($params);
 
     try {
       $email = [
@@ -326,7 +325,8 @@ class Contribution {
         'large_donation: A large donation notification was sent to: {to}',
         [ 'to' => print_r( $to, TRUE ) ]
       );
-    } catch ( \Exception $e ) {
+    }
+    catch (\Exception $e) {
       \Civi::log( 'wmf' )->error(
         'large_donation: Sending large donation message failed for contribution: {contribution_id}<pre> {contribution} \n\n {message}</pre>',
         [
