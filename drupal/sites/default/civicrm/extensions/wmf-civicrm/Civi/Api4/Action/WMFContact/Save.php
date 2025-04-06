@@ -519,15 +519,14 @@ class Save extends AbstractAction {
       $address['state_province'] = $msg['state_province'];
       $address['state_province_id'] = $this->getStateID($country_id, $msg['state_province']);
     }
-
-    $address_params = [
-      'contact_id' => $contact_id,
-      'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
-      'values' => [$address],
-    ];
+    $address['location_type_id'] = \CRM_Core_BAO_LocationType::getDefault()->id;
+    $address['contact_id'] = $contact_id;
 
     try {
-      civicrm_api3('Address', 'replace', $address_params);
+      Address::replace(FALSE)
+        ->addWhere('contact_id', '=', $address['contact_id'])
+        ->addWhere('location_type_id', '=', $address['location_type_id'])
+        ->addRecord($address)->execute();
     }
     catch (\CRM_Core_Exception $e) {
       // Constraint violations occur when data is rolled back to resolve a deadlock.

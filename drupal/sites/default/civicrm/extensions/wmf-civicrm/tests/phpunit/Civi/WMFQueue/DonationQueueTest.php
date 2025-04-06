@@ -1456,6 +1456,26 @@ class DonationQueueTest extends BaseQueueTestCase {
   /**
    * Test creating an address with void data does not create an address.
    */
+  public function testAddressImportUpdateReplaces(): void {
+    $this->createIndividual([
+      'email_primary.email' => 'test+201@local.net',
+      'address_primary.street_address' => 'hole in the wall',
+      'first_name' => 'Mickey',
+      'last_name' => 'Mouse',
+    ]);
+    $addresses = $this->getMouseHouses();
+    $this->assertCount(1, $addresses);
+    $this->assertEquals('hole in the wall', $addresses->first()['street_address']);
+
+    $this->processMessage($this->getDonationMessage(), 'Donation', 'test');
+    $addresses = $this->getMouseHouses();
+    $this->assertCount(1, $addresses);
+    $this->assertStringStartsWith('street address that is longer', $addresses->first()['street_address']);
+  }
+
+  /**
+   * Test creating an address with void data does not create an address.
+   */
   public function testAddressImportVoidData(): void {
     $msg = [
       'currency' => 'USD',
