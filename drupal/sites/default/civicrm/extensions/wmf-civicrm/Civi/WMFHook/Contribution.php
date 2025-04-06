@@ -4,6 +4,7 @@ namespace Civi\WMFHook;
 
 use Civi\API\Event\PrepareEvent;
 use Civi\Api4\ExchangeRate;
+use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\Contribution as ContributionHelper;
 use Civi\WMFHelper\Database;
@@ -205,6 +206,161 @@ class Contribution {
     }
 
     return $errors;
+  }
+
+  /**
+   * Implements hook_civicrm_post
+   */
+  public static function post($action, $contribution) {
+    switch ($action) {
+      case 'create':
+        if ($contribution->total_amount <= self::getMinimumLargeDonationThreshold()) {
+          return;
+        }
+
+        foreach (self::getLargeDonationThresholds() as $notification) {
+          $excludedFinancialTypes = explode(',', $notification['financial_types_excluded']);
+          if (!in_array($contribution->financial_type_id, $excludedFinancialTypes)) {
+            if ($contribution->total_amount > $notification['threshold']) {
+              \Civi::log( 'wmf' )->info(
+                'large_donation: Notifying of large donation, contribution: {contribution_id} above threshold {threshold}',
+                [ 'contribution_id' => $contribution->id, 'threshold' => $notification['threshold'] ]
+              );
+              self::sendLargeDonationNotification( $contribution, $notification );
+            }
+          }
+        }
+        break;
+      default:
+    }
+  }
+
+  /**
+   * Get large donation thresholds.
+   */
+  private static function getLargeDonationThresholds() {
+    $notifications = \Civi::settings()->get('large_donation_notifications') ?? [];
+    return $notifications;
+  }
+
+  /**
+   * Get the minimum amount that could trigger a notification.
+   *
+   * @return float
+   */
+  private static function getMinimumLargeDonationThreshold() {
+    if (!isset( \Civi::$statics[__CLASS__]['large_donation_minimum_threshold'])) {
+      $minThreshold = 100000000000000;
+      $notifications = self::getLargeDonationThresholds();
+      foreach ( $notifications as $threshold ) {
+        if ( $threshold['threshold'] < $minThreshold ) {
+          $minThreshold = $threshold['threshold'];
+        }
+      }
+      \Civi::$statics[__CLASS__]['large_donation_minimum_threshold'] = $minThreshold;
+    }
+    return \Civi::$statics[__CLASS__]['large_donation_minimum_threshold'];
+
+  }
+
+  /**
+   * The email should include the total amount, source amount, contact and
+   * contribution ids, and a link to the contact/contribution.
+   *
+   * No personally identifiable information should be included.
+   *
+   * @param \CRM_Contribute_BAO_Contribution $contribution
+   * @param array $notification
+   */
+  private static function sendLargeDonationNotification($contribution, $notification) {
+    $contact_link = \CRM_Utils_System::url(
+      'civicrm/contact/view',
+      [
+        'selectedChild' => 'contribute',
+        'cid' => $contribution->contact_id,
+        'reset' => 1,
+      ],
+      TRUE,
+      'Contributions'
+    );
+
+    $contribution_link = \CRM_Utils_System::url(
+      'civicrm/contact/view/contribution',
+      [
+        'action' => 'view',
+        'id' => $contribution->id,
+        'reset' => 1,
+      ],
+      TRUE
+    );
+
+    $to = $notification['addressee'];
+
+    $params = [
+      'threshold' => (float) $notification['threshold'],
+      'total_amount' => $contribution->total_amount,
+      'source' => $contribution->source,
+      'contact_link' => $contact_link,
+      'contribution_link' => $contribution_link,
+    ];
+
+    if ( !$to ) {
+      \Civi::log('wmf')->error('large_donation: Notification recipient address is not set up!');
+      return;
+    }
+
+    $mailer = MailFactory::singleton()->getMailer();
+
+    $message = self::getLargeDonationMessage( $params );
+
+    try {
+      $email = [
+        'to' => $to,
+        'from_address' => 'fr-tech+large_donation@wikimedia.org',
+        'from_name' => 'Large Donation Bot',
+        'subject' => "WMF - large donation: \${$contribution->total_amount}",
+        'html' => $message,
+      ];
+      $mailer->send($email);
+      \Civi::log('wmf')->info(
+        'large_donation: A large donation notification was sent to: {to}',
+        [ 'to' => print_r( $to, TRUE ) ]
+      );
+    } catch ( \Exception $e ) {
+      \Civi::log( 'wmf' )->error(
+        'large_donation: Sending large donation message failed for contribution: {contribution_id}<pre> {contribution} \n\n {message}</pre>',
+        [
+          'contribution_id' => $contribution->id,
+          'contribution' => $contribution,
+          'message' => $e->getMessage(),
+        ]
+      );
+    }
+  }
+
+  /**
+   * Get the contents of the notification email.
+   *
+   * @param array $params
+   *
+   * @return string
+   */
+  private static function getLargeDonationMessage( array $params): string {
+
+    return "<p>To whom it may concern:</p>
+
+<p>A large donation was made (over {$params['threshold']} USD):</p>
+
+<p>converted amount: {$params['total_amount']} USD</p>
+
+<p>original amount: {$params['source']}</p>
+
+<p><a href='{$params['contact_link']}'>View Contributions from Contact in CiviCRM</a></p>
+
+<p><a href='{$params['contribution_link']}'>View Contribution in CiviCRM</a></p>
+
+<p>You may need to examine this donation.</p>
+  ";
   }
 
 }

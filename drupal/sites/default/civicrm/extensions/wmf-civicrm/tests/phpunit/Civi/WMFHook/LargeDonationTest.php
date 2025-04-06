@@ -1,8 +1,12 @@
 <?php
 
+namespace Civi\WMFHook;
+
 use Civi\Test\Api3TestTrait;
 use Civi\Test\EntityTrait;
 use Civi\WMFEnvironmentTrait;
+use CRM_Core_PseudoConstant;
+use PHPUnit;
 
 /**
  * @group LargeDonation
@@ -26,60 +30,54 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
     $this->threshold = 100;
     $this->threshold_high = 1000;
 
-    db_delete('large_donation_notification')
-      ->execute();
+    $endowmentType = CRM_Core_PseudoConstant::getKey(
+      'CRM_Contribute_BAO_Contribution',
+      'financial_type_id',
+      'Endowment Gift'
+    );
 
-    db_insert('large_donation_notification')
-      ->fields(array(
-        'addressee' => 'notifee@localhost.net',
+    \Civi::settings()->set('large_donation_notifications', [
+      [
         'threshold' => $this->threshold,
-        'financial_types_excluded' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift')
-      ))
-      ->execute();
-
-    db_insert('large_donation_notification')
-      ->fields(array(
-        'addressee' => 'highrollingnotifee@localhost.net',
+        'addressee' => 'notifee@localhost.net',
+        'financial_types_excluded' => $endowmentType
+      ],
+      [
         'threshold' => $this->threshold_high,
-        'financial_types_excluded' => CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift')
-      ))
-      ->execute();
+        'addressee' => 'highrollingnotifee@localhost.net',
+        'financial_types_excluded' => $endowmentType
+      ],
+    ] );
 
-    $contactID = $this->createTestContact([
+    $contactID = $this->createTestContact( [
       'contact_type' => 'Individual',
       'first_name' => 'Testes',
-    ]);
+    ] );
     $this->contact_id = $contactID;
-    // https://api.drupal.org/api/drupal/includes%21bootstrap.inc/function/drupal_static_reset/7.x
-    drupal_static_reset('large_donation_get_minimum_threshold');
-    drupal_static_reset('large_donation_get_notification_thresholds');
   }
 
   public function tearDown(): void {
-    db_delete('large_donation_notification')
-      ->execute();
-    drupal_static_reset('large_donation_get_minimum_threshold');
-    drupal_static_reset('large_donation_get_notification_thresholds');
     $this->tearDownWMFEnvironment();
+    \Civi::settings()->set('large_donation_notifications', []);
     parent::tearDown();
   }
 
   public function testUnderThreshold(): void {
-    civicrm_api3('Contribution', 'create', array(
+    civicrm_api3('Contribution', 'create', [
       'contact_id' => $this->contact_id,
       'financial_type_id' => 'Cash',
       'currency' => 'USD',
       'payment_instrument' => 'Credit Card',
       'total_amount' => $this->threshold - 0.01,
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
-    ));
+    ]);
 
-    $this->assertEquals(0, $this->getMailingCount());
+    $this->assertEquals( 0, $this->getMailingCount() );
   }
 
   public function testAboveThreshold(): void {
     $amount = $this->threshold + 0.01;
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contact_id,
       'financial_type_id' => 'Cash',
       'currency' => 'USD',
@@ -87,18 +85,22 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
       'total_amount' => $amount,
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
       'source' => 'EUR 2020',
-    ));
+    ]);
 
     $this->assertEquals(1, $this->getMailingCount());
 
     $mailing = $this->getMailing(0);
-    $this->assertMatchesRegularExpression("/{$amount}/", $mailing['html'], 'Found amount in the notification email body.');
+    $this->assertMatchesRegularExpression(
+      "/{$amount}/",
+      $mailing['html'],
+      'Found amount in the notification email body.'
+    );
     $this->assertEquals('notifee@localhost.net', $mailing['to']);
   }
 
   public function testAboveHighThreshold(): void {
     $amount = $this->threshold_high + 0.01;
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contact_id,
       'financial_type_id' => 'Cash',
       'currency' => 'USD',
@@ -106,17 +108,17 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
       'total_amount' => $amount,
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
       'source' => 'EUR 2020',
-    ));
+    ]);
 
-    $this->assertEquals(2, $this->getMailingCount());
+    $this->assertEquals( 2, $this->getMailingCount() );
 
     $mailing = $this->getMailing(0);
     $mailing2 = $this->getMailing(1);
-    $this->assertEquals([
+    $this->assertEquals( [
       'notifee@localhost.net', 'highrollingnotifee@localhost.net'
     ], [
       $mailing['to'], $mailing2['to']
-    ]);
+    ] );
   }
 
   /**
@@ -124,7 +126,7 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
    */
   public function testAboveThresholdExcludedType(): void {
     $amount = $this->threshold + 0.01;
-    $this->callAPISuccess('Contribution', 'create', array(
+    $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contact_id,
       'financial_type_id' => 'Endowment Gift',
       'currency' => 'USD',
@@ -132,9 +134,9 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
       'total_amount' => $amount,
       'trxn_id' => 'TEST_GATEWAY ' . mt_rand(),
       'source' => 'EUR 2020',
-    ) );
+    ]);
 
-    $this->assertEquals( 0, $this->getMailingCount());
+    $this->assertEquals( 0, $this->getMailingCount() );
   }
 
 
@@ -145,8 +147,8 @@ class LargeDonationTest extends PHPUnit\Framework\TestCase {
    *
    * @return int
    */
-  public function createTestContact($params): int {
-    $id = (int) $this->createTestEntity('Contact', $params)['id'];
+  public function createTestContact( $params ): int {
+    $id = (int) $this->createTestEntity( 'Contact', $params )['id'];
     $this->ids['Contact'][$id] = $id;
     return $id;
   }
