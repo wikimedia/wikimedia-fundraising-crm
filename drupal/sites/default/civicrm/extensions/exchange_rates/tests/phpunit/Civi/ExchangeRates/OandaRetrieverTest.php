@@ -86,7 +86,7 @@ class OandaRetrieverTest extends TestCase implements HookInterface, Transactiona
     $this->client->expects($this->once())
       ->method('get')
       ->with(
-        'https://www.oanda.com/rates/api/v1/rates/USD.json?fields=midpoint&decimal_places=all&quote=EUR&quote=GBP',
+        'https://exchange-rates-api.oanda.com/v1/rates/USD.json?fields=midpoint&decimal_places=all&quote=EUR&quote=GBP',
         [
           'headers' => [
             'Authorization' => 'Bearer mzplx',

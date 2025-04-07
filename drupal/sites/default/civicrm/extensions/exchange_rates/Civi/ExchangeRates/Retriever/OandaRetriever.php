@@ -15,7 +15,7 @@ class OandaRetriever extends ExchangeRateRetriever {
 
   protected $fields;
 
-  protected $endpoint = 'https://www.oanda.com/rates/api';
+  protected $endpoint = 'https://exchange-rates-api.oanda.com';
 
   /**
    * @param Client $client function to retrieve quotes
