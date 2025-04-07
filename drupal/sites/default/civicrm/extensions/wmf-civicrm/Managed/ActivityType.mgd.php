@@ -324,11 +324,11 @@ return [
       'values' => [
         'option_group_id.name' => 'activity_type',
         'label' => 'Major Gifts Engagement',
-        'value' => 196,
+        'value' => 94,
         'name' => 'MajorGiftsEngagement',
         'grouping' => NULL,
         'filter' => 1,
-        'weight' => 196,
+        'weight' => 94,
         'is_default' => FALSE,
         'description' => 'Engagement by a major gifts officer',
         'is_optgroup' => FALSE,
