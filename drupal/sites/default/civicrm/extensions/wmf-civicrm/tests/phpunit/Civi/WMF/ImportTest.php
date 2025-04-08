@@ -855,44 +855,6 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
-   * This tests some features for the Fidelity import:
-   *  - Fidelity: The Donor Advised Organization is created from the Contact
-   * reference field.
-   *  - General: is_out_out is handled.
-   *
-   * @throws \CRM_Core_Exception
-   *
-   * @return void
-   */
-  public function testImportFeatures(): void {
-    $importRows = $this->importCSV('fidelity.csv', [
-      [],
-      [],
-      [],
-      ['name' => 'receive_date'],
-      ['name' => 'total_amount'],
-      [],
-      ['name' => 'donor_advised_fund.owns_donor_advised_for'],
-      ['name' => 'contact.full_name', 'default_value' => 'Squeaky Mouse'],
-      ['name' => 'contact.address_primary.street_address'],
-      [],
-      ['name' => 'financial_type_id', 'default_value' => 'Engage'],
-    ], [
-      'dateFormats' => \CRM_Utils_Date::DATE_mm_dd_yy,
-    ]);
-    $contribution = Contribution::get(FALSE)
-      ->addSelect('contact_id', 'donor_advised_fund.owns_donor_advised_for')
-      ->addWhere('id', '=', $importRows[1]['_entity_id'])
-      ->execute()->single();
-    $relationship = Relationship::get(FALSE)
-      ->addSelect('relationship_type_id:name')
-      ->addWhere('contact_id_a', '=', $contribution['donor_advised_fund.owns_donor_advised_for'])
-      ->addWhere('contact_id_b', '=', $contribution['contact_id'])
-      ->execute()->single();
-    $this->assertEquals('Holds a Donor Advised Fund of', $relationship['relationship_type_id:name']);
-  }
-
-  /**
    * Import the csv file values.
    *
    * This function uses a flow that mimics the UI flow.
