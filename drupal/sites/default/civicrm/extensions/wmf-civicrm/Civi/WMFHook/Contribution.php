@@ -327,7 +327,7 @@ class Contribution {
       );
     }
     catch (\Exception $e) {
-      \Civi::log( 'wmf' )->error(
+      \Civi::log('wmf')->alert(
         'large_donation: Sending large donation message failed for contribution: {contribution_id}<pre> {contribution} \n\n {message}</pre>',
         [
           'contribution_id' => $contribution->id,
