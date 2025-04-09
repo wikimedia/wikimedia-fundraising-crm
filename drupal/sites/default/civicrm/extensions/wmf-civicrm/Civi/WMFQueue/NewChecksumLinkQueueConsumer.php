@@ -60,6 +60,11 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
         // TODO: consider subpages, e.g. opt in. For now we only serve the main email preferences page, so this is OK.
         $url = PreferencesLink::getPreferenceUrl($contactID);
         break;
+      case 'DonorPortal':
+        $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
+        $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
+        $url = PreferencesLink::addContactAndChecksumToUrl($donorPortalBaseUrl, $contactID, $checksum);
+        break;
       default:
         throw new WMFException(
           WMFException::INVALID_MESSAGE,
