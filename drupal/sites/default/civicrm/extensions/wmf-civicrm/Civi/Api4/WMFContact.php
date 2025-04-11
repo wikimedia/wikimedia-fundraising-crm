@@ -3,6 +3,7 @@ namespace Civi\Api4;
 
 use Civi\Api4\Action\WMFContact\GetDonorSummary;
 use Civi\Api4\Action\WMFContact\Save;
+use Civi\Api4\Action\WMFContact\UpdateCommunicationsPreferences;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
@@ -23,6 +24,19 @@ class WMFContact extends Generic\AbstractEntity {
    */
   public static function save(bool $checkPermissions = TRUE): Save {
     return (new Save(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Update Email Preferences.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\WMFContact\UpdateCommunicationsPreferences
+   *
+   */
+  public static function updateCommunicationsPreferences(bool $checkPermissions = FALSE): UpdateCommunicationsPreferences {
+    return (new UpdateCommunicationsPreferences(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
