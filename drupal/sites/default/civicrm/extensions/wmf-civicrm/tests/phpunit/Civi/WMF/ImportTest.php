@@ -6,6 +6,8 @@ use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionSoft;
+use Civi\Api4\DedupeRule;
+use Civi\Api4\DedupeRuleGroup;
 use Civi\Api4\GroupContact;
 use Civi\Api4\Import;
 use Civi\Api4\Relationship;
@@ -13,7 +15,7 @@ use Civi\Api4\UserJob;
 use Civi\Core\Exception\DBQueryException;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
-use Civi\Test\HookInterface;
+use Civi\Core\HookInterface;
 use Civi\WMFEnvironmentTrait;
 use PHPUnit\Framework\TestCase;
 
@@ -43,6 +45,83 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    */
   private $formController;
 
+  public function setUp(): void {
+    Contact::save(FALSE)
+      ->setMatch(['organization_name', 'contact_type'])
+      ->addRecord([
+        'organization_name' => 'Fidelity Charitable Gift Fund',
+        'is_deleted' => FALSE,
+        'contact_type' => 'Organization',
+      ])
+      ->execute();
+    DedupeRuleGroup::save(FALSE)
+      ->addRecord([
+        'contact_type' => 'Organization',
+        'title' => 'Organization name & address',
+        'threshold' => 10,
+        'used' => 'General',
+        'name' => 'OrganizationNameAddress',
+      ])
+      ->setMatch(['name'])->execute();
+    DedupeRule::save(FALSE)
+      ->addRecord([
+        'dedupe_rule_group_id.name' => 'OrganizationNameAddress',
+        'rule_table' => 'civicrm_contact',
+        'rule_field' => 'organization_name',
+        'rule_weight' => 5,
+      ])
+      ->setMatch(['dedupe_rule_group_id', 'rule_table', 'rule_field'])
+      ->execute();
+    DedupeRule::save(FALSE)
+      ->addRecord([
+        'dedupe_rule_group_id.name' => 'OrganizationNameAddress',
+        'rule_table' => 'civicrm_address',
+        'rule_field' => 'street_address',
+        'rule_weight' => 5,
+      ])
+      ->setMatch(['dedupe_rule_group_id', 'rule_table', 'rule_field'])
+      ->execute();
+
+    DedupeRuleGroup::save(FALSE)
+      ->addRecord([
+        'contact_type' => 'Individual',
+        'title' => 'Individual name & address',
+        'threshold' => 15,
+        'used' => 'General',
+        'name' => 'IndividualNameAddress',
+      ])
+      ->setMatch(['name'])->execute();
+    DedupeRule::save(FALSE)
+      ->addRecord([
+        'dedupe_rule_group_id.name' => 'IndividualNameAddress',
+        'rule_table' => 'civicrm_contact',
+        'rule_field' => 'first_name',
+        'rule_weight' => 5,
+      ])
+      ->setMatch(['dedupe_rule_group_id', 'rule_table', 'rule_field'])
+      ->execute();
+    DedupeRule::save(FALSE)
+      ->addRecord([
+        'dedupe_rule_group_id.name' => 'IndividualNameAddress',
+        'rule_table' => 'civicrm_contact',
+        'rule_field' => 'last_name',
+        'rule_weight' => 5,
+      ])
+      ->setMatch(['dedupe_rule_group_id', 'rule_table', 'rule_field'])
+      ->execute();
+    DedupeRule::save(FALSE)
+      ->addRecord([
+        'dedupe_rule_group_id.name' => 'IndividualNameAddress',
+        'rule_table' => 'civicrm_address',
+        'rule_field' => 'street_address',
+        'rule_weight' => 5,
+      ])
+      ->setMatch(['dedupe_rule_group_id', 'rule_table', 'rule_field'])
+      ->execute();
+    $this->setUpWMFEnvironment();
+    parent::setUp();
+  }
+
   /**
    * Clean up after test.
    *
@@ -56,6 +135,11 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     if ($this->userJobID) {
       UserJob::delete(FALSE)->addWhere('id', '=', $this->userJobID)->execute();
     }
+    $this->cleanupContact(['organization_name' => 'Nice Family Fund']);
+    $this->cleanupContact(['organization_name' => 'Kind Family Charitable Fund']);
+    $this->cleanupContact(['organization_name' => 'Generous Family Fund']);
+    $this->cleanupContact(['organization_name' => 'Anonymous Fidelity Donor Advised Fund']);
+
     Contribution::delete(FALSE)->addWhere('contact_id.nick_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.organization_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.last_name', '=', 'Doe')->execute();
@@ -855,6 +939,147 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * This tests some features for the Fidelity import:
+   *  1 - The soft credit to the Fidelity contact is added
+   *  2 - The Fidelity - address is used for both contact & soft credit
+   *  3 - A donor advised fund relationship is created between the soft credit
+   *      and the fund.
+   *
+   * Note that the hook function self::hook_civicrm_importAlterMappedRow will alter the receive
+   * date from that in the csv.
+   *
+   * @throws \CRM_Core_Exception
+   *
+   * @return void
+   */
+  public function testImportFidelity(): void {
+    \Civi::dispatcher()->addListener('importAlterMappedRow', [__CLASS__, 'hook_civicrm_importAlterMappedRow']);
+    $softCreditEntityData = [
+      'soft_credit' => [
+        'contact_type' => 'Individual',
+        'soft_credit_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionSoft', 'soft_credit_type_id', 'donor-advised_fund'),
+        'action' => 'save',
+        'dedupe_rule' => 'IndividualNameAddress',
+      ],
+    ];
+    $importRows = $this->importCSV('fidelity.csv', [
+      // Each array reflects a column in the csv, with the empty ones being unmapped fields
+      [],
+      ['name' => 'contribution_extra.gateway_txn_id'],
+      [],
+      ['name' => 'receive_date'],
+      ['name' => 'total_amount'],
+      [],
+      ['name' => 'contact.organization_name'],
+      ['name' => 'soft_credit.contact.full_name', 'default_value' => '', 'entity_data' => $softCreditEntityData],
+      ['name' => 'contact.address_primary.street_address', 'default_value' => 'fidelity'],
+      [],
+      ['name' => 'financial_type_id', 'default_value' => 'Cash'],
+      ['name' => 'contact.address_primary.city'],
+      ['name' => 'contact.address_primary.state_province_id'],
+      ['name' => 'contact.address_primary.postal_code'],
+      ['name' => 'contact.address_primary.country_id'],
+      [],
+      [],
+      [],
+      [],
+      ['name' => 'contribution_extra.gateway', 'default_value' => 'fidelity'],
+    ], [
+      'dateFormats' => \CRM_Utils_Date::DATE_mm_dd_yy,
+    ], [
+      'Contribution' => ['action' => 'create'],
+      'Contact' => [
+        'action' => 'save',
+        'contact_type' => 'Organization',
+        'dedupe_rule' => 'OrganizationNameAddress',
+      ],
+      'SoftCreditContact' => [
+        'action' => 'save',
+        'contact_type' => 'Individual',
+        'soft_credit_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionSoft', 'soft_credit_type_id', 'donor-advised_fund'),
+        'dedupe_rule' => 'IndividualNameAddress',
+      ],
+    ]);
+
+    $this->assertNotEmpty($importRows[1]['_entity_id'], print_r($importRows, TRUE));
+
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contact_id', 'donor_advised_fund.owns_donor_advised_for')
+      ->addSelect('contact_id.address_primary.street_address')
+      ->addWhere('id', '=', $importRows[1]['_entity_id'])
+      ->execute()->single();
+    $this->assertEquals('75 Big Way', $contribution['contact_id.address_primary.street_address']);
+    $softCredit = ContributionSoft::get(FALSE)
+      ->addWhere('contribution_id', '=', $contribution['id'])
+      ->addWhere('soft_credit_type_id:name', '=', 'donor-advised_fund')
+      ->addSelect('contact_id', 'contact_id.address_primary.street_address')
+      ->execute()->single();
+
+    $this->assertEquals('75 Big Way', $softCredit['contact_id.address_primary.street_address']);
+    $relationship = Relationship::get(FALSE)
+      ->addSelect('relationship_type_id:name')
+      ->addWhere('contact_id_b', '=', $softCredit['contact_id'])
+      ->addWhere('contact_id_a', '=', $contribution['contact_id'])
+      ->execute()->single();
+    $this->assertEquals('Holds a Donor Advised Fund of', $relationship['relationship_type_id:name']);
+
+    // Check that the anonymous record went to the Anonymous fidelity donor.
+    Contribution::get(FALSE)
+      ->addWhere('contact_id.display_name', '=', 'Anonymous Fidelity Donor Advised Fund')
+      ->execute()->single();
+
+    $niceContributions = (array) Contribution::get(FALSE)
+      ->addWhere('contact_id.display_name', '=', 'Nice Family Fund')
+      ->execute()->indexBy('id');
+    $this->assertCount(2, $niceContributions);
+
+    $niceSoftCredits = ContributionSoft::get(FALSE)
+      ->addWhere('contribution_id', 'IN', array_keys($niceContributions))
+      ->addWhere('soft_credit_type_id:name', '=', 'donor-advised_fund')
+      ->addSelect('contact_id.display_name', 'contact_id.contact_type')
+      ->addWhere('contact_id.display_name', '=', 'Mr. Patrick Mouse')
+      ->addWhere('contact_id.contact_type', '=', 'Individual')
+      ->execute();
+    $this->assertCount(2, $niceSoftCredits);
+
+    $fidelitySoftCredits = ContributionSoft::get(FALSE)
+      ->addWhere('contribution_id', 'IN', array_keys($niceContributions))
+      ->addWhere('soft_credit_type_id:name', '=', 'Banking Institution')
+      ->addWhere('contact_id.display_name', '=', 'Fidelity Charitable Gift Fund')
+      ->addWhere('contact_id.contact_type', '=', 'Organization')
+      ->execute();
+    $this->assertCount(2, $fidelitySoftCredits);
+
+    $anonymousContribution = Contribution::get(FALSE)
+      ->addWhere('contact_id.display_name', '=', 'Anonymous Fidelity Donor Advised Fund')
+      ->execute()->single();
+    $softCredit = ContributionSoft::get(FALSE)
+      ->addWhere('contribution_id', '=', $anonymousContribution['id'])
+      ->addWhere('soft_credit_type_id:name', '!=', 'Banking Institution')
+      ->execute();
+    $this->assertCount(0, $softCredit);
+  }
+
+  /**
+   * Alter our import rows to have a recent receive date.
+   *
+   * We do this because the donor-advised-fund relationship is only created for recent contributions.
+   *
+   * @param string $importType
+   * @param string $context
+   * @param array $mappedRow
+   * @param array $rowValues
+   * @param int $userJobID
+   *
+   * @return void
+   */
+  public static function hook_civicrm_importAlterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID): void {
+    if (($mappedRow['Contribution']['contribution_extra.gateway'] ?? '') === 'fidelity') {
+      $mappedRow['Contribution']['receive_date'] = date('Y-m-d H:i:s', strtotime('-1 day'));
+    }
+  }
+
+  /**
    * Import the csv file values.
    *
    * This function uses a flow that mimics the UI flow.
@@ -862,8 +1087,11 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @param string $csv Name of csv file.
    * @param array $fieldMappings
    * @param array $submittedValues
+   * @param array $entityConfiguration
+   *
+   * @return array
    */
-  protected function importCSV(string $csv, array $fieldMappings, array $submittedValues = []): array {
+  protected function importCSV(string $csv, array $fieldMappings, array $submittedValues, array $entityConfiguration): array {
     try {
       \Civi::dispatcher()->addListener('hook_civicrm_alterRedirect', [$this, 'avoidRedirect']);
       $this->imitateAdminUser();
@@ -883,14 +1111,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       $userJob = UserJob::get(FALSE)
         ->addWhere('id', '=', $this->userJobID)
         ->execute()->single();
-      $userJob['metadata']['entity_configuration'] = [
-        'Contribution' => ['action' => 'create'],
-        "Contact" => [
-          "action" => "save",
-          "contact_type" => "Individual",
-          "dedupe_rule" => 'IndividualGeneral',
-        ],
-      ];
+      $userJob['metadata']['entity_configuration'] = $entityConfiguration;
       $userJob['metadata']['import_mappings'] = $fieldMappings;
       foreach ($userJob['metadata']['import_mappings'] as $key => $value) {
         if (!isset($value['column_number'])) {

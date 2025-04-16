@@ -58,6 +58,10 @@ class WMFTestListener implements \PHPUnit\Framework\TestListener {
     // and runs first, blocking them.
     \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 1 WHERE type = "test"');
     set_time_limit(210);
+    if ($test instanceof \Civi\Core\HookInterface) {
+      $listenerMap = \Civi\Core\Event\EventScanner::findListeners($test);
+      \Civi::dispatcher()->addListenerMap($test, $listenerMap);
+    }
   }
 
   public function endTest(\PHPUnit\Framework\Test $test, float $time): void {
