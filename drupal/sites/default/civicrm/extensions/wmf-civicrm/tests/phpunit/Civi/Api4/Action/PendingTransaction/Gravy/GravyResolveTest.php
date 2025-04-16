@@ -12,7 +12,7 @@ use SmashPig\Core\DataStores\PaymentsFraudDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\PaymentData\FinalStatus;
-use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
@@ -66,7 +66,7 @@ class GravyResolveTest extends TestCase {
   public function testResolveOnFailedTransaction(): void {
     $pending_message = $this->createTestPendingRecord('gravy');
 
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::FAILED)
       ->setSuccessful(FALSE)
@@ -107,7 +107,7 @@ class GravyResolveTest extends TestCase {
     );
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -197,7 +197,7 @@ class GravyResolveTest extends TestCase {
       $gateway,
     );
 
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -244,7 +244,7 @@ class GravyResolveTest extends TestCase {
       $pending_message['order_id'],
       $gateway,
     );
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::FAILED)
       ->setSuccessful(FALSE)
@@ -283,7 +283,7 @@ class GravyResolveTest extends TestCase {
       $pending_message['order_id'],
       $gateway,
     );
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::COMPLETE)
       ->setSuccessful(TRUE)
@@ -326,7 +326,7 @@ class GravyResolveTest extends TestCase {
     $this->createContactWithContribution($pending_message);
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -418,7 +418,7 @@ class GravyResolveTest extends TestCase {
     );
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -462,7 +462,7 @@ class GravyResolveTest extends TestCase {
     );
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -516,7 +516,7 @@ class GravyResolveTest extends TestCase {
     $this->createContactWithContribution($pending_message);
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -567,7 +567,7 @@ class GravyResolveTest extends TestCase {
     );
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)

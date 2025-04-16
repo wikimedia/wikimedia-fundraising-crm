@@ -10,7 +10,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\FailureEmail;
 use SmashPig\PaymentProviders\Responses\CreatePaymentWithProcessorRetryResponse;
-use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {

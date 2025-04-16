@@ -8,7 +8,7 @@ use SmashPig\PaymentProviders\IPaymentProvider;
 use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
 use SmashPig\PaymentProviders\Responses\CancelPaymentResponse;
 use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
-use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 
 class TestPaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusProvider, ICancelablePaymentProvider {
 
@@ -19,7 +19,7 @@ class TestPaymentProvider implements IPaymentProvider, IGetLatestPaymentStatusPr
 
   public function approvePayment(array $params) : ApprovePaymentResponse {}
 
-  public function getLatestPaymentStatus(array $params): PaymentDetailResponse {}
+  public function getLatestPaymentStatus(array $params): PaymentProviderExtendedResponse {}
 
   public function cancelPayment(string $gatewayTxnId) : CancelPaymentResponse {}
 
