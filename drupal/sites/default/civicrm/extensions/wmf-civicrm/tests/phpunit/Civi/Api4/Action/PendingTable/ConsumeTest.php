@@ -10,7 +10,7 @@ use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
 use SmashPig\PaymentProviders\Responses\CancelPaymentResponse;
-use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
@@ -92,8 +92,8 @@ class ConsumeTest extends TestCase {
 
     // setup stub responses for pending transaction resolver API calls
 
-    // - stub paymentDetailResponse
-    $paymentDetailResponse = new PaymentDetailResponse();
+    // - stub PaymentProviderExtendedResponse
+    $paymentDetailResponse = new PaymentProviderExtendedResponse();
     $paymentDetailResponse->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
       ->setRiskScores([])

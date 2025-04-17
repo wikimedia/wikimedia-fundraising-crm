@@ -12,7 +12,7 @@ use SmashPig\PaymentData\DonorDetails;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
 use SmashPig\PaymentProviders\Responses\CreateRecurringPaymentsProfileResponse;
-use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
@@ -74,7 +74,7 @@ class PayPalResolveTest extends TestCase {
     $pendingMessage = $this->createTestPendingMessage();
 
     // getLatestPaymentStatus response set up
-    $paymentStatusResponse = (new PaymentDetailResponse())
+    $paymentStatusResponse = (new PaymentProviderExtendedResponse())
       ->setStatus(FinalStatus::TIMEOUT)
       ->setSuccessful(TRUE);
 
@@ -101,7 +101,7 @@ class PayPalResolveTest extends TestCase {
     $pendingMessage = $this->createTestPendingMessage();
 
     // getLatestPaymentStatus response set up
-    $paymentStatusResponse = (new PaymentDetailResponse())
+    $paymentStatusResponse = (new PaymentProviderExtendedResponse())
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setProcessorContactID(mt_rand())
       ->setDonorDetails((new DonorDetails())
@@ -188,7 +188,7 @@ class PayPalResolveTest extends TestCase {
     $pendingMessage['recurring'] = 1;
 
     // getLatestPaymentStatus response set up
-    $paymentStatusResponse = (new PaymentDetailResponse())
+    $paymentStatusResponse = (new PaymentProviderExtendedResponse())
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setProcessorContactID(mt_rand())
       ->setDonorDetails((new DonorDetails())

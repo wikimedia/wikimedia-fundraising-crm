@@ -2,7 +2,7 @@
 
 namespace Civi\Helper;
 
-use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 
 class SmashPigPaymentError {
 
@@ -14,7 +14,7 @@ class SmashPigPaymentError {
    * @return string The error message text.
    */
   public static function getErrorText($errorResponse): string {
-    if ($errorResponse instanceof PaymentDetailResponse) {
+    if ($errorResponse instanceof PaymentProviderExtendedResponse) {
       if (
         count($errorResponse->getErrors()) &&
         method_exists($errorResponse->getErrors()[0], 'getDebugMessage')

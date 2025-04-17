@@ -14,7 +14,7 @@ use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\CrmLink\Messages\SourceFields;
 use SmashPig\PaymentData\DonorDetails;
 use SmashPig\PaymentData\FinalStatus;
-use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 use SmashPig\Tests\TestingContext;
 use SmashPig\Tests\TestingDatabase;
 use SmashPig\Tests\TestingGlobalConfiguration;
@@ -97,7 +97,7 @@ class IngenicoResolveTest extends TestCase {
     $this->createTestPaymentFraudRecord($pending_message['contribution_tracking_id'], $pending_message['order_id'], $gateway);
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -142,7 +142,7 @@ class IngenicoResolveTest extends TestCase {
     $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -230,7 +230,7 @@ class IngenicoResolveTest extends TestCase {
     $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -285,7 +285,7 @@ class IngenicoResolveTest extends TestCase {
     );
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -373,7 +373,7 @@ class IngenicoResolveTest extends TestCase {
   public function testResolveOnFailedTransaction(): void {
     $pending_message = $this->createTestPendingRecord();
 
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::FAILED)
       ->setSuccessful(FALSE)
@@ -410,7 +410,7 @@ class IngenicoResolveTest extends TestCase {
     $this->createContributionWithTrackingRecord(
       $pending_message['contribution_tracking_id'],
     );
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -456,7 +456,7 @@ class IngenicoResolveTest extends TestCase {
     $this->createTestContributionTrackingRecord(
       $pending_message['contribution_tracking_id'],
     );
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::FAILED)
       ->setSuccessful(FALSE)
@@ -492,7 +492,7 @@ class IngenicoResolveTest extends TestCase {
     $this->createContributionWithTrackingRecord(
       $pending_message['contribution_tracking_id'],
     );
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::COMPLETE)
       ->setSuccessful(TRUE)
@@ -528,7 +528,7 @@ class IngenicoResolveTest extends TestCase {
 
     // getLatestPaymentStatus response set up
     // cvv 100 & avs 100 codes represent a 'no_match' result
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -595,7 +595,7 @@ class IngenicoResolveTest extends TestCase {
     $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -673,7 +673,7 @@ class IngenicoResolveTest extends TestCase {
     $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -753,7 +753,7 @@ class IngenicoResolveTest extends TestCase {
     $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)
@@ -825,7 +825,7 @@ class IngenicoResolveTest extends TestCase {
     $pending_message = $this->createTestPendingRecord();
 
     // getLatestPaymentStatus response set up
-    $hostedPaymentStatusResponse = new PaymentDetailResponse();
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
     $hostedPaymentStatusResponse->setGatewayTxnId(mt_rand() . '-txn')
       ->setStatus(FinalStatus::PENDING_POKE)
       ->setSuccessful(TRUE)

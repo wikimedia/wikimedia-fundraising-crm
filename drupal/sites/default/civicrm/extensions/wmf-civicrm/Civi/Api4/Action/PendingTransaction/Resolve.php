@@ -18,7 +18,7 @@ use SmashPig\PaymentData\ValidationAction;
 use SmashPig\PaymentProviders\ICancelablePaymentProvider;
 use SmashPig\PaymentProviders\IPaymentProvider;
 use SmashPig\PaymentProviders\IRecurringPaymentProfileProvider;
-use SmashPig\PaymentProviders\Responses\PaymentDetailResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 /**
@@ -201,9 +201,9 @@ class Resolve extends AbstractAction {
   /**
    * Fill in any missing donor information that has come in on the status lookup call.
    *
-   * @param PaymentDetailResponse $latestPaymentDetailResult
+   * @param PaymentProviderExtendedResponse $latestPaymentDetailResult
    */
-  protected function addNewInfoFromPaymentDetailToMessage(PaymentDetailResponse $latestPaymentDetailResult): void {
+  protected function addNewInfoFromPaymentDetailToMessage(PaymentProviderExtendedResponse $latestPaymentDetailResult): void {
     $donorDetails = $latestPaymentDetailResult->getDonorDetails();
     if ($donorDetails !== NULL) {
       $infoToAddToMessage = [
@@ -626,7 +626,7 @@ class Resolve extends AbstractAction {
   }
 
   protected function approvePaymentAndReturnStatus(
-    IPaymentProvider $provider, PaymentDetailResponse $statusResult
+    IPaymentProvider $provider, PaymentProviderExtendedResponse $statusResult
   ): string {
     if (
       !empty($this->message['recurring']) &&
@@ -664,7 +664,7 @@ class Resolve extends AbstractAction {
   }
 
   protected function approveOneTimePaymentAndReturnStatus(
-    IPaymentProvider $provider, PaymentDetailResponse $statusResult
+    IPaymentProvider $provider, PaymentProviderExtendedResponse $statusResult
   ): string {
     // Ingenico only needs the gateway_txn_id, but we send more info to
     // be generic like the SmashPig extension recurring charge logic.
@@ -692,9 +692,9 @@ class Resolve extends AbstractAction {
   }
 
   /**
-   * @param PaymentDetailResponse $statusResult
+   * @param PaymentProviderExtendedResponse $statusResult
    */
-  protected function sendDonationsQueueMessage(PaymentDetailResponse $statusResult): void {
+  protected function sendDonationsQueueMessage(PaymentProviderExtendedResponse $statusResult): void {
     $donationsMessage = $this->message;
     unset($donationsMessage['gateway_session_id']);
     $token = $statusResult->getRecurringPaymentToken();
