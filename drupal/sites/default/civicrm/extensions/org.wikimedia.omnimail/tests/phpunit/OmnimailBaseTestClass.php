@@ -87,6 +87,7 @@ class OmnimailBaseTestClass extends TestCase {
         ->addWhere('id', 'IN', $this->ids['Contact'])
         ->setUseTrash(FALSE)
         ->execute();
+      CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_provider_data WHERE contact_id IN (' . implode(',', $this->ids['Contact']) . ')');
     }
     $phones = (array) Phone::get(FALSE)
       ->addWhere('phone_data.recipient_id', '=', 12345)
@@ -232,7 +233,7 @@ class OmnimailBaseTestClass extends TestCase {
     $this->callAPISuccess('Mailing', 'create', ['campaign_id' => 'xyz', 'hash' => 'xyz', 'name' => 'Mail Unit Test']);
 
     $this->callAPISuccess('MailingProviderData', 'create', [
-      'contact_id' => $this->contactIDs['charlie_clone'],
+      'contact_id' => $this->ids['Contact']['charlie_clone'],
       'email' => 'charlie@example.com',
       'event_type' => 'Opt Out',
       'mailing_identifier' => 'xyz',
@@ -240,7 +241,7 @@ class OmnimailBaseTestClass extends TestCase {
       'contact_identifier' => 'a',
     ]);
     $this->callAPISuccess('MailingProviderData', 'create', [
-      'contact_id' => $this->contactIDs['marie'],
+      'contact_id' => $this->ids['Contact']['marie'],
       'event_type' => 'Open',
       'email' => 'bob@example.com',
       'mailing_identifier' => 'xyz',
@@ -248,14 +249,14 @@ class OmnimailBaseTestClass extends TestCase {
       'contact_identifier' => 'b',
     ]);
     $this->callAPISuccess('MailingProviderData', 'create', [
-      'contact_id' => $this->contactIDs['isaac'],
+      'contact_id' => $this->ids['Contact']['isaac'],
       'event_type' => 'Suppressed',
       'mailing_identifier' => 'xyuuuz',
       'recipient_action_datetime' => '2017-04-04',
       'contact_identifier' => 'c',
     ]);
     $this->callAPISuccess('MailingProviderData', 'create', [
-      'contact_id' => $this->contactIDs['isaac'],
+      'contact_id' => $this->ids['Contact']['isaac'],
       'email' => 'charlie@example.com',
       'event_type' => 'Hard Bounce',
       'mailing_identifier' => 'xyuuuz',
@@ -280,36 +281,32 @@ class OmnimailBaseTestClass extends TestCase {
     \CRM_Queue_Service::singleton(TRUE);
   }
 
-  protected function makeScientists() {
-    $contact = $this->callAPISuccess('Contact', 'create', [
+  protected function makeScientists(): void {
+    $this->createTestEntity('Contact', [
       'first_name' => 'Charles',
       'last_name' => 'Darwin',
       'contact_type' => 'Individual',
-    ]);
-    $this->contactIDs['charlie'] = $contact['id'];
-    $contact = $this->callAPISuccess('Contact', 'create', [
+    ], 'charlie');
+
+    $this->createTestEntity('Contact', [
       'first_name' => 'Charlie',
       'last_name' => 'Darwin',
       'contact_type' => 'Individual',
-      'api.email.create' => [
-        'is_bulkmail' => 1,
-        'email' => 'charlie@example.com',
-      ],
-    ]);
-    $this->contactIDs['charlie_clone'] = $contact['id'];
+      'email_primary.email' => 'charlie@example.com',
+      'email_primary.is_bulkmail' => 1,
+    ], 'charlie_clone');
 
-    $contact = $this->callAPISuccess('Contact', 'create', [
+    $this->createTestEntity('Contact', [
       'first_name' => 'Marie',
       'last_name' => 'Currie',
       'contact_type' => 'Individual',
-    ]);
-    $this->contactIDs['marie'] = $contact['id'];
-    $contact = $this->callAPISuccess('Contact', 'create', [
+    ], 'marie');
+
+    $this->createTestEntity('Contact', [
       'first_name' => 'Isaac',
       'last_name' => 'Newton',
       'contact_type' => 'Individual',
-    ]);
-    $this->contactIDs['isaac'] = $contact['id'];
+    ], 'isaac');
   }
 
   /**
@@ -317,7 +314,7 @@ class OmnimailBaseTestClass extends TestCase {
    *
    * @param int $connectionCount
    */
-  protected function setUpForErase($connectionCount = 1) {
+  protected function setUpForErase(int $connectionCount = 1): void {
     $files = ['/Responses/AuthenticateRestResponse.txt'];
     $i = 0;
     while ($i < $connectionCount) {
@@ -344,7 +341,7 @@ class OmnimailBaseTestClass extends TestCase {
   /**
    * Set up the mock handler for an erase request.
    */
-  protected function setUpForEraseFollowUpSuccess() {
+  protected function setUpForEraseFollowUpSuccess(): void {
     $files = [
       '/Responses/AuthenticateRestResponse.txt',
       '/Responses/Privacy/EraseInProgressResponse.txt',
@@ -398,7 +395,7 @@ class OmnimailBaseTestClass extends TestCase {
    * here so trying a new tactic  - basically setting it up on the singleton
    * first.
    */
-  protected function addTestClientToRestSingleton() {
+  protected function addTestClientToRestSingleton(): void {
     $restConnector = SilverpopRestConnector::getInstance();
     $this->setUpClientWithHistoryContainer();
     $restConnector->setClient($this->getGuzzleClient());
