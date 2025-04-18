@@ -592,7 +592,7 @@ abstract class BaseAuditProcessor {
         }
       }
 
-      $wrap_up .= "Transaction IDs:\n";
+      $wrap_up .= "Missing Transaction IDs:\n";
       foreach ($remaining as $group => $transactions) {
         foreach ($transactions as $date => $missing) {
           foreach ($missing as $transaction) {
@@ -868,7 +868,6 @@ abstract class BaseAuditProcessor {
 
                 if (!$data) {
                   //no data found in this log, which is expected and normal and not a problem.
-                  $this->echo('.');
                   continue;
                 }
                 $data['order_id'] = $order_id;
