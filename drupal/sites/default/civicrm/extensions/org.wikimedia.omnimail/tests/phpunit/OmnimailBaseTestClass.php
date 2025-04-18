@@ -111,12 +111,12 @@ class OmnimailBaseTestClass extends TestCase {
   /**
    * Get mock guzzle client object.
    *
-   * @param $body
+   * @param array $body
    * @param bool $authenticateFirst
    *
    * @return \GuzzleHttp\Client
    */
-  public function getMockRequest($body = [], $authenticateFirst = TRUE): Client {
+  public function getMockRequest(array $body = [], bool $authenticateFirst = TRUE): Client {
 
     $responses = [];
     if ($authenticateFirst) {
@@ -139,7 +139,7 @@ class OmnimailBaseTestClass extends TestCase {
    * try anyway. That way when the actual command runs we know it is done and the number of responses
    * used won't depend on whether a previous test authenticated earlier.
    */
-  protected function authenticate() {
+  protected function authenticate(): void {
     $responses[] = new Response(200, [], file_get_contents(__DIR__ . '/Responses/AuthenticateResponse.txt'));
     $mock = new MockHandler($responses);
     $handler = HandlerStack::create($mock);
@@ -157,7 +157,7 @@ class OmnimailBaseTestClass extends TestCase {
    *
    * @return \GuzzleHttp\Client
    */
-  protected function setupSuccessfulDownloadClient($job = 'omnimail_omnigroupmembers_load'): Client {
+  protected function setupSuccessfulDownloadClient(string $job = 'omnimail_omnigroupmembers_load'): Client {
     $responses = [
       file_get_contents(__DIR__ . '/Responses/RawRecipientDataExportResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
@@ -192,7 +192,7 @@ class OmnimailBaseTestClass extends TestCase {
    *
    * @param array $values
    */
-  protected function createSetting($values) {
+  protected function createSetting(array $values): void {
     foreach (['last_timestamp', 'progress_end_timestamp'] as $dateField) {
       if (!empty($values[$dateField])) {
         $values[$dateField] = gmdate('YmdHis', $values[$dateField]);
