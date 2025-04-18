@@ -69,6 +69,7 @@ function smashpig_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$
       'url' => 'civicrm/smashpig/notification?type=recurringfailure',
       'qs' => "contribution_recur_id=$objectId&entity_id=$objectId",
       'class' => 'crm-popup large-popup',
+      'weight' => 0,
     ];
   }
 }

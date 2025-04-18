@@ -73,11 +73,13 @@ function civicrm_api3_preferences_create(array $params): array {
   validateInput($params);
   $contactID = (int) $params['contact_id'];
   $contact = getEmailPreferenceData($contactID);
+
   if (empty($contact)) {
     // Try to get any merged contact ID
-    $contactID = (int) key(
-      civicrm_api3('Contact', 'getmergedto', ['contact_id' => $contactID])['values']
-    );
+    $contactID = (int) Contact::getMergedTo(FALSE)
+        ->setContactId($contactID)
+        ->execute()
+        ->first()['id'];
     if (!$contactID) {
       throw new CRM_Core_Exception("No contact found with ID {$params['contact_id']}, even after getmergedto");
     }
