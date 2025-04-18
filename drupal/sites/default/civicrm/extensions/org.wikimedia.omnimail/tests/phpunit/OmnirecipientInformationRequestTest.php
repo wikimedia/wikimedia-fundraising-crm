@@ -1,12 +1,5 @@
 <?php
 
-use Civi\Test\EndToEndInterface;
-use Civi\Test\HookInterface;
-use Civi\Test\TransactionalInterface;
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Response;
 require_once __DIR__ . '/OmnimailBaseTestClass.php';
 
 /**
@@ -28,7 +21,7 @@ class OmnirecipientInformationRequestTest extends OmnimailBaseTestClass {
   /**
    * Example: Test that a version is returned.
    */
-  public function testOmnirecipientInformationRequest() {
+  public function testOmnirecipientInformationRequest(): void {
     $this->createMockHandlerForFiles([
       '/Responses/AuthenticateRestResponse.txt',
       '/Responses/Privacy/PrivacyRequest1.txt',
