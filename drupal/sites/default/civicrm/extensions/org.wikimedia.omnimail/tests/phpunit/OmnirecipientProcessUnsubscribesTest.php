@@ -33,17 +33,17 @@ class OmnirecipientProcessUnsubscribesTest extends OmnimailBaseTestClass {
     $this->callAPISuccess('Omnirecipient', 'process_unsubscribes', ['mail_provider' => 'Silverpop']);
     $data = $this->callAPISuccess('MailingProviderData', 'get', ['sequential' => 1]);
     $this->assertEquals(1, $data['values'][0]['is_civicrm_updated']);
-    $contact = $this->callAPISuccess('Contact', 'getsingle', ['id' => $this->contactIDs['charlie_clone']]);
+    $contact = $this->callAPISuccess('Contact', 'getsingle', ['id' => $this->ids['Contact']['charlie_clone']]);
     $this->assertEquals(1, $contact['is_opt_out']);
     $email = $this->callAPISuccess('Email', 'getsingle', ['email' => 'charlie@example.com']);
     $this->assertEquals(0, $email['is_bulkmail']);
-    $activity = $this->callAPISuccess('Activity', 'getsingle', ['contact_id' => $this->contactIDs['charlie_clone']]);
+    $activity = $this->callAPISuccess('Activity', 'getsingle', ['contact_id' => $this->ids['Contact']['charlie_clone']]);
     $this->assertEquals('Unsubscribed via Silverpop', $activity['subject']);
 
-    $contact = $this->callAPISuccess('Contact', 'getsingle', ['id' => $this->contactIDs['marie']]);
+    $contact = $this->callAPISuccess('Contact', 'getsingle', ['id' => $this->ids['Contact']['marie']]);
     $this->assertEquals(0, $contact['is_opt_out']);
 
-    $contact = $this->callAPISuccess('Contact', 'getsingle', ['id' => $this->contactIDs['isaac']]);
+    $contact = $this->callAPISuccess('Contact', 'getsingle', ['id' => $this->ids['Contact']['isaac']]);
     $this->assertEquals(0, $contact['is_opt_out']);
   }
 
