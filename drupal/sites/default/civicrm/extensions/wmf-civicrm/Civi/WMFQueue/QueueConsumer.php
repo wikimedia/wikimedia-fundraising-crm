@@ -46,7 +46,6 @@ abstract class QueueConsumer extends BaseQueueConsumer {
         ]
       );
       $this->handleWMFException($message, $newException, $logId);
-      throw $newException;
     }
     if ($ex instanceof DBQueryException && in_array($ex->getDBErrorMessage(), ['deadlock', 'database lock timeout'], TRUE)) {
       $newException = new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $ex->getErrorData(), $ex);
