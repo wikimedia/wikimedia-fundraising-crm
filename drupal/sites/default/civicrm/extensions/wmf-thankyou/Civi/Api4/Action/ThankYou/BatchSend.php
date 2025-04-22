@@ -60,15 +60,6 @@ class BatchSend extends AbstractAction {
       return;
     }
 
-    // FIXME: refactor this whole module to be more object oriented, so we can
-    // just set these properties and override during the test.
-    // This code resets the thank_you_days variable in case it's been left in
-    // a bad state by an aborted simulation run
-    if ($days == DUMB_BIG_TY_DAYS) {
-      $days = Civi::settings()->get('old_thank_you_days');
-      Civi::settings()->set('thank_you_days', $days);
-    }
-
     \Civi::log('wmf')->info('thank_you: Attempting to send {message_limit} thank you mails for contributions from the last {number_of_days} days.', [
       'number_of_days' => $days,
       'message_limit' => $messageLimit,

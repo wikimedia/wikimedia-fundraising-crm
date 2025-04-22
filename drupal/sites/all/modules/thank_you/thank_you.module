@@ -7,8 +7,6 @@ use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
 use Civi\WMFTransaction;
 use SmashPig\Core\UtcDate;
 
-// FIXME: this constant is for test code
-const DUMB_BIG_TY_DAYS = 100000;
 const MAX_RENDER_ATTEMPTS = 3;
 
 /**
