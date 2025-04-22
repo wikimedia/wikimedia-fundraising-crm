@@ -88,7 +88,6 @@ EOT;
 
     $consecutiveFailures = 0;
     $failureThreshold = \Civi::settings()->get('thank_you_failure_threshold');
-    $abort = FALSE;
     $endTime = $startTime + $timeLimit;
     $this->result = ['attempted' => 0, 'succeeded' => 0, 'failed' => 0, 'skipped' => 0];
     while ($contribution->fetch()) {
@@ -132,15 +131,9 @@ EOT;
         }
 
         $consecutiveFailures++;
-        $msg = "Disabling thank you job after $consecutiveFailures consecutive failures";
-        if ($consecutiveFailures > $failureThreshold) {
-          $abort = TRUE;
-          \Civi::log('wmf')->alert('thank_you: {message}', ['message' => $msg]);
-          $logMessage .= "<br/>$msg";
-        }
 
         // Always email if we're disabling the job
-        if ($ex->isNoEmail() && !$abort) {
+        if ($ex->isNoEmail() && $consecutiveFailures <= $failureThreshold) {
           \Civi::log('wmf')->error('thank_you: {log_message}', ['log_message' => $logMessage]);
         }
         else {
@@ -154,19 +147,15 @@ EOT;
                 ], TRUE),
                 'message' => $logMessage,
                 'contribution_id' => $contribution->id,
-                'subject' => 'Thank you mail failed for contribution ' . $contribution->id . " " . gethostname(),
+                'subject' => 'Thank you mail failed for contribution ' . $contribution->id . ' ' . gethostname(),
+                'consecutive_failures' => $consecutiveFailures,
               ]
             );
           }
           catch (\Exception $innerEx) {
             \Civi::log('wmf')->alert('thank_you: Can\'t even send failmail, disabling thank you job');
-            $abort = TRUE;
+            Civi::settings()->set('thank_you_enabled', 'false');
           }
-        }
-
-        if ($abort) {
-          variable_set('thank_you_enabled', 'false');
-          break;
         }
       }
     }
