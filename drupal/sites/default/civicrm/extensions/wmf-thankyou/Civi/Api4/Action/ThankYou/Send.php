@@ -243,7 +243,7 @@ class Send extends AbstractAction {
         $msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
           . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
 
-        throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
+        throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug, $e);
       }
     }
 
