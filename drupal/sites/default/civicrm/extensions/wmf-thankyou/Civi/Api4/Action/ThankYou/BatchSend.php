@@ -209,7 +209,7 @@ EOT;
    */
   private function sendThankYou(int $contribution_id) {
     // get contact mailing data from records
-    $mailingData = get_mailing_data($contribution_id);
+    $mailingData = $this->getMailingData($contribution_id);
     // don't send a Thank You email if one has already been sent
     if (!empty($mailingData['thankyou_date'])) {
       \Civi::log('wmf')->info('thank_you: Thank you email already sent for this transaction.');
@@ -336,6 +336,93 @@ EOT;
       }
       return TRUE;
     }
+  }
+
+  /**
+   * Retrieve full contribution and contact record for mailing
+   *
+   * @param int $contribution_id
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\Core\Exception\DBQueryException
+   * @throws \Civi\WMFException\WMFException
+   */
+  private function getMailingData(int $contribution_id): array {
+    if (!isset(Civi::$statics['thank_you']['giftTableName'])) {
+      Civi::$statics['thank_you']['giftTableName'] = civicrm_api3('CustomGroup', 'getvalue', [
+        'name' => 'Gift_Data',
+        'return' => 'table_name',
+      ]);
+    }
+    $giftTable = Civi::$statics['thank_you']['giftTableName'];
+    if (!isset(Civi::$statics['thank_you']['StockTableName'])) {
+      Civi::$statics['thank_you']['StockTableName'] = civicrm_api3('CustomGroup', 'getvalue', [
+        'name' => 'Stock_Information',
+        'return' => 'table_name',
+      ]);
+    }
+    $stockTable = Civi::$statics['thank_you']['StockTableName'];
+    \Civi::log('wmf')->info(
+      'thank_you: Selecting data for TY mail'
+    );
+
+    $mailingData = \CRM_Core_DAO::executeQuery("
+    SELECT
+      cntr.id AS contribution_id,
+      cntr.currency,
+      cntr.receive_date,
+      cntr.thankyou_date,
+      cntr.total_amount,
+      cntr.trxn_id,
+      cntr.payment_instrument_id,
+      cntc.id AS contact_id,
+      cntc.display_name,
+      cntc.first_name,
+      cntc.last_name,
+      cntc.organization_name,
+      cntc.contact_type,
+      cntc.email_greeting_display,
+      cntc.preferred_language,
+      f.name AS financial_type,
+      e.email,
+      x.gateway,
+      x.no_thank_you,
+      x.original_amount,
+      x.original_currency,
+      x.source_type,
+      g.campaign AS gift_source,
+      s.stock_value,
+      s.description_of_stock,
+      s.stock_ticker,
+      s.stock_qty,
+      eci.venmo_user_name,
+      recur.frequency_unit
+    FROM civicrm_contribution cntr
+    INNER JOIN civicrm_contact cntc ON cntr.contact_id = cntc.id
+    LEFT JOIN civicrm_financial_type f ON f.id = cntr.financial_type_id
+    LEFT JOIN civicrm_email e ON e.contact_id = cntc.id AND e.is_primary = 1
+    LEFT JOIN civicrm_contribution_recur recur ON cntr.contribution_recur_id = recur.id
+    INNER JOIN wmf_contribution_extra x ON cntr.id = x.entity_id
+    LEFT JOIN $giftTable g ON cntr.id = g.entity_id
+    LEFT JOIN $stockTable s ON cntr.id = s.entity_id
+    LEFT JOIN wmf_external_contact_identifiers eci ON cntr.contact_id = eci.entity_id
+    WHERE cntr.id = %1
+  ", [
+      1 => [
+        $contribution_id,
+        'Int',
+      ],
+    ]);
+    $found = $mailingData->fetch();
+    \Civi::log('wmf')->info('thank_you: Got data');
+    // check that the API result is a valid contribution result
+    if (!$found || !$mailingData->contact_id) {
+      // the API result is bad
+      $msg = 'Could not retrieve contribution record for: ' . $contribution_id . '<pre>' . print_r($mailingData, TRUE) . '</pre>';
+      throw new WMFException(WMFException::GET_CONTRIBUTION, $msg);
+    }
+    return $mailingData->toArray();
   }
 
 }
