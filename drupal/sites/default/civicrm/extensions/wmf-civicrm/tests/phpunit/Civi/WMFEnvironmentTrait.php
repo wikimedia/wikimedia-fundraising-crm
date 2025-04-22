@@ -67,6 +67,9 @@ trait WMFEnvironmentTrait {
     if (!file_exists(\Civi::settings()->get('metrics_reporting_prometheus_path'))) {
       \Civi::settings()->set('metrics_reporting_prometheus_path', \CRM_Core_Config::singleton()->configAndLogDir);
     }
+    if (!defined('WMF_UNSUB_SALT')) {
+      define('WMF_UNSUB_SALT', 'abc123');
+    }
     $this->maxContactID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
     $this->maxContributionID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution');
     $this->initializeSequenceGenerator();

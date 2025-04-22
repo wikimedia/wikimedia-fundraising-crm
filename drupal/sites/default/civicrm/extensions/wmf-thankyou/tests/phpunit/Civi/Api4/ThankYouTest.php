@@ -41,13 +41,9 @@ class ThankYouTest extends TestCase {
    * @throws \CRM_Core_Exception
    */
   public function setUp(): void {
-    if (!defined('WMF_UNSUB_SALT')) {
-      define('WMF_UNSUB_SALT', 'abc123');
-    }
-    parent::setUp();
-    MailFactory::singleton()->setActiveMailer('test');
-
+    $this->setUpWMFEnvironment();
     $this->createTestEntity('Contact', $this->testContact);
+    parent::setUp();
   }
 
   /**
