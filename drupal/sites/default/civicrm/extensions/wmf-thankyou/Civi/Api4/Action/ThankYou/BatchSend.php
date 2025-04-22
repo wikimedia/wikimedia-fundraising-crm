@@ -212,12 +212,6 @@ EOT;
       \Civi::log('wmf')->info('thank_you: Thank you email already sent for this transaction.');
       return FALSE;
     }
-    // only send a Thank You email if we are within the specified window
-    $ageInSeconds = time() - strtotime($mailingData['receive_date']);
-    if ($ageInSeconds > 86400 * Civi::settings()->get('thank_you_days')) {
-      \Civi::log('wmf')->info('thank_you: Contribution is older than limit, ignoring.');
-      return FALSE;
-    }
 
     // check for contacts without an email address
     if (empty($mailingData['email'])) {
@@ -301,6 +295,7 @@ EOT;
     if ($success) {
       $counter->increment($mailingData['gateway']);
       if ($mailingData['source_type'] === 'payments') {
+        $ageInSeconds = time() - strtotime($mailingData['receive_date']);
         $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
       }
       return TRUE;
