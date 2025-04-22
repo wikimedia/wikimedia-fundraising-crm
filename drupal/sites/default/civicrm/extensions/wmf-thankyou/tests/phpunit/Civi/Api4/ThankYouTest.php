@@ -89,21 +89,7 @@ class ThankYouTest extends TestCase {
    * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
-    try {
-      foreach ($this->originalSettings as $name => $value) {
-        Civi::settings()->set($name, $value);
-      }
-      Contribution::delete(FALSE)
-        ->addWhere('id', 'IN', $this->ids['Contribution'])
-        ->execute();
-      Contact::delete(FALSE)
-        ->addWhere('id', 'IN', $this->ids['Contact'])
-        ->setUseTrash(FALSE)
-        ->execute();
-    }
-    catch (\CRM_Core_Exception $e) {
-      $this->fail($e->getMessage());
-    }
+    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 
@@ -547,15 +533,18 @@ class ThankYouTest extends TestCase {
   /**
    * Set up a contribution with minimum detail for a thank you.
    */
-  protected function setupThankYouAbleContribution(): void {
+  protected function setupThankYouAbleContribution(string $key = 'first'): void {
     $wmfFields = $this->callAPISuccess('CustomField', 'get', ['custom_group_id' => 'contribution_extra'])['values'];
     $fieldMapping = [];
     foreach ($wmfFields as $field) {
       $fieldMapping[$field['name']] = $field['id'];
     }
-    $this->ids['Contact'][0] = $this->callAPISuccess('Contact', 'create', ['first_name' => 'bob', 'contact_type' => 'Individual', 'email' => 'bob@example.com'])['id'];
+    $this->createTestEntity('Contact', [
+      'first_name' => 'bob',
+      'contact_type' => 'Individual',
+      'email_primary.email' => 'bob@example.com'], $key);
     $this->createContribution([
-      'contact_id' => $this->ids['Contact'][0],
+      'contact_id' => $this->ids['Contact'][$key],
       'financial_type_id' => 'Donation',
       'total_amount' => 60,
       'custom_' . $fieldMapping['total_usd'] => 60,
