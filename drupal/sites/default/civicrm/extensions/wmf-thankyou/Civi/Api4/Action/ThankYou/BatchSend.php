@@ -249,12 +249,6 @@ EOT;
       \Civi::log('wmf')->notice('thank_you: {message}', ['message', $ex->getMessage()]);
     }
 
-    $locale = $mailingData['preferred_language'];
-    if (!$locale) {
-      \Civi::log('wmf')->info('thank_you: Donor language unknown.  Defaulting to English...');
-      $locale = 'en';
-    }
-
     // Select the email template
     if ($mailingData['financial_type'] === 'Endowment Gift') {
       $template = 'endowment_thank_you';
