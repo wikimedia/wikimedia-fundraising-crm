@@ -106,11 +106,9 @@ class ThankYouTest extends TestCase {
   }
 
   /**
-   * @dataProvider booleanDataProvider
-   *
    * @throws \CRM_Core_Exception
    */
-  public function testSendThankYou(bool $isUseApi): void {
+  public function testSendThankYou(): void {
     $this->setSetting('thank_you_add_civimail_records', FALSE);
     $sent = $this->sendThankYou();
     $this->assertEquals('generousdonor@example.org', $sent['to_address']);
@@ -124,15 +122,6 @@ class ThankYouTest extends TestCase {
 
     // Check for tax information, DAF emails have this removed
     $this->assertMatchesRegularExpression('/tax-exempt number/', $sent['html']);
-  }
-
-  /**
-   * Data provider for tests with 2 options
-   *
-   * @return array
-   */
-  public static function booleanDataProvider(): array {
-    return [[FALSE], [TRUE]];
   }
 
   /**
