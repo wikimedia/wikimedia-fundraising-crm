@@ -91,7 +91,7 @@ EOT;
 
     $consecutiveFailures = 0;
     $failureThreshold = \Civi::settings()->get('thank_you_failure_threshold');
-    $this->result = ['attempted' => 0, 'succeeded' => 0, 'failed' => 0, 'skipped' => 0];
+    $this->result = ['attempted' => 0, 'succeeded' => 0, 'failed' => 0];
 
     while ($contribution->fetch()) {
       if (time() >= $this->getEndTime()) {
@@ -107,9 +107,14 @@ EOT;
       ]);
       $this->result['attempted']++;
       try {
-        $this->sendThankYou($contribution->id);
-        $consecutiveFailures = 0;
-        $this->result['succeeded']++;
+        if ($this->sendThankYou($contribution->id)) {
+          $consecutiveFailures = 0;
+          $this->result['succeeded']++;
+        }
+        else {
+          $consecutiveFailures++;
+          $this->result['failed']++;
+        }
       }
       catch (WMFException $ex) {
         // let's get rid of this `gerErrorName()` & move this code towards

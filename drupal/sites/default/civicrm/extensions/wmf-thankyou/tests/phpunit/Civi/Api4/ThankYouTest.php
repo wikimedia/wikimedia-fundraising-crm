@@ -43,6 +43,8 @@ class ThankYouTest extends TestCase {
   public function setUp(): void {
     $this->setUpWMFEnvironment();
     $this->createTestEntity('Contact', $this->testContact);
+    // Set all existing rows to no thank you so we can predict which are sent.
+    \CRM_Core_DAO::executeQuery('UPDATE wmf_contribution_extra SET no_thank_you = 1');
     parent::setUp();
   }
 
@@ -589,9 +591,11 @@ class ThankYouTest extends TestCase {
       ->addWhere('contact_id', '=', $this->ids['Contact']['no_mail'])
       ->execute();
     $this->setupThankYouAbleContribution('second');
-    $result = ThankYou::batchSend(FALSE)->execute()->first();
-    $b = 1;
-
+    $result = ThankYou::batchSend(FALSE)
+      // Time limit of 10 minutes means we *may* not lose our minds when stepping through a debugger.
+      ->setTimeLimit(600)
+      ->setMessageLimit(10)->execute()->first();
+    $this->assertEquals(['attempted' => 3, 'succeeded' => 2, 'failed' => 1], $result);
   }
 
 }
