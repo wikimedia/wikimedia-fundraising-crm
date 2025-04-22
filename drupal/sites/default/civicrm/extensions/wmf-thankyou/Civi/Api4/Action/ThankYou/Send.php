@@ -225,6 +225,7 @@ class Send extends AbstractAction {
         ->addWhere('id', '=', $this->getContributionID())
         ->addValue('thankyou_date', 'now')
         ->execute();
+      $this->createActivity($subject, $html);
     }
     catch (\PHPMailer\PHPMailer\Exception $e) {
       //TODO: don't assume phpmailer
@@ -321,18 +322,6 @@ class Send extends AbstractAction {
       \Civi::log('wmf')->info('thank_you: Creating CiviMail record');
       $civi_queue_record = $civimail_store->addQueueRecord($civi_mailing, $email, $contact_id);
       \Civi::log('wmf')->info('thank_you: Done creating CiviMail record');
-
-      \Civi::log('wmf')->info('thank_you: Creating Activity');
-      Activity::create(FALSE)->setValues([
-        'source_contact_id' => $civi_queue_record->getContactID(),
-        'target_contact_id' => $civi_queue_record->getContactID(),
-        'activity_type_id:name' => 'Thank you email',
-        'activity_date_time' => 'now',
-        'subject' => $subject,
-        'details' => $html,
-        'status_id' => 2,
-      ])->execute();
-      \Civi::log('wmf')->info('thank_you: Done creating Activity');
     }
     catch (CiviQueueInsertException $e) {
       \Civi::log('wmf')->info(
@@ -397,6 +386,25 @@ class Send extends AbstractAction {
     }
     $this->getContact();
     return $this->preferredLanguage ?? 'en_US';
+  }
+
+  /**
+   * @param string $subject
+   * @param string $html
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  protected function createActivity(string $subject, string $html): void {
+    Activity::create(FALSE)->setValues([
+      'source_contact_id' => $this->getContactID(),
+      'target_contact_id' => $this->getContactID(),
+      'activity_type_id:name' => 'Thank you email',
+      'activity_date_time' => 'now',
+      'subject' => $subject,
+      'details' => $html,
+      'status_id:name' => 'Completed',
+    ])->execute();
   }
 
 }

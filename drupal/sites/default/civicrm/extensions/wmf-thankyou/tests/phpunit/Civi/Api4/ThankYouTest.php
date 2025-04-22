@@ -596,6 +596,11 @@ class ThankYouTest extends TestCase {
       ->setTimeLimit(600)
       ->setMessageLimit(10)->execute()->first();
     $this->assertEquals(['attempted' => 3, 'succeeded' => 2, 'failed' => 1], $result);
+    $activities = (array) Activity::get(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'Thank you email')
+      ->addWhere('source_contact_id', 'IN', $this->ids['Contact'])
+      ->execute();
+    $this->assertCount(2, $activities);
   }
 
 }
