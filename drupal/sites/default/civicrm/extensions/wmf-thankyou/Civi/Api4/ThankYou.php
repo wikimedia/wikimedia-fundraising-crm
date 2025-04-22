@@ -14,6 +14,7 @@ namespace Civi\Api4;
 
 use Civi\Api4\Action\ThankYou\Render;
 use Civi\Api4\Action\ThankYou\Send;
+use Civi\Api4\Action\ThankYou\BatchSend;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
@@ -38,10 +39,19 @@ class ThankYou extends Generic\AbstractEntity {
   /**
    * @param bool $checkPermissions
    *
-   * @return \Civi\Api4\Action\ThankYou\Render
+   * @return \Civi\Api4\Action\ThankYou\Send
    */
   public static function send(bool $checkPermissions = TRUE): Action\ThankYou\Send {
     return (new Send(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+  /**
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\ThankYou\BatchSend
+   */
+  public static function batchSend(bool $checkPermissions = TRUE): Action\ThankYou\BatchSend {
+    return (new BatchSend(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
