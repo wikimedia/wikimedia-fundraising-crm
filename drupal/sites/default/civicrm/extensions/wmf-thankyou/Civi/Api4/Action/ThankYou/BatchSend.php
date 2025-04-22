@@ -201,8 +201,11 @@ EOT;
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  private function sendThankYou(int $contribution_id) {
+  private function sendThankYou(int $contribution_id): bool {
     // get contact mailing data from records
+    // We do this cos we always have... However, if we simply call ThankYou::send
+    // without retrieving this data is will retrieve it itself, presumably
+    // equally efficiently as in both cases we do it record by record.
     $mailingData = $this->getMailingData($contribution_id);
     // don't send a Thank You email if one has already been sent
     if (!empty($mailingData['thankyou_date'])) {
@@ -286,28 +289,6 @@ EOT;
 
     \Civi::log('wmf')->info('thank_you: Calling thank_you_send_mail');
 
-    $require_params = [
-      'amount',
-      'currency',
-      'receive_date',
-      'recipient_address',
-      'recurring',
-      'transaction_id',
-    ];
-
-    $missing = [];
-    foreach ($require_params as $key) {
-      if (!isset($params[$key]) || $params[$key] === '') {
-        $missing[] = $key;
-      }
-    }
-    if ($missing) {
-      $as_list = implode(', ', $missing);
-      \Civi::log('wmf')->error('thank_you: Missing stuff from the TY params: {missing} {params}', ['missing' => $missing, 'params' => $params]);
-      $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
-      // Actually using WMFException only actually is better than CRM_Core_Exception in queue processing context (sometimes).
-      throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
-    }
     $success = ThankYou::send(FALSE)
       ->setDisplayName($mailingData['display_name'])
       ->setLanguage($params['language'])
@@ -324,6 +305,7 @@ EOT;
       }
       return TRUE;
     }
+    return FALSE;
   }
 
   /**
