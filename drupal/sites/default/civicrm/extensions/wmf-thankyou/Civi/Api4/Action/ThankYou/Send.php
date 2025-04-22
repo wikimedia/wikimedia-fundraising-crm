@@ -30,6 +30,8 @@ use Civi\WMFThankYou\From;
  * @method $this setEmail(string $email)
  * @method $this setContactID(int $contactID)
  * @method $this setContributionID(int $contributionID)
+ * @method $this setMaxRenderAttempts(int $max)
+ * @method int getMaxRenderAttempts()
  */
 class Send extends AbstractAction {
 
@@ -65,6 +67,8 @@ class Send extends AbstractAction {
    public $email;
 
    public $contactID;
+
+   protected int $maxRenderAttempts = 3;
 
    private $preferredLanguage;
 
@@ -168,7 +172,7 @@ class Send extends AbstractAction {
       }
       catch (\Exception $ex) {
         $renderAttempts++;
-        if ($renderAttempts >= MAX_RENDER_ATTEMPTS) {
+        if ($renderAttempts >= $this->getMaxRenderAttempts()) {
           throw $ex;
         }
       }

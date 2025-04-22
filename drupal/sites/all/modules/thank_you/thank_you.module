@@ -1,13 +1,6 @@
 <?php
 
 use Civi\Api4\ThankYou;
-use Civi\WMFException\WMFException;
-use Civi\WMFStatistic\PrometheusReporter;
-use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
-use Civi\WMFTransaction;
-use SmashPig\Core\UtcDate;
-
-const MAX_RENDER_ATTEMPTS = 3;
 
 /**
  * Main thank you batch processing function.
