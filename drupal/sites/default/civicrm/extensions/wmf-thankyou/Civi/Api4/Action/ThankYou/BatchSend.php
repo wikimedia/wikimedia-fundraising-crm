@@ -10,6 +10,7 @@ use Civi\Api4\ThankYou;
 use Civi\WMFException\WMFException;
 use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
+use Civi\WMFTransaction;
 
 /**
  * Class Render.
@@ -110,9 +111,10 @@ EOT;
 
       ]);
       try {
-        thank_you_for_contribution($contribution->id);
+        $this->sendThankYou($contribution->id);
         $consecutiveFailures = 0;
-      } catch (WMFException $ex) {
+      }
+      catch (WMFException $ex) {
         // let's get rid of this `gerErrorName()` & move this code towards
         // working with CRM_Core_Exception & leave the WMF_Exception for the queue processors
         $errName = $ex->getErrorName();
@@ -148,7 +150,7 @@ EOT;
         else {
           try {
             \Civi::log('wmf')->alert(
-              "Thank you mail failed for contribution {contribution_id}", [
+              'Thank you mail failed for contribution {contribution_id}', [
                 'url' => \CRM_Utils_System::url('civicrm/contact/view/contribution', [
                   'reset' => 1,
                   'id' => $contribution->id,
@@ -192,6 +194,148 @@ EOT;
       'thank_you: Sent {total_thank_you_emails} thank you emails.',
       ['total_thank_you_emails' => $metrics['total_thank_you_emails']]
     );
+  }
+
+
+  /**
+   * Send a TY letter, and do bookkeeping on the Civi records
+   * TODO: rewrite the civi api stuff to work like other code
+   *
+   * @param int $contribution_id
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  private function sendThankYou(int $contribution_id) {
+    // get contact mailing data from records
+    $mailingData = get_mailing_data($contribution_id);
+    // don't send a Thank You email if one has already been sent
+    if (!empty($mailingData['thankyou_date'])) {
+      \Civi::log('wmf')->info('thank_you: Thank you email already sent for this transaction.');
+      return FALSE;
+    }
+    // only send a Thank You email if we are within the specified window
+    $ageInSeconds = time() - strtotime($mailingData['receive_date']);
+    if ($ageInSeconds > 86400 * Civi::settings()->get('thank_you_days')) {
+      \Civi::log('wmf')->info('thank_you: Contribution is older than limit, ignoring.');
+      return FALSE;
+    }
+
+    // check for contacts without an email address
+    if (empty($mailingData['email'])) {
+      \Civi::log('wmf')->info('thank_you: No usable email address found');
+      Contribution::update(FALSE)
+        ->addValue('contribution_extra.no_thank_you', 'no email')
+        ->addWhere('id', '=', $contribution_id)
+        ->execute();
+      return FALSE;
+    }
+
+    if ($mailingData['no_thank_you']) {
+      \Civi::log('wmf')->info('thank_you: Contribution has been marked no_thank_you={no_thank_you_reason}, skipping.', ['no_thank_you_reason' => $mailingData['no_thank_you']]);
+      return FALSE;
+    }
+
+    $amount = $mailingData['original_amount'];
+    $currency = $mailingData['original_currency'];
+
+    // Use settlement currency if the original currency is virtual, for tax reasons.
+    if ($mailingData['original_currency'] === 'BTC') {
+      $amount = $mailingData['total_amount'];
+      $currency = $mailingData['currency'];
+    }
+
+    $is_recurring = FALSE;
+    try {
+      $transaction = WMFTransaction::from_unique_id($mailingData['trxn_id']);
+      $is_recurring = $transaction->is_recurring;
+    }
+    catch (WMFException $ex) {
+      \Civi::log('wmf')->notice('thank_you: {message}', ['message', $ex->getMessage()]);
+    }
+
+    $locale = $mailingData['preferred_language'];
+    if (!$locale) {
+      \Civi::log('wmf')->info('thank_you: Donor language unknown.  Defaulting to English...');
+      $locale = 'en';
+    }
+
+    // Select the email template
+    if ($mailingData['financial_type'] === 'Endowment Gift') {
+      $template = 'endowment_thank_you';
+    }
+    else {
+      $template = 'thank_you';
+    }
+
+    $params = [
+      'amount' => $amount,
+      'contact_id' => $mailingData['contact_id'],
+      'currency' => $currency,
+      'first_name' => $mailingData['first_name'],
+      'last_name' => $mailingData['last_name'],
+      'contact_type' => $mailingData['contact_type'],
+      'organization_name' => $mailingData['organization_name'],
+      'email_greeting_display' => $mailingData['email_greeting_display'],
+      'frequency_unit' => $mailingData['frequency_unit'],
+      'language' => $mailingData['preferred_language'] ?: 'en_US',
+      'receive_date' => $mailingData['receive_date'],
+      'recipient_address' => $mailingData['email'],
+      'recurring' => $is_recurring,
+      'transaction_id' => "CNTCT-{$mailingData['contact_id']}",
+      // shown in the body of the text
+      'gift_source' => $mailingData['gift_source'],
+      'stock_value' => $mailingData['stock_value'],
+      'stock_ticker' => $mailingData['stock_ticker'],
+      'stock_qty' => $mailingData['stock_qty'],
+      'description_of_stock' => $mailingData['description_of_stock'],
+    ];
+
+    if (!empty($mailingData['venmo_user_name'])) {
+      $params['venmo_user_name'] = $mailingData['venmo_user_name'];
+    }
+
+    \Civi::log('wmf')->info('thank_you: Calling thank_you_send_mail');
+
+    $require_params = [
+      'amount',
+      'currency',
+      'receive_date',
+      'recipient_address',
+      'recurring',
+      'transaction_id',
+    ];
+
+    $missing = [];
+    foreach ($require_params as $key) {
+      if (!isset($params[$key]) || $params[$key] === '') {
+        $missing[] = $key;
+      }
+    }
+    if ($missing) {
+      $as_list = implode(', ', $missing);
+      \Civi::log('wmf')->error('thank_you: Missing stuff from the TY params: {missing} {params}', ['missing' => $missing, 'params' => $params]);
+      $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
+      // Actually using WMFException only actually is better than CRM_Core_Exception in queue processing context (sometimes).
+      throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
+    }
+    $success = ThankYou::send(FALSE)
+      ->setDisplayName($mailingData['display_name'])
+      ->setLanguage($params['language'])
+      ->setTemplateName($template)
+      ->setParameters($params)
+      ->setContributionID($contribution_id)
+      ->execute()->first()['is_success'];
+    $counter = Queue2civicrmTrxnCounter::instance();
+
+    if ($success) {
+      $counter->increment($mailingData['gateway']);
+      if ($mailingData['source_type'] === 'payments') {
+        $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
+      }
+      return TRUE;
+    }
   }
 
 }
