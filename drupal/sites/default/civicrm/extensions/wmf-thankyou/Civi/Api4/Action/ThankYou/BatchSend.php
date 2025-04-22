@@ -24,6 +24,7 @@ use Civi\WMFTransaction;
 class BatchSend extends AbstractAction {
   protected int $messageLimit = 0;
   protected int $timeLimit = 0;
+  private $result;
 
   /**
    * @inheritDoc
@@ -89,6 +90,7 @@ EOT;
     $failureThreshold = \Civi::settings()->get('thank_you_failure_threshold');
     $abort = FALSE;
     $endTime = $startTime + $timeLimit;
+    $this->result = ['attempted' => 0, 'succeeded' => 0, 'failed' => 0, 'skipped' => 0];
     while ($contribution->fetch()) {
       if (time() >= $endTime) {
         \Civi::log('wmf')->info('thank_you: Batch time limit ({time_limit} s) elapsed', ['time_limit' => $timeLimit]);
@@ -101,15 +103,18 @@ EOT;
         'contact_id' => $contribution->contact_id,
 
       ]);
+      $this->result['attempted']++;
       try {
         $this->sendThankYou($contribution->id);
         $consecutiveFailures = 0;
+        $this->result['succeeded']++;
       }
       catch (WMFException $ex) {
         // let's get rid of this `gerErrorName()` & move this code towards
         // working with CRM_Core_Exception & leave the WMF_Exception for the queue processors
         $errName = $ex->getErrorName();
         $noThankYou = "failed: $errName";
+        $this->result['failed']++;
 
         $logMessage = $ex->getMessage()
           . "<br/>Setting no_thank_you to '$noThankYou'";
@@ -185,6 +190,7 @@ EOT;
       'thank_you: Sent {total_thank_you_emails} thank you emails.',
       ['total_thank_you_emails' => $metrics['total_thank_you_emails']]
     );
+    $result[] = $this->result;
   }
 
 

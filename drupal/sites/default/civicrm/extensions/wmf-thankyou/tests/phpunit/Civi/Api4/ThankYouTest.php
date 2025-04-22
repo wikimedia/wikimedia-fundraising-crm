@@ -591,4 +591,22 @@ class ThankYouTest extends TestCase {
     ]), $mailingData);
   }
 
+  /**
+   * Test the batch send function.
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testBatchSend(): void {
+    $this->setupThankYouAbleContribution();
+    $this->setupThankYouAbleContribution('no_mail');
+    Email::delete(FALSE)
+      ->addWhere('contact_id', '=', $this->ids['Contact']['no_mail'])
+      ->execute();
+    $this->setupThankYouAbleContribution('second');
+    $result = ThankYou::batchSend(FALSE)->execute()->first();
+    $b = 1;
+
+  }
+
 }
