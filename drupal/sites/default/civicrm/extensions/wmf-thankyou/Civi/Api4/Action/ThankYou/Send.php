@@ -227,37 +227,24 @@ class Send extends AbstractAction {
         ->execute();
       $this->createActivity($subject, $html);
     }
-    catch (\PHPMailer\PHPMailer\Exception $e) {
-      //TODO: don't assume phpmailer
-      //TODO: something with the CiviMail queue record to indicate it failed;
-      $debug = array_merge($email, ["html" => '', "plaintext" => '']);
-      \Civi::log('wmf')->error('thank_you: Sending thank you message failed in phpmailer for contribution:
-      {params} . "\n\n" .
-      {error_message}', ['params' => $params, 'error_message' => $e->errorMessage()]);
-
-      if (strpos($e->errorMessage(), "Invalid address:") === FALSE) {
-        \Civi::log('wmf')->error('thank_you: PhpMailer died unexpectedly: {error_message} at {trace}', [
-          'error_message' => $e->errorMessage(),
-          'trace' => $e->getTraceAsString(),
+    catch (\Exception $e) {
+      if (str_contains($e->getMessage(), 'Invalid address:')) {
+        $this->setNoThankYou('failed: BAD_EMAIL');
+      }
+      else {
+        $debug = array_merge($email ?? [], ['html' => '', 'subject' => '']);
+        \Civi::log('wmf')->error('thank_you: Sending thank you message failed with {exception_type} exception for contribution: {params} {debug} {error_message}', [
+          'params' => $params,
+          'debug' => $debug,
+          'exception_type' => get_class($e),
+          'error_message' => $e->getMessage(),
         ]);
-        $msg = "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n"
-          . __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n"
-          . $e->getTraceAsString();
+
+        $msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
+          . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
+
         throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
       }
-    }
-    catch (\Exception $e) {
-      $debug = array_merge($email ?? [], ["html" => '', "plaintext" => '']);
-      \Civi::log('wmf')->error('thank_you: Sending thank you message failed with generic exception for contribution: {params} {debug} {error_message}', [
-        'params' => $params,
-        'debug' => $debug,
-        'error_message' => $e->getMessage(),
-      ]);
-
-      $msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
-        . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
-
-      throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
     }
 
     if ($civi_queue_record) {
@@ -386,6 +373,13 @@ class Send extends AbstractAction {
     }
     $this->getContact();
     return $this->preferredLanguage ?? 'en_US';
+  }
+
+  private function setNoThankYou(string $reason): void {
+    Contribution::update(FALSE)
+      ->addValue('contribution_extra.no_thank_you', $reason)
+      ->addWhere('id', '=', $this->getContributionID())
+      ->execute();
   }
 
   /**
