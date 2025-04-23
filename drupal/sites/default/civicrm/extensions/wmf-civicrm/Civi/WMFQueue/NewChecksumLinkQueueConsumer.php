@@ -17,21 +17,38 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   function processMessage(array $message) {
-    $contactID = $message['contactID'];
-    $contact = Civi\Api4\Contact::get(FALSE)
-      ->addWhere('id', '=', $contactID)
+    $contactGet = Civi\Api4\Contact::get(FALSE)
       ->addSelect('preferred_language')
       ->addSelect('first_name')
       ->addSelect('display_name')
-      ->addSelect('email_primary.email')
-      ->execute()->first();
+      ->addSelect('email_primary.email');
+
+    if (!empty($message['contactID'])) {
+      $identifier = 'id ' . $message['contactID'];
+      $contactGet->addWhere('id', '=', $message['contactID']);
+    }
+    elseif (!empty($message['email'])) {
+      $identifier = 'email ' . $message['email'];
+      $contactGet->addWhere('email_primary.email', '=', $message['email'])
+        ->addOrderBy('modified_date', 'DESC');
+    }
+    else {
+      throw new WMFException(
+        WMFException::INVALID_MESSAGE,
+        'Donor preferences link request message needs contact ID or email'
+      );
+    }
+
+    $contact = $contactGet->execute()->first();
 
     if (!$contact) {
       throw new WMFException(
         WMFException::INVALID_MESSAGE,
-        "No contact found with id $contactID"
+        "No contact found with $identifier"
       );
     }
+
+    $contactID = $contact['id'];
 
     switch ($message['page']) {
       case 'RecurUpgrade':
