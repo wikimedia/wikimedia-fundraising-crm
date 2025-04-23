@@ -11,6 +11,7 @@ use Civi\WMFException\WMFException;
 use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
 use Civi\WMFTransaction;
+use CRM_Core_Exception;
 
 /**
  * Class Render.
@@ -19,9 +20,17 @@ use Civi\WMFTransaction;
  * @method $this setMessageLimit(int $messageLimit) Set consumer batch limit
  * @method int getMessageLimit() Get consumer batch limit
  * @method $this setTimeLimit(int $timeLimit) Set consumer time limit (seconds)
+ * @method $this setNumberOfDays(int $numberOfDays) Set the number of days to look back for contributions.
  */
 class BatchSend extends AbstractAction {
   protected int $messageLimit = 0;
+
+  /**
+   * Result of update.
+   *
+   * @var array
+   */
+  private array $result;
 
   /**
    * Time limit permitted for the script to run.
@@ -29,7 +38,13 @@ class BatchSend extends AbstractAction {
    * @var int $timeLimit
    */
   public int $timeLimit;
-  private $result;
+
+  /**
+   * Number of days to look back for contributions.
+   *
+   * @var int
+   */
+  public int $numberOfDays;
 
   /**
    * Time the script started.
@@ -46,17 +61,11 @@ class BatchSend extends AbstractAction {
    * @throws \Throwable
    */
   public function _run(Result $result): void {
-
-    $days = $days ?? \Civi::settings()->get('thank_you_days');
     $messageLimit = $this->getMessageLimit() ?: \Civi::settings()->get('thank_you_batch');
 
     // @todo - seems like this is broken - 'false' - naha - but do we want this setting at all?
     if (\Civi::settings()->get('thank_you_enabled') === 'false') {
       \Civi::log('wmf')->info('thank_you: Thank You send job is disabled');
-      return;
-    }
-    if (!$days) {
-      \Civi::log('wmf')->error('thank_you: Number of days to send thank you mails not configured');
       return;
     }
     if (!is_numeric($messageLimit)) {
@@ -65,14 +74,13 @@ class BatchSend extends AbstractAction {
     }
 
     \Civi::log('wmf')->info('thank_you: Attempting to send {message_limit} thank you mails for contributions from the last {number_of_days} days.', [
-      'number_of_days' => $days,
+      'number_of_days' => $this->getNumberOfDays(),
       'message_limit' => $messageLimit,
     ]);
-    $earliest = date('Y-m-d H:i:s', strtotime("-$days days"));
 
     $noEmailContributions = (array) Contribution::get(FALSE)
       ->addJoin('Email AS email', 'LEFT', ['contact_id', '=', 'email.contact_id'], ['email.is_primary', '=', 1])
-      ->addWhere('receive_date', '>', $earliest)
+      ->addWhere('receive_date', '>', $this->getEarliestContributionDate())
       ->addWhere('receive_date', '<', '30 seconds ago')
       ->addWhere('thankyou_date', 'IS NULL')
       ->addWhere('email.email', 'IS EMPTY')
@@ -104,7 +112,7 @@ class BatchSend extends AbstractAction {
 EOT;
 
     $contribution = \CRM_Core_DAO::executeQuery($ty_query, [
-      1 => [$earliest, 'String'],
+      1 => [$this->getEarliestContributionDate(), 'String'],
     ]);
 
     $consecutiveFailures = 0;
@@ -424,6 +432,34 @@ EOT;
 
   protected function getEndTime(): int {
     return $this->getStartTime() + $this->getTimeLimit();
+  }
+
+  /**
+   * Get the number of days to look back for contributions.
+   *
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public function getNumberOfDays(): int {
+    if (!isset($this->numberOfDays)) {
+      $days = \Civi::settings()->get('thank_you_days');
+      if (!$days) {
+        throw new CRM_Core_Exception('thank_you_days is not configured');
+      }
+      $this->numberOfDays = $days;
+    }
+    return $this->numberOfDays;
+  }
+
+  /**
+   * Get the earliest contribution date to look for.
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public function getEarliestContributionDate(): string {
+    $days = $this->getNumberOfDays();
+    return date('Y-m-d H:i:s', strtotime("-$days days"));
   }
 
 }
