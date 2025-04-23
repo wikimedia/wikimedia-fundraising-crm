@@ -68,13 +68,30 @@ class BatchSend extends AbstractAction {
       'number_of_days' => $days,
       'message_limit' => $messageLimit,
     ]);
-
     $earliest = date('Y-m-d H:i:s', strtotime("-$days days"));
+
+    $noEmailContributions = (array) Contribution::get(FALSE)
+      ->addJoin('Email AS email', 'LEFT', ['contact_id', '=', 'email.contact_id'], ['email.is_primary', '=', 1])
+      ->addWhere('receive_date', '>', $earliest)
+      ->addWhere('receive_date', '<', '30 seconds ago')
+      ->addWhere('thankyou_date', 'IS NULL')
+      ->addWhere('email.email', 'IS EMPTY')
+      ->addWhere('contribution_extra.no_thank_you', 'IS EMPTY')
+      ->execute()->indexBy('id');
+    if ($noEmailContributions) {
+      \Civi::log('wmf')->info('thank_you: Found {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
+      Contribution::update(FALSE)
+        ->addValue('contribution_extra.no_thank_you', 'no_email')
+        ->addWhere('id', 'IN', array_keys($noEmailContributions))
+        ->execute();
+    }
+
     $ty_query = <<<EOT
-		SELECT civicrm_contribution.id, trxn_id, contact_id
+		SELECT civicrm_contribution.id, trxn_id, civicrm_contribution.contact_id
 		FROM civicrm_contribution
-		JOIN wmf_contribution_extra
+		INNER JOIN wmf_contribution_extra
 			ON wmf_contribution_extra.entity_id = civicrm_contribution.id
+		INNER JOIN civicrm_email e ON e.contact_id = civicrm_contribution.contact_id AND e.is_primary = 1
 		WHERE
 			receive_date > %1 AND
 			thankyou_date IS NULL AND
@@ -82,6 +99,7 @@ class BatchSend extends AbstractAction {
 			  no_thank_you IS NULL OR
 			  no_thank_you IN ('', '0')
 			)
+		  AND e.email <> ''
 		ORDER BY receive_date ASC LIMIT {$messageLimit};
 EOT;
 
@@ -210,16 +228,6 @@ EOT;
     // don't send a Thank You email if one has already been sent
     if (!empty($mailingData['thankyou_date'])) {
       \Civi::log('wmf')->info('thank_you: Thank you email already sent for this transaction.');
-      return FALSE;
-    }
-
-    // check for contacts without an email address
-    if (empty($mailingData['email'])) {
-      \Civi::log('wmf')->info('thank_you: No usable email address found');
-      Contribution::update(FALSE)
-        ->addValue('contribution_extra.no_thank_you', 'no email')
-        ->addWhere('id', '=', $contribution_id)
-        ->execute();
       return FALSE;
     }
 
