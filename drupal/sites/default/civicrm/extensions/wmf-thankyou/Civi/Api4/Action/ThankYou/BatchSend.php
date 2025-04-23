@@ -18,7 +18,6 @@ use CRM_Core_Exception;
  *
  * Get the content of the thank you.
  * @method $this setMessageLimit(int $messageLimit) Set consumer batch limit
- * @method int getMessageLimit() Get consumer batch limit
  * @method $this setTimeLimit(int $timeLimit) Set consumer time limit (seconds)
  * @method $this setNumberOfDays(int $numberOfDays) Set the number of days to look back for contributions.
  */
@@ -61,21 +60,15 @@ class BatchSend extends AbstractAction {
    * @throws \Throwable
    */
   public function _run(Result $result): void {
-    $messageLimit = $this->getMessageLimit() ?: \Civi::settings()->get('thank_you_batch');
-
     // @todo - seems like this is broken - 'false' - naha - but do we want this setting at all?
     if (\Civi::settings()->get('thank_you_enabled') === 'false') {
       \Civi::log('wmf')->info('thank_you: Thank You send job is disabled');
       return;
     }
-    if (!is_numeric($messageLimit)) {
-      \Civi::log('wmf')->error('thank_you: Thank you mail message limit not configured');
-      return;
-    }
 
     \Civi::log('wmf')->info('thank_you: Attempting to send {message_limit} thank you mails for contributions from the last {number_of_days} days.', [
       'number_of_days' => $this->getNumberOfDays(),
-      'message_limit' => $messageLimit,
+      'message_limit' => $this->getMessageLimit(),
     ]);
 
     $noEmailContributions = (array) Contribution::get(FALSE)
@@ -108,11 +101,12 @@ class BatchSend extends AbstractAction {
 			  no_thank_you IN ('', '0')
 			)
 		  AND e.email <> ''
-		ORDER BY receive_date ASC LIMIT {$messageLimit};
+		ORDER BY receive_date ASC LIMIT %2;
 EOT;
 
     $contribution = \CRM_Core_DAO::executeQuery($ty_query, [
       1 => [$this->getEarliestContributionDate(), 'String'],
+      2 => [$this->getMessageLimit(), 'Int'],
     ]);
 
     $consecutiveFailures = 0;
@@ -432,6 +426,22 @@ EOT;
 
   protected function getEndTime(): int {
     return $this->getStartTime() + $this->getTimeLimit();
+  }
+
+  /**
+   * Get the limit of messages to parse per run.
+   *
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public function getMessageLimit(): int {
+    if (!isset($this->messageLimit)) {
+      $this->messageLimit = (int) \Civi::settings()->get('thank_you_batch');
+      if (!$this->messageLimit) {
+        throw new CRM_Core_Exception('thank_you: Thank you mail message limit not configured');
+      }
+    }
+    return $this->messageLimit;
   }
 
   /**
