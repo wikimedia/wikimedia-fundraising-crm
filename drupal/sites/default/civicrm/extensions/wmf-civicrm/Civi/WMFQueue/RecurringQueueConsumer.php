@@ -6,6 +6,7 @@ use Civi;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
+use Civi\Api4\FailureEmail;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\ThankYou;
 use Civi\Api4\WMFContact;
@@ -535,7 +536,14 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         // clear out the rescue_reference so we don't try to send them another auto-rescue cancel
         // API call (see civicrm_post hook in WMFHelper\ContributionRecur::cancelRecurAutoRescue)
         $update_params['contribution_recur_smashpig.rescue_reference'] = '';
-      }
+        // The failure email is otherwise sent from the recurring smashpig extension. When an autorescue
+        // attempt ends in failure, we cancel here and need to send the email as well
+        FailureEmail::send()
+          ->setCheckPermissions(FALSE)
+          ->setContactID($message->getContactID())
+          ->setContributionRecurID($message->getContributionRecurID())
+          ->execute();
+        }
       $this->updateContributionRecurWithErrorHandling($update_params);
 
       // Since the API4 update doesn't create the activity the api3 cancel call does, we create it here

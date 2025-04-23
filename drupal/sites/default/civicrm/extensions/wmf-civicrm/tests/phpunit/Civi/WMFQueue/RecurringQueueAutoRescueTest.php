@@ -2,7 +2,9 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\MessageTemplate;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFException\WMFException;
 
@@ -109,6 +111,33 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
     ]);
     $message = $this->getAutoRescueMessage(time(), 12345, 6789);
     $this->processMessageWithoutQueuing($message);
+  }
+
+  public function testAutoRescueCancellation(): void {
+    // setup example recurring
+    $rescueReference = 'MT6S49RV4HNG5S82';
+    $orderId = "279.2";
+    $recur = $this->createContributionRecur([
+      'frequency_interval' => '1',
+      'frequency_unit' => 'month',
+      'contribution_recur_smashpig.rescue_reference' => $rescueReference,
+      'invoice_id' => $orderId,
+      'payment_instrument_id:name' => "Credit Card: Visa",
+    ]);
+    // cancel the recurring
+    $cancel = $this->getRecurringCancelMessage();
+    $cancel['rescue_reference'] = $rescueReference;
+    $cancel['is_autorescue'] = 'true';
+    $cancel['cancel_reason'] = 'Payment cannot be rescued: maximum failures reached';
+    $this->processMessage($cancel);
+
+    $updatedRecur = ContributionRecur::get(FALSE)
+      ->addSelect('*', 'contribution_status_id:name')
+      ->addWhere('id', '=', $recur['id'])
+      ->execute()
+      ->first();
+
+    $this->assertEquals('Cancelled', $updatedRecur['contribution_status_id:name']);
   }
 
   /**
