@@ -41,9 +41,9 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   protected int $userJobID;
 
   /**
-   * @var \CRM_Core_Controller|\CRM_Import_Controller
+   * @var \CRM_Import_Controller
    */
-  private $formController;
+  private \CRM_Import_Controller $formController;
 
   public function setUp(): void {
     Contact::save(FALSE)
@@ -286,7 +286,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       'last_name' => 'Doe',
       'employer_id' => $this->ids['Contact']['organization'],
     ], 'individual_2');
-    $data = $this->setupImport(['soft_credit.contact.id' => ""]);
+    $data = $this->setupImport(['soft_credit.contact.id' => '']);
     $this->fillImportRow($data);
     $this->runImport($data);
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
@@ -580,7 +580,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     foreach ($columns as $column => $data) {
       $columnSQL[] = "'$data' as " . str_replace('.', '__', $column);
     }
-    return "SELECT " . implode(',', $columnSQL) . " FROM civicrm_contact LIMIT 1";
+    return 'SELECT ' . implode(',', $columnSQL) . ' FROM civicrm_contact LIMIT 1';
   }
 
   /**
@@ -592,7 +592,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   protected function createImportTable($columns = []): void {
     $fieldSql = [];
     foreach (array_keys($columns) as $column) {
-      $fieldSql[] = "`" . str_replace('.', '__', $column) . "` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL";
+      $fieldSql[] = '`' . str_replace('.', '__', $column) . '` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL';
     }
     \CRM_Core_DAO::executeQuery('CREATE TABLE civicrm_tmp_d_abc (
   ' . implode(',', $fieldSql) . ",
@@ -766,6 +766,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * as that is how we bring in DataAxle data.
    *
    * @return void
+   * @throws \CRM_Core_Exception
    */
   public function testContactImportAddressHook(): void {
     $contactID = $this->createIndividual(['address_primary.street_address' => 'Bumble Lane']);
@@ -788,9 +789,13 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals('123 Main St', $newAddress['street_address']);
     $this->assertEquals('Bumble Lane', $oldAddress['street_address']);
     $this->assertEquals('Old_' . date('Y'), $oldAddress['location_type_id:name']);
-    $this->assertEquals(FALSE, $oldAddress['is_primary']);
+    $this->assertFalse($oldAddress['is_primary']);
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
   private function doContactImport($data): void {
     $this->imitateAdminUser();
     $this->createImportTable($data + ['_related_contact_created' => 0, '_related_contact_matched' => 0]);
@@ -802,6 +807,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    *
    * @param array $data
    * @param string $mainContactType
+   *
+   * @throws \CRM_Core_Exception
    */
   private function runContactImport(array $data, string $mainContactType = 'Individual'): void {
     try {
@@ -1072,6 +1079,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @param int $userJobID
    *
    * @return void
+   * @noinspection PhpUnusedParameterInspection
    */
   public static function hook_civicrm_importAlterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID): void {
     if (($mappedRow['Contribution']['contribution_extra.gateway'] ?? '') === 'fidelity') {
@@ -1135,6 +1143,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     }
   }
 
+  /** @noinspection PhpUnusedParameterInspection */
   public static function avoidRedirect($parsedUrl, &$context) {
     throw new \CRM_Core_Exception_PrematureExitException();
   }
@@ -1143,6 +1152,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * Submit the preview form, triggering the import.
    *
    * @param array $submittedValues
+   *
+   * @throws \CRM_Core_Exception
    */
   protected function submitPreviewForm(array $submittedValues): void {
     $form = $this->getPreviewForm($submittedValues);
@@ -1277,14 +1288,14 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    *
    * @return \CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField|\CRM_Contribute_Import_Form_Preview
    */
-  public function getFormObject(string $class, array $formValues = [], array $urlParameters = []) {
+  public function getFormObject(string $class, array $formValues = [], array $urlParameters = []): \CRM_Contribute_Import_Form_Preview|\CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField {
     try {
       $_POST = $formValues;
       /** @var \CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField|\CRM_Contribute_Import_Form_Preview $form */
       $form = new $class();
       $_SERVER['REQUEST_METHOD'] = 'GET';
       $_REQUEST += $urlParameters;
-      if ($this->formController) {
+      if (isset($this->formController)) {
         // Add to the existing form controller.
         $form->controller = $this->formController;
       }
