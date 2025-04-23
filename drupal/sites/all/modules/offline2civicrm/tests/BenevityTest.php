@@ -83,7 +83,7 @@ class BenevityTest extends BaseChecksFileTest {
    * Test that import passes for the contact if a single match is found.
    */
   public function testImportSucceedOrganizationSingleContactExists(): void {
-    $this->callAPISuccess('Contact', 'create', [
+    $this->createTestEntity('Contact', [
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
     ]);
@@ -96,15 +96,15 @@ class BenevityTest extends BaseChecksFileTest {
    * found.
    */
   public function testImportSucceedIndividualSingleContactExists(): void {
-    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', [
+    $thaMouseMeister = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
     ]);
     $messages = $this->importBenevityFile();
     $this->assertEquals('1 out of 5 rows were imported.', $messages['Result']);
@@ -128,7 +128,7 @@ class BenevityTest extends BaseChecksFileTest {
    * exist & should be created.
    */
   public function testImportSucceedIndividualNoExistingMatch(): void {
-    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', [
+    $thaMouseMeister = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
@@ -161,7 +161,7 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualNoExistingMatchOnlyMatchingGift(): void {
-    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', [
+    $thaMouseMeister = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
@@ -198,15 +198,15 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualSofCreditMatchMatchingGiftNoDonorGift(): void {
-    $thaMouseMeister = $this->callAPISuccess('Contact', 'create', [
+    $thaMouseMeister = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse_home.org',
+      'email_primary.email' => 'minnie@mouse_home.org',
     ]);
     // Create a contribution on the organisation, soft credited to Better Minnie.
     $this->callAPISuccess('Contribution', 'create', [
@@ -232,21 +232,21 @@ class BenevityTest extends BaseChecksFileTest {
    * employer.
    */
   public function testImportSucceedIndividualDisambiguateByEmployer(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
     ]);
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
+    $betterMinnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
       'employer_id' => $organization['id'],
     ]);
     $messages = $this->importBenevityFile();
@@ -268,16 +268,16 @@ class BenevityTest extends BaseChecksFileTest {
    * employer.
    */
   public function testImportSucceedIndividualDisambiguateByEmployerEmailAdded(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
     ]);
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
+    $betterMinnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
@@ -306,21 +306,21 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualTooManyChoicesCantDecideSpamTheDB(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
     ]);
-    $doppelgangerMinnie = $this->callAPISuccess('Contact', 'create', [
+    $doppelgangerMinnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
     ]);
     $importer = new BenevityFile($this->getCsvDirectory() . "benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
     $importer->import();
@@ -347,22 +347,22 @@ class BenevityTest extends BaseChecksFileTest {
    * employer where nick_name match in play.
    */
   public function testImportSucceedIndividualDisambiguateByEmployerNickName(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mice',
       'nick_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
     ]);
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
+    $betterMinnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
       'employer_id' => $organization['id'],
     ]);
     $messages = $this->importBenevityFile();
@@ -385,21 +385,21 @@ class BenevityTest extends BaseChecksFileTest {
    * be redundant.
    */
   public function testImportSucceedIndividualDisambiguateByPreviousSoftCredit(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
     ]);
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
+    $betterMinnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
     ]);
     // Create a contribution on the organisation, soft credited to Better Minnie.
     $this->callAPISuccess('Contribution', 'create', [
@@ -431,17 +431,17 @@ class BenevityTest extends BaseChecksFileTest {
    * should get used as it will have an employee relationship.
    */
   public function testImportSucceedIndividualCreateIfAmbiguousPreviousSoftCredit(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
       'email' => 'minnie@mouse.org',
     ]);
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
+    $betterMinnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
@@ -493,21 +493,21 @@ class BenevityTest extends BaseChecksFileTest {
    * employee relationship.
    */
   public function testImportSucceedIndividualPreferRelationshipOverPreviousSoftCredit(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
     ]);
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
+    $betterMinnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
       'employer_id' => $organization['id'],
     ]);
 
@@ -540,15 +540,15 @@ class BenevityTest extends BaseChecksFileTest {
    * previous soft credit) we should accept them.
    */
   public function testImportSucceedIndividualMatchToEmployerDisregardingEmail(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
+    $betterMinnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse_home.org',
+      'email_primary.email' => 'minnie@mouse_home.org',
       'employer_id' => $organization['id'],
     ]);
     $messages = $this->importBenevityFile();
@@ -580,22 +580,22 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \League\Csv\Exception
    */
   public function testImportSucceedIndividualOneMatchNoEmailEmployerMatch(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
     ]);
 
-    $betterMinnie = $this->callAPISuccess('Contact', 'create', [
+    $betterMinnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
       'employer_id' => $organization['id'],
     ]);
 
@@ -654,15 +654,15 @@ class BenevityTest extends BaseChecksFileTest {
    * @throws \Civi\WMFException\WMFException
    */
   public function testImportSucceedIndividualOneMatchNoEmailNoEmployerMatch(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
     ]);
 
     $importer = new BenevityFile($this->getCsvDirectory() . "benevity_mice_no_email.csv", ['date' => ['year' => 2019, 'month' => 9, 'day' => 12]]);
@@ -691,7 +691,7 @@ class BenevityTest extends BaseChecksFileTest {
    * contribution have also been rolled back.
    */
   public function testImportDuplicateFullRollback(): void {
-    $organization = $this->callAPISuccess('Contact', 'create', [
+    $organization = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
@@ -742,9 +742,9 @@ class BenevityTest extends BaseChecksFileTest {
   public function testDuplicateDetectionInvalidState(): void {
     [$mouseOrg] = $this->createAllOrganizations();
 
-    $existing = $this->callAPISuccess('Contribution', 'create', [
+    $existing = $this->createTestEntity('Contribution', [
       'trxn_id' => 'BENEVITY TRXN-SQUEAK_MATCHED',
-      'financial_type_id' => 'Engage',
+      'financial_type_id:name' => 'Engage',
       'total_amount' => 5,
       'source' => 'USD 5.00',
       'contact_id' => $mouseOrg['id'],
@@ -791,16 +791,16 @@ class BenevityTest extends BaseChecksFileTest {
    * name as a name should not be a problem.
    */
   public function testImportSucceedOrganizationDisambiguatedBySingleNickName(): void {
-    $this->callAPISuccess('Contact', 'create', [
+    $this->createTestEntity('Contact', [
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
     ]);
-    $theRealDuck = $this->callAPISuccess('Contact', 'create', [
+    $theRealDuck = $this->createTestEntity('Contact', [
       'organization_name' => 'Donald Duck',
       'nick_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
     ]);
-    $this->callAPISuccess('Contact', 'create', [
+    $this->createTestEntity('Contact', [
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
     ]);
@@ -829,11 +829,11 @@ class BenevityTest extends BaseChecksFileTest {
   public function testImportSucceedAll(): void {
     [$mouseOrg] = $this->createAllOrganizations();
 
-    $this->callAPISuccess('Contact', 'create', [
+    $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
       'employer_id' => $mouseOrg['id'],
     ]);
 
@@ -946,19 +946,19 @@ class BenevityTest extends BaseChecksFileTest {
    * @return array
    */
   protected function createAllOrganizations(): array {
-    $mouseOrg = $this->callAPISuccess('Contact', 'create', [
+    $mouseOrg = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $dogOrg = $this->callAPISuccess('Contact', 'create', [
+    $dogOrg = $this->createTestEntity('Contact', [
       'organization_name' => 'Goofy Inc',
       'contact_type' => 'Organization',
     ]);
-    $duckOrg = $this->callAPISuccess('Contact', 'create', [
+    $duckOrg = $this->createTestEntity('Contact', [
       'organization_name' => 'Donald Duck Inc',
       'contact_type' => 'Organization',
     ]);
-    $stingyOrg = $this->callAPISuccess('Contact', 'create', [
+    $stingyOrg = $this->createTestEntity('Contact', [
       'organization_name' => 'Uncle Scrooge Inc',
       'contact_type' => 'Organization',
     ]);
@@ -987,15 +987,15 @@ class BenevityTest extends BaseChecksFileTest {
    * @return array
    */
   protected function spawnMice(): array {
-    $mouseOrg = $this->callAPISuccess('Contact', 'create', [
+    $mouseOrg = $this->createTestEntity('Contact', [
       'organization_name' => 'Mickey Mouse Inc',
       'contact_type' => 'Organization',
     ]);
-    $minnie = $this->callAPISuccess('Contact', 'create', [
+    $minnie = $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
       'contact_type' => 'Individual',
-      'email' => 'minnie@mouse.org',
+      'email_primary.email' => 'minnie@mouse.org',
     ]);
     return [$mouseOrg, $minnie];
   }
