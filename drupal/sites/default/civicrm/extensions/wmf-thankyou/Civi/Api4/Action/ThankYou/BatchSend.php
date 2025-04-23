@@ -71,21 +71,7 @@ class BatchSend extends AbstractAction {
       'message_limit' => $this->getMessageLimit(),
     ]);
 
-    $noEmailContributions = (array) Contribution::get(FALSE)
-      ->addJoin('Email AS email', 'LEFT', ['contact_id', '=', 'email.contact_id'], ['email.is_primary', '=', 1])
-      ->addWhere('receive_date', '>', $this->getEarliestContributionDate())
-      ->addWhere('receive_date', '<', '30 seconds ago')
-      ->addWhere('thankyou_date', 'IS NULL')
-      ->addWhere('email.email', 'IS EMPTY')
-      ->addWhere('contribution_extra.no_thank_you', 'IS EMPTY')
-      ->execute()->indexBy('id');
-    if ($noEmailContributions) {
-      \Civi::log('wmf')->info('thank_you: Found {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
-      Contribution::update(FALSE)
-        ->addValue('contribution_extra.no_thank_you', 'no_email')
-        ->addWhere('id', 'IN', array_keys($noEmailContributions))
-        ->execute();
-    }
+    $this->updateContributionsWithoutEmail();
 
     $ty_query = <<<EOT
 		SELECT civicrm_contribution.id, trxn_id, civicrm_contribution.contact_id
@@ -470,6 +456,32 @@ EOT;
   public function getEarliestContributionDate(): string {
     $days = $this->getNumberOfDays();
     return date('Y-m-d H:i:s', strtotime("-$days days"));
+  }
+
+  /**
+   * Update the no_thank_you field for contributions that have no email address to 'no_email'.
+   *
+   * This suppresses them from the thank you query.
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function updateContributionsWithoutEmail(): void {
+    $noEmailContributions = (array) Contribution::get(FALSE)
+      ->addJoin('Email AS email', 'LEFT', ['contact_id', '=', 'email.contact_id'], ['email.is_primary', '=', 1])
+      ->addWhere('receive_date', '>', $this->getEarliestContributionDate())
+      ->addWhere('receive_date', '<', '30 seconds ago')
+      ->addWhere('thankyou_date', 'IS NULL')
+      ->addWhere('email.email', 'IS EMPTY')
+      ->addWhere('contribution_extra.no_thank_you', 'IS EMPTY')
+      ->execute()->indexBy('id');
+    if ($noEmailContributions) {
+      \Civi::log('wmf')->info('thank_you: Found {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
+      Contribution::update(FALSE)
+        ->addValue('contribution_extra.no_thank_you', 'no_email')
+        ->addWhere('id', 'IN', array_keys($noEmailContributions))
+        ->execute();
+    }
   }
 
 }
