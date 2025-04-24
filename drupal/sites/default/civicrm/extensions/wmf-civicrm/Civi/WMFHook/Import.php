@@ -124,14 +124,12 @@ class Import {
           $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($this->mappedRow['Contact'], $this->mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $this->mappedRow['Contribution']['check_number'] ?? NULL, $this->rowValues[array_key_last($this->rowValues)]);
         }
 
-        if (empty($this->mappedRow['Contribution']['contribution_extra.gateway'])) {
-          $this->mappedRow['Contribution']['contribution_extra.gateway'] = self::getGateway($this->userJobID);
-        }
+        $this->mappedRow['Contribution']['contribution_extra.gateway'] = $this->getGateway();
         $existingContributionID = ContributionHelper::exists($this->mappedRow['Contribution']['contribution_extra.gateway'], $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
         if ($existingContributionID) {
           throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
         }
-        if ($this->mappedRow['Contribution']['contribution_extra.gateway'] === 'fidelity') {
+        if ($this->getGateway() === 'fidelity') {
           // For Fidelity we add a secondary contribution to Fidelity.
           // We also ensure any anonymous org ones are set to 'Anonymous Fidelity Donor Advised Fund')
           if (($this->mappedRow['Contact']['organization_name'] ?? '') === 'Anonymous') {
@@ -267,12 +265,17 @@ class Import {
   }
 
   /**
-   * @param int $userJobID
+   * Get the gateway (e.g fidelity, matching_gifts, benevity).
+   *
+   * Generally this is mapped in the import mapping and will show up in the mapped row.
+   * That may always be true now, but originally it was not possible to set a default
+   * so there is some additional handling based on the import template job name which
+   * possibly can go now.
    *
    * @throws \CRM_Core_Exception
    */
-  protected static function getGateway(int $userJobID): string {
-    return self::getUserJob($userJobID)['gateway'];
+  protected function getGateway(): string {
+    return !empty($this->mappedRow['Contribution']['contribution_extra.gateway']) ? $this->mappedRow['Contribution']['contribution_extra.gateway'] : $this->getUserJob()['gateway'];
   }
 
   /**
@@ -390,14 +393,14 @@ class Import {
   }
 
   /**
-   * @param int $userJobID
+   * Get the User Job.
    *
    * @return array
    * @throws \CRM_Core_Exception
    */
-  public static function getUserJob(int $userJobID): array {
+  private function getUserJob(): array {
     if (!isset(\Civi::$statics[__CLASS__]['user_job'])) {
-      $userJob = UserJob::get(FALSE)->addWhere('id', '=', $userJobID)->execute()->first();
+      $userJob = UserJob::get(FALSE)->addWhere('id', '=', $this->userJobID)->execute()->first();
       $templateID = $userJob['metadata']['template_id'] ?? NULL;
       $gateway = 'civicrm_import';
       if ($templateID) {
