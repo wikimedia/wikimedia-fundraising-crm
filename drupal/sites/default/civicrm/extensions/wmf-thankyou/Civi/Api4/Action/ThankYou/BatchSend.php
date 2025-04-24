@@ -11,6 +11,7 @@ use Civi\WMFException\WMFException;
 use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
 use Civi\WMFTransaction;
+use CRM_Core_Exception;
 
 /**
  * Class Render.
@@ -19,9 +20,17 @@ use Civi\WMFTransaction;
  * @method $this setMessageLimit(int $messageLimit) Set consumer batch limit
  * @method int getMessageLimit() Get consumer batch limit
  * @method $this setTimeLimit(int $timeLimit) Set consumer time limit (seconds)
+ * @method $this setNumberOfDays(int $numberOfDays) Set the number of days to look back for contributions.
  */
 class BatchSend extends AbstractAction {
   protected int $messageLimit = 0;
+
+  /**
+   * Result of update.
+   *
+   * @var array
+   */
+  private array $result;
 
   /**
    * Time limit permitted for the script to run.
@@ -29,7 +38,13 @@ class BatchSend extends AbstractAction {
    * @var int $timeLimit
    */
   public int $timeLimit;
-  private $result;
+
+  /**
+   * Number of days to look back for contributions.
+   *
+   * @var int
+   */
+  public int $numberOfDays;
 
   /**
    * Time the script started.
@@ -46,17 +61,11 @@ class BatchSend extends AbstractAction {
    * @throws \Throwable
    */
   public function _run(Result $result): void {
-
-    $days = $days ?? \Civi::settings()->get('thank_you_days');
     $messageLimit = $this->getMessageLimit() ?: \Civi::settings()->get('thank_you_batch');
 
     // @todo - seems like this is broken - 'false' - naha - but do we want this setting at all?
     if (\Civi::settings()->get('thank_you_enabled') === 'false') {
       \Civi::log('wmf')->info('thank_you: Thank You send job is disabled');
-      return;
-    }
-    if (!$days) {
-      \Civi::log('wmf')->error('thank_you: Number of days to send thank you mails not configured');
       return;
     }
     if (!is_numeric($messageLimit)) {
@@ -65,16 +74,32 @@ class BatchSend extends AbstractAction {
     }
 
     \Civi::log('wmf')->info('thank_you: Attempting to send {message_limit} thank you mails for contributions from the last {number_of_days} days.', [
-      'number_of_days' => $days,
+      'number_of_days' => $this->getNumberOfDays(),
       'message_limit' => $messageLimit,
     ]);
 
-    $earliest = date('Y-m-d H:i:s', strtotime("-$days days"));
+    $noEmailContributions = (array) Contribution::get(FALSE)
+      ->addJoin('Email AS email', 'LEFT', ['contact_id', '=', 'email.contact_id'], ['email.is_primary', '=', 1])
+      ->addWhere('receive_date', '>', $this->getEarliestContributionDate())
+      ->addWhere('receive_date', '<', '30 seconds ago')
+      ->addWhere('thankyou_date', 'IS NULL')
+      ->addWhere('email.email', 'IS EMPTY')
+      ->addWhere('contribution_extra.no_thank_you', 'IS EMPTY')
+      ->execute()->indexBy('id');
+    if ($noEmailContributions) {
+      \Civi::log('wmf')->info('thank_you: Found {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
+      Contribution::update(FALSE)
+        ->addValue('contribution_extra.no_thank_you', 'no_email')
+        ->addWhere('id', 'IN', array_keys($noEmailContributions))
+        ->execute();
+    }
+
     $ty_query = <<<EOT
-		SELECT civicrm_contribution.id, trxn_id, contact_id
+		SELECT civicrm_contribution.id, trxn_id, civicrm_contribution.contact_id
 		FROM civicrm_contribution
-		JOIN wmf_contribution_extra
+		INNER JOIN wmf_contribution_extra
 			ON wmf_contribution_extra.entity_id = civicrm_contribution.id
+		INNER JOIN civicrm_email e ON e.contact_id = civicrm_contribution.contact_id AND e.is_primary = 1
 		WHERE
 			receive_date > %1 AND
 			thankyou_date IS NULL AND
@@ -82,11 +107,12 @@ class BatchSend extends AbstractAction {
 			  no_thank_you IS NULL OR
 			  no_thank_you IN ('', '0')
 			)
+		  AND e.email <> ''
 		ORDER BY receive_date ASC LIMIT {$messageLimit};
 EOT;
 
     $contribution = \CRM_Core_DAO::executeQuery($ty_query, [
-      1 => [$earliest, 'String'],
+      1 => [$this->getEarliestContributionDate(), 'String'],
     ]);
 
     $consecutiveFailures = 0;
@@ -201,28 +227,15 @@ EOT;
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  private function sendThankYou(int $contribution_id) {
+  private function sendThankYou(int $contribution_id): bool {
     // get contact mailing data from records
+    // We do this cos we always have... However, if we simply call ThankYou::send
+    // without retrieving this data is will retrieve it itself, presumably
+    // equally efficiently as in both cases we do it record by record.
     $mailingData = $this->getMailingData($contribution_id);
     // don't send a Thank You email if one has already been sent
     if (!empty($mailingData['thankyou_date'])) {
       \Civi::log('wmf')->info('thank_you: Thank you email already sent for this transaction.');
-      return FALSE;
-    }
-    // only send a Thank You email if we are within the specified window
-    $ageInSeconds = time() - strtotime($mailingData['receive_date']);
-    if ($ageInSeconds > 86400 * Civi::settings()->get('thank_you_days')) {
-      \Civi::log('wmf')->info('thank_you: Contribution is older than limit, ignoring.');
-      return FALSE;
-    }
-
-    // check for contacts without an email address
-    if (empty($mailingData['email'])) {
-      \Civi::log('wmf')->info('thank_you: No usable email address found');
-      Contribution::update(FALSE)
-        ->addValue('contribution_extra.no_thank_you', 'no email')
-        ->addWhere('id', '=', $contribution_id)
-        ->execute();
       return FALSE;
     }
 
@@ -247,12 +260,6 @@ EOT;
     }
     catch (WMFException $ex) {
       \Civi::log('wmf')->notice('thank_you: {message}', ['message', $ex->getMessage()]);
-    }
-
-    $locale = $mailingData['preferred_language'];
-    if (!$locale) {
-      \Civi::log('wmf')->info('thank_you: Donor language unknown.  Defaulting to English...');
-      $locale = 'en';
     }
 
     // Select the email template
@@ -292,28 +299,6 @@ EOT;
 
     \Civi::log('wmf')->info('thank_you: Calling thank_you_send_mail');
 
-    $require_params = [
-      'amount',
-      'currency',
-      'receive_date',
-      'recipient_address',
-      'recurring',
-      'transaction_id',
-    ];
-
-    $missing = [];
-    foreach ($require_params as $key) {
-      if (!isset($params[$key]) || $params[$key] === '') {
-        $missing[] = $key;
-      }
-    }
-    if ($missing) {
-      $as_list = implode(', ', $missing);
-      \Civi::log('wmf')->error('thank_you: Missing stuff from the TY params: {missing} {params}', ['missing' => $missing, 'params' => $params]);
-      $msg = "FAILED TO RENDER HTML EMAIL because of missing parameters {$as_list} in " . __FUNCTION__;
-      // Actually using WMFException only actually is better than CRM_Core_Exception in queue processing context (sometimes).
-      throw new WMFException(WMFException::MISSING_MANDATORY_DATA, $msg);
-    }
     $success = ThankYou::send(FALSE)
       ->setDisplayName($mailingData['display_name'])
       ->setLanguage($params['language'])
@@ -326,10 +311,12 @@ EOT;
     if ($success) {
       $counter->increment($mailingData['gateway']);
       if ($mailingData['source_type'] === 'payments') {
+        $ageInSeconds = time() - strtotime($mailingData['receive_date']);
         $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
       }
       return TRUE;
     }
+    return FALSE;
   }
 
   /**
@@ -445,6 +432,34 @@ EOT;
 
   protected function getEndTime(): int {
     return $this->getStartTime() + $this->getTimeLimit();
+  }
+
+  /**
+   * Get the number of days to look back for contributions.
+   *
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public function getNumberOfDays(): int {
+    if (!isset($this->numberOfDays)) {
+      $days = \Civi::settings()->get('thank_you_days');
+      if (!$days) {
+        throw new CRM_Core_Exception('thank_you_days is not configured');
+      }
+      $this->numberOfDays = $days;
+    }
+    return $this->numberOfDays;
+  }
+
+  /**
+   * Get the earliest contribution date to look for.
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public function getEarliestContributionDate(): string {
+    $days = $this->getNumberOfDays();
+    return date('Y-m-d H:i:s', strtotime("-$days days"));
   }
 
 }
