@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4;
 
+use Civi\Api4\Action\WMFContact\GetDonorSummary;
 use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
@@ -22,6 +23,17 @@ class WMFContact extends Generic\AbstractEntity {
    */
   public static function save(bool $checkPermissions = TRUE): Save {
     return (new Save(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Get contact and donation information (for all contacts sharing an email with this CID)
+   *
+   * @param bool $checkPermissions
+   * @return GetDonorSummary
+   */
+  public static function getDonorSummary(bool $checkPermissions = TRUE): GetDonorSummary {
+    return (new GetDonorSummary(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 

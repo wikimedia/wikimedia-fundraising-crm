@@ -19,12 +19,24 @@ use Civi\WMFTransaction;
  * @method $this setMessageLimit(int $messageLimit) Set consumer batch limit
  * @method int getMessageLimit() Get consumer batch limit
  * @method $this setTimeLimit(int $timeLimit) Set consumer time limit (seconds)
- * @method int getTimeLimit() Get consumer time limit (seconds)
  */
 class BatchSend extends AbstractAction {
   protected int $messageLimit = 0;
-  protected int $timeLimit = 0;
+
+  /**
+   * Time limit permitted for the script to run.
+   *
+   * @var int $timeLimit
+   */
+  public int $timeLimit;
   private $result;
+
+  /**
+   * Time the script started.
+   *
+   * @var int $startTime
+   */
+  private int $startTime;
 
   /**
    * @inheritDoc
@@ -34,21 +46,12 @@ class BatchSend extends AbstractAction {
    * @throws \Throwable
    */
   public function _run(Result $result): void {
-    // If available, use the time the script started as the start time
-    // This way we're less likely to run past the start of the next run.
-    if (isset($_SERVER['REQUEST_TIME'])) {
-      $startTime = $_SERVER['REQUEST_TIME'];
-    }
-    else {
-      $startTime = time();
-    }
 
-    $timeLimit = $this->getTimeLimit() ?: \Civi::settings()->get('thank_you_batch_time');
     $days = $days ?? \Civi::settings()->get('thank_you_days');
     $messageLimit = $this->getMessageLimit() ?: \Civi::settings()->get('thank_you_batch');
-    $enabled = \Civi::settings()->get('thank_you_enabled');
 
-    if ($enabled === 'false') {
+    // @todo - seems like this is broken - 'false' - naha - but do we want this setting at all?
+    if (\Civi::settings()->get('thank_you_enabled') === 'false') {
       \Civi::log('wmf')->info('thank_you: Thank You send job is disabled');
       return;
     }
@@ -88,12 +91,11 @@ EOT;
 
     $consecutiveFailures = 0;
     $failureThreshold = \Civi::settings()->get('thank_you_failure_threshold');
-    $abort = FALSE;
-    $endTime = $startTime + $timeLimit;
-    $this->result = ['attempted' => 0, 'succeeded' => 0, 'failed' => 0, 'skipped' => 0];
+    $this->result = ['attempted' => 0, 'succeeded' => 0, 'failed' => 0];
+
     while ($contribution->fetch()) {
-      if (time() >= $endTime) {
-        \Civi::log('wmf')->info('thank_you: Batch time limit ({time_limit} s) elapsed', ['time_limit' => $timeLimit]);
+      if (time() >= $this->getEndTime()) {
+        \Civi::log('wmf')->info('thank_you: Batch time limit ({time_limit} s) elapsed', ['time_limit' => $this->getTimeLimit()]);
         break;
       }
       \Civi::log('wmf')->info(
@@ -105,9 +107,14 @@ EOT;
       ]);
       $this->result['attempted']++;
       try {
-        $this->sendThankYou($contribution->id);
-        $consecutiveFailures = 0;
-        $this->result['succeeded']++;
+        if ($this->sendThankYou($contribution->id)) {
+          $consecutiveFailures = 0;
+          $this->result['succeeded']++;
+        }
+        else {
+          $consecutiveFailures++;
+          $this->result['failed']++;
+        }
       }
       catch (WMFException $ex) {
         // let's get rid of this `gerErrorName()` & move this code towards
@@ -132,15 +139,9 @@ EOT;
         }
 
         $consecutiveFailures++;
-        $msg = "Disabling thank you job after $consecutiveFailures consecutive failures";
-        if ($consecutiveFailures > $failureThreshold) {
-          $abort = TRUE;
-          \Civi::log('wmf')->alert('thank_you: {message}', ['message' => $msg]);
-          $logMessage .= "<br/>$msg";
-        }
 
         // Always email if we're disabling the job
-        if ($ex->isNoEmail() && !$abort) {
+        if ($ex->isNoEmail() && $consecutiveFailures <= $failureThreshold) {
           \Civi::log('wmf')->error('thank_you: {log_message}', ['log_message' => $logMessage]);
         }
         else {
@@ -154,19 +155,15 @@ EOT;
                 ], TRUE),
                 'message' => $logMessage,
                 'contribution_id' => $contribution->id,
-                'subject' => 'Thank you mail failed for contribution ' . $contribution->id . " " . gethostname(),
+                'subject' => 'Thank you mail failed for contribution ' . $contribution->id . ' ' . gethostname(),
+                'consecutive_failures' => $consecutiveFailures,
               ]
             );
           }
           catch (\Exception $innerEx) {
             \Civi::log('wmf')->alert('thank_you: Can\'t even send failmail, disabling thank you job');
-            $abort = TRUE;
+            Civi::settings()->set('thank_you_enabled', 'false');
           }
-        }
-
-        if ($abort) {
-          variable_set('thank_you_enabled', 'false');
-          break;
         }
       }
     }
@@ -420,6 +417,34 @@ EOT;
       throw new WMFException(WMFException::GET_CONTRIBUTION, $msg);
     }
     return $mailingData->toArray();
+  }
+
+  /**
+   * @return int
+   */
+  protected function getStartTime(): int {
+    if (!isset($this->startTime)) {
+      // If available, use the time the script started as the start time
+      // This way we're less likely to run past the start of the next run.
+      if (isset($_SERVER['REQUEST_TIME'])) {
+        $this->startTime = $_SERVER['REQUEST_TIME'];
+      }
+      else {
+        $this->startTime = time();
+      }
+    }
+    return $this->startTime;
+  }
+
+  public function getTimeLimit(): int {
+    if (!isset($this->timeLimit)) {
+      $this->timeLimit = (int) Civi::settings()->get('thank_you_batch_time');
+    }
+    return $this->timeLimit;
+  }
+
+  protected function getEndTime(): int {
+    return $this->getStartTime() + $this->getTimeLimit();
   }
 
 }

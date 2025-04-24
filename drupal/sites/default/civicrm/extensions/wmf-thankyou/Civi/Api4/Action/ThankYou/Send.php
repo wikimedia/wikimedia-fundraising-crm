@@ -225,38 +225,26 @@ class Send extends AbstractAction {
         ->addWhere('id', '=', $this->getContributionID())
         ->addValue('thankyou_date', 'now')
         ->execute();
-    }
-    catch (\PHPMailer\PHPMailer\Exception $e) {
-      //TODO: don't assume phpmailer
-      //TODO: something with the CiviMail queue record to indicate it failed;
-      $debug = array_merge($email, ["html" => '', "plaintext" => '']);
-      \Civi::log('wmf')->error('thank_you: Sending thank you message failed in phpmailer for contribution:
-      {params} . "\n\n" .
-      {error_message}', ['params' => $params, 'error_message' => $e->errorMessage()]);
-
-      if (strpos($e->errorMessage(), "Invalid address:") === FALSE) {
-        \Civi::log('wmf')->error('thank_you: PhpMailer died unexpectedly: {error_message} at {trace}', [
-          'error_message' => $e->errorMessage(),
-          'trace' => $e->getTraceAsString(),
-        ]);
-        $msg = "UNHANDLED PHPMAILER EXCEPTION SENDING THANK YOU MESSAGE\n"
-          . __FUNCTION__ . "\n\n" . $e->errorMessage() . "\n\n"
-          . $e->getTraceAsString();
-        throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
-      }
+      $this->createActivity($subject, $html);
     }
     catch (\Exception $e) {
-      $debug = array_merge($email ?? [], ["html" => '', "plaintext" => '']);
-      \Civi::log('wmf')->error('thank_you: Sending thank you message failed with generic exception for contribution: {params} {debug} {error_message}', [
-        'params' => $params,
-        'debug' => $debug,
-        'error_message' => $e->getMessage(),
-      ]);
+      if (str_contains($e->getMessage(), 'Invalid address:')) {
+        $this->setNoThankYou('failed: BAD_EMAIL');
+      }
+      else {
+        $debug = array_merge($email ?? [], ['html' => '', 'subject' => '']);
+        \Civi::log('wmf')->error('thank_you: Sending thank you message failed with {exception_type} exception for contribution: {params} {debug} {error_message}', [
+          'params' => $params,
+          'debug' => $debug,
+          'exception_type' => get_class($e),
+          'error_message' => $e->getMessage(),
+        ]);
 
-      $msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
-        . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
+        $msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
+          . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
 
-      throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug);
+        throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug, $e);
+      }
     }
 
     if ($civi_queue_record) {
@@ -321,18 +309,6 @@ class Send extends AbstractAction {
       \Civi::log('wmf')->info('thank_you: Creating CiviMail record');
       $civi_queue_record = $civimail_store->addQueueRecord($civi_mailing, $email, $contact_id);
       \Civi::log('wmf')->info('thank_you: Done creating CiviMail record');
-
-      \Civi::log('wmf')->info('thank_you: Creating Activity');
-      Activity::create(FALSE)->setValues([
-        'source_contact_id' => $civi_queue_record->getContactID(),
-        'target_contact_id' => $civi_queue_record->getContactID(),
-        'activity_type_id:name' => 'Thank you email',
-        'activity_date_time' => 'now',
-        'subject' => $subject,
-        'details' => $html,
-        'status_id' => 2,
-      ])->execute();
-      \Civi::log('wmf')->info('thank_you: Done creating Activity');
     }
     catch (CiviQueueInsertException $e) {
       \Civi::log('wmf')->info(
@@ -397,6 +373,32 @@ class Send extends AbstractAction {
     }
     $this->getContact();
     return $this->preferredLanguage ?? 'en_US';
+  }
+
+  private function setNoThankYou(string $reason): void {
+    Contribution::update(FALSE)
+      ->addValue('contribution_extra.no_thank_you', $reason)
+      ->addWhere('id', '=', $this->getContributionID())
+      ->execute();
+  }
+
+  /**
+   * @param string $subject
+   * @param string $html
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  protected function createActivity(string $subject, string $html): void {
+    Activity::create(FALSE)->setValues([
+      'source_contact_id' => $this->getContactID(),
+      'target_contact_id' => $this->getContactID(),
+      'activity_type_id:name' => 'Thank you email',
+      'activity_date_time' => 'now',
+      'subject' => $subject,
+      'details' => $html,
+      'status_id:name' => 'Completed',
+    ])->execute();
   }
 
 }
