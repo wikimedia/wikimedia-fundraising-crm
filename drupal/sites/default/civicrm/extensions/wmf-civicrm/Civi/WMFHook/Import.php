@@ -5,6 +5,7 @@ namespace Civi\WMFHook;
 
 use Civi\Api4\GroupContact;
 use Civi\Api4\UserJob;
+use Civi\Core\Event\GenericHookEvent;
 use Civi\WMFHelper\Contact;
 use Civi\WMFHelper\Contribution as ContributionHelper;
 use CRM_Contribute_BAO_Contribution;
@@ -12,106 +13,134 @@ use Civi\WMFHelper\ContributionSoft as ContributionSoftHelper;
 
 class Import {
 
+  private GenericHookEvent $event;
+  private string $importType;
+
   /**
-   * Alter the import mapped row for WMF specific handling.
-   *
-   * 1) If organization_name is set we prioritise any contact with a
-   *   matching nick name (as long as there is only 1).
-   * 2) If an individual is being soft credited, or has a contribution
-   *   being soft credited to an organization, then
-   *   we look up that individual using our custom logic which
-   *   prioritises contacts with a relationship or soft credit
-   *   with the organization.
-   * 3) For Fidelity imports we
-   *  - a) add an additional soft credit of the type 'Banking Institution' to the Fidelity organization
-   *  - b) use 'Anonymous Fidelity Donor Advised Fund' for the organization if it is Anonymous
-   *  - c) copy the street address from the main (organization/DAF donor) to the soft credited individual.
-   * 4) wmf_contribution.extra.no_thankyou is set if not present - this prevents an email going out if
-   *   they are already thanked.
-   *
-   * Note there is also custom code in the ContributionSoft pre hook
-   * to create the relationship for contacts with an employee-ish soft
-   * credit type (ie workplace or matching_gifts) and to create the DAF relationship
-   * for donor advised fund soft credits.
-   *
-   * @see https://wikitech.wikimedia.org/w/index.php?title=Fundraising/Internal-facing/CiviCRM/Imports
+   * @var mixed|void
+   */
+  private string $context;
+
+  private array $mappedRow;
+
+  private array $rowValues;
+
+  private int $userJobID;
+
+  /**
+   * Call WMF import hook functionality.
    *
    * @param \Civi\Core\Event\GenericHookEvent $event
    *
    * @throws \CRM_Core_Exception
    * @throws \Exception
    */
-  public static function alterMappedRow($event): void {
-    $importType = $event->importType;
-    $context = $event->context;
-    $mappedRow = $event->mappedRow;
-    $rowValues = $event->rowValues;
-    $userJobID = $event->userJobID;
-    if ($context === 'validate' && empty($mappedRow['Contribution']['total_amount']) &&
-      !empty($mappedRow['Contribution']['contribution_extra.original_currency'])
-      && !empty($mappedRow['Contribution']['contribution_extra.original_amount'])
+  public static function alterMappedRow(GenericHookEvent $event): void {
+    $importAlterer = new self($event);
+    $importAlterer->alterRow();
+  }
+
+  public function __construct($event) {
+    $this->event = $event;
+    $this->importType = $this->event->importType;
+    $this->context = $this->event->context;
+    $this->mappedRow = $event->mappedRow;
+    $this->rowValues = $event->rowValues;
+    $this->userJobID = $event->userJobID;
+  }
+
+  /**
+   *  Alter the import mapped row for WMF specific handling.
+   *
+   *  1) If organization_name is set we prioritise any contact with a
+   *    matching nick name (as long as there is only 1).
+   *  2) If an individual is being soft credited, or has a contribution
+   *    being soft credited to an organization, then
+   *    we look up that individual using our custom logic which
+   *    prioritises contacts with a relationship or soft credit
+   *    with the organization.
+   *  3) For Fidelity imports we
+   *   - a) add an additional soft credit of the type 'Banking Institution' to the Fidelity organization
+   *   - b) use 'Anonymous Fidelity Donor Advised Fund' for the organization if it is Anonymous
+   *   - c) copy the street address from the main (organization/DAF donor) to the soft credited individual.
+   *  4) wmf_contribution.extra.no_thankyou is set if not present - this prevents an email going out if
+   *    they are already thanked.
+   *
+   *  Note there is also custom code in the ContributionSoft pre hook
+   *  to create the relationship for contacts with an employee-ish soft
+   *  credit type (ie workplace or matching_gifts) and to create the DAF relationship
+   *  for donor advised fund soft credits.
+   *
+   * @see https://wikitech.wikimedia.org/w/index.php?title=Fundraising/Internal-facing/CiviCRM/Imports
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function alterRow(): void {
+    if ($this->context === 'validate' && empty($this->mappedRow['Contribution']['total_amount']) &&
+      !empty($this->mappedRow['Contribution']['contribution_extra.original_currency'])
+      && !empty($this->mappedRow['Contribution']['contribution_extra.original_amount'])
     ) {
       // This is strictly in validate mode so the value doesn't matter (although I
       // deliberately made it insanely large so it gets noticed if it IS used).
       // What matters is whether it is empty, not the value. As with the validateForm hook hack
       // I am hoping this is temporary - ref https://lab.civicrm.org/dev/core/-/issues/5456
-      $mappedRow['Contribution']['total_amount'] = 99999999;
+      $this->mappedRow['Contribution']['total_amount'] = 99999999;
     }
-    if ($context === 'import' && $importType === 'contribution_import') {
+    if ($this->context === 'import' && $this->importType === 'contribution_import') {
       // Provide a default, allowing the import to be configured to override.
-      $isMatchingGift = in_array(self::getSoftCreditTypeIDForRow($mappedRow), ContributionSoftHelper::getEmploymentSoftCreditTypes(), TRUE);
+      $isMatchingGift = in_array(self::getSoftCreditTypeIDForRow($this->mappedRow), ContributionSoftHelper::getEmploymentSoftCreditTypes(), TRUE);
 
-      if ($isMatchingGift && !array_key_exists('contribution_extra.no_thank_you', $mappedRow['Contribution'])) {
-        $mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal (matching gift/ workplace giving)';
+      if ($isMatchingGift && !array_key_exists('contribution_extra.no_thank_you', $this->mappedRow['Contribution'])) {
+        $this->mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal (matching gift/ workplace giving)';
       }
       // Assume matching gifts if there is a soft credit involved...
-      if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
-        $mappedRow['Contribution']['contribution_extra.gateway'] = $isMatchingGift ? 'Matching Gifts' : 'CiviCRM Import';
+      if (empty($this->mappedRow['Contribution']['contribution_extra.gateway'])) {
+        $this->mappedRow['Contribution']['contribution_extra.gateway'] = $isMatchingGift ? 'Matching Gifts' : 'CiviCRM Import';
       }
 
       // If we have only a contact ID we can use that to determine the contact type
       // and to ensure we have any organization name loaded.
       if (
-        !empty($mappedRow['Contribution']['contact_id'])
+        !empty($this->mappedRow['Contribution']['contact_id'])
         && (
-          empty($mappedRow['Contact'])
-          || ($mappedRow['Contact']['contact_type'] === 'Organization' && empty($mappedRow['Contact']['organization_name']))
+          empty($this->mappedRow['Contact'])
+          || ($this->mappedRow['Contact']['contact_type'] === 'Organization' && empty($this->mappedRow['Contact']['organization_name']))
         )
       ) {
         // We have just an ID, so it is in ['Contribution']['contact_id']
         // Since we have handling further down let's populate the contact.
-        $mappedRow['Contact']['id'] = (int) $mappedRow['Contribution']['contact_id'];
-        $organizationName = Contact::getOrganizationName($mappedRow['Contact']['id']);
+        $this->mappedRow['Contact']['id'] = (int) $this->mappedRow['Contribution']['contact_id'];
+        $organizationName = Contact::getOrganizationName($this->mappedRow['Contact']['id']);
         if ($organizationName) {
-          $mappedRow['Contact']['organization_name'] = $organizationName;
+          $this->mappedRow['Contact']['organization_name'] = $organizationName;
         }
         // If it didn't return a name we can assume it is an individual.
-        $mappedRow['Contact']['contact_type'] = $organizationName ? 'Organization' : 'Individual';
+        $this->mappedRow['Contact']['contact_type'] = $organizationName ? 'Organization' : 'Individual';
       }
 
-      if (empty($mappedRow['Contribution']['id'])) {
-        if (empty($mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
+      if (empty($this->mappedRow['Contribution']['id'])) {
+        if (empty($this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
           // Generate a transaction ID so that we don't import the same rows multiple times
-          $mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($mappedRow['Contact'], $mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $mappedRow['Contribution']['check_number'] ?? NULL, $rowValues[array_key_last($rowValues)]);
+          $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($this->mappedRow['Contact'], $this->mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $this->mappedRow['Contribution']['check_number'] ?? NULL, $this->rowValues[array_key_last($this->rowValues)]);
         }
 
-        if (empty($mappedRow['Contribution']['contribution_extra.gateway'])) {
-          $mappedRow['Contribution']['contribution_extra.gateway'] = self::getGateway($userJobID);
+        if (empty($this->mappedRow['Contribution']['contribution_extra.gateway'])) {
+          $this->mappedRow['Contribution']['contribution_extra.gateway'] = self::getGateway($this->userJobID);
         }
-        $existingContributionID = ContributionHelper::exists($mappedRow['Contribution']['contribution_extra.gateway'], $mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
+        $existingContributionID = ContributionHelper::exists($this->mappedRow['Contribution']['contribution_extra.gateway'], $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
         if ($existingContributionID) {
           throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
         }
-        if ($mappedRow['Contribution']['contribution_extra.gateway'] === 'fidelity') {
+        if ($this->mappedRow['Contribution']['contribution_extra.gateway'] === 'fidelity') {
           // For Fidelity we add a secondary contribution to Fidelity.
           // We also ensure any anonymous org ones are set to 'Anonymous Fidelity Donor Advised Fund')
-          if (($mappedRow['Contact']['organization_name'] ?? '') === 'Anonymous') {
-            $mappedRow['Contact']['organization_name'] = 'Anonymous Fidelity Donor Advised Fund';
+          if (($this->mappedRow['Contact']['organization_name'] ?? '') === 'Anonymous') {
+            $this->mappedRow['Contact']['organization_name'] = 'Anonymous Fidelity Donor Advised Fund';
           }
-          foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
+          foreach ($this->mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
             $isAnonymous = empty($softCreditContact['Contact']['first_name']) && empty($softCreditContact['Contact']['last_name']);
             if ($isAnonymous) {
-              unset($mappedRow['SoftCreditContact'][$index]);
+              unset($this->mappedRow['SoftCreditContact'][$index]);
               continue;
             }
             if (!empty($softCreditContact['address_primary.street_address'])) {
@@ -120,16 +149,16 @@ class Import {
             }
             // Otherwise we copy the address fields from the Main contact to the soft credit contact.
             // We do this because Fidelity only provides one address column, which applies to both.
-            foreach ($mappedRow['Contact'] as $field => $value) {
+            foreach ($this->mappedRow['Contact'] as $field => $value) {
               if ($value && str_starts_with($field, 'address_primary.') && empty($softCreditContact['Contact'][$field])) {
-                $mappedRow['SoftCreditContact'][$index]['Contact'][$field] = $value;
+                $this->mappedRow['SoftCreditContact'][$index]['Contact'][$field] = $value;
               }
             }
           }
 
-          $mappedRow['SoftCreditContact']['Fidelity'] = [
+          $this->mappedRow['SoftCreditContact']['Fidelity'] = [
             'soft_credit_type_id' => ContributionSoftHelper::getBankingInstitutionSoftCreditTypes()['Banking Institution'],
-            'total_amount' => $mappedRow['Contribution']['total_amount'],
+            'total_amount' => $this->mappedRow['Contribution']['total_amount'],
             'Contact' => [
               'contact_type' => 'Organization',
               'id' => Contact::getOrganizationID('Fidelity Charitable Gift Fund'),
@@ -138,19 +167,19 @@ class Import {
         }
       }
 
-      $isRequireOrganizationResolution = $mappedRow['Contribution']['contribution_extra.gateway'] !== 'fidelity';
+      $isRequireOrganizationResolution = $this->mappedRow['Contribution']['contribution_extra.gateway'] !== 'fidelity';
 
-      if (!empty($mappedRow['SoftCreditContact'])) {
-        if (($mappedRow['Contact']['contact_type'] ?? NULL) === 'Organization') {
+      if (!empty($this->mappedRow['SoftCreditContact'])) {
+        if (($this->mappedRow['Contact']['contact_type'] ?? NULL) === 'Organization') {
           // If we can identify the organization here then we can try to improve on the dedupe
           // contact look up for the related individual by looking for contacts
           // with a relationship or prior soft credit.
           try {
-            $organizationName = self::resolveOrganization($mappedRow['Contact']);
-            $mappedRow['Contribution']['contact_id'] = $mappedRow['Contact']['id'];
-            foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
-              if (empty($mappedRow['SoftCreditContact'][$index]['Contact']['id'])) {
-                $mappedRow['SoftCreditContact'][$index]['Contact']['id'] = Contact::getIndividualID(
+            $organizationName = self::resolveOrganization($this->mappedRow['Contact']);
+            $this->mappedRow['Contribution']['contact_id'] = $this->mappedRow['Contact']['id'];
+            foreach ($this->mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
+              if (empty($this->mappedRow['SoftCreditContact'][$index]['Contact']['id'])) {
+                $this->mappedRow['SoftCreditContact'][$index]['Contact']['id'] = Contact::getIndividualID(
                   $softCreditContact['Contact']['email_primary.email'] ?? NULL,
                   $softCreditContact['Contact']['first_name'] ?? NULL,
                   $softCreditContact['Contact']['last_name'] ?? NULL,
@@ -168,24 +197,24 @@ class Import {
             }
           }
         }
-        elseif ($mappedRow['Contact']['contact_type'] === 'Individual') {
+        elseif ($this->mappedRow['Contact']['contact_type'] === 'Individual') {
           $organizationName = $organizationID = NULL;
-          foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
+          foreach ($this->mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
             if ($softCreditContact['Contact']['contact_type'] === 'Organization') {
               if (!empty($softCreditContact['Contact']['id'])) {
                 $organizationID = $softCreditContact['Contact']['id'];
               }
               else {
-                $organizationName = self::resolveOrganization($mappedRow['SoftCreditContact'][$index]['Contact']);
+                $organizationName = self::resolveOrganization($this->mappedRow['SoftCreditContact'][$index]['Contact']);
               }
             }
           }
-          $mappedRow['Contact']['id'] = $mappedRow['Contribution']['contact_id'] ?? FALSE;
-          if (!$mappedRow['Contact']['id']) {
-            $mappedRow['Contact']['id'] = $mappedRow['Contribution']['contact_id'] = Contact::getIndividualID(
-              $mappedRow['Contact']['email_primary.email'] ?? NULL,
-              $mappedRow['Contact']['first_name'] ?? NULL,
-              $mappedRow['Contact']['last_name'] ?? NULL,
+          $this->mappedRow['Contact']['id'] = $this->mappedRow['Contribution']['contact_id'] ?? FALSE;
+          if (!$this->mappedRow['Contact']['id']) {
+            $this->mappedRow['Contact']['id'] = $this->mappedRow['Contribution']['contact_id'] = Contact::getIndividualID(
+              $this->mappedRow['Contact']['email_primary.email'] ?? NULL,
+              $this->mappedRow['Contact']['first_name'] ?? NULL,
+              $this->mappedRow['Contact']['last_name'] ?? NULL,
               $organizationName,
               $organizationID
             );
@@ -193,10 +222,10 @@ class Import {
         }
       }
 
-      self::setTimeOfDayIfStockDonation($mappedRow);
+      self::setTimeOfDayIfStockDonation($this->mappedRow);
     }
-    if ($mappedRow !== $event->mappedRow) {
-      $event->mappedRow = $mappedRow;
+    if ($this->mappedRow !== $this->event->mappedRow) {
+      $this->event->mappedRow = $this->mappedRow;
     }
   }
 
@@ -347,7 +376,7 @@ class Import {
         'contact_type',
         '=',
         'Individual',
-        'source' => 'Import duplicate contact'
+        'source' => 'Import duplicate contact',
       ])
       ->execute()->first()['id'];
     GroupContact::create(FALSE)
