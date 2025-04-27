@@ -67,7 +67,7 @@ class BenevityFile extends ChecksFile {
       $msg[$moneyField] = isset($msg[$moneyField]) ? (str_replace(',', '', $msg[$moneyField])) : 0;
     }
 
-    $msg['gift_source'] = Import::getTransformedField('gift_source', $msg['gift_source'] ?? '');
+    $msg['gift_source'] = Import::getTransformedField('Gift_Data.Campaign', $msg['gift_source'] ?? '');
     foreach ($msg as $field => $value) {
       if ($value === 'Not shared by donor') {
         $msg[$field] = '';

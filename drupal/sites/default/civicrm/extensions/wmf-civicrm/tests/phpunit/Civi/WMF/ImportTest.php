@@ -1137,6 +1137,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $importedRows = $this->importBenevityFile();
     $this->assertCount(5, $importedRows);
 
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY trxn-QUACK']);
+    $this->assertEquals(11, $contribution['fee_amount']);
+    $this->assertEquals(1189, $contribution['net_amount']);
+
     $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY trxn-WOOF']);
     $this->assertEquals(22, $contribution['total_amount']);
     $this->assertEquals(20.41, $contribution['net_amount']);

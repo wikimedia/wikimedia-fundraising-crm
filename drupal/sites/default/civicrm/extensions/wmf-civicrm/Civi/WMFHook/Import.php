@@ -67,6 +67,7 @@ class Import {
    *    they are already thanked.
    * 5) For Benevity imports we
    *    a) filter out any values set to 'Not shared by donor'
+   *    b) applies a mapping to the GiftData.Campaign field mapping incoming values to our values.
    *
    *  Note there is also custom code in the ContributionSoft pre hook
    *  to create the relationship for contacts with an employee-ish soft
@@ -81,6 +82,7 @@ class Import {
     $this->inValidateModeDoNotRequireTotalAmount();
     // Tweaks to apply during validate and import.
     $this->filterBadBenevityData();
+    $this->applyFieldTransformations();
 
     if ($this->context === 'import' && $this->importType === 'contribution_import') {
       // Provide a default, allowing the import to be configured to override.
@@ -496,6 +498,24 @@ class Import {
    */
   public function isFidelity(): bool {
     return $this->getGateway() === 'fidelity';
+  }
+
+  /**
+   * Quasi-generic method for transforming field values based on a json file holding an array of swaps.
+   *
+   * Currently only applies to the Gift_Data.Campaign field in the benevity import.
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  private function applyFieldTransformations(): void {
+    foreach (self::getAvailableTransformations() as $transformation => $mapping) {
+      if (($this->mappedRow['Contribution'][$transformation] ?? '') === 'invalid_import_value') {
+        $transformedValue = self::getTransformedField($transformation, $this->getOriginalValue($transformation));
+        if ($transformedValue) {
+          $this->mappedRow['Contribution'][$transformation] = $transformedValue;
+        }
+      }
+    }
   }
 
 }
