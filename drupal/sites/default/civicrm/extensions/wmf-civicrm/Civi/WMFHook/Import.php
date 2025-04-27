@@ -76,16 +76,7 @@ class Import {
    * @throws \CRM_Core_Exception
    */
   private function alterRow(): void {
-    if ($this->context === 'validate' && empty($this->mappedRow['Contribution']['total_amount']) &&
-      !empty($this->mappedRow['Contribution']['contribution_extra.original_currency'])
-      && !empty($this->mappedRow['Contribution']['contribution_extra.original_amount'])
-    ) {
-      // This is strictly in validate mode so the value doesn't matter (although I
-      // deliberately made it insanely large so it gets noticed if it IS used).
-      // What matters is whether it is empty, not the value. As with the validateForm hook hack
-      // I am hoping this is temporary - ref https://lab.civicrm.org/dev/core/-/issues/5456
-      $this->mappedRow['Contribution']['total_amount'] = 99999999;
-    }
+    $this->inValidateModeDoNotRequireTotalAmount();
     if ($this->context === 'import' && $this->importType === 'contribution_import') {
       // Provide a default, allowing the import to be configured to override.
       $isMatchingGift = in_array(self::getSoftCreditTypeIDForRow($this->mappedRow), ContributionSoftHelper::getEmploymentSoftCreditTypes(), TRUE);
@@ -415,6 +406,28 @@ class Import {
       \Civi::$statics[__CLASS__]['user_job'] = $userJob;
     }
     return \Civi::$statics[__CLASS__]['user_job'];
+  }
+
+  /**
+   * In validate mode to not require total amount.
+   *
+   * Total amount is a required import field, but we calculate it in the Contribution pre
+   * hook from the original amound & original currency. Here we trick the import
+   * validate into thinking it is present in the import.
+   *
+   * @return void
+   */
+  private function inValidateModeDoNotRequireTotalAmount(): void {
+    if ($this->context === 'validate' && empty($this->mappedRow['Contribution']['total_amount']) &&
+      !empty($this->mappedRow['Contribution']['contribution_extra.original_currency'])
+      && !empty($this->mappedRow['Contribution']['contribution_extra.original_amount'])
+    ) {
+      // This is strictly in validate mode so the value doesn't matter (although I
+      // deliberately made it insanely large so it gets noticed if it IS used).
+      // What matters is whether it is empty, not the value. As with the validateForm hook hack
+      // I am hoping this is temporary - ref https://lab.civicrm.org/dev/core/-/issues/5456
+      $this->mappedRow['Contribution']['total_amount'] = 99999999;
+    }
   }
 
 }
