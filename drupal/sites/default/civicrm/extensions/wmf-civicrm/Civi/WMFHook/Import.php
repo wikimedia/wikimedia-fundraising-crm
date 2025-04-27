@@ -84,7 +84,7 @@ class Import {
 
     if ($this->context === 'import' && $this->importType === 'contribution_import') {
       // Provide a default, allowing the import to be configured to override.
-      $isMatchingGift = in_array(self::getSoftCreditTypeIDForRow($this->mappedRow), ContributionSoftHelper::getEmploymentSoftCreditTypes(), TRUE);
+      $isMatchingGift = $this->isMatchingGift();
 
       if ($isMatchingGift && !array_key_exists('contribution_extra.no_thank_you', $this->mappedRow['Contribution'])) {
         $this->mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal (matching gift/ workplace giving)';
@@ -128,7 +128,8 @@ class Import {
         if ($existingContributionID) {
           throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
         }
-        if ($this->getGateway() === 'fidelity') {
+
+        if ($this->isFidelity()) {
           // For Fidelity we add a secondary contribution to Fidelity.
           // We also ensure any anonymous org ones are set to 'Anonymous Fidelity Donor Advised Fund')
           if (($this->mappedRow['Contact']['organization_name'] ?? '') === 'Anonymous') {
@@ -479,6 +480,22 @@ class Import {
         }
       }
     }
+  }
+
+  /**
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function isMatchingGift(): bool {
+    return in_array(self::getSoftCreditTypeIDForRow($this->mappedRow), ContributionSoftHelper::getEmploymentSoftCreditTypes(), TRUE);
+  }
+
+  /**
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function isFidelity(): bool {
+    return $this->getGateway() === 'fidelity';
   }
 
 }
