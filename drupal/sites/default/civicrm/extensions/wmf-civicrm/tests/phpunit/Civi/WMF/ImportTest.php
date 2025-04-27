@@ -123,6 +123,56 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * @return array
+   */
+  public function importBenevityFile(): array {
+    $softCreditEntityData = [
+      'soft_credit' => [
+        'action' => 'update',
+        'contact_type' => 'Organization',
+        'soft_credit_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionSoft', 'soft_credit_type_id', 'matched_gift'),
+        'dedupe_rule' => 'OrganizationSupervised',
+      ],
+    ];
+    return $this->importCSV('benevity.csv', [
+      ['name' => 'soft_credit.contact.organization_name', 'entity_data' => $softCreditEntityData],
+      [],
+      ['name' => 'receive_date'],
+      ['name' => 'contact.first_name'],
+      ['name' => 'contact.last_name'],
+      ['name' => 'contact.email_primary.email'],
+      ['name' => 'contact.address_primary.street_address'],
+      ['name' => 'contact.address_primary.city'],
+      ['name' => 'contact.address_primary.state_province_id'],
+      ['name' => 'contact.address_primary.postal_code'],
+      [],
+      ['name' => 'note'],
+      ['name' => 'contribution_extra.gateway_txn_id'],
+      [],
+      ['name' => 'contribution_extra.original_currency', 'default_value' => 'USD'],
+      [],
+      ['name' => 'Gift_Data.Campaign'],
+      ['name' => 'contribution_extra.original_amount'],
+      ['name' => 'fee_amount'],
+      ['name' => 'Matching_Gift_Information.Match_Amount'],
+      [], // merchant fee
+      [],
+      ['name' => 'financial_type_id', 'default_value' => 'Cash'],
+      ['name' => 'contribution_extra.gateway', 'default_value' => 'benevity'],
+    ], [
+      'dateFormats' => \CRM_Utils_Date::DATE_yyyy_mm_dd,
+    ], [
+      'Contribution' => ['action' => 'create'],
+      'Contact' => [
+        'action' => 'save',
+        'contact_type' => 'Individual',
+        'dedupe_rule' => 'IndividualUnsupervised',
+      ],
+      'SoftCreditContact' => $softCreditEntityData,
+    ]);
+  }
+
+  /**
    * Clean up after test.
    *
    * @throws DBQueryException
@@ -139,6 +189,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->cleanupContact(['organization_name' => 'Kind Family Charitable Fund']);
     $this->cleanupContact(['organization_name' => 'Generous Family Fund']);
     $this->cleanupContact(['organization_name' => 'Anonymous Fidelity Donor Advised Fund']);
+    $this->cleanupContact(['display_name' => 'Pluto']);
+    $this->cleanupContact(['display_name' => 'Hewey Duck']);
 
     Contribution::delete(FALSE)->addWhere('contact_id.nick_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.organization_name', '=', 'Trading Name')->execute();
@@ -1065,6 +1117,52 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->addWhere('soft_credit_type_id:name', '!=', 'Banking Institution')
       ->execute();
     $this->assertCount(0, $softCredit);
+  }
+
+  /**
+   * This tests some features for the Benevity import.
+   *
+   * @return void
+   */
+  public function testImportBenevitySucceedAll(): void {
+    $this->createAllBenevityImportOrganizations();
+    $this->createTestEntity('Contact', [
+      'first_name' => 'Minnie',
+      'last_name' => 'Mouse',
+      'contact_type' => 'Individual',
+      'email_primary.email' => 'minnie@mouse.org',
+      'employer_id' => $this->ids['Contact']['mouse'],
+    ]);
+
+    $importedRows = $this->importBenevityFile();
+    $this->assertCount(5, $importedRows);
+
+    $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY trxn-WOOF']);
+    $this->assertEquals(22, $contribution['total_amount']);
+    $this->assertEquals(20.41, $contribution['net_amount']);
+    $this->assertEquals(1.59, $contribution['fee_amount']);
+  }
+
+  /**
+   * Create the organizations referenced in the benevity.csv.
+   */
+  protected function createAllBenevityImportOrganizations(): void {
+    $this->createTestEntity('Contact', [
+      'organization_name' => 'Mickey Mouse Inc',
+      'contact_type' => 'Organization',
+    ], 'mouse');
+    $this->createTestEntity('Contact', [
+      'organization_name' => 'Goofy Inc',
+      'contact_type' => 'Organization',
+    ], 'dog');
+    $this->createTestEntity('Contact', [
+      'organization_name' => 'Donald Duck Inc',
+      'contact_type' => 'Organization',
+    ], 'duck');
+    $this->createTestEntity('Contact', [
+      'organization_name' => 'Uncle Scrooge Inc',
+      'contact_type' => 'Organization',
+    ], 'scrooge');
   }
 
   /**

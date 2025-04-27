@@ -65,6 +65,8 @@ class Import {
    *   - c) copy the street address from the main (organization/DAF donor) to the soft credited individual.
    *  4) wmf_contribution.extra.no_thankyou is set if not present - this prevents an email going out if
    *    they are already thanked.
+   * 5) For Benevity imports we
+   *    a) filter out any values set to 'Not shared by donor'
    *
    *  Note there is also custom code in the ContributionSoft pre hook
    *  to create the relationship for contacts with an employee-ish soft
@@ -77,6 +79,9 @@ class Import {
    */
   private function alterRow(): void {
     $this->inValidateModeDoNotRequireTotalAmount();
+    // Tweaks to apply during validate and import.
+    $this->filterBadBenevityData();
+
     if ($this->context === 'import' && $this->importType === 'contribution_import') {
       // Provide a default, allowing the import to be configured to override.
       $isMatchingGift = in_array(self::getSoftCreditTypeIDForRow($this->mappedRow), ContributionSoftHelper::getEmploymentSoftCreditTypes(), TRUE);
@@ -113,6 +118,9 @@ class Import {
         if (empty($this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
           // Generate a transaction ID so that we don't import the same rows multiple times
           $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($this->mappedRow['Contact'], $this->mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $this->mappedRow['Contribution']['check_number'] ?? NULL, $this->rowValues[array_key_last($this->rowValues)]);
+        }
+        if (empty($this->mappedRow['Contribution']['trxn_id'])) {
+          $this->mappedRow['Contribution']['trxn_id'] = $this->getGateway() . ' ' . $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'];
         }
 
         $this->mappedRow['Contribution']['contribution_extra.gateway'] = $this->getGateway();
@@ -384,7 +392,28 @@ class Import {
   }
 
   /**
-   * Get the User Job.
+   * @param string $fieldName
+   *
+   * @return string|null
+   * @throws \CRM_Core_Exception
+   */
+  public function getOriginalValue(string $fieldName): ?string {
+    $userJob = $this->getUserJob();
+    $mappings = $userJob['metadata']['import_mappings'] ?? [];
+    foreach ($mappings as $mapping) {
+      $mappingName = $mapping['name'] ?? '';
+      if (str_starts_with($mappingName, 'contact.')) {
+        $mappingName = substr($mappingName, 8);
+      }
+      if ($mappingName === $fieldName) {
+        return $this->rowValues[$mapping['column_number']];
+      }
+    }
+    return NULL;
+  }
+
+  /**
+   * Get the user job.
    *
    * @return array
    * @throws \CRM_Core_Exception
@@ -427,6 +456,28 @@ class Import {
       // What matters is whether it is empty, not the value. As with the validateForm hook hack
       // I am hoping this is temporary - ref https://lab.civicrm.org/dev/core/-/issues/5456
       $this->mappedRow['Contribution']['total_amount'] = 99999999;
+    }
+  }
+
+  private function isBenevity(): bool {
+    return $this->getGateway() === 'benevity';
+  }
+
+  /**
+   * Filter out data from the benevity file that denotes no data provided.
+   *
+   * The rows may be 'Not shared by donor' - we filter this out, including if it
+   * has already been compared with valid options.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function filterBadBenevityData(): void {
+    if ($this->isBenevity() && isset($this->mappedRow['Contact'])) {
+      foreach ($this->mappedRow['Contact'] as $field => $value) {
+        if ($value === 'Not shared by donor' || ($value === 'invalid_import_value' && $this->getOriginalValue($field) === 'Not shared by donor')) {
+          unset($this->mappedRow['Contact'][$field]);
+        }
+      }
     }
   }
 
