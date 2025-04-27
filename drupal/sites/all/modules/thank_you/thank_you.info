@@ -1,5 +1,0 @@
-name = Thank You
-description = Automatically emails thank you notes to contributors.
-core = 7.x
-package = Wikimedia
-configure = admin/config/thank_you
