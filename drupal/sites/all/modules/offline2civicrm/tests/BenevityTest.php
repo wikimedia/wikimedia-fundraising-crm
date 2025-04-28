@@ -825,6 +825,8 @@ class BenevityTest extends BaseChecksFileTest {
 
   /**
    * Test a successful import run.
+   *
+   *  - Test migrated to new imports.
    */
   public function testImportSucceedAll(): void {
     [$mouseOrg] = $this->createAllOrganizations();
@@ -912,6 +914,8 @@ class BenevityTest extends BaseChecksFileTest {
 
   /**
    * Test that currency information can be handled as input.
+   *
+   * - Test not appropriate to transfer to new imports as relates to drupal form.
    */
   public function testImportSucceedCurrencyTransformExists(): void {
     [$mouseOrg, $minnie] = $this->spawnMice();
@@ -929,6 +933,8 @@ class BenevityTest extends BaseChecksFileTest {
 
   /**
    * Test that currency information can be handled as input.
+   *
+   *  - Test not appropriate to transfer to new imports as relates to drupal form.
    */
   public function testImportSucceedCurrencyWithOriginalCurrencyFee(): void {
     $this->setExchangeRates(strtotime('2019-09-12'), ['USD' => 1, 'JPY' => 100]);
