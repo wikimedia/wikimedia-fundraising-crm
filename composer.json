@@ -13,7 +13,9 @@
         { "name": "Eileen McNaughton" },
         { "name": "Christine Stone" },
         { "name": "Jack Gleeson" },
-        { "name": "Dylan Kozlowski" }
+        { "name": "Dylan Kozlowski" },
+        { "name": "Damilare Adedoyin"},
+        { "name": "Wenjun Fan"}
     ],
     "license": "GPL-2.0-or-later",
     "type": "project",
