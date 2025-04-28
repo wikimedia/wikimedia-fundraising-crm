@@ -79,11 +79,13 @@ class Import {
    * @throws \CRM_Core_Exception
    */
   private function alterRow(): void {
+    // Tweaks to apply during validate only.
     $this->inValidateModeDoNotRequireTotalAmount();
     // Tweaks to apply during validate and import.
     $this->filterBadBenevityData();
     $this->applyFieldTransformations();
 
+    // Tweaks to apply during import only.
     if ($this->context === 'import' && $this->importType === 'contribution_import') {
       // Provide a default, allowing the import to be configured to override.
       $isMatchingGift = $this->isMatchingGift();
@@ -131,43 +133,10 @@ class Import {
           throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
         }
 
-        if ($this->isFidelity()) {
-          // For Fidelity we add a secondary contribution to Fidelity.
-          // We also ensure any anonymous org ones are set to 'Anonymous Fidelity Donor Advised Fund')
-          if (($this->mappedRow['Contact']['organization_name'] ?? '') === 'Anonymous') {
-            $this->mappedRow['Contact']['organization_name'] = 'Anonymous Fidelity Donor Advised Fund';
-          }
-          foreach ($this->mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
-            $isAnonymous = empty($softCreditContact['Contact']['first_name']) && empty($softCreditContact['Contact']['last_name']);
-            if ($isAnonymous) {
-              unset($this->mappedRow['SoftCreditContact'][$index]);
-              continue;
-            }
-            if (!empty($softCreditContact['address_primary.street_address'])) {
-              // If the street address is set let's assume it is deliberate and nothing else should copy over.
-              continue;
-            }
-            // Otherwise we copy the address fields from the Main contact to the soft credit contact.
-            // We do this because Fidelity only provides one address column, which applies to both.
-            foreach ($this->mappedRow['Contact'] as $field => $value) {
-              if ($value && str_starts_with($field, 'address_primary.') && empty($softCreditContact['Contact'][$field])) {
-                $this->mappedRow['SoftCreditContact'][$index]['Contact'][$field] = $value;
-              }
-            }
-          }
-
-          $this->mappedRow['SoftCreditContact']['Fidelity'] = [
-            'soft_credit_type_id' => ContributionSoftHelper::getBankingInstitutionSoftCreditTypes()['Banking Institution'],
-            'total_amount' => $this->mappedRow['Contribution']['total_amount'],
-            'Contact' => [
-              'contact_type' => 'Organization',
-              'id' => Contact::getOrganizationID('Fidelity Charitable Gift Fund'),
-            ],
-          ];
-        }
+        $this->doFidelityWrangling();
       }
 
-      $isRequireOrganizationResolution = $this->mappedRow['Contribution']['contribution_extra.gateway'] !== 'fidelity';
+      $isRequireOrganizationResolution = !$this->isFidelity();
 
       if (!empty($this->mappedRow['SoftCreditContact'])) {
         if (($this->mappedRow['Contact']['contact_type'] ?? NULL) === 'Organization') {
@@ -515,6 +484,52 @@ class Import {
           $this->mappedRow['Contribution'][$transformation] = $transformedValue;
         }
       }
+    }
+  }
+
+  /**
+   * Do Fidelity specific wrangling.
+   *
+   * - Add 'Banking Institution' soft credit to the Fidelity contact.
+   * - Use specific anonymous organization contact when the fund is unknown.
+   * - Copy address data from the contribution contact to the soft credit contact.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function doFidelityWrangling(): void{
+    if ($this->isFidelity()) {
+      // For Fidelity we add a secondary contribution to Fidelity.
+      // We also ensure any anonymous org ones are set to 'Anonymous Fidelity Donor Advised Fund')
+      if (($this->mappedRow['Contact']['organization_name'] ?? '') === 'Anonymous') {
+        $this->mappedRow['Contact']['organization_name'] = 'Anonymous Fidelity Donor Advised Fund';
+      }
+      foreach ($this->mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
+        $isAnonymous = empty($softCreditContact['Contact']['first_name']) && empty($softCreditContact['Contact']['last_name']);
+        if ($isAnonymous) {
+          unset($this->mappedRow['SoftCreditContact'][$index]);
+          continue;
+        }
+        if (!empty($softCreditContact['address_primary.street_address'])) {
+          // If the street address is set let's assume it is deliberate and nothing else should copy over.
+          continue;
+        }
+        // Otherwise we copy the address fields from the Main contact to the soft credit contact.
+        // We do this because Fidelity only provides one address column, which applies to both.
+        foreach ($this->mappedRow['Contact'] as $field => $value) {
+          if ($value && str_starts_with($field, 'address_primary.') && empty($softCreditContact['Contact'][$field])) {
+            $this->mappedRow['SoftCreditContact'][$index]['Contact'][$field] = $value;
+          }
+        }
+      }
+
+      $this->mappedRow['SoftCreditContact']['Fidelity'] = [
+        'soft_credit_type_id' => ContributionSoftHelper::getBankingInstitutionSoftCreditTypes()['Banking Institution'],
+        'total_amount' => $this->mappedRow['Contribution']['total_amount'],
+        'Contact' => [
+          'contact_type' => 'Organization',
+          'id' => Contact::getOrganizationID('Fidelity Charitable Gift Fund'),
+        ],
+      ];
     }
   }
 
