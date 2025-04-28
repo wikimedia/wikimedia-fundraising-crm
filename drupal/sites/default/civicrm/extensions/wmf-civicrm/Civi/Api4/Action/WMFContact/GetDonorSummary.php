@@ -84,6 +84,13 @@ class GetDonorSummary extends AbstractAction {
       'id' => $this->contactID,
       'name' => $contact['display_name'],
       'email' => $email,
+      'address' => [
+        'street_address' => $contact['address_primary.street_address'],
+        'city' => $contact['address_primary.city'],
+        'state_province' => $contact['address_primary.state_province_id:name'],
+        'postal_code' => $contact['address_primary.postal_code'],
+        'country' => $contact['address_primary.country_id:abbr'],
+      ],
       'hasMultipleContacts' => count($allContactIDsWithEmail) > 1,
       'contributions' => $allContributions->getArrayCopy(),
       'recurringContributions' => $recurringContributions->getArrayCopy(),
