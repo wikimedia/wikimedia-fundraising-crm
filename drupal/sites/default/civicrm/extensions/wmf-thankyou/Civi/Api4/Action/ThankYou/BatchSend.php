@@ -18,7 +18,6 @@ use CRM_Core_Exception;
  *
  * Get the content of the thank you.
  * @method $this setMessageLimit(int $messageLimit) Set consumer batch limit
- * @method int getMessageLimit() Get consumer batch limit
  * @method $this setTimeLimit(int $timeLimit) Set consumer time limit (seconds)
  * @method $this setNumberOfDays(int $numberOfDays) Set the number of days to look back for contributions.
  */
@@ -61,38 +60,18 @@ class BatchSend extends AbstractAction {
    * @throws \Throwable
    */
   public function _run(Result $result): void {
-    $messageLimit = $this->getMessageLimit() ?: \Civi::settings()->get('thank_you_batch');
-
     // @todo - seems like this is broken - 'false' - naha - but do we want this setting at all?
     if (\Civi::settings()->get('thank_you_enabled') === 'false') {
       \Civi::log('wmf')->info('thank_you: Thank You send job is disabled');
       return;
     }
-    if (!is_numeric($messageLimit)) {
-      \Civi::log('wmf')->error('thank_you: Thank you mail message limit not configured');
-      return;
-    }
 
     \Civi::log('wmf')->info('thank_you: Attempting to send {message_limit} thank you mails for contributions from the last {number_of_days} days.', [
       'number_of_days' => $this->getNumberOfDays(),
-      'message_limit' => $messageLimit,
+      'message_limit' => $this->getMessageLimit(),
     ]);
 
-    $noEmailContributions = (array) Contribution::get(FALSE)
-      ->addJoin('Email AS email', 'LEFT', ['contact_id', '=', 'email.contact_id'], ['email.is_primary', '=', 1])
-      ->addWhere('receive_date', '>', $this->getEarliestContributionDate())
-      ->addWhere('receive_date', '<', '30 seconds ago')
-      ->addWhere('thankyou_date', 'IS NULL')
-      ->addWhere('email.email', 'IS EMPTY')
-      ->addWhere('contribution_extra.no_thank_you', 'IS EMPTY')
-      ->execute()->indexBy('id');
-    if ($noEmailContributions) {
-      \Civi::log('wmf')->info('thank_you: Found {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
-      Contribution::update(FALSE)
-        ->addValue('contribution_extra.no_thank_you', 'no_email')
-        ->addWhere('id', 'IN', array_keys($noEmailContributions))
-        ->execute();
-    }
+    $this->updateContributionsWithoutEmail();
 
     $ty_query = <<<EOT
 		SELECT civicrm_contribution.id, trxn_id, civicrm_contribution.contact_id
@@ -108,11 +87,12 @@ class BatchSend extends AbstractAction {
 			  no_thank_you IN ('', '0')
 			)
 		  AND e.email <> ''
-		ORDER BY receive_date ASC LIMIT {$messageLimit};
+		ORDER BY receive_date ASC LIMIT %2;
 EOT;
 
     $contribution = \CRM_Core_DAO::executeQuery($ty_query, [
       1 => [$this->getEarliestContributionDate(), 'String'],
+      2 => [$this->getMessageLimit(), 'Int'],
     ]);
 
     $consecutiveFailures = 0;
@@ -435,6 +415,22 @@ EOT;
   }
 
   /**
+   * Get the limit of messages to parse per run.
+   *
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public function getMessageLimit(): int {
+    if (!isset($this->messageLimit)) {
+      $this->messageLimit = (int) \Civi::settings()->get('thank_you_batch');
+      if (!$this->messageLimit) {
+        throw new CRM_Core_Exception('thank_you: Thank you mail message limit not configured');
+      }
+    }
+    return $this->messageLimit;
+  }
+
+  /**
    * Get the number of days to look back for contributions.
    *
    * @return int
@@ -460,6 +456,32 @@ EOT;
   public function getEarliestContributionDate(): string {
     $days = $this->getNumberOfDays();
     return date('Y-m-d H:i:s', strtotime("-$days days"));
+  }
+
+  /**
+   * Update the no_thank_you field for contributions that have no email address to 'no_email'.
+   *
+   * This suppresses them from the thank you query.
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function updateContributionsWithoutEmail(): void {
+    $noEmailContributions = (array) Contribution::get(FALSE)
+      ->addJoin('Email AS email', 'LEFT', ['contact_id', '=', 'email.contact_id'], ['email.is_primary', '=', 1])
+      ->addWhere('receive_date', '>', $this->getEarliestContributionDate())
+      ->addWhere('receive_date', '<', '30 seconds ago')
+      ->addWhere('thankyou_date', 'IS NULL')
+      ->addWhere('email.email', 'IS EMPTY')
+      ->addWhere('contribution_extra.no_thank_you', 'IS EMPTY')
+      ->execute()->indexBy('id');
+    if ($noEmailContributions) {
+      \Civi::log('wmf')->info('thank_you: Found {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
+      Contribution::update(FALSE)
+        ->addValue('contribution_extra.no_thank_you', 'no_email')
+        ->addWhere('id', 'IN', array_keys($noEmailContributions))
+        ->execute();
+    }
   }
 
 }

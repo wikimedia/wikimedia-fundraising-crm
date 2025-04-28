@@ -175,7 +175,30 @@ class CRM_Upgrade_Incremental_php_SixOne extends CRM_Upgrade_Incremental_Base {
    */
   public function upgrade_6_1_beta1(string $rev): void {
     $this->addTask('Update import mappings', 'upgradeImportMappingFields', 'Import Contribution');
+    $this->addTask('Increase site email display name length', 'alterSchemaField', 'SiteEmailAddress', 'display_name', [
+      'title' => ts('Display Name'),
+      'sql_type' => 'varchar(254)',
+      'input_type' => 'Text',
+      'required' => TRUE,
+      'description' => ts('Full name of the sender'),
+      'add' => '6.0',
+    ]);
   }
+
+  /**
+   * WMF port of function as it did not run when we deployed the rc as it got added to the rc after that.
+   */
+  public function upgrade_6_1_0(string $rev): void {
+    $this->addTask('Increase site email display name length', 'alterSchemaField', 'SiteEmailAddress', 'display_name', [
+      'title' => ts('Display Name'),
+      'sql_type' => 'varchar(254)',
+      'input_type' => 'Text',
+      'required' => TRUE,
+      'description' => ts('Full name of the sender'),
+      'add' => '6.0',
+    ]);
+  }
+
 
   /**
    * The updateConfigBackend page has been removed - so remove any nav items linking to it

@@ -185,22 +185,7 @@ class Import {
    * @throws \CRM_Core_Exception
    */
   protected static function getGateway(int $userJobID): string {
-    if (!isset(\Civi::$statics[__CLASS__]['user_job'])) {
-      $userJob = UserJob::get(FALSE)->addWhere('id', '=', $userJobID)->execute()->first();
-      $templateID = $userJob['metadata']['template_id'] ?? NULL;
-      $gateway = 'civicrm_import';
-      if ($templateID) {
-        try {
-          $gateway = UserJob::get(FALSE)->addSelect('name')->addWhere('id', '=', $templateID)->execute()->first()['name'];
-        }
-        catch (\CRM_Core_Exception $e) {
-          // ah well.
-        }
-      }
-      $userJob['gateway'] = $gateway;
-      \Civi::$statics[__CLASS__]['user_job'] = $userJob;
-    }
-    return \Civi::$statics[__CLASS__]['user_job']['gateway'];
+    return self::getUserJob($userJobID)['gateway'];
   }
 
   /**
@@ -315,6 +300,31 @@ class Import {
       ])
       ->execute();
     return $contactID;
+  }
+
+  /**
+   * @param int $userJobID
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public static function getUserJob(int $userJobID): array {
+    if (!isset(\Civi::$statics[__CLASS__]['user_job'])) {
+      $userJob = UserJob::get(FALSE)->addWhere('id', '=', $userJobID)->execute()->first();
+      $templateID = $userJob['metadata']['template_id'] ?? NULL;
+      $gateway = 'civicrm_import';
+      if ($templateID) {
+        try {
+          $gateway = UserJob::get(FALSE)->addSelect('name')->addWhere('id', '=', $templateID)->execute()->first()['name'];
+        }
+        catch (\CRM_Core_Exception $e) {
+          // ah well.
+        }
+      }
+      $userJob['gateway'] = $gateway;
+      \Civi::$statics[__CLASS__]['user_job'] = $userJob;
+    }
+    return \Civi::$statics[__CLASS__]['user_job'];
   }
 
 }

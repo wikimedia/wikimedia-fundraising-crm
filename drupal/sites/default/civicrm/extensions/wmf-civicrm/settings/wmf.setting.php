@@ -50,6 +50,22 @@ return [
     ],
     'settings_pages' => ['wmf-civicrm' => ['weight' => 35]],
   ],
+  'wmf_donor_portal_url' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_donor_portal_url',
+    'default' => 'https://donorpreferences.wikimedia.org/index.php?title=Special:DonorPortal',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('Donor Portal base url'),
+    'help_text' => '',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 100,
+    ],
+    'settings_pages' => ['wmf-civicrm' => ['weight' => 36]],
+  ],
   'wmf_last_delete_deleted_contact_modified_date' => [
     'group_name' => 'wmf Settings',
     'group' => 'wmf',
