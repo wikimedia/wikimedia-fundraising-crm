@@ -139,5 +139,121 @@ $entities[] = [
     ],
   ],
 ];
+$entities[] = [
+  'name' => 'OrganizationNameAddress',
+  'entity' => 'DedupeRuleGroup',
+  'cleanup' => 'unused',
+  'update' => 'unmodified',
+  'params' => [
+    'version' => 4,
+    'match' => ['name'],
+    'values' => [
+      'contact_type' => 'Organization',
+      'threshold' => 10,
+      'used' => 'General',
+      'name' => 'OrganizationNameAddress',
+      'title' => 'Organization Name and Address',
+      'is_reserved' => FALSE,
+    ],
+  ],
+];
+$entities[] = [
+  'name' => 'OrganizationNameAddress_street_address',
+  'entity' => 'DedupeRule',
+  'cleanup' => 'unused',
+  'update' => 'unmodified',
+  'params' => [
+    'version' => 4,
+    'match' => ['dedupe_rule_group_id', 'rule_table', 'rule_field'],
+    'values' => [
+      'dedupe_rule_group_id.name' => 'OrganizationNameAddress',
+      'rule_table' => 'civicrm_address',
+      'rule_field' => 'street_address',
+      'rule_weight' => 5,
+    ],
+  ],
+];
+$entities[] = [
+  'name' => 'OrganizationNameAddress_organization_name',
+  'entity' => 'DedupeRule',
+  'cleanup' => 'unused',
+  'update' => 'unmodified',
+  'params' => [
+    'version' => 4,
+    'match' => ['dedupe_rule_group_id', 'rule_table', 'rule_field'],
+    'values' => [
+      'dedupe_rule_group_id.name' => 'OrganizationNameAddress',
+      'rule_table' => 'civicrm_contact',
+      'rule_field' => 'organization_name',
+      'rule_weight' => 5,
+    ],
+  ],
+];
 
+$entities[] = [
+  'name' => 'IndividualNameAddress',
+  'entity' => 'DedupeRuleGroup',
+  'cleanup' => 'unused',
+  'update' => 'unmodified',
+  'params' => [
+    'version' => 4,
+    'match' => ['name'],
+    'values' => [
+      'contact_type' => 'Individual',
+      'threshold' => 15,
+      'used' => 'General',
+      'name' => 'IndividualNameAddress',
+      'title' => 'Individual Name and Address',
+      'is_reserved' => FALSE,
+    ],
+  ],
+];
+$entities[] = [
+  'name' => 'IndividualNameAddress_street_address',
+  'entity' => 'DedupeRule',
+  'cleanup' => 'unused',
+  'update' => 'unmodified',
+  'params' => [
+    'version' => 4,
+    'match' => ['dedupe_rule_group_id', 'rule_table', 'rule_field'],
+    'values' => [
+      'dedupe_rule_group_id.name' => 'IndividualNameAddress',
+      'rule_table' => 'civicrm_address',
+      'rule_field' => 'street_address',
+      'rule_weight' => 5,
+    ],
+  ],
+];
+$entities[] = [
+  'name' => 'IndividualNameAddress_last_name',
+  'entity' => 'DedupeRule',
+  'cleanup' => 'unused',
+  'update' => 'unmodified',
+  'params' => [
+    'version' => 4,
+    'match' => ['dedupe_rule_group_id', 'rule_table', 'rule_field'],
+    'values' => [
+      'dedupe_rule_group_id.name' => 'IndividualNameAddress',
+      'rule_table' => 'civicrm_contact',
+      'rule_field' => 'last_name',
+      'rule_weight' => 5,
+    ],
+  ],
+];
+$entities[] = [
+  'name' => 'IndividualNameAddress_first_name',
+  'entity' => 'DedupeRule',
+  'cleanup' => 'unused',
+  'update' => 'unmodified',
+  'params' => [
+    'version' => 4,
+    'match' => ['dedupe_rule_group_id', 'rule_table', 'rule_field'],
+    'values' => [
+      'dedupe_rule_group_id.name' => 'IndividualNameAddress',
+      'rule_table' => 'civicrm_contact',
+      'rule_field' => 'first_name',
+      'rule_weight' => 5,
+    ],
+  ],
+];
 return $entities;
