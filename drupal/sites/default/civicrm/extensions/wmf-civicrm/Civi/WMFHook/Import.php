@@ -176,7 +176,7 @@ class Import {
           }
           $this->mappedRow['Contact']['id'] = $this->mappedRow['Contribution']['contact_id'] ?? FALSE;
           if (!$this->mappedRow['Contact']['id']) {
-            $this->mappedRow['Contact']['id'] = $this->mappedRow['Contribution']['contact_id'] = Contact::getIndividualID(
+            $this->mappedRow['Contact']['id'] = Contact::getIndividualID(
               $this->mappedRow['Contact']['email_primary.email'] ?? NULL,
               $this->mappedRow['Contact']['first_name'] ?? NULL,
               $this->mappedRow['Contact']['last_name'] ?? NULL,
@@ -185,6 +185,9 @@ class Import {
             );
           }
         }
+      }
+      if (!empty($this->mappedRow['Contact']['id'])) {
+        $this->mappedRow['Contribution']['contact_id'] = $this->mappedRow['Contact']['id'];
       }
       $this->ensureTrxnIdentifiersSet();
       $this->setTimeOfDayIfStockDonation();
