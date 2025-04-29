@@ -87,13 +87,18 @@ class BatchSend extends AbstractAction {
 			  no_thank_you IN ('', '0')
 			)
 		  AND e.email <> ''
-		ORDER BY receive_date ASC LIMIT %2;
+		ORDER BY receive_date ASC
 EOT;
-
-    $contribution = \CRM_Core_DAO::executeQuery($ty_query, [
+    $params = [
       1 => [$this->getEarliestContributionDate(), 'String'],
-      2 => [$this->getMessageLimit(), 'Int'],
-    ]);
+    ];
+
+    if ($this->getMessageLimit() > 0) {
+      $ty_query .= ' LIMIT %2';
+      $params[2] = [$this->getMessageLimit(), 'Int'];
+    }
+
+    $contribution = \CRM_Core_DAO::executeQuery($ty_query, $params);
 
     $consecutiveFailures = 0;
     $failureThreshold = \Civi::settings()->get('thank_you_failure_threshold');
