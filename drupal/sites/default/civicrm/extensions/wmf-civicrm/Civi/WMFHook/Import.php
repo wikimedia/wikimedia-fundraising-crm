@@ -8,7 +8,6 @@ use Civi\Api4\UserJob;
 use Civi\Core\Event\GenericHookEvent;
 use Civi\WMFHelper\Contact;
 use Civi\WMFHelper\Contribution as ContributionHelper;
-use CRM_Contribute_BAO_Contribution;
 use Civi\WMFHelper\ContributionSoft as ContributionSoftHelper;
 
 class Import {
@@ -123,9 +122,6 @@ class Import {
           // Generate a transaction ID so that we don't import the same rows multiple times
           $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($this->mappedRow['Contact'], $this->mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $this->mappedRow['Contribution']['check_number'] ?? NULL, $this->rowValues[array_key_last($this->rowValues)]);
         }
-        if (empty($this->mappedRow['Contribution']['trxn_id'])) {
-          $this->mappedRow['Contribution']['trxn_id'] = $this->getGateway() . ' ' . $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'];
-        }
 
         $this->mappedRow['Contribution']['contribution_extra.gateway'] = $this->getGateway();
         $existingContributionID = ContributionHelper::exists($this->mappedRow['Contribution']['contribution_extra.gateway'], $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
@@ -190,7 +186,7 @@ class Import {
           }
         }
       }
-
+      $this->ensureTrxnIdentifiersSet();
       $this->setTimeOfDayIfStockDonation();
     }
     if ($this->mappedRow !== $this->event->mappedRow) {
@@ -530,6 +526,23 @@ class Import {
           'id' => Contact::getOrganizationID('Fidelity Charitable Gift Fund'),
         ],
       ];
+    }
+  }
+
+  /**
+   * Ensure trxn_id is set.
+   *
+   * Do this near the end of the import so that we can base trxn_id off gateway_txn_id,
+   * incorporating any changes made to the latter (looking at you Benevity import).
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  private function ensureTrxnIdentifiersSet(): void {
+    if (empty($this->mappedRow['Contribution']['id'])) {
+      if (empty($this->mappedRow['Contribution']['trxn_id'])) {
+        $this->mappedRow['Contribution']['trxn_id'] = $this->getGateway() . ' ' . $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'];
+      }
     }
   }
 
