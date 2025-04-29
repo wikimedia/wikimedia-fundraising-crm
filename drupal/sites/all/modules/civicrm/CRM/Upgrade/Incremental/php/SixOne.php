@@ -197,6 +197,13 @@ class CRM_Upgrade_Incremental_php_SixOne extends CRM_Upgrade_Incremental_Base {
       'description' => ts('Full name of the sender'),
       'add' => '6.0',
     ]);
+    $this->addTask('Add column "civicrm_managed.checksum"', 'alterSchemaField', 'Managed', 'checksum', [
+      'title' => ts('Checksum'),
+      'sql_type' => 'varchar(45)',
+      'input_type' => 'Text',
+      'required' => FALSE,
+      'description' => ts('Configuration of the managed-entity when last stored'),
+    ]);
   }
 
 
