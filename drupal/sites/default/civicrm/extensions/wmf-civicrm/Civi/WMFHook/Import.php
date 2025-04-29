@@ -22,10 +22,19 @@ class Import {
    *   we look up that individual using our custom logic which
    *   prioritises contacts with a relationship or soft credit
    *   with the organization.
+   * 3) For Fidelity imports we
+   *  - a) add an additional soft credit of the type 'Banking Institution' to the Fidelity organization
+   *  - b) use 'Anonymous Fidelity Donor Advised Fund' for the organization if it is Anonymous
+   *  - c) copy the street address from the main (organization/DAF donor) to the soft credited individual.
+   * 4) wmf_contribution.extra.no_thankyou is set if not present - this prevents an email going out if
+   *   they are already thanked.
    *
    * Note there is also custom code in the ContributionSoft pre hook
    * to create the relationship for contacts with an employee-ish soft
-   * credit type (ie workplace or matching_gifts).
+   * credit type (ie workplace or matching_gifts) and to create the DAF relationship
+   * for donor advised fund soft credits.
+   *
+   * @see https://wikitech.wikimedia.org/w/index.php?title=Fundraising/Internal-facing/CiviCRM/Imports
    *
    * @param \Civi\Core\Event\GenericHookEvent $event
    *
@@ -93,20 +102,69 @@ class Import {
         if ($existingContributionID) {
           throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
         }
+        if ($mappedRow['Contribution']['contribution_extra.gateway'] === 'fidelity') {
+          // For Fidelity we add a secondary contribution to Fidelity.
+          // We also ensure any anonymous org ones are set to 'Anonymous Fidelity Donor Advised Fund')
+          if (($mappedRow['Contact']['organization_name'] ?? '') === 'Anonymous') {
+            $mappedRow['Contact']['organization_name'] = 'Anonymous Fidelity Donor Advised Fund';
+          }
+          foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
+            $isAnonymous = empty($softCreditContact['Contact']['first_name']) && empty($softCreditContact['Contact']['last_name']);
+            if ($isAnonymous) {
+              unset($mappedRow['SoftCreditContact'][$index]);
+              continue;
+            }
+            if (!empty($softCreditContact['address_primary.street_address'])) {
+              // If the street address is set let's assume it is deliberate and nothing else should copy over.
+              continue;
+            }
+            // Otherwise we copy the address fields from the Main contact to the soft credit contact.
+            // We do this because Fidelity only provides one address column, which applies to both.
+            foreach ($mappedRow['Contact'] as $field => $value) {
+              if ($value && str_starts_with($field, 'address_primary.') && empty($softCreditContact['Contact'][$field])) {
+                $mappedRow['SoftCreditContact'][$index]['Contact'][$field] = $value;
+              }
+            }
+          }
+
+          $mappedRow['SoftCreditContact']['Fidelity'] = [
+            'soft_credit_type_id' => ContributionSoftHelper::getBankingInstitutionSoftCreditTypes()['Banking Institution'],
+            'total_amount' => $mappedRow['Contribution']['total_amount'],
+            'Contact' => [
+              'contact_type' => 'Organization',
+              'id' => Contact::getOrganizationID('Fidelity Charitable Gift Fund'),
+            ],
+          ];
+        }
       }
+
+      $isRequireOrganizationResolution = $mappedRow['Contribution']['contribution_extra.gateway'] !== 'fidelity';
 
       if (!empty($mappedRow['SoftCreditContact'])) {
         if (($mappedRow['Contact']['contact_type'] ?? NULL) === 'Organization') {
-          $organizationName = self::resolveOrganization($mappedRow['Contact']);
-          $mappedRow['Contribution']['contact_id'] = $mappedRow['Contact']['id'];
-          foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
-            if (empty($mappedRow['SoftCreditContact'][$index]['Contact']['id'])) {
-              $mappedRow['SoftCreditContact'][$index]['Contact']['id'] = Contact::getIndividualID(
-                $softCreditContact['Contact']['email_primary.email'] ?? NULL,
-                $softCreditContact['Contact']['first_name'] ?? NULL,
-                $softCreditContact['Contact']['last_name'] ?? NULL,
-                $organizationName
-              );
+          // If we can identify the organization here then we can try to improve on the dedupe
+          // contact look up for the related individual by looking for contacts
+          // with a relationship or prior soft credit.
+          try {
+            $organizationName = self::resolveOrganization($mappedRow['Contact']);
+            $mappedRow['Contribution']['contact_id'] = $mappedRow['Contact']['id'];
+            foreach ($mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
+              if (empty($mappedRow['SoftCreditContact'][$index]['Contact']['id'])) {
+                $mappedRow['SoftCreditContact'][$index]['Contact']['id'] = Contact::getIndividualID(
+                  $softCreditContact['Contact']['email_primary.email'] ?? NULL,
+                  $softCreditContact['Contact']['first_name'] ?? NULL,
+                  $softCreditContact['Contact']['last_name'] ?? NULL,
+                  $organizationName
+                );
+              }
+            }
+          }
+          catch (\CRM_Core_Exception $e) {
+            if ($isRequireOrganizationResolution) {
+              // The prior soft-credit resolution is possibly going out of favour - it
+              // may have been more transitional. Regardless we only want it as an optional
+              // extra for Fidelity.
+              throw $e;
             }
           }
         }

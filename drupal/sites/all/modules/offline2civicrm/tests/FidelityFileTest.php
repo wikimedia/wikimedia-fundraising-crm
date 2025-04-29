@@ -54,13 +54,13 @@ class FidelityFileTest extends BaseChecksFileTest {
 
     $contribution = $contributions[2];
     $this->assertEquals('John', $contribution['contact_id.first_name']);
-    $this->assertEquals('Duck', $contribution['contact_id.last_name']);
+    $this->assertEquals('McTest', $contribution['contact_id.last_name']);
     $this->assertEquals('Sally Mouse', $contribution['contact_id.Partner.Partner']);
-    $this->assertEquals('John Duck and Sally Mouse', $contribution['contact_id.addressee_display']);
-    $this->assertEquals('John Duck and Sally Mouse', $contribution['contact_id.addressee_custom']);
+    $this->assertEquals('John McTest and Sally Mouse', $contribution['contact_id.addressee_display']);
+    $this->assertEquals('John McTest and Sally Mouse', $contribution['contact_id.addressee_custom']);
 
     $contribution = $contributions[3];
-    $this->assertEquals('Great Family Foundation', $contribution['contact_id.organization_name']);
+    $this->assertEquals('Nice Family Fund', $contribution['contact_id.organization_name']);
 
     $contribution = $contributions[4];
     $this->assertEquals('Jim', $contribution['contact_id.first_name']);
