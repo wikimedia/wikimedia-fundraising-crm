@@ -140,14 +140,15 @@ class CRM_Upgrade_Incremental_php_SixOne extends CRM_Upgrade_Incremental_Base {
       $userJob->find();
       while ($userJob->fetch()) {
         $metadata = json_decode($userJob->metadata, TRUE);
-        foreach ($metadata['import_mappings'] as &$mapping) {
-          if (isset($fieldsToConvert[$mapping['name']])) {
-            $mapping['name'] = $fieldsToConvert[$mapping['name']];
+        if (!empty($metadata['import_mappings'])) {
+          foreach ($metadata['import_mappings'] as &$mapping) {
+            if (isset($fieldsToConvert[$mapping['name']])) {
+              $mapping['name'] = $fieldsToConvert[$mapping['name']];
+            }
+            $userJob->metadata = json_encode($metadata);
+            $userJob->save();
           }
-          $userJob->metadata = json_encode($metadata);
-          $userJob->save();
         }
-
       }
     }
     return TRUE;
@@ -184,28 +185,6 @@ class CRM_Upgrade_Incremental_php_SixOne extends CRM_Upgrade_Incremental_Base {
       'add' => '6.0',
     ]);
   }
-
-  /**
-   * WMF port of function as it did not run when we deployed the rc as it got added to the rc after that.
-   */
-  public function upgrade_6_1_0(string $rev): void {
-    $this->addTask('Increase site email display name length', 'alterSchemaField', 'SiteEmailAddress', 'display_name', [
-      'title' => ts('Display Name'),
-      'sql_type' => 'varchar(254)',
-      'input_type' => 'Text',
-      'required' => TRUE,
-      'description' => ts('Full name of the sender'),
-      'add' => '6.0',
-    ]);
-    $this->addTask('Add column "civicrm_managed.checksum"', 'alterSchemaField', 'Managed', 'checksum', [
-      'title' => ts('Checksum'),
-      'sql_type' => 'varchar(45)',
-      'input_type' => 'Text',
-      'required' => FALSE,
-      'description' => ts('Configuration of the managed-entity when last stored'),
-    ]);
-  }
-
 
   /**
    * The updateConfigBackend page has been removed - so remove any nav items linking to it

@@ -2659,23 +2659,6 @@ SELECT contact_id
   }
 
   /**
-   * @param null $message
-   * @param bool $printDAO
-   */
-  public static function debugPrint($message = NULL, $printDAO = TRUE) {
-    CRM_Utils_System::xMemory("{$message}: ");
-
-    if ($printDAO) {
-      global $_DB_DATAOBJECT;
-      $q = [];
-      foreach (array_keys($_DB_DATAOBJECT['RESULTS']) as $id) {
-        $q[] = $_DB_DATAOBJECT['RESULTS'][$id]->query;
-      }
-      CRM_Core_Error::debug('_DB_DATAOBJECT', $q);
-    }
-  }
-
-  /**
    * Build a list of triggers via hook and add them to (err, reconcile them
    * with) the database.
    *
@@ -2779,10 +2762,8 @@ SELECT contact_id
         $counts[] = $count;
       }
     }
-
-    foreach (CRM_Core_Component::getEnabledComponents() as $component) {
-      $counts = array_merge($counts, $component->getReferenceCounts($this));
-    }
+    // TODO: Fix hook to work with non-dao entities
+    // (probably need to add 2 params for $entityName and $record and deprecate the $dao param)
     CRM_Utils_Hook::referenceCounts($this, $counts);
 
     return $counts;

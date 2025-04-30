@@ -267,7 +267,7 @@ class CRM_Utils_System_Backdrop extends CRM_Utils_System_DrupalBase {
    */
   public function mapConfigToSSL() {
     global $base_url;
-    $base_url = str_replace('http://', 'https://', $base_url);
+    $base_url = str_replace('http://', 'https://', (string) $base_url);
   }
 
   /**
@@ -518,14 +518,6 @@ AND    u.status = 1
       return NULL;
     }
     return $user->uid;
-  }
-
-  /**
-   * @inheritDoc
-   */
-  public function logout() {
-    module_load_include('inc', 'user', 'user.pages');
-    user_logout();
   }
 
   /**

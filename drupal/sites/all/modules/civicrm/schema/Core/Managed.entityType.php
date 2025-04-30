@@ -78,7 +78,7 @@ return [
       'input_type' => 'Text',
       'required' => FALSE,
       'description' => ts('Configuration of the managed-entity when last stored'),
-      'add' => '6.1',
+      'add' => '6.2',
     ],
     'cleanup' => [
       'title' => ts('Cleanup Setting'),

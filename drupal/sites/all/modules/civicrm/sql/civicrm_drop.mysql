@@ -120,7 +120,6 @@ DROP TABLE IF EXISTS `civicrm_mailing_component`;
 DROP TABLE IF EXISTS `civicrm_mailing_event_bounce`;
 DROP TABLE IF EXISTS `civicrm_mailing_event_confirm`;
 DROP TABLE IF EXISTS `civicrm_mailing_event_delivered`;
-DROP TABLE IF EXISTS `civicrm_mailing_event_forward`;
 DROP TABLE IF EXISTS `civicrm_mailing_event_opened`;
 DROP TABLE IF EXISTS `civicrm_mailing_event_queue`;
 DROP TABLE IF EXISTS `civicrm_mailing_event_reply`;

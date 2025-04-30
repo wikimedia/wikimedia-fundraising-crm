@@ -22,8 +22,8 @@
             "type": "library",
             "extra": {
                 "patches_applied": {
-                    "Update gitignore to ensure that sites that manage via git don't miss out on the important db.json file": "https://patch-diff.githubusercontent.com/raw/adrienrn/php-mimetyper/pull/15.patch",
-                    "Apply patch to fix php8.2 deprecation notice on dynamic property $filename": "https://patch-diff.githubusercontent.com/raw/adrienrn/php-mimetyper/pull/17.patch"
+                    "Update gitignore to ensure that sites that manage via git don't miss out on the important db.json file": "https://download.civicrm.org/patches/ffb6c65c6caa0a8a648f167f8800072d50ca0e4138002c52c05065be0ae60a63/15.patch",
+                    "Apply patch to fix php8.2 deprecation notice on dynamic property $filename": "https://download.civicrm.org/patches/011c5f09dc27b260937380f7a9ef5ad1fa713ae206b0b66ce03decc1932fc3f6/17.patch"
                 }
             },
             "installation-source": "dist",
@@ -310,17 +310,17 @@
         },
         {
             "name": "civicrm/composer-compile-plugin",
-            "version": "v0.20",
-            "version_normalized": "0.20.0.0",
+            "version": "v0.21",
+            "version_normalized": "0.21.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/civicrm/composer-compile-plugin.git",
-                "reference": "0933ff53cd720ddcb24bdc5984879673ea1e0cbe"
+                "reference": "9129c3588e15e7744be2d740d3aff6b3215dff09"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/civicrm/composer-compile-plugin/zipball/0933ff53cd720ddcb24bdc5984879673ea1e0cbe",
-                "reference": "0933ff53cd720ddcb24bdc5984879673ea1e0cbe",
+                "url": "https://api.github.com/repos/civicrm/composer-compile-plugin/zipball/9129c3588e15e7744be2d740d3aff6b3215dff09",
+                "reference": "9129c3588e15e7744be2d740d3aff6b3215dff09",
                 "shasum": ""
             },
             "require": {
@@ -332,7 +332,7 @@
                 "composer/composer": "~1.0",
                 "totten/process-helper": "^1.0.1"
             },
-            "time": "2023-03-01T06:55:29+00:00",
+            "time": "2025-05-05T07:08:54+00:00",
             "type": "composer-plugin",
             "extra": {
                 "class": "Civi\\CompilePlugin\\CompilePlugin"
@@ -356,7 +356,7 @@
             "description": "Define a 'compile' event for all packages in the dependency-graph",
             "support": {
                 "issues": "https://github.com/civicrm/composer-compile-plugin/issues",
-                "source": "https://github.com/civicrm/composer-compile-plugin/tree/v0.20"
+                "source": "https://github.com/civicrm/composer-compile-plugin/tree/v0.21"
             },
             "install-path": "../civicrm/composer-compile-plugin"
         },
@@ -2249,8 +2249,8 @@
             "type": "library",
             "extra": {
                 "patches_applied": {
-                    "Apply CiviCRM Customisations for the pear:db package": "https://raw.githubusercontent.com/civicrm/civicrm-core/2ad420c394/tools/scripts/composer/pear_db_civicrm_changes.patch",
-                    "Ensure that error messages about MySQL-SSL connections are reported": "https://gist.githubusercontent.com/totten/f491faadc95c43bf7750596c79b6fbba/raw/69d24ef6b136656a5fdb6398bf2e491a6c659e48/DB_mysqli.patch"
+                    "Ensure that error messages about MySQL-SSL connections are reported": "https://download.civicrm.org/patches/a6e31a769218801fb1fb3d679ff72d3d8a7c5637d3bb7b78680cd7809552e0c6/mysqli-ssl.patch",
+                    "Apply CiviCRM Customisations for the pear:db package": "https://download.civicrm.org/patches/83a3d0dd9f8e555a474ee433c453ff741a4dedf1983bad8b3566136e90f9c46b/pear_db_civicrm_changes.patch"
                 }
             },
             "installation-source": "dist",
@@ -2302,17 +2302,17 @@
         },
         {
             "name": "pear/log",
-            "version": "1.14.4",
-            "version_normalized": "1.14.4.0",
+            "version": "1.14.5",
+            "version_normalized": "1.14.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pear/Log.git",
-                "reference": "f1ce70cfc8ee30af93c313f4e6444a7abe6aea03"
+                "reference": "38e6668ead984d446161acc1ba257cf77ec67bcd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pear/Log/zipball/f1ce70cfc8ee30af93c313f4e6444a7abe6aea03",
-                "reference": "f1ce70cfc8ee30af93c313f4e6444a7abe6aea03",
+                "url": "https://api.github.com/repos/pear/Log/zipball/38e6668ead984d446161acc1ba257cf77ec67bcd",
+                "reference": "38e6668ead984d446161acc1ba257cf77ec67bcd",
                 "shasum": ""
             },
             "require": {
@@ -2326,7 +2326,7 @@
             "suggest": {
                 "pear/db": "Install optionally via your project's composer.json"
             },
-            "time": "2024-02-20T21:00:10+00:00",
+            "time": "2025-03-09T21:15:38+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -2348,12 +2348,12 @@
                 {
                     "name": "Jon Parise",
                     "email": "jon@php.net",
-                    "homepage": "http://www.indelible.org",
+                    "homepage": "https://www.indelible.org/",
                     "role": "Developer"
                 }
             ],
             "description": "PEAR Logging Framework",
-            "homepage": "http://pear.github.io/Log/",
+            "homepage": "https://pear.github.io/Log/",
             "keywords": [
                 "log",
                 "logging"
@@ -2393,7 +2393,7 @@
             "type": "library",
             "extra": {
                 "patches_applied": {
-                    "Apply CiviCRM Customisations for CRM-1367 and CRM-5946": "https://raw.githubusercontent.com/civicrm/civicrm-core/36319938a5bf26c1e7e2110a26a65db6a5979268/tools/scripts/composer/patches/pear-mail.patch"
+                    "Apply CiviCRM Customisations for CRM-1367 and CRM-5946": "https://download.civicrm.org/patches/00da3cfcfe0d24420665f3015a5d3ea72dc331a52636f009883892ed3c7fbf84/pear-mail.patch"
                 }
             },
             "installation-source": "dist",
@@ -2462,7 +2462,7 @@
             "type": "library",
             "extra": {
                 "patches_applied": {
-                    "Apply patch for CRM-3133 wordwrap body to be 750 characters to apply with RFC 2821": "https://raw.githubusercontent.com/civicrm/civicrm-core/74e25f27bb3be32519657539afe8a285c6c99a08/tools/scripts/composer/patches/mail_mime_crm_3133.patch"
+                    "Apply patch for CRM-3133 wordwrap body to be 750 characters to apply with RFC 2821": "https://download.civicrm.org/patches/38231167f0c789e0b368b38c1499973d562de65e87094b402156a6b928cc4c38/crm_3133.patch"
                 }
             },
             "installation-source": "dist",
@@ -2528,7 +2528,7 @@
             "type": "library",
             "extra": {
                 "patches_applied": {
-                    "Add in CiviCRM custom error message for CRM-8744": "https://raw.githubusercontent.com/civicrm/civicrm-core/a6a0ff13d2a155ad962529595dceaef728116f96/tools/scripts/composer/patches/net-smtp-patch.patch"
+                    "Add in CiviCRM custom error message for CRM-8744": "https://download.civicrm.org/patches/ee02d81d09432e524b249c9d874c9756b88924df8f5a8d69b19e8b4d6f532327/error-msg.patch"
                 }
             },
             "installation-source": "dist",
@@ -5686,24 +5686,24 @@
         },
         {
             "name": "tecnickcom/tcpdf",
-            "version": "6.8.0",
-            "version_normalized": "6.8.0.0",
+            "version": "6.9.3",
+            "version_normalized": "6.9.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/tecnickcom/TCPDF.git",
-                "reference": "14ffa0e308f5634aa2489568b4b90b24073b6731"
+                "reference": "d0e8dd17f8a1df3c97b94b9af8356e88e811ed59"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tecnickcom/TCPDF/zipball/14ffa0e308f5634aa2489568b4b90b24073b6731",
-                "reference": "14ffa0e308f5634aa2489568b4b90b24073b6731",
+                "url": "https://api.github.com/repos/tecnickcom/TCPDF/zipball/d0e8dd17f8a1df3c97b94b9af8356e88e811ed59",
+                "reference": "d0e8dd17f8a1df3c97b94b9af8356e88e811ed59",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
                 "php": ">=7.1.0"
             },
-            "time": "2024-12-23T13:34:57+00:00",
+            "time": "2025-04-20T15:52:50+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -5711,8 +5711,6 @@
                     "config",
                     "include",
                     "tcpdf.php",
-                    "tcpdf_parser.php",
-                    "tcpdf_import.php",
                     "tcpdf_barcodes_1d.php",
                     "tcpdf_barcodes_2d.php",
                     "include/tcpdf_colors.php",
@@ -5750,7 +5748,7 @@
             ],
             "support": {
                 "issues": "https://github.com/tecnickcom/TCPDF/issues",
-                "source": "https://github.com/tecnickcom/TCPDF/tree/6.8.0"
+                "source": "https://github.com/tecnickcom/TCPDF/tree/6.9.3"
             },
             "funding": [
                 {
@@ -6198,8 +6196,8 @@
             "type": "library",
             "extra": {
                 "patches_applied": {
-                    "CiviCRM Custom Patches for ZetaCompoents mail": "https://raw.githubusercontent.com/civicrm/civicrm-core/9d93748a36c7c5d44422911db1c98fb2f7067b34/tools/scripts/composer/patches/civicrm-custom-patches-zetacompoents-mail.patch",
-                    "CiviCRM Custom patch to fix a php8.1 issue found in CiviCRM unit tests": "https://raw.githubusercontent.com/civicrm/civicrm-core/5506f4ce5d46799857b4f4ddf34069e7541e9cc5/tools/scripts/composer/zetacomponents-php-81-civicrm-custom.patch"
+                    "CiviCRM Custom Patches for ZetaCompoents mail": "https://download.civicrm.org/patches/6e4bd36dd432a1e62830b0c757a3bac9645ea1cfc551db39798a88c06d66aaf3/100-filename.patch",
+                    "CiviCRM Custom patch to fix a php8.1 issue found in CiviCRM unit tests": "https://download.civicrm.org/patches/d187bcd1100b99529705cdd61193efa683951f6cfbc97ecaa69bc6cd601d2e5f/200-php-81.patch"
                 }
             },
             "installation-source": "dist",
