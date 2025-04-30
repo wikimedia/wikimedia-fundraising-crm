@@ -154,8 +154,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ['name' => 'Gift_Data.Campaign'],
       ['name' => 'contribution_extra.original_amount'],
       ['name' => 'fee_amount'],
+      // We unset this field again - it's a dummy field to make the information available.
       ['name' => 'Matching_Gift_Information.Match_Amount'],
-      [], // merchant fee
+      // We unset this field again - it's a dummy field to make the information available.
+      ['name' => 'contribution_extra.scheme_fee'],
       [],
       ['name' => 'financial_type_id', 'default_value' => 'Cash'],
       ['name' => 'contribution_extra.gateway', 'default_value' => 'benevity'],
@@ -168,7 +170,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
         'contact_type' => 'Individual',
         'dedupe_rule' => 'IndividualUnsupervised',
       ],
-      'SoftCreditContact' => $softCreditEntityData,
+      'SoftCreditContact' => $softCreditEntityData['soft_credit'],
     ]);
   }
 
@@ -191,11 +193,23 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->cleanupContact(['organization_name' => 'Anonymous Fidelity Donor Advised Fund']);
     $this->cleanupContact(['display_name' => 'Pluto']);
     $this->cleanupContact(['display_name' => 'Hewey Duck']);
+    $this->cleanupContact(['display_name' => 'Minnie Mouse']);
+    $this->cleanupContact(['display_name' => 'Mickey Mouse Inc']);
+    $this->cleanupContact(['display_name' => 'Donald Duck Inc']);
+    $this->cleanupContact(['display_name' => 'Goofy Inc']);
+    $this->cleanupContact(['display_name' => 'Uncle Scrooge Inc']);
+    $this->cleanupContact(['display_name' => 'uncle@duck.org']);
+
+    Address::delete(FALSE)
+      ->addWhere('contact_id.last_name', '=', 'Anonymous')
+      ->addWhere('contact_id.first_name', '=', 'Anonymous')->execute();
 
     Contribution::delete(FALSE)->addWhere('contact_id.nick_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.organization_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.last_name', '=', 'Doe')->execute();
     Contribution::delete(FALSE)->addWhere('check_number', '=', 123456)->execute();
+    Contribution::delete(FALSE)->addWhere('trxn_id', '=', 'benevity trxn-SNUFFLE')->execute();
+    Contribution::delete(FALSE)->addWhere('trxn_id', '=', 'benevity trxn-ARF')->execute();
 
     Contact::delete(FALSE)->addWhere('nick_name', '=', 'Trading Name')->setUseTrash(FALSE)->execute();
     Contact::delete(FALSE)->addWhere('organization_name', '=', 'Trading Name')->setUseTrash(FALSE)->execute();
@@ -1123,8 +1137,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * This tests some features for the Benevity import.
    *
    * @return void
+   * @throws \CRM_Core_Exception
    */
   public function testImportBenevitySucceedAll(): void {
+    \Civi::dispatcher()->addListener('importAlterMappedRow', [__CLASS__, 'hook_civicrm_importAlterMappedRow']);
     $this->createAllBenevityImportOrganizations();
     $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
@@ -1136,15 +1152,127 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
 
     $importedRows = $this->importBenevityFile();
     $this->assertCount(5, $importedRows);
+    foreach ($importedRows as $importedRow) {
+      $expectedOutcome = (int) $importedRow['_id'] === 4 ? 'IMPORTED' : 'soft_credit_imported';
+      $this->assertEquals($expectedOutcome, $importedRow['_status'], 'row ' . $importedRow['_id'] . ':' . $importedRow['_status_message']);
+    }
 
-    $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY trxn-QUACK']);
+    // Row 1 Check Donald Duck's individual contribution with a soft credit.
+    // There is no gift against the organization here.
+    // In addition the gift type here is mapped.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('fee_amount', 'total_amount','Gift_Data.Campaign', 'net_amount')
+      ->addWhere('trxn_id', '=', 'BENEVITY trxn-QUACK')
+      ->execute()->single();
     $this->assertEquals(11, $contribution['fee_amount']);
     $this->assertEquals(1189, $contribution['net_amount']);
+    $this->assertEquals(1200, $contribution['total_amount']);
+    $this->assertEquals('Individual Gift', $contribution['Gift_Data.Campaign']);
+    $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->execute();
+    $this->assertCount(1, $softCredit);
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('contact_id.display_name', '=', 'Donald Duck Inc')
+      ->execute();
+    $this->assertCount(0, $contribution);
 
-    $contribution = $this->callAPISuccessGetSingle('Contribution', ['trxn_id' => 'BENEVITY trxn-WOOF']);
+    // Row 2 Check Minnie Mouse's individual contribution with a soft credit to Mickey Mouse Inc.
+    // No gift source provided.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('fee_amount', 'total_amount','Gift_Data.Campaign', 'net_amount', 'contact_id', 'contact_id.email_primary.email', 'contact_id.address_primary.street_address', 'contact_id.employer_id.display_name')
+      ->addWhere('trxn_id', '=', 'BENEVITY trxn-SQUEAK')
+      ->execute()->single();
+    $this->assertEquals(NULL, $contribution['Gift_Data.Campaign']);
+    $this->assertEquals(.1, $contribution['fee_amount']);
+    $this->assertEquals(99.90, $contribution['net_amount']);
+    $this->assertEquals(100, $contribution['total_amount']);
+    $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->execute();
+    $this->assertCount(1, $softCredit);
+    $this->assertEquals('2 Cheesy Place', $contribution['contact_id.address_primary.street_address']);
+    $this->assertEquals('Mickey Mouse Inc', $contribution['contact_id.employer_id.display_name']);
+    // Relationship should be created.
+    Relationship::get(FALSE)->addWhere('contact_id_a', '=', $contribution['contact_id'])->execute()->single();
+
+    // Row 3 Check Pluto's individual contribution with a soft credit to Goofy Inc
+    // PLUS a contribution for Goofy Inc soft credited back to Pluto.
+    // A new contact will have been created for Pluto.
+    // It should have an address & a relationship & be soft-credited.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('total_amount', 'net_amount', 'fee_amount', 'contact_id.display_name', 'contact_id', 'trxn_id')
+      ->addWhere('contact_id.display_name', '=', 'Pluto')
+      ->execute()->single();
     $this->assertEquals(22, $contribution['total_amount']);
     $this->assertEquals(20.41, $contribution['net_amount']);
     $this->assertEquals(1.59, $contribution['fee_amount']);
+    $this->assertEquals('benevity trxn-WOOF', $contribution['trxn_id']);
+    $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->execute();
+    $this->assertCount(1, $softCredit);
+    // Use single to check the address & relationship exist.
+    Address::get(FALSE)->addWhere('contact_id', '=', $contribution['contact_id'])->execute()->single();
+    Relationship::get(FALSE)->addWhere('contact_id_a', '=',$contribution['contact_id'])->execute()->single();
+
+    // Now get the organization contribution.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount', 'receive_date', 'contact_id', 'contact_id.display_name')
+      ->addWhere('trxn_id', '=', 'benevity trxn-WOOF_MATCHED')
+      ->execute()->single();
+
+    $this->assertEquals(25, $contribution['total_amount']);
+    $this->assertEquals(0, $contribution['fee_amount']);
+    $this->assertEquals(25, $contribution['net_amount']);
+    $this->assertEquals('Goofy Inc', $contribution['contact_id.display_name']);
+    $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->execute();
+    $this->assertCount(1, $softCredit);
+
+    // Row 4 Check contribution from Uncle Scrooge Inc.
+    // In this case there is no individual contribution and, since the potential
+    // individual soft credit would be to the anonymous donor this does not get a soft credit.
+    // The trxn_id has _MATCHED appended to it, so there is no contribution
+    // with 'BENEVITY TRXN-ARF' as the trxn_id.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('fee_amount', 'total_amount','Gift_Data.Campaign', 'net_amount')
+      ->addWhere('trxn_id', '=', 'BENEVITY TRXN-ARF')
+      ->execute();
+    $this->assertCount(0, $contribution);
+
+    // Now get the organization donation that was swapped in.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount', 'receive_date', 'contact_id')
+      ->addWhere('trxn_id', '=', 'BENEVITY TRXN-ARF_MATCHED')
+      ->execute()->single();
+    $this->assertEquals(.5, $contribution['total_amount']);
+    $this->assertEquals(.33, $contribution['fee_amount']);
+    $this->assertEquals(.17, $contribution['net_amount']);
+
+    // No address should have been created for the organization.
+    $organizationAddress = Address::get(FALSE)->addWhere('contact_id', '=', $contribution['contact_id'])->execute();
+    $this->assertCount(0, $organizationAddress, print_r($organizationAddress->first(), TRUE));
+
+    // No soft credit as the individual is anonymous.
+    $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->execute();
+    $this->assertCount(0, $softCredit);
+
+    // No address should have been attached to the anonymous donor.
+    $anonymousContact = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', 'fakeemail@wikimedia.org')->execute()->single();
+    $this->assertEquals('Anonymous', $anonymousContact['first_name']);
+    $this->assertEquals('Anonymous', $anonymousContact['last_name']);
+    $address = Address::get(FALSE)->addWhere('contact_id', '=', $anonymousContact['id'])->execute();
+    $this->assertCount(0, $address, print_r($address->first(), TRUE));
+
+    // No soft credit should have been attached to the anonymous donor.
+    $relationships = Relationship::get(FALSE)->addWhere('contact_id_a', '=', $anonymousContact['id'])->execute();
+    $this->assertCount(0, $relationships);
+
+    // Row 5 check that an organization contribution is created with a soft credit
+    // to the individual (uncle@duck.org). In this case we only have the organization
+    // contribution but we have enough detail to match it.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('fee_amount', 'total_amount','Gift_Data.Campaign', 'net_amount', 'contact_id.display_name', 'contact_id.email_primary.email', 'contact_id.address_primary.street_address', 'contact_id.employer_id.display_name')
+      ->addWhere('trxn_id', '=', 'BENEVITY trxn-SNUFFLE_MATCHED')
+      ->execute()->single();
+    $softCredit = ContributionSoft::get(FALSE)->addSelect('contact_id.display_name')->addWhere('contribution_id', '=', $contribution['id'])->execute();
+    $this->assertCount(1, $softCredit);
+    $this->assertEquals('uncle@duck.org', $softCredit->first()['contact_id.display_name']);
   }
 
   /**
@@ -1184,7 +1312,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @noinspection PhpUnusedParameterInspection
    */
   public static function hook_civicrm_importAlterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID): void {
-    if (($mappedRow['Contribution']['contribution_extra.gateway'] ?? '') === 'fidelity') {
+    if (in_array($mappedRow['Contribution']['contribution_extra.gateway'] ?? '', ['fidelity', 'benevity'], TRUE)) {
       $mappedRow['Contribution']['receive_date'] = date('Y-m-d H:i:s', strtotime('-1 day'));
     }
   }
