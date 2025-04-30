@@ -32,7 +32,7 @@ class UploadedFile extends \CRM_Import_DataSource {
    */
   private Reader $reader;
 
-  private string $importTableName;
+  private ?string $importTableName = NULL;
 
   private array $sqlFieldNames;
 
@@ -327,7 +327,11 @@ class UploadedFile extends \CRM_Import_DataSource {
    */
   protected function getTableName(): ?string {
     if (!isset($this->importTableName)) {
-      $this->importTableName = parent::getTableName();
+      $importTableName = parent::getTableName();
+      if ($importTableName) {
+        // Only set if not NULL, due to type hint.
+        $this->importTableName = $importTableName;
+      }
     }
     return $this->importTableName;
   }

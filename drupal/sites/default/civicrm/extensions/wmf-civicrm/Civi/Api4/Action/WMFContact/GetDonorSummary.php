@@ -9,19 +9,13 @@ use Civi\Api4\Email;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 
-/**
- * @method string getChecksum()
- * @method $this setChecksum(string $queueName)
- * @method int getContactID()
- * @method $this setContactID(int $contactID)
- */
 class GetDonorSummary extends AbstractAction {
 
   /**
    * @var int
    * @required
    */
-  protected $contactID;
+  protected $contact_id;
 
   /**
    * @var string
@@ -30,19 +24,19 @@ class GetDonorSummary extends AbstractAction {
   protected $checksum;
 
   public function _run(Result $result) {
-    if (!\CRM_Core_Permission::check('access CiviContribute') && !\CRM_Contact_BAO_Contact_Utils::validChecksum($this->contactID,  $this->checksum)) {
-      \Civi::log('wmf')->warning('Donor portal access denied {contact_id} {checksum}', ['contact_id' => $this->contactID, 'checksum' => $this->checksum]);
+    if (!\CRM_Core_Permission::check('access CiviContribute') && !\CRM_Contact_BAO_Contact_Utils::validChecksum($this->contact_id,  $this->checksum)) {
+      \Civi::log('wmf')->warning('Donor portal access denied {contact_id} {checksum}', ['contact_id' => $this->contact_id, 'checksum' => $this->checksum]);
       throw new \CRM_Core_Exception('Authorization failed');
     }
     $mergedToId = Contact::getMergedTo()
-      ->setContactId($this->contactID)
+      ->setContactId($this->contact_id)
       ->execute()
       ->first()['id'] ?? null;
     if ($mergedToId) {
-      $this->contactID = $mergedToId;
+      $this->contact_id = $mergedToId;
     }
     $contact = Contact::get(FALSE)
-      ->addWhere('id', '=', $this->contactID)
+      ->addWhere('id', '=', $this->contact_id)
       ->addSelect(
         'email_primary.email',
         'display_name',
@@ -81,13 +75,13 @@ class GetDonorSummary extends AbstractAction {
         'payment_instrument_id:name'
       )->execute();
     $result[] = [
-      'id' => $this->contactID,
+      'id' => $this->contact_id,
       'name' => $contact['display_name'],
       'email' => $email,
       'address' => [
         'street_address' => $contact['address_primary.street_address'],
         'city' => $contact['address_primary.city'],
-        'state_province' => $contact['address_primary.state_province_id:name'],
+        'state_province' => $contact['address_primary.state_province_id:abbr'],
         'postal_code' => $contact['address_primary.postal_code'],
         'country' => $contact['address_primary.country_id:abbr'],
       ],
