@@ -301,16 +301,21 @@ class UploadedFile extends \CRM_Import_DataSource {
   }
 
   /**
-   * @param $row
-   * @param $rowsToInsert
-   * @param string $tableName
+   * @param array $row
    *
    * @return void
+   * @throws \CRM_Core_Exception
    * @throws \Civi\Core\Exception\DBQueryException
    */
-  private function insertRowIntoImportTable($row): void {
+  private function insertRowIntoImportTable(array $row): void {
     $row = array_map('strval', $row);
-    $row = array_map([__CLASS__, 'trimNonBreakingSpaces'], $row);
+    // @todo remove once https://github.com/civicrm/civicrm-core/pull/32664 settles.
+    if (method_exists(__CLASS__, 'trimWhiteSpace')) {
+      $row = array_map([__CLASS__, 'trimWhiteSpace'], $row);
+    }
+    else {
+      $row = array_map([__CLASS__, 'trimNonBreakingSpaces'], $row);
+    }
     $row = array_map(['CRM_Core_DAO', 'escapeString'], $row);
     $sql = ["('" . implode("', '", $row) . "')"];
     \CRM_Core_DAO::executeQuery("INSERT IGNORE INTO " . $this->getTableName()
