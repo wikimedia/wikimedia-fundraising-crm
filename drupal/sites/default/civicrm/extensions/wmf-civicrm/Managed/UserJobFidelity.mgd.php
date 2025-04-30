@@ -197,15 +197,21 @@ $entities = [
               'entity_data' => [],
             ],
             [
+              'name' => '',
+              'default_value' => NULL,
+              'column_number' => 19,
+              'entity_data' => [],
+            ],
+            [
               'name' => 'contribution_extra.gateway',
               'default_value' => 'fidelity',
-              'column_number' => 19,
+              'column_number' => 20,
               'entity_data' => [],
             ],
             [
               'name' => 'financial_type_id',
               'default_value' => 'Cash',
-              'column_number' => 20,
+              'column_number' => 21,
               'entity_data' => [],
             ],
           ],
