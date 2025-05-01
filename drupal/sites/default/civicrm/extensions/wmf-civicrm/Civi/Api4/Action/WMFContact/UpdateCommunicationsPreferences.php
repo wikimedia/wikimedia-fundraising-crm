@@ -76,7 +76,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
    * @throws \CRM_Core_Exception
    * @throws UnauthorizedException
    */
-  public function _run(Result $result) {
+  public function _run(Result $result): void {
     $params = [
       'contact_id' => $this->contactID,
       'checksum' => $this->checksum,
@@ -115,7 +115,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     }
 
     $message = "Email Preference Center update - civicrm_contact id: $contactID";
-    $result = [];
+    $outcome = [];
     $snoozeValues = [];
     $contactUpdateValues = [];
     $oldOptInValue = $contact['Communication.opt_in'];
@@ -159,7 +159,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       $contactResult = Contact::update(FALSE)->setValues($contactUpdateValues)
         ->addWhere('id', '=', $contactID)
         ->execute()->first();
-      $result = array_merge($result, $contactResult);
+      $outcome = array_merge($outcome, $contactResult);
     }
 
     // 3: country update
@@ -187,7 +187,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
           'is_primary' => 1,
         ])->execute()->first();
       }
-      $result = array_merge($result, $addressResult);
+      $outcome = array_merge($outcome, $addressResult);
       $message .= ", country from {$oldCountryValue} to {$params['country']}";
     }
 
@@ -215,7 +215,8 @@ class UpdateCommunicationsPreferences extends AbstractAction {
           ] + $snoozeValues)
           ->addWhere('id', '=', $email->first()['id'])
           ->execute()->first();
-      } else {
+      }
+      else {
         $emailResult = Email::create(FALSE)->setValues([
             'email' => (string) $params['email'],
             'contact_id' => $contactID,
@@ -223,16 +224,16 @@ class UpdateCommunicationsPreferences extends AbstractAction {
           ] + $snoozeValues)->execute()->first();
       }
 
-      $result = array_merge($result, $emailResult);
+      $outcome = array_merge($outcome, $emailResult);
     }
 
     // only log when epc have the info update
-    if ($result !== []) {
+    if ($outcome !== []) {
       $this->logActivity('Email Preference Center', "$message.", $params['contact_id']);
     }
     \Civi::log('wmf')->info($message. '.');
 
-    return $result;
+    $result[] = $outcome;
   }
 
   /**

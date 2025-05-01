@@ -27,9 +27,9 @@ class EmailPreferencesQueueConsumer extends QueueConsumer {
           ->setSendEmail($message['send_email'] ?? null)
           ->execute();
 
-      if ($result['count'] !== 1) {
+      if (!$result->first()) {
         Civi::log('wmf')->info(
-          "No records updated from e-mail preferences message with checksum " .
+          'No records updated from e-mail preferences message with checksum ' .
           "{$message['checksum']} and contact_id {$message['contact_id']}."
         );
       }
