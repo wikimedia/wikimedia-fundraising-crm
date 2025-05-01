@@ -68,7 +68,8 @@ class BatchSend extends AbstractAction {
 
     \Civi::log('wmf')->info('thank_you: Attempting to send {message_limit} thank you mails for contributions from the last {number_of_days} days.', [
       'number_of_days' => $this->getNumberOfDays(),
-      'message_limit' => $this->getMessageLimit(),
+      'message_limit' => $this->getMessageLimit() ? $this->getMessageLimit() : 'all',
+      'time_limit' => $this->getTimeLimit(),
     ]);
 
     $this->updateContributionsWithoutEmail();

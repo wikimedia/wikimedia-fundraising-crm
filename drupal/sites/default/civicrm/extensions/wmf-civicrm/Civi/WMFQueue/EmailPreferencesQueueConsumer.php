@@ -4,6 +4,7 @@ namespace Civi\WMFQueue;
 
 use Civi;
 use Civi\WMFException\WMFException;
+use Civi\Api4\WMFContact;
 
 class EmailPreferencesQueueConsumer extends QueueConsumer {
 
@@ -14,9 +15,18 @@ class EmailPreferencesQueueConsumer extends QueueConsumer {
    *
    * @throws \Civi\WMFException\WMFException
    */
-  function processMessage(array $message) {
+  function processMessage(array $message): void {
     try {
-      $result = civicrm_api3('Preferences', 'create', $message);
+      $result = WMFContact::UpdateCommunicationsPreferences()
+          ->setEmail($message['email'] ?? null)
+          ->setContactID($message['contact_id'] ?? null)
+          ->setChecksum($message['checksum'] ?? null)
+          ->setCountry($message['country'] ?? null)
+          ->setLanguage($message['language'] ?? null)
+          ->setSnoozeDate($message['snooze_date'] ?? null)
+          ->setSendEmail($message['send_email'] ?? null)
+          ->execute();
+
       if ($result['count'] !== 1) {
         Civi::log('wmf')->info(
           "No records updated from e-mail preferences message with checksum " .
@@ -32,5 +42,4 @@ class EmailPreferencesQueueConsumer extends QueueConsumer {
       );
     }
   }
-
 }
