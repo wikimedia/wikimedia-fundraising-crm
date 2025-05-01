@@ -78,6 +78,7 @@ class OmniactivityGetTest extends OmnimailBaseTestClass {
     $this->assertCount(4, $result);
     $activities = Activity::get(FALSE)
       ->addWhere('activity_type_id:name', '=', 'unsubscribe')
+      ->addWhere('subject', '=', 'Unsubscribed via Acoustic Email link')
       ->execute();
     $this->assertCount(1, $activities);
     $progress = OmnimailJobProgress::get(FALSE)
