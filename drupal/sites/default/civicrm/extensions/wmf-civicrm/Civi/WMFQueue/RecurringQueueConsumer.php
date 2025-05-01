@@ -492,6 +492,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         ->setTemplateName('monthly_convert')
         ->setContributionID($ctRecord['contribution_id'])
         ->setParameters($params)
+        ->setActivityType('Recurring convert email')
         ->execute()->first()['is_success'];
 
       $context = [
