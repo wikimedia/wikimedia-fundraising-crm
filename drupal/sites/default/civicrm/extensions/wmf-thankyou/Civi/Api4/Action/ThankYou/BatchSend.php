@@ -106,6 +106,7 @@ EOT;
     $consecutiveFailures = 0;
     $failureThreshold = \Civi::settings()->get('thank_you_failure_threshold');
     $this->result = ['attempted' => 0, 'succeeded' => 0, 'failed' => 0];
+    \Civi::log('wmf')->info('thank_you: Found {count} contributions to thank.', ['count' => $contribution->N]);
 
     while ($contribution->fetch()) {
       if (time() >= $this->getEndTime()) {
@@ -476,6 +477,7 @@ EOT;
    * @throws \CRM_Core_Exception
    */
   public function updateContributionsWithoutEmail(): void {
+    \Civi::log('wmf')->info('checking for contributions without email address since {date}.', ['date' => $this->getEarliestContributionDate()]);;
     $noEmailContributions = (array) Contribution::get(FALSE)
       ->addJoin('Email AS email', 'LEFT', ['contact_id', '=', 'email.contact_id'], ['email.is_primary', '=', 1])
       ->addWhere('receive_date', '>', $this->getEarliestContributionDate())
@@ -484,12 +486,13 @@ EOT;
       ->addWhere('email.email', 'IS EMPTY')
       ->addWhere('contribution_extra.no_thank_you', 'IS EMPTY')
       ->execute()->indexBy('id');
+    \Civi::log('wmf')->info('thank_you: Found {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
     if ($noEmailContributions) {
-      \Civi::log('wmf')->info('thank_you: Found {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
       Contribution::update(FALSE)
         ->addValue('contribution_extra.no_thank_you', 'no_email')
         ->addWhere('id', 'IN', array_keys($noEmailContributions))
         ->execute();
+      \Civi::log('wmf')->info('thank_you: Updated no thank you for {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
     }
   }
 
