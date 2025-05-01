@@ -607,7 +607,7 @@ class ThankYouTest extends TestCase {
       // Time limit of 10 minutes means we *may* not lose our minds when stepping through a debugger.
       ->setTimeLimit(600)
       ->setMessageLimit(10)->execute()->first();
-    $this->assertEquals(['attempted' => 0, 'succeeded' => 0, 'failed' => 0], $result);
+    $this->assertEquals(['attempted' => 0, 'succeeded' => 0, 'failed' => 0], $result, $this->getLoggerRecordsAsString());
   }
 
 }
