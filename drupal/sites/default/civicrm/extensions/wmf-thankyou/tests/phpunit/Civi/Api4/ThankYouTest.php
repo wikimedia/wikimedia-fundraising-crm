@@ -591,11 +591,12 @@ class ThankYouTest extends TestCase {
       ->addWhere('contact_id', '=', $this->ids['Contact']['no_mail'])
       ->execute();
     $this->setupThankYouAbleContribution('second');
+    $_SERVER['REQUEST_TIME'] = NULL;
     $result = ThankYou::batchSend(FALSE)
       // Time limit of 10 minutes means we *may* not lose our minds when stepping through a debugger.
       ->setTimeLimit(600)
       ->setMessageLimit(10)->execute()->first();
-    $this->assertEquals(['attempted' => 2, 'succeeded' => 2, 'failed' => 0], $result);
+    $this->assertEquals(['attempted' => 2, 'succeeded' => 2, 'failed' => 0], $result, $this->getLoggerRecordsAsString());
     $activities = (array) Activity::get(FALSE)
       ->addWhere('activity_type_id:name', '=', 'Thank you email')
       ->addWhere('source_contact_id', 'IN', $this->ids['Contact'])

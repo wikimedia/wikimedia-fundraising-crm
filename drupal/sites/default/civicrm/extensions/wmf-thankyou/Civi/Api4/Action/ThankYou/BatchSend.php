@@ -70,6 +70,8 @@ class BatchSend extends AbstractAction {
       'number_of_days' => $this->getNumberOfDays(),
       'message_limit' => $this->getMessageLimit() ? $this->getMessageLimit() : 'all',
       'time_limit' => $this->getTimeLimit(),
+      'end_time' => date('Y-m-d-m-Y-H-i-s', $this->getEndTime()),
+      'start_time' => date('Y-m-d-m-Y-H-i-s', $this->getStartTime()),
     ]);
 
     $this->updateContributionsWithoutEmail();
@@ -400,6 +402,7 @@ EOT;
       // If available, use the time the script started as the start time
       // This way we're less likely to run past the start of the next run.
       if (isset($_SERVER['REQUEST_TIME'])) {
+        \Civi::log('wmf')->info('thank_you: Using REQUEST_TIME as start time');
         $this->startTime = $_SERVER['REQUEST_TIME'];
       }
       else {
