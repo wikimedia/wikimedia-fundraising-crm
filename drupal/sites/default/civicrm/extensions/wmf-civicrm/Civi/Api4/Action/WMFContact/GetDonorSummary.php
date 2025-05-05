@@ -72,7 +72,8 @@ class GetDonorSummary extends AbstractAction {
         'frequency_unit',
         'id',
         'next_sched_contribution_date',
-        'payment_instrument_id:name'
+        'payment_instrument_id:name',
+        'contribution_status_id:name'
       )->execute();
     $result[] = [
       'id' => $this->contact_id,
