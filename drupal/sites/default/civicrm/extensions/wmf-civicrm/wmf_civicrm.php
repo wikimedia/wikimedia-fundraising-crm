@@ -363,8 +363,8 @@ function wmf_civicrm_civicrm_validateForm($formName, &$fields, &$files, &$form, 
     if ($requiredFieldsError && preg_match($pattern, $requiredFieldsError, $matches)) {
       $mappedFields = CRM_Utils_Array::collect(0, $fields['mapper']);
       // If total amount is not set but original amount fields are then remove.
-      if (in_array('contribution_extra.original_currency', $mappedFields, TRUE)
-        && in_array('contribution_extra.original_amount', $mappedFields, TRUE)
+      if (in_array('Contribution.contribution_extra.original_currency', $mappedFields, TRUE)
+        && in_array('Contribution.contribution_extra.original_amount', $mappedFields, TRUE)
       ) {
         $requiredFieldsError = trim(str_replace('Total Amount', '', $requiredFieldsError));
         if (str_ends_with($requiredFieldsError, 'Missing required field:')) {

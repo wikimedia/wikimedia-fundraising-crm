@@ -76,39 +76,37 @@ class ImportFullNameTest extends TestCase implements HeadlessInterface, HookInte
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function testNameParseDuringImport(): void {
     $this->imitateAdminUser();
     $this->createImportSource();
     $importMappings = [
       [
-        'name' => 'contact.full_name',
+        'name' => 'Contact.full_name',
         'default_value' => NULL,
         'column_number' => 0,
         'entity_data' => [],
       ],
       [
-        'name' => 'total_amount',
+        'name' => 'Contribution.total_amount',
         'default_value' => 10,
         'column_number' => 1,
         'entity_data' => [],
       ],
       [
-        'name' => 'financial_type_id',
+        'name' => 'Contribution.financial_type_id',
         'default_value' => 1,
         'column_number' => 2,
         'entity_data' => [],
       ],
       [
-        'name' => 'soft_credit.contact.full_name',
+        'name' => 'SoftCreditContact.full_name',
         'default_value' => NULL,
         'column_number' => 3,
         'entity_data' => ['soft_credit' => ['soft_credit_type_id' => 1]],
       ],
       [
-        'name' => 'trxn_id',
+        'name' => 'Contribution.trxn_id',
         'default_value' => '',
         'column_number' => 4,
         'entity_data' => [],
@@ -153,10 +151,11 @@ class ImportFullNameTest extends TestCase implements HeadlessInterface, HookInte
       ->execute()->first();
     $this->assertEquals('soft_credit_imported', $row['_status'], $row['_status_message']);
     $contribution = Contribution::get(FALSE)
-      ->addSelect('contact_id.first_name', 'contact_id.last_name')
+      ->addSelect('contact_id.first_name', 'contact_id.last_name', 'contact_id.addressee_display')
       ->addWhere('id', '=', $row['_entity_id'])
       ->execute()->single();
     $this->assertEquals('Jane', $contribution['contact_id.first_name']);
+    $this->assertEquals('Jane Import_Test', $contribution['contact_id.addressee_display']);
     $this->assertEquals('Import_Test', $contribution['contact_id.last_name']);
     $softCredit = ContributionSoft::get(FALSE)
       ->addSelect('contact_id.first_name', 'contact_id.last_name')
