@@ -425,6 +425,9 @@ trait SavedSearchInspectorTrait {
       if (!empty($field['implicit_join']) && empty($field['custom_field_id'])) {
         $field = $this->getField(substr($expr->getAlias(), 0, -1 - strlen($field['name'])));
       }
+      if (empty($field)) {
+        \Civi::log('wmf')->warning('Field not found {expr}', ['expr' => print_r($expr, TRUE)]);
+      }
       return $label . $field['label'];
     }
     else {
