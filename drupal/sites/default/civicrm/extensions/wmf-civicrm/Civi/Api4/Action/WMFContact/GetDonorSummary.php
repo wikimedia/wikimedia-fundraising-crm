@@ -49,32 +49,41 @@ class GetDonorSummary extends AbstractAction {
       ->execute()
       ->first();
     $email = $contact['email_primary.email'];
+
+    // Since our database has a lot of duplicate contact records, we show donations for
+    // all contacts with the same email address.
     $allContactIDsWithEmail = Email::get(FALSE)
       ->addWhere('email', '=', $email)
       ->addWhere('contact_id.is_deleted', '=', FALSE)
       ->addSelect('contact_id')
       ->execute()->getArrayCopy();
     $contactIDList = array_column($allContactIDsWithEmail, 'contact_id');
+
     $allContributions = Contribution::get(FALSE)
       ->addWhere('contact_id', 'IN', $contactIDList)
       ->addSelect(
         'id',
-        'contribution_recur_id',
-        'contribution_extra.original_currency',
         'contribution_extra.original_amount',
-        'payment_instrument_id:name'
-      )->execute();
-    $recurringContributions = ContributionRecur::get(FALSE)
-      ->addWhere('contact_id', 'IN', $contactIDList)
-      ->addSelect(
-        'amount',
-        'currency',
-        'frequency_unit',
-        'id',
-        'next_sched_contribution_date',
+        'contribution_extra.original_currency',
+        'contribution_recur_id',
+        'contribution_recur_id.frequency_unit',
+        'financial_type_id:name',
         'payment_instrument_id:name',
-        'contribution_status_id:name'
+        'receive_date'
       )->execute();
+
+    // The donor portal will show a list of all active recurring contributions with links to manage them.
+    $recurringContributions = $this->getRecurringContributions(
+      $contactIDList, ['In Progress', 'Pending', 'Failing', 'Processing', 'Overdue']
+    );
+    // ... unless there are no active ones - then it will show the most recent inactive one with a link
+    // to re-establish it.
+    if ($recurringContributions->count() === 0) {
+      $recurringContributions = [
+        $this->getRecurringContributions($contactIDList, ['Completed', 'Failed', 'Cancelled'])->first()
+      ];
+    }
+
     $result[] = [
       'id' => $this->contact_id,
       'name' => $contact['display_name'],
@@ -87,8 +96,57 @@ class GetDonorSummary extends AbstractAction {
         'country' => $contact['address_primary.country_id:abbr'],
       ],
       'hasMultipleContacts' => count($allContactIDsWithEmail) > 1,
-      'contributions' => $allContributions->getArrayCopy(),
-      'recurringContributions' => $recurringContributions->getArrayCopy(),
+      'contributions' => $this->mapContributions($allContributions),
+      'recurringContributions' => $this->mapRecurringContributions($recurringContributions),
     ];
+  }
+
+  protected function getRecurringContributions(array $contactIDList, array $statuses): Result {
+    return ContributionRecur::get(FALSE)
+      ->addWhere('contact_id', 'IN', $contactIDList)
+      ->addWhere('contribution_status_id:name', 'IN', $statuses)
+      ->addOrderBy('modified_date', 'DESC')
+      ->addSelect(
+        'amount',
+        'currency',
+        'frequency_unit',
+        'id',
+        'next_sched_contribution_date',
+        'payment_instrument_id:name',
+        'contribution_status_id:name'
+      )->execute();
+  }
+
+  protected function mapContributions(Result $allContributions): array {
+    $mapped = [];
+    foreach ($allContributions as $contribution) {
+      $mapped[] = [
+        'id' => $contribution['id'],
+        'amount' => $contribution['contribution_extra.original_amount'],
+        'currency' => $contribution['contribution_extra.original_currency'],
+        'financial_type' => $contribution['financial_type_id:name'],
+        'frequency_unit' => $contribution['contribution_recur_id.frequency_unit'],
+        'is_recurring' => (bool) $contribution['contribution_recur_id'],
+        'payment_method' => $contribution['payment_instrument_id:name'],
+        'receive_date' => $contribution['receive_date'],
+      ];
+    }
+    return $mapped;
+  }
+
+  protected function mapRecurringContributions(Result $recurringContributions): array {
+    $mapped = [];
+    foreach ($recurringContributions as $recurringContribution) {
+      $mapped[] = [
+        'id' => $recurringContribution['id'],
+        'amount' => $recurringContribution['amount'],
+        'currency' => $recurringContribution['currency'],
+        'frequency_unit' => $recurringContribution['frequency_unit'],
+        'next_sched_contribution_date' => $recurringContribution['next_sched_contribution_date'],
+        'payment_method' => $recurringContribution['payment_instrument_id:name'],
+        'status' => $recurringContribution['contribution_status_id:name'],
+      ];
+    }
+    return $mapped;
   }
 }
