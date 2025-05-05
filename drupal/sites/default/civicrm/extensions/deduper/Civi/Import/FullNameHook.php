@@ -42,6 +42,7 @@ class FullNameHook {
     $contact = array_filter(Name::parse(FALSE)
       ->setNames([$contact['full_name']])
       ->execute()->first()) + $contact;
+    $contact['addressee_custom'] = $contact['addressee_display'] = $contact['full_name'];
     unset($contact['full_name']);
   }
 
