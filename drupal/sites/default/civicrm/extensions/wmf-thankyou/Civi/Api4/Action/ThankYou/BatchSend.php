@@ -60,12 +60,6 @@ class BatchSend extends AbstractAction {
    * @throws \Throwable
    */
   public function _run(Result $result): void {
-    // @todo - seems like this is broken - 'false' - naha - but do we want this setting at all?
-    if (\Civi::settings()->get('thank_you_enabled') === 'false') {
-      \Civi::log('wmf')->info('thank_you: Thank You send job is disabled');
-      return;
-    }
-
     \Civi::log('wmf')->info('thank_you: Attempting to send {message_limit} thank you mails for contributions from the last {number_of_days} days.', [
       'number_of_days' => $this->getNumberOfDays(),
       'message_limit' => $this->getMessageLimit() ? $this->getMessageLimit() : 'all',
@@ -160,25 +154,19 @@ EOT;
           \Civi::log('wmf')->error('thank_you: {log_message}', ['log_message' => $logMessage]);
         }
         else {
-          try {
-            \Civi::log('wmf')->alert(
-              'Thank you mail failed for contribution {contribution_id}', [
-                'url' => \CRM_Utils_System::url('civicrm/contact/view/contribution', [
-                  'reset' => 1,
-                  'id' => $contribution->id,
-                  'action' => 'view',
-                ], TRUE),
-                'message' => $logMessage,
-                'contribution_id' => $contribution->id,
-                'subject' => 'Thank you mail failed for contribution ' . $contribution->id . ' ' . gethostname(),
-                'consecutive_failures' => $consecutiveFailures,
-              ]
-            );
-          }
-          catch (\Exception $innerEx) {
-            \Civi::log('wmf')->alert('thank_you: Can\'t even send failmail, disabling thank you job');
-            Civi::settings()->set('thank_you_enabled', 'false');
-          }
+          \Civi::log('wmf')->alert(
+            'Thank you mail failed for contribution {contribution_id}', [
+              'url' => \CRM_Utils_System::url('civicrm/contact/view/contribution', [
+                'reset' => 1,
+                'id' => $contribution->id,
+                'action' => 'view',
+              ], TRUE),
+              'message' => $logMessage,
+              'contribution_id' => $contribution->id,
+              'subject' => 'Thank you mail failed for contribution ' . $contribution->id . ' ' . gethostname(),
+              'consecutive_failures' => $consecutiveFailures,
+            ]
+          );
         }
       }
     }

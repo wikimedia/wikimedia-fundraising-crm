@@ -131,17 +131,6 @@ return [
     'settings_pages' => ['wmf-thankyou' => ['weight' => 32]],
   ],
 
-   'thank_you_enabled' => [
-     'name' => 'thank_you_enabled',
-     'title' => E::ts('Enable Thank You send job'),
-     'type' => 'Boolean',
-     'quick_form_type' => 'YesNo',
-     'default' => TRUE,
-     'is_domain' => 1,
-     'is_contact' => 0,
-     'settings_pages' => ['wmf-thankyou' => ['weight' => 35]],
-   ],
-
   'thank_you_days' => [
     'name' => 'thank_you_days',
     'title' => E::ts('Days before considering transaction too old to automatically thank'),
