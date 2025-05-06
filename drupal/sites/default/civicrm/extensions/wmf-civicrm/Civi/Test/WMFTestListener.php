@@ -40,6 +40,8 @@ class WMFTestListener implements \PHPUnit\Framework\TestListener {
 
   private array $originalStatic;
 
+  private array $originalSettings;
+
   public function endTestSuite(\PHPUnit\Framework\TestSuite $suite): void {}
 
   public function startTest(\PHPUnit\Framework\Test $test): void {
@@ -54,6 +56,8 @@ class WMFTestListener implements \PHPUnit\Framework\TestListener {
     else {
       $this->tx = NULL;
     }
+    $this->originalSettings = \Civi::settings()->all();
+    \Civi::settings()->set('mailing_backend', ['outBound_option' => \CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB]);
     // Our main test logger has a higher weight than the other loggers
     // and runs first, blocking them.
     \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 1 WHERE type = "test"');
@@ -67,6 +71,8 @@ class WMFTestListener implements \PHPUnit\Framework\TestListener {
   public function endTest(\PHPUnit\Framework\Test $test, float $time): void {
     \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 0 WHERE type = "test"');
     MonologManager::flush();
+    // @todo - should we set ALL settings here?
+    \Civi::settings()->set('mailing_backend', ['outBound_option' => $this->originalSettings['mailing_backend']]);
     if ($test instanceof TransactionalInterface) {
       $this->tx->rollback()->commit();
       $this->tx = NULL;
