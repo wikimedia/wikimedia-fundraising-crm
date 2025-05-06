@@ -80,7 +80,10 @@ class Send extends AbstractAction {
    * @return int|null
    */
   protected function getYear(): ?int {
-    return $this->year;
+    if ($this->year) {
+      return $this->year;
+    }
+    return $this->getContactID() ? NULL : (int) (date('Y', strtotime('- 1 year')));
   }
 
   /**
