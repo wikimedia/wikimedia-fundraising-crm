@@ -4,7 +4,7 @@ namespace Civi\WMFQueue;
 
 use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
-use Civi\Api4\MessageTemplate;
+use Civi\Api4\Email;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFException\WMFException;
 
@@ -132,12 +132,200 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
     $this->processMessage($cancel);
 
     $updatedRecur = ContributionRecur::get(FALSE)
-      ->addSelect('*', 'contribution_status_id:name')
-      ->addWhere('id', '=', $recur['id'])
+      ->addSelect('*', 'contribution_status_id:name')->addWhere('id', '=', $recur['id'])
       ->execute()
       ->first();
 
     $this->assertEquals('Cancelled', $updatedRecur['contribution_status_id:name']);
+  }
+
+  /**
+   * Verifies that recurring failure email is sent when a user has no other active recurring contributions.
+   */
+  public function testAutoRescueCancellationEmailSent(): void {
+    // Add recurring contribution to be cancelled
+    $rescueReference = 'ABC-123';
+    $orderId = "1001.1";
+    $recur = $this->createContributionRecur([
+      'frequency_interval' => '1',
+      'frequency_unit' => 'month',
+      'contribution_recur_smashpig.rescue_reference' => $rescueReference,
+      'invoice_id' => $orderId,
+      'payment_instrument_id:name' => "Credit Card: Visa",
+    ]);
+
+    // Create an email record (needed to send Failure Email)
+    $testEmail = 'test@example.org';
+    Email::create(FALSE)
+      ->setValues([
+        'contact_id' => $recur['contact_id'],
+        'email' => $testEmail,
+        'is_primary' => TRUE,
+      ])->execute();
+
+    $cancelMessage = $this->getRecurringCancelMessage([
+      'rescue_reference' => $rescueReference,
+      'is_autorescue' => 'true',
+      'cancel_reason' => 'Payment cannot be rescued: maximum failures reached',
+      'contact_id' => $recur['contact_id'],
+      'order_id' => $orderId,
+      'recurring_payment_id' => $recur['id'],
+      'email' => $testEmail,
+    ]);
+
+    // Count email activities before processing cancellation
+    $preCancellationActivities = Activity::get(FALSE)
+      ->addSelect('*', 'activity_type_id:name')
+      ->addWhere('activity_type_id:name', '=', 'Email')
+      ->addWhere('source_record_id', '=', $recur['id'])
+      ->execute();
+
+    $preCancellationActivitiesCount = $preCancellationActivities->count();
+
+    // Cancel recurring contribution
+    $this->processMessage($cancelMessage);
+
+    // Verify contribution was cancelled
+    $updatedRecur = ContributionRecur::get(FALSE)
+      ->addSelect('*', 'contribution_status_id:name')
+      ->addSelect('contribution_recur_smashpig.rescue_reference')
+      ->addWhere('id', '=', $recur['id'])
+      ->execute()
+      ->first();
+    $this->assertEquals('Cancelled', $updatedRecur['contribution_status_id:name']);
+
+    // Verify that the rescue reference was cleared
+    $this->assertEquals('', $updatedRecur['contribution_recur_smashpig.rescue_reference']);
+
+    // Verify failure email was sent (check for new Email activity)
+    $postCancellationActivities = Activity::get(FALSE)
+      ->addSelect('*', 'activity_type_id:name')
+      ->addWhere('activity_type_id:name', '=', 'Email')
+      ->addWhere('source_record_id', '=', $recur['id'])
+      ->execute();
+
+    $postActivitiesCount = $postCancellationActivities->count();
+
+    // 1 new failure email activity should be created
+    $this->assertEquals($preCancellationActivitiesCount + 1, $postActivitiesCount);
+
+    // Additionally, verify the activity subject matches recurring failure email
+    $emailFailureActivity = $postCancellationActivities->last();
+    $this->assertStringContainsString('Recur fail message :', $emailFailureActivity['subject']);
+
+    // clean up email
+    Email::delete(FALSE)
+      ->addWhere('id', '=', $recur['contact_id'])
+      ->execute();
+  }
+
+  /**
+   * Verifies that failure email is not sent when a user has other active recurring contributions.
+   */
+  public function testAutoRescueCancellationEmailNotSentWhenAnotherActiveRecurring(): void {
+    // Setup first recurring contribution (will be cancelled)
+    $rescueReference = 'ABC-123';
+    $orderId = "1001.1";
+    $recur1 = $this->createContributionRecur([
+      'frequency_interval' => '1',
+      'frequency_unit' => 'month',
+      'contribution_recur_smashpig.rescue_reference' => $rescueReference,
+      'invoice_id' => $orderId,
+      'payment_instrument_id:name' => "Credit Card: Visa",
+    ]);
+
+    // Create payment token
+    $paymentToken = \Civi\Api4\PaymentToken::create(FALSE)
+      ->addValue('contact_id', $recur1['contact_id'])
+      ->addValue('token', 'tok_test123')
+      ->addValue('created_date', date('Y-m-d H:i:s'))
+      ->addValue('expiry_date', date('Y-m-d H:i:s', strtotime('+1 year')))
+      ->addValue('email', 'test@example.com')
+      ->addValue('payment_processor_id.name', 'adyen')
+      ->execute()
+      ->first();
+
+    // Setup second recurring contribution (will remain active)
+    $recur2 = $this->createContributionRecur([
+      'frequency_interval' => '1',
+      'frequency_unit' => 'month',
+      'invoice_id' => "1002.1",
+      'payment_instrument_id:name' => "Credit Card: Visa",
+      'trxn_id' => '1234.1',
+      'payment_token_id' => $paymentToken['id'],
+      'contact_id' => $recur1['contact_id'],
+      'contribution_status_id:name' => 'In Progress',
+    ]);
+
+    // Create an email record (needed to send Failure Email)
+    $testEmail = 'test@example.org';
+    Email::create(FALSE)
+      ->setValues([
+        'contact_id' => $recur1['contact_id'],
+        'email' => $testEmail,
+        'is_primary' => TRUE,
+      ])->execute();
+
+    // Cancel the first recurring contribution
+    $cancel = $this->getRecurringCancelMessage([
+      'rescue_reference' => $rescueReference,
+      'is_autorescue' => 'true',
+      'cancel_reason' => 'Payment cannot be rescued: maximum failures reached',
+      'contact_id' => $recur1['contact_id'],
+      'order_id' => $orderId,
+      'recurring_payment_id' => $recur1['id'],
+      'email' => $testEmail,
+    ]);
+
+    // Count email activities before processing
+    $preCancellationActivities = Activity::get(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'Email')
+      ->addWhere('source_record_id', '=', $recur1['id'])
+      ->execute();
+
+    $preCancellationActivitiesCount = $preCancellationActivities->count();
+
+    $this->processMessage($cancel);
+
+    // Verify the first recurring contribution was cancelled
+    $updatedRecur1 = ContributionRecur::get(FALSE)
+      ->addSelect('*', 'contribution_status_id:name')
+      ->addSelect('contribution_recur_smashpig.rescue_reference')
+      ->addWhere('id', '=', $recur1['id'])
+      ->execute()
+      ->first();
+    $this->assertEquals('Cancelled', $updatedRecur1['contribution_status_id:name']);
+    // Verify that the rescue reference was cleared
+    $this->assertEquals('', $updatedRecur1['contribution_recur_smashpig.rescue_reference']);
+
+    // Verify the second contribution is still active
+    $updatedRecur2 = ContributionRecur::get(FALSE)
+      ->addSelect('contribution_status_id:name')
+      ->addWhere('id', '=', $recur2['id'])
+      ->execute()
+      ->first();
+    $this->assertEquals('In Progress', $updatedRecur2['contribution_status_id:name']);
+
+    // Verify no failure email was sent (check for new activities)
+    $postCancellationActivities = Activity::get(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'Email')
+      ->addWhere('source_record_id', '=', $recur1['id'])
+      ->execute();
+
+    $postCancellationActivitiesCount = $postCancellationActivities->count();
+
+    // No new failure email activities should be created
+    $this->assertEquals($preCancellationActivitiesCount, $postCancellationActivitiesCount, 'No failure email should be sent when contact has another active recurring contribution');
+
+    // clean up email
+    Email::delete(FALSE)
+      ->addWhere('id', '=', $recur1['contact_id'])
+      ->execute();
+
+    // clean up payment token
+    \Civi\Api4\PaymentToken::delete(FALSE)
+      ->addWhere('id', '=', $paymentToken['id'])
+      ->execute();
   }
 
   /**

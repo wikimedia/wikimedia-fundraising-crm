@@ -19,7 +19,6 @@ use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFTransaction;
-use Statistics\Exception\StatisticsCollectorException;
 
 class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
@@ -77,7 +76,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * reason in that currently this code is what ensures the ContributionRecur
    * record exists. Potentially the Donation queue could do that too.
    *
-   * @param RecurDonationMessage $message
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
    * @param array $msg
    *
    * @throws \CRM_Core_Exception
@@ -131,7 +130,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       // messages lately. Insert a whole new contribution_recur record.
       $startMessage = [
         'txn_type' => 'subscr_signup',
-        ] + $msg;
+      ] + $msg;
       $this->importSubscriptionSignup($message, $startMessage);
     }
     if (!$message->getContributionRecurID()) {
@@ -213,7 +212,6 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     }
   }
 
-
   /**
    * Get the contribution tracking id for a given a recurring trxn
    *
@@ -228,7 +226,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @return int contribution tracking id
    */
   private function getContributionTracking($msg) {
-  if ($msg['txn_type'] == 'subscr_payment') {
+    if ($msg['txn_type'] == 'subscr_payment') {
       $queryResult = ContributionRecur::get(FALSE)
         ->addSelect('MIN(contribution_tracking.id) AS ctid', 'MIN(contribution.id) AS contribution_id')
         ->addJoin('Contribution AS contribution', 'INNER')
@@ -511,7 +509,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   /**
    * Process a subscriber cancellation
    *
-   * @param RecurDonationMessage $message
+   * @param \Civi\WMFQueueMessage\RecurDonationMessage $message
    *
    * @throws WMFException
    */
@@ -537,14 +535,18 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         // clear out the rescue_reference so we don't try to send them another auto-rescue cancel
         // API call (see civicrm_post hook in WMFHelper\ContributionRecur::cancelRecurAutoRescue)
         $update_params['contribution_recur_smashpig.rescue_reference'] = '';
-        // The failure email is otherwise sent from the recurring smashpig extension. When an autorescue
-        // attempt ends in failure, we cancel here and need to send the email as well
-        FailureEmail::send()
-          ->setCheckPermissions(FALSE)
-          ->setContactID($message->getContactID())
-          ->setContributionRecurID($message->getContributionRecurID())
-          ->execute();
+
+        if (!$this->hasOtherActiveRecurringContribution($message->getContactID(), $message->getContributionRecurID())) {
+          // The failure email is otherwise sent from the recurring smashpig extension. When an autorescue
+          // attempt ends in failure, we cancel here and need to send the email as well
+          // Note: We only send the email if the contact does not have any other active recurring contributions
+          FailureEmail::send()
+            ->setCheckPermissions(FALSE)
+            ->setContactID($message->getContactID())
+            ->setContributionRecurID($message->getContributionRecurID())
+            ->execute();
         }
+      }
       $this->updateContributionRecurWithErrorHandling($update_params);
 
       // Since the API4 update doesn't create the activity the api3 cancel call does, we create it here
@@ -669,6 +671,35 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for failed payment for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
     }
     Civi::log('wmf')->notice('recurring: Successfully recorded failed payment for subscriber id: {subscriber_id} ', ['subscriber_id' => print_r($msg['subscr_id'], TRUE)]);
+  }
+
+  /**
+   * Check if the donor has another active recurring contribution set up.
+   *
+   * @todo: I took this from CRM_Core_Payment_SmashPigRecurringProcessor so we
+   * can probably extract this to a common place and use it in both places.
+   *
+   * @param int $contactID
+   * @param int $recurringID ID of recurring contribution record
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  protected function hasOtherActiveRecurringContribution(int $contactID, int $recurringID): bool {
+    $recurringCount = ContributionRecur::get(FALSE)
+      ->addWhere('id', '!=', $recurringID)
+      ->addWhere('contact_id', '=', $contactID)
+      ->addWhere('contribution_status_id:name', 'IN', [
+        'Pending',
+        'Overdue',
+        'In Progress',
+        'Failing',
+      ])
+      ->addWhere('payment_token_id', 'IS NOT NULL')
+      ->execute()
+      ->count();
+
+    return $recurringCount > 0;
   }
 
 }
