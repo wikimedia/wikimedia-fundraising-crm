@@ -199,7 +199,7 @@ class Json extends \CRM_Import_DataSource {
     foreach ($row as $key => $value) {
       if (is_string($value)) {
         // CRM-17859 Trim non-breaking spaces from columns.
-        $row[$key] = \CRM_Core_DAO::escapeString(self::trimNonBreakingSpaces($value));
+        $row[$key] = \CRM_Core_DAO::escapeString(self::trimWhitespace($value));
       }
       elseif (!is_numeric($value)) {
         $row[$key] = '';

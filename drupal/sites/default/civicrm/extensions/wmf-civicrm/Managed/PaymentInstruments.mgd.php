@@ -121,6 +121,7 @@ $instruments = [
   'Bank Transfer: PicPay' => 'Bank Transfer: PicPay',
   'Bank Transfer: PSE' => 'Bank Transfer: PSE',
   'Bank Transfer: Santander' => 'Bank Transfer: Santander',
+  'Bank Transfer: Stitch' => 'Bank Transfer: Stitch',
   'Bank Transfer: Webpay' =>'Bank Transfer: Webpay',
   'Provencia Pagos' => 'Provencia Pagos',
   'Red Pagos' => 'Red Pagos',

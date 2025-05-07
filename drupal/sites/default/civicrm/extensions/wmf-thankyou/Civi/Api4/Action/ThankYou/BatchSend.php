@@ -60,16 +60,12 @@ class BatchSend extends AbstractAction {
    * @throws \Throwable
    */
   public function _run(Result $result): void {
-    // @todo - seems like this is broken - 'false' - naha - but do we want this setting at all?
-    if (\Civi::settings()->get('thank_you_enabled') === 'false') {
-      \Civi::log('wmf')->info('thank_you: Thank You send job is disabled');
-      return;
-    }
-
     \Civi::log('wmf')->info('thank_you: Attempting to send {message_limit} thank you mails for contributions from the last {number_of_days} days.', [
       'number_of_days' => $this->getNumberOfDays(),
       'message_limit' => $this->getMessageLimit() ? $this->getMessageLimit() : 'all',
       'time_limit' => $this->getTimeLimit(),
+      'end_time' => date('Y-m-d-m-Y-H-i-s', $this->getEndTime()),
+      'start_time' => date('Y-m-d-m-Y-H-i-s', $this->getStartTime()),
     ]);
 
     $this->updateContributionsWithoutEmail();
@@ -104,6 +100,7 @@ EOT;
     $consecutiveFailures = 0;
     $failureThreshold = \Civi::settings()->get('thank_you_failure_threshold');
     $this->result = ['attempted' => 0, 'succeeded' => 0, 'failed' => 0];
+    \Civi::log('wmf')->info('thank_you: Found {count} contributions to thank.', ['count' => $contribution->N]);
 
     while ($contribution->fetch()) {
       if (time() >= $this->getEndTime()) {
@@ -157,25 +154,19 @@ EOT;
           \Civi::log('wmf')->error('thank_you: {log_message}', ['log_message' => $logMessage]);
         }
         else {
-          try {
-            \Civi::log('wmf')->alert(
-              'Thank you mail failed for contribution {contribution_id}', [
-                'url' => \CRM_Utils_System::url('civicrm/contact/view/contribution', [
-                  'reset' => 1,
-                  'id' => $contribution->id,
-                  'action' => 'view',
-                ], TRUE),
-                'message' => $logMessage,
-                'contribution_id' => $contribution->id,
-                'subject' => 'Thank you mail failed for contribution ' . $contribution->id . ' ' . gethostname(),
-                'consecutive_failures' => $consecutiveFailures,
-              ]
-            );
-          }
-          catch (\Exception $innerEx) {
-            \Civi::log('wmf')->alert('thank_you: Can\'t even send failmail, disabling thank you job');
-            Civi::settings()->set('thank_you_enabled', 'false');
-          }
+          \Civi::log('wmf')->alert(
+            'Thank you mail failed for contribution {contribution_id}', [
+              'url' => \CRM_Utils_System::url('civicrm/contact/view/contribution', [
+                'reset' => 1,
+                'id' => $contribution->id,
+                'action' => 'view',
+              ], TRUE),
+              'message' => $logMessage,
+              'contribution_id' => $contribution->id,
+              'subject' => 'Thank you mail failed for contribution ' . $contribution->id . ' ' . gethostname(),
+              'consecutive_failures' => $consecutiveFailures,
+            ]
+          );
         }
       }
     }
@@ -400,6 +391,7 @@ EOT;
       // If available, use the time the script started as the start time
       // This way we're less likely to run past the start of the next run.
       if (isset($_SERVER['REQUEST_TIME'])) {
+        \Civi::log('wmf')->info('thank_you: Using REQUEST_TIME as start time');
         $this->startTime = $_SERVER['REQUEST_TIME'];
       }
       else {
@@ -473,6 +465,7 @@ EOT;
    * @throws \CRM_Core_Exception
    */
   public function updateContributionsWithoutEmail(): void {
+    \Civi::log('wmf')->info('checking for contributions without email address since {date}.', ['date' => $this->getEarliestContributionDate()]);;
     $noEmailContributions = (array) Contribution::get(FALSE)
       ->addJoin('Email AS email', 'LEFT', ['contact_id', '=', 'email.contact_id'], ['email.is_primary', '=', 1])
       ->addWhere('receive_date', '>', $this->getEarliestContributionDate())
@@ -481,12 +474,13 @@ EOT;
       ->addWhere('email.email', 'IS EMPTY')
       ->addWhere('contribution_extra.no_thank_you', 'IS EMPTY')
       ->execute()->indexBy('id');
+    \Civi::log('wmf')->info('thank_you: Found {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
     if ($noEmailContributions) {
-      \Civi::log('wmf')->info('thank_you: Found {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
       Contribution::update(FALSE)
         ->addValue('contribution_extra.no_thank_you', 'no_email')
         ->addWhere('id', 'IN', array_keys($noEmailContributions))
         ->execute();
+      \Civi::log('wmf')->info('thank_you: Updated no thank you for {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
     }
   }
 

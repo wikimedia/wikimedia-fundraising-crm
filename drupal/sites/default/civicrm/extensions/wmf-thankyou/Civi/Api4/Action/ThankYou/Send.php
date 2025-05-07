@@ -28,6 +28,8 @@ use Civi\WMFThankYou\From;
  * @method $this setDisplayName(string $displayName)
  * @method $this setTemplateName(string $templateName)
  * @method $this setEmail(string $email)
+ * @method $this setActivityType(string $activityType)
+ * @method string getActivityType()
  * @method $this setContactID(int $contactID)
  * @method $this setContributionID(int $contributionID)
  * @method $this setMaxRenderAttempts(int $max)
@@ -71,6 +73,8 @@ class Send extends AbstractAction {
    protected int $maxRenderAttempts = 3;
 
    private $preferredLanguage;
+
+   protected string $activityType = 'Thank you email';
 
   /**
    * @return mixed
@@ -212,19 +216,22 @@ class Send extends AbstractAction {
         $this->getHeaders()
       );
       if (!$email_success) {
-        $msg = "Thank you mail failed for contribution id: " . $this->getContributionID() . " to " . $this->getEmail();
+        $msg = 'Thank you mail failed for contribution id: ' . $this->getContributionID() . " to " . $this->getEmail();
         throw new WMFException(WMFException::BAD_EMAIL, $msg);
       }
-      \Civi::log('wmf')->info('thank_you: Thank you mail sent successfully to contact_id {contact_id} for contribution id: {contribution_id} to {recipient_address}', [
+      \Civi::log('wmf')->info('thank_you: {activity_type} sent successfully to contact_id {contact_id} for contribution id: {contribution_id} to {recipient_address}', [
         'contact_id' => $this->getContactID(),
         'contribution_id' => $this->getContributionID(),
         'recipient_address' => $this->getEmail(),
+        'activity_type' => $this->getActivityType(),
       ]);
-      \Civi::log('wmf')->info('thank_you: Updating TY send date to: {date}', ['date' => date('Y-m-d H:i:s')]);
-      Contribution::update(FALSE)
-        ->addWhere('id', '=', $this->getContributionID())
-        ->addValue('thankyou_date', 'now')
-        ->execute();
+      if ($this->isThankYou()) {
+        \Civi::log('wmf')->info('thank_you: Updating TY send date to: {date}', ['date' => date('Y-m-d H:i:s')]);
+        Contribution::update(FALSE)
+          ->addWhere('id', '=', $this->getContributionID())
+          ->addValue('thankyou_date', 'now')
+          ->execute();
+      }
       $this->createActivity($subject, $html);
     }
     catch (\Exception $e) {
@@ -393,12 +400,19 @@ class Send extends AbstractAction {
     Activity::create(FALSE)->setValues([
       'source_contact_id' => $this->getContactID(),
       'target_contact_id' => $this->getContactID(),
-      'activity_type_id:name' => 'Thank you email',
+      'activity_type_id:name' => $this->getActivityType(),
       'activity_date_time' => 'now',
       'subject' => $subject,
       'details' => $html,
       'status_id:name' => 'Completed',
     ])->execute();
+  }
+
+  /**
+   * @return bool
+   */
+  private function isThankYou(): bool {
+    return $this->getActivityType() === 'Thank you email';
   }
 
 }
