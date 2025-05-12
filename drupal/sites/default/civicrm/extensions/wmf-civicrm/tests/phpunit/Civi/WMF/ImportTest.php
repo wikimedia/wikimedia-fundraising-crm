@@ -130,7 +130,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       'soft_credit' => [
         'action' => 'update',
         'contact_type' => 'Organization',
-        'soft_credit_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionSoft', 'soft_credit_type_id', 'matched_gift'),
+        'soft_credit_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionSoft', 'soft_credit_type_id', 'workplace'),
         'dedupe_rule' => 'OrganizationSupervised',
       ],
     ];
@@ -1206,7 +1206,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals('benevity trxn-WOOF', $contribution['trxn_id']);
     $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->addSelect('soft_credit_type_id:name')->execute();
     $this->assertCount(1, $softCredit);
-    $this->assertEquals('matched_gift', $softCredit->first()['soft_credit_type_id:name']);;
+    $this->assertEquals('workplace', $softCredit->first()['soft_credit_type_id:name']);;
     // Use single to check the address & relationship exist.
     Address::get(FALSE)->addWhere('contact_id', '=', $contribution['contact_id'])->execute()->single();
     Relationship::get(FALSE)->addWhere('contact_id_a', '=',$contribution['contact_id'])->execute()->single();
@@ -1223,7 +1223,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals('Goofy Inc', $contribution['contact_id.display_name']);
     $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->addSelect('soft_credit_type_id:name')->execute();
     $this->assertCount(1, $softCredit);
-    $this->assertEquals('workplace', $softCredit->first()['soft_credit_type_id:name']);
+    $this->assertEquals('matched_gift', $softCredit->first()['soft_credit_type_id:name']);
 
     // Row 4 Check contribution from Uncle Scrooge Inc.
     // In this case there is no individual contribution and, since the potential
@@ -1275,7 +1275,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $softCredit = ContributionSoft::get(FALSE)->addSelect('contact_id.display_name')->addSelect('soft_credit_type_id:name')->addWhere('contribution_id', '=', $contribution['id'])->execute();
     $this->assertCount(1, $softCredit);
     $this->assertEquals('uncle@duck.org', $softCredit->first()['contact_id.display_name']);
-    $this->assertEquals('workplace', $softCredit->first()['soft_credit_type_id:name']);
+    $this->assertEquals('matched_gift', $softCredit->first()['soft_credit_type_id:name']);
   }
 
   /**
