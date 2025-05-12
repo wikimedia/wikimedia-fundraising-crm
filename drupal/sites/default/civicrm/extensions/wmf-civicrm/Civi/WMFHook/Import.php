@@ -630,7 +630,7 @@ class Import {
               'contact_id' => $this->mappedRow['Contact']['id'],
               'contribution_id' => $contribution['id'],
               'amount' => $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'],
-              'soft_credit_type_id:name' => 'workplace',
+              'soft_credit_type_id:name' => 'matched_gift',
             ])
             ->execute();
         }
@@ -650,7 +650,7 @@ class Import {
         else {
           // The individual contact is now the soft credit contact.
           $this->mappedRow['SoftCreditContact'][array_key_first($this->mappedRow['SoftCreditContact'])]['Contact'] = $individualContact;
-          $this->mappedRow['SoftCreditContact'][array_key_first($this->mappedRow['SoftCreditContact'])]['soft_credit_type_id'] = ContributionSoftHelper::getEmploymentSoftCreditTypes()['workplace'];
+          $this->mappedRow['SoftCreditContact'][array_key_first($this->mappedRow['SoftCreditContact'])]['soft_credit_type_id'] = ContributionSoftHelper::getEmploymentSoftCreditTypes()['matched_gift'];
         }
         $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] .= '_MATCHED';
       }
