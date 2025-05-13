@@ -381,8 +381,11 @@ class Import {
     $mappings = $userJob['metadata']['import_mappings'] ?? [];
     foreach ($mappings as $mapping) {
       $mappingName = $mapping['name'] ?? '';
-      if (str_starts_with($mappingName, 'contact.')) {
+      if (str_starts_with($mappingName, 'Contact.')) {
         $mappingName = substr($mappingName, 8);
+      }
+      if (str_starts_with($mappingName, 'Contribution.')) {
+        $mappingName = substr($mappingName, 13);
       }
       if ($mappingName === $fieldName) {
         return $this->rowValues[$mapping['column_number']];

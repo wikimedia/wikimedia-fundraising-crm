@@ -31,6 +31,7 @@ use Civi\UserJob\UserJobInterface;
  */
 abstract class CRM_Import_Parser implements UserJobInterface {
   use \Civi\API\EntityLookupTrait;
+  use \Civi\UserJob\UserJobTrait;
 
   /**
    * Return codes
@@ -41,23 +42,6 @@ abstract class CRM_Import_Parser implements UserJobInterface {
    * Codes for duplicate record handling
    */
   const DUPLICATE_SKIP = 1, DUPLICATE_UPDATE = 4, DUPLICATE_FILL = 8, DUPLICATE_NOCHECK = 16;
-
-  /**
-   * User job id.
-   *
-   * This is the primary key of the civicrm_user_job table which is used to
-   * track the import.
-   *
-   * @var int
-   */
-  protected $userJobID;
-
-  /**
-   * The user job in use.
-   *
-   * @var array
-   */
-  protected $userJob;
 
   /**
    * Potentially ambiguous options.
@@ -81,30 +65,11 @@ abstract class CRM_Import_Parser implements UserJobInterface {
   protected $siteDefaultCountry = NULL;
 
   /**
-   * @return int|null
-   */
-  public function getUserJobID(): ?int {
-    return $this->userJobID;
-  }
-
-  /**
    * Ids of contacts created this iteration.
    *
    * @var array
    */
   protected $createdContacts = [];
-
-  /**
-   * Set user job ID.
-   *
-   * @param int $userJobID
-   *
-   * @return self
-   */
-  public function setUserJobID(int $userJobID): self {
-    $this->userJobID = $userJobID;
-    return $this;
-  }
 
   /**
    * Countries that the site is restricted to
@@ -121,23 +86,8 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     return [];
   }
 
-  /**
-   * Get User Job.
-   *
-   * API call to retrieve the userJob row.
-   *
-   * @return array
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function getUserJob(): array {
-    if (empty($this->userJob)) {
-      $this->userJob = UserJob::get()
-        ->addWhere('id', '=', $this->getUserJobID())
-        ->execute()
-        ->first();
-    }
-    return $this->userJob;
+  public function getBaseEntity(): string {
+    return $this->baseEntity;
   }
 
   /**
@@ -268,17 +218,18 @@ abstract class CRM_Import_Parser implements UserJobInterface {
   protected function getContactFields(string $contactType, ?string $prefix = ''): array {
     $contactFields = $this->getAllContactFields('');
     $dedupeFields = $this->getDedupeFields($contactType);
-
+    $matchText = ' ' . ts('(match to %1)', [1 => $prefix]);
     foreach ($dedupeFields as $fieldName => $dedupeField) {
       if (!isset($contactFields[$fieldName])) {
         continue;
       }
-      $contactFields[$fieldName]['title'] . ' ' . ts('(match to contact)');
+      $contactFields[$fieldName]['title'] .= $matchText;
       $contactFields[$fieldName]['match_rule'] = $this->getDefaultRuleForContactType($contactType);
     }
 
-    $contactFields['external_identifier']['title'] .= (' ' . ts('(match to contact)'));
+    $contactFields['external_identifier']['title'] .= $matchText;
     $contactFields['external_identifier']['match_rule'] = '*';
+    $contactFields['id']['match_rule'] = '*';
     if ($prefix) {
       $prefixedFields = [];
       foreach ($contactFields as $name => $contactField) {
@@ -326,7 +277,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     $return = [];
     foreach ($this->getImportableFieldsMetadata() as $name => $field) {
       if ($name === 'id' && $this->isSkipDuplicates()) {
-        // Duplicates are being skipped so id matching is not availble.
+        // Duplicates are being skipped so id matching is not available.
         continue;
       }
       $return[$name] = $field['html']['label'] ?? $field['title'];
@@ -463,7 +414,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
       // specified dedupe rule (or the default Unsupervised if not specified).
       $requiredFields = $contactType === 'Individual' ? [[$requiredFields, 'external_identifier']] : [[$requiredFields, 'email', 'external_identifier']];
     }
-    $this->validateRequiredFields($requiredFields, $params, $prefixString);
+    $this->validateRequiredFields($requiredFields, $params, '', $prefixString);
   }
 
   /**
@@ -731,11 +682,18 @@ abstract class CRM_Import_Parser implements UserJobInterface {
    *     ['first_name', 'last_name']
    *   ]
    *   Means 'email' OR 'first_name AND 'last_name'.
+   * @param string $entityName
+   *   Entity name, if the entity is prefixed in the `getAvailableFields()` array
+   *   - we are working towards this being required.
    * @param string $prefixString
    *
    * @throws \CRM_Core_Exception Exception thrown if field requirements are not met.
    */
-  protected function validateRequiredFields(array $requiredFields, array $params, $prefixString = ''): void {
+  protected function validateRequiredFields(array $requiredFields, array $params, string $entityName = '', string $prefixString = ''): void {
+    if ($entityName) {
+      // @todo - make entityName required once all fields are prefixed.
+      $params = CRM_Utils_Array::prefixKeys($params, "$entityName.");
+    }
     $missingFields = $this->getMissingFields($requiredFields, $params);
     if (empty($missingFields)) {
       return;
@@ -1011,7 +969,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     }
     // @todo - make this generic - for fields where getOptions doesn't fetch
     // getOptions does not retrieve these fields with high potential results
-    if ($fieldName === 'event_id') {
+    if ($fieldMetadata['name'] === 'event_id' && $fieldMetadata['fk_entity'] === 'Event') {
       if (!isset(Civi::$statics[__CLASS__][$fieldName][$importedValue])) {
         $event = Event::get()->addClause('OR', ['title', '=', $importedValue], ['id', '=', $importedValue])->addSelect('id')->execute()->first();
         Civi::$statics[__CLASS__][$fieldName][$importedValue] = $event['id'] ?? FALSE;
@@ -1060,28 +1018,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
 
     $fieldMap = $this->getOddlyMappedMetadataFields();
     $fieldMapName = empty($fieldMap[$fieldName]) ? $fieldName : $fieldMap[$fieldName];
-    $fieldMapName = str_replace('__', '.', $fieldMapName);
-    // See https://lab.civicrm.org/dev/core/-/issues/4317#note_91322 - a further hack for quickform not
-    // handling dots in field names. One day we will get rid of the Quick form screen...
-    $fieldMapName = str_replace('~~', '_.', $fieldMapName);
-    foreach ($this->getImportEntities() as $entity) {
-      if (empty($this->getImportableFieldsMetadata()[$fieldMapName]) && $entity['entity_field_prefix'] && str_starts_with($fieldMapName, $entity['entity_field_prefix'])) {
-        // e.g if the field name is 'contact.external_identifier' then it is just a case of looking
-        // for external_identifier.
-        $fieldMapName = substr($fieldMapName, strlen($entity['entity_field_prefix']));
-        break;
-      }
-    }
-    if (isset($this->baseEntity) && str_starts_with($fieldMapName, strtolower($this->baseEntity) . '.')) {
-      // @todo - remove this again - we are switching to NOT namespacing the base entity & using the getImportEntities above.
-      $fieldMapName = str_replace(strtolower($this->baseEntity) . '.', '', $fieldMapName);
-    }
-    if (!isset($this->importableFieldsMetadata[$fieldMapName]) && isset($this->importableFieldsMetadata['contact.' . $fieldMapName])) {
-      // Our metadata is a bit in flux in the early 6.x versions but this should catch the mapping in 6.1
-      // and has cover in testImportFromUserJobConfigurationInvalidCountry.
-      $fieldMapName = 'contact.' . $fieldMapName;
-    }
-    // This whole business of only loading metadata for one type when we actually need it for all is ... dubious.
+    // This whole business of only loading metadata for one contact type when we actually need it for all is ... dubious.
     if (empty($this->getImportableFieldsMetadata()[$fieldMapName])) {
       if ($loadOptions || !$limitToContactType) {
         $this->importableFieldsMetadata[$fieldMapName] = CRM_Contact_BAO_Contact::importableFields('All')[$fieldMapName];
@@ -1213,7 +1150,9 @@ abstract class CRM_Import_Parser implements UserJobInterface {
    */
   protected function validateParams(array $params): void {
     if (empty($params['id']) && empty($params[$this->baseEntity]['id'])) {
-      $this->validateRequiredFields($this->getRequiredFields(), $params[$this->baseEntity] ?? $params);
+      $entityConfiguration = $this->getImportEntities()[$this->baseEntity];
+      $entity = $entityConfiguration['entity_name'] ?? '';
+      $this->validateRequiredFields($this->getRequiredFields(), $params[$this->baseEntity] ?? $params, $entity);
     }
     $errors = [];
     foreach ($params as $key => $value) {
@@ -1240,6 +1179,9 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     $errors = [];
     if ($value === 'invalid_import_value') {
       if (!is_numeric($key)) {
+        if (!isset($this->importableFieldsMetadata[$key]) && isset($this->importableFieldsMetadata[trim($prefixString) . '.' . $key])) {
+          $key = trim($prefixString) . '.' . $key;
+        }
         $metadata = $this->getFieldMetadata($key);
         $errors[] = $prefixString . ($metadata['label'] ?? $metadata['html']['label'] ?? $metadata['title']);
       }
@@ -1250,6 +1192,9 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     }
     elseif (is_array($value)) {
       foreach ($value as $innerKey => $innerValue) {
+        if (!$prefixString && !isset($this->importableFieldsMetadata[$innerKey]) && isset($this->importableFieldsMetadata[$key . '.' . $innerKey])) {
+          $innerKey = $key . '.' . $innerKey;
+        }
         $result = $this->getInvalidValues($innerValue, $innerKey, $prefixString);
         if ($result === [TRUE]) {
           $metadata = $this->getFieldMetadata($key);
@@ -1367,7 +1312,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
    */
   public function getImportEntities() : array {
     return [
-      'Contact' => ['text' => ts('Contact Fields'), 'is_contact' => TRUE, 'entity_field_prefix' => ''],
+      'Contact' => ['text' => ts('Contact Fields'), 'is_contact' => TRUE],
     ];
   }
 
@@ -1381,7 +1326,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
    */
   public function getMappedFieldLabel(array $mappedField): string {
     // doNotImport is on it's way out - skip fields will be '' once all is done.
-    if ($mappedField['name'] === 'doNotImport') {
+    if (empty($mappedField['name']) || $mappedField['name'] === 'doNotImport') {
       return '';
     }
     $this->setFieldMetadata();
@@ -1400,12 +1345,12 @@ abstract class CRM_Import_Parser implements UserJobInterface {
   public function getMappedRow(array $values): array {
     $params = [];
     foreach ($this->getFieldMappings() as $i => $mappedField) {
-      if ($mappedField['name'] === 'do_not_import') {
+      if (!isset($mappedField['name']) || $mappedField['name'] === 'do_not_import') {
         continue;
       }
       if ($mappedField['name']) {
         $fieldSpec = $this->getFieldMetadata($mappedField['name']);
-        $entity = $fieldSpec['entity_instance'] ?? $fieldSpec['entity'] ?? $fieldSpec['extends'] ?? NULL;
+        $entity = $fieldSpec['entity_instance'] ?? $fieldSpec['entity_name'] ?? $fieldSpec['entity'] ?? $fieldSpec['extends'] ?? NULL;
         if ($entity) {
           // Split values into arrays by entity.
           // Apiv4 name is currently only set for contact, & only in cases where it would
@@ -1430,15 +1375,17 @@ abstract class CRM_Import_Parser implements UserJobInterface {
    * @return array
    */
   protected function getFieldMappings(): array {
-    $mappedFields = [];
-    $mapper = $this->getSubmittedValue('mapper');
-    foreach ($mapper as $i => $mapperRow) {
-      // Cast to an array as it will be a string for membership
-      // and any others we simplify away from using hierselect for a single option.
-      $mappedField = $this->getMappingFieldFromMapperInput((array) $mapperRow, 0, $i);
-      // Just for clarity since 0 is a pseudo-value
-      unset($mappedField['mapping_id']);
-      $mappedFields[] = $mappedField;
+    $mappedFields = $this->getUserJob()['metadata']['import_mappings'] ?? [];
+    if (empty($mappedFields)) {
+      $mapper = $this->getSubmittedValue('mapper');
+      foreach ($mapper as $i => $mapperRow) {
+        // Cast to an array as it will be a string for membership
+        // and any others we simplify away from using hierselect for a single option.
+        $mappedField = $this->getMappingFieldFromMapperInput((array) $mapperRow, 0, $i);
+        // Just for clarity since 0 is a pseudo-value
+        unset($mappedField['mapping_id']);
+        $mappedFields[] = $mappedField;
+      }
     }
     return $mappedFields;
   }
@@ -1483,8 +1430,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     $dataSource->setLimit($limit);
 
     while ($row = $dataSource->getRow()) {
-      $values = array_values($row);
-      $parser->import($values);
+      $parser->import($row);
     }
     $parser->doPostImportActions();
     return TRUE;
@@ -1957,6 +1903,62 @@ abstract class CRM_Import_Parser implements UserJobInterface {
       }
     }
     return $array;
+  }
+
+  /**
+   * Get the actions to display in the rich UI.
+   *
+   * Filter by the input actions - e.g ['update' 'select'] will only return those keys.
+   *
+   * @param array $actions
+   * @param string $entity
+   *
+   * @return array
+   */
+  protected function getActions(array $actions, $entity = 'Contact'): array {
+    $actionList['Contact'] = [
+      'ignore' => [
+        'id' => 'ignore',
+        'text' => ts('No action'),
+        'description' => ts('Contact not altered'),
+      ],
+      'select' => [
+        'id' => 'select',
+        'text' => ts('Match existing Contact'),
+        'description' => ts('Look up existing contact. Skip row if not found'),
+      ],
+      'update' => [
+        'id' => 'update',
+        'text' => ts('Update existing Contact.'),
+        'description' => ts('Update existing Contact. Skip row if not found'),
+      ],
+      'save' => [
+        'id' => 'save',
+        'text' => ts('Update existing Contact or Create'),
+        'description' => ts('Create new contact if not found'),
+      ],
+    ];
+    return array_values(array_intersect_key($actionList[$entity], array_fill_keys($actions, TRUE)));
+  }
+
+  /**
+   * Save the contact.
+   *
+   * @param string $entity
+   * @param array $contact
+   *
+   * @return int|null
+   *
+   * @throws \Civi\API\Exception\UnauthorizedException|\CRM_Core_Exception
+   */
+  protected function saveContact(string $entity, array $contact): ?int {
+    if (in_array($this->getActionForEntity($entity), ['update', 'save', 'create'])) {
+      return Contact::save()
+        ->setRecords([$contact])
+        ->execute()
+        ->first()['id'];
+    }
+    return NULL;
   }
 
 }

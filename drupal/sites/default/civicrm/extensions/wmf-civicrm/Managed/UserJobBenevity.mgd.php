@@ -86,7 +86,7 @@ $entities = [
           ],
           'import_mappings' => [
             [
-              'name' => 'soft_credit.contact.organization_name',
+              'name' => 'SoftCreditContact.organization_name',
               'default_value' => NULL,
               'column_number' => 0,
               'entity_data' => [
@@ -105,49 +105,49 @@ $entities = [
               'entity_data' => [],
             ],
             [
-              'name' => 'receive_date',
+              'name' => 'Contribution.receive_date',
               'default_value' => NULL,
               'column_number' => 2,
               'entity_data' => [],
             ],
             [
-              'name' => 'contact.first_name',
+              'name' => 'Contact.first_name',
               'default_value' => NULL,
               'column_number' => 3,
               'entity_data' => [],
             ],
             [
-              'name' => 'contact.last_name',
+              'name' => 'Contact.last_name',
               'default_value' => NULL,
               'column_number' => 4,
               'entity_data' => [],
             ],
             [
-              'name' => 'contact.email_primary.email',
+              'name' => 'Contact.email_primary.email',
               'default_value' => NULL,
               'column_number' => 5,
               'entity_data' => [],
             ],
             [
-              'name' => 'contact.address_primary.street_address',
+              'name' => 'Contact.address_primary.street_address',
               'default_value' => NULL,
               'column_number' => 6,
               'entity_data' => [],
             ],
             [
-              'name' => 'contact.address_primary.city',
+              'name' => 'Contact.address_primary.city',
               'default_value' => NULL,
               'column_number' => 7,
               'entity_data' => [],
             ],
             [
-              'name' => 'contact.address_primary.state_province_id',
+              'name' => 'Contact.address_primary.state_province_id',
               'default_value' => NULL,
               'column_number' => 8,
               'entity_data' => [],
             ],
             [
-              'name' => 'contact.address_primary.postal_code',
+              'name' => 'Contact.address_primary.postal_code',
               'default_value' => NULL,
               'column_number' => 9,
               'entity_data' => [],
@@ -165,7 +165,7 @@ $entities = [
               'entity_data' => [],
             ],
             [
-              'name' => 'contribution_extra.gateway_txn_id',
+              'name' => 'Contribution.contribution_extra.gateway_txn_id',
               'default_value' => NULL,
               'column_number' => 12,
               'entity_data' => [],
@@ -177,7 +177,7 @@ $entities = [
               'entity_data' => [],
             ],
             [
-              'name' => 'contribution_extra.original_currency',
+              'name' => 'Contribution.contribution_extra.original_currency',
               'default_value' => 'USD',
               'column_number' => 14,
               'entity_data' => [],
@@ -189,19 +189,19 @@ $entities = [
               'entity_data' => [],
             ],
             [
-              'name' => 'Gift_Data.Campaign',
+              'name' => 'Contribution.Gift_Data.Campaign',
               'default_value' => NULL,
               'column_number' => 16,
               'entity_data' => [],
             ],
             [
-              'name' => 'contribution_extra.original_amount',
+              'name' => 'Contribution.contribution_extra.original_amount',
               'default_value' => NULL,
               'column_number' => 17,
               'entity_data' => [],
             ],
             [
-              'name' => 'fee_amount',
+              'name' => 'Contribution.fee_amount',
               'default_value' => NULL,
               'column_number' => 18,
               'entity_data' => [],
@@ -209,7 +209,7 @@ $entities = [
             [
               // We map this for wrangling in the hook, but do not save it
               // to this field (in keeping with historical benevity imports).
-              'name' => 'Matching_Gift_Information.Match_Amount',
+              'name' => 'Contribution.Matching_Gift_Information.Match_Amount',
               'default_value' => NULL,
               'column_number' => 19,
               'entity_data' => [],
@@ -217,7 +217,7 @@ $entities = [
             [
               // We need to map both fee columns because we total
               // them in fee_amount in custom code, and then unset this again.
-              'name' => 'contribution_extra.scheme_fee',
+              'name' => 'Contribution.contribution_extra.scheme_fee',
               'default_value' => NULL,
               'column_number' => 20,
               'entity_data' => [],
@@ -229,13 +229,13 @@ $entities = [
               'entity_data' => [],
             ],
             [
-              'name' => 'financial_type_id',
+              'name' => 'Contribution.financial_type_id',
               'default_value' => 'Cash',
               'column_number' => 22,
               'entity_data' => [],
             ],
             [
-              'name' => 'contribution_extra.gateway',
+              'name' => 'Contribution.contribution_extra.gateway',
               'default_value' => 'benevity',
               'column_number' => 23,
               'entity_data' => [],

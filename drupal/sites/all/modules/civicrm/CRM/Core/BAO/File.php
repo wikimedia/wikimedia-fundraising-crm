@@ -15,10 +15,12 @@
  * @copyright CiviCRM LLC https://civicrm.org/licensing
  */
 
+use Civi\Api4\Utils\CoreUtil;
+
 /**
  * BAO object for crm_log table
  */
-class CRM_Core_BAO_File extends CRM_Core_DAO_File {
+class CRM_Core_BAO_File extends CRM_Core_DAO_File implements \Civi\Core\HookInterface {
 
   public static $_signableFields = ['entityTable', 'entityID', 'fileID'];
 
@@ -36,6 +38,18 @@ class CRM_Core_BAO_File extends CRM_Core_DAO_File {
    */
   public static function create($params) {
     return self::writeRecord($params);
+  }
+
+  /**
+   * Event fired before an action is taken on a File record.
+   * @param \Civi\Core\Event\PreEvent $event
+   */
+  public static function self_hook_civicrm_pre(\Civi\Core\Event\PreEvent $event) {
+    if ($event->action === 'create') {
+      if (empty($event->params['created_id'])) {
+        $event->params['created_id'] = CRM_Core_Session::getLoggedInContactID();
+      }
+    }
   }
 
   /**
@@ -149,12 +163,12 @@ class CRM_Core_BAO_File extends CRM_Core_DAO_File {
 
     //save static tags
     if (!empty($fileParams['tag'])) {
-      CRM_Core_BAO_EntityTag::create($fileParams['tag'], 'civicrm_file', $entityFileDAO->id);
+      CRM_Core_BAO_EntityTag::create($fileParams['tag'], 'civicrm_file', $fileDAO->id);
     }
 
     //save free tags
     if (isset($fileParams['attachment_taglist']) && !empty($fileParams['attachment_taglist'])) {
-      CRM_Core_Form_Tag::postProcess($fileParams['attachment_taglist'], $entityFileDAO->id, 'civicrm_file');
+      CRM_Core_Form_Tag::postProcess($fileParams['attachment_taglist'], $fileDAO->id, 'civicrm_file');
     }
 
     // lets call the post hook here so attachments code can do the right stuff
@@ -243,17 +257,10 @@ class CRM_Core_BAO_File extends CRM_Core_DAO_File {
 
     if (!empty($cfIDs)) {
       foreach ($cfIDs as $fileID => $fUri) {
-        $tagParams = [
-          'entity_table' => 'civicrm_file',
-          'entity_id' => $fileID,
-        ];
-        // Delete tags from entity tag table.
-        CRM_Core_BAO_EntityTag::del($tagParams);
-
         // sequentially deletes EntityFile entry and then deletes File record
         CRM_Core_DAO_EntityFile::deleteRecord(['id' => $cefIDs[$fileID]]);
         // Delete file only if there are no longer any entities using this file.
-        if (!CRM_Core_DAO::getFieldValue('CRM_Core_DAO_EntityFile', $fileID, 'id', 'file_id')) {
+        if (!CoreUtil::getRefCountTotal('File', $fileID)) {
           self::deleteRecord(['id' => $fileID]);
           unlink($config->customFileUploadDir . $fUri);
         }
@@ -281,11 +288,11 @@ class CRM_Core_BAO_File extends CRM_Core_DAO_File {
 
     $config = CRM_Core_Config::singleton();
 
-    [$sql, $params] = self::sql($entityTable, $entityID, NULL);
+    [$sql, $params] = self::sql($entityTable, $entityID);
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
     $results = [];
     while ($dao->fetch()) {
-      $fileHash = self::generateFileHash($dao->entity_id, $dao->cfID);
+      $fileHash = self::generateFileHash(NULL, $dao->cfID);
       $result['fileID'] = $dao->cfID;
       $result['entityID'] = $dao->cefID;
       $result['mime_type'] = $dao->mime_type;
@@ -293,7 +300,7 @@ class CRM_Core_BAO_File extends CRM_Core_DAO_File {
       $result['description'] = $dao->description;
       $result['cleanName'] = CRM_Utils_File::cleanFileName($dao->uri);
       $result['fullPath'] = $config->customFileUploadDir . $dao->uri;
-      $result['url'] = CRM_Utils_System::url('civicrm/file', "reset=1&id={$dao->cfID}&eid={$dao->entity_id}&fcs={$fileHash}");
+      $result['url'] = CRM_Utils_System::url('civicrm/file', "reset=1&id={$dao->cfID}&fcs={$fileHash}");
       $result['href'] = "<a href=\"{$result['url']}\">{$result['cleanName']}</a>";
       $result['tag'] = CRM_Core_BAO_EntityTag::getTag($dao->cfID, 'civicrm_file');
       $result['icon'] = CRM_Utils_File::getIconFromMimeType($dao->mime_type ?? '');
@@ -625,16 +632,18 @@ AND       CEF.entity_id    = %2";
   }
 
   /**
-   * @param $entityTable
+   * @param string $entityTable
    * @param int $entityID
    * @param int $fileID
+   * @param int|null $customField
    *
    * @return string
    */
-  public static function deleteURLArgs($entityTable, $entityID, $fileID) {
+  public static function deleteURLArgs($entityTable, $entityID, $fileID, $customField = NULL) {
     $params['entityTable'] = $entityTable;
     $params['entityID'] = $entityID;
     $params['fileID'] = $fileID;
+    $params['customField'] = $customField;
 
     $signer = new CRM_Utils_Signer(CRM_Core_Key::privateKey(), self::$_signableFields);
     $params['_sgn'] = $signer->sign($params);
@@ -647,18 +656,51 @@ AND       CEF.entity_id    = %2";
    */
   public static function deleteAttachment() {
     $params = [];
-    $params['entityTable'] = CRM_Utils_Request::retrieve('entityTable', 'String', CRM_Core_DAO::$_nullObject, TRUE);
-    $params['entityID'] = CRM_Utils_Request::retrieve('entityID', 'Positive', CRM_Core_DAO::$_nullObject, TRUE);
-    $params['fileID'] = CRM_Utils_Request::retrieve('fileID', 'Positive', CRM_Core_DAO::$_nullObject, TRUE);
+    $params['entityTable'] = CRM_Utils_Request::retrieve('entityTable', 'String', NULL, TRUE);
+    $params['entityID'] = CRM_Utils_Request::retrieve('entityID', 'Positive', NULL, TRUE);
+    $params['fileID'] = CRM_Utils_Request::retrieve('fileID', 'Positive', NULL, TRUE);
+    $params['customField'] = CRM_Utils_Request::retrieve('customField', 'Positive');
 
-    $signature = CRM_Utils_Request::retrieve('_sgn', 'String', CRM_Core_DAO::$_nullObject, TRUE);
+    $signature = CRM_Utils_Request::retrieve('_sgn', 'String', NULL, TRUE);
 
     $signer = new CRM_Utils_Signer(CRM_Core_Key::privateKey(), self::$_signableFields);
     if (!$signer->validate($signature, $params)) {
       throw new CRM_Core_Exception('Request signature is invalid');
     }
 
-    self::deleteEntityFile($params['entityTable'], $params['entityID'], NULL, $params['fileID']);
+    // Attachment - need to delete entityFile record
+    if (!$params['customField']) {
+      self::deleteEntityFile($params['entityTable'], $params['entityID'], NULL, $params['fileID']);
+      return;
+    }
+    $refCount = 0;
+    // Custom file field - set the custom value to NULL
+    $customGroup = CRM_Core_BAO_CustomGroup::getGroup(['table_name' => $params['entityTable']]);
+    $customField = $customGroup['fields'][$params['customField']] ?? NULL;
+    if ($customField) {
+      // *SIGH* Api4 has a bug which cannot update file custom fields to NULL :(
+      //   $entityName = $customGroup['extends'] ?? NULL;
+      //   $fieldName = CRM_Core_BAO_CustomField::getLongNameFromShortName('custom_' . $params['customField']);
+      //   civicrm_api4($entityName, 'update', [
+      //     'values' => [$fieldName => NULL, 'id' => $params['entityID']],
+      //     'where' => [
+      //       ['id', '=', $params['entityID']],
+      //       [$fieldName, '=', $params['fileID']],
+      //     ],
+      //   ]);
+      // TEMP HACK
+      CRM_Core_DAO::executeQuery("UPDATE `{$customGroup['table_name']}` SET {$customField['column_name']} = NULL WHERE entity_id = %1 AND {$customField['column_name']} = %2", [
+        1 => [$params['entityID'], 'Integer'],
+        2 => [$params['fileID'], 'Integer'],
+      ]);
+      $refCount = CoreUtil::getRefCountTotal('File', $params['fileID']);
+    }
+    // Delete file if there are no other references
+    if ($refCount === 0) {
+      \Civi\Api4\File::delete(FALSE)
+        ->addWhere('id', '=', $params['fileID'])
+        ->execute();
+    }
   }
 
   /**
@@ -805,17 +847,9 @@ HEREDOC;
   }
 
   /**
-   * FIXME: Incomplete pseudoconstant for EntityFile.entity_table
+   * List of entities that can have file attachments.
    *
-   * The `EntityFile` table serves 2 purposes:
-   * 1. As a many-to-many bridge table for entities that support multiple attachments
-   * 2. As a redundant copy of the value of custom fields of type File
-   *
-   * The 2nd use isn't really a bridge entity, and doesn't even make much sense
-   * (what purpose does it serve other than as a dummy value to use in file download links).
-   * Including the 2nd in this function would blow up the possible values for `entity_table`
-   * and make ACL clauses quite slow. So until someone comes up with a better idea,
-   * this only returns values relevant to the 1st.
+   * TODO: Make this extensible.
    *
    * @return array
    */

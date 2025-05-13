@@ -3,23 +3,7 @@
 /**
  * Class CRM_Custom_Import_Form_MapField
  */
-class CRM_Custom_Import_Form_MapField extends CRM_Import_Form_MapField {
-
-
-  /**
-   * Does the form layer convert field names to support QuickForm widgets.
-   *
-   * (e.g) if 'yes' we swap
-   * `soft_credit.external_identifier` to `soft_credit__external_identifier`
-   * because the contribution form would break on the . as it would treat it as
-   * javascript.
-   *
-   * In the case of the custom field import the array is flatter and there
-   * is no hierarchical select so we do not need to do this.
-   *
-   * @var bool
-   */
-  protected bool $supportsDoubleUnderscoreFields = FALSE;
+class CRM_Custom_Import_Form_MapField extends CRM_CiviImport_Form_MapField {
 
   /**
    * Get the name of the type to be stored in civicrm_user_job.type_id.
@@ -37,7 +21,7 @@ class CRM_Custom_Import_Form_MapField extends CRM_Import_Form_MapField {
    */
   public function buildQuickForm(): void {
     $this->addSavedMappingFields();
-    $this->addFormRule(['CRM_Custom_Import_Form_MapField', 'formRule']);
+    $this->addFormRule([__CLASS__, 'formRule'], $this);
     $this->addMapper();
     $this->addFormButtons();
   }
@@ -47,23 +31,24 @@ class CRM_Custom_Import_Form_MapField extends CRM_Import_Form_MapField {
    *
    * @param array $fields
    *   Posted values of the form.
+   * @param array $files
+   * @param \CRM_Custom_Import_Form_MapField $self
    *
    * @return array|bool
    *   list of errors to be posted back to the form
+   * @throws \CRM_Core_Exception
    */
-  public static function formRule(array $fields) {
-    // todo - this could be shared with other mapFields forms.
-    $errors = [];
-    if (!array_key_exists('savedMapping', $fields)) {
-      // check either contact id or external identifier
-      if (!in_array('contact_id', $fields['mapper']) && !in_array('external_identifier', $fields['mapper'])) {
-        if (!isset($errors['_qf_default'])) {
-          $errors['_qf_default'] = '';
-        }
-        $errors['_qf_default'] .= ts('Missing required field: %1', [1 => ts('Contact ID or External Identifier')]);
-      }
-    }
+  public static function formRule(array $fields, array $files, CRM_Custom_Import_Form_MapField $self) {
+    $errors = $self->validateRequiredContactFields();
     return empty($errors) ? TRUE : $errors;
+  }
+
+  /**
+   * Has the user chosen to update existing records.
+   * @return bool
+   */
+  protected function isUpdateExisting(): bool {
+    return TRUE;
   }
 
   /**

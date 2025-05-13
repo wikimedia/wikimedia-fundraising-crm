@@ -63,43 +63,43 @@ $organizationFields = [
     ],
   ],
   'Additional Address 2' => [
-    'name' => 'soft_credit.contact.address_primary.supplemental_address_2',
+    'name' => 'SoftCreditContact.address_primary.supplemental_address_2',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'City' => [
-    'name' => 'soft_credit.contact.address_primary.city',
+    'name' => 'SoftCreditContact.address_primary.city',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'State/Province' => [
-    'name' => 'soft_credit.contact.address_primary.state_province_id',
+    'name' => 'SoftCreditContact.address_primary.state_province_id',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Postal Code' => [
-    'name' => 'soft_credit.contact.address_primary.postal_code',
+    'name' => 'SoftCreditContact.address_primary.postal_code',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Country' => [
-    'name' => 'soft_credit.contact.address_primary.country_id',
+    'name' => 'SoftCreditContact.address_primary.country_id',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Phone' => [
-    'name' => 'soft_credit.contact.phone_primary.phone',
+    'name' => 'SoftCreditContact.phone_primary.phone',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Email' => [
-    'name' => 'soft_credit.contact.email_primary.email',
+    'name' => 'SoftCreditContact.email_primary.email',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
@@ -299,25 +299,25 @@ $entities = [
           ],
           'import_mappings' => [
             [
-              'name' => 'Gift_Information.import_batch_number',
+              'name' => 'Contribution.Gift_Information.import_batch_number',
               'default_value' => NULL,
               'column_number' => 0,
               'entity_data' => [],
             ],
             [
-              'name' => 'financial_type_id',
+              'name' => 'Contribution.financial_type_id',
               'default_value' => NULL,
               'column_number' => 1,
               'entity_data' => [],
             ],
             [
-              'name' => 'contribution_extra.gateway_txn_id',
+              'name' => 'Contribution.contribution_extra.gateway_txn_id',
               'default_value' => NULL,
               'column_number' => 2,
               'entity_data' => [],
             ],
             [
-              'name' => 'total_amount',
+              'name' => 'Contribution.total_amount',
               'default_value' => NULL,
               'column_number' => 3,
               'entity_data' => [],
@@ -329,61 +329,61 @@ $entities = [
               'entity_data' => [],
             ],
             [
-              'name' => 'fee_amount',
+              'name' => 'Contribution.fee_amount',
               'default_value' => NULL,
               'column_number' => 5,
               'entity_data' => [],
             ],
             [
-              'name' => 'contribution_extra.Postmark_Date',
+              'name' => 'Contribution.contribution_extra.Postmark_Date',
               'default_value' => NULL,
               'column_number' => 6,
               'entity_data' => [],
             ],
             [
-              'name' => 'receive_date',
+              'name' => 'Contribution.receive_date',
               'default_value' => NULL,
               'column_number' => 7,
               'entity_data' => [],
             ],
             [
-              'name' => 'payment_instrument_id',
+              'name' => 'Contribution.payment_instrument_id',
               'default_value' => NULL,
               'column_number' => 8,
               'entity_data' => [],
             ],
             [
-              'name' => 'check_number',
+              'name' => 'Contribution.check_number',
               'default_value' => NULL,
               'column_number' => 9,
               'entity_data' => [],
             ],
             [
-              'name' => 'Gift_Data.Fund',
+              'name' => 'Contribution.Gift_Data.Fund',
               'default_value' => NULL,
               'column_number' => 10,
               'entity_data' => [],
             ],
             [
-              'name' => 'contribution_source',
+              'name' => 'Contribution.source',
               'default_value' => NULL,
               'column_number' => 11,
               'entity_data' => [],
             ],
             [
-              'name' => 'Gift_Data.Appeal',
+              'name' => 'Contribution.Gift_Data.Appeal',
               'default_value' => NULL,
               'column_number' => 12,
               'entity_data' => [],
             ],
             [
-              'name' => 'first_name',
+              'name' => 'Contact.first_name',
               'default_value' => NULL,
               'column_number' => 13,
               'entity_data' => [],
             ],
             [
-              'name' => 'last_name',
+              'name' => 'Contact.last_name',
               'default_value' => NULL,
               'column_number' => 14,
               'entity_data' => [],
@@ -395,7 +395,7 @@ $entities = [
               'entity_data' => [],
             ],
             [
-              'name' => 'soft_credit.contact.id',
+              'name' => 'SoftCreditContact.id',
               'default_value' => NULL,
               'column_number' => 16,
               'entity_data' => [
@@ -405,7 +405,7 @@ $entities = [
               ],
             ],
             [
-              'name' => 'soft_credit.contact.organization_name',
+              'name' => 'SoftCreditContact.organization_name',
               'default_value' => NULL,
               'column_number' => 17,
               'entity_data' => [
@@ -415,55 +415,55 @@ $entities = [
               ],
             ],
             [
-              'name' => 'address_primary.street_address',
+              'name' => 'Contact.address_primary.street_address',
               'default_value' => NULL,
               'column_number' => 18,
               'entity_data' => [],
             ],
             [
-              'name' => 'address_primary.supplemental_address_1',
+              'name' => 'Contact.address_primary.supplemental_address_1',
               'default_value' => NULL,
               'column_number' => 19,
               'entity_data' => [],
             ],
             [
-              'name' => 'address_primary.supplemental_address_2',
+              'name' => 'Contact.address_primary.supplemental_address_2',
               'default_value' => NULL,
               'column_number' => 20,
               'entity_data' => [],
             ],
             [
-              'name' => 'address_primary.city',
+              'name' => 'Contact.address_primary.city',
               'default_value' => NULL,
               'column_number' => 21,
               'entity_data' => [],
             ],
             [
-              'name' => 'address_primary.state_province_id',
+              'name' => 'Contact.address_primary.state_province_id',
               'default_value' => NULL,
               'column_number' => 22,
               'entity_data' => [],
             ],
             [
-              'name' => 'address_primary.postal_code',
+              'name' => 'Contact.address_primary.postal_code',
               'default_value' => NULL,
               'column_number' => 23,
               'entity_data' => [],
             ],
             [
-              'name' => 'address_primary.country_id',
+              'name' => 'Contact.address_primary.country_id',
               'default_value' => NULL,
               'column_number' => 24,
               'entity_data' => [],
             ],
             [
-              'name' => 'phone_primary.phone',
+              'name' => 'Contact.phone_primary.phone',
               'default_value' => NULL,
               'column_number' => 25,
               'entity_data' => [],
             ],
             [
-              'name' => 'email_primary.email',
+              'name' => 'Contact.email_primary.email',
               'default_value' => NULL,
               'column_number' => 26,
               'entity_data' => [],

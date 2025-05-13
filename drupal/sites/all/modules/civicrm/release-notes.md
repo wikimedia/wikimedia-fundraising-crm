@@ -15,24 +15,6 @@ Other resources for identifying changes are:
     * https://github.com/civicrm/civicrm-joomla
     * https://github.com/civicrm/civicrm-wordpress
 
-## CiviCRM 6.1.2
-
-Released April 21, 2025
-
-- **[Synopsis](release-notes/6.1.2.md#synopsis)**
-- **[Bugs resolved](release-notes/6.1.2.md#bugs)**
-- **[Credits](release-notes/6.1.2.md#credits)**
-- **[Feedback](release-notes/6.1.2.md#feedback)**
-
-## CiviCRM 6.1.1
-
-Released April 16, 2025
-
-- **[Synopsis](release-notes/6.1.1.md#synopsis)**
-- **[Bugs resolved](release-notes/6.1.1.md#bugs)**
-- **[Credits](release-notes/6.1.1.md#credits)**
-- **[Feedback](release-notes/6.1.1.md#feedback)**
-
 ## CiviCRM 6.1.0
 
 Released April 3, 2025
