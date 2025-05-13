@@ -60,7 +60,7 @@ function civicrm_api3_omnigroupmember_load($params) {
       // to avoid thinking a job is incomplete if the limit co-incides with available rows.
       return civicrm_api3_create_success($values);
     }
-    $groupMember = $job->formatRow($contact, $params['custom_data_map']);
+    $groupMember = $job->formatRow($contact);
     if (!empty($groupMember['email']) && !civicrm_api3('email', 'getcount', array('email' => $groupMember['email']))) {
       // If there is already a contact with this email we will skip for now.
       // It might that we want to create duplicates, update contacts or do other actions later
@@ -74,7 +74,7 @@ function civicrm_api3_omnigroupmember_load($params) {
         'email' => $groupMember['email'],
         'is_opt_out' => $groupMember['is_opt_out'],
         'source' => $source,
-        'preferred_language' => _civicrm_api3_omnigroupmember_get_language($groupMember),
+        'preferred_language' => $groupMember['preferred_language'],
         'email_primary.email' => $groupMember['email'],
       ];
 
@@ -123,44 +123,6 @@ function civicrm_api3_omnigroupmember_load($params) {
 }
 
 /**
- * Get the contact's language.
- *
- * This is a place in the code where I am struggling to keep wmf-specific coding out
- * of a generic extension. The wmf-way would be to call the wmf contact_insert function.
- *
- * That is not so appropriate from an extension, but we have language/country data that
- * needs some wmf specific handling as it might or might not add up to a legit language.
- *
- * At this stage I'm compromising on containing the handling within the extension,
- * ensuring test covering and splitting out & documenting the path taken /issue.
- * Later maybe a more listener/hook type approach is the go.
- *
- * It's worth noting this is probably the least important part of the omnimail work
- * from wmf POV.
- *
- * @param array $params
- *
- * @return string|null
- */
-function _civicrm_api3_omnigroupmember_get_language($params) {
-  static $languages = NULL;
-  if (!$languages) {
-    $languages = civicrm_api3('Contact', 'getoptions', array('field' => 'preferred_language', 'limit' => 0));
-    $languages = $languages['values'];
-  }
-  $attempts = array(
-    $params['language'] . '_' . strtoupper($params['country']),
-    $params['language'],
-  );
-  foreach ($attempts as $attempt) {
-    if (isset($languages[$attempt])) {
-      return $attempt;
-    }
-  }
-  return NULL;
-}
-
-/**
  * Check if the country is valid.
  *
  * @param string $country
@@ -206,17 +168,6 @@ function _civicrm_api3_omnigroupmember_load_spec(&$params) {
   );
   $params['retrieval_parameters'] = array(
     'title' => ts('Additional information for retrieval of pre-stored requests'),
-  );
-  $params['custom_data_map'] = array(
-    'type' => CRM_Utils_Type::T_STRING,
-    'title' => ts('Custom fields map'),
-    'description' => array('custom mappings pertaining to the mail provider fields'),
-    'api.default' => array(
-      'language' => 'rml_language',
-      'source' => 'rml_source',
-      'created_date' => 'rml_submitDate',
-      'country' => 'rml_country',
-    ),
   );
   $params['is_opt_in_only'] = array(
     'type' => CRM_Utils_Type::T_BOOLEAN,
