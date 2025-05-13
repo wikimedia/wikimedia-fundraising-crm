@@ -72,6 +72,7 @@ class OmnimailBaseTestClass extends TestCase {
     // mock response rather than doing a live call.
     $this->setBaseUri('https://api-campaign-us-4.goacoustic.com/');
     $this->setSetting('omnimail_job_retry_interval', 0);
+    $this->setDatabaseID(1234);
   }
 
   /**

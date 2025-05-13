@@ -122,11 +122,9 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
    * @param array $params
    *
    * @return int
-   * @throws \CRM_Core_Exception
    */
   public function getLimit($params) {
-    $options = _civicrm_api3_get_options_from_params($params);
-    return (int) $options['limit'];
+    return (int) $params['limit'] ?? NULL;
   }
 
   /**
