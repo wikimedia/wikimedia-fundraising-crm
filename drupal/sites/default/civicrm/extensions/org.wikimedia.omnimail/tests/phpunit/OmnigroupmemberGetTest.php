@@ -44,7 +44,7 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass {
     $this->assertEquals('Opt out via email opt out.', $result['values'][0]['opt_out_source']);
     $this->assertEquals('clever place', $result['values'][2]['source']);
     $this->assertEquals('US', $result['values'][2]['country']);
-    $this->assertEquals('en', $result['values'][2]['language']);
+    $this->assertEquals('en_US', $result['values'][2]['preferred_language']);
     $this->assertEquals('07/04/17', $result['values'][2]['created_date']);
   }
 
