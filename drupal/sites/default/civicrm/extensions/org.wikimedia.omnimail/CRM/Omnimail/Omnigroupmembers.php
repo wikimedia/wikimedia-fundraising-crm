@@ -28,6 +28,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     'source' => 'rml_source',
     'created_date' => 'rml_submitDate',
     'country' => 'rml_country',
+    'phone' => 'mobile_phone',
   ];
 
   /**
@@ -97,6 +98,9 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
       'Email',
       'RECIPIENT_ID',
       'LastSentDate',
+      'LastClickDate',
+      'LastOpenDate',
+      'IsoLang',
       // These details are all pretty confusing as they show opted in for
       // contacts on the Master suppression list.
       // But these are what we can get - maybe one day we will understand - let's
@@ -112,7 +116,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     if ($isSuppressionList) {
       return $systemFields;
     }
-    return $systemFields + array_values($this->customDataMap);
+    return $systemFields + ['contactID'] + array_values($this->customDataMap);
   }
 
   private function isMasterSuppressionList(): true {
@@ -167,11 +171,13 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     $value = [
       'email' => (string) $groupMember->getEmail(),
       'is_opt_out' => (string) $groupMember->isOptOut(),
+      'is_opt_in' => !$groupMember->isOptOut() && $groupMember->getOptInIsoDateTime(),
       'opt_in_date' => (string) $groupMember->getOptInIsoDateTime(),
       'opt_in_source' => (string) $groupMember->getOptInSource(),
       'opt_out_source' => (string) $groupMember->getOptOutSource(),
       'opt_out_date' => (string) $groupMember->getOptOutIsoDateTime(),
       'contact_id' => (string) $groupMember->getContactReference(),
+      'recipient_id' => $groupMember->getCustomData('RECIPIENT_ID'),
     ];
     $country = $this->getCountry($groupMember);
     foreach ($this->customDataMap as $fieldName => $dataKey) {

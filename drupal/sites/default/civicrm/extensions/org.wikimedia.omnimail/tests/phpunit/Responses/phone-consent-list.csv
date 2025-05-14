@@ -1,0 +1,3 @@
+Email,RECIPIENT_ID,Opt In Date,Opted Out,Opt In Details,Email Type,Opted Out Date,Opt Out Details,ContactID,IsoLang,LastClickDate,LastOpenDate,LastSentDate,mobile_phone,rml_country,rml_language,rml_source,rml_submitDate
+,123456,12/19/2024 08:24 PM,F,Opt in thru web form named RML - Phone Added via API. IP Address: 12.34.56.78,0,,,,,,,12/20/2024,123456789,US,en,B2425_121917_en6C_dsk_p1_lg_txt_149,12/19/2024
+,123457,12/19/2024 08:24 PM,T,Opt in thru web form named RML - Phone Added via API. IP Address: 12.34.56.78,0,2024-04-05,Magic,,,,,,123456788,US,en,telepathy
