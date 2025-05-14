@@ -8,7 +8,8 @@
         </div>
       </div>
       <div class="crm-summary-row">
-        <a style="text-decoration: underline" href="{$preferencesLink}">Email Preferences</a>{if $recurringUpgradeLink}<br/>
+        <a style="text-decoration: underline" href="{$preferencesLink}">Email Preferences</a>
+        <a style="text-decoration: underline" href="{$donorPortalLink}">Donor Portal</a>{if $recurringUpgradeLink}<br/>
         <a style="text-decoration: underline" href="{$recurringUpgradeLink}">Recurring Upgrade</a>{/if}
       </div>
     </div>

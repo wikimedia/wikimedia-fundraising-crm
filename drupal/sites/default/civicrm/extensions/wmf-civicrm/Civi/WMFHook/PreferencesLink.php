@@ -49,6 +49,9 @@ class PreferencesLink {
         $recurringUpgradeUrl = FALSE;
       }
       $page->assign('recurringUpgradeLink', $recurringUpgradeUrl);
+      $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
+      $donorPortalUrl = self::addContactAndChecksumToUrl($donorPortalBaseUrl, $contactID, $checksum);
+      $page->assign('donorPortalLink', $donorPortalUrl);
       // FIXME: should be enough to have this path in tpl_file in the contactSummaryBlocks hook
       \CRM_Core_Region::instance('contact-basic-info-right')->add(array(
         'template' => 'CRM/Wmf/Page/Inline/PreferencesLink.tpl',
