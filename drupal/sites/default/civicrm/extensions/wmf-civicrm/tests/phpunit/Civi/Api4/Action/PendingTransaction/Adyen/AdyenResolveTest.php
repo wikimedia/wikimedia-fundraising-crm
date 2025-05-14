@@ -418,14 +418,15 @@ class AdyenResolveTest extends TestCase {
   }
 
   /**
-   * Test moving Adyen PendingPoke to Failed path.
+   * Test moving Adyen PendingPoke path when fraud scores say to leave it
+   * in review.
    *
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    * @throws \SmashPig\Core\SmashPigException
    */
-  public function testResolveAdyenPendingPokeToFailedWithFraudScoresInReviewAction(): void {
+  public function testResolveAdyenPendingPokeWithFraudScoresInReviewAction(): void {
     // generate a pending message to test
     $gateway = 'adyen';
     $pending_message = $this->createTestPendingRecord($gateway);
@@ -453,7 +454,7 @@ class AdyenResolveTest extends TestCase {
 
     // confirm status is now complete
     $this->assertEquals(
-      FinalStatus::FAILED,
+      FinalStatus::PENDING_POKE,
       $result[$pending_message['order_id']]['status']
     );
   }
