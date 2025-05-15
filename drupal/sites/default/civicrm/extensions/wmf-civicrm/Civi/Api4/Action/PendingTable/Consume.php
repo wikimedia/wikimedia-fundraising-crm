@@ -60,6 +60,11 @@ class Consume extends AbstractAction {
     $message = $pendingDb->fetchMessageByGatewayOldest(
       $this->gateway, PendingTransaction::getResolvableMethods()
     );
+    $statusCounts = [
+      FinalStatus::COMPLETE => 0,
+      FinalStatus::FAILED => 0,
+      FinalStatus::PENDING_POKE => 0,
+    ];
     while (
       $message &&
       $message['date'] < UtcDate::getUtcTimestamp("-{$this->minimumAge} minutes") &&
@@ -74,6 +79,7 @@ class Consume extends AbstractAction {
         "Pending transaction {$message['order_id']} was " .
         'resolved and the result is ' . json_encode($resolveResult)
       );
+      $statusCounts[$resolveResult['status']] = ($statusCounts[$resolveResult['status']] ?? 0) + 1;
       $pendingDb->deleteMessage($message);
       $processed++;
       $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway, PendingTransaction::getResolvableMethods());
@@ -107,6 +113,7 @@ class Consume extends AbstractAction {
     // TODO add to prometheus
     $result->append([
       'transactions_resolved' => $processed,
+      'counts_by_status' => $statusCounts,
       'time_elapsed' => time() - $startTime
     ]);
   }

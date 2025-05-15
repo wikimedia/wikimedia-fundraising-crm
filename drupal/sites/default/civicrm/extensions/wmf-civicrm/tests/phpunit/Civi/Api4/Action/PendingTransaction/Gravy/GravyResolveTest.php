@@ -398,17 +398,17 @@ class GravyResolveTest extends TestCase {
   }
 
   /**
-   * Scenario: transaction is set to FAILED at the gateway and
+   * Scenario: transaction is set to PENDING_POKE at the gateway and
    * ValidationAction::REVIEW
    *
-   * Expectation: the transaction is marked as FAILED when resolved.
+   * Expectation: the transaction is still in PENDING_POKE when resolved.
    *
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    * @throws \SmashPig\Core\SmashPigException
    */
-  public function testResolvePendingPokeToFailedWithFraudScoresInReviewAction(): void {
+  public function testResolvePendingPokeWithFraudScoresInReviewAction(): void {
     // generate a pending message to test
     $gateway = 'gravy';
     $pending_message = $this->createTestPendingRecord($gateway);
@@ -436,7 +436,7 @@ class GravyResolveTest extends TestCase {
 
     // confirm status is now complete
     $this->assertEquals(
-      FinalStatus::FAILED,
+      FinalStatus::PENDING_POKE,
       $result[$pending_message['order_id']]['status']
     );
   }

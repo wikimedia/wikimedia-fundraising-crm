@@ -156,7 +156,7 @@ class Resolve extends AbstractAction {
         // Just delete the pending message and leave the transaction at the
         // merchant console for review. Return early so as not to send a
         // payments-init message since nothing new has happened.
-        $result[$this->message['order_id']]['status'] = FinalStatus::FAILED;
+        $result[$this->message['order_id']]['status'] = FinalStatus::PENDING_POKE;
         return;
     }
 
