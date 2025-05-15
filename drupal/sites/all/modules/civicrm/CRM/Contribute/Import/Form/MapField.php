@@ -164,36 +164,6 @@ class CRM_Contribute_Import_Form_MapField extends CRM_CiviImport_Form_MapField {
   }
 
   /**
-   * Get default values for the mapping.
-   *
-   * This looks up any saved mapping or derives them from the headers if possible.
-   *
-   * @return array
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function getDefaults(): array {
-    $defaults = [];
-    $fieldMappings = $this->getFieldMappings();
-    foreach ($this->getColumnHeaders() as $i => $columnHeader) {
-      $defaults["mapper[$i]"] = [];
-      if ($this->getSubmittedValue('savedMapping')) {
-        $fieldMapping = $fieldMappings[$i] ?? [];
-        $this->addMappingToDefaults($defaults, $fieldMapping, $i);
-      }
-      elseif ($this->getSubmittedValue('skipColumnHeader')) {
-        $defaults["mapper[$i]"][0] = $this->guessMappingBasedOnColumns($columnHeader);
-      }
-    }
-    $userDefinedMappings = array_diff_key($this->getFieldMappings(), $this->getColumnHeaders());
-    foreach ($userDefinedMappings as $index => $mapping) {
-      $this->addMappingToDefaults($defaults, $mapping, $index);
-    }
-
-    return $defaults;
-  }
-
-  /**
    * Add the saved mapping to the defaults.
    *
    * @param array $defaults
@@ -203,7 +173,7 @@ class CRM_Contribute_Import_Form_MapField extends CRM_CiviImport_Form_MapField {
    * @return void
    */
   public function addMappingToDefaults(array &$defaults, array $fieldMapping, int $rowNumber): void {
-    if ($fieldMapping) {
+    if ($fieldMapping && !empty($fieldMapping['name'])) {
       if ($fieldMapping['name'] !== ts('do_not_import')) {
         // $mapping contact_type is not really a contact type - the 'about this entity' data has been mangled
         // into that field - see https://lab.civicrm.org/dev/core/-/issues/654
