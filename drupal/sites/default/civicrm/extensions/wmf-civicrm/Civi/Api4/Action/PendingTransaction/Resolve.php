@@ -156,7 +156,7 @@ class Resolve extends AbstractAction {
         // Just delete the pending message and leave the transaction at the
         // merchant console for review. Return early so as not to send a
         // payments-init message since nothing new has happened.
-        $result[$this->message['order_id']]['status'] = FinalStatus::FAILED;
+        $result[$this->message['order_id']]['status'] = FinalStatus::PENDING_POKE;
         return;
     }
 
@@ -682,6 +682,16 @@ class Resolve extends AbstractAction {
       // after the approval
       if (empty($this->message['gateway_txn_id'])) {
         $this->message['gateway_txn_id'] = $approveResult->getGatewayTxnId();
+      }
+      // And other processors have a boatload of other special IDs to copy over
+      if ($approveResult->getBackendProcessor()) {
+        $this->message['backend_processor'] = $approveResult->getBackendProcessor();
+      }
+      if ($approveResult->getBackendProcessorTransactionId()) {
+        $this->message['backend_processor_txn_id'] = $approveResult->getBackendProcessorTransactionId();
+      }
+      if ($approveResult->getPaymentOrchestratorReconciliationId()) {
+        $this->message['payment_orchestrator_reconciliation_id'] = $approveResult->getPaymentOrchestratorReconciliationId();
       }
       $this->sendDonationsQueueMessage($statusResult);
     }
