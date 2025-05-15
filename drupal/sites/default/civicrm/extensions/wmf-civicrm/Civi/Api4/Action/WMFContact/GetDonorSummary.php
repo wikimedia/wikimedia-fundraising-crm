@@ -24,7 +24,7 @@ class GetDonorSummary extends AbstractAction {
   protected $checksum;
 
   public function _run(Result $result) {
-    if (!\CRM_Core_Permission::check('access CiviContribute') && !\CRM_Contact_BAO_Contact_Utils::validChecksum($this->contact_id,  $this->checksum)) {
+    if (!\CRM_Core_Permission::check('access CiviContribute') || !\CRM_Contact_BAO_Contact_Utils::validChecksum($this->contact_id,  $this->checksum)) {
       \Civi::log('wmf')->warning('Donor portal access denied {contact_id} {checksum}', ['contact_id' => $this->contact_id, 'checksum' => $this->checksum]);
       throw new \CRM_Core_Exception('Authorization failed');
     }
@@ -40,6 +40,7 @@ class GetDonorSummary extends AbstractAction {
       ->addSelect(
         'email_primary.email',
         'display_name',
+        'first_name',
         'address_primary.street_address',
         'address_primary.city',
         'address_primary.state_province_id:abbr',
@@ -70,23 +71,20 @@ class GetDonorSummary extends AbstractAction {
         'financial_type_id:name',
         'payment_instrument_id:name',
         'receive_date'
-      )->execute();
+      )->execute()->getArrayCopy();
 
     // The donor portal will show a list of all active recurring contributions with links to manage them.
-    $recurringContributions = $this->getRecurringContributions(
-      $contactIDList, ['In Progress', 'Pending', 'Failing', 'Processing', 'Overdue']
-    );
+    $recurringContributions = $this->getRecurringContributions($contactIDList, TRUE);
     // ... unless there are no active ones - then it will show the most recent inactive one with a link
     // to re-establish it.
-    if ($recurringContributions->count() === 0) {
-      $recurringContributions = [
-        $this->getRecurringContributions($contactIDList, ['Completed', 'Failed', 'Cancelled'])->first()
-      ];
+    if (count($recurringContributions) === 0) {
+      $recurringContributions = $this->getRecurringContributions($contactIDList, FALSE);
     }
 
     $result[] = [
       'id' => $this->contact_id,
       'name' => $contact['display_name'],
+      'first_name' => $contact['first_name'],
       'email' => $email,
       'address' => [
         'street_address' => $contact['address_primary.street_address'],
@@ -101,10 +99,13 @@ class GetDonorSummary extends AbstractAction {
     ];
   }
 
-  protected function getRecurringContributions(array $contactIDList, array $statuses): Result {
-    return ContributionRecur::get(FALSE)
+  protected function getRecurringContributions(array $contactIDList, bool $active): array {
+    $statusList = $active ?
+      ['In Progress', 'Pending', 'Failing', 'Processing', 'Overdue'] :
+      ['Completed', 'Failed', 'Cancelled'];
+    $get = ContributionRecur::get(FALSE)
       ->addWhere('contact_id', 'IN', $contactIDList)
-      ->addWhere('contribution_status_id:name', 'IN', $statuses)
+      ->addWhere('contribution_status_id:name', 'IN', $statusList)
       ->addOrderBy('modified_date', 'DESC')
       ->addSelect(
         'amount',
@@ -114,10 +115,16 @@ class GetDonorSummary extends AbstractAction {
         'next_sched_contribution_date',
         'payment_instrument_id:name',
         'contribution_status_id:name'
-      )->execute();
+      );
+    if (!$active) {
+      $get->addJoin('Contribution AS contribution', 'LEFT')
+        ->addSelect('MAX(contribution.receive_date) AS last_contribution_date')
+        ->setLimit(1);
+    }
+    return $get->execute()->getArrayCopy();
   }
 
-  protected function mapContributions(Result $allContributions): array {
+  protected function mapContributions(array $allContributions): array {
     $mapped = [];
     foreach ($allContributions as $contribution) {
       $mapped[] = [
@@ -134,7 +141,7 @@ class GetDonorSummary extends AbstractAction {
     return $mapped;
   }
 
-  protected function mapRecurringContributions(Result $recurringContributions): array {
+  protected function mapRecurringContributions(array $recurringContributions): array {
     $mapped = [];
     foreach ($recurringContributions as $recurringContribution) {
       $mapped[] = [
@@ -142,6 +149,7 @@ class GetDonorSummary extends AbstractAction {
         'amount' => $recurringContribution['amount'],
         'currency' => $recurringContribution['currency'],
         'frequency_unit' => $recurringContribution['frequency_unit'],
+        'last_contribution_date' => $recurringContribution['last_contribution_date'] ?? null,
         'next_sched_contribution_date' => $recurringContribution['next_sched_contribution_date'],
         'payment_method' => $recurringContribution['payment_instrument_id:name'],
         'status' => $recurringContribution['contribution_status_id:name'],

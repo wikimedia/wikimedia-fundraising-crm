@@ -64,8 +64,8 @@ class BatchSend extends AbstractAction {
       'number_of_days' => $this->getNumberOfDays(),
       'message_limit' => $this->getMessageLimit() ? $this->getMessageLimit() : 'all',
       'time_limit' => $this->getTimeLimit(),
-      'end_time' => date('Y-m-d-m-Y-H-i-s', $this->getEndTime()),
-      'start_time' => date('Y-m-d-m-Y-H-i-s', $this->getStartTime()),
+      'end_time' => date('Y-m-d H-i-s', $this->getEndTime()),
+      'start_time' => date('Y-m-d H-i-s', $this->getStartTime()),
     ]);
 
     $this->updateContributionsWithoutEmail();
