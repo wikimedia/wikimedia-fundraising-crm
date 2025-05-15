@@ -173,7 +173,7 @@ class CRM_Contribute_Import_Form_MapField extends CRM_CiviImport_Form_MapField {
    * @return void
    */
   public function addMappingToDefaults(array &$defaults, array $fieldMapping, int $rowNumber): void {
-    if ($fieldMapping && !empty($fieldMapping['name'])) {
+    if ($fieldMapping) {
       if ($fieldMapping['name'] !== ts('do_not_import')) {
         // $mapping contact_type is not really a contact type - the 'about this entity' data has been mangled
         // into that field - see https://lab.civicrm.org/dev/core/-/issues/654
