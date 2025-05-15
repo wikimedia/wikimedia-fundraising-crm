@@ -683,6 +683,16 @@ class Resolve extends AbstractAction {
       if (empty($this->message['gateway_txn_id'])) {
         $this->message['gateway_txn_id'] = $approveResult->getGatewayTxnId();
       }
+      // And other processors have a boatload of other special IDs to copy over
+      if ($approveResult->getBackendProcessor()) {
+        $this->message['backend_processor'] = $approveResult->getBackendProcessor();
+      }
+      if ($approveResult->getBackendProcessorTransactionId()) {
+        $this->message['backend_processor_txn_id'] = $approveResult->getBackendProcessorTransactionId();
+      }
+      if ($approveResult->getPaymentOrchestratorReconciliationId()) {
+        $this->message['payment_orchestrator_reconciliation_id'] = $approveResult->getPaymentOrchestratorReconciliationId();
+      }
       $this->sendDonationsQueueMessage($statusResult);
     }
     else {
