@@ -122,7 +122,10 @@ class GravyResolveTest extends TestCase {
     $approvePaymentResponse = new ApprovePaymentResponse();
     $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
       ->setGatewayTxnId(mt_rand())
-      ->setSuccessful(TRUE);
+      ->setSuccessful(TRUE)
+      ->setBackendProcessor('gravy')
+      ->setBackendProcessorTransactionId('ABC-123-XYZ')
+      ->setPaymentOrchestratorReconciliationId('abc123zyzzz');
 
     // set configured response to mock approvePayment call
     $this->hostedCheckoutProvider->expects($this->once())
@@ -163,6 +166,9 @@ class GravyResolveTest extends TestCase {
       'gross',
       'currency',
       'gateway_txn_id',
+      'backend_processor',
+      'backend_processor_txn_id',
+      'payment_orchestrator_reconciliation_id',
     ], array_keys($donation_queue_message)
     );
 
@@ -175,6 +181,11 @@ class GravyResolveTest extends TestCase {
       $hostedPaymentStatusResponse->getGatewayTxnId(),
       $donation_queue_message['gateway_txn_id']
     );
+
+    // confirm donation queue message contains gravy backend processor data
+    $this->assertEquals('gravy', $donation_queue_message['backend_processor']);
+    $this->assertEquals('ABC-123-XYZ', $donation_queue_message['backend_processor_txn_id']);
+    $this->assertEquals('abc123zyzzz', $donation_queue_message['payment_orchestrator_reconciliation_id']);
   }
 
   /**
