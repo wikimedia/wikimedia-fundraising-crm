@@ -9,7 +9,7 @@
   <p>No open tickets</p>
 {/if}
 
-<h3 style="margin: 0px 0px 10px 0px;">Zendesk Tickets (Resolved)</h3>
+<h3 style="margin: 0px 0px 10px 0px;">Zendesk Tickets (Solved or Closed)</h3>
 {if isset($closedTickets) && count($closedTickets) > 0}
 <ul>
 {foreach from=$closedTickets item='ticket'}
