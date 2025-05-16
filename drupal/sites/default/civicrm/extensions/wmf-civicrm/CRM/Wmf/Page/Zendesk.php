@@ -31,7 +31,7 @@ class CRM_Wmf_Page_Zendesk extends CRM_Core_Page {
     }
 
     // fetch Zendesk closed ticket data via API
-    $closedTicketSearchParams = "requester:{$contactEmail} status:solved";
+    $closedTicketSearchParams = "requester:{$contactEmail} status>=solved";
     $closedTicketsRequest = new Request('GET', "{$zendeskURL}/api/v2/search.json?query=$closedTicketSearchParams", $requestAuthHeaders);
     $closedTicketsResponse = $zendeskApiClient->sendAsync($closedTicketsRequest)->wait();
     $closedTickets = json_decode($closedTicketsResponse->getBody(), TRUE);
