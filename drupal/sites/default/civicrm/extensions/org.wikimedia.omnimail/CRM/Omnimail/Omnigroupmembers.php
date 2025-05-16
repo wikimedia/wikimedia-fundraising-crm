@@ -19,18 +19,6 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
   protected $request;
 
   /**
-   * Mapping of Acoustic fields to our fields.
-   *
-   * @var array|string[]
-   */
-  protected array $customDataMap = [
-    'preferred_language' => 'rml_language',
-    'source' => 'rml_source',
-    'created_date' => 'rml_submitDate',
-    'country' => 'rml_country',
-  ];
-
-  /**
    * @var string
    */
   protected string $job = 'omnigroupmembers';
@@ -48,7 +36,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     $settings = CRM_Omnimail_Helper::getSettings();
 
     $mailerCredentials = CRM_Omnimail_Helper::getCredentials($params);
-    $jobParameters = [];
+    $jobParameters = array();
     if ($params['is_opt_in_only']) {
       $jobParameters['exportType'] = 'OPT_IN';
     }
@@ -83,11 +71,11 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
       }
     }
 
-    throw new CRM_Omnimail_IncompleteDownloadException('Download incomplete', 0, [
+    throw new CRM_Omnimail_IncompleteDownloadException('Download incomplete', 0, array(
       'retrieval_parameters' => $this->getRetrievalParameters(),
       'mail_provider' => $params['mail_provider'],
       'end_date' => $this->endTimeStamp,
-    ]);
+    ));
 
   }
 
@@ -100,13 +88,13 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
    * @return array
    * @throws \CRM_Core_Exception
    */
-  public function formatResult($params, $result): array {
+  public function formatResult($params, $result) {
     $options = _civicrm_api3_get_options_from_params($params);
-    $values = [];
+    $values = array();
     foreach ($result as $row) {
       $groupMember = new Contact($row);
       $groupMember->setContactReferenceField('ContactID');
-      $value = $this->formatRow($groupMember);
+      $value = $this->formatRow($groupMember, $params['custom_data_map']);
       $values[] = $value;
       if ($options['limit'] > 0 && count($values) === (int) $options['limit']) {
         // IN theory no longer required as limit is done in library
@@ -133,12 +121,13 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
    * Format a single row of the result.
    *
    * @param Contact $groupMember
+   * @param array $customDataMap
+   *   - Mapping of provider fields to desired output fields.
    *
    * @return array
-   * @throws \CRM_Core_Exception
    */
-  public function formatRow($groupMember) {
-    $value = [
+  public function formatRow($groupMember, $customDataMap) {
+    $value = array(
       'email' => (string) $groupMember->getEmail(),
       'is_opt_out' => (string) $groupMember->isOptOut(),
       'opt_in_date' => (string) $groupMember->getOptInIsoDateTime(),
@@ -146,69 +135,11 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
       'opt_out_source' => (string) $groupMember->getOptOutSource(),
       'opt_out_date' => (string) $groupMember->getOptOutIsoDateTime(),
       'contact_id' => (string) $groupMember->getContactReference(),
-    ];
-    $country = $this->getCountry($groupMember);
-    foreach ($this->customDataMap as $fieldName => $dataKey) {
-      $value[$fieldName] = (string) $this->transform($fieldName, $groupMember->getCustomData($dataKey), $country);
+    );
+    foreach ($customDataMap as $fieldName => $dataKey) {
+      $value[$fieldName] = (string) $groupMember->getCustomData($dataKey);
     }
     return $value;
-  }
-
-  private function getCountry($groupMember): string {
-    return $groupMember->getCustomData('rml_country') ?? '';
-  }
-
-  /**
-   * @param string $fieldName
-   * @param string $value
-   * @param string $country
-   *
-   * @return string
-   * @throws \CRM_Core_Exception
-   */
-  private function transform(string $fieldName, string $value, string $country): string {
-    if ($fieldName === 'preferred_language' && $value) {
-      return $this->transformLanguage($value, $country);
-    }
-    return $value;
-  }
-
-  /**
-   * Get the contact's language.
-   *
-   * This is a place in the code where I am struggling to keep wmf-specific coding out
-   * of a generic extension. The wmf-way would be to call the wmf contact_insert function.
-   *
-   * That is not so appropriate from an extension, but we have language/country data that
-   * needs some wmf specific handling as it might or might not add up to a legit language.
-   *
-   * At this stage I'm compromising on containing the handling within the extension,
-   * ensuring test covering and splitting out & documenting the path taken /issue.
-   * Later maybe a more listener/hook type approach is the go.
-   *
-   * It's worth noting this is probably the least important part of the omnimail work
-   * from wmf POV.
-   *
-   * @param string $language
-   * @param $country
-   *
-   * @return string|null
-   */
-  private function transformLanguage(string $language, $country): ?string {
-    static $languages = NULL;
-    if (!$languages) {
-      $languages = array_flip(\CRM_Utils_Array::collect('name', \Civi::entity('Contact')->getOptions('preferred_language')));
-    }
-    $attempts = [
-      $language . '_' . strtoupper($country),
-      $language,
-    ];
-    foreach ($attempts as $attempt) {
-      if (isset($languages[$attempt])) {
-        return $attempt;
-      }
-    }
-    return NULL;
   }
 
 }
