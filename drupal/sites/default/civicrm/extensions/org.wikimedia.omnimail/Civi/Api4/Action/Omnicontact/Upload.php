@@ -139,25 +139,55 @@ class Upload extends AbstractAction {
     $temporaryDirectory = sys_get_temp_dir();
     $this->mappingFile = $temporaryDirectory. '/' . str_replace('.csv', '.xml', basename($this->getCsvFile()));
     $file = fopen($this->mappingFile, 'wb');
+    $isConsent = in_array('CONSENT_STATUS_CODE', $headers);
+    $action = 'ADD_AND_UPDATE';
+    $isPhoneUpdate = !in_array('email', $headers);
+    $syncField = ($isPhoneUpdate ? 'mobile_phone' : 'EMAIL');
+    $syncFieldXML = '<SYNC_FIELDS>
+      <SYNC_FIELD>
+         <NAME>' . $syncField . '</NAME>
+      </SYNC_FIELD>
+   </SYNC_FIELDS>';
+    $recipientXML = '';
+    if ($isConsent || $isPhoneUpdate) {
+      // At this stage we only want to do updates from our SMS consent driven updates.
+      // This is mostly out of caution - ie we don't want to push a bunch of unexpected entries
+      // into Acoustic given the orphans (phone only records) should have come FROM acoustic
+      // We also update the phone but only onto existing Acoustic records - there might
+      // be some where they are not in Acoustic due to being other wise opted out - we can
+      // work through these if it is a thing.
+      $action = 'UPDATE_ONLY';
+      if (in_array('RECIPIENT_ID', $headers)) {
+        $syncFieldXML = '';
+        $recipientXML = '
+<USE_RECIPIENT_ID>true</USE_RECIPIENT_ID>
+';
+      }
+    }
+    $consentXml = !$isConsent ? '' : '
+   <CONSENT>
+      <CHANNEL>SMS</CHANNEL>
+      <TEXT_TO_JOIN_PROGRAM_ID>' . \Civi::settings()->get('omnimail_sms_campaign_id') . '</TEXT_TO_JOIN_PROGRAM_ID>
+      <HONOR_OPT_OUT_STATUS>true</HONOR_OPT_OUT_STATUS>
+      <OVERRIDE_ON_NO_CHANGE>false</OVERRIDE_ON_NO_CHANGE>
+   </CONSENT>';
     $xml = '<?xml version="1.0" encoding="UTF-8"?>
   <LIST_IMPORT>
    <LIST_INFO>
-      <ACTION>ADD_AND_UPDATE</ACTION>
+      <ACTION>' . $action . '</ACTION>
       <LIST_ID>' . $this->getDatabaseID()  . '</LIST_ID>
       <FILE_TYPE>0</FILE_TYPE>
-      <HASHEADERS>true</HASHEADERS>
-   </LIST_INFO>
-   <SYNC_FIELDS>
-      <SYNC_FIELD>
-         <NAME>EMAIL</NAME>
-      </SYNC_FIELD>
-   </SYNC_FIELDS>
+      <HASHEADERS>true</HASHEADERS>' . $recipientXML . '
+   </LIST_INFO>' . $consentXml . '
+   ' . $syncFieldXML . '
    <MAPPING>
       ';
     foreach ($headers as $index => $header) {
       $xml .= '
       <COLUMN>
-         <INDEX>' . ($index + 1) . '</INDEX>
+         <INDEX>' . ($index + 1) . '</INDEX>'
+        . (in_array($header, ['CONSENT_STATUS_CODE', 'CONSENT_DATE', 'CONSENT_SOURCE']) ? '
+<IS_CONSENT>true</IS_CONSENT>' : '') . '
          <NAME>' . $header . '</NAME>
          <INCLUDE>true</INCLUDE>
       </COLUMN>

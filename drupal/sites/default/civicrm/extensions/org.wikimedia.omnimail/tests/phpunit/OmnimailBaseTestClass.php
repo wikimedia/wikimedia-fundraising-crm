@@ -4,6 +4,7 @@ require_once __DIR__ . '/GuzzleTestTrait.php';
 
 use Civi\Api4\Contact;
 use Civi\Api4\Phone;
+use Civi\Api4\PhoneConsent;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\EntityTrait;
 use GuzzleHttp\Client;
@@ -89,6 +90,10 @@ class OmnimailBaseTestClass extends TestCase {
         ->setUseTrash(FALSE)
         ->execute();
       CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_provider_data WHERE contact_id IN (' . implode(',', $this->ids['Contact']) . ')');
+    }
+    if (!empty($this->ids['PhoneConsent'])) {
+      PhoneConsent::delete(FALSE)
+        ->addWhere('id', 'IN', $this->ids['PhoneConsent'])->execute();
     }
     $phones = (array) Phone::get(FALSE)
       ->addWhere('phone_data.recipient_id', '=', 12345)
