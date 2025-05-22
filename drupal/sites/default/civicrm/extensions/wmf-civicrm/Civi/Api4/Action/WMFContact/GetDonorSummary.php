@@ -121,7 +121,9 @@ class GetDonorSummary extends AbstractAction {
         ->addSelect('MAX(contribution.receive_date) AS last_contribution_date')
         ->setLimit(1);
     }
-    return $get->execute()->getArrayCopy();
+    // Under API4, a LEFT JOIN is a bit different from raw SQL. When no recurring contribution exists, it
+    // returns a single record with all NULL values. Filter out these empty records that have no valid ID.
+    return array_filter($get->execute()->getArrayCopy(), function ($row) {return !empty($row['id']); });
   }
 
   protected function mapContributions(array $allContributions): array {
