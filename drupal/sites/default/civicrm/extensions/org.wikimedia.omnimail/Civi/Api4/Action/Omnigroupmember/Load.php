@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4\Action\Omnigroupmember;
 
+use Civi\Api4\Email;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\GroupContact;
@@ -29,6 +30,8 @@ use Omnimail\Silverpop\Responses\Contact;
  * @method $this setGroupIdentifier(int $number)
  * @method string|null getJobIdentifier() Get progress tracking Identifier.
  * @method $this setJobIdentifier(?string $identifier)
+ * @method int getIsSuppressionList() Get whether this is a suppression list check.
+ * @method $this setIsSuppressionList(bool $isSuppression)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
  * @method $this setClient(Client$client) Generally Silverpop....
@@ -106,6 +109,18 @@ class Load extends AbstractAction {
   protected $groupIdentifier;
 
   /**
+   * Is this a suppression list request.
+   *
+   * The suppression list requests cannot get all the columns that are in
+   * the main database and need to include opted in contacts.
+   *
+   * @default false
+   *
+   * @var bool
+   */
+  protected $isSuppressionList;
+
+  /**
    * Number of inserts to throttle after.
    *
    * @var int
@@ -135,7 +150,7 @@ class Load extends AbstractAction {
     $params = [
       'mail_provider' => $this->getMailProvider(),
       'group_identifier' => $this->getGroupIdentifier(),
-      'is_opt_in_only' => TRUE,
+      'is_suppression_list' => $this->getIsSuppressionList(),
       'limit' => $this->getLimit(),
       'client' => $this->getClient(),
       'database_id' => $this->getDatabaseID(),
@@ -175,41 +190,57 @@ class Load extends AbstractAction {
         return;
       }
       $groupMember = $job->formatRow($contact);
-      if (!empty($groupMember['email']) && !civicrm_api3('email', 'getcount', ['email' => $groupMember['email']])) {
-        // If there is already a contact with this email we will skip for now.
-        // It might that we want to create duplicates, update contacts or do other actions later
-        // but let's re-assess when we see that happening. Spot checks only found emails not
-        // otherwise in the DB.
-        $source = (empty($params['mail_provider']) ? ts('Mail Provider') : $params['mail_provider']) . ' ' . (!empty($groupMember['source']) ? $groupMember['source'] : $groupMember['opt_in_source']);
-        $source .= ' ' . $groupMember['created_date'];
+      if (!empty($groupMember['email'])) {
+        $emails = Email::get(FALSE)
+          ->addWhere('email', '=', $groupMember['email'])
+          ->execute();
+        if (!$this->getIsSuppressionList() && count($emails) === 0) {
+          // If there is already a contact with this email we will skip for now.
+          // It might that we want to create duplicates, update contacts or do other actions later
+          // but let's re-assess when we see that happening. Spot checks only found emails not
+          // otherwise in the DB.
+          $source = (empty($params['mail_provider']) ? ts('Mail Provider') : $params['mail_provider']) . ' ' . (!empty($groupMember['source']) ? $groupMember['source'] : $groupMember['opt_in_source']);
+          $source .= ' ' . $groupMember['created_date'];
 
-        $contactParams = [
-          'contact_type' => 'Individual',
-          'email' => $groupMember['email'],
-          'is_opt_out' => $groupMember['is_opt_out'],
-          'source' => $source,
-          'preferred_language' => $groupMember['preferred_language'],
-          'email_primary.email' => $groupMember['email'],
-        ];
+          $contactParams = [
+            'contact_type' => 'Individual',
+            'email' => $groupMember['email'],
+            'is_opt_out' => $groupMember['is_opt_out'],
+            'source' => $source,
+            'preferred_language' => $groupMember['preferred_language'],
+            'email_primary.email' => $groupMember['email'],
+          ];
 
-        $contactCreateCall = \Civi\Api4\Contact::create(FALSE)
-          ->setValues($contactParams);
+          $contactCreateCall = \Civi\Api4\Contact::create(FALSE)
+            ->setValues($contactParams);
 
-        if (!empty($groupMember['country']) && $this->isCountryValid($groupMember['country'])) {
-          $contactCreateCall->addValue('address_primary.country_id:abbr', $groupMember['country']);
+          if (!empty($groupMember['country']) && $this->isCountryValid($groupMember['country'])) {
+            $contactCreateCall->addValue('address_primary.country_id:abbr', $groupMember['country']);
+          }
+
+          if ($this->getGroupID()) {
+            $contactCreateCall->addChain(
+              'groupContact',
+              GroupContact::create(FALSE)->setValues([
+                'contact_id' => '$id',
+                'group_id' => $this->getGroupID(),
+              ])
+            );
+          }
+          $contact = $contactCreateCall->execute()->first();
+          $result[$contact['id']] = $contact;
         }
-
-        if ($this->getGroupID()) {
-          $contactCreateCall->addChain(
-            'groupContact',
-            GroupContact::create(FALSE)->setValues([
-              'contact_id' => '$id',
-              'group_id' => $this->getGroupID(),
-            ])
-          );
+        elseif ($this->getIsSuppressionList() && count($emails) > 0) {
+          foreach ($emails as $email) {
+            if ($email['is_primary']) {
+              GroupContact::create(FALSE)->setValues([
+                'contact_id' => $email['contact_id'],
+                'group_id' => $this->getGroupID(),
+              ])->execute();
+              $result[$email['contact_id']] = $email;
+            }
+          }
         }
-        $contact = $contactCreateCall->execute()->first();
-        $result[$contact['id']] = $contact;
       }
 
       $count++;

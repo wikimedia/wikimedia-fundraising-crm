@@ -49,7 +49,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
 
     $mailerCredentials = CRM_Omnimail_Helper::getCredentials($params);
     $jobParameters = [];
-    if ($params['is_opt_in_only']) {
+    if (empty($params['is_suppression_list'])) {
       $jobParameters['exportType'] = 'OPT_IN';
     }
 
@@ -71,6 +71,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
       $request->setEndTimeStamp($this->endTimeStamp);
     }
     $request->setGroupIdentifier($params['group_identifier']);
+    $request->setColumns($this->getColumns($params['is_suppression_list'] ?? FALSE));
 
     $result = $request->getResponse();
     $this->setRetrievalParameters($result->getRetrievalParameters());
@@ -89,6 +90,33 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
       'end_date' => $this->endTimeStamp,
     ]);
 
+  }
+
+  private function getColumns(bool $isSuppressionList): array {
+    $systemFields = [
+      'Email',
+      'RECIPIENT_ID',
+      'LastSentDate',
+      // These details are all pretty confusing as they show opted in for
+      // contacts on the Master suppression list.
+      // But these are what we can get - maybe one day we will understand - let's
+      // keep them visible.
+      'Opt in Date',
+      'Opted Out',
+      'Opt In Details',
+      'Email Type',
+      'Opted Out Date',
+      'Opt Out Details',
+      'Last Modified Date',
+    ];
+    if ($isSuppressionList) {
+      return $systemFields;
+    }
+    return $systemFields + array_values($this->customDataMap);
+  }
+
+  private function isMasterSuppressionList(): true {
+    return TRUE;
   }
 
   /**

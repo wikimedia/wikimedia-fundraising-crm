@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\GroupContact;
+use Civi\Api4\Omnigroupmember;
 use GuzzleHttp\Client;
 
 require_once __DIR__ . '/OmnimailBaseTestClass.php';
@@ -24,6 +26,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $this->cleanupGroup(NULL, 'Omnimailers');
     $this->cleanupGroup(NULL, 'Omnimailers2');
     $this->cleanupGroup(NULL, 'Omnimailers3');
+    $this->cleanupGroup(NULL, 'MSL');
     parent::tearDown();
   }
 
@@ -56,6 +59,29 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
     $this->assertEquals('Silverpop clever place 07/04/17', $contacts['values'][2]['source']);
     $this->cleanupGroup($group);
+  }
+
+  public function testLoadSuppressionList(): void {
+    $this->createTestEntity('Contact', [
+      'first_name' => 'Bob',
+      'last_name' => 'Mouse',
+      'email_primary.email' => 'bob@example.org',
+    ], 'mouse');
+    $client = $this->setupSuccessfulDownloadClient(TRUE, 'msl-import-list.csv');
+    $group = $this->createTestEntity('Group', ['name' => 'MSL', 'title' => 'MSL']);
+
+    Omnigroupmember::load(FALSE)
+      ->setGroupIdentifier(12345)
+      ->setGroupID($group['id'])
+      ->setIsSuppressionList(TRUE)
+      ->setClient($client)
+      ->setLimit(5)
+      ->execute();
+    $groupContact = GroupContact::get(FALSE)
+      ->addWhere('group_id', '=', $group['id'])
+      ->addWhere('contact_id', '=', $this->ids['Contact']['mouse'])
+      ->execute()->single();
+    $this->assertEquals('Added', $groupContact['status']);
   }
 
   /**
@@ -273,14 +299,16 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    *
    * @return \GuzzleHttp\Client
    */
-  protected function setupSuccessfulDownloadClient($isUpdateSetting = TRUE): Client {
+  protected function setupSuccessfulDownloadClient($isUpdateSetting = TRUE, string $fileName = '20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv'): Client {
     $responses = [
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
-    copy(__DIR__ . '/Responses/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv', sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
-    fopen(sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv.complete', 'c');
+    // Note that the copy-to is the same for all tests - because otherwise we would need
+    // the file name altered in the responses (above) too - the file name is data from Acoustic.
+    copy(__DIR__ . '/Responses/' . $fileName, sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
+    fopen(sys_get_temp_dir() . '/' . $fileName . '.complete', 'c');
     if ($isUpdateSetting) {
       $this->createSetting(['job' => 'omnimail_omnigroupmembers_load', 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
     }
