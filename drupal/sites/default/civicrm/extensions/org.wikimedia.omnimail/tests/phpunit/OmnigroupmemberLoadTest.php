@@ -34,7 +34,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    */
   public function testOmnigroupmemberLoad(): void {
     $client = $this->setupSuccessfulDownloadClient();
-    $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers', 'title' => 'Omni']);
+    $group = $this->createTestEntity('Group', ['name' => 'Omnimailers', 'title' => 'Omni']);
 
     $this->callAPISuccess('Omnigroupmember', 'load', [
       'mail_provider' => 'Silverpop',
@@ -139,7 +139,6 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
   /**
    * Test when download does not complete in time.
    *
-   * @throws \CRM_Core_Exception
    */
   public function testOmnigroupmemberLoadIncomplete(): void {
     $this->createSetting([
