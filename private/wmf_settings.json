@@ -1,0 +1,11 @@
+{
+  "logging" : 1,
+  "enable_components": [
+    "CiviEvent",
+    "CiviContribute",
+    "CiviMail",
+    "CiviPledge",
+    "CiviReport",
+    "CiviCampaign"
+  ]
+}
