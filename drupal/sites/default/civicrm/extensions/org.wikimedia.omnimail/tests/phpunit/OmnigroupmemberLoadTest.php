@@ -2,6 +2,7 @@
 
 use Civi\Api4\GroupContact;
 use Civi\Api4\Omnigroupmember;
+use Civi\Api4\PhoneConsent;
 use GuzzleHttp\Client;
 
 require_once __DIR__ . '/OmnimailBaseTestClass.php';
@@ -27,6 +28,8 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $this->cleanupGroup(NULL, 'Omnimailers2');
     $this->cleanupGroup(NULL, 'Omnimailers3');
     $this->cleanupGroup(NULL, 'MSL');
+    PhoneConsent::delete(FALSE)
+      ->addWhere('master_recipient_id', 'LIKE', '12345%')->execute();
     parent::tearDown();
   }
 
@@ -82,6 +85,48 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       ->addWhere('contact_id', '=', $this->ids['Contact']['mouse'])
       ->execute()->single();
     $this->assertEquals('Added', $groupContact['status']);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testPhoneConsentListLoad(): void {
+    $this->createTestEntity('Contact', [
+      'first_name' => 'Bob',
+      'last_name' => 'Mouse',
+      'email_primary.email' => 'bob@example.org',
+    ], 'mouse');
+    $client = $this->setupSuccessfulDownloadClient(TRUE, 'phone-consent-list.csv');
+
+    // Create an existing Phone Consent - this one will be updated to opt-out.
+    PhoneConsent::create(FALSE)
+      ->setValues([
+        'country_code' => 1,
+        'master_recipient_id' => 123457,
+        'phone_number' => 23456788,
+        'consent_date' => '2023-01-01',
+        'consent_source' => 'somehow',
+        'opted_in' => TRUE,
+      ])->execute();
+    Omnigroupmember::load(FALSE)
+      ->setGroupIdentifier(12345)
+      ->setClient($client)
+      ->setLimit(5)
+      ->execute();
+    $consent = PhoneConsent::get(FALSE)
+      ->addWhere('phone_number', '=', 23456789)
+      ->execute()->single();
+    $this->assertEquals(1, $consent['country_code']);
+    $this->assertEquals(123456, $consent['master_recipient_id']);
+    $this->assertEquals(23456789, $consent['phone_number']);
+    $this->assertEquals('2024-12-19 20:24:00', $consent['consent_date']);
+    $this->assertEquals('Opt in thru web form named RML - Phone Added via API. IP Address: 12.34.56.78', $consent['consent_source']);
+    $this->assertTrue($consent['opted_in']);
+
+    $consent = PhoneConsent::get(FALSE)
+      ->addWhere('phone_number', '=', 23456788)
+      ->execute()->single();
+    $this->assertFalse($consent['opted_in']);
   }
 
   /**

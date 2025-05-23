@@ -5,6 +5,7 @@ use Civi\Api4\Email;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\GroupContact;
+use Civi\Api4\PhoneConsent;
 use GuzzleHttp\Client;
 use Omnimail\Silverpop\Responses\Contact;
 
@@ -48,8 +49,6 @@ class Load extends AbstractAction {
 
   /**
    * CiviCRM group ID to add the imported contact to.
-   *
-   * @required
    *
    * @var int
    */
@@ -242,7 +241,54 @@ class Load extends AbstractAction {
           }
         }
       }
-
+      if (empty($groupMember['email']) && !empty($groupMember['phone'])) {
+        // This is an SMS only contact.
+        if (str_starts_with($groupMember['phone'], 1)) {
+          // 1 = United States = Weird
+          $countryCode = substr($groupMember['phone'], 0, 1);
+          $phone = substr($groupMember['phone'], 1);
+        }
+        else {
+          // We only have United States at the moment but if we ever have others
+          // they are 2 digit codes.
+          $countryCode = substr($groupMember['phone'], 0, 2);
+          $phone = substr($groupMember['phone'], 2);
+        }
+        $existingConsent = PhoneConsent::get(FALSE)
+          ->addWhere('phone_number', '=', $phone)
+          ->addWhere('country_code', '=', $countryCode)
+          ->execute()->first();
+        if (!$existingConsent) {
+          PhoneConsent::create(FALSE)
+            ->setValues([
+              'country_code' => $countryCode,
+              'phone_number' => $phone,
+              'master_recipient_id' => $groupMember['recipient_id'],
+              // Since these contacts are ONLY opted in to SMS we assume these values
+              // apply to SMS.
+              'consent_date' => $groupMember['opt_in_date'],
+              'consent_source' => $groupMember['opt_in_source'],
+              'opted_in' => $groupMember['is_opt_in'],
+            ])->execute();
+        }
+        elseif ($existingConsent['opted_in'] !== $groupMember['is_opt_in']) {
+          $consent = PhoneConsent::update(FALSE)
+            ->addValue('opted_in', $groupMember['is_opt_in'])
+            ->addWhere('id', '=', $existingConsent['id']);
+          if ($groupMember['is_opt_in']) {
+            // We don't really expect phones that are opted out to
+            // be re-opted in through this.
+            // Perhaps it's better to
+            // make sure we see any, given their unexpected nature?
+            \Civi::log('wmf')->alert('opt out reversed for recipient {recipient_id} in Acoustic. This is unexpected and we should understand this flow', [
+              'recipient_id' => $groupMember['recipient_id'],
+            ]);
+            $consent->addValue('consent_date', $groupMember['opt_in_date'])
+              ->addValue('consent_source', $groupMember['opt_in_source']);
+          }
+          $consent->execute();
+        }
+      }
       $count++;
       // Every row seems extreme but perhaps not in this performance monitoring phase.
       $job->saveJobSetting(array_merge($jobSettings, array('offset' => $offset + $count)));
