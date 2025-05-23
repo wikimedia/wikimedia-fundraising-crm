@@ -79,4 +79,40 @@ class OmniphoneUpdateTest extends OmnimailBaseTestClass {
     $this->assertEquals('SMS consent given for 19099909021', $activity['subject']);
   }
 
+  /**
+   * Test pushing consent updates back to Acoustic.
+   */
+  public function testRemoteUpdate(): void {
+    $baseDir = __DIR__ . '/Requests/ImportFiles/';
+    $this->setSetting('omnimail_allowed_upload_folders', [$baseDir]);
+    $this->createTestEntity('PhoneConsent', [
+      'country_code' => 1,
+      'phone_number' => '123456',
+      'master_recipient_id' => 77777777,
+      'consent_date' => '2024-12-25 02:39:49',
+      'consent_source' => 'Sms Consent Kafka Streams',
+      'opted_in' => TRUE,
+    ]);
+    $this->createTestEntity('Contact', [
+      'phone_primary.phone' => '123456',
+      'email_primary.email' => 'bob@example.com',
+      'contact_type' => 'Individual',
+      'first_name' => 'Bob',
+      'last_name' => 'Mouse',
+    ], 'bob_mouse');
+    $client = $this->getMockRequest([
+      file_get_contents(__DIR__ . '/Responses/ImportListResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/ImportListResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/ImportListResponse.txt'),
+    ]);
+
+    PhoneConsent::remoteUpdate(FALSE)
+      ->setLimit(1)
+      ->setClient($client)
+      ->setIsTest(TRUE)
+      ->execute();
+    $this->assertCount(4, $this->getRequestBodies());
+  }
+
 }
