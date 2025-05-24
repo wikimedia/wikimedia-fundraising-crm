@@ -2,3 +2,4 @@
 !.gitignore
 !wmf_settings.json
 !wmf_settings_developer.json
+!wmf_roles.sh
