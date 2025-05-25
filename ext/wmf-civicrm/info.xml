@@ -64,6 +64,7 @@
     <ext>riverlea</ext>
     <ext>damaged</ext>
     <ext>symfony_email</ext>
+    <ext>civi_campaign</ext>
   </requires>
   <civix>
     <namespace>CRM/Wmf</namespace>
