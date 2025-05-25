@@ -103,7 +103,10 @@ class Save extends AbstractAction {
       // For inserts however we can rely on the core api.
       $contact['email_primary.email'] = $msg['email'];
     }
-
+    if (!empty($msg['billing_email'])) {
+      \Civi::log('wmf')->info('add additional billing email');
+      $contact['email_billing.email'] = $msg['billing_email'];
+    }
     $preferredLanguage = $this->getPreferredLanguage($msg);
     if ($preferredLanguage) {
       $contact['preferred_language'] = $preferredLanguage;

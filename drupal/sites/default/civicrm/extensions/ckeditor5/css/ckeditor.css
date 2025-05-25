@@ -27,3 +27,8 @@
   float: right;
   margin-left: 1em;
 }
+
+/* CKEditor does not support dark theme, so override the dark theme's white text on CKEditor's white background. */
+html body .ck.ck-editor__main * {
+  color: black;
+}

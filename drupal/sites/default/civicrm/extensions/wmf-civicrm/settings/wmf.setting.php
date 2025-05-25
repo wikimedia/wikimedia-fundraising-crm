@@ -72,12 +72,11 @@ return [
     'name' => 'wmf_last_delete_deleted_contact_modified_date',
     'default' => null,
     'type' => 'Date',
-    'quick_form_type' => 'DateTime',
     'is_domain' => 1,
     'is_contact' => 0,
     'title' => E::ts('Last delete deleted contact\'s modified date'),
     'help_text' => '',
-    'html_type' => 'text',
+    'html_type' => 'datepicker',
     'html_attributes' => [
       'size' => 20,
     ],
