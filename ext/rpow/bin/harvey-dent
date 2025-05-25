@@ -2,7 +2,6 @@
 
 CIVIRPOWBIN="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 CIVIRPOWDIR="$(dirname $CIVIRPOWBIN)"
-
 DEV_SETTINGS_PHP=sites/default/civicrm.settings.d/pre.d/100-civirpow.php
 SITE_ROOT=
 CIVIRO_USER=civiro
@@ -16,7 +15,7 @@ WRITE_TABLES=
 function show_help() {
   echo ""
   echo "about: Create with one database having a split personality (one side RW, one side RO)."
-  echo "usage: $0 [-r <path>|--root <path>] [--write-none|--write-all-caches|<writable_table...>]"
+  echo "usage: $0 [-r <path>|--root <path>] [-s <path>|--settings-path <path>] [--write-none|--write-all-caches|<writable_table...>]"
   echo ""
   echo "This script uses a few inferred values:"
   echo "- SITE_ROOT: $SITE_ROOT"
@@ -38,6 +37,11 @@ while [ -n "$1" ]; do
   case "$value" in
     -r|--root)
       SITE_ROOT="$1"
+      shift
+      ;;
+
+    -s|--settings-path)
+      DEV_SETTINGS_PHP="$1"
       shift
       ;;
 
