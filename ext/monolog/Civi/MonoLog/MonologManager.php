@@ -102,7 +102,7 @@ class MonologManager {
         // retrieving the monologs.
         $this->channels[$channel] = $this->getBuiltInLogger($channel);
         $monologs = $this->getMonologsByChannel($channel);
-        if (empty($monologs)) {
+        if (empty(array_filter($monologs))) {
           return $this->getBuiltInLogger($channel);
         }
         $this->channels[$channel] = $this->getLogger($channel);
