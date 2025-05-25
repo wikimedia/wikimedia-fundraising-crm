@@ -39,6 +39,6 @@ class CRM_SmashPig_ContextWrapper {
     $ctx->setSourceType($type);
     $ctx->setSourceName($name);
     // FIXME: WMF_specific (hook?)
-    $ctx->setVersionFromFile(DRUPAL_ROOT . "/.version-stamp");
+    $ctx->setVersionFromFile(\Civi::paths()->getPath('[cms.root]') . DIRECTORY_SEPARATOR . '.version-stamp');
   }
 }
