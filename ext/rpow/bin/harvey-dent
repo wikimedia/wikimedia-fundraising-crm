@@ -15,7 +15,7 @@ WRITE_TABLES=
 function show_help() {
   echo ""
   echo "about: Create with one database having a split personality (one side RW, one side RO)."
-  echo "usage: $0 [-r <path>|--root <path>] [-s <path>|--settings-path <path>] [--write-none|--write-all-caches|<writable_table...>]"
+  echo "usage: $0 [-r <path>|--root <path>] [-s <path>|--settings-path <path>] [-u <user>|--user-name <user>][--write-none|--write-all-caches|<writable_table...>]"
   echo ""
   echo "This script uses a few inferred values:"
   echo "- SITE_ROOT: $SITE_ROOT"
@@ -42,6 +42,11 @@ while [ -n "$1" ]; do
 
     -s|--settings-path)
       DEV_SETTINGS_PHP="$1"
+      shift
+      ;;
+
+    -u|--user-name)
+      CIVIRO_USER="$1"
       shift
       ;;
 
