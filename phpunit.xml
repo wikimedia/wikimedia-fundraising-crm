@@ -1,7 +1,7 @@
 <phpunit
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/3.7/phpunit.xsd"
-  bootstrap="drupal/sites/default/bootstrap-phpunit.php"
+  bootstrap="bootstrap-phpunit.php"
   printerClass="clagiordano\PhpunitResultPrinter\ResultPrinter"
   backupGlobals="false">
   <php>
@@ -9,43 +9,43 @@
   </php>
   <testsuites>
     <testsuite name="wmf-civicrm">
-      <directory>drupal/sites/default/civicrm/extensions/wmf-civicrm/tests/phpunit</directory>
+      <directory>ext/wmf-civicrm/tests/phpunit</directory>
     </testsuite>
     <testsuite name="exchange_rates tests">
-      <directory>drupal/sites/default/civicrm/extensions/exchange_rates/tests/phpunit</directory>
+      <directory>ext/exchange_rates/tests/phpunit</directory>
     </testsuite>
     <testsuite name="contacteditor_tests">
-      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.contacteditor/tests/phpunit</directory>
+      <directory>ext/org.wikimedia.contacteditor/tests/phpunit</directory>
     </testsuite>
     <testsuite name="geocoder_tests">
-      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.geocoder/tests/phpunit</directory>
+      <directory>ext/org.wikimedia.geocoder/tests/phpunit</directory>
     </testsuite>
     <testsuite name="forgetme_tests">
-      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.forgetme/tests/phpunit</directory>
+      <directory>ext/org.wikimedia.forgetme/tests/phpunit</directory>
     </testsuite>
     <testsuite name="smashpig_tests">
-      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.smashpig/tests/phpunit</directory>
+      <directory>ext/org.wikimedia.smashpig/tests/phpunit</directory>
     </testsuite>
     <testsuite name="dedupetools_tests">
-      <directory>drupal/sites/default/civicrm/extensions/deduper/tests/phpunit</directory>
+      <directory>ext/deduper/tests/phpunit</directory>
     </testsuite>
     <testsuite name="datachecks_tests">
-      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.datachecks/tests/phpunit</directory>
+      <directory>ext/org.wikimedia.datachecks/tests/phpunit</directory>
     </testsuite>
     <testsuite name="wmffraud_tests">
-      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.wmffraud/tests/phpunit</directory>
+      <directory>ext/org.wikimedia.wmffraud/tests/phpunit</directory>
     </testsuite>
     <testsuite name="email_amender_tests">
-      <directory>drupal/sites/default/civicrm/extensions/Email-Amender/tests/phpunit</directory>
+      <directory>ext/Email-Amender/tests/phpunit</directory>
     </testsuite>
     <testsuite name="thank_you_tests">
-      <directory>drupal/sites/default/civicrm/extensions/wmf-thankyou/tests/phpunit</directory>
+      <directory>ext/wmf-thankyou/tests/phpunit</directory>
     </testsuite>
     <testsuite name="matchinggift_tests">
-      <directory>drupal/sites/default/civicrm/extensions/matching-gifts/tests/phpunit</directory>
+      <directory>ext/matching-gifts/tests/phpunit</directory>
     </testsuite>
     <testsuite name="omnimail_tests">
-      <directory>drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit</directory>
+      <directory>ext/org.wikimedia.omnimail/tests/phpunit</directory>
     </testsuite>
   </testsuites>
   <listeners>
