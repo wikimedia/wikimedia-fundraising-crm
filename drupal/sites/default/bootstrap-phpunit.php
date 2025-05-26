@@ -26,7 +26,6 @@ require_once(__DIR__ . '/../../../vendor/autoload.php');
 putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
 require_once __DIR__ . '/civicrm/extensions/wmf-civicrm/tests/phpunit/bootstrap.php';
 civicrm_initialize();
-require_once(__DIR__ . "/../all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php");
 // This causes errors to be thrown rather than the user-oriented html being presented on a fatal error.
 // Note that the CRM_Core_TemporaryErrorScope reverts the scope on _deconstruct so
 // the scope lasts until the variable is unset (by the script finishing)
