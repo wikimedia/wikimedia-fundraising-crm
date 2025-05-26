@@ -11,10 +11,6 @@
     <testsuite name="wmf-civicrm">
       <directory>drupal/sites/default/civicrm/extensions/wmf-civicrm/tests/phpunit</directory>
     </testsuite>
-    <testsuite name="offline2civicrm tests">
-      <directory>drupal/sites/all/modules/offline2civicrm/tests</directory>
-      <exclude>drupal/sites/all/modules/offline2civicrm/tests/includes/BaseChecksFileTest.php</exclude>
-    </testsuite>
     <testsuite name="exchange_rates tests">
       <directory>drupal/sites/default/civicrm/extensions/exchange_rates/tests/phpunit</directory>
     </testsuite>
