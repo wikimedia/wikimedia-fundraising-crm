@@ -2111,11 +2111,11 @@
         },
         {
             "name": "omnimail/omnimail",
-            "version": "0.4.0",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/eileenmcnaughton/omnimail",
-                "reference": "02834a9850c3ddf05d24f8f65784c58e1b14458e"
+                "url": "https://github.com/eileenmcnaughton/omnimail.git",
+                "reference": "6b5104b8df3000f"
             },
             "require": {
                 "ext-json": "*",
@@ -2147,6 +2147,7 @@
                 "sendgrid/sendgrid": "Required if you use the Sendgrid sending system",
                 "wildbit/postmark-php": "Required if you use the Postmark sending system"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -2191,7 +2192,7 @@
                 "sendgrid",
                 "sendinblue"
             ],
-            "time": "2023-09-14T00:20:49+00:00"
+            "time": "2024-09-25T23:23:55+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -7573,7 +7574,8 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "drupal/coder": 20
+        "drupal/coder": 20,
+        "omnimail/omnimail": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
