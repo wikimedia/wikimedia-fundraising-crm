@@ -72,7 +72,7 @@ class WMFTestListener implements \PHPUnit\Framework\TestListener {
     \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 0 WHERE type = "test"');
     MonologManager::flush();
     // @todo - should we set ALL settings here?
-    \Civi::settings()->set('mailing_backend', ['outBound_option' => $this->originalSettings['mailing_backend']]);
+    \Civi::settings()->set('mailing_backend', $this->originalSettings['mailing_backend']);
     if ($test instanceof TransactionalInterface) {
       $this->tx->rollback()->commit();
       $this->tx = NULL;
