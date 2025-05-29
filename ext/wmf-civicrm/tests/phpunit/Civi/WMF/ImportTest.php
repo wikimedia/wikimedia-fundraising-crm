@@ -45,7 +45,17 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    */
   private \CRM_Import_Controller $formController;
 
+  /**
+   * @var bool
+   */
+  private bool $wasDebugEnabled;
+
   public function setUp(): void {
+    $this->wasDebugEnabled = (bool)\Civi::settings()->get('debug_enabled');
+    // Temporariliy disable debug to make these tests run faster. Core
+    // import code needs to flush all entities, and with debug enabled
+    // we always have to scan all the afform directories.
+    \Civi::settings()->set('debug_enabled', FALSE);
     Contact::save(FALSE)
       ->setMatch(['organization_name', 'contact_type'])
       ->addRecord([
@@ -221,6 +231,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // Registering them all in ids['Contact'] is where the core helpers are going so
     // is preferred - we should migrate the rest over.
     $this->tearDownWMFEnvironment();
+    \Civi::settings()->set('debug_enabled', $this->wasDebugEnabled);
     parent::tearDown();
     unset(\Civi::$statics['wmf_contact']);
   }
