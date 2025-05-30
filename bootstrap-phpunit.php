@@ -33,6 +33,10 @@ else {
 ini_set('memory_limit', '2G');
 
 eval(cv('php:boot --level=classloader', 'phpcode'));
+if (function_exists('civicrm_initialize')) {
+  // Still required for Drupal it seems.
+  civicrm_initialize();
+}
 $baseDirs = (array) glob(__DIR__ . '/ext/*/tests/phpunit');
 $baseDirs[] = __DIR__ . '/ext/wmf-civicrm';
 
