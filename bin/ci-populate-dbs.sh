@@ -42,8 +42,8 @@ CIVICRM_BUILDKIT=/src/wikimedia/fundraising/crm/civicrm-buildkit
 
 "$CIVICRM_BUILDKIT"/bin/amp config:set --mysql_dsn=mysql://root@127.0.0.1:3306
 
-rm -rf "$CIVICRM_BUILDKIT"/build/wmff
+rm -rf "$CIVICRM_BUILDKIT"/build/wmf
 mkdir -p "$CIVICRM_BUILDKIT"/build
-ln -s "$WORKSPACE"/src/wikimedia/fundraising/crm "$CIVICRM_BUILDKIT"/build/wmff
+ln -s "$WORKSPACE"/src/wikimedia/fundraising/crm "$CIVICRM_BUILDKIT"/build/wmf
 
-"$CIVICRM_BUILDKIT"/bin/civibuild reinstall wmff
+"$CIVICRM_BUILDKIT"/bin/civibuild reinstall wmf
