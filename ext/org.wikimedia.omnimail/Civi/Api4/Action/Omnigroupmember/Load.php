@@ -29,7 +29,6 @@ use Omnimail\Silverpop\Responses\Contact;
  * @method $this setOffset(int|null $offset)
  * @method int getGroupIdentifier() Get Acoustic Group Identifier.
  * @method $this setGroupIdentifier(int $number)
- * @method string|null getJobIdentifier() Get progress tracking Identifier.
  * @method $this setJobIdentifier(?string $identifier)
  * @method int getIsSuppressionList() Get whether this is a suppression list check.
  * @method $this setIsSuppressionList(bool $isSuppression)
@@ -127,11 +126,15 @@ class Load extends AbstractAction {
   protected int $throttleNumber = 5000;
 
   /**
-   * Optional identifier for tracking job progress.
+   * Identifier for tracking job progress.
    *
    * @var string|null
    */
-  protected $jobIdentifier;
+  protected ?string $jobIdentifier = NULL;
+
+  public function getJobIdentifier(): string {
+    return $this->jobIdentifier ?: ($this->getIsSuppressionList() ? 'suppress_' : '') . $this->getGroupIdentifier();
+  }
 
   /**
    * @inheritDoc

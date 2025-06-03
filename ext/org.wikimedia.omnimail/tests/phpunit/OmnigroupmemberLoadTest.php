@@ -172,6 +172,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'client' => $client,
       'group_identifier' => 123,
       'group_id' => $group['id'],
+      'job_identifier' => 'load',
     ]);
     $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(1, $groupMembers['count']);
@@ -188,6 +189,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'client' => $client,
       'group_identifier' => 123,
       'group_id' => $group['id'],
+      'job_identifier' => 'load',
     ]);
     $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(2, $groupMembers['count']);
@@ -203,7 +205,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
       ],
       'progress_end_timestamp' => '2017-03-02 23:00:00',
-    ], $this->getUtcDateFormattedJobSettings());
+    ], $this->getUtcDateFormattedJobSettings(['job_identifier' => 'load']));
 
   }
 
@@ -216,6 +218,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'job' => 'omnimail_omnigroupmembers_load',
       'mailing_provider' => 'Silverpop',
       'last_timestamp' => '1487890800',
+      'job_identifier' => 'load_test',
     ]);
 
     $this->callAPISuccess('Setting', 'create',  ['omnimail_job_default_time_interval' => '7 days']);
@@ -234,6 +237,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'client' => $this->getMockRequest($responses),
       'group_identifier' => 123,
       'group_id' => $group['id'],
+      'job_identifier' => 'load_test',
     ]);
 
     $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
@@ -247,7 +251,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       ],
       'progress_end_timestamp' => '2017-03-02 23:00:00',
       'offset' => 0,
-    ], $this->getUtcDateFormattedJobSettings());
+    ], $this->getUtcDateFormattedJobSettings(['job_identifier' => 'load_test']));
   }
 
   /**
@@ -310,6 +314,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'job' => 'omnimail_omnigroupmembers_load',
       'mailing_provider' => 'Silverpop',
       'last_timestamp' => '1487890800',
+      'job_identifier' => 'incomplete_load',
       'retrieval_parameters' => [
         'jobId' => '101719657',
         'filePath' => '/download/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv',
@@ -326,6 +331,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'client' => $client,
       'group_identifier' => 123,
       'group_id' => $group['id'],
+      'job_identifier' => 'incomplete_load',
     ]);
 
     $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
@@ -333,7 +339,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
 
     $this->assertEquals([
       'last_timestamp' => '2017-02-26 23:00:00',
-    ], $this->getUtcDateFormattedJobSettings(['mail_provider' => 'Silverpop']));
+    ], $this->getUtcDateFormattedJobSettings(['job_identifier' => 'incomplete_load']));
     $this->cleanupGroup($group);
   }
 
@@ -341,6 +347,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
    * Set up the mock client to emulate a successful download.
    *
    * @param bool $isUpdateSetting
+   * @param string $fileName
    *
    * @return \GuzzleHttp\Client
    */
@@ -355,7 +362,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     copy(__DIR__ . '/Responses/' . $fileName, sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
     fopen(sys_get_temp_dir() . '/' . $fileName . '.complete', 'c');
     if ($isUpdateSetting) {
-      $this->createSetting(['job' => 'omnimail_omnigroupmembers_load', 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
+      $this->createSetting(['job' => 'omnimail_omnigroupmembers_load', 'job_identifier' => 'load', 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
     }
 
     return $this->getMockRequest($responses);
