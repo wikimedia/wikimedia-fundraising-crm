@@ -2115,7 +2115,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail.git",
-                "reference": "6b5104b8df3000f"
+                "reference": "6b5104b"
             },
             "require": {
                 "ext-json": "*",
