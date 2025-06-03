@@ -12,3 +12,8 @@ wmff.iml
 .phpunit.result.cache
 drupal/sites/all/modules/civicrm/bin/setup.conf
 !drupal/sites/all/modules/civicrm/packages/*/vendor
+core/bin/setup.conf
+private
+!private/wmf_settings.json
+!private/wmf_settings_developer.json
+!private/wmf_roles.sh
