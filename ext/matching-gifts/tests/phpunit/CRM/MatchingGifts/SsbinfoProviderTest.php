@@ -15,7 +15,6 @@ class CRM_MatchingGifts_SsbInfoProviderTest extends BaseTestClass
 
   public function setUp(): void {
     parent::setUp();
-    civicrm_initialize();
     $this->provider = new CRM_MatchingGifts_SsbinfoProvider([
       'api_key' => 'blahDeBlah',
     ]);

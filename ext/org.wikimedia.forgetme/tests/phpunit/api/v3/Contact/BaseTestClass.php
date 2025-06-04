@@ -37,7 +37,6 @@ class api_v3_Contact_BaseTestClass extends \PHPUnit\Framework\TestCase implement
    */
   public function setUp(): void {
     parent::setUp();
-    civicrm_initialize();
     CRM_Forgetme_Hook::testSetup();
   }
 

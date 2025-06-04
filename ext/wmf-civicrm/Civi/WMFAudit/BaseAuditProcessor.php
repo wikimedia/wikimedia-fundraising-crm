@@ -493,7 +493,6 @@ abstract class BaseAuditProcessor {
    * @throws \Exception
    */
   public function run() {
-    civicrm_initialize();
 
     //make sure all the things we need are there.
     if (!$this->setup_required_directories()) {

@@ -67,7 +67,6 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
    * @param array $context
    */
   private function log(string $message, array $context): void {
-    civicrm_initialize();
     \Civi::log('wmf')->info('contribution-tracking: ' . $message, $context);
   }
 

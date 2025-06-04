@@ -54,7 +54,6 @@ class CRM_MatchingGifts_SynchronizerTest extends BaseTestClass
 
   public function setUp(): void {
     parent::setUp();
-    civicrm_initialize();
     $this->provider = $this->getMockBuilder(CRM_MatchingGifts_SsbinfoProvider::class)
       ->setConstructorArgs([['api_key' => 'blah']])
       ->getMock();
