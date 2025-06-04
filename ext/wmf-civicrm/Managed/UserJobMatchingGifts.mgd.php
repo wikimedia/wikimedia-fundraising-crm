@@ -22,42 +22,42 @@ foreach ($softCreditTypes as $type) {
 $individualDedupeRule = CRM_Core_DAO::singleValueQuery("SELECT name FROM civicrm_dedupe_rule_group WHERE is_reserved = 1 AND contact_type = 'Individual' AND used = 'General'");
 
 $organizationFields = [
-  'Batch' => ['name' => 'Gift_Information.import_batch_number'],
-  'Contribution Type' => ['name' => 'financial_type_id'],
-  'Transaction ID' => ['name' => 'contribution_extra.gateway_txn_id'],
-  'Total Amount' => ['name' => 'total_amount'],
+  'Batch' => ['name' => 'Contribution.Gift_Information.import_batch_number'],
+  'Contribution Type' => ['name' => 'Contribution.financial_type_id'],
+  'Transaction ID' => ['name' => 'Contribution.contribution_extra.gateway_txn_id'],
+  'Total Amount' => ['name' => 'Contribution.total_amount'],
   'Source' => ['name' => ''],
-  'Fee Amount' => ['name' => 'fee_amount'],
-  'Postmark Date' => ['name' => 'contribution_extra.Postmark_Date'],
-  'Received Date' => ['name' => 'receive_date'],
-  'Payment Instrument' => ['name' => 'payment_instrument_id'],
-  'Check Number' => ['name' => 'check_number'],
-  'Restrictions' => ['name' => 'Gift_Data.Fund'],
-  'Gift Source' => ['name' => 'Gift_Data.Campaign'],
-  'Direct Mail Appeal' => ['name' => 'Gift_Data.Appeal'],
-  'Organization CID' => ['name' => 'contribution_contact_id'],
-  'Organization Name' => ['name' => 'organization_name'],
+  'Fee Amount' => ['name' => 'Contribution.fee_amount'],
+  'Postmark Date' => ['name' => 'Contribution.contribution_extra.Postmark_Date'],
+  'Received Date' => ['name' => 'Contribution.receive_date'],
+  'Payment Instrument' => ['name' => 'Contribution.payment_instrument_id'],
+  'Check Number' => ['name' => 'Contribution.check_number'],
+  'Restrictions' => ['name' => 'Contribution.Gift_Data.Fund'],
+  'Gift Source' => ['name' => 'Contribution.Gift_Data.Campaign'],
+  'Direct Mail Appeal' => ['name' => 'Contribution.Gift_Data.Appeal'],
+  'Organization CID' => ['name' => 'Contribution.contact_id'],
+  'Organization Name' => ['name' => 'Contribution.organization_name'],
   'Employer of' => ['name' => ''],
   'Soft Credit to First Name' => [
-    'name' => 'soft_credit.contact.first_name',
+    'name' => 'SoftCreditContact.first_name',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Soft Credit to Last Name' => [
-    'name' => 'soft_credit.contact.last_name',
+    'name' => 'SoftCreditContact.last_name',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Street Address' => [
-    'name' => 'soft_credit.contact.address_primary.street_address',
+    'name' => 'SoftCreditContact.address_primary.street_address',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
   ],
   'Additional Address 1' => [
-    'name' => 'soft_credit.contact.address_primary.supplemental_address_1',
+    'name' => 'SoftCreditContact.address_primary.supplemental_address_1',
     'entity_data' => [
       'soft_credit' => ['soft_credit_type_id' => $matchedTypeID],
     ],
