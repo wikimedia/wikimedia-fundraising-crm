@@ -25,7 +25,7 @@ if (file_exists(__DIR__ . "/drupal/sites/default/settings.php")) {
 require_once(__DIR__ . '/vendor/autoload.php');
 
 if (file_exists(__DIR__ . '/private/civicrm.settings.php')) {
-  putenv('CIVICRM_SETTINGS=' . __DIR__ . '/private/civicrm.settings.php');
+  putenv('CIVICRM_SETTINGS=' . __DIR__ . '/civicrm.standalone.php');
 }
 else {
   putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');

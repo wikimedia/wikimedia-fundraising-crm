@@ -46,6 +46,11 @@ class WMFTestListener implements \PHPUnit\Framework\TestListener {
 
   public function startTest(\PHPUnit\Framework\Test $test): void {
     error_reporting(E_ALL);
+    // Calling this populates \Civi::$statics with boot variables.
+    // When this was not being called before the statics are stashed
+    // sometimes \Civi::$statics held a translation related key, which seemed
+    // to block it loading the container into statics.
+    \CRM_Core_Config::singleton();
     $this->originalStatic = \Civi::$statics;
     $GLOBALS['CIVICRM_TEST_CASE'] = $test;
     \CRM_Core_Session::singleton()->set('userID', NULL);
