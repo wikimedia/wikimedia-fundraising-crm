@@ -4,10 +4,6 @@ if (function_exists("module_load_include") and module_exists("wmf_civicrm")) {
   module_load_include("inc", "wmf_civicrm", "bootstrap");
 }
 
-function offline2civicrm_install() {
-  offline2civicrm_update_7001();
-}
-
 function offline2civicrm_schema() {
   $schema['offline2civicrm_log'] = [
     'fields' => [
@@ -40,15 +36,3 @@ function offline2civicrm_schema() {
   return $schema;
 }
 
-/**
- * Create Citibank contact to put the anonymous donations against.
- */
-function offline2civicrm_update_7001() {
-  civicrm_initialize();
-  civicrm_api3('Contact', 'create', [
-    'contact_type' => 'Individual',
-    'last_name' => 'Citibank',
-    'source' => 'Citibank imports contact',
-    'email' => 'fakecitibankemail@wikimedia.org',
-  ]);
-}
