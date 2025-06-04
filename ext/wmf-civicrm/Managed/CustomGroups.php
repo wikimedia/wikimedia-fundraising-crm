@@ -348,6 +348,15 @@ return [
     ],
     'fields' => _wmf_civicrm_get_direct_mail_fields(),
   ],
+  'Gift_Information' => [
+    'group' => [
+      'name' => 'Gift_Information',
+      'title' => 'Gift Information',
+      'table_name' => 'civicrm_value_1_check_number_9',
+      'extends' => 'Contribution',
+    ],
+    'fields' => _wmf_civicrm_get_gift_information_fields(),
+  ],
 ];
 
 /**
@@ -2277,6 +2286,20 @@ function _wmf_civicrm_get_direct_mail_fields(): array {
       'data_type' => 'String',
       'text_length' => 255,
       'column_name' => 'direct_mail_package',
+    ],
+  ];
+}
+
+function _wmf_civicrm_get_gift_information_fields(): array {
+  return [
+    'import_batch_number' => [
+      'name' => 'import_batch_number',
+      'label' => 'Batch Number',
+      'html_type' => 'Text',
+      'data_type' => 'String',
+      'text_length' => 255,
+      'column_name' => 'import_batch_number',
+      'is_searchable' => TRUE,
     ],
   ];
 }
