@@ -34,7 +34,7 @@ $entities = [
             ],
             'skipColumnHeader' => '1',
             'uploadFile' => [
-              'name' => '/srv/civi-sites/wmff/drupal/sites/default/files/civicrm/upload/benevity_only_match_1c199fd47d23ea5028ccf7f6830b34ea.csv',
+              'name' => '/srv/civi-sites/wmf/drupal/sites/default/files/civicrm/upload/benevity_only_match_1c199fd47d23ea5028ccf7f6830b34ea.csv',
               'type' => 'text/csv',
             ],
             'fieldSeparator' => ',',
