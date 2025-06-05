@@ -510,39 +510,5 @@ $entities = [
     ],
   ],
 ];
-foreach ($entities as $template) {
-  $entities[] = [
-    'name' => substr($template['name'], 7),
-    'entity' => 'Mapping',
-    'cleanup' => 'unused',
-    'update' => 'never',
-    'params' => [
-      'version' => 4,
-      'match' => ['name'],
-      'values' => [
-        'mapping_type_id:name' => 'Import Contribution',
-        'name' => substr($template['name'], 7),
-      ],
-    ],
-  ];
-  foreach ($template['params']['values']['metadata']['submitted_values']['mapper'] as $column => $field) {
-    $entities[] = [
-
-      'name' => $template['name'] . '_' . $column,
-      'entity' => 'MappingField',
-      'cleanup' => 'unused',
-      'update' => 'never',
-      'params' => [
-        'version' => 4,
-        'match' => ['mapping_id', 'column_number'],
-        'values' => [
-          'mapping_id.name' => substr($template['name'], 7),
-          'name' => $field[0] ?: 'do_not_import',
-          'column_number' => $column,
-        ],
-      ],
-    ];
-  }
-}
 
 return $entities;
