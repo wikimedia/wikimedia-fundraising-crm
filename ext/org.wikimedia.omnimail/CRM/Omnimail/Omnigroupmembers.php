@@ -97,10 +97,6 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     $systemFields = [
       'Email',
       'RECIPIENT_ID',
-      'LastSentDate',
-      'LastClickDate',
-      'LastOpenDate',
-      'IsoLang',
       // These details are all pretty confusing as they show opted in for
       // contacts on the Master suppression list.
       // But these are what we can get - maybe one day we will understand - let's
@@ -116,6 +112,11 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     if ($isSuppressionList) {
       return $systemFields;
     }
+    // These seem to be system fields that are not always present.
+    $systemFields[] = 'LastSentDate';
+    $systemFields[] = 'LastClickDate';
+    $systemFields[] = 'LastOpenDate';
+    $systemFields[] = 'IsoLang';
     return $systemFields + ['contactID'] + array_values($this->customDataMap);
   }
 
