@@ -220,8 +220,8 @@ class OmnimailBaseTestClass extends TestCase {
    *
    * @return array
    */
-  public function getUtcDateFormattedJobSettings($params = ['mail_provider' => 'Silverpop']): array {
-    $settings = $this->getJobSettings($params);
+  public function getUtcDateFormattedJobSettings($params = []): array {
+    $settings = $this->getJobSettings($params + ['mail_provider' => 'Silverpop']);
     $dateFields = ['last_timestamp', 'progress_end_timestamp'];
     foreach ($dateFields as $dateField) {
       if (!empty($settings[$dateField])) {
