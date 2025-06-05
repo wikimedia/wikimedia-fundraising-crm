@@ -225,4 +225,40 @@ $entities = [
   ],
 ];
 
+$templateName = 'Fidelity';
+foreach ($entities as $template) {
+  $entities[] = [
+    'name' => $templateName,
+    'entity' => 'Mapping',
+    'cleanup' => 'unused',
+    'update' => 'never',
+    'params' => [
+      'version' => 4,
+      'match' => ['name'],
+      'values' => [
+        'mapping_type_id:name' => 'Import Contribution',
+        'name' => $templateName,
+      ],
+    ],
+  ];
+  foreach ($template['params']['values']['metadata']['submitted_values']['mapper'] as $column => $field) {
+    $entities[] = [
+
+      'name' => $template['name'] . '_' . $column,
+      'entity' => 'MappingField',
+      'cleanup' => 'unused',
+      'update' => 'never',
+      'params' => [
+        'version' => 4,
+        'match' => ['mapping_id', 'column_number'],
+        'values' => [
+          'mapping_id.name' => $templateName,
+          'name' => $field[0] ?: 'do_not_import',
+          'column_number' => $column,
+        ],
+      ],
+    ];
+  }
+}
+
 return $entities;

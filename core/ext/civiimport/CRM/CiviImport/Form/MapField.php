@@ -94,6 +94,7 @@ class CRM_CiviImport_Form_MapField extends CRM_Import_Form_MapField {
    * @throws \CRM_Core_Exception
    */
   protected function addSavedMappingFields(): void {
+    $savedMappingID = $this->getSavedMappingID();
     //to save the current mappings
     if (!$this->getTemplateID()) {
       $saveDetailsName = ts('Save this field mapping');
