@@ -105,6 +105,7 @@ class Save extends AbstractAction {
     }
     if (!empty($msg['billing_email'])) {
       \Civi::log('wmf')->info('add additional billing email');
+      $contact['email_billing.location_type_id:name'] = 'Billing';
       $contact['email_billing.email'] = $msg['billing_email'];
     }
     $preferredLanguage = $this->getPreferredLanguage($msg);
