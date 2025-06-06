@@ -26,8 +26,7 @@ $settings = [
   // Enable message translation with locale parsing.
   'partial_locales' => 1,
 
-  // Shoreditch theme settings.
-  'customCSSURL' => 'sites/default/civicrm/extensions/theisland/css/custom-civicrm.css',
+  // Do we still want a white menu?.
   'menubar_color' => '#ffffff',
   'editor_id' => 'CKEditor5-base64',
 
