@@ -19,6 +19,8 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
   public const RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME = 'Recurring Downgrade';
 
+  public const RECURRING_PAUSED_ACTIVITY_TYPE_NAME = 'Recurring Paused';
+
   /**
    * @inheritDoc
    *
@@ -41,6 +43,10 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     }
     if ($messageObject->isDowngrade()) {
       $this->downgradeRecurAmount($messageObject, $message);
+      return;
+    }
+    if ($messageObject->isPaused()) {
+      $this->pauseRecurRecord($messageObject, $message);
       return;
     }
     if ($messageObject->isExternalSubscriptionModification()) {
@@ -75,6 +81,34 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       }
     }
     $createCall->execute();
+  }
+
+  /**
+   * Pause recur record
+   */
+
+  protected function pauseRecurRecord(RecurringModifyMessage $message, array $msg): void {
+    $date = date_create($message->getNextScheduledDate());
+    $new_date = date_add($date, date_interval_create_from_date_string($msg['duration']));
+    $formatDate = date_format($new_date, 'Y-m-d H:i:s');
+    $pauseScheduledParams = [
+      'next_sched_contribution_date' => $formatDate,
+      'old_date' => $date->format('Y-m-d H:i:s'),
+      'duration' => $msg['duration']
+    ];
+    $activityParams = [
+      'subject' => "Paused recurring till {$formatDate}",
+      'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
+      'contribution_recur_id' => $message->getContributionRecurID(),
+      'activity_type_id:name' => self::RECURRING_PAUSED_ACTIVITY_TYPE_NAME
+    ];
+    ContributionRecur::update(FALSE)->addValue('next_sched_contribution_date', $pauseScheduledParams['next_sched_contribution_date'])->addWhere(
+      'id',
+      '=',
+      $activityParams['contribution_recur_id']
+    )->execute();
+
+    $this->createRecurringActivity(json_encode($pauseScheduledParams), $activityParams);
   }
 
   /**
@@ -125,7 +159,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     }
 
     $activityParams['activity_type_id:name'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_NAME;
-    $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
+    $this->updateContributionRecurAmountAndRecurringActivity($amountDetails, $activityParams);
     RecurUpgradeEmail::send()
       ->setCheckPermissions(FALSE)
       ->setContactID($message->getExistingContributionRecurValue('contact_id'))
@@ -156,7 +190,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
     $activityParams['subject'] = "Recurring amount reduced by " . $message->getOriginalDecreaseAmountRounded() . ' ' . $message->getModifiedCurrency();
     $activityParams['activity_type_id:name'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME;
-    $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
+    $this->updateContributionRecurAmountAndRecurringActivity($amountDetails, $activityParams);
   }
 
   /**
@@ -170,15 +204,17 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
    *
    * @throws \CRM_Core_Exception
    */
-  protected function updateContributionRecurAndRecurringActivity(array $amountDetails, array $activityParams): void {
-    $additionalData = json_encode($amountDetails);
-
+  protected function updateContributionRecurAmountAndRecurringActivity(array $amountDetails, array $activityParams): void {
     ContributionRecur::update(FALSE)->addValue('amount', $activityParams['amount'])->addWhere(
       'id',
       '=',
       $activityParams['contribution_recur_id']
     )->execute();
 
+    $this->createRecurringActivity(json_encode($amountDetails), $activityParams);
+  }
+
+  protected function createRecurringActivity(string $additionalData, array $activityParams): void {
     $createCall = Activity::create(FALSE)
       ->addValue('activity_type_id:name', $activityParams['activity_type_id:name'])
       ->addValue(
@@ -239,7 +275,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
         $activityParams['subject'] = "Recurring amount increased by {$messageObject->getOriginalIncreaseAmountRounded()} {$recur_currency}";
         $activityParams['activity_type_id:name'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_NAME;
       }
-      $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
+      $this->updateContributionRecurAmountAndRecurringActivity($amountDetails, $activityParams);
     }
   }
 

@@ -44,6 +44,42 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
   /**
    * @throws \CRM_Core_Exception
    */
+  public function testRecurringPause(): void {
+    $testRecurring = $this->createContributionRecur(
+      [
+        'contribution_status_id:name' => 'In Progress',
+        'next_sched_contribution_date' => '2025-07-06 14:16:40'
+      ]
+    );
+    $date = $testRecurring['next_sched_contribution_date'];
+    $msg = [
+      'txn_type' => 'recurring_paused',
+      'contribution_recur_id' => $testRecurring['id'],
+      'duration' => '60 days',
+    ];
+
+    $this->processMessage($msg);
+    $updatedRecurring = ContributionRecur::get(FALSE)
+      ->addSelect('id', 'next_sched_contribution_date')
+      ->addWhere('id', '=', $testRecurring['id'])
+      ->execute()
+      ->first();
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $testRecurring['id'])
+      ->addWhere('activity_type_id:name', '=', $this->getActivityTypeID('paused'))
+      ->execute()
+      ->last();
+
+    $new_date = date_add(date_create($date), date_interval_create_from_date_string($msg['duration']));
+    $formatDate = date_format($new_date, 'Y-m-d H:i:s');
+
+    $this->assertEquals($formatDate, $updatedRecurring['next_sched_contribution_date']);
+    $this->assertEquals("Paused recurring till {$formatDate}", $activity['subject']);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
   public function testRecurringUpgrade(): void {
     $testRecurring = $this->createContributionRecur();
     $additionalAmount = 5.00;
@@ -138,7 +174,8 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
 
       case 'downgrade':
         return RecurringModifyQueueConsumer::RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME;
-
+      case 'paused':
+        return RecurringModifyQueueConsumer::RECURRING_PAUSED_ACTIVITY_TYPE_NAME;
       default:
         throw new \CRM_Core_Exception('invalid type');
     }
