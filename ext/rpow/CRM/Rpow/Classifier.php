@@ -67,6 +67,12 @@ class CRM_Rpow_Classifier {
         preg_match('; (for update|for share|into outfile|into dumpfile);', $sql)
         // ^^keywords
 
+        // Checks on the information_schema might be used to determine which indexes to add etc.
+        // A read only user is likely to be lacking permission on the information_schema - meaning
+        // it would be silently misinformed about existing indexes etc which could lead to the
+        // check to ensure they are only added if they do not already exist failing.
+        || preg_match('; information_schema\.;', $sql)
+
         // FIXME: This is more correct, but civicrm-core may be a bit too eager with using them?
         || preg_match(';[ ,\(](get_lock|is_free_lock|is_used_lock) *\(;S', $sql)
         // ^^functions
