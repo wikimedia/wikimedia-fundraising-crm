@@ -7,7 +7,7 @@ use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 
-class RecurringModifyAmountMessage extends Message {
+class RecurringModifyMessage extends Message {
 
   private $contributionRecurID;
   /**
@@ -31,6 +31,10 @@ class RecurringModifyAmountMessage extends Message {
 
   public function isExternalSubscriptionModification(): bool {
     return $this->message['txn_type'] === 'external_recurring_modification';
+  }
+
+  public function isPaused(): bool {
+    return $this->message['txn_type'] === 'recurring_paused';
   }
 
   /**
@@ -85,6 +89,12 @@ class RecurringModifyAmountMessage extends Message {
       }
       if ($this->getDifferenceAmount() > 0) {
         throw new WMFException(WMFException::INVALID_RECURRING, 'downgradeRecurAmount: New recurring amount is greater than the original amount.');
+      }
+    }
+
+    if ($this->isPaused()) {
+      if (!isset($this->message['duration'])) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to pause recurring subscription but duration is not set');
       }
     }
 
@@ -183,6 +193,10 @@ class RecurringModifyAmountMessage extends Message {
 
   public function getOriginalExistingAmountRounded(): string {
     return $this->round($this->getExistingContributionRecurValue('amount'), $this->getExistingContributionRecurValue('currency'));
+  }
+
+  public function getNextScheduledDate(): ?string {
+    return $this->getExistingContributionRecurValue('next_sched_contribution_date');
   }
 
   /**

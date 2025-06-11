@@ -5,7 +5,7 @@ namespace Civi\WMF;
 use Civi\Api4\Contact;
 use Civi\Api4\WMFContact;
 use Civi\WMFQueueMessage\RecurDonationMessage;
-use Civi\WMFQueueMessage\RecurringModifyAmountMessage;
+use Civi\WMFQueueMessage\RecurringModifyMessage;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -43,7 +43,7 @@ class WMFContactSaveTest extends TestCase {
    */
   public function testExternalIdentifierFundraiseupIdUpdate(): void {
     $fundraiseup_id = random_int(10000, 11200);
-    $initialDetails = new RecurringModifyAmountMessage([
+    $initialDetails = new RecurringModifyMessage([
       'first_name' => 'Sarah',
       'last_name' => 'Mouse',
       'nick_name' => '',
@@ -60,7 +60,7 @@ class WMFContactSaveTest extends TestCase {
     ]);
     $oldContactId = WMFContact::save(FALSE)->setMessage($initialDetails->normalize())->execute()->first()['id'];
 
-    $newDetails = new RecurringModifyAmountMessage(array_merge($initialDetails->normalize(), [
+    $newDetails = new RecurringModifyMessage(array_merge($initialDetails->normalize(), [
       'id' => $oldContactId,
       'contact_id' => $oldContactId,
       'gateway' => 'fundraiseup',

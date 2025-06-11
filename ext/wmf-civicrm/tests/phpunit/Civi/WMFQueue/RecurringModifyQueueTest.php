@@ -13,14 +13,14 @@ use Civi\Test\ContactTestTrait;
  * @group queues
  * @group Recurring
  */
-class RecurringModifyAmountQueueTest extends BaseQueueTestCase {
+class RecurringModifyQueueTest extends BaseQueueTestCase {
 
   use ContactTestTrait;
   use Api3TestTrait;
 
   protected string $queueName = 'recurring-modify';
 
-  protected string $queueConsumer = 'RecurringModifyAmount';
+  protected string $queueConsumer = 'RecurringModify';
 
   /**
    * @throws \CRM_Core_Exception
@@ -131,13 +131,13 @@ class RecurringModifyAmountQueueTest extends BaseQueueTestCase {
   protected function getActivityTypeID(string $type): int {
     switch ($type) {
       case 'accept':
-        return RecurringModifyAmountQueueConsumer::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
+        return RecurringModifyQueueConsumer::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
 
       case 'decline':
-        return RecurringModifyAmountQueueConsumer::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID;
+        return RecurringModifyQueueConsumer::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID;
 
       case 'downgrade':
-        return RecurringModifyAmountQueueConsumer::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
+        return RecurringModifyQueueConsumer::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
 
       default:
         throw new \CRM_Core_Exception('invalid type');
