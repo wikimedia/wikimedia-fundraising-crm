@@ -37,8 +37,8 @@ class GravyAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * This test sets up the gravy audit processor the process the donations settlement report located at:
-   * tests/phpunit/Civi/WMFAudit/data/Gravy/donations/gravy/incoming/gravy_settlement_report_2024_09_13.csv
+   * This test sets up the gravy audit processor the process the donations all transactions report located at:
+   * tests/phpunit/Civi/WMFAudit/data/Gravy/donations/gravy/incoming/gravy_all_transactions_report_2024_09_13.csv
    * and then asserts that queue message was added for the "missing" 113 transaction in getExpectedDonationMessage().
    *
    * The code internals rely on the test fixture payments log data in
@@ -54,8 +54,8 @@ class GravyAuditTest extends BaseAuditTestCase {
   }
 
   /**
-   * This test sets up the gravy audit processor the process the refund settlement report located at:
-   * tests/phpunit/Civi/WMFAudit/data/Gravy/refund/incoming/gravy_settlement_report_2024_09_13.csv
+   * This test sets up the gravy audit processor the process the refund all transactions report located at:
+   * tests/phpunit/Civi/WMFAudit/data/Gravy/refund/incoming/gravy_all_transactions_report_2024_09_13.csv
    * and confirms a refund queue message was pushed to the queue.
    */
   public function testParseRefunds(): void {
