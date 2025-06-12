@@ -1,2 +1,0 @@
-<?php
-define('IGNORE_SEPARATOR_CONFIG', TRUE);

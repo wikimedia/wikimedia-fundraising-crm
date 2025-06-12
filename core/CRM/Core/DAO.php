@@ -3496,9 +3496,15 @@ SELECT contact_id
         return explode(self::VALUE_SEPARATOR, trim($value));
 
       case self::SERIALIZE_JSON:
+        if (is_array($value)) {
+          return $value;
+        }
         return strlen($value) ? json_decode($value, TRUE) : [];
 
       case self::SERIALIZE_PHP:
+        if (is_array($value)) {
+          return $value;
+        }
         return strlen($value) ? CRM_Utils_String::unserialize($value) : [];
 
       case self::SERIALIZE_COMMA:

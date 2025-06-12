@@ -23,7 +23,7 @@
   <comments>This extension allows you to define a second read only database connection for load balancing. Operations that do not need to write to the database will use it</comments>
   <civix>
     <namespace>CRM/Rpow</namespace>
-    <format>23.02.1</format>
+    <format>25.01.1</format>
   </civix>
   <classloader>
     <psr0 prefix="CRM_" path="."/>

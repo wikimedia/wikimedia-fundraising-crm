@@ -16,16 +16,22 @@ class CRM_Standaloneusers_Upgrader extends CRM_Extension_Upgrader_Base {
    * @return void
    * @throws \CRM_Core_Exception
    */
-  public function preInstall() {
-    $config = \CRM_Core_Config::singleton();
-    // We generally only want to run on standalone. In theory, we might also run headless tests.
-    if (!in_array(get_class($config->userPermissionClass), ['CRM_Core_Permission_Standalone', 'CRM_Core_Permission_UnitTests'])) {
-      throw new \CRM_Core_Exception("standaloneusers can only be installed on standalone");
+  public function preInstall(): void {
+    $this->reKeyID();
+    $entity = include __DIR__ . '/../../schema/User.entityType.php';
+    $tableName = 'civicrm_uf_match';
+    $ctx = new CRM_Queue_TaskContext();
+    foreach ($entity['getFields']() as $fieldName => $fieldSpec) {
+      // We can't run the next line in preInstall - so it's contents are copied here.
+      // CRM_Upgrade_Incremental_Base::alterSchemaField(NULL, 'User', $fieldName, $params);
+      $fieldSql = Civi::schemaHelper()->arrayToSql($fieldSpec);
+      if (CRM_Core_BAO_SchemaHandler::checkIfFieldExists($tableName, $fieldName, FALSE)) {
+        CRM_Upgrade_Incremental_Base::alterColumn($ctx, $tableName, $fieldName, $fieldSql, !empty($fieldSpec['localizable']));
+      }
+      else {
+        CRM_Upgrade_Incremental_Base::addColumn($ctx, $tableName, $fieldName, $fieldSql, !empty($fieldSpec['localizable']));
+      }
     }
-    if (!in_array(get_class($config->userSystem), ['CRM_Utils_System_Standalone', 'CRM_Utils_System_UnitTests'])) {
-      throw new \CRM_Core_Exception("standaloneusers can only be installed on standalone");
-    }
-    CRM_Core_DAO::executeQuery('DROP TABLE civicrm_uf_match');
   }
 
   /**
@@ -44,7 +50,9 @@ class CRM_Standaloneusers_Upgrader extends CRM_Extension_Upgrader_Base {
    * so here to avoid order of operation problems.
    */
   public function postInstall() {
-
+    if (CIVICRM_UF === 'Drupal') {
+      $this->copyDrupalUsersAndRoles();
+    }
     // Ensure users can login with username/password via authx.
     Civi::settings()->set('authx_login_cred', array_unique(array_merge(
       Civi::settings()->get('authx_login_cred'),
@@ -179,6 +187,85 @@ class CRM_Standaloneusers_Upgrader extends CRM_Extension_Upgrader_Base {
   //   return TRUE;
   // }
 
+  private function copyDrupalUsersAndRoles(): void {
+    $roles = user_roles(); // Returns array: rid => role name
+    $role_permissions = user_role_permissions(array_keys($roles));
+    foreach ($roles as $rid => $role) {
+      // create roles matching d7 roles
+      $rolePermissions = array_keys($role_permissions[$rid] ?? []);
+      $name = $role;
+      $label = $role;
+      if ($role === 'anonymous user') {
+        $rolePermissions[] = 'authenticate with password';
+        $rolePermissions[] = 'access password resets';
+        $label = 'Everyone, including anonymous users';
+        $name = 'everyone';
+      }
+      $permissions = CRM_Core_DAO::serializeField($rolePermissions, \CRM_Core_DAO::SERIALIZE_SEPARATOR_BOOKEND);
+      CRM_Core_DAO::executeQuery('
+        INSERT INTO `civicrm_role` (`id`, `name`, `label`, `permissions`, `is_active`)
+        SELECT %1, %2, %3, %4, 1
+        ON DUPLICATE KEY UPDATE label = %3, permissions = %4, is_active = 1
+      ', [
+        1 => [$rid, 'Integer'],
+        // if name = anonymous user set name = everyone
+        2 => [$name, 'String'],
+        3 => [$label, 'String'],
+        // implode, bookend serialize
+        4 => [$permissions, 'String']
+      ]);
+
+    }
+    $users = entity_load('user');
+    // -- create superuser role
+    $superUserPermissions = CRM_Core_DAO::serializeField([
+      "all CiviCRM permissions and ACLs",
+      "access password resets",
+    ], \CRM_Core_DAO::SERIALIZE_SEPARATOR_BOOKEND);
+
+    CRM_Core_DAO::executeQuery('
+       INSERT INTO `civicrm_role` (`name`, `label`, `permissions`, `is_active`)
+        VALUES ("superuser", "Superuser", %1, 1)
+        ON DUPLICATE KEY UPDATE label = "Superuser", permissions = %1, is_active = 1
+        ', [1 => [$superUserPermissions, 'String']]
+    );
+
+    //  assign superuser role to User ID 1
+    CRM_Core_DAO::executeQuery('
+      INSERT INTO `civicrm_user_role` (`user_id`, `role_id`)
+      SELECT 1, `id` FROM `civicrm_role` WHERE `name` = "superuser"');
+
+    foreach ($users as $user) {
+      if ($user->uid == 0
+        || empty(CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_uf_match WHERE uf_id = %1', [1 => [$user->uid, 'Integer']]))) {
+        continue;
+      }
+      CRM_Core_DAO::executeQuery("
+        UPDATE `civicrm_uf_match`
+        SET username = %1,
+        `hashed_password` = %2,
+        `when_created` = IF(%3 > 0, FROM_UNIXTIME(%3), NULL),
+        `when_last_accessed` = IF(%4 > 0, FROM_UNIXTIME(%4), NULL),
+        `when_updated` = IF(%4 > 0, FROM_UNIXTIME(%4), NULL),
+        is_active = %5
+        WHERE uf_id = %6
+      ", [
+        1 => [$user->name, 'String'],
+        2 => [$user->pass, 'String'],
+        3 => [$user->created, 'Integer'],
+        4 => [$user->access, 'Integer'],
+        5 => [$user->status, 'Integer'],
+        6 => [$user->uid, 'Integer'],
+      ]);
+      foreach (array_keys($user->roles ?? []) as $roleID) {
+        // assign roles after the above so the FK works (ie civicrm_user_role.user_id -> civicrm_user.id.
+        CRM_Core_DAO::executeQuery('INSERT INTO `civicrm_user_role` (`user_id`, `role_id`) VALUES(%1, %2)', [
+          1 => [$user->uid, 'Integer'],
+          2 => [$roleID, 'Integer'],
+        ]);
+      }
+    }
+  }
   /**
    * Create table civicrm_session
    *
@@ -189,6 +276,22 @@ class CRM_Standaloneusers_Upgrader extends CRM_Extension_Upgrader_Base {
     $this->ctx->log->info('Applying update 5691');
     $this->executeSqlFile('sql/upgrade_5691.sql');
     return TRUE;
+  }
+
+  /**
+   * @return void
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function reKeyID(): void {
+    // -- Standaloneusers expects uf_id to match id. In order to alter these
+    // we need to follow a 2 step process to drop and then to re-add the primary key.
+    CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_uf_match
+     MODIFY id int(10) unsigned NOT NULL COMMENT 'Unique User ID',
+     DROP PRIMARY KEY");
+    CRM_Core_DAO::executeQuery("UPDATE civicrm_uf_match SET id = uf_id");
+    CRM_Core_DAO::executeQuery("ALTER TABLE civicrm_uf_match
+       MODIFY id int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique User ID',
+       ADD PRIMARY KEY (id)");
   }
 
 }
