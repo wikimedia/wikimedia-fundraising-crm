@@ -61,7 +61,7 @@ class GravyAuditProcessor extends BaseAuditProcessor {
    * @return string
    */
   protected function regex_for_recon() {
-    return '/gravy_settlement_report/';
+    return '/gravy_all_transactions_report/';
   }
 
   protected function get_order_id($transaction) {
