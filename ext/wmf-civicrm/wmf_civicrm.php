@@ -131,7 +131,9 @@ function wmf_civicrm_civicrm_alterSettingsMetaData(&$settingsMetaData, $domainID
   $configuredSettingsFile = __DIR__ . '/Managed/Settings.php';
   $configuredSettings = include $configuredSettingsFile;
   foreach ($configuredSettings as $name => $value) {
-    $settingsMetaData[$name]['default'] = $value;
+    if (isset($settingsMetaData[$name])) {
+      $settingsMetaData[$name]['default'] = $value;
+    }
   }
 }
 

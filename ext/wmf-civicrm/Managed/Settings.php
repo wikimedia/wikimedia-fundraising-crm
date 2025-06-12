@@ -40,6 +40,8 @@ $settings = [
     'date.today_format_raw',
   ],
 
+  'standaloneusers_session_max_lifetime' => 24 *24 * 60,
+
   // Per live, exclude supplemental_address_3, add postal_code_suffix (11).
   // core default is   '1234568910'
   'address_options' => '123456891011',
