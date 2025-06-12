@@ -69,20 +69,6 @@ class CRM_Upgrade_Incremental_php_SixThree extends CRM_Upgrade_Incremental_Base 
   }
 
   public function upgrade_6_3_beta2($rev): void {
-    $this->addTask('Add column "UserJob.search_display_id"', 'alterSchemaField', 'UserJob', 'search_display_id', [
-      'title' => ts('SearchDisplay ID'),
-      'sql_type' => 'int unsigned',
-      'input_type' => 'EntityRef',
-      'description' => ts('Batch import search display'),
-      'input_attrs' => [
-        'label' => ts('Search Display'),
-      ],
-      'entity_reference' => [
-        'entity' => 'SearchDisplay',
-        'key' => 'id',
-        'fk' => FALSE,
-      ],
-    ], 'queue_id');
     $this->addTask('Update Activity mappings', 'upgradeImportMappingFields', 'Activity');
     $this->addTask('Update Membership mappings', 'upgradeImportMappingFields', 'Membership');
     $this->addTask('Update Contribution mappings', 'upgradeImportMappingFields', 'Contribution');
