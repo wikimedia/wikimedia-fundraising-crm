@@ -1,0 +1,17 @@
+{
+  "logging_no_trigger_permission" : 0,
+  "debug_enabled" : 1,
+  "backtrace" : 1,
+  "environment" : "Development",
+  "mailing_backend" : {
+    "smtpServer" : "mailcatcher",
+    "smtpPort" : "1025",
+    "outBound_option" : 0,
+    "smtpAuth" : ""
+  },
+  "omnimail_allowed_upload_folders" : [
+    "/srv/civi-sites/wmf/drupal/sites/default/civicrm/extensions/org.wikimedia.omnimail/tests/phpunit/Requests/ImportFiles/",
+    "/tmp/"
+  ],
+  "symfony_email_dsn" : "smtp://mailcatcher:1025"
+}
