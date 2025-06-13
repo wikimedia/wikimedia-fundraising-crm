@@ -625,7 +625,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $this->ids['Contact'][] = $recurRow['contact_id'];
     $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
 
-    $this->processMessage($planChangeMessage, 'RecurringModifyAmount', 'recurring-modify');
+    $this->processMessage($planChangeMessage, 'RecurringModify', 'recurring-modify');
 
     $recurRowUpdated = ContributionRecur::get(FALSE)
       ->addSelect('id', 'amount', 'contact_id')
@@ -680,7 +680,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
     $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
 
     $planChangeMessage['email'] = 'jwales_1_updated@example.org';
-    $this->processMessage($planChangeMessage, 'RecurringModifyAmount', 'recurring-modify');
+    $this->processMessage($planChangeMessage, 'RecurringModify', 'recurring-modify');
 
     $recurRowUpdated = ContributionRecur::get(FALSE)
       ->addSelect('id', 'amount', 'contact_id')
@@ -727,7 +727,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
       ->addWhere('trxn_id', '=', $planChangeMessage['subscr_id'])
       ->execute()->first();
     $this->assertEquals($newRecurringMsg['gross'], $recurRow['amount']);
-    $this->processMessage($planChangeMessage, 'RecurringModifyAmount', 'recurring');
+    $this->processMessage($planChangeMessage, 'RecurringModify', 'recurring');
 
     $recurRowUpdated = ContributionRecur::get(FALSE)
       ->addSelect('id', 'amount', 'contact_id')

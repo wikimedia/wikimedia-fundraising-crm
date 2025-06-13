@@ -9,9 +9,9 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\RecurUpgradeEmail;
 use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
-use Civi\WMFQueueMessage\RecurringModifyAmountMessage;
+use Civi\WMFQueueMessage\RecurringModifyMessage;
 
-class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
+class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
   public const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID = 165;
 
@@ -28,7 +28,7 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * @throws WMFException|ExchangeRatesException
    */
   public function processMessage(array $message): void {
-    $messageObject = new RecurringModifyAmountMessage($message);
+    $messageObject = new RecurringModifyMessage($message);
     $messageObject->validate();
 
     if ($messageObject->isDecline()) {
@@ -56,12 +56,12 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * Completes the process of upgrading the contribution recur
    * if the donor decline
    *
-   * @param RecurringModifyAmountMessage $message
+   * @param RecurringModifyMessage $message
    * @param array $msg
    *
    * @throws \CRM_Core_Exception
    */
-  protected function upgradeRecurDecline(RecurringModifyAmountMessage $message, array $msg): void {
+  protected function upgradeRecurDecline(RecurringModifyMessage $message, array $msg): void {
     $createCall = Activity::create(FALSE)
       ->addValue('activity_type_id', self::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
       ->addValue('source_record_id', $message->getContributionRecurID())
@@ -79,7 +79,7 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
 
   /**
    */
-  protected function getActivityValues(RecurringModifyAmountMessage $message, $msg): array {
+  protected function getActivityValues(RecurringModifyMessage $message, $msg): array {
     $activityParams = [
       'amount' => $message->getModifiedAmountRounded(),
       'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
@@ -97,13 +97,13 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * Completes the process of upgrading the contribution recur amount
    * if the donor agrees
    *
-   * @param RecurringModifyAmountMessage $message
+   * @param RecurringModifyMessage $message
    * @param array $msg
    *
    * @throws \CRM_Core_Exception
    * @throws ExchangeRatesException
    */
-  protected function upgradeRecurAmount(RecurringModifyAmountMessage $message, array $msg): void {
+  protected function upgradeRecurAmount(RecurringModifyMessage $message, array $msg): void {
     $increaseAsFloat = floatval($message->getOriginalIncreaseAmountRounded());
     if ($increaseAsFloat === 0.0) {
       Civi::log('wmf')->info('Discarding (probable duplicate) recurring upgrade message with zero amount');
@@ -138,13 +138,13 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    *
    * Completes the process of downgrading the contribution recur amount
    *
-   * @param RecurringModifyAmountMessage $message
+   * @param RecurringModifyMessage $message
    * @param array $msg
    *
    * @throws \CRM_Core_Exception
    * @throws ExchangeRatesException
    */
-  protected function downgradeRecurAmount(RecurringModifyAmountMessage $message, array $msg): void {
+  protected function downgradeRecurAmount(RecurringModifyMessage $message, array $msg): void {
     $amountDetails = [
       'native_currency' => $message->getModifiedCurrency(),
       'native_original_amount' => $message->getOriginalExistingAmountRounded(),
@@ -201,14 +201,14 @@ class RecurringModifyAmountQueueConsumer extends TransactionalQueueConsumer {
    * Import recur record from external payment orchestrator
    * ex. FundraiseUp
    *
-   * @param RecurringModifyAmountMessage $messageObject
+   * @param RecurringModifyMessage $messageObject
    * @param array $msg
    * @return void
    *
    * @throws ExchangeRatesException
    * @throws \CRM_Core_Exception
    */
-  private function importExternalModifiedRecurRecord(RecurringModifyAmountMessage $messageObject, array $msg): void {
+  private function importExternalModifiedRecurRecord(RecurringModifyMessage $messageObject, array $msg): void {
     $message = $messageObject->normalize();
     $message['id'] = $message['contact_id'];
     // FundraiseUp also sends contact updates in the notification
