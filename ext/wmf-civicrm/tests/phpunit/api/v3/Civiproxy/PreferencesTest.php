@@ -51,7 +51,6 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
    * Note how the function name begins with the word "test".
    *
    * @throws \CRM_Core_Exception
-   * @throws \CRM_Core_Exception
    */
   public function testGetEmailPreferenceApi(): void {
     $this->contactID = Contact::create(FALSE)->setValues([
@@ -79,6 +78,15 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
     $this->assertEquals('CA', $contact['country']);
     $this->assertEquals('en_US', $contact['preferred_language']);
     $this->assertEquals('bob.roberto@test.com', $contact['email']);
+
+    $contactv4 = \Civi\Api4\WMFContact::getCommunicationsPreferences()
+      ->setChecksum($checksum)
+      ->setContact_id($this->contactID)
+      ->execute()->first();
+
+    unset($contact['xdebug']);
+    $this->assertEquals($contact, $contactv4);
+
   }
 
 }
