@@ -650,17 +650,17 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
    * here swallows whatever error is actually causing the crash)
    */
   public function sessionStart() {
+    // session lifetime in seconds (default = 24 minutes)
+    $session_max_lifetime = (Civi::settings()->get('standaloneusers_session_max_lifetime') ?? 24) * 60;
+
     if (!$this->isUserExtensionAvailable()) {
       $session_cookie_name = 'SESSCIVISOFALLBACK';
     }
     else {
-      $session_handler = $this->getSessionHandler();
+      $session_handler = $this->getSessionHandler($session_max_lifetime);
       session_set_save_handler($session_handler);
       $session_cookie_name = 'SESSCIVISO';
     }
-
-    // session lifetime in seconds (default = 24 minutes)
-    $session_max_lifetime = (Civi::settings()->get('standaloneusers_session_max_lifetime') ?? 24) * 60;
 
     session_start([
       'cookie_httponly'  => 1,
@@ -720,11 +720,11 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
   /**
    * @return \Civi\Standalone\SessionHandlerInterface
    */
-  public function getSessionHandler(): SessionHandlerInterface {
+  public function getSessionHandler($sessionMaxLifetime): SessionHandlerInterface {
     if (CIVICRM_DB_CACHE_CLASS === 'Redis') {
       // This class *should* work with other caching types but
       // has only been tested for Redis.
-      return new CiviCacheSessionHandler();
+      return new CiviCacheSessionHandler($sessionMaxLifetime);
     }
     return new SessionHandler();
   }
