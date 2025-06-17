@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4;
 
+use Civi\Api4\Action\WMFContact\GetCommunicationsPreferences;
 use Civi\Api4\Action\WMFContact\GetDonorSummary;
 use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\Action\WMFContact\UpdateCommunicationsPreferences;
@@ -41,6 +42,17 @@ class WMFContact extends Generic\AbstractEntity {
   }
 
   /**
+   * Get email preferences
+   *
+   * @param bool $checkPermissions
+   * @return GetCommunicationsPreferences
+   */
+  public static function getCommunicationsPreferences(bool $checkPermissions = TRUE): GetCommunicationsPreferences {
+    return (new GetCommunicationsPreferences(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
    * Get contact and donation information (for all contacts sharing an email with this CID)
    *
    * @param bool $checkPermissions
@@ -60,7 +72,7 @@ class WMFContact extends Generic\AbstractEntity {
    * @return array
    */
   public static function permissions():array {
-    return ['save' => 'edit all contacts'];
+    return ['save' => 'edit all contacts', 'getCommunicationsPreferences' => '*always allow*'];
   }
 
   /**
