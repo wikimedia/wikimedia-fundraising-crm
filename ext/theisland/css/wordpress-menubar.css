@@ -1,8 +1,0 @@
-/* CSS added by theisland CiviCRM extension */
-/* Hide the WP Menu */
-body:not(.crm-menubar-hidden) #adminmenumain {
-  display: none;
-}
-body:not(.crm-menubar-hidden) #wpcontent {
-  margin-left: 0;
-}
