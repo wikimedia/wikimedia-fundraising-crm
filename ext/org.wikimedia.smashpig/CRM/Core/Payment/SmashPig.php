@@ -92,6 +92,12 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     Civi::log('wmf')->debug('Raw response: ' . print_r($createPaymentResponse->getRawResponse(), true));
 
     if (!$createPaymentResponse->isSuccessful()) {
+      foreach ($createPaymentResponse->getErrors() as $error) {
+        Civi::log('wmf')->debug('Payment error message: ' . $error->getDebugMessage());
+      }
+      foreach ($createPaymentResponse->getValidationErrors() as $error) {
+        Civi::log('wmf')->debug('Validation error in field: ' . $error->getField() . '. Message: ' . $error->getDebugMessage());
+      }
       $this->throwException( 'CreatePayment failed', $createPaymentResponse );
     }
     $gatewayTxnId = $createPaymentResponse->getGatewayTxnId();
