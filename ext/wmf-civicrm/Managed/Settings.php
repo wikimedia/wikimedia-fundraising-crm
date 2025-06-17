@@ -40,6 +40,8 @@ $settings = [
     'date.today_format_raw',
   ],
 
+  'syncCMSEmail' => FALSE,
+
   'standaloneusers_session_max_lifetime' => 24 *24 * 60,
 
   // Per live, exclude supplemental_address_3, add postal_code_suffix (11).
