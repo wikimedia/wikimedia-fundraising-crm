@@ -34,7 +34,7 @@
     <div ng-class="contact['result'][0]['email_primary.on_hold'] ? 'text-danger': ''"><strong class="basic-contact-field">{{ts('Email')}}</strong>: <span editable-text="contact['result'][0]['email_primary.email']">{{contact['result'][0]['email_primary.email'] || ".."}}</span>
       <span ng-if="contact['result'][0]['email_primary.on_hold']">({{ts('On hold')}}) {{contact['result'][0]['email_primary.hold_date']}}</span></div>
     <div ng-show=contact['result'][0]['address_primary.street_address']><strong class="basic-contact-field">{{ts('Street Address')}}</strong>: <span>{{contact['result'][0]['address_primary.street_address']}}</span></div>
-    <div ng-show=contact['result'][0]['address_primary.city']><strong class="basic-contact-field">{{ts('City')}}</strong>: <span>{{contact['result'][0]['address_primary.street_city']}}</span></div>
+    <div ng-show=contact['result'][0]['address_primary.city']><strong class="basic-contact-field">{{ts('City')}}</strong>: <span>{{contact['result'][0]['address_primary.city']}}</span></div>
     <div><strong class="basic-contact-field">{{ts('Contact ID')}}</strong>: <a target="_blank" ng-if="options.contact_url" href="{{options.contact_url}}{{contact['result'][0]['id']}}">{{contact['result'][0]['id']}}</a></div>
 
     <p></p>
