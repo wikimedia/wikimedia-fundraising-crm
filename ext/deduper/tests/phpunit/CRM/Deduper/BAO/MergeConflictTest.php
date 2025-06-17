@@ -301,17 +301,50 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *
    * @param bool $isReverse
    *   Should we reverse which contact we merge into?
+   * @param array $contact1
+   * @param array $contact2
    *
-   * @dataProvider booleanDataProvider
+   * @dataProvider initialDataProvider
    */
-  public function testInitialResolutionInitialWithCasingConflict(bool $isReverse): void {
-    $this->createDuplicateIndividuals([['last_name' => 'M SMITH'], []]);
+  public function testInitialResolutionInitialWithCasingConflict(bool $isReverse, array $contact1, array $contact2): void {
+    $this->createDuplicateIndividuals([$contact1, $contact2]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Bob', $mergedContact['first_name']);
     $this->assertEquals('Smith', $mergedContact['last_name']);
     $this->assertEquals('M', $mergedContact['middle_name']);
   }
 
+  public function initialDataProvider(): array {
+    return [
+      'M SMITH' => [FALSE, 'contact_1' => ['last_name' => 'M SMITH'], 'contact_2' => []],
+      'M SMITH_' => [TRUE, 'contact_1' => ['last_name' => 'M SMITH'], 'contact_2' => []],
+      'm Smith' => [FALSE, 'contact_1' => ['last_name' => 'm Smith'], 'contact_2' => ['middle_name' => 'M']],
+      'm Smith_' => [TRUE, 'contact_1' => ['last_name' => 'm Smith'], 'contact_2' => ['middle_name' => 'M']],
+      'Bob m' => [FALSE, 'contact_1' => ['first_name' => 'Bob m'], 'contact_2' => []],
+      'Bob m_' => [TRUE, 'contact_1' => ['first_name' => 'Bob m'], 'contact_2' => []],
+      'Bob m to M' => [FALSE, 'contact_1' => ['first_name' => 'Bob m'], 'contact_2' => ['middle_name' => 'M']],
+      'Bob m to M_' => [TRUE, 'contact_1' => ['first_name' => 'Bob m'], 'contact_2' => ['middle_name' => 'M']],
+    ];
+  }
+
+  /**
+   * Test resolving an initial in the last name when casing varies.
+   *
+   * ie. middle name = M last name = Smith should merge with last
+   * name = M Smith.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testInitialResolutionInLastMisCased(bool $isReverse) {
+    $this->createDuplicateIndividuals([['last_name' => 'm Smith'], ['middle_name' => 'M']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Bob', $mergedContact['first_name']);
+    $this->assertEquals('M', $mergedContact['middle_name']);
+    $this->assertEquals('Smith', $mergedContact['last_name']);
+  }
   /**
    * Test resolving an initial in the first name when the other contact already has the same value as an initial
    *
