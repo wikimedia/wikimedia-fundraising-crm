@@ -761,6 +761,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
       'city' => '意外だね',
       'postal_code' => 310027,
       'country_id:name' => 'China',
+      'state_province_id:name' => 'Beijing',
     ], 'contact_1_main');
 
     $this->createTestEntity('Address', [
@@ -769,7 +770,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
       'is_billing' => TRUE,
       'location_type_id:name' => 'Other',
       'city' => 'Mega-ville',
-      'state_province_id:name' => 'CA',
+      'state_province_id:name' => 'California',
       'postal_code' => 90201,
       'country_id:name' => 'United States',
     ], 'contact_2_other');
@@ -779,6 +780,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->createTestEntity('Address', [
       'contact_id' => $this->ids['Contact'][1],
       'street_address' => 'Home sweet home',
+      'supplemental_address_1' => 'something',
       'is_billing' => TRUE,
       'is_primary' => TRUE,
       'location_type_id:name' => 'Home',
@@ -790,15 +792,19 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
 
     $address = Address::get(FALSE)
       ->addWhere('contact_id', '=', $contact['id'])
-      ->addSelect('street_address', 'is_primary', 'location_type_id:name', 'location_type_id')
+      ->addSelect('street_address', 'is_primary', 'location_type_id:name', 'location_type_id', 'state_province_id:name', 'supplemental_address_1')
       ->addOrderBy('is_primary', 'DESC')
       ->execute();
     $this->assertCount(2, $address);
     $this->assertEquals('Home', $address[0]['location_type_id:name']);
     $this->assertEquals('意外だね42意外だね', $address[0]['street_address']);
+    $this->assertEmpty($address[0]['supplemental_address_1']);
+    $this->assertEquals('Beijing', $address[0]['state_province_id:name']);
     $this->assertNotEmpty($address[1]['location_type_id']);
     $this->assertNotEquals($address[0]['location_type_id'], $address[1]['location_type_id']);
     $this->assertEquals('33 Main Street', $address[1]['street_address']);
+    $this->assertEmpty($address[1]['supplemental_address_1']);
+    $this->assertEquals('California', $address[1]['state_province_id:name']);
   }
 
   /**
