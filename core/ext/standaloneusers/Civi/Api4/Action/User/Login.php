@@ -19,6 +19,14 @@ class Login extends AbstractAction {
   protected ?string $identifier = NULL;
 
   /**
+   * Username or email to authenticate. - temporary compatibility hack
+   *
+   * @var string
+   * @default NULL
+   */
+  protected ?string $username = NULL;
+
+  /**
    * Password to authenticate.
    *
    * @var string
@@ -55,6 +63,7 @@ class Login extends AbstractAction {
   protected ?string $originalUrl = NULL;
 
   public function _run(Result $result) {
+    $this->identifier = $this->identifier ?? $this->username;
     if (empty($this->mfaClass)) {
       // Initial call with username, password.
       return $this->passwordCheck($result);
