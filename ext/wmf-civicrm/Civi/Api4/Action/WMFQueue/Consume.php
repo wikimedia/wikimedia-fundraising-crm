@@ -17,6 +17,8 @@ use CRM_SmashPig_ContextWrapper;
  * @method int getMessageLimit() Get consumer batch limit
  * @method $this setTimeLimit(int $timeLimit) Set consumer time limit (seconds)
  * @method int getTimeLimit() Get consumer time limit (seconds)
+ * @method $this setWaitForMessages(bool $waitForMessages) Sets whether to wait for new messages until time expires
+ * @method bool getWaitForMessages() Gets whether to wait for new messages until time expires (defaults to FALSE)
  */
 class Consume extends AbstractAction {
 
@@ -34,6 +36,11 @@ class Consume extends AbstractAction {
    * @var string
    */
   protected $queueName;
+
+  /**
+   * @var bool
+   */
+  protected $waitForMessages = FALSE;
 
   /**
    * Queue consumer name.
@@ -75,7 +82,8 @@ class Consume extends AbstractAction {
     return new $class(
       $this->getQueueName(),
       $this->getTimeLimit(),
-      $this->getMessageLimit()
+      $this->getMessageLimit(),
+      $this->getWaitForMessages()
     );
   }
 

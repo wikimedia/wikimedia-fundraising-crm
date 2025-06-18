@@ -1,6 +1,0 @@
-/**
-* This function is used to generate dialogbox selector.
-*/
-@function civi-dialog() {
-  @return unquote('.crm-container[role=\'dialog\']');
-}
