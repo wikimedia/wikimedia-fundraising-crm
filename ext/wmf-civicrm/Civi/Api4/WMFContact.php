@@ -72,7 +72,11 @@ class WMFContact extends Generic\AbstractEntity {
    * @return array
    */
   public static function permissions():array {
-    return ['save' => 'edit all contacts', 'getCommunicationsPreferences' => '*always allow*'];
+    return [
+      'getCommunicationsPreferences' => '*always allow*',
+      'getDonorSummary' => '*always allow*',
+      'save' => 'edit all contacts',
+    ];
   }
 
   /**
