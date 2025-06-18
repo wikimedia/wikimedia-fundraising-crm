@@ -14,19 +14,28 @@
     <url desc="Support">https://github.com/eileenmcnaughton/org.wikimedia.geocoder</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2024-08-09</releaseDate>
-  <version>1.13</version>
+  <releaseDate>2025-06-18</releaseDate>
+  <version>1.15</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.74</ver>
+    <ver>6.3</ver>
   </compatibility>
+  <smarty_compatibility>
+    <ver>5.0</ver>
+  </smarty_compatibility>
+  <php_compatibility>
+    <ver>8.1</ver>
+    <ver>8.2</ver>
+    <ver>8.3</ver>
+    <ver>8.4</ver>
+  </php_compatibility>
   <comments>Implementation of geocoder library (which itself supports multiple providers). Please be aware that CiviCRM will store data from these providers to the CiviCRM database as addresses are edited (the fields to be stored are somewhat configurable) and when searching by geocode. You are responsible for understanding the geocoder terms of service and ensuring you are working within them.
 
       This extension ships with a US based postal code to geocode lookup table which you can use for fast but less precise lookups in the US. Similar tables are available for other countries but you will need to download the data -eg from http://download.geonames.org/export/zip/ and upload it. Depending on the data some additional config will be needed.
   </comments>
   <civix>
     <namespace>CRM/Geocoder</namespace>
-    <format>23.02.1</format>
+    <format>25.01.1</format>
   </civix>
   <classloader>
     <psr0 prefix="CRM_" path="."/>
@@ -36,7 +45,7 @@
   <mixins>
     <mixin>ang-php@1.0.0</mixin>
     <mixin>mgd-php@1.0.0</mixin>
-    <mixin>entity-types-php@1.0.0</mixin>
+    <mixin>entity-types-php@2.0.0</mixin>
   </mixins>
-  <upgrader>CRM_Geocoder_Upgrader</upgrader>
+  <upgrader>CiviMix\Schema\Geocoder\AutomaticUpgrader</upgrader>
 </extension>
