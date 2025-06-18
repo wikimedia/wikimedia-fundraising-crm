@@ -13,23 +13,12 @@ require_once(__DIR__ . "/vendor/mrmarkfrench/silverpop-php-connector/test/tests/
 // Argh.  Crib from _drush_bootstrap_drupal_site_validate
 $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 
-if (file_exists(__DIR__ . "/drupal/sites/default/settings.php")) {
-  chdir(__DIR__ . '/drupal');
-  require_once("includes/bootstrap.inc");
-  drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-  // Drupal just usurped PHPUnit's error handler.  Kick it off the throne.
-  restore_error_handler();
-}
 
 // Load contrib libs so tests can inherit from them.
 require_once(__DIR__ . '/vendor/autoload.php');
 
-if (file_exists(__DIR__ . '/private/civicrm.settings.php')) {
-  putenv('CIVICRM_SETTINGS=' . __DIR__ . '/civicrm.standalone.php');
-}
-else {
-  putenv('CIVICRM_SETTINGS=' . DRUPAL_ROOT . '/sites/default/civicrm.settings.php');
-}
+putenv('CIVICRM_SETTINGS=' . __DIR__ . '/civicrm.standalone.php');
+
 ini_set('memory_limit', '2G');
 
 eval(cv('php:boot --level=classloader', 'phpcode'));
