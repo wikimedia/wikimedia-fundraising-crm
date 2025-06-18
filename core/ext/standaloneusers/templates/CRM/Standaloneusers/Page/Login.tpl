@@ -39,7 +39,7 @@
         // Remove the current status popup messages.
         CRM.$('#crm-notification-container .ui-notify-message').remove();
         const response = await CRM.api4('User', 'login', {
-          identifier: username.value,
+          username: username.value,
           password: password.value,
           originalUrl
         });
