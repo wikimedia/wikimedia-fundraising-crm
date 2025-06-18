@@ -402,7 +402,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * @throws \CRM_Core_Exception
    * @throws \Exception
    *
-   * @see sites/default/civicrm/extensions/org.wikimedia.smashpig/CRM/Core/Payment/SmashPigRecurringProcessor.php:233
+   * @see ext/org.wikimedia.smashpig/CRM/Core/Payment/SmashPigRecurringProcessor.php:233
    */
   public function testRecurringChargeJobPreviousContributionLookupFallback(): void {
     \Civi::settings()->set(

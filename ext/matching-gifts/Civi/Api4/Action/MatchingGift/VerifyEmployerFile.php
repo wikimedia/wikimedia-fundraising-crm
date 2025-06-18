@@ -65,7 +65,7 @@ class VerifyEmployerFile extends AbstractAction {
    *
    * @return array $syncResult
    * @throws \CRM_Core_Exception
-   * @see sites/default/civicrm/extensions/matching-gifts/api/v3/MatchingGiftPolicies/Sync.php
+   * @see ext/matching-gifts/api/v3/MatchingGiftPolicies/Sync.php
    */
   private function syncMatchingGiftsEmployerData(): array {
     \Civi::log('matching_gifts')->info(
