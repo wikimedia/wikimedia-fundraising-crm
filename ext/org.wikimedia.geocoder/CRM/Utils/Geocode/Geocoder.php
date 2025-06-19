@@ -118,7 +118,11 @@ class CRM_Utils_Geocode_Geocoder {
         if (!empty($geocoder['datafill_response_fields'])) {
           foreach (json_decode($geocoder['datafill_response_fields'], TRUE) as $fieldName) {
             if (empty($values[$fieldName]) || $values[$fieldName] === 'null') {
-              $values[$fieldName] = self::getValueFromResult($fieldName, $result, $values);
+              $filledValue = self::getValueFromResult($fieldName, $result, $values);
+              // Do not overwrite fill fields if value not found.
+              if ($filledValue) {
+                $values[$fieldName] = $filledValue;
+              }
             }
           }
         }
@@ -387,7 +391,7 @@ class CRM_Utils_Geocode_Geocoder {
       case 'state_province_id':
         if (empty($values['country_id'])) {
           // not possible to determine state without the country.
-          return 'null';
+          return '';
         }
         $state = $firstResult->getAdminLevels()->get(1)->getCode();
         if (!isset(\Civi::$statics[__CLASS__]['country_id'][$state])) {
@@ -401,7 +405,7 @@ class CRM_Utils_Geocode_Geocoder {
           }
           catch (CRM_Core_Exception $e) {
             // We just won't worry about the state.
-            return 'null';
+            return '';
           }
         }
         return \Civi::$statics[__CLASS__]['country_id'][$state];
