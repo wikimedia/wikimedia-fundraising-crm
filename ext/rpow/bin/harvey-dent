@@ -2,7 +2,7 @@
 
 CIVIRPOWBIN="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 CIVIRPOWDIR="$(dirname $CIVIRPOWBIN)"
-DEV_SETTINGS_PHP=sites/default/civicrm.settings.d/pre.d/100-civirpow.php
+DEV_SETTINGS_PHP=private/civicrm.settings.d/pre.d/100-civirpow.php
 SITE_ROOT=
 CIVIRO_USER=civiro
 CIVIRO_PASS=r3ad0n1yt0ps3cr3t
