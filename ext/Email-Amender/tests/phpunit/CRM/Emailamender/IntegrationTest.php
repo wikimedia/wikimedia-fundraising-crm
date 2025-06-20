@@ -20,6 +20,9 @@ use Civi\Test\TransactionalInterface;
  */
 class CRM_Emailamender_IntegrationTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
   use \Civi\Test\Api3TestTrait;
+  use \Civi\Test\EntityTrait;
+
+  protected int $maxExistingActivityID;
 
   public function setUpHeadless() {
     // Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
@@ -58,14 +61,12 @@ class CRM_Emailamender_IntegrationTest extends \PHPUnit\Framework\TestCase imple
    * @param string $emailAddress
    *
    * @return array
-   *
-   * @throws \CRM_Core_Exception
    */
-  public function createTestContact($emailAddress) {
-    $createContactResults = $this->callApiSuccess('Contact', 'create', [
-      'contact_type' => 'individual',
-      'email' => $emailAddress,
-    ]);
+  public function createTestContact(string $emailAddress): array {
+    $createContactResults = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'email_primary.email' => $emailAddress,
+    ], $emailAddress);
 
     return $this->callApiSuccessGetSingle('Email', ['contact_id' => $createContactResults['id']]);
   }
@@ -74,9 +75,8 @@ class CRM_Emailamender_IntegrationTest extends \PHPUnit\Framework\TestCase imple
    * @param int $contactId
    *
    * @return array|int
-   * @throws \CRM_Core_Exception
    */
-  public function getCorrectedEmailAddressActivityCount($contactId) {
+  public function getCorrectedEmailAddressActivityCount($contactId): array|int {
     return $this->callApiSuccessGetCount('Activity', [
       'contact_id' => $contactId,
       'activity_type_id' => 'corrected_email_address',
@@ -140,7 +140,7 @@ class CRM_Emailamender_IntegrationTest extends \PHPUnit\Framework\TestCase imple
    */
   public function testTwoCorrections() {
     $emailDetails = $this->createTestContact('john@yaho.com');
-    $this->callApiSuccess('Email', 'create', [
+    $this->createTestEntity('Email', [
       'contact_id' => $emailDetails['contact_id'],
       'location_type_id' => 1,
       'email' => 'john@yaho.com',
