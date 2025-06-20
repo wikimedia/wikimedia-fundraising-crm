@@ -40,6 +40,7 @@ class OmnirecipientEraseTest extends OmnimailBaseTestClass {
       'client_secret' => 'waggleleftthumb',
       'refresh_token' => 'thenrightone',
       'database_id' => [1, 2],
+      'retry_delay' => 0,
     ])['values'];
 
     $requests = $this->getRequestBodies();

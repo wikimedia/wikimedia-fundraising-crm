@@ -39,7 +39,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
 
     $settings = $this->setDatabaseID([50]);
     $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->ids['Contact']['charlie_clone']]);
-    $this->callAPISuccess('Omnirecipient', 'process_forgetme', ['mail_provider' => 'Silverpop']);
+    $this->callAPISuccess('Omnirecipient', 'process_forgetme', ['mail_provider' => 'Silverpop', 'retry_delay' => 0]);
 
     $this->assertEquals(0, $this->callAPISuccessGetCount('MailingProviderData', ['contact_id' => $this->ids['Contact']['charlie_clone']]));
 
@@ -51,7 +51,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
     $this->setUpForEraseFollowUpSuccess();
     $this->addTestClientToRestSingleton();
     // This time it was complete - entry should be gone.
-    $this->callAPISuccess('Omnirecipient', 'process_forgetme', ['mail_provider' => 'Silverpop']);
+    $this->callAPISuccess('Omnirecipient', 'process_forgetme', ['mail_provider' => 'Silverpop', 'retry_delay' => 0]);
     $this->callAPISuccessGetCount('OmnimailJobProgress', $omniJobParams, 0);
 
     // Check the request retried our url
@@ -74,7 +74,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
     $settings = $this->setDatabaseID([50]);
 
     $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->ids['Contact']['charlie_clone']]);
-    $this->callAPISuccess('Omnirecipient', 'process_forgetme', ['mail_provider' => 'Silverpop']);
+    $this->callAPISuccess('Omnirecipient', 'process_forgetme', ['mail_provider' => 'Silverpop', 'retry_delay' => 0]);
 
     // Check the request we sent out had the right email in it.
     $requests = $this->getRequestBodies();
