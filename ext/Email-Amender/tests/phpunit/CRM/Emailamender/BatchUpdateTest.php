@@ -38,9 +38,7 @@ class CRM_Emailamender_BatchUpdateTest extends \PHPUnit\Framework\TestCase imple
   }
 
   public function setUp(): void {
-    $this->callAPISuccess('Setting', 'create', [
-      'emailamender.email_amender_enabled' => 'true',
-    ]);
+    \Civi::settings()->set('emailamender.email_amender_enabled', TRUE);
     // Cleanup first in  case any values are 'hanging around'
     $this->callApiSuccess('EmailAmender', 'batch_update', [])['values'];
     parent::setUp();
@@ -60,7 +58,7 @@ class CRM_Emailamender_BatchUpdateTest extends \PHPUnit\Framework\TestCase imple
    * Test for email addresses on contacts created via the API.
    */
   public function testBatchUpdate() {
-    $this->callApiSuccess('Setting', 'create', ['emailamender.email_amender_enabled' => FALSE]);
+    \Civi::settings()->set('emailamender.email_amender_enabled', FALSE);
     $testEmailCorrections = [
       // Test contacts with an incorrect top level domain.
       'john@gmail.cpm' => 'john@gmail.com',
