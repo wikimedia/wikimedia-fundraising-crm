@@ -15,3 +15,4 @@ drupal/sites/all/modules/civicrm/bin/setup.conf
 !core/packages/*/vendor
 core/bin/setup.conf
 private
+ext/org.wikimedia.omnimail/tests/phpunit/Requests/ImportFiles/remote-upload*

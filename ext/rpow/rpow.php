@@ -28,7 +28,7 @@ function rpow_init($config = []) {
     'cookieName' => 'rpow' . substr(md5('cookie::' . $defaultCookieSigningKey), 0, 8),
     'cookieTtl' => 90,
     'stateMachine' => new CRM_Rpow_StateMachine(),
-    'debug' => 1,
+    'debug' => 0,
   ];
 
   global $civirpow;
