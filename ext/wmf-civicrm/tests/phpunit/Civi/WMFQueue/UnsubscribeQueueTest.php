@@ -20,9 +20,6 @@ class UnsubscribeQueueTest extends BaseQueueTestCase {
   public function setUp(): void {
     parent::setUp();
     $this->createIndividual();
-    $this->consumer = new UnsubscribeQueueConsumer(
-      'opt-in'
-    );
   }
 
   /**
