@@ -222,7 +222,8 @@ class RecurringModifyMessage extends Message {
    * @return string|null
    */
   public function getSubscriptionID(): ?string {
-    return trim($this->message['subscr_id'] ?? $this->message['trxn_id'] ?? NULL);
+    $subscriptionID = $this->message['subscr_id'] ?? $this->message['trxn_id'] ?? NULL;
+    return $subscriptionID ? trim($subscriptionID) : NULL;
   }
 
 }
