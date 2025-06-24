@@ -35,7 +35,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     $this->processMessage($msg);
     $activity = Activity::get(FALSE)
       ->addWhere('source_record_id', '=', $testRecurring['id'])
-      ->addWhere('activity_type_id', '=', $this->getActivityTypeID('decline'))
+      ->addWhere('activity_type_id:name', '=', $this->getActivityTypeID('decline'))
       ->execute()
       ->last();
     $this->assertEquals('Decline recurring upgrade', $activity['subject']);
@@ -69,7 +69,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       ->first();
     $activity = Activity::get(FALSE)
       ->addWhere('source_record_id', '=', $testRecurring['id'])
-      ->addWhere('activity_type_id', '=', $this->getActivityTypeID('accept'))
+      ->addWhere('activity_type_id:name', '=', $this->getActivityTypeID('accept'))
       ->execute()
       ->last();
 
@@ -128,16 +128,16 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
   /**
    * @throws \CRM_Core_Exception
    */
-  protected function getActivityTypeID(string $type): int {
+  protected function getActivityTypeID(string $type): string {
     switch ($type) {
       case 'accept':
-        return RecurringModifyQueueConsumer::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
+        return RecurringModifyQueueConsumer::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_NAME;
 
       case 'decline':
-        return RecurringModifyQueueConsumer::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID;
+        return RecurringModifyQueueConsumer::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_NAME;
 
       case 'downgrade':
-        return RecurringModifyQueueConsumer::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
+        return RecurringModifyQueueConsumer::RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME;
 
       default:
         throw new \CRM_Core_Exception('invalid type');
@@ -180,7 +180,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
 
     $activity = Activity::get(FALSE)
       ->addWhere('source_record_id', '=', $testRecurringContributionFor15Dollars['id'])
-      ->addWhere('activity_type_id', '=', $this->getActivityTypeID('downgrade'))
+      ->addWhere('activity_type_id:name', '=', $this->getActivityTypeID('downgrade'))
       ->execute()
       ->last();
 

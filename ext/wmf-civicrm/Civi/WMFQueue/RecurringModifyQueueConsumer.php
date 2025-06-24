@@ -13,11 +13,11 @@ use Civi\WMFQueueMessage\RecurringModifyMessage;
 
 class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
-  public const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID = 165;
+  public const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_NAME = 'Recurring Upgrade';
 
-  public const RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID = 166;
+  public const RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_NAME = 'Recurring Upgrade Decline';
 
-  public const RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID = 168;
+  public const RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME = 'Recurring Downgrade';
 
   /**
    * @inheritDoc
@@ -63,7 +63,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
    */
   protected function upgradeRecurDecline(RecurringModifyMessage $message, array $msg): void {
     $createCall = Activity::create(FALSE)
-      ->addValue('activity_type_id', self::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
+      ->addValue('activity_type_id:name', self::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_NAME)
       ->addValue('source_record_id', $message->getContributionRecurID())
       ->addValue('status_id:name', 'Completed')
       ->addValue('subject', "Decline recurring upgrade")
@@ -124,7 +124,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       $activityParams['subject'] .= ' (Negative value probably indicates a second upgrade form click with a lower amount)';
     }
 
-    $activityParams['activity_type_id'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
+    $activityParams['activity_type_id:name'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_NAME;
     $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
     RecurUpgradeEmail::send()
       ->setCheckPermissions(FALSE)
@@ -155,7 +155,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     $activityParams = $this->getActivityValues($message, $msg);
 
     $activityParams['subject'] = "Recurring amount reduced by " . $message->getOriginalDecreaseAmountRounded() . ' ' . $message->getModifiedCurrency();
-    $activityParams['activity_type_id'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
+    $activityParams['activity_type_id:name'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME;
     $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
   }
 
@@ -180,7 +180,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     )->execute();
 
     $createCall = Activity::create(FALSE)
-      ->addValue('activity_type_id', $activityParams['activity_type_id'])
+      ->addValue('activity_type_id:name', $activityParams['activity_type_id:name'])
       ->addValue(
         'source_record_id',
         $activityParams['contribution_recur_id']
@@ -231,13 +231,13 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
         $amountDetails['native_amount_removed'] = $messageObject->getOriginalDecreaseAmountRounded();
         $amountDetails['usd_amount_removed'] = $messageObject->getSettledDecreaseAmountRounded();
         $activityParams['subject'] = "Recurring amount reduced by {$messageObject->getOriginalDecreaseAmountRounded()} {$recur_currency}";
-        $activityParams['activity_type_id'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
+        $activityParams['activity_type_id:name'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME;
       }
       else {
         $amountDetails['native_amount_added'] = $messageObject->getOriginalIncreaseAmountRounded();
         $amountDetails['usd_amount_added'] = $messageObject->getSettledIncreaseAmountRounded();
         $activityParams['subject'] = "Recurring amount increased by {$messageObject->getOriginalIncreaseAmountRounded()} {$recur_currency}";
-        $activityParams['activity_type_id'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
+        $activityParams['activity_type_id:name'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_NAME;
       }
       $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
     }
