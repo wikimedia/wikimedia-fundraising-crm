@@ -21,6 +21,8 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
   public const RECURRING_PAUSED_ACTIVITY_TYPE_NAME = 'Recurring Paused';
 
+  public const RECURRING_CANCELLED_ACTIVITY_TYPE_NAME = 'Cancel Recurring Contribution';
+
   /**
    * @inheritDoc
    *
@@ -47,6 +49,10 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     }
     if ($messageObject->isPaused()) {
       $this->pauseRecurRecord($messageObject, $message);
+      return;
+    }
+    if ($messageObject->isCancelled()) {
+      $this->cancelRecurRecord($messageObject, $message);
       return;
     }
     if ($messageObject->isExternalSubscriptionModification()) {
@@ -109,6 +115,38 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     )->execute();
 
     $this->createRecurringActivity(json_encode($pauseScheduledParams), $activityParams);
+  }
+
+  /**
+   * Pause recur record
+   */
+
+  protected function cancelRecurRecord(RecurringModifyMessage $message, array $msg): void {
+    $date = $message->getCancelDate();
+    $update_params = [
+      'id' => $message->getContributionRecurID(),
+      'cancel_date' => $date,
+      'cancel_reason' => $message->getCancelReason() ?? '(auto) User Cancelled via Donor Portal',
+      'end_date' => $date,
+    ];
+    $activityParams = [
+      'subject' => "Donor cancelled recurring through the Donor Portal on {$date}",
+      'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
+      'contribution_recur_id' => $message->getContributionRecurID(),
+      'activity_type_id:name' => self::RECURRING_CANCELLED_ACTIVITY_TYPE_NAME
+    ];
+    ContributionRecur::update(FALSE)
+      ->addValue('contribution_status_id:name', 'Cancelled')
+      ->addValue('cancel_date', $update_params['cancel_date'])
+      ->addValue('end_date',$update_params['end_date'])
+      ->addValue('cancel_reason',$update_params['cancel_reason'])
+      ->addWhere(
+      'id',
+      '=',
+      $message->getContributionRecurID()
+    )->execute();
+
+    $this->createRecurringActivity(json_encode($update_params), $activityParams);
   }
 
   /**

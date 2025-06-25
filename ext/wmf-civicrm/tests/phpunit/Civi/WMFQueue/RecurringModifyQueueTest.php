@@ -77,6 +77,38 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     $this->assertEquals("Paused recurring till {$formatDate}", $activity['subject']);
   }
 
+  public function testRecurringCancel(): void {
+    $testRecurring = $this->createContributionRecur(
+      [
+        'contribution_status_id:name' => 'In Progress',
+        'next_sched_contribution_date' => '2025-07-06 14:16:40'
+      ]
+    );
+    $msg = [
+      'txn_type' => 'recurring_cancel',
+      'contribution_recur_id' => $testRecurring['id'],
+      'cancel_reason' => 'Financial reason',
+      'cancel_date' => date('Y-m-d H:i:s')
+    ];
+
+    $this->processMessage($msg);
+    $updatedRecurring = ContributionRecur::get(FALSE)
+      ->addSelect('id', 'contribution_status_id:name', 'cancel_date', 'end_date')
+      ->addWhere('id', '=', $testRecurring['id'])
+      ->execute()
+      ->first();
+    $activity = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $testRecurring['id'])
+      ->addWhere('activity_type_id:name', '=', $this->getActivityTypeID('cancelled'))
+      ->execute()
+      ->last();
+
+    $this->assertEquals($msg['cancel_date'], $updatedRecurring['cancel_date']);
+    $this->assertEquals($msg['cancel_date'], $updatedRecurring['end_date']);
+    $this->assertEquals('Cancelled', $updatedRecurring['contribution_status_id:name']);
+    $this->assertEquals("Donor cancelled recurring through the Donor Portal on {$msg['cancel_date']}", $activity['subject']);
+  }
+
   /**
    * @throws \CRM_Core_Exception
    */
@@ -174,8 +206,13 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
 
       case 'downgrade':
         return RecurringModifyQueueConsumer::RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME;
+
       case 'paused':
         return RecurringModifyQueueConsumer::RECURRING_PAUSED_ACTIVITY_TYPE_NAME;
+
+      case 'cancelled':
+        return RecurringModifyQueueConsumer::RECURRING_CANCELLED_ACTIVITY_TYPE_NAME;
+
       default:
         throw new \CRM_Core_Exception('invalid type');
     }
