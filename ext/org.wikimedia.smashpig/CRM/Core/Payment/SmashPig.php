@@ -281,6 +281,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       $params['payment_instrument'] === 'Paypal' => 'paypal',
       $params['payment_instrument'] === 'Venmo' => 'venmo',
       str_starts_with($params['payment_instrument'], 'Bank Transfer:') => 'bt',
+      str_starts_with($params['payment_instrument'], 'Google Pay') => 'google',
+      str_starts_with($params['payment_instrument'], 'Apple Pay') => 'apple',
       default => 'cc',
     };
   }
