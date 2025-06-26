@@ -2391,33 +2391,12 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    * let her rip.
    *
    * Bug: T368974
+   *
    * @return bool
+   * @throws \CRM_Core_Exception
    */
   public function upgrade_4535(): bool {
-    // The highest contact ID at the point at which the triggers were updated.
-    $maxContactID = 64261802;
-    $this->queueApi4('WMFDonor', 'update', [
-      'values' => [
-        'donor_segment_id' => '',
-        'donor_status_id' => '',
-      ],
-      'where' => [
-        ['id', 'BETWEEN', ['%1', '%2']],
-      ],
-    ],
-      [
-        1 => [
-          'value' => 20000000,
-          'type' => 'Integer',
-          'increment' => 100000,
-          'max' => $maxContactID,
-        ],
-        2 => [
-          'value' => 20100000,
-          'type' => 'Integer',
-          'increment' => 100000,
-        ],
-      ]);
+    $this->doAnnualWMFDonorRollover();
     return TRUE;
   }
 
@@ -2763,6 +2742,18 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Bug: T383195
+   *
+   * Update WMF donor values for new financial year.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_4620(): bool {
+    $this->doAnnualWMFDonorRollover();
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
@@ -2822,6 +2813,37 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
       'error' => 'abort',
     ]));
     $queue->sql($sql, $queryParameters, empty($doneCondition) ? QueueHelper::ITERATE_UNTIL_DONE : QueueHelper::ITERATE_UNTIL_TRUE, $doneCondition, $weight);
+  }
+
+  /**
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function doAnnualWMFDonorRollover(): void {
+    // The highest contact ID at the point at which the triggers were updated.
+    $maxContactID = CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
+    $this->queueApi4('WMFDonor', 'update', [
+      'values' => [
+        'donor_segment_id' => '',
+        'donor_status_id' => '',
+      ],
+      'where' => [
+        ['id', 'BETWEEN', ['%1', '%2']],
+      ],
+    ],
+      [
+        1 => [
+          'value' => 0,
+          'type' => 'Integer',
+          'increment' => 100000,
+          'max' => $maxContactID,
+        ],
+        2 => [
+          'value' => 100000,
+          'type' => 'Integer',
+          'increment' => 100000,
+        ],
+      ]);
   }
 
 }
