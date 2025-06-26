@@ -13,11 +13,15 @@ use Civi\WMFQueueMessage\RecurringModifyMessage;
 
 class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
-  public const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID = 165;
+  public const RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_NAME = 'Recurring Upgrade';
 
-  public const RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID = 166;
+  public const RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_NAME = 'Recurring Upgrade Decline';
 
-  public const RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID = 168;
+  public const RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME = 'Recurring Downgrade';
+
+  public const RECURRING_PAUSED_ACTIVITY_TYPE_NAME = 'Recurring Paused';
+
+  public const RECURRING_CANCELLED_ACTIVITY_TYPE_NAME = 'Cancel Recurring Contribution';
 
   /**
    * @inheritDoc
@@ -43,6 +47,14 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       $this->downgradeRecurAmount($messageObject, $message);
       return;
     }
+    if ($messageObject->isPaused()) {
+      $this->pauseRecurRecord($messageObject, $message);
+      return;
+    }
+    if ($messageObject->isCancelled()) {
+      $this->cancelRecurRecord($messageObject, $message);
+      return;
+    }
     if ($messageObject->isExternalSubscriptionModification()) {
       $this->importExternalModifiedRecurRecord($messageObject, $message);
       return;
@@ -63,7 +75,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
    */
   protected function upgradeRecurDecline(RecurringModifyMessage $message, array $msg): void {
     $createCall = Activity::create(FALSE)
-      ->addValue('activity_type_id', self::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_ID)
+      ->addValue('activity_type_id:name', self::RECURRING_UPGRADE_DECLINE_ACTIVITY_TYPE_NAME)
       ->addValue('source_record_id', $message->getContributionRecurID())
       ->addValue('status_id:name', 'Completed')
       ->addValue('subject', "Decline recurring upgrade")
@@ -75,6 +87,66 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       }
     }
     $createCall->execute();
+  }
+
+  /**
+   * Pause recur record
+   */
+
+  protected function pauseRecurRecord(RecurringModifyMessage $message, array $msg): void {
+    $date = date_create($message->getNextScheduledDate());
+    $new_date = date_add($date, date_interval_create_from_date_string($msg['duration']));
+    $formatDate = date_format($new_date, 'Y-m-d H:i:s');
+    $pauseScheduledParams = [
+      'next_sched_contribution_date' => $formatDate,
+      'old_date' => $date->format('Y-m-d H:i:s'),
+      'duration' => $msg['duration']
+    ];
+    $activityParams = [
+      'subject' => "Paused recurring till {$formatDate}",
+      'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
+      'contribution_recur_id' => $message->getContributionRecurID(),
+      'activity_type_id:name' => self::RECURRING_PAUSED_ACTIVITY_TYPE_NAME
+    ];
+    ContributionRecur::update(FALSE)->addValue('next_sched_contribution_date', $pauseScheduledParams['next_sched_contribution_date'])->addWhere(
+      'id',
+      '=',
+      $activityParams['contribution_recur_id']
+    )->execute();
+
+    $this->createRecurringActivity(json_encode($pauseScheduledParams), $activityParams);
+  }
+
+  /**
+   * Pause recur record
+   */
+
+  protected function cancelRecurRecord(RecurringModifyMessage $message, array $msg): void {
+    $date = $message->getCancelDate();
+    $update_params = [
+      'id' => $message->getContributionRecurID(),
+      'cancel_date' => $date,
+      'cancel_reason' => $message->getCancelReason() ?? '(auto) User Cancelled via Donor Portal',
+      'end_date' => $date,
+    ];
+    $activityParams = [
+      'subject' => "Donor cancelled recurring through the Donor Portal on {$date}",
+      'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
+      'contribution_recur_id' => $message->getContributionRecurID(),
+      'activity_type_id:name' => self::RECURRING_CANCELLED_ACTIVITY_TYPE_NAME
+    ];
+    ContributionRecur::update(FALSE)
+      ->addValue('contribution_status_id:name', 'Cancelled')
+      ->addValue('cancel_date', $update_params['cancel_date'])
+      ->addValue('end_date',$update_params['end_date'])
+      ->addValue('cancel_reason',$update_params['cancel_reason'])
+      ->addWhere(
+      'id',
+      '=',
+      $message->getContributionRecurID()
+    )->execute();
+
+    $this->createRecurringActivity(json_encode($update_params), $activityParams);
   }
 
   /**
@@ -124,8 +196,8 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       $activityParams['subject'] .= ' (Negative value probably indicates a second upgrade form click with a lower amount)';
     }
 
-    $activityParams['activity_type_id'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
-    $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
+    $activityParams['activity_type_id:name'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_NAME;
+    $this->updateContributionRecurAmountAndRecurringActivity($amountDetails, $activityParams);
     RecurUpgradeEmail::send()
       ->setCheckPermissions(FALSE)
       ->setContactID($message->getExistingContributionRecurValue('contact_id'))
@@ -155,8 +227,8 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     $activityParams = $this->getActivityValues($message, $msg);
 
     $activityParams['subject'] = "Recurring amount reduced by " . $message->getOriginalDecreaseAmountRounded() . ' ' . $message->getModifiedCurrency();
-    $activityParams['activity_type_id'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
-    $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
+    $activityParams['activity_type_id:name'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME;
+    $this->updateContributionRecurAmountAndRecurringActivity($amountDetails, $activityParams);
   }
 
   /**
@@ -170,17 +242,19 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
    *
    * @throws \CRM_Core_Exception
    */
-  protected function updateContributionRecurAndRecurringActivity(array $amountDetails, array $activityParams): void {
-    $additionalData = json_encode($amountDetails);
-
+  protected function updateContributionRecurAmountAndRecurringActivity(array $amountDetails, array $activityParams): void {
     ContributionRecur::update(FALSE)->addValue('amount', $activityParams['amount'])->addWhere(
       'id',
       '=',
       $activityParams['contribution_recur_id']
     )->execute();
 
+    $this->createRecurringActivity(json_encode($amountDetails), $activityParams);
+  }
+
+  protected function createRecurringActivity(string $additionalData, array $activityParams): void {
     $createCall = Activity::create(FALSE)
-      ->addValue('activity_type_id', $activityParams['activity_type_id'])
+      ->addValue('activity_type_id:name', $activityParams['activity_type_id:name'])
       ->addValue(
         'source_record_id',
         $activityParams['contribution_recur_id']
@@ -231,15 +305,15 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
         $amountDetails['native_amount_removed'] = $messageObject->getOriginalDecreaseAmountRounded();
         $amountDetails['usd_amount_removed'] = $messageObject->getSettledDecreaseAmountRounded();
         $activityParams['subject'] = "Recurring amount reduced by {$messageObject->getOriginalDecreaseAmountRounded()} {$recur_currency}";
-        $activityParams['activity_type_id'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_ID;
+        $activityParams['activity_type_id:name'] = self::RECURRING_DOWNGRADE_ACTIVITY_TYPE_NAME;
       }
       else {
         $amountDetails['native_amount_added'] = $messageObject->getOriginalIncreaseAmountRounded();
         $amountDetails['usd_amount_added'] = $messageObject->getSettledIncreaseAmountRounded();
         $activityParams['subject'] = "Recurring amount increased by {$messageObject->getOriginalIncreaseAmountRounded()} {$recur_currency}";
-        $activityParams['activity_type_id'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_ID;
+        $activityParams['activity_type_id:name'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_NAME;
       }
-      $this->updateContributionRecurAndRecurringActivity($amountDetails, $activityParams);
+      $this->updateContributionRecurAmountAndRecurringActivity($amountDetails, $activityParams);
     }
   }
 

@@ -4,6 +4,7 @@
  */
 
 require_once 'vendor/autoload.php';
+use CRM_Omnimail_ExtensionUtil as E;
 
 /**
  * Get details about Recipients.
@@ -25,6 +26,7 @@ function civicrm_api3_omnirecipient_process_forgetme($params) {
     $result = civicrm_api3('Omnirecipient', 'erase', [
       'email' => json_decode($forget['job_identifier'], TRUE),
       'mail_provider' => $params['mail_provider'],
+      'retry_delay' => $params['retry_delay'],
       'retrieval_parameters' => (isset($forget['retrieval_parameters']) ? json_decode($forget['retrieval_parameters'], TRUE) : []),
     ])['values'];
 
@@ -53,6 +55,10 @@ function civicrm_api3_omnirecipient_process_forgetme($params) {
  *
  * @param $params
  */
-function _civicrm_api3_omnirecipient_process_forgetme_spec(&$params) {
-  $params['mail_provider']['api.default'] = 'Silverpop';
+function _civicrm_api3_omnirecipient_process_forgetme_spec(&$spec) {
+  $spec['mail_provider']['api.default'] = 'Silverpop';
+  $spec['retry_delay'] = [
+    'title' => E::ts('Delay between attempts to check server response'),
+    'api.default' => 1,
+  ];
 }

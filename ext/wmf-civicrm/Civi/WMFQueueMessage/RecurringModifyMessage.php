@@ -37,6 +37,10 @@ class RecurringModifyMessage extends Message {
     return $this->message['txn_type'] === 'recurring_paused';
   }
 
+  public function isCancelled(): bool {
+    return $this->message['txn_type'] === 'recurring_cancel';
+  }
+
   /**
    * Get the recurring contribution ID if it already exists.
    *
@@ -226,4 +230,19 @@ class RecurringModifyMessage extends Message {
     return $subscriptionID ? trim($subscriptionID) : NULL;
   }
 
+  /**
+   * Get the cancel reason for subscription cancelled through the portal
+   * @return string|null
+   */
+  public function getCancelReason(): ?string {
+    return $this->message['cancel_reason'] ?? NULL;
+  }
+
+  /**
+   * Get the cancel date for subscription cancelled through the portal
+   * @return string
+   */
+  public function getCancelDate(): string {
+    return $this->message['cancel_date'] ?? date('Ymd H:i:s');
+  }
 }

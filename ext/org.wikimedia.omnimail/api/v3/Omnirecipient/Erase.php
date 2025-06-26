@@ -1,6 +1,7 @@
 <?php
 
 use Omnimail\Omnimail;
+use CRM_Omnimail_ExtensionUtil as E;
 
 /**
  * omnirecipient.eraser API specification (optional)
@@ -15,6 +16,10 @@ function _civicrm_api3_omnirecipient_erase_spec(&$spec) {
   $spec['mail_provider']['api.required'] = TRUE;
   $spec['database_id']['api.required'] = FALSE;
   $spec['database_id']['title'] = ts('Database ID');
+  $spec['retry_delay'] = [
+    'title' => E::ts('Delay between attempts to check server response'),
+    'api.default' => 1,
+  ];
 }
 
 /**
@@ -40,7 +45,7 @@ function civicrm_api3_omnirecipient_erase($params) {
   /** @var Omnimail\Silverpop\Mailer $factory */
   $factory = Omnimail::create($params['mail_provider'], $mailerCredentials);
   /** @var Omnimail\Silverpop\\Requests\PrivacyDeleteRequest $request */
-  $request = $factory->privacyDeleteRequest(['email' => $params['email']]);
+  $request = $factory->privacyDeleteRequest(['email' => $params['email'], 'retryDelay' => $params['retry_delay']]);
 
   $request->setRetrievalParameters($retrievalParameters);
 

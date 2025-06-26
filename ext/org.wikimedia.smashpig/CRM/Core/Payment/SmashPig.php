@@ -275,22 +275,16 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    * @return string
    */
   public static function getPaymentMethod(array $params) {
-    switch ($params['payment_instrument']) {
-      case 'ACH':
-        return 'dd';
-      case 'iDeal':
-      case 'SEPA Direct Debit':
-        return 'rtbt';
-      case 'Paypal';
-        return 'paypal';
-      case 'Venmo';
-        return 'venmo';
-      case 'Bank Transfer: UPI':
-      case 'Bank Transfer: PayTM Wallet':
-        return 'bt';
-      default:
-        return 'cc';
-    }
+    return match (true) {
+      $params['payment_instrument'] === 'ACH' => 'dd',
+      in_array($params['payment_instrument'] , ['iDeal', 'SEPA Direct Debit']) => 'rtbt',
+      $params['payment_instrument'] === 'Paypal' => 'paypal',
+      $params['payment_instrument'] === 'Venmo' => 'venmo',
+      str_starts_with($params['payment_instrument'], 'Bank Transfer:') => 'bt',
+      str_starts_with($params['payment_instrument'], 'Google Pay') => 'google',
+      str_starts_with($params['payment_instrument'], 'Apple Pay') => 'apple',
+      default => 'cc',
+    };
   }
 
   /**
