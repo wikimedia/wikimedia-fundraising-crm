@@ -95,6 +95,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       'xmlFile' => $params['mapping_file'],
       'csvFile' => $params['csv_file'],
       'isAlreadyUploaded' => $params['is_already_uploaded'] ?? FALSE,
+      'timeout' => $params['timeout'],
     ]);
     /* @var \Omnimail\Silverpop\Responses\ImportListResponse $reponse */
     return $request->getResponse();

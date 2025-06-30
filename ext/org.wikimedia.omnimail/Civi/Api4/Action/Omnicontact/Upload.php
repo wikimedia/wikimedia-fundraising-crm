@@ -22,6 +22,8 @@ use League\Csv\Reader;
  * @method string getMailProvider()
  * @method $this setClient(Client $client) Generally Silverpop....
  * @method null|Client getClient()
+ * @method float getTimeout()
+ * @method $this setTimeout(float $timeout)
  *
  * @package Civi\Api4
  */
@@ -56,6 +58,13 @@ class Upload extends AbstractAction {
    * @var string
    */
   protected string $mappingFile = '';
+
+  /**
+   * Timeout.
+   *
+   * @var float
+   */
+  protected float $timeout = 30.0;
 
   /**
    * Folder containing CSV files. If not explicitly specifying a single file with $csvFile,
@@ -218,6 +227,7 @@ class Upload extends AbstractAction {
       'mapping_file' => $this->getMappingFile(),
       'csv_file' => $this->getCsvFile(),
       'is_already_uploaded' => $this->isAlreadyUploaded,
+      'timeout' => $this->getTimeout(),
     ]);
     if (!$response->getIsSuccess()) {
       throw new \CRM_Core_Exception('csv mapping upload failed');
