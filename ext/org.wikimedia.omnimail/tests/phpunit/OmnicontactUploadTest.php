@@ -40,11 +40,14 @@ class OmnicontactUploadTest extends OmnimailBaseTestClass {
       ->setClient($client)
       // For the test, do not do the sftp as it is not mocked.
       ->setIsAlreadyUploaded(TRUE)
+      ->setTimeout(25.0)
       ->setCsvFile($baseDir . 'example.csv')
       ->setMappingFile($baseDir . 'example.xml')
       // ->setDatabaseID(12345678)
       ->execute()->first();
     $this->assertEquals(trim(file_get_contents(__DIR__ . '/Requests/ImportListRequest.txt')), $this->getRequestBodies()[0]);
+    // The timeout from parameters should override the timeout in the client and the default.
+    $this->assertEquals(25.0, $this->container[0]['options']['timeout']);
   }
 
 }

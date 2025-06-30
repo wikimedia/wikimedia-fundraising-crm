@@ -154,6 +154,7 @@ class OmnimailBaseTestClass extends TestCase {
     Omnimail::create('Silverpop', [
       'client' => $client,
       'credentials' => new Credentials(['username' => 'Shrek', 'password' => 'Fiona']),
+      'timeout' => 0.1,
     ])->getMailings();
   }
 

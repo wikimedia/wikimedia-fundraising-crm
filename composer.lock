@@ -2001,16 +2001,16 @@
         },
         {
             "name": "mrmarkfrench/silverpop-php-connector",
-            "version": "1.6.7",
+            "version": "1.6.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
-                "reference": "631d5128be9074abfbd473f38e911e3f3bdf6706"
+                "reference": "ac02533a7f15f375a41fec57309d97d5c9515a75"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/631d5128be9074abfbd473f38e911e3f3bdf6706",
-                "reference": "631d5128be9074abfbd473f38e911e3f3bdf6706",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/ac02533a7f15f375a41fec57309d97d5c9515a75",
+                "reference": "ac02533a7f15f375a41fec57309d97d5c9515a75",
                 "shasum": ""
             },
             "require": {
@@ -2041,13 +2041,14 @@
             "description": "A connector SDK library for applications integrating with Silverpop, including the Silverpop Universal Behavior API",
             "homepage": "https://github.com/mrmarkfrench/silverpop-php-connector",
             "keywords": [
+                "Acoustic",
                 "Silverpop"
             ],
             "support": {
                 "issues": "https://github.com/mrmarkfrench/silverpop-php-connector/issues",
-                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.6.7"
+                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.6.8"
             },
-            "time": "2025-06-26T05:12:35+00:00"
+            "time": "2025-06-30T08:22:18+00:00"
         },
         {
             "name": "nikic/php-parser",
@@ -5256,11 +5257,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.19",
+            "version": "1.20",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "c945309ef8aae86dbbb0295bfd9c203bc6c59d4f"
+                "reference": "ae6ec53864ba88b42ffaaf32ab4023db70ad470a"
             },
             "require": {
                 "league/csv": "^9",
@@ -5300,7 +5301,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2025-06-26T05:15:34+00:00"
+            "time": "2025-06-30T08:17:58+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
