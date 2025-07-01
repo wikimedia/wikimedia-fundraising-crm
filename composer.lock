@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a675940e6660fb28abad5a552a95d656",
+    "content-hash": "1012c207b59c338c0e8b3122435ee5d1",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -5257,11 +5257,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.20",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "ae6ec53864ba88b42ffaaf32ab4023db70ad470a"
+                "reference": "61143f5"
             },
             "require": {
                 "league/csv": "^9",
@@ -5273,6 +5273,7 @@
                 "guzzlehttp/guzzle": "*",
                 "phpunit/phpunit": "*"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -7650,7 +7651,8 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "drupal/coder": 20,
-        "omnimail/omnimail": 20
+        "omnimail/omnimail": 20,
+        "wikimedia/omnimail-silverpop": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
