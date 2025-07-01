@@ -10,10 +10,12 @@ use Civi\Api4\Action\UpdateTimezones;
  * Provided by the Geocoder extension.
  *
  * @search secondary
+ * @orderBy weight
  *
  * @package Civi\Api4
  */
 class Geocoder extends Generic\DAOEntity {
+  use Generic\Traits\SortableEntity;
 
   /**
    * Add timezone data from a web service
@@ -22,4 +24,5 @@ class Geocoder extends Generic\DAOEntity {
     return (new UpdateTimezones(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
+
 }

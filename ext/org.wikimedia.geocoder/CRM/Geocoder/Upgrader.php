@@ -13,7 +13,6 @@ class CRM_Geocoder_Upgrader extends CRM_Extension_Upgrader_Base {
    * Example: Run an external SQL script when the module is installed.
    */
   public function install() {
-    $this->executeSqlFile('sql/install.sql');
     $this->executeSqlFile('sql/install_zip_data_set.sql');
     civicrm_api3('Setting', 'create', ['geoProvider' => 'Geocoder']);
   }
@@ -125,11 +124,10 @@ class CRM_Geocoder_Upgrader extends CRM_Extension_Upgrader_Base {
   }
 
   /**
-   *  Update the URL for OpenStreetMap end point
+   *  Add additional data to the US zip dataset.
    *
-   * @throws \CRM_Core_Exception
    */
-  public function upgrade_1300() {
+  public function upgrade_1300(): bool {
     $this->ctx->log->info('Applying update 1300: Adding additional data to the US zip dataset');
     $this->executeSqlFile('sql/add_2025_zip_data_set.sql');
 
@@ -168,7 +166,7 @@ class CRM_Geocoder_Upgrader extends CRM_Extension_Upgrader_Base {
    * Example: Run an external SQL script when the module is uninstalled.
    */
   public function uninstall() {
-    $this->executeSqlFile('sql/uninstall.sql');
+    CRM_Core_BAO_SchemaHandler::dropTable('civicrm_geocoder_zip_dataset');
     civicrm_api3('Setting', 'create', ['geoProvider' => 'null']);
   }
 
