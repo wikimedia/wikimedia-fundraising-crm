@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1012c207b59c338c0e8b3122435ee5d1",
+    "content-hash": "a675940e6660fb28abad5a552a95d656",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -5257,11 +5257,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "dev-master",
+            "version": "1.21",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "61143f5"
+                "reference": "40dceff1c4a0e000450d4aca87f9a47f03301319"
             },
             "require": {
                 "league/csv": "^9",
@@ -5273,7 +5273,6 @@
                 "guzzlehttp/guzzle": "*",
                 "phpunit/phpunit": "*"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -5302,7 +5301,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2025-06-30T08:17:58+00:00"
+            "time": "2025-07-01T03:15:06+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
@@ -7651,8 +7650,7 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "drupal/coder": 20,
-        "omnimail/omnimail": 20,
-        "wikimedia/omnimail-silverpop": 20
+        "omnimail/omnimail": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

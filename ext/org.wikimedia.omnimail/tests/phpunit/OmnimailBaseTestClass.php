@@ -14,7 +14,6 @@ use GuzzleHttp\Psr7\Response;
 use Omnimail\Omnimail;
 use Omnimail\Silverpop\Credentials;
 use PHPUnit\Framework\TestCase;
-use SilverpopConnector\SilverpopConnector;
 use SilverpopConnector\SilverpopRestConnector;
 use SilverpopConnector\SilverpopXmlConnector;
 
@@ -107,7 +106,7 @@ class OmnimailBaseTestClass extends TestCase {
 
     $this->cleanupMailingData();
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_omnimail_job_progress');
-    SilverpopConnector::getInstance()->logout();
+    SilverpopXmlConnector::getInstance()->logout();
     foreach ($this->existingSettings as $key => $value) {
       $this->setSetting($key, $value);
     }
