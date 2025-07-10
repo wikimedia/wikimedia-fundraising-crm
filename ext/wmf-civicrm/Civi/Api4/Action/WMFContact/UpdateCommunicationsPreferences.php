@@ -270,10 +270,39 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     ) {
       throw new \CRM_Core_Exception('Invalid data in e-mail preferences message.');
     }
-    // validate checksum (for queue with fallback unsubscribe still need these two value to validate)
-    if (!\CRM_Contact_BAO_Contact_Utils::validChecksum($params['contact_id'], $params['checksum'])) {
+    // validate checksum, but allow expired checksum
+    if (!$this->validateChecksum($params['contact_id'], $params['checksum'])) {
       throw new \CRM_Core_Exception('Checksum mismatch.');
     }
+  }
+
+  /**
+   * Similar to \CRM_Contact_BAO_Contact_Utils::validateChecksum just without the timestamp check part
+   * This is used to validate the checksum from the email preference center queue
+   *
+   * @param $contactID
+   * @param $inputCheck
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  function validateChecksum($contactID, $inputCheck) {
+    // This is a helper function to validate the checksum
+    // Allow a hook to invalidate checksums
+    $invalid = FALSE;
+    \CRM_Utils_Hook::invalidateChecksum($contactID, $inputCheck, $invalid);
+    if ($invalid) {
+      return FALSE;
+    }
+    $input = \CRM_Utils_System::explode('_', $inputCheck, 3);
+    $inputTS = $input[1] ?? NULL;
+    $inputLF = $input[2] ?? NULL;
+
+    $check = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID, $inputTS, $inputLF);
+    if (!hash_equals($check, (string) $inputCheck)) {
+      return FALSE;
+    }
+    // If we get here, the checksum is valid
+    return TRUE;
   }
 
   /**
