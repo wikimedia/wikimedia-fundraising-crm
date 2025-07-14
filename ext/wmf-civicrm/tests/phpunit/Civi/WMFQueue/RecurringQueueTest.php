@@ -539,6 +539,50 @@ class RecurringQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Test processing a Gravy PayPal recurring cancel message.
+   */
+  public function testRecurringCancelGravyPaypalMessage(): void {
+    // Create a Gravy PayPal recurring signup to have something to cancel
+    $signupMessage = $this->processRecurringSignup([
+      'gateway' => 'gravy',
+      'payment_method' => 'paypal',
+      'subscr_id' => '48df827f-93bd-4c33-8186-2da6fc02c878',
+    ]);
+
+    // Now process the cancellation message using your sample data
+    $cancelMessage = [
+      'gateway' => 'gravy',
+      'txn_type' => 'subscr_cancel',
+      'subscr_id' => '48df827f-93bd-4c33-8186-2da6fc02c878',
+      'payment_method' => 'paypal',
+      'date' => 1719773621,
+      'cancel_date' => 1719773621,
+      'recurring' => '1',
+      'raw_response' => [
+        'type' => 'payment-method',
+        'id' => '48df827f-93bd-4c33-8186-2da6fc02c878',
+        'method' => 'paypal',
+        'status' => 'succeeded',
+        'created_at' => '2024-06-30T18:51:10Z',
+        'updated_at' => '2024-06-30T18:53:41Z',
+        'external_identifier' => NULL,
+      ],
+    ];
+
+    $this->processMessage($cancelMessage);
+
+    // Verify the cancellation was processed correctly
+    $recur_record = $this->getContributionRecurForMessage($signupMessage);
+    $this->assertEquals('48df827f-93bd-4c33-8186-2da6fc02c878', $recur_record['trxn_id']);
+    $this->assertEquals('(auto) User Cancelled via Gateway', $recur_record['cancel_reason']);
+    $this->assertEquals('2024-06-30 18:53:41', $recur_record['cancel_date']);
+    $this->assertEquals('2024-06-30 18:53:41', $recur_record['end_date']);
+    $this->assertNotEmpty($recur_record['payment_processor_id']);
+    $this->assertEmpty($recur_record['failure_retry_date']);
+    $this->assertEquals('Cancelled', $recur_record['contribution_status_id:name']);
+  }
+
+  /**
    * Test record of failed recurring payment rather than by the subscr_id
    */
   public function testRecurringFailedMessageWithRecurringContributionID(): void {
