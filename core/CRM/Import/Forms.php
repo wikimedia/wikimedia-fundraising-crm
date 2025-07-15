@@ -189,6 +189,9 @@ class CRM_Import_Forms extends CRM_Core_Form {
    * @throws \CRM_Core_Exception
    */
   protected function getMappingName(): string {
+    if ($this->getSubmittedValue('saveMappingName')) {
+      return $this->getSubmittedValue('saveMappingName');
+    }
     if ($this->mappingName === NULL) {
       $savedMappingID = $this->getSavedMappingID();
       if ($savedMappingID) {
@@ -451,7 +454,7 @@ class CRM_Import_Forms extends CRM_Core_Form {
       'created_id' => CRM_Core_Session::getLoggedInContactID(),
       'job_type' => $this->getUserJobType(),
       'status_id:name' => 'draft',
-      'name' => 'import_' . $this->getSubmittedValue('saveMappingName'),
+      'name' => 'import_' . $this->getMappingName(),
       'metadata' => ['submitted_values' => $this->getSubmittedValues()],
     ])->execute()->first()['id'];
   }
@@ -915,7 +918,10 @@ class CRM_Import_Forms extends CRM_Core_Form {
    * @throws \CRM_Core_Exception
    */
   protected function getTemplateJob(): ?array {
-    $templateID = $this->templateID ?? $this->getUserJob()['metadata']['template_id'] ?? NULL;
+    $templateID = $this->templateID ?? NULL;
+    if (!$templateID && $this->getUserJobID()) {
+      $templateID = $this->getUserJob()['metadata']['template_id'] ?? NULL;
+    }
 
     if ($templateID) {
       $templateJob = UserJob::get(FALSE)
