@@ -506,11 +506,11 @@ abstract class BaseAuditProcessor {
       $parsed = $this->parseReconciliationFile($file);
 
       //remove transactions we already know about
-      $this->startTiming($file . 'get missing');
+      $this->startTiming(' get missing on ' . $file);
       $missing = $this->getMissingTransactions($parsed, $file);
 
       $recon_file_stats[$file] = $this->getFileStatistic($file, 'total_missing');
-      $time = $this->stopTiming($file . 'get missing');
+      $time = $this->stopTiming(' get missing on ' . $file);
       $this->echo($this->countMissing($missing) . ' missing transactions (of a possible ' . $this->getFileStatistic($file, 'total_records') . ") identified in $time seconds\n");
 
       //If the file is empty, move it off.
@@ -1470,7 +1470,7 @@ abstract class BaseAuditProcessor {
    * @param string $name
    */
   protected function startTiming(string $name): void {
-    $this->echo($name);
+    $this->echo('Starting process: ' . $name);
     $this->timings[$name]['start'] = microtime(TRUE);
   }
 
