@@ -60,7 +60,7 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
   }
 
   protected function regex_for_recon() {
-    return '/settlement_detail_report_batch_|payments_accounting_report_/';
+    return '/settlement_detail_report_|payments_accounting_report_/';
   }
 
   /**
