@@ -288,6 +288,10 @@ class RecurDonationMessage extends DonationMessage {
       (isset($this->message['is_autorescue']) && $this->message['is_autorescue']);
   }
 
+  public function isGravyPaypal(): bool {
+    return ($this->getGateway() === 'gravy' && $this->message['payment_method'] === 'paypal');
+  }
+
   /**
    * Get the reference associated with the auto-rescue attempt.
    *
@@ -373,7 +377,6 @@ class RecurDonationMessage extends DonationMessage {
     }
     return NULL;
   }
-
 
   /**
    * Get the failure_retry_date unix timestamp.
