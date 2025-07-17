@@ -28,10 +28,10 @@ class PendingTransaction extends Generic\AbstractEntity {
       ->setCheckPermissions($checkPermissions);
   }
 
-  public static function getFields() {
-    return new BasicGetFieldsAction(__CLASS__, __FUNCTION__, function() {
+  public static function getFields(bool $checkPermissions = TRUE): BasicGetFieldsAction {
+    return (new BasicGetFieldsAction(__CLASS__, __FUNCTION__, function() {
       return [];
-    });
+    }))->setCheckPermissions($checkPermissions);
   }
 
   public static function getResolvableMethods(): array {

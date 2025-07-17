@@ -38,13 +38,10 @@ class WMFConfig extends Generic\AbstractEntity {
       ->setCheckPermissions($checkPermissions);
   }
 
-  /**
-   * @return \Civi\Api4\Generic\BasicGetFieldsAction
-   */
-  public static function getFields(): BasicGetFieldsAction {
-    return new BasicGetFieldsAction(__CLASS__, __FUNCTION__, function () {
+  public static function getFields(bool $checkPermissions = TRUE): BasicGetFieldsAction {
+    return (new BasicGetFieldsAction(__CLASS__, __FUNCTION__, function() {
       return [];
-    });
+    }))->setCheckPermissions($checkPermissions);
   }
 
 }
