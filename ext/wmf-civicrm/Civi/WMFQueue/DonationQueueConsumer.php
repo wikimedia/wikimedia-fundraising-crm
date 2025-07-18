@@ -423,7 +423,14 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
     }
 
-    if ($message->getSubscriptionID()) {
+    // For Gravy PayPal transactions, use the recurring_payment_token as the subscription ID
+    // instead of the gateway_txn_id. This is a workaround as Gravy only sends us the
+    // recurring_payment_token in related webhooks so to allow us to match them up we use the
+    // same ID as the civicrm_contribution_recur.trxn_id. See T399868
+    if ($message->isGravyPaypal() && !empty($msg['recurring_payment_token'])) {
+      $gateway_subscr_id = $msg['recurring_payment_token'];
+    }
+    elseif ($message->getSubscriptionID()) {
       $gateway_subscr_id = $message->getSubscriptionID();
     }
     elseif (!empty($msg['gateway_txn_id'])) {
