@@ -71,7 +71,7 @@ class Snooze extends AbstractAction {
           'email' => $this->getEmail(),
           'checkPermissions' => $this->getCheckPermissions(),
           'values' => [
-            'snooze_end_date' => date('Y-m-d H:i:s', strtotime($this->getSnoozeDate())),
+            'snooze_end_date' => date('Y-m-d', strtotime($this->getSnoozeDate())),
             'activity_id' => $activity_id,
           ],
         ],
