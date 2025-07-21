@@ -85,6 +85,21 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       ->addWhere('contact_id', '=', $this->ids['Contact']['mouse'])
       ->execute()->single();
     $this->assertEquals('Added', $groupContact['status']);
+
+    $client = $this->setupSuccessfulDownloadClient(TRUE, 'msl-import-list.csv');
+    Omnigroupmember::load(FALSE)
+      ->setGroupIdentifier(12345)
+      ->setGroupID($group['id'])
+      ->setIsSuppressionList(TRUE)
+      ->setClient($client)
+      ->setLimit(5)
+      ->execute();
+
+    $groupContact = GroupContact::get(FALSE)
+      ->addWhere('group_id', '=', $group['id'])
+      ->addWhere('contact_id', '=', $this->ids['Contact']['mouse'])
+      ->execute()->single();
+    $this->assertEquals('Added', $groupContact['status']);
   }
 
   /**
