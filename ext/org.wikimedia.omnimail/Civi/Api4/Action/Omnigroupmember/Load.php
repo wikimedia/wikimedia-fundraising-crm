@@ -235,10 +235,16 @@ class Load extends AbstractAction {
         elseif ($this->getIsSuppressionList() && count($emails) > 0) {
           foreach ($emails as $email) {
             if ($email['is_primary']) {
-              GroupContact::create(FALSE)->setValues([
-                'contact_id' => $email['contact_id'],
-                'group_id' => $this->getGroupID(),
-              ])->execute();
+              $existingRecord = GroupContact::get(FALSE)
+                ->addWhere('contact_id', '=', $email['contact_id'])
+                ->addWhere('group_id', '=', $this->getGroupID())
+                ->execute()->first();
+              if (!$existingRecord) {
+                GroupContact::save(FALSE)->addRecord([
+                  'contact_id' => $email['contact_id'],
+                  'group_id' => $this->getGroupID(),
+                ])->execute();
+              }
               $result[$email['contact_id']] = $email;
             }
           }
