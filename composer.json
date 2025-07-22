@@ -32,8 +32,7 @@
         "predis/predis": "1.*",
         "wikimedia/composer-merge-plugin": "^2",
         "jackgleeson/stats-collector": "^1.4",
-        "ext-json": "*",
-        "drush/drush": "8.*"
+        "ext-json": "*"
     },
     "repositories": [
       {
