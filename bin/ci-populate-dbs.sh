@@ -46,4 +46,4 @@ rm -rf "$CIVICRM_BUILDKIT"/build/wmf
 mkdir -p "$CIVICRM_BUILDKIT"/build
 ln -s "$WORKSPACE"/src/wikimedia/fundraising/crm "$CIVICRM_BUILDKIT"/build/wmf
 
-"$CIVICRM_BUILDKIT"/bin/civibuild reinstall wmf
+"$CIVICRM_BUILDKIT"/bin/civibuild reinstall wmf --force
