@@ -1,5 +1,0 @@
-name = WMF CiviCRM
-description = Common functions for interacting with CiviCRM
-core = 7.x
-package = Wikimedia
-dependencies[] = civicrm

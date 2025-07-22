@@ -1,5 +1,0 @@
-role 'administrator'
-add access export menu
-add access pdf menu
-add access print menu
-add access mailing labels menu

@@ -1,8 +1,0 @@
-name = Tivy
-description = A theme designed for CiviCRM.
-core = 7.x
-
-stylesheets[all][] = css/tivy.css
-
-regions[left] = Left
-regions[content] = Content
