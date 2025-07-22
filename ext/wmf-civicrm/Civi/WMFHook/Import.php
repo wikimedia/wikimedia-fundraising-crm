@@ -3,6 +3,7 @@
 
 namespace Civi\WMFHook;
 
+use Civi\Api4\ExchangeRate;
 use Civi\Api4\GroupContact;
 use Civi\Api4\UserJob;
 use Civi\Core\Event\GenericHookEvent;
@@ -602,6 +603,13 @@ class Import {
     if ($this->isBenevity()) {
       // Calculate the fee_amount from the 2 fee fields.
       $this->mappedRow['Contribution']['fee_amount'] = $this->mappedRow['Contribution']['fee_amount'] + $this->mappedRow['Contribution']['contribution_extra.scheme_fee'];
+      if ($this->mappedRow['Contribution']['contribution_extra.original_currency'] !== 'USD') {
+        $this->mappedRow['Contribution']['fee_amount'] = (float) ExchangeRate::convert(FALSE)
+          ->setFromCurrency($this->mappedRow['Contribution']['contribution_extra.original_currency'])
+          ->setFromAmount($this->mappedRow['Contribution']['fee_amount'])
+          ->setTimestamp($this->mappedRow['Contribution']['receive_date'] ?? 'now')
+          ->execute()->first()['amount'];
+      }
 
       // Create the individual donor if not anonymous.
       $isIndividualAnonymous = $this->isMainContactAnonymous();
@@ -624,7 +632,8 @@ class Import {
             'fee_amount' => 0,
             'trxn_id' => $this->getGateway() . ' ' . $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
             'contribution_extra.gateway_txn_id' => $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
-            'total_amount' => $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'],
+            'contribution_extra.original_amount' => $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'],
+            'contribution_extra.original_currency' => $this->mappedRow['Contribution']['contribution_extra.original_currency'],
           ]))
           ->execute()->first();
         if (!$isIndividualAnonymous) {
@@ -632,7 +641,7 @@ class Import {
             ->setValues([
               'contact_id' => $this->mappedRow['Contact']['id'],
               'contribution_id' => $contribution['id'],
-              'amount' => $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'],
+              'amount' => $contribution['total_amount'],
               'soft_credit_type_id:name' => 'matched_gift',
             ])
             ->execute();
