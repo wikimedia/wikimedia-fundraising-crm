@@ -302,9 +302,14 @@ trait WMFEnvironmentTrait {
    * @throws \Exception
    */
   public function setExchangeRate(string $currency, float $rate, string $dateString = 'now'): void {
-    \CRM_ExchangeRates_BAO_ExchangeRate::addToCache(
-      $currency, (new \DateTime($dateString))->format('YmdHis'), $rate
-    );
+    try {
+      \CRM_ExchangeRates_BAO_ExchangeRate::addToCache(
+        $currency, (new \DateTime($dateString))->format('YmdHis'), $rate
+      );
+    }
+    catch (\Exception $e) {
+      $this->fail('Failed to set Exchange rate ' . $e->getMessage());
+    }
   }
 
   /**

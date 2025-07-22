@@ -12,6 +12,7 @@ use Civi\Api4\GroupContact;
 use Civi\Api4\Import;
 use Civi\Api4\Relationship;
 use Civi\Api4\UserJob;
+use Civi\Core\Event\GenericHookEvent;
 use Civi\Core\Exception\DBQueryException;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
@@ -1037,7 +1038,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @return void
    */
   public function testImportFidelity(): void {
-    \Civi::dispatcher()->addListener('importAlterMappedRow', [__CLASS__, 'hook_civicrm_importAlterMappedRow']);
+    // Add hook to set our donation to be current (so ContributionSoft hook fires).
+    \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [__CLASS__, 'hook_importAlterMappedRow'], 300);
     $softCreditEntityData = [
       'soft_credit' => [
         'contact_type' => 'Individual',
@@ -1151,8 +1153,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportBenevitySucceedAll(): void {
-    \Civi::dispatcher()->addListener('importAlterMappedRow', [__CLASS__, 'hook_civicrm_importAlterMappedRow']);
+    // Add hook to set our donation to be current (so ContributionSoft hook fires).
+    \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [__CLASS__, 'hook_importAlterMappedRow'], 300);
     $this->createAllBenevityImportOrganizations();
+    $this->setExchangeRate('CAD', .9,'-1 day');
     $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',
@@ -1172,12 +1176,12 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // There is no gift against the organization here.
     // In addition the gift type here is mapped.
     $contribution = Contribution::get(FALSE)
-      ->addSelect('fee_amount', 'total_amount','Gift_Data.Campaign', 'net_amount')
+      ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount')
       ->addWhere('trxn_id', '=', 'BENEVITY trxn-QUACK')
       ->execute()->single();
-    $this->assertEquals(11, $contribution['fee_amount']);
-    $this->assertEquals(1189, $contribution['net_amount']);
-    $this->assertEquals(1200, $contribution['total_amount']);
+    $this->assertEquals(1080, $contribution['total_amount']);
+    $this->assertEquals(9.9, $contribution['fee_amount']);
+    $this->assertEquals(1070.1, $contribution['net_amount']);
     $this->assertEquals('Individual Gift', $contribution['Gift_Data.Campaign']);
     $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->execute();
     $this->assertCount(1, $softCredit);
@@ -1193,9 +1197,9 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->addWhere('trxn_id', '=', 'BENEVITY trxn-SQUEAK')
       ->execute()->single();
     $this->assertEquals(NULL, $contribution['Gift_Data.Campaign']);
-    $this->assertEquals(.1, $contribution['fee_amount']);
-    $this->assertEquals(99.90, $contribution['net_amount']);
-    $this->assertEquals(100, $contribution['total_amount']);
+    $this->assertEquals(.09, $contribution['fee_amount']);
+    $this->assertEquals(89.91, $contribution['net_amount']);
+    $this->assertEquals(90, $contribution['total_amount']);
     $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->execute();
     $this->assertCount(1, $softCredit);
     $this->assertEquals('2 Cheesy Place', $contribution['contact_id.address_primary.street_address']);
@@ -1283,8 +1287,9 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->addSelect('fee_amount', 'total_amount','Gift_Data.Campaign', 'net_amount', 'contact_id.display_name', 'contact_id.email_primary.email', 'contact_id.address_primary.street_address', 'contact_id.employer_id.display_name')
       ->addWhere('trxn_id', '=', 'BENEVITY trxn-SNUFFLE_MATCHED')
       ->execute()->single();
-    $softCredit = ContributionSoft::get(FALSE)->addSelect('contact_id.display_name')->addSelect('soft_credit_type_id:name')->addWhere('contribution_id', '=', $contribution['id'])->execute();
+    $softCredit = ContributionSoft::get(FALSE)->addSelect('contact_id.display_name', 'amount', 'soft_credit_type_id:name')->addWhere('contribution_id', '=', $contribution['id'])->execute();
     $this->assertCount(1, $softCredit);
+    $this->assertEquals(.45, $softCredit->first()['amount']);
     $this->assertEquals('uncle@duck.org', $softCredit->first()['contact_id.display_name']);
     $this->assertEquals('matched_gift', $softCredit->first()['soft_credit_type_id:name']);
   }
@@ -1316,18 +1321,13 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    *
    * We do this because the donor-advised-fund relationship is only created for recent contributions.
    *
-   * @param string $importType
-   * @param string $context
-   * @param array $mappedRow
-   * @param array $rowValues
-   * @param int $userJobID
+   * @param \Civi\Core\Event\GenericHookEvent $event
    *
    * @return void
-   * @noinspection PhpUnusedParameterInspection
    */
-  public static function hook_civicrm_importAlterMappedRow(string $importType, string $context, array &$mappedRow, array $rowValues, int $userJobID): void {
-    if (in_array($mappedRow['Contribution']['contribution_extra.gateway'] ?? '', ['fidelity', 'benevity'], TRUE)) {
-      $mappedRow['Contribution']['receive_date'] = date('Y-m-d H:i:s', strtotime('-1 day'));
+  public static function hook_importAlterMappedRow(GenericHookEvent $event): void {
+    if (in_array($event->mappedRow['Contribution']['contribution_extra.gateway'] ?? '', ['fidelity', 'benevity'], TRUE)) {
+      $event->mappedRow['Contribution']['receive_date'] = date('Y-m-d H:i:s', strtotime('-1 day'));
     }
   }
 
