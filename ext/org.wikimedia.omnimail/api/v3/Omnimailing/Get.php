@@ -38,6 +38,9 @@ function civicrm_api3_omnimailing_get($params) {
     /* @var \Omnimail\Silverpop\Responses\Mailing $mailing */
     try {
       $result = mapMailing($mailing) + ['is_multiple_report' => FALSE];
+      if (!$params['is_include_text']) {
+        unset($result['body_text'], $result['body_html']);
+      }
       $results[] = $result;
     }
     catch (Exception $e) {
@@ -56,6 +59,9 @@ function civicrm_api3_omnimailing_get($params) {
     /* @var \Omnimail\Silverpop\Responses\Mailing $mailing */
     try {
       $result = mapMailing($mailing) + ['is_multiple_report' => TRUE];
+      if (!$params['is_include_text']) {
+        unset($result['body_text'], $result['body_html']);
+      }
       $results[] = $result;
     }
     catch (Exception $e) {
@@ -96,6 +102,7 @@ function mapMailing(\Omnimail\Silverpop\Responses\Mailing $mailing): array {
       'name' => substr($mailing->getName(), 0, 128),
       'body_html' => $mailing->getHtmlBody(),
       'body_text' => $mailing->getTextBody(),
+      'tags' => $mailing->getTags(),
     ];
   }
   $result = \Civi::$statics[$mailingKey] + [
@@ -150,6 +157,11 @@ function _civicrm_api3_omnimailing_get_spec(&$params) {
     'title' => ts('Date to fetch to'),
     'type' => CRM_Utils_Type::T_TIMESTAMP,
     'api.default' => 'now',
+  ];
+  $params['is_include_text'] = [
+    'title' => ts('Include mailing text and html, set to FALSE for concise data'),
+    'type' => CRM_Utils_Type::T_BOOLEAN,
+    'api.default' => TRUE,
   ];
 
 }
