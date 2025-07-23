@@ -34,10 +34,10 @@ class WMFQueue extends Generic\AbstractEntity {
       ->setCheckPermissions($checkPermissions);
   }
 
-  public static function getFields(): BasicGetFieldsAction {
-    return new BasicGetFieldsAction(__CLASS__, __FUNCTION__, function() {
+  public static function getFields(bool $checkPermissions = TRUE): BasicGetFieldsAction {
+    return (new BasicGetFieldsAction(__CLASS__, __FUNCTION__, function() {
       return [];
-    });
+    }))->setCheckPermissions($checkPermissions);
   }
 
 }
