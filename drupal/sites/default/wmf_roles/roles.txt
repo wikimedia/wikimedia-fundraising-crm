@@ -1,7 +1,0 @@
-administrator
-authenticated user
-CiviCRM Admin
-fr-tech
-Donor Services
-Donor Services Management
-civiproxy
