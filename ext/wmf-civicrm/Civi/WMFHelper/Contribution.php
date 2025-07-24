@@ -2,6 +2,7 @@
 
 namespace Civi\WMFHelper;
 
+use Civi\Api4\Contact;
 use Civi\WMFException\WMFException;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
@@ -54,7 +55,7 @@ class Contribution {
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
    */
-  public static function updateWMFDonorLastDonation(string $op, &$contribution) {
+  public static function updateWMFDonorLastDonation(string $op, $contribution) {
     switch ($op) {
       case 'create':
       case 'edit':
@@ -67,8 +68,10 @@ class Contribution {
         // Update wmf_donor row for the associated contact
         $params = self::getLastDonationParams($contribution);
         if (!empty($params)) {
-          $params['id'] = $contribution->contact_id;
-          civicrm_api3('Contact', 'create', $params);
+          Contact::update(FALSE)
+            ->setValues($params)
+            ->addWhere('id', '=', $contribution->contact_id)
+            ->execute();
         }
 
         break;
@@ -88,7 +91,7 @@ class Contribution {
    * @return mixed
    * @throws \CRM_Core_Exception
    */
-  private static function getLastDonationParams(&$contribution) {
+  private static function getLastDonationParams($contribution) {
     $contributionStatus = \CRM_Core_PseudoConstant::getLabel('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $contribution->contribution_status_id);
     if (empty($contribution->total_amount) && (!$contributionStatus)) {
       return [];
@@ -118,18 +121,18 @@ class Contribution {
     if ($contributionStatus === 'Completed' && !$isRefund) {
       // This is a 'valid' transaction - it's either the latest or no update is required.
       if (
-        !empty($contactLastDonation['date']) &&
+        !empty($contactLastDonation['wmf_donor.last_donation_date']) &&
         !empty($contribution->receive_date) &&
-        strtotime($contactLastDonation['date']) === strtotime($contribution->receive_date)
+        strtotime($contactLastDonation['wmf_donor.last_donation_date']) === strtotime($contribution->receive_date)
       ) {
-        if (!empty($extra['original_currency']) && $contactLastDonation['currency'] !== \CRM_Utils_Array::value('original_currency', $extra)) {
-          $params[self::api3FieldName('last_donation_currency')] = $extra['original_currency'];
+        if (!empty($extra['original_currency']) && $contactLastDonation['wmf_donor.last_donation_currency'] !== \CRM_Utils_Array::value('original_currency', $extra)) {
+          $params['wmf_donor.last_donation_currency'] = $extra['original_currency'];
         }
-        if (!empty($extra['original_amount']) && round($contactLastDonation['amount'], 2) !== round(\CRM_Utils_Array::value('original_amount', $extra), 2)) {
-          $params[self::api3FieldName('last_donation_amount')] = $extra['original_amount'];
+        if (!empty($extra['original_amount']) && round($contactLastDonation['wmf_donor.last_donation_amount'], 2) !== round(\CRM_Utils_Array::value('original_amount', $extra), 2)) {
+          $params['wmf_donor.last_donation_amount'] = $extra['original_amount'];
         }
-        if (round($contactLastDonation['amount_usd'], 2) !== round($contribution->total_amount, 2)) {
-          $params[self::api3FieldName('last_donation_usd')] = $contribution->total_amount;
+        if (round($contactLastDonation['wmf_donor.last_donation_usd'], 2) !== round($contribution->total_amount, 2)) {
+          $params['wmf_donor.last_donation_usd'] = $contribution->total_amount;
         }
       }
       if (!empty($params)) {
@@ -166,13 +169,13 @@ class Contribution {
     $latestContributionAmount = \CRM_Utils_Array::value(self::api3FieldName('original_amount'), $latestContribution);
 
     if ($latestContributionCurrency !== \CRM_Utils_Array::value('original_currency', $extra)) {
-      $params[self::api3FieldName('last_donation_currency')] = $latestContributionCurrency;
+      $params['wmf_donor.last_donation_currency'] = $latestContributionCurrency;
     }
-    if (round($contactLastDonation['amount'], 2) !== round($latestContributionAmount, 2)) {
-      $params[self::api3FieldName('last_donation_amount')] = $latestContributionAmount;
+    if (round($contactLastDonation['wmf_donor.last_donation_amount'], 2) !== round($latestContributionAmount, 2)) {
+      $params['wmf_donor.last_donation_amount'] = $latestContributionAmount;
     }
-    if (round($contactLastDonation['amount_usd'], 2) !== round($latestContribution['total_amount'], 2)) {
-      $params[self::api3FieldName('last_donation_usd')] = $latestContribution['total_amount'];
+    if (round($contactLastDonation['wmf_donor.last_donation_usd'], 2) !== round($latestContribution['total_amount'], 2)) {
+      $params['wmf_donor.last_donation_usd'] = $latestContribution['total_amount'];
     }
     return $params;
   }
@@ -236,7 +239,7 @@ class Contribution {
    * @throws \CRM_Core_Exception
    */
   private static function getContactLastDonationData(int $contactID): array {
-    $contactExistingCustomData = \Civi\Api4\Contact::get(FALSE)->addWhere('id', '=', $contactID)
+    return Contact::get(FALSE)->addWhere('id', '=', $contactID)
       ->addSelect(
         'wmf_donor.last_donation_currency',
         'wmf_donor.last_donation_amount',
@@ -244,12 +247,6 @@ class Contribution {
         'wmf_donor.last_donation_usd'
       )
       ->execute()->first();
-    return [
-      'amount' => $contactExistingCustomData['wmf_donor.last_donation_amount'],
-      'date' => $contactExistingCustomData['wmf_donor.last_donation_date'],
-      'amount_usd' => $contactExistingCustomData['wmf_donor.last_donation_usd'],
-      'currency' => $contactExistingCustomData['wmf_donor.last_donation_currency'],
-    ];
   }
 
 }
