@@ -25,6 +25,8 @@ use Omnimail\Silverpop\Responses\Contact;
  * @method $this setThrottleNumber(int $number)
  * @method int getLimit()
  * @method $this setLimit(int $limit)
+ * @method int getTimeout()
+ * @method $this setTimeout(int $timeOut)
  * @method int|null getOffset()
  * @method $this setOffset(int|null $offset)
  * @method int getGroupIdentifier() Get Acoustic Group Identifier.
@@ -97,6 +99,8 @@ class Load extends AbstractAction {
    */
   protected int $throttleSeconds = 60;
 
+  protected int $timeout = 10;
+
   /**
    * Identifier in Acoustic for the group.
    *
@@ -158,6 +162,7 @@ class Load extends AbstractAction {
       'database_id' => $this->getDatabaseID(),
       'job_identifier' => $this->getJobIdentifier(),
       'offset' => $this->getOffset(),
+      'timeout' => $this->getTimeout(),
     ];
 
     $job = new \CRM_Omnimail_Omnigroupmembers($params);
