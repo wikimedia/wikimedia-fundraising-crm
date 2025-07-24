@@ -150,23 +150,20 @@ class Contribution {
 
     // We don't have a completed transaction here - probably a refund - time to get the details of the latest & update it.
     // (From back office it could also be pending but we probably don't stand to gain much by special handling pendings as low volume).
-    $existing = civicrm_api3('Contribution', 'get', [
-      'contribution_status_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed'),
-      'contact_id' => $contribution->contact_id,
-      'options' => ['limit' => 1, 'sort' => 'receive_date DESC'],
-      'trxn_id' => ['NOT LIKE' => 'RFD %'],
-      'return' => [
-        self::api3FieldName('original_currency'),
-        self::api3FieldName('original_amount'),
-        'total_amount',
-      ],
-    ]);
-    if (!$existing['count']) {
+    $latestContribution = \Civi\Api4\Contribution::get(FALSE)
+      ->addWhere('contribution_status_id:name', '=', 'Completed')
+      ->addWhere('contact_id', '=', $contribution->contact_id)
+      ->addWhere('trxn_id', 'NOT LIKE', 'RFD %')
+      ->addOrderBy('receive_date', 'DESC')
+      ->addSelect('total_amount', 'contribution_extra.original_currency', 'contribution_extra.original_amount')
+      ->setLimit(1)
+      ->execute()->first();
+    if (!$latestContribution) {
       return $params;
     }
-    $latestContribution = $existing['values'][$existing['id']];
-    $latestContributionCurrency = \CRM_Utils_Array::value(self::api3FieldName('original_currency'), $latestContribution);
-    $latestContributionAmount = \CRM_Utils_Array::value(self::api3FieldName('original_amount'), $latestContribution);
+
+    $latestContributionCurrency = $latestContribution['contribution_extra.original_currency'];
+    $latestContributionAmount = $latestContribution['contribution_extra.original_amount'];
 
     if ($latestContributionCurrency !== \CRM_Utils_Array::value('original_currency', $extra)) {
       $params['wmf_donor.last_donation_currency'] = $latestContributionCurrency;
@@ -178,19 +175,6 @@ class Contribution {
       $params['wmf_donor.last_donation_usd'] = $latestContribution['total_amount'];
     }
     return $params;
-  }
-
-  /**
-   * @param $field_name
-   * @param null $group_name
-   *
-   * @return mixed
-   * @throws \CRM_Core_Exception
-   * @deprecated - try ot use apiv4 instead.
-   *
-   */
-  private static function api3FieldName($field_name, $group_name = NULL) {
-    return 'custom_' . \CRM_Core_BAO_CustomField::getCustomFieldID($field_name, $group_name);
   }
 
   /**
