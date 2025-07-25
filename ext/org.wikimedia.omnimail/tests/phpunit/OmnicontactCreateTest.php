@@ -107,7 +107,7 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
       ->setValues([
         'last_name' => 'Donald',
         'first_name' => 'Duck',
-        'snooze_end_date' => '2023-09-09',
+        'snooze_end_date' => ((int) date('Y') + 1) . '-09-09',
         'activity_id' => $activity['id'],
       ])
       ->execute()->first();
@@ -118,9 +118,8 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
       ->execute()
       ->last();
 
-    $this->contactIDs[] = $contact['id'];
     $this->assertEquals('Completed', $activity['status_id:name']);
-    $this->assertEquals(trim(file_get_contents(__DIR__ . '/Requests/SnoozeRecipient.txt')), $guzzleSentRequests[1]);
+    $this->assertEquals(str_replace('--YEAR--', (string) ((int) date('Y') + 1), trim(file_get_contents(__DIR__ . '/Requests/SnoozeRecipient.txt'))), $guzzleSentRequests[1]);
   }
 
   /**
@@ -145,7 +144,7 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
       ->addWhere('name', '=', 'omni-snooze')
       ->addWhere('status', '=', 'active')
       ->execute();
-    $this->contactIDs[] = $contact['id'];
+
     $this->assertCount(1, $queue);
     $this->assertEquals('active', $queue->first()['status']);
     $this->runQueue();
@@ -156,7 +155,7 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
       ->execute()->last();
     $this->assertNotNull($activity);
     $this->assertEquals('Completed', $activity['status_id:name']);
-    $requestContent = str_replace(urlencode('RESUME_SEND_DATE>09/09/2023'), 'RESUME_SEND_DATE' . urlencode('>' . date('m/d/Y', strtotime($snoozeDate))), trim(file_get_contents(__DIR__ . '/Requests/SnoozeRecipient.txt')));
+    $requestContent = str_replace(urlencode('RESUME_SEND_DATE>09/09/--YEAR--'), 'RESUME_SEND_DATE' . urlencode('>' . date('m/d/Y', strtotime($snoozeDate))), trim(file_get_contents(__DIR__ . '/Requests/SnoozeRecipient.txt')));
     $guzzleSentRequests = $this->getRequestBodies();
     $this->assertEquals($requestContent, $guzzleSentRequests[1]);
   }
