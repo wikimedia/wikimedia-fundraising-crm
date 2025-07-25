@@ -169,6 +169,13 @@ class Kernel {
    * @throws \CRM_Core_Exception
    */
   public function boot($apiRequest) {
+    static $first = 1;
+    if ($first) {
+      $include_path = DIRECTORY_SEPARATOR . 'srv' . DIRECTORY_SEPARATOR . 'org.wikimedia.civicrm' . DIRECTORY_SEPARATOR . 'core' . PATH_SEPARATOR .
+      get_include_path();
+      set_include_path( $include_path );
+      $first = 0;
+    }
     require_once 'api/Exception.php';
     // the create error function loads some functions from utils
     // so this require is also needed for apiv4 until such time as
