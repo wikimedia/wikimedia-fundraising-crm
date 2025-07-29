@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a9f28ef51a400b08cd4b208e42106484",
+    "content-hash": "2e3d416d44f78616cc0346749ed98ea8",
     "packages": [
         {
             "name": "amzn/login-and-pay-with-amazon-sdk-php",
@@ -1648,23 +1648,23 @@
         },
         {
             "name": "mrmarkfrench/silverpop-php-connector",
-            "version": "1.6.8",
+            "version": "1.6.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mrmarkfrench/silverpop-php-connector.git",
-                "reference": "ac02533a7f15f375a41fec57309d97d5c9515a75"
+                "reference": "0323250c2db16ffecf8d235d5c47bd0fff3e722e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/ac02533a7f15f375a41fec57309d97d5c9515a75",
-                "reference": "ac02533a7f15f375a41fec57309d97d5c9515a75",
+                "url": "https://api.github.com/repos/mrmarkfrench/silverpop-php-connector/zipball/0323250c2db16ffecf8d235d5c47bd0fff3e722e",
+                "reference": "0323250c2db16ffecf8d235d5c47bd0fff3e722e",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
                 "ext-xml": "*",
                 "guzzlehttp/guzzle": "*",
-                "php": ">7.0",
+                "php": ">8.0",
                 "phpseclib/phpseclib": "*"
             },
             "require-dev": {
@@ -1693,9 +1693,9 @@
             ],
             "support": {
                 "issues": "https://github.com/mrmarkfrench/silverpop-php-connector/issues",
-                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.6.8"
+                "source": "https://github.com/mrmarkfrench/silverpop-php-connector/tree/v1.6.9"
             },
-            "time": "2025-06-30T08:22:18+00:00"
+            "time": "2025-07-24T04:35:22+00:00"
         },
         {
             "name": "omnimail/omnimail",
@@ -3941,31 +3941,35 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v4.4.45",
+            "version": "v5.4.45",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "aeccc4dc52a9e634f1d1eebeb21eacfdcff1053d"
+                "reference": "a454d47278cc16a5db371fe73ae66a78a633371e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/aeccc4dc52a9e634f1d1eebeb21eacfdcff1053d",
-                "reference": "aeccc4dc52a9e634f1d1eebeb21eacfdcff1053d",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/a454d47278cc16a5db371fe73ae66a78a633371e",
+                "reference": "a454d47278cc16a5db371fe73ae66a78a633371e",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.1.3",
-                "symfony/polyfill-ctype": "~1.8"
+                "php": ">=7.2.5",
+                "symfony/deprecation-contracts": "^2.1|^3",
+                "symfony/polyfill-ctype": "^1.8"
             },
             "conflict": {
-                "symfony/console": "<3.4"
+                "symfony/console": "<5.3"
             },
             "require-dev": {
-                "symfony/console": "^3.4|^4.0|^5.0"
+                "symfony/console": "^5.3|^6.0"
             },
             "suggest": {
                 "symfony/console": "For validating YAML files using the lint command"
             },
+            "bin": [
+                "Resources/bin/yaml-lint"
+            ],
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -3992,7 +3996,7 @@
             "description": "Loads and dumps YAML files",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/yaml/tree/v4.4.45"
+                "source": "https://github.com/symfony/yaml/tree/v5.4.45"
             },
             "funding": [
                 {
@@ -4008,7 +4012,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-08-02T15:47:23+00:00"
+            "time": "2024-09-25T14:11:13+00:00"
         },
         {
             "name": "theiconic/name-parser",
@@ -4174,11 +4178,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.22",
+            "version": "1.23",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "d105ce1ab2688eddee985531ef41310439d333a7"
+                "reference": "e6bb7696025b5e5567dd31b903fc9627f0f49ea7"
             },
             "require": {
                 "league/csv": "^9",
@@ -4218,20 +4222,20 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2025-07-22T00:18:29+00:00"
+            "time": "2025-07-28T21:48:17+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v0.9.7.1",
+            "version": "v0.9.7.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "b716c89a6323602b48ab228d3eb9551cdd75925f"
+                "reference": "a46c23a2a29fd7d72b8311e89871d3cc69f836b9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/b716c89a6323602b48ab228d3eb9551cdd75925f",
-                "reference": "b716c89a6323602b48ab228d3eb9551cdd75925f",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/a46c23a2a29fd7d72b8311e89871d3cc69f836b9",
+                "reference": "a46c23a2a29fd7d72b8311e89871d3cc69f836b9",
                 "shasum": ""
             },
             "require": {
@@ -4308,9 +4312,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.9.7.1"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v0.9.7.3"
             },
-            "time": "2025-07-22T21:15:11+00:00"
+            "time": "2025-07-28T17:22:38+00:00"
         },
         {
             "name": "willdurand/geocoder",
