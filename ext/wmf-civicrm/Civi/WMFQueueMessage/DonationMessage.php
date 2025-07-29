@@ -13,6 +13,25 @@ use CRM_Core_Exception;
 
 class DonationMessage extends Message {
 
+  /**
+   * WMF Donation Message.
+   *
+   * @var array{
+   *   recurring: bool,
+   *   contribution_recur_id: int,
+   *   subscr_id: string,
+   *   recurring_payment_token: string,
+   *   date: string,
+   *   thankyou_date: string,
+   *   utm_medium: string,
+   *   type: string,
+   *   phone: string,
+   *   email: string,
+   *   country: string,
+   *  }
+   */
+  protected array $message;
+
   protected array $parsedName;
 
   /**

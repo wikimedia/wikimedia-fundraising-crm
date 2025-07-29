@@ -49,7 +49,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     $settings = CRM_Omnimail_Helper::getSettings();
 
     $mailerCredentials = CRM_Omnimail_Helper::getCredentials($params);
-    $jobParameters = [];
+    $jobParameters = ['timeout' => $params['timeout']];
     if (empty($params['is_suppression_list'])) {
       $jobParameters['exportType'] = 'OPT_IN';
     }
