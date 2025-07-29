@@ -5,6 +5,7 @@ namespace Civi\WMFQueueMessage;
 use Civi\API\EntityLookupTrait;
 use Civi\Api4\Contact;
 use Civi\Api4\ExchangeRate;
+use Civi\Api4\Utils\ReflectionUtils;
 use Civi\WMFException\WMFException;
 use CRM_Wmf_ExtensionUtil as E;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
@@ -22,17 +23,18 @@ class Message {
    * We have started documenting them in the getFields() function which
    * will eventually be used for mapping & validation.
    *
-   *  - recurring
-   *  - contribution_recur_id
-   *  - subscr_id
-   *  - recurring_payment_token
-   *  - date
-   *  - thankyou_date
-   *  - utm_medium
-   *
-   * @var array
+   * @var array{
+   *   type: string,
+   *   phone: string,
+   *   email: string,
+   *   country: string,
+   *  }
    */
   protected array $message;
+
+  protected array $supportedFields = [];
+  protected array $requiredFields = [];
+  protected bool $isRestrictToSupportedFields = FALSE;
 
   /**
    * Contribution Tracking ID.
@@ -49,6 +51,29 @@ class Message {
    * Constructor.
    */
   public function __construct(array $message) {
+    $messageProperty = ReflectionUtils::getCodeDocs((new \ReflectionProperty($this, 'message')), 'Property');
+    if (isset($messageProperty['shape'])) {
+      $this->supportedFields = $messageProperty['shape'];
+    }
+
+    foreach (array_keys($message) as $key) {
+      if (!isset($this->supportedFields[$key])) {
+        if ($this->isRestrictToSupportedFields) {
+          // Currently ONLY SettleMessage defines supported values
+          // We clear out the other values in the hope of forcing tightening
+          // of the metadata - probably only realistic with NEW Message
+          // types - when we extend to others we probably need to be noisy rather
+          // than clearing them out, or perhaps behave differently when running tests.
+          // Ideally we would log undeclared fields for the others to see what there is.
+          unset($message[$key]);
+        }
+        else {
+          // log the key here? That way we can see what is not documented
+          // and over time reduce it to nothing.
+        }
+      }
+    }
+
     $this->message = $message;
     foreach ($this->message as $key => $input) {
       if (is_string($input)) {
@@ -60,17 +85,165 @@ class Message {
   /**
    * Get the array of fields supported.
    *
-   * This is very much WIP.... but let's build it out!
-   *
    * @return array
    */
   public function getFields(): array {
+    $supported = $this->supportedFields;
+    $fields = [];
+    foreach (array_keys($supported) as $fieldName) {
+      $fields[$fieldName] = $this->getAvailableFields()[$fieldName] + ['required' => in_array($fieldName, $this->requiredFields)];
+    }
+    return $fields;
+  }
+
+  /**
+   * Get metadata for fields available for use in the MessageSubsystem.
+   *
+   * This function should provide metadata about all the fields supported
+   * by the Message subsystem.
+   *
+   * Not all Message classes will support all fields, but if they do they should be
+   * as described in this function.
+   *
+   * Note that this is a new/evolving approach. The intent is that this
+   * will be the primary source of documentation for ALL the fields supported
+   * in our Message Subsystem. We will work to add an array on each message class
+   * specifying which of these fields is supported by that class.
+   *
+   * As of writing the new Settle message is the only one that does this.
+   */
+  public function getAvailableFields(): array {
     return [
-      'type' => ['description' => 'queue - as determined by audit code', 'data_type' => 'String'],
-      'phone' => ['api_field' => 'phone_primary.phone', 'label' => E::ts('Phone'), 'api_entity' => 'Contact'],
-      'email' => ['api_field' => 'email_primary.email', 'label' => E::ts('Email'), 'api_entity' => 'Contact'],
-      'date' => ['api_field' => 'receive_date', 'api_entity' => 'Contribution', 'label' => E::ts('Transaction Date')],
-      'country' => ['api_field' => 'address_primary.country_id', 'label' => E::ts('Phone'), 'api_entity' => 'Contact'],
+      'gateway' => [
+        'name' => 'gateway',
+        'title' => 'Gateway',
+        // Note that we could move from a description to a list of valid options.
+        // Might enforce consistency in a good way?
+        'description' => 'gateway processor for this payment - eg. adyen, paypal etc',
+        'data_type' => 'String',
+        'api_field' => 'contribution_extra.gateway',
+        'api_entity' => 'Contribution',
+      ],
+      'gateway_txn_id' => [
+        'name' => 'gateway_txn_id',
+        'description' => 'Gateway Transaction reference',
+        'data_type' => 'String',
+        'api_field' => 'contribution.extra.gateway_txn',
+        'api_entity' => 'Contribution',
+      ],
+      'gateway_account' => [
+        'name' => 'gateway_account',
+        'description' => 'Possibly unused field',
+        'title' => 'Gateway Account',
+        'data_type' => 'String',
+        'api_field' => 'contribution.extra.gateway_account',
+        'api_entity' => 'Contribution',
+      ],
+      'invoice_id' => [
+        'title' => E::ts('Invoice ID'),
+        'name' => 'invoice_id',
+        'data_type' => 'String',
+      ],
+      'contribution_tracking_id' => [
+        'name' => 'contribution_tracking_id',
+        'data_type' => 'Integer',
+      ],
+      'currency' => [
+        'name' => 'currency',
+        'description' => E::ts('Original Currency'),
+        'data_type' => 'String',
+      ],
+      'gross' => [
+        'name' => 'gross',
+        'description' => E::ts('Total amount in original currency'),
+        'data_type' => 'Money',
+      ],
+      'fee' => [
+        'name' => 'fee',
+        'description' => E::ts('Fee in the Settled currency'),
+        'data_type' => 'Money',
+      ],
+      'settled_currency' => [
+        'title' => E::ts('Settled Currency'),
+        'name' => 'settled_currency',
+        'data_type' => 'String',
+      ],
+      'settled_date' => [
+        'name' => 'settled_date',
+        'description' => E::ts('Date this settled at the payment processor - this is when their conversion is finalized'),
+        'data_type' => 'Datetime',
+      ],
+      'payment_method' => [
+        'name' => 'payment_method',
+        'data_type' => 'String',
+      ],
+      'payment_submethod' => [
+        'name' => 'payment_submethod',
+        'data_type' => 'String',
+      ],
+      'type' => [
+        'description' => 'refund or chargeback or other to be documented',
+        'data_type' => 'String',
+      ],
+      'phone' => [
+        'api_field' => 'phone_primary.phone',
+        'label' => E::ts('Phone'),
+        'api_entity' => 'Contact',
+        'data_type' => 'String',
+      ],
+      'email' => [
+        'api_field' => 'email_primary.email',
+        'label' => E::ts('Email'),
+        'api_entity' => 'Contact',
+        'data_type' => 'String',
+      ],
+      'date' => [
+        'api_field' => 'receive_date',
+        'api_entity' => 'Contribution',
+        'label' => E::ts('Transaction Date'),
+        'data_type' => 'Datetime',
+      ],
+      'country' => [
+        'label' => E::ts('Phone'),
+        'api_field' => 'address_primary.country_id',
+        'api_entity' => 'Contact',
+        'data_type' => 'String',
+      ],
+      'recurring' => [
+        'label' => E::ts('Is recurring?'),
+        'data_type' => 'Bool',
+      ],
+      'contribution_recur_id' => [
+        'label' => E::ts('Contribution Recur ID'),
+        'data_type' => 'Int',
+        'api_field' => 'id',
+        'api_entity' => 'ContributionRecur',
+      ],
+      'subscr_id' => [
+        'label' => E::ts('Subscription ID'),
+        'data_type' => 'String',
+        'api_field' => 'trxn_id',
+        'api_entity' => 'ContributionRecur',
+      ],
+      'recurring_payment_token' => [
+        'label' => E::ts('Token identifier for recharging a recurring'),
+        'data_type' => 'String',
+        'api_field' => 'token',
+        'api_entity' => 'PaymentToken',
+      ],
+      'thankyou_date' => [
+        'label' => E::ts('Deprecated? date for already sent thank you'),
+        'description' => 'this feels like a hang over from our old import code.',
+        'data_type' => 'Datetime',
+        'api_field' => 'thankyou_date',
+        'api_entity' => 'Contribution',
+      ],
+      'utm_medium' => [
+        'label' => E::ts('UTM Medium'),
+        'data_type' => 'String',
+        'api_field' => 'contribution_extra.utm_medium',
+        'api_entity' => 'Contribution',
+      ],
     ];
   }
 
