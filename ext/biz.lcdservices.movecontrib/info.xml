@@ -4,18 +4,24 @@
   <name>Move Contribution</name>
   <description>Adds an action to the contribution tab listing allowing the user to move a contribution to a different contact record.</description>
   <license>AGPL-3.0</license>
-  <maintainer>
-    <author>Lighthouse Consulting and Design</author>
-    <email>dev@lcdservices.biz</email>
-  </maintainer>
+  <authors>
+    <author>
+      <name>Lighthouse Consulting and Design</name>
+      <email>dev@lcdservices.biz</email>
+    </author>
+    <author>
+      <name>JMA Consulting</name>
+      <email>support@jmaconsulting.biz</email>
+    </author>
+  </authors>
   <urls>
-    <url desc="Main Extension Page">https://github.com/lcdservices/biz.lcdservices.movecontrib</url>
-    <url desc="Documentation">https://github.com/lcdservices/biz.lcdservices.movecontrib</url>
-    <url desc="Support">https://github.com/lcdservices/biz.lcdservices.movecontrib/issues</url>
+    <url desc="Main Extension Page">https://lab.civicrm.org/extensions/movecontrib/</url>
+    <url desc="Documentation">https://lab.civicrm.org/extensions/movecontrib/</url>
+    <url desc="Support">https://lab.civicrm.org/extensions/movecontrib/-/issues</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
   <releaseDate>2025-02-13</releaseDate>
-  <version>2.14</version>
+  <version>2.14.1</version>
   <develStage>stable</develStage>
   <compatibility>
     <ver>5.82</ver>
