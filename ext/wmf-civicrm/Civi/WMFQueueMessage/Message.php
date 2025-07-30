@@ -231,13 +231,6 @@ class Message {
         'api_field' => 'token',
         'api_entity' => 'PaymentToken',
       ],
-      'thankyou_date' => [
-        'label' => E::ts('Deprecated? date for already sent thank you'),
-        'description' => 'this feels like a hang over from our old import code.',
-        'data_type' => 'Datetime',
-        'api_field' => 'thankyou_date',
-        'api_entity' => 'Contribution',
-      ],
       'utm_medium' => [
         'label' => E::ts('UTM Medium'),
         'data_type' => 'String',
@@ -584,7 +577,6 @@ class Message {
       'gift_source' => 'Gift_Data.Campaign',
       'restrictions' => 'Gift_Data.Fund',
       'stock_description' => 'Stock_Information.Description_of_Stock',
-      'postmark_date' => 'contribution_extra.Postmark_Date',
       'gateway_status' => 'contribution_extra.gateway_status_raw',
       'do_not_solicit' => 'Communication.do_not_solicit',
       'opt_in' => 'Communication.opt_in',
@@ -627,7 +619,6 @@ class Message {
       'backend_processor_txn_id',
       'payment_orchestrator_reconciliation_id',
       'gateway_status_raw',
-      'Postmark_Date',
       'gateway_txn_id',
     ])) {
       return NULL;

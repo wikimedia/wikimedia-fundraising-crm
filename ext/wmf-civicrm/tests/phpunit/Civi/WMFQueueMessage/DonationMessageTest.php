@@ -14,14 +14,11 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
     // Start with a message already in normal form, to make comparison easy
     $enqueuedTime = time() + 2;
     $original_msg = [
-      'anonymous' => 0,
-      'check_number' => '',
       'city' => '',
       'comment' => '',
       'contact_id' => mt_rand(),
       'contribution_recur_id' => mt_rand(),
       'contribution_tracking_id' => mt_rand(),
-      'contribution_tracking_update' => '1',
       'financial_type_id' => '9',
       'country' => 'IL',
       'create_date' => time() + 11,
@@ -46,7 +43,6 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
       'payment_instrument_id' => '25',
       'payment_instrument' => 'Paypal',
       'postal_code' => '',
-      'postmark_date' => NULL,
       'recurring' => '1',
       'source_enqueued_time' => $enqueuedTime,
       'contribution_extra.source_enqueued_time' => $enqueuedTime,
@@ -66,7 +62,6 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
       'subscr_id' => 'TEST-S-1234567' . mt_rand(),
       'supplemental_address_1' => '',
       'supplemental_address_2' => '',
-      'thankyou_date' => '',
       'txn_type' => 'subscr_payment',
       'utm_campaign' => '',
       'contribution_extra.gateway_txn_id' => '1234AB1234-2',
@@ -89,14 +84,11 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
   public function testGetPaymentInstrumentReturnNullInNormalizeMsg(): void {
     // Initialize message with no payment_instrument_id, payment_instrument, gateway, and payment_method set.
     $original_msg = [
-      'anonymous' => 0,
-      'check_number' => '',
       'city' => '',
       'comment' => '',
       'contact_id' => mt_rand(),
       'contribution_recur_id' => mt_rand(),
       'contribution_tracking_id' => mt_rand(),
-      'contribution_tracking_update' => '1',
       'financial_type_id' => '9',
       'country' => 'IL',
       'create_date' => time() + 11,
@@ -110,7 +102,6 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
       'gateway_txn_id' => '1234AB1234-2',
       'gross' => 5.8,
       'last_name' => 'es',
-      'letter_code' => '',
       'middle_name' => '',
       'net' => 5.29,
       'order_id' => mt_rand(),
@@ -119,7 +110,6 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
       'original_gross' => '20.00',
       'payment_date' => time(),
       'postal_code' => '',
-      'postmark_date' => NULL,
       'recurring' => '1',
       'source_enqueued_time' => time() + 2,
       'source_host' => 'thulium',
@@ -133,7 +123,6 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
       'subscr_id' => 'TEST-S-1234567' . mt_rand(),
       'supplemental_address_1' => '',
       'supplemental_address_2' => '',
-      'thankyou_date' => '',
       'txn_type' => 'subscr_payment',
       'utm_campaign' => '',
     ];

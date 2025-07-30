@@ -297,9 +297,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'receive_date' => $message->getDate(),
       'currency' => $msg['currency'],
       'contribution_recur_id' => $message->getContributionRecurID(),
-      'check_number' => $msg['check_number'],
       'debug' => TRUE,
-      'thankyou_date' => $message->getThankYouDateTime(),
       'invoice_id' => $message->getInvoiceID(),
     ];
 
