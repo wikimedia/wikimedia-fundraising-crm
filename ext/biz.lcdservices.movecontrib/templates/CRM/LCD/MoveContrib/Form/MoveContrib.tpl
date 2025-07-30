@@ -1,3 +1,4 @@
+{crmScope extensionKey='biz.lcdservices.movecontrib'}
 <div id="moveContribution" class="crm-block crm-form-block crm-contribution-move-form-block">
   <div class="messages status">
     <div class="icon inform-icon"></div> {ts 1=$currentContactName}This contribution is currently assigned to %1.{/ts}
@@ -15,3 +16,4 @@
     {include file="CRM/common/formButtons.tpl" location="bottom"}
   </div>
 </div>
+{/crmScope}

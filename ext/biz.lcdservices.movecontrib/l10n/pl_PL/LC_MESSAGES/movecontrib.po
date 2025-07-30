@@ -1,0 +1,58 @@
+# Copyright CiviCRM LLC (c) 2004-2015
+# This file is distributed under the same license as the CiviCRM package.
+# If you contribute heavily to a translation and deem your work copyrightable,
+# make sure you license it to CiviCRM LLC under Academic Free License 3.0.
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Artur Śmigielski\n"
+"Language-Team: IProSoft\n"
+"Language: pl_PL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.0.1\n"
+
+msgid "Moved"
+msgstr "Przeniesione"
+
+msgid "Move Contribution"
+msgstr "Przenieś transakcję"
+
+msgid "CiviCRM: Allow Move Contributions"
+msgstr "CiviCRM: Przenoszenie transakcji"
+
+msgid "Allow Move Contribution"
+msgstr "Zezwalaj na przenoszenie transakcji"
+
+msgid "This contribution is currently assigned to %1."
+msgstr "Ta transakcja jest obecnie przypisana do %1."
+
+msgid "Contribution Reassignment"
+msgstr "Przeniesienie transakcji"
+
+msgid "Contribution moved to a different contact"
+msgstr "Transakcja przeniesiona na inny kontakt"
+
+msgid "Contribution moved successfully."
+msgstr "Transakcja została przeniesiona."
+
+msgid "Unable to move contribution."
+msgstr "Transakcja nie została przeniesiona."
+
+msgid "%count contribution moved."
+msgstr "%count transakcja przeniesiona."
+
+msgid "%count contributions moved."
+msgstr "%count transakcji przeniesionych."
+
+msgid "1 could not be moved."
+msgstr "1 nie mogła zostać przeniesiona."
+
+msgid "%count could not be moved."
+msgstr "%count nie mogło zostać przeniesionych."
+
+msgid "%1 contribution(s) will be moved."
+msgstr "%1 transakcji zostanie przeniesionych."
