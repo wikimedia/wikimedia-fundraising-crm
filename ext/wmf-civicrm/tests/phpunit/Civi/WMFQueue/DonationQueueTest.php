@@ -866,7 +866,6 @@ class DonationQueueTest extends BaseQueueTestCase {
           'prefix_id:label' => 'Mr.',
           'suffix_id:label' => 'Sr.',
           'payment_method' => 'check',
-          'stock_description' => 'Long-winded prolegemenon',
           'fiscal_number' => 'AAA11223344',
         ],
         'expected' => [
