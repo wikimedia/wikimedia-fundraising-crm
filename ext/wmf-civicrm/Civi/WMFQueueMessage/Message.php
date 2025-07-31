@@ -783,7 +783,6 @@ class Message {
     // restrictive on contribution fields.
     if ($field['custom_group']['extends'] === 'Contribution' && !in_array($field['name'], [
       'gateway_account',
-      'import_batch_number',
       'no_thank_you',
       'source_name',
       'source_type',
