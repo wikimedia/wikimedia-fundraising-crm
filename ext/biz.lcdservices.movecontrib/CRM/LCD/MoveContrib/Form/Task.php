@@ -24,7 +24,7 @@
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
  */
-
+use CRM_LCD_MoveContrib_ExtensionUtil as E;
 /**
  *
  * @package CRM
@@ -42,9 +42,10 @@ class CRM_LCD_MoveContrib_Form_Task extends CRM_Contribute_Form_Task {
    * Build all the data structures needed to build the form.
    */
   public function preProcess(): void {
+    CRM_Utils_System::setTitle(E::ts('Move Contribution'));
     //check for delete
     if (!CRM_Core_Permission::checkActionPermission('CiviContribute', CRM_Core_Action::UPDATE)) {
-      CRM_Core_Error::statusBounce(ts('You do not have permission to access this page.'));
+      CRM_Core_Error::statusBounce(E::ts('You do not have permission to access this page.'));
     }
     parent::preProcess();
   }
@@ -53,7 +54,7 @@ class CRM_LCD_MoveContrib_Form_Task extends CRM_Contribute_Form_Task {
    * Build the form object.
    */
   public function buildQuickForm(): void {
-    $this->addEntityRef('change_contact_id', ts('Select Contact'), [], TRUE);
+    $this->addEntityRef('change_contact_id', E::ts('Select Contact'), [], TRUE);
     $count = count($this->_contributionIds);
     $this->assign('count', $count);
 
@@ -63,12 +64,12 @@ class CRM_LCD_MoveContrib_Form_Task extends CRM_Contribute_Form_Task {
     $this->addButtons([
       [
         'type' => 'submit',
-        'name' => ts('Submit'),
+        'name' => E::ts('Submit'),
         'isDefault' => TRUE,
       ],
       [
         'type' => 'cancel',
-        'name' => ts('Cancel'),
+        'name' => E::ts('Cancel'),
       ],
     ]);
 
@@ -109,17 +110,17 @@ class CRM_LCD_MoveContrib_Form_Task extends CRM_Contribute_Form_Task {
     }
 
     if ($moved) {
-      CRM_Core_Session::setStatus(ts('%count contribution moved.', [
+      CRM_Core_Session::setStatus(E::ts('%count contribution moved.', [
         'plural' => '%count contributions moved.',
         'count' => $moved,
-      ]), ts('Moved'), 'success');
+      ]), E::ts('Moved'), 'success');
     }
 
     if ($failed) {
-      CRM_Core_Session::setStatus(ts('1 could not be moved.', [
+      CRM_Core_Session::setStatus(E::ts('1 could not be moved.', [
         'plural' => '%count could not be moved.',
         'count' => $failed,
-      ]), ts('Error'), 'error');
+      ]), E::ts('Error'), 'error');
     }
 
     parent::postProcess();

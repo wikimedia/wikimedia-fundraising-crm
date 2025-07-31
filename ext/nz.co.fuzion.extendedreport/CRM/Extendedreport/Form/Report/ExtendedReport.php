@@ -725,7 +725,13 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
       }
       else {
         $this->_selectAliases[$alias] = $alias;
-        $this->_columnHeaders[$field['alias']]['type'] = CRM_Utils_Array::value('type', $field);
+        if (isset($this->_columnHeaders[$field['alias']])) {
+          // is this actually changing the type at all?
+          $this->_columnHeaders[$field['alias']]['type'] = $field['type'] ?? NULL;
+        }
+        else {
+          $this->_columnHeaders[$field['alias']] = ['type' => $field['type'] ?? NULL];
+        }
         $select[$fieldName] = $this->getBasicFieldSelectClause($field, $alias) . " as $alias ";
       }
     }
@@ -1976,7 +1982,7 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
     if (in_array($this->_outputMode, [
         'print',
         'pdf'
-      ]) && $this->_params['templates']) {
+      ]) && array_key_exists('templates', $this->_params) && $this->_params['templates']) {
         $defaultTpl = 'CRM/Extendedreport/Form/Report/CustomTemplates/' . $this->_params['templates'] . '.tpl';
       }
 
@@ -2489,9 +2495,11 @@ LEFT JOIN civicrm_contact {$prop['alias']} ON {$prop['alias']}.id = {$this->_ali
     $altered = [];
     $fieldsToUnSetForSubtotalLines = [];
     //on this first round we'll get a list of keys that are not groupbys or stats
-    foreach (array_keys($firstRow) as $rowField) {
-      if (!array_key_exists($rowField, $groupBys) && substr($rowField, -4) !== '_sum' && !substr($rowField, -7) !== '_count') {
-        $fieldsToUnSetForSubtotalLines[] = $rowField;
+    if (!$this->isPivot) {
+      foreach (array_keys($firstRow) as $rowField) {
+        if (!array_key_exists($rowField, $groupBys) && substr($rowField, -4) !== '_sum' && !substr($rowField, -7) !== '_count') {
+          $fieldsToUnSetForSubtotalLines[] = $rowField;
+        }
       }
     }
 
@@ -2644,6 +2652,9 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
         }
         if ($customField) {
           if ($customField['data_type'] === 'Money') {
+            $rows[$rowNum][$tableCol] = $val;
+          }
+          else if ($customField['data_type'] === 'Boolean') {
             $rows[$rowNum][$tableCol] = $val;
           }
           else {
@@ -4694,6 +4705,10 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
       $join['title'] = E::ts('%1 only included based on filter ', [$field['entity']]) . $join['title'];
       $statistics['filters'][] = $join;
     }
+    // Prevents an e-notice in Statistics.tpl
+    if (!isset($statistics['filters'])) {
+      $statistics['filters'] = [];
+    }
   }
 
   /*
@@ -5722,11 +5737,13 @@ AND {$this->_aliases['civicrm_line_item']}.entity_table = 'civicrm_participant')
    * Define join from Participant to Contribution table
    */
   protected function joinContributionFromParticipant(): void {
-    $this->_from .= " LEFT JOIN civicrm_participant_payment pp
+    if ($this->isTableSelected('civicrm_contribution')) {
+      $this->_from .= " LEFT JOIN civicrm_participant_payment pp
 ON {$this->_aliases['civicrm_participant']}.id = pp.participant_id
 LEFT JOIN civicrm_contribution {$this->_aliases['civicrm_contribution']}
 ON pp.contribution_id = {$this->_aliases['civicrm_contribution']}.id
 ";
+    }
   }
 
   /**
@@ -6395,12 +6412,22 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
   }
 
   /**
-   * @param int|null $value
+   * @param string|null $value
    *
    * @return string
    */
-  protected function alterGenderID(?int $value): string {
-    return CRM_Contact_BAO_Contact::buildOptions('gender_id')[$value] ?? '';
+  protected function alterGenderID(?string $value): string {
+    $genders = CRM_Contact_BAO_Contact::buildOptions('gender_id');
+
+    if (CRM_Utils_Type::validate($value, 'CommaSeparatedIntegers', FALSE)) {
+      $value = explode(',', $value);
+    }
+
+    foreach ((array) $value as $key => $genderID) {
+      $value[$key] = $genders[trim($genderID)] ?? '';
+    }
+
+    return implode(', ', $value);
   }
 
   /**
@@ -6472,9 +6499,18 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
    *
    * @return string
    */
-  protected function alterPaymentType(?int $value): string {
+  protected function alterPaymentType(?string $value): string {
     $paymentInstruments = CRM_Contribute_BAO_Contribution::buildOptions('payment_instrument_id', 'get');
-    return (string) ($paymentInstruments[$value] ?? '');
+    $values = explode(',', $value);
+    $labels = [];
+    foreach ($values as $value) {
+      $label = $paymentInstruments[$value] ?? '';
+      if ($label) {
+        $labels[] = $label;
+      }
+    }
+
+    return (string) implode(',', $labels);
   }
 
   /**
@@ -6692,7 +6728,7 @@ ON ({$this->_aliases['civicrm_event']}.id = {$this->_aliases['civicrm_participan
         }
       }
     }
-    $addressOutput = CRM_Utils_Address::format($address, $format);
+    $addressOutput = CRM_Utils_Address::format($address);
     if ($this->_outputMode !== 'csv') {
       return nl2br($addressOutput);
     }
