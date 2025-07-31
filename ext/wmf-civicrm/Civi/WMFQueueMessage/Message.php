@@ -225,16 +225,19 @@ class Message {
         'description' => 'Reference ID for a modification (e.g. refund)',
       ],
       'date' => [
+        'name' => 'date',
         'api_field' => 'receive_date',
         'api_entity' => 'Contribution',
         'label' => E::ts('Transaction Date'),
         'data_type' => 'Datetime',
       ],
       'recurring' => [
+        'name' => 'recurring',
         'label' => E::ts('Is recurring?'),
         'data_type' => 'Bool',
       ],
       'contribution_recur_id' => [
+        'name' => 'contribution_recur_id',
         'label' => E::ts('Contribution Recur ID'),
         'data_type' => 'Int',
         'api_field' => 'id',
@@ -331,6 +334,7 @@ class Message {
         'api_entity' => 'Contact',
       ],
       'country' => [
+        'name' => 'country',
         'label' => E::ts('Phone'),
         'api_field' => 'address_primary.country_id',
         'api_entity' => 'Contact',
