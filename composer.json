@@ -79,7 +79,8 @@
     "extra": {
       "merge-plugin": {
         "include": [
-          "ext/*/composer.json"
+          "ext/*/composer.json",
+          "core/composer.json"
         ],
         "recurse": true,
         "replace": false,
@@ -89,6 +90,31 @@
         "merge-extra-deep": false,
         "merge-scripts": false,
         "merge-replace": false
+      },
+      "compile-whitelist": ["civicrm/composer-compile-lib"],
+      "patches-comments": "These are copied from the civicrm-core composer.json - they are fairly static so can be managed manually",
+      "patches": {
+        "adrienrn/php-mimetyper": {
+          "Update gitignore to ensure that sites that manage via git don't miss out on the important db.json file": "core/tools/patches/raw/adrienrn/php-mimetyper/15.patch",
+          "Apply patch to fix php8.2 deprecation notice on dynamic property $filename": "core/tools/patches/raw/adrienrn/php-mimetyper/17.patch"
+        },
+        "pear/db": {
+          "Ensure that error messages about MySQL-SSL connections are reported": "core/tools/patches/raw/pear/db/mysqli-ssl.patch",
+          "Apply CiviCRM Customisations for the pear:db package": "core/tools/patches/raw/pear/db/pear_db_civicrm_changes.patch"
+        },
+        "pear/mail": {
+          "Apply CiviCRM Customisations for CRM-1367 and CRM-5946": "core/tools/patches/raw/pear/mail/pear-mail.patch"
+        },
+        "pear/mail_mime": {
+          "Apply patch for CRM-3133 wordwrap body to be 750 characters to apply with RFC 2821": "core/tools/patches/raw/pear/mail_mime/crm_3133.patch"
+        },
+        "pear/net_smtp": {
+          "Add in CiviCRM custom error message for CRM-8744": "core/tools/patches/raw/pear/net_smtp/error-msg.patch"
+        },
+        "zetacomponents/mail": {
+          "CiviCRM Custom Patches for ZetaCompoents mail": "core/tools/patches/raw/zetacomponents/mail/100-filename.patch",
+          "CiviCRM Custom patch to fix a php8.1 issue found in CiviCRM unit tests": "core/tools/patches/raw/zetacomponents/mail/200-php-81.patch"
+        }
       }
     },
     "config": {
@@ -97,7 +123,10 @@
         },
         "allow-plugins": {
             "wikimedia/composer-merge-plugin": true,
-            "php-http/discovery": false
+            "php-http/discovery": false,
+            "cweagans/composer-patches": true,
+            "civicrm/composer-compile-plugin": true,
+            "civicrm/composer-downloads-plugin": true
         }
     }
 }
