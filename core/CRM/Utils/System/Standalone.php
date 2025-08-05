@@ -657,9 +657,14 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
       $session_cookie_name = 'SESSCIVISOFALLBACK';
     }
     else {
+      $session_cookie_name = 'SESSCIVISO';
+    }
+    if (ini_get('session.save_handler') === 'redis') {
+      // We'll just use the default, take no action.
+    }
+    else {
       $session_handler = $this->getSessionHandler($session_max_lifetime);
       session_set_save_handler($session_handler);
-      $session_cookie_name = 'SESSCIVISO';
     }
 
     session_start([
