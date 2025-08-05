@@ -117,7 +117,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     $systemFields[] = 'LastClickDate';
     $systemFields[] = 'LastOpenDate';
     $systemFields[] = 'IsoLang';
-    return $systemFields + ['contactID'] + array_values($this->customDataMap);
+    return array_merge($systemFields, ['contactID'], array_values($this->customDataMap));
   }
 
   private function isMasterSuppressionList(): true {

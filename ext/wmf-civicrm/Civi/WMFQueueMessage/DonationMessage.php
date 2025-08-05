@@ -22,7 +22,6 @@ class DonationMessage extends Message {
    *   subscr_id: string,
    *   recurring_payment_token: string,
    *   date: string,
-   *   thankyou_date: string,
    *   utm_medium: string,
    *   type: string,
    *   phone: string,
@@ -118,8 +117,6 @@ class DonationMessage extends Message {
       'country' => '',
       'state_province' => '',
       'postal_code' => '',
-      'postmark_date' => NULL,
-      'check_number' => NULL,
       'recurring' => NULL,
       'utm_campaign' => NULL,
       'effort_id' => NULL,
@@ -142,7 +139,6 @@ class DonationMessage extends Message {
     }
     $msg['payment_instrument_id'] = $this->getPaymentInstrumentID();
     $msg['date'] = $this->getTimestamp();
-    $msg['thankyou_date'] = $this->getThankYouTimestamp();
     $parsed = $this->getParsedName();
     if (!empty($parsed)) {
       $msg = array_merge(array_filter((array) $parsed), $msg);
@@ -385,39 +381,6 @@ class DonationMessage extends Message {
         $msg['postal_code']
       );
     }
-  }
-
-  /**
-   * Get the unix-style timestamp for the thank you date.
-   *
-   * @return int|null
-   */
-  public function getThankYouTimestamp(): ?int {
-    if (empty($this->message['thankyou_date'])) {
-      return NULL;
-    }
-    if (is_numeric($this->message['thankyou_date'])) {
-      return $this->message['thankyou_date'];
-    }
-    try {
-      return $this->parseDateString($this->message['thankyou_date']);
-    }
-    catch (\Exception $e) {
-      \Civi::log('wmf')->debug('wmf_civicrm: Could not parse thankyou date: {date} from {id}', [
-        'date' => $this->message['thankyou_date'],
-        'id' => $this->message['contribution_tracking_id'],
-      ]);
-    }
-    return NULL;
-  }
-
-  /**
-   * Get the date time for the thank you date.
-   *
-   * @return string|null
-   */
-  public function getThankYouDateTime(): ?string {
-    return $this->getThankYouTimestamp() ? date('Y-m-d H:i:s', $this->getThankYouTimestamp()) : NULL;
   }
 
   public function getInvoiceID(): ?string {
