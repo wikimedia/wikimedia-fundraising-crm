@@ -197,13 +197,6 @@ class CRM_Contribute_Form_ContributionRecur extends CRM_Core_Form {
       if (!$id) {
         $id = $this->getMembershipValue('contribution_recur_id');
       }
-      if (!$id) {
-        echo "<pre>";
-        print_r($_GET);
-        print_r($_POST);
-        print_r($_REQUEST);
-        die;
-      }
       $this->contributionRecurID = $this->_crid = $id;
     }
     return (int) $this->contributionRecurID;

@@ -34,6 +34,8 @@
           $element.addClass('af-field-type-multiple');
         }
 
+        this.fkEntity = this.defn.fk_entity || null;
+
         if (this.defn.name !== this.fieldName) {
           if (!this.defn.name) {
             console.error('Missing field definition for: ' + this.fieldName);
@@ -76,8 +78,8 @@
         }
 
         // ChainSelect - watch control field & reload options as needed
-        if (ctrl.defn.input_type === 'ChainSelect') {
-          var controlField = namePrefix + ctrl.defn.input_attrs.control_field;
+        if (ctrl.defn.input_type === 'ChainSelect' && ctrl.defn.input_attrs.control_field) {
+          const controlField = namePrefix + ctrl.defn.input_attrs.control_field;
           $scope.$watch('dataProvider.getFieldData()["' + controlField + '"]', function(val) {
             // After switching option list, remove invalid options
             function validateValue() {
@@ -117,6 +119,22 @@
               validateValue();
             }
           }, true);
+        }
+
+        // Dynamic foreign key
+        if (ctrl.defn.input_type === 'EntityRef' && ctrl.defn.dfk_entities && ctrl.defn.input_attrs.control_field) {
+          const controlField = namePrefix + ctrl.defn.input_attrs.control_field;
+          $scope.$watch('dataProvider.getFieldData()["' + controlField + '"]', function(val) {
+            if (val && val.length) {
+              if (Array.isArray(val)) {
+                ctrl.fkEntity = ctrl.defn.dfk_entities[val[0]];
+              } else {
+                ctrl.fkEntity = ctrl.defn.dfk_entities[val];
+              }
+            } else {
+              ctrl.fkEntity = null;
+            }
+          });
         }
 
         // Wait for parent controllers to initialize
@@ -268,8 +286,18 @@
         return ctrl.defn.input_type === 'DisplayOnly';
       };
 
+      ctrl.isDisabled = function() {
+        if (ctrl.isReadonly()) {
+          return true;
+        }
+        if (ctrl.defn.input_type === 'EntityRef' && !ctrl.fkEntity) {
+          return true;
+        }
+        return false;
+      };
+
       ctrl.getDisplayValue = function(value) {
-        if (value === undefined || value === null || value === '') {
+        if (value === undefined || value === null || value === '' || (Array.isArray(value) && !value.length)) {
           return '';
         }
         if (fieldOptions) {
@@ -279,13 +307,30 @@
         }
         if (ctrl.defn.data_type === 'Date' || ctrl.defn.data_type === 'Timestamp') {
           try {
-            return CRM.formatDate(value, null, ctrl.defn.data_type === 'Timestamp');
+            return CRM.utils.formatDate(value, null, ctrl.defn.data_type === 'Timestamp');
           } catch (e) {
             return '';
           }
         }
-        if (ctrl.defn.fk_entity) {
-          // TODO: EntityRef fields
+        if (ctrl.fkEntity) {
+          // EntityRef fields: fetch label via API if not already present
+          // This is async, so we return a placeholder and update later
+          const ids = Array.isArray(value) ? value : [value];
+          if (!ctrl._entityLabels) {
+            ctrl._entityLabels = {};
+          }
+          // Call autocomplete api
+          if (!(ids.join() in ctrl._entityLabels)) {
+            ctrl._entityLabels[ids.join()] = null;
+            const params = ctrl.getAutocompleteParams();
+            params.ids = ids;
+            crmApi4(ctrl.fkEntity, 'autocomplete', params)
+              .then(function(result) {
+                // Join all labels
+                ctrl._entityLabels[ids.join()] = result.map((item) => item.label).join(', ');
+              });
+          }
+          return ctrl._entityLabels[ids.join()] || ts('Loading...');
         }
         return value;
       };

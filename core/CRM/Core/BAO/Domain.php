@@ -113,7 +113,7 @@ class CRM_Core_BAO_Domain extends CRM_Core_DAO_Domain {
     $url = CRM_Utils_System::url('civicrm/admin/options/site_email_address',
       'reset=1'
     );
-    $status = ts("There is no valid default email address configured for the site. <a href='%1'>Configure Site Email Addresses.</a>", [1 => $url]);
+    $status = ts("There is no valid default email address configured for the site. <a href='%1'>Configure Site From Email Addresses.</a>", [1 => $url]);
     return $status;
   }
 
@@ -121,8 +121,11 @@ class CRM_Core_BAO_Domain extends CRM_Core_DAO_Domain {
    * Get the location values of a domain.
    *
    * @return CRM_Core_BAO_Location[]|NULL
+   *
+   * @deprecated since 6.3 will be removed around 6.13.
    */
   public function getLocationValues() {
+    CRM_Core_Error::deprecatedFunctionWarning('use the api');
     if ($this->_location == NULL) {
       $params = [
         'contact_id' => $this->contact_id,
@@ -258,7 +261,7 @@ class CRM_Core_BAO_Domain extends CRM_Core_DAO_Domain {
     }
 
     $domainGroupID = Civi::settings()->get('domain_group_id');
-    $multisite = Civi::settings()->get('is_enabled');
+    $multisite = Civi::settings()->get('multisite_is_enabled');
 
     if ($domainGroupID) {
       $groupID = $domainGroupID;
