@@ -44,6 +44,7 @@
     <ext>org.wikimedia.datachecks</ext>
     <ext>org.wikimedia.forgetme</ext>
     <ext>org.wikimedia.relationshipblock</ext>
+    <ext>org.wikimedia.systemtools</ext>
     <ext>org.civicrm.contactlayout</ext>
     <ext>org.civicrm.recentmenu</ext>
     <ext>org.wikimedia.thethe</ext>

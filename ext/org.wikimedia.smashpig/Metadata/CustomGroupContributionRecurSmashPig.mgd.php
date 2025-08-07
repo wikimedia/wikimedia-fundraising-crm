@@ -167,4 +167,31 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'CustomGroup_Contribution_Recur_SmashPig_CustomField_Original_Country',
+    'entity' => 'CustomField',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'custom_group_id.name' => 'contribution_recur_smashpig',
+        'name' => 'Original_Country',
+        'label' => 'Original Country',
+        'data_type' => 'Country',
+        'html_type' => 'Select',
+        'help_pre' => 'Country originally associated with the recurring contribution. May be used to map tax IDs to the right format in case a donor\'s address changes.',
+        'is_active' => TRUE,
+        'is_view' => TRUE,
+        'text_length' => 255,
+        'note_columns' => 60,
+        'note_rows' => 4,
+        'column_name' => 'original_country',
+      ],
+      'match' => [
+        'name',
+        'custom_group_id',
+      ],
+    ],
+  ],
 ];

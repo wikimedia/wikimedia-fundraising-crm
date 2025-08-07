@@ -11,8 +11,8 @@ use CRM_Systemtools_ExtensionUtil as E;
 function systemtools_civicrm_config(&$config) {
   _systemtools_civix_civicrm_config($config);
   $listener = function(\Civi\Core\Event\QueryEvent $e) {
-    global $user;
-    $uid = is_a($user, 'stdClass') ? (int) $user->uid : 'unknown';
+    $sess = CRM_Core_Session::singleton();
+    $uid = $sess->get('ufID') ?? 'unknown';
     $e->query = '/* User : ' . $uid . ' */' . $e->query;
   };
   Civi::dispatcher()->addListener('civi.db.query', $listener);
