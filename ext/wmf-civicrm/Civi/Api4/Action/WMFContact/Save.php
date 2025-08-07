@@ -112,8 +112,8 @@ class Save extends AbstractAction {
       // do_not_solicit should probably be removed from the queue processing sub-system.
       // It was probably only used for legacy imports.
       'Communication.do_not_solicit',
-      // Do we still have anything come in with employer_id????
-      // It feels like it might be from legacy imports.
+      // Donors can select an employer on the form for us to send them matching gift info
+      // Those messages should have both employer ID (creates a relationship) and name
       'Communication.Employer_Name',
       // Update DOES save these too - it does it with a separate api call
       // & filters off the prefix. Unclear if it is different for *reasons* or just cos.
