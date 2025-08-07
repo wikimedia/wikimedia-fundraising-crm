@@ -335,7 +335,7 @@ class Message {
       ],
       'country' => [
         'name' => 'country',
-        'label' => E::ts('Phone'),
+        'label' => E::ts('Country'),
         'api_field' => 'address_primary.country_id',
         'api_entity' => 'Contact',
         'data_type' => 'String',
