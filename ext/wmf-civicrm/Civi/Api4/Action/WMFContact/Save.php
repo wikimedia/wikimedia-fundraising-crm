@@ -63,18 +63,9 @@ class Save extends AbstractAction {
     $msg = $this->getMessage();
 
     $existingContact = $this->getExistingContact($msg);
-    $replaceNames = FALSE;
     if ($existingContact) {
-      $msg['contact_id'] = $existingContact['contact_id'];
-      $replaceNames = (
-        empty($existingContact['contact_id.first_name']) &&
-        empty($existingContact['contact_id.last_name'])
-      );
-    }
-    if (!empty($msg['contact_id'])) {
-      $this->setMessage($msg);
-      $this->handleUpdate($replaceNames);
-      $result[] = ['id' => $msg['contact_id']];
+      $this->handleUpdate($existingContact);
+      $result[] = ['id' => $existingContact['id']];
       return;
     }
 
@@ -423,16 +414,26 @@ class Save extends AbstractAction {
    *
    * This is an interim step... getting it onto the same class.
    *
-   * @param bool $replaceNames
+   * @param array $existingContact
    *
    * @throws WMFException
    * @throws \CRM_Core_Exception
    */
-  public function handleUpdate(bool $replaceNames = FALSE): void {
+  private function handleUpdate(array $existingContact): void {
+    $updateFields = [];
     // This winds up being a list of permitted fields to update. The approach of
     // filtering out some fields here probably persists more because we
     // have not been brave enough to change historical code than an underlying reason.
-    $updateFields = $replaceNames ? ['first_name', 'last_name'] : [];
+    // Here we have tended to discard incoming names on update - why??
+    // The latest cut only discards them if we have reason to think it might be poor quality.
+    if ((empty($existingContact['first_name']) && empty($existingContact['last_name']))
+      || (!$this->getIsLowConfidenceNameSource()
+        && !empty($this->message['first_name'])
+        && !empty($this->message['last_name'])
+      )
+    ) {
+      $updateFields = ['first_name', 'last_name'];
+    }
 
     $msg = $this->getMessage();
     $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
@@ -452,24 +453,24 @@ class Save extends AbstractAction {
     if (!empty($updateParams)) {
       $this->startTimer('update_contact_civi_api');
       Contact::update(FALSE)
-        ->addWhere('id', '=', $msg['contact_id'])
+        ->addWhere('id', '=', $existingContact['id'])
         ->setValues($updateParams)
         ->execute();
       $this->stopTimer('update_contact_civi_api');
     }
-    $this->createEmployerRelationshipIfSpecified($msg['contact_id'], $msg);
+    $this->createEmployerRelationshipIfSpecified($existingContact['id'], $msg);
 
     // We have set the bar for invoking a location update fairly high here - ie state,
     // city or postal_code is not enough, as historically this update has not occurred at
     // all & introducing it this conservatively feels like a safe strategy.
     if (!empty($msg['street_address'])) {
       $this->startTimer('message_location_update');
-      $this->updateAddress($msg, $msg['contact_id']);
+      $this->updateAddress($msg, $existingContact['id']);
       $this->stopTimer('message_location_update');
     }
     if (!empty($msg['email'])) {
       $this->startTimer('message_email_update');
-      $this->emailUpdate($msg, $msg['contact_id']);
+      $this->emailUpdate($msg, $existingContact['id']);
       $this->stopTimer('message_email_update');
     }
     $phoneFields = \CRM_Utils_Array::filterByPrefix($msg, 'phone_primary.');
@@ -478,7 +479,7 @@ class Save extends AbstractAction {
     // so better to make a conscious choice if we want to change this in the future.
     // The testPhoneImport() test locks this in.
     if (!empty($phoneFields['location_type_id:name']) && $phoneFields['location_type_id:name'] === 'sms_mobile') {
-      $phoneFields['contact_id'] = $msg['contact_id'];
+      $phoneFields['contact_id'] = $existingContact['id'];
       // In practice as of late 2024 these would all be incoming SMS consent numbers.
       // We have historically not brought in phones from banners or emails and the support for
       // phones in create probably dates back to the old offline2civicrm manual imports.
@@ -681,16 +682,17 @@ WHERE
    * @throws \CRM_Core_Exception
    */
   protected function getExistingContact(array $msg): ?array {
-    if (empty($msg['first_name']) || empty($msg['last_name'])) {
-      return NULL;
-    }
     if (!empty($msg['contact_id'])) {
       $contact = Contact::get(FALSE)->addWhere('id', '=', $msg['contact_id'])
         ->addSelect('first_name', 'last_name')->execute()->first();
       if ($contact) {
-        return ['contact_id.first_name' => $contact['first_name'], 'contact_id.last_name' => $contact['last_name'], 'contact_id' => $contact['id']];
+        return $contact;
       }
       // @todo - should we throw an exception here? Should no be reachable.
+    }
+    // @todo - does this still make sense? Before or after Venmo?
+    if (empty($msg['first_name']) || empty($msg['last_name'])) {
+      return NULL;
     }
     $externalIdentifiers = array_flip($this->getExternalIdentifierFields());
     if ($externalIdentifiers) {
@@ -703,7 +705,6 @@ WHERE
           ->execute()
           ->first();
         if (!empty($matches)) {
-          $matches['contact_id'] = $matches['id'];
           return $matches;
         }
       }
@@ -728,7 +729,7 @@ WHERE
         ->execute();
 
       if (count($matches) === 1) {
-        return $matches->first();
+        return $this->keyAsContact($matches->first());
       }
       return NULL;
     }
@@ -755,7 +756,7 @@ WHERE
       ->setLimit(2)
       ->execute();
     if (count($matches) === 1) {
-      return $matches->first();
+      return $this->keyAsContact($matches->first());
     }
 
     return NULL;
@@ -839,7 +840,9 @@ WHERE
       $this->isLowConfidenceNameSource = $this->getMessage()['payment_method'] === 'apple';
     }
     else {
-      $this->isLowConfidenceNameSource = FALSE;
+      // If contribution recur ID is populated we are not dealing with something they just entered on
+      // our form. Their details may not be more up-to-date than what we have.
+      $this->isLowConfidenceNameSource = !empty($this->message['contribution_recur_id']);
     }
     return $this->isLowConfidenceNameSource;
   }
@@ -897,6 +900,29 @@ WHERE
       }
     }
     return $externalIdentifierFields;
+  }
+
+  /**
+   * Reformat an array from another entity as a contact array.
+   *
+   * e.g an email array of ['contact_id' => 5, 'contact_id.first_name' => 'Tinkerbell']
+   * will be swapped to ['id' => 5, 'first_name' => 'Tinkerbell']
+   *
+   * @param array $result
+   *
+   * @return array
+   */
+  private function keyAsContact(array $result): array {
+    $contact = [];
+    foreach ($result as $key => $value) {
+      if ($key === 'contact_id') {
+        $contact['id'] = $value;
+      }
+      elseif ($key !== 'id') {
+        $contact[substr($key, 11)] = $value;
+      }
+    }
+    return $contact;
   }
 
 }
