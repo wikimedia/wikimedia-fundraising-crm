@@ -36,6 +36,8 @@ class Message {
   protected array $requiredFields = [];
   protected bool $isRestrictToSupportedFields = FALSE;
 
+  protected array $availableFields;
+
   /**
    * Contribution Tracking ID.
    *
@@ -113,7 +115,11 @@ class Message {
    * As of writing the new Settle message is the only one that does this.
    */
   public function getAvailableFields(): array {
-    return [
+    if (isset($this->availableFields)) {
+      return $this->availableFields;
+    }
+    $contactFields = Contact::getFields(FALSE)->setAction('save')->execute()->indexBy('name');
+    $fields = [
       'gateway' => [
         'name' => 'gateway',
         'title' => 'Gateway',
@@ -419,7 +425,21 @@ class Message {
         'data_type' => 'Datetime',
         'description' => 'Start date of recurring contribution',
       ],
+      'opt_in' => [
+        'name' => 'opt_in',
+        'data_type' => 'Boolean',
+        'description' => 'Selection on opt in check box (if presented)',
+        'api_field' => 'Communication.opt_in',
+        'api_entity' => 'Contact',
+      ],
     ];
+    foreach ($fields as $index => $field) {
+      if (($field['api_entity'] ?? '') === 'Contact' && isset($contactFields[$field['api_field']])) {
+        $field += $contactFields[$field['api_field']];
+      }
+      $this->availableFields[$index] = $field;
+    }
+    return $this->availableFields;
   }
 
   /**
@@ -644,8 +664,7 @@ class Message {
         continue;
       }
       $field = $this->getCustomFieldMetadataByFieldName($fieldName);
-      $api4FieldName = $field ? $field['custom_group']['name'] . '.' . $field['name'] : NULL;
-      if ($field && !isset($this->message[$api4FieldName])) {
+      if ($field && !isset($this->message[$field['api_field']])) {
         if (!empty($field['option_group_id'])) {
           // temporary handling while I adjust the code to apiv4.
           $entity = $field['custom_group']['extends'] === 'Contribution' ? 'Contribution' : 'Contact';
@@ -661,14 +680,14 @@ class Message {
           $value = '@' . $value;
         }
         if (empty($field['options'])) {
-          $customFields[$api4FieldName] = $value;
+          $customFields[$field['api_field']] = $value;
         }
         else {
           if ($value === '' || $value === NULL || !empty($field['options'][$value])) {
-            $customFields[$api4FieldName] = $value;
+            $customFields[$field['api_field']] = $value;
           }
           elseif (in_array($value, $field['options'])) {
-            $customFields[$api4FieldName] = array_search($value, $field['options']);
+            $customFields[$field['api_field']] = array_search($value, $field['options']);
           }
           else {
             $found = FALSE;
@@ -676,7 +695,7 @@ class Message {
             foreach ($field['options'] as $optionValue) {
               if (mb_strtolower($optionValue) === mb_strtolower($value)) {
                 $found = TRUE;
-                $customFields[$api4FieldName] = $optionValue;
+                $customFields[$field['api_field']] = $optionValue;
                 break;
               }
             }
@@ -749,9 +768,10 @@ class Message {
    * @throws \CRM_Core_Exception
    */
   public function getCustomFieldMetadataByFieldName(string $name): ?array {
-    $declaredFields = $this->getFields();
-    if (!empty($declaredFields[$name]) && empty($declaredFields['custom_field_id'])) {
-      return NULL;
+    $declaredField = $this->getFields()[$name] ?? [];
+    if (isset($declaredField['api_entity'])) {
+      // Ideally this function would end after this if....
+      return empty($declaredField['custom_field_id']) ? NULL : $declaredField;
     }
     $fieldsToMap = [
       'utm_campaign' => 'Gift_Data.Appeal',
@@ -777,6 +797,7 @@ class Message {
       return NULL;
     }
     $field = $this->getCustomFieldMetadata($fieldID);
+    $field['api_field'] = $field ? $field['custom_group']['name'] . '.' . $field['name'] : NULL;
     // Only pass through Contribution fields on the allow-list.
     // This filtering may or may not be a good idea but historically the
     // code has been permission on contact field pass-through &

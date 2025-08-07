@@ -1685,7 +1685,6 @@ class DonationQueueTest extends BaseQueueTestCase {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function testExternalIdentifierUpdate(): void {
     $newVenmoUserName = 'test';

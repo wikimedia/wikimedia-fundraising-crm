@@ -27,6 +27,7 @@ class DonationMessage extends Message {
    *   phone: string,
    *   email: string,
    *   country: string,
+   *   opt_in: string
    *  }
    */
   protected array $message;
