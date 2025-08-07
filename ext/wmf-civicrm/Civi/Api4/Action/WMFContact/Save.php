@@ -107,9 +107,16 @@ class Save extends AbstractAction {
     // These fields have historically been permitted for create but not
     // update - or they would be in getApiReadyFields()
     $allowedCreateFields = [
+      // opt_in is more nuanced on update.
       'Communication.opt_in',
+      // do_not_solicit should probably be removed from the queue processing sub-system.
+      // It was probably only used for legacy imports.
       'Communication.do_not_solicit',
+      // Do we still have anything come in with employer_id????
+      // It feels like it might be from legacy imports.
       'Communication.Employer_Name',
+      // Update DOES save these too - it does it with a separate api call
+      // & filters off the prefix. Unclear if it is different for *reasons* or just cos.
       'phone_primary.phone',
       'phone_primary.phone_type_id:name',
       'phone_primary.location_type_id:name',
