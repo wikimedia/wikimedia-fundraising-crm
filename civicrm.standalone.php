@@ -14,7 +14,7 @@ global $appRootPath, $settingsPath;
 $appRootPath = __DIR__;
 
 // standard file structure with top-level private, public and extensions dirs.
-$autoLoader = implode(DIRECTORY_SEPARATOR, [$appRootPath, 'core', 'vendor', 'autoload.php']);
+$autoLoader = implode(DIRECTORY_SEPARATOR, [$appRootPath, 'vendor', 'autoload.php']);
 $classLoader = implode(DIRECTORY_SEPARATOR, [$appRootPath, 'core', 'CRM', 'Core', 'ClassLoader.php']);
 
 # // alternative composer-style file structure:

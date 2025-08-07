@@ -435,6 +435,20 @@ class Save extends AbstractAction {
       $updateFields = ['first_name', 'last_name'];
     }
 
+    if (isset($this->getMessage()['Communication.opt_in'])) {
+      if (!isset($existingContact['Communication.opt_in'])
+        || !$existingContact['wmf_donor.last_donation_date']
+        || strtotime($existingContact['wmf_donor.last_donation_date']) < strtotime($this->getMessage()['date'])
+      ) {
+        // Update the opt in - unless we are processing a donation that is older than the contact's most recent.
+        $updateFields[] = 'Communication.opt_in';
+      }
+      else {
+        // @todo - this is good enough maybe for a first run - but what about recurrings.
+        \Civi::log('wmf')->notice('opt in not updated for contact ' . $existingContact['id']);
+      }
+    }
+
     $msg = $this->getMessage();
     $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
     $updateParams += $this->getApiReadyFields();

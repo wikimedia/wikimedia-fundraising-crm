@@ -1719,12 +1719,13 @@ class DonationQueueTest extends BaseQueueTestCase {
       'invoice_id' => 8888888,
     ]);
 
-    $this->processDonationMessage($this->getDonationMessage($newDetails));
+    $this->processDonationMessage(['opt_in' => 1, 'optout' => 0] + $this->getDonationMessage($newDetails));
     $updatedContact = Contact::get(FALSE)
       ->addSelect('External_Identifiers.venmo_user_name')
+      ->addSelect('Communication.opt_in')
       ->addWhere('id', '=', $contribution['contact_id'])
       ->execute()->first();
-
+    $this->assertTrue($updatedContact['Communication.opt_in']);
     $this->assertEquals($newVenmoUserName, $updatedContact['External_Identifiers.venmo_user_name']);
   }
 
