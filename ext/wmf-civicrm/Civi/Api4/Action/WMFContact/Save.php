@@ -109,11 +109,7 @@ class Save extends AbstractAction {
     $allowedCreateFields = [
       'Communication.opt_in',
       'Communication.do_not_solicit',
-      'Organization_Contact.Name',
-      'Organization_Contact.Title',
       'Communication.Employer_Name',
-      'Organization_Contact.Phone',
-      'Organization_Contact.Email',
       'phone_primary.phone',
       'phone_primary.phone_type_id:name',
       'phone_primary.location_type_id:name',
