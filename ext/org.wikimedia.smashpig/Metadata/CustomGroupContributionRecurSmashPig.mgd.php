@@ -176,7 +176,7 @@ return [
       'version' => 4,
       'values' => [
         'custom_group_id.name' => 'contribution_recur_smashpig',
-        'name' => 'Original_Country',
+        'name' => 'original_country',
         'label' => 'Original Country',
         'data_type' => 'Country',
         'html_type' => 'Select',
