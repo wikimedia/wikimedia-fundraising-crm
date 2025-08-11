@@ -20,6 +20,7 @@ $instruments = [
   'Apple Pay: Visa Electron' => 'Apple Pay: Visa Electron',
   'Apple Pay: JCB' => 'Apple Pay: JCB',
   'Apple Pay: MasterCard' => 'Apple Pay: MasterCard',
+  'Apple Pay: Accel' => 'Apple Pay: Accel',
   'Google Pay' => 'Google Pay',
   'Google Pay: American Express' => 'Google Pay: American Express',
   'Google Pay: Discover' => 'Google Pay: Discover',
@@ -49,6 +50,7 @@ $instruments = [
   'Credit Card: CMR Falabella' => 'Credit Card: CMR Falabella',
   'Credit Card: Discover' => 'Credit Card: Discover',
   'Credit Card: JCB' => 'Credit Card: JCB',
+  'Credit Card: Accel' => 'Credit Card: Accel',
   // Credit Card: Laser exists on live but no contributions.
   'Credit Card: Laser' => 'Credit Card: Laser',
   // Credit Card: Maestro exists on live but no contributions.

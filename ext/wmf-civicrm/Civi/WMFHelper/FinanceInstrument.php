@@ -9,6 +9,7 @@ class FinanceInstrument {
 
   public const APPLE_PAY_SUBMETHOD_LIST = [
     'apple' => 'Apple',
+    'accel' => 'Accel',
     'visa' => 'Visa',
     'amex' => 'American Express',
     'cb' => 'Carte Bleue',
@@ -50,6 +51,7 @@ class FinanceInstrument {
   ];
 
   public const CARD_SUBMETHOD_LIST = [
+    'accel' => 'Accel',
     'alia' => 'Alia', // Ecuador
     'amex' => 'American Express',
     'argen' => 'Argencard',
