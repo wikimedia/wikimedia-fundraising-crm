@@ -124,11 +124,14 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
    * @throws \CRM_Core_Exception
    */
   public static function getLocationTypes() : array {
-    return Email::getFields(FALSE)
-      ->setLoadOptions(TRUE)
-      ->addWhere('name', '=', 'location_type_id')
-      ->addOrderBy('id')
-      ->execute()->first()['options'];
+    $locations = CRM_Core_DAO::executeQuery('
+      SELECT id, name FROM civicrm_location_type
+    ');
+    $return = [];
+    while ($locations->fetch()) {
+      $return[$locations->id] = $locations->name;
+    }
+    return $return;
   }
 
   /**
