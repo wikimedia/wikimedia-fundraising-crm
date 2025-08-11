@@ -1607,7 +1607,7 @@ class DonationQueueTest extends BaseQueueTestCase {
   /**
    * @throws \CRM_Core_Exception
    */
-  public function testRecurringInitialSchemeTxnId(): void {
+  public function testRecurringCustomFields(): void {
     $msg = [
       'first_name' => 'Lex',
       'currency' => 'USD',
@@ -1630,12 +1630,17 @@ class DonationQueueTest extends BaseQueueTestCase {
     $contribution = $this->getContributionForMessage($msg);
     $recurRecord = ContributionRecur::get(FALSE)
       ->addSelect('contribution_recur_smashpig.initial_scheme_transaction_id')
+      ->addSelect('contribution_recur_smashpig.original_country:abbr')
       ->addWhere('id', '=', $contribution['contribution_recur_id'])
       ->execute()
       ->first();
     $this->assertEquals(
       'FlargBlarg12345',
       $recurRecord['contribution_recur_smashpig.initial_scheme_transaction_id']
+    );
+    $this->assertEquals(
+      'US',
+      $recurRecord['contribution_recur_smashpig.original_country:abbr']
     );
   }
 
