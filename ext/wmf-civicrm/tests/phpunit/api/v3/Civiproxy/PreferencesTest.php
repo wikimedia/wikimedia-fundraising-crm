@@ -6,7 +6,8 @@ use Civi\Test\Api3TestTrait;
 use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
-use Civi\Test\TransactionalInterface;
+use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Civi\Api4\Contact;
 
 /**
@@ -53,7 +54,63 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
    * @throws \CRM_Core_Exception
    */
   public function testGetEmailPreferenceApi(): void {
-    $this->contactID = Contact::create(FALSE)->setValues([
+    $contactID = $this->createContact();
+    $checksum = CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
+    $contact = $this->callAPISuccess('Civiproxy', 'getpreferences', ['checksum' => $checksum, 'contact_id' => $contactID]);
+
+    $this->assertEquals(FALSE, $contact['is_opt_in']);
+    $this->assertEquals('Bob', $contact['first_name']);
+    $this->assertEquals('CA', $contact['country']);
+    $this->assertEquals('en_US', $contact['preferred_language']);
+    $this->assertEquals('bob.roberto@test.com', $contact['email']);
+  }
+
+  public function testGetEmailPreferenceApiV4(): void {
+    $contactID = $this->createContact();
+    $recur = ContributionRecur::create(FALSE)
+     ->setValues([
+       'contact_id' => $contactID,
+       'trxn_id' => 'active-paypal-recur-' . time(),
+       'amount' => 100,
+       'frequency_interval' => 1,
+       'frequency_unit' => 'month',
+       'start_date' => '2023-10-01',
+       'installments' => 12,
+       'contribution_status_id:name' => 'In Progress',
+       'financial_type_id:name' => 'Donation',
+     ])->execute()->first();
+
+   Contribution::create(FALSE)
+     ->setValues([
+       'contact_id' => $contactID,
+       'total_amount' => 100.00,
+       'financial_type_id:name' => 'Donation',
+       'receive_date' => '2023-10-01',
+       'contribution_status_id:name' => 'Completed',
+       'currency' => 'USD',
+       'source' => 'Test Contribution',
+       'contribution_extra.original_amount' => 100.00,
+       'contribution_extra.original_currency' => 'USD',
+       'payment_instrument_id:name' => 'Paypal',
+       'contribution_recur_id' => $recur['id'],
+     ])->execute();
+
+    $checksum = CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
+    $contact =  \Civi\Api4\WMFContact::getCommunicationsPreferences()
+      ->setChecksum($checksum)
+      ->setContact_id($contactID)
+      ->execute()->first();
+
+    $this->assertEquals(FALSE, $contact['is_opt_in']);
+    $this->assertEquals('Bob', $contact['first_name']);
+    $this->assertEquals('CA', $contact['country']);
+    $this->assertEquals('en_US', $contact['preferred_language']);
+    $this->assertEquals('bob.roberto@test.com', $contact['email']);
+    $this->assertEquals(TRUE, $contact['has_paypal']);
+  }
+
+  public function createContact(): int {
+    $contact = Contact::create(FALSE)->setValues([
       'first_name' => 'Bob',
       'last_name' => 'Roberto',
       'Communication.opt_in' => 0,
@@ -67,26 +124,8 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
       ->addValue('contact_id', '$id')
       ->addValue('email', 'bob.roberto@test.com')
       ->addValue('location_type_id:name', 'Home')
-    )
-    ->execute()->first()['id'];
-
-    $checksum = CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID);
-    $contact = $this->callAPISuccess('Civiproxy', 'getpreferences', ['checksum' => $checksum, 'contact_id' => $this->contactID]);
-
-    $this->assertEquals(FALSE, $contact['is_opt_in']);
-    $this->assertEquals('Bob', $contact['first_name']);
-    $this->assertEquals('CA', $contact['country']);
-    $this->assertEquals('en_US', $contact['preferred_language']);
-    $this->assertEquals('bob.roberto@test.com', $contact['email']);
-
-    $contactv4 = \Civi\Api4\WMFContact::getCommunicationsPreferences()
-      ->setChecksum($checksum)
-      ->setContact_id($this->contactID)
-      ->execute()->first();
-
-    unset($contact['xdebug']);
-    $this->assertEquals($contact, $contactv4);
-
+    )->execute()->first();
+    return $contact['id'];
   }
 
 }
