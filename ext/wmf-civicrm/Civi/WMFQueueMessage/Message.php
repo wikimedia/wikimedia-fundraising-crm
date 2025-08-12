@@ -438,6 +438,15 @@ class Message {
         'api_field' => 'Communication.opt_in',
         'api_entity' => 'Contact',
       ],
+      'batch_reference' => [
+        'name' => 'batch_reference',
+        'data_type' => 'String',
+        'label' => E::ts('Gateway batch reference'),
+        'description' => E::ts('The gateway batch number'),
+        'api_field' => 'contribution_extra.settlement_batch_number',
+        'api_entity' => 'Contribution',
+        'used_for' => 'WMFAudit.settle api',
+      ],
     ];
     foreach ($fields as $index => $field) {
       if (($field['api_entity'] ?? '') === 'Contact' && isset($contactFields[$field['api_field']])) {
