@@ -250,18 +250,21 @@ class Message {
         'api_entity' => 'ContributionRecur',
       ],
       'subscr_id' => [
+        'name' => 'subscr_id',
         'label' => E::ts('Subscription ID'),
         'data_type' => 'String',
         'api_field' => 'trxn_id',
         'api_entity' => 'ContributionRecur',
       ],
       'recurring_payment_token' => [
+        'name' => 'recurring_payment_token',
         'label' => E::ts('Token identifier for recharging a recurring'),
         'data_type' => 'String',
         'api_field' => 'token',
         'api_entity' => 'PaymentToken',
       ],
       'utm_medium' => [
+        'name' => 'utm_medium',
         'label' => E::ts('UTM Medium'),
         'data_type' => 'String',
         'api_field' => 'contribution_extra.utm_medium',
@@ -274,6 +277,7 @@ class Message {
         'used_for' => 'All payment messages',
       ],
       'gift_source' => [
+        'name' => 'gift_source',
         'label' => 'Gift Source',
         'api_entity' => 'Contribution',
         'api_field' => 'Gift_Data.Campaign',
@@ -292,12 +296,14 @@ class Message {
         'api_field' => 'preferred_language',
       ],
       'phone' => [
+        'name' => 'phone',
         'api_field' => 'phone_primary.phone',
         'label' => E::ts('Phone'),
         'api_entity' => 'Contact',
         'data_type' => 'String',
       ],
       'email' => [
+        'name' => 'email',
         'api_field' => 'email_primary.email',
         'label' => E::ts('Email'),
         'api_entity' => 'Contact',
