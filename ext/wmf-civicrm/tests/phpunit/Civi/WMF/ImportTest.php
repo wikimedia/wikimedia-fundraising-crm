@@ -540,7 +540,6 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * Test that we can handling imports in non USD when the USD is not specified.
    *
    * @throws \CRM_Core_Exception
-   * @throws \Exception
    */
   public function testCurrencyConversion(): void {
     $this->createTestEntity('Contact', [
@@ -1156,7 +1155,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // Add hook to set our donation to be current (so ContributionSoft hook fires).
     \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [__CLASS__, 'hook_importAlterMappedRow'], 300);
     $this->createAllBenevityImportOrganizations();
-    $this->setExchangeRate('CAD', .9,'-1 day');
+    $this->setExchangeRate('CAD', .9, '-1 day');
     $this->createTestEntity('Contact', [
       'first_name' => 'Minnie',
       'last_name' => 'Mouse',

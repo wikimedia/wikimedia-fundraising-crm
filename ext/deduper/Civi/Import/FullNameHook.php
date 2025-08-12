@@ -18,11 +18,9 @@ class FullNameHook {
     if (!empty($contact['full_name'])) {
       self::addFullNameDetails($mappedRow['Contact']);
     }
-    $softCreditContacts = $mappedRow['SoftCreditContact'] ?? [];
-    foreach ($softCreditContacts as $key => $softCreditContact) {
-      if (!empty($softCreditContact['Contact']['full_name'])) {
-        self::addFullNameDetails($mappedRow['SoftCreditContact'][$key]['Contact']);
-      }
+    $softCreditContact = $mappedRow['SoftCreditContact'] ?? [];
+    if (!empty($softCreditContact['full_name'])) {
+      self::addFullNameDetails($mappedRow['SoftCreditContact']);
     }
     $event->mappedRow = $mappedRow;
   }

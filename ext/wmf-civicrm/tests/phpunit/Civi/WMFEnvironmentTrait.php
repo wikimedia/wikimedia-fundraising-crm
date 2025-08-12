@@ -299,7 +299,6 @@ trait WMFEnvironmentTrait {
    * @param string $dateString
    *
    * @return void
-   * @throws \Exception
    */
   public function setExchangeRate(string $currency, float $rate, string $dateString = 'now'): void {
     try {

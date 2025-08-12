@@ -117,10 +117,7 @@ class ImportFullNameTest extends TestCase implements HeadlessInterface, HookInte
       'status_id' => 1,
       'metadata' => [
         'submitted_values' => [
-          'contactType' => 'Individual',
-          'dateFormats' => 1,
           'dataSource' => 'CRM_Import_DataSource_SQL',
-          'onDuplicate' => 1,
         ],
         'Template' => ['mapping_id' => NULL],
         'DataSource' => [
