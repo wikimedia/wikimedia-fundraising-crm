@@ -42,7 +42,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
     return [
       [
         __DIR__ . '/data/Amazon/donation/',
-        [
+        'donation' => [
           'donations' => [
             [
               'contribution_tracking_id' => '87654321',
@@ -72,7 +72,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'refund' => [
         __DIR__ . '/data/Amazon/refund/',
         [
           'refund' => [
@@ -88,7 +88,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'chargeback' => [
         __DIR__ . '/data/Amazon/chargeback/',
         [
           'refund' => [
