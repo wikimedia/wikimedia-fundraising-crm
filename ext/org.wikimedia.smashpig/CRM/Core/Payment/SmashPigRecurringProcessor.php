@@ -229,7 +229,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   protected function getPaymentsToCharge($contributionRecurId = NULL) {
     $getAction = ContributionRecur::get(FALSE)
       ->addSelect('*')
-      ->addSelect('custom.*');
+      ->addSelect('custom.*')
+      ->addSelect('contribution_recur_smashpig.original_country:abbr');
 
     if ($contributionRecurId) {
       $getAction->addWhere('id', '=', $contributionRecurId);
@@ -643,7 +644,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
     $params = [
       'amount' => $recurringPayment['amount'],
-      'country' => $donor['address_primary.country_id:abbr'],
+      'country' => $recurringPayment['contribution_recur_smashpig.original_country:abbr'] ?? $donor['address_primary.country_id:abbr'],
       'currency' => $recurringPayment['currency'],
       'email' => $donor['email_primary.email'],
       'first_name' => $donor['first_name'],

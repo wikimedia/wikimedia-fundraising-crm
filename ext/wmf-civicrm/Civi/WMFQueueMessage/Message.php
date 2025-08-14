@@ -35,6 +35,8 @@ class Message {
   protected array $supportedFields = [];
   protected array $requiredFields = [];
   protected bool $isRestrictToSupportedFields = FALSE;
+  protected bool $isLogUnsupportedFields = FALSE;
+  protected bool $isLogUnavailableFields = FALSE;
 
   protected array $availableFields;
 
@@ -59,6 +61,9 @@ class Message {
     }
 
     foreach (array_keys($message) as $key) {
+      if ($this->isLogUnavailableFields && !isset($this->getAvailableFields()[$key])) {
+        \Civi::log('wmf')->info(__CLASS__ . ' undeclared field ' . $key);
+      }
       if (!isset($this->supportedFields[$key])) {
         if ($this->isRestrictToSupportedFields) {
           // Currently ONLY SettleMessage defines supported values
@@ -70,8 +75,11 @@ class Message {
           unset($message[$key]);
         }
         else {
-          // log the key here? That way we can see what is not documented
-          // and over time reduce it to nothing.
+          if ($this->isLogUnsupportedFields) {
+            // log the key here? That way we can see what is not documented
+            // and over time reduce it to nothing.
+            \Civi::log('wmf')->info(__CLASS__ . ' unsupported field ' . $key);
+          }
         }
       }
     }

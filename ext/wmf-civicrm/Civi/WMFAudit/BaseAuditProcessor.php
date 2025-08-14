@@ -4,6 +4,7 @@ namespace Civi\WMFAudit;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
+use Civi\Api4\WMFAudit;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFException\WMFException;
 use Civi\WMFTransaction;
@@ -319,30 +320,6 @@ abstract class BaseAuditProcessor {
   }
 
   /**
-   * Checks the array to see if the data inside is describing a refund.
-   *
-   * @param array $record The transaction we would like to know is a refund or
-   *   not.
-   *
-   * @return boolean true if it is, otherwise false
-   */
-  protected function record_is_refund($record) {
-    return (array_key_exists('type', $record) && $record['type'] === 'refund');
-  }
-
-  /**
-   * Checks the array to see if the data inside is describing a chargeback.
-   *
-   * @param array $record The transaction we would like to know is a chargeback
-   *   or not.
-   *
-   * @return boolean true if it is, otherwise false
-   */
-  protected function record_is_chargeback($record) {
-    return (array_key_exists('type', $record) && $record['type'] === 'chargeback');
-  }
-
-  /**
    * Checks the array to see if the data inside is describing a cancel.
    *
    * @param array $record The transaction we would like to know is a cancel or
@@ -379,6 +356,7 @@ abstract class BaseAuditProcessor {
    * @return array The normalized data we want to send
    */
   protected function normalize_negative($record) {
+    // @todo - move all this to the AuditMessage
     $send_message = [
       // FIXME: Use WmfTransaction
       'gross' => $record['gross'],
@@ -389,6 +367,7 @@ abstract class BaseAuditProcessor {
       // 'payment_method' => $record['payment_method'], //Argh. Not telling you.
       // 'payment_submethod' => $record['payment_submethod'], //Still not telling you.
       'type' => $record['type'],
+      'gateway_parent_id' => $record['gateway_parent_id'],
       //This actually works here. Weird, right?
     ];
     if (isset($record['gateway'])) {
@@ -404,12 +383,6 @@ abstract class BaseAuditProcessor {
     elseif (isset($record['gateway_txn_id'])) {
       //Notes from a previous version: "after intense deliberation, we don't actually care what this is at all."
       $send_message['gateway_refund_id'] = $record['gateway_txn_id'];
-    }
-    if (isset($record['gateway_parent_id'])) {
-      $send_message['gateway_parent_id'] = $record['gateway_parent_id'];
-    }
-    else {
-      $send_message['gateway_parent_id'] = $record['gateway_txn_id'];
     }
     if (isset($record['gross_currency'])) {
       $send_message['gross_currency'] = $record['gross_currency'];
@@ -1327,29 +1300,23 @@ abstract class BaseAuditProcessor {
 
     $fileStatistics = &$this->statistics[$file];
     foreach ($transactions as $transaction) {
-      $paymentMethod = $transaction['payment_method'] ?? 'unknown';
-      $type = $transaction['type'] ?? 'main';
-      if ($type === 'donations' || $type === 'recurring' || $type === 'recurring-modify') {
-        // It seems type could be one of these others here from fundraise up (the others are unset).
-        // It might be nice to switch from main to donations but for now ...
-        $type = 'main';
-      }
+      $auditRecord = WMFAudit::audit(FALSE)
+        ->setValues($transaction)
+        ->execute()->single();
+      $paymentMethod = $auditRecord['payment_method'];
+      $type = $auditRecord['audit_message_type'];
       if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
         $fileStatistics[$type]['by_payment'][$paymentMethod] = ['missing' => 0, 'found' => 0];
       }
       if (
-        $this->record_is_refund($transaction) ||
-        $this->record_is_chargeback($transaction) ||
-        $this->record_is_cancel($transaction)
+        $auditRecord['is_negative']
       ) {
-        //negative
-        $transaction = $this->pre_process_refund($transaction);
-        if ($this->negative_transaction_exists_in_civi($transaction) === FALSE) {
-          $missing['negative'][] = $transaction;
+        if ($auditRecord['is_missing']) {
+          $missing['negative'][] = $auditRecord['message'];
           $fileStatistics[$type]['missing']++;
           $fileStatistics[$type]['total']++;
           $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
-          $this->missingTransactions['negative'][] = $transaction;
+          $this->missingTransactions['negative'][] = $auditRecord['message'];
         }
         else {
           $fileStatistics[$type]['found']++;
@@ -1359,11 +1326,11 @@ abstract class BaseAuditProcessor {
       }
       else {
         //normal type
-        if ($this->main_transaction_exists_in_civi($transaction) === FALSE) {
-          $missing['main'][] = $transaction;
+        if ($auditRecord['is_missing']) {
+          $missing['main'][] = $auditRecord['message'];
           $fileStatistics[$type]['missing']++;
           $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
-          $this->missingTransactions['main'][] = $transaction;
+          $this->missingTransactions['main'][] = $auditRecord['message'];
         }
         else {
           $fileStatistics[$type]['found']++;
@@ -1618,30 +1585,6 @@ abstract class BaseAuditProcessor {
     $this->statistics[$file]['total_records'] = count($records);
     $this->statistics['total_records'] += $this->statistics[$file]['total_records'];
     return $records;
-  }
-
-  /**
-   * @throws \CRM_Core_Exception
-   */
-  protected function getGatewayIdFromTracking(int $contributionTrackingID) {
-    $tracking = ContributionTracking::get(FALSE)
-      ->addWhere('id', '=', $contributionTrackingID)
-      ->addSelect('contribution_id.contribution_extra.gateway_txn_id')
-      ->execute()
-      ->first();
-    return $tracking ? $tracking['contribution_id.contribution_extra.gateway_txn_id'] : NULL;
-  }
-
-  /**
-   * Override this if your gateway's audit process needs to do things
-   * with refunds that can't be done in the file parser.
-   *
-   * @param array $transaction
-   *
-   * @return array
-   */
-  protected function pre_process_refund($transaction) {
-    return $transaction;
   }
 
   /**

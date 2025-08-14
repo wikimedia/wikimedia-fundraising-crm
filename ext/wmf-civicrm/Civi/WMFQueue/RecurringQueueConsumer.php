@@ -365,6 +365,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         $params['contribution_recur_smashpig.rescue_reference'] = $msg['rescue_reference'];
       }
 
+      if (!empty($msg['country'])) {
+        $params['contribution_recur_smashpig.original_country:abbr'] = $msg['country'];
+      }
+
       $newContributionRecur = $this->createContributionRecurWithErrorHandling($params);
       $message->setContributionRecurID($newContributionRecur['id']);
     }
