@@ -117,7 +117,10 @@ class RecurringModifyMessage extends Message {
       $addressFields = Address::getFields(FALSE)
         ->execute()->indexBy('name');
       foreach ($addressFields as $field) {
-        $message['address_primary.' . $field['name']] = $message[$field['name']] ?? NULL;
+        // Do not set id as we will not have one here https://github.com/civicrm/civicrm-core/pull/33284/files#r2275442330
+        if ($field['name'] !== 'id') {
+          $message['address_primary.' . $field['name']] = $message[$field['name']] ?? NULL;
+        }
       }
       $message['address_primary.country_id:name'] = $message['country'] ?? NULL;
       unset($message['address_primary.country']);
