@@ -1510,11 +1510,11 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    *
    * @param array $submittedValues
    *
-   * @return \CRM_Contribute_Import_Form_Preview
+   * @return \CRM_CiviImport_Form_Generic_Preview
    */
-  protected function getPreviewForm(array $submittedValues): \CRM_Contribute_Import_Form_Preview {
-    /** @var \CRM_Contribute_Import_Form_Preview $form */
-    $form = $this->getFormObject('CRM_Contribute_Import_Form_Preview', $submittedValues);
+  protected function getPreviewForm(array $submittedValues): \CRM_CiviImport_Form_Generic_Preview {
+    /** @var \CRM_CiviImport_Form_Generic_Preview $form */
+    $form = $this->getFormObject('CRM_CiviImport_Form_Generic_Preview', $submittedValues);
     return $form;
   }
 
@@ -1530,12 +1530,12 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    *
    * @param array $urlParameters
    *
-   * @return \CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField|\CRM_Contribute_Import_Form_Preview
+   * @return \CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField|\CRM_CiviImport_Form_Generic_Preview
    */
-  public function getFormObject(string $class, array $formValues = [], array $urlParameters = []): \CRM_Contribute_Import_Form_Preview|\CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField {
+  public function getFormObject(string $class, array $formValues = [], array $urlParameters = []): \CRM_CiviImport_Form_Generic_Preview|\CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField {
     try {
       $_POST = $formValues;
-      /** @var \CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField|\CRM_Contribute_Import_Form_Preview $form */
+      /** @var \CRM_Contribute_Import_Form_DataSource|\CRM_Contribute_Import_Form_MapField|\CRM_CiviImport_Form_Generic_Preview $form */
       $form = new $class();
       $_SERVER['REQUEST_METHOD'] = 'GET';
       $_REQUEST += $urlParameters;
