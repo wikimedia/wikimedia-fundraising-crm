@@ -157,7 +157,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ['name' => 'Contact.address_primary.state_province_id'],
       ['name' => 'Contact.address_primary.postal_code'],
       [],
-      ['name' => 'note'],
+      ['name' => 'Contribution.note'],
       ['name' => 'Contribution.contribution_extra.gateway_txn_id'],
       [],
       ['name' => 'Contribution.contribution_extra.original_currency', 'default_value' => 'USD'],
