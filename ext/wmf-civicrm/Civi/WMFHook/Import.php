@@ -92,6 +92,12 @@ class Import {
     if ($this->context === 'import' && $this->importType === 'contribution_import') {
       // Provide a default, allowing the import to be configured to override.
       $isMatchingGift = $this->isMatchingGift();
+      // Now ensure converted total_amount is set.
+      // We haven't really done any updates so far but possibly it we do we would
+      // want to extend the if to check the provided values. But safer not to touch on update if we don't have to.
+      if (!isset($this->mappedRow['Contribution']['total_amount']) && empty($this->mappedRow['Contribution']['id'])) {
+        $this->mappedRow['Contribution']['total_amount'] = ContributionHelper::getConvertedTotalAmount($this->mappedRow['Contribution']);
+      }
 
       if ($isMatchingGift && !array_key_exists('contribution_extra.no_thank_you', $this->mappedRow['Contribution'])) {
         $this->mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal (matching gift/ workplace giving)';
@@ -625,16 +631,20 @@ class Import {
         // The import will handle the main donation but it does not expect to handle a second contribution.
         // So we have to create the matched organization contribution here.
         // Fortunately we should be able to count on the organization_id having been resolved by now.
+        $contributionValues = array_merge($this->mappedRow['Contribution'], [
+          'contact_id' => $this->getFirstSoftCreditContact()['id'],
+          // The full fee will have been assigned to the main donation.
+          'fee_amount' => 0,
+          'trxn_id' => $this->getGateway() . ' ' . $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
+          'contribution_extra.gateway_txn_id' => $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
+          'contribution_extra.original_amount' => $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'],
+          'contribution_extra.original_currency' => $this->mappedRow['Contribution']['contribution_extra.original_currency'],
+        ]);
+        // total_amount should be recalculated in the hook
+        // scheme fee is otherwise unmapped further down & not for saving.
+        unset($contributionValues['total_amount'], $contributionValues['contribution_extra.scheme_fee']);
         $contribution = \Civi\Api4\Contribution::create(FALSE)
-          ->setValues(array_merge($this->mappedRow['Contribution'], [
-            'contact_id' => $this->getFirstSoftCreditContact()['id'],
-            // The full fee will have been assigned to the main donation.
-            'fee_amount' => 0,
-            'trxn_id' => $this->getGateway() . ' ' . $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
-            'contribution_extra.gateway_txn_id' => $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
-            'contribution_extra.original_amount' => $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'],
-            'contribution_extra.original_currency' => $this->mappedRow['Contribution']['contribution_extra.original_currency'],
-          ]))
+          ->setValues($contributionValues)
           ->execute()->first();
         if (!$isIndividualAnonymous) {
           \Civi\Api4\ContributionSoft::create(FALSE)
@@ -653,6 +663,7 @@ class Import {
         // If there is no individual main donation then we switch the soft credit
         // to be the main donation & remove the soft credit.
         $this->mappedRow['Contribution']['contribution_extra.original_amount'] = $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'];
+        $this->mappedRow['Contribution']['total_amount'] = ContributionHelper::getConvertedTotalAmount($this->mappedRow['Contribution']);
         $individualContact = $this->mappedRow['Contact'];
         $this->mappedRow['Contact'] = $this->getFirstSoftCreditContact();
 
