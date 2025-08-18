@@ -428,28 +428,6 @@ abstract class BaseAuditProcessor {
     }
   }
 
-  /**
-   * Checks to see if the refund or chargeback already exists in civi.
-   * NOTE: This does not check to see if the parent is present at all, nor
-   * should it. Call main_transaction_exists_in_civi for that.
-   *
-   * @param array $transaction Array of donation data
-   *
-   * @return boolean true if it's in there, otherwise false
-   */
-  protected function negative_transaction_exists_in_civi($transaction) {
-    $positive_txn_id = $this->get_parent_order_id($transaction);
-    $gateway = $transaction['gateway'];
-
-    $contributions = $this->getContributions($gateway, $positive_txn_id);
-    if (!$contributions) {
-      return FALSE;
-    }
-    return \CRM_Contribute_BAO_Contribution::isContributionStatusNegative(
-      $contributions[0]['contribution_status_id']
-    );
-  }
-
   protected function get_runtime_options($name) {
     if (isset($this->options[$name])) {
       return $this->options[$name];
