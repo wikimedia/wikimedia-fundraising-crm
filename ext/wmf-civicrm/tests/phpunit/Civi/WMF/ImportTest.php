@@ -335,16 +335,12 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->setSelect(['_status_message', '_status'])
       ->execute();
     $this->assertEquals('soft_credit_imported', $import[0]['_status'], 'maybe our hack/patch got lost? ' . $import[0]['_status_message']);
-    $contact = Contact::get(FALSE)
-      ->addWhere('id', '>', $this->ids['Contact']['duplicate'])
-      ->addWhere('contact_type', '=', 'Individual')
-      ->execute()->single();
-    $this->assertEquals('Import duplicate contact', $contact['source']);
-    GroupContact::get(FALSE)
-      ->addWhere('contact_id', '=', $contact['id'])
+    $contacts = GroupContact::get(FALSE)
+      ->addWhere('contact_id', 'IN', $this->ids['Contact'])
       ->addWhere('group_id:name', '=', 'imported_duplicates')
       ->addWhere('status', '=', 'Added')
-      ->execute()->single();
+      ->execute();
+    $this->assertCount(1, $contacts);
   }
 
   /**
@@ -815,12 +811,13 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
           'number_of_columns' => count($data),
         ],
         'sqlQuery' => $this->getSelectQuery($data),
+        'bundled_actions' => [['action' => 'add_to_group.imported_duplicates', 'condition' => 'on_multiple_match', 'entity' => 'Contact']],
         'entity_configuration' => [
           'Contribution' => ['action' => 'create'],
           'Contact' => [
             'action' => $contactAction,
             'contact_type' => $mainContactType,
-            'dedupe_rule' => $mainContactType . 'Unsupervised',
+            'dedupe_rule' => $mainContactType . 'Unsupervised.first',
           ],
           'SoftCreditContact' => [
             'contact_type' => $mainContactType === 'Organization' ? 'Individual' : 'Organization',
