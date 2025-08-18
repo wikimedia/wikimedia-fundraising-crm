@@ -417,10 +417,9 @@ abstract class BaseAuditProcessor {
    * @return boolean true if it's in there, otherwise false
    */
   protected function main_transaction_exists_in_civi($transaction) {
-    $positive_txn_id = $this->get_parent_order_id($transaction);
     $gateway = $transaction['gateway'];
     //go through the transactions and check to see if they're in civi
-    if ($this->getContributions($gateway, $positive_txn_id) === FALSE) {
+    if ($this->getContributions($gateway, $transaction['gateway_parent_id']) === FALSE) {
       return FALSE;
     }
     else {
@@ -1518,23 +1517,6 @@ abstract class BaseAuditProcessor {
       }
     }
     return $filtered;
-  }
-
-  /**
-   * Grabs the positive transaction id associated with a transaction.
-   *
-   * @param array $transaction possibly incomplete set of transaction data
-   *
-   * @return string|false the order_id, or false if we can't figure it out
-   */
-  protected function get_parent_order_id($transaction) {
-    if (is_array($transaction) && array_key_exists('gateway_parent_id', $transaction)) {
-      return $transaction['gateway_parent_id'];
-    }
-    if (is_array($transaction) && array_key_exists('gateway_txn_id', $transaction)) {
-      return $transaction['gateway_txn_id'];
-    }
-    return FALSE;
   }
 
   /**

@@ -86,13 +86,12 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
    * @return boolean true if it's in there, otherwise false
    */
   protected function main_transaction_exists_in_civi($transaction) {
-    $positive_txn_id = $this->get_parent_order_id($transaction);
     $gateway = $transaction['gateway'];
     //go through the transactions and check to see if they're in civi
     // there are Adyen situations where the $positive_txn_id is not what is stored in civi
     // look for modification_reference instead
     // T306944
-    if ($this->getContributions($gateway, $positive_txn_id) === FALSE) {
+    if ($this->getContributions($gateway, $transaction['gateway_parent_id']) === FALSE) {
       if (isset($transaction['modification_reference']) && $this->getContributions($gateway, $transaction['modification_reference']) !== FALSE) {
         return TRUE;
       }
