@@ -452,8 +452,12 @@ abstract class BaseAuditProcessor {
     $recon_file_stats = [];
     foreach ($this->getReconciliationFiles() as $file) {
       //parse the recon files into something relatively reasonable.
-      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []]];
+      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0];
       $parsed = $this->parseReconciliationFile($file);
+      if (empty($parsed)) {
+        $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
+        continue;
+      }
 
       //remove transactions we already know about
       $this->startTiming(' get missing on ' . $file);
@@ -1257,15 +1261,7 @@ abstract class BaseAuditProcessor {
    *   already, or false if something goes wrong enough
    */
   protected function getMissingTransactions(array $transactions, string $file) {
-    if (empty($transactions)) {
-      $this->echo(__FUNCTION__ . ': No transactions to find. Returning.');
-      return FALSE;
-    }
     //go through the transactions and check to see if they're in civi
-    $missing = [
-      'main' => 0,
-      'negative' => 0,
-    ];
 
     $fileStatistics = &$this->statistics[$file];
     foreach ($transactions as $transaction) {
@@ -1281,7 +1277,7 @@ abstract class BaseAuditProcessor {
         $auditRecord['is_negative']
       ) {
         if ($auditRecord['is_missing']) {
-          $missing['negative']++;
+          $fileStatistics['missing_negative']++;
           $fileStatistics[$type]['missing']++;
           $fileStatistics[$type]['total']++;
           $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
@@ -1296,7 +1292,7 @@ abstract class BaseAuditProcessor {
       else {
         //normal type
         if ($auditRecord['is_missing']) {
-          $missing['main']++;
+          $fileStatistics['missing_main']++;
           $fileStatistics[$type]['missing']++;
           $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
           $this->missingTransactions['main'][] = $auditRecord['message'];
@@ -1307,8 +1303,7 @@ abstract class BaseAuditProcessor {
         }
       }
     }
-    $this->statistics[$file]['missing_negative'] = $missing['negative'];
-    $this->statistics[$file]['missing_main'] = $missing['main'];
+
     $this->statistics[$file]['total_missing'] = $this->statistics[$file]['missing_negative'] + $this->statistics[$file]['missing_main'];
     $this->statistics['total_missing'] += $this->statistics[$file]['total_missing'];
     $this->echo('Transactions');
