@@ -428,28 +428,6 @@ abstract class BaseAuditProcessor {
     }
   }
 
-  /**
-   * Checks to see if the refund or chargeback already exists in civi.
-   * NOTE: This does not check to see if the parent is present at all, nor
-   * should it. Call main_transaction_exists_in_civi for that.
-   *
-   * @param array $transaction Array of donation data
-   *
-   * @return boolean true if it's in there, otherwise false
-   */
-  protected function negative_transaction_exists_in_civi($transaction) {
-    $positive_txn_id = $this->get_parent_order_id($transaction);
-    $gateway = $transaction['gateway'];
-
-    $contributions = $this->getContributions($gateway, $positive_txn_id);
-    if (!$contributions) {
-      return FALSE;
-    }
-    return \CRM_Contribute_BAO_Contribution::isContributionStatusNegative(
-      $contributions[0]['contribution_status_id']
-    );
-  }
-
   protected function get_runtime_options($name) {
     if (isset($this->options[$name])) {
       return $this->options[$name];
@@ -480,17 +458,17 @@ abstract class BaseAuditProcessor {
 
       //remove transactions we already know about
       $this->startTiming(' get missing on ' . $file);
-      $missing = $this->getMissingTransactions($parsed, $file);
+      $missingCount = $this->getMissingTransactions($parsed, $file);
 
       $recon_file_stats[$file] = $this->getFileStatistic($file, 'total_missing');
       $time = $this->stopTiming(' get missing on ' . $file);
-      $this->echo($this->countMissing($missing) . ' missing transactions (of a possible ' . $this->getFileStatistic($file, 'total_records') . ") identified in $time seconds\n");
+      $this->echo($missingCount . ' missing transactions (of a possible ' . $this->getFileStatistic($file, 'total_records') . ") identified in $time seconds\n");
 
       //If the file is empty, move it off.
       // Note that we are not archiving files that have missing transactions,
       // which might be resolved below. Those are archived on the next run,
       // once we can confirm they have hit Civi and are no longer missing.
-      if ($this->countMissing($missing) <= $this->get_runtime_options('recon_complete_count')) {
+      if ($missingCount <= $this->get_runtime_options('recon_complete_count')) {
         $this->move_completed_recon_file($file);
       }
     }
@@ -1294,8 +1272,8 @@ abstract class BaseAuditProcessor {
     }
     //go through the transactions and check to see if they're in civi
     $missing = [
-      'main' => [],
-      'negative' => [],
+      'main' => 0,
+      'negative' => 0,
     ];
 
     $fileStatistics = &$this->statistics[$file];
@@ -1312,7 +1290,7 @@ abstract class BaseAuditProcessor {
         $auditRecord['is_negative']
       ) {
         if ($auditRecord['is_missing']) {
-          $missing['negative'][] = $auditRecord['message'];
+          $missing['negative']++;
           $fileStatistics[$type]['missing']++;
           $fileStatistics[$type]['total']++;
           $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
@@ -1327,7 +1305,7 @@ abstract class BaseAuditProcessor {
       else {
         //normal type
         if ($auditRecord['is_missing']) {
-          $missing['main'][] = $auditRecord['message'];
+          $missing['main']++;
           $fileStatistics[$type]['missing']++;
           $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
           $this->missingTransactions['main'][] = $auditRecord['message'];
@@ -1338,8 +1316,8 @@ abstract class BaseAuditProcessor {
         }
       }
     }
-    $this->statistics[$file]['missing_negative'] = count($missing['negative']);
-    $this->statistics[$file]['missing_main'] = count($missing['main']);
+    $this->statistics[$file]['missing_negative'] = $missing['negative'];
+    $this->statistics[$file]['missing_main'] = $missing['main'];
     $this->statistics[$file]['total_missing'] = $this->statistics[$file]['missing_negative'] + $this->statistics[$file]['missing_main'];
     $this->statistics['total_missing'] += $this->statistics[$file]['total_missing'];
     $this->echo('Transactions');
@@ -1348,7 +1326,7 @@ abstract class BaseAuditProcessor {
     $this->echoFileSummaryRow($file, 'cancel');
     $this->echoFileSummaryRow($file, 'chargeback');
 
-    return $missing;
+    return $this->statistics[$file]['total_missing'];
   }
 
   /**
