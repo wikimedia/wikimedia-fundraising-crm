@@ -473,17 +473,11 @@ abstract class BaseAuditProcessor {
       }
     }
     $this->echo($this->statistics['total_missing'] . " total missing transactions identified at start");
-    $total_missing = $this->missingTransactions;
 
     //get the date distribution on what's left... for ***main transactions only***
     //That should be to say: The things that are totally in the payments logs.
     //Other things, we will have to look other places, or just rebuild.
-    $missing_by_date = [];
-    if (array_key_exists('main', $total_missing) && !empty($total_missing['main'])) {
-      foreach ($total_missing['main'] as $record) {
-        $missing_by_date[$this->get_record_human_date($record)][] = $record;
-      }
-    }
+    $missing_by_date = $this->getMissingByDate();
 
     $remaining = NULL;
     if (!empty($missing_by_date)) {
@@ -493,7 +487,7 @@ abstract class BaseAuditProcessor {
     //@TODO: Handle the recurring type, once we have a gateway that gives some of those to us.
     //
     //Handle the negatives now. That way, the parent transactions will probably exist.
-    $this->handleNegatives($total_missing, $remaining);
+    $this->handleNegatives($remaining);
 
     //Wrap it up and put a bow on it.
     //@TODO much later: Make a fredge table for these things and dump some messages over there about what we just did.
@@ -558,64 +552,62 @@ abstract class BaseAuditProcessor {
     $this->echo($wrap_up);
   }
 
-  protected function handleNegatives($total_missing, &$remaining) {
+  protected function handleNegatives(&$remaining) {
     $this->echo("Processing 'negative' transactions");
     $numberProcessed = 0;
     $numberSkipped = 0;
-    if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
-      foreach ($total_missing['negative'] as $record) {
-        //check to see if the parent exists. If it does, normalize and send.
-        $parentByInvoice = [];
-        $foundParent = $this->main_transaction_exists_in_civi($record);
-        if (!$foundParent && !empty($record['invoice_id'])) {
-          // Sometimes it's difficult to find a parent transaction by the
-          // gateway-side ID, for example for Ingenico recurring refunds.
-          // Try again by invoice ID.
-          if (!empty($record['invoice_id'])) {
-            $parentByInvoice = Contribution::get(FALSE)
-              ->addClause(
-                'OR',
-                ['invoice_id', '=', $record['invoice_id']],
-                // For recurring payments, we sometimes append a | and a random
-                // number after the invoice ID
-                ['invoice_id', 'LIKE', $record['invoice_id'] . '|%']
-              )
-              ->execute()
-              ->first();
-            if (!empty($parentByInvoice) && $parentByInvoice['trxn_id']) {
-              // $parentByInvoice['trxn_id'] has extra information in it for example
-              // RECURRING INGENICO 000000123410000010640000200001
-              // Need to get just the transaction id after the processor name
-              $record['gateway_parent_id'] = (WMFTransaction::from_unique_id($parentByInvoice['trxn_id']))->gateway_txn_id;
-              $record['gateway_refund_id'] = $record['gateway_parent_id'];
-              $foundParent = TRUE;
-            }
-          }
-        }
-        if ($foundParent) {
-          if (
-            count($parentByInvoice)
-            && \CRM_Contribute_BAO_Contribution::isContributionStatusNegative($parentByInvoice['contribution_status_id'])
-          ) {
-            continue;
-          }
-          $normal = $this->normalize_negative($record);
-          $this->send_queue_message($normal, 'negative');
-          $numberProcessed += 1;
-        }
-        else {
-          // Ignore cancels with no parents because they must have
-          // been cancelled before reaching Civi.
-          if (!$this->record_is_cancel($record)) {
-            //@TODO: Some version of makemissing should make these, too. Gar.
-            $remaining['negative'][$this->get_record_human_date($record)][] = $record;
-            $numberSkipped++;
+    foreach ($this->getMissingReversals() as $record) {
+      //check to see if the parent exists. If it does, normalize and send.
+      $parentByInvoice = [];
+      $foundParent = $this->main_transaction_exists_in_civi($record);
+      if (!$foundParent && !empty($record['invoice_id'])) {
+        // Sometimes it's difficult to find a parent transaction by the
+        // gateway-side ID, for example for Ingenico recurring refunds.
+        // Try again by invoice ID.
+        if (!empty($record['invoice_id'])) {
+          $parentByInvoice = Contribution::get(FALSE)
+            ->addClause(
+              'OR',
+              ['invoice_id', '=', $record['invoice_id']],
+              // For recurring payments, we sometimes append a | and a random
+              // number after the invoice ID
+              ['invoice_id', 'LIKE', $record['invoice_id'] . '|%']
+            )
+            ->execute()
+            ->first();
+          if (!empty($parentByInvoice) && $parentByInvoice['trxn_id']) {
+            // $parentByInvoice['trxn_id'] has extra information in it for example
+            // RECURRING INGENICO 000000123410000010640000200001
+            // Need to get just the transaction id after the processor name
+            $record['gateway_parent_id'] = (WMFTransaction::from_unique_id($parentByInvoice['trxn_id']))->gateway_txn_id;
+            $record['gateway_refund_id'] = $record['gateway_parent_id'];
+            $foundParent = TRUE;
           }
         }
       }
-      $this->echo("Processed $numberProcessed 'negative' transactions\n");
-      $this->echo("Skipped $numberSkipped 'negative' transactions (no parent record to cancel, probably cancelled before reaching CiviCRM)\n");
+      if ($foundParent) {
+        if (
+          count($parentByInvoice)
+          && \CRM_Contribute_BAO_Contribution::isContributionStatusNegative($parentByInvoice['contribution_status_id'])
+        ) {
+          continue;
+        }
+        $normal = $this->normalize_negative($record);
+        $this->send_queue_message($normal, 'negative');
+        $numberProcessed += 1;
+      }
+      else {
+        // Ignore cancels with no parents because they must have
+        // been cancelled before reaching Civi.
+        if (!$this->record_is_cancel($record)) {
+          //@TODO: Some version of makemissing should make these, too. Gar.
+          $remaining['negative'][$this->get_record_human_date($record)][] = $record;
+          $numberSkipped++;
+        }
+      }
     }
+    $this->echo("Processed $numberProcessed 'negative' transactions\n");
+    $this->echo("Skipped $numberSkipped 'negative' transactions (no parent record to cancel, probably cancelled before reaching CiviCRM)\n");
   }
 
   /**
@@ -1446,6 +1438,34 @@ abstract class BaseAuditProcessor {
     $foundByTypeString = $foundByType ? '(' . implode(',', $foundByType) . ')' : '';
     $missingByTypeString = $missingByType ? '(' . implode(',', $missingByType) . ')' : '';
     $this->echo($type . "|  total : {$fileStatistics['total']}    | found : {$fileStatistics['found']}  $foundByTypeString     | missing: {$fileStatistics['missing']} $missingByTypeString");
+  }
+
+  /**
+   * @return array
+   */
+  public function getMissingDonations(): array {
+    return $this->missingTransactions['main'] ?? [];
+  }
+
+  /**
+   * @return array
+   */
+  public function getMissingReversals(): array {
+    return $this->missingTransactions['negative'] ?? [];
+  }
+
+  /**
+   * @param 'donation'|'reversal' $type
+   *
+   * @return array
+   * @throws \Exception
+   */
+  public function getMissingByDate(): array {
+    $missingByDate = [];
+    foreach ($this->getMissingDonations() as $record) {
+      $missingByDate[$this->get_record_human_date($record)][] = $record;
+    }
+    return $missingByDate;
   }
 
   protected function parse_json_log_line($line) {

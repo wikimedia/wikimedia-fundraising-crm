@@ -70,17 +70,15 @@ class FundraiseupAuditProcessor extends BaseAuditProcessor {
     }
   }
 
-  protected function handleNegatives($total_missing, &$remaining) {
+  protected function handleNegatives(&$remaining) {
     $neg_count = 0;
-    if (array_key_exists('negative', $total_missing) && !empty($total_missing['negative'])) {
-      foreach ($total_missing['negative'] as $record) {
-        $normal = $this->normalize_negative($record);
-        $this->send_queue_message($normal, 'negative');
-        $neg_count += 1;
-        $this->echo('!');
-      }
-      $this->echo("Processed $neg_count 'negative' transactions\n");
+    foreach ($this->getMissingReversals() as $record) {
+      $normal = $this->normalize_negative($record);
+      $this->send_queue_message($normal, 'negative');
+      $neg_count += 1;
+      $this->echo('!');
     }
+    $this->echo("Processed $neg_count 'negative' transactions\n");
   }
 
   protected function normalize_partial($record) {
