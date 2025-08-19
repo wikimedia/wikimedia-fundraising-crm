@@ -43,21 +43,6 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
   }
 
   /**
-   * Amazon audit parser should add our reference id as invoice_id.  This will
-   * be the contribution tracking id, a dash, and the attempt number.
-   *
-   * @param array $transaction possibly incomplete set of transaction data
-   *
-   * @return string|false the order_id, or false if we can't figure it out
-   */
-  protected function get_order_id($transaction) {
-    if (is_array($transaction) && array_key_exists('invoice_id', $transaction)) {
-      return $transaction['invoice_id'];
-    }
-    return FALSE;
-  }
-
-  /**
    * @inheritdoc
    */
   protected function get_compressed_log_file_names($date) {

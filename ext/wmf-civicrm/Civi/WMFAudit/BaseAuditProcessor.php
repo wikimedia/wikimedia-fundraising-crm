@@ -813,25 +813,23 @@ abstract class BaseAuditProcessor {
             foreach ($missing as $id => $transaction) {
               $checked += 1;
               //reset vars used below, for extra safety
-              $order_id = FALSE;
               $data = FALSE;
               $all_data = FALSE;
               $contribution_tracking_data = FALSE;
               try {
-                $order_id = $this->get_order_id($transaction);
-                if (!$order_id) {
+                if (!$transaction['order_id']) {
                   throw new WMFException(
                     WMFException::MISSING_MANDATORY_DATA,
                     'Could not get an order id for the following transaction ' . print_r($transaction, TRUE)
                   );
                 }
-                $data = $this->get_log_data_by_order_id($order_id, $logs, $transaction);
+                $data = $this->get_log_data_by_order_id($transaction['order_id'], $logs, $transaction);
 
                 if (!$data) {
                   //no data found in this log, which is expected and normal and not a problem.
                   continue;
                 }
-                $data['order_id'] = $order_id;
+                $data['order_id'] = $transaction['order_id'];
                 //if we have data at this point, it means we have a match in the logs
                 $found += 1;
 
@@ -858,7 +856,7 @@ abstract class BaseAuditProcessor {
                   if (!empty($all_data['installment']) && $all_data['installment'] > 1) {
                     throw new WMFException(
                       WMFException::INVALID_RECURRING,
-                      "Audit parser found recurring order $order_id with installment {$all_data['installment']}"
+                      "Audit parser found recurring order {$transaction['order_id']} with installment {$all_data['installment']}"
                     );
                   }
                   $method = 'r' . $method;
@@ -1584,21 +1582,6 @@ abstract class BaseAuditProcessor {
       }
     }
     return $filtered;
-  }
-
-  /**
-   * Grabs just the order_id out of a $transaction. Override if the
-   * parser doesn't normalize.
-   *
-   * @param array $transaction possibly incomplete set of transaction data
-   *
-   * @return string|false the order_id, or false if we can't figure it out
-   */
-  protected function get_order_id($transaction) {
-    if (is_array($transaction) && array_key_exists('gateway_txn_id', $transaction)) {
-      return $transaction['gateway_txn_id'];
-    }
-    return FALSE;
   }
 
   /**

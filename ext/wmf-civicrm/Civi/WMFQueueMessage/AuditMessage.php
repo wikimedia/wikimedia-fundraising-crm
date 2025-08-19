@@ -161,6 +161,10 @@ class AuditMessage extends DonationMessage {
       $message['gateway_parent_id'] = $this->getGatewayParentTxnID();
       $message['gateway_refund_id'] = $this->getGatewayRefundID();
     }
+    else {
+      $message['order_id'] = $this->getOrderID();
+    }
+
     return $message;
   }
 
@@ -282,6 +286,25 @@ class AuditMessage extends DonationMessage {
 
   public function getPaymentOrchestratorReconciliationReference(): ? string {
     return $this->message['payment_orchestrator_reconciliation_id'] ?? NULL;
+  }
+
+  /**
+   *
+   */
+  public function getOrderID(): ?string {
+    if (!empty($this->message['invoice_id'])) {
+      return $this->message['invoice_id'];
+    }
+    if (!empty($this->message['order_id'])) {
+      return $this->message['order_id'];
+    }
+    if ($this->isFundraiseUp()) {
+      return $this->message['gateway_txn_id'] ?? FALSE;
+    }
+    if ($this->isIngenico()) {
+      return $this->message['gateway_parent_id'] ?? FALSE;
+    }
+    return NULL;
   }
 
   /**
