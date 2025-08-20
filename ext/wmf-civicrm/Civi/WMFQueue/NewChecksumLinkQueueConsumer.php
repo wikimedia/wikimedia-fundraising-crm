@@ -42,10 +42,8 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
     $contact = $contactGet->execute()->first();
 
     if (!$contact) {
-      throw new WMFException(
-        WMFException::INVALID_MESSAGE,
-        "No contact found with $identifier"
-      );
+      Civi::log()->warning( "New link queue consumer: No contact found with $identifier" );
+      return;
     }
 
     $contactID = $contact['id'];
