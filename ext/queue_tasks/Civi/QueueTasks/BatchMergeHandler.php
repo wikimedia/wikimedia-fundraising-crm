@@ -13,10 +13,13 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
 
   use \CRM_Queue_BasicHandlerTrait;
 
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     return ['&hook_civicrm_queueRun_batch_merge' => 'runBatch'];
   }
 
+  /**
+   * @throws \CRM_Core_Exception
+   */
   protected function runItem($item, \CRM_Queue_Queue $queue): void {
     $data = (array) $item->data;
 
@@ -41,11 +44,11 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
       "
     )->fetchAll()[0];
 
-    $criteria = ['modified_date' => ['BETWEEN' => [$startDateTime, $endDateTime]]];
+    $criteria = ['where' => [['modified_date', 'BETWEEN', [$startDateTime, $endDateTime]]]];
     $isLimitApplied = ($result['count'] === $limit);
     if ($isLimitApplied) {
       // We need to assume there are more based on just date range
-      $criteria[] = ['contact_id' => ['BETWEEN' => [$result['min_contact_id'], $result['max_contact_id']]]];
+      $criteria['where'][] = ['id', 'BETWEEN', [$result['min_contact_id'], $result['max_contact_id']]];
     }
     \Civi::log('batch_merge')->info('deduping {limit} contacts from date {start_date} to date {to date}', [
       'limit' => $limit,
@@ -68,6 +71,7 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
     }
 
     $result = civicrm_api3('Job', 'process_batch_merge', $mergeParams);
+    /** @noinspection PhpUndefinedMethodInspection */
     Queue::addDedupeTask(FALSE)
       ->setStartDateTime($isLimitApplied ? $startDateTime : $endDateTime)
       ->setGroupID($data['group_id'] ?? NULL)
