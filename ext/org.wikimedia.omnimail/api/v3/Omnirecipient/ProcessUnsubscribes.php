@@ -39,19 +39,34 @@ function civicrm_api3_omnirecipient_process_unsubscribes($params) {
           'Integer'
         ],
     ]);
-    if ($exists) {
-      \Civi\Api4\Activity::create(FALSE)->setValues([
+
+    if (!$exists) {
+      // check if merged to another contact
+      $contactID = (int) \Civi\Api4\Contact::getMergedTo(FALSE)
+        ->setContactId($unsubscribes['contact_id'])
+        ->execute()
+        ->first()['id'];
+      if (!$contactID) {
+        \Civi::log('wmf')->warning('Unsubscribe failed for contact {contact_id} - contact not found', [
+          'contact_id' => $unsubscribes['contact_id'],
+        ]);
+        continue;
+      }
+    } else {
+      $contactID = $unsubscribes['contact_id'];
+    }
+    \Civi\Api4\Activity::create(FALSE)->setValues([
         'activity_type_id:name' => 'unsubscribe',
         'campaign_id.name' => $unsubscribes['mailing_identifier.campaign_id.name'] ?? NULL,
-        'target_contact_id' => $unsubscribes['contact_id'],
-        'source_contact_id' => $unsubscribes['contact_id'],
+        'target_contact_id' => $contactID,
+        'source_contact_id' => $contactID,
         'activity_date_time' => $unsubscribes['recipient_action_datetime'],
         'subject' => ts('Unsubscribed via ' . (isset($params['mail_provider']) ? $params['mail_provider'] : ts('Mailing provider'))),
       ])->execute();
 
       \Civi\Api4\Contact::update(FALSE)
         ->addValue('is_opt_out', TRUE)
-        ->addWhere('id', '=', $unsubscribes['contact_id'])
+        ->addWhere('id', '=', $contactID)
         ->execute();
 
       if (!empty($unsubscribes['email'])) {
@@ -68,11 +83,6 @@ function civicrm_api3_omnirecipient_process_unsubscribes($params) {
         2 => array($unsubscribes['recipient_action_datetime'], 'String'),
         3 => array($unsubscribes['event_type'], 'String'),
       ));
-    } else {
-      \Civi::log('wmf')->warning('Unsubscribe failed for contact {contact_id} - contact not found', [
-        'contact_id' => $unsubscribes['contact_id'],
-      ]);
-    }
   }
 
   return civicrm_api3_create_success(1);
