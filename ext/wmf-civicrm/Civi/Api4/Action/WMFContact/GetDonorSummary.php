@@ -62,6 +62,7 @@ class GetDonorSummary extends AbstractAction {
 
     $allContributions = Contribution::get(FALSE)
       ->addWhere('contact_id', 'IN', $contactIDList)
+      ->addOrderBy( 'receive_date', 'DESC' )
       ->addSelect(
         'id',
         'contribution_extra.original_amount',
