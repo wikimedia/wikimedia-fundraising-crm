@@ -49,7 +49,7 @@ class ContributionTrackingQueueTest extends BaseQueueTestCase {
     $message = $this->getContributionTrackingMessage();
     $message['utm_source'] = 'Blah_source-this-donor-came-in-from-a-search-' .
       'engine-and-they-were-looking-for-how-to-donate-to-wikipedia.' .
-      'default~default~jimmy-wants-cash.paypal';
+      'default~default~jimm...';
     $this->processMessage($message);
     $truncatedMessage = $message;
     $truncatedMessage['utm_source'] = substr($message['utm_source'], 0, 128);
