@@ -7,6 +7,7 @@ use Civi\Api4\OptionValue;
 use Civi\Api4\WMFConfig;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
+use CRM_Wmf_ExtensionUtil as E;
 
 /**
  * Collection of upgrade steps.
@@ -2783,6 +2784,18 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
         'data_axle_marital_status',
       ])
       ->execute();
+    return TRUE;
+  }
+
+  /**
+   * Install settlement transactions table.
+   *
+   * This table is likely to be a temporary table but I think it will be
+   * helpful as we work through this process for validation.
+   */
+  public function upgrade_4635(): bool {
+    $this->ctx->log->info('Applying update 1001: Create transactions table');
+    E::schema()->createEntityTable('schema/SettlementTransaction.entityType.php');
     return TRUE;
   }
 
