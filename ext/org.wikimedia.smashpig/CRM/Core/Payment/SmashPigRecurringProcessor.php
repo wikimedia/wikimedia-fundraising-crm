@@ -4,7 +4,6 @@ use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
 use Civi\Helper\SmashPigPaymentError;
 use SmashPig\Core\DataStores\QueueWrapper;
-use SmashPig\Core\SequenceGenerators;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
 use Civi\Api4\Contact;
@@ -53,7 +52,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $descriptor,
     $timeLimitInSeconds = 0
   ) {
-    \CRM_SmashPig_ContextWrapper::createContext('recurring-processor');
     $this->useQueue = $useQueue;
     $this->retryDelayDays = $retryDelayDays;
     $this->maxFailures = $maxFailures;
@@ -272,10 +270,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     return $getAction->execute();
   }
 
-  protected static function isFundraiseupContribution($invoiceId) {
-    return preg_match("/[a-z]/i", strtolower($invoiceId));
-  }
-
   /**
    * Given an invoice ID for a recurring payment, get the invoice ID for the
    * next payment in the series.
@@ -290,12 +284,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   protected static function getNextInvoiceId($previousInvoiceId, $failures = 0) {
     $invoiceParts = explode('|', $previousInvoiceId);
     $previousInvoiceId = $invoiceParts[0];
-
-    // Recurring contributions with alphanumeric characters are non-WMF format
-    if (self::isFundraiseupContribution($previousInvoiceId)) {
-      return self::getNextInvoiceIdForRecentlyMigratedFundraiseupToken($failures);
-    }
-
     $invoiceParts = explode('.', $previousInvoiceId);
     $ctId = $invoiceParts[0];
     if (count($invoiceParts) > 1 && intval($invoiceParts[1])) {
@@ -308,26 +296,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     // Include failed attempts in the sequence number
     $currentSequenceNum = $previousSequenceNum + $failures + 1;
     return "$ctId.$currentSequenceNum";
-  }
-
-  /**
-   * Contributions from the Fundraiseup integration have the invoice id issued
-   * by Fundraiseup which is alphanumeric and different from the WMF's invoice ID
-   * format
-   *
-   * @param string $previousInvoiceId
-   * @param int $failures
-   *
-   * @return string
-   */
-  protected static function getNextInvoiceIdForRecentlyMigratedFundraiseupToken($failures = 0) {
-    // Create a contribution tracking id
-    $generator = SequenceGenerators\Factory::getSequenceGenerator('contribution-tracking');
-    $contributionTrackingId = (string) $generator->getNext();
-
-    // Include failed attempts in the sequence number
-    $currentSequenceNum = $failures + 1;
-    return "$contributionTrackingId.$currentSequenceNum";
   }
 
   /**

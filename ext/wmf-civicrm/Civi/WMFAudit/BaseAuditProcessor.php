@@ -452,7 +452,7 @@ abstract class BaseAuditProcessor {
     $recon_file_stats = [];
     foreach ($this->getReconciliationFiles() as $file) {
       //parse the recon files into something relatively reasonable.
-      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0];
+      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0];
       $parsed = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
         $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
@@ -1262,17 +1262,50 @@ abstract class BaseAuditProcessor {
    */
   protected function getMissingTransactions(array $transactions, string $file) {
     //go through the transactions and check to see if they're in civi
+
+    $fileStatistics = &$this->statistics[$file];
     foreach ($transactions as $transaction) {
       $auditRecord = WMFAudit::audit(FALSE)
         ->setValues($transaction)
         ->execute()->single();
-      $this->recordStatistic($auditRecord, $file);
-      if ($auditRecord['is_missing']) {
-        $key = $auditRecord['is_negative'] ? 'negative' : 'main';
-        $this->missingTransactions[$key][] = $auditRecord['message'];
+      $paymentMethod = $auditRecord['payment_method'];
+      $type = $auditRecord['audit_message_type'];
+      if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
+        $fileStatistics[$type]['by_payment'][$paymentMethod] = ['missing' => 0, 'found' => 0];
+      }
+      if (
+        $auditRecord['is_negative']
+      ) {
+        if ($auditRecord['is_missing']) {
+          $fileStatistics['missing_negative']++;
+          $fileStatistics[$type]['missing']++;
+          $fileStatistics[$type]['total']++;
+          $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
+          $this->missingTransactions['negative'][] = $auditRecord['message'];
+        }
+        else {
+          $fileStatistics[$type]['found']++;
+          $fileStatistics[$type]['total']++;
+          $fileStatistics[$type]['by_payment'][$paymentMethod]['found']++;
+        }
+      }
+      else {
+        //normal type
+        if ($auditRecord['is_missing']) {
+          $fileStatistics['missing_main']++;
+          $fileStatistics[$type]['missing']++;
+          $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
+          $this->missingTransactions['main'][] = $auditRecord['message'];
+        }
+        else {
+          $fileStatistics[$type]['found']++;
+          $fileStatistics[$type]['by_payment'][$paymentMethod]['found']++;
+        }
       }
     }
 
+    $this->statistics[$file]['total_missing'] = $this->statistics[$file]['missing_negative'] + $this->statistics[$file]['missing_main'];
+    $this->statistics['total_missing'] += $this->statistics[$file]['total_missing'];
     $this->echo('Transactions');
     $this->echoFileSummaryRow($file, 'main');
     $this->echoFileSummaryRow($file, 'refund');
@@ -1280,33 +1313,6 @@ abstract class BaseAuditProcessor {
     $this->echoFileSummaryRow($file, 'chargeback');
 
     return $this->statistics[$file]['total_missing'];
-  }
-
-  private function recordStatistic($auditRecord, $file) {
-    $fileStatistics = &$this->statistics[$file];
-    $paymentMethod = $auditRecord['payment_method'];
-    $type = $auditRecord['audit_message_type'];
-    if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
-      $fileStatistics[$type]['by_payment'][$paymentMethod] = ['missing' => 0, 'found' => 0];
-    }
-    if ($auditRecord['is_missing']) {
-      $fileStatistics[$type]['missing']++;
-      $fileStatistics['total_missing']++;
-      $fileStatistics[$type]['total']++;
-      $fileStatistics[$type]['by_payment'][$paymentMethod]['missing']++;
-      $this->statistics['total_missing']++;
-      if ($auditRecord['is_negative']) {
-        $fileStatistics['missing_negative']++;
-      }
-      else {
-        $fileStatistics['missing_main']++;
-      }
-    }
-    else {
-      $fileStatistics[$type]['found']++;
-      $fileStatistics[$type]['total']++;
-      $fileStatistics[$type]['by_payment'][$paymentMethod]['found']++;
-    }
   }
 
   /**

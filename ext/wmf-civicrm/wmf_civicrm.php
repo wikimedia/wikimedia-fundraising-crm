@@ -162,6 +162,7 @@ function wmf_civicrm_civicrm_preProcess(string $formName, $form) {
   QuickForm::preProcess($formName, $form);
 }
 
+
 /**
  * Log the dedupe to our log.
  *
@@ -428,6 +429,7 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
 function wmf_civicrm_civicrm_contactSummaryBlocks(array &$blocks) {
   PreferencesLink::contactSummaryBlocks($blocks);
 }
+
 
 /**
  * Add mailing event tab to contact summary screen
