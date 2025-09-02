@@ -13,7 +13,7 @@ function systemtools_civicrm_config(&$config) {
   $listener = function(\Civi\Core\Event\QueryEvent $e) {
     $sess = CRM_Core_Session::singleton();
     $uid = $sess->get('ufID') ?? 'unknown';
-    $e->query = '/* User : ' . $uid . ' */' . $e->query;
+    $e->query = '/* User : ' . $uid . ' PID : ' . getmypid() . ' */' . $e->query;
   };
   Civi::dispatcher()->addListener('civi.db.query', $listener);
 }
