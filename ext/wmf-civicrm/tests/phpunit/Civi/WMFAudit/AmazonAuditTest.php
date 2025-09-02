@@ -15,7 +15,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
 
   /**
    * @throws \Civi\WMFException\WMFException
-   * @throws CRM_Core_Exception
+   * @throws \CRM_Core_Exception
    */
   public function setUp(): void {
     parent::setUp();

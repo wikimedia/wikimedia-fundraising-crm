@@ -31,7 +31,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
 
   public function auditTestProvider(): array {
     return [
-      [
+      'donations' => [
         __DIR__ . '/data/Fundraiseup/donations/',
         [
           'donations' => [
@@ -188,7 +188,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'refunds' =>[
         __DIR__ . '/data/Fundraiseup/refunds',
         [
           'refund' => [
@@ -204,7 +204,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'cancelled' => [
         __DIR__ . '/data/Fundraiseup/recurring/cancelled',
         [
           'recurring' => [
@@ -239,7 +239,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'recurring' => [
         __DIR__ . '/data/Fundraiseup/recurring/new',
         [
           'recurring' => [
@@ -273,7 +273,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
           ],
         ],
       ],
-      [
+      'failed' => [
         __DIR__ . '/data/Fundraiseup/recurring/failed',
         [
           'recurring' => [
@@ -349,7 +349,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testImportCreditCardUsdDonationMessages() {
-    $audit = $this->auditTestProvider()[0];
+    $audit = array_values($this->auditTestProvider())[0];
     $donation = $audit[1]['donations'][0];
     $this->processDonationMessage($donation);
 
@@ -390,7 +390,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testImportGooglePayDonationMessages() {
-    $audit = $this->auditTestProvider()[0];
+    $audit = array_values($this->auditTestProvider())[0];
     $donation = $audit[1]['donations'][1];
     $this->processDonationMessage($donation);
 
@@ -431,7 +431,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testImportBtDonationMessages() {
-    $audit = $this->auditTestProvider()[0];
+    $audit = array_values($this->auditTestProvider())[0];
     $donation = $audit[1]['donations'][2];
     $this->processDonationMessage($donation);
 
@@ -472,7 +472,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testImportRefundDonationMessages(): void {
-    $audit = $this->auditTestProvider();
+    $audit = array_values($this->auditTestProvider());
     $donation = $audit[0][1]['donations'][3];
     $refund = $audit[1][1]['refund'][0];
     $this->processDonationMessage($donation);
@@ -509,7 +509,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testImportNewRecurring() {
-    $audit = $this->auditTestProvider();
+    $audit= array_values($this->auditTestProvider());
     $recurring = $audit[3][1]['recurring'][0];
     $this->processMessage($recurring, 'Recurring', 'recurring');
 
@@ -540,7 +540,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testImportCancelRecurring(): void {
-    $audit = $this->auditTestProvider();
+    $audit= array_values($this->auditTestProvider());
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $cancelMsg = $audit[2][1]['recurring'][0];
     $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
@@ -573,7 +573,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testImportFailedRecurring(): void {
-    $audit = $this->auditTestProvider();
+    $audit= array_values($this->auditTestProvider());
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $failedMsg = $audit[4][1]['recurring'][0];
     $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
@@ -607,7 +607,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testRecurringPlanChange() {
-    $audit = $this->auditTestProvider();
+    $audit= array_values($this->auditTestProvider());
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $planChangeMessage = $audit[5][1]['recurring-modify'][0];
     $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
@@ -661,7 +661,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testRecurringPlanChangeModifyEmail() {
-    $audit = $this->auditTestProvider();
+    $audit= array_values($this->auditTestProvider());
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $planChangeMessage = $audit[5][1]['recurring-modify'][0];
     $this->processMessage($newRecurringMsg, 'Recurring', 'recurring');
@@ -717,7 +717,7 @@ class FundraiseupAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testRecurringPlanChangeDowngrade(): void {
-    $audit = $this->auditTestProvider();
+    $audit= array_values($this->auditTestProvider());
     $newRecurringMsg = $audit[3][1]['recurring'][0];
     $planChangeMessage = $audit[5][1]['recurring-modify'][0];
     $planChangeMessage['amount'] = '9';

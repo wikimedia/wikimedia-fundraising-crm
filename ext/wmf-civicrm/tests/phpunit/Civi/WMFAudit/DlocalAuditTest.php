@@ -34,7 +34,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
 
   public function auditTestProvider(): array {
     return [
-      [
+      'donation' => [
         __DIR__ . '/data/Dlocal/donation/',
         [
           'donations' => [
@@ -70,7 +70,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
         ],
         [],
       ],
-      [
+      'bt' =>[
         __DIR__ . '/data/Dlocal/bt/',
         [
           'donations' => [
@@ -106,7 +106,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
         ],
         [],
       ],
-      [
+      'refund' => [
         __DIR__ . '/data/Dlocal/refund/',
         [
           'refund' => [
