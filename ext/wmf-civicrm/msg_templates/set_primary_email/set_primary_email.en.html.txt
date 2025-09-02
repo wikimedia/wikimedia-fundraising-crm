@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+  <head>
+    <!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+    <meta name="x-apple-disable-message-reformatting">
+    <title>Wikimedia Foundation</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;}
+      table, th, td {
+        box-sizing: border-box;
+        }
+      td {
+        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; word-break:break-word;
+        }
+      img {
+        display: block;
+        }
+      a:link {
+        color: inherit;
+        }
+      @media only screen and (max-width: 480px) {
+        .main > tbody > tr > td.container {
+          padding-left: 16px !important;
+          padding-right: 16px !important;
+        }
+        .button td a {
+          padding: 10px 8px !important;
+        }
+        td.footer__logo {
+          padding: 20px 16px !important;
+        }
+      }
+      @media only screen and (min-width: 0) {
+        .button--primary-base td:hover {
+          background-color: #3366CC !important;
+        }
+        .paragraph a.link:hover {
+          text-decoration: none !important;
+        }
+      }
+    </style>
+  </head>
+  <!-- START EMAIL BODY -->
+  <body class="body body--foundation" bgcolor="#FFFFFF">
+    <!-- START EMAIL WRAPPER -->
+    <table role="article" aria-roledescription="email" aria-label="Wikimedia Foundation" lang="en" dir="ltr" border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td bgcolor="#FFFFFF" class="gap--base">
+          <!--[if mso]><table role="none" align="center" border="0" cellpadding="0" cellspacing="0" width="600"><tr><td><![endif]-->
+          <!-- START EMAIL CONTENT -->
+          <table role="none" align="center" bgcolor="#FFFFFF" border="0" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; min-width:320px; word-break:break-word;" class="main">
+            <!-- START HEADER -->
+            <tr>
+              <td class="section" style="padding-bottom: 24px;">
+                <table role="none" border="0" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td align="center" background="https://upload.wikimedia.org/wikipedia/donate/8/82/Color-white-wkfrds.png" class="header" style="background-color: #FFFFFF;">
+                      <!--[if gte mso 9]>
+                      <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:72px;">
+                        <v:fill type="tile" src="https://upload.wikimedia.org/wikipedia/donate/8/82/Color-white-wkfrds.png" color="none" />
+                        <v:textbox inset="0,0,0,0">
+                      <![endif]-->
+                      <div>
+                      <table role="none" border="0" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%;" width="600">
+                        <tr>
+                          <td align="left" class="container" style="padding-top: 16px; padding-bottom: 16px; padding-left: 20px; padding-right: 20px;">
+                            <!-- START IMAGE (FOUNDATION) -->
+                            <a href="https://wikimediafoundation.org/" target="_blank">
+                              <img 40 src="https://upload.wikimedia.org/wikipedia/donate/e/e2/Logo-foundation-landscape-wkfrds.png" alt="Wikimedia Foundation Logo" class="image--foundation header__logo" style="height: 40px;">
+                            </a>
+                            <!-- END IMAGE (FOUNDATION) -->
+                          </td>
+                        </tr>
+                      </table>
+                      </div>
+                      <!--[if gte mso 9]>
+                        </v:textbox>
+                      </v:rect>
+                      <![endif]-->
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- END HEADER -->
+            <!-- START PARAGRAPH -->
+            <tr>
+              <td align="left" class="paragraph container" style="padding-left: 20px; padding-right: 20px; padding-bottom: 24px;">
+                <div class="text--body" style="font-size: 16px; line-height: 26px; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; color: #202122; font-weight: 400;">
+                  {if '{contact.first_name|boolean}'}
+                  <p>Hi {contact.first_name},</p>
+                  {else}
+                  <p>Hi donor,</p>
+                  {/if}
+                  We received a request to update the email address registered with your donation on {$date} at {$time}.
+                  <p>
+                  Previous email: {$oldEmail}
+                  <br/>
+                  New email: {$newEmail}
+                  </p>
+                  If you made this request, please verify the update by clicking below.
+                </div>
+              </td>
+            </tr>
+            <!-- END PARAGRAPH -->
+            <!-- START BUTTON -->
+            <tr>
+              <td class="button button--primary-base container" style="padding-left: 20px; padding-right: 20px; padding-bottom: 24px;">
+                <table role="none" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
+                  <tr>
+                    <td style="mso-padding-alt: 10px 24px; border-radius: 2px; background-color: #3056A9; border: 1px solid #3056A9; text-align: center;">
+                      <a rel="noopener noreferrer" target="_blank" href="{$url}" class="link" style="color: #FFFFFF; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size: 18px; font-weight: 700; line-height: 150%; text-decoration: none; padding: 10px 24px; display: block;">
+                        Yes, I made this request.
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- END BUTTON -->
+            <!-- START BUTTON -->
+            <tr>
+              <td class="button button--primary-base container" style="padding-left: 20px; padding-right: 20px; padding-bottom: 24px;">
+                <table role="none" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
+                  <tr>
+                    <td style="mso-padding-alt: 10px 24px; border-radius: 2px; background-color: #ffffff; border: 1px solid #3056A9; text-align: center;">
+                      <a rel="noopener noreferrer" href="javascript:window.open('','_self').close();" class="link" style="color: #3056A9; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size: 18px; font-weight: 700; line-height: 150%; text-decoration: none; padding: 10px 24px; display: block;">
+                        No, this was not me.
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- END BUTTON -->
+            <!-- START PARAGRAPH -->
+            <tr>
+              <td align="left" class="paragraph container" style="padding-left: 20px; padding-right: 20px; padding-bottom: 24px;">
+                <div class="text--body" style="font-size: 16px; line-height: 26px; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; color: #202122; font-weight: 400;">
+                  Thank you!
+                  <br/>
+                  Wikimedia Foundation Donor Relations Team
+                </div>
+              </td>
+            </tr>
+            <!-- END PARAGRAPH -->
+          </table>
+          <!-- END EMAIL CONTENT -->
+          <!--[if mso]></td></tr></table><![endif]-->
+        </td>
+      </tr>
+    </table>
+    <!-- END EMAIL WRAPPER -->
+  </body>
+  <!-- END EMAIL BODY -->
+ </html>
