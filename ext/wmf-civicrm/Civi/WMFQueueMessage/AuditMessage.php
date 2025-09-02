@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueueMessage;
 
+use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 
 class AuditMessage extends DonationMessage {
@@ -49,6 +50,7 @@ class AuditMessage extends DonationMessage {
     'gateway',
     'gateway_txn_id',
   ];
+  private array $existingContribution;
 
   /**
    * Are we dealing with a message that had a currency other than our settlement currency.
@@ -106,11 +108,59 @@ class AuditMessage extends DonationMessage {
    */
   public function normalize(): array {
     $message = $this->message;
+    $message['contribution_id'] = $this->getExistingContributionID();
+    $message['parent_contribution_id'] = $this->getParentContributionID();
+
     if ($this->isNegative()) {
       $message['gateway_parent_id'] = $this->getGatewayParentTxnID();
       $message['gateway_refund_id'] = $this->getGatewayRefundID();
     }
     return $message;
+  }
+
+  public function getParentContributionID(): ?int {
+    if (!$this->isNegative()) {
+      return NULL;
+    }
+    $existingContribution = $this->getExistingContribution();
+    if (!$existingContribution && $this->getGatewayAlternateParentTxnID()) {
+      $existingContribution = Contribution::get(FALSE)
+        ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+        ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+        ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayAlternateParentTxnID())
+        ->execute()->first() ?? [];
+    }
+    if ($existingContribution && !in_array($existingContribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded'])) {
+      return $existingContribution['id'];
+    }
+    return NULL;
+  }
+
+  public function getExistingContributionID(): ?int {
+    $existingContribution = $this->getExistingContribution();
+    if (!$existingContribution) {
+      return NULL;
+    }
+    if ($this->isNegative() && !in_array($existingContribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded'])) {
+      return NULL;
+    }
+    return $existingContribution['id'];
+  }
+
+  /**
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   */
+  public function getExistingContribution(): ?array {
+    if (!isset($this->existingContribution)) {
+      $this->existingContribution = Contribution::get(FALSE)
+        ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+        ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+        ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
+        ->execute()->first() ?? [];
+    }
+
+    return $this->existingContribution ?: NULL;
   }
 
   /**
@@ -136,6 +186,15 @@ class AuditMessage extends DonationMessage {
         ->first()['contribution_id.contribution_extra.gateway_txn_id'] ?? NULL;
     }
     return '';
+  }
+
+  /**
+   * Get alternate modification reference for gateways that return more than one.
+   *
+   * (looking at you Adyen T306944)
+   */
+  public function getGatewayAlternateParentTxnID(): ?string {
+    return $this->message['modification_reference'] ?? NULL;
   }
 
   /**
@@ -177,6 +236,14 @@ class AuditMessage extends DonationMessage {
       $type = 'main';
     }
     return $type;
+  }
+
+  /**
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function isSettled(): bool {
+    return (bool) ($this->getExistingContribution()['contribution_extra.settlement_date'] ?? FALSE);
   }
 
 }

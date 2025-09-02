@@ -59,6 +59,14 @@ class BaseAuditTestCase extends TestCase {
           SourceFields::removeFromMessage($message);
           $actual[] = $message;
         }
+        // As we often declare the expected in a dataProvider they may not be
+        // known during test set up so only check if they are in the expected array.
+        foreach ($expected as $index => $message) {
+          if (!array_key_exists('contribution_id', $message)) {
+            unset($actual[$index]['contribution_id']);
+            unset($actual[$index]['parent_contribution_id']);
+          }
+        }
         $this->assertEquals($expected, $actual);
       }
     }
