@@ -2754,6 +2754,39 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Remove old prospect fields
+   *
+   * Bug: T395961
+   *
+   * @return bool
+   * @throws CRM_Core_Exception
+   */
+  public function  upgrade_4630(): bool {
+    CustomField::delete(FALSE)
+      ->addWhere('is_active', '=', FALSE)
+      ->addWhere('name', 'IN', [
+        // disabled Mar 2024 was marked 'Legacy data point - Disable by 2023'
+        'Steward',
+        // disabled Feb 2024
+        'Endowment_Stage',
+        'Net_Worth',
+        'data_axle_net_worth',
+        'data_axle_expendable_income',
+        'data_axle_donation_interest',
+        'data_axle_is_single',
+        'data_axle_is_grandparent',
+        'data_axle_is_parent',
+        'data_axle_number_children',
+        'data_axle_security_investor_likelihood',
+        'data_axle_stock_investor_likelihood',
+        'data_axle_homeowner_investor_likelihood',
+        'data_axle_marital_status',
+      ])
+      ->execute();
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
