@@ -38,7 +38,7 @@ class EmailPreferencesQueueConsumer extends QueueConsumer {
       // TODO Temporarily just throwing a WMFException; See T279962.
       throw new WMFException(
         WMFException::INVALID_MESSAGE,
-        'Invalid data in e-mail preferences message.'
+        'failed to update e-mail preferences message:' . $e->getMessage()
       );
     }
   }
