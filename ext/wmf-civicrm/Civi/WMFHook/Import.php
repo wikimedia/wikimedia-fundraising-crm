@@ -90,8 +90,21 @@ class Import {
 
     // Tweaks to apply during import only.
     if ($this->context === 'import' && $this->importType === 'contribution_import') {
+      if (!empty($this->mappedRow['SoftCreditContact'])) {
+        // Upstream this got converted from an array of arrays to just a single array.
+        // The thinking being that another one would be added more like $this->mappedRow['SoftCreditContact2']
+        // but it's kinda in limbo. Still upstream copes with the original format at save time
+        // and all our code is written for that...
+        $this->mappedRow['SoftCreditContact'] = [$this->mappedRow['SoftCreditContact']];
+      }
       // Provide a default, allowing the import to be configured to override.
       $isMatchingGift = $this->isMatchingGift();
+      // Now ensure converted total_amount is set.
+      // We haven't really done any updates so far but possibly it we do we would
+      // want to extend the if to check the provided values. But safer not to touch on update if we don't have to.
+      if (!isset($this->mappedRow['Contribution']['total_amount']) && empty($this->mappedRow['Contribution']['id'])) {
+        $this->mappedRow['Contribution']['total_amount'] = ContributionHelper::getConvertedTotalAmount($this->mappedRow['Contribution']);
+      }
 
       if ($isMatchingGift && !array_key_exists('contribution_extra.no_thank_you', $this->mappedRow['Contribution'])) {
         $this->mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal (matching gift/ workplace giving)';
@@ -147,11 +160,11 @@ class Import {
             $organizationName = self::resolveOrganization($this->mappedRow['Contact']);
             $this->mappedRow['Contribution']['contact_id'] = $this->mappedRow['Contact']['id'];
             foreach ($this->mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
-              if (empty($this->mappedRow['SoftCreditContact'][$index]['Contact']['id'])) {
-                $this->mappedRow['SoftCreditContact'][$index]['Contact']['id'] = Contact::getIndividualID(
-                  $softCreditContact['Contact']['email_primary.email'] ?? NULL,
-                  $softCreditContact['Contact']['first_name'] ?? NULL,
-                  $softCreditContact['Contact']['last_name'] ?? NULL,
+              if (empty($this->mappedRow['SoftCreditContact'][$index]['id'])) {
+                $this->mappedRow['SoftCreditContact'][$index]['id'] = Contact::getIndividualID(
+                  $softCreditContact['email_primary.email'] ?? NULL,
+                  $softCreditContact['first_name'] ?? NULL,
+                  $softCreditContact['last_name'] ?? NULL,
                   $organizationName
                 );
               }
@@ -169,12 +182,12 @@ class Import {
         elseif ($this->mappedRow['Contact']['contact_type'] === 'Individual') {
           $organizationName = $organizationID = NULL;
           foreach ($this->mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
-            if ($softCreditContact['Contact']['contact_type'] === 'Organization') {
-              if (!empty($softCreditContact['Contact']['id'])) {
-                $organizationID = $softCreditContact['Contact']['id'];
+            if ($softCreditContact['contact_type'] === 'Organization') {
+              if (!empty($softCreditContact['id'])) {
+                $organizationID = $softCreditContact['id'];
               }
               else {
-                $organizationName = self::resolveOrganization($this->mappedRow['SoftCreditContact'][$index]['Contact']);
+                $organizationName = self::resolveOrganization($this->mappedRow['SoftCreditContact'][$index]);
               }
             }
           }
@@ -518,7 +531,7 @@ class Import {
         $this->mappedRow['Contact']['organization_name'] = 'Anonymous Fidelity Donor Advised Fund';
       }
       foreach ($this->mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
-        $isAnonymous = empty($softCreditContact['Contact']['first_name']) && empty($softCreditContact['Contact']['last_name']);
+        $isAnonymous = empty($softCreditContact['first_name']) && empty($softCreditContact['last_name']);
         if ($isAnonymous) {
           unset($this->mappedRow['SoftCreditContact'][$index]);
           continue;
@@ -530,8 +543,8 @@ class Import {
         // Otherwise we copy the address fields from the Main contact to the soft credit contact.
         // We do this because Fidelity only provides one address column, which applies to both.
         foreach ($this->mappedRow['Contact'] as $field => $value) {
-          if ($value && str_starts_with($field, 'address_primary.') && empty($softCreditContact['Contact'][$field])) {
-            $this->mappedRow['SoftCreditContact'][$index]['Contact'][$field] = $value;
+          if ($value && str_starts_with($field, 'address_primary.') && empty($softCreditContact[$field])) {
+            $this->mappedRow['SoftCreditContact'][$index][$field] = $value;
           }
         }
       }
@@ -539,10 +552,8 @@ class Import {
       $this->mappedRow['SoftCreditContact']['Fidelity'] = [
         'soft_credit_type_id' => ContributionSoftHelper::getBankingInstitutionSoftCreditTypes()['Banking Institution'],
         'total_amount' => $this->mappedRow['Contribution']['total_amount'],
-        'Contact' => [
-          'contact_type' => 'Organization',
-          'id' => Contact::getOrganizationID('Fidelity Charitable Gift Fund'),
-        ],
+        'contact_type' => 'Organization',
+        'id' => Contact::getOrganizationID('Fidelity Charitable Gift Fund'),
       ];
     }
   }
@@ -575,7 +586,7 @@ class Import {
    */
   private function getFirstSoftCreditContact(): array {
     foreach ($this->mappedRow['SoftCreditContact'] as $softCreditContact) {
-      return $softCreditContact['Contact'];
+      return $softCreditContact;
     }
     return [];
   }
@@ -625,16 +636,20 @@ class Import {
         // The import will handle the main donation but it does not expect to handle a second contribution.
         // So we have to create the matched organization contribution here.
         // Fortunately we should be able to count on the organization_id having been resolved by now.
+        $contributionValues = array_merge($this->mappedRow['Contribution'], [
+          'contact_id' => $this->getFirstSoftCreditContact()['id'],
+          // The full fee will have been assigned to the main donation.
+          'fee_amount' => 0,
+          'trxn_id' => $this->getGateway() . ' ' . $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
+          'contribution_extra.gateway_txn_id' => $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
+          'contribution_extra.original_amount' => $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'],
+          'contribution_extra.original_currency' => $this->mappedRow['Contribution']['contribution_extra.original_currency'],
+        ]);
+        // total_amount should be recalculated in the hook
+        // scheme fee is otherwise unmapped further down & not for saving.
+        unset($contributionValues['total_amount'], $contributionValues['contribution_extra.scheme_fee']);
         $contribution = \Civi\Api4\Contribution::create(FALSE)
-          ->setValues(array_merge($this->mappedRow['Contribution'], [
-            'contact_id' => $this->getFirstSoftCreditContact()['id'],
-            // The full fee will have been assigned to the main donation.
-            'fee_amount' => 0,
-            'trxn_id' => $this->getGateway() . ' ' . $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
-            'contribution_extra.gateway_txn_id' => $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
-            'contribution_extra.original_amount' => $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'],
-            'contribution_extra.original_currency' => $this->mappedRow['Contribution']['contribution_extra.original_currency'],
-          ]))
+          ->setValues($contributionValues)
           ->execute()->first();
         if (!$isIndividualAnonymous) {
           \Civi\Api4\ContributionSoft::create(FALSE)
@@ -653,6 +668,7 @@ class Import {
         // If there is no individual main donation then we switch the soft credit
         // to be the main donation & remove the soft credit.
         $this->mappedRow['Contribution']['contribution_extra.original_amount'] = $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'];
+        $this->mappedRow['Contribution']['total_amount'] = ContributionHelper::getConvertedTotalAmount($this->mappedRow['Contribution']);
         $individualContact = $this->mappedRow['Contact'];
         $this->mappedRow['Contact'] = $this->getFirstSoftCreditContact();
 
@@ -661,7 +677,7 @@ class Import {
         }
         else {
           // The individual contact is now the soft credit contact.
-          $this->mappedRow['SoftCreditContact'][array_key_first($this->mappedRow['SoftCreditContact'])]['Contact'] = $individualContact;
+          $this->mappedRow['SoftCreditContact'][array_key_first($this->mappedRow['SoftCreditContact'])] = $individualContact;
           $this->mappedRow['SoftCreditContact'][array_key_first($this->mappedRow['SoftCreditContact'])]['soft_credit_type_id'] = ContributionSoftHelper::getEmploymentSoftCreditTypes()['matched_gift'];
         }
         $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] .= '_MATCHED';

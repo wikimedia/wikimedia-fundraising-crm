@@ -61,24 +61,9 @@ class Contribution {
       }
     }
 
-    // Now ensure source & converted total_amount are set.
-    $originalCurrency = $values['contribution_extra.original_currency'] ?? '';
-    $originalAmount = $values['contribution_extra.original_amount'] ?? NULL;
-    if ($originalCurrency && is_numeric($originalAmount)) {
-      // Fill in total_amount, if necessary.
-      if (!isset($values['total_amount']) && $isCreate) {
-        if ($originalCurrency === 'USD') {
-          $values['total_amount'] = $originalAmount;
-        }
-        else {
-          $values['total_amount'] = (float) ExchangeRate::convert(FALSE)
-            ->setFromCurrency($originalCurrency)
-            ->setFromAmount($originalAmount)
-            ->setTimestamp($values['receive_date'] ?? 'now')
-            ->execute()
-            ->first()['amount'];
-        }
-      }
+    // Now ensure converted total_amount is set.
+    if (!isset($values['total_amount']) && $isCreate) {
+      $values['total_amount'] =  ContributionHelper::getConvertedTotalAmount($values);
     }
     if ($values !== $originalValues) {
       $apiRequest->setValues($values);

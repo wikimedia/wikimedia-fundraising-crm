@@ -3,6 +3,7 @@
 namespace Civi\WMFHelper;
 
 use Civi\Api4\Contact;
+use Civi\Api4\ExchangeRate;
 use Civi\WMFException\WMFException;
 use SmashPig\PaymentData\ReferenceData\CurrencyRates;
 
@@ -76,6 +77,32 @@ class Contribution {
 
         break;
     }
+  }
+
+  /**
+   * @param $values
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public static function getConvertedTotalAmount($values): ?float {
+    $originalCurrency = $values['contribution_extra.original_currency'] ?? '';
+    $originalAmount = $values['contribution_extra.original_amount'] ?? NULL;
+    $totalAmount = $values['total_amount'] ?? NULL;
+    if ($originalCurrency && is_numeric($originalAmount)) {
+      if ($originalCurrency === 'USD') {
+        $totalAmount = $originalAmount;
+      }
+      else {
+        $totalAmount = (float) ExchangeRate::convert(FALSE)
+          ->setFromCurrency($originalCurrency)
+          ->setFromAmount($originalAmount)
+          ->setTimestamp($values['receive_date'] ?? 'now')
+          ->execute()
+          ->first()['amount'];
+      }
+    }
+    return $totalAmount;
   }
 
   /**
