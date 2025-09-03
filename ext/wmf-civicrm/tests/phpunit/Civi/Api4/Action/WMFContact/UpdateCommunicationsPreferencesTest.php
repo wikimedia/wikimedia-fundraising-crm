@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\Api4\Action\WMFContact;
+namespace Civi\Api4\WMFContact;
 
 use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\WMFContact;

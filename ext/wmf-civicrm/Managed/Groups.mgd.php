@@ -18,23 +18,61 @@
 // first name is the same too and either state or city is the same.
 // There are some odd street address ones -
 
-$entities = [[
-  'name' => 'imported_duplicates',
-  'entity' => 'Group',
-  'cleanup' => 'unused',
-  'update' => 'unmodified',
-  'params' => [
-    'version' => 4,
-    'match' => ['name'],
-    'values' => [
-      'name' => 'imported_duplicates',
-      'title' => 'Duplicate from csv imports',
-      'description' => 'This group should be processed through manual deduping',
-      'group_type' => [],
-      'source' => 'csv imports',
-      'is_reserved' => TRUE,
+$entities = [
+  [
+    'name' => 'imported_duplicates',
+    'entity' => 'Group',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'match' => ['name'],
+      'values' => [
+        'name' => 'imported_duplicates',
+        'title' => 'Duplicate from csv imports',
+        'description' => 'This group should be processed through manual deduping',
+        'group_type' => [],
+        'source' => 'csv imports',
+        'is_reserved' => TRUE,
+      ],
     ],
   ],
-]];
+  [
+    'name' => 'opt_in_backfill',
+    'entity' => 'Group',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'match' => ['name'],
+      'values' => [
+        'name' => 'opt_in_backfill',
+        'title' => 'Opt-ins missed in donation imports',
+        'description' => 'Contacts whose opt_in=1 value was skipped during donation import',
+        'group_type' => [],
+        'source' => 'log messages',
+        'is_reserved' => TRUE,
+      ],
+    ],
+  ],
+  [
+    'name' => 'opt_out_backfill',
+    'entity' => 'Group',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'match' => ['name'],
+      'values' => [
+        'name' => 'opt_out_backfill',
+        'title' => 'Opt-outs missed in donation imports',
+        'description' => 'Contacts whose opt_in=0 value was skipped during donation import',
+        'group_type' => [],
+        'source' => 'log messages',
+        'is_reserved' => TRUE,
+      ],
+    ],
+  ],
+];
 
 return $entities;
