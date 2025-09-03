@@ -1956,7 +1956,7 @@ LIKE %1
     $tr = [];
     foreach ($params as $key => $item) {
       if (is_numeric($key)) {
-        if (CRM_Utils_Type::validate($item[0], $item[1]) !== NULL) {
+        if (CRM_Utils_Type::validate($item[0], $item[1], TRUE, $item[2] ?? 'One of the parameters ') !== NULL) {
           $item[0] = self::escapeString($item[0]);
           if ($item[1] == 'String' ||
             $item[1] == 'Memo' ||
@@ -2817,7 +2817,14 @@ SELECT contact_id
         // Exclude references to other columns
         $coreReference->getTargetKey() === 'id'
       ) {
-        $contactReferences[$coreReference->getReferenceTable()][] = $coreReference->getReferenceKey();
+        $referenceTable = $coreReference->getReferenceTable();
+        $referenceKey = $coreReference->getReferenceKey();
+        if (!(
+          array_key_exists($referenceTable, $contactReferences) &&
+          in_array($referenceKey, $contactReferences[$referenceTable])
+        )) {
+          $contactReferences[$referenceTable][] = $referenceKey;
+        }
       }
     }
     self::appendCustomTablesExtendingContacts($contactReferences);
@@ -2993,7 +3000,7 @@ SELECT contact_id
     }
     $checkPermissions = (bool) ($values['check_permissions'] ?? ($context == 'create' || $context == 'search'));
     $includeDisabled = ($context == 'validate' || $context == 'get');
-    $options = $entity->getOptions($fieldName, $values, $includeDisabled, $checkPermissions);
+    $options = $entity->getOptions($fieldName, $values, $includeDisabled, $checkPermissions, NULL, ($context == 'get' || $context === 'search'));
     return $options ? CRM_Core_PseudoConstant::formatArrayOptions($context, $options) : $options;
   }
 
@@ -3488,6 +3495,9 @@ SELECT contact_id
     if ($value === '') {
       return [];
     }
+    if (is_array($value)) {
+      return $value;
+    }
     switch ($serializationType) {
       case self::SERIALIZE_SEPARATOR_BOOKEND:
         return (array) CRM_Utils_Array::explodePadded($value);
@@ -3496,15 +3506,9 @@ SELECT contact_id
         return explode(self::VALUE_SEPARATOR, trim($value));
 
       case self::SERIALIZE_JSON:
-        if (is_array($value)) {
-          return $value;
-        }
         return strlen($value) ? json_decode($value, TRUE) : [];
 
       case self::SERIALIZE_PHP:
-        if (is_array($value)) {
-          return $value;
-        }
         return strlen($value) ? CRM_Utils_String::unserialize($value) : [];
 
       case self::SERIALIZE_COMMA:

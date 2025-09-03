@@ -171,17 +171,9 @@ a.crm-expand-row:focus {
     ALERTS
 *******************/
 
-.crm-container del,
 .crm-container .ui-icons_deleted,
-.crm-container table.caseSelector td.status-urgent,
 .crm-container .font-red,
-.crm-container .status-removed,
-.crm-container .status-overdue,
-.crm-container .status-fatal,
-.crm-container .status-hold,
-.crm-container .status-past,
-.crm-contact-deceased,
-.crm-container .status-warning {
+.crm-contact-deceased {
   color: var(--crm-c-danger-on-page-bg);
 }
 .crm-container .alert.alert-info.font-red { /* for when an info alert wants to be a danger alert! */
@@ -407,8 +399,8 @@ body[class*="page-civicrm-report-"] #report-tab-order-by-elements #optionFieldLi
 .CRM_Contact_Form_Contact > .crm-form-block > details,
 .CRM_Contact_Form_Contact > .crm-form-block > div > details {
   margin-inline: calc(-1 * var(--crm-form-block-padding));
-  padding-inline: var(--crm-expand-2-body-padding);
-  margin-bottom: var(--crm-expand-2-body-padding);
+  padding-inline: var(--crm-expand2-body-padding);
+  margin-bottom: var(--crm-expand2-body-padding);
 }
 .crm-container .crm-add-address-wrapper {
   height: auto;
@@ -509,14 +501,6 @@ body[class*="page-civicrm-report-"] #report-tab-order-by-elements #optionFieldLi
   padding: var(--crm-padding-reg);
   box-shadow: none;
   background: var(--crm-tab-bg-active);
-}
-/* Include profile (contribtuion page and events  */
-.crm-contribution-contributionpage-custom-form-block-custom_pre_id td.html-adjust > div > div,
-.crm-contribution-contributionpage-custom-form-block-custom_post_id td.html-adjust > div > div,
-.crm-event-manage-registration-form-block-custom_pre_id td > div > div,
-.crm-event-manage-registration-form-block-custom_post_id td > div > div {
-  display: flex;
-  gap: var(--crm-s);
 }
 /* Event dashboard */
 .CRM_Event_Form_Search .button {

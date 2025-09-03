@@ -256,10 +256,11 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
     static $contactDetails;
     $contactImage = NULL;
     if (!isset($contactDetails[$contactId])) {
-      [$displayName, $contactImage] = self::getContactDetails($contactId);
+      [$displayName, $contactImage, $contactType] = self::getContactDetails($contactId);
       $contactDetails[$contactId] = [
         'displayName' => $displayName,
         'contactImage' => $contactImage,
+        'contactType' => $contactType,
         'isDeceased' => (bool) CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $contactId, 'is_deceased'),
       ];
     }
@@ -271,7 +272,9 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
     // set page title
     $title = "{$contactImage} {$displayName}";
     if ($contactDetails[$contactId]['isDeceased']) {
-      $title .= '  <span class="crm-contact-deceased">(' . ts('deceased') . ')</span>';
+      $title .= '  <span class="crm-contact-deceased">(' .
+        ($contactDetails[$contactId]['contactType'] === 'Individual' ? ts('deceased') : ts('closed')) .
+        ')</span>';
     }
     if ($isDeleted) {
       $title = "<del>{$title}</del>";
@@ -336,7 +339,7 @@ class CRM_Contact_Page_View extends CRM_Core_Page {
   protected function getGroupOrganizationUrl(string $contactType): string {
     if ($contactType !== 'Organization' || !CRM_Core_Permission::check('administer Multiple Organizations')
       || !CRM_Contact_BAO_GroupOrganization::hasGroupAssociated($this->_contactId)
-      || !Civi::settings()->get('is_enabled')
+      || !Civi::settings()->get('multisite_is_enabled')
     ) {
       return '';
     }

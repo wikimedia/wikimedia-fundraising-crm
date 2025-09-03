@@ -159,7 +159,7 @@ $entities = [
               'entity_data' => [],
             ],
             [
-              'name' => 'note',
+              'name' => '',
               'default_value' => NULL,
               'column_number' => 11,
               'entity_data' => [],

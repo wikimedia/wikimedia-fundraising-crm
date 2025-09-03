@@ -24,11 +24,7 @@ function standaloneusers_civicrm_alterBundle(CRM_Core_Resources_Bundle $bundle) 
  */
 function standaloneusers_civicrm_config(&$config) {
   _standaloneusers_civix_civicrm_config($config);
-  if (CIVICRM_UF === 'Drupal') {
-    // Standalone users can run on a drupal site for migration purposes
-    // but it should not run config in this scenario.
-    return;
-  }
+
   // set system timezone based on logged in user
   \CRM_Utils_System::setTimeZone();
 
@@ -92,6 +88,8 @@ function standaloneusers_civicrm_navigationMenu(&$menu) {
     'url' => 'civicrm/admin/setting/standaloneusers?reset=1',
     'permission' => 'cms:administer users',
   ]);
+
+  \Civi\Standalone\Utils::alterHomeMenuItems($menu);
 }
 
 /**

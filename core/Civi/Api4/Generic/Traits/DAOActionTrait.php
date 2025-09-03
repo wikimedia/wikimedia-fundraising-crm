@@ -27,6 +27,44 @@ trait DAOActionTrait {
   private $_maxWeights = [];
 
   /**
+   * Get fields the logged in user is not permitted to act on.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function getUnpermittedFields(): array {
+    $unpermittedFields = [];
+    if ($this->getCheckPermissions()) {
+      $fields = $this->entityFields();
+      foreach ($fields as $field) {
+        if (!empty($field['permission']) && !\CRM_Core_Permission::check($field['permission'])) {
+          $unpermittedFields[$field['name']] = ['permission' => $field['permission'], 'own_permission' => []];
+        }
+      }
+    }
+    return $unpermittedFields;
+  }
+
+  /**
+   * Filter out any fields with field level permissions.
+   *
+   * @param array $items
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function filterUnpermittedFields(array &$items): void {
+    $unpermittedFields = $this->getUnpermittedFields();
+    $userID = \CRM_Core_Session::getLoggedInContactID();
+    if ($unpermittedFields) {
+      foreach ($items as &$item) {
+        foreach ($unpermittedFields as $unpermittedField => $permissions) {
+          unset($item[$unpermittedField]);
+        }
+      }
+    }
+  }
+
+  /**
    * @return \CRM_Core_DAO|string
    */
   protected function getBaoName() {
@@ -139,16 +177,25 @@ trait DAOActionTrait {
     // Ensure array keys start at 0
     $items = array_values($items);
 
-    foreach ($this->write($items) as $index => $dao) {
-      if (!$dao) {
-        $errMessage = sprintf('%s write operation failed', $this->getEntityName());
-        throw new \CRM_Core_Exception($errMessage);
-      }
-      $result[] = $this->baoToArray($dao, $items[$index]);
+    $daos = $this->write($items);
+
+    // Some legacy DAOs return false on error instead of throwing an exception
+    if (in_array(FALSE, $daos)) {
+      $errMessage = sprintf('%s write operation failed', $this->getEntityName());
+      throw new \CRM_Core_Exception($errMessage);
     }
 
-    \CRM_Utils_API_HTMLInputCoder::singleton()->decodeRows($result);
-    FormattingUtil::formatOutputValues($result, $this->entityFields());
+    if (empty($this->reload)) {
+      foreach ($daos as $index => $dao) {
+        $result[] = $this->baoToArray($dao, $items[$index]);
+      }
+      \CRM_Utils_API_HTMLInputCoder::singleton()->decodeRows($result);
+      FormattingUtil::formatOutputValues($result, $this->entityFields());
+    }
+    else {
+      $result = $this->reloadResults($daos, $this->reload);
+    }
+
     return $result;
   }
 
@@ -165,6 +212,7 @@ trait DAOActionTrait {
     $baoName = $this->getBaoName();
 
     $method = method_exists($baoName, 'create') ? 'create' : (method_exists($baoName, 'add') ? 'add' : NULL);
+    $this->filterUnpermittedFields($items);
     // Use BAO create or add method if not deprecated
     if ($method && !ReflectionUtils::isMethodDeprecated($baoName, $method)) {
       foreach ($items as $item) {
@@ -201,10 +249,13 @@ trait DAOActionTrait {
       }
       [$fieldName, $fkField] = explode('.', $key);
       $field = $this->entityFields()[$fieldName] ?? NULL;
-      if (!$field || empty($field['fk_entity'])) {
+      if (!$field || $field['type'] !== 'Field' || empty($field['fk_entity'])) {
         continue;
       }
       $fkDao = CoreUtil::getBAOFromApiName($field['fk_entity']);
+      if (!$fkDao) {
+        throw new \CRM_Core_Exception('Failed to load ' . $field['fk_entity']);
+      }
       // Constrain search to the domain of the current entity
       $domainConstraint = NULL;
       if (isset($fkDao::getSupportedFields()['domain_id'])) {

@@ -47,7 +47,6 @@ function afform_civicrm_config(&$config) {
   $dispatcher->addListener('civi.afform.submit', ['\Civi\Api4\Action\Afform\Submit', 'processRelationships'], 1);
   $dispatcher->addListener('hook_civicrm_angularModules', '_afform_hook_civicrm_angularModules', -1000);
   $dispatcher->addListener('hook_civicrm_alterAngular', ['\Civi\Afform\AfformMetadataInjector', 'preprocess']);
-  $dispatcher->addListener('hook_civicrm_check', ['\Civi\Afform\StatusChecks', 'hook_civicrm_check']);
   $dispatcher->addListener('civi.afform.get', ['\Civi\Api4\Action\CustomGroup\GetAfforms', 'getCustomGroupAfforms']);
 }
 
@@ -467,6 +466,7 @@ function afform_civicrm_referenceCounts($dao, &$counts) {
     ];
     try {
       $displays = civicrm_api4('SearchDisplay', 'get', [
+        'checkPermissions' => FALSE,
         'where' => [['saved_search_id', '=', $dao->id]],
       ], ['name']);
       foreach ($displays as $displayName) {

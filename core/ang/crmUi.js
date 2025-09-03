@@ -80,7 +80,11 @@
         },
         link: function (scope, element, attrs, ngModel) {
           ngModel.$render = function () {
-            element.val(ngModel.$viewValue).change();
+            const viewVal = ngModel.$viewValue || '';
+            // Prevent unnecessarily triggering ngChagne
+            if (element.val() != viewVal) {
+              element.val(viewVal).change();
+            }
           };
           let settings = angular.copy(scope.crmUiDatepicker || {});
           // Set defaults to be non-restrictive
@@ -100,6 +104,14 @@
                   }
                   if (settings.date === false) {
                     requiredLength = 8;
+                  }
+                  else if (typeof settings.date === 'string') {
+                    var lowerFormat = settings.date.toLowerCase();
+                    // FIXME: parseDate doesn't work with incomplete date formats; skip validation if no month, day or year in format
+                    if (lowerFormat.indexOf('y') < 0 || lowerFormat.indexOf('m') < 0 || lowerFormat.indexOf('d') < 0) {
+                      // skipping the validation by setting the actual length of datepicker value
+                      requiredLength = element.val().length;
+                    }
                   }
                   ngModel.$setValidity('incompleteDateTime', !(element.val().length && element.val().length !== requiredLength));
                 });
@@ -803,10 +815,13 @@
           this.$onChanges = function() {
             // Timeout is to wait for `placeholder="{{ ts(...) }}"` to be resolved
             $timeout(function() {
+              // Only auto-open if there are no static options or quickAdd links
+              const autoOpen = ctrl.autoOpen &&
+                !(ctrl.staticOptions && ctrl.staticOptions.length) &&
+                !(ctrl.quickAdd === true || (ctrl.quickAdd && ctrl.quickAdd.length));
               $element.crmAutocomplete(ctrl.entity, ctrl.crmAutocompleteParams || {}, {
                 multiple: ctrl.multi,
-                // Only auto-open if there are no static options
-                minimumInputLength: ctrl.autoOpen && _.isEmpty(ctrl.staticOptions) ? 0 : 1,
+                minimumInputLength: autoOpen ? 0 : 1,
                 static: ctrl.staticOptions || [],
                 quickAdd: ctrl.quickAdd,
               });

@@ -38,6 +38,7 @@
             'api_params',
             'is_template',
             // These two need to be in the select clause so they are allowed as filters
+            'created_id',
             'created_id.display_name',
             'modified_id.display_name',
             'created_date',
@@ -97,14 +98,24 @@
 
       // Get the names of in-use filters
       function getActiveFilters() {
-        return _.keys(_.pick(ctrl.filters, function(val) {
-          return val !== null && (_.includes(['boolean', 'number'], typeof val) || val.length);
-        }));
+        return Object.keys(ctrl.filters).filter(key => {
+          let val = ctrl.filters[key];
+          if (typeof val === 'object' && val.hasOwnProperty('CONTAINS')) {
+            val = val.CONTAINS;
+          }
+          return val !== null &&
+            (['boolean', 'number'].includes(typeof val) || val.length);
+        });
       }
 
       this.onPostRun.push(function(apiResults) {
         _.each(apiResults.run, function(row) {
           row.permissionToEdit = CRM.checkPerm('all CiviCRM permissions and ACLs') || !_.includes(row.data.display_acl_bypass, true);
+          // If someone has manage own permission, we need to override and only allow if they are the owner.
+          if (!CRM.checkPerm('all CiviCRM permissions and ACLs') && CRM.checkPerm('manage own search_kit') && (CRM.config.cid !== row.data.created_id)) {
+            row.permissionToEdit = false;
+          }
+
           // If main entity doesn't exist, no can edit
           if (!row.data['api_entity:label']) {
             row.permissionToEdit = false;
@@ -117,6 +128,9 @@
           if (!row.data.display_name) {
             row.openDisplayMenu = false;
           }
+
+          // Implied permission that if you can edit, you should be able to delete.
+          row.permissionToDelete = row.permissionToEdit;
         });
         updateAfformCounts();
       });

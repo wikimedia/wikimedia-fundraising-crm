@@ -16,7 +16,6 @@
  */
 
 use Civi\Standalone\SessionHandler;
-use Civi\Standalone\CiviCacheSessionHandler;
 
 /**
  * Standalone specific stuff goes here.
@@ -161,34 +160,30 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
 
   /**
    * @inheritDoc
+   *
+   * Note: Standalone renders the html-header region directly in its smarty page template
+   * so this should never be called
    */
   public function addHTMLHead($header) {
-    $template = CRM_Core_Smarty::singleton();
-    // Smarty's append function does not check for the existence of the var before appending to it.
-    // So this prevents a stupid notice error:
-    $template->ensureVariablesAreAssigned(['pageHTMLHead']);
-    $template->append('pageHTMLHead', $header);
-    return;
+    throw new \CRM_Core_Exception('addHTMLHead should never be called in Standalone');
   }
 
   /**
-   * @inheritDoc
+   * @inheritdoc
+   *
+   * No such things as CMS-rendering in Standalone => always return FALSE
    */
   public function addStyleUrl($url, $region) {
-    if ($region != 'html-header') {
-      return FALSE;
-    }
-    $this->addHTMLHead('<link rel="stylesheet" href="' . $url . '"></style>');
+    return FALSE;
   }
 
   /**
-   * @inheritDoc
+   * @inheritdoc
+   *
+   * No such things as CMS-rendering in Standalone => always return FALSE
    */
   public function addStyle($code, $region) {
-    if ($region != 'html-header') {
-      return FALSE;
-    }
-    $this->addHTMLHead('<style>' . $code . '</style>');
+    return FALSE;
   }
 
   /**
@@ -329,30 +324,25 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
   /**
    * @inheritDoc
    */
-  public function theme(&$content, $print = FALSE, $maintenance = FALSE) {
-    if ($maintenance) {
-      // if maintenance, we need to wrap in a minimal header
-      $headerContent = CRM_Core_Region::instance('html-header', FALSE)->render('');
+  public function renderMaintenanceMessage(string $content): string {
+    // wrap in a minimal header
+    $headerContent = CRM_Core_Region::instance('html-header', FALSE)->render('');
 
-      // note - now adding #crm-container is a hacky way to avoid rendering
-      // the civicrm menubar. @todo a better way
-      $content = <<<HTML
-        <!DOCTYPE html >
-        <html class="crm-standalone">
-          <head>
-            {$headerContent}
-          </head>
-          <body>
-            <div class="crm-container standalone-page-padding">
-              {$content}
-            </div>
-          </body>
-        </html>
-      HTML;
-    }
-
-    print $content;
-    return NULL;
+    // note - not adding #crm-container is a hacky way to avoid rendering
+    // the civicrm menubar. @todo a better way
+    return <<<HTML
+      <!DOCTYPE html >
+      <html class="crm-standalone">
+        <head>
+          {$headerContent}
+        </head>
+        <body>
+          <div class="crm-container standalone-page-padding">
+            {$content}
+          </div>
+        </body>
+      </html>
+    HTML;
   }
 
   /**
@@ -650,9 +640,6 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
    * here swallows whatever error is actually causing the crash)
    */
   public function sessionStart() {
-    // session lifetime in seconds (default = 24 minutes)
-    $session_max_lifetime = (Civi::settings()->get('standaloneusers_session_max_lifetime') ?? 24) * 60;
-
     if (!$this->isUserExtensionAvailable()) {
       $session_cookie_name = 'SESSCIVISOFALLBACK';
     }
@@ -663,9 +650,12 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
       // We'll just use the default, take no action.
     }
     else {
-      $session_handler = $this->getSessionHandler($session_max_lifetime);
+      $session_handler = new SessionHandler();
       session_set_save_handler($session_handler);
     }
+
+    // session lifetime in seconds (default = 24 minutes)
+    $session_max_lifetime = (Civi::settings()->get('standaloneusers_session_max_lifetime') ?? 24) * 60;
 
     session_start([
       'cookie_httponly'  => 1,
@@ -720,18 +710,6 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
   public function postContainerBoot(): void {
     $sess = \CRM_Core_Session::singleton();
     $sess->initialize();
-  }
-
-  /**
-   * @return \Civi\Standalone\SessionHandlerInterface
-   */
-  public function getSessionHandler($sessionMaxLifetime): SessionHandlerInterface {
-    if (CIVICRM_DB_CACHE_CLASS === 'Redis') {
-      // This class *should* work with other caching types but
-      // has only been tested for Redis.
-      return new CiviCacheSessionHandler($sessionMaxLifetime);
-    }
-    return new SessionHandler();
   }
 
 }
