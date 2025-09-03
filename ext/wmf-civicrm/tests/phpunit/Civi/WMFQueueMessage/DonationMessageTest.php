@@ -32,7 +32,6 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
       'gateway_txn_id' => '1234AB1234-2',
       'gross' => 5.8,
       'last_name' => 'es',
-      'letter_code' => '',
       'middle_name' => '',
       'net' => 5.29,
       'order_id' => mt_rand(),
