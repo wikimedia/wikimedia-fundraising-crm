@@ -122,8 +122,13 @@ class Resolve extends AbstractAction {
     ];
 
     // Check if payment is awaiting approval.
-    // If not, just delete the message
+    // If not, just log it and return early to delete the message
     if (!$latestPaymentDetailResult->requiresApproval()) {
+      $approvalNotNeededLogMessage = 'Payment is not awaiting approval - current status: ' .
+        $latestPaymentDetailResult->getStatus() . ' for order_id: ' .
+        $this->message['order_id'];
+
+      \Civi::Log('wmf')->info($approvalNotNeededLogMessage);
       return;
     }
 
