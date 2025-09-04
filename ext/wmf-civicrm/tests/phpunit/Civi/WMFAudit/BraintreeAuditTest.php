@@ -87,6 +87,8 @@ class BraintreeAuditTest extends BaseAuditTestCase {
               'gross' => '4.50',
               'contribution_tracking_id' => '35',
               'currency' => 'USD',
+              'settled_currency' => 'USD',
+              'settled_date' => NULL,
               'email' => 'donor@gmail.com',
               'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2szNmZ4Y3A',
               'invoice_id' => '35.1',

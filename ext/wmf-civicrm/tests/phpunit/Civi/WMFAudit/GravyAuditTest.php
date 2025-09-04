@@ -76,6 +76,7 @@ class GravyAuditTest extends BaseAuditTestCase {
         'order_id' => '113.10',
         'currency' => 'USD',
         'date' => 1726234885,
+        'settled_date' => NULL,
         'gateway_txn_id' => '3754736e-9a6e-44fe-a43b-835f8d78c89b',
         'gross' => '35.00',
         'invoice_id' => '113.10',

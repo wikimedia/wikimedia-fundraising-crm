@@ -39,11 +39,9 @@ class Settle extends AbstractAction {
     // and deposit date is settled to the bank
     // We may not always track deposit date but when deposited in EUR it will
     // be our final calculation date.
-    // **settlement_currency**
     // **settlement_date**
     // gateway_date
     // settlement_usd
-    // **settlement_currency**
     // **settlement_batch_number**
     // deposit_date
     // deposit_usd

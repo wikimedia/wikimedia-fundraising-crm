@@ -40,7 +40,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
 
   public function auditTestProvider(): array {
     return [
-      [
+      'donations' => [
         __DIR__ . '/data/Amazon/donation/',
         'donation' => [
           'donations' => [
@@ -48,6 +48,8 @@ class AmazonAuditTest extends BaseAuditTestCase {
               'contribution_tracking_id' => '87654321',
               'country' => 'US',
               'currency' => 'USD',
+              'settled_currency' => 'USD',
+              'settled_date' => NULL,
               'date' => 1443723034,
               'email' => 'nonchalant@gmail.com',
               'fee' => '0.59',

@@ -305,12 +305,10 @@ class DonationMessage extends Message {
   }
 
   /**
-   * Get the currency the donation is settled in.
-   *
-   * Currency it is always converted to USD.
+   * Get the currency the donation is settled into at the gateway.
    */
   public function getSettlementCurrency(): string {
-    return 'USD';
+    return $this->message['settled_currency'] ?? 'USD';
   }
 
   public function getSettledAmountRounded(): string {
@@ -679,6 +677,23 @@ class DonationMessage extends Message {
    */
   public function isUPI() : bool {
     return ($this->message['payment_submethod'] ?? '') === 'upi';
+  }
+
+  /**
+   * Get the currency the donation is settled into at the gateway.
+   */
+  public function getSettlementDate(): ?string {
+    if (empty($this->message['settled_date'])) {
+      return NULL;
+    }
+    return date('Y-m-d H:i:s', $this->getSettlementTimeStamp());
+  }
+
+  public function getSettlementTimeStamp(): ?int {
+    if (!empty($this->message['settled_date'])) {
+      return $this->message['settled_date'];
+    }
+    return NULL;
   }
 
 }
