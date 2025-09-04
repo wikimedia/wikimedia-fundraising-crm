@@ -31,6 +31,17 @@ abstract class BaseAuditProcessor {
   protected $cutoff = -3;
 
   /**
+   * All settlement batches processed.
+   *
+   * These are per settled currency.
+   *
+   * If there is no settlement_batch provided then the batch is the file.
+   *
+   * @var array
+   */
+  protected array $batches = [];
+
+  /**
    * Number of file to parse per run, absent any incoming parameter.
    *
    * Note that 0 is equivalent to all or no limit.
@@ -1276,6 +1287,12 @@ abstract class BaseAuditProcessor {
   private function recordStatistic($auditRecord, $file) {
     $fileStatistics = &$this->statistics[$file];
     $paymentMethod = $auditRecord['payment_method'];
+    $transaction = $auditRecord['message'];
+    if (isset($transaction['audit_file_gateway'])) {
+      // For now this means we are only doing it for adyen.
+      // The batching is by the audit file gateway (ie adyen) not gravy.
+      $this->addToBatch($transaction);
+    }
     $type = $auditRecord['audit_message_type'];
     if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
       $fileStatistics[$type]['by_payment'][$paymentMethod] = ['missing' => 0, 'found' => 0];
@@ -1445,6 +1462,45 @@ abstract class BaseAuditProcessor {
       $missingByDate[$this->get_record_human_date($record)][] = $record;
     }
     return $missingByDate;
+  }
+
+  /**
+   * @param array $transaction
+   * @return void
+   */
+  private function addToBatch(array $transaction): void {
+    $batchName = $transaction['audit_file_gateway'] . '_' . ($transaction['settled_currency'] ?? '') . '_' . $transaction['settlement_batch_reference'];
+    if (!isset($this->batches[$batchName])) {
+      $this->batches[$batchName] = [
+        'transaction_count' => 0,
+        'settled_total_amount' => 0,
+        'settled_fee_amount' => 0,
+        'settled_net_amount' => 0,
+        'settled_reversal_amount' => 0,
+        'settled_donation_amount' => 0,
+        'settlement_currency' => $transaction['settled_currency'],
+        'settlement_date' => date('Ymd', $transaction['settled_date']),
+        'settlement_batch_reference' => $batchName,
+      ];
+    }
+    $this->batches[$batchName]['transaction_count']++;
+    \Civi::log('wmf')->warning($batchName . " : " . $this->batches[$batchName]['transaction_count']);
+    if (!isset($transaction['settled_total_amount'])) {
+      \Civi::log('wmf')->warning('is string {transaction}', ['transaction' => $transaction]);
+    }
+    else {
+      $this->batches[$batchName]['settled_total_amount'] += $transaction['settled_total_amount'];
+      if ($transaction['settled_total_amount'] < 0) {
+        $this->batches[$batchName]['settled_reversal_amount'] += $transaction['settled_total_amount'];
+      }
+      else {
+        $this->batches[$batchName]['settled_donation_amount'] += $transaction['settled_total_amount'];
+      }
+    }
+    // These will be wrong if they are not set right - but that is OK for now as it will highlight
+    // where the gaps are and it is informational.
+    $this->batches[$batchName]['settled_fee_amount'] += $transaction['settled_fee_amount'] ?? 0;
+    $this->batches[$batchName]['settled_net_amount'] += $transaction['settled_net_amount'] ?? 0;
   }
 
   protected function parse_json_log_line($line) {
@@ -1634,6 +1690,10 @@ abstract class BaseAuditProcessor {
     date_add($date, date_interval_create_from_date_string("$add days"));
 
     return date_format($date, 'Ymd');
+  }
+
+  public function getBatchInformation(): array {
+    return $this->batches;
   }
 
 }
