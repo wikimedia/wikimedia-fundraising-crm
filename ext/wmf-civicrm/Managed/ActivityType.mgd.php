@@ -312,7 +312,7 @@ return [
       ],
     ],
   ],
-    [
+  [
     'name' => 'OptionValue_RecurringPaused',
     'entity' => 'OptionValue',
     'cleanup' => 'unused',
@@ -336,6 +336,38 @@ return [
         'domain_id' => NULL,
         'visibility_id' => NULL,
         'icon' => 'fa-pause',
+        'color' => NULL,
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ],
+  [
+    'name' => 'OptionValue_RecurringPrenotify',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'activity_type',
+        'label' => 'Recurring Prenotification',
+        'value' => 207,
+        'name' => 'Recurring Prenotification',
+        'grouping' => NULL,
+        'filter' => 1,
+        'weight' => 95,
+        'is_default' => FALSE,
+        'description' => 'We sent a notification to an donor that their annual recurring donation was about to be charged',
+        'is_optgroup' => FALSE,
+        'is_reserved' => FALSE,
+        'is_active' => TRUE,
+        'component_id' => NULL,
+        'domain_id' => NULL,
+        'visibility_id' => NULL,
+        'icon' => 'fa-envelope-o',
         'color' => NULL,
       ],
       'match' => [
