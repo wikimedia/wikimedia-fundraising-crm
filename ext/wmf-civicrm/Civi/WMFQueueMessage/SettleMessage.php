@@ -15,7 +15,7 @@ class SettleMessage extends DonationMessage {
    *    gross: float|string|int,
    *    settled_currency: string,
    *    fee: string,
-   *    batch_reference: string,
+   *    settlement_batch_reference: string,
    *    }
    */
   protected array $message;

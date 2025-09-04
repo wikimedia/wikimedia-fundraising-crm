@@ -79,30 +79,6 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
   }
 
   /**
-   * Checks to see if the transaction already exists in civi
-   *
-   * @param array $transaction Array of donation data
-   *
-   * @return boolean true if it's in there, otherwise false
-   */
-  protected function main_transaction_exists_in_civi($transaction) {
-    $gateway = $transaction['gateway'];
-    //go through the transactions and check to see if they're in civi
-    // there are Adyen situations where the $positive_txn_id is not what is stored in civi
-    // look for modification_reference instead
-    // T306944
-    if ($this->getContributions($gateway, $transaction['gateway_parent_id']) === FALSE) {
-      if (isset($transaction['modification_reference']) && $this->getContributions($gateway, $transaction['modification_reference']) !== FALSE) {
-        return TRUE;
-      }
-      return FALSE;
-    }
-    else {
-      return TRUE;
-    }
-  }
-
-  /**
    * Override parent function to deal with recurring donations with modification_reference.
    * We do not want to pass the modification_reference,
    * also need to make sure the transaction id not null before send audit job to civi

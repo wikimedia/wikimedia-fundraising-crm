@@ -56,7 +56,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
    * country from email preference center queue.
    * @var string|null
    * @optionsCallback getPreferCountryOptions
-  */
+   */
   protected $country = null;
 
   /**
@@ -137,7 +137,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
         if ($oldSnoozeDateValue !== null &&
           strtotime($oldSnoozeDateValue) > strtotime('+1 day')) {
           $snoozeValues['email_settings.snooze_date'] = date("Y-m-d", strtotime("+1 day"));
-          $message .= ', since current snoozeValue was '. $oldSnoozeDateValue . ', so set snoozeValue to ' . $snoozeValues['email_settings.snooze_date'];
+          $message .= ', since current snoozeValue was ' . $oldSnoozeDateValue . ', so set snoozeValue to ' . $snoozeValues['email_settings.snooze_date'];
         }
         $message .= ", opt_in from {$oldOptInValue} to {$params['send_email']}";
         $detail = "Email Preference Center update opt_in from {$oldOptInValue} to {$params['send_email']}";
@@ -194,7 +194,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     // We just need to set this value here. The omnimail_civicrm_custom hook will pick up
     // the change and queue up an API request to Acoustic to actually snooze it.
     // 4: update snoozed_date
-    if (!empty($params['snooze_date']) && $params['snooze_date']!== $oldSnoozeDateValue) {
+    if (!empty($params['snooze_date']) && $params['snooze_date'] !== $oldSnoozeDateValue) {
       $snoozeValues = ['email_settings.snooze_date' => $params['snooze_date']];
       $message .= ", snooze date from {$oldSnoozeDateValue} to {$params['snooze_date']}";
     }
@@ -241,7 +241,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
    * @param array $params
    * @throws \CRM_Core_Exception
    */
-  function validateInput($params) {
+  function validateInput($params): void {
     // check if required params exist
     if (empty($params['email']) ||
       empty($params['contact_id']) ||
@@ -285,7 +285,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
    * @return bool
    * @throws \CRM_Core_Exception
    */
-  function validateChecksum($contactID, $inputCheck) {
+  function validateChecksum($contactID, $inputCheck): bool {
     // This is a helper function to validate the checksum
     // Allow a hook to invalidate checksums
     $invalid = FALSE;
@@ -309,7 +309,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
    * @throws UnauthorizedException
    * @throws \CRM_Core_Exception
    */
-  function getEmailPreferenceData($contactID) {
+  function getEmailPreferenceData($contactID): ?array {
     return Contact::get(FALSE)
       ->addWhere('id', '=', $contactID)
       ->addWhere('is_deleted', '=', FALSE)
@@ -331,7 +331,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
    * @throws \CRM_Core_Exception
    * @throws UnauthorizedException
    */
-  function logActivity($activityName, $detail, $contactId) {
+  function logActivity($activityName, $detail, $contactId): void {
     $subject = $activityName === 'Email Preference Center' ? 'Preferences Updated' : "$activityName - Email Preference Center";
     Activity::create(FALSE)
       ->addValue('activity_type_id:name', $activityName)

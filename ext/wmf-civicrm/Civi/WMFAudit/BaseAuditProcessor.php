@@ -408,25 +408,6 @@ abstract class BaseAuditProcessor {
     return $record;
   }
 
-  /**
-   * Checks to see if the transaction already exists in civi
-   * Override if the parser doesn't normalize.
-   *
-   * @param array $transaction Array of donation data
-   *
-   * @return boolean true if it's in there, otherwise false
-   */
-  protected function main_transaction_exists_in_civi($transaction) {
-    $gateway = $transaction['gateway'];
-    //go through the transactions and check to see if they're in civi
-    if ($this->getContributions($gateway, $transaction['gateway_parent_id']) === FALSE) {
-      return FALSE;
-    }
-    else {
-      return TRUE;
-    }
-  }
-
   protected function get_runtime_options($name) {
     if (isset($this->options[$name])) {
       return $this->options[$name];
@@ -562,7 +543,7 @@ abstract class BaseAuditProcessor {
     foreach ($this->getMissingReversals() as $record) {
       //check to see if the parent exists. If it does, normalize and send.
       $parentByInvoice = [];
-      $foundParent = $this->main_transaction_exists_in_civi($record);
+      $foundParent = (bool) $record['parent_contribution_id'];
       if (!$foundParent && !empty($record['invoice_id'])) {
         // Sometimes it's difficult to find a parent transaction by the
         // gateway-side ID, for example for Ingenico recurring refunds.
@@ -1653,45 +1634,6 @@ abstract class BaseAuditProcessor {
     date_add($date, date_interval_create_from_date_string("$add days"));
 
     return date_format($date, 'Ymd');
-  }
-
-
-  /**
-   * @todo - in most places this becomes obsolete when Message::normlize() is used.
-   * Pulls all records in the wmf_contribution_extras table that match the gateway
-   * and gateway transaction id.
-   *
-   * @deprecated - in many cases \Civi\WMFHelper\Contribution::exists() is more appropriate
-   * - this has a weird return signature.g
-   *
-   * @param string $gateway
-   * @param string $gateway_txn_id
-   *
-   * @return mixed array of result rows, or false if none present.
-   * TODO: return empty set rather than false.
-   * @throws \Civi\WMFException\WMFException
-   */
-  protected function getContributions($gateway, $gateway_txn_id) {
-    // If you only want to know if it exists then call \Civi\WMFHelper\Contribution::exists()
-    // Use apiv4
-    $gateway = strtolower($gateway);
-    $query = "SELECT cx.*, cc.* FROM wmf_contribution_extra cx LEFT JOIN civicrm_contribution cc
-		ON cc.id = cx.entity_id
-		WHERE gateway = %1 AND gateway_txn_id = %2";
-
-    $dao = \CRM_Core_DAO::executeQuery($query, [
-      1 => [$gateway, 'String'],
-      2 => [$gateway_txn_id, 'String'],
-    ]);
-    $result = [];
-    while ($dao->fetch()) {
-      $result[] = $dao->toArray();
-    }
-    // FIXME: pick wart
-    if (empty($result)) {
-      return FALSE;
-    }
-    return $result;
   }
 
 }

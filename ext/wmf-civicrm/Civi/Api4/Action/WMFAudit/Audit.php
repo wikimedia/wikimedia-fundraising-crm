@@ -35,13 +35,7 @@ class Audit extends AbstractAction {
    */
   public function _run(Result $result): void {
     $message = new AuditMessage($this->values);
-    $existingContribution = Contribution::get(FALSE)
-      ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
-      ->addWhere('contribution_extra.gateway', '=', $message->getGateway())
-      ->addWhere('contribution_extra.gateway_txn_id', '=', $message->getGatewayParentTxnID())
-      ->execute()->first();
 
-    $isSettled = (bool) ($existingContribution['contribution_extra.settlement_date'] ?? FALSE);
     if ($this->processSettlement) {
       // Here we would ideally queue but short term we will probably process in real time on specific files
       // as we test.
@@ -51,7 +45,7 @@ class Audit extends AbstractAction {
       // WMFAudit::settle(FALSE)
       //  ->setValues($message->normalize())->execute();
     }
-    $isMissing = !$existingContribution || ($message->isNegative() && !in_array($existingContribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded']));
+    $isMissing = !$message->getExistingContributionID();
     // @todo - we would ideally augment the missing messages here from the Pending table
     // allowing us to drop 'log_hunt_and_send'
     // also @todo if we are unable to find the extra data then queue to (e.g) a missing
@@ -65,7 +59,7 @@ class Audit extends AbstractAction {
       'payment_method' => $message->getPaymentMethod(),
       'audit_message_type' => $message->getAuditMessageType(),
       'is_missing' => $isMissing,
-      'is_settled' => $isSettled,
+      'is_settled' => $message->isSettled(),
     ];
   }
 
