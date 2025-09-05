@@ -387,6 +387,7 @@ class ContributionParser extends ImportParser {
               ->addWhere('id', '=', $contributionID)
               ->execute()->single();
             Payment::create()
+              ->setnotificationForCompleteOrder(FALSE)
               ->setValues(($params['Payment'] ?? []) + [
                 'contribution_id' => $contributionID,
                 'check_number' => $contribution['check_number'],
