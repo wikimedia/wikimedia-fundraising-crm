@@ -447,7 +447,7 @@ class EOYEmailTest extends TestCase {
 <p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href=\"mailto:legacy@wikimedia.org\">Contact us to learn how to make a legacy gift.</a></p>
 <p>Jimmy Walrus, this letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
 <p>CNTCT-{$contact['id']}</p>
-<!-- TI_BEGIN[“name”:“End_of_Year.en.html”,“revision”:20230331,“currency”:“USD“]TI_END -->
+<!-- TI_BEGIN[“name”:“End_of_Year.en.html”,“revision”:20230331,“currency”:““]TI_END -->
 ",
     ], $email->first());
   }
@@ -709,7 +709,7 @@ class EOYEmailTest extends TestCase {
 <p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href="mailto:legacy@wikimedia.org">Contact us to learn how to make a legacy gift.</a></p>
 <p>Bob Walrus, this letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
 <p>CNTCT-' . $contactID . '</p>
-<!-- TI_BEGIN[“name”:“End_of_Year.en.html”,“revision”:20230331,“currency”:“USD“]TI_END -->
+<!-- TI_BEGIN[“name”:“End_of_Year.en.html”,“revision”:20230331,“currency”:““]TI_END -->
 ',
     ], $email);
   }
@@ -788,7 +788,7 @@ class EOYEmailTest extends TestCase {
 <p>Help ensure the future is filled with curiosity and wonder by remembering Wikipedia in your will. <a href="mailto:legacy@wikimedia.org">Contact us to learn how to make a legacy gift.</a></p>
 <p>Bob Walrus, this letter may serve as a record of your donation. No goods or services were provided, in whole or in part, for this contribution. Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703</p>
 <p>CNTCT-' . $contactID . '</p>
-<!-- TI_BEGIN[“name”:“End_of_Year.en.html”,“revision”:20230331,“currency”:“USD“]TI_END -->
+<!-- TI_BEGIN[“name”:“End_of_Year.en.html”,“revision”:20230331,“currency”:““]TI_END -->
 ',
     ], $email);
   }
