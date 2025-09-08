@@ -77,6 +77,9 @@ class Parse extends AbstractAction {
     );
     $audit = $this->loadAuditProcessor();
     $audit->run();
+    foreach ($audit->getBatchInformation() as $batch) {
+      $result[] = $batch;
+    }
   }
 
   /**

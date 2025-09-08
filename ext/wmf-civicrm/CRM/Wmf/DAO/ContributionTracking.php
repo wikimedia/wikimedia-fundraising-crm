@@ -42,7 +42,7 @@
  * @property string $utm_source
  * @property string $banner_history_log_id
  */
-class CRM_Wmf_DAO_ContributionTracking extends CRM_Wmf_DAO_Base {
+class CRM_Wmf_DAO_ContributionTracking extends CRM_Core_DAO_Base {
 
   /**
    * Required by older versions of CiviCRM (<5.74).

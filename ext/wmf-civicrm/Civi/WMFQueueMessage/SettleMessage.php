@@ -11,7 +11,6 @@ class SettleMessage extends DonationMessage {
    *    gateway: string,
    *    gateway_txn_id: string,
    *    settled_date: string,
-   *    currency: string,
    *    gross: float|string|int,
    *    settled_currency: string,
    *    fee: string,
@@ -49,7 +48,7 @@ class SettleMessage extends DonationMessage {
    * Get the currency the donation is settled into at the gateway.
    */
   public function getSettlementCurrency(): string {
-    return $this->message['currency'] ?? 'USD';
+    return $this->message['settled_currency'] ?? 'USD';
   }
 
   public function getSettlementBatchReference(): string {

@@ -30,6 +30,12 @@ CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'label' => ts('Phone'),
   'value' => 'Phone',
 ]);
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'cg_extend_objects',
+  'name' => 'civicrm_batch',
+  'label' => ts('Batch'),
+  'value' => 'Batch',
+]);
 // FIXME: Should we do these in an ActivityType.mgd.php?
 $mg_year_end_appeal_activity_type = CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'option_group_id' => 'activity_type',
@@ -347,6 +353,15 @@ return [
       'extends_entity_column_value' => [CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'direct_mail')],
     ],
     'fields' => _wmf_civicrm_get_direct_mail_fields(),
+  ],
+  'batch_data' => [
+    'group' => [
+      'name' => 'batch_data',
+      'title' => 'Batch Data',
+      'table_name' => 'civicrm_batch_data',
+      'extends' => 'Batch',
+    ],
+    'fields' => _wmf_civicrm_get_batch_data_fields(),
   ],
   'Gift_Information' => [
     'group' => [
@@ -2113,6 +2128,81 @@ function _wmf_civicrm_get_gift_information_fields(): array {
       'text_length' => 255,
       'column_name' => 'import_batch_number',
       'is_searchable' => TRUE,
+    ],
+  ];
+}
+
+/**
+ * Get fields for batch data custom group.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_batch_data_fields(): array {
+  return [
+    'settlement_date' => [
+      'name' => 'settlement_date',
+      'column_name' => 'settlement_date',
+      'label' => 'Settlement Date',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'date_format' => 'yy-mm-dd',
+      'is_active' => 1,
+      'weight' => 1,
+    ],
+    'settlement_currency' => [
+      'name' => 'settlement_currency',
+      'column_name' => 'settlement_currency',
+      'label' => 'Settlement Currency',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'text_length' => 3,
+      'weight' => 2,
+    ],
+    'settlement_gateway' => [
+      'name' => 'settlement_gateway',
+      'column_name' => 'settlement_gateway',
+      'label' => 'Settlement Gateway',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'text_length' => 32,
+      'is_active' => 1,
+      'weight' => 3,
+    ],
+    'settled_fee_amount' => [
+      'name' => 'settled_fee_amount',
+      'column_name' => 'settled_fee_amount',
+      'label' => 'Settled Fee Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'weight' => 4,
+    ],
+    'settled_reversal_amount' => [
+      'name' => 'settled_reversal_amount',
+      'column_name' => 'settled_reversal_amount',
+      'label' => 'Settled Reversal Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'weight' => 5,
+    ],
+    'settled_net_amount' => [
+      'name' => 'settled_net_amount',
+      'column_name' => 'settled_net_amount',
+      'label' => 'Settled Net Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'weight' => 6,
+    ],
+    'settled_donation_amount' => [
+      'name' => 'settled_donation_amount',
+      'column_name' => 'settled_donation_amount',
+      'label' => 'Settled Donation Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'weight' => 7,
     ],
   ];
 }

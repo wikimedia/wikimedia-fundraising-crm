@@ -121,7 +121,9 @@ class AuditMessage extends DonationMessage {
     $message = $this->message;
     $message['contribution_id'] = $this->getExistingContributionID();
     $message['parent_contribution_id'] = $this->getParentContributionID();
-
+    // Do not populate this unless we know it is settled.
+    $message['settled_currency'] = $this->getSettlementCurrency();
+    $message['settled_date'] = $this->getSettlementTimeStamp();
     if ($this->isNegative()) {
       $message['gateway_parent_id'] = $this->getGatewayParentTxnID();
       $message['gateway_refund_id'] = $this->getGatewayRefundID();
