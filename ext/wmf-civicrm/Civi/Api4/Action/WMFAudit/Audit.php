@@ -5,6 +5,7 @@ namespace Civi\Api4\Action\WMFAudit;
 use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\SettlementTransaction;
 use Civi\Api4\WMFAudit;
 use Civi\WMFQueueMessage\AuditMessage;
 
@@ -35,8 +36,23 @@ class Audit extends AbstractAction {
    */
   public function _run(Result $result): void {
     $message = new AuditMessage($this->values);
+    $isMissing = !$message->getExistingContributionID();
 
     if ($this->processSettlement) {
+      // For now let's start tracking the messages...
+      // Next will be to settle them.
+      $record = $message->normalize();
+      $record['date'] = date('Ymdhis', $record['date']);
+      $record['settled_date'] = date('Ymdhis', $record['settled_date']);
+      if ($record['gateway'] === 'gravy') {
+        // This is very much tbd - but for adyen audit files we want to match
+        // this field...
+        $record['audit_file_gateway_txn_id'] = $record['backend_processor_txn_id'];
+      }
+      SettlementTransaction::save(FALSE)
+        ->addRecord(['type' => $message->getTransactionType()] + $record)
+        ->setMatch(['gateway_txn_id', 'type'])
+        ->execute();
       // Here we would ideally queue but short term we will probably process in real time on specific files
       // as we test.
       // @todo - create queue option (after maybe some testing with this).
@@ -45,8 +61,7 @@ class Audit extends AbstractAction {
       // WMFAudit::settle(FALSE)
       //  ->setValues($message->normalize())->execute();
     }
-    $isMissing = !$message->getExistingContributionID();
-    // @todo - we would ideally augment the missing messages here from the Pending table
+   // @todo - we would ideally augment the missing messages here from the Pending table
     // allowing us to drop 'log_hunt_and_send'
     // also @todo if we are unable to find the extra data then queue to (e.g) a missing
     // queue - this would allow us to process each audit file only once & the transactions would
@@ -57,7 +72,8 @@ class Audit extends AbstractAction {
       'is_negative' => $message->isNegative(),
       'message' => $message->normalize(),
       'payment_method' => $message->getPaymentMethod(),
-      'audit_message_type' => $message->getAuditMessageType(),
+      // Caller still expects the ambiguous 'main'.
+      'audit_message_type' => $message->getAuditMessageType() === 'settled' ? 'main' : $message->getAuditMessageType(),
       'is_missing' => $isMissing,
       'is_settled' => $message->isSettled(),
     ];
