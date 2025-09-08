@@ -1481,6 +1481,7 @@ abstract class BaseAuditProcessor {
         'settlement_currency' => $transaction['settled_currency'],
         'settlement_date' => date('Ymd', $transaction['settled_date']),
         'settlement_batch_reference' => $batchName,
+        'settlement_gateway' => $transaction['audit_file_gateway'],
       ];
     }
     $this->batches[$batchName]['transaction_count']++;
