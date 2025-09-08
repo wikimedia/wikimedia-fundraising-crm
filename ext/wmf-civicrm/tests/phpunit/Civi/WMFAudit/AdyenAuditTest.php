@@ -366,7 +366,19 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->addValue('contribution_status_id:name', 'Refunded')
       ->addWhere('id', '=', $this->ids['Contribution']['for_refund'])
       ->execute();
-    $this->runAuditor();
+    $result = $this->runAuditor();
+    $this->assertEquals([
+      'transaction_count' => 1,
+      'settled_total_amount' => -1.0,
+      'settled_fee_amount' => 0,
+      'settled_net_amount' => -1.0,
+      'settled_reversal_amount' => -1.0,
+      'settled_donation_amount' => 0,
+      'settlement_currency' => 'USD',
+      'settlement_date' => '20250908',
+      'settlement_batch_reference' => 'adyen_USD_3',
+      'settlement_gateway' => 'adyen',
+    ], $result->first());
     $this->assertMessages($expectedMessages);
   }
 

@@ -3,6 +3,7 @@
 namespace Civi\WMFAudit;
 
 use Civi\Api4\ContributionTracking;
+use Civi\Api4\Generic\Result;
 use Civi\Api4\WMFAudit;
 use Civi\WMFEnvironmentTrait;
 use Civi\WMFQueueTrait;
@@ -76,10 +77,10 @@ class BaseAuditTestCase extends TestCase {
   }
 
   /**
-   * @throws \Exception
+   * @throws \CRM_Core_Exception
    */
-  protected function runAuditor() {
-    WMFAudit::parse()
+  protected function runAuditor(): Result {
+    return WMFAudit::parse()
       ->setGateway($this->gateway)
       ->execute();
   }
