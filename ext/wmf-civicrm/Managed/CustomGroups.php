@@ -159,6 +159,16 @@ return [
     ],
     'fields' => _wmf_civicrm_get_wmf_contribution_extra_fields(),
   ],
+  'contribution_settlement' => [
+    'group' => [
+      'extends' => 'Contribution',
+      'name' => 'contribution_settlement',
+      'table_name' => 'civicrm_value_contribution_settlement',
+      'title' => ts('Contribution Settlement'),
+      'is_active' => 1,
+    ],
+    'fields' => _wmf_civicrm_get_contribution_settlement_fields(),
+  ],
   'Communication' => [
     'group' => [
       'name' => 'Communication',
@@ -1320,7 +1330,7 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields(): array {
       'label' => ts('Settlement Currency'),
       'data_type' => 'String',
       'html_type' => 'Text',
-      'is_active' => 1,
+      'is_active' => 0,
       'is_searchable' => 1,
       'is_view' => 1,
     ],
@@ -1330,7 +1340,7 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields(): array {
       'label' => ts('Settlement Batch Number'),
       'data_type' => 'String',
       'html_type' => 'Text',
-      'is_active' => 1,
+      'is_active' => 0,
       'is_searchable' => 1,
       'is_view' => 1,
     ],
@@ -1487,6 +1497,98 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields(): array {
       'is_active' => 1,
       'is_searchable' => 0,
       'is_view' => 0,
+    ],
+  ];
+}
+/**
+ * Get fields for _wmf_contribution_extra.
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_contribution_settlement_fields(): array {
+  return [
+    'settlement_date' => [
+      'name' => 'settlement_date',
+      'column_name' => 'settlement_date',
+      'label' => ts('Settlement Date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_search_range' => 1,
+      'is_view' => 1,
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
+      'weight' => 1,
+    ],
+    'settlement_currency' => [
+      'name' => 'settlement_currency',
+      'column_name' => 'settlement_currency',
+      'label' => ts('Settlement Currency'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 1,
+      'weight' => 2,
+    ],
+    'settlement_batch_reference' => [
+      'name' => 'settlement_batch_reference',
+      'column_name' => 'settlement_batch_reference',
+      'label' => ts('Settlement Batch Reference'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 1,
+      'weight' => 3,
+    ],
+    'settlement_batch_reversal_reference' => [
+      'name' => 'settlement_batch_reversal_reference',
+      'column_name' => 'settlement_batch_reversal_reference',
+      'label' => ts('Settlement Batch Reference for Reversal transation'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 1,
+      'weight' => 4,
+    ],
+    'settled_donation_amount' => [
+      'name' => 'settled_donation_amount',
+      'column_name' => 'settled_donation_amount',
+      'label' => 'Settled Donation Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'weight' => 5,
+    ],
+    'settled_fee_amount' => [
+      'name' => 'settled_fee_amount',
+      'column_name' => 'settled_fee_amount',
+      'label' => 'Settled Fee Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'weight' => 6,
+    ],
+    'settled_reversal_amount' => [
+      'name' => 'settled_reversal_amount',
+      'column_name' => 'settled_reversal_amount',
+      'label' => 'Settled Reversal Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'weight' => 7,
+    ],
+    'settled_fee_reversal_amount' => [
+      'name' => 'settled_fee_reversal_amount',
+      'column_name' => 'settled_fee_reversal_amount',
+      'label' => 'Settled Fee Reversal Amount',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'weight' => 8,
     ],
   ];
 }

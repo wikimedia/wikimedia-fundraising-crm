@@ -528,7 +528,7 @@ class Message {
         'data_type' => 'String',
         'label' => E::ts('Gateway batch reference'),
         'description' => E::ts('The gateway batch number'),
-        'api_field' => 'contribution_extra.settlement_batch_number',
+        'api_field' => 'contribution_settlement.settlement_batch_reference',
         'api_entity' => 'Contribution',
         'used_for' => 'WMFAudit.settle api',
       ],

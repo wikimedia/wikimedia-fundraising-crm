@@ -47,9 +47,9 @@ class Settle extends AbstractAction {
     // deposit_usd
     // deposit_currency
     $values = [
-      'contribution_extra.settlement_date' => $message->getSettledDate(),
-      'contribution_extra.settlement_batch_number' => $message->getSettlementBatchReference(),
-      'contribution_extra.settlement_currency' => $message->getSettlementCurrency(),
+      'contribution_settlement.settlement_date' => $message->getSettledDate(),
+      'contribution_settlement.settlement_batch_reference' => $message->getSettlementBatchReference(),
+      'contribution_settlement.settlement_currency' => $message->getSettlementCurrency(),
     ];
     if ($message->getSettlementCurrency() === 'USD') {
       $values['fee_amount'] = $message->getSettledFeeAmountRounded();
