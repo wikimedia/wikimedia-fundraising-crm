@@ -2,11 +2,11 @@
 
 namespace Civi\WMFAudit;
 
-use Civi\Api4\ContributionTracking;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\WMFAudit;
 use Civi\WMFEnvironmentTrait;
 use Civi\WMFQueueTrait;
+use Civi\Test\EntityTrait;
 use SmashPig\Core\ConfigurationException;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\CrmLink\Messages\SourceFields;
@@ -15,8 +15,7 @@ use PHPUnit\Framework\TestCase;
 class BaseAuditTestCase extends TestCase {
   use WMFEnvironmentTrait;
   use WMFQueueTrait;
-
-  protected array $ids = [];
+  use EntityTrait;
 
   public function setUp(): void {
     // This sets the working log directory to the CiviCRM upload directory.

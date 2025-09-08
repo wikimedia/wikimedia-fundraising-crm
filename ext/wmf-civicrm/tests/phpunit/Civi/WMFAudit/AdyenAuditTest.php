@@ -4,7 +4,6 @@ namespace Civi\WMFAudit;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
-use Civi\WMFException\WMFException;
 
 /**
  * @group Adyen
