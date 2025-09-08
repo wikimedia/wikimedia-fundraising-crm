@@ -3,6 +3,7 @@
 namespace Civi\Api4\Action\WMFAudit;
 
 use Civi;
+use Civi\Api4\Batch;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use CRM_SmashPig_ContextWrapper;
@@ -79,6 +80,25 @@ class Parse extends AbstractAction {
     $audit->run();
     foreach ($audit->getBatchInformation() as $batch) {
       $result[] = $batch;
+      // In time we should only overwrite open batches but for now we just update to what we find
+      // as this is experimental.
+      Batch::save(FALSE)
+        ->addRecord([
+          'name' => $batch['settlement_batch_reference'],
+          'status_id:name' => 'Open',
+          'type_id:name' => 'automatic',
+          'total' => $batch['settled_total_amount'],
+          'item_count' => $batch['transaction_count'],
+          'batch_data.settled_fee_amount' => $batch['settled_fee_amount'],
+          'batch_data.settled_reversal_amount' => $batch['settled_reversal_amount'],
+          'batch_data.settled_net_amount' => $batch['settled_net_amount'],
+          'batch_data.settled_donation_amount' => $batch['settled_donation_amount'],
+          'batch_data.settlement_currency' => $batch['settlement_currency'],
+          'batch_data.settlement_date' => $batch['settlement_date'],
+          'batch_data.settlement_gateway' => $batch['settlement_gateway'],
+        ])
+        ->setMatch(['name', 'type_id'])
+        ->execute();
     }
   }
 
