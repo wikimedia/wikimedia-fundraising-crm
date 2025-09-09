@@ -172,6 +172,16 @@ class AuditMessage extends DonationMessage {
         ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
         ->execute()->first() ?? [];
     }
+    if (!$this->existingContribution) {
+      static $isFirst = TRUE;
+      if ($isFirst) {
+        \Civi::log('wmf')->info('contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}',
+          ['gateway' => $this->getGateway(), 'gateway_txn_id' => $this->getGatewayParentTxnID()]
+          + $this->message
+        );
+      }
+      $isFirst = FALSE;
+    }
 
     return $this->existingContribution ?: NULL;
   }
