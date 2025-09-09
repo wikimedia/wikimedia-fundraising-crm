@@ -753,7 +753,8 @@ WHERE
       }
 
       $matches = $email->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name'])
-        ->setLimit(2)
+        ->setLimit(1)
+        ->setOrderBy(['contact_id' => 'ASC']) // in case of duplicates, get the oldest cid
         ->execute();
 
       if (count($matches) === 1) {
@@ -781,7 +782,8 @@ WHERE
       ->addWhere('contact_id.is_deceased', '=', 0)
       ->addWhere('is_primary', '=', TRUE)
       ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name'])
-      ->setLimit(2)
+      ->setLimit(1)
+      ->setOrderBy(['contact_id' => 'ASC'])
       ->execute();
     if (count($matches) === 1) {
       return $this->keyAsContact($matches->first());
