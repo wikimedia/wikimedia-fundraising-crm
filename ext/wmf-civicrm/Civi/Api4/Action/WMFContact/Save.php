@@ -485,6 +485,17 @@ class Save extends AbstractAction {
       $this->updateAddress($msg, $existingContact['id']);
       $this->stopTimer('message_location_update');
     }
+    else {
+      // If there is no address at all, add whatever is in the message
+      $addressExists = Address::get(FALSE)
+        ->setSelect(['id'])
+        ->addWhere('contact_id', '=', $existingContact['id'])
+        ->setLimit(1)
+        ->execute()->count();
+      if (!$addressExists) {
+        $this->createAddress($msg, $existingContact['id']);
+      }
+    }
     if (!empty($msg['email'])) {
       $this->startTimer('message_email_update');
       $this->emailUpdate($msg, $existingContact['id']);
