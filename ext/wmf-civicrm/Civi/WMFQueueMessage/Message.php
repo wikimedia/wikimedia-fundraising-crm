@@ -146,6 +146,12 @@ class Message {
         'api_entity' => 'Contribution',
         'used_for' => 'All payment messages',
       ],
+      'gateway_refund_id' => [
+        'name' => 'gateway_refund_id',
+        'description' => 'Gateway Transaction reference for refund',
+        'data_type' => 'String',
+        'used_for' => 'Audit messages',
+      ],
       'gateway_parent_id' => [
         'name' => 'gateway_parent_id',
         'description' => 'Parent Transaction contribution_extra.txn_id',
@@ -161,6 +167,14 @@ class Message {
         'api_entity' => 'Contribution',
         'used_for' => 'All payment messages',
         'notes' => 'Propose removal - Does not appear to have been used in a meaningful way since 2018 - all values since are "live", "prod", "default", "WikimediaDonations" or "Wikimedia Foundation"',
+      ],
+      'audit_file_gateway' => [
+        'name' => 'audit_file_gateway',
+        'title' => 'Audit file Gateway',
+        'description' => 'gateway processor for this audit file - could differ from the final gateway',
+        'data_type' => 'String',
+        'used_for' => 'Audit messages',
+        'notes' => 'Differentiates gravy messages from gravy file vs adyen file',
       ],
       'payment_orchestrator_reconciliation_id' => [
         'name' => 'payment_orchestrator_reconciliation_id',

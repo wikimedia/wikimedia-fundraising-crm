@@ -12,6 +12,7 @@ class AuditMessage extends DonationMessage {
    *
    * @var array{
    *    gateway: string,
+   *    audit_file_gateway: string,
    *    gateway_txn_id: string,
    *    gateway_refund_id: string,
    *    gateway_account: string,
@@ -25,6 +26,7 @@ class AuditMessage extends DonationMessage {
    *    currency: string,
    *    original_currency: string,
    *    settled_currency: string,
+   *    gross_currency: string,
    *    gross: float,
    *    settled_gross: float,
    *    settlement_batch_reference: string,
