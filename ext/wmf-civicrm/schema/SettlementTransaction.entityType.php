@@ -1,0 +1,250 @@
+<?php
+
+use CRM_Wmf_ExtensionUtil as E;
+
+return [
+  'name' => 'SettlementTransaction',
+  'class' => 'CRM_Wmf_DAO_SettlementTransaction',
+  'table' => 'settlement_transaction',
+  'getInfo' => fn() => [
+    'title' => E::ts('Settlement Transaction'),
+    'description' => E::ts('Stores payment gateway transaction details.'),
+    'log' => TRUE,
+  ],
+  'getFields' => fn() => [
+    'id' => [
+      'name' => 'id',
+      'required' => TRUE,
+      'description' => E::ts('Transaction ID'),
+      'primary_key' => TRUE,
+      'auto_increment' => TRUE,
+      'title' => E::ts('ID'),
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+    ],
+    'gateway' => [
+      'name' => 'gateway',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Gateway'),
+    ],
+    'invoice_id' => [
+      'name' => 'invoice_id',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Invoice ID'),
+    ],
+    'gateway_txn_id' => [
+      'name' => 'gateway_txn_id',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Gateway Transaction ID'),
+      'unique_name' => 'gateway_txn_id',
+    ],
+    'audit_file_gateway_txn_id' => [
+      'name' => 'audit_file_gateway_txn_id',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Audit File Gateway Transaction ID'),
+      'description' => E::ts('The value treated as the transaction ID in the audit file In the Adyen audit file this could be the gravy ID for gravy transactions.'),
+    ],
+    'settlement_batch_reference' => [
+      'name' => 'settlement_batch_reference',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Settlement Batch Reference'),
+    ],
+    'exchange_rate' => [
+      'name' => 'exchange_rate',
+      'sql_type' => 'double',
+      'title' => E::ts('Exchange Rate'),
+    ],
+    'contribution_tracking_id' => [
+      'name' => 'contribution_tracking_id',
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Text',
+      'title' => E::ts('Contribution Tracking ID'),
+    ],
+    'payment_method' => [
+      'name' => 'payment_method',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Payment Method'),
+    ],
+    'payment_submethod' => [
+      'name' => 'payment_submethod',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Payment Submethod'),
+    ],
+    'original_currency' => [
+      'name' => 'original_currency',
+      'title' => E::ts('Original Currency'),
+      'sql_type' => 'varchar(3)',
+      'input_type' => 'text',
+    ],
+    'settled_currency' => [
+      'name' => 'settled_currency',
+      'title' => E::ts('Settled Currency'),
+      'sql_type' => 'varchar(3)',
+      'input_type' => 'text',
+    ],
+    'settled_date' => [
+      'name' => 'settled_date',
+      'sql_type' => 'datetime',
+      'input_type' => 'Select Date',
+      'title' => E::ts('Settled Date'),
+    ],
+    'settled_total_amount' => [
+      'name' => 'settled_total_amount',
+      'sql_type' => 'decimal(18,9)',
+      'title' => E::ts('Settled Total Amount'),
+    ],
+    'settled_fee_amount' => [
+      'name' => 'settled_fee_amount',
+      'sql_type' => 'decimal(18,9)',
+      'title' => E::ts('Settled Fee Amount'),
+    ],
+    'settled_net_amount' => [
+      'name' => 'settled_net_amount',
+      'sql_type' => 'decimal(18,9)',
+      'title' => E::ts('Settled Net Amount'),
+    ],
+    'original_net_amount' => [
+      'name' => 'original_net_amount',
+      'sql_type' => 'decimal(18,9)',
+      'title' => E::ts('Original Net Amount'),
+    ],
+    'original_fee_amount' => [
+      'name' => 'original_fee_amount',
+      'sql_type' => 'decimal(18,9)',
+      'title' => E::ts('Original Fee Amount'),
+    ],
+    'original_total_amount' => [
+      'name' => 'original_total_amount',
+      'sql_type' => 'decimal(18,9)',
+      'title' => E::ts('Original Total Amount'),
+    ],
+    'gateway_parent_id' => [
+      'name' => 'gateway_parent_id',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Gateway Parent ID'),
+    ],
+    'gateway_refund_id' => [
+      'name' => 'gateway_refund_id',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Gateway Refund ID'),
+    ],
+    'type' => [
+      'name' => 'type',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'maxlength' => 50,
+      'required' => TRUE,
+      'title' => E::ts('Type'),
+    ],
+    'modification_reference' => [
+      'name' => 'modification_reference',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Modification Reference'),
+    ],
+    'order_id' => [
+      'name' => 'order_id',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Order ID'),
+    ],
+    'backend_processor_txn_id' => [
+      'name' => 'backend_processor_txn_id',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Backend Processor Transaction ID'),
+    ],
+    'backend_processor' => [
+      'name' => 'backend_processor',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Backend Processor'),
+    ],
+    'payment_orchestrator_reconciliation_id' => [
+      'name' => 'payment_orchestrator_reconciliation_id',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Payment Orchestrator Reconciliation ID'),
+    ],
+    'backend_processor_parent_id' => [
+      'name' => 'backend_processor_parent_id',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Backend Processor Parent ID'),
+    ],
+    'backend_processor_refund_id' => [
+      'name' => 'backend_processor_refund_id',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Backend Processor Refund ID'),
+    ],
+    'contribution_id' => [
+      'title' => ts('Contribution ID'),
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Text',
+    ],
+    'parent_contribution_id' => [
+      'title' => ts('Parent Contribution ID'),
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Text',
+    ],
+    // These fields are likely to be more temporary as they seem to duplicate / not add much but for now...
+    'gateway_account' => [
+      'name' => 'gateway_account',
+      'sql_type' => 'varchar(128)',
+      'input_type' => 'Text',
+      'title' => E::ts('Gateway Account'),
+    ],
+    'currency' => [
+      'name' => 'currency',
+      'sql_type' => 'varchar(3)',
+      'input_type' => 'Text',
+      'title' => E::ts('Currency'),
+    ],
+    'settled_gross' => [
+      'name' => 'settled_gross',
+      'sql_type' => 'decimal(20,3)',
+      'input_type' => 'Decimal',
+      'title' => E::ts('Settled Gross'),
+    ],
+    'fee' => [
+      'name' => 'fee',
+      'sql_type' => 'decimal(18,9)',
+      'title' => E::ts('Fee'),
+    ],
+    'date' => [
+      'name' => 'date',
+      'sql_type' => 'datetime',
+      'input_type' => 'Select Date',
+      'title' => E::ts('Transaction Date'),
+    ],
+    'gross' => [
+      'name' => 'gross',
+      'sql_type' => 'decimal(18,9)',
+      'title' => E::ts('Gross Amount'),
+    ],
+    'gross_currency' => [
+      'name' => 'gross_currency',
+      'sql_type' => 'varchar(3)',
+      'input_type' => 'text',
+      'title' => E::ts('Gross Currency'),
+    ],
+  ],
+  'getIndices' => fn() => [
+    'index_gateway_txn_id_type' => [
+      'name' => 'index_gateway_txn_id_type',
+      'fields' => ['gateway_txn_id' => TRUE, 'type' => TRUE],
+      'unique' => TRUE,
+      'localizable' => FALSE,
+    ],
+  ],
+];

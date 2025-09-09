@@ -24,7 +24,7 @@ class AuditMessage extends DonationMessage {
    *    modification_reference: string,
    *    currency: string,
    *    original_currency: string,
-   *    settled_currency: float,
+   *    settled_currency: string,
    *    gross: float,
    *    settled_gross: float,
    *    settlement_batch_reference: string,
