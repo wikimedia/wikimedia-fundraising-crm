@@ -170,6 +170,7 @@ class AuditMessage extends DonationMessage {
    */
   public function getExistingContribution(): ?array {
     if (!isset($this->existingContribution)) {
+      $isGravy = FALSE;
       if ($this->getGatewayParentTxnID()) {
         $this->existingContribution = Contribution::get(FALSE)
           ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
@@ -178,6 +179,7 @@ class AuditMessage extends DonationMessage {
           ->execute()->first() ?? [];
       }
       elseif ($this->getGateway() === 'gravy' && $this->getBackEndProcessor()) {
+        $isGravy = TRUE;
         // Looking at a gravy transaction in the Adyen file?
         $this->existingContribution = Contribution::get(FALSE)
           ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
@@ -186,15 +188,20 @@ class AuditMessage extends DonationMessage {
           ->execute()->first() ?? [];
       }
       else {
+        $isGravy = 'holy cow';
         $this->existingContribution = [];
       }
     }
     if (!$this->existingContribution) {
       static $isFirst = TRUE;
       if ($isFirst) {
-        \Civi::log('wmf')->info('contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}',
-          ['gateway' => $this->getGateway(), 'gateway_txn_id' => $this->getGatewayParentTxnID()]
-          + $this->message
+        \Civi::log('wmf')->info("contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}\n", [
+            'gateway' => $this->getGateway(),
+            'gateway_txn_id' => $this->getGatewayParentTxnID(),
+            'backend_processor' => $this->getBackEndProcessor(),
+            'backend_txn_id' => $this->getBackendProcessorTxnID(),
+            'is_gravy' => $isGravy,
+          ] + $this->message
         );
       }
       $isFirst = FALSE;
