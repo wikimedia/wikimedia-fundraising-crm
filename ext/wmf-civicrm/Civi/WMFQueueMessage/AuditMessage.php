@@ -220,6 +220,10 @@ class AuditMessage extends DonationMessage {
     return $this->message['modification_reference'] ?? NULL;
   }
 
+  public function getPaymentOrchestratorReconciliationReference(): ? string {
+    return $this->message['payment_orchestrator_reconciliation_id'] ?? NULL;
+  }
+
   /**
    * @throws \CRM_Core_Exception
    */
@@ -244,6 +248,14 @@ class AuditMessage extends DonationMessage {
     return $this->message['payment_method'] ?? 'unknown';
   }
 
+  public function getTransactionType(): string {
+    $value = $this->getAuditMessageType();
+    if ($value === 'refund') {
+      return 'refunded';
+    }
+    return $value;
+  }
+
   /**
    * Get the audit method type.
    *
@@ -252,11 +264,11 @@ class AuditMessage extends DonationMessage {
    * @return string
    */
   public function getAuditMessageType(): string {
-    $type = $this->message['type'] ?? 'main';
+    $type = $this->message['type'] ?? 'settled';
     if ($type === 'donations' || $type === 'recurring' || $type === 'recurring-modify') {
       // It seems type could be one of these others here from fundraise up (the others are unset).
       // It might be nice to switch from main to donations but for now ...
-      $type = 'main';
+      $type = 'settled';
     }
     return $type;
   }
