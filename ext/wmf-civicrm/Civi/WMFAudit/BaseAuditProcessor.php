@@ -1485,7 +1485,6 @@ abstract class BaseAuditProcessor {
       ];
     }
     $this->batches[$batchName]['transaction_count']++;
-    \Civi::log('wmf')->warning($batchName . " : " . $this->batches[$batchName]['transaction_count']);
     if (!isset($transaction['settled_total_amount'])) {
       \Civi::log('wmf')->warning('is string {transaction}', ['transaction' => $transaction]);
     }

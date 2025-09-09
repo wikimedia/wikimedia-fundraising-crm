@@ -176,6 +176,22 @@ class Message {
         'used_for' => 'Audit messages',
         'notes' => 'Differentiates gravy messages from gravy file vs adyen file',
       ],
+      'backend_processor' => [
+        'name' => 'backend_processor',
+        'title' => 'Backend Processor - eg. adyen when main gateway is gravy',
+        'data_type' => 'String',
+        'used_for' => 'Audit messages',
+        'api_field' => 'contribution_extra.backend_processor',
+        'api_entity' => 'Contribution',
+      ],
+      'backend_processor_txn_id' => [
+        'name' => 'backend_processor_txn_id',
+        'title' => 'Backend Processor - eg. adyen trxn_id when main gateway is gravy',
+        'data_type' => 'String',
+        'used_for' => 'Audit messages',
+        'api_field' => 'contribution_extra.backend_processor_txn_id',
+        'api_entity' => 'Contribution',
+      ],
       'payment_orchestrator_reconciliation_id' => [
         'name' => 'payment_orchestrator_reconciliation_id',
         'api_field' => 'contribution_extra.payment_orchestrator_reconciliation_id',
