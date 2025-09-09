@@ -986,4 +986,12 @@ class Message {
     return [];
   }
 
+  public function getBackendProcessor(): ?string {
+    return $this->message['backend_processor'] ?? NULL;
+  }
+
+  public function getBackendProcessorTxnID(): ?string {
+    return $this->message['backend_processor_txn_id'] ?? NULL;
+  }
+
 }
