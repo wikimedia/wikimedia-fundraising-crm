@@ -1257,6 +1257,7 @@ abstract class BaseAuditProcessor {
     foreach ($transactions as $transaction) {
       $auditRecord = WMFAudit::audit(FALSE)
         ->setValues($transaction)
+        ->setProcessSettlement($this->get_runtime_options('is_settle'))
         ->execute()->single();
       $this->recordStatistic($auditRecord, $file);
       if ($auditRecord['is_missing']) {
@@ -1272,6 +1273,10 @@ abstract class BaseAuditProcessor {
         }
         $key = $auditRecord['is_negative'] ? 'negative' : 'main';
         $this->missingTransactions[$key][] = $auditRecord['message'];
+        if ($this->get_runtime_options('is_stop_at_first_missing')) {
+          \Civi::log('wmf')->info('stopping on first missing', $auditRecord + ['transaction' => $transaction]);
+          break;
+        }
       }
     }
 
