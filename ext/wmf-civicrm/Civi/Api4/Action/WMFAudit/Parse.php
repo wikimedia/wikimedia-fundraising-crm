@@ -12,6 +12,8 @@ use CRM_SmashPig_ContextWrapper;
  * @method string getGateway()
  * @method $this setGateway(string $gateway)
  * @method $this setIsMakeMissing(bool $isMakeMissing)
+ * @method $this setIsSettle(bool $isSettle)
+ * @method $this setIsStopOnFirstMissing(bool $isStopOnFirstMissing)
  * @method $this setFile(string $file)
  * @method $this setLogSearchPastDays(int $logSearchPastDays)
  * @method $this setFileLimit(?int $fileLimit)
@@ -25,6 +27,22 @@ class Parse extends AbstractAction {
    * @var bool
    */
   public bool $isMakeMissing = FALSE;
+
+  /**
+   * Should settlement be done on this run.
+   *
+   * @var bool
+   */
+  public bool $isSettle = FALSE;
+
+  /**
+   * Should parsing stop on the first missing one.
+   *
+   * Useful in debug context.
+   *
+   * @var bool
+   */
+  public bool $isStopOnFirstMissing = FALSE;
 
   /**
    * Name of a file to parse (optional) (must be in the incoming directory, should not include full path).
@@ -62,6 +80,8 @@ class Parse extends AbstractAction {
       'file_limit' => $this->fileLimit,
       'file' => $this->file,
       'log_search_past_days' => $this->logSearchPastDays,
+      'is_settle' => $this->isSettle,
+      'is_stop_on_first_missing' => $this->isStopOnFirstMissing,
     ];
   }
 
