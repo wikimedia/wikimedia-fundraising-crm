@@ -12,6 +12,7 @@ class AuditMessage extends DonationMessage {
    *
    * @var array{
    *    gateway: string,
+   *    audit_file_gateway: string,
    *    gateway_txn_id: string,
    *    gateway_refund_id: string,
    *    gateway_account: string,
@@ -25,6 +26,7 @@ class AuditMessage extends DonationMessage {
    *    currency: string,
    *    original_currency: string,
    *    settled_currency: string,
+   *    gross_currency: string,
    *    gross: float,
    *    settled_gross: float,
    *    settlement_batch_reference: string,
@@ -166,11 +168,24 @@ class AuditMessage extends DonationMessage {
    */
   public function getExistingContribution(): ?array {
     if (!isset($this->existingContribution)) {
-      $this->existingContribution = Contribution::get(FALSE)
-        ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
-        ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
-        ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
-        ->execute()->first() ?? [];
+      if ($this->getGatewayParentTxnID()) {
+        $this->existingContribution = Contribution::get(FALSE)
+          ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+          ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+          ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
+          ->execute()->first() ?? [];
+      }
+      elseif ($this->getGateway() === 'gravy' && $this->getBackEndProcessor()) {
+        // Looking at a gravy transaction in the Adyen file?
+        $this->existingContribution = Contribution::get(FALSE)
+          ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+          ->addWhere('contribution_extra.gateway', '=', $this->getBackEndProcessor())
+          ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getBackendProcessorTxnID())
+          ->execute()->first() ?? [];
+      }
+      else {
+        $this->existingContribution = [];
+      }
     }
     if (!$this->existingContribution) {
       static $isFirst = TRUE;

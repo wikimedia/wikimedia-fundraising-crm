@@ -308,7 +308,7 @@ class DonationMessage extends Message {
    * Get the currency the donation is settled into at the gateway.
    */
   public function getSettlementCurrency(): string {
-    return $this->message['settled_currency'] ?? 'USD';
+    return $this->message['settled_currency'] ?? $this->message['gross_currency'] ?? 'USD';
   }
 
   public function getSettledAmountRounded(): string {

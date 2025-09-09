@@ -2799,6 +2799,13 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     return TRUE;
   }
 
+  public function upgrade_4640() : bool {
+    CRM_Core_DAO::executeQuery("CREATE VIEW civicrm_transaction_log as
+      SELECT *
+      FROM smashpig.pending");
+    return TRUE;
+  }
+
   /**
    * @param array $conversions
    *
