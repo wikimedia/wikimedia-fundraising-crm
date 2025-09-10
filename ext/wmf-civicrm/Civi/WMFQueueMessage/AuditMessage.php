@@ -121,7 +121,29 @@ class AuditMessage extends DonationMessage {
   /**
    * Normalize the incoming message
    *
-   * @return array
+   * @return array{
+   *   contribution_id: int,
+   *   parent_contribution_id: int,
+   *   settled_currency: string,
+   *   settled_date: int,
+   *   gateway: string,
+   *   gateway_account: string,
+   *   gateway_txn_id: string,
+   *   gateway_parent_id: string,
+   *   gateway_refund_id: string,
+   *   type: string,
+   *   backend_processor_parent_id: string,
+   *   backend_processor_refund_id: string,
+   *   original_total_amount: float,
+   *   original_net_amount: float,
+   *   original_fee_amount: float,
+   *   settled_net_amount: float,
+   *   settled_fee_amount: float,
+   *   settled_total_amount: float,
+   *   payment_method: string,
+   *   payment_submethod: string,
+   *   date: int,
+   * }
    */
   public function normalize(): array {
     $message = $this->message;
@@ -130,6 +152,8 @@ class AuditMessage extends DonationMessage {
     // Do not populate this unless we know it is settled.
     $message['settled_currency'] = $this->getSettlementCurrency();
     $message['settled_date'] = $this->getSettlementTimeStamp();
+    $message['gateway'] = $this->getGateway();
+    $message['gateway_txn_id'] = $this->getGatewayTxnId();
     if ($this->isNegative()) {
       $message['gateway_parent_id'] = $this->getGatewayParentTxnID();
       $message['gateway_refund_id'] = $this->getGatewayRefundID();
