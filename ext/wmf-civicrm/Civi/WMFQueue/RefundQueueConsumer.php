@@ -199,9 +199,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       );
     }
 
-    // Note that my usual reservation about using BAO functions from custom code is overridden by the
-    // caching problems we are hitting in testing (plus the happy knowledge the tests care about this line of
-    // code).
     if (in_array($contribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded'], TRUE)
     ) {
       throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: $contribution_id");
