@@ -58,7 +58,8 @@
            _:   "contact_identifier.display",
           sort: "contact_identifier.name"
         } },
-      ]
+      ],
+      order: [[0, "desc"]]
     });
 
 </script>
