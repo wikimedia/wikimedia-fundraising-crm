@@ -1262,8 +1262,10 @@ abstract class BaseAuditProcessor {
       $this->recordStatistic($auditRecord, $file);
       if ($auditRecord['is_missing']) {
         if (
-          (($auditRecord['gateway'] ?? NULL) === 'gravy' && ($auditRecord['audit_file_gateway'] ?? NULL) === 'adyen')
-          || ($auditRecord['type'] ?? NULL) === 'fee'
+          !$auditRecord['is_negative'] && (
+            (($auditRecord['message']['gateway'] ?? NULL) === 'gravy' && ($auditRecord['message']['audit_file_gateway'] ?? NULL) === 'adyen')
+            || ($auditRecord['message']['type'] ?? NULL) === 'fee'
+          )
         ) {
           // For now continue to skip these.
           // We are trying to co-ordinate allowing them to bubble up from smash-pig

@@ -15,6 +15,8 @@ class AuditMessage extends DonationMessage {
    *    audit_file_gateway: string,
    *    backend_processor: string,
    *    backend_processor_txn_id: string,
+   *    backend_processor_parent_id: string,
+   *    backend_processor_refund_id: string,
    *    gateway_txn_id: string,
    *    gateway_refund_id: string,
    *    gateway_account: string,
