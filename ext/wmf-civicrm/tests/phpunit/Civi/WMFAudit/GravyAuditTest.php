@@ -118,6 +118,16 @@ class GravyAuditTest extends BaseAuditTestCase {
         // for both refund_id and parent_id
         'gateway_refund_id' => '3754736e-9a6e-44fe-a43b-835f8d78c89b',
         'gateway_parent_id' => '3754736e-9a6e-44fe-a43b-835f8d78c89b',
+        'settlement_batch_reference' => NULL,
+        'settled_total_amount' => NULL,
+        'settled_fee_amount' => NULL,
+        'settled_net_amount' => NULL,
+        'settled_currency' => 'USD',
+        'original_currency' => NULL,
+        'settled_date' => NULL,
+        'original_net_amount' => NULL,
+        'original_fee_amount' => NULL,
+        'original_total_amount' => NULL,
       ],
     ];
   }

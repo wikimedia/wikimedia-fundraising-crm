@@ -55,6 +55,18 @@ class RefundQueueTest extends BaseQueueTestCase {
     $this->assertMessageContributionStatus($donation_message, 'Chargeback');
   }
 
+  public function testRefundWithParentContributionID(): void {
+    $donation_message = $this->getDonationMessage([], TRUE, ['USD' => 1, '*' => 3]);
+    $this->processMessage($donation_message, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($donation_message);
+    $refund_message = $this->getRefundMessage();
+    $refund_message['parent_contribution_id'] = $contribution['id'];
+    unset($refund_message['gateway_parent_id']);
+
+    $this->processMessage($refund_message);
+    $this->assertMessageContributionStatus($donation_message, 'Chargeback');
+  }
+
   public function testRefundNoPredecessor(): void {
     $this->expectException(WMFException::class);
     $this->expectExceptionCode(WMFException::MISSING_PREDECESSOR);

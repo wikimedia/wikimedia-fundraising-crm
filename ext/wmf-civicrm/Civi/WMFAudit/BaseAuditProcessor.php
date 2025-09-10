@@ -401,6 +401,23 @@ abstract class BaseAuditProcessor {
     else {
       $send_message['gross_currency'] = $record['currency'];
     }
+    $allowList = [
+      'parent_contribution_id',
+      'settlement_batch_reference',
+      'settled_total_amount',
+      'settled_fee_amount',
+      'settled_net_amount',
+      'settled_currency',
+      'original_currency',
+      'settled_date',
+      'original_net_amount',
+      'original_fee_amount',
+      'original_total_amount',
+    ];
+    foreach ($allowList as $item) {
+      $send_message[$item] = $record[$item] ?? NULL;
+    }
+
     return $send_message;
   }
 
