@@ -1,5 +1,6 @@
 <?php /** @noinspection PhpUnused */
 
+use Civi\Api4\ContributionRecur;
 use Civi\Api4\CustomField;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\OptionGroup;
@@ -2439,7 +2440,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   public function upgrade_4555(): bool {
     // Get all the paypal recurrings that were automatically cancelled between 2024-05-23 and 2024-06-19
     // 15079 in total
-    $contributionRecurs = \Civi\Api4\ContributionRecur::get(TRUE)
+    $contributionRecurs = ContributionRecur::get(TRUE)
       ->addSelect('id')
       ->addWhere('payment_processor_id:name', 'IN', ['paypal', 'paypal_ec'])
       ->addWhere('cancel_date', '>', '2024-05-22')
@@ -2453,7 +2454,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
         AND cancel_date IS NOT NULL AND cancel_date < "2024-05-24" LIMIT 1');
 
       if ($cancel_date) {
-        \Civi\Api4\ContributionRecur::update(FALSE)
+        ContributionRecur::update(FALSE)
           ->addWhere('id', '=', $recur['id'])
           ->setValues([
             'cancel_date' => $cancel_date,
@@ -2803,6 +2804,35 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     CRM_Core_DAO::executeQuery("CREATE VIEW civicrm_transaction_log as
       SELECT *
       FROM smashpig.pending");
+    return TRUE;
+  }
+
+  public function upgrade_4650() : bool {
+    $contributionRecurs = ContributionRecur::get(FALSE)
+      ->addSelect('address.country_id:abbr', 'contact_id', 'contribution_status_id:name', 'contact.legal_identifier', 'currency')
+      ->addJoin('Contact AS contact', 'LEFT', ['contact_id', '=', 'contact.id'])
+      ->addJoin('Address AS address', 'LEFT', ['address.contact_id', '=', 'contact.id'], ['address.is_primary', '=', 1])
+      ->addWhere('payment_processor_id', '=', 19)
+      ->addWhere('contribution_status_id:name', 'IN', ['Pending', 'In Progress', 'Failing'])
+      ->addWhere('contribution_recur_smashpig.original_country', 'IS EMPTY')
+      ->addWhere('contact.legal_identifier', 'IS NOT EMPTY')
+      ->execute();
+    foreach ($contributionRecurs as $contributionRecur) {
+      // For donors in a country with a fiscal_number mapping, just set the original_country to current country
+      if (in_array($contributionRecur['address.country_id:abbr'], ['AR', 'BR', 'CL', 'CO', 'IN', 'MX', 'ZA', 'UY', 'PE'])) {
+        ContributionRecur::update(FALSE)
+          ->addWhere('id', '=', $contributionRecur['id'])
+          ->addValue('contribution_recur_smashpig.original_country:abbr', $contributionRecur['address.country_id:abbr'])
+          ->execute();
+      }
+      else {
+        // Guess from currency code
+        ContributionRecur::update(FALSE)
+          ->addWhere('id', '=', $contributionRecur['id'])
+          ->addValue('contribution_recur_smashpig.original_country:abbr', substr($contributionRecur['currency'], 0, 2))
+          ->execute();
+      }
+    }
     return TRUE;
   }
 
