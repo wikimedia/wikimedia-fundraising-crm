@@ -2,6 +2,7 @@
 // phpcs:disable
 use CRM_Wmf_ExtensionUtil as E;
 // phpcs:enable
+use SmashPig\Core\SequenceGenerators;
 
 class CRM_Wmf_BAO_ContributionTracking extends CRM_Wmf_DAO_ContributionTracking {
 
@@ -36,6 +37,12 @@ class CRM_Wmf_BAO_ContributionTracking extends CRM_Wmf_DAO_ContributionTracking 
    * @throws \CRM_Core_Exception
    */
   public static function writeRecord(array $record): CRM_Core_DAO {
+    if (empty($record['id'])){
+      // Create a contribution tracking id
+      \CRM_SmashPig_ContextWrapper::createContext('contribution-tracking');
+      $generator = SequenceGenerators\Factory::getSequenceGenerator('contribution-tracking');
+      $record['id'] = (string) $generator->getNext();
+    }
     $exists = (bool) CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_contribution_tracking WHERE id = %1', [1 => [$record['id'], 'Integer']]);
     $op = !$exists ? 'create' : 'edit';
     $entityName = 'ContributionTracking';
