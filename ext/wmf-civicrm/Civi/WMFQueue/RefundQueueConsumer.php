@@ -239,7 +239,13 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'contribution_status_id:name' => $messageObject->getContributionStatus(),
           'cancel_date' => $messageObject->getDate(),
           'refund_trxn_id' => $refund_gateway_txn_id,
-        ])->execute();
+        ]
+          // These fields do include a settlement_date override
+          // - I'm still working through whether that is a good thing
+          // but at this stage there is nothing to over-ride and the
+          // whole data structure is still 'settling' (geddit).
+          + $messageObject->getSettlementFields()
+        )->execute();
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(
@@ -278,7 +284,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
             'debug' => 1,
             'contribution_extra.parent_contribution_id' => $contribution_id,
             'contribution_extra.no_thank_you' => 1,
-          ])->execute();
+          ]  + $messageObject->getSettlementFields())->execute();
         }
         catch (\CRM_Core_Exception $e) {
           throw new WMFException(

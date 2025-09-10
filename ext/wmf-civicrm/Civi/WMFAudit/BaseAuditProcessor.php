@@ -1500,7 +1500,7 @@ abstract class BaseAuditProcessor {
    * @return void
    */
   private function addToBatch(array $transaction): void {
-    $batchName = $transaction['audit_file_gateway'] . '_' . ($transaction['settled_currency'] ?? '') . '_' . $transaction['settlement_batch_reference'];
+    $batchName = $transaction['settlement_batch_reference'];
     if (!isset($this->batches[$batchName])) {
       $this->batches[$batchName] = [
         'transaction_count' => 0,

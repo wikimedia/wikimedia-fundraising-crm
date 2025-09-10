@@ -98,7 +98,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'contribution_tracking_id' => '82431234',
               'processor_contact_id' => '82431234.1',
               'audit_file_gateway' => 'adyen',
-              'settlement_batch_reference' => '2',
+              'settlement_batch_reference' => 'adyen_USD_2',
               'exchange_rate' => '1',
               'original_currency' => 'EUR',
               'currency' => 'EUR',
@@ -148,7 +148,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'settled_currency' => 'USD',
               'tracking_date' => '2017-02-19 06:10:51',
               'audit_file_gateway' => 'adyen',
-              'settlement_batch_reference' => '2',
+              'settlement_batch_reference' => 'adyen_USD_2',
               'exchange_rate' => '1',
               'original_currency' => 'USD',
               'original_total_amount' => 1,
@@ -201,7 +201,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'opt_in' => '0',
               'tracking_date' => '2020-02-23 20:14:04',
               'audit_file_gateway' => 'adyen',
-              'settlement_batch_reference' => '630',
+              'settlement_batch_reference' => 'adyen_USD_630',
               'exchange_rate' => '1.0656568',
               'settled_fee_amount' => 0.27,
               'original_net_amount' => 5.1,
@@ -224,7 +224,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'gross' => '1.00',
               'gross_currency' => 'USD',
               'type' => 'refund',
-              'settlement_batch_reference' => '3',
+              'settlement_batch_reference' => 'adyen_USD_3',
               'settled_total_amount' => -1,
               'settled_fee_amount' => 0,
               'settled_net_amount' => -1,
@@ -250,7 +250,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'gross' => '1.00',
               'gross_currency' => 'USD',
               'type' => 'chargeback',
-              'settlement_batch_reference' => '3',
+              'settlement_batch_reference' => 'adyen_USD_3',
               'settled_total_amount' => -3,
               'settled_fee_amount' => -2,
               'settled_net_amount' => -1,
@@ -342,6 +342,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $contributionID = $this->createTestEntity('Contribution', [
       'contact_id' => $this->createIndividual(['email_primary.email' => 'mouse@wikimedia.org']),
       'total_amount' => 10.40,
+      'fee_amount' => .2,
       'contribution_extra.payment_orchestrator_reconciliation_id' => 'ABCDEFG',
       'receive_date' => '2025-07-24 05:55:55',
       'financial_type_id:name' => 'Recurring Gift - Cash',
@@ -355,11 +356,22 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->runAuditor();
     $this->processQueue('refund', 'Refund');
     $contribution = Contribution::get(FALSE)->addWhere('id', '>', $contributionID - 1)
-      ->addSelect('contribution_extra.gateway_txn_id', 'contribution_extra.gateway', 'contribution_status_id:name', 'total_amount', 'fee_amount')
+      ->addSelect(
+        'contribution_extra.gateway_txn_id',
+        'contribution_extra.gateway',
+        'contribution_status_id:name',
+        'contribution_settlement.*',
+        'total_amount',
+        'fee_amount')
       ->execute()->single();
     $this->assertEquals('Chargeback', $contribution['contribution_status_id:name']);
     $this->assertEquals('gravy', $contribution['contribution_extra.gateway']);
     $this->assertEquals('MNOP', $contribution['contribution_extra.gateway_txn_id']);
+    $this->assertEquals(-10.65, $contribution['contribution_settlement.settled_fee_reversal_amount']);
+    $this->assertEquals(-21.05, $contribution['contribution_settlement.settled_reversal_amount']);
+    $this->assertEquals('USD', $contribution['contribution_settlement.settlement_currency']);
+    $this->assertEquals('adyen_USD_1122', $contribution['contribution_settlement.settlement_batch_reversal_reference']);
+
   }
 
   /**
@@ -409,7 +421,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
             'settled_currency' => 'USD',
             'tracking_date' => '2017-02-19 06:10:51',
             'audit_file_gateway' => 'adyen',
-            'settlement_batch_reference' => '2',
+            'settlement_batch_reference' => 'adyen_USD_2',
             'exchange_rate' => '1',
             'settled_fee_amount' => 0.24,
             'original_net_amount' => 0.76,

@@ -106,4 +106,13 @@ class RefundMessage extends Message {
     return (array) $originalContribution;
   }
 
+  /**
+   * Is this a donation reversal?
+   *
+   * @return bool
+   */
+  public function isReversal(): bool {
+    return TRUE;
+  }
+
 }

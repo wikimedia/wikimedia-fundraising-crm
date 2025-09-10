@@ -154,6 +154,9 @@ class AuditMessage extends DonationMessage {
     $message['settled_date'] = $this->getSettlementTimeStamp();
     $message['gateway'] = $this->getGateway();
     $message['gateway_txn_id'] = $this->getGatewayTxnId();
+    if ($this->message['settlement_batch_reference'] ?? NULL) {
+      $message['settlement_batch_reference'] = $this->getSettlementBatchReference();
+    }
     if ($this->isNegative()) {
       $message['gateway_parent_id'] = $this->getGatewayParentTxnID();
       $message['gateway_refund_id'] = $this->getGatewayRefundID();
@@ -350,6 +353,17 @@ class AuditMessage extends DonationMessage {
 
   public function getParentTransactionGateway(): string {
     return trim($this->message['gateway']);
+  }
+
+  /**
+   * @return string
+   */
+  public function getSettlementBatchReference(): string {
+    return $this->getAuditFileGateway() . '_' . $this->getSettlementCurrency() . '_' . ($this->message['settlement_batch_reference'] ?? '');
+  }
+
+  public function getAuditFileGateway(): string {
+    return $this->message['audit_file_gateway'] ?? '';
   }
 
 }
