@@ -200,17 +200,17 @@ class AuditMessage extends DonationMessage {
       if ($this->getGatewayParentTxnID()) {
         $this->existingContribution = Contribution::get(FALSE)
           ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
-          ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+          ->addWhere('contribution_extra.gateway', '=', $this->getParentTransactionGateway())
           ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
           ->execute()->first() ?? [];
       }
-      elseif ($this->getGateway() === 'gravy' && $this->getBackEndProcessor()) {
+      elseif ($this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
         $isGravy = TRUE;
         // Looking at a gravy transaction in the Adyen file?
         $this->existingContribution = Contribution::get(FALSE)
           ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
-          ->addWhere('contribution_extra.gateway', '=', $this->getBackEndProcessor())
-          ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getBackendProcessorTxnID())
+          ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
+          ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorTxnID())
           ->execute()->first() ?? [];
       }
       else {
@@ -329,6 +329,20 @@ class AuditMessage extends DonationMessage {
    */
   public function isSettled(): bool {
     return (bool) ($this->getExistingContribution()['contribution_extra.settlement_date'] ?? FALSE);
+  }
+
+  public function getGateway(): string {
+    $gateway = $this->getParentTransactionGateway();
+    if ($gateway === 'gravy' && $this->isChargeback()) {
+      // For chargebacks we need to use the backend processor details.
+      // This scenario only occurs with Gravy + adyen.
+      return $this->message['backend_processor'];
+    }
+    return $gateway;
+  }
+
+  public function getParentTransactionGateway(): string {
+    return trim($this->message['gateway']);
   }
 
 }
