@@ -27,7 +27,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
   public function processMessage(array $message): void {
     // Sanity checking :)
     $required_fields = [
-      "gross_currency",
       "gross",
       "date",
       "gateway",
@@ -40,6 +39,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       }
     }
     $messageObject = new RefundMessage($message);
+    $messageObject->validate();
     $contributionStatus = $messageObject->getContributionStatus();
     $gateway = $message['gateway'];
 
@@ -67,7 +67,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           $originalContribution['id'],
           $messageObject,
           $refundTxn,
-          $message['gross_currency'],
           $message['gross']
         );
         \Civi::log('wmf')->info('refund {log_id}: Successfully marked as refunded', $context);
@@ -101,12 +100,14 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       // For SEPA and iDEAL, we may not have a contribution in CiviCRM yet
       // because the payment is pending, and if failed due to RetryableChargeback, will rescue later
       if (!empty($message['payment_method']) && in_array($message['payment_method'], ['rtbt_ideal', 'sepadirectdebit'])) {
-          // delete message from pending table
-          PendingDatabase::get()->deleteMessage($message);
+          // resolve message from pending table
+          PendingDatabase::get()->markMessageResolved($message);
           \Civi::log('wmf')->info( 'Deleting pending contribution for ' . strtoupper($gateway) . " " . $message['gateway_parent_id'] . ' ('. $message['payment_method'] . ') due to' . $reason, $context);
-      } else if(!empty($message['backend_processor']) && $message['backend_processor'] == "trustly"){
+      }
+      elseif(!empty($message['backend_processor']) && $message['backend_processor'] == "trustly"){
         \Civi::log('wmf')->error('refund {log_id}: Skipping failed trustly transaction, as contribution not found in Civi!', $context);
-      } else {
+      }
+      else {
         \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
         throw new WMFException(WMFException::MISSING_PREDECESSOR, "Parent not found: " . strtoupper($gateway) . " " . $message['gateway_parent_id']);
       }
@@ -117,9 +118,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * @param int $contribution_id
    * @param \Civi\WMFQueueMessage\RefundMessage $messageObject
    * @param string|null $refund_gateway_txn_id
-   * @param string|null $refund_currency
-   *   If provided this will be checked against the original contribution and an
-   *   exception will be thrown on mismatch.
    * @param float|null $refund_amount
    *   If provided this will be checked against the original contribution and an
    *   exception will be thrown on mismatch.
@@ -173,7 +171,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     int $contribution_id,
     RefundMessage $messageObject,
     ?string $refund_gateway_txn_id,
-    ?string $refund_currency,
     ?float $refund_amount
   ): void {
     $amount_scammed = 0;
@@ -188,6 +185,8 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'contact_id',
           'receive_date',
           'contribution_status_id:name',
+          'contribution_extra.original_currency',
+          'contribution_extra.original_amount',
         ])->execute()->single();
     }
     catch (\CRM_Core_Exception $e) {
@@ -202,7 +201,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     }
     // Deal with any discrepancies in the refunded amount.
     [$original_currency, $original_amount] = explode(" ", $contribution['source']);
-
+    $refund_currency = $messageObject->getOriginalCurrency();
     if ($refund_currency !== NULL) {
       if ($refund_currency != $original_currency) {
         if ($refund_currency === 'USD') {

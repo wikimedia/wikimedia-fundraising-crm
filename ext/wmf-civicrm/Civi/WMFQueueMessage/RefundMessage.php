@@ -57,6 +57,9 @@ class RefundMessage extends Message {
     if (empty($this->message['gateway_parent_id']) && empty($this->message['parent_contribution_id'])) {
       throw new WMFException(WMFException::CIVI_REQ_FIELD, 'parent_contribution_id or parent_txn_id required');
     }
+    if (empty($this->message['original_currency']) && empty($this->message['gross_currency'])) {
+      throw new WMFException(WMFException::CIVI_REQ_FIELD, 'original_currency (recommended) or gross_currency (deprecated) required');
+    }
   }
 
   /**
@@ -113,6 +116,19 @@ class RefundMessage extends Message {
    */
   public function isReversal(): bool {
     return TRUE;
+  }
+
+  /**
+   * Get original currency.
+   *
+   * In this context the original currency is the currency in which the
+   * donation is paid back to the donor (which may or may not be the
+   * same as what they paid in - but probably is).
+   *
+   * @return string
+   */
+  public function getOriginalCurrency(): string {
+    return $this->message['original_currency'] ?? $this->message['gross_currency'];
   }
 
 }
