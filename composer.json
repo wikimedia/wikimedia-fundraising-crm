@@ -15,7 +15,8 @@
         { "name": "Jack Gleeson" },
         { "name": "Dylan Kozlowski" },
         { "name": "Damilare Adedoyin"},
-        { "name": "Wenjun Fan"}
+        { "name": "Wenjun Fan"},
+        { "name": "Lars Sander-Green"}
     ],
     "license": "GPL-2.0-or-later",
     "type": "project",
