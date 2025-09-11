@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueueMessage;
 
+use Civi\Api4\Contribution;
 use Civi\WMFException\WMFException;
 
 /**
@@ -15,6 +16,16 @@ use Civi\WMFException\WMFException;
  * with only what we need.
  */
 class RefundMessage extends Message {
+  /**
+   * Refund Message.
+   *
+   * @var array{
+   *   gateway_parent_id: string,
+   *   parent_contribution_id: int,
+   *   type: string,
+   *  }
+   */
+  protected array $message;
 
   /**
    * @throws \Civi\WMFException\WMFException
@@ -34,6 +45,65 @@ class RefundMessage extends Message {
       throw new WMFException(WMFException::IMPORT_CONTRIB, "Unknown refund type '{$this->message['type']}'");
     }
     return $validTypes[$this->message['type']];
+  }
+
+  /**
+   * Validate the message
+   *
+   * @return void
+   * @throws \Civi\WMFException\WMFException|\CRM_Core_Exception
+   */
+  public function validate(): void {
+    if (empty($this->message['gateway_parent_id']) && empty($this->message['parent_contribution_id'])) {
+      throw new WMFException(WMFException::CIVI_REQ_FIELD, 'parent_contribution_id or parent_txn_id required');
+    }
+  }
+
+  /**
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function getOriginalContribution(): array {
+    if (!empty($this->message['parent_contribution_id'])) {
+      return Contribution::get(FALSE)
+        ->addWhere('id', '=', $this->message['parent_contribution_id'])
+        ->execute()->single();
+    }
+    // @todo add functions ->getOriginalContributionID() and `->getOriginalContributionValue()`
+    // similar to getRecurringPriorContributionValue on the RecurringQueue class.
+    $originalContribution = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+      ->addWhere('contribution_extra.gateway_txn_id', '=', $this->message['gateway_parent_id'])
+      ->execute()->first();
+    // Fall back to searching by invoice ID, generally for Ingenico recurring
+    if (!$originalContribution && !empty($this->message['invoice_id'])) {
+      $originalContribution = Contribution::get(FALSE)
+        ->addClause(
+          'OR',
+          ['invoice_id', '=', $this->message['invoice_id']],
+          // For recurring payments, we sometimes append a | and a random number after the invoice ID
+          ['invoice_id', 'LIKE', $this->message['invoice_id'] . '|%']
+        )
+        ->execute()->first();
+    }
+
+    if ($this->isPaypal() && !$originalContribution) {
+      /**
+       * Refunds raised by Paypal do not indicate whether the initial
+       * payment was taken using the paypal express checkout (paypal_ec) integration or
+       * the legacy paypal integration (paypal). We try to work this out by checking for
+       * the presence of specific values in messages sent over, but it appears this
+       * isn't watertight as we've seen refunds failing due to incorrect mappings
+       * on some occasions. To mitigate this we now fall back to the alternative
+       * gateway if no match is found for the gateway supplied.
+       */
+      $originalContribution = Contribution::get(FALSE)
+        ->addWhere('contribution_extra.gateway', 'IN', ['paypal', 'paypal_ec'])
+        ->addWhere('contribution_extra.gateway_txn_id', '=', $this->message['gateway_parent_id'])
+        ->execute()->first();
+    }
+    return (array) $originalContribution;
   }
 
 }

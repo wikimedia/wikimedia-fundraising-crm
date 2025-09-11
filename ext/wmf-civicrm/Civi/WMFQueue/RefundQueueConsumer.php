@@ -18,10 +18,6 @@ use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 class RefundQueueConsumer extends TransactionalQueueConsumer {
 
-  const PAYPAL_GATEWAY = 'paypal';
-
-  const PAYPAL_EXPRESS_CHECKOUT_GATEWAY = 'paypal_ec';
-
   /**
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
@@ -31,7 +27,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
   public function processMessage(array $message): void {
     // Sanity checking :)
     $required_fields = [
-      "gateway_parent_id",
       "gross_currency",
       "gross",
       "date",
@@ -47,10 +42,10 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     $messageObject = new RefundMessage($message);
     $contributionStatus = $messageObject->getContributionStatus();
     $gateway = $message['gateway'];
-    $parentTxn = $message['gateway_parent_id'];
+
     $refundTxn = isset($message['gateway_refund_id']) ? $message['gateway_refund_id'] : NULL;
     if ($refundTxn === NULL) {
-      $logId = $parentTxn;
+      $logId = $message['gateway_parent_id'];
     }
     else {
       $logId = $refundTxn;
@@ -59,43 +54,8 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     if ($message['gross'] < 0) {
       $message['gross'] = abs($message['gross']);
     }
+    $originalContribution = $messageObject->getOriginalContribution();
 
-    // @todo move all these lookups to RefundMessage - add functions
-    // ->getOriginalContributionID() and `->getOriginalContributionValue()`
-    // similar to getRecurringPriorContributionValue on the RecurringQueue class.
-    // The message class is responsible for interpreting the message - this
-    // class should only be 'doing' with the interpreted message.
-    $originalContribution = Contribution::get(FALSE)
-      ->addWhere('contribution_extra.gateway', '=', $messageObject->getGateway())
-      ->addWhere('contribution_extra.gateway_txn_id', '=', $parentTxn)
-      ->execute()->first();
-    // Fall back to searching by invoice ID, generally for Ingenico recurring
-    if (!$originalContribution && !empty($message['invoice_id'])) {
-      $originalContribution = Contribution::get(FALSE)
-        ->addClause(
-          'OR',
-          ['invoice_id', '=', $message['invoice_id']],
-          // For recurring payments, we sometimes append a | and a random number after the invoice ID
-          ['invoice_id', 'LIKE', $message['invoice_id'] . '|%']
-        )
-        ->execute()->first();
-    }
-
-    if ($messageObject->isPaypal() && !$originalContribution) {
-      /**
-       * Refunds raised by Paypal do not indicate whether the initial
-       * payment was taken using the paypal express checkout (paypal_ec) integration or
-       * the legacy paypal integration (paypal). We try to work this out by checking for
-       * the presence of specific values in messages sent over, but it appears this
-       * isn't watertight as we've seen refunds failing due to incorrect mappings
-       * on some occasions. To mitigate this we now fall back to the alternative
-       * gateway if no match is found for the gateway supplied.
-       */
-      $originalContribution = Contribution::get(FALSE)
-        ->addWhere('contribution_extra.gateway', 'IN', [static::PAYPAL_GATEWAY, static::PAYPAL_EXPRESS_CHECKOUT_GATEWAY])
-        ->addWhere('contribution_extra.gateway_txn_id', '=', $parentTxn)
-        ->execute()->first();
-    }
     $context = ['log_id' => $logId];
     // not all messages have a reason
     $reason = $message['reason'] ?? '';
@@ -143,12 +103,12 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       if (!empty($message['payment_method']) && in_array($message['payment_method'], ['rtbt_ideal', 'sepadirectdebit'])) {
           // delete message from pending table
           PendingDatabase::get()->deleteMessage($message);
-          \Civi::log('wmf')->info( 'Deleting pending contribution for ' . strtoupper($gateway) . " " . $parentTxn . ' ('. $message['payment_method'] . ') due to' . $reason, $context);
+          \Civi::log('wmf')->info( 'Deleting pending contribution for ' . strtoupper($gateway) . " " . $message['gateway_parent_id'] . ' ('. $message['payment_method'] . ') due to' . $reason, $context);
       } else if(!empty($message['backend_processor']) && $message['backend_processor'] == "trustly"){
         \Civi::log('wmf')->error('refund {log_id}: Skipping failed trustly transaction, as contribution not found in Civi!', $context);
       } else {
         \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);
-        throw new WMFException(WMFException::MISSING_PREDECESSOR, "Parent not found: " . strtoupper($gateway) . " " . $parentTxn);
+        throw new WMFException(WMFException::MISSING_PREDECESSOR, "Parent not found: " . strtoupper($gateway) . " " . $message['gateway_parent_id']);
       }
      }
   }
