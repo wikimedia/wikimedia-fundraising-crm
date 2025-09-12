@@ -6,6 +6,7 @@ namespace Civi\Api4;
  *
  * Provided by the WMF CiviCRM extension.
  * @searchable primary
+ * @searchFields id,tracking_date,amount,currency,country,utm_key,utm_medium,referrer
  * @package Civi\Api4
  */
 class ContributionTracking extends Generic\DAOEntity {
