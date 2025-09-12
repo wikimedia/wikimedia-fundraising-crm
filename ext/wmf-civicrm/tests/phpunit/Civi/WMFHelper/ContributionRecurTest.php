@@ -23,7 +23,6 @@ class ContributionRecurTest extends TestCase implements HeadlessInterface, HookI
     $this->assertTrue(ContributionRecur::gatewayManagesOwnRecurringSchedule('paypal_ec'));
     $this->assertFalse(ContributionRecur::gatewayManagesOwnRecurringSchedule('adyen'));
     $this->assertFalse(ContributionRecur::gatewayManagesOwnRecurringSchedule('dlocal'));
-    $this->assertFalse(ContributionRecur::gatewayManagesOwnRecurringSchedule('fundraiseup'));
   }
 
 }

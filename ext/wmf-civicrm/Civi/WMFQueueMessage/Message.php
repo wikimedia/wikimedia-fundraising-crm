@@ -758,10 +758,6 @@ class Message {
     return $this->isGateway('braintree') || $this->message['payment_method'] === 'venmo';
   }
 
-  public function isFundraiseUp(): bool {
-    return $this->isGateway('fundraiseup');
-  }
-
   /**
    * Is this a recurring payment which the provider has been able to 'rescue'.
    *
