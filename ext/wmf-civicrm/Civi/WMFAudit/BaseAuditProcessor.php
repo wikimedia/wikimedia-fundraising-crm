@@ -1312,7 +1312,7 @@ abstract class BaseAuditProcessor {
     $fileStatistics = &$this->statistics[$file];
     $paymentMethod = $auditRecord['payment_method'];
     $transaction = $auditRecord['message'];
-    if (isset($transaction['audit_file_gateway'])) {
+    if (isset($transaction['audit_file_gateway']) && !empty($transaction['settled_date'])) {
       // For now this means we are only doing it for adyen.
       // The batching is by the audit file gateway (ie adyen) not gravy.
       $this->addToBatch($transaction);
