@@ -60,9 +60,7 @@ class Consume extends AbstractAction {
 
     $consumer = $this->loadQueueConsumer();
     $consumer->initiateStatistics();
-
     $processed = $consumer->dequeueMessages();
-
     $consumer->reportStatistics($processed);
     if ($processed > 0) {
       \Civi::log('wmf')->info('Successfully processed {processed} from queue {queue_name}', ['processed' => $processed, 'queue_name' => $this->getQueueName()]);

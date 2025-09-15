@@ -70,6 +70,8 @@ class ConsumeFile extends AbstractAction {
     $processed = 0;
     foreach ($messages as $message) {
       try {
+        // in case of memory exceed, log the message before processing
+        \Civi::log('wmf')->info( "Message: " . json_encode( $message ) );
         $consumer->processMessage( $message );
         $processed++;
         if ( $this->limit && $processed === $this->limit ) {
