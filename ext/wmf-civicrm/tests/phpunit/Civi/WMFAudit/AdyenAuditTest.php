@@ -306,6 +306,38 @@ class AdyenAuditTest extends BaseAuditTestCase {
    * The match is found based on the backend processor fields.
    * @return void
    */
+  public function testGravyDonationSettled(): void {
+    $contributionID = $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual(['email_primary.email' => 'mouse@wikimedia.org']),
+      'total_amount' => 10.40,
+      'contribution_extra.payment_orchestrator_reconciliation_id' => 'ABCDEFG',
+      'receive_date' => '2025-07-24 05:55:55',
+      'financial_type_id:name' => 'Recurring Gift - Cash',
+      'payment_instrument_id:name' => 'Credit Card: Visa',
+      'contribution_extra.original_currency' => 'ILS',
+      'contribution_extra.original_amount' => 11.20,
+      'contribution_extra.gateway' => 'gravy',
+      'contribution_extra.gateway_txn_id' => 'MNOP',
+      'contribution_extra.backend_processor' => 'adyen',
+      'contribution_extra.backend_processor_txn_id' => 'FGH',
+    ])['id'];
+    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/donation_gravy/');
+    $this->runAuditor();
+    $this->processQueue('refund', 'Refund');
+    $contribution = Contribution::get(FALSE)->addWhere('id', '>', $contributionID - 1)
+      ->addSelect('contribution_extra.gateway_txn_id', 'contribution_extra.gateway', 'contribution_status_id:name', 'total_amount', 'fee_amount')
+      ->execute()->single();
+    $this->assertEquals('Completed', $contribution['contribution_status_id:name']);
+    $this->assertEquals('gravy', $contribution['contribution_extra.gateway']);
+    $this->assertEquals('MNOP', $contribution['contribution_extra.gateway_txn_id']);
+  }
+
+  /**
+   * Test that gravy adyen chargebacks are handled if picked up through the adyen audit.
+   *
+   * The match is found based on the backend processor fields.
+   * @return void
+   */
   public function testGravyChargeback(): void {
     $contributionID = $this->createTestEntity('Contribution', [
       'contact_id' => $this->createIndividual(['email_primary.email' => 'mouse@wikimedia.org']),
