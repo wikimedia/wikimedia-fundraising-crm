@@ -465,6 +465,7 @@ abstract class BaseAuditProcessor {
       $parsed = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
         $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
+        $this->move_completed_recon_file($file);
         continue;
       }
 
