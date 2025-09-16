@@ -197,20 +197,20 @@ class AuditMessage extends DonationMessage {
   public function getExistingContribution(): ?array {
     if (!isset($this->existingContribution)) {
       $isGravy = FALSE;
-      if ($this->getGatewayParentTxnID()) {
-        $this->existingContribution = Contribution::get(FALSE)
-          ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
-          ->addWhere('contribution_extra.gateway', '=', $this->getParentTransactionGateway())
-          ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
-          ->execute()->first() ?? [];
-      }
-      elseif ($this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
+      if ($this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
         $isGravy = TRUE;
         // Looking at a gravy transaction in the Adyen file?
         $this->existingContribution = Contribution::get(FALSE)
           ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
           ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
           ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorTxnID())
+          ->execute()->first() ?? [];
+      }
+      elseif ($this->getGatewayParentTxnID()) {
+        $this->existingContribution = Contribution::get(FALSE)
+          ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+          ->addWhere('contribution_extra.gateway', '=', $this->getParentTransactionGateway())
+          ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
           ->execute()->first() ?? [];
       }
       else {

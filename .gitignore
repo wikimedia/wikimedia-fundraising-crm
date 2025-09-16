@@ -30,3 +30,4 @@ core/sql/zipcodes.json
 core/bin/setup.sh
 private
 ext/org.wikimedia.omnimail/tests/phpunit/Requests/ImportFiles/remote-upload*
+ext/*/tests
