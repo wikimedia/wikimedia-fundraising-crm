@@ -27,7 +27,7 @@ class SyncCustomFields extends AbstractAction {
    */
   public function _run(Result $result): void {
     try {
-      $customGroupSpecs = require __DIR__ . '/../../../../Managed/CustomGroups.php';
+      $customGroupSpecs = require __DIR__ . '/../../../../managed/CustomGroups.php';
       foreach ($customGroupSpecs as $groupName => $customGroupSpec) {
         $customGroup = civicrm_api3('CustomGroup', 'get', ['name' => $groupName]);
         if (!$customGroup['count']) {
