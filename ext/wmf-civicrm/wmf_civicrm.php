@@ -624,3 +624,21 @@ function wmf_civicrm_civicrm_smashpig_stats($stats) {
   $reporter = new PrometheusReporter($prometheusPath);
   $reporter->reportMetrics('recurring_smashpig', $metrics);
 }
+
+/**
+ * Implements hook_civicrm_summaryActions().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_summaryActions/
+ *
+ */
+function wmf_civicrm_civicrm_summaryActions(&$actions, $contactID)
+{
+  $actions['otherActions']['referrals'] = [
+    'title' => 'Find referrals',
+    'weight' => 505,
+    'ref' => 'find-referrals',
+    'key' => 'referrals',
+    'href' => '/civicrm/referralspercontact#/?source_contact_id,target_contact_id=' . $contactID,
+    'class' => 'crm-popup',
+  ];
+}
