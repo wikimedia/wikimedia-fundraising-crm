@@ -549,11 +549,17 @@ abstract class BaseAuditProcessor {
       }
 
       $wrap_up .= "Missing Transaction IDs:\n";
-      foreach ($remaining as $group => $transactions) {
-        foreach ($transactions as $date => $missing) {
+      foreach ($remaining as $transactions) {
+        foreach ($transactions as $missing) {
           foreach ($missing as $transaction) {
-            $wrap_up .= "\t" . WMFTransaction::from_message($transaction)
-              ->get_unique_id() . "\n";
+            try {
+              $wrap_up .= "\t" . WMFTransaction::from_message($transaction)
+                  ->get_unique_id() . "\n";
+            }
+            catch (WMFException $e) {
+              \Civi::log('wmf')->warning($e->getMessage() . "\n {transaction}", ['transaction' => $transaction]);
+              throw $e;
+            }
           }
         }
       }
@@ -1312,7 +1318,7 @@ abstract class BaseAuditProcessor {
     $fileStatistics = &$this->statistics[$file];
     $paymentMethod = $auditRecord['payment_method'];
     $transaction = $auditRecord['message'];
-    if (isset($transaction['audit_file_gateway'])) {
+    if (isset($transaction['audit_file_gateway']) && !empty($transaction['settled_date'])) {
       // For now this means we are only doing it for adyen.
       // The batching is by the audit file gateway (ie adyen) not gravy.
       $this->addToBatch($transaction);
@@ -1510,7 +1516,7 @@ abstract class BaseAuditProcessor {
     }
     $this->batches[$batchName]['transaction_count']++;
     if (!isset($transaction['settled_total_amount'])) {
-      \Civi::log('wmf')->warning('is string {transaction}', ['transaction' => $transaction]);
+      \Civi::log('wmf')->warning('missing total_amount for {transaction}', ['transaction' => $transaction]);
     }
     else {
       $this->batches[$batchName]['settled_total_amount'] += $transaction['settled_total_amount'];
