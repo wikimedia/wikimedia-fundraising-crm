@@ -62,6 +62,7 @@ class BaseAuditTestCase extends TestCase {
         // As we often declare the expected in a dataProvider they may not be
         // known during test set up so only check if they are in the expected array.
         foreach ($expected as $index => $message) {
+          unset($actual[$index]['contribution_tracking'], $actual[$index]['transaction_details']);
           if (!array_key_exists('contribution_id', $message)) {
             unset($actual[$index]['contribution_id']);
             unset($actual[$index]['parent_contribution_id']);

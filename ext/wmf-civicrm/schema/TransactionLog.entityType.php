@@ -66,6 +66,7 @@ return [
       'input_type' => 'TextArea',
       'title'      => E::ts('Message'),
       'required'   => TRUE,
+      'serialize' => CRM_Core_DAO::SERIALIZE_JSON,
     ],
     'payment_method' => [
       'name'       => 'payment_method',

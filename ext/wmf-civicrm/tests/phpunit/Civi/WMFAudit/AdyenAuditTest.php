@@ -4,6 +4,7 @@ namespace Civi\WMFAudit;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
+use Civi\Api4\TransactionLog;
 
 /**
  * @group Adyen
@@ -59,11 +60,25 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->processMessage($msg, 'Donation', 'test');
     $this->ids['Contribution']['for_refund'] = $this->getContributionForMessage($msg)['id'];
 
+    $contributionTrackingID = 82431234;
     $this->createContributionTracking([
-      'id' => 82431234,
+      'id' => $contributionTrackingID,
       'utm_campaign' => 'adyen_audit',
     ]);
-    $this->ids['ContributionTracking'][] = 43992337;
+    $this->processContributionTrackingQueue();
+    $this->ids['ContributionTracking'] = array_keys(
+      (array) ContributionTracking::get(FALSE)
+      ->addWhere('id', '>=', $contributionTrackingID)
+      ->execute()->indexBy('id'));
+    // Dunno where this pops up from but...
+    $this->ids['ContributionTracking'][] = 1004;
+  }
+
+  public function tearDown(): void {
+    TransactionLog::delete(FALSE)
+      ->addWhere('gateway_txn_id', '=', '3f9c958c-ee57-4121-a79e-408946b27077')
+      ->execute();
+    $this->tearDownWMFEnvironment();
   }
 
   public function auditTestProvider(): array {
@@ -330,6 +345,123 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals('Completed', $contribution['contribution_status_id:name']);
     $this->assertEquals('gravy', $contribution['contribution_extra.gateway']);
     $this->assertEquals('MNOP', $contribution['contribution_extra.gateway_txn_id']);
+  }
+
+  /**
+   * Test that gravy missing donations are handled.
+   *
+   * @return void
+   */
+  public function testGravyMissingDonationSettled(): void {
+    $gravyTxnID = '3f9c958c-ee57-4121-a79e-408946b27077';
+    $maxContributionTrackingID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking');
+    $trackingID = $this->ids['ContributionTracking'][] = ContributionTracking::save(FALSE)
+      ->addRecord([
+        'id' => $maxContributionTrackingID + 1,
+      ])
+      ->execute()->first()['id'];
+    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/donation_gravy/');
+    $this->createTestEntity('TransactionLog', [
+      'date' => '2025-09-01 23:04:00',
+      'gateway' => 'gravy',
+      'gateway_account' => 'WikimediaDonations',
+      'order_id' => $trackingID . '.1',
+      'gateway_txn_id' => $gravyTxnID,
+      'message' => [
+        "gateway_txn_id" => $gravyTxnID,
+        "response" => FALSE,
+        "gateway_account" => "WikimediaDonations",
+        "fee" => 0,
+        "gross" => "56.75",
+        "backend_processor" => "adyen",
+        "backend_processor_txn_id" => "XYZ",
+        "city" => "Wellington",
+        "contribution_tracking_id" => $trackingID,
+        "country" => "MX",
+        "currency" => "MXN",
+        "email" => "mouse@wikimedia.org",
+        "first_name" => "Albert",
+        "gateway" => "gravy",
+        "language" => "es-419",
+        "last_name" => "Mouse",
+        "opt_in" => "0",
+        "order_id" => $trackingID . '.1',
+        "payment_method" => "apple",
+        "payment_orchestrator_reconciliation_id" => "1w24hGOdCSFLtsgBQr2jKh",
+        "payment_submethod" => "amex",
+        "postal_code" => "20100",
+        "recurring" => "",
+        "state_province" => "Wellington",
+        "street_address" => "1 The beehive",
+        "user_ip" => "169.255.255.255",
+        "utm_campaign" => "WMF_FR_C2526_esLA_m_0805",
+        "utm_medium" => "sitenotice",
+        "utm_source" => "B2526_082914_esLA_m_p1_lg_twn_twin1_optIn0.no-LP.apple_amex",
+        "date" => 1756767840,
+        "source_name" => "DonationInterface",
+        "source_type" => "payments",
+        "source_host" => "payments1007",
+        "source_run_id" => 1219008,
+        "source_version" => "973d0a66742ab85eeac413c4f7470fb208e33d29",
+        "source_enqueued_time" => 1756767840
+      ]
+    ], 'auth');
+    $this->createTestEntity('TransactionLog', [
+      'date' => '2025-09-01 23:04:00',
+      'gateway' => 'gravy',
+      'gateway_account' => 'WikimediaDonations',
+      'order_id' => $trackingID . '.1',
+      'gateway_txn_id' => $gravyTxnID,
+      'message' => [
+        "gateway_txn_id" => $gravyTxnID,
+        "response" => FALSE,
+        "gateway_account" => "WikimediaDonations",
+        "fee" => 0,
+        "gross" => "56.75",
+        "backend_processor" => "adyen",
+        "backend_processor_txn_id" => "FGH",
+        "city" => "Wellington",
+        "contribution_tracking_id" => $trackingID,
+        "country" => "MX",
+        "currency" => "MXN",
+        "email" => "mouse@wikimedia.org",
+        "first_name" => "Albert",
+        "gateway" => "gravy",
+        "language" => "es-419",
+        "last_name" => "Mouse",
+        "opt_in" => "0",
+        "order_id" => $trackingID . '.1',
+        "payment_method" => "apple",
+        "payment_orchestrator_reconciliation_id" => "1w24hGOdCSFLtsgBQr2jKh",
+        "payment_submethod" => "amex",
+        "postal_code" => "20100",
+        "recurring" => "",
+        "state_province" => "Wellington",
+        "street_address" => "1 The beehive",
+        "user_ip" => "169.255.255.255",
+        "utm_campaign" => "WMF_FR_C2526_esLA_m_0805",
+        "utm_medium" => "sitenotice",
+        "utm_source" => "B2526_082914_esLA_m_p1_lg_twn_twin1_optIn0.no-LP.apple_amex",
+        "date" => 1756767840,
+        "source_name" => "DonationInterface",
+        "source_type" => "payments",
+        "source_host" => "payments1007",
+        "source_run_id" => 1219008,
+        "source_version" => "973d0a66742ab85eeac413c4f7470fb208e33d29",
+        "source_enqueued_time" => 1756767840
+      ]
+    ], 'capture');
+    $this->runAuditor();
+    $this->processQueue('donations', 'Donation');
+    $this->processContributionTrackingQueue();
+    $contributionTracking = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $trackingID)
+      ->execute()->first();
+    $this->assertNotEmpty($contributionTracking['contribution_id']);
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('id', '=', $contributionTracking['contribution_id'])
+      ->execute()->single();
+    $this->assertEquals('GRAVY 3f9c958c-ee57-4121-a79e-408946b27077', $contribution['trxn_id']);
   }
 
   /**

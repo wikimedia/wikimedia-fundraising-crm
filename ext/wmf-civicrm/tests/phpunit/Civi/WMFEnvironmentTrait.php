@@ -9,6 +9,7 @@ use Civi\Api4\ContributionTracking;
 use Civi\Api4\OptionValue;
 use Civi\Api4\PaymentProcessor;
 use Civi\Api4\PaymentToken;
+use Civi\Api4\TransactionLog;
 use Civi\MonoLog\MonologManager;
 use Civi\Omnimail\MailFactory;
 use Civi\WMFStatistic\DonationStatsCollector;
@@ -84,12 +85,20 @@ trait WMFEnvironmentTrait {
       $contributionTracking = (array) ContributionTracking::get(FALSE)->addWhere('id', 'IN', $this->ids['ContributionTracking'])->execute()->indexBy('id');
       if (!empty($contributionTracking)) {
         foreach ($contributionTracking as $item) {
+          TransactionLog::delete(FALSE)
+            ->addWhere('message', 'LIKE', "%contribution_tracking_id:" . $item['id'] . '%')
+            ->execute();
           if ($item['contribution_id']) {
             $this->cleanupContribution($item['contribution_id']);
           }
         }
         ContributionTracking::delete(FALSE)->addWhere('id', 'IN', $this->ids['ContributionTracking'])->execute();
       }
+    }
+    if (!empty($this->ids['TransactionLog'])) {
+      TransactionLog::delete(FALSE)
+        ->addWhere('id', 'IN', $this->ids['TransactionLog'])
+        ->execute();
     }
     if (!empty($this->ids['Contribution'])) {
       Contribution::delete(FALSE)->addWhere('id', 'IN', $this->ids['Contribution'])->execute();

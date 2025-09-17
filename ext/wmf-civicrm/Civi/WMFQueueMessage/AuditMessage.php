@@ -2,8 +2,10 @@
 
 namespace Civi\WMFQueueMessage;
 
+use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
+use Civi\Api4\TransactionLog;
 
 class AuditMessage extends DonationMessage {
 
@@ -68,6 +70,7 @@ class AuditMessage extends DonationMessage {
     'gateway_txn_id',
   ];
   private array $existingContribution;
+  private array $transactionDetails;
 
   /**
    * Are we dealing with a message that had a currency other than our settlement currency.
@@ -144,6 +147,7 @@ class AuditMessage extends DonationMessage {
    *   payment_submethod: string,
    *   date: int,
    * }
+   * @throws \CRM_Core_Exception
    */
   public function normalize(): array {
     $message = $this->message;
@@ -166,8 +170,31 @@ class AuditMessage extends DonationMessage {
     else {
       $message['order_id'] = $this->getOrderID();
     }
-
+    $message['contribution_tracking_id'] = $this->getContributionTrackingID();
+    if (!$this->getExistingContributionID()) {
+      $message['transaction_details'] = $this->getTransactionDetails();
+    }
+    if (!$this->getExistingContributionID() && $message['contribution_tracking_id']) {
+      $message['contribution_tracking'] = ContributionTracking::get(FALSE)
+        ->addWhere('id', '=', $message['contribution_tracking_id'])
+        ->execute()->first();
+    }
     return $message;
+  }
+
+  /**
+   * Get the contribution tracking ID if it already exists.
+   *
+   * @return int|null
+   * @throws \CRM_Core_Exception
+   */
+  public function getContributionTrackingID(): ?int {
+    $id = parent::getContributionTrackingID();
+    if (!$id) {
+      $tracking = $this->getTransactionDetails();
+      $id = $tracking['message']['contribution_tracking_id'] ?? NULL;
+    }
+    return $id;
   }
 
   public function getParentContributionID(): ?int {
@@ -383,6 +410,32 @@ class AuditMessage extends DonationMessage {
 
   public function getAuditFileGateway(): string {
     return $this->message['audit_file_gateway'] ?? '';
+  }
+
+  /**
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   */
+  public function getTransactionDetails(): ?array {
+    if (!isset($this->transactionDetails)) {
+      $this->transactionDetails = [];
+      $transactionDetails = (array)TransactionLog::get(FALSE)
+        ->addWhere('gateway_txn_id', '=', $this->getGatewayTxnID())
+        ->addWhere('gateway', '=', $this->getGateway())
+        ->execute();
+      foreach ($transactionDetails as $transactionDetail) {
+        if ($this->getBackendProcessorTxnID() === ($transactionDetail['message']['backend_processor_txn_id'] ?? FALSE)
+          // Only checking isNegative here because I haven't fully worked
+          // through the negative transactions & want to just
+          // double check we are always loading the right one.
+          || (!$this->getBackendProcessorTxnID() && !$this->isNegative())
+        ) {
+          $this->transactionDetails = $transactionDetail;
+          break;
+        }
+      }
+    }
+    return empty($this->transactionDetails) ? NULL : $this->transactionDetails;
   }
 
 }
