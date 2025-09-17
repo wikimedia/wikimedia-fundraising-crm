@@ -81,6 +81,7 @@ class BaseAuditTestCase extends TestCase {
   protected function runAuditor(): Result {
     return WMFAudit::parse()
       ->setGateway($this->gateway)
+      ->setIsMoveCompletedFile(FALSE)
       ->execute();
   }
 
