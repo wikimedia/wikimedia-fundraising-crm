@@ -68,6 +68,7 @@ class QueueHelper {
    * @param string $entity
    * @param string $action
    * @param array $params
+   * @param array $incrementParameters
    * @param array $options
    * @return $this
    */
@@ -197,7 +198,7 @@ class QueueHelper {
    * @return bool
    * @internal only use from this class.
    */
-  public static function doApi4(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params, $incrementParameters): bool {
+  public static function doApi4(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params, array $incrementParameters): bool {
     try {
       $runParams = $params;
       $runParams['checkPermissions'] = FALSE;
@@ -220,7 +221,8 @@ class QueueHelper {
       }
       civicrm_api4($entity, $action, $runParams);
 
-      $reQueue = TRUE;
+      // Do not requeue when incrementParameters are empty
+      $reQueue = !empty($incrementParameters);
       foreach ($incrementParameters as $key => $incrementParameter) {
         if (empty($incrementParameter['max']) || $incrementParameter['value'] < $incrementParameter['max']) {
           $incrementParameters[$key]['value'] += $incrementParameter['increment'];
