@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4;
 
+use Civi\Api4\Action\WMFContact\BackfillOptIn;
 use Civi\Api4\Action\WMFContact\GetCommunicationsPreferences;
 use Civi\Api4\Action\WMFContact\GetDonorSummary;
 use Civi\Api4\Action\WMFContact\Save;
@@ -60,6 +61,17 @@ class WMFContact extends Generic\AbstractEntity {
    */
   public static function getDonorSummary(bool $checkPermissions = TRUE): GetDonorSummary {
     return (new GetDonorSummary(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Backfill opt_in value from log message (for all contacts with a given email)
+   *
+   * @param bool $checkPermissions
+   * @return BackfillOptIn
+   */
+  public static function backfillOptIn(bool $checkPermissions = TRUE): BackfillOptIn {
+    return (new BackfillOptIn(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
