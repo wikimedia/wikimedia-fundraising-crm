@@ -64,21 +64,6 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
   }
 
   /**
-   * Initial logs for Adyen have no gateway transaction id, just our
-   * contribution tracking id plus the attempt number.
-   *
-   * @param array $transaction possibly incomplete set of transaction data
-   *
-   * @return string|false the order_id, or false if we can't figure it out
-   */
-  protected function get_order_id($transaction) {
-    if (is_array($transaction) && array_key_exists('invoice_id', $transaction)) {
-      return $transaction['invoice_id'];
-    }
-    return FALSE;
-  }
-
-  /**
    * Override parent function to deal with recurring donations with modification_reference.
    * We do not want to pass the modification_reference,
    * also need to make sure the transaction id not null before send audit job to civi

@@ -280,8 +280,9 @@ class Message {
         'description' => E::ts('Total amount (including fee) in the Settled currency'),
         'data_type' => 'Money',
         'api_entity' => 'Contribution',
-        'api_field' => 'total_amount',
-        'used_for' => 'All payment messages',
+        'api_field' => 'contribution_settlement.settled_donation_amount',
+        'api_field_reversal' => 'contribution_settlement.settled_reversal_amount',
+        'used_for' => 'settle',
         'notes' => '',
       ],
       'settled_net_amount' => [
@@ -289,7 +290,8 @@ class Message {
         'description' => E::ts('Total Amount less any fees in the Settled currency'),
         'data_type' => 'Money',
         'api_entity' => 'Contribution',
-        'api_field' => 'net_amount',
+        // Not saved directly - Civi re-calculates
+        // 'api_field' => 'net_amount',
         'used_for' => 'settle',
         'notes' => '',
       ],
@@ -298,7 +300,8 @@ class Message {
         'description' => E::ts('Fee in the Settled currency'),
         'data_type' => 'Money',
         'api_entity' => 'Contribution',
-        'api_field' => 'fee_amount',
+        'api_field' => 'contribution_settlement.settled_fee_amount',
+        'api_field_reversal' => 'contribution_settlement.settled_fee_reversal_amount',
         'used_for' => 'settle',
         'notes' => '',
       ],
@@ -320,18 +323,22 @@ class Message {
         'title' => E::ts('Settled Currency'),
         'name' => 'settled_currency',
         'data_type' => 'String',
-        'used_for' => '*tbd',
+        'used_for' => 'settle',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_settlement.settlement_currency',
       ],
       'settled_date' => [
         'name' => 'settled_date',
         'description' => E::ts('Date this settled at the payment processor - this is when their conversion is finalized'),
         'data_type' => 'Datetime',
         'used_for' => 'settle',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_settlement.settlement_date',
       ],
       'exchange_rate' => [
         'name' => 'exchange_rate',
         'data_type' => 'Float',
-        'used_for' => 'settle',
+        'used_for' => 'audit,settle,not saved',
       ],
       'payment_method' => [
         'name' => 'payment_method',
@@ -573,8 +580,9 @@ class Message {
         'label' => E::ts('Gateway batch reference'),
         'description' => E::ts('The gateway batch number'),
         'api_field' => 'contribution_settlement.settlement_batch_reference',
+        'api_field_reversal' => 'contribution_settlement.settlement_batch_reversal_reference',
         'api_entity' => 'Contribution',
-        'used_for' => 'WMFAudit.settle api',
+        'used_for' => 'settle',
       ],
     ];
     foreach ($fields as $index => $field) {
@@ -1018,6 +1026,35 @@ class Message {
 
   public function getBackendProcessorTxnID(): ?string {
     return $this->message['backend_processor_txn_id'] ?? NULL;
+  }
+
+  public function getSettlementFields(): array {
+    $fields = [];
+    if ($this->getSettledDate()) {
+      foreach ($this->getAvailableFields() as $key => $spec) {
+        if ($key === 'settled_date') {
+          $fields['contribution_settlement.settled_date'] = $this->getSettledDate();
+        }
+        elseif (($spec['used_for'] ?? NULL ) === 'settle' && isset($spec['api_field']) && isset($this->message[$key])) {
+          $apiKey = $this->isReversal() ? ($spec['api_field_reversal'] ?? $spec['api_field']) : $spec['api_field'];
+          $fields[$apiKey] = $this->message[$key];
+        }
+      }
+    }
+    return $fields;
+  }
+
+  public function getSettledDate() : ?string {
+    return empty($this->message['settled_date']) ? NULL : date('Y-m-d H:i:s T', $this->message['settled_date']);
+  }
+
+  /**
+   * Is this a donation reversal?
+   *
+   * @return bool
+   */
+  public function isReversal(): bool {
+    return FALSE;
   }
 
 }

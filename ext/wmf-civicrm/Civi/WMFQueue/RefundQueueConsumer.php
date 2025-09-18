@@ -182,17 +182,16 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     $amount_scammed = 0;
 
     try {
-      $contribution = civicrm_api3('Contribution', 'getsingle', [
-        'id' => $contribution_id,
-        'return' => [
+      $contribution = Contribution::get(FALSE)
+        ->addWhere('id', '=', $contribution_id)
+        ->setSelect([
           'total_amount',
           'trxn_id',
-          'contribution_source',
+          'source',
           'contact_id',
           'receive_date',
-          'contribution_status_id',
-        ],
-      ]);
+          'contribution_status_id:name',
+        ])->execute()->single();
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(
@@ -200,15 +199,12 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       );
     }
 
-    // Note that my usual reservation about using BAO functions from custom code is overridden by the
-    // caching problems we are hitting in testing (plus the happy knowledge the tests care about this line of
-    // code).
-    if (\CRM_Contribute_BAO_Contribution::isContributionStatusNegative($contribution['contribution_status_id'])
+    if (in_array($contribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded'], TRUE)
     ) {
       throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: $contribution_id");
     }
     // Deal with any discrepancies in the refunded amount.
-    [$original_currency, $original_amount] = explode(" ", $contribution['contribution_source']);
+    [$original_currency, $original_amount] = explode(" ", $contribution['source']);
 
     if ($refund_currency !== NULL) {
       if ($refund_currency != $original_currency) {
@@ -233,13 +229,20 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     }
 
     try {
-      civicrm_api3('Contribution', 'create', [
-        'id' => $contribution_id,
-        'debug' => 1,
-        'contribution_status_id' => $messageObject->getContributionStatus(),
-        'cancel_date' => $messageObject->getDate(),
-        'refund_trxn_id' => $refund_gateway_txn_id,
-      ]);
+      Contribution::update(FALSE)
+        ->setDebug(TRUE)
+        ->addWhere('id', '=', $contribution_id)
+        ->setValues([
+          'contribution_status_id:name' => $messageObject->getContributionStatus(),
+          'cancel_date' => $messageObject->getDate(),
+          'refund_trxn_id' => $refund_gateway_txn_id,
+        ]
+          // These fields do include a settlement_date override
+          // - I'm still working through whether that is a good thing
+          // but at this stage there is nothing to over-ride and the
+          // whole data structure is still 'settling' (geddit).
+          + $messageObject->getSettlementFields()
+        )->execute();
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(
@@ -278,7 +281,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
             'debug' => 1,
             'contribution_extra.parent_contribution_id' => $contribution_id,
             'contribution_extra.no_thank_you' => 1,
-          ])->execute();
+          ]  + $messageObject->getSettlementFields())->execute();
         }
         catch (\CRM_Core_Exception $e) {
           throw new WMFException(

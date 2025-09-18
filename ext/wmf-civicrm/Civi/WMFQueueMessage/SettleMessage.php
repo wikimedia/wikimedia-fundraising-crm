@@ -33,7 +33,7 @@ class SettleMessage extends DonationMessage {
     'settled_date',
   ];
 
-  public function getSettledDate() {
+  public function getSettledDate(): string {
     return $this->message['settled_date'];
   }
 

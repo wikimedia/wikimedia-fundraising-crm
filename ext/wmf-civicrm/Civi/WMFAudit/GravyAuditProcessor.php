@@ -64,11 +64,4 @@ class GravyAuditProcessor extends BaseAuditProcessor {
     return '/gravy_all_transactions_report/';
   }
 
-  protected function get_order_id($transaction) {
-    if (is_array($transaction) && array_key_exists('order_id', $transaction)) {
-      return $transaction['order_id'];
-    }
-    return FALSE;
-  }
-
 }

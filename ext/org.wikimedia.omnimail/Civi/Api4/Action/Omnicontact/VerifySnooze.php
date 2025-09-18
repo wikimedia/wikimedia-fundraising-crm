@@ -6,6 +6,7 @@ use Civi\Api4\Email;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Omnicontact;
+use CRM_Omnimail_Helper;
 use GuzzleHttp\Client;
 
 /**
@@ -101,6 +102,7 @@ class VerifySnooze extends AbstractAction {
         \Civi::log('wmf')->info('unable to retrieve from Acoustic: ' . $snoozedEmail['email']) . $e->getMessage();
       }
     }
+    CRM_Omnimail_Helper::logout();
   }
 
   /**

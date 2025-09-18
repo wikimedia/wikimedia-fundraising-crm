@@ -18,6 +18,8 @@ use SmashPig\PaymentData\FinalStatus;
  *
  * @method $this setGateway(string $gateway) Set gateway code
  * @method array getGateway() Get WMF normalised values.
+ * @method $this setPaymentMethod(string $paymentMethod) Optional, limits resolver to just this method
+ * @method string getPaymentMethod() One of 'cc', 'google', 'paypal'
  * @method $this setMinimumAge(int $minimumAge) Set minimum txn age (minutes)
  * @method int getMinimumAge() Get minimum age of txns to process
  * @method $this setBatch(int $batch) Set consumer batch limit
@@ -33,6 +35,12 @@ class Consume extends AbstractAction {
    * @required
    */
   protected $gateway;
+
+  /**
+   * Optional, can be one of 'cc', 'google', 'paypal'
+   * @var string
+   */
+  protected $paymentMethod;
 
   /**
    * Minimum age of pending transactions to process (in minutes)
@@ -58,7 +66,7 @@ class Consume extends AbstractAction {
     \CRM_SmashPig_ContextWrapper::createContext('pending_transaction_resolver', $this->gateway);
     $pendingDb = PendingDatabase::get();
     $message = $pendingDb->fetchMessageByGatewayOldest(
-      $this->gateway, PendingTransaction::getResolvableMethods()
+      $this->gateway, $this->getMethodsToResolve()
     );
     $statusCounts = [
       FinalStatus::COMPLETE => 0,
@@ -82,21 +90,23 @@ class Consume extends AbstractAction {
       $statusCounts[$resolveResult['status']] = ($statusCounts[$resolveResult['status']] ?? 0) + 1;
       $pendingDb->deleteMessage($message);
       $processed++;
-      $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway, PendingTransaction::getResolvableMethods());
+      $message = $pendingDb->fetchMessageByGatewayOldest($this->gateway, $this->getMethodsToResolve());
       // Keep track of emails with completed transactions so we can skip duplicates
       if ($resolveResult['status'] === FinalStatus::COMPLETE) {
         $this->emailsWithResolvedTransactions[$resolveResult['email']] = TRUE;
       }
     }
+    $qualifier = $this->getPaymentMethod() ? ' with method ' . $this->getPaymentMethod() : '';
     if (!$message) {
       Civi::log('wmf')->info(
-        'All {gateway} pending transactions resolved', ['gateway' => $this->gateway]
+        'All {gateway} pending transactions{qualifier} resolved',
+        ['gateway' => $this->gateway, 'qualifier' => $qualifier]
       );
     }
     else if ($message['date'] >= UtcDate::getUtcTimestamp("-{$this->minimumAge} minutes")) {
       Civi::log('wmf')->info(
-        'All {gateway} pending transactions older than {minimumAge} minutes resolved',
-        ['gateway' => $this->gateway, 'minimumAge' => $this->minimumAge]
+        'All {gateway} pending transactions{qualifier} older than {minimumAge} minutes resolved',
+        ['gateway' => $this->gateway, 'qualifier' => $qualifier, 'minimumAge' => $this->minimumAge]
       );
     }
     if ($this->timeLimit > 0 && time() >= $startTime + $this->timeLimit) {
@@ -116,5 +126,12 @@ class Consume extends AbstractAction {
       'counts_by_status' => $statusCounts,
       'time_elapsed' => time() - $startTime
     ]);
+  }
+
+  protected function getMethodsToResolve(): array {
+    if ($this->paymentMethod) {
+      return [$this->paymentMethod];
+    }
+    return PendingTransaction::getResolvableMethods();
   }
 }

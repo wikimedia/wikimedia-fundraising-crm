@@ -9,6 +9,7 @@ use Civi\Api4\WMFConfig;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
 use CRM_Wmf_ExtensionUtil as E;
+use League\Csv\Reader;
 
 /**
  * Collection of upgrade steps.
@@ -2832,6 +2833,36 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
           ->addValue('contribution_recur_smashpig.original_country:abbr', substr($contributionRecur['currency'], 0, 2))
           ->execute();
       }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Fix opt_in values skipped because of WmfContact::save update handling
+   * Bug: T401353
+   *
+   * @return bool
+   */
+  public function upgrade_4655(): bool {
+    if (!file_exists('/tmp/optins_to_backfill.csv')) {
+      return TRUE;
+    }
+    $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
+      'type' => 'Sql',
+      'runner' => 'task',
+      'retry_limit' => 10,
+      'reset' => FALSE,
+      'error' => 'abort',
+    ]));
+    $queue->setRunAs(['contactId' => 1]);
+    $reader = Reader::createFromPath('/tmp/optins_to_backfill.csv');
+
+    foreach ($reader->getRecords(['email','timestamp','opt_in']) as $record) {
+      $queue->api4('WMFContact', 'BackfillOptIn', [
+        'email' => $record['email'],
+        'date' => $record['timestamp'],
+        'opt_in' => (bool)$record['opt_in'],
+      ], [], ['weight' => 100]);
     }
     return TRUE;
   }

@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\Omnicontact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use \CRM_Omnimail_ExtensionUtil as E;
+use CRM_Omnimail_Helper;
 use GuzzleHttp\Client;
 
 /**

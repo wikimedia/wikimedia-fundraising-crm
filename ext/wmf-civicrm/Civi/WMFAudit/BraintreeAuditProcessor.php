@@ -54,19 +54,4 @@ class BraintreeAuditProcessor extends BaseAuditProcessor {
     return '/settlement_batch_report_/';
   }
 
-  /**
-   * Initial logs for Braintree have no gateway transaction id, just our
-   * contribution tracking id.
-   *
-   * @param array $transaction possibly incomplete set of transaction data
-   *
-   * @return string|false the order_id, or false if we can't figure it out
-   */
-  protected function get_order_id($transaction) {
-    if (is_array($transaction) && array_key_exists('invoice_id', $transaction)) {
-      return $transaction['invoice_id'];
-    }
-    return FALSE;
-  }
-
 }
