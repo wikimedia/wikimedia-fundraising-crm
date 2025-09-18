@@ -298,12 +298,6 @@ class AuditMessage extends DonationMessage {
     if (!empty($this->message['order_id'])) {
       return $this->message['order_id'];
     }
-    if ($this->isFundraiseUp()) {
-      return $this->message['gateway_txn_id'] ?? FALSE;
-    }
-    if ($this->isIngenico()) {
-      return $this->message['gateway_parent_id'] ?? FALSE;
-    }
     return NULL;
   }
 
