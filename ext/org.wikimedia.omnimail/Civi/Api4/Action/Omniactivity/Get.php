@@ -3,6 +3,7 @@ namespace Civi\Api4\Action\Omniactivity;
 
 use Civi\Api4\Action\Omniaction;
 use Civi\Api4\Generic\Result;
+use CRM_Omnimail_Helper;
 
 /**
  *  Class Check.
@@ -44,6 +45,7 @@ class Get extends Omniaction {
       'end_date' => $this->end,
       'limit' => $this->limit,
     ]);
+    CRM_Omnimail_Helper::logout();
     foreach ($rows as $row) {
       $result[] = $row;
     }

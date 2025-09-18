@@ -6,6 +6,7 @@ use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
 use Civi\Api4\Generic\Result;
+use CRM_Omnimail_Helper;
 
 /**
  *  Class Check.
@@ -62,6 +63,7 @@ class Load extends Omniaction {
         'start_date' => $this->start ?: NULL,
         'end_date' => $this->end ?: NULL,
       ]);
+      CRM_Omnimail_Helper::logout();
     }
     catch (\CRM_Omnimail_IncompleteDownloadException $e) {
       $omniObject->saveJobSetting([
@@ -71,6 +73,7 @@ class Load extends Omniaction {
         // saved as the last_timestamp.
         'progress_end_timestamp' => $omniObject->endTimeStamp,
       ], 'omnirecipient_incomplete_download');
+      CRM_Omnimail_Helper::logout();
       return;
     }
 
