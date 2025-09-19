@@ -1631,8 +1631,8 @@ abstract class BaseAuditProcessor {
    * @throws \Exception
    */
   protected function send_queue_message($body, $type) {
-    static $isFirst = TRUE;
-    if ($isFirst) {
+    static $isFirstHere = TRUE;
+    if ($isFirstHere) {
       \Civi::log('wmf')->info("Queued missing contribution {gateway} and gateway_txn_id {gateway_txn_id}\n", [
         'gateway' => $body['gateway'],
         'gateway_txn_id' => $body['gateway_txn_id'] ?? NULL,
@@ -1641,7 +1641,7 @@ abstract class BaseAuditProcessor {
         'contribution_tracking_id' => $body['contribution_tracking_id'] ?? NULL,
         'invoice_id' => $body['invoice_id'] ?? NULL,
       ]);
-      $isFirst = FALSE;
+      $isFirstHere = FALSE;
     }
     $queueNames = [
       'main' => 'donations',
