@@ -14,6 +14,7 @@ use CRM_SmashPig_ContextWrapper;
  * @method $this setIsMakeMissing(bool $isMakeMissing)
  * @method $this setIsSettle(bool $isSettle)
  * @method $this setIsStopOnFirstMissing(bool $isStopOnFirstMissing)
+ * @method $this setIsMoveCompletedFile(bool $isMoveCompletedFile)
  * @method $this setFile(string $file)
  * @method $this setLogSearchPastDays(int $logSearchPastDays)
  * @method $this setFileLimit(?int $fileLimit)
@@ -34,6 +35,15 @@ class Parse extends AbstractAction {
    * @var bool
    */
   public bool $isSettle = FALSE;
+
+  /**
+   * Is move completed file.
+   *
+   * In tests this is set to false for convenience.
+   *
+   * @var bool
+   */
+  public bool $isMoveCompletedFile = TRUE;
 
   /**
    * Should parsing stop on the first missing one.
@@ -82,6 +92,7 @@ class Parse extends AbstractAction {
       'log_search_past_days' => $this->logSearchPastDays,
       'is_settle' => $this->isSettle,
       'is_stop_on_first_missing' => $this->isStopOnFirstMissing,
+      'is_move_completed_file' => $this->isMoveCompletedFile
     ];
   }
 

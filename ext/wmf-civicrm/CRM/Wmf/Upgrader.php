@@ -2854,7 +2854,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
       'reset' => FALSE,
       'error' => 'abort',
     ]));
-    $queue->setRunAs(['contactId' => 1]);
+    $queue->setRunAs(['contactId' => CRM_Core_Session::getLoggedInContactID()]);
     $reader = Reader::createFromPath('/tmp/optins_to_backfill.csv');
 
     foreach ($reader->getRecords(['email','timestamp','opt_in']) as $record) {

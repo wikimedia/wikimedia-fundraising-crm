@@ -1200,7 +1200,11 @@ abstract class BaseAuditProcessor {
    *
    * @return boolean true on success, otherwise false
    */
-  protected function move_completed_recon_file($file) {
+  protected function move_completed_recon_file(string $file): bool {
+    if (!$this->get_runtime_options('is_move_completed_file')) {
+      // Generally in unit tests we want the files left unmoved.
+      return TRUE;
+    }
     $files_directory = $this->getCompletedFilesDirectory();
     $completed_dir = $files_directory;
     if (!is_dir($completed_dir)) {
