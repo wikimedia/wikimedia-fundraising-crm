@@ -565,6 +565,13 @@ class Message {
         'data_type' => 'Datetime',
         'description' => 'Timestamp when source record was queued',
       ],
+      'source_name' => [
+        'name' => 'source_name',
+        'data_type' => 'String',
+        'description' => 'Source Name',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_extra.source_name',
+      ],
       'Gift_Data.Appeal' => [
         'name' => 'Gift_Data.Appeal',
         'data_type' => 'String',
@@ -966,7 +973,6 @@ class Message {
     if ($field['custom_group']['extends'] === 'Contribution' && !in_array($field['name'], [
       'gateway_account',
       'no_thank_you',
-      'source_name',
       'source_type',
       'source_host',
       'source_run_id',
@@ -976,11 +982,7 @@ class Message {
       'Appeal',
       'Fund',
       'Campaign',
-      'backend_processor',
-      'backend_processor_txn_id',
-      'payment_orchestrator_reconciliation_id',
       'gateway_status_raw',
-      'gateway_txn_id',
     ])) {
       return NULL;
     }
