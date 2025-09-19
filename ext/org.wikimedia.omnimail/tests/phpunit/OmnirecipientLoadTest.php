@@ -207,7 +207,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   public function testCompleteIncomplete(): void {
-    $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
+    $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load', FALSE);
     $now = time();
     $this->createSetting([
       'job' => 'omnimail_omnirecipient_load',
@@ -236,7 +236,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   public function testCompleteIncompleteUseSuffix(): void {
-    $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load');
+    $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load', FALSE);
     $this->createSetting([
       'job' => 'omnimail_omnirecipient_load',
       'mailing_provider' => 'Silverpop',

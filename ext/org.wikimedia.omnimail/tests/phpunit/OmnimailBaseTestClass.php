@@ -163,30 +163,40 @@ class OmnimailBaseTestClass extends TestCase {
    *
    * @return \GuzzleHttp\Client
    */
-  protected function setupSuccessfulDownloadClient(string $job = 'omnimail_omnigroupmembers_load'): Client {
+  protected function setupSuccessfulDownloadClient(string $job = 'omnimail_omnigroupmembers_load', bool $isUpdateSetting = TRUE, string $fileName = 'Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv') : Client {
     $responses = [
       file_get_contents(__DIR__ . '/Responses/RawRecipientDataExportResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
     //Raw Recipient Data Export Jul 02 2017 21-46-49 PM 758.zip
-    copy(__DIR__ . '/Responses/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv', sys_get_temp_dir() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv');
+    copy(__DIR__ . '/Responses/' . $fileName, sys_get_temp_dir() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv');
     fopen(sys_get_temp_dir() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv.complete', 'c');
-    $this->createSetting(['job' => $job, 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
+    if ($isUpdateSetting) {
+      $this->createSetting(['job' => $job, 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
+    }
+    else {
+      // In this case we are starting as it it has already started and do not need the first one ...
+      unset($responses[0]);
+    }
     return $this->getMockRequest($responses);
   }
 
   /**
    * Set up the mock client to imitate a success result.
    *
-   * @return \GuzzleHttp\Client
+   * @param bool $isFirst
+   * @return Client
    */
-  protected function setupSuccessfulWebTrackingDownloadClient(): Client {
+  protected function setupSuccessfulWebTrackingDownloadClient(bool $isFirst = TRUE): Client {
     $responses = [
       file_get_contents(__DIR__ . '/Responses/WebTrackingDataExportResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
+    if (!$isFirst) {
+      unset($responses[0]);
+    }
     //Raw Recipient Data Export Jul 02 2017 21-46-49 PM 758.zip
     copy(__DIR__ . '/Responses/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv', sys_get_temp_dir() . '/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv');
     fopen(sys_get_temp_dir() . '/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv.complete', 'c');

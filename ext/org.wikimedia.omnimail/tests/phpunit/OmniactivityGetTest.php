@@ -86,8 +86,7 @@ class OmniactivityGetTest extends OmnimailBaseTestClass {
       ->execute()->single();
     $this->assertEquals('2024-12-29 00:00:00', $progress['progress_end_timestamp']);
     $this->assertEquals(7, $progress['offset'], 'offset should be equal to the limit + the ignored rows');
-
-    $this->setupSuccessfulWebTrackingDownloadClient();
+    $this->setupSuccessfulWebTrackingDownloadClient(FALSE);
     $result = Omniactivity::load(FALSE)
       ->setClient($this->getGuzzleClient())
       // This would be picked up from settings if not set here.

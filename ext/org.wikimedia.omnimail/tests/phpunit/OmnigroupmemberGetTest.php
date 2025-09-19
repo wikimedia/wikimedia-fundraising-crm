@@ -55,16 +55,22 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass {
    *@return \GuzzleHttp\Client
    *
    */
-  protected function setupSuccessfulDownloadClient(string $job = 'omnimail_omnigroupmembers_load'): Client {
+  protected function setupSuccessfulDownloadClient(string $job = 'omnimail_omnigroupmembers_load', bool $isUpdateSetting = TRUE, string $fileName = '20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv'): Client {
+
     $responses = array(
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     );
-    copy(__DIR__ . '/Responses/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv', sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
+    copy(__DIR__ . '/Responses/' . $fileName, sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
     fopen(sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv.complete', 'c');
-    $this->createSetting(array('job' => $job, 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800'));
-
+    if ($isUpdateSetting) {
+      $this->createSetting(array('job' => $job, 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800'));
+    }
+    else {
+      // In this case we are starting as it it has already started and do not need the first one ...
+      unset($responses[0]);
+    }
     $client = $this->getMockRequest($responses);
     return $client;
   }
