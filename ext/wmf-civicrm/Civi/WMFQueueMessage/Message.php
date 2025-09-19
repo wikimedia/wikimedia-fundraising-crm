@@ -1037,6 +1037,7 @@ class Message {
       'Fund',
       'gateway_status_raw',
     ])) {
+      \Civi::log('wmf')->info(static::class . ' undeclared field - please fix this ' . $field['name']);
       return NULL;
     }
     $this->availableFields[$name] = $this->loadOptionsForField($field);
