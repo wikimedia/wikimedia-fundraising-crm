@@ -154,6 +154,8 @@ class AuditMessage extends DonationMessage {
     $message['settled_date'] = $this->getSettlementTimeStamp();
     $message['gateway'] = $this->getGateway();
     $message['gateway_txn_id'] = $this->getGatewayTxnId();
+    $message['backend_processor'] = $this->getBackendProcessor();
+    $message['backend_processor_txn_id'] = $this->getBackendProcessorTxnID();
     if ($this->message['settlement_batch_reference'] ?? NULL) {
       $message['settlement_batch_reference'] = $this->getSettlementBatchReference();
     }
