@@ -55,10 +55,14 @@ class Message {
    * Constructor.
    */
   public function __construct(array $message) {
-    $messageProperty = ReflectionUtils::getCodeDocs((new \ReflectionProperty($this, 'message')), 'Property');
-    if (isset($messageProperty['shape'])) {
-      $this->supportedFields = $messageProperty['shape'];
+    if (!isset(\Civi::$statics[__CLASS__]['supportedFields'])) {
+      \Civi::$statics[__CLASS__]['supportedFields'] = [];
+      $messageProperty = ReflectionUtils::getCodeDocs((new \ReflectionProperty($this, 'message')), 'Property');
+      if (isset($messageProperty['shape'])) {
+        \Civi::$statics[__CLASS__]['supportedFields'] = $messageProperty['shape'];
+      }
     }
+    $this->supportedFields = \Civi::$statics[__CLASS__]['supportedFields'];
 
     foreach (array_keys($message) as $key) {
       if ($this->isLogUnavailableFields && !isset($this->getAvailableFields()[$key])) {
@@ -126,7 +130,10 @@ class Message {
     if (isset($this->availableFields)) {
       return $this->availableFields;
     }
-    $contactFields = Contact::getFields(FALSE)->setAction('save')->execute()->indexBy('name');
+    if (!isset(\Civi::$statics[__CLASS__]['availableFields'])) {
+      \Civi::$statics[__CLASS__]['availableFields'] = [];
+    }
+    $this->availableFields = &\Civi::$statics[__CLASS__]['availableFields'];
     $fields = [
       'gateway' => [
         'name' => 'gateway',
@@ -585,6 +592,7 @@ class Message {
         'used_for' => 'settle',
       ],
     ];
+    $contactFields = Contact::getFields(FALSE)->setAction('save')->execute()->indexBy('name');
     foreach ($fields as $index => $field) {
       if (($field['api_entity'] ?? '') === 'Contact' && isset($contactFields[$field['api_field']])) {
         $field += $contactFields[$field['api_field']];
