@@ -4,6 +4,7 @@ namespace Civi\WMFQueueMessage;
 
 use Civi\API\EntityLookupTrait;
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\Utils\ReflectionUtils;
 use Civi\WMFException\WMFException;
@@ -593,9 +594,13 @@ class Message {
       ],
     ];
     $contactFields = Contact::getFields(FALSE)->setAction('save')->execute()->indexBy('name');
+    $contributionFields = Contribution::getFields(FALSE)->setAction('save')->execute()->indexBy('name');
     foreach ($fields as $index => $field) {
       if (($field['api_entity'] ?? '') === 'Contact' && isset($contactFields[$field['api_field']])) {
         $field += $contactFields[$field['api_field']];
+      }
+      if (($field['api_entity'] ?? '') === 'Contribution' && !empty($field['api_field']) && isset($contributionFields[$field['api_field']])) {
+        $field += $contributionFields[$field['api_field']];
       }
       $this->availableFields[$index] = $field;
     }
