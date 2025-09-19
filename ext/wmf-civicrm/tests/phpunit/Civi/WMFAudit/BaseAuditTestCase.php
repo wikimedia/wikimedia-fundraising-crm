@@ -66,6 +66,12 @@ class BaseAuditTestCase extends TestCase {
             unset($actual[$index]['contribution_id']);
             unset($actual[$index]['parent_contribution_id']);
           }
+          if (array_key_exists('backend_processor', $actual[$index])) {
+            $expected[$index] += array_fill_keys([
+              'backend_processor',
+              'backend_processor_txn_id',
+            ], NULL);
+          }
         }
         $this->assertEquals($expected, $actual);
       }
