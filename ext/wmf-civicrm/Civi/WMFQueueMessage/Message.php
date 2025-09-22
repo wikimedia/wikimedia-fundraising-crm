@@ -219,6 +219,13 @@ class Message {
         'api_field' => 'contribution_extra.payment_orchestrator_reconciliation_id',
         'api_entity' => 'Contribution',
       ],
+      'parent_contribution_id' => [
+        'name' => 'parent_contribution_id',
+        'title' => 'Parent Contribution ID',
+        'data_type' => 'Integer',
+        'api_field' => 'contribution_extra.parent_contribution_id',
+        'api_entity' => 'Contribution',
+      ],
       'invoice_id' => [
         'title' => E::ts('Invoice ID'),
         'name' => 'invoice_id',
