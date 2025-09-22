@@ -33,7 +33,13 @@ class DonationMessage extends Message {
    *   phone: string,
    *   email: string,
    *   country: string,
-   *   opt_in: string
+   *   opt_in: string,
+   *   source_enqueued_time: string,
+   *   source_name: string,
+   *   source_host: string,
+   *   source_type: string,
+   *   source_run_id: string,
+   *   source_version: string,
    *  }
    */
   protected array $message;
