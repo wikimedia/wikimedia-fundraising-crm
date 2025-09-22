@@ -245,6 +245,7 @@ class Message {
         'name' => 'currency',
         'api_entity' => 'Contribution',
         'api_field' => 'contribution_extra.original_currency',
+        'getter' => 'getOriginalCurrency',
         'description' => E::ts('Original Currency'),
         'data_type' => 'String',
         'used_for' => 'All payment messages',
@@ -330,9 +331,12 @@ class Message {
       'original_currency' => [
         'name' => 'original_currency',
         'data_type' => 'String',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_extra.original_currency',
         'description' => 'Currency in which payment was originally provided.',
         'used_for' => '*tbd',
         'replacement_for' => 'currency',
+        'getter' => 'getOriginalCurrency',
       ],
       'settled_currency' => [
         'title' => E::ts('Settled Currency'),
