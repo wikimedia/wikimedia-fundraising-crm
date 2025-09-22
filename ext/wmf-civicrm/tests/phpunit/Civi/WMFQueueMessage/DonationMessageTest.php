@@ -64,7 +64,6 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
       'txn_type' => 'subscr_payment',
       'utm_campaign' => '',
       'contribution_extra.gateway_txn_id' => '1234AB1234-2',
-      'contribution_extra.Postmark_Date' => NULL,
       'Gift_Data.Appeal' => '',
       'contribution_extra.original_amount' => '20',
       'contribution_extra.original_currency' => 'ILS',
