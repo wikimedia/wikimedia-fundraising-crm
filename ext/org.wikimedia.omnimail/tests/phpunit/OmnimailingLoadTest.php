@@ -74,7 +74,6 @@ class OmnimailingLoadTest extends OmnimailBaseTestClass {
       // The query look ups are at the end.
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
     if ($isCached) {
       // Because these have been retrieved there is no outgoing call here.

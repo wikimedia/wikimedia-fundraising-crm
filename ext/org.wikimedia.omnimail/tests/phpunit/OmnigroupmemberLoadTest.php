@@ -287,7 +287,6 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     for ($i = 0; $i < 15; $i++) {
       $responses[] = file_get_contents(__DIR__ . '/Responses/JobStatusWaitingResponse.txt');
     }
-    $responses[] = file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt');
 
     $group = $this->callAPISuccess('Group', 'create', ['name' => 'Omnimailers2', 'title' => 'Omni2']);
 
@@ -371,7 +370,6 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $responses = [
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
     // Note that the copy-to is the same for all tests - because otherwise we would need
     // the file name altered in the responses (above) too - the file name is data from Acoustic.

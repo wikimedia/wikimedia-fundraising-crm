@@ -126,8 +126,6 @@ class OmnimailBaseTestClass extends TestCase {
     $responses = [];
     if ($authenticateFirst) {
       $this->authenticate();
-      // Make sure there is a logout at the end.
-      $body[] = file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt');
     }
     foreach ($body as $responseBody) {
       $responses[] = new Response(200, [], $responseBody);
@@ -167,7 +165,6 @@ class OmnimailBaseTestClass extends TestCase {
     $responses = [
       file_get_contents(__DIR__ . '/Responses/RawRecipientDataExportResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
     //Raw Recipient Data Export Jul 02 2017 21-46-49 PM 758.zip
     copy(__DIR__ . '/Responses/' . $fileName, sys_get_temp_dir() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv');
@@ -192,7 +189,6 @@ class OmnimailBaseTestClass extends TestCase {
     $responses = [
       file_get_contents(__DIR__ . '/Responses/WebTrackingDataExportResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
     if (!$isFirst) {
       unset($responses[0]);
@@ -347,7 +343,6 @@ class OmnimailBaseTestClass extends TestCase {
       );
       $i++;
     }
-    $files[] = '/Responses/LogoutResponse.txt';
 
     $this->createMockHandlerForFiles($files);
     $this->setUpClientWithHistoryContainer();

@@ -27,7 +27,6 @@ class OmnirecipientInformationRequestTest extends OmnimailBaseTestClass {
       '/Responses/Privacy/PrivacyRequest1.txt',
       '/Responses/Privacy/PrivacyRequest2.txt',
       '/Responses/Privacy/PrivacyRequest3.txt',
-      '/Responses/LogoutResponse.txt',
     ]);
     $this->setUpClientWithHistoryContainer();
     $result = $this->callAPISuccess('Omnirecipient', 'informationrequest', [

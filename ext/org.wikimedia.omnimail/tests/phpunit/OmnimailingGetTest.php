@@ -38,7 +38,6 @@ class OmnimailingGetTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/GetMailingTemplateResponse2.txt'),
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/GetQueryResponse.txt'),
-      file_get_contents(__DIR__ . '/Responses/LogoutResponse.txt'),
     ];
 
     $mailings = $this->callAPISuccess('Omnimailing', 'get', [
