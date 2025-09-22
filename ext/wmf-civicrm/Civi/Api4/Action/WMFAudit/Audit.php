@@ -54,10 +54,9 @@ class Audit extends AbstractAction {
       // Here we would ideally queue but short term we will probably process in real time on specific files
       // as we test.
       // @todo - create queue option (after maybe some testing with this).
-      // Commented out until a bit more testing done. (would need to be run deliberately
-      // anyway).
-      // WMFAudit::settle(FALSE)
-      //  ->setValues($message->normalize())->execute();
+      // For now this only kicks in when run mannually.
+      WMFAudit::settle(FALSE)
+       ->setValues($message->normalize())->execute();
     }
    // @todo - we would ideally augment the missing messages here from the Pending table
     // allowing us to drop 'log_hunt_and_send'
