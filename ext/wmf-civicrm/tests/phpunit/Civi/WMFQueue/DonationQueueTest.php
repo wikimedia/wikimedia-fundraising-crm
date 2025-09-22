@@ -2336,7 +2336,7 @@ class DonationQueueTest extends BaseQueueTestCase {
    * If contact record hash is different from that specified in the import, create new record and activity
    * that links the contacts and the contribution.
    */
-  public function testImportWithHashmismatchNamemismatch(): void {
+  public function testImportWithHashMismatchNameIsMatch(): void {
     $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Test',
