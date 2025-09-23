@@ -7,6 +7,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Email;
 use Civi\Api4\Generic\Result;
 use CRM_Omnimail_Helper;
+use League\Csv\UnavailableStream;
 
 /**
  *  Class Check.
@@ -75,6 +76,17 @@ class Load extends Omniaction {
       ], 'omnirecipient_incomplete_download');
       CRM_Omnimail_Helper::logout();
       return;
+    }
+    catch (UnavailableStream $e) {
+      // The csv could not be loaded - forget about it and try again.
+      // This might happen if our file had been removed & when we try upstream
+      // it is not there to fetch.
+      $omniObject->saveJobSetting([
+        'progress_end_timestamp' => 'null',
+        'offset' => 'null',
+        'retrieval_parameters' => 'null',
+      ], 'omniactivity_file_failed');
+      throw new \CRM_Core_Exception('file error - try again');
     }
 
     foreach ($rows as $row) {
