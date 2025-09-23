@@ -16,7 +16,7 @@ use GuzzleHttp\Client;
  * @method int getContactID()
  * @method $this setLimit(int $limit)
  * @method int getLimit()
- * @method $this setOffset(int $offset)
+ * @method $this setOffset(?int $offset)
  * @method int getOffset()
  * @method $this setStart(string $start)
  * @method string getStart()
@@ -54,9 +54,9 @@ abstract class Omniaction extends AbstractAction {
   protected int $limit = 0;
 
   /**
-   * @var int
+   * @var int|null
    */
-  protected int $offset = 0;
+  protected ?int $offset = NULL;
 
   /**
    * @var string

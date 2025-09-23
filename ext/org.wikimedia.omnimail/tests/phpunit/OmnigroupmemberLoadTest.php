@@ -112,8 +112,12 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'email_primary.email' => 'bob@example.org',
     ], 'mouse');
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnigroupmembers_load', TRUE, 'phone-consent-list.csv');
+    $this->addMockResponse(file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt'));
+    $consentResponse = file_get_contents(__DIR__ . '/Responses/ConsentInformationResponse.txt');
+    $this->addMockResponse($consentResponse);
+    $this->addMockResponse(file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt'));
+    $this->addMockResponse(str_replace('OPTED-IN', 'OPTED-OUT', $consentResponse));
 
-    // Create an existing Phone Consent - this one will be updated to opt-out.
     PhoneConsent::create(FALSE)
       ->setValues([
         'country_code' => 1,
@@ -127,6 +131,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       ->setGroupIdentifier(12345)
       ->setClient($client)
       ->setLimit(5)
+      ->setIsConsentOptOutGroup(TRUE)
       ->execute();
     $consent = PhoneConsent::get(FALSE)
       ->addWhere('phone_number', '=', 23456789)
@@ -134,8 +139,8 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $this->assertEquals(1, $consent['country_code']);
     $this->assertEquals(123456, $consent['master_recipient_id']);
     $this->assertEquals(23456789, $consent['phone_number']);
-    $this->assertEquals('2024-12-19 20:24:00', $consent['consent_date']);
-    $this->assertEquals('Opt in thru web form named RML - Phone Added via API. IP Address: 12.34.56.78', $consent['consent_source']);
+    $this->assertEquals('2024-11-27 00:08:59', $consent['consent_date']);
+    $this->assertEquals('Sms Consent Kafka Streams', $consent['consent_source']);
     $this->assertTrue($consent['opted_in']);
 
     $consent = PhoneConsent::get(FALSE)

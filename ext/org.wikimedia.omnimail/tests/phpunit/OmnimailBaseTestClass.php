@@ -179,6 +179,10 @@ class OmnimailBaseTestClass extends TestCase {
     return $this->getMockRequest($responses);
   }
 
+  protected function addMockResponse($responseBody) {
+    $this->mockHandler->append(new Response(200, [], $responseBody));
+  }
+
   /**
    * Set up the mock client to imitate a success result.
    *

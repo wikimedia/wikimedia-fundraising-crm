@@ -50,7 +50,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
 
     $mailerCredentials = CRM_Omnimail_Helper::getCredentials($params);
     $jobParameters = ['timeout' => $params['timeout']];
-    if (empty($params['is_suppression_list'])) {
+    if (empty($params['is_include_opt_out'])) {
       $jobParameters['exportType'] = 'OPT_IN';
     }
 
@@ -62,7 +62,7 @@ class CRM_Omnimail_Omnigroupmembers extends CRM_Omnimail_Omnimail{
     }
 
     $startTimestamp = $this->getStartTimestamp($params);
-    $this->endTimeStamp = $this->getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
+    $this->endTimeStamp = $this->getEndTimestamp($params['end_date'] ?? NULL, $settings, $startTimestamp);
 
     if ($this->getRetrievalParameters()) {
       $request->setRetrievalParameters($this->getRetrievalParameters());
