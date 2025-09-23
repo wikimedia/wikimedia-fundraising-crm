@@ -45,8 +45,7 @@ class OmnirecipientEraseTest extends OmnimailBaseTestClass {
 
     $requests = $this->getRequestBodies();
     // We check what we sent out....
-    $this->assertEquals($requests[0], trim(file_get_contents(__DIR__ . '/Requests/AuthenticateRest.txt')));
-    $this->assertEquals($requests[1], file_get_contents(__DIR__ . '/Requests/privacy_csv.txt'));
+    $this->assertEquals($requests[0], file_get_contents(__DIR__ . '/Requests/privacy_csv.txt'));
 
   }
 

@@ -78,7 +78,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
 
     // Check the request we sent out had the right email in it.
     $requests = $this->getRequestBodies();
-    $this->assertEquals("Email,charlie@example.com\n", $requests[1], print_r($requests, 1));
+    $this->assertEquals("Email,charlie@example.com\n", $requests[0], print_r($requests, 1));
     Civi::settings()->set('omnimail_credentials', $settings);
   }
 

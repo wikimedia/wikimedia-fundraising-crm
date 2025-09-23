@@ -23,7 +23,6 @@ class OmnirecipientInformationRequestTest extends OmnimailBaseTestClass {
    */
   public function testOmnirecipientInformationRequest(): void {
     $this->createMockHandlerForFiles([
-      '/Responses/AuthenticateRestResponse.txt',
       '/Responses/Privacy/PrivacyRequest1.txt',
       '/Responses/Privacy/PrivacyRequest2.txt',
       '/Responses/Privacy/PrivacyRequest3.txt',
@@ -40,8 +39,7 @@ class OmnirecipientInformationRequestTest extends OmnimailBaseTestClass {
 
     $this->assertEquals(1417692990, $result->getOptInTimestamp());
     $requests = $this->getRequestBodies();
-    $this->assertEquals($requests[0], trim(file_get_contents(__DIR__ . '/Requests/AuthenticateRest.txt')));
-    $this->assertEquals($requests[1], file_get_contents(__DIR__ . '/Requests/privacy_csv.txt'));
+    $this->assertEquals($requests[0], file_get_contents(__DIR__ . '/Requests/privacy_csv.txt'));
   }
 
 }

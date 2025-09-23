@@ -46,7 +46,6 @@ class OmniphoneUpdateTest extends OmnimailBaseTestClass {
       ->execute();
     $this->getMockRequest([
       file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt'),
-      file_get_contents(__DIR__ . '/Responses/AuthenticateRestResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/ConsentInformationResponse.txt'),
     ]);
 

@@ -28,7 +28,6 @@ class OmnicontactGetTest extends OmnimailBaseTestClass {
   public function testGetRecipient(): void {
     $this->getMockRequest([
       file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt'),
-      file_get_contents(__DIR__ . '/Responses/AuthenticateRestResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/ConsentInformationResponse.txt'),
     ]);
 
@@ -59,7 +58,6 @@ class OmnicontactGetTest extends OmnimailBaseTestClass {
     $lazyBones = Omnicontact::verifySnooze(FALSE)
       ->setClient($this->getMockRequest([
         file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt'),
-        file_get_contents(__DIR__ . '/Responses/AuthenticateRestResponse.txt'),
         file_get_contents(__DIR__ . '/Responses/ConsentInformationResponse.txt'),
       ]))
 

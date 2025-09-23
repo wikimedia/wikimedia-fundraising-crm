@@ -326,7 +326,7 @@ class OmnimailBaseTestClass extends TestCase {
    * @param int $connectionCount
    */
   protected function setUpForErase(int $connectionCount = 1): void {
-    $files = ['/Responses/AuthenticateRestResponse.txt'];
+    $files = [];
     $i = 0;
     while ($i < $connectionCount) {
       // These files consist of the Authenticate request and the 'status pending'.
@@ -353,7 +353,6 @@ class OmnimailBaseTestClass extends TestCase {
    */
   protected function setUpForEraseFollowUpSuccess(): void {
     $files = [
-      '/Responses/AuthenticateRestResponse.txt',
       '/Responses/Privacy/EraseInProgressResponse.txt',
       '/Responses/Privacy/EraseSuccessResponse.txt',
     ];
