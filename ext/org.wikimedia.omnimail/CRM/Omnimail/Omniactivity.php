@@ -108,7 +108,6 @@ class CRM_Omnimail_Omniactivity extends CRM_Omnimail_Omnimail {
         return $rows;
       }
       else {
-        CRM_Omnimail_Helper::logout();
         sleep($settings['omnimail_job_retry_interval']);
       }
     }
