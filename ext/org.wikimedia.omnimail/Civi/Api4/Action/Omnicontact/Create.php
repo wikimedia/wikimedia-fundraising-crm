@@ -3,7 +3,6 @@ namespace Civi\Api4\Action\Omnicontact;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use CRM_Omnimail_Helper;
 use GuzzleHttp\Client;
 use CRM_Omnimail_ExtensionUtil as E;
 
@@ -105,7 +104,6 @@ class Create extends AbstractAction {
       'snooze_end_date' => $this->getSnoozeDate(),
       'check_permissions' => $this->getCheckPermissions(),
     ]);
-    CRM_Omnimail_Helper::logout();
   }
 
   public function fields(): array {

@@ -2,7 +2,6 @@
 
 use Omnimail\Silverpop\Credentials;
 use GuzzleHttp\Client;
-use SilverpopConnector\SilverpopXmlConnector;
 
 /**
  * Created by IntelliJ IDEA.
@@ -159,16 +158,4 @@ class CRM_Omnimail_Helper {
     return $client;
   }
 
-  /**
-   * Safely attempt to log out of the XML connector
-   * @return void
-   */
-  public static function logout() {
-    try {
-      SilverpopXmlConnector::getInstance()->logout();
-    }
-    catch (\Exception $e) {
-      \Civi::log('wmf')->warning('Difficulties logging out of Acoustic: ' . $e->getMessage());
-    }
-  }
 }

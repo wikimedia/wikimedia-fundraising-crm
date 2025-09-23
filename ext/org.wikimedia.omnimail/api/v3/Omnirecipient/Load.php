@@ -36,7 +36,6 @@ function civicrm_api3_omnirecipient_load($params) {
   try {
     $omnimail = new CRM_Omnimail_Omnirecipients($params);
     $recipients = $omnimail->getResult($params);
-    CRM_Omnimail_Helper::logout();
     $jobSettings = $omnimail->getJobSettings();
 
     $throttleSeconds = CRM_Utils_Array::value('throttle_seconds', $params);
@@ -106,7 +105,6 @@ function civicrm_api3_omnirecipient_load($params) {
       'retrieval_parameters' => $e->getRetrievalParameters(),
       'progress_end_timestamp' => $e->getEndTimestamp(),
     ], 'omnirecipient_incomplete_download');
-    CRM_Omnimail_Helper::logout();
     return civicrm_api3_create_success(1);
   }
 

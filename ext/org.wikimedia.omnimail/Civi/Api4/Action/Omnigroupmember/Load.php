@@ -6,7 +6,6 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\GroupContact;
 use Civi\Api4\PhoneConsent;
-use CRM_Omnimail_Helper;
 use GuzzleHttp\Client;
 use Omnimail\Silverpop\Responses\Contact;
 
@@ -179,7 +178,6 @@ class Load extends AbstractAction {
       ]);
       return;
     }
-    CRM_Omnimail_Helper::logout();
 
     $offset = $job->getOffset();
     $limit = $params['limit'] ?? NULL;
