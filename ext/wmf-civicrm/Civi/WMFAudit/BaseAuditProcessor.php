@@ -1287,16 +1287,8 @@ abstract class BaseAuditProcessor {
         ->execute()->single();
       $this->recordStatistic($auditRecord, $file);
       if ($auditRecord['is_missing']) {
-        if (
-          !$auditRecord['is_negative'] && (
-            (($auditRecord['message']['gateway'] ?? NULL) === 'gravy' && ($auditRecord['message']['audit_file_gateway'] ?? NULL) === 'adyen')
-            || ($auditRecord['message']['type'] ?? NULL) === 'fee'
-          )
-        ) {
+        if (($auditRecord['message']['type'] ?? NULL) === 'fee') {
           // For now continue to skip these.
-          // We are trying to co-ordinate allowing them to bubble up from smash-pig
-          // with adding handling for them in the Audit classes but this is the
-          // chicken & that is the egg.
           continue;
         }
         $key = $auditRecord['is_negative'] ? 'negative' : 'main';
