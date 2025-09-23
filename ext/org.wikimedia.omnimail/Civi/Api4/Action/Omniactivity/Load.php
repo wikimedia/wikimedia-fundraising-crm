@@ -81,6 +81,8 @@ class Load extends Omniaction {
       // The csv could not be loaded - forget about it and try again.
       // This might happen if our file had been removed & when we try upstream
       // it is not there to fetch.
+      // Arguably we should set the last_timestamp to progress_end_timestamp
+      // but starting again from known success feels safer.
       $omniObject->saveJobSetting([
         'progress_end_timestamp' => 'null',
         'offset' => 'null',
