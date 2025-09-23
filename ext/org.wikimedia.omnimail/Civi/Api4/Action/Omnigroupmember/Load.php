@@ -236,8 +236,8 @@ class Load extends AbstractAction {
               ])
             );
           }
-          $contact = $contactCreateCall->execute()->first();
-          $result[$contact['id']] = $contact;
+          $createdContact = $contactCreateCall->execute()->first();
+          $result[$createdContact['id']] = $createdContact;
         }
         elseif ($this->getIsSuppressionList() && count($emails) > 0) {
           foreach ($emails as $email) {
@@ -307,7 +307,7 @@ class Load extends AbstractAction {
       }
       $count++;
       // Every row seems extreme but perhaps not in this performance monitoring phase.
-      $job->saveJobSetting(array_merge($jobSettings, array('offset' => $offset + $count)));
+      $job->saveJobSetting(array_merge($jobSettings, ['offset' => $offset + $count]));
 
       $rowsLeftBeforeThrottle--;
       if ($throttleStagePoint && (strtotime('now') > $throttleStagePoint)) {
