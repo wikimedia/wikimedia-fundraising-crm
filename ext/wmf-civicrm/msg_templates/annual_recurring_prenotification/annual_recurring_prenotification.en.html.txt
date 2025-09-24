@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+  <meta name="x-apple-disable-message-reformatting">
+  <title></title>
+  <style>
+    * { box-sizing: border-box; }
+    table { border-collapse: collapse; mso-table-lspace: 0; mso-table-rspace: 0; }
+    u + .body a { color: inherit; text-decoration: none; font-size: inherit; font-weight: inherit; line-height: inherit; }
+    div[style*="margin: 16px 0"] { margin: 0 !important; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+    a { color:inherit; mso-color-alt: windowtext; text-decoration: none; }
+    span.MsoHyperlink { color: inherit !important; mso-style-priority: 99 !important; }
+    span.MsoHyperlinkFollowed { color: inherit !important; mso-style-priority: 99 !important; }
+    @font-face {
+      font-family: 'Source Serif Pro';
+      font-style: italic;
+      font-weight: 600;
+      font-display: swap;
+      src: url("https://tools-static.wmflabs.org/fontcdn/s/sourceserif4/v8/vEF02_tTDB4M7-auWDN0ahZJW1ge6NmXpVAHV83Bfb_US2D2QYxoUKIkn98pmFhtDMQCjDDUXmAz.woff2") format('woff2');
+      mso-generic-font-family: roman;
+    }
+    @font-face {
+      font-family: 'Source Serif Pro';
+      font-style: normal;
+      font-weight: 600;
+      font-display: swap;
+      src: url("https://tools-static.wmflabs.org/fontcdn/s/sourceserif4/v8/vEFy2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6OAVIJmeUDygwjisltnhtdDs4DrjTMXw.woff2") format('woff2');
+      mso-generic-font-family: roman;
+    }
+  </style>
+  <style>
+    @media only screen and (max-width:480px) {
+      .w-full { width: 100% !important; }
+      .px-20 { padding-left: 20px !important; padding-right: 20px !important; }
+    }
+    @media print {
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#FFFFFF;" class="body">
+<!-- START PREHEADER -->
+<div style="display:none">
+  {contact.first_name}, your generosity supports Wikipedia all year long.
+  &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+</div>
+<!-- END PREHEADER -->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+  <tr>
+    <td align="center" bgcolor="#FFFFFF">
+      <!-- START EMAIL CONTENT -->
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="width:600px;min-width:360px;border-collapse:separate;" class="w-full">
+        <!-- START HEADER -->
+        <tr>
+          <td align="left" style="padding:16px 0 8px 0;">
+            <img src="https://upload.wikimedia.org/wikipedia/donate/7/7a/Header-wiki-logos.png" alt="Wikipedia & Wikimedia Foundation Logo" width="600" style="width:600px;display:block;" class="w-full">
+          </td>
+        </tr>
+        <!-- END HEADER -->
+        <!-- START BODY -->
+        <tr>
+          <td align="center" class="px-20">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="520" style="width:520px;" class="w-full">
+              <!-- START COPY -->
+              <tr>
+                <td align="left" style="padding-bottom:32px;">
+                  <p style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:#202122;">
+                    Hello, {contact.first_name}!
+                    <br><br>
+                    This is a friendly reminder that your yearly donation of {contribution_recur.amount} will be charged automatically on {contribution_recur.next_sched_contribution_date}. You will receive an additional email receipt after your gift is processed.
+                    <br><br>
+                    We can’t thank you enough for your thoughtful gift. Supporters like you are rare—only 2% of Wikipedia readers donate. <strong>With your commitment to giving annually, you help safeguard the future of our nonprofit mission to share knowledge with the world.</strong> We are truly grateful.
+                    <br><br>
+                    Today the world’s largest encyclopedia is more essential than ever. What makes Wikipedia unique is that it is sustained by contributions from readers like you—not by advertising or corporate interests. Your gifts help Wikipedia maintain its integrity, quality, and accessibility. Thank you, {contact.first_name}.
+                    <br><br>
+                    With gratitude,<br><br>
+                    Lisa Seitz Gruwell<br>
+                    Deputy CEO, <a style="color:#202122; text-decoration:underline;" target="_blank" href="https://wikimediafoundation.org/give/">Wikimedia Foundation</a><br><br>
+                    P.S. If you wish to cancel or update your donation, <a style="color:#202122; text-decoration:underline;" target="_blank" href="https://donate.wikimedia.org/wiki/Cancel_or_change_recurring_giving">please follow the instructions here</a>.
+                  </p>
+                </td>
+              </tr>
+              <!-- END COPY -->
+            </table>
+          </td>
+        </tr>
+        <!-- END BODY -->
+        <!-- START FOOTER -->
+        <tr>
+          <td class="px-20" style="padding:32px 40px;">
+            <!-- START FOOTER COPY -->
+            <p style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight:400; font-size:12px; line-height:20px; color:#202122;">
+              <br><br>
+              You are receiving this email at {contact.email} as a valued donor of the Wikimedia Foundation. If you do not wish to receive emails from the Wikimedia Foundation, you can <a href="{$unsubscribe_link}" style="color:#202122; text-decoration:underline;" target="_blank">manage your communication preferences</a>. Please note we will still send you receipts and transactional emails, like this one, for future donations.
+              <br><br>
+              Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
+              <br><br>
+              Ref CiviAnnPre{contact.preferred_language} {contribution_recur.id}
+            </p>
+          <!-- END FOOTER COPY -->
+          </td>
+        </tr>
+        <!-- END FOOTER -->
+      </table>
+      <!-- END EMAIL CONTENT -->
+    </td>
+  </tr>
+</table>
+</body>
+</html>

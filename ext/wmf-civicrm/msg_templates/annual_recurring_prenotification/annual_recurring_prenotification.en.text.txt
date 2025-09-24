@@ -1,0 +1,19 @@
+Hello, {contact.first_name}!
+
+This is a friendly reminder that your yearly donation of {contribution_recur.amount} will be charged automatically on {contribution_recur.next_sched_contribution_date}. You will receive an additional email receipt after your gift is processed.
+
+We can’t thank you enough for your thoughtful gift. Supporters like you are rare—only 2% of Wikipedia readers donate. With your commitment to giving annually, you help safeguard the future of our nonprofit mission to share knowledge with the world. We are truly grateful.
+
+Today the world’s largest encyclopedia is more essential than ever. What makes Wikipedia unique is that it is sustained by contributions from readers like you—not by advertising or corporate interests. Your gift helps Wikipedia maintain its integrity, quality, and accessibility. Thank you, {contact.first_name}.
+
+With gratitude,
+Lisa Seitz Gruwell
+Deputy CEO, Wikimedia Foundation
+
+P.S. If you wish to cancel or update your donation, please follow the instructions here: https://donate.wikimedia.org/wiki/Cancel_or_change_recurring_giving.
+
+You are receiving this email at {contact.email} as a valued donor of the Wikimedia Foundation. If you do not wish to receive emails from the Wikimedia Foundation, you can manage your communication preferences at {$unsubscribe_link}. Please note we will still send you receipts and transactional emails, like this one, for future donations.
+
+Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
+
+Ref CiviAnnPre{contact.preferred_language} {contribution_recur.id}
