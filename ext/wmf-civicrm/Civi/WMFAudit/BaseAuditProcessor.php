@@ -1739,7 +1739,7 @@ abstract class BaseAuditProcessor {
   }
 
   public function getBatchInformation(): array {
-    return $this->batches;
+    return $this->get_runtime_options('is_stop_on_first_missing') ? [] : $this->batches;
   }
 
 }
