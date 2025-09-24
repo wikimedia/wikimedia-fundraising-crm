@@ -4,6 +4,7 @@ namespace Civi\Test;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\Queue;
 use Civi\Helper\SmashPigPaymentError;
 use Psr\Log\LogLevel;
 use SmashPig\Core\Context;
@@ -120,6 +121,9 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
+    Civi\Api4\QueueItem::delete(FALSE)
+      ->addWhere('queue_name', '=', 'email')
+      ->execute();
     foreach ($this->oldSettings as $setting => $value) {
       \Civi::settings()->set(
         $setting, $value
@@ -1179,6 +1183,10 @@ class SmashPigTest extends SmashPigBaseTestClass {
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
+    // Run the queue task to send the email
+    Queue::run(FALSE)
+      ->setQueue('email')
+      ->execute();
 
     $contributionRecurRecord = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $contributionRecur['id'],
@@ -1238,6 +1246,11 @@ class SmashPigTest extends SmashPigBaseTestClass {
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
+
+    // Run the queue task to send the email
+    Queue::run(FALSE)
+      ->setQueue('email')
+      ->execute();
 
     $contributionRecurRecord = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $contributionRecur['id'],
@@ -1304,6 +1317,10 @@ class SmashPigTest extends SmashPigBaseTestClass {
       TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
+
+    Queue::run(FALSE)
+      ->setQueue('email')
+      ->execute();
 
     $contributionRecurRecord = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $contributionRecur['id'],
@@ -1386,6 +1403,10 @@ class SmashPigTest extends SmashPigBaseTestClass {
     );
     $processor->run();
 
+    Queue::run(FALSE)
+      ->setQueue('email')
+      ->execute();
+
     // confirm the charge failed and was cancelled
     $checkContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $contributionRecur1['id'],
@@ -1416,6 +1437,11 @@ class SmashPigTest extends SmashPigBaseTestClass {
   public function testCancelMessage() {
     $this->setupFailureTemplate();
     $contributionRecur = $this->setupAndFailRecurring();
+
+    Queue::run(FALSE)
+      ->setQueue('email')
+      ->execute();
+
     $activity = $this->getLatestFailureMailActivity((int) $contributionRecur['id']);
     $month = date('F');
     $expectedMessage = "Dear Harry,
