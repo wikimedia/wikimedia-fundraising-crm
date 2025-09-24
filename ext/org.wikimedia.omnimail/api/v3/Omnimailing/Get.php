@@ -30,6 +30,7 @@ function civicrm_api3_omnimailing_get($params) {
   $mailerParameters = [
     'StartTimeStamp' => strtotime($params['start_date']),
     'EndTimeStamp' => strtotime($params['end_date']),
+    'timeout' => $params['timeout'],
   ];
 
   $mailings = (array) $mailer->getMailings($mailerParameters)->getResponse();
@@ -162,6 +163,11 @@ function _civicrm_api3_omnimailing_get_spec(&$params) {
     'title' => ts('Include mailing text and html, set to FALSE for concise data'),
     'type' => CRM_Utils_Type::T_BOOLEAN,
     'api.default' => TRUE,
+  ];
+  $params['timeout'] = [
+    'title' => ts('Http request time out'),
+    'type' => CRM_Utils_Type::T_INT,
+    'api.default' => 20,
   ];
 
 }

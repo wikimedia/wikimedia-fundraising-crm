@@ -73,9 +73,9 @@ class BatchSend extends AbstractAction {
     $ty_query = <<<EOT
 		SELECT civicrm_contribution.id, trxn_id, civicrm_contribution.contact_id
 		FROM civicrm_contribution
-		INNER JOIN wmf_contribution_extra
+		STRAIGHT_JOIN wmf_contribution_extra
 			ON wmf_contribution_extra.entity_id = civicrm_contribution.id
-		INNER JOIN civicrm_email e ON e.contact_id = civicrm_contribution.contact_id AND e.is_primary = 1
+		STRAIGHT_JOIN civicrm_email e ON e.contact_id = civicrm_contribution.contact_id AND e.is_primary = 1
 		WHERE
 			receive_date > %1 AND
 			thankyou_date IS NULL AND

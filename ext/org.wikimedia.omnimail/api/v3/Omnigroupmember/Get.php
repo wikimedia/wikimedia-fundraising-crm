@@ -18,7 +18,6 @@ function civicrm_api3_omnigroupmember_get($params) {
   $params['limit'] = $options['limit'];
   $job = new CRM_Omnimail_Omnigroupmembers($params);
   $result = $job->getResult($params);
-  CRM_Omnimail_Helper::logout();
   $values = $job->formatResult($params, $result);
   return civicrm_api3_create_success($values);
 }

@@ -2136,6 +2136,7 @@ function _wmf_civicrm_get_phone_data_fields(): array {
       'label' => 'Acoustic recipient ID',
       'data_type' => 'Float',
       'html_type' => 'Text',
+      'is_searchable' => TRUE,
       'column_name' => 'recipient_id',
     ],
     'phone_update_date' => [
