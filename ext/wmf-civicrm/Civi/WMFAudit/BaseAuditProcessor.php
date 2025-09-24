@@ -481,7 +481,9 @@ abstract class BaseAuditProcessor {
       // Note that we are not archiving files that have missing transactions,
       // which might be resolved below. Those are archived on the next run,
       // once we can confirm they have hit Civi and are no longer missing.
-      if ($missingCount <= $this->get_runtime_options('recon_complete_count')) {
+      if ($missingCount <= $this->get_runtime_options('recon_complete_count')
+        && !$this->get_runtime_options('is_stop_at_first_missing')
+      ) {
         $this->move_completed_recon_file($file);
       }
     }
