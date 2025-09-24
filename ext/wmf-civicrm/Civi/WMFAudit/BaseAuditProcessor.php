@@ -482,7 +482,7 @@ abstract class BaseAuditProcessor {
       // which might be resolved below. Those are archived on the next run,
       // once we can confirm they have hit Civi and are no longer missing.
       if ($missingCount <= $this->get_runtime_options('recon_complete_count')
-        && !$this->get_runtime_options('is_stop_at_first_missing')
+        && !$this->get_runtime_options('is_stop_on_first_missing')
       ) {
         $this->move_completed_recon_file($file);
       }
@@ -1290,7 +1290,7 @@ abstract class BaseAuditProcessor {
         }
         $key = $auditRecord['is_negative'] ? 'negative' : 'main';
         $this->missingTransactions[$key][] = $auditRecord['message'];
-        if ($this->get_runtime_options('is_stop_at_first_missing')) {
+        if ($this->get_runtime_options('is_stop_on_first_missing')) {
           \Civi::log('wmf')->info('stopping on first missing', $auditRecord + ['transaction' => $transaction]);
           break;
         }
