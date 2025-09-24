@@ -25,15 +25,23 @@ function civicrm_api3_omnimailing_get($params) {
   date_default_timezone_set('UTC');
   CRM_Core_DAO::executeQuery("SET TIME_ZONE='+00:00'");
 
-  /* @var \Omnimail\Silverpop\Mailer $mailer */
-  $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
+    /* @var \Omnimail\Silverpop\Mailer $mailer */
+    $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
   $mailerParameters = [
     'StartTimeStamp' => strtotime($params['start_date']),
     'EndTimeStamp' => strtotime($params['end_date']),
     'timeout' => $params['timeout'],
   ];
-
-  $mailings = (array) $mailer->getMailings($mailerParameters)->getResponse();
+  try {
+    $mailings = (array) $mailer->getMailings($mailerParameters)->getResponse();
+  }
+  catch (Exception $e) {
+    \Civi::log('wmf')->error(get_class($e) . '
+      : start time {StartTimeStamp} end time {EndTimeStamp} timeout {timeout}' . $e->getMessage(), [
+      $mailerParameters
+    ]);
+    throw $e;
+  }
   $results = [];
   foreach ($mailings as $mailing) {
     /* @var \Omnimail\Silverpop\Responses\Mailing $mailing */
