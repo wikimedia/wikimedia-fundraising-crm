@@ -2879,7 +2879,26 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     return TRUE;
   }
 
-    /**
+  /**
+   * Drop 2020_2021 indexes from wmf_donor, make custom fields non-searchable
+   * Bug: T404925
+   *
+   * @return bool
+   */
+  public function upgrade_4665(): bool {
+    CRM_Core_BAO_SchemaHandler::dropIndexIfExists('wmf_donor', 'total_2020_2021');
+    CRM_Core_BAO_SchemaHandler::dropIndexIfExists('wmf_donor', 'INDEX_endowment_total_2020_2021');
+    CRM_Core_BAO_SchemaHandler::dropIndexIfExists('wmf_donor', 'INDEX_all_funds_total_2020_2021');
+    CRM_Core_BAO_SchemaHandler::dropIndexIfExists('wmf_donor', 'index_all_funds_total_2019_2020');
+
+    \Civi\Api4\CustomField::update(FALSE)
+      ->addValue('is_searchable', FALSE)
+      ->addWhere('name', 'LIKE', '%2020_2021%')
+      ->execute();
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
