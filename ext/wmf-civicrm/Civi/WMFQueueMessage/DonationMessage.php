@@ -292,6 +292,9 @@ class DonationMessage extends Message {
    * @return string
    */
   public function getOriginalAmount(): string {
+    if (!empty($this->message['original_total_amount'])) {
+      return $this->round($this->message['original_total_amount'], $this->message['original_currency']);
+    }
     return !empty($this->message['original_gross']) ? $this->cleanMoney($this->message['original_gross']) : $this->cleanMoney($this->message['gross'] ?? 0);
   }
 

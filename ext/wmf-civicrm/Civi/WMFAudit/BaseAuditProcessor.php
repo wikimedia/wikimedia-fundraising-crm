@@ -481,7 +481,9 @@ abstract class BaseAuditProcessor {
       // Note that we are not archiving files that have missing transactions,
       // which might be resolved below. Those are archived on the next run,
       // once we can confirm they have hit Civi and are no longer missing.
-      if ($missingCount <= $this->get_runtime_options('recon_complete_count')) {
+      if ($missingCount <= $this->get_runtime_options('recon_complete_count')
+        && !$this->get_runtime_options('is_stop_at_first_missing')
+      ) {
         $this->move_completed_recon_file($file);
       }
     }
@@ -490,6 +492,18 @@ abstract class BaseAuditProcessor {
     //get the date distribution on what's left... for ***main transactions only***
     //That should be to say: The things that are totally in the payments logs.
     //Other things, we will have to look other places, or just rebuild.
+    foreach ($this->getMissingDonations() as $index => $record) {
+      if (!empty($record['transaction_details'])) {
+        $fullRecord = $this->merge_data($record['transaction_details']['message'], $record);
+        if (empty($record['contribution_tracking'])) {
+          $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
+        }
+        unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
+        $this->send_queue_message($fullRecord, 'main');
+        unset($this->missingTransactions['main'][$index]);
+        $this->echo('%');
+      }
+    }
     $missing_by_date = $this->getMissingByDate();
 
     $remaining = NULL;
@@ -949,24 +963,7 @@ abstract class BaseAuditProcessor {
     $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $contributionTrackingId)->execute()->first();
 
     if (!$result) {
-      $this->logError("Missing Contribution Tracking data. Supposed ID='$contributionTrackingId'", 'DATA_INCOMPLETE');
-      $paymentMethod = $record['payment_method'] ?? '';
-      $fallbackContributionTrackingData = [
-        'id' => $contributionTrackingId,
-        'utm_medium' => 'audit',
-        'utm_source' => "audit..$paymentMethod",
-        'payment_method' => $paymentMethod,
-        'tracking_date' => date('Y-m-d H:i:s', $record['date'] ?? time()),
-        'language' => $record['language'] ?? NULL,
-        'country' => $record['country'] ?? NULL,
-      ];
-      QueueWrapper::push('contribution-tracking', $fallbackContributionTrackingData);
-      $fallbackContributionTrackingData['date'] = $record['date'];
-      $fallbackContributionTrackingData['utm_payment_method'] = $paymentMethod;
-      foreach (['language', 'ts', 'id', 'payment_method'] as $unsetme) {
-        unset($fallbackContributionTrackingData[$unsetme]);
-      }
-      return $fallbackContributionTrackingData;
+      return $this->createContributionTracking($contributionTrackingId, $record['payment_method'] ?? '', $record['date'] ?? NULL, $record['language'] ?? NULL, $record['country'] ?? NULL);
     }
 
     $this->echo("Found Contribution Tracking data. ID='$contributionTrackingId'", TRUE);
@@ -1526,6 +1523,33 @@ abstract class BaseAuditProcessor {
     // where the gaps are and it is informational.
     $this->batches[$batchName]['settled_fee_amount'] += $transaction['settled_fee_amount'] ?? 0;
     $this->batches[$batchName]['settled_net_amount'] += $transaction['settled_net_amount'] ?? 0;
+  }
+
+  /**
+   * @param mixed $contributionTrackingId
+   * @param array $record
+   * @return array
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  public function createContributionTracking(mixed $contributionTrackingId, string $paymentMethod, ?int $timestamp, ?string $language, ?string $country): array{
+    $this->logError("Missing Contribution Tracking data. Supposed ID='$contributionTrackingId'", 'DATA_INCOMPLETE');
+    $fallbackContributionTrackingData = [
+      'id' => $contributionTrackingId,
+      'utm_medium' => 'audit',
+      'utm_source' => "audit..$paymentMethod",
+      'payment_method' => $paymentMethod,
+      'tracking_date' => date('Y-m-d H:i:s', $timestamp ?? time()),
+      'language' => $language,
+      'country' => $country,
+    ];
+    QueueWrapper::push('contribution-tracking', $fallbackContributionTrackingData);
+    $fallbackContributionTrackingData['date'] = $timestamp;
+    $fallbackContributionTrackingData['utm_payment_method'] = $paymentMethod;
+    foreach (['language', 'ts', 'id', 'payment_method'] as $unsetme) {
+      unset($fallbackContributionTrackingData[$unsetme]);
+    }
+    return $fallbackContributionTrackingData;
   }
 
   protected function parse_json_log_line($line) {

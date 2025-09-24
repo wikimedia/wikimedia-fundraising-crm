@@ -2,11 +2,9 @@
 
 namespace Civi\Api4\Action\WMFAudit;
 
-use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\SettlementTransaction;
-use Civi\Api4\WMFAudit;
 use Civi\WMFQueueMessage\AuditMessage;
 
 /**
@@ -67,8 +65,7 @@ class Audit extends AbstractAction {
     // queue - this would allow us to process each audit file only once & the transactions would
     // be 'in the system' from then on until resolved. I guess the argument for the files is that
     // if they do not get processed for any reason the file sits there until they are truly processed....
-
-    $result[] = [
+    $record = [
       'is_negative' => $message->isNegative(),
       'message' => $message->normalize(),
       'payment_method' => $message->getPaymentMethod(),
@@ -77,6 +74,7 @@ class Audit extends AbstractAction {
       'is_missing' => $isMissing,
       'is_settled' => $message->isSettled(),
     ];
+    $result[] = $record;
   }
 
   public static function fields(): array {
