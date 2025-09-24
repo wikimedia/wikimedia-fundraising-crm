@@ -62,6 +62,19 @@ return [
     ],
 
   ],
-  'getIndices' => fn() => [],
+  'getIndices' => fn() => [
+    'index_master_recipient_id' => [
+      'fields' => [
+        'master_recipient_id' => TRUE,
+      ],
+      'add' => '6.6',
+    ],
+    'index_phone_number' => [
+      'fields' => [
+        'phone_number' => TRUE,
+      ],
+      'add' => '6.6',
+    ],
+  ],
   'getPaths' => fn() => [],
 ];

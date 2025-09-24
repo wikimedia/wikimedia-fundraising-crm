@@ -2868,6 +2868,18 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Add indexes to civicrm_phone_consent.
+   *
+   * Bug: T379702
+   *
+   * @return bool
+   */
+  public function upgrade_4660(): bool {
+    CRM_Core_BAO_SchemaHandler::createIndexes(['civicrm_phone_consent' => ['master_recipient_id', 'phone_number']]);
+    return TRUE;
+  }
+
+    /**
    * @param array $conversions
    *
    * @return void
