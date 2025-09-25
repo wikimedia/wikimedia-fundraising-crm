@@ -17,17 +17,29 @@ class DonationMessage extends Message {
    * WMF Donation Message.
    *
    * @var array{
+   *   gateway: string,
+   *   gateway_txn_id: string,
+   *   backend_processor: string,
+   *   backend_processor_txn_id: string,
+   *   payment_orchestrator_reconciliation_id: string,
    *   recurring: bool,
    *   contribution_recur_id: int,
    *   subscr_id: string,
    *   recurring_payment_token: string,
    *   date: string,
    *   utm_medium: string,
+   *   source_name: string,
    *   type: string,
    *   phone: string,
    *   email: string,
    *   country: string,
-   *   opt_in: string
+   *   opt_in: string,
+   *   source_enqueued_time: string,
+   *   source_name: string,
+   *   source_host: string,
+   *   source_type: string,
+   *   source_run_id: string,
+   *   source_version: string,
    *  }
    */
   protected array $message;

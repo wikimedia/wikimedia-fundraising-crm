@@ -4,6 +4,7 @@ namespace Civi\WMFQueueMessage;
 
 use Civi\API\EntityLookupTrait;
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\Utils\ReflectionUtils;
 use Civi\WMFException\WMFException;
@@ -55,10 +56,14 @@ class Message {
    * Constructor.
    */
   public function __construct(array $message) {
-    $messageProperty = ReflectionUtils::getCodeDocs((new \ReflectionProperty($this, 'message')), 'Property');
-    if (isset($messageProperty['shape'])) {
-      $this->supportedFields = $messageProperty['shape'];
+    if (!isset(\Civi::$statics[__CLASS__]['supportedFields'])) {
+      \Civi::$statics[__CLASS__]['supportedFields'] = [];
+      $messageProperty = ReflectionUtils::getCodeDocs((new \ReflectionProperty($this, 'message')), 'Property');
+      if (isset($messageProperty['shape'])) {
+        \Civi::$statics[__CLASS__]['supportedFields'] = $messageProperty['shape'];
+      }
     }
+    $this->supportedFields = \Civi::$statics[__CLASS__]['supportedFields'];
 
     foreach (array_keys($message) as $key) {
       if ($this->isLogUnavailableFields && !isset($this->getAvailableFields()[$key])) {
@@ -126,7 +131,10 @@ class Message {
     if (isset($this->availableFields)) {
       return $this->availableFields;
     }
-    $contactFields = Contact::getFields(FALSE)->setAction('save')->execute()->indexBy('name');
+    if (!isset(\Civi::$statics[__CLASS__]['availableFields'])) {
+      \Civi::$statics[__CLASS__]['availableFields'] = [];
+    }
+    $this->availableFields = &\Civi::$statics[__CLASS__]['availableFields'];
     $fields = [
       'gateway' => [
         'name' => 'gateway',
@@ -556,6 +564,43 @@ class Message {
         'name' => 'source_enqueued_time',
         'data_type' => 'Datetime',
         'description' => 'Timestamp when source record was queued',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_extra.source_enqueued_time',
+      ],
+      'source_name' => [
+        'name' => 'source_name',
+        'data_type' => 'String',
+        'description' => 'Source Name',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_extra.source_name',
+      ],
+      'source_host' => [
+        'name' => 'source_host',
+        'data_type' => 'String',
+        'description' => 'Source host',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_extra.source_host',
+      ],
+      'source_type' => [
+        'name' => 'source_type',
+        'data_type' => 'String',
+        'description' => 'Source type',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_extra.source_type',
+      ],
+      'source_run_id' => [
+        'name' => 'source_run_id',
+        'data_type' => 'String',
+        'description' => 'Source run ID',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_extra.source_run_id',
+      ],
+      'source_version' => [
+        'name' => 'source_version',
+        'data_type' => 'String',
+        'description' => 'Source version',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_extra.source_version',
       ],
       'Gift_Data.Appeal' => [
         'name' => 'Gift_Data.Appeal',
@@ -585,9 +630,14 @@ class Message {
         'used_for' => 'settle',
       ],
     ];
+    $contactFields = Contact::getFields(FALSE)->setAction('save')->execute()->indexBy('name');
+    $contributionFields = Contribution::getFields(FALSE)->setAction('save')->execute()->indexBy('name');
     foreach ($fields as $index => $field) {
       if (($field['api_entity'] ?? '') === 'Contact' && isset($contactFields[$field['api_field']])) {
         $field += $contactFields[$field['api_field']];
+      }
+      if (($field['api_entity'] ?? '') === 'Contribution' && !empty($field['api_field']) && isset($contributionFields[$field['api_field']])) {
+        $field += $contributionFields[$field['api_field']];
       }
       $this->availableFields[$index] = $field;
     }
@@ -953,21 +1003,11 @@ class Message {
     if ($field['custom_group']['extends'] === 'Contribution' && !in_array($field['name'], [
       'gateway_account',
       'no_thank_you',
-      'source_name',
-      'source_type',
-      'source_host',
-      'source_run_id',
-      'source_version',
-      'source_enqueued_time',
       'Donor_Specified',
       'Appeal',
       'Fund',
       'Campaign',
-      'backend_processor',
-      'backend_processor_txn_id',
-      'payment_orchestrator_reconciliation_id',
       'gateway_status_raw',
-      'gateway_txn_id',
     ])) {
       return NULL;
     }

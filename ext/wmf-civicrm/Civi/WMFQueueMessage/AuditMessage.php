@@ -241,7 +241,7 @@ class AuditMessage extends DonationMessage {
           ->execute()->first() ?? [];
       }
       $isGravy = FALSE;
-      if (empty($this->existingContribution) && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
+      if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
         $isGravy = TRUE;
         // Looking at a gravy transaction in the Adyen file?
         $this->existingContribution = Contribution::get(FALSE)
