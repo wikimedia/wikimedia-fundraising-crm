@@ -30,14 +30,15 @@ class PrenotifyAnnualDonors extends AbstractAction {
   public function _run( Result $result ) {
     $activityType = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Recurring Prenotification');
     // Get annual recurring contributions with next charge date less than $days days in the future
-    // and no activity of type 'Recurring Prenotification'
+    // and no activity of type 'Recurring Prenotification' in the last 3 months
     $recurringQuery = ContributionRecur::get(FALSE)
       ->addSelect('id', 'contact_id')
       ->addJoin(
         'Activity AS activity',
         'LEFT',
         ['activity.source_record_id', '=', 'id'],
-        ['activity.activity_type_id', '=', $activityType]
+        ['activity.activity_type_id', '=', $activityType],
+        ['activity.activity_date_time', '>', '-3 months'],
       )
       ->addWhere('frequency_unit', '=', 'year')
       ->addWhere('next_sched_contribution_date', 'BETWEEN', ['now', "+$this->days days"])
