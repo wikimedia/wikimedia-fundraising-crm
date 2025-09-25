@@ -40,6 +40,12 @@ class DonationMessage extends Message {
    *   source_type: string,
    *   source_run_id: string,
    *   source_version: string,
+   *   settled_date: string,
+   *   settled_total_amount: float,
+   *   settled_net_amount: float,
+   *   settled_fee_amount: float,
+   *   settled_currency: string,
+   *   settlement_batch_reference: string,
    *  }
    */
   protected array $message;
@@ -181,7 +187,7 @@ class DonationMessage extends Message {
         $this->ensureOptionValueExists($field['option_group_id'], $appealValue);
       }
     }
-    $msg += $this->getCustomFields();
+    $msg += $this->getSettlementFields() + $this->getCustomFields();
     $msg += $this->getPhoneFields();
 
     if ($this->isEndowmentGift()) {
