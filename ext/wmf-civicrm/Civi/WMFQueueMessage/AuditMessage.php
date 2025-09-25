@@ -321,13 +321,22 @@ class AuditMessage extends DonationMessage {
    *
    */
   public function getOrderID(): ?string {
+    $value = NULL;
     if (!empty($this->message['invoice_id'])) {
-      return $this->message['invoice_id'];
+      $value = $this->message['invoice_id'];
     }
-    if (!empty($this->message['order_id'])) {
-      return $this->message['order_id'];
+    elseif (!empty($this->message['order_id'])) {
+      $value = $this->message['order_id'];
     }
-    return NULL;
+    $check = explode('.', $value);
+    if (!is_numeric($check[0])) {
+      // Might be a Gravy reference - do a look up.
+      $transaction = $this->getTransactionDetails();
+      if (!empty($transaction['order_id'])) {
+        $value = $transaction['order_id'];
+      }
+    }
+    return $value;
   }
 
   /**
