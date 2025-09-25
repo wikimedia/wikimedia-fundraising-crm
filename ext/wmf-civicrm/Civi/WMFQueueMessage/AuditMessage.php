@@ -250,7 +250,7 @@ class AuditMessage extends DonationMessage {
           ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorTxnID())
           ->execute()->first() ?? [];
       }
-      elseif (empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
+      if (empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
         $this->existingContribution = Contribution::get(FALSE)
           ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
           ->addWhere('contribution_extra.gateway', '=', $this->getParentTransactionGateway())
