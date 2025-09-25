@@ -426,6 +426,9 @@ class Message {
         'data_type' => 'String',
         'description' => 'UTM Campaign identifier for analytics',
         'used_for' => 'All payment messages',
+        'api_field' => 'Gift_Data.Appeal',
+        'api_entity' => 'Contribution',
+        'getter' => 'getAppeal',
       ],
       'gift_source' => [
         'name' => 'gift_source',
@@ -891,11 +894,16 @@ class Message {
   public function getCustomFields(): array {
     $customFields = array_filter(['Gift_Data.Channel' => $this->getChannel()]);
     foreach ($this->message as $fieldName => $value) {
-      if ($fieldName === 'direct_mail_appeal' && !empty($this->message['utm_campaign'])) {
-        // This is a weird one, utm_campaign beats direct_mail_appeal because ... code history.
+      if (str_contains($fieldName, '.')) {
+        // It is already mapped to a v4 style custom field.
+        // e.g in a double normalize situation.
         continue;
       }
       $field = $this->getCustomFieldMetadataByFieldName($fieldName);
+      if (!empty($field['getter'])) {
+        // Let's handle ones with getters explicitly at the top level...
+        continue;
+      }
       if ($field && !isset($this->message[$field['api_field']])) {
         if ($field['data_type'] === 'Date' && is_integer($value)) {
           $value = '@' . $value;
@@ -995,8 +1003,6 @@ class Message {
       return empty($declaredField['custom_field_id']) ? NULL : $declaredField;
     }
     $fieldsToMap = [
-      'utm_campaign' => 'Gift_Data.Appeal',
-      'direct_mail_appeal' => 'Gift_Data.Appeal',
       'gift_source' => 'Gift_Data.Campaign',
       'restrictions' => 'Gift_Data.Fund',
       'gateway_status' => 'contribution_extra.gateway_status_raw',
@@ -1024,9 +1030,7 @@ class Message {
     if ($field['custom_group']['extends'] === 'Contribution' && !in_array($field['name'], [
       'no_thank_you',
       'Donor_Specified',
-      'Appeal',
       'Fund',
-      'Campaign',
       'gateway_status_raw',
     ])) {
       return NULL;
