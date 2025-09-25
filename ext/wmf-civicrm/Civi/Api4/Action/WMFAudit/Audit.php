@@ -5,6 +5,7 @@ namespace Civi\Api4\Action\WMFAudit;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\SettlementTransaction;
+use Civi\Api4\WMFAudit;
 use Civi\WMFQueueMessage\AuditMessage;
 
 /**

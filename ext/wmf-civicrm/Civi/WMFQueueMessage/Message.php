@@ -1008,7 +1008,6 @@ class Message {
     // code has been permission on contact field pass-through &
     // restrictive on contribution fields.
     if ($field['custom_group']['extends'] === 'Contribution' && !in_array($field['name'], [
-      'gateway_account',
       'no_thank_you',
       'Donor_Specified',
       'Appeal',
