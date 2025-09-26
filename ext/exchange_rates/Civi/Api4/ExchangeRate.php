@@ -20,6 +20,11 @@ class ExchangeRate extends Generic\DAOEntity {
       ->setCheckPermissions($checkPermissions);
   }
 
+  public static function convertContribution($checkPermissions = TRUE): Action\ExchangeRate\ConvertContribution {
+    return (new Action\ExchangeRate\ConvertContribution(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
   public static function getLatest($checkPermissions = TRUE): Action\ExchangeRate\GetLatest {
     return (new Action\ExchangeRate\GetLatest(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
