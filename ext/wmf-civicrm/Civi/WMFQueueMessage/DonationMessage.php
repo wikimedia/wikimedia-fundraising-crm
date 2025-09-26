@@ -206,7 +206,7 @@ class DonationMessage extends Message {
     }
     if ($this->isExchangeRateConversionRequired()) {
       \Civi::log('wmf')->info('wmf_civicrm: Converting to settlement currency: {old} -> {new}',
-        ['old' => $msg['currency'], 'new' => $this->getSettlementCurrency()]);
+        ['old' => $msg['currency'], 'new' => $this->getReportingCurrency()]);
     }
 
     $msg['original_gross'] = $msg['contribution_extra.original_amount'] = $this->getOriginalAmount();
@@ -215,10 +215,10 @@ class DonationMessage extends Message {
     // in \Civi\WMFHook\Contribution, which
     // covers other imports (e.g via the UI). However, that code currently does not
     // handle fees.
-    $msg['currency'] = $this->getSettlementCurrency();
-    $msg['fee'] = $this->getSettledFeeAmountRounded();
-    $msg['gross'] = $this->getSettledAmountRounded();
-    $msg['net'] = $this->getSettledNetAmountRounded();
+    $msg['currency'] = $this->getReportingCurrency();
+    $msg['fee'] = $this->getReportingFeeAmountRounded();
+    $msg['gross'] = $this->getReportingAmountRounded();
+    $msg['net'] = $this->getReportingNetAmountRounded();
 
     return $msg;
   }
@@ -328,14 +328,27 @@ class DonationMessage extends Message {
   }
 
   /**
+   * Get the amount of the donation in the currency it is settled in.
+   *
+   * @return float
+   */
+  public function getReportingAmount(): float {
+    return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
+  }
+
+  public function getSettledAmountRounded(): string {
+    return $this->round($this->getSettledAmount(), $this->getSettlementCurrency());
+  }
+
+  /**
    * Get the currency the donation is settled into at the gateway.
    */
   public function getSettlementCurrency(): string {
     return $this->message['settled_currency'] ?? $this->message['gross_currency'] ?? 'USD';
   }
 
-  public function getSettledAmountRounded(): string {
-    return $this->round($this->getSettledAmount(), $this->getSettlementCurrency());
+  public function getReportingAmountRounded(): string {
+    return $this->round($this->getReportingAmount(), $this->getReportingCurrency());
   }
 
   /**
@@ -356,6 +369,37 @@ class DonationMessage extends Message {
   }
 
   /**
+   * Get the fee amount charged by the processing gateway, when available
+   */
+  public function getReportingFeeAmount(): float {
+    if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
+      return $this->cleanMoney($this->message['fee']) * $this->getConversionRate();
+    }
+    if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
+      return $this->getReportingAmount() - $this->getReportingFeeAmount();
+    }
+    return 0.00;
+  }
+
+
+  public function getReportingFeeAmountRounded(): string {
+    return $this->round($this->getReportingFeeAmount(), $this->getReportingCurrency());
+  }
+
+  /**
+   * Get amount less any fee charged by the processor.
+   */
+  public function getReportingNetAmount(): float {
+    if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
+      return $this->cleanMoney($this->message['net']) * $this->getConversionRate();
+    }
+    if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
+      return $this->getReportingAmount() - $this->getReportingFeeAmount();
+    }
+    return $this->getReportingAmount();
+  }
+
+  /**
    * Get amount less any fee charged by the processor.
    */
   public function getSettledNetAmount(): float {
@@ -368,8 +412,8 @@ class DonationMessage extends Message {
     return $this->getSettledAmount();
   }
 
-  public function getSettledNetAmountRounded(): string {
-    return $this->round($this->getSettledNetAmount(), $this->getSettlementCurrency());
+  public function getReportingNetAmountRounded(): string {
+    return $this->round($this->getReportingNetAmount(), $this->getReportingCurrency());
   }
 
   /**
@@ -471,7 +515,7 @@ class DonationMessage extends Message {
       $errors[] = 'Required field/s missing from message: ' . implode(', ', $missingFields);
     }
 
-    if ($this->getSettledNetAmount() <= 0 || $this->getSettledAmount() <= 0) {
+    if ($this->getReportingNetAmount() <= 0 || $this->getReportingAmount() <= 0) {
       $errors[] = "Positive amount required.";
     }
 
@@ -504,7 +548,7 @@ class DonationMessage extends Message {
       return 1;
     }
     try {
-      return (float) $this->currencyConvert($this->getOriginalCurrency(), 1, $this->getTimestamp()) / $this->currencyConvert($this->getSettlementCurrency(), 1, $this->getTimestamp());
+      return (float) $this->currencyConvert($this->getOriginalCurrency(), 1, $this->getTimestamp()) / $this->currencyConvert($this->getReportingCurrency(), 1, $this->getTimestamp());
     }
     catch (ExchangeRatesException $e) {
       throw new WMFException(WMFException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$this->getOriginalCurrency()}': " . $e->getMessage());
@@ -515,7 +559,7 @@ class DonationMessage extends Message {
    * Are we dealing with a message that had a currency other than our settlement currency.
    */
   public function isExchangeRateConversionRequired(): bool {
-    return $this->message['currency'] !== $this->getSettlementCurrency();
+    return $this->message['currency'] !== $this->getReportingCurrency();
   }
 
   /**

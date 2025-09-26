@@ -763,6 +763,9 @@ class Message {
       ->first()['amount'];
   }
 
+  public function getReportingCurrency() {
+    return 'USD';
+  }
 
   /**
    * Get the time stamp for the message.
