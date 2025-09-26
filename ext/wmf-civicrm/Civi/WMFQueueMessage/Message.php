@@ -56,18 +56,18 @@ class Message {
    * Constructor.
    */
   public function __construct(array $message) {
-    if (!isset(\Civi::$statics[__CLASS__]['supportedFields'])) {
-      \Civi::$statics[__CLASS__]['supportedFields'] = [];
+    if (!isset(\Civi::$statics[static::class]['supportedFields'])) {
+      \Civi::$statics[static::class]['supportedFields'] = [];
       $messageProperty = ReflectionUtils::getCodeDocs((new \ReflectionProperty($this, 'message')), 'Property');
       if (isset($messageProperty['shape'])) {
-        \Civi::$statics[__CLASS__]['supportedFields'] = $messageProperty['shape'];
+        \Civi::$statics[static::class]['supportedFields'] = $messageProperty['shape'];
       }
     }
-    $this->supportedFields = \Civi::$statics[__CLASS__]['supportedFields'];
+    $this->supportedFields = \Civi::$statics[static::class]['supportedFields'];
 
     foreach (array_keys($message) as $key) {
       if ($this->isLogUnavailableFields && !isset($this->getAvailableFields()[$key])) {
-        \Civi::log('wmf')->info(__CLASS__ . ' undeclared field ' . $key);
+        \Civi::log('wmf')->info(static::class . ' undeclared field ' . $key);
       }
       if (!isset($this->supportedFields[$key])) {
         if ($this->isRestrictToSupportedFields) {
@@ -83,7 +83,7 @@ class Message {
           if ($this->isLogUnsupportedFields) {
             // log the key here? That way we can see what is not documented
             // and over time reduce it to nothing.
-            \Civi::log('wmf')->info(__CLASS__ . ' unsupported field ' . $key);
+            \Civi::log('wmf')->info(static::class . ' unsupported field ' . $key);
           }
         }
       }
@@ -131,10 +131,10 @@ class Message {
     if (isset($this->availableFields)) {
       return $this->availableFields;
     }
-    if (!isset(\Civi::$statics[__CLASS__]['availableFields'])) {
-      \Civi::$statics[__CLASS__]['availableFields'] = [];
+    if (!isset(\Civi::$statics[static::class]['availableFields'])) {
+      \Civi::$statics[static::class]['availableFields'] = [];
     }
-    $this->availableFields = &\Civi::$statics[__CLASS__]['availableFields'];
+    $this->availableFields = &\Civi::$statics[static::class]['availableFields'];
     $fields = [
       'gateway' => [
         'name' => 'gateway',
