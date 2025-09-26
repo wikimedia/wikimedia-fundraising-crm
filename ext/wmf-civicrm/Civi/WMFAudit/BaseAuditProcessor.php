@@ -214,7 +214,8 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function getIncomingFilesDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR;
+    $subdir = $this->get_runtime_options('is_completed') ? 'completed' : 'incoming';
+    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR;
   }
 
   /**

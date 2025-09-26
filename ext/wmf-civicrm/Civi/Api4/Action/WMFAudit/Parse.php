@@ -15,6 +15,7 @@ use CRM_SmashPig_ContextWrapper;
  * @method $this setIsSettle(bool $isSettle)
  * @method $this setIsStopOnFirstMissing(bool $isStopOnFirstMissing)
  * @method $this setIsMoveCompletedFile(bool $isMoveCompletedFile)
+ * @method $this setIsCompleted(bool $isCompleted)
  * @method $this setFile(string $file)
  * @method $this setLogSearchPastDays(int $logSearchPastDays)
  * @method $this setFileLimit(?int $fileLimit)
@@ -35,6 +36,13 @@ class Parse extends AbstractAction {
    * @var bool
    */
   public bool $isSettle = FALSE;
+
+  /**
+   * Should the parser find the file in the completed directory.
+   *
+   * @var bool
+   */
+  public bool $isCompleted = FALSE;
 
   /**
    * Is move completed file.
@@ -92,7 +100,8 @@ class Parse extends AbstractAction {
       'log_search_past_days' => $this->logSearchPastDays,
       'is_settle' => $this->isSettle,
       'is_stop_on_first_missing' => $this->isStopOnFirstMissing,
-      'is_move_completed_file' => $this->isMoveCompletedFile
+      'is_move_completed_file' => $this->isMoveCompletedFile,
+      'is_completed' => $this->isCompleted,
     ];
   }
 
@@ -102,6 +111,9 @@ class Parse extends AbstractAction {
     }
     if ($this->file) {
       \Civi::log('wmf')->info('File argument given, only processing specified file: ' . $this->file);
+    }
+    if ($this->isCompleted && !$this->file) {
+      throw new \CRM_Core_Exception('isCompleted is intended to be used for a specific already-parsed file');
     }
     \CRM_SmashPig_ContextWrapper::createContext($this->gateway . '_audit', $this->gateway);
     \CRM_SmashPig_ContextWrapper::setMessageSource(
