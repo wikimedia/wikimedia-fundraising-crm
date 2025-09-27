@@ -25,6 +25,7 @@ class EmailPreferencesQueueConsumer extends QueueConsumer {
           ->setLanguage($message['language'] ?? null)
           ->setSnoozeDate($message['snooze_date'] ?? null)
           ->setSendEmail($message['send_email'] ?? null)
+          ->setEmailChecksum($message['email_checksum'] ?? null)
           ->execute();
 
       if (!$result->first()) {
