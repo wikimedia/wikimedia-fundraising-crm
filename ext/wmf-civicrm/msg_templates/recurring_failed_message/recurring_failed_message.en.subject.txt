@@ -1,1 +1,1 @@
-{contact.first_name}, renew your monthly donation to Wikipedia
+{contact.first_name}, renew your {if '{contribution_recur.frequency_unit}' == 'month' }monthly{else}annual{/if} donation to Wikipedia

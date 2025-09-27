@@ -1,8 +1,8 @@
 Hi {contact.first_name},
 
-Thank you for your continued support of the Wikimedia Foundation and free knowledge. In {now.MMMM}, we were unable to process your monthly donation of {contribution_recur.amount} to Wikipedia.
+Thank you for your continued support of the Wikimedia Foundation and free knowledge. In {now.MMMM}, we were unable to process your {if '{contribution_recur.frequency_unit}' == 'month' }monthly{else}annual{/if} donation of {contribution_recur.amount} to Wikipedia.
 
-Your support is very important to us. If you would like to renew your support for Wikipedia on a monthly basis, please take one minute to start a new recurring donation, and keep Wikipedia online and ad-free.
+Your support is very important to us. If you would like to renew your support for Wikipedia on {if '{contribution_recur.frequency_unit}' == 'month' }a monthly{else}an annual{/if} basis, please take one minute to start a new recurring donation, and keep Wikipedia online and ad-free.
 
 Wikipedia exists thanks to contributions from readers like you.
 

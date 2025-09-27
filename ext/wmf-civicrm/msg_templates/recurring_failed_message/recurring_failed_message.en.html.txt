@@ -1,8 +1,8 @@
 <p>Hi {contact.first_name},</p>
 
-<p>Thank you for your continued support of the Wikimedia Foundation and free knowledge. In {now.MMMM}, we were unable to process your monthly donation of {contribution_recur.amount} to Wikipedia.<p>
+<p>Thank you for your continued support of the Wikimedia Foundation and free knowledge. In {now.MMMM}, we were unable to process your {if '{contribution_recur.frequency_unit}' == 'month' }monthly{else}annual{/if} donation of {contribution_recur.amount} to Wikipedia.<p>
 
-<p>Your support is very important to us. If you would like to renew your support for Wikipedia on a monthly basis, <a href='https://donate.wikimedia.org/wiki/Ways_to_Give?rdfrom=%2F%2Ffoundation.wikimedia.org%2Fw%2Findex.php%3Ftitle%3DWays_to_Give%2Fen%26redirect%3Dno#Monthly_gift&utm_medium=civi-mail&utm_campaign=FailedRecur&utm_source=FY2021_FailedRecur'>please take one minute to start a new recurring donation, and keep Wikipedia online and ad-free.</a></p>
+<p>Your support is very important to us. If you would like to renew your support for Wikipedia on {if '{contribution_recur.frequency_unit}' == 'month' }a monthly{else}an annual{/if} basis, <a href='https://donate.wikimedia.org/wiki/Ways_to_Give?rdfrom=%2F%2Ffoundation.wikimedia.org%2Fw%2Findex.php%3Ftitle%3DWays_to_Give%2Fen%26redirect%3Dno#Monthly_gift&utm_medium=civi-mail&utm_campaign=FailedRecur&utm_source=FY2021_FailedRecur'>please take one minute to start a new recurring donation, and keep Wikipedia online and ad-free.</a></p>
 
 <p>Wikipedia exists thanks to contributions from readers like you.</p>
 
