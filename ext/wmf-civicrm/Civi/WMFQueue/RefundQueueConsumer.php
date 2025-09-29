@@ -125,10 +125,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    *   exception will be thrown on mismatch.
    *
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    * @throws \Civi\WMFException\WMFException
-   * @todo - fix tests to process via the queue consumer, move this to the queue consumer.
-   * Sets the civi records to reflect a contribution refund.
    *
    * The original contribution is set to status "Refunded", or "Chargeback" and a
    * negative financial transaction record is created. If the amount refunded
