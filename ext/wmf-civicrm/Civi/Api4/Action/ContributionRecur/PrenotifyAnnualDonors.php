@@ -30,14 +30,15 @@ class PrenotifyAnnualDonors extends AbstractAction {
   public function _run( Result $result ) {
     $activityType = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Recurring Prenotification');
     // Get annual recurring contributions with next charge date less than $days days in the future
-    // and no activity of type 'Recurring Prenotification'
+    // and no activity of type 'Recurring Prenotification' in the last 3 months
     $recurringQuery = ContributionRecur::get(FALSE)
       ->addSelect('id', 'contact_id')
       ->addJoin(
         'Activity AS activity',
         'LEFT',
         ['activity.source_record_id', '=', 'id'],
-        ['activity.activity_type_id', '=', $activityType]
+        ['activity.activity_type_id', '=', $activityType],
+        ['activity.activity_date_time', '>', '-3 months'],
       )
       ->addWhere('frequency_unit', '=', 'year')
       ->addWhere('next_sched_contribution_date', 'BETWEEN', ['now', "+$this->days days"])
@@ -58,12 +59,22 @@ class PrenotifyAnnualDonors extends AbstractAction {
     if ($this->batch) {
       $recurringQuery->setLimit($this->batch);
     }
+    $result['notifications'] = [];
+    $result['send_success_count'] = $result['send_failure_count'] = 0;
     foreach ($recurringQuery->execute() as $recurringContribution) {
-      $result[$recurringContribution['id']] = $this->sendNotification($recurringContribution, $activityType);
+      $sendResult = $this->sendNotification($recurringContribution, $activityType);
+      if ($sendResult['send_successful']) {
+        $result['send_success_count']++;
+      } else {
+        $result['send_failure_count']++;
+      }
+      unset ($sendResult['html']); // keep the output reasonable
+      $sendResult['contactID'] = $recurringContribution['contact_id'];
+      $result['notifications'][$recurringContribution['id']] = $sendResult;
     }
   }
 
-  function sendNotification(array $recurringContribution, int $activityType) {
+  function sendNotification(array $recurringContribution, int $activityType): array {
     $email = $this->renderEmail($recurringContribution);
 
     // If no template exists just back out.
@@ -71,7 +82,7 @@ class PrenotifyAnnualDonors extends AbstractAction {
       return ['send_successful' => FALSE];
     }
     list($domainEmailName, $domainEmailAddress) = \CRM_Core_BAO_Domain::getNameAndEmail();
-    $params = [
+    $params = $return = [
       'html' => $email['msg_html'] ?? NULL,
       'text' => $email['msg_text'] ?? NULL,
       'subject' => $email['msg_subject'],
@@ -89,13 +100,11 @@ class PrenotifyAnnualDonors extends AbstractAction {
         'activity_date_time' => 'now',
         'source_record_id' => $recurringContribution['id'],
       ])->execute();
-      $email['send_successful'] = TRUE;
+      $return['send_successful'] = TRUE;
     } else {
-      $email['send_successful'] = FALSE;
+      $return['send_successful'] = FALSE;
     }
-
-    $email['from'] = $params['from'];
-    return $email;
+    return $return;
   }
 
   protected function renderEmail(array $recurringContribution) {
