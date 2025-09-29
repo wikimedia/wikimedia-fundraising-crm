@@ -84,7 +84,6 @@ class GravyAuditTest extends BaseAuditTestCase {
         'email' => 'jwales@example.com',
         'first_name' => 'Jimmy',
         'last_name' => 'Wales',
-        'settled_gross' => 35,
         'settled_currency' => 'USD',
         'gross_currency' => 'USD',
         'contribution_tracking_id' => '113',
