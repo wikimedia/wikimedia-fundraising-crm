@@ -86,6 +86,41 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertExpectedContributionValues($expected, $message2['gateway_txn_id']);
   }
 
+  /**
+   * Process an ordinary (one-time) donation message not in USD
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testDonationNotUSD(): void {
+    $message = $this->processDonationMessage([
+      'gross' => 400,
+      'original_gross' => 400,
+      'original_currency' => 'PLN',
+      'settled_currency' => 'PLN'
+    ]);
+
+    $this->processContributionTrackingQueue();
+    $expected = [
+      'contact_id.contact_type' => 'Individual',
+      'contact_id.sort_name' => 'Mouse, Mickey',
+      'contact_id.display_name' => 'Mickey Mouse',
+      'contact_id.first_name' => 'Mickey',
+      'contact_id.last_name' => 'Mouse',
+      'currency' => 'USD',
+      'total_amount' => '200.00',
+      'fee_amount' => '0.00',
+      'net_amount' => '200.00',
+      'trxn_id' => 'GLOBALCOLLECT ' . $message['gateway_txn_id'],
+      'source' => 'PLN 400.00',
+      'financial_type_id:label' => 'Cash',
+      'contribution_status_id:label' => 'Completed',
+      'payment_instrument_id:label' => 'Credit Card: Visa',
+      'invoice_id' => $message['order_id'],
+      'Gift_Data.Campaign' => 'Online Gift',
+    ];
+    $this->assertExpectedContributionValues($expected, $message['gateway_txn_id'], $message['contribution_tracking_id']);
+  }
+
   public function testImportToDeletedContact(): void {
     $donation = $this->processDonationMessage([
       'contact_id' => 9999999,
