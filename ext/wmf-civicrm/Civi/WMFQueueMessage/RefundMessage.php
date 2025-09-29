@@ -27,6 +27,14 @@ class RefundMessage extends Message {
    */
   protected array $message;
 
+  protected array $requiredFields = [
+    "gross_currency",
+    "gross",
+    "date",
+    "gateway",
+    "type",
+  ];
+
   /**
    * @throws \Civi\WMFException\WMFException
    */
@@ -54,6 +62,13 @@ class RefundMessage extends Message {
    * @throws \Civi\WMFException\WMFException|\CRM_Core_Exception
    */
   public function validate(): void {
+    // Sanity checking :)
+    foreach ($this->requiredFields as $field_name) {
+      if (!array_key_exists($field_name, $this->message) || empty($this->message[$field_name])) {
+        $error = "Required field '$field_name' not present! Dropping message on floor.";
+        throw new WMFException(WMFException::CIVI_REQ_FIELD, $error);
+      }
+    }
     if (empty($this->message['gateway_parent_id']) && empty($this->message['parent_contribution_id'])) {
       throw new WMFException(WMFException::CIVI_REQ_FIELD, 'parent_contribution_id or parent_txn_id required');
     }
