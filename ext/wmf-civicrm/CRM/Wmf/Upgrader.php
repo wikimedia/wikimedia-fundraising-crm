@@ -2903,6 +2903,21 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     return TRUE;
   }
 
+  public function upgrade_4670(): bool {
+    $this->ctx->log->info('Applying update 4670: disable obsolete financial types');
+    CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_financial_type
+    SET is_active = 0
+    WHERE name IN (
+      'reversal',
+      'admin_fraud_reversal',
+      'unauthorized_spoof',
+      'admin_reversal'
+    )
+  ");
+    return TRUE;
+  }
+
   /**
    * @param array $conversions
    *
