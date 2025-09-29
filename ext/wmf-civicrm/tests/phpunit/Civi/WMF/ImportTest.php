@@ -419,7 +419,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->imitateAdminUser();
     $this->createOrganization();
     $data = [
-      'Contribution.financial_type_id' => 'Engage',
+      'Contribution.financial_type_id' => 'Donation',
       'Contribution.total_amount' => 50,
       'Contribution.contact_id' => $this->ids['Organization'],
       'Contact.first_name' => 'Jane',
@@ -963,7 +963,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   protected function setupImport(array $data = []): array {
     $this->imitateAdminUser();
     $data = array_merge([
-      'Contribution.financial_type_id' => 'Engage',
+      'Contribution.financial_type_id' => 'Donation',
       'Contribution.total_amount' => 50,
       'Contact.organization_name' => 'Trading Name',
       'first_name' => 'Jane',
