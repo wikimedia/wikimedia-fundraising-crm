@@ -63,6 +63,7 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
      */
     $tables = ['civicrm_country' => ['iso_code']];
     CRM_Core_BAO_SchemaHandler::createIndexes($tables);
+    $this->executeSqlFile('sql/create_smashpig_pending_table.sql');
   }
 
   /**
@@ -104,6 +105,7 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
     */
     CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ADD INDEX entity_total (entity_id, lifetime_usd_total)');
     CRM_Core_BAO_SchemaHandler::safeRemoveFK('civicrm_activity', 'FK_civicrm_activity_original_id');
+    $this->upgrade_4640();
   }
 
   /**
@@ -2802,6 +2804,9 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   public function upgrade_4640() : bool {
+    // On new installs the managed TransactionLog entityType will have created
+    // a regular table, but we just want the view.
+    CRM_Core_DAO::executeQuery("DROP TABLE IF EXISTS civicrm_transaction_log");
     CRM_Core_DAO::executeQuery("CREATE VIEW civicrm_transaction_log as
       SELECT *
       FROM smashpig.pending");
@@ -2895,6 +2900,21 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
       ->addValue('is_searchable', FALSE)
       ->addWhere('name', 'LIKE', '%2020_2021%')
       ->execute();
+    return TRUE;
+  }
+
+  public function upgrade_4670(): bool {
+    $this->ctx->log->info('Applying update 4670: disable obsolete financial types');
+    CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_financial_type
+    SET is_active = 0
+    WHERE name IN (
+      'reversal',
+      'admin_fraud_reversal',
+      'unauthorized_spoof',
+      'admin_reversal'
+    )
+  ");
     return TRUE;
   }
 

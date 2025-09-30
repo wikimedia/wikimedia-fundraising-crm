@@ -57,8 +57,8 @@
       <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="width:600px;min-width:360px;border-collapse:separate;" class="w-full">
         <!-- START HEADER -->
         <tr>
-          <td align="left" style="padding:16px 0 8px 0;">
-            <img src="https://upload.wikimedia.org/wikipedia/donate/7/7a/Header-wiki-logos.png" alt="Wikipedia & Wikimedia Foundation Logo" width="600" style="width:600px;display:block;" class="w-full">
+          <td align="center" style="padding:16px 0 8px 0;">
+            <img alt="Wikimedia Foundation" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Wikimedia_Foundation_logo_-_horizontal.svg/320px-Wikimedia_Foundation_logo_-_horizontal.svg.png" width="320" style="width:320px;display:block;margin:auto;background-color:#fff" class="w-full"/>
           </td>
         </tr>
         <!-- END HEADER -->
@@ -72,7 +72,7 @@
                   <p style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:#202122;">
                     Hello, {contact.first_name}!
                     <br><br>
-                    This is a friendly reminder that your yearly donation of {contribution_recur.amount} will be charged automatically on {contribution_recur.next_sched_contribution_date}. You will receive an additional email receipt after your gift is processed.
+                    Thanks for supporting Wikipedia with your gift to the Wikimedia Foundation. This is a friendly reminder that your yearly donation of {contribution_recur.amount} will be charged automatically on {contribution_recur.next_sched_contribution_date}. You will receive an additional email receipt after your gift is processed.
                     <br><br>
                     We can’t thank you enough for your thoughtful gift. Supporters like you are rare—only 2% of Wikipedia readers donate. <strong>With your commitment to giving annually, you help safeguard the future of our nonprofit mission to share knowledge with the world.</strong> We are truly grateful.
                     <br><br>
@@ -100,7 +100,7 @@
               <br><br>
               Our postal address is: Wikimedia Foundation, Inc., P.O. Box 98204, Washington, DC 20090-8204, USA. U.S. tax-exempt number: 20-0049703
               <br><br>
-              Ref CiviAnnPre{contact.preferred_language} {contribution_recur.id}
+              Ref CiviAnnPre_{contact.preferred_language}_{contribution_recur.id}
             </p>
           <!-- END FOOTER COPY -->
           </td>

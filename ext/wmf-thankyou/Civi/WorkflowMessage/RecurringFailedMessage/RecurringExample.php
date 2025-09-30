@@ -10,9 +10,15 @@ class RecurringExample extends WorkflowMessageExample {
 
   public function getExamples(): iterable {
     yield [
-      'name' => 'workflow/recurring_failed_message/failed',
+      'name' => 'workflow/recurring_failed_message/month',
       'workflow' => 'recurring_failed_message',
-      'title' => ts('Recurring Failure'),
+      'title' => ts('Recurring Failure - monthly'),
+      'tags' => ['preview'],
+    ];
+    yield [
+      'name' => 'workflow/recurring_failed_message/year',
+      'workflow' => 'recurring_failed_message',
+      'title' => ts('Recurring Failure - annual'),
       'tags' => ['preview'],
     ];
   }
@@ -23,20 +29,22 @@ class RecurringExample extends WorkflowMessageExample {
    * @throws \CRM_Core_Exception
    */
   public function build(array &$example): void {
+    $contributionRecur = $this->getContributionRecur($example['name']);
     $message = new RecurringFailedMessage();
     $message->setContact(DemoData::example('entity/Contact/Alex'));
-    $message->setContributionRecur($this->getContributionRecur());
+    $message->setContributionRecur($contributionRecur);
     $example['data'] = $this->toArray($message);
   }
 
   /**
    * @return array[]
    */
-  protected function getContributionRecur(): array {
+  protected function getContributionRecur(string $name): array {
+    $parts = explode('/', $name);
     return [
       'id' => 0,
       'amount' => '12.30',
-      'frequency_unit' => 'month',
+      'frequency_unit' => $parts[2],
       'currency' => 'USD',
     ];
   }
