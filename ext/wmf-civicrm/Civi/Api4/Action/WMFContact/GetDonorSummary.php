@@ -120,6 +120,7 @@ class GetDonorSummary extends AbstractAction {
     if (!$active) {
       $get->addJoin('Contribution AS contribution', 'LEFT')
         ->addSelect('MAX(contribution.receive_date) AS last_contribution_date')
+        ->addGroupBy('id')
         ->setLimit(1);
     }
     // Under API4, a LEFT JOIN is a bit different from raw SQL. When no recurring contribution exists, it
