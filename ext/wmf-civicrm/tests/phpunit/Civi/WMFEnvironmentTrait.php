@@ -134,6 +134,17 @@ trait WMFEnvironmentTrait {
   }
 
   /**
+   * Set a CiviCRM setting, storing the original value for tearDown.
+   *
+   * @param string $name
+   * @param mixed $value
+   */
+  protected function setSetting(string $name, mixed $value): void {
+    $this->originalSettings[$name] = \Civi::settings()->get($name);
+    \Civi::settings()->set($name, $value);
+  }
+
+  /**
    * @return \Monolog\Handler\TestHandler
    */
   public function getLogger(): \Monolog\Handler\TestHandler {

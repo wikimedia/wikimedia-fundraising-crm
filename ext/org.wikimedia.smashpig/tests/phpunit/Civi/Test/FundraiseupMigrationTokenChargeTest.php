@@ -19,7 +19,7 @@ use Civi\WMFQueueTrait;
 /**
  * Tests for Fundraiseup migration token charge
  *
- *
+ * @todo - remove this soon - should be obsolete now? or during last 3 months of 2025.
  * @group SmashPig
  * @group headless
  */
@@ -47,6 +47,7 @@ class FundraiseupMigrationTokenChargeTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function setUp(): void {
+    $this->gateway = '';
     parent::setUp();
 
     // Initialize SmashPig with a fake context object

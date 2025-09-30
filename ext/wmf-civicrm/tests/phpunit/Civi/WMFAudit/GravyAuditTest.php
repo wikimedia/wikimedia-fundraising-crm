@@ -131,9 +131,4 @@ class GravyAuditTest extends BaseAuditTestCase {
     ];
   }
 
-  protected function setAuditDirectory(string $subDir): void {
-    $directory = __DIR__ . '/data/Gravy/' . $subDir;
-    \Civi::settings()->set('wmf_audit_directory_audit', $directory);
-  }
-
 }

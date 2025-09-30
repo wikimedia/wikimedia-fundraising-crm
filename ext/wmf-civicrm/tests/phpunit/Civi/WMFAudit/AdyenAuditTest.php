@@ -580,7 +580,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testAlreadyRefundedTransactionIsSkipped(): void {
-    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/refunded/');
+    $this->setAuditDirectory('refunded');
     $expectedMessages = [
       'refund' => [],
     ];
