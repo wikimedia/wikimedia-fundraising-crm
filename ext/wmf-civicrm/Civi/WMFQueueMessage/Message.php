@@ -1098,7 +1098,7 @@ class Message {
     if ($this->getSettledDate()) {
       foreach ($this->getAvailableFields() as $key => $spec) {
         if ($key === 'settled_date') {
-          $fields['contribution_settlement.settled_date'] = $this->getSettledDate();
+          $fields['contribution_settlement.settlement_date'] = $this->getSettledDate();
         }
         elseif (($spec['used_for'] ?? NULL ) === 'settle' && isset($spec['api_field']) && isset($this->message[$key])) {
           $apiKey = $this->isReversal() ? ($spec['api_field_reversal'] ?? $spec['api_field']) : $spec['api_field'];
