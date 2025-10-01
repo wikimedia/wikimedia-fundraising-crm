@@ -637,8 +637,12 @@ class Message {
         'used_for' => 'settle',
       ],
     ];
-    $contactFields = Contact::getFields(FALSE)->setAction('save')->execute()->indexBy('name');
-    $contributionFields = Contribution::getFields(FALSE)->setAction('save')->execute()->indexBy('name');
+    $contactFields = Contact::getFields(FALSE)
+      ->setLoadOptions(TRUE)
+      ->setAction('save')->execute()->indexBy('name');
+    $contributionFields = Contribution::getFields(FALSE)
+      ->setLoadOptions(TRUE)
+      ->setAction('save')->execute()->indexBy('name');
     foreach ($fields as $index => $field) {
       if (($field['api_entity'] ?? '') === 'Contact' && isset($contactFields[$field['api_field']])) {
         $field += $contactFields[$field['api_field']];
@@ -662,6 +666,26 @@ class Message {
    */
   public function setContributionTrackingID(?int $contributionTrackingID): void {
     $this->contributionTrackingID = $contributionTrackingID;
+  }
+
+  /**
+   * @param array $field
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private function loadOptionsForField(array $field): array {
+    if (!empty($field['option_group_id']) && (empty($field['options']) || !is_array($field['options']))) {
+      // temporary handling while I adjust the code to apiv4.
+      $entity = $field['custom_group']['extends'] === 'Contribution' ? 'Contribution' : 'Contact';
+      $field['options'] = civicrm_api4($entity, 'getfields', [
+        'loadOptions' => TRUE,
+        'where' => [
+          ['custom_field_id', '=', $field['id']],
+        ],
+        'checkPermissions' => FALSE,
+      ])->first()['options'];
+    }
+    return $field;
   }
 
   protected function cleanMoney($value): float {
@@ -873,17 +897,6 @@ class Message {
       }
       $field = $this->getCustomFieldMetadataByFieldName($fieldName);
       if ($field && !isset($this->message[$field['api_field']])) {
-        if (!empty($field['option_group_id'])) {
-          // temporary handling while I adjust the code to apiv4.
-          $entity = $field['custom_group']['extends'] === 'Contribution' ? 'Contribution' : 'Contact';
-          $field['options'] = civicrm_api4($entity, 'getfields', [
-            'loadOptions' => TRUE,
-            'where' => [
-              ['custom_field_id', '=', $field['id']],
-            ],
-            'checkPermissions' => FALSE,
-          ])->first()['options'];
-        }
         if ($field['data_type'] === 'Date' && is_integer($value)) {
           $value = '@' . $value;
         }
@@ -991,10 +1004,8 @@ class Message {
       'opt_in' => 'Communication.opt_in',
       'employer' => 'Communication.Employer_Name',
     ];
-    if (!empty($fieldsToMap[$name])) {
-      $name = $fieldsToMap[$name];
-    }
-    $parts = explode('.', $name);
+    $mappedName = !empty($fieldsToMap[$name]) ? $fieldsToMap[$name] : $name;
+    $parts = explode('.', $mappedName);
     if (count($parts) == 1) {
       $fieldID = \CRM_Core_BAO_CustomField::getCustomFieldID($parts[0]);
     }
@@ -1020,7 +1031,8 @@ class Message {
     ])) {
       return NULL;
     }
-    return $field;
+    $this->availableFields[$name] = $this->loadOptionsForField($field);
+    return $this->availableFields[$name];
   }
 
   public function getCustomFieldMetadata(int $id): array {
