@@ -521,6 +521,17 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         'Other Offline' => 'Other Offline',
       ],
     ],
+    'is_major_gift' => [
+      'name' => 'is_major_gift',
+      'label' => 'Is Major Gift',
+      'column_name' => 'is_major_gift',
+      'description' => 'Has this been solicited through major gift team efforts (or is it over 10k)',
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
+      'default_value' => 0,
+      'is_searchable' => TRUE,
+      'weight' => 312,
+    ],
   ];
 }
 
