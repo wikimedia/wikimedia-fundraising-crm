@@ -3,7 +3,7 @@ namespace Civi\Api4;
 
 use Civi\Api4\Action\Omnigroupmember\Load;
 use Civi\Api4\Generic\BasicGetFieldsAction;
-use Civi\Api4\Action\Omnigroup\Push;
+use Civi\Api4\Action\Omnigroupmember\Delete;
 
 /**
 *  Class Omnigroup.
@@ -29,7 +29,21 @@ class Omnigroupmember extends Generic\AbstractEntity {
       ->setCheckPermissions($checkPermissions);
   }
 
- /**
+  /**
+   * Omnigroupmembership delete.
+   *
+   * Delete members from a remote group.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\Omnigroupmember\Delete
+   */
+  public static function delete(bool $checkPermissions = TRUE): Delete {
+    return (new Delete(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
   * Get permissions.
   *
   * It may be that we don't need a permission check on this api at all at there is a check on the entity
