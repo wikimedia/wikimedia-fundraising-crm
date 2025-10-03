@@ -307,6 +307,7 @@ class Message {
         'api_field_reversal' => 'contribution_settlement.settled_reversal_amount',
         'used_for' => 'settle',
         'notes' => '',
+        'getter' => 'getSettledAmountRounded',
       ],
       'settled_net_amount' => [
         'name' => 'settled_net_amount',

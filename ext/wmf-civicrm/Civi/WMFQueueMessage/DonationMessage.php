@@ -316,7 +316,7 @@ class DonationMessage extends Message {
    * @return float
    */
   public function getSettledAmount(): float {
-    return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
+    return $this->message['settled_total_amount'];
   }
 
   /**
