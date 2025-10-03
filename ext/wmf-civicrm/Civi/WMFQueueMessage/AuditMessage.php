@@ -411,10 +411,13 @@ class AuditMessage extends DonationMessage {
   }
 
   /**
-   * @return string
+   * @return ?string
    */
-  public function getSettlementBatchReference(): string {
-    return $this->getAuditFileGateway() . '_' . $this->getSettlementCurrency() . '_' . ($this->message['settlement_batch_reference'] ?? '');
+  public function getSettlementBatchReference(): ?string {
+    if (empty($this->message['settlement_batch_reference'])) {
+      return NULL;
+    }
+    return $this->getAuditFileGateway() . '_' . ($this->message['settlement_batch_reference'] ?? '')  . '_' .  $this->getSettlementCurrency();
   }
 
   public function getAuditFileGateway(): string {
