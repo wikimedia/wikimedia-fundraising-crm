@@ -6,6 +6,7 @@ use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\TransactionLog;
+use Civi\Api4\WMFAudit;
 use League\Csv\Exception;
 use League\Csv\Reader;
 use SmashPig\Core\Helpers\Base62Helper;
@@ -363,11 +364,16 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->processRefundQueue();
     $this->processSettleQueue();
     $contribution = Contribution::get(FALSE)->addWhere('id', '>', $contributionID - 1)
-      ->addSelect('contribution_extra.gateway_txn_id', 'contribution_extra.gateway', 'contribution_status_id:name', 'total_amount', 'fee_amount')
+      ->addSelect('contribution_settlement.*', 'contribution_extra.gateway_txn_id', 'contribution_extra.gateway', 'contribution_status_id:name', 'total_amount', 'fee_amount')
       ->execute()->single();
     $this->assertEquals('Completed', $contribution['contribution_status_id:name']);
     $this->assertEquals('gravy', $contribution['contribution_extra.gateway']);
     $this->assertEquals('MNOP', $contribution['contribution_extra.gateway_txn_id']);
+    $this->assertEquals('adyen_1122_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals('USD', $contribution['contribution_settlement.settlement_currency']);
+    $this->assertEquals('2025-08-06 16:59:59', $contribution['contribution_settlement.settlement_date']);
+    $this->assertEquals(31.7, $contribution['contribution_settlement.settled_donation_amount']);
+    $this->assertEquals(-10.65, $contribution['contribution_settlement.settled_fee_amount']);
   }
 
   /**
@@ -753,7 +759,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'settled_reversal_amount' => -1.0,
       'settled_donation_amount' => 20.20,
       'settlement_currency' => 'USD',
-      'settlement_date' => '20250908',
+      'settlement_date' => '20250912',
       'settlement_batch_reference' => 'adyen_1120_USD',
       'settlement_gateway' => 'adyen',
     ], $result['batch']->first());
@@ -834,7 +840,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     // First let's have a process to create some TransactionLog entries.
     $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR . $fileName;
     try {
-    $csv = Reader::createFromPath($file, 'r');
+      $csv = Reader::createFromPath($file, 'r');
       $csv->setHeaderOffset(0);
     }
     catch (Exception $e) {
@@ -848,19 +854,50 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
   /**
    * @param string $directory
-   * @param string $file
+   * @param string $fileName
+   * @param string $batchName
    * @return array
+   *
    * @throws \CRM_Core_Exception
    */
-  public function runAuditBatch(string $directory, string $file): array {
-    $this->prepareForAuditProcessing($directory, $file);
-    $result = [];
-    $result['batch'] = $this->runAuditor();
+  public function runAuditBatch(string $directory, string $fileName, string $batchName = ''): array {
+    $this->prepareForAuditProcessing($directory, $fileName);
+
+    $this->runAuditor();
     $this->processDonationsQueue();
     $this->processContributionTrackingQueue();
     $this->processRefundQueue();
     $this->processSettleQueue();
-    return $result;
+
+    $this->processContributionTrackingQueue();
+    $auditResult['batch'] = $this->runAuditor();
+    if ($batchName) {
+      $auditResult['validate'] = WMFAudit::generateBatch(FALSE)
+        ->setBatchPrefix($batchName)
+        ->setIsOutputCsv(TRUE)
+        ->execute();
+
+      foreach ($auditResult['validate'] as $row) {
+        $this->assertEquals(0, array_sum($row['validation']), print_r($row, TRUE));
+      }
+    }
+    return (array) $auditResult;
+  }
+
+  public function testAdyenSettlementBatch() {
+    $fileName = 'settlement_detail_report_batch_1128.csv';
+    $directory = 'batch_1';
+    $validate = $this->runAuditBatch($directory, $fileName, 'adyen_1128')['validate'];
+    $this->assertCount(2, $validate);
+    //    	Total debits	  Total credits	  Payout
+    // USD	234.79	         196.97	       37.82
+    // EUR	47.98	           19.47	       28.51
+    // US batch breaks down as
+    // Settled donation amount = 237.36 - 4 Donations totalling 237.36 less 2.57 fees = net 234.79
+    // Less Settled Reversal amount = -107.65 credited to donors 160.97 credited from our account less 53.32 fees
+    // Less Settled fee amount amount - -55.89 in line fees + $36 in fee rows
+    // = $37.82 net amount
+    $this->runAuditBatch('batch_2', 'settlement_detail_report_batch_1129.csv', 'adyen_1129');
   }
 
 }

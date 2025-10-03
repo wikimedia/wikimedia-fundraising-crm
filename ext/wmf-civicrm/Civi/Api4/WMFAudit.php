@@ -5,6 +5,7 @@ namespace Civi\Api4;
 use Civi\Api4\Action\WMFAudit\Parse;
 use Civi\Api4\Action\WMFAudit\Audit;
 use Civi\Api4\Action\WMFAudit\Settle;
+use Civi\Api4\Action\WMFAudit\GenerateBatch;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 class WMFAudit extends Generic\AbstractEntity {
@@ -32,6 +33,19 @@ class WMFAudit extends Generic\AbstractEntity {
    */
   public static function settle(bool $checkPermissions = TRUE): Settle {
     return (new Settle(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Settle contributions once full settlement data is received.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return GenerateBatch
+   *
+   */
+  public static function generateBatch(bool $checkPermissions = TRUE): GenerateBatch {
+    return (new GenerateBatch(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
