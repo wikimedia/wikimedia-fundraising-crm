@@ -2,6 +2,8 @@
 
 namespace Civi\Api4\Action\WMFAudit;
 
+use Brick\Math\RoundingMode;
+use Brick\Money\Money;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\SettlementTransaction;
@@ -48,10 +50,52 @@ class Audit extends AbstractAction {
         // this field...
         $record['audit_file_gateway_txn_id'] = $record['backend_processor_txn_id'];
       }
-      SettlementTransaction::save(FALSE)
-        ->addRecord(['type' => $message->getTransactionType()] + $record)
-        ->setMatch(['gateway_txn_id', 'type'])
-        ->execute();
+      // Fetch first & only write if create / change needed.
+      $transaction = \Civi\Api4\SettlementTransaction::get(FALSE)
+        // We don't check gateway here just because we are mostly recording these
+        // for trouble shooting & gateway might be wrong...
+        ->addWhere('gateway_txn_id', '=', $record['gateway_txn_id'])
+        ->addWhere('type', '=', $message->getTransactionType())
+        ->execute()->first() ?? [];
+
+      $settlementRecord = array_intersect_key($record, $transaction);
+      foreach ($transaction as $key => $value) {
+        if (!array_key_exists($key, $settlementRecord)) {
+          continue;
+        }
+        if ($record[$key] === $value) {
+          unset($settlementRecord[$key]);
+        }
+        elseif ($record[$key] !== NULL && $key === 'exchange_rate' && round($value, 4) === round($record[$key], 4)) {
+          unset($settlementRecord[$key]);
+        }
+        elseif ($record[$key] && in_array($key, ['date', 'settled_date']) && strtotime($record[$key]) === strtotime($value)) {
+          unset($settlementRecord[$key]);
+        }
+        elseif (is_float($value)) {
+          // (float) .46 does not always equal (float) .46 ....
+          // I'm actually interested in passing money objects up
+          // from the settlement report & around our subsystem but let's come back to that.
+          // Use USD as it just checks to 2 decimal places - seems enough for this
+          // rather than figuring out which field.
+          $newValue = Money::of($value, 'USD', NULL, RoundingMode::HALF_UP);
+          if ($newValue->compareTo($record[$key] ?: 0) === 0) {
+            unset($settlementRecord[$key]);
+          }
+        }
+        elseif ($key === 'contribution_id' && !$record[$key]) {
+          // Do not overwrite contribution_id with blank in this process.
+          // Probably only happening due to poor test clean up but this table
+          // is primarily for troubleshooting so better not to lose this data.
+          unset($settlementRecord[$key]);
+        }
+      }
+      if ($settlementRecord) {
+        $settlementRecord['id'] = $transaction['id'] ?? NULL;
+        SettlementTransaction::save(FALSE)
+          ->addRecord(['type' => $message->getTransactionType()] + $settlementRecord)
+          ->execute();
+      }
       // Here we would ideally queue but short term we will probably process in real time on specific files
       // as we test.
       // @todo - create queue option (after maybe some testing with this).
