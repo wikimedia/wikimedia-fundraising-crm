@@ -643,6 +643,15 @@ class Message {
         'api_entity' => 'Contribution',
         'used_for' => 'settle',
       ],
+      'recipient_id' => [
+        'name' => 'recipient_id',
+        'data_type' => 'Integer',
+        'label' => E::ts('Recipient ID'),
+        'description' => E::ts('The Acoustic ID'),
+        'api_field' => 'phone_data.recipient_id',
+        'api_entity' => 'Phone',
+        'used_for' => 'donation',
+      ],
     ];
     $contactFields = Contact::getFields(FALSE)
       ->setLoadOptions(TRUE)
