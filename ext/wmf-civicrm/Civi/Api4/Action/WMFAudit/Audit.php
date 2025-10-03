@@ -42,7 +42,7 @@ class Audit extends AbstractAction {
       // Next will be to settle them.
       $record = $message->normalize();
       $record['date'] = date('Ymdhis', $record['date']);
-      $record['settled_date'] = date('Ymdhis', $record['settled_date']);
+      $record['settled_date'] = date('Y-m-d H:i:s T', $record['settled_date']);
       if ($record['gateway'] === 'gravy') {
         // This is very much tbd - but for adyen audit files we want to match
         // this field...
@@ -55,9 +55,21 @@ class Audit extends AbstractAction {
       // Here we would ideally queue but short term we will probably process in real time on specific files
       // as we test.
       // @todo - create queue option (after maybe some testing with this).
-      // For now this only kicks in when run mannually.
-      WMFAudit::settle(FALSE)
-       ->setValues($message->normalize())->execute();
+      // For now this only kicks in when run manually and only on settlement reports from adyen
+      // as only those pass up the settled reference.
+      if (!$isMissing && !empty($record['settlement_batch_reference'])) {
+        WMFAudit::settle(FALSE)
+          ->setValues([
+            'gateway' => $record['gateway'],
+            'gateway_txn_id' => $record['gateway_txn_id'],
+            'contribution_id' => $message->getExistingContributionID(),
+            'settled_date' => $record['settled_date'],
+            'settled_currency' => $record['settled_currency'],
+            'settlement_batch_reference' => $record['settlement_batch_reference'],
+            'settled_total_amount' => $record['settled_total_amount'],
+            'settled_fee_amount' => $record['settled_fee_amount'],
+          ])->execute();
+      }
     }
    // @todo - we would ideally augment the missing messages here from the Pending table
     // allowing us to drop 'log_hunt_and_send'

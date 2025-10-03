@@ -25,7 +25,7 @@ class SettleTest extends TestCase {
     $fields = WMFAudit::getFields(FALSE)
       ->setCheckPermissions(FALSE)
       ->setAction('settle')->execute()->indexBy('name');
-    $this->assertEquals(TRUE, $fields['gross']['required']);
+    $this->assertEquals(TRUE, $fields['settled_total_amount']['required']);
   }
 
   public function testSettle(): void {
@@ -40,15 +40,16 @@ class SettleTest extends TestCase {
       'contribution_extra.gateway_txn_id' => 12345,
       'contribution_extra.original_currency' => 'NZD',
       'contribution_extra.original_amount' => 45,
-    ]);
+    ], 'daffy');
     WMFAudit::settle(FALSE)
       ->setValues([
         'settled_currency' => 'USD',
         'settled_date' => '2025-07-17 17:23:23',
-        'gross' => 33.5,
+        'settled_total_amount' => 33.5,
+        'contribution_id' => $this->ids['Contribution']['daffy'],
         'gateway' => 'adyen',
         'gateway_txn_id' => 12345,
-        'fee' => '.3',
+        'settled_fee_amount' => '.3',
       ])
       ->execute();
     $settledContribution = Contribution::get(FALSE)

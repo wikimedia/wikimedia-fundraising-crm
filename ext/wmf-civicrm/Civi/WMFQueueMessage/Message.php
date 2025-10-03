@@ -106,7 +106,7 @@ class Message {
     $supported = $this->supportedFields;
     $fields = [];
     foreach (array_keys($supported) as $fieldName) {
-      $fields[$fieldName] = $this->getAvailableFields()[$fieldName] + ['required' => in_array($fieldName, $this->requiredFields)];
+      $fields[$fieldName] = ['required' => in_array($fieldName, $this->requiredFields)] + $this->getAvailableFields()[$fieldName];
     }
     return $fields;
   }
@@ -226,6 +226,13 @@ class Message {
         'api_field' => 'contribution_extra.parent_contribution_id',
         'api_entity' => 'Contribution',
       ],
+      'contribution_id' => [
+        'name' => 'contribution_id',
+        'title' => 'Contribution ID',
+        'data_type' => 'Integer',
+        'api_field' => 'id',
+        'api_entity' => 'Contribution',
+      ],
       'invoice_id' => [
         'title' => E::ts('Invoice ID'),
         'name' => 'invoice_id',
@@ -312,7 +319,7 @@ class Message {
         'notes' => '',
       ],
       'settled_fee_amount' => [
-        'name' => 'settled_fee',
+        'name' => 'settled_fee_amount',
         'description' => E::ts('Fee in the Settled currency'),
         'data_type' => 'Money',
         'api_entity' => 'Contribution',
