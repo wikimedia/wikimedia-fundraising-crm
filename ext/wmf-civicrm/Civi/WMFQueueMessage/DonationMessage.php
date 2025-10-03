@@ -369,10 +369,16 @@ class DonationMessage extends Message {
    * Get the fee amount charged by the processing gateway, when available
    */
   public function getReportingFeeAmount(): float {
-    if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
-      return $this->cleanMoney($this->message['fee']) * $this->getConversionRate();
+    if ($this->getSettlementCurrency() === 'USD' && !empty($this->message['settled_fee_amount'])) {
+      // If we already know the settled fee (from the auditor) and it is already USD then return it.
+      // It will already be a float in that case.
+      return $this->message['settled_fee_amount'];
+    }
+    if ($this->getOriginalFeeAmount() !== FALSE) {
+      return $this->getOriginalFeeAmount() * $this->getConversionRate();
     }
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
+      // @todo - this must be unreachable cos it looks a lot like a loop.
       return $this->getReportingAmount() - $this->getReportingFeeAmount();
     }
     return 0.00;
@@ -767,6 +773,20 @@ class DonationMessage extends Message {
       }
     }
     return $appealValue;
+  }
+
+  /**
+   * @return int|float|false
+   * @throws WMFException
+   */
+  public function getOriginalFeeAmount(): int|float|false {
+    if (array_key_exists('original_fee_amount', $this->message) && is_numeric($this->message['original_fee_amount'])) {
+      return $this->cleanMoney($this->message['original_fee_amount']);
+    }
+    if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
+      return $this->cleanMoney($this->message['fee']);
+    }
+    return FALSE;
   }
 
 }
