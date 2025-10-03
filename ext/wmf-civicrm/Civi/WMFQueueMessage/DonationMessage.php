@@ -333,6 +333,11 @@ class DonationMessage extends Message {
    * @return float
    */
   public function getReportingAmount(): float {
+    if ($this->getSettlementCurrency() === 'USD' && !empty($this->message['settled_total_amount'])) {
+      // If we already know the settled total amount (from the auditor) and it is already USD then return it.
+      // It will already be a float in that case.
+      return $this->message['settled_total_amount'];
+    }
     return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
   }
 
@@ -390,6 +395,11 @@ class DonationMessage extends Message {
    * Get amount less any fee charged by the processor.
    */
   public function getReportingNetAmount(): float {
+    if ($this->getSettlementCurrency() === 'USD' && !empty($this->message['settled_net_amount'])) {
+      // If we already know the settled fee (from the auditor) and it is already USD then return it.
+      // It will already be a float in that case.
+      return $this->message['settled_net_amount'];
+    }
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
       return $this->cleanMoney($this->message['net']) * $this->getConversionRate();
     }
