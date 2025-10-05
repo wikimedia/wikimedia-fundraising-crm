@@ -18,6 +18,7 @@ use CRM_SmashPig_ContextWrapper;
  * @method $this setIsCompleted(bool $isCompleted)
  * @method $this setFile(string $file)
  * @method $this setLogSearchPastDays(int $logSearchPastDays)
+ * @method $this setLogInterval(int $logInterval)
  * @method $this setFileLimit(?int $fileLimit)
  */
 class Parse extends AbstractAction {
@@ -91,6 +92,13 @@ class Parse extends AbstractAction {
    */
   public ?int $fileLimit = NULL;
 
+  /**
+   * Log progress after this many rows.
+   *
+   * @var int $logInterval
+   */
+  protected int $logInterval = 100000;
+
   protected function getOptions(): array {
     return [
       'makemissing' => $this->isMakeMissing,
@@ -102,6 +110,7 @@ class Parse extends AbstractAction {
       'is_stop_on_first_missing' => $this->isStopOnFirstMissing,
       'is_move_completed_file' => $this->isMoveCompletedFile,
       'is_completed' => $this->isCompleted,
+      'progress_log_count' => $this->logInterval,
     ];
   }
 

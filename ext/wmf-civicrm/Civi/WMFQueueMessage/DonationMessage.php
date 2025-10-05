@@ -2,8 +2,10 @@
 
 namespace Civi\WMFQueueMessage;
 
+use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Contribution;
 use Civi\Api4\Name;
+use Civi\Api4\OptionValue;
 use Civi\Api4\PaymentToken;
 use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
@@ -24,12 +26,15 @@ class DonationMessage extends Message {
    *   backend_processor_txn_id: string,
    *   payment_orchestrator_reconciliation_id: string,
    *   parent_contribution_id: int,
+   *   original_currency: string,
    *   recurring: bool,
    *   contribution_recur_id: int,
    *   subscr_id: string,
    *   recurring_payment_token: string,
    *   date: string,
    *   utm_medium: string,
+   *   utm_campaign: string,
+   *   gift_source: string,
    *   source_name: string,
    *   type: string,
    *   phone: string,
@@ -139,7 +144,6 @@ class DonationMessage extends Message {
       'state_province' => '',
       'postal_code' => '',
       'recurring' => NULL,
-      'utm_campaign' => NULL,
       'effort_id' => NULL,
     ];
     $msg = $msg + $defaults;
@@ -182,14 +186,10 @@ class DonationMessage extends Message {
         unset($msg[$name]);
       }
     }
-    $appealValue = $msg['utm_campaign'] ?? $msg['Gift_Data.Appeal'] ?? $msg['direct_mail_appeal'] ?? NULL;
-    if ($appealValue) {
-      $field = $this->getCustomFieldMetadataByFieldName('Gift_Data.Appeal');
-      if (empty($field['options'][$appealValue])) {
-        $this->ensureOptionValueExists($field['option_group_id'], $appealValue);
-      }
-    }
+
     $msg += $this->getSettlementFields() + $this->getCustomFields();
+
+    $msg['Gift_Data.Appeal'] = $this->getAppeal();
     $msg += $this->getPhoneFields();
 
     if ($this->isEndowmentGift()) {
@@ -333,6 +333,11 @@ class DonationMessage extends Message {
    * @return float
    */
   public function getReportingAmount(): float {
+    if ($this->getSettlementCurrency() === 'USD' && !empty($this->message['settled_total_amount'])) {
+      // If we already know the settled total amount (from the auditor) and it is already USD then return it.
+      // It will already be a float in that case.
+      return $this->message['settled_total_amount'];
+    }
     return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
   }
 
@@ -390,6 +395,11 @@ class DonationMessage extends Message {
    * Get amount less any fee charged by the processor.
    */
   public function getReportingNetAmount(): float {
+    if ($this->getSettlementCurrency() === 'USD' && !empty($this->message['settled_net_amount'])) {
+      // If we already know the settled fee (from the auditor) and it is already USD then return it.
+      // It will already be a float in that case.
+      return $this->message['settled_net_amount'];
+    }
     if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
       return $this->cleanMoney($this->message['net']) * $this->getConversionRate();
     }
@@ -657,36 +667,26 @@ class DonationMessage extends Message {
   /**
    * Ensure the specified option value exists.
    *
-   * @param string $group_name
+   * @param array $field
    * @param string $value
+   * @throws CRM_Core_Exception
+   * @throws UnauthorizedException
    */
-  private function ensureOptionValueExists($group_name, $value) {
-    $params = [
-      'option_group_id' => $group_name,
-      'name' => $value,
-      'label' => $value,
-      'value' => $value,
-      'is_active' => 1,
-    ];
-    $existingValues = civicrm_api3('OptionValue', 'get', [
-      'option_group_id' => $params['option_group_id'],
-      'value' => $params['value'],
-      'sequential' => 1,
-    ]);
-    $createRequired = FALSE;
-    if ($existingValues['count'] == 0) {
-      $createRequired = TRUE;
+  private function ensureOptionValueExists(array &$field, $value) {
+    if (empty($field['option_group_id'])) {
+      $field['option_group_id'] = \CRM_Core_BAO_CustomField::getField($field['custom_field_id'])['option_group_id'];
     }
-    elseif (!$existingValues['values'][0]['is_active']) {
-      $params['id'] = $existingValues['values'][0]['id'];
-      $createRequired = TRUE;
-    }
-    if ($createRequired) {
-      civicrm_api3('OptionValue', 'create', $params);
-      // It won't take much to rebuild this & we don't know the entity.
-      // This should be rare.
-      \Civi::$statics['wmf_civicrm'] = [];
-    }
+    OptionValue::save(FALSE)
+      ->addRecord([
+        'option_group_id' => $field['option_group_id'],
+        'name' => $value,
+        'label' => $value,
+        'value' => $value,
+        'is_active' => TRUE,
+      ])
+      ->setMatch(['option_group_id', 'value'])
+      ->execute()->first();
+    $field['options'][$value] = $value;
   }
 
   /**
@@ -761,6 +761,21 @@ class DonationMessage extends Message {
       return $this->message['settled_date'];
     }
     return NULL;
+  }
+
+  /**
+   * @return string|null
+   * @throws CRM_Core_Exception
+   */
+  public function getAppeal(): ?string {
+    $appealValue = $this->message['utm_campaign'] ?? $this->message['Gift_Data.Appeal'] ?? $this->message['direct_mail_appeal'] ?? NULL;
+    if ($appealValue) {
+      $field = &$this->availableFields['utm_campaign'];
+      if (empty($field['options'][$appealValue])) {
+        $this->ensureOptionValueExists($field, $appealValue);
+      }
+    }
+    return $appealValue;
   }
 
 }

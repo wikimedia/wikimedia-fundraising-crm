@@ -1278,11 +1278,20 @@ abstract class BaseAuditProcessor {
    */
   protected function getMissingTransactions(array $transactions, string $file) {
     //go through the transactions and check to see if they're in civi
+    $counter = $count = 0;
+    $timer = microtime(true);
     foreach ($transactions as $transaction) {
       $auditRecord = WMFAudit::audit(FALSE)
         ->setValues($transaction)
         ->setProcessSettlement($this->get_runtime_options('is_settle'))
         ->execute()->single();
+      $counter++;
+      $count++;
+      if (($this->get_runtime_options('progress_log_count') ?: 100000) === $counter) {
+        $this->echo('Get missing progress : ' . $count . '   seconds taken ' . microtime(true) - $timer) . '    number of missing found : ' . (count($this->missingTransactions['main']) + count($this->missingTransactions['negative']));
+        $counter = 0;
+        $timer = microtime(true);
+      }
       $this->recordStatistic($auditRecord, $file);
       if ($auditRecord['is_missing']) {
         if (($auditRecord['message']['type'] ?? NULL) === 'fee') {
