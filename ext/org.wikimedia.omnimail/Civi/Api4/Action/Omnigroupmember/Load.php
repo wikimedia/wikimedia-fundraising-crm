@@ -1,12 +1,14 @@
 <?php
 namespace Civi\Api4\Action\Omnigroupmember;
 
+use Civi\Api4\Action\Omniaction;
 use Civi\Api4\Email;
-use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\GroupContact;
+use Civi\Api4\Omnicontact;
 use Civi\Api4\PhoneConsent;
 use GuzzleHttp\Client;
+use League\Csv\Exception;
 use Omnimail\Silverpop\Responses\Contact;
 
 /**
@@ -27,8 +29,6 @@ use Omnimail\Silverpop\Responses\Contact;
  * @method $this setLimit(int $limit)
  * @method int getTimeout()
  * @method $this setTimeout(int $timeOut)
- * @method int|null getOffset()
- * @method $this setOffset(int|null $offset)
  * @method int getGroupIdentifier() Get Acoustic Group Identifier.
  * @method $this setGroupIdentifier(int $number)
  * @method $this setJobIdentifier(?string $identifier)
@@ -36,17 +36,14 @@ use Omnimail\Silverpop\Responses\Contact;
  * @method $this setIsSuppressionList(bool $isSuppression)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
+ * @method $this setIsConsentOptOutGroup(bool $isConsentOptOutGroup)
+ * @method $this setIsConsentOptInGroup(bool $isConsentOptInGroup)
  * @method $this setClient(Client$client) Generally Silverpop....
  * @method null|Client getClient()
  *
  * @package Civi\Api4
  */
-class Load extends AbstractAction {
-
-  /**
-   * @var object
-   */
-  protected $client;
+class Load extends Omniaction {
 
   /**
    * CiviCRM group ID to add the imported contact to.
@@ -74,21 +71,14 @@ class Load extends AbstractAction {
    *
    * @var bool
    */
-  protected $isPublic = TRUE;
+  protected bool $isPublic = TRUE;
 
   /**
    * Max Number of rows to process.
    *
    * @var int
    */
-  protected $limit = 10000;
-
-  /**
-   * Max Number of rows to process.
-   *
-   * @var int|null
-   */
-  protected $offset = NULL;
+  protected int $limit = 10000;
 
   /**
    * Throttle after the number has been reached in this number of seconds.
@@ -136,6 +126,20 @@ class Load extends AbstractAction {
    */
   protected ?string $jobIdentifier = NULL;
 
+  /**
+   * Is this a group of recipients who have opted out of SMS consents.
+   *
+   * @var bool
+   */
+  protected bool $isConsentOptOutGroup = FALSE;
+
+  /**
+   * Is this a group of recipients who have opted into SMS consents
+   *
+   * @var bool
+   */
+  protected bool $isConsentOptInGroup = FALSE;
+
   public function getJobIdentifier(): string {
     return $this->jobIdentifier ?: ($this->getIsSuppressionList() ? 'suppress_' : '') . $this->getGroupIdentifier();
   }
@@ -146,12 +150,16 @@ class Load extends AbstractAction {
    * @param \Civi\Api4\Generic\Result $result
    *
    * @throws \CRM_Core_Exception
+   * @throws Exception
    */
   public function _run(Result $result): void {
     $throttleSeconds = $this->getThrottleSeconds();
     $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . ' seconds');
     $throttleCount = $this->getThrottleNumber();
     $rowsLeftBeforeThrottle = $this->getThrottleNumber();
+    if ($this->isConsentOptInGroup && $this->isConsentOptOutGroup) {
+      throw new \CRM_Core_Exception('opt in and opt out are mutually exclusive');
+    }
 
     $params = [
       'mail_provider' => $this->getMailProvider(),
@@ -163,6 +171,8 @@ class Load extends AbstractAction {
       'job_identifier' => $this->getJobIdentifier(),
       'offset' => $this->getOffset(),
       'timeout' => $this->getTimeout(),
+      'start_date' => $this->start ?: NULL,
+      'is_include_opt_out' => $this->getIsSuppressionList() || $this->isConsentOptOutGroup,
     ];
 
     $job = new \CRM_Omnimail_Omnigroupmembers($params);
@@ -187,7 +197,7 @@ class Load extends AbstractAction {
       $contact = new Contact($row);
       if ($count === $limit) {
         $job->saveJobSetting(array(
-          'last_timestamp' => $jobSettings['last_timestamp'],
+          'last_timestamp' => $jobSettings['last_timestamp'] ?? NULL,
           'retrieval_parameters' => $job->getRetrievalParameters(),
           'progress_end_timestamp' => $job->endTimeStamp,
           'offset' => $offset + $count,
@@ -255,8 +265,8 @@ class Load extends AbstractAction {
           }
         }
       }
-      if (empty($groupMember['email']) && !empty($groupMember['phone'])) {
-        // This is an SMS only contact.
+      if (!empty($groupMember['phone'])) {
+        // This is an SMS contact.
         if (str_starts_with($groupMember['phone'], 1)) {
           // 1 = United States = Weird
           $countryCode = substr($groupMember['phone'], 0, 1);
@@ -272,35 +282,33 @@ class Load extends AbstractAction {
           ->addWhere('phone_number', '=', $phone)
           ->addWhere('country_code', '=', $countryCode)
           ->execute()->first();
-        if (!$existingConsent) {
-          PhoneConsent::create(FALSE)
-            ->setValues([
+
+        if (!$existingConsent
+          || ($this->isConsentOptOutGroup && $existingConsent['opted_in'])
+          || ($this->isConsentOptInGroup && !$existingConsent['opted_in'])
+        ) {
+          // Consent needs updating if there is no existing consent or the existing
+          // consent differs to the remote. We only check the remote if it seems
+          // likely to be different based on isConsentOptOutGroup/isConsentOptInGroup
+          // This is to save us looking up every single one - the group criteria
+          // at the Acoustic end is set to opt in our out.
+          $remoteContact = Omnicontact::get(FALSE)
+            ->setRecipientID($groupMember['recipient_id'])
+            ->execute()->first();
+
+          $idValue = $existingConsent ? ['id' => $existingConsent['id']] : [];
+          PhoneConsent::save(FALSE)
+            ->addRecord($idValue + [
               'country_code' => $countryCode,
               'phone_number' => $phone,
               'master_recipient_id' => $groupMember['recipient_id'],
               // Since these contacts are ONLY opted in to SMS we assume these values
               // apply to SMS.
-              'consent_date' => $groupMember['opt_in_date'],
-              'consent_source' => $groupMember['opt_in_source'],
-              'opted_in' => $groupMember['is_opt_in'],
-            ])->execute();
-        }
-        elseif ($existingConsent['opted_in'] !== $groupMember['is_opt_in']) {
-          $consent = PhoneConsent::update(FALSE)
-            ->addValue('opted_in', $groupMember['is_opt_in'])
-            ->addWhere('id', '=', $existingConsent['id']);
-          if ($groupMember['is_opt_in']) {
-            // We don't really expect phones that are opted out to
-            // be re-opted in through this.
-            // Perhaps it's better to
-            // make sure we see any, given their unexpected nature?
-            \Civi::log('wmf')->alert('opt out reversed for recipient {recipient_id} in Acoustic. This is unexpected and we should understand this flow', [
-              'recipient_id' => $groupMember['recipient_id'],
-            ]);
-            $consent->addValue('consent_date', $groupMember['opt_in_date'])
-              ->addValue('consent_source', $groupMember['opt_in_source']);
-          }
-          $consent->execute();
+              'consent_date' => $remoteContact['sms_consent_datetime'],
+              'consent_source' => $remoteContact['sms_consent_source'],
+              'opted_in' => $remoteContact['sms_consent_status'] === 'OPTED-IN',
+            ])
+            ->execute();
         }
       }
       $count++;
@@ -342,14 +350,18 @@ class Load extends AbstractAction {
    * @return array
    */
   public function fields(): array {
-    return [
+    return parent::fields() + [
       [
-        'name' => 'throttle_seconds',
-        'required' => TRUE,
-        'description' => ts('Contribution ID'),
-        'data_type' => 'Integer',
-        'fk_entity' => 'Contribution',
-        'input_type' => 'EntityRef',
+        'name' => 'isConsentOptInGroup',
+        'label' => 'Is this a group of recipients who have opted into SMS?',
+        'data_type' => 'Boolean',
+        'default' => FALSE,
+      ],
+      [
+        'name' => 'isConsentOptOutGroup',
+        'label' => 'Is this a group of recipients who have opted out of SMS?',
+        'data_type' => 'Boolean',
+        'default' => FALSE,
       ],
     ];
   }
