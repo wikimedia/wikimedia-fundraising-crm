@@ -970,6 +970,19 @@ class Message {
     return '';
   }
 
+  /**
+   * Is it recurring - we would be using the child class if it is.
+   *
+   * @return bool
+   */
+  public function isRecurring(): bool {
+    return FALSE;
+  }
+
+  public function isSubsequentRecurring(): bool {
+    return (bool) $this->getContributionRecurID();
+  }
+
   public function getPhoneFields() : array {
     $phoneFields = [];
     if (!empty($this->message['phone'])) {

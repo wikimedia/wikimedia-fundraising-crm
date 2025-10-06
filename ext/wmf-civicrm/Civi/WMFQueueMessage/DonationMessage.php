@@ -92,15 +92,6 @@ class DonationMessage extends Message {
   }
 
   /**
-   * Is it recurring - we would be using the child class if it is.
-   *
-   * @return bool
-   */
-  public function isRecurring(): bool {
-    return FALSE;
-  }
-
-  /**
    * @param array $message
    *
    * @return \Civi\WMFQueueMessage\DonationMessage|\Civi\WMFQueueMessage\RecurDonationMessage
@@ -482,8 +473,7 @@ class DonationMessage extends Message {
       }
       return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', $this->message['financial_type_id']);
     }
-    // @todo - can these first 2 be safely moved to the RecurringMessage child class?
-    if ($this->getContributionRecurID()) {
+    if ($this->isSubsequentRecurring()) {
       return ContributionRecur::getFinancialType($this->getContributionRecurID());
     }
     if ($this->isRecurring()) {
