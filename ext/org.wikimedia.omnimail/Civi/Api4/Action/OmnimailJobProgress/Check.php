@@ -30,11 +30,15 @@ class Check extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result) {
-    if (OmnimailJobProgress::get($this->getCheckPermissions())
+    // Check for jobs that have been running longer than expected
+    $outdatedJobCount = OmnimailJobProgress::get($this->getCheckPermissions())
       ->selectRowCount()
       ->addWhere('created_date', '<=', $this->getTimeDescription())
       ->addWhere('job', '=', $this->getJobName())
-      ->execute()->count()) {
+      ->execute()
+      ->count();
+
+    if ($outdatedJobCount > 0) {
       throw new \CRM_Core_Exception('Out of date ' . $this->getJobName() . ' request found');
     }
   }
