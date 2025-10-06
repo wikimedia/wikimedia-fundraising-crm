@@ -486,7 +486,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     ])['id'];
     \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/chargeback_gravy/');
     $this->runAuditor();
-    $this->processQueue('refund', 'Refund');
+    $this->processRefundQueue();
     $contribution = Contribution::get(FALSE)->addWhere('id', '>', $contributionID - 1)
       ->addSelect(
         'contribution_extra.gateway_txn_id',

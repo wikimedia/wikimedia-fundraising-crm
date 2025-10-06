@@ -28,6 +28,13 @@ trait WMFQueueTrait {
   }
 
   /**
+   * @return void
+   */
+  public function processRefundQueue(): void {
+    $this->processQueue('refund', 'Refund');
+  }
+
+  /**
    * Process donation, using defaults plus any passed in values.
    *
    * Note that it is intended that when using this method you only
