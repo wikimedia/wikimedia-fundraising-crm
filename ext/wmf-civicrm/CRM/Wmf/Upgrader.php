@@ -3188,6 +3188,120 @@ WHERE (
         'increment' => 300000,
       ],
     ]);
+  }
+
+  /**
+   * Backfill is_major_gift.
+   *
+   * (4.192 sec)
+   *
+   * @return bool
+   */
+  public function upgrade_4760(): bool {
+    $sql = 'UPDATE civicrm_value_1_gift_data_7 gift
+    INNER JOIN civicrm_contribution_tracking t ON t.contribution_id = gift.entity_id
+    SET is_major_gift = 1
+    WHERE utm_medium LIKE "MG%"
+      AND utm_medium NOT LIKE "mgbxb8%"
+    ';
+    CRM_Core_DAO::executeQuery($sql);
+
+    // All major gifts 10k+ except chapter gifts.
+    $sql = "UPDATE civicrm_contribution c
+    LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
+SET is_major_gift = 1
+WHERE total_amount >= 10000
+AND channel <> 'Chapter Gifts'";
+
+    // lower threshold in the past - backfill.
+    CRM_Core_DAO::executeQuery($sql);
+    $sql = "UPDATE civicrm_contribution c
+    LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
+SET is_major_gift = 1
+WHERE total_amount >= 1000
+  AND receive_date < '2023-07-01'
+AND channel <> 'Chapter Gifts'";
+    CRM_Core_DAO::executeQuery($sql);
+
+    $sql = "UPDATE civicrm_contribution c
+    LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
+SET is_major_gift = 1
+WHERE gift.appeal LIKE 'mg%'
+AND channel <> 'Chapter Gifts'";
+    CRM_Core_DAO::executeQuery($sql);
+
+    $sql = "UPDATE civicrm_contribution c
+    LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
+SET is_major_gift = 1
+WHERE utm_medium LIKE 'mg%'
+AND channel <> 'Chapter Gifts'";
+    CRM_Core_DAO::executeQuery($sql);
+
+    // Legacy clean up - no need for ongoing handling of these.
+    $sql = "UPDATE civicrm_contribution c
+    LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
+SET is_major_gift = 1
+WHERE utm_medium = 'email'
+  AND utm_campaign LIKE 'm%'
+  AND utm_campaign NOT LIKE 'missedyou%'
+AND channel <> 'Chapter Gifts'";
+    CRM_Core_DAO::executeQuery($sql);
+
+    // Legacy clean up - no need for ongoing handling of these.
+    $sql = "UPDATE civicrm_contribution c
+    LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
+SET is_major_gift = 1
+WHERE package like 'NOV3%'
+   OR package like 'DEC3%'
+   OR package like 'FEB3%'
+   OR package like 'MAR3%'
+   OR package = 'MARND26'
+   OR package like 'MAY3%'
+   OR package = 'DECND26'
+AND channel <> 'Chapter Gifts'";
+    CRM_Core_DAO::executeQuery($sql);
+
+    // This pattern is in use in 2026 & hopefully will be going forwards.
+    // However getChannel() could change to Direct Mail and we might add
+    // str_ends_with($appeal, 'MGF') on the principle we should show endowment
+    // is_major_gift vs not is_major_gift.
+    // Note previous updates should cause the source like dmurl to be picked up.
+    $sql = "UPDATE civicrm_contribution c
+    LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
+SET is_major_gift = 1
+WHERE appeal like '%MGF' AND channel in ('Direct Mail', 'Direct_Mail')
+AND channel <> 'Chapter Gifts'";
+    CRM_Core_DAO::executeQuery($sql);
+
+    // Legacy clean up - no need for ongoing handling of these.
+    // Direct_Mail not really a thing here but for completeness.
+    $sql = "UPDATE civicrm_contribution c
+    LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
+SET is_major_gift = 1
+WHERE appeal in ('WMF0824', 'WMF0924RE') AND channel in ('Direct Mail', 'Direct_Mail')
+AND channel <> 'Chapter Gifts'";
+    CRM_Core_DAO::executeQuery($sql);
+
+    // This pattern is in use in 2026 & seems ongoing
+    $sql = "UPDATE civicrm_contribution c
+    LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
+SET is_major_gift = 1
+WHERE (
+  appeal in ('WMF1124RE' , 'White Mail')
+  OR appeal LIKE '%WM')
+  AND channel in ('Direct Mail', 'Direct_Mail')
+  AND total_amount >= 250
+AND channel <> 'Chapter Gifts'";
+    CRM_Core_DAO::executeQuery($sql);
     return TRUE;
   }
 
