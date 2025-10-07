@@ -5,6 +5,7 @@ namespace Civi\WMFQueueMessage;
 use Civi\API\EntityLookupTrait;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\Utils\ReflectionUtils;
 use Civi\WMFException\WMFException;
@@ -376,6 +377,14 @@ class Message {
         'api_entity' => 'Contact',
         'api_field' => 'Communication.Employer_Name',
       ],
+      'initial_scheme_transaction_id' => [
+        'name' => 'initial_scheme_transaction_id',
+        'description' => 'legacy? (was Ingenico) code provided by (e.g) visa that should be passed up to increase chance of success',
+        'data_type' => 'String',
+        'used_for' => 'Donation',
+        'api_entity' => 'ContributionRecur',
+        'api_field' => 'contribution_recur_smashpig.initial_scheme_transaction_id',
+      ],
       'payment_method' => [
         'name' => 'payment_method',
         'data_type' => 'String',
@@ -676,12 +685,18 @@ class Message {
     $contributionFields = Contribution::getFields(FALSE)
       ->setLoadOptions(TRUE)
       ->setAction('save')->execute()->indexBy('name');
+    $contributionRecurFields = ContributionRecur::getFields(FALSE)
+      ->setLoadOptions(TRUE)
+      ->setAction('save')->execute()->indexBy('name');
     foreach ($fields as $index => $field) {
       if (($field['api_entity'] ?? '') === 'Contact' && isset($contactFields[$field['api_field']])) {
         $field += $contactFields[$field['api_field']];
       }
       if (($field['api_entity'] ?? '') === 'Contribution' && !empty($field['api_field']) && isset($contributionFields[$field['api_field']])) {
         $field += $contributionFields[$field['api_field']];
+      }
+      if (($field['api_entity'] ?? '') === 'ContributionRecur' && !empty($field['api_field']) && isset($contributionRecurFields[$field['api_field']])) {
+        $field += $contributionRecurFields[$field['api_field']];
       }
       $this->availableFields[$index] = $field;
     }

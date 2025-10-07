@@ -25,6 +25,7 @@ class DonationMessage extends Message {
    *   backend_processor: string,
    *   backend_processor_txn_id: string,
    *   employer: string,
+   *   initial_scheme_transaction_id: string,
    *   payment_orchestrator_reconciliation_id: string,
    *   parent_contribution_id: int,
    *   original_currency: string,
