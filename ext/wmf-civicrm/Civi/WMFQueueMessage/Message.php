@@ -367,6 +367,13 @@ class Message {
         'data_type' => 'Float',
         'used_for' => 'audit,settle,not saved',
       ],
+      'employer' => [
+        'name' => 'employer',
+        'data_type' => 'String',
+        'used_for' => 'Donation',
+        'api_entity' => 'Contact',
+        'api_field' => 'Communication.Employer_Name',
+      ],
       'payment_method' => [
         'name' => 'payment_method',
         'data_type' => 'String',
@@ -1042,7 +1049,6 @@ class Message {
       'gateway_status' => 'contribution_extra.gateway_status_raw',
       'do_not_solicit' => 'Communication.do_not_solicit',
       'opt_in' => 'Communication.opt_in',
-      'employer' => 'Communication.Employer_Name',
     ];
     $mappedName = !empty($fieldsToMap[$name]) ? $fieldsToMap[$name] : $name;
     $parts = explode('.', $mappedName);
