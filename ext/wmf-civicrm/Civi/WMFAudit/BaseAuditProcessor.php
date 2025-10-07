@@ -1290,7 +1290,7 @@ abstract class BaseAuditProcessor {
       $counter++;
       $count++;
       if (($this->get_runtime_options('progress_log_count') ?: 100000) === $counter) {
-        $this->echo('Get missing progress : ' . $count . '   seconds taken ' . microtime(true) - $timer) . '    number of missing found : ' . (count($this->missingTransactions['main'] ?? []) + count($this->missingTransactions['negative'] ?? []));
+        $this->echo('Get missing progress : ' . $count . '   seconds taken ' . (microtime(true) - $timer) . '    number of missing found : ' . (count($this->missingTransactions['main'] ?? []) + count($this->missingTransactions['negative'] ?? [])));
         $counter = 0;
         $timer = microtime(true);
       }
