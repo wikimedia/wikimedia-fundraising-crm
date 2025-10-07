@@ -138,7 +138,8 @@ class Parse extends AbstractAction {
         ->addRecord([
           'name' => $batch['settlement_batch_reference'],
           'status_id:name' => 'Open',
-          'type_id:name' => 'automatic',
+          'type_id:name' => 'Contribution',
+          'mode_id:name' => 'Automatic Batch',
           'total' => $batch['settled_total_amount'],
           'item_count' => $batch['transaction_count'],
           'batch_data.settled_fee_amount' => $batch['settled_fee_amount'],

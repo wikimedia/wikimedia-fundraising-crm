@@ -2,8 +2,11 @@
 
 namespace Civi\Api4\Action\WMFAudit;
 
+use Brick\Math\RoundingMode;
+use Brick\Money\Money;
 use Civi;
 use Civi\Api4\Contribution;
+use Civi\Api4\ExchangeRate;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\WMFQueueMessage\SettleMessage;
@@ -33,39 +36,66 @@ class Settle extends AbstractAction {
    */
   public function _run(Result $result): void {
     $message = new SettleMessage($this->values);
-    // Existing contribution_extra fields - these currently do not have data
-    // and some could be removed but they are available for this use.
-    // Existing thinking is settlement_date is the date settled to the processor
-    // and deposit date is settled to the bank
-    // We may not always track deposit date but when deposited in EUR it will
-    // be our final calculation date.
-    // **settlement_date**
-    // gateway_date
-    // settlement_usd
-    // **settlement_batch_number**
-    // deposit_date
-    // deposit_usd
-    // deposit_currency
     $values = [
       'contribution_settlement.settlement_date' => $message->getSettledDate(),
-      'contribution_settlement.settlement_batch_reference' => $message->getSettlementBatchReference(),
+      'contribution_settlement.settlement_batch_reference' => $message->isReversal() ? NULL : $message->getSettlementBatchReference(),
+      'contribution_settlement.settlement_batch_reversal_reference' => $message->isReversal() ? $message->getSettlementBatchReference() : NULL,
       'contribution_settlement.settlement_currency' => $message->getSettlementCurrency(),
+      'contribution_settlement.settled_donation_amount' => $message->isReversal() ? NULL : $message->getSettledAmount(),
+      'contribution_settlement.settled_fee_amount' => $message->isReversal() ? NULL : $message->getSettledFeeAmount(),
+      'contribution_settlement.settled_reversal_amount' => $message->isReversal() ? $message->getSettledAmount() : NULL,
+      'contribution_settlement.settled_fee_reversal_amount' => $message->isReversal() ? $message->getSettledFeeAmount() : NULL,
+
     ];
+    $settlementCurrency = $values['contribution_settlement.settlement_currency'];
+    // Avoid calling update if we can by checking first.
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('id', '=', $message->getContributionID())
+      ->setSelect(array_merge(array_keys($values), ['fee_amount', 'total_amount']))
+      ->execute()->first();
+
     if ($message->getSettlementCurrency() === 'USD') {
-      $values['fee_amount'] = $message->getSettledFeeAmountRounded();
-      $values['total_amount'] = $message->getSettledAmountRounded();
+      $values['fee_amount'] = (float) $message->getSettledFeeAmountRounded();
+      $values['total_amount'] = (float) $message->getSettledAmountRounded();
     }
     else {
-      $values['contribution_extra.deposit_currency'] = $message->getSettlementCurrency();
-      // Here we need to do a final conversion to get fee_amount & USD total
-      // based on our best numbers?
-      // @todo
+      // Fill in missing fee amount. No need to alter total - we don't have more up-to-date
+      // info & net should recalculate.
+      if (empty($contribution['fee_amount']) && !empty($values['contribution_settlement.settled_fee_amount'])) {
+        $values['fee_amount'] = ExchangeRate::convert(FALSE)
+          ->setFromCurrency($settlementCurrency)
+          ->setFromAmount($values['contribution_settlement.settled_fee_amount'])
+          ->setTimestamp($values['contribution_settlement.settlement_date'])
+          ->execute()->first()['amount'];
+
+      }
     }
-    $contribution = Contribution::update(FALSE)
-      ->addWhere('contribution_extra.gateway', '=', $message->getGateway())
-      ->addWhere('contribution_extra.gateway_txn_id', '=', $message->getGatewayTxnID())
-      ->setValues($values)
-      ->execute()->first();
+
+    foreach ($values as $name => $value) {
+      if (!isset($contribution[$name])) {
+        continue;
+      }
+      if ($contribution[$name] === $value
+        || $name === 'contribution_settlement.settlement_date' && strtotime($contribution[$name]) === strtotime($value)
+      ) {
+        unset($values[$name]);
+      }
+      elseif (is_float($value)) {
+        // (float) .46 does not always equal (float) .46 ....
+        // I'm actually interested in passing money objects up
+        // from the settlement report & around our subsystem but let's come back to that.
+        $newValue = Money::of($value, $settlementCurrency, NULL, RoundingMode::HALF_UP);
+        if ($newValue->compareTo($contribution[$name]) === 0) {
+          unset($values[$name]);
+        }
+      }
+    }
+    if ($values) {
+      $contribution = Contribution::update(FALSE)
+        ->addWhere('id', '=', $message->getContributionID())
+        ->setValues($values)
+        ->execute()->first();
+    }
     $result[] = $contribution;
   }
 

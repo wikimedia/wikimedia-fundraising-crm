@@ -25,19 +25,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
   public function processMessage(array $message): void {
-    // Sanity checking :)
-    $required_fields = [
-      "gross",
-      "date",
-      "gateway",
-      "type",
-    ];
-    foreach ($required_fields as $field_name) {
-      if (!array_key_exists($field_name, $message) || empty($message[$field_name])) {
-        $error = "Required field '$field_name' not present! Dropping message on floor.";
-        throw new WMFException(WMFException::CIVI_REQ_FIELD, $error);
-      }
-    }
     $messageObject = new RefundMessage($message);
     $messageObject->validate();
     $contributionStatus = $messageObject->getContributionStatus();

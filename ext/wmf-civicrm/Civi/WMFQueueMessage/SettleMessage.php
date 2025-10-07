@@ -10,11 +10,12 @@ class SettleMessage extends DonationMessage {
    * @var array{
    *    gateway: string,
    *    gateway_txn_id: string,
+   *    contribution_id: int,
    *    settled_date: string,
-   *    gross: float|string|int,
    *    settled_currency: string,
-   *    fee: string,
    *    settlement_batch_reference: string,
+   *    settled_total_amount: float|string|int,
+   *    settled_fee_amount: float|string|int,
    *    }
    */
   protected array $message;
@@ -27,10 +28,9 @@ class SettleMessage extends DonationMessage {
    * @var array|string[]
    */
   protected array $requiredFields = [
-    'gateway',
-    'gateway_txn_id',
-    'gross',
     'settled_date',
+    'settled_total_amount',
+    'contribution_id',
   ];
 
   public function getSettledDate(): string {
@@ -52,7 +52,7 @@ class SettleMessage extends DonationMessage {
   }
 
   public function getSettlementBatchReference(): string {
-    return $this->message['batch_reference'] ?? '';
+    return $this->message['settlement_batch_reference'] ?? '';
   }
 
   /**
@@ -61,7 +61,18 @@ class SettleMessage extends DonationMessage {
    * @return float
    */
   public function getSettledAmount(): float {
-    return $this->message['gross'];
+    return $this->message['settled_total_amount'];
+  }
+
+  /**
+   * Get the fee amount charged by the processing gateway, when available
+   */
+  public function getSettledFeeAmount(): float {
+    return $this->message['settled_fee_amount'] ?: 0.0;
+  }
+
+  public function getContributionID(): int {
+    return $this->message['contribution_id'];
   }
 
 }

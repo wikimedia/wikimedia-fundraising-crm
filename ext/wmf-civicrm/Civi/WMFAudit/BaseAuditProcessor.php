@@ -1199,7 +1199,7 @@ abstract class BaseAuditProcessor {
    * @return boolean true on success, otherwise false
    */
   protected function move_completed_recon_file(string $file): bool {
-    if (!$this->get_runtime_options('is_move_completed_file')) {
+    if (!$this->isMoveCompletedFile()) {
       // Generally in unit tests we want the files left unmoved.
       return TRUE;
     }
@@ -1236,8 +1236,10 @@ abstract class BaseAuditProcessor {
       'log_archive' => $this->getLogArchiveDirectory(),
       'recon' => $this->getIncomingFilesDirectory(),
       'log_working' => $this->getWorkingLogDirectory(),
-      'recon_completed' => $this->getCompletedFilesDirectory(),
     ];
+    if ($this->isMoveCompletedFile()) {
+      $directories['recon_completed'] = $this->getCompletedFilesDirectory();
+    }
 
     foreach ($directories as $id => $dir) {
       if ($dir && !is_dir($dir)) {
@@ -1288,7 +1290,7 @@ abstract class BaseAuditProcessor {
       $counter++;
       $count++;
       if (($this->get_runtime_options('progress_log_count') ?: 100000) === $counter) {
-        $this->echo('Get missing progress : ' . $count . '   seconds taken ' . microtime(true) - $timer) . '    number of missing found : ' . (count($this->missingTransactions['main']) + count($this->missingTransactions['negative']));
+        $this->echo('Get missing progress : ' . $count . '   seconds taken ' . microtime(true) - $timer) . '    number of missing found : ' . (count($this->missingTransactions['main'] ?? []) + count($this->missingTransactions['negative'] ?? []));
         $counter = 0;
         $timer = microtime(true);
       }
@@ -1560,6 +1562,13 @@ abstract class BaseAuditProcessor {
       unset($fallbackContributionTrackingData[$unsetme]);
     }
     return $fallbackContributionTrackingData;
+  }
+
+  /**
+   * @return bool
+   */
+  public function isMoveCompletedFile(): bool {
+    return $this->get_runtime_options('is_move_completed_file');
   }
 
   protected function parse_json_log_line($line) {

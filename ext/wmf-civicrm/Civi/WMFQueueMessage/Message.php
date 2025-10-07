@@ -106,7 +106,7 @@ class Message {
     $supported = $this->supportedFields;
     $fields = [];
     foreach (array_keys($supported) as $fieldName) {
-      $fields[$fieldName] = $this->getAvailableFields()[$fieldName] + ['required' => in_array($fieldName, $this->requiredFields)];
+      $fields[$fieldName] = ['required' => in_array($fieldName, $this->requiredFields)] + $this->getAvailableFields()[$fieldName];
     }
     return $fields;
   }
@@ -226,6 +226,13 @@ class Message {
         'api_field' => 'contribution_extra.parent_contribution_id',
         'api_entity' => 'Contribution',
       ],
+      'contribution_id' => [
+        'name' => 'contribution_id',
+        'title' => 'Contribution ID',
+        'data_type' => 'Integer',
+        'api_field' => 'id',
+        'api_entity' => 'Contribution',
+      ],
       'invoice_id' => [
         'title' => E::ts('Invoice ID'),
         'name' => 'invoice_id',
@@ -300,6 +307,7 @@ class Message {
         'api_field_reversal' => 'contribution_settlement.settled_reversal_amount',
         'used_for' => 'settle',
         'notes' => '',
+        'getter' => 'getSettledAmountRounded',
       ],
       'settled_net_amount' => [
         'name' => 'settled_net_amount',
@@ -312,7 +320,7 @@ class Message {
         'notes' => '',
       ],
       'settled_fee_amount' => [
-        'name' => 'settled_fee',
+        'name' => 'settled_fee_amount',
         'description' => E::ts('Fee in the Settled currency'),
         'data_type' => 'Money',
         'api_entity' => 'Contribution',
@@ -968,6 +976,19 @@ class Message {
       return 'SMS';
     }
     return '';
+  }
+
+  /**
+   * Is it recurring - we would be using the child class if it is.
+   *
+   * @return bool
+   */
+  public function isRecurring(): bool {
+    return FALSE;
+  }
+
+  public function isSubsequentRecurring(): bool {
+    return (bool) $this->getContributionRecurID();
   }
 
   public function getPhoneFields() : array {
