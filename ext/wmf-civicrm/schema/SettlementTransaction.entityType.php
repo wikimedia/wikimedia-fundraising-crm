@@ -246,5 +246,11 @@ return [
       'unique' => TRUE,
       'localizable' => FALSE,
     ],
+    'index_contribution_id' => [
+      'name' => 'index_contribution_id',
+      'fields' => ['contribution_id' => TRUE],
+      'unique' => TRUE,
+      'localizable' => FALSE,
+    ],
   ],
 ];
