@@ -1286,6 +1286,7 @@ abstract class BaseAuditProcessor {
       $auditRecord = WMFAudit::audit(FALSE)
         ->setValues($transaction)
         ->setProcessSettlement($this->get_runtime_options('is_settle'))
+        ->setIsSaveSettlementTransaction($this->get_runtime_options('is_save_settlement_transaction'))
         ->execute()->single();
       $counter++;
       $count++;

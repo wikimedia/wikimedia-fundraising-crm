@@ -15,6 +15,7 @@ use CRM_SmashPig_ContextWrapper;
  * @method $this setIsSettle(bool $isSettle)
  * @method $this setIsStopOnFirstMissing(bool $isStopOnFirstMissing)
  * @method $this setIsMoveCompletedFile(bool $isMoveCompletedFile)
+ * @method $this setIsSaveSettlementTransaction(bool $isSaveSettlementTransaction)
  * @method $this setIsCompleted(bool $isCompleted)
  * @method $this setFile(string $file)
  * @method $this setLogSearchPastDays(int $logSearchPastDays)
@@ -37,6 +38,12 @@ class Parse extends AbstractAction {
    * @var bool
    */
   public bool $isSettle = FALSE;
+
+  /**
+   *
+   * @var bool
+   */
+  public bool $isSaveSettlementTransaction = FALSE;
 
   /**
    * Should the parser find the file in the completed directory.
@@ -107,6 +114,7 @@ class Parse extends AbstractAction {
       'file' => $this->file,
       'log_search_past_days' => $this->logSearchPastDays,
       'is_settle' => $this->isSettle,
+      'is_save_settlement_transaction' => $this->isSaveSettlementTransaction,
       'is_stop_on_first_missing' => $this->isStopOnFirstMissing,
       'is_move_completed_file' => $this->isMoveCompletedFile,
       'is_completed' => $this->isCompleted,
