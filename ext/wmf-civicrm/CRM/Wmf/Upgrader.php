@@ -2918,6 +2918,18 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
     return TRUE;
   }
 
+  public function upgrade_4675(): bool {
+    $this->ctx->log->info('Applying update 4675: Add contribution_id index to settlement_transaction table');
+    CRM_Core_BAO_SchemaHandler::createIndexes(['settlement_transaction' => ['contribution_id']]);
+    return TRUE;
+  }
+
+  public function upgrade_4680(): bool {
+    $this->ctx->log->info('Applying update 4680: Clear out test data from ');
+    CRM_Core_DAO::executeQuery('TRUNCATE civicrm_value_contribution_settlement');
+    return TRUE;
+  }
+
   /**
    * @param array $conversions
    *
