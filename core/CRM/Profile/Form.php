@@ -18,10 +18,6 @@
 /**
  * This class generates form components for custom data
  *
- * It delegates the work to lower level subclasses and integrates the changes
- * back in. It also uses a lot of functionality with the CRM API's, so any change
- * made here could potentially affect the API etc. Be careful, be aware, use unit tests.
- *
  */
 class CRM_Profile_Form extends CRM_Core_Form {
   const
@@ -162,6 +158,7 @@ class CRM_Profile_Form extends CRM_Core_Form {
 
   protected $_currentUserID = NULL;
   protected $_session = NULL;
+  protected $_maxRecordLimit = NULL;
 
   /**
    * Check for any duplicates.
@@ -343,7 +340,7 @@ class CRM_Profile_Form extends CRM_Core_Form {
       }
     }
 
-    $gids = explode(',', (CRM_Utils_Request::retrieve('gid', 'String', CRM_Core_DAO::$_nullObject, FALSE, 0) ?? ''));
+    $gids = explode(',', (CRM_Utils_Request::retrieve('gid', 'String', NULL, FALSE, 0) ?? ''));
 
     if ((count($gids) > 1) && !$this->_profileIds && empty($this->_profileIds)) {
       if (!empty($gids)) {
@@ -806,7 +803,7 @@ class CRM_Profile_Form extends CRM_Core_Form {
     $this->assign('isHideFieldSet', ($this->_mode === self::MODE_CREATE || $this->_mode === self::MODE_EDIT));
     $this->assign('action', $this->_action);
     $this->assign('fields', $this->_fields);
-    $this->assign('fieldset', (isset($this->_fieldset)) ? $this->_fieldset : "");
+    $this->assign('fieldset', '');
 
     // should we restrict what we display
     $admin = TRUE;
@@ -973,7 +970,7 @@ class CRM_Profile_Form extends CRM_Core_Form {
    *   The input form values.
    * @param array $files
    *   The uploaded files if any.
-   * @param CRM_Core_Form $form
+   * @param CRM_Profile_Form $form
    *   The form object.
    *
    * @return bool|array
