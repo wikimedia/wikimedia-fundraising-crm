@@ -73,6 +73,15 @@ class AuditMessage extends DonationMessage {
   private array $transactionDetails;
 
   /**
+   * Original contribution in recurring series.
+   *
+   * Only loaded if required.
+   *
+   * @var array|null
+   */
+  private ?array $firstRecurringContribution;
+
+  /**
    * Are we dealing with a message that had a currency other than our settlement currency.
    */
   public function isExchangeRateConversionRequired(): bool {
@@ -257,9 +266,6 @@ class AuditMessage extends DonationMessage {
           ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
           ->execute()->first() ?? [];
       }
-      else {
-        $isGravy = 'holy cow';
-      }
     }
     if (!$this->existingContribution) {
       static $isFirst = TRUE;
@@ -277,6 +283,17 @@ class AuditMessage extends DonationMessage {
     }
 
     return $this->existingContribution ?: NULL;
+  }
+
+  public function isSubsequentRecurring(): bool {
+    if ($this->getContributionRecurID()) {
+      return TRUE;
+    }
+    $orderParts = explode('.', $this->getOrderID());
+    if (($orderParts[1] ?? 0) <= 1) {
+      return FALSE;
+    }
+    return !empty($this->getFirstRecurringContribution());
   }
 
   /**
@@ -446,8 +463,41 @@ class AuditMessage extends DonationMessage {
           break;
         }
       }
+      if (empty($this->transactionDetails) && $this->isSubsequentRecurring()) {
+        // Let's make them up based on the first in the sequence.
+        $contribution = $this->getFirstRecurringContribution();
+        if ($contribution) {
+          $contributionTrackingID = explode('.', $this->getOrderID())[0];
+          $this->transactionDetails = [
+            'gateway' => $this->getGateway(),
+            'gateway_txn_id' => $this->getGatewayTxnID(),
+            'message' => [
+              'contact_id' => $contribution['contact_id'],
+              'contribution_tracking_id' => $contributionTrackingID,
+              'contribution_recur_id' => $contribution['contribution_recur_id'],
+            ],
+          ];
+        }
+      }
     }
     return empty($this->transactionDetails) ? NULL : $this->transactionDetails;
+  }
+
+  /**
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function getFirstRecurringContribution(): array {
+    if (!isset($this->firstRecurringContribution)) {
+      $contributionTrackingID = explode('.', $this->getOrderID())[0];
+      $this->firstRecurringContribution = Contribution::get(FALSE)
+        ->addWhere('invoice_id', 'LIKE', ($contributionTrackingID . '.%|recur%'))
+        ->addOrderBy('id')
+        ->addSelect('contact_id', 'contribution_recur_id')
+        ->setLimit(1)
+        ->execute()->first() ?? [];
+    }
+    return $this->firstRecurringContribution;
   }
 
 }
