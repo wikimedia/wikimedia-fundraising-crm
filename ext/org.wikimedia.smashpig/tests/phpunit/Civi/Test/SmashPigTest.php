@@ -616,15 +616,15 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
       'financial_type_id' => $financialType,
-      'payment_instrument_id' => '4',
+      'payment_instrument_id' => 4,
       'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
-      'restrictions' => NULL,
-      'gift_source' => NULL,
-      'direct_mail_appeal' => NULL,
+      'restrictions' => 'Unrestricted - General',
+      'gift_source' => 'Individual Gift',
+      'direct_mail_appeal' => 'Spontaneous Donation',
     ], $contributionMessage);
   }
 
@@ -681,19 +681,19 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $this->assertEquals([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
-      'gross' => '9.00',
+      'gross' => 9,
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
       'financial_type_id' => $financialType,
-      'payment_instrument_id' => '4',
+      'payment_instrument_id' => 4,
       'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
-      'restrictions' => NULL,
-      'gift_source' => NULL,
-      'direct_mail_appeal' => NULL,
+      'restrictions' => 'Unrestricted - General',
+      'gift_source' => 'Individual Gift',
+      'direct_mail_appeal' => 'Spontaneous Donation',
     ], $contributionMessage);
   }
 
@@ -825,19 +825,19 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $this->assertEquals([
       'contact_id' => $contact['id'],
       'currency' => 'EUR',
-      'gross' => '11.22',
+      'gross' => 11.22,
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $expectedInvoiceId,
       'financial_type_id' => $financialType,
-      'payment_instrument_id' => '4',
+      'payment_instrument_id' => 4,
       'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
-      'restrictions' => NULL,
-      'gift_source' => NULL,
-      'direct_mail_appeal' => NULL,
+      'restrictions' => 'Unrestricted - General',
+      'gift_source' => 'Individual Gift',
+      'direct_mail_appeal' => 'Spontaneous Donation',
     ], $contributionMessage);
   }
 
@@ -1608,19 +1608,19 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $this->assertEquals([
       'contact_id' => $contact['id'],
       'currency' => 'USD',
-      'gross' => '12.34',
+      'gross' => 12.34,
       'gateway_txn_id' => '000000850010000188130000200001',
       'invoice_id' => $nextInvoiceId,
       'financial_type_id' => $financialType,
-      'payment_instrument_id' => '4',
+      'payment_instrument_id' => 4,
       'gateway' => 'testSmashPig',
       'payment_method' => 'cc',
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
-      'restrictions' => NULL,
-      'gift_source' => NULL,
-      'direct_mail_appeal' => NULL,
+      'restrictions' => 'Unrestricted - General',
+      'gift_source' => 'Individual Gift',
+      'direct_mail_appeal' => 'Spontaneous Donation',
     ], $contributionMessage);
   }
 

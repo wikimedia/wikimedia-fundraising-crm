@@ -1192,7 +1192,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->addSelect('fee_amount', 'total_amount','Gift_Data.Campaign', 'net_amount', 'contact_id', 'contact_id.email_primary.email', 'contact_id.address_primary.street_address', 'contact_id.employer_id.display_name')
       ->addWhere('trxn_id', '=', 'BENEVITY trxn-SQUEAK')
       ->execute()->single();
-    $this->assertEquals(NULL, $contribution['Gift_Data.Campaign']);
+    $this->assertEquals('Individual Gift', $contribution['Gift_Data.Campaign']);
     $this->assertEquals(.09, $contribution['fee_amount']);
     $this->assertEquals(89.91, $contribution['net_amount']);
     $this->assertEquals(90, $contribution['total_amount']);
