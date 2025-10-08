@@ -348,6 +348,25 @@ class AdyenAuditTest extends BaseAuditTestCase {
   }
 
   /**
+   * Test that a subsequent recurring can be built from the initial recur.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testSubsequentRecur(): void {
+    $this->setAuditDirectory('donation_recur');
+    $this->runAuditor();
+    $this->processDonationsQueue();
+    $this->setAuditDirectory('donation_recur_subsequent');
+    $this->runAuditor();
+    $this->processDonationsQueue();
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', 'LIKE', '82431234.%|recur-%')
+      ->addOrderBy('id', 'DESC')
+    ->execute();
+    $this->assertCount(2, $contribution);
+  }
+
+  /**
    * Test that gravy missing donations are handled.
    *
    * @return void
