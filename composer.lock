@@ -4617,16 +4617,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "2.0.48",
+            "version": "2.0.49",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "eaa7be704b8b93a6913b69eb7f645a59d7731b61"
+                "reference": "4de468f48f0ab9709fc875aca0762abdc81cfa9b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/eaa7be704b8b93a6913b69eb7f645a59d7731b61",
-                "reference": "eaa7be704b8b93a6913b69eb7f645a59d7731b61",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/4de468f48f0ab9709fc875aca0762abdc81cfa9b",
+                "reference": "4de468f48f0ab9709fc875aca0762abdc81cfa9b",
                 "shasum": ""
             },
             "require": {
@@ -4707,7 +4707,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/2.0.48"
+                "source": "https://github.com/phpseclib/phpseclib/tree/2.0.49"
             },
             "funding": [
                 {
@@ -4723,7 +4723,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-12-14T21:03:54+00:00"
+            "time": "2025-10-06T01:05:33+00:00"
         },
         {
             "name": "phrity/net-stream",
@@ -8401,11 +8401,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.26",
+            "version": "1.27",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "78b613419821766dde7265cc0a2220577f1bfbb6"
+                "reference": "7b56eb22b56872b8c7c8f2575baed30836791a21"
             },
             "require": {
                 "league/csv": "^9",
@@ -8445,7 +8445,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2025-10-02T02:54:08+00:00"
+            "time": "2025-10-07T21:10:53+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
