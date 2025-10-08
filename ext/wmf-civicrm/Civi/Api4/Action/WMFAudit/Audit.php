@@ -9,6 +9,7 @@ use Civi\Api4\Generic\Result;
 use Civi\Api4\SettlementTransaction;
 use Civi\Api4\WMFAudit;
 use Civi\WMFQueueMessage\AuditMessage;
+use SmashPig\Core\DataStores\QueueWrapper;
 
 /**
  * Settle transaction.
@@ -26,6 +27,13 @@ class Audit extends AbstractAction {
    */
   protected array $values = [];
 
+  /**
+   * Settlement processing mode.
+   *
+   * queue|now
+   *
+   * @var string|null
+   */
   protected ?string $processSettlement = NULL;
 
   /**
@@ -63,23 +71,24 @@ class Audit extends AbstractAction {
       }
       $this->saveSettlementTransaction($record, $message);
 
-      // Here we would ideally queue but short term we will probably process in real time on specific files
-      // as we test.
-      // @todo - create queue option (after maybe some testing with this).
-      // For now this only kicks in when run manually and only on settlement reports from adyen
-      // as only those pass up the settled reference.
       if (!$isMissing && !empty($record['settlement_batch_reference'])) {
-        WMFAudit::settle(FALSE)
-          ->setValues([
-            'gateway' => $record['gateway'],
-            'gateway_txn_id' => $record['gateway_txn_id'],
-            'contribution_id' => $message->getExistingContributionID(),
-            'settled_date' => $record['settled_date'],
-            'settled_currency' => $record['settled_currency'],
-            'settlement_batch_reference' => $record['settlement_batch_reference'],
-            'settled_total_amount' => $record['settled_total_amount'],
-            'settled_fee_amount' => $record['settled_fee_amount'],
-          ])->execute();
+        $values = [
+          'gateway' => $record['gateway'],
+          'gateway_txn_id' => $record['gateway_txn_id'],
+          'contribution_id' => $message->getExistingContributionID(),
+          'settled_date' => $record['settled_date'],
+          'settled_currency' => $record['settled_currency'],
+          'settlement_batch_reference' => $record['settlement_batch_reference'],
+          'settled_total_amount' => $record['settled_total_amount'],
+          'settled_fee_amount' => $record['settled_fee_amount'],
+        ];
+        if ($this->processSettlement === 'queue') {
+          QueueWrapper::push('settle', $values, TRUE);
+        }
+        else {
+          WMFAudit::settle(FALSE)
+            ->setValues($values)->execute();
+        }
       }
     }
    // @todo - we would ideally augment the missing messages here from the Pending table

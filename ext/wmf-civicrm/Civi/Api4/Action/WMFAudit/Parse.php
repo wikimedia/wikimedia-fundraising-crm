@@ -12,7 +12,7 @@ use CRM_SmashPig_ContextWrapper;
  * @method string getGateway()
  * @method $this setGateway(string $gateway)
  * @method $this setIsMakeMissing(bool $isMakeMissing)
- * @method $this setIsSettle(bool $isSettle)
+ * @method $this setSettleMode(string $settleMode)
  * @method $this setIsStopOnFirstMissing(bool $isStopOnFirstMissing)
  * @method $this setIsMoveCompletedFile(bool $isMoveCompletedFile)
  * @method $this setIsSaveSettlementTransaction(bool $isSaveSettlementTransaction)
@@ -33,11 +33,11 @@ class Parse extends AbstractAction {
   public bool $isMakeMissing = FALSE;
 
   /**
-   * Should settlement be done on this run.
+   * How should settlement be done on this run? None (NULL) or queue|now.
    *
-   * @var bool
+   * @var ?string
    */
-  public bool $isSettle = FALSE;
+  public ?string $settleMode = NULL;
 
   /**
    *
@@ -113,7 +113,7 @@ class Parse extends AbstractAction {
       'file_limit' => $this->fileLimit,
       'file' => $this->file,
       'log_search_past_days' => $this->logSearchPastDays,
-      'is_settle' => $this->isSettle,
+      'settle_mode' => $this->settleMode,
       'is_save_settlement_transaction' => $this->isSaveSettlementTransaction,
       'is_stop_on_first_missing' => $this->isStopOnFirstMissing,
       'is_move_completed_file' => $this->isMoveCompletedFile,
