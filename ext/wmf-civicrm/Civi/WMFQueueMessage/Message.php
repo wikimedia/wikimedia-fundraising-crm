@@ -1025,7 +1025,7 @@ class Message {
       }
     }
 
-    if (in_array($utmMedium, ['WikipediaApp', 'WikipediaAppFeed'])) {
+    if (in_array($utmMedium, ['wikipediaapp', 'wikipediaappfeed'])) {
       return 'Wikipedia App';
     }
 
