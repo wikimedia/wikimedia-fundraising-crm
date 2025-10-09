@@ -508,7 +508,14 @@ function _wmf_civicrm_get_gift_data_fields(): array {
       'note_columns' => 60,
       'note_rows' => 4,
       'option_values' => [
-        'Banner' => 'Banner',
+        'Mobile Banner' => 'Mobile Banner',
+        'Desktop Banner' => 'Desktop Banner',
+        'Portal Banner' => 'Portal Banner',
+        'Other Banner' => 'Other Banner',
+        'Other Portal' => 'Other Portal',
+        'Sidebar' => 'Sidebar',
+        'Social Media' => 'Social Media',
+        'Wikipedia App' => 'Wikipedia App',
         'Email' => 'Email',
         'Direct_Mail' => 'Direct Mail',
         'Workplace_Giving' => 'Workplace Giving',
@@ -519,6 +526,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         'Recurring_Gift' => 'Recurring Gift',
         'Chapter_Gifts' => 'Chapter Gifts',
         'Other Offline' => 'Other Offline',
+        'Other Online' => 'Other Online',
       ],
     ],
     'is_major_gift' => [

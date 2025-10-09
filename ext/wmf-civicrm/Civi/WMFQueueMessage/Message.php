@@ -979,10 +979,70 @@ class Message {
     if (!empty($this->message['channel'])) {
       return $this->message['channel'];
     }
+    if ($this->isSubsequentRecurring()) {
+      // The first recurring goes to the solicted channel. After that to Recurring Gift.
+      return 'Recurring Gift';
+    }
     if (!empty($this->message['recipient_id'])) {
       return 'SMS';
     }
-    return '';
+    $utmSource = $this->message['utm_source'] ?? '';
+    $utmMedium = strtolower($this->message['utm_medium'] ?? '');
+
+    if ($utmMedium === 'mail' || str_contains('DMURL', $utmSource)) {
+      return 'Direct_Mail';
+    }
+
+    if ($utmMedium === 'sitenotice'
+      // Endowment gifts put endowment in the medium...
+      || ($this->isEndowmentGift() && str_starts_with($utmSource, 'B'))
+    ) {
+      if (str_contains($utmSource, '_m_')
+        || str_contains($utmSource, 'mob')
+      ) {
+        return 'Mobile Banner';
+      }
+      if (str_contains($utmSource, 'dsk')) {
+        return 'Desktop Banner';
+      }
+      return 'Other Banner';
+    }
+    // Once the endowment banner check is done let's be case insensitive.
+    $utmSource = strtolower($utmSource);
+    if ($utmMedium === 'sidebar') {
+      return 'Sidebar';
+    }
+
+    if (str_starts_with($utmSource, 'sp') || $utmMedium === 'email') {
+      return 'Email';
+    }
+    if ($utmMedium === 'portal') {
+      if (($this->message['utm_campaign'] ?? '') == 'portalBanner') {
+        return 'Portal Banner';
+      }
+      else {
+        return 'Other Portal';
+      }
+    }
+
+    if (in_array($utmMedium, ['WikipediaApp', 'WikipediaAppFeed'])) {
+      return 'Wikipedia App';
+    }
+
+    if (in_array($utmMedium, ['google', 'facebook', 'instagram', 'tiktok', 'threads'])) {
+      return 'Social Media';
+    }
+
+    return 'Other Online';
+  }
+
+  /**
+   * Is the donation an endowment gift.
+   *
+   * @return bool
+   */
+  public function isEndowmentGift(): bool {
+    return isset($this->message['utm_medium']) && $this->message['utm_medium'] === 'endowment';
   }
 
   /**

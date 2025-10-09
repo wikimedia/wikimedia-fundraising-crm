@@ -282,15 +282,6 @@ class DonationMessage extends Message {
   }
 
   /**
-   * Is the donation an endowment gift.
-   *
-   * @return bool
-   */
-  public function isEndowmentGift(): bool {
-    return isset($this->message['utm_medium']) && $this->message['utm_medium'] === 'endowment';
-  }
-
-  /**
    * Get the currency remitted by the donor.
    *
    * @return string
