@@ -2961,6 +2961,53 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Update channel to email where the mailing_identifier is set.
+   *
+   * I did some checks and these are all currently empty - ie
+   * select channel, count(*) FROM civicrm_contribution_tracking
+   * LEFT JOIN civicrm_value_1_gift_data_7 ON entity_id = contribution_id
+   * WHERE mailing_identifier LIKE '%' GROUP BY channel;
+   * +---------+----------+
+   * | channel | count(*) |
+   * +---------+----------+
+   * | NULL    | 24356733 |
+   * |         |      183 |
+   *
+   * I agreed with Joseph that we should set the channel for these - going forwards we
+   * will set on ingress. In testing the lowest relevant ID is
+   * 3573301 so this will start from 3500000 and update in batches of 250k until
+   * it runs a query with no affected rows. At 250k rows the query took about 1 second
+   * on staging and I think we should be safe assuming no unaffected rows will
+   * be in a 250k batch prior to the end of the road... However, if we update the
+   * bulk & then need to pick up a few later that's OK - this will happen anyway if
+   * we deploy the update before the ingress code goes out.
+   *
+   * Bug: T406193
+   *
+   * @return bool
+   */
+  public function upgrade_4690(): bool {
+    $sql = '
+      UPDATE civicrm_value_1_gift_data_7 gift
+      INNER JOIN civicrm_contribution_tracking ON entity_id = contribution_id SET channel = "Email"
+      WHERE mailing_identifier IS NOT NULL
+      AND gift.id BETWEEN %1 AND %2';
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 3500000,
+        'type' => 'Integer',
+        'increment' => 250000,
+      ],
+      2 => [
+        'value' => 3750000,
+        'type' => 'Integer',
+        'increment' => 250000,
+      ],
+    ]);
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void
