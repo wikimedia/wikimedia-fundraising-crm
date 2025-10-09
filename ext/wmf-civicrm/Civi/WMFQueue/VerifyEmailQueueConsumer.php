@@ -8,7 +8,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Email;
 
 /**
- * Consumer for the "set-primary-email" queue.
+ * Consumer for the "verify-email" queue.
  *
  * Expects messages with the following structure:
  *   {
