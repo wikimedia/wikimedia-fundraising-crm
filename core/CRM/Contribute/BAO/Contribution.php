@@ -630,8 +630,24 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution im
       // TODO: the same calculation is done in various places in the form layer
       // would be good to remove
       if (!isset($event->params['invoice_id'])) {
-        $event->params['invoice_id'] = bin2hex(random_bytes(16));
+        $event->params['invoice_id'] = self::generateInvoiceID();
       }
+    }
+  }
+
+  /**
+   * Note: Invoice IDs are generated all over the place.
+   *   This function was added to consolidate that so we have one place where the IDs are generated
+   *
+   * @return string
+   * @throws \Random\RandomException
+   */
+  public static function generateInvoiceID(): string {
+    try {
+      return bin2hex(random_bytes(16));
+    }
+    catch (Random\RandomException $e) {
+      return '';
     }
   }
 
@@ -3173,11 +3189,11 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
 
     $checkStatus = [
       'Cancelled' => ['Completed', 'Refunded'],
-      'Completed' => ['Cancelled', 'Refunded', 'Chargeback'],
+      'Completed' => ['Cancelled', 'Refunded', 'Chargeback', 'Partially paid'],
       'Pending' => ['Cancelled', 'Completed', 'Failed', 'Partially paid'],
       'In Progress' => ['Cancelled', 'Completed', 'Failed'],
       'Refunded' => ['Cancelled', 'Completed'],
-      'Partially paid' => ['Completed'],
+      'Partially paid' => ['Completed', 'Refunded'],
       'Pending refund' => ['Completed', 'Refunded'],
       'Failed' => ['Pending'],
     ];

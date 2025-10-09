@@ -753,14 +753,22 @@ WHERE     civicrm_contact.id = " . CRM_Utils_Type::escape($id, 'Integer');
    * @throws \CRM_Core_Exception
    */
   protected static function contactTrash(CRM_Contact_DAO_Contact $contact): bool {
-    $updateParams = [
+    $updateParams = $preHookUpdateParams = [
       'id' => $contact->id,
       'is_deleted' => 1,
     ];
     CRM_Utils_Hook::pre('edit', $contact->contact_type, $contact->id, $updateParams);
-
+    // Do a direct update query - the legacy behaviour blocked mysql
+    // from managing modified_date.
+    CRM_Core_DAO::executeQuery('UPDATE civicrm_contact SET is_deleted = %1 WHERE id = %2', [
+      1 => [$updateParams['is_deleted'], 'Integer'],
+      2 => [$updateParams['id'], 'Integer'],
+    ]);
     $contact->copyValues($updateParams);
-    $contact->save();
+    if ($updateParams !== $preHookUpdateParams) {
+      // Do legacy behaviour.
+      $contact->save();
+    }
     CRM_Core_BAO_Log::register($contact->id, 'civicrm_contact', $contact->id);
 
     CRM_Utils_Hook::post('edit', $contact->contact_type, $contact->id, $contact);
@@ -779,13 +787,15 @@ WHERE     civicrm_contact.id = " . CRM_Utils_Type::escape($id, 'Integer');
    * @param array $defaults
    *   (reference ) an assoc array to hold the name / value pairs.
    *                        in a hierarchical manner
-   * @param bool $microformat
-   *   Deprecated value
+   * @param bool $useAddressMarkup
+   *   (DEPRECATED) If TRUE, the contact's primary address will be
+   *   returned with a formatted (HTML) blob.
    *
    * @return CRM_Contact_BAO_Contact
+   *
    */
-  public static function &retrieve(&$params, &$defaults = [], $microformat = FALSE) {
-    if ($microformat) {
+  public static function &retrieve(&$params, &$defaults = [], $useAddressMarkup = FALSE) {
+    if ($useAddressMarkup) {
       CRM_Core_Error::deprecatedWarning('microformat is deprecated in CRM_Contact_BAO_Contact::retrieve');
     }
     if (array_key_exists('contact_id', $params)) {
@@ -803,7 +813,7 @@ WHERE     civicrm_contact.id = " . CRM_Utils_Type::escape($id, 'Integer');
     $contact->email = $defaults['email'] = CRM_Core_BAO_Email::getValues(['contact_id' => $params['contact_id']]);
     $contact->openid = $defaults['openid'] = CRM_Core_BAO_OpenID::getValues(['contact_id' => $params['contact_id']]);
     $contact->phone = $defaults['phone'] = CRM_Core_BAO_Phone::getValues(['contact_id' => $params['contact_id']]);
-    $contact->address = $defaults['address'] = CRM_Core_BAO_Address::getValues(['contact_id' => $params['contact_id']], $microformat);
+    $contact->address = $defaults['address'] = CRM_Core_BAO_Address::getValues(['contact_id' => $params['contact_id']], $useAddressMarkup);
     $contact->website = CRM_Core_BAO_Website::getValues($params, $defaults);
 
     if (!isset($params['noNotes'])) {
