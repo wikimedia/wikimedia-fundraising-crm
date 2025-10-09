@@ -9,6 +9,8 @@ use Civi\Api4\Email;
 use Civi\Api4\Contact;
 use Civi\Api4\Address;
 use Civi\Api4\Activity;
+use Civi\Api4\WorkflowMessage;
+use Civi\WorkflowMessage\SetPrimaryEmailMessage;
 
 /**
  * Class UpdateCommunicationsPreferences.
@@ -20,7 +22,9 @@ use Civi\Api4\Activity;
  * @method $this setContactID(int $contactID)
  * @method int getContactID() Get contactID from email preference center queue.
  * @method $this setChecksum(string $checksum)
- * @method string getChecksum() Get checksum from email preference center queue.
+ * @method string getChecksum() Get emailChecksum from email preference center queue.
+ * @method $this setEmailChecksum(string $emailChecksum)
+ * @method string getEmailChecksum() Get emailChecksum from email preference center queue.
  * @method $this setCountry(?string $country)
  * @method string|null getCountry() Get country from email preference center queue.
  * @method $this setSnoozeDate(?string $snoozeDate)
@@ -44,6 +48,13 @@ class UpdateCommunicationsPreferences extends AbstractAction {
    * @var string
    */
   protected $checksum;
+
+  /**
+   * checksum prepared for set primary email queue.
+   * @required
+   * @var string
+   */
+  protected $emailChecksum;
 
   /**
    * email from email preference center queue.
@@ -80,8 +91,10 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     $params = [
       'contact_id' => $this->contactID,
       'checksum' => $this->checksum,
+      'email_checksum' => $this->emailChecksum,
       'email' => $this->email,
     ];
+
     if ($this->country) {
       $params['country'] = $this->country;
     }
@@ -113,12 +126,11 @@ class UpdateCommunicationsPreferences extends AbstractAction {
         "Contact with ID {$params['contact_id']} from preferences message has been merged into contact with ID $contactID"
       );
     }
-
-    $message = "Email Preference Center update - civicrm_contact id: $contactID";
+    $message = "";
     $outcome = [];
     $snoozeValues = [];
     $contactUpdateValues = [];
-    $oldOptInValue = $contact['Communication.opt_in'];
+    $oldOptInValue = $contact['Communication.opt_in'] ? 1 : 0;
     $oldSnoozeDateValue = $contact['email_primary.email_settings.snooze_date'];
     $oldLanguageValue = $contact['preferred_language'];
     $oldEmailValue = $contact['email.email'];
@@ -139,12 +151,12 @@ class UpdateCommunicationsPreferences extends AbstractAction {
           $snoozeValues['email_settings.snooze_date'] = date("Y-m-d", strtotime("+1 day"));
           $message .= ', since current snoozeValue was ' . $oldSnoozeDateValue . ', so set snoozeValue to ' . $snoozeValues['email_settings.snooze_date'];
         }
-        $message .= ", opt_in from {$oldOptInValue} to {$params['send_email']}";
-        $detail = "Email Preference Center update opt_in from {$oldOptInValue} to {$params['send_email']}";
+        $message .= ", opt_in from {$oldOptInValue} to {$newOptIn}";
+        $detail = "Email Preference Center update opt_in from {$oldOptInValue} to {$newOptIn}";
         if ($params['send_email'] === 'true') {
-          $this->logActivity("OptIn", $detail, $params['contact_id']);
+          $this->logActivity("OptIn", $detail, $contactID);
         } else {
-          $this->logActivity("unsubscribe", $detail, $params['contact_id']);
+          $this->logActivity("unsubscribe", $detail, $contactID);
         }
       }
     }
@@ -199,39 +211,48 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       $message .= ", snooze date from {$oldSnoozeDateValue} to {$params['snooze_date']}";
     }
 
-    // 5: update email
+    // 5: update email - trigger verification email if email changed
     $email = Email::get(FALSE)
       ->addWhere('contact_id', '=', $contactID)
       ->addWhere('is_primary', '=',1)
       ->execute();
     $isEmailUpdated = $oldEmailValue !== $params['email'];
     if ($isEmailUpdated) {
-      $message .= ", email from {$oldEmailValue} to {$params['email']}";
+      // Send verification email to donor to confirm if confirm primary update
+      $this->sendVerificationEmail(
+        $params,
+        $contact,
+        $contactID
+      );
+      // send email change activity
+      $this->logActivity("Send Verification Email",
+        "Try to update EmailPreference email from $oldEmailValue to " . $params['email'] . " and send verification email.",
+        $contactID);
     }
-    if ($isEmailUpdated || $snoozeValues !== []) {
+
+    // 6: if snooze date updated, update/create email record
+    if ($snoozeValues !== []) {
       if (count($email) === 1) {
-        $emailResult = Email::update(FALSE)->setValues([
-            'email' => (string) $params['email']
-          ] + $snoozeValues)
+        $emailResult = Email::update(FALSE)->setValues($snoozeValues)
           ->addWhere('id', '=', $email->first()['id'])
           ->execute()->first();
       }
       else {
-        $emailResult = Email::create(FALSE)->setValues([
-            'email' => (string) $params['email'],
-            'contact_id' => $contactID,
-            'is_primary' => 1,
-          ] + $snoozeValues)->execute()->first();
+        $emailResult = [];
       }
-
+      // log activity for snooze date update
+      $this->logActivity("Email Preference Center",
+        "Email Preference Center update snooze date from {$oldSnoozeDateValue}
+          to {$snoozeValues['email_settings.snooze_date']}", $contactID);
       $outcome = array_merge($outcome, $emailResult);
     }
 
     // only log when epc have the info update
     if ($outcome !== []) {
+      $message = "Email Preference Center update - civicrm_contact id: $contactID" . $message . '.';
+      \Civi::log('wmf')->info($message);
       $this->logActivity('Email Preference Center', "$message.", $params['contact_id']);
     }
-    \Civi::log('wmf')->info($message. '.');
 
     $result[] = $outcome;
   }
@@ -245,7 +266,8 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     // check if required params exist
     if (empty($params['email']) ||
       empty($params['contact_id']) ||
-      empty($params['checksum'])
+      empty($params['checksum'])||
+      empty($params['email_checksum'])
     ) {
       throw new \CRM_Core_Exception('Missing required parameters in e-mail preferences message.');
     }
@@ -379,5 +401,41 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       'true' => 'true',
       'false' => 'false',
     ];
+  }
+
+  function sendVerificationEmail(array $params, array $contact, int $contactID): void {
+    // unique checksum for validation
+    $unexpiredChecksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID, null, 'inf');
+    $primaryEmailUrl = \Civi::settings()->get('wmf_confirm_primary_email_url') .
+      '&contact_id='. $params['contact_id'] . '&checksum=' . $unexpiredChecksum .
+      '&email_checksum=' . $params['email_checksum'] .
+      '&email=' . urlencode($params['email']);
+    [$domainEmailName, $domainEmailAddress] = \CRM_Core_BAO_Domain::getNameAndEmail();
+
+    // Render email template
+    $emailTemplate = WorkflowMessage::render(FALSE)
+      ->setLanguage($contact['preferred_language'])
+      ->setWorkflow(SetPrimaryEmailMessage::WORKFLOW)
+      ->setValues([
+        'contact' => $contact,
+        'contactID' => $contactID,
+        'url' => $primaryEmailUrl,
+        'newEmail' => $params['email'],
+        'oldEmail' => $contact['email.email'],
+        'date' => date('Y-m-d'),
+        'time' => date('H:i'),
+      ])
+      ->execute()->first();
+
+    $emailParams = [
+      'html' => $emailTemplate['html'],
+      'text' => $emailTemplate['text'],
+      'subject' => $emailTemplate['subject'],
+      'toEmail' => $params['email'],
+      'toName' => $contact['first_name'],
+      'from' => "$domainEmailName <$domainEmailAddress>",
+    ];
+    \CRM_Utils_Mail::send($emailParams);
+    \Civi::log('wmf')->info("Attempt to update contact {$params['contact_id']}'s email from {$contact['email.email']} to {$params['email']}, confirmation email send");
   }
 }

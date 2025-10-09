@@ -38,7 +38,7 @@ class PrenotifyAnnualDonors extends AbstractAction {
         'LEFT',
         ['activity.source_record_id', '=', 'id'],
         ['activity.activity_type_id', '=', $activityType],
-        ['activity.activity_date_time', '>', '-3 months'],
+        ['activity.activity_date_time', '>', "'" . date_create('-3 months')->format('Y-m-d') . "'"],
       )
       ->addWhere('frequency_unit', '=', 'year')
       ->addWhere('next_sched_contribution_date', 'BETWEEN', ['now', "+$this->days days"])

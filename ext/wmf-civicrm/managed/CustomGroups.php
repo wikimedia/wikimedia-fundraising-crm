@@ -1173,6 +1173,16 @@ function _wmf_civicrm_get_external_identifiers_fields(): array {
       'is_searchable' => 1,
       'is_view' => 0,
     ],
+    'paypal_payer_id' => [
+      'name' => 'paypal_payer_id',
+      'column_name' => 'paypal_payer_id',
+      'label' => ts('Paypal Payer ID'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 0,
+    ],
   ];
 }
 
