@@ -70,7 +70,7 @@ return [
     'group_name' => 'wmf Settings',
     'group' => 'wmf',
     'name' => 'wmf_confirm_primary_email_url',
-    'default' => 'https://donorpreferences.wikimedia.org/wiki/index.php?title=Special:EmailPreferences/confirmEmail',
+    'default' => 'https://donorpreferences.wikimedia.org/index.php?title=Special:EmailPreferences/confirmEmail',
     'type' => 'String',
     'is_domain' => 1,
     'is_contact' => 0,
