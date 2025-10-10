@@ -126,6 +126,24 @@ CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'color' => NULL,
 ]);
 
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'label' => 'Double Opt-In',
+  'value' => 220,
+  'name' => 'Double Opt-In',
+  'grouping' => NULL,
+  'filter' => 1,
+  'is_default' => FALSE,
+  'description' => 'Donor confirmed that they want to receive emails. Opted in email address is in subject.',
+  'is_optgroup' => FALSE,
+  'is_reserved' => FALSE,
+  'is_active' => TRUE,
+  'component_id' => NULL,
+  'domain_id' => NULL,
+  'visibility_id' => NULL,
+  'color' => NULL,
+]);
+
 return [
   'wmf_donor' => [
     'group' => [
@@ -311,8 +329,8 @@ return [
       'name' => 'activity_tracking',
       'title' => 'Activity Tracking',
       'extends' => 'Activity',
-  // Values hardcoded above
-      'extends_entity_column_value' => [165, 166, 168],
+  // Values hardcoded above and in ActivityType.mgd.php
+      'extends_entity_column_value' => [165, 166, 168, 220],
       'style' => 'Inline',
       'is_active' => TRUE,
       'table_name' => 'civicrm_activity_tracking',
@@ -1529,6 +1547,7 @@ function _wmf_civicrm_get_wmf_contribution_extra_fields(): array {
     ],
   ];
 }
+
 /**
  * Get fields for _wmf_contribution_extra.
  *

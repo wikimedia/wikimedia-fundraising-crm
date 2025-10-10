@@ -440,5 +440,36 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'OptionValue_DoubleOptIn',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'activity_type',
+        'label' => 'Double Opt-In',
+        'name' => 'Double Opt-In',
+        'value' => 220,
+        'grouping' => NULL,
+        'filter' => 1,
+        'weight' => 98,
+        'is_default' => FALSE,
+        'description' => 'Donor confirmed that they want to receive emails. Opted in email address is in subject.',
+        'is_optgroup' => FALSE,
+        'is_reserved' => FALSE,
+        'is_active' => TRUE,
+        'component_id' => NULL,
+        'domain_id' => NULL,
+        'visibility_id' => NULL,
+        'icon' => 'fa-check',
+        'color' => NULL,
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ],
 ];
-
