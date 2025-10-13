@@ -462,7 +462,7 @@ abstract class BaseAuditProcessor {
     $recon_file_stats = [];
     foreach ($this->getReconciliationFiles() as $file) {
       //parse the recon files into something relatively reasonable.
-      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0];
+      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0];
       $parsed = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
         $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
@@ -1297,7 +1297,9 @@ abstract class BaseAuditProcessor {
       }
       $this->recordStatistic($auditRecord, $file);
       if ($auditRecord['is_missing']) {
-        if (($auditRecord['message']['type'] ?? NULL) === 'fee') {
+        if (($auditRecord['message']['type'] ?? NULL) === 'fee'
+          || ($auditRecord['message']['type'] ?? NULL) === 'aggregate'
+        ) {
           // For now continue to skip these.
           continue;
         }
@@ -1329,6 +1331,11 @@ abstract class BaseAuditProcessor {
       $this->addToBatch($transaction);
     }
     $type = $auditRecord['audit_message_type'];
+    if ($type === 'aggregate') {
+      $this->totals[$transaction['settled_currency']] ??= 0;
+      $this->totals[$transaction['settled_currency']] += $transaction['settled_total_amount'];
+      return;
+    }
     if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
       $fileStatistics[$type]['by_payment'][$paymentMethod] = ['missing' => 0, 'found' => 0];
     }

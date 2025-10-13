@@ -172,6 +172,11 @@ class AuditMessage extends DonationMessage {
     if ($this->message['settlement_batch_reference'] ?? NULL) {
       $message['settlement_batch_reference'] = $this->getSettlementBatchReference();
     }
+
+    if ($this->isAggregateRow() || $this->isFeeRow()) {
+      $message['type'] = $this->getAuditMessageType();
+      return $message;
+    }
     if ($this->isNegative()) {
       $message['gateway_parent_id'] = $this->getGatewayParentTxnID();
       $message['gateway_refund_id'] = $this->getGatewayRefundID();
@@ -402,6 +407,9 @@ class AuditMessage extends DonationMessage {
       // It might be nice to switch from main to donations but for now ...
       $type = 'settled';
     }
+    if ($type === 'payout') {
+      return 'aggregate';
+    }
     return $type;
   }
 
@@ -498,6 +506,17 @@ class AuditMessage extends DonationMessage {
         ->execute()->first() ?? [];
     }
     return $this->firstRecurringContribution;
+  }
+
+  /**
+   * @return bool
+   */
+  public function isAggregateRow(): bool {
+    return $this->getAuditMessageType() === 'aggregate';
+  }
+
+  public function isFeeRow(): bool {
+    return $this->getAuditMessageType() === 'fee';
   }
 
 }
