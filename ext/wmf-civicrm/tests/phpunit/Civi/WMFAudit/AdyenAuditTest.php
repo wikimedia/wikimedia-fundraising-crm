@@ -2,6 +2,7 @@
 
 namespace Civi\WMFAudit;
 
+use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\TransactionLog;
@@ -77,6 +78,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
   public function tearDown(): void {
     TransactionLog::delete(FALSE)
       ->addWhere('gateway_txn_id', '=', '3f9c958c-ee57-4121-a79e-408946b27077')
+      ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'adyen_112%')
       ->execute();
     $this->tearDownWMFEnvironment();
   }
