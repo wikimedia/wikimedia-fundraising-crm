@@ -623,13 +623,14 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->addWhere('id', '=', $this->ids['Contribution']['for_refund'])
       ->execute();
     $result = $this->runAuditor();
+    // Batch contains one refund and one donation.
     $this->assertEquals([
-      'transaction_count' => 2,
-      'settled_total_amount' => -1.0,
-      'settled_fee_amount' => 1.8,
-      'settled_net_amount' => -2.8,
+      'transaction_count' => 3,
+      'settled_total_amount' => 19.2,
+      'settled_fee_amount' => 2.04,
+      'settled_net_amount' => 17.16,
       'settled_reversal_amount' => -1.0,
-      'settled_donation_amount' => 0,
+      'settled_donation_amount' => 20.2,
       'settlement_currency' => 'USD',
       'settlement_date' => '20250908',
       'settlement_batch_reference' => 'adyen_3_USD',

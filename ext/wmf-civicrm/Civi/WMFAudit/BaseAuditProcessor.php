@@ -2,6 +2,8 @@
 
 namespace Civi\WMFAudit;
 
+use Brick\Math\RoundingMode;
+use Brick\Money\Money;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\WMFAudit;
@@ -1334,8 +1336,8 @@ abstract class BaseAuditProcessor {
     }
     $type = $auditRecord['audit_message_type'];
     if ($type === 'aggregate') {
-      $this->totals[$transaction['settled_currency']] ??= 0;
-      $this->totals[$transaction['settled_currency']] += $transaction['settled_total_amount'];
+      $this->totals[$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency']);
+      $this->totals[$transaction['settled_currency']] = $this->totals[$transaction['settled_currency']]->plus($transaction['settled_total_amount']);
       return;
     }
     if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
@@ -1769,6 +1771,33 @@ abstract class BaseAuditProcessor {
 
   public function getBatchInformation(): array {
     return $this->get_runtime_options('is_stop_on_first_missing') ? [] : $this->batches;
+  }
+
+  public function getValidBatches(): array {
+    $validBatches = [];
+    foreach ($this->batches as $batch) {
+      if (empty($this->totals[$batch['settlement_currency']])) {
+        \Civi::log('wmf')->info("Unable to validate batch for {currency} - settlement row not parsed. This is expected for payment files", [
+          'currency' => $batch['settlement_currency'],
+        ]);
+        continue;
+      }
+      $currency = $batch['settlement_currency'];
+      /** @var Money $expectedAmount */
+      $expectedAmount = $this->totals[$currency];
+      if ($expectedAmount->compareTo($batch['settled_net_amount']) === 0) {
+        $validBatches[] = $batch;
+      }
+      else {
+        \Civi::log('wmf')->info('Batch total mismatch. {currency} is out by {difference}. Expected {expected} vs Actual {actual}', [
+          'difference' => $expectedAmount->minus($batch['settled_net_amount'], RoundingMode::HALF_UP)->getAmount(),
+          'expected' => $expectedAmount->getAmount(),
+          'actual' => $batch['settled_net_amount'],
+          'currency' => $currency,
+        ]);
+      }
+    }
+    return $validBatches;
   }
 
 }
