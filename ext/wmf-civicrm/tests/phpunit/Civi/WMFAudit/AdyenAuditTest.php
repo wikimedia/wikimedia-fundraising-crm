@@ -94,6 +94,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
     ContributionTracking::delete(FALSE)
       ->addWhere('id', '=', 43992337)
       ->execute();
+    Contribution::delete(FALSE)
+      ->addWhere('trxn_id', 'LIKE', 'ADYEN Transaction Fees%')
+      ->execute();
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_112%')
       ->execute();
@@ -670,9 +673,15 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->addSelect('custom.*', '*')
       ->addOrderBy('id')
       ->execute();
-    // The donation
-    $this->assertCount(1, $contributions);
-    $donation = $contributions[0];
+    // The donation and the fee
+    $this->assertCount(2, $contributions);
+    $feeContribution = $contributions->first();
+    $this->assertEquals(1.8, $feeContribution['fee_amount']);
+    $this->assertEquals(-1.8, $feeContribution['net_amount']);
+    $this->assertEquals(0, $feeContribution['total_amount']);
+    $this->assertEquals(0, $feeContribution['contribution_settlement.settled_donation_amount']);
+    $this->assertEquals(-1.8, $feeContribution['contribution_settlement.settled_fee_amount']);
+    $donation = $contributions[1];
     $this->assertEquals(19.96, $donation['net_amount']);
     $this->assertEquals(.24, $donation['fee_amount']);
     $this->assertEquals(20.2, $donation['total_amount']);
@@ -708,6 +717,17 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'settlement_gateway' => 'adyen',
     ], $result['batch']->first());
     $this->assertMessages($expectedMessages);
+
+    // Run the batch again to confirm it doesn't fail on the second go at the fees
+    $this->runAuditBatch($directory, $file);
+
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'adyen_1120_USD')
+      ->addSelect('custom.*', '*')
+      ->addOrderBy('id')
+      ->execute();
+    // The donation and the fee
+    $this->assertCount(2, $contributions);
   }
 
   public function createTransactionLog(array $row): void {
