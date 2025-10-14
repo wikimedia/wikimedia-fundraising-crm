@@ -13,7 +13,7 @@ use Civi\Api4\Activity;
  * Verify and record a double opt-in activity.
  *
  * @method $this setEmail(string $email)
- * @method $this setContactID(int $contactID)
+ * @method $this setContact_Id( int $contact_id)
  * @method $this setChecksum(string $checksum)
  * @method $this setCampaign(string $campaign)
  * @method $this setMedium(string $medium)
@@ -34,7 +34,7 @@ class DoubleOptIn extends AbstractAction {
    * @var int
    * @required
    */
-  protected $contactID;
+  protected $contact_id;
 
   /**
    * checksum
@@ -67,25 +67,25 @@ class DoubleOptIn extends AbstractAction {
    */
   public function _run(Result $result): void {
     $validation = Contact::validateChecksum(FALSE)
-      ->setContactId($this->contactID)
+      ->setContactId($this->contact_id)
       ->setChecksum($this->checksum)
       ->execute()->first()['valid'];
     if (!$validation) {
-      throw new \CRM_Core_Exception("Checksum validation failed for Contact ID {$this->contactID}.");
+      throw new \CRM_Core_Exception("Checksum validation failed for Contact ID {$this->contact_id}.");
     }
 
     $emailID = Email::get(FALSE)
       ->addWhere('email', '=', $this->email)
-      ->addWhere('contact_id', '=', $this->contactID)
+      ->addWhere('contact_id', '=', $this->contact_id)
       ->addWhere('is_primary', '=', TRUE)
       ->execute()->first()['id'] ?? NULL;
     if (!$emailID) {
-      throw new \CRM_Core_Exception("Provided email is not the primary email for Contact ID {$this->contactID}.");
+      throw new \CRM_Core_Exception("Provided email is not the primary email for Contact ID {$this->contact_id}.");
     }
 
     $activity = Activity::create(FALSE)
       ->addValue('source_record_id', $emailID)
-      ->addValue('source_contact_id', $this->contactID)
+      ->addValue('source_contact_id', $this->contact_id)
       ->addValue('subject', $this->email)
       ->addValue('activity_tracking.activity_campaign', $this->campaign)
       ->addValue('activity_tracking.activity_medium', $this->medium)
@@ -93,7 +93,7 @@ class DoubleOptIn extends AbstractAction {
       ->addValue('activity_type_id', 220)
       ->execute()->first();
     if (!$activity) {
-      throw new \CRM_Core_Exception("Activity create failed for Contact ID {$this->contactID}.");
+      throw new \CRM_Core_Exception("Activity create failed for Contact ID {$this->contact_id}.");
     }
 
     $result[] = ['id' => $activity['id']];

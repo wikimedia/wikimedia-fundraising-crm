@@ -99,6 +99,7 @@ class WMFContact extends Generic\AbstractEntity {
     return [
       'getCommunicationsPreferences' => '*always allow*',
       'getDonorSummary' => '*always allow*',
+      'doubleOptIn' => '*always allow*',
       'save' => 'edit all contacts',
     ];
   }
