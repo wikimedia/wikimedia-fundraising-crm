@@ -343,6 +343,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/donation_gravy/');
     $this->runAuditor();
     $this->processRefundQueue();
+    $this->processSettleQueue();
     $contribution = Contribution::get(FALSE)->addWhere('id', '>', $contributionID - 1)
       ->addSelect('contribution_extra.gateway_txn_id', 'contribution_extra.gateway', 'contribution_status_id:name', 'total_amount', 'fee_amount')
       ->execute()->single();

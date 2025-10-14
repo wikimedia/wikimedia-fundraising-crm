@@ -35,6 +35,13 @@ trait WMFQueueTrait {
   }
 
   /**
+   * @return void
+   */
+  public function processSettleQueue(): void {
+    $this->processQueue('settle', 'Settle');
+  }
+
+  /**
    * Process donation, using defaults plus any passed in values.
    *
    * Note that it is intended that when using this method you only
