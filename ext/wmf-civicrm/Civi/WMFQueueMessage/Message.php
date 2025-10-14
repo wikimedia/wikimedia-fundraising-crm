@@ -989,7 +989,7 @@ class Message {
     $utmSource = $this->message['utm_source'] ?? '';
     $utmMedium = strtolower($this->message['utm_medium'] ?? '');
 
-    if ($utmMedium === 'mail' || str_contains('DMURL', $utmSource)) {
+    if ($utmMedium === 'mail' || str_contains($utmSource, 'DMURL')) {
       return 'Direct_Mail';
     }
 
