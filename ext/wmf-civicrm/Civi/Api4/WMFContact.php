@@ -6,6 +6,7 @@ use Civi\Api4\Action\WMFContact\GetCommunicationsPreferences;
 use Civi\Api4\Action\WMFContact\GetDonorSummary;
 use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\Action\WMFContact\UpdateCommunicationsPreferences;
+use Civi\Api4\Action\WMFContact\DoubleOptIn;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
@@ -70,8 +71,19 @@ class WMFContact extends Generic\AbstractEntity {
    * @param bool $checkPermissions
    * @return BackfillOptIn
    */
-  public static function backfillOptIn(bool $checkPermissions = TRUE): BackfillOptIn {
+  public static function backfillOptIn(bool $checkPermissions = FALSE): BackfillOptIn {
     return (new BackfillOptIn(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Verify and record a double opt-in activity
+   *
+   * @param bool $checkPermissions
+   * @return \Civi\Api4\Action\WMFContact\DoubleOptIn
+   */
+  public static function doubleOptIn(bool $checkPermissions = FALSE): DoubleOptIn {
+    return (new DoubleOptIn(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
@@ -87,6 +99,7 @@ class WMFContact extends Generic\AbstractEntity {
     return [
       'getCommunicationsPreferences' => '*always allow*',
       'getDonorSummary' => '*always allow*',
+      'doubleOptIn' => '*always allow*',
       'save' => 'edit all contacts',
     ];
   }
