@@ -350,6 +350,9 @@ class AuditMessage extends DonationMessage {
     elseif (!empty($this->message['order_id'])) {
       $value = $this->message['order_id'];
     }
+    if (!$value) {
+      return NULL;
+    }
     $check = explode('.', $value);
     if (!is_numeric($check[0])) {
       // Might be a Gravy reference - do a look up.
