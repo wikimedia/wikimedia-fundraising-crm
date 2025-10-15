@@ -12,6 +12,7 @@
 // To sync the database with fields defined in this file use:
 // drush @wmff cvapi WMFConfig.SyncCustomFields version=4
 // ******
+use Civi\Api4\OptionValue;
 use Civi\WMFHook\CalculatedData;
 
 $calculatedData = new CalculatedData();
@@ -143,6 +144,33 @@ CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'visibility_id' => NULL,
   'color' => NULL,
 ]);
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'label' => 'Recurring Paused',
+  'value' => 201,
+  'name' => 'Recurring Paused',
+  'grouping' => NULL,
+  'filter' => 1,
+  'weight' => 94,
+  'is_default' => FALSE,
+  'description' => 'Donor paused recurring',
+  'is_optgroup' => FALSE,
+  'is_reserved' => FALSE,
+  'is_active' => TRUE,
+  'component_id' => NULL,
+  'domain_id' => NULL,
+  'visibility_id' => NULL,
+  'icon' => 'fa-pause',
+  'color' => NULL,
+]);
+$recurringCancelActivityId = OptionValue::get(FALSE)
+  ->addWhere('name', '=', 'Cancel Recurring Contribution')
+  ->execute()
+  ->first()['value'];
+$recurringModifyActivityId = OptionValue::get(FALSE)
+  ->addWhere('name', '=', 'Update Recurring Contribution')
+  ->execute()
+  ->first()['value'];
 
 return [
   'wmf_donor' => [
@@ -329,8 +357,16 @@ return [
       'name' => 'activity_tracking',
       'title' => 'Activity Tracking',
       'extends' => 'Activity',
-  // Values hardcoded above and in ActivityType.mgd.php
-      'extends_entity_column_value' => [165, 166, 168, 220],
+      // Values hardcoded above and in ActivityType.mgd.php
+      'extends_entity_column_value' => [
+        165,
+        166,
+        168,
+        201,
+        220,
+        $recurringCancelActivityId,
+        $recurringModifyActivityId
+      ],
       'style' => 'Inline',
       'is_active' => TRUE,
       'table_name' => 'civicrm_activity_tracking',
@@ -2160,6 +2196,17 @@ function _wmf_civicrm_get_activity_tracking_fields(): array {
       'column_name' => 'source',
       'is_view' => 1,
     ],
+    'activity_is_from_donor_portal' => [
+      'name' => 'activity_is_from_donor_portal',
+      'label' => 'Is from Donor Portal',
+      'description' => 'True if the activity was initiated by the donor at the donor portal or email preferences page',
+      'html_type' => 'Radio',
+      'data_type' => 'Boolean',
+      'is_searchable' => TRUE,
+      'column_name' => 'is_from_donor_portal',
+      'default_value' => 0,
+      'is_view' => 1,
+    ]
   ];
 }
 

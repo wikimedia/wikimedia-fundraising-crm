@@ -56,6 +56,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'txn_type' => 'recurring_paused',
       'contribution_recur_id' => $testRecurring['id'],
       'duration' => '60 days',
+      'source_type' => 'emailpreferences'
     ];
 
     $this->processMessage($msg);
@@ -65,6 +66,8 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       ->execute()
       ->first();
     $activity = Activity::get(FALSE)
+      ->addSelect('subject')
+      ->addSelect('activity_tracking.*')
       ->addWhere('source_record_id', '=', $testRecurring['id'])
       ->addWhere('activity_type_id:name', '=', $this->getActivityTypeID('paused'))
       ->execute()
@@ -75,6 +78,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
 
     $this->assertEquals($formatDate, $updatedRecurring['next_sched_contribution_date']);
     $this->assertEquals("Paused recurring till {$formatDate}", $activity['subject']);
+    $this->assertEquals(TRUE, $activity['activity_tracking.activity_is_from_donor_portal']);
   }
 
   public function testRecurringCancel(): void {
@@ -88,7 +92,8 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'txn_type' => 'recurring_cancel',
       'contribution_recur_id' => $testRecurring['id'],
       'cancel_reason' => 'Financial reason',
-      'cancel_date' => date('Y-m-d H:i:s')
+      'cancel_date' => date('Y-m-d H:i:s'),
+      'source_type' => 'emailpreferences'
     ];
 
     $this->processMessage($msg);
@@ -98,6 +103,8 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       ->execute()
       ->first();
     $activity = Activity::get(FALSE)
+      ->addSelect('activity_tracking.*')
+      ->addSelect('subject')
       ->addWhere('source_record_id', '=', $testRecurring['id'])
       ->addWhere('activity_type_id:name', '=', $this->getActivityTypeID('cancelled'))
       ->execute()
@@ -107,6 +114,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     $this->assertEquals($msg['cancel_date'], $updatedRecurring['end_date']);
     $this->assertEquals('Cancelled', $updatedRecurring['contribution_status_id:name']);
     $this->assertEquals("Donor cancelled recurring through the Donor Portal on {$msg['cancel_date']}", $activity['subject']);
+    $this->assertEquals(TRUE, $activity['activity_tracking.activity_is_from_donor_portal']);
   }
 
   /**
@@ -120,6 +128,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'contribution_recur_id' => $testRecurring['id'],
       'amount' => $testRecurring['amount'] + $additionalAmount,
       'currency' => $testRecurring['currency'],
+      'source_type' => 'emailpreferences',
     ];
     $amountDetails = [
       'native_currency' => $msg['currency'],
@@ -136,6 +145,9 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       ->execute()
       ->first();
     $activity = Activity::get(FALSE)
+      ->addSelect('activity_tracking.*')
+      ->addSelect('subject')
+      ->addSelect('details')
       ->addWhere('source_record_id', '=', $testRecurring['id'])
       ->addWhere('activity_type_id:name', '=', $this->getActivityTypeID('accept'))
       ->execute()
@@ -144,6 +156,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     $this->assertEquals($testRecurring['amount'] + $additionalAmount, $updatedRecurring['amount']);
     $this->assertEquals('Added 5.00 USD', $activity['subject']);
     $this->assertEquals(json_encode($amountDetails), $activity['details']);
+    $this->assertEquals(TRUE, $activity['activity_tracking.activity_is_from_donor_portal']);
   }
 
   /**
@@ -234,6 +247,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'contribution_recur_id' => $testRecurringContributionFor15Dollars['id'],
       'amount' => $newRecurringDonationAmount,
       'currency' => $testRecurringContributionFor15Dollars['currency'],
+      'source_type' => 'emailpreferences',
     ];
 
     $amountDetails = [
@@ -253,6 +267,9 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       ->first();
 
     $activity = Activity::get(FALSE)
+      ->addSelect('activity_tracking.*')
+      ->addSelect('subject')
+      ->addSelect('details')
       ->addWhere('source_record_id', '=', $testRecurringContributionFor15Dollars['id'])
       ->addWhere('activity_type_id:name', '=', $this->getActivityTypeID('downgrade'))
       ->execute()
@@ -263,6 +280,8 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     $this->assertEquals('Recurring amount reduced by 10.00 USD', $activity['subject']);
 
     $this->assertEquals(json_encode($amountDetails), $activity['details']);
+
+    $this->assertEquals(TRUE, $activity['activity_tracking.activity_is_from_donor_portal']);
 
     // clean up fixture data
     $this->ids['ContributionRecur'][$testRecurringContributionFor15Dollars['id']] = $testRecurringContributionFor15Dollars['id'];

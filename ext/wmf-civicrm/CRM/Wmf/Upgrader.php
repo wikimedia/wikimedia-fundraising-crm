@@ -2,6 +2,7 @@
 
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\CustomField;
+use Civi\Api4\CustomGroup;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\OptionGroup;
 use Civi\Api4\OptionValue;
@@ -2927,6 +2928,35 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   public function upgrade_4680(): bool {
     $this->ctx->log->info('Applying update 4680: Clear out test data from ');
     CRM_Core_DAO::executeQuery('TRUNCATE civicrm_value_contribution_settlement');
+    return TRUE;
+  }
+
+  /**
+   * Make activity tracking extend more subtypes
+   */
+  public function upgrade_4685(): bool {
+    $this->addCustomFields();
+    $recurringCancelActivityId = OptionValue::get(FALSE)
+      ->addWhere('name', '=', 'Cancel Recurring Contribution')
+      ->execute()
+      ->first()['value'];
+    $recurringModifyActivityId = OptionValue::get(FALSE)
+      ->addWhere('name', '=', 'Update Recurring Contribution')
+      ->execute()
+      ->first()['value'];
+
+    CustomGroup::update(FALSE)
+      ->addWhere('name', '=', 'activity_tracking')
+      ->addValue('extends_entity_column_value', [
+        165,
+        166,
+        168,
+        201,
+        220,
+        $recurringCancelActivityId,
+        $recurringModifyActivityId
+      ])
+      ->execute();
     return TRUE;
   }
 

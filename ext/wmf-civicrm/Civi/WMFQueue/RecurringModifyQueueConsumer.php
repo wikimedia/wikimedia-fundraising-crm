@@ -106,7 +106,8 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       'subject' => "Paused recurring till {$formatDate}",
       'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
       'contribution_recur_id' => $message->getContributionRecurID(),
-      'activity_type_id:name' => self::RECURRING_PAUSED_ACTIVITY_TYPE_NAME
+      'activity_type_id:name' => self::RECURRING_PAUSED_ACTIVITY_TYPE_NAME,
+      'is_from_donor_portal' => $message->isFromDonorPortal(),
     ];
     ContributionRecur::update(FALSE)->addValue('next_sched_contribution_date', $pauseScheduledParams['next_sched_contribution_date'])->addWhere(
       'id',
@@ -133,7 +134,8 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       'subject' => "Donor cancelled recurring through the Donor Portal on {$date}",
       'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
       'contribution_recur_id' => $message->getContributionRecurID(),
-      'activity_type_id:name' => self::RECURRING_CANCELLED_ACTIVITY_TYPE_NAME
+      'activity_type_id:name' => self::RECURRING_CANCELLED_ACTIVITY_TYPE_NAME,
+      'is_from_donor_portal' => $message->isFromDonorPortal()
     ];
     ContributionRecur::update(FALSE)
       ->addValue('contribution_status_id:name', 'Cancelled')
@@ -156,6 +158,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       'amount' => $message->getModifiedAmountRounded(),
       'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
       'contribution_recur_id' => $message->getContributionRecurID(),
+      'is_from_donor_portal' => $message->isFromDonorPortal()
     ];
     foreach (['campaign', 'medium', 'source'] as $trackingField) {
       $activityParams[$trackingField] = $msg[$trackingField] ?? NULL;
@@ -263,7 +266,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       ->addValue('subject', $activityParams['subject'])
       ->addValue('details', $additionalData)
       ->addValue('source_contact_id', $activityParams['contact_id']);
-    foreach (['campaign', 'medium', 'source'] as $trackingField) {
+    foreach (['campaign', 'medium', 'source', 'is_from_donor_portal'] as $trackingField) {
       if (!empty($activityParams[$trackingField])) {
         $createCall->addValue('activity_tracking.activity_' . $trackingField, $activityParams[$trackingField]);
       }
