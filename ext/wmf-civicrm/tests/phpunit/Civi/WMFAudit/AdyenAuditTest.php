@@ -88,7 +88,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
     TransactionLog::delete(FALSE)
       ->addWhere('order_id', 'IN', ['1004.1', '12000.1'])
       ->execute();
-
+    ContributionTracking::delete(FALSE)
+      ->addWhere('id', '=', 43992337)
+      ->execute();
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_112%')
       ->execute();
