@@ -153,4 +153,44 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
     $this->assertEquals(0.79, $normalized['net']);
   }
 
+  public function testGetChannelInApp(): void {
+    $msg = [
+      'gateway' => 'adyen',
+      'gateway_account' => 'WikimediaDonations',
+      'gateway_txn_id' => 'ZZGLP7L3J88T4F69',
+      'order_id' => '238458565.1',
+      'user_ip' => '1.1.1.2',
+      'country' => 'GB',
+      'gross' => '2.00',
+      'city' => 'Test City',
+      'currency' => 'GBP',
+      'language' => 'en',
+      'email' => 'test@localhost.com',
+      'full_name' => 'Mr Test',
+      'payment_method' => 'google',
+      'payment_submethod' => 'visa',
+      'processor_contact_id' => '1234.1',
+      'postal_code' => 'B43 7EA',
+      'opt_in' => '0',
+      'recurring' => '1',
+      'recurring_payment_token' => 'TMXQKHJNHXKH2CQ9',
+      'street_address' => '1 Test Street',
+      'state_province' => '',
+      'source_name' => 'DonationInterface',
+      'source_type' => 'payments',
+      'source_host' => 'payments1007',
+      'source_run_id' => 1214371,
+      'source_version' => '1157911a46dd33a06320058cb5a7be45f91f3dbb',
+      'source_enqueued_time' => 1760490655,
+      'contribution_tracking_id' => mt_rand(),
+      'date' => time() + 1,
+      'utm_source' => 'enGB_appmenu_Android.inapp.google',
+      'utm_medium' => 'WikipediaApp'
+    ];
+
+    $message = new DonationMessage($msg);
+
+    $channel = $message->getChannel();
+    $this->assertEquals('Wikipedia App', $channel);
+  }
 }
