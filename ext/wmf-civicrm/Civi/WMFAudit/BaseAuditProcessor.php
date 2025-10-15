@@ -41,6 +41,8 @@ abstract class BaseAuditProcessor {
    */
   protected array $batches = [];
 
+  protected array $totals = [];
+
   /**
    * Number of file to parse per run, absent any incoming parameter.
    *
@@ -462,7 +464,7 @@ abstract class BaseAuditProcessor {
     $recon_file_stats = [];
     foreach ($this->getReconciliationFiles() as $file) {
       //parse the recon files into something relatively reasonable.
-      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0];
+      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0];
       $parsed = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
         $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');

@@ -613,10 +613,10 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->execute();
     $result = $this->runAuditor();
     $this->assertEquals([
-      'transaction_count' => 1,
+      'transaction_count' => 2,
       'settled_total_amount' => -1.0,
-      'settled_fee_amount' => 0,
-      'settled_net_amount' => -1.0,
+      'settled_fee_amount' => 1.8,
+      'settled_net_amount' => -2.8,
       'settled_reversal_amount' => -1.0,
       'settled_donation_amount' => 0,
       'settlement_currency' => 'USD',
