@@ -9,7 +9,8 @@ use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 /**
  * Changes status to cancelled for any recurring contributions
- * that haven't gotten a contribution for at least two months
+ * that have their next scheduled date more than 60 days in the past
+ * (meaning they have not had a successful payment in at least 60 days)
  * @method setDays(int $days) set the number of days
  */
 class CancelInactives extends AbstractAction {
