@@ -161,6 +161,9 @@ class Parse extends AbstractAction {
         ->setMatch(['name', 'type_id'])
         ->execute();
     }
+    // The goal is to use this instead of getBatchInformation above. We just need to get the
+    // smashpig patches merged first.
+    $audit->getValidBatches();
   }
 
   /**

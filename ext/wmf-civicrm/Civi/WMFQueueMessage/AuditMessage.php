@@ -172,6 +172,11 @@ class AuditMessage extends DonationMessage {
     if ($this->message['settlement_batch_reference'] ?? NULL) {
       $message['settlement_batch_reference'] = $this->getSettlementBatchReference();
     }
+
+    if ($this->isAggregateRow() || $this->isFeeRow()) {
+      $message['type'] = $this->getAuditMessageType();
+      return $message;
+    }
     if ($this->isNegative()) {
       $message['gateway_parent_id'] = $this->getGatewayParentTxnID();
       $message['gateway_refund_id'] = $this->getGatewayRefundID();
@@ -289,8 +294,8 @@ class AuditMessage extends DonationMessage {
     if ($this->getContributionRecurID()) {
       return TRUE;
     }
-    $orderParts = explode('.', $this->getOrderID());
-    if (($orderParts[1] ?? 0) <= 1) {
+    $orderParts = explode('.', (string) $this->getOrderID());
+    if ((int) ($orderParts[1] ?? 0) <= 1) {
       return FALSE;
     }
     return !empty($this->getFirstRecurringContribution());
@@ -344,6 +349,9 @@ class AuditMessage extends DonationMessage {
     }
     elseif (!empty($this->message['order_id'])) {
       $value = $this->message['order_id'];
+    }
+    if (!$value) {
+      return NULL;
     }
     $check = explode('.', $value);
     if (!is_numeric($check[0])) {
@@ -401,6 +409,9 @@ class AuditMessage extends DonationMessage {
       // It seems type could be one of these others here from fundraise up (the others are unset).
       // It might be nice to switch from main to donations but for now ...
       $type = 'settled';
+    }
+    if ($type === 'payout') {
+      return 'aggregate';
     }
     return $type;
   }
@@ -498,6 +509,17 @@ class AuditMessage extends DonationMessage {
         ->execute()->first() ?? [];
     }
     return $this->firstRecurringContribution;
+  }
+
+  /**
+   * @return bool
+   */
+  public function isAggregateRow(): bool {
+    return $this->getAuditMessageType() === 'aggregate';
+  }
+
+  public function isFeeRow(): bool {
+    return $this->getAuditMessageType() === 'fee';
   }
 
 }

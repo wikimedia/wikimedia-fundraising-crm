@@ -531,6 +531,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         'Portal Banner' => 'Portal Banner',
         'Other Banner' => 'Other Banner',
         'Other Portal' => 'Other Portal',
+        'Wikimedia Portal' => 'Wikimedia Portal',
         'Sidebar' => 'Sidebar',
         'Social Media' => 'Social Media',
         'Wikipedia App' => 'Wikipedia App',

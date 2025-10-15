@@ -1024,6 +1024,9 @@ class Message {
         return 'Other Portal';
       }
     }
+    if ($utmMedium === 'wikimediaportal') {
+      return 'Wikimedia Portal';
+    }
 
     if (in_array($utmMedium, ['wikipediaapp', 'wikipediaappfeed'])) {
       return 'Wikipedia App';

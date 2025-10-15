@@ -2,6 +2,8 @@
 
 namespace Civi\WMFAudit;
 
+use Brick\Math\RoundingMode;
+use Brick\Money\Money;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\WMFAudit;
@@ -40,6 +42,8 @@ abstract class BaseAuditProcessor {
    * @var array
    */
   protected array $batches = [];
+
+  protected array $totals = [];
 
   /**
    * Number of file to parse per run, absent any incoming parameter.
@@ -462,7 +466,7 @@ abstract class BaseAuditProcessor {
     $recon_file_stats = [];
     foreach ($this->getReconciliationFiles() as $file) {
       //parse the recon files into something relatively reasonable.
-      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0];
+      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0];
       $parsed = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
         $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
@@ -1297,7 +1301,9 @@ abstract class BaseAuditProcessor {
       }
       $this->recordStatistic($auditRecord, $file);
       if ($auditRecord['is_missing']) {
-        if (($auditRecord['message']['type'] ?? NULL) === 'fee') {
+        if (($auditRecord['message']['type'] ?? NULL) === 'fee'
+          || ($auditRecord['message']['type'] ?? NULL) === 'aggregate'
+        ) {
           // For now continue to skip these.
           continue;
         }
@@ -1329,6 +1335,11 @@ abstract class BaseAuditProcessor {
       $this->addToBatch($transaction);
     }
     $type = $auditRecord['audit_message_type'];
+    if ($type === 'aggregate') {
+      $this->totals[$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency']);
+      $this->totals[$transaction['settled_currency']] = $this->totals[$transaction['settled_currency']]->plus($transaction['settled_total_amount']);
+      return;
+    }
     if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
       $fileStatistics[$type]['by_payment'][$paymentMethod] = ['missing' => 0, 'found' => 0];
     }
@@ -1760,6 +1771,33 @@ abstract class BaseAuditProcessor {
 
   public function getBatchInformation(): array {
     return $this->get_runtime_options('is_stop_on_first_missing') ? [] : $this->batches;
+  }
+
+  public function getValidBatches(): array {
+    $validBatches = [];
+    foreach ($this->batches as $batch) {
+      if (empty($this->totals[$batch['settlement_currency']])) {
+        \Civi::log('wmf')->info("Unable to validate batch for {currency} - settlement row not parsed. This is expected for payment files", [
+          'currency' => $batch['settlement_currency'],
+        ]);
+        continue;
+      }
+      $currency = $batch['settlement_currency'];
+      /** @var Money $expectedAmount */
+      $expectedAmount = $this->totals[$currency];
+      if ($expectedAmount->compareTo($batch['settled_net_amount']) === 0) {
+        $validBatches[] = $batch;
+      }
+      else {
+        \Civi::log('wmf')->info('Batch total mismatch. {currency} is out by {difference}. Expected {expected} vs Actual {actual}', [
+          'difference' => $expectedAmount->minus($batch['settled_net_amount'], RoundingMode::HALF_UP)->getAmount(),
+          'expected' => $expectedAmount->getAmount(),
+          'actual' => $batch['settled_net_amount'],
+          'currency' => $currency,
+        ]);
+      }
+    }
+    return $validBatches;
   }
 
 }
