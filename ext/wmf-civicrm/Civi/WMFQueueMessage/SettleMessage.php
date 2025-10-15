@@ -75,4 +75,13 @@ class SettleMessage extends DonationMessage {
     return $this->message['contribution_id'];
   }
 
+  /**
+   * Is this a donation reversal?
+   *
+   * @return bool
+   */
+  public function isReversal(): bool {
+    return $this->message['settled_total_amount'] < 0;
+  }
+
 }
