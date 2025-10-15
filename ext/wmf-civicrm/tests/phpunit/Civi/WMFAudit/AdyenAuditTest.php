@@ -6,6 +6,9 @@ use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\TransactionLog;
+use League\Csv\Exception;
+use League\Csv\Reader;
+use SmashPig\Core\Helpers\Base62Helper;
 
 /**
  * @group Adyen
@@ -134,10 +137,10 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'original_currency' => 'EUR',
               'currency' => 'EUR',
               'original_total_amount' => 2.35,
-              'settled_fee_amount' => 0.24,
+              'settled_fee_amount' => -0.24,
               'fee' => 0.24,
-              'original_fee_amount' => 0.24,
-              'original_net_amount' => 2.1100000000000003,
+              'original_fee_amount' => -0.24,
+              'original_net_amount' => 2.11,
               'settled_net_amount' => 0.76,
               'settled_total_amount' => 1,
               'settled_date' => NULL,
@@ -183,8 +186,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'exchange_rate' => '1',
               'original_currency' => 'USD',
               'original_total_amount' => 1,
-              'settled_fee_amount' => 0.24,
-              'original_fee_amount' => 0.24,
+              'settled_fee_amount' => -0.24,
+              'original_fee_amount' => -0.24,
               'fee' => 0.24,
               'original_net_amount' => 0.76,
               'settled_net_amount' => 0.76,
@@ -209,7 +212,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'date' => 1582488844,
               'email' => 'testy@wikimedia.org',
               'fee' => 0.25,
-              'original_fee_amount' => 0.25,
+              'original_fee_amount' => -0.25,
               'first_name' => 'Testy',
               'gateway' => 'adyen',
               'gateway_account' => 'TestMerchant',
@@ -234,7 +237,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'audit_file_gateway' => 'adyen',
               'settlement_batch_reference' => 'adyen_630_USD',
               'exchange_rate' => '1.0656568',
-              'settled_fee_amount' => 0.27,
+              'settled_fee_amount' => -0.27,
               'original_net_amount' => 5.1,
               'settled_net_amount' => 5.43,
               'settled_total_amount' => 5.7,
@@ -282,15 +285,15 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'gross_currency' => 'USD',
               'type' => 'chargeback',
               'settlement_batch_reference' => 'adyen_3_USD',
-              'settled_total_amount' => -3,
+              'settled_total_amount' => -1,
               'settled_fee_amount' => -2,
-              'settled_net_amount' => -1,
+              'settled_net_amount' => -3,
               'settled_currency' => 'USD',
               'original_currency' => 'USD',
               'settled_date' => null,
-              'original_net_amount' => -1,
+              'original_net_amount' => -3,
               'original_fee_amount' => -2,
-              'original_total_amount' => -3,
+              'original_total_amount' => -1,
             ],
           ],
         ],
@@ -536,7 +539,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals('gravy', $contribution['contribution_extra.gateway']);
     $this->assertEquals('MNOP', $contribution['contribution_extra.gateway_txn_id']);
     $this->assertEquals(-10.65, $contribution['contribution_settlement.settled_fee_reversal_amount']);
-    $this->assertEquals(-21.05, $contribution['contribution_settlement.settled_reversal_amount']);
+    $this->assertEquals(-10.40, $contribution['contribution_settlement.settled_reversal_amount']);
     $this->assertEquals('USD', $contribution['contribution_settlement.settlement_currency']);
     $this->assertEquals('adyen_1122_USD', $contribution['contribution_settlement.settlement_batch_reversal_reference']);
 
@@ -564,7 +567,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
             'date' => 1487484651,
             'email' => 'mouse@wikimedia.org',
             'fee' => 0.24,
-            'original_fee_amount' => 0.24,
+            'original_fee_amount' => -0.24,
             'first_name' => 'asdf',
             'gateway' => 'adyen',
             'gateway_account' => 'TestMerchant',
@@ -591,7 +594,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
             'audit_file_gateway' => 'adyen',
             'settlement_batch_reference' => 'adyen_2_USD',
             'exchange_rate' => '1',
-            'settled_fee_amount' => 0.24,
+            'settled_fee_amount' => -0.24,
             'original_net_amount' => 0.76,
             'settled_net_amount' => 0.76,
             'settled_total_amount' => 1,
@@ -613,32 +616,189 @@ class AdyenAuditTest extends BaseAuditTestCase {
   }
 
   /**
+   * Test already refunded transaction as part of a small batch.
+   *
+   * The refunded transaction should have settlement data updated but not the fees/ amount.
+   *
+   * The csv has 3 other transactions and checks the totals
+   * Refund:
+   *  - total refunded to the donor $1.00 (settled_total_amount)
+   *  - total fee (negative as it is a partial fee refund) -$0.11 (settled_fee_amount)
+   *  - total charged to us -$0.89 (settled_net_amount)
+   * Donation:
+   *  - total paid by the donor $20.20 (settled_total_amount)
+   *  - total fee $0.24 (settled_fee_amount)
+   *  - total paid to us $19.96 (settled_net_amount)
+   * Fee (not ingressed this patch but included in auditor totals watch this space)
+   *   - total fee $1.80 (settled_fee_amount)
+   *   - total paid by the fee contact $0 (settled_total_amount)
+   *   - total deducted from our payout -1.80 (settled_net_amount)
+   *
+   * The sum of settled_net_amount is what we are paid
+   * ie $19.96
+   * less the charges (debits) against us ($.89 & $1.80) = $2.69
+   * = 17.27
+   *
+   * The settled_fee_amount is the total paid to the gateway in fees on donations
+   * (including fee-only rows but excluding reversals)
+   * .24  -.11 + 1.80 = $1.93
+   *
+   * The settled_total_amount is the sum of the total amount paid by donors (donations only)
+   * $19.20
+   * - made up of settled_donation_amount ($19.20)
+   * - settled_reversal_amount ($1.00) refunded to the donor
+   *
+   * $1.93 fees + $17.27 net_amount = $19.20 total_amount.
+   *
    * @throws \CRM_Core_Exception
    */
   public function testAlreadyRefundedTransactionIsSkipped(): void {
-    $this->setAuditDirectory('refunded');
-    $expectedMessages = [
-      'refund' => [],
-    ];
     Contribution::update(FALSE)
       ->addValue('contribution_status_id:name', 'Refunded')
       ->addWhere('id', '=', $this->ids['Contribution']['for_refund'])
       ->execute();
-    $result = $this->runAuditor();
+    $expectedMessages = [
+      'refund' => [],
+    ];
+    $directory = 'refunded';
+    $file = 'settlement_detail_report_batch_4.csv';
+
+    $result = $this->runAuditBatch($directory, $file);
+
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'adyen_1120_USD')
+      ->addSelect('custom.*', '*')
+      ->addOrderBy('id')
+      ->execute();
+    // The donation
+    $this->assertCount(1, $contributions);
+    $donation = $contributions[0];
+    $this->assertEquals(19.96, $donation['net_amount']);
+    $this->assertEquals(.24, $donation['fee_amount']);
+    $this->assertEquals(20.2, $donation['total_amount']);
+    $this->assertEquals(20.2, $donation['contribution_settlement.settled_donation_amount']);
+    $this->assertEquals(-.24, $donation['contribution_settlement.settled_fee_amount']);
+
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('contribution_settlement.settlement_batch_reversal_reference', '=', 'adyen_1120_USD')
+      ->addSelect('contribution_settlement.*', 'total_amount', 'net_amount', 'fee_amount')
+      ->addOrderBy('id')
+      ->execute();
+    // The refund.
+    $this->assertCount(1, $contributions, print_r($contributions, TRUE));
+    $refundContribution = $contributions->first();
+    $this->assertEquals(.11, $refundContribution['contribution_settlement.settled_fee_reversal_amount']);
+    $this->assertEquals(-1, $refundContribution['contribution_settlement.settled_reversal_amount']);
+    // These are unchanged from the original donation.
+    $this->assertEquals(1, $refundContribution['net_amount']);
+    $this->assertEquals(0, $refundContribution['fee_amount']);
+    $this->assertEquals(1, $refundContribution['total_amount']);
+
     // Batch contains one refund and one donation.
     $this->assertEquals([
       'transaction_count' => 3,
       'settled_total_amount' => 19.2,
-      'settled_fee_amount' => 2.04,
-      'settled_net_amount' => 17.16,
+      'settled_fee_amount' => -1.93,
+      'settled_net_amount' => 17.27,
       'settled_reversal_amount' => -1.0,
-      'settled_donation_amount' => 20.2,
+      'settled_donation_amount' => 20.20,
       'settlement_currency' => 'USD',
       'settlement_date' => '20250908',
-      'settlement_batch_reference' => 'adyen_3_USD',
+      'settlement_batch_reference' => 'adyen_1120_USD',
       'settlement_gateway' => 'adyen',
-    ], $result->first());
+    ], $result['batch']->first());
     $this->assertMessages($expectedMessages);
+  }
+
+  public function createTransactionLog(array $row): void {
+    if (empty($row['Creation Date']) || in_array($row['Type'], ['Fee', 'MerchantPayout'], TRUE)) {
+      // Fee row.
+      return;
+    }
+    $orderID = $row['Merchant Reference'];
+    $trackingID = explode('.', $orderID)[0];
+    $isGravy = !is_numeric($trackingID);
+    if ($isGravy) {
+      $trackingID = 1 + ((int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking'));
+    }
+    $utmSource = "B2526_082914_esLA_m_p1_lg_twn_twin1_optIn0.no-LP.apple_amex";
+    $this->ids['ContributionTracking'][] = ContributionTracking::save(FALSE)
+      ->addRecord([
+        'id' => $trackingID,
+        'utm_source' => $utmSource,
+      ])
+      ->execute()->first()['id'];
+    $gateway = $isGravy ? 'gravy' : $this->gateway;
+    $gatewayTxnID = $gateway === $this->gateway ? $row['Psp Reference'] : Base62Helper::toUuid($row['Merchant Reference']);
+    $this->createTestEntity('TransactionLog', [
+      'date' => $row['Creation Date'],
+      'gateway' => $gateway,
+      'gateway_account' => 'WikimediaDonations',
+      'order_id' => $trackingID . '.1',
+      'gateway_txn_id' => $gatewayTxnID,
+      'message' => [
+        "gateway_txn_id" => $gatewayTxnID,
+        "response" => FALSE,
+        "gateway_account" => "WikimediaDonations",
+        "fee" => 0,
+        "gross" => $row['Gross Debit (GC)'],
+        "backend_processor" => $isGravy ? "adyen" : NULL,
+        "backend_processor_txn_id" => $isGravy ? $row['Psp Reference'] : NULL,
+        "contribution_tracking_id" => $trackingID,
+        "payment_orchestrator_reconciliation_id" => $isGravy ? $row['Merchant Reference'] : NULL,
+        "currency" => $row['Gross Currency'],
+        "order_id" => $trackingID . '.1',
+        "payment_method" => "apple",
+        "payment_submethod" => "amex",
+        "email" => $gatewayTxnID . "@wikimedia.org",
+        "first_name" => $gatewayTxnID,
+        "gateway" => $isGravy ? 'gravy' : 'adyen',
+        "last_name" => "Mouse",
+        "user_ip" => "169.255.255.255",
+        "utm_campaign" => "WMF_FR_C2526_esLA_m_0805",
+        "utm_medium" => "sitenotice",
+        "utm_source" => $utmSource,
+        "date" => strtotime($row['Creation Date']),
+      ]
+    ], $gatewayTxnID);
+  }
+
+  /**
+   * @param string $directory
+   * @param string $fileName
+   * @return array
+   */
+  public function prepareForAuditProcessing(string $directory, string $fileName): array {
+    $this->setAuditDirectory($directory);
+    // First let's have a process to create some TransactionLog entries.
+    $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR . $fileName;
+    try {
+    $csv = Reader::createFromPath($file, 'r');
+      $csv->setHeaderOffset(0);
+    }
+    catch (Exception $e) {
+      $this->fail('Failed to read csv' . $file . ': ' . $e->getMessage());
+    }
+    foreach ($csv as $row) {
+      $this->createTransactionLog($row);
+    }
+    return $row;
+  }
+
+  /**
+   * @param string $directory
+   * @param string $file
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  public function runAuditBatch(string $directory, string $file): array {
+    $this->prepareForAuditProcessing($directory, $file);
+    $result = [];
+    $result['batch'] = $this->runAuditor();
+    $this->processDonationsQueue();
+    $this->processRefundQueue();
+    $this->processSettleQueue();
+    return $result;
   }
 
 }

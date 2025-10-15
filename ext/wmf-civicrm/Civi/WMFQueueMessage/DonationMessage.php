@@ -363,8 +363,9 @@ class DonationMessage extends Message {
   public function getReportingFeeAmount(): float {
     if ($this->getSettlementCurrency() === 'USD' && !empty($this->message['settled_fee_amount'])) {
       // If we already know the settled fee (from the auditor) and it is already USD then return it.
-      // It will already be a float in that case.
-      return $this->message['settled_fee_amount'];
+      // It will already be a float in that case and it will be negative
+      // (settled_total_amount + settled_fee_amount = settled_net_amount).
+      return -$this->message['settled_fee_amount'];
     }
     if ($this->getOriginalFeeAmount() !== FALSE) {
       return $this->getOriginalFeeAmount() * $this->getConversionRate();

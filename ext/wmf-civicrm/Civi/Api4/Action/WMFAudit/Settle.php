@@ -58,7 +58,7 @@ class Settle extends AbstractAction {
       $values['fee_amount'] = (float) $message->getSettledFeeAmountRounded();
       $values['total_amount'] = (float) $message->getSettledAmountRounded();
     }
-    else {
+    elseif (!$message->isReversal()) {
       // Fill in missing fee amount. No need to alter total - we don't have more up-to-date
       // info & net should recalculate.
       if (empty($contribution['fee_amount']) && !empty($values['contribution_settlement.settled_fee_amount'])) {

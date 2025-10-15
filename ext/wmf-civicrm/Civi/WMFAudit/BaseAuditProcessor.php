@@ -1770,7 +1770,19 @@ abstract class BaseAuditProcessor {
   }
 
   public function getBatchInformation(): array {
-    return $this->get_runtime_options('is_stop_on_first_missing') ? [] : $this->batches;
+    if ($this->get_runtime_options('is_stop_on_first_missing')) {
+      return [];
+    };
+    $batches = [];
+    foreach ($this->batches as $batch) {
+      foreach ($batch as $fieldName => $fieldValue) {
+        if (str_ends_with($fieldName, '_amount')) {
+          $batch[$fieldName] = (string) Money::of($fieldValue, $batch['settlement_currency'])->getAmount();
+        }
+      }
+      $batches[] = $batch;
+    }
+    return $batches;
   }
 
   public function getValidBatches(): array {
