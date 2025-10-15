@@ -294,8 +294,8 @@ class AuditMessage extends DonationMessage {
     if ($this->getContributionRecurID()) {
       return TRUE;
     }
-    $orderParts = explode('.', $this->getOrderID());
-    if (($orderParts[1] ?? 0) <= 1) {
+    $orderParts = explode('.', (string) $this->getOrderID());
+    if ((int) ($orderParts[1] ?? 0) <= 1) {
       return FALSE;
     }
     return !empty($this->getFirstRecurringContribution());
