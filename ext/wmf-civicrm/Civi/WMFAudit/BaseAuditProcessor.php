@@ -4,6 +4,7 @@ namespace Civi\WMFAudit;
 
 use Brick\Math\RoundingMode;
 use Brick\Money\Money;
+use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\WMFAudit;
@@ -1300,11 +1301,37 @@ abstract class BaseAuditProcessor {
         $timer = microtime(true);
       }
       $this->recordStatistic($auditRecord, $file);
+      $messageType = $auditRecord['message']['type'] ?? NULL;
       if ($auditRecord['is_missing']) {
-        if (($auditRecord['message']['type'] ?? NULL) === 'fee'
-          || ($auditRecord['message']['type'] ?? NULL) === 'aggregate'
-        ) {
-          // For now continue to skip these.
+
+        if ($messageType === 'fee') {
+          // I went back and forth on pushing this into the queue consumer.
+          // These are super low volume and it felt like a contortion to get the DonationQueueConsumer
+          // to handle them.
+          Contribution::save(FALSE)
+            ->addRecord([
+              'total_amount' => 0,
+              'net_amount' => $auditRecord['message']['settled_fee_amount'],
+              'fee_amount' => -$auditRecord['message']['settled_fee_amount'],
+              'contribution_settlement.settled_fee_amount' => $auditRecord['message']['settled_fee_amount'],
+              // We record this fee transaction against the anonymous contact
+              // I thought about going with a specific contact but triggers already exclude
+              // the anonymous contact
+              'contact_id' => \Civi\WMFHelper\Contact::getAnonymousContactID(),
+              'trxn_id' => strtoupper($auditRecord['message']['audit_file_gateway']) . ' ' . $auditRecord['message']['gateway_txn_id'],
+              'contribution_extra.gateway' => $auditRecord['message']['audit_file_gateway'],
+              'contribution_extra.gateway_txn_id' => $auditRecord['message']['gateway_txn_id'],
+              'receive_date' => '@' . $auditRecord['message']['settled_date'],
+              'contribution_settlement.settlement_batch_reference' => $auditRecord['message']['settlement_batch_reference'],
+              'contribution_settlement.settlement_date' => '@' . $auditRecord['message']['settled_date'],
+              'contribution_settlement.settlement_currency' => $auditRecord['message']['settled_currency'],
+              'financial_type_id:name' => 'Cash',
+              'payment_instrument_id:name' => 'Cash',
+            ])->setMatch(['trxn_id'])->execute();
+          continue;
+        }
+        if ($messageType === 'aggregate') {
+          // These are totals - we track them in recordStatistic but then discard.
           continue;
         }
         $key = $auditRecord['is_negative'] ? 'negative' : 'main';
@@ -1770,7 +1797,19 @@ abstract class BaseAuditProcessor {
   }
 
   public function getBatchInformation(): array {
-    return $this->get_runtime_options('is_stop_on_first_missing') ? [] : $this->batches;
+    if ($this->get_runtime_options('is_stop_on_first_missing')) {
+      return [];
+    };
+    $batches = [];
+    foreach ($this->batches as $batch) {
+      foreach ($batch as $fieldName => $fieldValue) {
+        if (str_ends_with($fieldName, '_amount')) {
+          $batch[$fieldName] = (string) Money::of($fieldValue, $batch['settlement_currency'])->getAmount();
+        }
+      }
+      $batches[] = $batch;
+    }
+    return $batches;
   }
 
   public function getValidBatches(): array {

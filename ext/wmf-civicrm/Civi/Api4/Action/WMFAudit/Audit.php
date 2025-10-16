@@ -71,7 +71,10 @@ class Audit extends AbstractAction {
       }
       $this->saveSettlementTransaction($record, $message);
 
-      if (!$isMissing && !empty($record['settlement_batch_reference'])) {
+      if (!$isMissing && !empty($record['settlement_batch_reference'])
+        && !$message->isFeeRow()
+        && !$message->isAggregateRow()
+      ) {
         $values = [
           'gateway' => $record['gateway'],
           'gateway_txn_id' => $record['gateway_txn_id'],

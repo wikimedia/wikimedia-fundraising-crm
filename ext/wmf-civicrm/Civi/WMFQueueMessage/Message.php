@@ -282,12 +282,14 @@ class Message {
       ],
       'original_net_amount' => [
         'name' => 'original_net_amount',
+        'title' => 'Original currency net amount (amount paid to us)',
         'description' => E::ts('Amount less the fee in the original currency'),
         'data_type' => 'Money',
         'used_for' => '*tbd',
       ],
       'original_total_amount' => [
         'name' => 'original_total_amount',
+        'title' => 'Original currency total amount (amount paid by donor)',
         'description' => E::ts('Total amount in the original currency'),
         'data_type' => 'Money',
         'used_for' => '*tbd',

@@ -54,11 +54,11 @@ class Settle extends AbstractAction {
       ->setSelect(array_merge(array_keys($values), ['fee_amount', 'total_amount']))
       ->execute()->first();
 
-    if ($message->getSettlementCurrency() === 'USD') {
+    if ($message->getSettlementCurrency() === 'USD' && !$message->isReversal()) {
       $values['fee_amount'] = (float) $message->getSettledFeeAmountRounded();
       $values['total_amount'] = (float) $message->getSettledAmountRounded();
     }
-    else {
+    elseif (!$message->isReversal()) {
       // Fill in missing fee amount. No need to alter total - we don't have more up-to-date
       // info & net should recalculate.
       if (empty($contribution['fee_amount']) && !empty($values['contribution_settlement.settled_fee_amount'])) {
@@ -75,8 +75,11 @@ class Settle extends AbstractAction {
       if (!isset($contribution[$name])) {
         continue;
       }
-      if ($contribution[$name] === $value
-        || $name === 'contribution_settlement.settlement_date' && strtotime($contribution[$name]) === strtotime($value)
+      // Do not overwrite existing values with NULL as there might be a batch_reference
+      // AND a batch_reversal_reference for a given transaction.
+      if ($value === NULL
+        || $contribution[$name] === $value
+        || ($name === 'contribution_settlement.settlement_date' && strtotime($contribution[$name]) === strtotime($value))
       ) {
         unset($values[$name]);
       }
