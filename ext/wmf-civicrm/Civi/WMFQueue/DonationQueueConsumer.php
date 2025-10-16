@@ -283,9 +283,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    */
   private function importContribution(DonationMessage $message, array $msg): array {
-    $transaction = WMFTransaction::from_message($msg);
-    $trxn_id = $transaction->get_unique_id();
-
     $contribution = [
       'contact_id' => $msg['contact_id'],
       'total_amount' => $msg['gross'],
@@ -293,7 +290,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       'payment_instrument_id' => $msg['payment_instrument_id'],
       'fee_amount' => $msg['fee'],
       'net_amount' => $msg['net'],
-      'trxn_id' => $trxn_id,
+      'trxn_id' => $msg['trxn_id'],
       'receive_date' => $message->getDate(),
       'currency' => $msg['currency'],
       'contribution_recur_id' => $message->getContributionRecurID(),

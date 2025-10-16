@@ -11,6 +11,7 @@ use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur;
 use Civi\WMFHelper\FinanceInstrument;
+use Civi\WMFTransaction;
 use CRM_Core_Exception;
 
 class DonationMessage extends Message {
@@ -91,6 +92,13 @@ class DonationMessage extends Message {
       return $this->isPayment;
     }
     return TRUE;
+  }
+
+  public function isChargebackReversal() : bool {
+    if (empty($this->message['type'])) {
+      return FALSE;
+    }
+    return $this->message['type'] === 'chargeback_reversed';
   }
 
   /**
@@ -184,6 +192,8 @@ class DonationMessage extends Message {
     $msg += $this->getSettlementFields() + $this->getCustomFields();
 
     $msg['Gift_Data.Appeal'] = $this->getAppeal();
+    $msg['gateway_txn_id'] = $this->getGatewayTxnID();
+    $msg['trxn_id'] = $this->getTrxnID();
     $msg += $this->getPhoneFields();
 
     if ($this->isEndowmentGift()) {
@@ -524,14 +534,26 @@ class DonationMessage extends Message {
       throw new WMFException(WMFException::CIVI_REQ_FIELD, implode("\n", $errors));
     }
 
-    //Now check to make sure this isn't going to be a duplicate message for this gateway.
-    if (\CRM_Core_DAO::singleValueQuery(
-      'SELECT count(*)
-    FROM wmf_contribution_extra cx
-    WHERE gateway = %1 AND gateway_txn_id = %2', [
-      1 => [$this->getGateway(), 'String'],
-      2 => [$this->getGatewayTxnID(), 'String'],
-    ])) {
+    // Now check to make sure this isn't going to be a duplicate message for this gateway.
+    // Special handling for chargeback reversals, which have the same gateway_txn_id but
+    // a different trxn_id.
+    if ($this->isChargebackReversal()) {
+      $duplicate = \CRM_Core_DAO::singleValueQuery(
+        'SELECT count(*)
+          FROM civicrm_contribution
+          WHERE trxn_id = %1', [
+        1 => [$this->getTrxnId(), 'String'],
+      ]);
+    } else {
+      $duplicate = \CRM_Core_DAO::singleValueQuery(
+        'SELECT count(*)
+          FROM wmf_contribution_extra cx
+          WHERE gateway = %1 AND gateway_txn_id = %2', [
+          1 => [ $this->getGateway(), 'String' ],
+          2 => [ $this->getGatewayTxnID(), 'String' ],
+      ]);
+    }
+    if ($duplicate) {
       throw new WMFException(
         WMFException::DUPLICATE_CONTRIBUTION,
         'Contribution already exists. Ignoring message.'
@@ -781,6 +803,19 @@ class DonationMessage extends Message {
       return $this->cleanMoney($this->message['fee']);
     }
     return FALSE;
+  }
+
+  /**
+   * Gets a unique transaction ID suitable for storing in civicrm_contribution.trxn_id
+   * @return string|null
+   * @throws WMFException
+   */
+  public function getTrxnID(): ?string {
+    if (!$this->getGatewayTxnID()) {
+      return NULL;
+    }
+    $transaction = WMFTransaction::from_message($this->message);
+    return $transaction->get_unique_id();
   }
 
 }

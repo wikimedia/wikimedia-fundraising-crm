@@ -28,6 +28,11 @@ class WMFTransaction {
   /**
    * @var bool
    */
+  public $is_chargeback_reversal;
+
+  /**
+   * @var bool
+   */
   public $is_recurring;
 
   /**
@@ -51,6 +56,10 @@ class WMFTransaction {
 
     if ($this->is_refund) {
       $parts[] = "RFD";
+    }
+
+    if ($this->is_chargeback_reversal) {
+      $parts[] = "CHARGEBACK_REVERSAL";
     }
 
     if ($this->is_recurring) {
@@ -80,6 +89,7 @@ class WMFTransaction {
     }
     $transaction->gateway = $msg['gateway'];
     $transaction->is_recurring = !empty($msg['recurring']);
+    $transaction->is_chargeback_reversal = (($msg['type'] ?? NULL) === 'chargeback_reversed');
     return $transaction;
   }
 

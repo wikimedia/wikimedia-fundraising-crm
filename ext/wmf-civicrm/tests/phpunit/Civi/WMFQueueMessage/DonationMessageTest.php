@@ -61,6 +61,7 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
       'subscr_id' => 'TEST-S-1234567' . mt_rand(),
       'supplemental_address_1' => '',
       'supplemental_address_2' => '',
+      'trxn_id' => 'RECURRING PAYPAL 1234AB1234-2',
       'txn_type' => 'subscr_payment',
       'utm_campaign' => '',
       'contribution_extra.gateway_txn_id' => '1234AB1234-2',

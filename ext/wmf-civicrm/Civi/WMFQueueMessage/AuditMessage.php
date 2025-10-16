@@ -6,6 +6,7 @@ use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\TransactionLog;
+use Civi\WMFTransaction;
 
 class AuditMessage extends DonationMessage {
 
@@ -118,6 +119,16 @@ class AuditMessage extends DonationMessage {
   }
 
   /**
+   * Is the message advising a chargeback has been reversed.
+   *
+   * @return boolean
+   */
+  public function isChargebackReversal(): bool {
+    return $this->getType() === 'chargeback_reversed';
+  }
+
+
+  /**
    * Is the message advising a payment has been cancelled.
    *
    * @return boolean
@@ -183,6 +194,10 @@ class AuditMessage extends DonationMessage {
     }
     else {
       $message['order_id'] = $this->getOrderID();
+    }
+    if ($this->isChargebackReversal()) {
+      // Maybe always but definitely here.
+      $message['invoice_id'] = $this->getOrderID();
     }
     $message['contribution_tracking_id'] = $this->getContributionTrackingID();
     if (!$this->getExistingContributionID()) {
@@ -264,11 +279,18 @@ class AuditMessage extends DonationMessage {
           ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorTxnID())
           ->execute()->first() ?? [];
       }
-      if (empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
+      if (empty($this->existingContribution) && $this->getGatewayParentTxnID() && !$this->isChargebackReversal()) {
         $this->existingContribution = Contribution::get(FALSE)
           ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
           ->addWhere('contribution_extra.gateway', '=', $this->getParentTransactionGateway())
           ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
+          ->execute()->first() ?? [];
+      }
+      if (empty($this->existingContribution) && $this->isChargebackReversal()) {
+        $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
+        $this->existingContribution = Contribution::get(FALSE)
+          ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+          ->addWhere('trxn_id', '=', $trxn_id)
           ->execute()->first() ?? [];
       }
     }
@@ -307,6 +329,11 @@ class AuditMessage extends DonationMessage {
   public function getGatewayParentTxnID(): ?string {
     if (!empty($this->message['gateway_parent_id'])) {
       return $this->message['gateway_parent_id'];
+    }
+    if ($this->isChargebackReversal()) {
+      // We treat these as a new contribution on their own
+      // and ignore the parent.
+      return NULL;
     }
     if ($this->getGatewayTxnID()) {
       return $this->getGatewayTxnID();
@@ -360,6 +387,9 @@ class AuditMessage extends DonationMessage {
       if (!empty($transaction['order_id'])) {
         $value = $transaction['order_id'];
       }
+    }
+    if ($this->isChargebackReversal() && !empty($value)) {
+      $value .= '-cr';
     }
     return $value;
   }
