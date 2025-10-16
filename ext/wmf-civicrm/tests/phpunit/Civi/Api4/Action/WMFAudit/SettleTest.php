@@ -49,7 +49,7 @@ class SettleTest extends TestCase {
         'contribution_id' => $this->ids['Contribution']['daffy'],
         'gateway' => 'adyen',
         'gateway_txn_id' => 12345,
-        'settled_fee_amount' => '.3',
+        'settled_fee_amount' => '-.3',
       ])
       ->execute();
     $settledContribution = Contribution::get(FALSE)

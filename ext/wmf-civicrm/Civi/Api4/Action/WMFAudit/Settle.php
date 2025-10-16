@@ -55,7 +55,7 @@ class Settle extends AbstractAction {
       ->execute()->first();
 
     if ($message->getSettlementCurrency() === 'USD' && !$message->isReversal()) {
-      $values['fee_amount'] = (float) $message->getSettledFeeAmountRounded();
+      $values['fee_amount'] = (float) -$message->getSettledFeeAmountRounded();
       $values['total_amount'] = (float) $message->getSettledAmountRounded();
     }
     elseif (!$message->isReversal()) {
