@@ -1287,7 +1287,12 @@ abstract class BaseAuditProcessor {
     //go through the transactions and check to see if they're in civi
     $counter = $count = 0;
     $timer = microtime(true);
-    foreach ($transactions as $transaction) {
+    $rowLimit = $this->get_runtime_options('row_limit') ?? 0;
+    $offset = $this->get_runtime_options('offset') ?? 0;
+    foreach ($transactions as $rowNumber => $transaction) {
+      if ($offset && $rowNumber < $offset) {
+        continue;
+      }
       $auditRecord = WMFAudit::audit(FALSE)
         ->setValues($transaction)
         ->setProcessSettlement($this->get_runtime_options('settle_mode'))
@@ -1300,11 +1305,14 @@ abstract class BaseAuditProcessor {
         $counter = 0;
         $timer = microtime(true);
       }
+
       $this->recordStatistic($auditRecord, $file);
+
       $messageType = $auditRecord['message']['type'] ?? NULL;
+      $isHitRowLimit = ($rowLimit && $count === $rowLimit);
       if ($auditRecord['is_missing']) {
 
-        if ($messageType === 'fee') {
+        if (!$isHitRowLimit && $messageType === 'fee') {
           // I went back and forth on pushing this into the queue consumer.
           // These are super low volume and it felt like a contortion to get the DonationQueueConsumer
           // to handle them.
@@ -1330,7 +1338,7 @@ abstract class BaseAuditProcessor {
             ])->setMatch(['trxn_id'])->execute();
           continue;
         }
-        if ($messageType === 'aggregate') {
+        if (!$isHitRowLimit && $messageType === 'aggregate') {
           // These are totals - we track them in recordStatistic but then discard.
           continue;
         }
@@ -1338,6 +1346,10 @@ abstract class BaseAuditProcessor {
         $this->missingTransactions[$key][] = $auditRecord['message'];
         if ($this->get_runtime_options('is_stop_on_first_missing')) {
           \Civi::log('wmf')->info('stopping on first missing', $auditRecord + ['transaction' => $transaction]);
+          break;
+        }
+
+        if ($isHitRowLimit) {
           break;
         }
       }

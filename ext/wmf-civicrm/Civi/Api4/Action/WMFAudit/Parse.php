@@ -21,6 +21,8 @@ use CRM_SmashPig_ContextWrapper;
  * @method $this setLogSearchPastDays(int $logSearchPastDays)
  * @method $this setLogInterval(int $logInterval)
  * @method $this setFileLimit(?int $fileLimit)
+ * @method $this setRowLimit(?int $rowLimit)
+ * @method $this setOffset(int $offset)
  */
 class Parse extends AbstractAction {
 
@@ -104,7 +106,25 @@ class Parse extends AbstractAction {
    *
    * @var int $logInterval
    */
-  protected int $logInterval = 100000;
+  protected int $logInterval = 10000;
+
+  /**
+   * Number of rows to parse.
+   *
+   * By default all rows are passed. Useful for troubleshooting.
+   *
+   * @var int|null
+   */
+  public ?int $rowLimit = NULL;
+
+  /**
+   * Offset row to start at.
+   *
+   * By default all rows are passed. Useful for troubleshooting.
+   *
+   * @var int
+   */
+  public int $offset = 0;
 
   protected function getOptions(): array {
     return [
@@ -119,6 +139,8 @@ class Parse extends AbstractAction {
       'is_move_completed_file' => $this->isMoveCompletedFile,
       'is_completed' => $this->isCompleted,
       'progress_log_count' => $this->logInterval,
+      'row_limit' => $this->rowLimit,
+      'row_offset' => $this->offset,
     ];
   }
 
@@ -131,6 +153,9 @@ class Parse extends AbstractAction {
     }
     if ($this->isCompleted && !$this->file) {
       throw new \CRM_Core_Exception('isCompleted is intended to be used for a specific already-parsed file');
+    }
+    if (($this->offset || $this->rowLimit) && !$this->file) {
+      throw new \CRM_Core_Exception('offset and rowLimit only valid when parsing a specific file');
     }
     \CRM_SmashPig_ContextWrapper::createContext($this->gateway . '_audit', $this->gateway);
     \CRM_SmashPig_ContextWrapper::setMessageSource(
