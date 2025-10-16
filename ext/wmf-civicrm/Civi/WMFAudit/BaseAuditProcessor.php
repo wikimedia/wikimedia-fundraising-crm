@@ -1804,7 +1804,7 @@ abstract class BaseAuditProcessor {
     foreach ($this->batches as $batch) {
       foreach ($batch as $fieldName => $fieldValue) {
         if (str_ends_with($fieldName, '_amount')) {
-          $batch[$fieldName] = (string) Money::of($fieldValue, $batch['settlement_currency'])->getAmount();
+          $batch[$fieldName] = (string) Money::of($fieldValue, $batch['settlement_currency'], NULL, RoundingMode::HALF_UP)->getAmount();
         }
       }
       $batches[] = $batch;

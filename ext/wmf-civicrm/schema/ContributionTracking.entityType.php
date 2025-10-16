@@ -79,8 +79,11 @@ return [
     'contribution_id' => [
       'title' => E::ts('Contribution ID'),
       'sql_type' => 'int unsigned',
-      'input_type' => 'Number',
+      'input_type' => 'EntityRef',
       'description' => E::ts('FK to Contribution'),
+      'input_attrs' => [
+        'label' => ts('Contribution'),
+      ],
       'entity_reference' => [
         'entity' => 'Contribution',
         'key' => 'id',

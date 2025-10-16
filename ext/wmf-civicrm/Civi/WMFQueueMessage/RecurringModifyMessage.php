@@ -9,6 +9,8 @@ use Civi\WMFHelper\ContributionRecur as RecurHelper;
 
 class RecurringModifyMessage extends Message {
 
+  public const DONOR_PORTAL_MESSAGE_SOURCE_TYPE = 'emailpreferences';
+
   private $contributionRecurID;
   /**
    * Constructor.
@@ -247,5 +249,12 @@ class RecurringModifyMessage extends Message {
    */
   public function getCancelDate(): string {
     return $this->message['cancel_date'] ?? date('Ymd H:i:s');
+  }
+
+  /**
+   * Returns true for messages send from the email prefs center or the donor portal
+   */
+  public function isFromDonorPortal(): bool {
+    return $this->message['source_type'] ??= self::DONOR_PORTAL_MESSAGE_SOURCE_TYPE;
   }
 }
