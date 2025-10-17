@@ -55,8 +55,12 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
         $url = PreferencesLink::addContactAndChecksumToUrl($recurringUpgradeBaseUrl, $contactID, $checksum);
         break;
       case 'EmailPreferences':
-        // TODO: consider subpages, e.g. opt in. For now we only serve the main email preferences page, so this is OK.
+        // This gets us a link to Special:
         $url = PreferencesLink::getPreferenceUrl($contactID);
+        if ($message['subpage'] == 'optIn') {
+          // TODO: better way to do subpages, e.g. optIn
+          $url = str_replace('emailPreferences', 'optIn', $url);
+        }
         break;
       case 'DonorPortal':
         $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
