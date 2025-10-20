@@ -187,9 +187,9 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     // We just need to set this value here. The omnimail_civicrm_custom hook will pick up
     // the change and queue up an API request to Acoustic to actually snooze it.
     // 4: update snoozed_date
-    if (!empty($this->snooze_date) && $this->snooze_date !== $oldSnoozeDateValue) {
-      $snoozeValues = ['email_settings.snooze_date' => $this->snooze_date];
-      $message .= ", snooze date from {$oldSnoozeDateValue} to $this->snooze_date";
+    if (!empty($this->snoozeDate) && $this->snoozeDate !== $oldSnoozeDateValue) {
+      $snoozeValues = ['email_settings.snooze_date' => $this->snoozeDate];
+      $message .= ", snooze date from {$oldSnoozeDateValue} to $this->snoozeDate";
     }
 
     // 5: update email - trigger verification email if email changed
