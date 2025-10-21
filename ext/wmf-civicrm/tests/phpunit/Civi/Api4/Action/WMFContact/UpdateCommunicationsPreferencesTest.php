@@ -4,6 +4,7 @@ namespace Civi\Api4\WMFContact;
 
 use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Activity;
+use Civi\Api4\QueueItem;
 use Civi\Api4\WMFContact;
 use Civi\Api4\Email;
 use PHPUnit\Framework\TestCase;
@@ -19,6 +20,14 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
   use WMFEnvironmentTrait;
 
   protected $contactID;
+
+  public function tearDown(): void {
+    QueueItem::delete(FALSE)
+      ->addWhere('queue_name', '=', 'omni-snooze')
+      ->execute();
+    parent::tearDown();
+  }
+
   /**
    * Test use of API4 in EmailPreferenceCenterQueueConsumer
    *
@@ -287,4 +296,46 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->setEmailChecksum(hash('sha256', $this->contactID))
       ->execute();
   }
+
+  public function testSetSnoozePreference() {
+    $credentials = \Civi::settings()->get('omnimail_credentials');
+    $this->setSetting('omnimail_credentials', ['Silverpop' => array_merge($credentials['Silverpop'] ?? [], ['database_id' => [50]])]);
+    $this->contactID = Contact::create(FALSE)->setValues([
+      'first_name' => 'Bob',
+      'last_name' => 'McTest',
+      'Communication.opt_in' => 0,
+      'contact_type' => 'Individual',
+      'preferred_language' => 'fr_CA',
+    ])->addChain('address', Address::create(FALSE)
+      ->addValue('contact_id', '$id')
+      ->addValue('country_id:name', 'CA')
+      ->addValue('location_type_id:name', 'Home')
+      ->addValue('is_primary', 1)
+    ) ->addChain('email', Email::create(FALSE)
+      ->addValue('contact_id', '$id')
+      ->addValue('email', 'bob.roberto@test.com')
+      ->addValue('location_type_id:name', 'Home')
+    )
+      ->execute()->first()['id'];
+
+    $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID);
+    $emailChecksum = hash('sha256', $this->contactID);
+    WMFContact::updateCommunicationsPreferences()
+      ->setEmail('bob.roberto@test.com')
+      ->setContactID($this->contactID)
+      ->setChecksum($checksum)
+      ->setEmailChecksum($emailChecksum)
+      ->setCountry('US')
+      ->setLanguage('es_US')
+      ->setSnoozeDate('2035-10-21')
+      ->setSendEmail('true')
+      ->execute();
+
+    $contact = Contact::get(FALSE)->addWhere('id', '=', (int) $this->contactID)
+      ->setSelect(['email_primary.email_settings.snooze_date'])
+      ->execute()->first();
+
+    $this->assertEquals('2035-10-21', $contact['email_primary.email_settings.snooze_date']);
+  }
+
 }
