@@ -151,7 +151,7 @@ class Message {
         'name' => 'gateway_txn_id',
         'description' => 'Gateway Transaction reference',
         'data_type' => 'String',
-        'api_field' => 'contribution_extra.gateway_txn',
+        'api_field' => 'contribution_extra.gateway_txn_id',
         'api_entity' => 'Contribution',
         'used_for' => 'All payment messages',
       ],

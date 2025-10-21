@@ -143,6 +143,11 @@ class Contribution {
     // We could possibly 'assume' it to be the latest if on the latest day - although in that
     // case we probably lose a get query & gain an 'update' query as the extra fields are likely already
     // updated by the triggers.
+    if (!$contribution->contact_id) {
+      \Civi::log('wmf')->warning('no contact ID found for contribution {id} {contribution}',
+        ['id' => $contribution->id, 'contribution' => (array) $contribution],
+      );
+    }
     $contactLastDonation = self::getContactLastDonationData((int) $contribution->contact_id);
     $extra = self::getOriginalCurrencyAndAmountFromSource((string) $contribution->source, $contribution->total_amount);
     if ($contributionStatus === 'Completed' && !$isRefund) {
@@ -250,7 +255,7 @@ class Contribution {
    * @throws \CRM_Core_Exception
    */
   private static function getContactLastDonationData(int $contactID): array {
-    return Contact::get(FALSE)->addWhere('id', '=', $contactID)
+    $result = Contact::get(FALSE)->addWhere('id', '=', $contactID)
       ->addSelect(
         'wmf_donor.last_donation_currency',
         'wmf_donor.last_donation_amount',
@@ -258,6 +263,11 @@ class Contribution {
         'wmf_donor.last_donation_usd'
       )
       ->execute()->first();
+    if (!$result) {
+      \Civi::log('wmf')->warning(__CLASS__ . ': ' . __FUNCTION__ . ' unexpectedly no result - since this is in the post hook it *should* exit. Contact ID {contact_id}', ['contact_id' => $contactID]);
+      return [];
+    }
+    return $result;
   }
 
 }
