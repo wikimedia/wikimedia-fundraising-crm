@@ -1486,8 +1486,9 @@ class CalculatedData extends TriggerHook {
   protected function getTextClause($range): string {
     $comparison = isset($range['total']) ? 'at least ' : ' less than ';
     $amount = $range['total'] ?? $range['max_total'];
-    $textClause = $comparison . \Civi::format()
-        ->money($amount) . ' between ' . date('Y-m-d H:i:s', strtotime($range['from'])) . ' and ' . date('Y-m-d H:i:s', strtotime($range['to']));
+    $textClause = $comparison . \Civi::format()->money($amount, 'USD', 'en-US') .
+      ' between ' . date('Y-m-d H:i:s', strtotime($range['from'])) . ' and ' .
+      date('Y-m-d H:i:s', strtotime($range['to']));
     if (!empty($range['additional_criteria'])) {
       // Currently this is the only additional criteria defined so
       // let's cut a corner.
