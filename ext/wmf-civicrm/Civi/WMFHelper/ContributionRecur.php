@@ -117,8 +117,8 @@ class ContributionRecur {
         ->addWhere('contact_id', 'IN', $allContactIds)
         ->addWhere('cancel_date', 'IS NULL')
         ->addWhere('next_sched_contribution_date', 'IS NOT NULL')
-        // use adyen and ingenico first, find dlocal except upi later
-        ->addWhere('payment_processor.name', 'IN', ['adyen', 'ingenico'])
+        // use adyen and gravy first, find dlocal except upi later
+        ->addWhere('payment_processor.name', 'IN', ['adyen', 'gravy'])
         ->execute();
       // Also filter out multi recurring e.g. contact 1925710.
       if (count($contribution_recurs) === 1) {
