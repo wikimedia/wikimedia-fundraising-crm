@@ -137,7 +137,13 @@ class Import {
       if (empty($this->mappedRow['Contribution']['id'])) {
         if (empty($this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
           // Generate a transaction ID so that we don't import the same rows multiple times
-          $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference($this->mappedRow['Contact'], $this->mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'), $this->mappedRow['Contribution']['check_number'] ?? NULL, $this->rowValues[array_key_last($this->rowValues)]);
+          $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference(
+            $this->mappedRow['Contact'],
+            $this->mappedRow['Contribution']['receive_date'] ?? date('Y-m-d'),
+            $this->mappedRow['Contribution']['check_number'] ?? NULL,
+            $this->rowValues[array_key_last($this->rowValues)],
+            $this->mappedRow['Contribution']['Gift_Information.import_batch_number'] ?? NULL,
+            $this->userJobID);
         }
 
         $this->mappedRow['Contribution']['contribution_extra.gateway'] = $this->getGateway();
