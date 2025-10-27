@@ -126,7 +126,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
         // Log the send_email activity for GDPR
         $contactUpdateValues['Communication.opt_in'] = $this->sendEmail;
         // if No Bulk emails is set, we need to remove it
-        //(this should be removable in the future when we fix the multiple optin/out fields problem, 'is_opt_out' could also be removed in getEmailPreferenceData)
+        // (this should be removable in the future when we fix the multiple optin/out fields problem)
         if ($this->sendEmail && $contact['is_opt_out'] === TRUE) {
           $contactUpdateValues['is_opt_out'] = FALSE;
         }
@@ -325,7 +325,6 @@ class UpdateCommunicationsPreferences extends AbstractAction {
         'is_opt_out',
         'Communication.opt_in',
         'email_primary.email_settings.snooze_date',
-        'is_opt_out',
       ])
       ->addJoin('Address AS address', 'LEFT', ['address.is_primary', '=', 1])
       ->addJoin('Email AS email', 'LEFT', ['email.is_primary', '=', 1])
