@@ -3008,6 +3008,33 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Bug: T406193
+   *
+   * @return bool
+   */
+  public function upgrade_4695(): bool {
+    $sql = '
+      UPDATE civicrm_value_1_gift_data_7 gift
+      INNER JOIN civicrm_contribution_tracking ON entity_id = contribution_id SET channel = "Sidebar"
+      WHERE utm_medium = "sidebar"
+        AND channel IS NULL
+      AND gift.id BETWEEN %1 AND %2';
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 3500000,
+        'type' => 'Integer',
+        'increment' => 250000,
+      ],
+      2 => [
+        'value' => 3750000,
+        'type' => 'Integer',
+        'increment' => 250000,
+      ],
+    ]);
+    return TRUE;
+  }
+
+  /**
    * @param array $conversions
    *
    * @return void

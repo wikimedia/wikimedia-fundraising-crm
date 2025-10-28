@@ -121,6 +121,7 @@ function _civiimport_civicrm_get_import_tables(): array {
       'expires_date' => $tables->expires_date,
       'title' => $tables->label ? E::ts('Import: %1', [1 => $tables->label]) : E::ts('Import Job %1', [1 => $tables->id]),
       'description' => $tables->created_date . $createdBy,
+      'entity' => $tables->entity,
     ];
   }
   Civi::$statics['civiimport_tables'] = $importEntities;
