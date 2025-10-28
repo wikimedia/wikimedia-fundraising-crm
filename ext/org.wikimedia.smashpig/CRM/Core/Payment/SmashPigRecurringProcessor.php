@@ -763,7 +763,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @return bool
    * @throws \CRM_Core_Exception
    */
-  protected function hasOtherActiveRecurringContribution(int $contactID, int $recurringID) {
+  protected function hasOtherActiveRecurringContribution(int $contactID, int $recurringID) : bool {
     $result = civicrm_api3('ContributionRecur', 'get', [
       'id' => ['!=' => $recurringID],
       'contact_id' => $contactID,
@@ -778,7 +778,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'payment_token_id' => ['IS NOT NULL' => TRUE],
     ]);
 
-    return ($result['count'] ?? 0) > 0 ;
+    $hasActiveRecurring = !empty($result['count']);
+    return $hasActiveRecurring;
   }
 
   /**
