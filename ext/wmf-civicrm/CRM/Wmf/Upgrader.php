@@ -2980,6 +2980,45 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Bug: T406193
+   *
+   * Set channel = 'Recurring Gift' for all non-first recurrings.
+   *
+   * On digging this will change 1495 that are currently email
+   * and 343 that are currently sidebar - I think that are just ones that happened
+   * very recently & hopefully were teething. With the email ones I specifically
+   * missed off checking channel is NULL when doing the update.
+   *
+   * @return bool
+   */
+  public function upgrade_4700(): bool {
+    $sql = '
+      UPDATE civicrm_value_1_gift_data_7 gift
+      INNER JOIN civicrm_contribution current ON current.id = gift.entity_id
+        AND current.contribution_recur_id IS NOT NULL
+      INNER JOIN civicrm_contribution first
+        ON first.contribution_recur_id = current.contribution_recur_id
+        AND first.id < current.id
+        AND first.receive_date < current.receive_date
+      SET channel = "Recurring Gift"
+      WHERE channel <> "Recurring Gift"
+      AND gift.id BETWEEN %1 AND %2';
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 3000000,
+        'type' => 'Integer',
+        'increment' => 250000,
+      ],
+      2 => [
+        'value' => 3750000,
+        'type' => 'Integer',
+        'increment' => 250000,
+      ],
+    ]);
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
