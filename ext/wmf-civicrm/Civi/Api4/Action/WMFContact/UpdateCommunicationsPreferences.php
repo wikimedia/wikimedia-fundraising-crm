@@ -23,7 +23,7 @@ use Civi\WorkflowMessage\SetPrimaryEmailMessage;
  * @method int getContactID() Get contactID from email preference center queue.
  * @method $this setChecksum(string $checksum)
  * @method string getChecksum() Get emailChecksum from email preference center queue.
- * @method $this setEmailChecksum(string $emailChecksum)
+ * @method $this setEmailChecksum(?string $emailChecksum)
  * @method string getEmailChecksum() Get emailChecksum from email preference center queue.
  * @method $this setCountry(?string $country)
  * @method string|null getCountry() Get country from email preference center queue.
@@ -50,8 +50,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
   protected $checksum;
 
   /**
-   * checksum prepared for set primary email queue.
-   * @required
+   * checksum prepared for set primary email queue should exist if email updated.
    * @var string
    */
   protected $emailChecksum;
@@ -250,8 +249,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     if (
       empty($this->email) ||
       empty($this->contactID) ||
-      empty($this->checksum) ||
-      empty($this->emailChecksum)
+      empty($this->checksum)
     ) {
       throw new \CRM_Core_Exception('Missing required parameters in e-mail preferences message.');
     }
@@ -385,7 +383,17 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     ];
   }
 
+  /**
+   * @param array $contact
+   * @return void
+   * @throws UnauthorizedException
+   * @throws \CRM_Core_Exception
+   */
   function sendVerificationEmail(array $contact): void {
+    // should have email_checksum passed in to send verification email
+    if ( empty($this->emailChecksum) ) {
+      throw new \CRM_Core_Exception('Missing required checksum in e-mail preferences message.');
+    }
     // unique checksum for validation
     $unexpiredChecksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID, null, 'inf');
     $primaryEmailUrl = \Civi::settings()->get('wmf_confirm_primary_email_url') .

@@ -207,6 +207,33 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->execute();
   }
 
+  public function testMissingEmailChecksumWhenEmailUpdate() {
+    $this->contactID = Contact::create(FALSE)->setValues([
+      'first_name' => 'Bob',
+      'last_name' => 'McTest',
+      'contact_type' => 'Individual',
+    ])->addChain('email', Email::create(FALSE)
+      ->addValue('contact_id', '$id')
+      ->addValue('email', 'bob.roberto@test.com')
+      ->addValue('location_type_id:name', 'Home')
+    )->execute()->first()['id'];
+
+    $this->expectException( \CRM_Core_Exception::class );
+    $this->expectExceptionMessage( 'Missing required checksum in e-mail preferences message.' );
+    $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID);
+    // no email which is required
+    WMFContact::updateCommunicationsPreferences()
+      ->setEmail('bob.roberto+update@test.com')
+      ->setContactID($this->contactID)
+      ->setChecksum($checksum)
+      ->setCountry(null)
+      ->setLanguage(null)
+      ->setSnoozeDate(null)
+      ->setSendEmail(null)
+      ->setEmailChecksum(null)
+      ->execute();
+  }
+
   public function testChecksumMismatch() {
     $this->contactID = Contact::create(FALSE)->setValues([
       'first_name' => 'Bob',
@@ -227,6 +254,43 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->setSendEmail(null)
       ->setEmailChecksum(hash('sha256', $this->contactID))
       ->execute();
+  }
+
+  public function testNoEmailUpdateSoNoEmailChecksumNeeded() {
+    $this->contactID = Contact::create(FALSE)->setValues([
+      'first_name' => 'Bob',
+      'last_name' => 'McTest',
+      'contact_type' => 'Individual',
+      'preferred_language' => 'fr_CA',
+    ])->addChain('email', Email::create(FALSE)
+      ->addValue('contact_id', '$id')
+      ->addValue('email', 'bob.roberto@test.com')
+      ->addValue('location_type_id:name', 'Home')
+    )->execute()->first()['id'];
+
+    $prefLang = Contact::get(FALSE)->addWhere('id', '=', (int) $this->contactID)
+      ->setSelect(['preferred_language'])
+      ->execute()
+      ->first()['preferred_language'];
+    $this->assertEquals('fr_CA', $prefLang);
+
+    $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID);
+    WMFContact::updateCommunicationsPreferences()
+      ->setEmail('bob.roberto@test.com')
+      ->setContactID($this->contactID)
+      ->setChecksum($checksum)
+      ->setCountry(null)
+      ->setLanguage('es_US')
+      ->setSnoozeDate(null)
+      ->setSendEmail(null)
+      ->setEmailChecksum(null)
+      ->execute();
+
+    $prefLangUpdated = Contact::get(FALSE)->addWhere('id', '=', (int) $this->contactID)
+      ->setSelect(['preferred_language'])
+      ->execute()
+      ->first()['preferred_language'];
+    $this->assertEquals('es_US', $prefLangUpdated);
   }
 
   /**
