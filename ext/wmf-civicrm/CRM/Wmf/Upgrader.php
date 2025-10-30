@@ -1979,22 +1979,6 @@ AND q.id BETWEEN %1 AND %2";
   }
 
   /**
-   * Convert drupal variables to CiviCRM settings.
-   *
-   * Bug: T356115
-   *
-   * @return bool
-   */
-  public function upgrade_4455(): bool {
-    $this->convertDrupalVariableToCiviCRMSetting([
-      'wmf_common_failmail' => 'wmf_failmail_recipient',
-      'wmf_common_no_failmail' => 'wmf_failmail_exclude_list',
-      'sendmail_from' => 'wmf_failmail_from',
-    ]);
-    return TRUE;
-  }
-
-  /**
    * Allow manual creation of 'Recurring Upgrade Decline' activities
    *
    * Bug: T362087
@@ -2008,33 +1992,6 @@ AND q.id BETWEEN %1 AND %2";
     SET is_reserved = 0, filter = 0
     WHERE name=\'Recurring Upgrade Decline\'
     ');
-    return TRUE;
-  }
-
-  /**
-   * Copy exchange rates drupal vars to Civi settings
-   * @return bool
-   */
-  public function upgrade_4465(): bool {
-    $copySettings = [
-      'exchange_rates_bank_update' => 'exchange_rates_last_update_timestamp',
-      'exchange_rates_key_oanda' => 'exchange_rates_key_oanda',
-      'exchange_rates_quote_oanda' => 'exchange_rates_quote_oanda',
-      'exchange_rates_remaining_quotes' => 'exchange_rates_remaining_quotes',
-    ];
-    $this->convertDrupalVariableToCiviCRMSetting($copySettings);
-    return TRUE;
-  }
-
-  /**
-   * Copy prometheus drupal vars to Civi settings
-   * @return bool
-   */
-  public function upgrade_4470(): bool {
-    $copySettings = [
-      'metrics_reporting_prometheus_path' => 'metrics_reporting_prometheus_path',
-    ];
-    $this->convertDrupalVariableToCiviCRMSetting($copySettings);
     return TRUE;
   }
 
@@ -2403,18 +2360,6 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    */
   public function upgrade_4535(): bool {
     $this->doAnnualWMFDonorRollover();
-    return TRUE;
-  }
-
-  /**
-   * Migrate a couple more Drupal variables to Civi settings
-   * @return bool
-   */
-  public function upgrade_4540(): bool {
-    $this->convertDrupalVariableToCiviCRMSetting([
-      'wmf_common_requeue_delay' => 'wmf_requeue_delay',
-      'wmf_common_requeue_max' => 'wmf_requeue_max',
-    ]);
     return TRUE;
   }
 
@@ -3035,14 +2980,42 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
-   * @param array $conversions
+   * Bug: T406193
    *
-   * @return void
+   * Set channel = 'Recurring Gift' for all non-first recurrings.
+   *
+   * On digging this will change 1495 that are currently email
+   * and 343 that are currently sidebar - I think that are just ones that happened
+   * very recently & hopefully were teething. With the email ones I specifically
+   * missed off checking channel is NULL when doing the update.
+   *
+   * @return bool
    */
-  private function convertDrupalVariableToCiviCRMSetting(array $conversions) {
-    foreach ($conversions as $variableName => $settingName) {
-      Civi::settings()->set($settingName, variable_get($variableName));
-    }
+  public function upgrade_4700(): bool {
+    $sql = '
+      UPDATE civicrm_value_1_gift_data_7 gift
+      INNER JOIN civicrm_contribution current ON current.id = gift.entity_id
+        AND current.contribution_recur_id IS NOT NULL
+      INNER JOIN civicrm_contribution first
+        ON first.contribution_recur_id = current.contribution_recur_id
+        AND first.id < current.id
+        AND first.receive_date < current.receive_date
+      SET channel = "Recurring Gift"
+      WHERE channel <> "Recurring Gift"
+      AND gift.id BETWEEN %1 AND %2';
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 3000000,
+        'type' => 'Integer',
+        'increment' => 250000,
+      ],
+      2 => [
+        'value' => 3750000,
+        'type' => 'Integer',
+        'increment' => 250000,
+      ],
+    ]);
+    return TRUE;
   }
 
   /**

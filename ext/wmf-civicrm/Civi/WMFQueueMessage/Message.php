@@ -950,7 +950,7 @@ class Message {
         continue;
       }
       if ($field && !isset($this->message[$field['api_field']])) {
-        if ($field['data_type'] === 'Date' && is_integer($value)) {
+        if (in_array($field['data_type'], ['Date', 'Datetime']) && is_integer($value)) {
           $value = '@' . $value;
         }
         if (empty($field['options'])) {
