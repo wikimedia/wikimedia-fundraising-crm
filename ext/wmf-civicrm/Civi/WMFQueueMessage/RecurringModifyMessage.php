@@ -12,6 +12,7 @@ class RecurringModifyMessage extends Message {
   public const DONOR_PORTAL_MESSAGE_SOURCE_TYPE = 'emailpreferences';
 
   private $contributionRecurID;
+
   /**
    * Constructor.
    */
@@ -256,5 +257,17 @@ class RecurringModifyMessage extends Message {
    */
   public function isFromDonorPortal(): bool {
     return $this->message['source_type'] ??= self::DONOR_PORTAL_MESSAGE_SOURCE_TYPE;
+  }
+
+  public function getActivityTracking(): array {
+    $values = [
+      'is_from_donor_portal' => $this->isFromDonorPortal(),
+    ];
+    foreach (['campaign', 'medium', 'source'] as $fieldName) {
+      if (!empty($this->message[$fieldName])) {
+        $values[$fieldName] = $this->message[$fieldName];
+      }
+    }
+    return $values;
   }
 }

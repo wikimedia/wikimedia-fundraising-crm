@@ -56,7 +56,8 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'txn_type' => 'recurring_paused',
       'contribution_recur_id' => $testRecurring['id'],
       'duration' => '60 days',
-      'source_type' => 'emailpreferences'
+      'source_type' => 'emailpreferences',
+      'campaign' => 'Blast1',
     ];
 
     $this->processMessage($msg);
@@ -79,6 +80,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     $this->assertEquals($formatDate, $updatedRecurring['next_sched_contribution_date']);
     $this->assertEquals("Paused recurring till {$formatDate}", $activity['subject']);
     $this->assertEquals(TRUE, $activity['activity_tracking.activity_is_from_donor_portal']);
+    $this->assertEquals('Blast1', $activity['activity_tracking.activity_campaign']);
   }
 
   public function testRecurringCancel(): void {
@@ -93,7 +95,8 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'contribution_recur_id' => $testRecurring['id'],
       'cancel_reason' => 'Financial reason',
       'cancel_date' => date('Y-m-d H:i:s'),
-      'source_type' => 'emailpreferences'
+      'source_type' => 'emailpreferences',
+      'medium' => 'email',
     ];
 
     $this->processMessage($msg);
@@ -115,6 +118,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     $this->assertEquals('Cancelled', $updatedRecurring['contribution_status_id:name']);
     $this->assertEquals("Donor cancelled recurring through the Donor Portal on {$msg['cancel_date']}", $activity['subject']);
     $this->assertEquals(TRUE, $activity['activity_tracking.activity_is_from_donor_portal']);
+    $this->assertEquals('email', $activity['activity_tracking.activity_medium']);
   }
 
   /**
@@ -129,6 +133,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'amount' => $testRecurring['amount'] + $additionalAmount,
       'currency' => $testRecurring['currency'],
       'source_type' => 'emailpreferences',
+      'source' => 'direct'
     ];
     $amountDetails = [
       'native_currency' => $msg['currency'],
@@ -157,6 +162,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     $this->assertEquals('Added 5.00 USD', $activity['subject']);
     $this->assertEquals(json_encode($amountDetails), $activity['details']);
     $this->assertEquals(TRUE, $activity['activity_tracking.activity_is_from_donor_portal']);
+    $this->assertEquals('direct', $activity['activity_tracking.activity_source']);
   }
 
   /**

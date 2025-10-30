@@ -107,8 +107,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
       'contribution_recur_id' => $message->getContributionRecurID(),
       'activity_type_id:name' => self::RECURRING_PAUSED_ACTIVITY_TYPE_NAME,
-      'is_from_donor_portal' => $message->isFromDonorPortal(),
-    ];
+    ] + $message->getActivityTracking();
     ContributionRecur::update(FALSE)->addValue('next_sched_contribution_date', $pauseScheduledParams['next_sched_contribution_date'])->addWhere(
       'id',
       '=',
@@ -135,8 +134,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
       'contribution_recur_id' => $message->getContributionRecurID(),
       'activity_type_id:name' => self::RECURRING_CANCELLED_ACTIVITY_TYPE_NAME,
-      'is_from_donor_portal' => $message->isFromDonorPortal()
-    ];
+    ] + $message->getActivityTracking();
     ContributionRecur::update(FALSE)
       ->addValue('contribution_status_id:name', 'Cancelled')
       ->addValue('cancel_date', $update_params['cancel_date'])
@@ -154,16 +152,11 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
   /**
    */
   protected function getActivityValues(RecurringModifyMessage $message, $msg): array {
-    $activityParams = [
+    return [
       'amount' => $message->getModifiedAmountRounded(),
       'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
       'contribution_recur_id' => $message->getContributionRecurID(),
-      'is_from_donor_portal' => $message->isFromDonorPortal()
-    ];
-    foreach (['campaign', 'medium', 'source'] as $trackingField) {
-      $activityParams[$trackingField] = $msg[$trackingField] ?? NULL;
-    }
-    return $activityParams;
+    ] + $message->getActivityTracking();
   }
 
   /**
