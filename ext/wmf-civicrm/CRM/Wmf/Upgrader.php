@@ -3019,7 +3019,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
         AND first.id < current.id
         AND first.receive_date < current.receive_date
       SET channel = "Recurring Gift"
-      WHERE channel <> "Recurring Gift"
+      WHERE (channel IS NULL OR channel <> "Recurring Gift")
       AND gift.id BETWEEN %1 AND %2';
     $this->queueSQL($sql, [
       1 => [
