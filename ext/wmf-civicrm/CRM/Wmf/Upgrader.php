@@ -3009,7 +3009,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    *
    * @return bool
    */
-  public function upgrade_4710(): bool {
+  public function upgrade_4715(): bool {
     $sql = '
       UPDATE civicrm_value_1_gift_data_7 gift
       INNER JOIN civicrm_contribution current ON current.id = gift.entity_id
