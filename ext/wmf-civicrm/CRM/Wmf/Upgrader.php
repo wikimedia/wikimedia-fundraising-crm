@@ -3009,7 +3009,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    *
    * @return bool
    */
-  public function upgrade_4720(): bool {
+  public function upgrade_4725(): bool {
     $sql = '
       UPDATE civicrm_value_1_gift_data_7 gift
       INNER JOIN civicrm_contribution current ON current.id = gift.entity_id
@@ -3023,14 +3023,14 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
       AND gift.id BETWEEN %1 AND %2';
     $this->queueSQL($sql, [
       1 => [
-        'value' => 5200000,
+        'value' => 6200000,
         'type' => 'Integer',
-        'increment' => 500000,
+        'increment' => 1000000,
       ],
       2 => [
-        'value' => 5700000,
+        'value' => 7200000,
         'type' => 'Integer',
-        'increment' => 500000,
+        'increment' => 1000000,
       ],
     ]);
     return TRUE;

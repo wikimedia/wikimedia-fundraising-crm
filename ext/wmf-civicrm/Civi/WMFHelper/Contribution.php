@@ -19,17 +19,19 @@ class Contribution {
    * @param string|null $checkNumber
    * @param int $rowIndex
    *   Row number within the import file.
+   * @param string|null $batchNumber
+   * @param int $userJobID
    *
    * @return string
    */
-  public static function generateTransactionReference(array $contactParams, string $date, ?string $checkNumber, int $rowIndex): string {
+  public static function generateTransactionReference(array $contactParams, string $date, ?string $checkNumber, int $rowIndex, ?string $batchNumber, int $userJobID): string {
     if ($contactParams['contact_type'] === 'Individual') {
       $name_salt = ($contactParams['first_name'] ?? '') . ($contactParams['last_name'] ?? '');
     }
     else {
       $name_salt = $contactParams['organization_name'];
     }
-    return md5(($checkNumber ?: '') . $date . $name_salt . $rowIndex);
+    return md5(($checkNumber ?: '') . $date . $name_salt . ($batchNumber ?? $userJobID) . $rowIndex);
   }
 
   /**
