@@ -2980,6 +2980,24 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Bug: T408769
+   * Set donor_status_id to correct 1000 when incorrectly set to 100.
+   * Update database field default to 1000.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_4705(): bool {
+    CRM_Core_DAO::executeQuery(
+      'ALTER TABLE wmf_donor ALTER COLUMN donor_status_id SET DEFAULT 1000'
+    );
+    CRM_Core_DAO::executeQuery(
+      'UPDATE wmf_donor SET donor_status_id = 1000 WHERE donor_segment_id = 1000 AND donor_status_id = 100'
+    );
+    return TRUE;
+  }
+
+  /**
    * Bug: T406193
    *
    * Set channel = 'Recurring Gift' for all non-first recurrings.
@@ -2991,7 +3009,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    *
    * @return bool
    */
-  public function upgrade_4700(): bool {
+  public function upgrade_4710(): bool {
     $sql = '
       UPDATE civicrm_value_1_gift_data_7 gift
       INNER JOIN civicrm_contribution current ON current.id = gift.entity_id
@@ -3005,12 +3023,12 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
       AND gift.id BETWEEN %1 AND %2';
     $this->queueSQL($sql, [
       1 => [
-        'value' => 3000000,
+        'value' => 3250000,
         'type' => 'Integer',
         'increment' => 250000,
       ],
       2 => [
-        'value' => 3750000,
+        'value' => 3500000,
         'type' => 'Integer',
         'increment' => 250000,
       ],

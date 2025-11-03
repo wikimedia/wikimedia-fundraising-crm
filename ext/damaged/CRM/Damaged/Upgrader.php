@@ -12,7 +12,7 @@ class CRM_Damaged_Upgrader extends CRM_Extension_Upgrader_Base {
   /**
    * Example: Run an external SQL script when the module is installed.
    */
-  public function install(): void {
+  public function preinstall(): void {
     $this->executeSqlFile('sql/install.sql');
   }
 
