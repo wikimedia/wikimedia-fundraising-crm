@@ -1007,7 +1007,7 @@ class Message {
     $utmMedium = strtolower($this->message['utm_medium'] ?? '');
 
     if ($utmMedium === 'mail' || str_contains($utmSource, 'DMURL')) {
-      return 'Direct_Mail';
+      return 'Direct Mail';
     }
 
     if ($utmMedium === 'sitenotice'

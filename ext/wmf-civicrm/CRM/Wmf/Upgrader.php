@@ -3118,6 +3118,80 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Bug: T406193
+   *
+   * Update channel for banners, portals, apps.
+   *
+   * This leaves some minor cleanups but should mean most online gifts have channels,
+   * excepting the ones that will wind up as 'Other Online'. There are a few email ones that
+   * might need some cleaning up
+   *
+   * @return bool
+   */
+  public function upgrade_4750(): bool {
+    $sql = "UPDATE
+    civicrm_value_1_gift_data_7 gift
+        INNER JOIN civicrm_contribution c ON c.id = gift.entity_id
+        INNER JOIN civicrm_contribution_tracking t ON t.contribution_id = c.id
+    SET channel =
+       CASE
+           WHEN utm_medium = 'wikimediaportal'
+             THEN 'Wikimedia Portal'
+
+           WHEN utm_medium = 'portal' AND utm_campaign = 'portalBanner'
+             THEN 'Portal Banner'
+
+           WHEN utm_medium = 'portal'
+             THEN 'Other Portal'
+
+           WHEN utm_medium IN ('wikipediaapp', 'wikipediaappfeed')
+             THEN 'Wikipedia App'
+
+           WHEN utm_medium IN ('google', 'facebook', 'instagram', 'tiktok', 'threads')
+             THEN 'Social Media'
+
+           WHEN utm_medium = 'pagelink'
+             THEN 'Other Online'
+
+           -- from here down is implicitly utm_medium sitenotice or endowment + utm_source LIKE B%
+           WHEN utm_source LIKE '%\_m\_%'
+               OR utm_source LIKE '%mob%'
+               THEN 'Mobile Banner'
+
+           WHEN utm_source LIKE '%dsk%'
+               THEN 'Desktop Banner'
+
+           ELSE 'Other Banner'
+           END
+
+WHERE (
+  utm_medium IN (
+      'sitenotice',
+      'wikimediaportal', 'portal'
+      'wikipediaapp', 'wikipediaappfeed',
+      'google', 'facebook', 'instagram', 'tiktok', 'threads',
+      'pagelink',
+    )
+    OR (utm_medium = 'endowment' AND utm_source LIKE 'B%')
+  )
+  AND (gift.channel = '' OR gift.channel IS NULL)
+        AND gift.id BETWEEN %1 AND %2";
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 1,
+        'type' => 'Integer',
+        'increment' => 300000,
+      ],
+      2 => [
+        'value' => 300000,
+        'type' => 'Integer',
+        'increment' => 300000,
+      ],
+    ]);
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
