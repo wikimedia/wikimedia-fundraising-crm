@@ -3037,6 +3037,54 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * Bug: T406193
+   *
+   * Set channel = 'Direct_Mail' WHERE utm_medium = 'mail'
+   *
+   * Note that it might be we update to 'Direct Mail' - I'm just trying
+   * to clarify with others but we will need to do an update on existing
+   * 'Direct_Mail' at that point anyway so let's knock this off.
+   *
+   * There are < 2000 affected so let's not batch. The source ones are a bit
+   * slow so looking at the approach there.
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4735(): bool {
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_value_1_gift_data_7 gift
+      INNER JOIN civicrm_contribution c ON c.id = gift.entity_id
+      INNER JOIN civicrm_contribution_tracking t ON t.contribution_id = c.id
+       SET channel = 'Direct_Mail'
+      WHERE (t.utm_medium = 'mail')
+        AND (channel IS NULL OR channel <>'')
+    ");
+
+    // There are literally 10 of these...
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_value_1_gift_data_7 gift
+      INNER JOIN civicrm_contribution c ON c.id = gift.entity_id
+      INNER JOIN civicrm_contribution_tracking t ON t.contribution_id = c.id
+       SET channel = 'Direct_Mail'
+      WHERE (t.utm_medium = 'DMURL')
+        AND (channel IS NULL OR channel <>'')
+    ");
+
+    // and only 19 of these. Count is the same for '%dmurl%'.
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_value_1_gift_data_7 gift
+      INNER JOIN civicrm_contribution c ON c.id = gift.entity_id
+      INNER JOIN civicrm_contribution_tracking t ON t.contribution_id = c.id
+       SET channel = 'Direct_Mail'
+      WHERE (t.utm_medium = 'endowment' AND utm_source LIKE 'dmurl.%')
+        AND (channel IS NULL OR channel <>'')
+    ");
+
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
