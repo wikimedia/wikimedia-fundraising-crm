@@ -224,7 +224,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           // - I'm still working through whether that is a good thing
           // but at this stage there is nothing to over-ride and the
           // whole data structure is still 'settling' (geddit).
-          + $messageObject->getSettlementFields()
+          + array_filter($messageObject->getSettlementFields())
         )->execute();
     }
     catch (\CRM_Core_Exception $e) {
@@ -264,7 +264,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
             'debug' => 1,
             'contribution_extra.parent_contribution_id' => $contribution_id,
             'contribution_extra.no_thank_you' => 1,
-          ]  + $messageObject->getSettlementFields())->execute();
+          ])->execute();
         }
         catch (\CRM_Core_Exception $e) {
           throw new WMFException(

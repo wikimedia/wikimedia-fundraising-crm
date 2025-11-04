@@ -1034,12 +1034,10 @@ class Message {
       return 'Email';
     }
     if ($utmMedium === 'portal') {
-      if (($this->message['utm_campaign'] ?? '') == 'portalBanner') {
+      if (($this->message['utm_campaign'] ?? '') === 'portalBanner') {
         return 'Portal Banner';
       }
-      else {
-        return 'Other Portal';
-      }
+      return 'Other Portal';
     }
     if ($utmMedium === 'wikimediaportal') {
       return 'Wikimedia Portal';

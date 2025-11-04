@@ -3085,6 +3085,39 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4740(): bool {
+    $this->ctx->log->info('Applying update 4740: Tie old braintree venmo usernames to new one, without @ prefix');
+    CRM_Core_DAO::executeQuery("
+    UPDATE wmf_external_contact_identifiers
+    SET venmo_user_name = CONCAT('@', TRIM(venmo_user_name))
+    WHERE venmo_user_name IS NOT NULL
+      AND TRIM(venmo_user_name) != ''
+      AND LEFT(TRIM(venmo_user_name), 1) != '@'
+    ");
+    return TRUE;
+  }
+
+  /**
+   * Fix some missing mailing identifiers.
+   *
+   * Bug: T406193
+   */
+  public function upgrade_4745(): bool {
+    $queries = [
+      "UPDATE civicrm_contribution_tracking LEFT JOIN civicrm_value_1_gift_data_7 ON entity_id = contribution_id SET mailing_identifier = 'sp73493245', channel = 'Email' WHERE utm_source = 'sp73493245'",
+      "UPDATE civicrm_contribution_tracking LEFT JOIN civicrm_value_1_gift_data_7 ON entity_id = contribution_id SET mailing_identifier = 'sp74626175', channel = 'Email' WHERE utm_source = 'sp74626175'",
+      "UPDATE civicrm_contribution_tracking LEFT JOIN civicrm_value_1_gift_data_7 ON entity_id = contribution_id SET mailing_identifier = 'sp74626242', channel = 'Email' WHERE utm_source = 'sp74626242'",
+      "UPDATE civicrm_contribution_tracking LEFT JOIN civicrm_value_1_gift_data_7 ON entity_id = contribution_id SET mailing_identifier = 'sp74626249', channel = 'Email' WHERE utm_source = 'sp74626249'",
+    ];
+    foreach ($queries as $query) {
+      CRM_Core_DAO::executeQuery($query);
+    }
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
