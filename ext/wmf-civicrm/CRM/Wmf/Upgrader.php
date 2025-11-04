@@ -3128,7 +3128,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    *
    * @return bool
    */
-  public function upgrade_4750(): bool {
+  public function upgrade_4751(): bool {
     $sql = "UPDATE
     civicrm_value_1_gift_data_7 gift
         INNER JOIN civicrm_contribution c ON c.id = gift.entity_id
@@ -3170,7 +3170,7 @@ WHERE (
       'wikimediaportal', 'portal'
       'wikipediaapp', 'wikipediaappfeed',
       'google', 'facebook', 'instagram', 'tiktok', 'threads',
-      'pagelink',
+      'pagelink'
     )
     OR (utm_medium = 'endowment' AND utm_source LIKE 'B%')
   )
