@@ -3192,6 +3192,20 @@ WHERE (
   }
 
   /**
+   * Fix Direct_Mail to Direct Mail.
+   *
+   * Bug: T406193
+   *
+   * @return bool
+   */
+  public function upgrade_4755(): bool {
+    CRM_Core_DAO::executeQuery(
+      'UPDATE civicrm_value_1_gift_data_7 gift SET channel = "Direct Mail" WHERE channel = "Direct_Mail"'
+    );
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
