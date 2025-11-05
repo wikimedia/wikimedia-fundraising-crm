@@ -1331,7 +1331,8 @@ abstract class BaseAuditProcessor {
               // I thought about going with a specific contact but triggers already exclude
               // the anonymous contact
               'contact_id' => \Civi\WMFHelper\Contact::getAnonymousContactID(),
-              'trxn_id' => strtoupper($auditRecord['message']['audit_file_gateway']) . ' ' . $auditRecord['message']['gateway_txn_id'],
+              // fee is unique within a batch but description might be date specific.
+              'trxn_id' => strtoupper($auditRecord['message']['audit_file_gateway']) . ' ' . $auditRecord['message']['gateway_txn_id'] . ' ' .$auditRecord['message']['settlement_batch_reference'],
               'contribution_extra.gateway' => $auditRecord['message']['audit_file_gateway'],
               'contribution_extra.gateway_txn_id' => $auditRecord['message']['gateway_txn_id'],
               'receive_date' => '@' . $auditRecord['message']['settled_date'],
