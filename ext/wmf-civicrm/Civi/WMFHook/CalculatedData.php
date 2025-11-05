@@ -1147,16 +1147,38 @@ class CalculatedData extends TriggerHook {
         'name' => 'annual_recurring_active',
         'label' => 'Active Annual Recurring',
         'value' => 12,
-        'static_description' => 'gave annual recurring within last 13 months',
+        'static_description' => 'has an active annual recurring plan',
         'criteria' => [
-          'multiple_range' => array_merge([
-            [
-              'from' => '13 months ago',
-              'to' => $this->getFinancialYearEndDateTime(),
-              'total' => 0.01,
-              'additional_criteria' => ['contribution_recur_id IS NOT NULL', 'annual_recur.id IS NOT NULL'],
-            ],
-          ], $midTierAndMajorGiftsExclusionRange),
+          'multiple_range' => $midTierAndMajorGiftsExclusionRange,
+          'recurring' => [
+            'annual_recur.contribution_status_id NOT IN (1, 3, 4)',
+          ],
+        ],
+      ],
+      14 => [
+        'name' => 'annual_recurring_delinquent',
+        'label' => 'Delinquent Annual Recurring',
+        'value' => 14,
+        'static_description' => 'their annual recurring plan was cancelled within the last 3 months',
+        'criteria' => [
+          'multiple_range' => $midTierAndMajorGiftsExclusionRange,
+          'recurring' => [
+            'annual_recur.end_date > NOW() - INTERVAL 3 MONTH',
+            'annual_recur.cancel_date > NOW() - INTERVAL 3 MONTH',
+          ],
+        ],
+      ],
+      16 => [
+        'name' => 'annual_recurring_lapsed',
+        'label' => 'Lapsed Annual Recurring',
+        'value' => 16,
+        'static_description' => 'their annual recurring plan was cancelled between 3 and 13 months ago',
+        'criteria' => [
+          'multiple_range' => $midTierAndMajorGiftsExclusionRange,
+          'recurring' => [
+            'annual_recur.cancel_date > NOW() - INTERVAL 13 MONTH',
+            'annual_recur.end_date > NOW() - INTERVAL 13 MONTH',
+          ],
         ],
       ],
       20 => [
@@ -1361,14 +1383,13 @@ class CalculatedData extends TriggerHook {
       450 => [
         'label' => 'Recurring annual donor',
         'value' => 450,
-        'static_description' => 'has made a recurring annual donation in last 13 months',
+        'static_description' => 'has an annual recurring plan that is active or was active in the last 13 months',
         'name' => 'recurring_annual',
         'criteria' => [
-          'range' => [
-            [
-              'from' => '13 months ago', 'to' => $this->getFinancialYearEndDateTime(),
-              'total' => 0.01,
-              'additional_criteria' => ['annual_recur.id IS NOT NULL']],
+          'recurring' => [
+            'annual_recur.contribution_status_id NOT IN (1, 3, 4)',
+            'annual_recur.cancel_date > NOW() - INTERVAL 13 MONTH',
+            'annual_recur.end_date > NOW() - INTERVAL 13 MONTH',
           ],
         ],
       ],
@@ -1471,7 +1492,7 @@ class CalculatedData extends TriggerHook {
    * @return string
    */
   protected function getRangeClause(array $range): string {
-    $additionalCriteria = empty($range['additional_criteria']) ? '' : (implode(' AND ', $range['additional_criteria']))  . ' AND ';
+    $additionalCriteria = empty($range['additional_criteria']) ? '' : (implode(' AND ', $range['additional_criteria'])) . ' AND ';
     return "COALESCE(IF($additionalCriteria receive_date
       BETWEEN (" . $this->convertDateOffsetToSQL($range['from']) . ") AND (" . $this->convertDateOffsetToSQL($range['to']) . ')
       , total_amount, 0), 0)';
@@ -1538,6 +1559,13 @@ class CalculatedData extends TriggerHook {
       $clauses = implode(' OR ', $rangeClauses);
       $dynamicDescription = implode(" OR \n", $textClauses);
     }
+    if (!empty($detail['criteria']['recurring'])) {
+      $clauses = 'MAX(' . implode(' OR ', $detail['criteria']['recurring']) . ')' . ($clauses ? ' AND (' . $clauses . ')' : '');
+      $detail['description'] = $detail['static_description'] . ($dynamicDescription ? " AND\n" . $dynamicDescription : '');
+    }
+    else {
+      $detail['description'] = $detail['static_description'] . " - ie\n" . $dynamicDescription;
+    }
     $sqlSelect = "
          WHEN (
          --  {$detail['label']}  {$detail['static_description']}
@@ -1545,7 +1573,6 @@ class CalculatedData extends TriggerHook {
 
         )";
     $detail['sql_select'] = $sqlSelect;
-    $detail['description'] = $detail['static_description'] . " - ie \n" . $dynamicDescription;
   }
 
   /**

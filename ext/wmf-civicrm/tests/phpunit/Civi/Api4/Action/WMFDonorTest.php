@@ -4,6 +4,7 @@ namespace Civi\Api4\Action;
 
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\WMFDonor;
 use Civi\Test;
@@ -120,7 +121,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
-   * Test the insanity that is donor segmentation..
+   * Test the insanity that is donor segmentation.
    *
    * @throws \CRM_Core_Exception
    */
@@ -128,6 +129,9 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $this->createDonor(['total_amount' => 2]);
     $annualDonationDate = date('Y-m-d', strtotime('-8 months'));
     $monthlyDonationDate = date('Y-m-d', strtotime('-7 months'));
+    $thirtySixMonthsAgoDate = date('Y-m-d', strtotime('-36 months'));
+    $todayDate = date('Y-m-d', strtotime('now'));
+
     $this->createTestEntity('ContributionRecur', [
       'contact_id' => $this->ids['Contact']['donor'],
       'frequency_unit' => 'year',
@@ -168,7 +172,78 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $this->assertEquals(12, $row['donor_status_id']);
     $this->assertEquals('Recurring annual donor', $row['donor_segment_id:label']);
     $this->assertEquals('Active Annual Recurring', $row['donor_status_id:label']);
-    $this->assertStringContainsString('has made a recurring annual donation in last 13 months', $row['donor_segment_id:description']);
+    $this->assertStringContainsString('has an annual recurring plan that is active or was active in the last 13 months', $row['donor_segment_id:description']);
+
+    // End recurring donation today, segment is still annual recurring, status is now delinquent
+    ContributionRecur::update(FALSE)
+      ->addValue('contribution_status_id:name', 'Cancelled')
+      ->addValue('end_date', $todayDate)
+      ->addWhere('id', '=', $this->ids['ContributionRecur']['annual'])
+      ->execute();
+
+    $result = WMFDonor::get(FALSE)
+      ->setDebug(TRUE)
+      ->addSelect('donor_segment_id', 'donor_status_id')
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->execute();
+    $row = $result->first();
+    $this->assertEquals(450, $row['donor_segment_id']);
+    $this->assertEquals(14, $row['donor_status_id']);
+
+    // Cancel recurring donation 8 months ago, segment is still annual recurring, status is now lapsed
+    ContributionRecur::update(FALSE)
+      ->addValue('cancel_date', $annualDonationDate)
+      ->addValue('end_date', NULL)
+      ->addWhere('id', '=', $this->ids['ContributionRecur']['annual'])
+      ->execute();
+
+    $result = WMFDonor::get(FALSE)
+      ->setDebug(TRUE)
+      ->addSelect('donor_segment_id', 'donor_status_id')
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->execute();
+    $row = $result->first();
+    $this->assertEquals(450, $row['donor_segment_id']);
+    $this->assertEquals(16, $row['donor_status_id']);
+
+    // Check that major donations prevent the donor from having a recurring status
+    // Update all the donor's contributions
+    Contribution::update(FALSE)
+      ->addValue('receive_date', $todayDate)
+      ->addValue('total_amount', 1001)
+      ->addWhere('contact_id', '=', $this->ids['Contact']['donor'])
+      ->execute();
+
+    $result = WMFDonor::get(FALSE)
+      ->setDebug(TRUE)
+      ->addSelect('donor_segment_id', 'donor_status_id')
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->execute();
+    $row = $result->first();
+    $this->assertEquals(200, $row['donor_segment_id']);
+    $this->assertEquals(25, $row['donor_status_id']);
+
+    // Cancel recurring donation 36 months ago, segment now falls out of annual recurring to grassroots plus, status is now deep lapsed
+    ContributionRecur::update(FALSE)
+      ->addValue('cancel_date', $thirtySixMonthsAgoDate)
+      ->addWhere('id', '=', $this->ids['ContributionRecur']['annual'])
+      ->execute();
+
+    // Update all the donor's contributions so they aren't a major donor, three years ago makes sure they fall in fiscal years for deep lapsed
+    Contribution::update(FALSE)
+      ->addValue('receive_date', $thirtySixMonthsAgoDate)
+      ->addValue('total_amount', 99)
+      ->addWhere('contact_id', '=', $this->ids['Contact']['donor'])
+      ->execute();
+
+    $result = WMFDonor::get(FALSE)
+      ->setDebug(TRUE)
+      ->addSelect('donor_segment_id', 'donor_status_id')
+      ->addWhere('id', 'IN', $this->ids['Contact'])
+      ->execute();
+    $row = $result->first();
+    $this->assertEquals(500, $row['donor_segment_id']);
+    $this->assertEquals(60, $row['donor_status_id']);
 
     $this->createTestEntity('Contribution', [
       'contact_id' => $this->ids['Contact']['donor'],
@@ -190,7 +265,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $this->assertStringContainsString('as donor_segment_id', $sql);
     // Annual recur donor.
     $row = $result->first();
-    $this->assertEquals(109, $row['lifetime_including_endowment']);
+    $this->assertEquals(206, $row['lifetime_including_endowment']);
     $this->assertEquals(400, $row['donor_segment_id']);
     $this->assertEquals(8, $row['donor_status_id']);
     $this->assertEquals('Recurring donor', $row['donor_segment_id:label']);
