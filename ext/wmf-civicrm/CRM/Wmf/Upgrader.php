@@ -3188,16 +3188,19 @@ WHERE (
         'increment' => 300000,
       ],
     ]);
+    return TRUE;
   }
 
   /**
    * Backfill is_major_gift.
    *
+   * Bug: T406193
+   *
    * (4.192 sec)
    *
    * @return bool
    */
-  public function upgrade_4760(): bool {
+  public function upgrade_4761(): bool {
     $sql = 'UPDATE civicrm_value_1_gift_data_7 gift
     INNER JOIN civicrm_contribution_tracking t ON t.contribution_id = gift.entity_id
     SET is_major_gift = 1
@@ -3276,7 +3279,7 @@ AND channel <> 'Chapter Gifts'";
     LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
     LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
 SET is_major_gift = 1
-WHERE appeal like '%MGF' AND channel in ('Direct Mail', 'Direct_Mail')
+WHERE gift.appeal like '%MGF' AND channel in ('Direct Mail', 'Direct_Mail')
 AND channel <> 'Chapter Gifts'";
     CRM_Core_DAO::executeQuery($sql);
 
@@ -3286,7 +3289,7 @@ AND channel <> 'Chapter Gifts'";
     LEFT JOIN  civicrm_contribution_tracking t ON t.contribution_id = c.id
     LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
 SET is_major_gift = 1
-WHERE appeal in ('WMF0824', 'WMF0924RE') AND channel in ('Direct Mail', 'Direct_Mail')
+WHERE gift.appeal in ('WMF0824', 'WMF0924RE') AND channel in ('Direct Mail', 'Direct_Mail')
 AND channel <> 'Chapter Gifts'";
     CRM_Core_DAO::executeQuery($sql);
 
@@ -3296,8 +3299,8 @@ AND channel <> 'Chapter Gifts'";
     LEFT JOIN civicrm_value_1_gift_data_7 gift ON gift.entity_id = c.id
 SET is_major_gift = 1
 WHERE (
-  appeal in ('WMF1124RE' , 'White Mail')
-  OR appeal LIKE '%WM')
+  gift.appeal in ('WMF1124RE' , 'White Mail')
+  OR gift.appeal LIKE '%WM')
   AND channel in ('Direct Mail', 'Direct_Mail')
   AND total_amount >= 250
 AND channel <> 'Chapter Gifts'";
