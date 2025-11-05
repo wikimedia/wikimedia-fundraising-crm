@@ -1196,6 +1196,10 @@ class Message {
       return [];
     }
     if ($this->isBraintreeVenmo()) {
+      // Add @ to username if not starts with it to normalize the format
+      if (!str_starts_with($this->message['external_identifier'], '@')) {
+        $this->message['external_identifier'] = '@' . $this->message['external_identifier'];
+      }
       return ['External_Identifiers.venmo_user_name' => $this->cleanString($this->message['external_identifier'], 64)];
     }
     if (\CRM_Core_BAO_CustomField::getCustomFieldID($this->getGateway() . '_id')) {

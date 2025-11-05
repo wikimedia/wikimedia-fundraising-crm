@@ -1683,7 +1683,7 @@ class DonationQueueTest extends BaseQueueTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testExternalIdentifierUpdate(): void {
-    $newVenmoUserName = 'test';
+    $newVenmoUserName = '@test';
     $initialDetails = $this->getDonationMessage([
       'first_name' => 'Sally',
       'last_name' => 'Mouse',
@@ -1705,7 +1705,7 @@ class DonationQueueTest extends BaseQueueTestCase {
       ->addSelect('External_Identifiers.venmo_user_name')
       ->addWhere('id', '=', $contribution['contact_id'])
       ->execute()->first();
-    $this->assertEquals('old', $oldContact['External_Identifiers.venmo_user_name']);
+    $this->assertEquals('@old', $oldContact['External_Identifiers.venmo_user_name']);
 
     $newDetails = array_merge($initialDetails, [
       'id' => $contribution['contact_id'],
