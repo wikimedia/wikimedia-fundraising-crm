@@ -48,4 +48,19 @@ return [
     ],
     'settings_pages' => ['wmf-audit' => ['weight' => 220]],
   ],
+  'wmf_audit_intact_files' => [
+    'name' => 'wmf_audit_intact_files',
+    'title' => E::ts('Intact folder'),
+    'description' => E::ts('Directory for files for Intact integration'),
+    'help_text' => '',
+    'default' => sys_get_temp_dir(),
+    'html_type' => 'text',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'html_attributes' => [
+      'size' => 80,
+    ],
+    'settings_pages' => ['wmf-audit' => ['weight' => 230]],
+  ],
 ];

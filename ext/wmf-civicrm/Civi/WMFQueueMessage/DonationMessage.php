@@ -190,7 +190,10 @@ class DonationMessage extends Message {
     }
 
     $msg += $this->getSettlementFields() + $this->getCustomFields();
-
+    if ($this->getOriginalAmount()) {
+      // Set is major gift but do not try to calculate on (e.g) cancel messages.
+      $msg['Gift_Data.is_major_gift'] = $this->isMajorGift();
+    }
     $msg['Gift_Data.Appeal'] = $this->getAppeal();
     $msg['gateway_txn_id'] = $this->getGatewayTxnID();
     $msg['trxn_id'] = $this->getTrxnID();
@@ -225,6 +228,37 @@ class DonationMessage extends Message {
     $msg['net'] = $this->getReportingNetAmountRounded();
 
     return $msg;
+  }
+
+  public function isMajorGift() : bool {
+    if ($this->getReportingAmount() > 9999.99) {
+      return TRUE;
+    }
+    $utmMedium = $this->message['utm_medium'] ?? '';
+    $appeal = $this->getAppeal();
+    // This pattern is in use in 2026 & hopefully will be going forwards.
+    // However getChannel() could change to Direct Mail and we might add
+    // str_ends_with($appeal, 'MGF') on the principle we should show endowment
+    // is_major_gift vs not is_major_gift.
+    $isDirectMail = $this->getChannel() === 'Direct Mail';
+    if ($isDirectMail) {
+      if (str_ends_with($appeal, 'MGF')) {
+        return TRUE;
+      }
+      // Whitemail - subject to $ threshold.
+      if ($this->getReportingAmountRounded() >= 250
+        && (in_array($appeal, ['WMF1124RE' , 'White Mail'])
+        || str_ends_with($appeal, 'WM'))
+      ) {
+        return TRUE;
+      }
+    }
+
+    // Note question about case over at https://phabricator.wikimedia.org/T406193#11338650
+    if (str_starts_with($utmMedium, 'MG') || str_starts_with($appeal, 'MG')) {
+      return TRUE;
+    }
+    return FALSE;
   }
 
   /**

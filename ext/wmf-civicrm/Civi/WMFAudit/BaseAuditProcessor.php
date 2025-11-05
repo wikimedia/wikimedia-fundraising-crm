@@ -1823,10 +1823,24 @@ abstract class BaseAuditProcessor {
         if (str_ends_with($fieldName, '_amount')) {
           $batch[$fieldName] = (string) Money::of($fieldValue, $batch['settlement_currency'], NULL, RoundingMode::HALF_UP)->getAmount();
         }
+        if ($batch['settlement_gateway'] === 'adyen') {
+          $batch['settlement_date'] = $this->moveToNextFriday($batch['settlement_date']);
+        }
       }
+
       $batches[] = $batch;
     }
     return $batches;
+  }
+
+  private function moveToNextFriday($dateString): string {
+    $date = new \DateTime($dateString);
+    // Check if the current day is already Friday
+    if ((int) $date->format('N') !== 5) {
+      // Modify to next Friday
+      $date->modify('next Friday');
+    }
+    return $date->format('Ymd');
   }
 
   public function getValidBatches(): array {
