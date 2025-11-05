@@ -386,10 +386,18 @@ GROUP BY s.settlement_batch_reference
   -- 2) Specific channels
   WHEN gift.channel = 'Chapter Gifts'   THEN 43440   -- Chapter Gifts
   WHEN gift.channel = 'Recurring Gift'  THEN 43480   -- Online Recurring Contributions
-  WHEN gift.channel = 'Banner'          THEN 43481   -- Online Banner Contributions
+  WHEN gift.channel = 'Mobile Banner'   THEN 43481   -- Online Banner Contributions
+  WHEN gift.channel = 'Desktop Banner'   THEN 43481   -- Online Banner Contributions
   WHEN gift.channel = 'Email'           THEN 43482   -- Online Email Contributions
   WHEN gift.channel = 'Direct Mail'     THEN 43483   -- Online Direct Mail Contributions
-  WHEN gift.channel = 'SMS'            THEN 43484   -- Other Online Contributions
+  WHEN gift.channel = 'SMS'             THEN 43484   -- Other Online Contributions
+  WHEN gift.channel = 'Other Online'    THEN 43484   -- Other Online Contributions
+  WHEN gift.channel = 'Portal Banner'   THEN 43484   -- Other Online Contributions
+  WHEN gift.channel = 'Sidebar'         THEN 43484   -- Other Online Contributions
+  WHEN gift.channel = 'Wikipedia App'   THEN 43484   -- Other Online Contributions
+  WHEN gift.channel = 'Wikipedia Portal' THEN 43484   -- Other Online Contributions
+  WHEN gift.channel = 'Other Portal'    THEN 43484   -- Other Online Contributions
+  WHEN gift.channel = 'Social Media'    THEN 43484   -- Other Online Contributions
   -- 3) Everything else -> Online Other Contributions
   -- remaining = 'Workplace Giving','Direct Solicitation','Planned Giving', 'Events','White Mail','Other Offline'
   ELSE '' -- default/fallback
