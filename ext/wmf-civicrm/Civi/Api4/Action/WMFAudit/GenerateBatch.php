@@ -395,7 +395,7 @@ GROUP BY s.settlement_batch_reference
   WHEN gift.channel = 'Portal Banner'   THEN 43484   -- Other Online Contributions
   WHEN gift.channel = 'Sidebar'         THEN 43484   -- Other Online Contributions
   WHEN gift.channel = 'Wikipedia App'   THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Wikipedia Portal' THEN 43484   -- Other Online Contributions
+  WHEN gift.channel = 'Wikimedia Portal' THEN 43484   -- Other Online Contributions
   WHEN gift.channel = 'Other Portal'    THEN 43484   -- Other Online Contributions
   WHEN gift.channel = 'Social Media'    THEN 43484   -- Other Online Contributions
   -- 3) Everything else -> Online Other Contributions
