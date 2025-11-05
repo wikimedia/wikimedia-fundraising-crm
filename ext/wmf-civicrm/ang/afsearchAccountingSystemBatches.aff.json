@@ -1,0 +1,19 @@
+{
+    "type": "search",
+    "title": "Accounting System Batches",
+    "placement": [],
+    "placement_filters": [],
+    "icon": "fa-swatchbook",
+    "server_route": "civicrm/accounting/batches",
+    "permission": [
+        "access CiviCRM"
+    ],
+    "permission_operator": "AND",
+    "navigation": {
+        "parent": "Contributions",
+        "label": "Accounting System Batches",
+        "weight": 1
+    },
+    "confirmation_type": "redirect_to_url",
+    "created_id": 11863262
+}
