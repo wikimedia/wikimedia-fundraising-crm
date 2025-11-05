@@ -451,7 +451,8 @@ class AuditMessage extends DonationMessage {
    * @throws \CRM_Core_Exception
    */
   public function isSettled(): bool {
-    return (bool) ($this->getExistingContribution()['contribution_extra.settlement_date'] ?? FALSE);
+      $settledField = $this->isNegative() ? 'settlement_batch_reversal_reference' : 'settlement_batch_reference';
+      return (bool) ($this->getExistingContribution()[$settledField] ?? FALSE);
   }
 
   public function getGateway(): string {
