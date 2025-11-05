@@ -9,9 +9,8 @@ use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
-use Civi\Api4\FailureEmail;
+use Civi\Helper\FailureEmail;
 use SmashPig\PaymentProviders\Responses\CreatePaymentWithProcessorRetryResponse;
-use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
@@ -537,7 +536,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    */
   public function sendFailureEmail(int $contributionRecurID, int $contactID) {
     if ( Civi::settings()->get('smashpig_recurring_send_failure_email') ) {
-      FailureEmail::send()->setCheckPermissions(FALSE)->setContactID($contactID)->setContributionRecurID($contributionRecurID)->execute();
+      FailureEmail::sendViaQueue($contactID, $contributionRecurID);
     }
   }
 
