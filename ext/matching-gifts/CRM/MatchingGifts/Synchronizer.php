@@ -20,6 +20,8 @@ class CRM_MatchingGifts_Synchronizer {
    */
   protected $jobStart;
 
+  protected $corrections = [];
+
   public function __construct(CRM_MatchingGifts_ProviderInterface $policyProvider) {
     $this->policyProvider = $policyProvider;
   }
@@ -196,8 +198,17 @@ class CRM_MatchingGifts_Synchronizer {
   }
 
   protected static function getCustomFieldParams(array $policyDetails): array {
+    static $corrections = NULL;
+    if ($corrections === NULL) {
+      $corrections = \Civi::settings()->get('matchinggifts.corrections');
+    }
     $params = [];
     foreach($policyDetails as $fieldName => $value) {
+      if ($fieldName === 'subsidiaries') {
+        foreach ($corrections as $wrong => $right) {
+          $value = mb_ereg_replace($wrong, $right, $value);
+        }
+      }
       $paramName = 'matching_gift_policies.' . $fieldName;
       $params[$paramName] = $value;
     }

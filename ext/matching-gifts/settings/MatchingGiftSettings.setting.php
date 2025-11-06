@@ -41,4 +41,16 @@ return [
     'title' => 'Array of categories to interact with',
     'description' => '',
   ],
+  'matchinggifts.corrections' => [
+    'name' => 'matchinggifts.corrections',
+    'type' => 'Array',
+    'quick_form_type' => 'Element',
+    'default' => [
+      'Comany' => 'Company'
+    ],
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'title' => 'Array of "wrong" => "right" corrections to apply to retrieved subsidiaries',
+    'description' => '',
+  ]
 ];

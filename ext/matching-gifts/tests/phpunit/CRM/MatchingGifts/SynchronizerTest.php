@@ -49,6 +49,16 @@ class CRM_MatchingGifts_SynchronizerTest extends BaseTestClass
       'minimum_gift_matched_usd' => 35,
       'match_policy_last_updated' => '2018-08-24',
       'subsidiaries' => '["Aperture Laboratories","Aperture Fixtures","Aperture Enrichment Centers"]',
+    ],
+    '75751101' => [
+      'matching_gifts_provider_id' => '75751101',
+      'name_from_matching_gift_db' => 'Typo-ed Subsidiaries, Inc.',
+      'matching_gifts_provider_info_url' => 'https://matchinggifts.com/wikimedia_iframe',
+      'guide_url' => 'https://example.com/typo/matchingpolicy.pdf',
+      'online_form_url' => 'https://typo.benevity.com/',
+      'minimum_gift_matched_usd' => 45,
+      'match_policy_last_updated' => '2019-08-24',
+      'subsidiaries' => '["Typo Comany","Typo spin-off Comany"]',
     ]
   ];
 
@@ -78,6 +88,7 @@ class CRM_MatchingGifts_SynchronizerTest extends BaseTestClass
       }
     }
   }
+
   /**
    * Civi\Test has many helpers, like install(), uninstall(), sql(), and sqlFile().
    *
@@ -111,11 +122,16 @@ class CRM_MatchingGifts_SynchronizerTest extends BaseTestClass
           'name_from_matching_gift_db' => 'Aperture Science, Inc.',
           'match_policy_last_updated' => '2018-01-04',
         ],
+        '75751101' => [
+          'matching_gifts_provider_id' => '75751101',
+          'name_from_matching_gift_db' => 'Typo-ed Subsidiaries, Inc.',
+          'match_policy_last_updated' => '2019-08-24',
+        ],
     ]);
   }
 
   protected function setUpMockDetails() {
-    $this->provider->expects($this->exactly(3))
+    $this->provider->expects($this->exactly(4))
       ->method('getPolicyDetails')
       ->willReturnCallback(function ($companyId) {
         return $this->mockDetails[$companyId];
@@ -158,7 +174,7 @@ class CRM_MatchingGifts_SynchronizerTest extends BaseTestClass
       'return' => array_values($mappedFieldNames),
     ])['values'];
     $this->assertArrayHasKey($contact['id'], $result);
-    $this->assertCount(3, $result);
+    $this->assertCount(4, $result);
     foreach($result as $contactId => $contact) {
       $companyId = $contact[$companyIdField];
       $expected = $this->mockDetails[$companyId];
@@ -166,6 +182,10 @@ class CRM_MatchingGifts_SynchronizerTest extends BaseTestClass
         $mappedFieldName = $mappedFieldNames[$expectedFieldName];
         if ($expectedFieldName === 'match_policy_last_updated') {
           $expectedFieldValue .= ' 00:00:00';
+        }
+        // Check that typo-correction works as expected
+        if ($expectedFieldName === 'subsidiaries') {
+          $expectedFieldValue = str_replace('Comany', 'Company', $expectedFieldValue);
         }
         $this->assertEquals($expectedFieldValue, $contact[$mappedFieldName]);
       }
