@@ -38,16 +38,16 @@ function civicrm_api3_omnirecipient_load($params) {
     $recipients = $omnimail->getResult($params);
     $jobSettings = $omnimail->getJobSettings();
 
-    $throttleSeconds = CRM_Utils_Array::value('throttle_seconds', $params);
+    $throttleSeconds = $params['throttle_seconds'] ?? NULL;
     $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . ' seconds');
-    $throttleCount = (int) CRM_Utils_Array::value('throttle_number', $params);
+    $throttleCount = (int) ($params['throttle_number'] ?? 0);
     $rowsLeftBeforeThrottle = $throttleCount;
     $limit = $params['options']['limit'] ?? NULL;
     $count = 0;
-    $insertBatchSize = CRM_Utils_Array::value('insert_batch_size', $params, 1);
+    $insertBatchSize = $params['insert_batch_size'] ?? 1;
     $valueStrings = [];
     $progressSettings = [
-      'last_timestamp' => CRM_Utils_Array::value('last_timestamp', $jobSettings),
+      'last_timestamp' => $jobSettings['last_timestamp'] ?? NULL,
       'retrieval_parameters' => $omnimail->getRetrievalParameters(),
       'progress_end_timestamp' => $omnimail->endTimeStamp,
     ];
@@ -65,7 +65,7 @@ function civicrm_api3_omnirecipient_load($params) {
       $insertValues = [
         1 => [(string) $recipient->getContactIdentifier(), 'String'],
         2 => [
-          (string) CRM_Utils_Array::value('mailing_prefix', $params, '') . $recipient->getMailingIdentifier(),
+          (string) ($params['mailing_prefix'] ?? '') . $recipient->getMailingIdentifier(),
           'String',
         ],
         3 => [(string) $recipient->getEmail(), 'String'],
