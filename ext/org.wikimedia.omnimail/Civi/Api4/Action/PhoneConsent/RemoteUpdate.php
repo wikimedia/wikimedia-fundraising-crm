@@ -85,8 +85,8 @@ class RemoteUpdate extends AbstractUpdateAction {
 
     foreach ($items as $item) {
       $addEmailCsv->insertOne([
-        'mobile_phone' => $item['country_code'] . $item['phone_number'],
         'Email' => $item['phone.contact_id.email_primary.email'],
+        'mobile_phone' => $item['country_code'] . $item['phone_number'],
       ]);
       $addConsentCsv->insertOne([
         'mobile_phone' => $item['country_code'] . $item['phone_number'],
