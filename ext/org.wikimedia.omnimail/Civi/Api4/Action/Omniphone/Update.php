@@ -116,6 +116,7 @@ class Update extends AbstractAction {
         ->setValues([
           'phone' => substr($details['mobile_phone'], 1),
           'phone_data.update_date' => $details['sms_consent_datetime'],
+          'phone_data.phone_source' => 'Acoustic',
         ])
         ->execute();
 
