@@ -33,7 +33,7 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
     }
     $endDateTime = date('Y-m-d H:i:s', $endTimeStamp);
     $limit = (int) $data["batch_limit"];
-    $minimumContactID = $data['min_contact_id'] ?? 0;
+    $minimumContactID = $data['minimum_contact_id'] ?? 0;
     // check count.
     $result = \CRM_Core_DAO::executeQuery(
       "SELECT count(*) as count, MAX(id) as max_contact_id FROM
@@ -48,7 +48,7 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
     $isLimitApplied = ($result['count'] >= $limit);
     if ($isLimitApplied) {
       // We need to assume there are more based on just date range
-      $criteria['where'][] = ['id', 'BETWEEN', [$result['min_contact_id'], $result['max_contact_id']]];
+      $criteria['where'][] = ['id', 'BETWEEN', [$minimumContactID, $result['max_contact_id']]];
     }
     \Civi::log('batch_merge')->info('deduping {limit} contacts from date {start_date} to date {to date}', [
       'limit' => $limit,
@@ -70,7 +70,7 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
       $mergeParams['rule_group_id'] = $data['rule_group_id'];
     }
 
-    $result = civicrm_api3('Job', 'process_batch_merge', $mergeParams);
+    civicrm_api3('Job', 'process_batch_merge', $mergeParams);
     /** @noinspection PhpUndefinedMethodInspection */
     Queue::addDedupeTask(FALSE)
       ->setStartDateTime($isLimitApplied ? $startDateTime : $endDateTime)
