@@ -40,7 +40,7 @@ class CRM_Omnimail_Omnirecipients extends CRM_Omnimail_Omnimail{
     $request->setOffset($this->offset);
 
     $startTimestamp = $this->getStartTimestamp($params);
-    $this->endTimeStamp = $this->getEndTimestamp(CRM_Utils_Array::value('end_date', $params), $settings, $startTimestamp);
+    $this->endTimeStamp = $this->getEndTimestamp($params['end_date'] ?? NULL, $settings, $startTimestamp);
 
     if ($this->getRetrievalParameters()) {
       $request->setRetrievalParameters($this->getRetrievalParameters());

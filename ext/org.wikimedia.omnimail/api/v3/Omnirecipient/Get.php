@@ -19,7 +19,7 @@ function civicrm_api3_omnirecipient_get($params) {
     $recipient = new \Omnimail\Silverpop\Responses\Recipient($row);
     $values[] = array(
       'contact_identifier' => (string) $recipient->getContactIdentifier(),
-      'mailing_identifier' => (string) CRM_Utils_Array::value('mailing_prefix', $params, '') . $recipient->getMailingIdentifier(),
+      'mailing_identifier' => (string) ($params['mailing_prefix'] ?? '') . $recipient->getMailingIdentifier(),
       'email' => (string) $recipient->getEmail(),
       'event_type' => (string) $recipient->getRecipientAction(),
       'recipient_action_datetime' => (string) $recipient->getRecipientActionIsoDateTime(),
