@@ -40,10 +40,11 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       $request = $mailer->addContact([
         'groupIdentifier' => array_keys($groupIdentifier),
         'email' => $email,
+        'recipientIdentifier' => $params['recipient_id'],
         'databaseID' => $params['database_id'],
         'fields' => $this->mapFields($params['values']) + ($snoozeEndDate ? ['snooze_end_date' => date('Y-m-d H:i:s', strtotime($snoozeEndDate))] : []),
         'snoozeTimeStamp' => empty($snoozeEndDate) ? NULL : strtotime($snoozeEndDate),
-        'syncFields' => ['Email' => $email],
+        'syncFields' => $email ? ['Email' => $email] : ['RECIPIENT_ID' => $params['recipient_id']],
       ]);
       /* @var Contact $response */
       $response = $request->getResponse();
@@ -84,6 +85,9 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       if (isset($mapping[$key])) {
         $fields[$mapping[$key]] = $value;
       }
+    }
+    if (!empty($values['is_orphan'])) {
+      $fields['is_orphan'] = 'Yes';
     }
     return $fields;
   }
