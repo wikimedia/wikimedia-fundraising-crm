@@ -33,9 +33,14 @@ return [
       // Ideally this would be numeric - but it joins to a varchar
       // (phone_numeric)
       'sql_type' => 'varchar(32)',
-      'input_type' => 'Number',
+      'input_type' => 'Entity Ref',
       'default' => 1,
       'description' => E::ts('Phone number'),
+      'entity_reference' => [
+        'entity' => 'Phone',
+        'key' => 'phone_numeric',
+        'fk' => FALSE,
+      ],
     ],
     'master_recipient_id' => [
       'title' => E::ts('Master recipient ID'),
