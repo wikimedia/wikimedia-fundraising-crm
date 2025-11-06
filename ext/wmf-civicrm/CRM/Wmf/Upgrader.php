@@ -3088,7 +3088,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    * @throws \Civi\Core\Exception\DBQueryException
    */
   public function upgrade_4740(): bool {
-    $this->ctx->log->info('Applying update 4740: Tie old braintree venmo usernames to new one, without @ prefix');
+    $this->ctx->log->info('Applying update 4740: Tie all venmo usernames to use @ as prefix');
     CRM_Core_DAO::executeQuery("
     UPDATE wmf_external_contact_identifiers
     SET venmo_user_name = CONCAT('@', TRIM(venmo_user_name))
