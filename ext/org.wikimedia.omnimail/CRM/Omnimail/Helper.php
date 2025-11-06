@@ -73,7 +73,7 @@ class CRM_Omnimail_Helper {
    */
   public static function getSetting($name) {
     $settings = self::getSettings();
-    return CRM_Utils_Array::value($name, $settings);
+    return $settings[$name] ?? NULL;
   }
 
   /**

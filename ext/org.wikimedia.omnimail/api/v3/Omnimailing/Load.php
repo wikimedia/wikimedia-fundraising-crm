@@ -190,7 +190,7 @@ function _civicrm_api3_omnimailing_load_api_replace($entity, $retrieveParams, $u
   }
   if (isset($preExisting['id'])) {
     foreach ($updateParams as $key => $updateParam) {
-      if (CRM_Utils_Array::value($key, $preExisting) === $updateParam) {
+      if (($preExisting[$key] ?? NULL) === $updateParam) {
         unset($updateParams[$key]);
       }
     }

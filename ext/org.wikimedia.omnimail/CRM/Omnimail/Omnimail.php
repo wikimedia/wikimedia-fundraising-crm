@@ -147,7 +147,7 @@ class CRM_Omnimail_Omnimail {
       $endTimeStamp = $this->jobSettings['progress_end_timestamp'];
     }
     else {
-      $adjustment = CRM_Utils_Array::value('omnimail_job_default_time_interval', $settings, ' + 1 day');
+      $adjustment = $settings['omnimail_job_default_time_interval'] ?? ' + 1 day';
       $endTimeStamp = strtotime($adjustment, $startTimestamp);
     }
     return ($endTimeStamp > time() ? time() : $endTimeStamp);
@@ -207,7 +207,7 @@ class CRM_Omnimail_Omnimail {
     if ($savedSettings['count']) {
       foreach ($savedSettings['values'] as $savedSetting) {
         // filter for job_identifier since NULL will not have been respected.
-        if (CRM_Utils_Array::value('job_identifier', $savedSetting) === $this->job_identifier) {
+        if (($savedSetting['job_identifier'] ?? NULL) === $this->job_identifier) {
           foreach (array('last_timestamp', 'progress_end_timestamp') as $dateField) {
             if (isset($savedSetting[$dateField])) {
               $savedSetting[$dateField] = strtotime($savedSetting[$dateField]);
