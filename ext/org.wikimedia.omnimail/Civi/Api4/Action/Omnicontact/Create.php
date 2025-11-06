@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4\Action\Omnicontact;
 
+use Civi\Api4\Contact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use GuzzleHttp\Client;
@@ -18,6 +19,8 @@ use CRM_Omnimail_ExtensionUtil as E;
  * @method $this setValues(array $values)
  * @method array getValues()
  * @method array getGroupID()
+ * @method int getContactID()
+ * @method $this setContactID(?int $contactID)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
  * @method $this setClient(Client$client) Generally Silverpop....
@@ -38,9 +41,18 @@ class Create extends AbstractAction {
   protected $groupID;
 
   /**
-   * @var string
+   * @var string|null
    */
   protected $email;
+
+  /**
+   * Contact ID.
+   *
+   * Used to look up the email.
+   *
+   * @var int|null
+   */
+  protected ?int $contactID = NULL;
 
   /**
    * Acoustic recipient ID.
@@ -106,6 +118,12 @@ class Create extends AbstractAction {
     $omniObject = new \CRM_Omnimail_Omnicontact([
       'mail_provider' => $this->getMailProvider(),
     ]);
+    if (!$this->getEmail() && $this->getContactID()) {
+      $this->email = Contact::get(FALSE)
+        ->addWhere('id', '=', $this->getContactID())
+        ->addSelect('email_primary.email')
+        ->execute()->first()['email_primary.email'] ?? NULL;
+    }
     $result[] = $omniObject->create([
       'client' => $this->getClient(),
       'mail_provider' => $this->getMailProvider(),
