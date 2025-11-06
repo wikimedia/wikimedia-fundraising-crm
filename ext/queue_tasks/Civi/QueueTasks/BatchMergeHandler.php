@@ -45,7 +45,7 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
     )->fetchAll()[0];
 
     $criteria = ['where' => [['modified_date', 'BETWEEN', [$startDateTime, $endDateTime]]]];
-    $isLimitApplied = ($result['count'] === $limit);
+    $isLimitApplied = ($result['count'] >= $limit);
     if ($isLimitApplied) {
       // We need to assume there are more based on just date range
       $criteria['where'][] = ['id', 'BETWEEN', [$result['min_contact_id'], $result['max_contact_id']]];
