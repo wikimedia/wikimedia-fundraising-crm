@@ -44,7 +44,7 @@ class OmnicontactGetTest extends OmnimailBaseTestClass {
     $this->assertEquals('2022-03-02 06:08:00', $result['opt_in_date']);
     $this->assertEquals('2022-03-03 02:50:00', $result['last_modified_date']);
     $this->assertEquals(123456, $result['contact_identifier']);
-    $this->assertEquals('https://cloud.goacoustic.com/campaign-automation/Data/Databases?cuiOverrideSrc=https%253A%252F%252Fcampaign-us-4.goacoustic.com%252FsearchRecipient.do%253FisShellUser%253D1%2526action%253Dedit%2526listId%253D9644238%2526recipientId%253D123456&listId=345',$result['url'] );
+    $this->assertEquals('https://cloud.goacoustic.com/campaign-automation/Data/Databases?cuiOverrideSrc=https%253A%252F%252Fcampaign-us-4.goacoustic.com%252FsearchRecipient.do%253FisShellUser%253D1%2526action%253Dedit%2526listId%253D345%2526recipientId%253D123456',$result['url'] );
   }
 
   /**
