@@ -26,7 +26,7 @@ return [
     'params' => [
       'version' => 3,
       'name' => 'sms_mobile',
-      'display_name' => 'SMS Mobile (from Acoustic)',
+      'display_name' => 'SMS Mobile',
     ],
   ],
 ];
