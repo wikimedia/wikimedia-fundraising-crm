@@ -1381,7 +1381,7 @@ abstract class BaseAuditProcessor {
     }
     $type = $auditRecord['audit_message_type'];
     if ($type === 'aggregate') {
-      $this->totals[$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency']);
+      $this->totals[$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP);
       $this->totals[$transaction['settled_currency']] = $this->totals[$transaction['settled_currency']]->plus($transaction['settled_total_amount']);
       return;
     }
