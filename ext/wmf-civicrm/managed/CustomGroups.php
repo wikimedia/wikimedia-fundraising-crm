@@ -2220,11 +2220,11 @@ function _wmf_civicrm_get_phone_data_fields(): array {
       'text_length' => 255,
       'column_name' => 'source',
       'option_values' => [
-        'acoustic' => 'Acoustic',
-        'staff' => 'Staff Supplied',
-        'donor' => 'Donor Supplied',
-        'paypal' => 'PayPal Account',
-        'fundraiseup' => 'Fundraise Up',
+        'Acoustic' => 'Acoustic',
+        'Staff' => 'Staff Supplied',
+        'Donor' => 'Donor Supplied',
+        'Paypal' => 'PayPal Account',
+        'FundraiseUp' => 'Fundraise Up',
       ],
     ],
     'recipient_id' => [
