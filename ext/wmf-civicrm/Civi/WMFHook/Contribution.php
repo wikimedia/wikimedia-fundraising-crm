@@ -83,6 +83,9 @@ class Contribution {
             'Native txn rolled back before running pre contribution hook'
           );
         }
+        if (str_contains($contribution['trxn_id'] ?? '', 'Transaction Fees')) {
+          break;
+        }
         $extra = self::getContributionExtra($contribution);
 
         if ($extra) {
