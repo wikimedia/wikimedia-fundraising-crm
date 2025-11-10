@@ -42,6 +42,7 @@ use Civi;
  * @group headless
  */
 class SmashPigTest extends SmashPigBaseTestClass {
+  use Civi\WMFEnvironmentTrait;
 
   private $oldSettings = [];
 
@@ -1347,7 +1348,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       and we are sending you this at harry@hendersons.net
       this month of $month
       $12.34";
-    $this->assertEquals($expectedMessage, $activity['details']);
+    $this->assertEquals($expectedMessage, $activity['details'], $this->getLoggerRecordsAsString());
   }
 
   /**
