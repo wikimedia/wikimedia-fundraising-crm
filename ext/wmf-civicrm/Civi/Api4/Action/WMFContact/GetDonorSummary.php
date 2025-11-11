@@ -97,7 +97,9 @@ class GetDonorSummary extends AbstractAction {
       ],
       'hasMultipleContacts' => count($allContactIDsWithEmail) > 1,
       'contributions' => $this->mapContributions($allContributions),
-      'recurringContributions' => $this->mapRecurringContributions($recurringContributions),
+      'recurringContributions' => $this->mapRecurringContributions(
+        $recurringContributions, $contact['address_primary.country_id:abbr']
+      ),
     ];
   }
 
@@ -118,6 +120,7 @@ class GetDonorSummary extends AbstractAction {
         'payment_instrument_id:name',
         'contribution_status_id:name',
         'payment_processor_id:name',
+        'contribution_recur_smashpig.original_country:abbr'
       );
     if (!$active) {
       $get->addJoin('Contribution AS contribution', 'LEFT')
@@ -147,17 +150,19 @@ class GetDonorSummary extends AbstractAction {
     return $mapped;
   }
 
-  protected function mapRecurringContributions(array $recurringContributions): array {
+  protected function mapRecurringContributions(array $recurringContributions, string $donorCountry): array {
     $mapped = [];
     foreach ($recurringContributions as $recurringContribution) {
       $mapped[] = [
         'id' => $recurringContribution['id'],
         'amount' => $recurringContribution['amount'],
+        'country' => $recurringContribution['contribution_recur_smashpig.original_country:abbr'] ?? $donorCountry,
         'currency' => $recurringContribution['currency'],
         'frequency_unit' => $recurringContribution['frequency_unit'],
         'last_contribution_date' => $recurringContribution['last_contribution_date'] ?? null,
         'next_sched_contribution_date' => $recurringContribution['next_sched_contribution_date'],
         'payment_method' => $recurringContribution['payment_instrument_id:name'],
+        'payment_processor' => $recurringContribution['payment_processor_id:name'],
         'status' => $recurringContribution['contribution_status_id:name'],
         'can_modify' => !RecurHelper::gatewayManagesOwnRecurringSchedule(
           $recurringContribution['payment_processor_id:name']
