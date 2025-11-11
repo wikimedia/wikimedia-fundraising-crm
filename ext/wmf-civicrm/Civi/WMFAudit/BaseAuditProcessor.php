@@ -1332,9 +1332,9 @@ abstract class BaseAuditProcessor {
               // the anonymous contact
               'contact_id' => \Civi\WMFHelper\Contact::getAnonymousContactID(),
               // fee is unique within a batch but description might be date specific.
-              'trxn_id' => strtoupper($auditRecord['message']['audit_file_gateway']) . ' ' . $auditRecord['message']['gateway_txn_id'] . ' ' .$auditRecord['message']['settlement_batch_reference'],
+              'trxn_id' => strtoupper($auditRecord['message']['audit_file_gateway']) . ' ' . $auditRecord['message']['gateway_txn_id'],
               'contribution_extra.gateway' => $auditRecord['message']['audit_file_gateway'],
-              'contribution_extra.gateway_txn_id' => $auditRecord['message']['gateway_txn_id'] . ' ' .$auditRecord['message']['settlement_batch_reference'],
+              'contribution_extra.gateway_txn_id' => $auditRecord['message']['gateway_txn_id'],
               'receive_date' => '@' . $auditRecord['message']['settled_date'],
               'contribution_settlement.settlement_batch_reference' => $auditRecord['message']['settlement_batch_reference'],
               'contribution_settlement.settlement_date' => '@' . $auditRecord['message']['settled_date'],

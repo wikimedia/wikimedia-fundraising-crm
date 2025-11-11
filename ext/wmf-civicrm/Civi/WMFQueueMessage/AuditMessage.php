@@ -335,6 +335,9 @@ class AuditMessage extends DonationMessage {
       // and ignore the parent.
       return NULL;
     }
+    if ($this->isFeeRow()) {
+      return $this->getGatewayTxnID() . ' ' . $this->getSettlementBatchReference();
+    }
     if ($this->getGatewayTxnID()) {
       return $this->getGatewayTxnID();
     }
