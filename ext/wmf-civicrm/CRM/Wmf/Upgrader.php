@@ -3348,6 +3348,47 @@ AND channel <> 'Chapter Gifts'";
    }
 
   /**
+   * Bug: T406193
+   *
+   * Set channel = 'Recurring Gift' for all non-first recurrings.
+   *
+   * There are just a few more of these that need to be set.
+   * It should just take a few minutes to do these.
+   *
+   * @return bool
+   */
+  public function upgrade_4765(): bool {
+    $sql = 'INSERT INTO civicrm_value_1_gift_data_7
+    (entity_id, channel, campaign)
+    SELECT DISTINCT current.id, "Recurring Gift", "Online Gift"
+    FROM civicrm_contribution current
+    INNER JOIN civicrm_contribution first
+      ON first.contribution_recur_id = current.contribution_recur_id
+      AND first.contribution_recur_id > 0
+      AND current.contribution_recur_id IS NOT NULL
+      AND first.id < current.id
+    --   Not needed - I checked -- AND first.receive_date < current.receive_date
+    LEFT JOIN civicrm_value_1_gift_data_7 gift
+      ON gift.entity_id = current.id
+      WHERE gift.id IS NULL
+      AND current.id BETWEEN %1 AND %2
+    ';
+        $this->queueSQL($sql, [
+          1 => [
+            'value' => 2370000,
+            'type' => 'Integer',
+            'increment' => 500000,
+          ],
+          2 => [
+            'value' => 2870000,
+            'type' => 'Integer',
+            'increment' => 500000,
+          ],
+        ]);
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
