@@ -28,6 +28,11 @@ class WMFTransaction {
   /**
    * @var bool
    */
+  public $is_chargeback;
+
+  /**
+   * @var bool
+   */
   public $is_chargeback_reversal;
 
   /**
@@ -56,6 +61,10 @@ class WMFTransaction {
 
     if ($this->is_refund) {
       $parts[] = "RFD";
+    }
+
+    if ($this->is_chargeback) {
+      $parts[] = "CHARGEBACK";
     }
 
     if ($this->is_chargeback_reversal) {

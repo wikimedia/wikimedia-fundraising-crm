@@ -90,6 +90,12 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->addWhere('gateway_txn_id', 'LIKE', '%NEW123456789101')
       ->execute();
     TransactionLog::delete(FALSE)
+      ->addWhere('gateway_txn_id', 'LIKE', '5364893193133131')
+      ->execute();
+    TransactionLog::delete(FALSE)
+      ->addWhere('gateway_txn_id', 'LIKE', '35610b63-6667-4de7-94f9-ef8a26cf6131')
+      ->execute();
+    TransactionLog::delete(FALSE)
       ->addWhere('order_id', 'IN', ['1004.1', '12000.1'])
       ->execute();
     ContributionTracking::delete(FALSE)
@@ -885,9 +891,11 @@ class AdyenAuditTest extends BaseAuditTestCase {
     return (array) $auditResult;
   }
 
-  public function testAdyenSettlementBatch() {
+  public function testAdyenSettlementBatch(): void {
     $fileName = 'settlement_detail_report_batch_1128.csv';
     $directory = 'batch_1';
+    // Run it once to get the main donation & then again to process the refund & chargeback.
+    $this->runAuditBatch($directory, $fileName);
     $validate = $this->runAuditBatch($directory, $fileName, 'adyen_1128')['validate'];
     $this->assertCount(2, $validate);
     //    	Total debits	  Total credits	  Payout
