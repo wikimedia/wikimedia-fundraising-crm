@@ -3323,6 +3323,31 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Bug: T406193
+   *
+   * Set channel = 'Recurring Gift' for all non-first recurrings.
+   *
+   * There are just a few more of these that need to be set.
+   * It should just take a few minutes to do these.
+   *
+   * @return bool
+   */
+  public function upgrade_4760(): bool {
+    $sql = '
+      UPDATE civicrm_value_1_gift_data_7 gift
+      INNER JOIN civicrm_contribution current ON current.id = gift.entity_id
+        AND current.contribution_recur_id IS NOT NULL
+      INNER JOIN civicrm_contribution first
+        ON first.contribution_recur_id = current.contribution_recur_id
+        AND first.id < current.id
+        AND first.receive_date < current.receive_date
+      SET channel = "Recurring Gift"
+      WHERE (channel IS NULL OR channel <> "Recurring Gift")';
+    CRM_Core_DAO::executeQuery($sql);
+    return TRUE;
+   }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
