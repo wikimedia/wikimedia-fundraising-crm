@@ -762,6 +762,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'settlement_date' => '20250912',
       'settlement_batch_reference' => 'adyen_1120_USD',
       'settlement_gateway' => 'adyen',
+      'status_id:name' => 'total_verified',
     ], $result['batch']->first());
     $this->assertMessages($expectedMessages);
 
@@ -898,6 +899,14 @@ class AdyenAuditTest extends BaseAuditTestCase {
     // Less Settled fee amount amount - -55.89 in line fees + $36 in fee rows
     // = $37.82 net amount
     $this->runAuditBatch('batch_2', 'settlement_detail_report_batch_1129.csv', 'adyen_1129');
+  }
+
+  public function testBatchMoreThanOneFile(): void {
+    $this->prepareForAuditProcessing('batch_2', 'settlement_detail_report_batch_1129.csv');
+    $result = $this->runAuditor();
+    $this->assertEquals(37.82, $result->first()['settled_net_amount']);
+    $this->assertEquals('USD', $result->first()['settlement_currency']);
+    $this->assertEquals(14, $result->first()['transaction_count']);
   }
 
 }
