@@ -410,6 +410,66 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * Test updateAnnualDonors API action.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testUpdateAnnualDonors(): void {
+    $this->createDonor(['total_amount' => 2], 'current');
+    $this->createDonor(['total_amount' => 2], 'delinquent');
+    $this->createDonor(['total_amount' => 2], 'lapsed');
+    $this->createDonor(['total_amount' => 2], 'onetime');
+    $this->clearWMFDonorData();
+
+    $annualContributionRecurs = [
+      'current' => ['cancel_date' => NULL, 'status' => 2, 'donor_segment_id' => 450, 'donor_status_id' => 12],
+      'delinquent' => ['cancel_date' => '2 months ago', 'status' => 1, 'donor_segment_id' => 450, 'donor_status_id' => 14],
+      'lapsed' => ['cancel_date' => '9 months ago', 'status' => 3, 'donor_segment_id' => 450, 'donor_status_id' => 16],
+      'onetime' => ['cancel_date' => '15 months ago', 'status' => 4, 'donor_segment_id' => 600, 'donor_status_id' => 30],
+    ];
+
+    foreach ($annualContributionRecurs as $name => $recur) {
+      $this->createTestEntity('ContributionRecur', [
+        'contact_id' => $this->ids['Contact'][$name],
+        'frequency_unit' => 'year',
+        'frequency_interval' => 1,
+        'amount' => 11,
+      ], $name);
+      $this->createTestEntity('Contribution', [
+        'contact_id' => $this->ids['Contact'][$name],
+        'total_amount' => 11,
+        'financial_type_id:name' => 'Donation',
+        'contribution_recur_id' => $this->ids['ContributionRecur'][$name],
+      ], $name);
+    }
+
+    $updatedContacts = $this->updateWMFDonorData();
+    foreach ($updatedContacts as $updatedContact) {
+      $this->assertEquals(450, $updatedContact['wmf_donor.donor_segment_id']);
+      $this->assertEquals(12, $updatedContact['wmf_donor.donor_status_id']);
+    }
+
+    foreach ($annualContributionRecurs as $name => $recur) {
+      ContributionRecur::update(FALSE)
+        ->addValue('contribution_status_id', $recur['status'])
+        ->addValue('cancel_date', $recur['cancel_date'] ? date('Y-m-d', strtotime($recur['cancel_date'])) : NULL)
+        ->addWhere('id', '=', $this->ids['ContributionRecur'][$name])
+        ->execute();
+    }
+
+    WMFDonor::updateAnnualDonors(FALSE)->execute();
+
+    foreach ($annualContributionRecurs as $name => $recur) {
+      $donor = Contact::get(FALSE)
+        ->addWhere('id', '=', $this->ids['Contact'][$name])
+        ->addSelect('wmf_donor.donor_segment_id', 'wmf_donor.donor_status_id')
+        ->execute()->first();
+      $this->assertEquals($recur['donor_segment_id'], $donor['wmf_donor.donor_segment_id']);
+      $this->assertEquals($recur['donor_status_id'], $donor['wmf_donor.donor_status_id']);
+    }
+  }
+
+  /**
    * @param bool[] $fields
    *
    * @return \Civi\Api4\Generic\Result
@@ -425,7 +485,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->execute();
     return Contact::get(FALSE)
       ->addWhere('id', 'IN', $this->ids['Contact'])
-      ->addSelect('wmf_donor.donor_segment_id', 'wmf_donor.lifetime_usd_total')
+      ->addSelect('wmf_donor.donor_segment_id', 'wmf_donor.donor_status_id', 'wmf_donor.lifetime_usd_total')
       ->execute();
   }
 

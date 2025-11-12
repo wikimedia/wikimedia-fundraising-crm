@@ -42,6 +42,11 @@ class Update extends DAOUpdateAction {
   }
 
   /**
+   * Handles three input cases, passing:
+   * 1. A single id (one contact)
+   * 2. An array of ids (multiple contacts)
+   * 3. Non-id where clauses (use wmf_donor.field for WMFDonor fields)
+   *
    * @param array $items
    * @return array
    * @throws \CRM_Core_Exception
@@ -51,6 +56,9 @@ class Update extends DAOUpdateAction {
     if (count($items) === 1) {
       $item = reset($items);
       $calculatedData->setWhereClause('c.contact_id = ' . (int) $item['id']);
+    }
+    elseif (count($this->where) === 1 && $this->where[0][0] === 'id' && $this->where[0][1] === 'IN') {
+      $calculatedData->setWhereClause('c.contact_id IN (' . implode(", ", $this->where[0][2]) . ')');
     }
     else {
       $calculatedData->setWhereClause($this->getTemporaryTableSelectClause());
