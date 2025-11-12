@@ -3357,7 +3357,7 @@ AND channel <> 'Chapter Gifts'";
    *
    * @return bool
    */
-  public function upgrade_4766(): bool {
+  public function upgrade_4767(): bool {
     $sql = 'INSERT INTO civicrm_value_1_gift_data_7
     (entity_id, channel, campaign)
     SELECT DISTINCT current.id, "Recurring Gift", "Online Gift"
@@ -3378,14 +3378,14 @@ AND channel <> 'Chapter Gifts'";
 
         $this->queueSQL($sql, [
           1 => [
-            'value' => 2270000,
+            'value' => 16960000,
             'type' => 'Integer',
-            'increment' => 500000,
+            'increment' => 300000,
           ],
           2 => [
-            'value' => 2770000,
+            'value' => 17260000,
             'type' => 'Integer',
-            'increment' => 500000,
+            'increment' => 300000,
           ],
         ]);
     return TRUE;
