@@ -235,7 +235,7 @@ class DonationMessage extends Message {
       return TRUE;
     }
     $utmMedium = $this->message['utm_medium'] ?? '';
-    $appeal = $this->getAppeal();
+    $appeal = $this->getAppeal() ?: '';
     // This pattern is in use in 2026 & hopefully will be going forwards.
     // However getChannel() could change to Direct Mail and we might add
     // str_ends_with($appeal, 'MGF') on the principle we should show endowment
