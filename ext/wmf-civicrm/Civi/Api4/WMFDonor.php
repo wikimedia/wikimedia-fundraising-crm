@@ -4,6 +4,7 @@ namespace Civi\Api4;
 
 use Civi\Api4\Action\WMFDonor\Get;
 use Civi\Api4\Action\WMFDonor\Update;
+use Civi\Api4\Action\WMFDonor\UpdateAnnualDonors;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 use Civi\WMFHook\CalculatedData;
 
@@ -37,6 +38,18 @@ class WMFDonor extends Generic\AbstractEntity {
    */
   public static function update(bool $checkPermissions = TRUE): Update {
     return (new Update(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Update wmf donor segment and status for annual recurring donors.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\WMFDonor\UpdateAnnualDonors
+   */
+  public static function updateAnnualDonors(bool $checkPermissions = TRUE): UpdateAnnualDonors {
+    return (new UpdateAnnualDonors(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
