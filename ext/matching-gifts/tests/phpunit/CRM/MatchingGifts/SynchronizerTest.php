@@ -157,8 +157,11 @@ class CRM_MatchingGifts_SynchronizerTest extends BaseTestClass
       ],
       'batch' => 10
     ]);
+    $expectedDetails = $this->mockDetails;
+    $expectedDetails['75751101']['subsidiaries'] =
+      str_replace('Comany', 'Company', $expectedDetails['75751101']['subsidiaries']);
     $this->assertEquals(
-      $this->mockDetails,
+      $expectedDetails,
       $result
     );
     $fieldNames = array_keys($this->mockDetails['12340000']);
@@ -184,7 +187,7 @@ class CRM_MatchingGifts_SynchronizerTest extends BaseTestClass
           $expectedFieldValue .= ' 00:00:00';
         }
         // Check that typo-correction works as expected
-        if ($expectedFieldName === 'subsidiaries') {
+        if (in_array($expectedFieldName, ['subsidiaries', 'name_from_matching_gift_db'])) {
           $expectedFieldValue = str_replace('Comany', 'Company', $expectedFieldValue);
         }
         $this->assertEquals($expectedFieldValue, $contact[$mappedFieldName]);

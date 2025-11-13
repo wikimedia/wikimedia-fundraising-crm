@@ -20,7 +20,7 @@ class CRM_MatchingGifts_Synchronizer {
    */
   protected $jobStart;
 
-  protected $corrections = [];
+  protected ?array $corrections = NULL;
 
   public function __construct(CRM_MatchingGifts_ProviderInterface $policyProvider) {
     $this->policyProvider = $policyProvider;
@@ -66,6 +66,7 @@ class CRM_MatchingGifts_Synchronizer {
     foreach ($searchResults as $searchResult) {
       $companyId = $searchResult['matching_gifts_provider_id'];
       $details = $this->policyProvider->getPolicyDetails($companyId);
+      $details = $this->applyCorrections($details);
       CRM_MatchingGifts_Synchronizer::addOrUpdatePolicy($details);
       CRM_Core_DAO::executeQuery(
         "UPDATE civicrm_matching_gift_job_progress
@@ -198,21 +199,28 @@ class CRM_MatchingGifts_Synchronizer {
   }
 
   protected static function getCustomFieldParams(array $policyDetails): array {
-    static $corrections = NULL;
-    if ($corrections === NULL) {
-      $corrections = \Civi::settings()->get('matchinggifts.corrections');
-    }
     $params = [];
     foreach($policyDetails as $fieldName => $value) {
-      if ($fieldName === 'subsidiaries') {
-        foreach ($corrections as $wrong => $right) {
-          $value = mb_ereg_replace($wrong, $right, $value);
-        }
-      }
       $paramName = 'matching_gift_policies.' . $fieldName;
       $params[$paramName] = $value;
     }
     return $params;
+  }
+
+  protected function applyCorrections(array $uncorrected): array {
+    if ($this->corrections === NULL) {
+      $this->corrections = \Civi::settings()->get('matchinggifts.corrections');
+    }
+    $returnValue = $uncorrected;
+    foreach (['subsidiaries', 'name_from_matching_gift_db'] as $field) {
+      $value = $uncorrected[$field];
+      foreach ($this->corrections as $wrong => $right) {
+        $value = mb_ereg_replace($wrong, $right, $value);
+      }
+      $returnValue[$field] = $value;
+    }
+
+    return $returnValue;
   }
 
 }
