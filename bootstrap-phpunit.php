@@ -13,6 +13,9 @@ require_once(__DIR__ . "/vendor/mrmarkfrench/silverpop-php-connector/test/tests/
 // Argh.  Crib from _drush_bootstrap_drupal_site_validate
 $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 
+// Set the queue busy threshold really high to short circuit our hook_civicrm_queueActive hook
+// (Civi\WMFHelper\Queue::isSiteBusy) so queue tasks will run
+putenv('busy_threshold=500000');
 
 // Load contrib libs so tests can inherit from them.
 require_once(__DIR__ . '/vendor/autoload.php');
