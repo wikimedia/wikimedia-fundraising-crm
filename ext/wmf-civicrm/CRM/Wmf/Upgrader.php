@@ -3459,6 +3459,66 @@ AND channel <> 'Chapter Gifts'";
     return TRUE;
   }
 
+
+  /**
+   * Bug: T406193
+   *
+   * @return bool
+   */
+  public function upgrade_4780(): bool {
+    $sql = '
+     INSERT INTO civicrm_value_1_gift_data_7 (entity_id, channel, campaign)
+      SELECT DISTINCT
+        contribution_id,
+         CASE
+           WHEN utm_medium = "sidebar" THEN "Sidebar"
+           WHEN utm_medium = "portal" AND utm_campaign = "portalBanner" THEN "Portal Banner"
+           WHEN utm_medium = "portal" THEN "Other Portal"
+           WHEN utm_medium = "WikipediaApp" THEN "WikipediaApp"
+           WHEN utm_medium = "WikipediaAppFeed" THEN "WikipediaApp"
+           WHEN utm_medium = "wmfSite" THEN "Other Online"
+           WHEN utm_medium = "Waystogive" THEN "Other Online"
+           WHEN utm_medium = "spontaneous" THEN "Other Online"
+           WHEN utm_medium = "donatewiki_page" THEN "Other Online"
+           WHEN utm_medium = "sitenotice" AND (utm_source LIKE "%\_m\_%" OR utm_source LIKE "%mob%")
+               THEN "Mobile Banner"
+           WHEN utm_medium = "sitenotice" AND utm_source LIKE "%dsk%"
+               THEN "Desktop Banner"
+           WHEN utm_medium = "sitenotice" THEN "Other Banner"
+           WHEN utm_medium = "SocialMedia" THEN "Social Media"
+           END as channel,
+         "Online Gift"
+      FROM civicrm_contribution_tracking
+      LEFT JOIN civicrm_value_1_gift_data_7 gift
+        ON entity_id = contribution_id
+      WHERE utm_medium IN (
+        "sidebar", "portal", "WikipediaApp", "wmfSite", "WikipediaAppFeed",
+           "Waystogive",
+           "sitenotice",
+           "spontaneous",
+           "donatewiki_page",
+           "SocialMedia"
+        )
+        AND (gift.channel IS NULL OR gift.channel = "")
+      AND contribution_id BETWEEN %1 AND %2
+      ON DUPLICATE KEY UPDATE
+       channel = VALUES(channel)';
+
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 250000,
+        'type' => 'Integer',
+        'increment' => 250000,
+      ],
+      2 => [
+        'value' => 500000,
+        'type' => 'Integer',
+        'increment' => 250000,
+      ],
+    ]);
+    return TRUE;
+  }
+
   /**
    * Queue up an API4 update.
    *
