@@ -1,9 +1,9 @@
 <?php
 
-namespace Civi\Api4\MatchingGift;
+namespace Civi\Api4\MatchingGiftPolicies;
 
 use Civi\Api4\Contact;
-use Civi\Api4\MatchingGift;
+use Civi\Api4\MatchingGiftPolicies;
 use Civi\BaseTestClass;
 
 /**
@@ -21,7 +21,7 @@ class VerifyEmployerFileTest extends BaseTestClass {
       $this->getResponseContents('detail02.json'),
     ]);
     $this->setEmployerDataFilePathToTmp();
-    $result = MatchingGift::verifyEmployerFile(FALSE)
+    $result = MatchingGiftPolicies::verifyEmployerFile(FALSE)
       ->setLimit(0)
       ->execute()
       ->first()['is_update'];
@@ -50,7 +50,7 @@ class VerifyEmployerFileTest extends BaseTestClass {
     // run matching gifts comparison job.
     // compares the latest employer data pulled from the API to the current version.
     // overwrites the current version if updates are present in the new export
-    $result = MatchingGift::verifyEmployerFile(FALSE)
+    $result = MatchingGiftPolicies::verifyEmployerFile(FALSE)
       ->setLimit(0)
       ->execute()
       ->first();
@@ -79,7 +79,7 @@ class VerifyEmployerFileTest extends BaseTestClass {
     // run matching gifts comparison job.
     // compares the latest employer data pulled from the API to the current version.
     // overwrites the current version if updates are present in the new export
-    $result = MatchingGift::verifyEmployerFile(FALSE)
+    $result = MatchingGiftPolicies::verifyEmployerFile(FALSE)
       ->setLimit(0)
       ->execute()
       ->first();

@@ -3,16 +3,11 @@
 namespace Civi\Api4;
 
 use Civi\Api4\Generic\AbstractEntity;
-use Civi\Api4\Action\MatchingGift\VerifyEmployerFile;
+use Civi\Api4\Action\MatchingGiftPolicies\VerifyEmployerFile;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
-class MatchingGift extends AbstractEntity {
+class MatchingGiftPolicies extends AbstractEntity {
 
-  /**
-   * @deprecated Use MatchingGiftPolicies::verifyEmployerFile instead
-   * @param $checkPermissions
-   * @return VerifyEmployerFile
-   */
   public static function verifyEmployerFile($checkPermissions = TRUE): VerifyEmployerFile {
     return (new VerifyEmployerFile(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
