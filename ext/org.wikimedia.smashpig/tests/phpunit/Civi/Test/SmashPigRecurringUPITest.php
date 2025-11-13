@@ -73,7 +73,8 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token, [
-      'trxn_id' => 'RECURRING DLOCAL ' . $this->generateRandomOrderId(),
+      'gateway' => 'DLOCAL',
+      'trxn_id' => $this->generateRandomOrderId(),
       'invoice_id' => $expectedOrderIdWithSequence,
       'contribution_recur_smashpig.processor_contact_id' => '123456.1',
       'contribution_recur_smashpig.rescue_reference' => NULL
@@ -126,7 +127,8 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token, [
-      'trxn_id' => 'RECURRING DLOCAL ' . $this->generateRandomOrderId(),
+      'gateway' => 'DLOCAL',
+      'trxn_id' => $this->generateRandomOrderId(),
       'invoice_id' => $expectedOrderIdWithSequence,
     ]);
     $this->createContribution($contributionRecur, [
@@ -164,7 +166,8 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
     $initialContributionRecur = $this->createContributionRecur($token, [
-      'trxn_id' => 'RECURRING DLOCAL ' . $this->generateRandomOrderId(),
+      'gateway' => 'DLOCAL',
+      'trxn_id' => $this->generateRandomOrderId(),
       'invoice_id' => $expectedOrderIdWithSequence,
     ]);
     $this->createContribution($initialContributionRecur, [

@@ -316,7 +316,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
       'cycle_day' => gmdate('d', strtotime('-12 hours')),
       'payment_processor_id.name' => $this->processorName,
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
-      'trxn_id' => 'RECURRING ' . $gateway . $trxn_id,
+      'trxn_id' => 'RECURRING ' . $gateway . ' ' . $trxn_id,
       'processor_id' => $trxn_id,
       'invoice_id' => $invoice_id,
       'contribution_status_id:name' => 'Pending',
