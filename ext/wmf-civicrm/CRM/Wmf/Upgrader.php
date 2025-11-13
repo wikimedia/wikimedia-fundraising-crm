@@ -3421,6 +3421,45 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Update channel to email where the mailing_identifier is set.
+   *
+   * Similar to 4690 but this covers the INSERT.
+   *
+   * Bug: T406193
+   *
+   * @return bool
+   */
+  public function upgrade_4775(): bool {
+    $sql = '
+      INSERT INTO civicrm_value_1_gift_data_7 (entity_id, channel, campaign)
+      SELECT DISTINCT contribution_id,
+             "Email",
+             "Online Gift"
+      FROM civicrm_contribution_tracking
+      LEFT JOIN civicrm_value_1_gift_data_7 gift
+        ON entity_id = contribution_id
+      WHERE mailing_identifier IS NOT NULL
+        AND (gift.channel IS NULL OR gift.channel = "")
+      AND contribution_id BETWEEN %1 AND %2
+      ON DUPLICATE KEY UPDATE
+       channel = VALUES(channel)
+      ';
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 4900000,
+        'type' => 'Integer',
+        'increment' => 500000,
+      ],
+      2 => [
+        'value' => 5400000,
+        'type' => 'Integer',
+        'increment' => 500000,
+      ],
+    ]);
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
