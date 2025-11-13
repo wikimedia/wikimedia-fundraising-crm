@@ -168,8 +168,6 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   public function testQueueEmailEdit(): void {
-    // Set the busy_threshold really high so our hook does not prevent it running.
-    putenv('busy_threshold=500000');
     // We don't send calls in this test but get an e-notice on CI if there is
     // no Acoustic configured.
     $this->setDatabaseID(1234);
