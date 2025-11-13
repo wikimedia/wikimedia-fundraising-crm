@@ -19,6 +19,8 @@ use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use SmashPig\Core\DataStores\QueueWrapper;
 use Civi\WMFTransaction;
+use Smashpig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
+use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 class RecurringQueueConsumer extends TransactionalQueueConsumer {
 
@@ -33,6 +35,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    */
   public function processMessage($message) {
     if (empty($message['txn_type']) || !in_array($message['txn_type'], [
+      'monthly_convert_decline',
       // subscription canceled by user at the gateway.
       'subscr_cancel',
       // subscription expired (end of term)
@@ -46,6 +49,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       'subscr_payment',
     ])) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg not recognized as a recurring payment related message.');
+    }
+    if ($message['txn_type'] === 'monthly_convert_decline') {
+      $this->removeRecurringToken($message);
+      return;
     }
     // Set recurring to true in case the message is re-queued.
     // @todo - we can switch later to do this at the point where we re-queue.
@@ -700,6 +707,24 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       ->count();
 
     return $recurringCount > 0;
+  }
+
+  protected function removeRecurringToken(array $message): void {
+    \CRM_SmashPig_ContextWrapper::createContext( 'donation_queue_process_message', $message['gateway'] );
+    $provider = PaymentProviderFactory::getProviderForMethod(
+      $message['payment_method']
+    );
+    // todo: need to add this deleteRecurringPaymentToken function for other payment gateways if we pre tokenized for recurring
+    if ( $provider instanceof IDeleteRecurringPaymentTokenProvider ) {
+      // handle remove recurring token for on-time donor with post monthly convert
+      \Civi::log( 'wmf' )->notice(
+        'decline-recurring:' . $message['gateway'] . ' ' . $message['payment_method'] . ': decline recurring with order id ' . $message['order_id']
+      );
+      $result = $provider->deleteRecurringPaymentToken( $message );
+      $logMessage = "decline-recurring: For order id: {$message['order_id']}, delete recurring payment token with status " . ( $result
+          ? 'success' : 'failed' );
+      \Civi::log( 'wmf' )->info( $logMessage );
+    }
   }
 
 }
