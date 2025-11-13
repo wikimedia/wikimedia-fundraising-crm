@@ -40,6 +40,10 @@ class RecurringModifyMessage extends Message {
     return $this->message['txn_type'] === 'recurring_paused';
   }
 
+  public function isAnnualConversion(): bool {
+    return $this->message['txn_type'] === 'recurring_annual_conversion';
+  }
+
   public function isCancelled(): bool {
     return $this->message['txn_type'] === 'recurring_cancel';
   }
@@ -77,6 +81,7 @@ class RecurringModifyMessage extends Message {
     if (!$this->getContributionRecurID()) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid message type');
     }
+
     if ($this->isDecline() && !$this->getContactID()) {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Invalid contact_id');
     }
@@ -102,6 +107,15 @@ class RecurringModifyMessage extends Message {
     if ($this->isPaused()) {
       if (!isset($this->message['duration'])) {
         throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to pause recurring subscription but duration is not set');
+      }
+    }
+
+    if ($this->isAnnualConversion()) {
+      if (!isset($this->message['amount'])) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to convert current monthly recurring subscription but amount is not set');
+      }
+      if (!isset($this->message['next_sched_contribution_date'])) {
+        throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to convert current monthly recurring subscription but next schedule date is not set');
       }
     }
 
@@ -152,7 +166,7 @@ class RecurringModifyMessage extends Message {
   }
 
   /**
-   * Get the amount in the original currency.
+   * Get the updated amount in usd.
    *
    * @return string
    * @throws ExchangeRatesException
