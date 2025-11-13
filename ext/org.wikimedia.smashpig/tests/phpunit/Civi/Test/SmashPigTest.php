@@ -1348,7 +1348,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       and we are sending you this at harry@hendersons.net
       this month of $month
       $12.34";
-    $this->assertEquals($expectedMessage, $activity['details'], $this->getLoggerRecordsAsString());
+    $this->assertEquals($expectedMessage, $activity['details'] ?? null, $this->getLoggerRecordsAsString());
   }
 
   /**
@@ -1450,7 +1450,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       and we are sending you this at harry@hendersons.net
       this month of $month
       $12.34";
-    $this->assertEquals($expectedMessage, $activity['details']);
+    $this->assertEquals($expectedMessage, $activity['details'] ?? null, $this->getLoggerRecordsAsString());
   }
 
   /**
