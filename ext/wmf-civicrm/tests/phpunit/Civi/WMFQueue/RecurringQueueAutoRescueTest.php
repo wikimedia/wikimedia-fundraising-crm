@@ -5,6 +5,8 @@ namespace Civi\WMFQueue;
 use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Email;
+use Civi\Api4\Queue;
+use Civi\Api4\QueueItem;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFException\WMFException;
 
@@ -17,6 +19,13 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
   protected string $queueName = 'recurring';
 
   protected string $queueConsumer = 'Recurring';
+
+  public function tearDown(): void {
+    QueueItem::delete(FALSE)
+      ->addWhere('queue_name', '=', 'email')
+      ->execute();
+    parent::tearDown();
+  }
 
   /**
    * Test use of Auto Rescue message consumption
@@ -196,6 +205,17 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
 
     // Verify that the rescue reference was cleared
     $this->assertEquals('', $updatedRecur['contribution_recur_smashpig.rescue_reference']);
+
+    $item = QueueItem::get(FALSE)
+      ->addWhere('queue_name', '=', 'email')
+      ->execute()->first();
+
+    $this->assertNotNull($item);
+
+    // Run the queue task to send the email
+    Queue::run(FALSE)
+      ->setQueue('email')
+      ->execute();
 
     // Verify failure email was sent (check for new Email activity)
     $postCancellationActivities = Activity::get(FALSE)

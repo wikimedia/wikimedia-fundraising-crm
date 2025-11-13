@@ -6,11 +6,11 @@ use Civi;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
-use Civi\Api4\FailureEmail;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\ThankYou;
 use Civi\Api4\WMFContact;
 use Civi\Core\Exception\DBQueryException;
+use Civi\Helper\FailureEmail;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
@@ -544,11 +544,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
           // The failure email is otherwise sent from the recurring smashpig extension. When an autorescue
           // attempt ends in failure, we cancel here and need to send the email as well
           // Note: We only send the email if the contact does not have any other active recurring contributions
-          FailureEmail::send()
-            ->setCheckPermissions(FALSE)
-            ->setContactID($message->getContactID())
-            ->setContributionRecurID($message->getContributionRecurID())
-            ->execute();
+          FailureEmail::sendViaQueue($message->getContactID(), $message->getContributionRecurID());
         }
       }
       $this->updateContributionRecurWithErrorHandling($update_params);
