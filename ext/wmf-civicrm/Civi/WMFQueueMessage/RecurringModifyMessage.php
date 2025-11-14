@@ -86,7 +86,7 @@ class RecurringModifyMessage extends Message {
         throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to upgrade recurring subscription but amount is not set');
       }
       if ($this->getDifferenceAmount() < 0) {
-        throw new WMFException(WMFException::INVALID_RECURRING, 'upgradeRecurAmount: New recurring amount is less than the original amount.');
+        $this->message['txn_type'] = 'recurring_downgrade';
       }
     }
 
@@ -95,7 +95,7 @@ class RecurringModifyMessage extends Message {
         throw new WMFException(WMFException::INVALID_RECURRING, 'Trying to downgrade recurring subscription but amount is not set');
       }
       if ($this->getDifferenceAmount() > 0) {
-        throw new WMFException(WMFException::INVALID_RECURRING, 'downgradeRecurAmount: New recurring amount is greater than the original amount.');
+        $this->message['txn_type'] = 'recurring_upgrade';
       }
     }
 

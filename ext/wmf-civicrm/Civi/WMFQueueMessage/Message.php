@@ -1047,7 +1047,7 @@ class Message {
       return 'Wikipedia App';
     }
 
-    if (in_array($utmMedium, ['google', 'facebook', 'instagram', 'tiktok', 'threads'])) {
+    if (in_array($utmMedium, ['google', 'facebook', 'instagram', 'tiktok', 'threads', 'reddit', 'twitter', 'socialmedia'])) {
       return 'Social Media';
     }
 
