@@ -1216,6 +1216,142 @@ class Message {
     return $this->message['backend_processor_txn_id'] ?? NULL;
   }
 
+  /**
+   * Get the currency remitted by the donor.
+   *
+   * @return string
+   */
+  public function getOriginalCurrency(): ?string {
+    return $this->message['original_currency'] ?? $this->message['currency'] ?? NULL;
+  }
+
+  /**
+   * Get the original remitted amount in original currency.
+   *
+   * @return string
+   */
+  public function getOriginalAmount(): string {
+    if (!empty($this->message['original_total_amount'])) {
+      return $this->round($this->message['original_total_amount'], $this->message['original_currency']);
+    }
+    return !empty($this->message['original_gross']) ? $this->cleanMoney($this->message['original_gross']) : $this->cleanMoney($this->message['gross'] ?? 0);
+  }
+
+  /**
+   * Get the amount of the donation in the currency it is settled in.
+   *
+   * @return float
+   */
+  public function getSettledAmount(): float {
+    return $this->message['settled_total_amount'];
+  }
+
+  /**
+   * Get the amount of the donation in the currency it is settled in.
+   *
+   * @return float
+   */
+  public function getReportingAmount(): float {
+    if ($this->getSettlementCurrency() === 'USD' && !empty($this->message['settled_total_amount'])) {
+      // If we already know the settled total amount (from the auditor) and it is already USD then return it.
+      // It will already be a float in that case.
+      return $this->message['settled_total_amount'];
+    }
+    return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
+  }
+
+  public function getSettledAmountRounded(): string {
+    return $this->round($this->getSettledAmount(), $this->getSettlementCurrency());
+  }
+
+  /**
+   * Get the currency the donation is settled into at the gateway.
+   */
+  public function getSettlementCurrency(): string {
+    return $this->message['settled_currency'] ?? $this->message['gross_currency'] ?? 'USD';
+  }
+
+  public function getReportingAmountRounded(): string {
+    return $this->round($this->getReportingAmount(), $this->getReportingCurrency());
+  }
+
+  /**
+   * Get the fee amount charged by the processing gateway, when available
+   */
+  public function getSettledFeeAmount(): float {
+    if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
+      return $this->cleanMoney($this->message['fee']) * $this->getConversionRate();
+    }
+    if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
+      return $this->getSettledAmount() - $this->getSettledNetAmount();
+    }
+    return 0.00;
+  }
+
+  public function getSettledFeeAmountRounded(): string {
+    return $this->round($this->getSettledFeeAmount(), $this->getSettlementCurrency());
+  }
+
+  /**
+   * Get the fee amount charged by the processing gateway, when available
+   */
+  public function getReportingFeeAmount(): float {
+    if ($this->getSettlementCurrency() === 'USD' && !empty($this->message['settled_fee_amount'])) {
+      // If we already know the settled fee (from the auditor) and it is already USD then return it.
+      // It will already be a float in that case and it will be negative
+      // (settled_total_amount + settled_fee_amount = settled_net_amount).
+      return -$this->message['settled_fee_amount'];
+    }
+    if ($this->getOriginalFeeAmount() !== FALSE) {
+      return $this->getOriginalFeeAmount() * $this->getConversionRate();
+    }
+    if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
+      // @todo - this must be unreachable cos it looks a lot like a loop.
+      return $this->getReportingAmount() - $this->getReportingFeeAmount();
+    }
+    return 0.00;
+  }
+
+
+  public function getReportingFeeAmountRounded(): string {
+    return $this->round($this->getReportingFeeAmount(), $this->getReportingCurrency());
+  }
+
+  /**
+   * Get amount less any fee charged by the processor.
+   */
+  public function getReportingNetAmount(): float {
+    if ($this->getSettlementCurrency() === 'USD' && !empty($this->message['settled_net_amount'])) {
+      // If we already know the settled fee (from the auditor) and it is already USD then return it.
+      // It will already be a float in that case.
+      return $this->message['settled_net_amount'];
+    }
+    if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
+      return $this->cleanMoney($this->message['net']) * $this->getConversionRate();
+    }
+    if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
+      return $this->getReportingAmount() - $this->getReportingFeeAmount();
+    }
+    return $this->getReportingAmount();
+  }
+
+  /**
+   * Get amount less any fee charged by the processor.
+   */
+  public function getSettledNetAmount(): float {
+    if (array_key_exists('net', $this->message) && is_numeric($this->message['net'])) {
+      return $this->cleanMoney($this->message['net']) * $this->getConversionRate();
+    }
+    if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
+      return $this->getSettledAmount() - $this->getSettledFeeAmount();
+    }
+    return $this->getSettledAmount();
+  }
+
+  public function getReportingNetAmountRounded(): string {
+    return $this->round($this->getReportingNetAmount(), $this->getReportingCurrency());
+  }
+
   public function getSettlementFields(): array {
     $fields = [];
     if ($this->getSettledDate()) {

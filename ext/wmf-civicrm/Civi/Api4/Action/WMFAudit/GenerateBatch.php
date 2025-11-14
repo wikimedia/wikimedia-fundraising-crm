@@ -247,10 +247,10 @@ GROUP BY s.settlement_batch_reference
         ->addSelect('contribution_extra.*', 'contribution_settlement.*', 'total_amount', 'fee_amount', 'net_amount', 'trxn_id', 'invoice_id', 'source', 'currency', 'financial_type_id', 'receive_date')
         ->execute();
       */
-      if ($batch['status_id:name'] !== 'Open') {
+      if ($batch['status_id:name'] !== 'total_verified') {
         // @todo what should we do - return information but not export?
         // export in debug mode?
-        throw new \CRM_Core_Exception('batch not open - already exported?');
+        throw new \CRM_Core_Exception('batch verified - cannot export');
       }
       $renderedSql = CRM_Core_DAO::composeQuery($sql, [
         1 => [$batch['name'], 'String'],

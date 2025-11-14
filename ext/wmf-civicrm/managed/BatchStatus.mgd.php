@@ -1,0 +1,64 @@
+<?php
+
+return [
+  [
+    'name' => 'OptionValue_BatchStatus_TotalVerified',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'batch_status',
+        'label' => 'Total Verified',
+        'value' => 6,
+        'name' => 'total_verified',
+        'filter' => 1,
+        'is_default' => FALSE,
+        'description' => 'Batch total confirmed against payout',
+        'is_optgroup' => FALSE,
+        'is_reserved' => TRUE,
+        'is_active' => TRUE,
+        'component_id' => NULL,
+        'domain_id' => NULL,
+        'visibility_id' => NULL,
+        'icon' => 'fa-thumbs-o-up',
+        'color' => NULL,
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ],
+  [
+    'name' => 'OptionValue_BatchStatus_Validated',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'batch_status',
+        'label' => 'Validated, ready for export',
+        'value' => 7,
+        'name' => 'validated',
+        'filter' => 1,
+        'is_default' => FALSE,
+        'description' => 'Contributions validated as meeting batch total, ready for export',
+        'is_optgroup' => FALSE,
+        'is_reserved' => TRUE,
+        'is_active' => TRUE,
+        'component_id' => NULL,
+        'domain_id' => NULL,
+        'visibility_id' => NULL,
+        'icon' => 'fa-thumbs-o-up',
+        'color' => NULL,
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ],
+];

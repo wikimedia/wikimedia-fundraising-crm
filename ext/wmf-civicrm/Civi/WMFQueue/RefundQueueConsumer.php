@@ -174,6 +174,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'contribution_status_id:name',
           'contribution_extra.original_currency',
           'contribution_extra.original_amount',
+          'gift_data.*',
         ])->execute()->single();
     }
     catch (\CRM_Core_Exception $e) {
@@ -182,8 +183,46 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       );
     }
 
+    $giftDataFields = [];
+    foreach ($contribution as $field => $value) {
+      if (str_starts_with('gift_data.', $field)) {
+        $giftDataFields[$field] = $value;
+      }
+    }
+
     if (in_array($contribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded'], TRUE)
     ) {
+      if (($messageObject->getContributionStatus() === 'Chargeback' && $contribution['contribution_status_id:name'] === 'Refunded')
+        || ($messageObject->getContributionStatus() === 'Refunded' && $contribution['contribution_status_id:name'] === 'Chargeback')
+      ) {
+        $reversalTrxnId = $this->getRefundUniqueID($contribution['trxn_id'], $refund_gateway_txn_id, $messageObject->getContributionStatus());
+        $reversedContribution = Contribution::get(FALSE)
+          ->addWhere('trxn_id', '=', $reversalTrxnId)
+          ->addSelect('id')->execute()->first();
+        \Civi::log('wmf')->info('refund {reversal_trxn_id}: Recorded double-reversal', ['reversal_trxn_id' => $reversalTrxnId]);
+        if ($reversedContribution) {
+          throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: $contribution_id");
+        }
+        // In some cases a contribution is reversed twice -ie we refund it AND we are pinged with a chargeback.
+        // We might get either one first ... but we should record a negative contribution for the second
+        // to reflect the fact we have received negative money. (We might get a chargeback reversal later..
+        Contribution::create(FALSE)
+        ->setValues([
+          'contribution_status_id:name' => $messageObject->getContributionStatus(),
+          'total_amount' => $messageObject->getReportingAmountRounded(),
+          'fee_amount' => $messageObject->getReportingFeeAmountRounded(),
+          'financial_type_id:name' => 'Chargeback',
+          'contact_id' => $contribution['contact_id'],
+          'trxn_id' => $reversalTrxnId,
+          'receive_date' => $messageObject->getDate(),
+          'currency' => 'USD',
+          'contribution_extra.original_currency' => $messageObject->getOriginalCurrency(),
+          'contribution_extra.original_amount' => $messageObject->getOriginalAmount(),
+          'contribution_extra.parent_contribution_id' => $contribution_id,
+          'contribution_extra.no_thank_you' => 1,
+        ] + $giftDataFields + array_filter($messageObject->getSettlementFields()))->execute();
+        return;
+      }
       throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: $contribution_id");
     }
     // Deal with any discrepancies in the refunded amount.
@@ -238,12 +277,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     if ($refund_amount !== NULL) {
       $amount_scammed = round($refund_amount, 2) - round($original_amount, 2);
       if ($amount_scammed != 0) {
-        $transaction = WMFTransaction::from_unique_id($contribution['trxn_id']);
-        if ($refund_gateway_txn_id) {
-          $transaction->gateway_txn_id = $refund_gateway_txn_id;
-        }
-        $transaction->is_refund = TRUE;
-        $refund_unique_id = $transaction->get_unique_id();
+        $refund_unique_id = $this->getRefundUniqueID($contribution['trxn_id'], $refund_gateway_txn_id, $messageObject->getContributionStatus());
 
         try {
           $convertedTotalAmount = ExchangeRate::convert(FALSE)
@@ -264,7 +298,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
             'debug' => 1,
             'contribution_extra.parent_contribution_id' => $contribution_id,
             'contribution_extra.no_thank_you' => 1,
-          ])->execute();
+          ] + $giftDataFields)->execute();
         }
         catch (\CRM_Core_Exception $e) {
           throw new WMFException(
@@ -341,6 +375,24 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     ];
 
     return in_array($reason,$reasons);
+  }
+
+  /**
+   * @param $trxn_id
+   * @param string|null $refund_gateway_txn_id
+   * @return string
+   * @throws WMFException
+   */
+  public function getRefundUniqueID($trxn_id, ?string $refund_gateway_txn_id, $contributionStatus): string {
+    $transaction = WMFTransaction::from_unique_id($trxn_id);
+    if ($refund_gateway_txn_id) {
+      $transaction->gateway_txn_id = $refund_gateway_txn_id;
+    }
+    $transaction->is_refund = TRUE;
+    if ($contributionStatus === 'Chargeback') {
+      $transaction->is_chargeback = TRUE;
+    }
+    return $transaction->get_unique_id();
   }
 
 }

@@ -1,13 +1,12 @@
 <?php
 
-namespace Civi\Api4\Action\MatchingGift;
+namespace Civi\Api4\Action\MatchingGiftPolicies;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Omnimail\MailFactory;
 
 /**
- * @deprecated use MatchingGiftPolicies.verifyEmployerFile instead
  * @method int getLimit()
  * @method $this setLimit(int $limit)
  */

@@ -1370,19 +1370,19 @@ abstract class BaseAuditProcessor {
     return $this->statistics[$file]['total_missing'];
   }
 
-  private function recordStatistic($auditRecord, $file) {
+  private function recordStatistic(array $auditRecord, string $file): void {
     $fileStatistics = &$this->statistics[$file];
     $paymentMethod = $auditRecord['payment_method'];
     $transaction = $auditRecord['message'];
     if (isset($transaction['audit_file_gateway']) && !empty($transaction['settled_date'])) {
       // For now this means we are only doing it for adyen.
       // The batching is by the audit file gateway (ie adyen) not gravy.
-      $this->addToBatch($transaction);
+      $this->addToBatch($transaction, $file);
     }
     $type = $auditRecord['audit_message_type'];
     if ($type === 'aggregate') {
-      $this->totals[$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP);
-      $this->totals[$transaction['settled_currency']] = $this->totals[$transaction['settled_currency']]->plus($transaction['settled_total_amount']);
+      $this->totals[$file][$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP);
+      $this->totals[$file][$transaction['settled_currency']] = $this->totals[$file][$transaction['settled_currency']]->plus($transaction['settled_total_amount']);
       return;
     }
     if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
@@ -1559,10 +1559,10 @@ abstract class BaseAuditProcessor {
    * @param array $transaction
    * @return void
    */
-  private function addToBatch(array $transaction): void {
+  private function addToBatch(array $transaction, string $file): void {
     $batchName = $transaction['settlement_batch_reference'];
-    if (!isset($this->batches[$batchName])) {
-      $this->batches[$batchName] = [
+    if (!isset($this->batches[$file][$batchName])) {
+      $this->batches[$file][$batchName] = [
         'transaction_count' => 0,
         'settled_total_amount' => Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP),
         'settled_fee_amount' => Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP),
@@ -1573,26 +1573,27 @@ abstract class BaseAuditProcessor {
         'settlement_date' => date('Ymd', $transaction['settled_date']),
         'settlement_batch_reference' => $batchName,
         'settlement_gateway' => $transaction['audit_file_gateway'],
+        'status_id:name' => 'Open',
       ];
     }
 
-    $this->batches[$batchName]['transaction_count']++;
+    $this->batches[$file][$batchName]['transaction_count']++;
     if (!isset($transaction['settled_total_amount'])) {
       \Civi::log('wmf')->warning('missing total_amount for {transaction}', ['transaction' => $transaction]);
     }
     else {
-      $this->batches[$batchName]['settled_total_amount'] = $this->batches[$batchName]['settled_total_amount']->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
+      $this->batches[$file][$batchName]['settled_total_amount'] = $this->batches[$file][$batchName]['settled_total_amount']->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
       if ($transaction['settled_total_amount'] < 0) {
-        $this->batches[$batchName]['settled_reversal_amount'] = $this->batches[$batchName]['settled_reversal_amount']->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
+        $this->batches[$file][$batchName]['settled_reversal_amount'] = $this->batches[$file][$batchName]['settled_reversal_amount']->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
       }
       else {
-        $this->batches[$batchName]['settled_donation_amount'] = $this->batches[$batchName]['settled_donation_amount']->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
+        $this->batches[$file][$batchName]['settled_donation_amount'] = $this->batches[$file][$batchName]['settled_donation_amount']->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
       }
     }
     // These will be wrong if they are not set right - but that is OK for now as it will highlight
     // where the gaps are and it is informational.
-    $this->batches[$batchName]['settled_fee_amount'] = $this->batches[$batchName]['settled_fee_amount']->plus($transaction['settled_fee_amount'] ?? 0, RoundingMode::HALF_UP);
-    $this->batches[$batchName]['settled_net_amount'] = $this->batches[$batchName]['settled_net_amount']->plus($transaction['settled_net_amount'] ?? 0, RoundingMode::HALF_UP);
+    $this->batches[$file][$batchName]['settled_fee_amount'] = $this->batches[$file][$batchName]['settled_fee_amount']->plus($transaction['settled_fee_amount'] ?? 0, RoundingMode::HALF_UP);
+    $this->batches[$file][$batchName]['settled_net_amount'] = $this->batches[$file][$batchName]['settled_net_amount']->plus($transaction['settled_net_amount'] ?? 0, RoundingMode::HALF_UP);
   }
 
   /**
@@ -1818,22 +1819,13 @@ abstract class BaseAuditProcessor {
   public function getBatchInformation(): array {
     if ($this->get_runtime_options('is_stop_on_first_missing')) {
       return [];
-    };
-    $batches = [];
-    foreach ($this->batches as $batch) {
-      foreach ($batch as $fieldName => $fieldValue) {
-        if ($fieldValue instanceof Money) {
-          /* @var Money $fieldValue */
-          $batch[$fieldName] = (string) $fieldValue->getAmount();
-        }
-        if ($batch['settlement_gateway'] === 'adyen') {
-          $batch['settlement_date'] = $this->moveToNextFriday($batch['settlement_date']);
-        }
-      }
-
-      $batches[] = $batch;
     }
-    return $batches;
+    // Start with the valid batches & add in any other batches, if not present in valid batches.
+    $batches = $this->getValidBatches();
+    foreach ($this->batches as $fileBatches) {
+      $batches += $fileBatches;
+    }
+    return array_values($batches);
   }
 
   private function moveToNextFriday($dateString): string {
@@ -1848,28 +1840,34 @@ abstract class BaseAuditProcessor {
 
   public function getValidBatches(): array {
     $validBatches = [];
-    foreach ($this->batches as $batch) {
-      if (empty($this->totals[$batch['settlement_currency']])) {
-        \Civi::log('wmf')->info("Unable to validate batch for {currency} - settlement row not parsed. This is expected for payment files", [
-          'currency' => $batch['settlement_currency'],
-        ]);
-        continue;
-      }
-      $currency = $batch['settlement_currency'];
-      /** @var Money $expectedAmount */
-      $expectedAmount = $this->totals[$currency];
-      /** @var Money $settledNetAmount */
-      $settledNetAmount = $batch['settled_net_amount'];
-      if ($expectedAmount->compareTo($settledNetAmount) === 0) {
-        $validBatches[] = $batch;
-      }
-      else {
-        \Civi::log('wmf')->info('Batch total mismatch. {currency} is out by {difference}. Expected {expected} vs Actual {actual}', [
-          'difference' => $expectedAmount->minus($settledNetAmount, RoundingMode::HALF_UP)->getAmount(),
-          'expected' => $expectedAmount->getAmount(),
-          'actual' => $settledNetAmount->getAmount(),
-          'currency' => $currency,
-        ]);
+    foreach ($this->batches as $fileName => $fileBatches) {
+      foreach ($fileBatches as $batchName => $batch) {
+        if (empty($this->totals[$fileName][$batch['settlement_currency']])) {
+          \Civi::log('wmf')->info("Unable to validate batch for {currency} - settlement row not parsed. This is expected for payment files", [
+            'currency' => $batch['settlement_currency'],
+          ]);
+          continue;
+        }
+        $currency = $batch['settlement_currency'];
+        /** @var Money $expectedAmount */
+        $expectedAmount = $this->totals[$fileName][$currency];
+        /** @var Money $settledNetAmount */
+        $settledNetAmount = $batch['settled_net_amount'];
+        if ($expectedAmount->compareTo($settledNetAmount) === 0) {
+          if ($batch['settlement_gateway'] === 'adyen') {
+            $batch['settlement_date'] = $this->moveToNextFriday($batch['settlement_date']);
+          }
+          $batch['status_id:name'] = 'total_verified';
+          $validBatches[$batchName] = $batch;
+        }
+        else {
+          \Civi::log('wmf')->info('Batch total mismatch. {currency} is out by {difference}. Expected {expected} vs Actual {actual}', [
+            'difference' => $expectedAmount->minus($settledNetAmount, RoundingMode::HALF_UP)->getAmount(),
+            'expected' => $expectedAmount->getAmount(),
+            'actual' => $settledNetAmount->getAmount(),
+            'currency' => $currency,
+          ]);
+        }
       }
     }
     return $validBatches;

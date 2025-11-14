@@ -38,7 +38,7 @@ return [
       'checkPermissions' => FALSE,
       'values' => [
         'msg_title' => 'set_primary_email',
-        'msg_text' => $msgText,
+        'msg_text' => ' ', // Text version is ui-required, but we don't use it - so use a space.
         'msg_html' => $htmlText,
         'msg_subject' => $subject,
         'is_default' => FALSE,

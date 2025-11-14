@@ -164,13 +164,26 @@ class Parse extends AbstractAction {
     $audit = $this->loadAuditProcessor();
     $audit->run();
     foreach ($audit->getBatchInformation() as $batch) {
+      $existing = Batch::get(FALSE)
+        ->addWhere('name', '=', $batch['settlement_batch_reference'])
+        ->addSelect('status_id:name')
+        ->execute()->first() ?? [];
+      $batch['settled_total_amount'] = (string) $batch['settled_total_amount']->getAmount();
+      $batch['settled_net_amount'] = (string) $batch['settled_net_amount']->getAmount();
+      $batch['settled_fee_amount'] = (string) $batch['settled_fee_amount']->getAmount();
+      $batch['settled_reversal_amount'] = (string) $batch['settled_reversal_amount']->getAmount();
+      $batch['settled_donation_amount'] = (string) $batch['settled_donation_amount']->getAmount();
       $result[] = $batch;
+      if (!empty($existing['status_id:name']) && !in_array($existing['status_id:name'], ['Reopened', 'Open'], TRUE)) {
+        // Once it is verified or exported we don't overwrite it.
+        continue;
+      }
       // In time we should only overwrite open batches but for now we just update to what we find
       // as this is experimental.
       Batch::save(FALSE)
         ->addRecord([
           'name' => $batch['settlement_batch_reference'],
-          'status_id:name' => 'Open',
+          'status_id:name' => $batch['status_id:name'],
           'type_id:name' => 'Contribution',
           'mode_id:name' => 'Automatic Batch',
           'total' => $batch['settled_total_amount'],
@@ -182,13 +195,10 @@ class Parse extends AbstractAction {
           'batch_data.settlement_currency' => $batch['settlement_currency'],
           'batch_data.settlement_date' => $batch['settlement_date'],
           'batch_data.settlement_gateway' => $batch['settlement_gateway'],
-        ])
+        ] + $existing)
         ->setMatch(['name', 'type_id'])
         ->execute();
     }
-    // The goal is to use this instead of getBatchInformation above. We just need to get the
-    // smashpig patches merged first.
-    $audit->getValidBatches();
   }
 
   /**
