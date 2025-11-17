@@ -13,6 +13,7 @@ use CRM_Omnimail_ExtensionUtil as E;
  *
  * @method $this setDatabaseID(int $databaseID)
  * @method $this setEmail(bool $email)
+ * @method $this setRecipientID(?int $recipientID)
  * @method bool getEmail()
  * @method $this setValues(array $values)
  * @method array getValues()
@@ -40,6 +41,17 @@ class Create extends AbstractAction {
    * @var string
    */
   protected $email;
+
+  /**
+   * Acoustic recipient ID.
+   *
+   * @var int|null
+   */
+  protected ?int $recipientID = NULL;
+
+  public function getRecipientID(): ?int {
+    return $this->recipientID;
+  }
 
   /**
    * @var array
@@ -99,6 +111,7 @@ class Create extends AbstractAction {
       'mail_provider' => $this->getMailProvider(),
       'database_id' => $this->getDatabaseID(),
       'email' => $this->getEmail(),
+      'recipient_id' => $this->getRecipientID(),
       'group_id' => $this->getGroupID(),
       'values' => $this->getValues(),
       'snooze_end_date' => $this->getSnoozeDate(),
