@@ -76,6 +76,7 @@ class Audit extends AbstractAction {
         && !$message->isFeeRow()
         && !$message->isAggregateRow()
       ) {
+        $contribution = $message->getExistingContribution();
         $values = [
           'gateway' => $record['gateway'],
           'gateway_txn_id' => $record['gateway_txn_id'],
@@ -86,7 +87,15 @@ class Audit extends AbstractAction {
           'settled_total_amount' => $record['settled_total_amount'],
           'settled_fee_amount' => $record['settled_fee_amount'],
         ];
-        if ($this->processSettlement === 'queue') {
+        $isNegative = $record['settled_total_amount'] < 0;
+        if (
+          ($isNegative && $contribution['contribution_settlement.settlement_batch_reversal_reference'] === $record['settlement_batch_reference'])
+          ||
+          (!$isNegative && $contribution['contribution_settlement.settlement_batch_reference'] === $record['settlement_batch_reference'])
+        ) {
+          // Do nothing - it is settled.
+        }
+        elseif ($this->processSettlement === 'queue') {
           QueueWrapper::push('settle', $values, TRUE);
         }
         else {

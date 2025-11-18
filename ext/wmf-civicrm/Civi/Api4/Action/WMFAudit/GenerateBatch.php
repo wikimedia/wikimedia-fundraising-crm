@@ -18,6 +18,7 @@ use League\Csv\Writer;
  * @method $this setBatchPrefix(string $batchPrefix)
  * @method $this setIsOutputCsv(bool $isOutputCsv)
  * @method $this setIsOutputSql(bool $isOutputSql)
+ * @method $this setIsOutputRows(bool $isOutputRows)
  */
 class GenerateBatch extends AbstractAction {
 
@@ -31,6 +32,15 @@ class GenerateBatch extends AbstractAction {
    * @var string
    */
   protected string $batchPrefix = '';
+
+  /**
+   * Is output rows.
+   *
+   * Generally rows might be useful in tests but are otherwise TMI.
+   *
+   * @var bool
+   */
+  protected bool $isOutputRows = FALSE;
 
   /**
    * Is a csv to be output.
@@ -142,6 +152,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = settlement_batch_reference)
   AND ( settled_fee_amount <> 0)
   AND trxn_id NOT LIKE 'adyen transaction%'
+  AND trxn_id NOT LIKE 'adyen invoice%'
 GROUP BY s.settlement_batch_reference
 
 UNION
@@ -171,7 +182,7 @@ FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
 WHERE (%1 = settlement_batch_reversal_reference)
   AND ( settled_fee_reversal_amount <> 0)
-  AND trxn_id NOT LIKE 'adyen transaction%'
+  AND (trxn_id NOT LIKE 'adyen transaction%' AND trxn_id NOT LIKE 'adyen invoice %')
 GROUP BY s.settlement_batch_reversal_reference
 
 UNION
@@ -200,7 +211,7 @@ FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
 WHERE (%1 = settlement_batch_reference)
   AND ( settled_fee_amount <> 0)
-  AND trxn_id LIKE 'adyen transaction%'
+  AND (trxn_id LIKE 'adyen transaction%' OR trxn_id LIKE 'adyen invoice %')
 GROUP BY s.settlement_batch_reference
 ";
 
@@ -308,6 +319,9 @@ GROUP BY s.settlement_batch_reference
         'fee' => $batch['batch_data.settled_fee_amount'] + $record['totals']['fee'],
       ];
       $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['batch_data.settlement_currency']);
+      if (!$this->isOutputRows) {
+        unset ($record['csv_rows']);
+      }
       $result[] = $record;
     }
   }
