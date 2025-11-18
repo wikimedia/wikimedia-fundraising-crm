@@ -336,9 +336,6 @@ class AuditMessage extends DonationMessage {
       // and ignore the parent.
       return NULL;
     }
-    if ($this->isFeeRow()) {
-      return $this->getGatewayTxnID() . ' ' . $this->getSettlementBatchReference();
-    }
     if ($this->getGatewayTxnID()) {
       return $this->getGatewayTxnID();
     }
@@ -355,6 +352,14 @@ class AuditMessage extends DonationMessage {
         ->first()['contribution_id.contribution_extra.gateway_txn_id'] ?? NULL;
     }
     return '';
+  }
+
+  public function getGatewayTxnID(): ?string {
+    $gatewayTxnID = parent::getGatewayTxnID();
+    if ($this->isFeeRow()) {
+      return $gatewayTxnID . ' ' . $this->getSettlementBatchReference();
+    }
+    return $gatewayTxnID;
   }
 
   /**
