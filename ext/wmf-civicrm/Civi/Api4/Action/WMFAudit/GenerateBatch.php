@@ -18,6 +18,7 @@ use League\Csv\Writer;
  * @method $this setBatchPrefix(string $batchPrefix)
  * @method $this setIsOutputCsv(bool $isOutputCsv)
  * @method $this setIsOutputSql(bool $isOutputSql)
+ * @method $this setIsOutputRows(bool $isOutputRows)
  */
 class GenerateBatch extends AbstractAction {
 
@@ -31,6 +32,15 @@ class GenerateBatch extends AbstractAction {
    * @var string
    */
   protected string $batchPrefix = '';
+
+  /**
+   * Is output rows.
+   *
+   * Generally rows might be useful in tests but are otherwise TMI.
+   *
+   * @var bool
+   */
+  protected bool $isOutputRows = FALSE;
 
   /**
    * Is a csv to be output.
@@ -308,6 +318,9 @@ GROUP BY s.settlement_batch_reference
         'fee' => $batch['batch_data.settled_fee_amount'] + $record['totals']['fee'],
       ];
       $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['batch_data.settlement_currency']);
+      if (!$this->isOutputRows) {
+        unset ($record['csv_rows']);
+      }
       $result[] = $record;
     }
   }

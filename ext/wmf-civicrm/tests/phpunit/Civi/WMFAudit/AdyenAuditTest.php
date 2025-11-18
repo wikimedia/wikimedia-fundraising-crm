@@ -885,7 +885,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         ->execute();
 
       foreach ($auditResult['validate'] as $row) {
-        $this->assertEquals(0, array_sum($row['validation']), print_r($row, TRUE));
+        $this->assertEquals(0, array_sum($row['validation']), print_r(array_filter($row), TRUE));
       }
     }
     return (array) $auditResult;
