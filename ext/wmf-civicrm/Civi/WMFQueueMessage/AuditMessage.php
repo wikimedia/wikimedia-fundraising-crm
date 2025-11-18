@@ -262,9 +262,10 @@ class AuditMessage extends DonationMessage {
   public function getExistingContribution(): ?array {
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
+      $selectFields = ['id', 'contribution_status_id:name', 'fee_amount', 'contribution_settlement.settlement_batch_reference', 'contribution_settlement.settlement_batch_reversal_reference'];
       if ($this->getPaymentOrchestratorReconciliationReference()) {
         $this->existingContribution = Contribution::get(FALSE)
-          ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+          ->setSelect($selectFields)
           ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())
           ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
           ->execute()->first() ?? [];
@@ -274,14 +275,14 @@ class AuditMessage extends DonationMessage {
         $isGravy = TRUE;
         // Looking at a gravy transaction in the Adyen file?
         $this->existingContribution = Contribution::get(FALSE)
-          ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+          ->setSelect($selectFields)
           ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
           ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorTxnID())
           ->execute()->first() ?? [];
       }
       if (empty($this->existingContribution) && $this->getGatewayParentTxnID() && !$this->isChargebackReversal()) {
         $this->existingContribution = Contribution::get(FALSE)
-          ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+          ->setSelect($selectFields)
           ->addWhere('contribution_extra.gateway', '=', $this->getParentTransactionGateway())
           ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
           ->execute()->first() ?? [];
@@ -289,7 +290,7 @@ class AuditMessage extends DonationMessage {
       if (empty($this->existingContribution) && $this->isChargebackReversal()) {
         $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
         $this->existingContribution = Contribution::get(FALSE)
-          ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+          ->setSelect($selectFields)
           ->addWhere('trxn_id', '=', $trxn_id)
           ->execute()->first() ?? [];
       }
