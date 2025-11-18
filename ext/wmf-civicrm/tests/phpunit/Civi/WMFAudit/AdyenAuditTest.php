@@ -923,4 +923,19 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals(14, $result->first()['transaction_count']);
   }
 
+  public function testBatchLimitAndOffset(): void {
+    $file = 'settlement_detail_report_batch_1129.csv';
+    $this->prepareForAuditProcessing('batch_2', $file);
+    $result = WMFAudit::parse()
+      ->setGateway($this->gateway)
+      ->setOffset(2)
+      ->setFile($file)
+      ->setRowLimit(2)
+      ->setSettleMode('queue')
+      ->setIsMoveCompletedFile(FALSE)
+      ->execute()->first();
+    $this->assertEquals(2, $result['transaction_count']);
+    $this->assertEquals(-44.92, $result['settled_net_amount']);
+  }
+
 }
