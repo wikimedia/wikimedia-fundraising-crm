@@ -791,7 +791,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
   }
 
   public function createTransactionLog(array $row): void {
-    if (empty($row['Creation Date']) || in_array($row['Type'], ['Fee', 'MerchantPayout'], TRUE)) {
+    if (empty($row['Creation Date']) || in_array($row['Type'] ?? $row['Record Type'], ['Fee', 'MerchantPayout'], TRUE)) {
       // Fee row.
       return;
     }
@@ -821,12 +821,12 @@ class AdyenAuditTest extends BaseAuditTestCase {
         "response" => FALSE,
         "gateway_account" => "WikimediaDonations",
         "fee" => 0,
-        "gross" => $row['Gross Debit (GC)'],
+        "gross" => $row['Gross Debit (GC)'] ?? $row['Captured (PC)'],
         "backend_processor" => $isGravy ? "adyen" : NULL,
         "backend_processor_txn_id" => $isGravy ? $row['Psp Reference'] : NULL,
         "contribution_tracking_id" => $trackingID,
         "payment_orchestrator_reconciliation_id" => $isGravy ? $row['Merchant Reference'] : NULL,
-        "currency" => $row['Gross Currency'],
+        "currency" => $row['Gross Currency'] ?? $row['Payment Currency'],
         "order_id" => $trackingID . '.1',
         "payment_method" => "apple",
         "payment_submethod" => "amex",
@@ -895,6 +895,23 @@ class AdyenAuditTest extends BaseAuditTestCase {
       }
     }
     return (array) $auditResult;
+  }
+
+  /**
+   * Test running a payment file, checking settlement fee.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testPaymentFile(): void {
+    $fileName = 'payments_accounting_report_2025_11_16-test.csv';
+    $directory = 'payment_file';
+    $this->runAuditBatch($directory, $fileName);
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('trxn_id', '=', 'ADYEN ABCDE3HSQP412345')
+      ->addSelect('contribution_settlement.*')
+      ->execute()->first();
+    $this->assertEquals('adyen_1138_EUR', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals(-.16, $contribution['contribution_settlement.settled_fee_amount']);
   }
 
   public function testAdyenSettlementBatch(): void {
