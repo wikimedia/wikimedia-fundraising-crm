@@ -1293,7 +1293,7 @@ abstract class BaseAuditProcessor {
     $counter = $count = 0;
     $timer = microtime(true);
     $rowLimit = $this->get_runtime_options('row_limit') ?? 0;
-    $offset = $this->get_runtime_options('offset') ?? 0;
+    $offset = $this->get_runtime_options('row_offset') ?? 0;
     foreach ($transactions as $rowNumber => $transaction) {
       if ($offset && $rowNumber < $offset) {
         continue;
@@ -1354,10 +1354,9 @@ abstract class BaseAuditProcessor {
           \Civi::log('wmf')->info('stopping on first missing', $auditRecord + ['transaction' => $transaction]);
           break;
         }
-
-        if ($isHitRowLimit) {
-          break;
-        }
+      }
+      if ($isHitRowLimit) {
+        break;
       }
     }
 

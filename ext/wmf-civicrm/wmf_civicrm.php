@@ -3,6 +3,7 @@
 use Civi\Api4\CustomField;
 use Civi\WMFHelper\Queue;
 use Civi\WMFHook\Address as AddressHook;
+use CRM_Wmf_ExtensionUtil as E;
 
 require_once 'wmf_civicrm.civix.php';
 // phpcs:disable
@@ -116,6 +117,35 @@ function wmf_civicrm_civicrm_searchTasks() {
     && CRM_Utils_Request::retrieve('qfKey', 'String') === NULL
   ) {
     $_GET['force'] = $_REQUEST['force'] = FALSE;
+  }
+}
+
+function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermissions, ?int $userID): void {
+  // Make this task available on Contribution-based SearchKit searches.
+  if (CRM_Core_Permission::check('administer CiviCRM data')) {
+    $tasks['Contribution']['clear_settlement_fields'] = [
+      'title' => E::ts('Clear settlement fields'),
+      'icon' => 'fa-toilet',
+      'apiBatch' => [
+        'action' => 'update',
+        'params' => [
+          'values' => [
+            'contribution_settlement.settlement_batch_reference' => '',
+            'contribution_settlement.settlement_batch_reversal_reference' => '',
+            'contribution_settlement.settled_donation_amount' => '',
+            'contribution_settlement.settled_fee_amount' => '',
+            'contribution_settlement.settled_fee_reversal_amount' => '',
+            'contribution_settlement.settlement_date' => '',
+            'contribution_settlement.settlement_currency' => '',
+          ],
+        ],
+
+        'confirmMsg' => E::ts('Clear settlement fields for %1 %2?'),
+        'runMsg' => E::ts('Clearing settlement fields for %1 %2...'),
+        'successMsg' => E::ts('Successfully cleared settlement fields for %1 %2.'),
+        'errorMsg' => E::ts('An error occurred while attempting to clear settlement fields for %1 %2.'),
+      ],
+    ];
   }
 }
 

@@ -94,12 +94,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function processMessage(array $message): void {
-    // no need to insert contribution, return empty array is enough
-    if (isset($message['monthly_convert_decline']) && $message['monthly_convert_decline']) {
-      $this->removeRecurringToken($message);
-      return;
-    }
-
     // If more information is available, find it from the pending database
     // FIXME: combine the information in a SmashPig job a la Adyen, not here
     if (isset($message['completion_message_id'])) {
@@ -530,20 +524,4 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
     }
   }
-
-  private function removeRecurringToken(array $message): void {
-    \CRM_SmashPig_ContextWrapper::createContext('donation_queue_process_message', $message['gateway']);
-    $provider = PaymentProviderFactory::getProviderForMethod(
-      $message['payment_method']
-    );
-    // todo: need to add this deleteRecurringPaymentToken function for other payment gateways if we pre tokenized for recurring
-    if ($provider instanceof IDeleteRecurringPaymentTokenProvider) {
-      // handle remove recurring token for on-time donor with post monthly convert
-      \Civi::log('wmf')->notice('decline-recurring:' . $message['gateway'] . ' ' . $message['payment_method'] . ': decline recurring with order id ' . $message['order_id']);
-      $result = $provider->deleteRecurringPaymentToken($message);
-      $logMessage = "decline-recurring: For order id: {$message['order_id']}, delete recurring payment token with status " . ($result ? 'success' : 'failed');
-      \Civi::log('wmf')->info($logMessage);
-    }
-  }
-
 }
