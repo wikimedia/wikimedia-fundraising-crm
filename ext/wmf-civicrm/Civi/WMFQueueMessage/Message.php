@@ -1014,13 +1014,13 @@ class Message {
       // Endowment gifts put endowment in the medium...
       || ($this->isEndowmentGift() && str_starts_with($utmSource, 'B'))
     ) {
+      if (str_contains($utmSource, '_dsk_')) {
+        return 'Desktop Banner';
+      }
       if (str_contains($utmSource, '_m_')
         || str_contains($utmSource, 'mob')
       ) {
         return 'Mobile Banner';
-      }
-      if (str_contains($utmSource, 'dsk')) {
-        return 'Desktop Banner';
       }
       return 'Other Banner';
     }
