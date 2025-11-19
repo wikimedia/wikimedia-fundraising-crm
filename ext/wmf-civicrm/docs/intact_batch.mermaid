@@ -1,0 +1,12 @@
+flowchart
+  A[Start<br>Scan for batches in total_verified state] --> B{All currency<br>batches verified for that batch?}
+  B -- No --> C[Wait for<br>other batches]
+  B -- Yes --> D[Generate Intact<br>journal entries]
+
+  D --> E{Journal totals<br>match<br>batch totals?}
+  E -- No --> F[Do not upload<br>and alert fr-tech]
+  E -- Yes --> G[Upload to Intact<br>via CSV or API]
+
+  G --> H[Archive journal<br>output]
+  F --> H
+  H --> I[End]
