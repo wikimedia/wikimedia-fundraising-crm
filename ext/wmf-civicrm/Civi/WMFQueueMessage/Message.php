@@ -779,6 +779,11 @@ class Message {
       }
       return NULL;
     }
+    if ($contactID && !empty($this->message['checksum'])) {
+      if (!\CRM_Contact_BAO_Contact_Utils::validChecksum($contactID, $this->message['checksum'])) {
+        return NULL;
+      }
+    }
     return $contactID;
   }
 

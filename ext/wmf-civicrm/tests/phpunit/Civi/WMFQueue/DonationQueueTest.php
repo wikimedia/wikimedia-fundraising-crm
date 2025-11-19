@@ -646,6 +646,79 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertNotEquals($msg['street_address'], $address['street_address']);
   }
 
+  public function testImportGoodChecksum(): void {
+    $email = 'boo-boo' . mt_rand() . '@example.org';
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'email_primary.email' => $email,
+      'address_primary.country_id.iso_code' => 'FR',
+      'address_primary.street_address' => '777 Trompe L\'Oeil Boulevard',
+    ], 'existing');
+
+    $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($existingContact['id']);
+    $msg = [
+      'contact_id' => $existingContact['id'],
+      'first_name' => 'Lex',
+      'checksum' => $checksum,
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => $email,
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertEquals($existingContact['id'], $contribution['contact_id']);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $existingContact['id'])
+      ->execute()->single();
+    $this->assertEquals($msg['street_address'], $address['street_address']);
+  }
+
+  public function testImportBadChecksum(): void {
+    $email = 'boo-boo' . mt_rand() . '@example.org';
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'email_primary.email' => $email,
+      'address_primary.country_id.iso_code' => 'FR',
+      'address_primary.street_address' => '777 Trompe L\'Oeil Boulevard',
+    ], 'existing');
+
+    $msg = [
+      'contact_id' => $existingContact['id'],
+      'first_name' => 'Lex',
+      'checksum' => 'NotAProperChecksum',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => $email,
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
+    $this->assertNotEquals($existingContact['id'], $contribution['contact_id']);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $existingContact['id'])
+      ->execute()->single();
+    $this->assertNotEquals($msg['street_address'], $address['street_address']);
+  }
+
   /**
    * @throws \CRM_Core_Exception
    */
