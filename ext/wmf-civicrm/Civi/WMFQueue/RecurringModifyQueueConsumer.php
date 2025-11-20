@@ -21,6 +21,8 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
   public const RECURRING_PAUSED_ACTIVITY_TYPE_NAME = 'Recurring Paused';
 
+  public const RECURRING_ANNUAL_CONVERSION_ACTIVITY_TYPE_NAME = 'Recurring Annual Conversion';
+
   public const RECURRING_CANCELLED_ACTIVITY_TYPE_NAME = 'Cancel Recurring Contribution';
 
   /**
@@ -45,6 +47,10 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     }
     if ($messageObject->isDowngrade()) {
       $this->downgradeRecurAmount($messageObject, $message);
+      return;
+    }
+    if ($messageObject->isAnnualConversion()) {
+      $this->annualConversion($messageObject, $message);
       return;
     }
     if ($messageObject->isPaused()) {
@@ -87,6 +93,58 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       }
     }
     $createCall->execute();
+  }
+
+  /**
+   * Annual conversion recur record
+   *
+   * Completes the process of converting the recur from monthly to yearly
+   *
+   * @param RecurringModifyMessage $message
+   * @param array $msg
+   *
+   * @throws \CRM_Core_Exception
+   * @throws ExchangeRatesException
+   */
+  protected function annualConversion(RecurringModifyMessage $message, array $msg): void {
+    $amountDetails = [
+      'next_sched_contribution_date' => $msg['next_sched_contribution_date'],
+      'new_annual_amount' => $msg['amount'],
+      'new_annual_amount_in_usd' => $message->getSettledModifiedAmountRounded(),
+      'native_currency' => $message->getModifiedCurrency(),
+      'native_original_amount' => $message->getOriginalExistingAmountRounded(),
+      'usd_original_amount' => $message->getSettledExistingAmountRounded(),
+    ];
+    $originalAmountAnnually = $amountDetails['native_original_amount'] * 12;
+    $usdOriginalAmountAnnually = $amountDetails['usd_original_amount'] * 12;
+    if ($originalAmountAnnually === $amountDetails['new_annual_amount']) {
+      $amountDetails['keep_same_amount_annually'] = true;
+    } else if ($amountDetails['new_annual_amount'] > $originalAmountAnnually) {
+      $amountDetails['native_amount_added'] = $amountDetails['new_annual_amount'] - $originalAmountAnnually;
+      $amountDetails['usd_amount_added'] = $amountDetails['new_annual_amount_in_usd'] - $usdOriginalAmountAnnually;
+    } else {
+      $amountDetails['native_amount_removed'] = $originalAmountAnnually - $amountDetails['new_annual_amount'];
+      $amountDetails['usd_amount_removed'] = $usdOriginalAmountAnnually - $amountDetails['new_annual_amount_in_usd'];
+    }
+
+    $activityParams = [
+        'subject' => "Convert to annual recurring with amount " . $message->getModifiedAmountRounded() . ' ' . $message->getModifiedCurrency(),
+        'contact_id' => $message->getExistingContributionRecurValue('contact_id'),
+        'contribution_recur_id' => $message->getContributionRecurID(),
+        'activity_type_id:name' => self::RECURRING_ANNUAL_CONVERSION_ACTIVITY_TYPE_NAME,
+      ] + $message->getActivityTracking();
+
+    ContributionRecur::update(FALSE)
+      ->addValue('next_sched_contribution_date', $amountDetails['next_sched_contribution_date'])
+      ->addValue('amount', $amountDetails['new_annual_amount'])
+      ->addValue('frequency_unit', 'year')
+      ->addWhere(
+      'id',
+      '=',
+      $activityParams['contribution_recur_id']
+    )->execute();
+
+    $this->createRecurringActivity(json_encode($amountDetails), $activityParams);
   }
 
   /**
