@@ -24,6 +24,7 @@ use League\Csv\Reader;
  * @method null|Client getClient()
  * @method float getTimeout()
  * @method $this setTimeout(float $timeout)
+ * @method $this setUploadAction(string $action)
  *
  * @package Civi\Api4
  */
@@ -58,6 +59,15 @@ class Upload extends AbstractAction {
    * @var string
    */
   protected string $mappingFile = '';
+
+  /**
+   * Upload action.
+   *
+   * By default we 'save' - ie create if not exists, update if it does.
+   *
+   * @var string 'create'|'update'|'save'|'opt_out'
+   */
+  protected string $uploadAction = 'save';
 
   /**
    * Timeout.
@@ -149,7 +159,7 @@ class Upload extends AbstractAction {
     $this->mappingFile = $temporaryDirectory. '/' . str_replace('.csv', '.xml', basename($this->getCsvFile()));
     $file = fopen($this->mappingFile, 'wb');
     $isConsent = in_array('CONSENT_STATUS_CODE', $headers);
-    $action = 'ADD_AND_UPDATE';
+    $action = $this->getMappedUploadAction();
     $isPhoneUpdate = !in_array('email', $headers);
     $syncField = ($isPhoneUpdate ? 'mobile_phone' : 'EMAIL');
     $syncFieldXML = '<SYNC_FIELDS>
@@ -268,6 +278,19 @@ class Upload extends AbstractAction {
       "The csv file '$csvFile' is not in one of the allowed folders. " .
       'Please check omnimail_allowed_upload_folders in CiviCRM settings'
     );
+  }
+
+  /**
+   * @return string
+   */
+  public function getMappedUploadAction(): string {
+    $options = [
+      'save' => 'ADD_AND_UPDATE',
+      'create' => 'ADD_ONLY',
+      'update' => 'UPDATE_ONLY',
+      'opt_out' => 'OPT_OUT',
+    ];
+    return $options[$this->uploadAction];
   }
 
 }

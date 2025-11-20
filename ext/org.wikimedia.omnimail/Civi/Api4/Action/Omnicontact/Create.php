@@ -127,6 +127,12 @@ class Create extends AbstractAction {
         'description' => E::ts('Snooze End Date'),
         'data_type' => 'Datetime',
       ],
+      [
+        'name' => 'is_opt_out',
+        'required' => FALSE,
+        'description' => E::ts('Is Opt Out'),
+        'data_type' => 'Boolean',
+      ],
     ];
   }
 

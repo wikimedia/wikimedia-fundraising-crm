@@ -89,6 +89,9 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
     if (!empty($values['is_orphan'])) {
       $fields['is_orphan'] = 'Yes';
     }
+    if (isset($values['is_opt_out'])) {
+      $fields['OPT_OUT'] = $values['is_opt_out'] ? 'true' : 'false';
+    }
     return $fields;
   }
 
