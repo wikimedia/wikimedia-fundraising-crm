@@ -11,6 +11,7 @@
   },
   "omnimail_allowed_upload_folders" : [
     "/srv/civi-sites/wmf/ext/org.wikimedia.omnimail/tests/phpunit/Requests/ImportFiles/",
+    "/srv/civi-sites/wmf/private",
     "/tmp/"
   ],
   "symfony_email_dsn" : "smtp://mailcatcher:1025",

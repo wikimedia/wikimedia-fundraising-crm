@@ -760,7 +760,11 @@ class Message {
     if ($this->isDefined('Contact')) {
       return $this->lookup('Contact', 'id');
     }
-    $contactID = !empty($this->message['contact_id']) ? (int) $this->message['contact_id'] : NULL;
+    $contactID = $this->message['contact_id'] ?? NULL;
+    if (!is_numeric($contactID) || !$contactID) {
+      return NULL;
+    }
+    $contactID = (int) $contactID;
     if (!empty($this->message['contact_hash'])) {
       $contact = Contact::get(FALSE)
         ->addWhere('id', '=', $contactID)

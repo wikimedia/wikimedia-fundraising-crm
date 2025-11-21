@@ -3520,6 +3520,35 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Bug: T410566
+   *
+   * Clean up supplemental address 1 data where it is equal to contact display name.
+   * *
+   * @return bool
+   */
+  public function upgrade_4785(): bool {
+    CRM_Core_DAO::executeQuery('CREATE TEMPORARY TABLE addr_to_fix (id INT PRIMARY KEY)');
+    $sql = '
+      INSERT INTO addr_to_fix (id)
+      SELECT a.id
+      FROM civicrm_address a
+      JOIN civicrm_contact c ON a.contact_id = c.id
+      WHERE a.supplemental_address_1 = c.display_name
+        AND a.supplemental_address_1 <> ""
+        AND a.supplemental_address_1 IS NOT NULL
+      ';
+    CRM_Core_DAO::executeQuery($sql);
+    $sql = '
+      UPDATE civicrm_address
+      SET supplemental_address_1 = NULL
+      WHERE id IN (SELECT id FROM addr_to_fix)
+      ';
+    CRM_Core_DAO::executeQuery($sql);
+    CRM_Core_DAO::executeQuery('DROP TABLE addr_to_fix');
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
