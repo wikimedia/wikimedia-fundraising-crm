@@ -735,15 +735,16 @@ WHERE
     if ($externalIdentifiers) {
       // since venmo allow user to update their user_name, we can not use this as single select param,
       // we can probably use venmo_user_id in the future for this dedupe function works for venmo
-      if (empty($externalIdentifiers['External_Identifiers.venmo_user_name'])) {
-        $external_identifier_field = array_key_first($externalIdentifiers);
-        $matches = Contact::get(FALSE)
-          ->addWhere($external_identifier_field, '=', $this->message[$external_identifier_field])
-          ->execute()
-          ->first();
-        if (!empty($matches)) {
-          return $matches;
-        }
+      $external_identifier_field = array_key_first($externalIdentifiers);
+      $contactMatch = Contact::get(FALSE)
+        ->addWhere($external_identifier_field, '=', $this->message[$external_identifier_field]);
+      if (!empty($externalIdentifiers['External_Identifiers.venmo_user_name'])) {
+        // venmo_user_id can be updated manually, so dedupe with double check email
+        $contactMatch->addWhere('email_primary.email', '=', $msg['email']);
+      }
+      $matches = $contactMatch->execute()->first();
+      if (!empty($matches)) {
+        return $matches;
       }
     }
 
@@ -876,7 +877,9 @@ WHERE
       $this->isLowConfidenceNameSource === NULL &&
       !empty($this->getMessage()['payment_method'])
     ) {
-      $this->isLowConfidenceNameSource = $this->getMessage()['payment_method'] === 'apple';
+      // those 3rd party contact might have their own name, opt out name check for dedupe if external identifier matched
+      $paymentMethodsReturnLowConfidenceName = ['apple', 'google', 'amazon', 'venmo', 'paypal'];
+      $this->isLowConfidenceNameSource = in_array(strtolower($this->getMessage()['payment_method']), $paymentMethodsReturnLowConfidenceName);
     }
     else {
       // If contribution recur ID is populated we are not dealing with something they just entered on

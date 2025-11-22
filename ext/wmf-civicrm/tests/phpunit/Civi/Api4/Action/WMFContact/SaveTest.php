@@ -62,8 +62,6 @@ class SaveTest extends TestCase {
     $oldContactId = WMFContact::save(FALSE)->setMessage($initialDetails->normalize())->execute()->first()['id'];
 
     $newDetails = new RecurringModifyMessage(array_merge($initialDetails->normalize(), [
-      'id' => $oldContactId,
-      'contact_id' => $oldContactId,
       'gateway' => 'fundraiseup',
       'external_identifier' => $fundraiseup_id,
     ]));
@@ -120,4 +118,54 @@ class SaveTest extends TestCase {
     $this->assertEquals($new_first_name, $contact[0]['first_name']);
   }
 
+  public function testVenmoDiffNameDedupe(): void {
+    // Create a contact with email
+    $donationMessage = new RecurDonationMessage([
+      'first_name' => 'Venmo',
+      'last_name' => 'Test',
+      'nick_name' => '',
+      'email' => 'aaa@aa.com',
+      'gateway' => 'braintree',
+      'external_identifier' => '@venmojoe123',
+      'payment_method' => 'venmo',
+      'country' => 'US',
+      'street_address' => '',
+      'city' => '',
+      'street_number' => '',
+      'postal_code' => '',
+      'state_province' => '',
+    ]);
+    WMFContact::save(FALSE)->setMessage($donationMessage->normalize())->execute();
+    // Verify this contact is unique
+    $contacts = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', 'aaa@aa.com')
+      ->addSelect('id')
+      ->execute();
+    $this->assertCount(1, $contacts);
+    // Consume a donation message with the same email
+    $anotherDonationMessage = new RecurDonationMessage([
+      'first_name' => 'diff-firstname',
+      'last_name' => 'Test',
+      'nick_name' => '',
+      'email' => 'aaa@aa.com',
+      'gateway' => 'braintree',
+      'external_identifier' => '@venmojoe123',
+      'payment_method' => 'venmo',
+      'country' => 'US',
+      'street_address' => '',
+      'city' => '',
+      'street_number' => '',
+      'postal_code' => '',
+      'state_province' => '',
+    ]);
+    WMFContact::save(FALSE)->setMessage($anotherDonationMessage->normalize())->execute();
+    $afterContacts = Contact::get(FALSE)
+      ->addSelect('id', 'External_Identifiers.venmo_user_name', 'email_primary.email')
+      ->addWhere('External_Identifiers.venmo_user_name', '=', '@venmojoe123')
+      ->execute();
+    // Verify that no new contact was created since the email matches
+    $this->assertCount(1, $afterContacts);
+    $this->assertEquals('@venmojoe123', $afterContacts[0]['External_Identifiers.venmo_user_name']);
+    $this->assertEquals($contacts[0]['id'], $afterContacts[0]['id']);
+  }
 }
