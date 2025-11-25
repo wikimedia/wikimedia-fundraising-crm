@@ -37,10 +37,11 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
     // check count.
     $result = \CRM_Core_DAO::executeQuery(
       "SELECT count(*) as count, MAX(id) as max_contact_id FROM
+       (SELECT id FROM
       civicrm_contact WHERE modified_date BETWEEN '{$startDateTime}' AND '{$endDateTime}'
       AND id > $minimumContactID
       ORDER BY id
-      LIMIT $limit
+      LIMIT $limit) as ids
       "
     )->fetchAll()[0];
 
