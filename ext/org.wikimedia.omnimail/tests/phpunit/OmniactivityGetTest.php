@@ -109,12 +109,40 @@ class OmniactivityGetTest extends OmnimailBaseTestClass {
   }
 
   /**
+   * Test that Legacy Giving Signup form submissions are skipped.
+   *
+   * Before the fix, we'd get a CRM_Core_Exception:
+   * - omni-mystery : action "form", action name "Form", action URL name "Legacy Giving Signup (Wiki domain)"
+   *
+   * @see https://phabricator.wikimedia.org/T411011
+   * @throws \CRM_Core_Exception
+   */
+  public function testLegacyGivingSignupFormIsSkipped(): void {
+    $result = Omniactivity::get(FALSE)
+      ->setClient($this->getGuzzleClient())
+      ->setDatabaseID(345)
+      ->setStart('2024-12-28')
+      ->setEnd('2024-12-29')
+      ->execute();
+
+    // The CSV fixture contains one Legacy Giving Signup form action that should be skipped
+    // We expect to get results without throwing an omni-mystery exception
+    $this->assertGreaterThan(0, $result->count(), 'Should return at least one valid activity');
+
+    // Verify that the Legacy Giving Signup form was not included in the results
+    foreach ($result as $activity) {
+      $this->assertNotEquals('Legacy Giving Signup (Wiki domain)', $activity['action_url_name'],
+        'Legacy Giving Signup form should have been skipped');
+    }
+  }
+
+  /**
    * Contact IDs used in the test.
    *
    * @return array
    */
   public function usedContactIDs(): array {
-    return [12, 15, 56, 57];
+    return [12, 15, 56, 57, 99];
   }
 
 }
