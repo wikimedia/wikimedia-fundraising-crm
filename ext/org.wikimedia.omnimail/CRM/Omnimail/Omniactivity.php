@@ -80,6 +80,9 @@ class CRM_Omnimail_Omniactivity extends CRM_Omnimail_Omnimail {
             // Note there seem to be 2 types of form actions too....
             || (($recipient->getRecipientActionName() === 'Form' || $recipient->getRecipientAction() === 'form')
               && str_starts_with($recipient->getRecipientActionUrlName(), 'WMF Unsubscribe'))
+            // Skip Legacy Giving Signup
+            || (($recipient->getRecipientActionName() === 'Form' || $recipient->getRecipientAction() === 'form')
+              && str_starts_with($recipient->getRecipientActionUrlName(), 'Legacy Giving Signup'))
           ) {
             $this->skippedRows++;
             continue;
