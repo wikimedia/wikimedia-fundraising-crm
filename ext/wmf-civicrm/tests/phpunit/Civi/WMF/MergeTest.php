@@ -6,6 +6,7 @@ use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\CustomField;
 use Civi\Api4\Email;
+use Civi\Api4\LocationType;
 use Civi\Api4\OptionValue;
 use Civi\Test;
 use Civi\Test\Api3TestTrait;
@@ -1099,6 +1100,104 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
       ],
     ]);
     $this->assertEquals('Duck Manor', $contact['values'][$toKeepID]['street_address']);
+  }
+
+  /**
+   * Tests tests do not crash when resolving addresses with non-contiguous blocks.
+   *
+   * The blocks are indexed from 0 and do not reflect location_type_id. In this scenario
+   * we are looking at conflicts in blocks 0 and 2 but not 1 (by virtue of the order of addresses the contacts
+   * have.)
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testAddressCrash(): void {
+    $toKeepID = $this->breedDuck();
+    $toRemoveID = $this->breedDuck();
+    Address::create(FALSE)
+      ->setValues([
+        'contact_id' => $toKeepID,
+        'location_type_id:name' => 'Home',
+        "is_primary" => TRUE,
+        "street_address" => "345 6th Ave",
+        "city" => "Brooklyn",
+        "state_province_id" => "1031",
+        "postal_code" => "11228",
+        "country_id" => "1228",
+        "manual_geo_code" => "0",
+        "timezone" => "UTC-5",
+      ])
+      ->execute();
+
+    Address::create(FALSE)
+      ->setValues([
+        'contact_id' => $toKeepID,
+        'location_type_id:name' => 'Mailing',
+        "street_address" => "1234 4th Avenue, #2F",
+        "city" => "Schenectady",
+        "state_province_id" => "1031",
+        "postal_code" => "12345",
+        "country_id" => "1228",
+        "manual_geo_code" => "0",
+      ])
+      ->execute();
+      Address::create(FALSE)
+        ->setValues([
+          "contact_id" => $toRemoveID,
+          'location_type_id:name' => "Other",
+          "street_address" => "1234 4th Avenue, #2F",
+          "city" => "SCHENECTADY",
+          "state_province_id" => "1031",
+          "postal_code" => "12345",
+          "country_id" => "1228",
+          "manual_geo_code" => "0",
+      ])
+      ->execute();
+
+    Address::create(FALSE)
+      ->setValues([
+        "contact_id" => $toRemoveID,
+        "location_type_id:name" => "Home",
+        "is_primary" => TRUE,
+        "street_address" => "345 6th Ave",
+        "city" => "Brooklyn",
+        "state_province_id" => "1031",
+        "postal_code_suffix" => "9999",
+        "postal_code" => "11228",
+        "country_id" => "1228",
+        "manual_geo_code" => "0",
+        "timezone" => "UTC-5",
+      ])
+      ->execute();
+    Address::create(FALSE)
+      ->setValues([
+        "contact_id" => $toRemoveID,
+        "location_type_id:name" => "Mailing",
+        "is_primary" => "0",
+        "is_billing" => "0",
+        "street_address" => "123 4th Avenue, #2F",
+        "city" => "Schenectady",
+        "state_province_id" => "1031",
+        "postal_code_suffix" => "1234",
+        "postal_code" => "12345",
+        "country_id" => "1228",
+        "manual_geo_code" => "0"
+      ])
+      ->execute();
+
+    $this->callAPISuccess('Contact', 'merge', [
+      'to_keep_id' => $toKeepID,
+      'to_remove_id' => $toRemoveID,
+      'mode'  => 'safe',
+    ]);
+
+    $addresses = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $toKeepID)
+      ->addSelect('*', 'location_type_id:name')
+      ->execute()->indexBy('location_type_id:name');
+    $this->assertEquals(9999, $addresses['Home']['postal_code_suffix']);
+    $this->assertEquals(1234, $addresses['Mailing']['postal_code_suffix']);
   }
 
   /**
