@@ -30,11 +30,53 @@ use Civi\Api4\Generic\Result;
  * @method $this setStartDateTime(string $startDateTime)
  */
 class AddDedupeTask extends AbstractAction {
+
+  /**
+   * Increment as a string.
+   *
+   * @default 60 minutes
+   *
+   * @var string
+   */
   protected string $increment = '60 minutes';
+
+  /**
+   * Start Date Time in strtotime format.
+   *
+   * @var string
+   */
   protected string $startDateTime = '';
+
+  /**
+   * Batch limit.
+   *
+   * Limit of contacts to attempt to dedupe each run.
+   *
+   * @default 100
+   *
+   * @var int
+   */
   protected int $batchLimit = 100;
+
+  /**
+   * Group ID.
+   *
+   * @var int|null
+   */
   protected ?int $groupID = NULL;
+
+  /**
+   * Rule Group ID.
+   *
+   * @var int|null
+   */
   protected ?int $ruleGroupID = NULL;
+
+  /**
+   * Minimum contact ID to act on.
+   *
+   * @var int|null
+   */
   protected ?int $minimumContactID = NULL;
 
   public function _run(Result $result) {
