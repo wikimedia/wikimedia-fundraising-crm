@@ -229,7 +229,6 @@ return [
   'deduper_resolver_custom_groups_to_skip' => [
     'name' => 'deduper_resolver_custom_groups_to_skip',
     'type' => 'Array',
-    'serialize' => CRM_Core_DAO::SERIALIZE_JSON,
     'is_domain' => 1,
     'is_contact' => 0,
     'description' => E::ts('Custom tables that should be completely ignored (generally calculated fields such as summary fields)'),
