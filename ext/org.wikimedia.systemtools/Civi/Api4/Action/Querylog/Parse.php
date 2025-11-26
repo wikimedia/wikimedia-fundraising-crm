@@ -52,19 +52,19 @@ class Parse extends AbstractAction {
     $currentIndex = 0;
     foreach ($lines as $index => $line) {
       $line = trim($line);
-      $date = substr($line,0,15);
-      if (preg_match("/^[A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/",$date)) {
+      $date = substr($line,0,19);
+      if (preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/",$date)) {
         // We have a new log line.
         $date = date('Y-m-d H:i:s', strtotime($date));
-        $type = substr($line, 18, 5) === 'debug' ? 'debug' : 'info';
-        $isQuery = substr($line, 24, 9) === ' $Query =';
+        $type = substr($line, 27, 5) === 'debug' ? 'debug' : 'info';
+        $isQuery = substr($line, 33, 9) === ' $Query =';
         if ($isQuery) {
           if (!empty($parsed[$currentIndex])) {
             // Starting parsing a new query - write the previous one, if exists.
             $writer->insertOne($parsed[$currentIndex]);
           }
          // this is the low hanging fruit of data sanitising - get rid of emails.
-          $query = preg_replace('/([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})/', $currentIndex . '@example.com', substr($line, 34));
+          $query = preg_replace('/([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})/', $currentIndex . '@example.com', substr($line, 43));
           $parsed[$index] = [
             'timestamp' => $date,
             'query' => $query,
