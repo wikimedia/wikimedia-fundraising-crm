@@ -92,7 +92,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
               'email' => 'donor@gmail.com',
               'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2szNmZ4Y3A',
               'invoice_id' => '35.1',
-              'phone' => NULL,
+              'phone' => 1234,
               'first_name' => 'donor',
               'last_name' => 'test',
               'payment_method' => 'paypal',
@@ -167,13 +167,88 @@ class BraintreeAuditTest extends BaseAuditTestCase {
 
   /**
    * @dataProvider auditTestProvider
+   * @throws \CRM_Core_Exception
    */
-  public function testParseFiles($path, $expectedMessages) {
+  public function testParseFiles(string $path, array $expectedMessages): void {
     \Civi::settings()->set('wmf_audit_directory_audit', $path);
-
     $this->runAuditor();
-
     $this->assertMessages($expectedMessages);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testPhoneIsSaved(): void {
+     $this->runAuditBatch('donation', 'settlement_batch_report_2022-06-28.json', 'braintree');
+     $contribution = Contribution::get(FALSE)
+       ->addSelect('contact_id.phone_primary.phone')
+       ->addSelect('contact_id.phone_primary.phone_data.phone_source')
+       ->addSelect('contact_id.phone_primary.location_type_id')
+       ->addWhere('contribution_extra.gateway_txn_id', '=', 'dHJhbnNhY3Rpb25fa2szNmZ4Y3A')
+       ->execute()->first();
+     $this->assertEquals('Venmo', $contribution['contact_id.phone_primary.phone_data.phone_source']);
+  }
+
+  /**
+   * @param string $directory
+   * @param string $fileName
+   * @return array
+   */
+  public function getRows(string $directory, string $fileName): array {
+    $this->setAuditDirectory($directory);
+    // First let's have a process to create some TransactionLog entries.
+    $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR . $fileName;
+    try {
+      $rows = json_decode(file_get_contents($file, 'r'), true, 512, JSON_THROW_ON_ERROR);
+    }
+    catch (\JsonException $e) {
+      $this->fail('Failed to read json' . $file . ': ' . $e->getMessage());
+    }
+    return $rows;
+  }
+
+  public function createTransactionLog(array $row): void {
+    $trackingID = $row['contribution_tracking_id'];
+    $utmSource = "B2526_082914_esLA_m_p1_lg_twn_twin1_optIn0.no-LP.apple_amex";
+    $this->ids['ContributionTracking'][] = ContributionTracking::save(FALSE)
+      ->addRecord([
+        'id' => $trackingID,
+        'utm_source' => $utmSource,
+      ])
+      ->execute()->first()['id'];
+    $gateway = $this->gateway;
+    $gatewayTxnID = $row['gateway_txn_id'];
+    $this->createTestEntity('TransactionLog', [
+      'date' => $row['date'],
+      'gateway' => $gateway,
+      'gateway_account' => 'WikimediaDonations',
+      'order_id' => $trackingID . '.1',
+      'gateway_txn_id' => $gatewayTxnID,
+      'message' => [
+        "gateway_txn_id" => $gatewayTxnID,
+        "response" => FALSE,
+        "gateway_account" => "WikimediaDonations",
+        "fee" => 0,
+        "gross" => $row['gross'],
+        "backend_processor" => $gateway,
+        "backend_processor_txn_id" => NULL,
+        "contribution_tracking_id" => $trackingID,
+        "payment_orchestrator_reconciliation_id" => NULL,
+        "currency" => $row['currency'],
+        "order_id" => $trackingID . '.1',
+        "payment_method" => "apple",
+        "payment_submethod" => "amex",
+        "email" => $gatewayTxnID . "@wikimedia.org",
+        "first_name" => $gatewayTxnID,
+        "gateway" => $gateway,
+        "last_name" => "Mouse",
+        "user_ip" => "169.255.255.255",
+        "utm_campaign" => "WMF_FR_C2526_esLA_m_0805",
+        "utm_medium" => "sitenotice",
+        "utm_source" => $utmSource,
+        "date" => strtotime($row['date']),
+      ]
+    ], $gatewayTxnID);
   }
 
   /**

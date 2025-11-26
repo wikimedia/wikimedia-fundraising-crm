@@ -16,8 +16,6 @@ use SmashPig\Core\Helpers\Base62Helper;
  * @group WmfAudit
  */
 class AdyenAuditTest extends BaseAuditTestCase {
-  protected $idForRefundTest;
-
   protected string $gateway = 'adyen';
 
   public function setUp(): void {
@@ -841,60 +839,6 @@ class AdyenAuditTest extends BaseAuditTestCase {
         "date" => strtotime($row['Creation Date']),
       ]
     ], $gatewayTxnID);
-  }
-
-  /**
-   * @param string $directory
-   * @param string $fileName
-   * @return array
-   */
-  public function prepareForAuditProcessing(string $directory, string $fileName): array {
-    $this->setAuditDirectory($directory);
-    // First let's have a process to create some TransactionLog entries.
-    $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR . $fileName;
-    try {
-      $csv = Reader::createFromPath($file, 'r');
-      $csv->setHeaderOffset(0);
-    }
-    catch (Exception $e) {
-      $this->fail('Failed to read csv' . $file . ': ' . $e->getMessage());
-    }
-    foreach ($csv as $row) {
-      $this->createTransactionLog($row);
-    }
-    return $row;
-  }
-
-  /**
-   * @param string $directory
-   * @param string $fileName
-   * @param string $batchName
-   * @return array
-   *
-   * @throws \CRM_Core_Exception
-   */
-  public function runAuditBatch(string $directory, string $fileName, string $batchName = ''): array {
-    $this->prepareForAuditProcessing($directory, $fileName);
-
-    $this->runAuditor();
-    $this->processDonationsQueue();
-    $this->processContributionTrackingQueue();
-    $this->processRefundQueue();
-    $this->processSettleQueue();
-
-    $this->processContributionTrackingQueue();
-    $auditResult['batch'] = $this->runAuditor();
-    if ($batchName) {
-      $auditResult['validate'] = WMFAudit::generateBatch(FALSE)
-        ->setBatchPrefix($batchName)
-        ->setIsOutputCsv(TRUE)
-        ->execute();
-
-      foreach ($auditResult['validate'] as $row) {
-        $this->assertEquals(0, array_sum($row['validation']), print_r(array_filter($row), TRUE));
-      }
-    }
-    return (array) $auditResult;
   }
 
   /**

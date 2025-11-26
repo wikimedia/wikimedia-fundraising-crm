@@ -53,6 +53,7 @@ class AuditMessage extends DonationMessage {
    *    first_name: string,
    *    last_name: string,
    *    email: string,
+   *    phone: string,
    *    }
    */
   protected array $message;
@@ -166,6 +167,7 @@ class AuditMessage extends DonationMessage {
    *   payment_method: string,
    *   payment_submethod: string,
    *   date: int,
+   *   phone: string,
    * }
    * @throws \CRM_Core_Exception
    */
