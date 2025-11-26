@@ -91,7 +91,7 @@ function contactlayout_civicrm_pageRun(&$page) {
           ->addStyleFile('org.civicrm.contactlayout', 'css/contact-summary-layout.css');
       }
       if (!empty($layout['tabs']) || $defaultTabs) {
-        $tabs = array_column($page->get_template_vars('allTabs'), NULL, 'id');
+        $tabs = array_column($page->getTemplateVars('allTabs'), NULL, 'id');
         foreach ($layout['tabs'] ?? $defaultTabs as $weight => $tab) {
           $id = $tab['id'];
           if (empty($tab['is_active'])) {
