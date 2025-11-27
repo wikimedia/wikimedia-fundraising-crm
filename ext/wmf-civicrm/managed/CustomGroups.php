@@ -2225,6 +2225,7 @@ function _wmf_civicrm_get_phone_data_fields(): array {
         'Donor' => 'Donor Supplied',
         'Paypal' => 'PayPal Account',
         'FundraiseUp' => 'Fundraise Up',
+        'Venmo' => 'Venmo',
       ],
     ],
     'recipient_id' => [
