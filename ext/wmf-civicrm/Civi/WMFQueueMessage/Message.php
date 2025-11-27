@@ -1093,6 +1093,9 @@ class Message {
       if ($this->isBraintreeVenmo()) {
         $phoneFields['phone_primary.phone_data.phone_source'] = 'Venmo';
       }
+      if ($this->isPaypal()) {
+        $phoneFields['phone_primary.phone_data.phone_source'] = 'Paypal';
+      }
     }
     // The recipient ID is a value sent from Acoustic which can be used to look
     // up the actual phone number.
