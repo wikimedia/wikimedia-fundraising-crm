@@ -8,6 +8,8 @@ use Civi\Api4\ExchangeRate;
 use Civi\Api4\WMFQueue;
 use Civi\ExchangeRates\ExchangeRatesException;
 use CRM_ExchangeRates_BAO_ExchangeRate;
+use PHPQueue\Exception\JobNotFoundException;
+use SmashPig\Core\ConfigurationKeyException;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
@@ -340,6 +342,20 @@ trait WMFQueueTrait {
     }
     catch (\CRM_Core_Exception $e) {
       $this->fail('failed to loop up value');
+    }
+  }
+
+  /**
+   * @param string $queueName
+   * @return void
+     */
+  public function assertQueueEmpty(string $queueName): void {
+    try {
+      $message = QueueWrapper::getQueue($queueName)->pop();
+      $this->assertNull($message);
+    }
+    catch (\Exception $e) {
+      $this->fail($e->getMessage());
     }
   }
 

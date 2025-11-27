@@ -4,6 +4,7 @@ namespace Civi\WMFAudit;
 
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
+use SmashPig\Core\DataStores\QueueWrapper;
 
 /**
  * @group Braintree
@@ -91,6 +92,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
               'settled_date' => NULL,
               'email' => 'donor@gmail.com',
               'gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2szNmZ4Y3A',
+              'audit_file_gateway' => 'braintree',
               'invoice_id' => '35.1',
               'phone' => 1234,
               'first_name' => 'donor',
@@ -106,7 +108,6 @@ class BraintreeAuditTest extends BaseAuditTestCase {
               'recurring' => '',
               'user_ip' => '172.19.0.1',
               'order_id' => '35.1',
-              'audit_file_gateway' => 'braintree',
             ],
           ],
         ],
@@ -174,6 +175,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
     \Civi::settings()->set('wmf_audit_directory_audit', $path);
     $this->runAuditor();
     $this->assertMessages($expectedMessages);
+
   }
 
   /**
@@ -250,6 +252,32 @@ class BraintreeAuditTest extends BaseAuditTestCase {
         "date" => strtotime($row['date']),
       ]
     ], $gatewayTxnID);
+  }
+
+  /**
+   * Test that a gravy transaction is not treated as missing if it exists.
+   *
+   * We can't help that it won't be created at this stage as the gravy ID
+   * we receive in the audit file is not the same as that in the Pending table but
+   * at least if it has been created we can check it is not considered to
+   * be missing
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testExistingGravyIsFound(): void {
+    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Braintree/gravy_donation/');
+    $this->createTestEntity('Contribution', [
+      'trxn_id' => 'BRAINTREE dHJhbnNhY3Rpb25fa2szNmZ4Y3A',
+      'contribution_extra.backend_processor' => 'braintree',
+      'contribution_extra.backend_processor_txn_id' => 'dHJhbnNhY3Rpb25fa2szNmZ4Y3A',
+      'contact_id' => $this->createIndividual(),
+      'total_amount' => 5,
+      'financial_type_id' => 1,
+    ], 'gravy');
+    $this->runAuditor();
+    $queueName = 'donations';
+    $this->assertQueueEmpty($queueName);
   }
 
   /**
