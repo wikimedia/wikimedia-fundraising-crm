@@ -56,6 +56,18 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
       'start_date' => $startDateTime,
       'to_date' => $endDateTime,
     ]);
+    $command = sprintf(
+      "echo '{\"criteria\":{\"where\":[[\"modified_date\",\"BETWEEN\",[\"%s\",\"%s\"]],[\"id\",\"BETWEEN\",[%d,%d]]]}}' | wmf-cv -vv --in=json api Job.process_batch_merge",
+      $startDateTime,
+      $endDateTime,
+      $minimumContactID,
+      $result['max_contact_id']
+    );
+
+    \Civi::log('batch_merge')->debug("To test on the cli use command \n {command}", [
+      'command' => $command
+    ]);
+
 
     $mergeParams = [
       'criteria' => $criteria,
