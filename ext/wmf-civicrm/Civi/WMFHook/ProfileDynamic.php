@@ -19,7 +19,7 @@ class ProfileDynamic {
    */
   public static function pageRun(\CRM_Core_Page $page) {
     if ($page instanceof \CRM_Profile_Page_Dynamic) {
-      $vars = $page->get_template_vars();
+      $vars = $page->getTemplateVars();
       if (isset($vars['profileFields'])) {
         $customFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('all_funds_last_donation_date', 'wmf_donor');
         if (isset($vars['profileFields']['custom_' . $customFieldId])) {
