@@ -203,11 +203,12 @@ function wmf_civicrm_civicrm_preProcess(string $formName, $form) {
  */
 function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
   if (in_array($type, ['form', 'batch'])) {
-    Civi::log('wmf')->debug(
+    Civi::log($type . '_merge')->debug(
       'Deduping contacts {contactKeptID} and {contactDeletedID}. Mode = {mode}', [
       'contactKeptID' => $mainId,
       'contactDeletedID' => $otherId,
       'mode' => $type,
+      'user' => \CRM_Core_Session::singleton()->getLoggedInContactDisplayName(),
     ]);
   }
 }
