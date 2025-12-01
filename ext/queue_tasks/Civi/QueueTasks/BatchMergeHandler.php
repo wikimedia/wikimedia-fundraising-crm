@@ -83,16 +83,28 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
       $mergeParams['rule_group_id'] = $data['rule_group_id'];
     }
 
-    civicrm_api3('Job', 'process_batch_merge', $mergeParams);
-    /** @noinspection PhpUndefinedMethodInspection */
-    Queue::addDedupeTask(FALSE)
-      ->setStartDateTime($isLimitApplied ? $startDateTime : $endDateTime)
-      ->setGroupID($data['group_id'] ?? NULL)
-      ->setRuleGroupID($data['rule_group_id'] ?? NULL)
-      ->setMinimumContactID($isLimitApplied ? $result['max_contact_id'] : NULL)
-      ->setIncrement($data['increment'])
-      ->setBatchLimit($data['batch_limit'])
-      ->execute();
+    try {
+      civicrm_api3('Job', 'process_batch_merge', $mergeParams);
+    }
+    catch (\Exception $e) {
+      \Civi::log('batch_merge')->warning('Batch merge failed: ' . $e->getMessage(), ['exception' => $e]);
+      throw $e;
+    }
+    try {
+      /** @noinspection PhpUndefinedMethodInspection */
+      Queue::addDedupeTask(FALSE)
+        ->setStartDateTime($isLimitApplied ? $startDateTime : $endDateTime)
+        ->setGroupID($data['group_id'] ?? NULL)
+        ->setRuleGroupID($data['rule_group_id'] ?? NULL)
+        ->setMinimumContactID($isLimitApplied ? $result['max_contact_id'] : NULL)
+        ->setIncrement($data['increment'])
+        ->setBatchLimit($data['batch_limit'])
+        ->execute();
+    }
+    catch (\Exception $e) {
+      \Civi::log('batch_merge')->warning('Requeue failed: ' . $e->getMessage(), ['exception' => $e]);
+      throw $e;
+    }
   }
 
 }
