@@ -30,7 +30,7 @@ class CRM_Deduper_BAO_MergeConflict extends CRM_Deduper_DAO_MergeConflict {
           || ($fieldName === 'on_hold' && !Civi::settings()->get('civimail_multiple_bulk_emails'))
         )
       ) {
-        $prefix = CRM_Utils_Array::value('entity', $fieldSpec) === 'Email' ? E::ts('Email::') : '';
+        $prefix = ($fieldSpec['entity'] ?? NULL) === 'Email' ? E::ts('Email::') : '';
         $booleanFields[$fieldSpec['name']] = $prefix . $fieldSpec['title'];
       }
     }

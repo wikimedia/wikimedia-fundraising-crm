@@ -16,7 +16,7 @@ class CRM_Deduper_BAO_ContactNamePair extends CRM_Deduper_DAO_ContactNamePair {
     $entityName = 'ContactNamePair';
     $hook = empty($params['id']) ? 'create' : 'edit';
 
-    CRM_Utils_Hook::pre($hook, $entityName, CRM_Utils_Array::value('id', $params), $params);
+    CRM_Utils_Hook::pre($hook, $entityName, $params['id'] ?? NULL, $params);
     /* @var self $instance */
     $instance = new $className();
     if (!isset($params['id'])) {

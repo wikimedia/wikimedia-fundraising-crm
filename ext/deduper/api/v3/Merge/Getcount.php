@@ -30,7 +30,7 @@ function _civicrm_api3_merge_getcount_spec(&$spec) {
  * @throws \CRM_Core_Exception
  */
 function civicrm_api3_merge_getcount($params) {
-  $cacheKeyString = CRM_Dedupe_Merger::getMergeCacheKeyString($params['rule_group_id'], CRM_Utils_Array::value('group_id', $params), $params['criteria'], CRM_Utils_Array::value('check_permissions', $params), $params['search_limit']);
+  $cacheKeyString = CRM_Dedupe_Merger::getMergeCacheKeyString($params['rule_group_id'], $params['group_id'] ?? NULL, $params['criteria'], $params['check_permissions'] ?? NULL, $params['search_limit']);
   // @todo - pretty sure these joins are no longer required as we remove from the cache once they have
   // been marked duplicates now.
   return CRM_Core_DAO::singleValueQuery("

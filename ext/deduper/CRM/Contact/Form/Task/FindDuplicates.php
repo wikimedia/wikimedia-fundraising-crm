@@ -61,7 +61,7 @@ class CRM_Contact_Form_Task_FindDuplicates extends CRM_Core_Form {
     $contactIDs = $this->_contactIds;
     if (count($contactIDs) > $limit) {
       $chunked = array_chunk($contactIDs, $limit);
-      CRM_Core_Session::setStatus(ts("Only the first $limit have been selected for deduping"));
+      CRM_Core_Session::setStatus(ts("Only the first %1 have been selected for deduping", [1 => $limit]));
       $contactIDs = $chunked[0];
     }
     $contactType = CRM_Core_DAO::singleValueQuery(
