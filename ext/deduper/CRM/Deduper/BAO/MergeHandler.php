@@ -590,8 +590,8 @@ class CRM_Deduper_BAO_MergeHandler {
    */
   public function setResolvedAddressValue(string $fieldName, string $location, int $block, string $value) {
     $this->locationConflictResolutions[$location][$block][$fieldName] = $value;
-    $mainBlock = &$this->dedupeData['migration_info']['main_details']['location_blocks']['address'][$block];
-    $otherBlock = &$this->dedupeData['migration_info']['other_details']['location_blocks']['address'][$block];
+    $mainBlock = $this->getAddressBlock(TRUE, $block);
+    $otherBlock = $this->getAddressBlock(FALSE, $block);
     unset($this->addressConflictDetails[$block]['fields'][$fieldName]);
 
     if (!empty($this->addressConflictDetails[$block]['fields']['display'])) {
