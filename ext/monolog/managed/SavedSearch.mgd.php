@@ -4,26 +4,17 @@ use CRM_Monolog_ExtensionUtil as E;
 
 // This file declares a managed SavedSearch and SearchDisplay
 
-// Install search display if searchkit is installed.
-if (!civicrm_api3('Extension', 'getcount', [
-  'full_name' => 'org.civicrm.search_kit',
-  'status' => 'installed',
-])) {
-  return [];
-}
-
 return [
   [
-    'name' => 'Monolog configuration',
+    'name' => 'SavedSearch_Monolog_configuration',
     'entity' => 'SavedSearch',
+    'cleanup' => 'always',
     'update' => 'unmodified',
-    'cleanup' => 'unused',
     'params' => [
       'version' => 4,
       'values' => [
         'name' => 'Monolog configuration',
-        'label' => 'Monolog configuration',
-        'description' => E::ts('Configured monolog logging handlers'),
+        'label' => E::ts('Monolog configuration'),
         'api_entity' => 'Monolog',
         'api_params' => [
           'version' => 4,
@@ -39,16 +30,24 @@ return [
             'is_final',
             'is_default',
           ],
-          'orderBy' => ['weight' => 'ASC'],
+          'orderBy' => [
+            'is_active' => 'DESC',
+            'weight' => 'ASC',
+            'is_final' => 'DESC',
+          ],
         ],
+        'description' => E::ts('Configured monolog logging handlers'),
+      ],
+      'match' => [
+        'name',
       ],
     ],
   ],
   [
-    'name' => 'Monolog display',
+    'name' => 'SavedSearch_Monolog_configuration_SearchDisplay_Monolog_configuration_display',
     'entity' => 'SearchDisplay',
+    'cleanup' => 'always',
     'update' => 'unmodified',
-    'cleanup' => 'unused',
     'params' => [
       'version' => 4,
       'values' => [
@@ -56,14 +55,28 @@ return [
         'label' => E::ts('Monolog configuration'),
         'saved_search_id.name' => 'Monolog configuration',
         'type' => 'table',
-        'actions' => TRUE,
-        'acl_bypass' => FALSE,
         'settings' => [
           'limit' => 50,
-          'classes' => ['table', 'table-striped'],
-          'pager' => ['show_count' => TRUE],
+          'classes' => [
+            'table',
+            'table-striped',
+          ],
+          'pager' => [
+            'show_count' => TRUE,
+          ],
           'sort' => [
-            ['weight', 'ASC'],
+            [
+              'is_active',
+              'DESC',
+            ],
+            [
+              'weight',
+              'ASC',
+            ],
+            [
+              'is_final',
+              'DESC',
+            ],
           ],
           'cssRules' => [
             [
@@ -134,6 +147,14 @@ return [
               'dataType' => 'Boolean',
               'type' => 'field',
               'editable' => TRUE,
+              'cssRules' => [
+                [
+                  'bg-warning',
+                  'is_final',
+                  '=',
+                  TRUE,
+                ],
+              ],
             ],
             [
               'key' => 'is_default',
@@ -143,7 +164,12 @@ return [
               'editable' => TRUE,
             ],
           ],
+          'placeholder' => 5,
         ],
+      ],
+      'match' => [
+        'saved_search_id',
+        'name',
       ],
     ],
   ],

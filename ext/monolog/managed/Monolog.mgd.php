@@ -14,7 +14,7 @@ return [
       'checkPermissions' => FALSE,
       'values' => [
         'name' => 'cli_std_out_logger',
-        'type' => 'std_out',
+        'type' => '*',
         'channel' => 'default',
         'is_default' => TRUE,
         'is_active' => TRUE,
@@ -39,7 +39,7 @@ return [
       'values' => [
         'name' => 'default_logger',
         'type' => 'log_file',
-        'channel' => 'default',
+        'channel' => '*',
         'is_default' => TRUE,
         'is_active' => TRUE,
         'is_final' => FALSE,
@@ -89,7 +89,7 @@ return [
       'checkPermissions' => FALSE,
       'values' => [
         'name' => 'firephp',
-        'channel' => 'default',
+        'channel' => '*',
         'description' => E::ts('Expose to developers using firephp (permission dependent)'),
         'type' => 'firephp',
         'is_default' => FALSE,
@@ -112,7 +112,7 @@ return [
       'values' => [
         'name' => 'syslog',
         'description' => E::ts('log to machine syslog'),
-        'channel' => 'default',
+        'channel' => '*',
         'type' => 'syslog',
         'is_default' => FALSE,
         'is_active' => TRUE,

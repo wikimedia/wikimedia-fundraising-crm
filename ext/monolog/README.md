@@ -31,21 +31,12 @@ From 5.38 onwards the use of 'channels' are encouraged - ie
   Civi::log('ipn')->error();
 ```
 
-If the ipn channel has not been defined it will fall back to the default channel.
-This allows the possibility that different logging providers can be
-configured for different channels. Monolog allows one or more logging providers
-to attach to each channel. In each case you need to specify the minimum logging
-severity to deal with and whether the handler is the final handler.
-
-For example if you had decided to log all logging output to a file but
-for fatal errors you wanted them to go to syslog and phpmailer* but not
-to the file you would attach the normal logging handler to the channel
-with an alert level of 'debug' (the lowest possible) and also configure
-configure the syslog and phpmailer* handlers with the minimum alert for
-to 'error' and set whichever has highest weight to be the final.
-
-* - note the phpmailer handler is not included at this stage - I
-  removed it to work through some composer issues.
+- Monologs are configured by channel, falling back to the default channel if non are defined.
+- More than one monolog can be configured per channel
+- Monologs configured to apply to '*' apply to all channels, including the default
+- Monologs have a minimum logging severity. If the severity is lower the monolog will not apply
+- Monologs are applied from the lowest weight (including negative weights) to the highest weight
+- Once a monolog that is set to be the final handler is applied no more will be applied.
 
 ## Configuration
 Out of the box 4 loggers are enabled and attached to the default
@@ -65,6 +56,27 @@ permission AND the login user has a [firephp browser extension](https://firephp.
    in the user's browser.
 4) syslog, active. Configured to miniumum level of 'error' this
 logs to the syslog service
+
+## Configuration example
+
+**Example 1 by error level**
+Requirements
+- errors go to syslog and phpmailer (only)
+- all other errors are logged to a file
+In this scenario you would need 3 handlers
+- phpmailer handler weight = 1, channel '*', minimum_severity = error, is_final = FALSE
+- syslog handler weight = 5, channel '*', minimum_severity = error, is_final = TRUE
+- logfile_handler weight = 10, channel '*', minimum_severity = debug
+
+**Example 2 multichannel**
+Requirements
+- ipn errors logged to syslog (only)
+- all other errors are logged to a file
+In this scenario you would need 3 handlers
+- syslog handler weight = 1, channel 'ipn', minimum_severity = debug, is_final = TRUE
+- logfile_handler weight = 5, channel '*', minimum_severity = debug
+
+In this scenario you would need 2 handlers
 
 
 The extension is licensed under [MIT](LICENSE.txt).
