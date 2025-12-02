@@ -1103,11 +1103,10 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
-   * Tests tests do not crash when resolving addresses with non-contiguous blocks.
+   * Tests tests do not crash when resolving addresses that have different block ids for the same location type.
    *
-   * The blocks are indexed from 0 and do not reflect location_type_id. In this scenario
-   * we are looking at conflicts in blocks 0 and 2 but not 1 (by virtue of the order of addresses the contacts
-   * have.)
+   * The blocks are indexed from 0 per contact and do not reflect location_type_id. In this scenario
+   * we are looking at conflicts in blocks 0/0 and then in blocks 1/2.
    *
    * @return void
    * @throws \CRM_Core_Exception
