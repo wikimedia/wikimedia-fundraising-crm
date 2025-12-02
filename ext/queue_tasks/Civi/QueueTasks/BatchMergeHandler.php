@@ -62,6 +62,7 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
       // Use a zero limit as we have already calculated limits
       // per https://github.com/civicrm/civicrm-core/pull/15185
       'search_limit' => 0,
+      'is_force_new_search' => TRUE,
     ];
 
     if ($data['group_id']) {
