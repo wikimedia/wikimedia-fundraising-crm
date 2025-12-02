@@ -274,6 +274,15 @@ function deduper_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
 
     case 'batch':
     case 'form':
+      if (in_array($type, ['form', 'batch'], TRUE)) {
+        Civi::log($type . '_merge')->debug(
+          'Deduping contacts {contactKeptID} and {contactDeletedID}. Mode = {mode}', [
+          'contactKeptID' => $mainId,
+          'contactDeletedID' => $otherId,
+          'mode' => $type,
+          'user' => \CRM_Core_Session::singleton()->getLoggedInContactDisplayName(),
+        ]);
+      }
       $refs['migration_info']['context'] = $type;
       // Randomise log connection id. This ensures reverts can be done without reverting the whole batch if logging is enabled.
       CRM_Core_DAO::executeQuery('SET @uniqueID = %1', array(
