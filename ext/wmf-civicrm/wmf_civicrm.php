@@ -193,27 +193,6 @@ function wmf_civicrm_civicrm_preProcess(string $formName, $form) {
 }
 
 /**
- * Log the dedupe to our log.
- *
- * @param string $type
- * @param array $refs
- * @param int $mainId
- * @param int $otherId
- * @param array $tables
- */
-function wmf_civicrm_civicrm_merge($type, &$refs, $mainId, $otherId, $tables) {
-  if (in_array($type, ['form', 'batch'])) {
-    Civi::log($type . '_merge')->debug(
-      'Deduping contacts {contactKeptID} and {contactDeletedID}. Mode = {mode}', [
-      'contactKeptID' => $mainId,
-      'contactDeletedID' => $otherId,
-      'mode' => $type,
-      'user' => \CRM_Core_Session::singleton()->getLoggedInContactDisplayName(),
-    ]);
-  }
-}
-
-/**
  * Implementation of hook_civicrm_pre
  *
  * @param string $op
