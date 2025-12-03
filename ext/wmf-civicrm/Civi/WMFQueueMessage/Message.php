@@ -8,6 +8,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\Utils\ReflectionUtils;
+use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use CRM_Wmf_ExtensionUtil as E;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
@@ -842,6 +843,30 @@ class Message {
       ->setTimestamp('@' . ($timestamp ?: $this->getTimestamp()))
       ->execute()
       ->first()['amount'];
+  }
+
+  /**
+   * Get the rate to convert the currency using.
+   *
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function getConversionRate(): float {
+    if (!$this->isExchangeRateConversionRequired()) {
+      return 1;
+    }
+    try {
+      return $this->currencyConvert($this->getOriginalCurrency(), 1, $this->getTimestamp()) / $this->currencyConvert($this->getReportingCurrency(), 1, $this->getTimestamp());
+    }
+    catch (ExchangeRatesException $e) {
+      throw new WMFException(WMFException::INVALID_MESSAGE, "UNKNOWN_CURRENCY: '{$this->getOriginalCurrency()}': " . $e->getMessage());
+    }
+  }
+
+  /**
+   * Are we dealing with a message that had a currency other than our settlement currency.
+   */
+  public function isExchangeRateConversionRequired(): bool {
+    return $this->message['currency'] !== $this->getReportingCurrency();
   }
 
   public function getReportingCurrency() {
