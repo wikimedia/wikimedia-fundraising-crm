@@ -44,7 +44,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *
    * @throws \CRM_Core_Exception
    */
-  public function testGetBooleanFields() {
+  public function testGetBooleanFields(): void {
     $fields = CRM_Deduper_BAO_MergeConflict::getBooleanFields();
     $this->assertTrue(isset($fields['do_not_mail'], $fields['on_hold']));
     $this->assertFalse(isset($fields['contact_type']));
@@ -96,7 +96,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *
    * @dataProvider booleanDataProvider
    */
-  public function testResolveAggressivePreferredContact(bool $isReverse) {
+  public function testResolveAggressivePreferredContact(bool $isReverse): void {
     $this->setSetting('deduper_resolver_field_prefer_preferred_contact', ['source']);
     $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recently_created_contact']);
     $this->createDuplicateDonors([['first_name' => 'Sally'], []]);
@@ -112,11 +112,23 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *
    * @dataProvider booleanDataProvider
    */
-  public function testSafeModeDoesNotOverrideConflict(bool $isReverse) {
+  public function testSafeModeDoesNotOverrideConflict(bool $isReverse): void {
     $this->setSetting('deduper_resolver_field_prefer_preferred_contact', ['source']);
     $this->setSetting('deduper_resolver_preferred_contact_resolution', ['most_recently_created_contact']);
     $this->createDuplicateDonors([['first_name' => 'Sally'], []]);
     $this->doNotDoMerge($isReverse);
+  }
+
+  /**
+   * Test that in trying to merge contacts with email address custom data conflicts does not cause error.
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testEmailHasCustomDataConflict(bool $isReverse): void {
+    $this->createTestEntity('CustomGroup', ['extends' => 'Email', 'name' => 'test_email', 'title' => 'Email test data'], 'test_email');
+    $this->createTestEntity('CustomField', ['custom_group_id:name' => 'test_email', 'name' => 'date', 'label' => 'test email field', 'html_type' => 'Date'], 'test_email');
+    $this->createDuplicateDonors([['email_primary.test_email.date' => '2022-01-01'], ['email_primary.test_email.date' => '2022-01-02']]);
+    $this->doMerge($isReverse);
   }
 
   /**
