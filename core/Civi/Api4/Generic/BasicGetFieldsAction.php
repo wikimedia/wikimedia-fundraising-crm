@@ -227,15 +227,17 @@ class BasicGetFieldsAction extends BasicGetAction {
    */
   public function pseudoconstantOptions(string $optionGroupName) {
     if ($this->getLoadOptions()) {
-      $options = \CRM_Core_OptionValue::getValues(['name' => $optionGroupName]);
-      foreach ($options as &$option) {
-        $option['id'] = $option['value'];
+      $key = __CLASS__ . __FUNCTION__ . $optionGroupName;
+      if (!\Civi::$statics[$key]) {
+        $options = \CRM_Core_OptionValue::getValues( [ 'name' => $optionGroupName ] );
+        foreach ( $options as &$option ) {
+          $option['id'] = $option['value'];
+        }
+        \Civi::$statics[$key] = $options;
       }
+      return \Civi::$statics[$key];
     }
-    else {
-      $options = TRUE;
-    }
-    return $options;
+    return TRUE;
   }
 
   public function fields() {
