@@ -1019,6 +1019,10 @@ class Message {
     return isset($this->message['is_successful_autorescue']) && $this->message['is_successful_autorescue'];
   }
 
+  public function isSmsOptIn(): bool {
+    return isset($this->message['sms_opt_in']) && $this->message['sms_opt_in'];
+  }
+
   public function isGateway(string $gateway): bool {
     return $this->getGateway() === $gateway;
   }
@@ -1195,6 +1199,12 @@ class Message {
       }
       if ($this->isPaypal()) {
         $phoneFields['phone_primary.phone_data.phone_source'] = 'Paypal';
+      }
+
+      if ($this->isSmsOptIn()) {
+        $phoneFields['phone_primary.phone_data.phone_source'] = 'Payments Form';
+        // Matching what acoustic consents look like
+        $phoneFields['phone_primary.location_type_id:name'] = 'sms_mobile';
       }
     }
     // The recipient ID is a value sent from Acoustic which can be used to look

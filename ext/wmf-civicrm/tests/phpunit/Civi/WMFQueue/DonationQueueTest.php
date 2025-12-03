@@ -14,6 +14,7 @@ use Civi\Api4\Generic\Result;
 use Civi\Api4\OptionValue;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\Phone;
+use Civi\Api4\PhoneConsent;
 use Civi\Api4\Relationship;
 use Civi\Api4\StateProvince;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
@@ -816,6 +817,49 @@ class DonationQueueTest extends BaseQueueTestCase {
 
     $this->assertEquals($phoneNumber, $phone['phone']);
   }
+
+  /**
+   * Test a sms_opt_in from the front end
+   * This is currently US only
+   */
+  public function testPhoneWithSmsOptin(): void {
+    $phoneNumber = '3151234567';
+    $msg = [
+      'currency' => 'USD',
+      'country' => 'US',
+      'date' => time(),
+      'email' => 'mouse@wikimedia.org',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'phone' => $phoneNumber,
+      'sms_opt_in' => 1
+    ];
+
+    $this->processDonationMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
+
+    $phone = Phone::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->addSelect('location_type_id:name', 'phone', 'is_primary', 'phone_type_id:name')
+      ->execute()->single();
+
+    $this->assertEquals($phoneNumber, $phone['phone']);
+    $this->assertEquals(1, $phone['is_primary']);
+    $this->assertEquals('sms_mobile', $phone['location_type_id:name']);
+
+    //Check consent
+    $consent = PhoneConsent::get(FALSE)
+      ->addWhere('phone_number','=',$phoneNumber)
+      ->execute()->single();
+
+    $this->assertEquals(1, $consent['country_code']);
+    $this->assertEquals('Payments Form', $consent['consent_source']);
+    $this->assertEquals(TRUE, $consent['opted_in']);
+  }
+
 
   /**
    * Test that endowment donation is imported with the right fields for
