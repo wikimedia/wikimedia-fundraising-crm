@@ -228,7 +228,7 @@ class BasicGetFieldsAction extends BasicGetAction {
   public function pseudoconstantOptions(string $optionGroupName) {
     if ($this->getLoadOptions()) {
       $key = __CLASS__ . __FUNCTION__ . $optionGroupName;
-      if (!\Civi::$statics[$key]) {
+      if (empty(\Civi::$statics[$key])) {
         $options = \CRM_Core_OptionValue::getValues( [ 'name' => $optionGroupName ] );
         foreach ( $options as &$option ) {
           $option['id'] = $option['value'];
