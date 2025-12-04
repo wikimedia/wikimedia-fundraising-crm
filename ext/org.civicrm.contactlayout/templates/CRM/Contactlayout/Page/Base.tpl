@@ -8,7 +8,7 @@
 </div>
 {* Since css files don't support translatable strings *}
 {literal}
-  <style>
+  <style type="text/css">
     #cse-block-container .cse-layout-col .block-multiple:not(.collapsed):after {
       content: '+ {/literal}{ts}Multiple{/ts}{literal}';
     }
