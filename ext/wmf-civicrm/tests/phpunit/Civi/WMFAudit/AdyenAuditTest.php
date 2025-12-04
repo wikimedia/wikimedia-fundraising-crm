@@ -7,8 +7,6 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\TransactionLog;
 use Civi\Api4\WMFAudit;
-use League\Csv\Exception;
-use League\Csv\Reader;
 use SmashPig\Core\Helpers\Base62Helper;
 
 /**
@@ -603,6 +601,27 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->execute()->single();
     $this->assertEquals('CHARGEBACK_REVERSAL ADYEN 1234893193133131', $contribution['trxn_id']);
 
+  }
+
+  /**
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testReversalAndChargeback(): void {
+    $this->runAuditBatch('chargeback_and_refund', 'settlement_detail_report_batch_1120.csv');
+    $this->runAuditBatch('chargeback_and_refund', 'settlement_detail_report_batch_1120.csv');
+    $this->runAuditBatch('chargeback_and_refund', 'settlement_detail_report_batch_1120-2.csv');
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'adyen_1120_USD')
+      ->addSelect('trxn_id', 'contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'contribution_extra.*')
+      ->execute();
+    $this->assertCount(2, $contributions);
+
+    $reverseContributions = Contribution::get(FALSE)
+      ->addWhere('contribution_settlement.settlement_batch_reversal_reference', '=', 'adyen_1120_USD')
+      ->addSelect('contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount')
+      ->execute();
+    $this->assertCount(4, $reverseContributions);
   }
 
   /**
