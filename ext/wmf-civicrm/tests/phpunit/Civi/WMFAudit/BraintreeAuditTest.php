@@ -106,6 +106,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
               'recurring' => '',
               'user_ip' => '172.19.0.1',
               'order_id' => '35.1',
+              'audit_file_gateway' => 'braintree',
             ],
           ],
         ],
