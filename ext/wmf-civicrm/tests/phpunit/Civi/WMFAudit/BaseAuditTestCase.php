@@ -152,14 +152,13 @@ class BaseAuditTestCase extends TestCase {
   public function runAuditBatch(string $directory, string $fileName, string $batchName = ''): array {
     $this->prepareForAuditProcessing($directory, $fileName);
 
-    $this->runAuditor($fileName);
+    $auditResult['batch'] = $this->runAuditor($fileName);
     $this->processDonationsQueue();
     $this->processContributionTrackingQueue();
     $this->processRefundQueue();
     $this->processSettleQueue();
 
     $this->processContributionTrackingQueue();
-    $auditResult['batch'] = $this->runAuditor($fileName);
     if ($batchName) {
       $auditResult['validate'] = WMFAudit::generateBatch(FALSE)
         ->setBatchPrefix($batchName)
