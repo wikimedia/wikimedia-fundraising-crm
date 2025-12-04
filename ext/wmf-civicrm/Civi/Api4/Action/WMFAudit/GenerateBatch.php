@@ -338,6 +338,12 @@ GROUP BY s.settlement_batch_reference
         'settled' => round($batch['batch_data.settled_net_amount'], 2) - $record['totals']['settled'],
       ];
       $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['batch_data.settlement_currency']);
+      if (empty(array_filter($record['validation']))) {
+        Batch::update(FALSE)
+          ->addValue('status_id:name', 'validated')
+          ->addWhere('id', '=', $batch['id'])
+          ->execute();
+      }
       if (!$this->isOutputRows) {
         unset($record['csv_rows']);
       }
