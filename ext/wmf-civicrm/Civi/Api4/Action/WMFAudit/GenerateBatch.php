@@ -19,6 +19,7 @@ use League\Csv\Writer;
  * @method $this setIsOutputCsv(bool $isOutputCsv)
  * @method $this setIsOutputSql(bool $isOutputSql)
  * @method $this setIsOutputRows(bool $isOutputRows)
+ * @method $this setEmailSummaryAddress(string $email)
  */
 class GenerateBatch extends AbstractAction {
 
@@ -26,8 +27,6 @@ class GenerateBatch extends AbstractAction {
    * Batch prefix.
    *
    * e.g adyen_1127 (the batch names are then adyen_1127_AUD)
-   *
-   * @required
    *
    * @var string
    */
@@ -55,6 +54,15 @@ class GenerateBatch extends AbstractAction {
    * @var bool
    */
   protected bool $isOutputSQL = FALSE;
+
+  /**
+   * The address to email a summary to.
+   *
+   * If provided a summary will be sent to this address.
+   *
+   * @var string|null
+   */
+  protected ?string $emailSummaryAddress = NULL;
 
   private Writer $writer;
 
@@ -215,9 +223,18 @@ WHERE (%1 = settlement_batch_reference)
 GROUP BY s.settlement_batch_reference
 ";
 
-    $batches = Batch::get(FALSE)->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
-      ->addSelect('batch_data.*', '*', 'status_id:name')
-      ->execute()->indexBy('name');
+    if ($this->batchPrefix) {
+      $batches = Batch::get(FALSE)
+        ->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
+        ->addSelect('batch_data.*', '*', 'status_id:name')
+        ->execute()->indexBy('name');
+    }
+    else {
+      $batches = Batch::get(FALSE)
+        ->addWhere('status_id:name', '=', 'total_verified')
+        ->addSelect('batch_data.*', '*', 'status_id:name')
+        ->execute()->indexBy('name');
+    }
 
     $rowNumber = 1;
 
@@ -310,20 +327,23 @@ GROUP BY s.settlement_batch_reference
         'fee_debit' => (string) $feeDebit->getAmount(),
         'fee_credit' => (string) $feeCredit->getAmount(),
         'fee' => (string) $feeDebit->minus($feeCredit)->getAmount(),
+        'settled' => (string) $credit->minus($debit)->minus($feeDebit)->plus($feeCredit)->getAmount(),
         'count' => $count
       ];
-      $record['validation'] = [
+       $record['validation'] = [
         'count' => $batch['item_count'] - $record['totals']['count'],
         'credit' => round($batch['batch_data.settled_donation_amount'], 2) - $record['totals']['credit'],
         'debit' => round($batch['batch_data.settled_reversal_amount'], 2) + $record['totals']['debit'],
         'fee' => $batch['batch_data.settled_fee_amount'] + $record['totals']['fee'],
+        'settled' => round($batch['batch_data.settled_net_amount'], 2) - $record['totals']['settled'],
       ];
       $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['batch_data.settlement_currency']);
       if (!$this->isOutputRows) {
-        unset ($record['csv_rows']);
+        unset($record['csv_rows']);
       }
       $result[] = $record;
     }
+    $this->sendSummary($result);
   }
 
   public static function fields(): array {
@@ -499,6 +519,35 @@ END";
       $rowsWithReversals[] = $reversalRow;
     }
     return $rowsWithReversals;
+  }
+
+  /**
+   * @param Result $result
+   * @return void
+   */
+  public function sendSummary(Result $result): void {
+    if (count($result)) {
+      if ($this->emailSummaryAddress) {
+        $params = ['toEmail' => $this->emailSummaryAddress, 'subject' => 'Finance batch generated', 'from' => \CRM_Core_BAO_Domain::getFromEmail()];
+        $invalidBatches = 0;
+        $html = "<table><th>Batch</th><th>Settled Currency</th><th>Settled Total</th><th>Total in batch</th><th>Discrepancy</th>";
+        foreach ($result as $batch) {
+          if (!empty(array_filter($batch['validation']))) {
+            $invalidBatches++;
+          }
+          $discrepancy = $batch['validation']['credit'] + $batch['validation']['debit'] + $batch['validation']['fee'];
+          $html .= "<tr><td>{$batch['batch']['name']}</td><td>{$batch['batch']['batch_data.settlement_currency']}</td><td>{$batch['totals']['settled']}</td><td></td><td>$discrepancy</td></tr>";
+        }
+        if ($invalidBatches) {
+          $params['subject'] .= " $invalidBatches need attention";
+        }
+        $html .= "</table>";
+        $params['html'] = $html;
+        if (!\CRM_Utils_Mail::send($params)) {
+          \Civi::log('wmf')->warning('Summary failed to send to ' . $params['toEmail']);
+        }
+      }
+    }
   }
 
 }

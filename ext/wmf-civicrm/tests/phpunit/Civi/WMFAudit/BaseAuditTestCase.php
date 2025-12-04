@@ -163,6 +163,7 @@ class BaseAuditTestCase extends TestCase {
       $auditResult['validate'] = WMFAudit::generateBatch(FALSE)
         ->setBatchPrefix($batchName)
         ->setIsOutputCsv(TRUE)
+        ->setEmailSummaryAddress('test@example.org')
         ->execute();
 
       foreach ($auditResult['validate'] as $row) {

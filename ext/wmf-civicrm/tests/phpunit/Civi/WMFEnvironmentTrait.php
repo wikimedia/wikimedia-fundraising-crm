@@ -119,6 +119,7 @@ trait WMFEnvironmentTrait {
     if (!empty($this->ids['PaymentProcessor'])) {
       PaymentProcessor::delete(FALSE)->addWhere('id', 'IN', $this->ids['PaymentProcessor'])->execute();
     }
+    \CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_spool');
     PaymentProcessor::delete(FALSE)->addWhere('name', '=', 'test_gateway')->execute();
     ImportStatsCollector::tearDown();
     DonationStatsCollector::tearDown();
@@ -340,6 +341,17 @@ trait WMFEnvironmentTrait {
     return Test::headless()
       ->installMe(__DIR__)
       ->apply();
+  }
+
+  /**
+   * Get the most recent email sent with the CiviCRM mail method.
+   *
+   * Note this is emails sent using CRM_Utils_Mail, not our WMF specific method.
+   *
+   * @return array
+   */
+  protected function getMostRecentEmail(): array {
+    return \CRM_Core_DAO::executeQuery('SELECT headers, body FROM civicrm_mailing_spool ORDER BY id DESC LIMIT 1')->fetchAll()[0];
   }
 
 }

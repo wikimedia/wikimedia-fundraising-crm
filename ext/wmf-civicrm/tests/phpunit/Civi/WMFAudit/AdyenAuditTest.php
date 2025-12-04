@@ -865,6 +865,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->runAuditBatch($directory, $fileName);
     $validate = $this->runAuditBatch($directory, $fileName, 'adyen_1128')['validate'];
     $this->assertCount(2, $validate);
+    $summary = $this->getMostRecentEmail();
+    $this->assertStringContainsString('Finance batch generated', $summary['headers']);
+    $this->assertStringContainsString('adyen', $summary['body']);
     //    	Total debits	  Total credits	  Payout
     // USD	234.79	         196.97	       37.82
     // EUR	47.98	           19.47	       28.51
