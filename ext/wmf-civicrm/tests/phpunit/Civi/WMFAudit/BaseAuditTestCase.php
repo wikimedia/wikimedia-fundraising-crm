@@ -119,9 +119,10 @@ class BaseAuditTestCase extends TestCase {
   /**
    * @throws \CRM_Core_Exception
    */
-  protected function runAuditor(): Result {
+  protected function runAuditor($fileName = NULL): Result {
     return WMFAudit::parse()
       ->setGateway($this->gateway)
+      ->setFile((string) $fileName)
       ->setSettleMode('queue')
       ->setIsMoveCompletedFile(FALSE)
       ->execute();
@@ -151,14 +152,14 @@ class BaseAuditTestCase extends TestCase {
   public function runAuditBatch(string $directory, string $fileName, string $batchName = ''): array {
     $this->prepareForAuditProcessing($directory, $fileName);
 
-    $this->runAuditor();
+    $this->runAuditor($fileName);
     $this->processDonationsQueue();
     $this->processContributionTrackingQueue();
     $this->processRefundQueue();
     $this->processSettleQueue();
 
     $this->processContributionTrackingQueue();
-    $auditResult['batch'] = $this->runAuditor();
+    $auditResult['batch'] = $this->runAuditor($fileName);
     if ($batchName) {
       $auditResult['validate'] = WMFAudit::generateBatch(FALSE)
         ->setBatchPrefix($batchName)
