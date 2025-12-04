@@ -110,8 +110,8 @@ function contactlayout_civicrm_pageRun(&$page) {
         CRM_Core_Region::instance('contact-actions-ribbon')
           ->add([
             'markup' => '<li class="crm-contact-summary-edit-layout">
-              <a class="crm-hover-button" title="' . htmlspecialchars(E::ts('Edit Layout')) . '" href="' . CRM_Utils_System::url('civicrm/admin/contactlayout') . '">
-                <i class="crm-i fa-edit"></i> ' . htmlspecialchars(E::ts('Layout: %1', [1 => $layout['label'] ?? E::ts('System Default')])) .
+              <a class="crm-hover-button" title="' . E::ts('Edit Layout', ['escape' => 'htmlattribute']) . '" href="' . CRM_Utils_System::url('civicrm/admin/contactlayout') . '">
+                <i role="img" aria-hidden="true" class="crm-i fa-edit"></i> ' . E::ts('Layout: %1', ['escape' => 'htmlattribute', 1 => $layout['label'] ?? E::ts('System Default')]) .
             '</a>
             </li>',
           ]);

@@ -297,7 +297,7 @@ class AuditMessage extends DonationMessage {
           ->execute()->first() ?? [];
       }
     }
-    if (!$this->existingContribution) {
+    if (!$this->existingContribution && !$this->isAggregateRow()) {
       static $isFirst = TRUE;
       if ($isFirst) {
         \Civi::log('wmf')->info("contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}\n", [
