@@ -1,6 +1,6 @@
 <?php
 
-namespace Civi\WMF;
+namespace Civi\Api4\WMFContact;
 
 use Civi\Api4\Contact;
 use Civi\Api4\WMFContact;
@@ -10,9 +10,10 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Contact Save tests for WMF user cases.
- *
+ * @group epcV4
+ * @covers \Civi\Api4\Action\WMFContact\Save
  */
-class WMFContactSaveTest extends TestCase {
+class SaveTest extends TestCase {
 
   /**
    * @var array
