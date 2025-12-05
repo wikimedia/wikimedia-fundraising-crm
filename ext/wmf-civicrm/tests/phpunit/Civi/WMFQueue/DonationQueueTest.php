@@ -2607,6 +2607,45 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testOptedOutContact(): void {
+    $existingContact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'email_primary.email' => 'wasoptedout@example.org',
+      'is_opt_out' => TRUE,
+      'do_not_email' => TRUE,
+      'Communication.do_not_solicit' => TRUE,
+    ]);
+    $this->processMessage([
+      'opt_in' => 1,
+      'first_name' => 'Test',
+      'last_name' => 'Mouse',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'wasoptedout@example.org',
+      'country' => 'US',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa'
+    ]);
+    $contact = Contact::get(FALSE)
+      ->addWhere('id', '=', $existingContact['id'])
+      ->addSelect('do_not_email', 'is_opt_out', 'Communication.opt_in', 'Communication.do_not_solicit')
+      ->execute()
+      ->first();
+    $this->assertFalse($contact['is_opt_out']);
+    $this->assertFalse($contact['do_not_email']);
+    $this->assertTrue($contact['Communication.opt_in']);
+    $this->assertEquals('', $contact['Communication.do_not_solicit']);
+  }
+
+  /**
    * @param string $gatewayTxnID
    * @return array|null
    */

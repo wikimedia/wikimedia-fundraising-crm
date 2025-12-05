@@ -438,6 +438,8 @@ class Save extends AbstractAction {
       $updateFields = ['first_name', 'last_name'];
     }
 
+    $updateParams = [];
+
     if (isset($this->getMessage()['Communication.opt_in'])) {
       if (!isset($existingContact['Communication.opt_in'])
         || !$existingContact['wmf_donor.last_donation_date']
@@ -445,6 +447,13 @@ class Save extends AbstractAction {
       ) {
         // Update the opt in - unless we are processing a donation that is older than the contact's most recent.
         $updateFields[] = 'Communication.opt_in';
+        if ((bool)$this->getMessage()['Communication.opt_in'] === TRUE) {
+          $updateParams += [
+            'Communication.do_not_solicit' => 0,
+            'do_not_email' => 0,
+            'is_opt_out' => 0,
+          ];
+        }
       }
       else {
         // @todo - this is good enough maybe for a first run - but what about recurrings.
@@ -453,7 +462,7 @@ class Save extends AbstractAction {
     }
 
     $msg = $this->getMessage();
-    $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
+    $updateParams += array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
     $updateParams += $this->getApiReadyFields();
     if (empty($msg['contact_type']) || $msg['contact_type'] === 'Individual') {
       // Individual-only custom fields
