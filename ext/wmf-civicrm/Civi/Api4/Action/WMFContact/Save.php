@@ -438,6 +438,8 @@ class Save extends AbstractAction {
       $updateFields = ['first_name', 'last_name'];
     }
 
+    $updateParams = [];
+
     if (isset($this->getMessage()['Communication.opt_in'])) {
       if (!isset($existingContact['Communication.opt_in'])
         || !$existingContact['wmf_donor.last_donation_date']
@@ -445,6 +447,13 @@ class Save extends AbstractAction {
       ) {
         // Update the opt in - unless we are processing a donation that is older than the contact's most recent.
         $updateFields[] = 'Communication.opt_in';
+        if ((bool)$this->getMessage()['Communication.opt_in'] === TRUE) {
+          $updateParams += [
+            'Communication.do_not_solicit' => 0,
+            'do_not_email' => 0,
+            'is_opt_out' => 0,
+          ];
+        }
       }
       else {
         // @todo - this is good enough maybe for a first run - but what about recurrings.
@@ -453,7 +462,7 @@ class Save extends AbstractAction {
     }
 
     $msg = $this->getMessage();
-    $updateParams = array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
+    $updateParams += array_intersect_key($msg, array_fill_keys($updateFields, TRUE));
     $updateParams += $this->getApiReadyFields();
     if (empty($msg['contact_type']) || $msg['contact_type'] === 'Individual') {
       // Individual-only custom fields
@@ -726,15 +735,16 @@ WHERE
     if ($externalIdentifiers) {
       // since venmo allow user to update their user_name, we can not use this as single select param,
       // we can probably use venmo_user_id in the future for this dedupe function works for venmo
-      if (empty($externalIdentifiers['External_Identifiers.venmo_user_name'])) {
-        $external_identifier_field = array_key_first($externalIdentifiers);
-        $matches = Contact::get(FALSE)
-          ->addWhere($external_identifier_field, '=', $this->message[$external_identifier_field])
-          ->execute()
-          ->first();
-        if (!empty($matches)) {
-          return $matches;
-        }
+      $external_identifier_field = array_key_first($externalIdentifiers);
+      $contactMatch = Contact::get(FALSE)
+        ->addWhere($external_identifier_field, '=', $this->message[$external_identifier_field]);
+      if (!empty($externalIdentifiers['External_Identifiers.venmo_user_name'])) {
+        // venmo_user_id can be updated manually, so dedupe with double check email
+        $contactMatch->addWhere('email_primary.email', '=', $msg['email']);
+      }
+      $matches = $contactMatch->execute()->first();
+      if (!empty($matches)) {
+        return $matches;
       }
     }
 
@@ -867,7 +877,9 @@ WHERE
       $this->isLowConfidenceNameSource === NULL &&
       !empty($this->getMessage()['payment_method'])
     ) {
-      $this->isLowConfidenceNameSource = $this->getMessage()['payment_method'] === 'apple';
+      // those 3rd party contact might have their own name, opt out name check for dedupe if external identifier matched
+      $paymentMethodsReturnLowConfidenceName = ['apple', 'google', 'amazon', 'venmo', 'paypal'];
+      $this->isLowConfidenceNameSource = in_array(strtolower($this->getMessage()['payment_method']), $paymentMethodsReturnLowConfidenceName);
     }
     else {
       // If contribution recur ID is populated we are not dealing with something they just entered on

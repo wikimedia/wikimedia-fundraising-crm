@@ -610,6 +610,7 @@ abstract class BaseAuditProcessor {
         // Try again by invoice ID.
         if (!empty($record['invoice_id'])) {
           $parentByInvoice = Contribution::get(FALSE)
+            ->addSelect('trxn_id', 'contribution_status_id:name')
             ->addClause(
               'OR',
               ['invoice_id', '=', $record['invoice_id']],
@@ -632,7 +633,9 @@ abstract class BaseAuditProcessor {
       if ($foundParent) {
         if (
           count($parentByInvoice)
-          && \CRM_Contribute_BAO_Contribution::isContributionStatusNegative($parentByInvoice['contribution_status_id'])
+          && (($record['type'] === 'chargeback' && $parentByInvoice['contribution_status_id:name'] === 'Chargeback')
+            || ($record['type'] === 'refund' && $parentByInvoice['contribution_status_id:name'] === 'Refunded')
+            || ($record['type'] === 'cancel' && $parentByInvoice['contribution_status_id:name'] === 'Cancelled'))
         ) {
           continue;
         }

@@ -58,14 +58,16 @@ class AfformAdminMeta {
    * @return array
    */
   public static function getConfirmationTypes(): array {
-    $confirmationTypes = (array) \Civi\Api4\OptionValue::get(FALSE)
-      ->addSelect('label', 'name', 'value')
-      ->addWhere('is_active', '=', TRUE)
-      ->addWhere('option_group_id:name', '=', 'afform_confirmation_type')
-      ->addOrderBy('weight', 'ASC')
-      ->execute();
-
-    return $confirmationTypes;
+    $key = __CLASS__ . __FUNCTION__;
+    if (!\Civi::cache('metadata')->has($key)) {
+      \Civi::cache('metadata')->set($key, (array) \Civi\Api4\OptionValue::get(FALSE)
+        ->addSelect('label', 'name', 'value')
+        ->addWhere('is_active', '=', TRUE)
+        ->addWhere('option_group_id:name', '=', 'afform_confirmation_type')
+        ->addOrderBy('weight', 'ASC')
+        ->execute());
+    }
+    return \Civi::cache('metadata')->get($key);
   }
 
   /**

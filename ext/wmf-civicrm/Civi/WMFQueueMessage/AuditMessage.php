@@ -240,7 +240,7 @@ class AuditMessage extends DonationMessage {
         ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayAlternateParentTxnID())
         ->execute()->first() ?? [];
     }
-    if ($existingContribution && !in_array($existingContribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded'])) {
+    if ($existingContribution && $this->isStatusChanged($existingContribution['contribution_status_id:name'])) {
       return $existingContribution['id'];
     }
     return NULL;
@@ -251,10 +251,29 @@ class AuditMessage extends DonationMessage {
     if (!$existingContribution) {
       return NULL;
     }
-    if ($this->isNegative() && !in_array($existingContribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded'])) {
+    if (
+      // If we have a status change (ie negative transaction) and the contribution has not yet been updated to
+      // that status then treat as 'missing' so it goes into the refund queue. Note it is possible
+      // for a contribution to be both refunded and charged back (although hopefully in time the
+      // processor will make us whole)
+      $this->isStatusChanged($existingContribution['contribution_status_id:name'])
+    ) {
       return NULL;
     }
     return $existingContribution['id'];
+  }
+
+  protected function isStatusChanged(string $existingContributionStatus): bool {
+    if ($existingContributionStatus !== 'Chargeback' && $this->isChargeback()) {
+      return TRUE;
+    }
+    if ($existingContributionStatus !== 'Refunded' && $this->isRefund()) {
+      return TRUE;
+    }
+    if ($existingContributionStatus !== 'Cancelled' && $this->isCancel()) {
+      return TRUE;
+    }
+    return FALSE;
   }
 
   /**
