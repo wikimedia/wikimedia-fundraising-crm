@@ -106,6 +106,7 @@ FROM civicrm_value_contribution_settlement s
          LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
 WHERE (%1 = s.settlement_batch_reference)
   AND (COALESCE(settled_donation_amount, 0) <> 0)
+  AND is_template = 0
 GROUP BY Fund, gift.channel, is_major_gift
 
 UNION
@@ -130,6 +131,7 @@ FROM civicrm_value_contribution_settlement s
          LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
 WHERE (%1 = s.settlement_batch_reversal_reference)
   AND (COALESCE(settled_reversal_amount, 0) <> 0)
+  AND is_template = 0
 GROUP BY Fund, gift.channel, is_major_gift
 
 UNION
@@ -161,6 +163,7 @@ WHERE (%1 = settlement_batch_reference)
   AND ( settled_fee_amount <> 0)
   AND trxn_id NOT LIKE 'adyen transaction%'
   AND trxn_id NOT LIKE 'adyen invoice%'
+  AND is_template = 0
 GROUP BY s.settlement_batch_reference
 
 UNION
@@ -191,6 +194,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = settlement_batch_reversal_reference)
   AND ( settled_fee_reversal_amount <> 0)
   AND (trxn_id NOT LIKE 'adyen transaction%' AND trxn_id NOT LIKE 'adyen invoice %')
+  AND is_template = 0
 GROUP BY s.settlement_batch_reversal_reference
 
 UNION
@@ -220,6 +224,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = settlement_batch_reference)
   AND ( settled_fee_amount <> 0)
   AND (trxn_id LIKE 'adyen transaction%' OR trxn_id LIKE 'adyen invoice %')
+  AND is_template = 0
 GROUP BY s.settlement_batch_reference
 ";
 
