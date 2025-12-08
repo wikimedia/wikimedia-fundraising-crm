@@ -284,7 +284,17 @@ class AuditMessage extends DonationMessage {
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
       $selectFields = ['id', 'contribution_status_id:name', 'fee_amount', 'contribution_settlement.settlement_batch_reference', 'contribution_settlement.settlement_batch_reversal_reference'];
-      if ($this->getPaymentOrchestratorReconciliationReference()) {
+      if ($this->isRefund() || $this->isChargeback()) {
+        // Check whether a standalone refund or chargeback has been created - this occurs when
+        // we get a chargeback on one we have already refunded.
+        $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
+        $this->existingContribution = Contribution::get(FALSE)
+          ->setSelect($selectFields)
+          ->addWhere('trxn_id', '=', $trxn_id)
+          ->execute()->first() ?? [];
+      }
+
+      if (empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
         $this->existingContribution = Contribution::get(FALSE)
           ->setSelect($selectFields)
           ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())

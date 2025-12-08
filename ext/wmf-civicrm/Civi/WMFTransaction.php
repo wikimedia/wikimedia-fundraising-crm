@@ -98,7 +98,10 @@ class WMFTransaction {
     }
     $transaction->gateway = $msg['gateway'];
     $transaction->is_recurring = !empty($msg['recurring']);
-    $transaction->is_chargeback_reversal = (($msg['type'] ?? NULL) === 'chargeback_reversed');
+    $messageType = $msg['type'] ?? NULL;
+    $transaction->is_chargeback_reversal = ($messageType === 'chargeback_reversed');
+    $transaction->is_chargeback = ($messageType === 'chargeback');
+    $transaction->is_refund = in_array($messageType, ['chargeback', 'refund'], TRUE);
     return $transaction;
   }
 
