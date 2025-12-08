@@ -27,7 +27,7 @@
         "amzn/login-and-pay-with-amazon-sdk-php": "^2.5",
         "coderkungfu/php-queue": "^1.0",
         "ext-intl": "*",
-        "wikimedia/smash-pig": "v1.0.1",
+        "wikimedia/smash-pig": "v1.0.2.1",
         "phpmailer/phpmailer": "^6",
         "phpseclib/phpseclib":  "~2.0|~3",
         "predis/predis": "1.*",
