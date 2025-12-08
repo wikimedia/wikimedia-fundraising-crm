@@ -99,7 +99,8 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     if (isset($message['completion_message_id'])) {
       $pendingDbEntry = PendingDatabase::get()->fetchMessageByGatewayOrderId(
         $message['gateway'],
-        $message['order_id']
+        $message['order_id'],
+        (string) $message['gateway_txn_id']
       );
       if ($pendingDbEntry) {
         // Sparse messages should have no keys at all for the missing info,
