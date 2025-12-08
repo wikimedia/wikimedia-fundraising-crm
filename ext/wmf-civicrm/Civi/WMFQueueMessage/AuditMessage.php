@@ -303,10 +303,13 @@ class AuditMessage extends DonationMessage {
       if ($this->isRefund() || $this->isChargeback()) {
         // Check whether a standalone refund or chargeback has been created - this occurs when
         // we get a chargeback on one we have already refunded.
-        $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
+        $transaction = WMFTransaction::from_message($this->message);
+        $trxn_id = $transaction->get_unique_id();
+        $transaction->is_recurring = TRUE;
+        $trxn_id_recur = $transaction->get_unique_id();
         $this->existingContribution = Contribution::get(FALSE)
           ->setSelect($selectFields)
-          ->addWhere('trxn_id', '=', $trxn_id)
+          ->addClause('OR', ['trxn_id', '=', $trxn_id], ['trxn_id', '=', $trxn_id_recur])
           ->execute()->first() ?? [];
       }
 
