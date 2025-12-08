@@ -41,6 +41,11 @@ class WMFTransaction {
   public $is_recurring;
 
   /**
+   * @var bool
+   */
+  public $is_adjustment;
+
+  /**
    * @var int
    *
    * @deprecated
@@ -73,6 +78,10 @@ class WMFTransaction {
 
     if ($this->is_recurring) {
       $parts[] = "RECURRING";
+    }
+
+    if ($this->is_adjustment) {
+      $parts[] = "ADJUSTMENT";
     }
 
     if (!$this->gateway) {
