@@ -258,6 +258,22 @@ class AuditMessage extends DonationMessage {
       // processor will make us whole)
       $this->isStatusChanged($existingContribution['contribution_status_id:name'])
     ) {
+      static $isFirstNegative = TRUE;
+      if ($isFirstNegative) {
+        \Civi::log('wmf')->info("contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}\n", [
+            'gateway' => $this->getGateway(),
+            'trxn_id' => WMFTransaction::from_message($this->message)->get_unique_id(),
+            'gateway_txn_id' => $this->getGatewayParentTxnID(),
+            'backend_processor' => $this->getBackEndProcessor(),
+            'backend_txn_id' => $this->getBackendProcessorTxnID(),
+            'existing_contribution_id' => $existingContribution['id'],
+            'existing_status' => $existingContribution['contribution_status_id:name'],
+            'is_chargeback' => $this->isChargeback(),
+            'is_refund' => $this->isRefund(),
+          ] + $this->message
+        );
+        $isFirstNegative = FALSE;
+      }
       return NULL;
     }
     return $existingContribution['id'];
