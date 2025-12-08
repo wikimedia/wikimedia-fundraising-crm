@@ -611,6 +611,10 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->runAuditBatch('chargeback_and_refund', 'settlement_detail_report_batch_1120.csv');
     $this->runAuditBatch('chargeback_and_refund', 'settlement_detail_report_batch_1120.csv');
     $this->runAuditBatch('chargeback_and_refund', 'settlement_detail_report_batch_1120-2.csv');
+    // Run it one last time & check log output doesn't show that we tried to re-process the refund/ chargeback.
+    // If we did try then it would mean the file is not clearing (thinks something still needs resolving).
+    $this->runAuditBatch('chargeback_and_refund', 'settlement_detail_report_batch_1120-2.csv');
+    $this->assertFalse($this->getLogger()->hasErrorThatContains('Contribution is already refunded'));
     $contributions = Contribution::get(FALSE)
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'adyen_1120_USD')
       ->addSelect('trxn_id', 'contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'contribution_extra.*')
