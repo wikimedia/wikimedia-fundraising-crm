@@ -380,6 +380,9 @@ class DonationMessage extends Message {
       }
       return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', $this->message['financial_type_id']);
     }
+    if ($this->isChargebackReversal()) {
+      return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Chargeback Reversal');
+    }
     if ($this->isSubsequentRecurring()) {
       return ContributionRecur::getFinancialType($this->getContributionRecurID());
     }
