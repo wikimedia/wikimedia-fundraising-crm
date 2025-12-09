@@ -307,6 +307,7 @@ class AuditMessage extends DonationMessage {
    * @throws \CRM_Core_Exception
    */
   public function getExistingContribution(): ?array {
+    $debugInformation = [];
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
       $selectFields = ['id', 'contribution_status_id:name', 'fee_amount', 'contribution_settlement.settlement_batch_reference', 'contribution_settlement.settlement_batch_reversal_reference'];
@@ -337,9 +338,8 @@ class AuditMessage extends DonationMessage {
           ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
           ->execute()->first() ?? [];
       }
-      $isGravy = FALSE;
       if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
-        $isGravy = TRUE;
+        $debugInformation['is_gravy'] = TRUE;
         // Looking at a gravy transaction in the Adyen file?
         $this->existingContribution = Contribution::get(FALSE)
           ->setSelect($selectFields)
@@ -356,6 +356,7 @@ class AuditMessage extends DonationMessage {
       }
       if (empty($this->existingContribution) && $this->isChargebackReversal()) {
         $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
+        $debugInformation['chargeback_reversal_trxn_id'] = $trxn_id;
         $this->existingContribution = Contribution::get(FALSE)
           ->setSelect($selectFields)
           ->addWhere('trxn_id', '=', $trxn_id)
@@ -365,12 +366,11 @@ class AuditMessage extends DonationMessage {
     if (!$this->existingContribution && !$this->isAggregateRow()) {
       static $isFirst = TRUE;
       if ($isFirst) {
-        \Civi::log('wmf')->info("contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}\n", [
+        \Civi::log('wmf')->info("contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}\n", $debugInformation + [
             'gateway' => $this->getGateway(),
             'gateway_txn_id' => $this->getGatewayParentTxnID(),
             'backend_processor' => $this->getBackEndProcessor(),
             'backend_txn_id' => $this->getBackendProcessorTxnID(),
-            'is_gravy' => $isGravy,
           ] + $this->message
         );
       }
