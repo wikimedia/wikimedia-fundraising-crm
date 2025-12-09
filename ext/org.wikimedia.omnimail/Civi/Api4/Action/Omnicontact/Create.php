@@ -2,7 +2,7 @@
 namespace Civi\Api4\Action\Omnicontact;
 
 use Civi\Api4\Contact;
-use Civi\Api4\Generic\AbstractAction;
+use Civi\Api4\Generic\AbstractCreateAction;
 use Civi\Api4\Generic\Result;
 use GuzzleHttp\Client;
 use CRM_Omnimail_ExtensionUtil as E;
@@ -16,9 +16,9 @@ use CRM_Omnimail_ExtensionUtil as E;
  * @method $this setEmail(bool $email)
  * @method $this setRecipientID(?int $recipientID)
  * @method bool getEmail()
- * @method $this setValues(array $values)
- * @method array getValues()
  * @method array getGroupID()
+ * @method int getGroupIdentifier()
+ * @method $this setGroupIdentifier(array $groupIdentifier)
  * @method int getContactID()
  * @method $this setContactID(?int $contactID)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
@@ -28,7 +28,7 @@ use CRM_Omnimail_ExtensionUtil as E;
  *
  * @package Civi\Api4
  */
-class Create extends AbstractAction {
+class Create extends AbstractCreateAction {
 
   /**
    * @var object
@@ -39,6 +39,14 @@ class Create extends AbstractAction {
    * @var array
    */
   protected $groupID;
+
+  /**
+   * Acoustic contact lists ids to add the contact to,
+   * in addition those for the groups above.
+   *
+   * @var array
+   */
+  protected $groupIdentifier = [];
 
   /**
    * @var string|null
@@ -64,11 +72,6 @@ class Create extends AbstractAction {
   public function getRecipientID(): ?int {
     return $this->recipientID;
   }
-
-  /**
-   * @var array
-   */
-  protected $values = [];
 
   /**
    *
@@ -134,10 +137,11 @@ class Create extends AbstractAction {
       'values' => $this->getValues(),
       'snooze_end_date' => $this->getSnoozeDate(),
       'check_permissions' => $this->getCheckPermissions(),
+      'groupIdentifier' => $this->getGroupIdentifier(),
     ]);
   }
 
-  public function fields(): array {
+  public function getFields(): array {
     return [
       [
         'name' => 'snooze_end_date',

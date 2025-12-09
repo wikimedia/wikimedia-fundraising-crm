@@ -13,6 +13,7 @@ use Omnimail\Silverpop\Responses\Contact;
 
 class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
   public const DUMMY_PHONE = 99999;
+  protected const MSL_LISTID = 9574332; // for testing sandbox, use 44943309
   /**
    * @var
    */
@@ -20,6 +21,8 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
 
   /**
    * Create a contact with an optional group (list) membership in Acoustic DB.
+   * If values[is_opt_out] is false, the email will be opted in
+   * and removed from the Master Suppression List.
    *
    * @param array $params
    *
@@ -38,7 +41,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       $email = $params['email'];
       $snoozeEndDate = $params['snooze_end_date'];
       $request = $mailer->addContact([
-        'groupIdentifier' => array_keys($groupIdentifier),
+        'groupIdentifier' => array_keys($groupIdentifier) + $params['groupIdentifier'],
         'email' => $email,
         'recipientIdentifier' => $params['recipient_id'],
         'databaseID' => $params['database_id'],
@@ -48,9 +51,27 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       ]);
       /* @var Contact $response */
       $response = $request->getResponse();
-      $activityDetail = "Email $email was successfully snoozed till $snoozeEndDate";
+
+      if (isset($params['values']['is_opt_out']) && $params['values']['is_opt_out'] == FALSE) {
+        try {
+          $mslRequest = $mailer->removeGroupMember([
+            'email' => $email,
+            'listId' => self::MSL_LISTID,
+          ]);
+          $mslRequest->getResponse();
+        }
+        catch (Exception $e) {
+          // If the error code is 138, it means 'Unable to remove the recipient from the list. Internal error.'
+          // most likely because the contact was not on the MSL, so we ignore this error.
+          if ($e->getCode() != 138) {
+            throw $e;
+          }
+        }
+      }
+
       $activity_id = $params['values']['activity_id'] ?? NULL;
       if ($activity_id) {
+        $activityDetail = "Email $email was successfully snoozed till $snoozeEndDate";
         Activity::update(FALSE)
           ->addValue('status_id:name', 'Completed')
           ->addValue('subject', "Email snoozed until " . date('Y-m-d', strtotime($snoozeEndDate)))
