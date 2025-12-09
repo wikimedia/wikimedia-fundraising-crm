@@ -10,7 +10,7 @@ use CRM_WMFFraud_ExtensionUtil as E;
  */
 class CRM_WMFFraud_Form_Report_PaymentAttempts extends CRM_WMFFraud_Form_Report_FraudReportsBase {
 
-  function __construct() {
+  public function __construct() {
     parent::__construct();
     $this->_columns['payments_fraud']['fields']['validation_action']['default'] = 1;
     $this->_columns['payments_fraud']['fields']['fredge_date']['default'] = 1;
@@ -25,7 +25,7 @@ class CRM_WMFFraud_Form_Report_PaymentAttempts extends CRM_WMFFraud_Form_Report_
    * This report shows all payment attempts and left joins onto contribution
    * whereas the other shows all contributions and left joins onto payments.
    */
-  function from() {
+  public function from() {
     $this->_from = "
       FROM {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']}
       LEFT JOIN civicrm_contribution_tracking {$this->_aliases['civicrm_contribution_tracking']}
@@ -39,7 +39,7 @@ class CRM_WMFFraud_Form_Report_PaymentAttempts extends CRM_WMFFraud_Form_Report_
     $this->addEmailFailsJoin();
   }
 
-  function preProcess() {
+  public function preProcess() {
     $this->assign('reportTitle', E::ts('Payment attempts'));
     parent::preProcess();
   }

@@ -11,12 +11,12 @@ use CRM_WMFFraud_ExtensionUtil as E;
  */
 class CRM_WMFFraud_Form_Report_Fraud extends CRM_WMFFraud_Form_Report_FraudReportsBase {
 
-  function __construct() {
+  public function __construct() {
     parent::__construct();
     $this->_columns['civicrm_contribution']['order_bys']['receive_date']['default_order'] = 'DESC';
   }
 
-  function preProcess() {
+  public function preProcess() {
     $this->assign('reportTitle', E::ts('Potential Fraudsters Report'));
     parent::preProcess();
   }
@@ -26,7 +26,7 @@ class CRM_WMFFraud_Form_Report_Fraud extends CRM_WMFFraud_Form_Report_FraudRepor
    *
    * The report is based on contributions, which may or may not have fredge entries.
    */
-  function from() {
+  public function from() {
     $this->_from = "
       FROM civicrm_contribution {$this->_aliases['civicrm_contribution']}
       LEFT JOIN civicrm_contribution_tracking {$this->_aliases['civicrm_contribution_tracking']}
