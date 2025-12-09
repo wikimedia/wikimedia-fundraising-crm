@@ -539,21 +539,75 @@ END";
   public function sendSummary(Result $result): void {
     if (count($result)) {
       if ($this->emailSummaryAddress) {
-        $params = ['toEmail' => $this->emailSummaryAddress, 'subject' => 'Finance batch generated', 'from' => \CRM_Core_BAO_Domain::getFromEmail()];
+        $params = [
+          'toEmail' => $this->emailSummaryAddress,
+          'subject' => 'Finance batch generated',
+          'from' => \CRM_Core_BAO_Domain::getFromEmail(),
+        ];
+
         $invalidBatches = 0;
-        $html = "<table><th>Batch</th><th>Settled Currency</th><th>Settled Total</th><th>Total in batch</th><th>Discrepancy</th>";
+
+        // Start styled table (corporate / minimal)
+        $html = '<html>
+        <table style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 14px;">
+          <thead>
+            <tr style="background-color: #f2f2f2; font-weight: bold;">
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Batch</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Settled Currency</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Settled Total</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total in batch</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Discrepancy</th>
+            </tr>
+          </thead>
+          <tbody>
+      ';
+
         foreach ($result as $batch) {
           if (!empty(array_filter($batch['validation']))) {
             $invalidBatches++;
           }
-          $discrepancy = $batch['validation']['credit'] + $batch['validation']['debit'] + $batch['validation']['fee'];
-          $html .= "<tr><td>{$batch['batch']['name']}</td><td>{$batch['batch']['batch_data.settlement_currency']}</td><td>{$batch['totals']['settled']}</td><td></td><td>$discrepancy</td></tr>";
+
+          $discrepancy = $batch['validation']['credit']
+            + $batch['validation']['debit']
+            + $batch['validation']['fee'];
+
+          // Base cell styles
+          $cell = 'border: 1px solid #ccc; padding: 6px;';
+          $cellRight = $cell . ' text-align: right;';
+
+          // Discrepancy cell: red + bold when non-zero
+          $discrepancyStyle = $cellRight;
+          if ((float) $discrepancy !== 0.0) {
+            $discrepancyStyle .= ' color: #b30000; font-weight: bold;';
+          }
+
+          $batchName = htmlspecialchars($batch['batch']['name'], ENT_QUOTES, 'UTF-8');
+          $currency  = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8');
+          $settled   = htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8');
+          $totalInBatch = htmlspecialchars($batch['batch']['batch_data.settled_net_amount'], ENT_QUOTES, 'UTF-8');
+          $html .= "
+          <tr>
+            <td style=\"$cell\">{$batchName}</td>
+            <td style=\"$cell\">{$currency}</td>
+            <td style=\"$cellRight\">{$totalInBatch}</td>
+            <td style=\"$cellRight\">{$settled}</td>
+            <td style=\"$discrepancyStyle\">{$discrepancy}</td>
+          </tr>
+        ";
         }
+
+        $html .= '
+          </tbody>
+        </table>
+        </html>
+      ';
+
         if ($invalidBatches) {
-          $params['subject'] .= " $invalidBatches need attention";
+          $params['subject'] .= " {$invalidBatches} need attention";
         }
-        $html .= "</table>";
+
         $params['html'] = $html;
+
         if (!\CRM_Utils_Mail::send($params)) {
           \Civi::log('wmf')->warning('Summary failed to send to ' . $params['toEmail']);
         }
