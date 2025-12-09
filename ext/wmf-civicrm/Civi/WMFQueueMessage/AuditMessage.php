@@ -280,16 +280,26 @@ class AuditMessage extends DonationMessage {
   }
 
   protected function isStatusChanged(string $existingContributionStatus): bool {
-    if ($existingContributionStatus !== 'Chargeback' && $this->isChargeback()) {
-      return TRUE;
-    }
-    if ($existingContributionStatus !== 'Refunded' && $this->isRefund()) {
-      return TRUE;
-    }
-    if ($existingContributionStatus !== 'Cancelled' && $this->isCancel()) {
-      return TRUE;
-    }
-    return FALSE;
+    return $existingContributionStatus !== $this->getMappedStatus();
+  }
+
+  /**
+   * Get the CiviCRM status that maps to the audit status.
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  protected function getMappedStatus(): string {
+     if ($this->isCancel()) {
+       return 'Cancelled';
+     }
+     if ($this->isRefund()) {
+       return 'Refunded';
+     }
+     if ($this->isChargeback()) {
+       return 'Chargeback';
+     }
+     return 'Completed';
   }
 
   /**
@@ -309,6 +319,13 @@ class AuditMessage extends DonationMessage {
         $trxn_id_recur = $transaction->get_unique_id();
         $this->existingContribution = Contribution::get(FALSE)
           ->setSelect($selectFields)
+          // Include status as otherwise we might pick up a balance transaction
+          // which would have a status of completed, rather than falling through
+          // to look at the main contribution record.
+          // @see RefundQueueConsumer->markRefund
+          // @todo - maybe give balance transactions an extra twiddle int
+          // their trxn_id - if we do that this will age out...
+          ->addWhere('contribution_status_id:name', '=', $this->getMappedStatus())
           ->addClause('OR', ['trxn_id', '=', $trxn_id], ['trxn_id', '=', $trxn_id_recur])
           ->execute()->first() ?? [];
       }
