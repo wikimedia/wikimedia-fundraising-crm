@@ -331,37 +331,43 @@ class AuditMessage extends DonationMessage {
           ->addClause('OR', ['trxn_id', '=', $trxn_id], ['trxn_id', '=', $trxn_id_recur])
           ->execute()->first() ?? [];
       }
-
-      if (empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
-        $this->existingContribution = Contribution::get(FALSE)
-          ->setSelect($selectFields)
-          ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())
-          ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
-          ->execute()->first() ?? [];
+      if ($this->isChargebackReversal()) {
+        // Chargeback reversals would result in a discreet contribution with a trxn_id
+        // like CHARGEBACK_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
+        // That is the only contribution that would be a 'match' for an incoming chargeback reversal
+        if (empty($this->existingContribution)) {
+          $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
+          $debugInformation['chargeback_reversal_trxn_id'] = $trxn_id;
+          $this->existingContribution = Contribution::get(FALSE)
+            ->setSelect($selectFields)
+            ->addWhere('trxn_id', '=', $trxn_id)
+            ->execute()->first() ?? [];
+        }
       }
-      if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
-        $debugInformation['is_gravy'] = TRUE;
-        // Looking at a gravy transaction in the Adyen file?
-        $this->existingContribution = Contribution::get(FALSE)
-          ->setSelect($selectFields)
-          ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
-          ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorTxnID())
-          ->execute()->first() ?? [];
-      }
-      if (empty($this->existingContribution) && $this->getGatewayParentTxnID() && !$this->isChargebackReversal()) {
-        $this->existingContribution = Contribution::get(FALSE)
-          ->setSelect($selectFields)
-          ->addWhere('contribution_extra.gateway', '=', $this->getParentTransactionGateway())
-          ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
-          ->execute()->first() ?? [];
-      }
-      if (empty($this->existingContribution) && $this->isChargebackReversal()) {
-        $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
-        $debugInformation['chargeback_reversal_trxn_id'] = $trxn_id;
-        $this->existingContribution = Contribution::get(FALSE)
-          ->setSelect($selectFields)
-          ->addWhere('trxn_id', '=', $trxn_id)
-          ->execute()->first() ?? [];
+      else {
+        if (empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
+          $this->existingContribution = Contribution::get(FALSE)
+            ->setSelect($selectFields)
+            ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())
+            ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+            ->execute()->first() ?? [];
+        }
+        if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
+          $debugInformation['is_gravy'] = TRUE;
+          // Looking at a gravy transaction in the Adyen file?
+          $this->existingContribution = Contribution::get(FALSE)
+            ->setSelect($selectFields)
+            ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
+            ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorTxnID())
+            ->execute()->first() ?? [];
+        }
+        if (empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
+          $this->existingContribution = Contribution::get(FALSE)
+            ->setSelect($selectFields)
+            ->addWhere('contribution_extra.gateway', '=', $this->getParentTransactionGateway())
+            ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
+            ->execute()->first() ?? [];
+        }
       }
     }
     if (!$this->existingContribution && !$this->isAggregateRow()) {
