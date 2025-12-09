@@ -350,6 +350,7 @@ class AuditMessage extends DonationMessage {
             ->setSelect($selectFields)
             ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())
             ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+            ->addWhere('financial_type_id:name', '!=', 'Chargeback Reversal')
             ->execute()->first() ?? [];
         }
         if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
@@ -359,11 +360,13 @@ class AuditMessage extends DonationMessage {
             ->setSelect($selectFields)
             ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
             ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorTxnID())
+            ->addWhere('financial_type_id:name', '!=', 'Chargeback Reversal')
             ->execute()->first() ?? [];
         }
         if (empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
+            ->addWhere('financial_type_id:name', '!=', 'Chargeback Reversal')
             ->addWhere('contribution_extra.gateway', '=', $this->getParentTransactionGateway())
             ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
             ->execute()->first() ?? [];
