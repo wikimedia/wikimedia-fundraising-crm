@@ -252,6 +252,7 @@ class AuditMessage extends DonationMessage {
       return NULL;
     }
     if (
+      $this->isNegative() &&
       // If we have a status change (ie negative transaction) and the contribution has not yet been updated to
       // that status then treat as 'missing' so it goes into the refund queue. Note it is possible
       // for a contribution to be both refunded and charged back (although hopefully in time the
@@ -260,7 +261,7 @@ class AuditMessage extends DonationMessage {
     ) {
       static $isFirstNegative = TRUE;
       if ($isFirstNegative) {
-        \Civi::log('wmf')->info("contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}\n", [
+        \Civi::log('wmf')->info("contribution status not per the update\n", [
             'gateway' => $this->getGateway(),
             'trxn_id' => WMFTransaction::from_message($this->message)->get_unique_id(),
             'gateway_txn_id' => $this->getGatewayParentTxnID(),
