@@ -120,13 +120,31 @@ class WMFTransaction {
     $parts = explode(' ', trim($unique_id));
 
     $transaction->is_refund = FALSE;
-    while ($parts and in_array($parts[0], ['RFD', 'REFUND'])) {
+    while ($parts && in_array($parts[0], ['RFD', 'REFUND'])) {
       $transaction->is_refund = TRUE;
       array_shift($parts);
     }
 
+    $transaction->is_chargeback = FALSE;
+    while ($parts && $parts[0] === 'CHARGEBACK' ) {
+      $transaction->is_chargeback = TRUE;
+      array_shift($parts);
+    }
+
+    $transaction->is_chargeback_reversal = FALSE;
+    while ($parts && $parts[0] === 'CHARGEBACK_REVERSAL' ) {
+      $transaction->is_chargeback_reversal = TRUE;
+      array_shift($parts);
+    }
+
+    $transaction->is_adjustment = FALSE;
+    while ($parts && $parts[0] === 'ADJUSTMENT' ) {
+      $transaction->is_adjustment = TRUE;
+      array_shift($parts);
+    }
+
     $transaction->is_recurring = FALSE;
-    while ($parts and $parts[0] === 'RECURRING') {
+    while ($parts && $parts[0] === 'RECURRING') {
       $transaction->is_recurring = TRUE;
       array_shift($parts);
     }
