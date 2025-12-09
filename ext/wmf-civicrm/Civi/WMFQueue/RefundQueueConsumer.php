@@ -277,7 +277,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     if ($refund_amount !== NULL) {
       $amount_scammed = round($refund_amount, 2) - round($original_amount, 2);
       if ($amount_scammed != 0) {
-        $refund_unique_id = $this->getRefundUniqueID($contribution['trxn_id'], $refund_gateway_txn_id, $messageObject->getContributionStatus());
+        $refund_unique_id = $this->getRefundUniqueID($contribution['trxn_id'], $refund_gateway_txn_id, $messageObject->getContributionStatus(), TRUE);
 
         try {
           $convertedTotalAmount = ExchangeRate::convert(FALSE)
@@ -383,12 +383,14 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * @return string
    * @throws WMFException
    */
-  public function getRefundUniqueID($trxn_id, ?string $refund_gateway_txn_id, $contributionStatus): string {
+  public function getRefundUniqueID($trxn_id, ?string $refund_gateway_txn_id, $contributionStatus, $isBalanceTransaction = FALSE): string {
     $transaction = WMFTransaction::from_unique_id($trxn_id);
     if ($refund_gateway_txn_id) {
       $transaction->gateway_txn_id = $refund_gateway_txn_id;
     }
     $transaction->is_refund = TRUE;
+    $transaction->is_adjustment = $isBalanceTransaction;
+
     if ($contributionStatus === 'Chargeback') {
       $transaction->is_chargeback = TRUE;
     }
