@@ -121,9 +121,11 @@ class QuickForm {
       case 'CRM_Contribute_Form_ContributionView':
         $payments = $form->getTemplateVars('payments');
         foreach ($payments as &$payment) {
-          $url = \Civi\WMFHelper\Contribution::getURLForTransactionID($payment['trxn_id']);
-          if ($url) {
-            $payment['trxn_id'] = "<a href=\"$url\" target=\"_blank\">{$payment['trxn_id']}</a>";
+          if (!empty($payment['trxn_id'])) {
+            $url = \Civi\WMFHelper\Contribution::getURLForTransactionID($payment['trxn_id']);
+            if ($url) {
+              $payment['trxn_id'] = "<a href=\"$url\" target=\"_blank\">{$payment['trxn_id']}</a>";
+            }
           }
         }
         $form->assign('payments', $payments);
