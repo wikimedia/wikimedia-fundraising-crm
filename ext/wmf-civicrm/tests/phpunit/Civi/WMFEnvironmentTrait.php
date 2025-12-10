@@ -2,6 +2,7 @@
 
 namespace Civi;
 
+use Civi\Api4\Batch;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
@@ -105,6 +106,9 @@ trait WMFEnvironmentTrait {
     }
     foreach ($this->ids['Contact'] ?? [] as $id) {
       $this->cleanupContact(['id' => $id]);
+    }
+    if (!empty($this->ids['Batch'])) {
+      Batch::delete(FALSE)->addWhere('id', 'IN', $this->ids['Batch'])->execute();
     }
     if (!empty($this->ids['OptionValue'])) {
       OptionValue::delete(FALSE)->addWhere('id', 'IN', $this->ids['OptionValue'])->execute();
