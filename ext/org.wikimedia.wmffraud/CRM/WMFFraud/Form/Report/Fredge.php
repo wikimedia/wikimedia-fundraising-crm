@@ -27,7 +27,7 @@ class CRM_WMFFraud_Form_Report_Fredge extends CRM_WMFFraud_Form_Report_FraudRepo
 
   public function from() : void {
     $this->_from = "
-      FROM {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']}";
+      FROM payments_fraud {$this->_aliases['payments_fraud']}";
     if ($this->isTableSelected('civicrm_contribution_tracking')
       || $this->isTableSelected('civicrm_contribution')
       || $this->isTableSelected('civicrm_email')
@@ -54,9 +54,9 @@ class CRM_WMFFraud_Form_Report_Fredge extends CRM_WMFFraud_Form_Report_FraudRepo
 
     foreach (self::FRAUD_FILTERS as $columnName => $value) {
       $tblAlias = "payments_fraud_breakdown_" . $columnName;
-      $this->_from .= "LEFT JOIN {$this->fredge}.payments_fraud_breakdown {$this->_aliases[$tblAlias]}
-        ON {$this->fredge}.{$this->_aliases['payments_fraud']}.id = {$this->fredge}.{$this->_aliases[$tblAlias]}.payments_fraud_id
-        AND {$this->fredge}.{$this->_aliases[$tblAlias]}.filter_name = '$value' ";
+      $this->_from .= "LEFT JOIN payments_fraud_breakdown {$this->_aliases[$tblAlias]}
+        ON {$this->_aliases['payments_fraud']}.id = {$this->_aliases[$tblAlias]}.payments_fraud_id
+        AND {$this->_aliases[$tblAlias]}.filter_name = '$value' ";
     }
   }
 

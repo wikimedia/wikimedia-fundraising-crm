@@ -27,7 +27,7 @@ class CRM_WMFFraud_Form_Report_PaymentAttempts extends CRM_WMFFraud_Form_Report_
    */
   public function from() {
     $this->_from = "
-      FROM {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']}
+      FROM payments_fraud {$this->_aliases['payments_fraud']}
       LEFT JOIN civicrm_contribution_tracking {$this->_aliases['civicrm_contribution_tracking']}
         ON {$this->_aliases['payments_fraud']}.contribution_tracking_id = {$this->_aliases['civicrm_contribution_tracking']}.id
       LEFT JOIN civicrm_contribution {$this->_aliases['civicrm_contribution']}

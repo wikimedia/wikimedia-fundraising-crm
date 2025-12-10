@@ -31,7 +31,7 @@ class CRM_WMFFraud_Form_Report_Fraud extends CRM_WMFFraud_Form_Report_FraudRepor
       FROM civicrm_contribution {$this->_aliases['civicrm_contribution']}
       LEFT JOIN civicrm_contribution_tracking {$this->_aliases['civicrm_contribution_tracking']}
         ON {$this->_aliases['civicrm_contribution_tracking']}.contribution_id = {$this->_aliases['civicrm_contribution']}.id
-      LEFT JOIN {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']}
+      LEFT JOIN payments_fraud {$this->_aliases['payments_fraud']}
       ON {$this->_aliases['payments_fraud']}.contribution_tracking_id = {$this->_aliases['civicrm_contribution_tracking']}.id";
     $this->addJoinToContactAndEmail();
     $this->addJoinToPaymentsFraudBreakdown();

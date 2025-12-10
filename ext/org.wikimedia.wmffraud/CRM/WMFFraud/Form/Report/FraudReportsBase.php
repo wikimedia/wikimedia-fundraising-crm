@@ -6,20 +6,7 @@ class CRM_WMFFraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
 
   protected $_customGroupExtends = [];
 
-  /**
-   * @var string Fredge DB Name.
-   */
-  protected string $fredge;
-
-  /**
-   * @var string Drupal DB Name.
-   */
-  protected string $drupal;
-
   public function __construct() {
-    global $databases;
-    $this->fredge = substr($databases['default']['default']['database'], 0,
-      3) === 'dev' ? 'dev_fredge' : 'fredge';
     $this->setReportColumns();
     parent::__construct();
   }
@@ -235,7 +222,7 @@ class CRM_WMFFraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
     $this->_from .= " $join JOIN
       (
       SELECT user_ip, count(*) as ip_fails_count
-      FROM {$this->fredge}.payments_fraud
+      FROM payments_fraud
       WHERE validation_action = 'reject'
         AND `date` BETWEEN '{$from}' AND '{$to}'
       GROUP BY user_ip
@@ -275,7 +262,7 @@ class CRM_WMFFraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
     $this->_from .= " $join JOIN
       (
       SELECT email, count(*) as email_fails_count
-      FROM {$this->fredge}.payments_fraud pf
+      FROM payments_fraud pf
       INNER JOIN civicrm_contribution_tracking dt ON dt.id = pf.contribution_tracking_id
       INNER JOIN civicrm_contribution c on dt.contribution_id = c.id
       INNER JOIN civicrm_email email ON email.contact_id = c.contact_id AND email IS NOT NULL
@@ -299,7 +286,7 @@ class CRM_WMFFraud_Form_Report_FraudReportsBase extends CRM_Report_Form {
   protected function addJoinToPaymentsFraudBreakdown() : void {
     if ($this->isTableSelected('payments_fraud_breakdown')) {
       $this->_from .= "
-      LEFT JOIN {$this->fredge}.payments_fraud_breakdown {$this->_aliases['payments_fraud_breakdown']}
+      LEFT JOIN payments_fraud_breakdown {$this->_aliases['payments_fraud_breakdown']}
         ON {$this->_aliases['payments_fraud']}.id = {$this->_aliases['payments_fraud_breakdown']}.payments_fraud_id
     ";
     }
