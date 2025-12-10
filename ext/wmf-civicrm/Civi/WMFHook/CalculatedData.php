@@ -299,7 +299,7 @@ class CalculatedData extends TriggerHook {
 
       $requiredClauses = [1];
 
-      $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google', 'Apple']]])['values'];
+      $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google', 'Apple', 'Citi']]])['values'];
       $excludedContacts = array_keys($matchingGiftDonors);
       $anonymousContact = civicrm_api3('Contact', 'get', [
         'first_name' => 'Anonymous',

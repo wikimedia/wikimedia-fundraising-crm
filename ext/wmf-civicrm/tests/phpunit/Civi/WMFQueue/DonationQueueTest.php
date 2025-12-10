@@ -62,6 +62,8 @@ class DonationQueueTest extends BaseQueueTestCase {
       'payment_instrument_id:label' => 'Credit Card: Visa',
       'invoice_id' => $message['order_id'],
       'Gift_Data.Campaign' => 'Online Gift',
+      'wmf_donor.last_donation_currency' => 'PLN',
+      'wmf_donor.last_donation_amount' => '952.34'
     ];
     $this->assertExpectedContributionValues($expected, $message['gateway_txn_id'], $message['contribution_tracking_id']);
 
@@ -82,6 +84,8 @@ class DonationQueueTest extends BaseQueueTestCase {
       'payment_instrument_id:label' => 'Credit Card: Visa',
       'invoice_id' => $message2['order_id'],
       'Gift_Data.Campaign' => 'Online Gift',
+      'wmf_donor.last_donation_currency' => 'PLN',
+      'wmf_donor.last_donation_amount' => '952.34'
     ];
     $this->assertExpectedContributionValues($expected, $message2['gateway_txn_id']);
   }
@@ -117,6 +121,8 @@ class DonationQueueTest extends BaseQueueTestCase {
       'payment_instrument_id:label' => 'Credit Card: Visa',
       'invoice_id' => $message['order_id'],
       'Gift_Data.Campaign' => 'Online Gift',
+      'wmf_donor.last_donation_currency' => 'PLN',
+      'wmf_donor.last_donation_amount' => '400'
     ];
     $this->assertExpectedContributionValues($expected, $message['gateway_txn_id'], $message['contribution_tracking_id']);
   }
@@ -256,6 +262,8 @@ class DonationQueueTest extends BaseQueueTestCase {
       'payment_instrument_id:label' => 'Credit Card: Visa',
       'invoice_id' => $message['invoice_id'],
       'Gift_Data.Campaign' => 'Online Gift',
+      'wmf_donor.last_donation_currency' => 'PLN',
+      'wmf_donor.last_donation_amount' => '952.34'
     ];
     $this->assertExpectedContributionValues($expected, $message['gateway_txn_id']);
   }
@@ -480,6 +488,13 @@ class DonationQueueTest extends BaseQueueTestCase {
     $contribution = Contribution::get(FALSE)
       ->setSelect($returnFields)
       ->addWhere('contribution_extra.gateway_txn_id', '=', $gatewayTxnID)
+      ->execute()->first();
+
+    $contribution += Contact::get(FALSE)->addWhere('id', '=', $contribution['contact_id'])
+      ->addSelect(
+      'wmf_donor.last_donation_currency',
+        'wmf_donor.last_donation_amount',
+      )
       ->execute()->first();
 
     foreach ($expected as $key => $item) {
