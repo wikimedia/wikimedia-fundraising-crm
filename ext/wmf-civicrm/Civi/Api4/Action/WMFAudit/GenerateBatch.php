@@ -432,7 +432,8 @@ GROUP BY s.settlement_batch_reference
   WHEN gift.channel = 'Chapter Gifts'   THEN 43440   -- Chapter Gifts
   WHEN gift.channel = 'Recurring Gift'  THEN 43480   -- Online Recurring Contributions
   WHEN gift.channel = 'Mobile Banner'   THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Desktop Banner'   THEN 43481   -- Online Banner Contributions
+  WHEN gift.channel = 'Desktop Banner'  THEN 43481   -- Online Banner Contributions
+  WHEN gift.channel = 'Other Banner'    THEN 43481   -- Online Banner Contributions
   WHEN gift.channel = 'Email'           THEN 43482   -- Online Email Contributions
   WHEN gift.channel = 'Direct Mail'     THEN 43483   -- Online Direct Mail Contributions
   WHEN gift.channel = 'SMS'             THEN 43484   -- Other Online Contributions
