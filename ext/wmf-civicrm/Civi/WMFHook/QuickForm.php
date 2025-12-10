@@ -111,6 +111,22 @@ class QuickForm {
           ]);
         }
         break;
+      case 'CRM_Contribute_Form_AdditionalPayment':
+        // Add links to transaction info in payment processor consoles
+        /** @var \CRM_Contribute_Form_AdditionalPayment $form */
+        if (!$form->isViewMode()) {
+          return;
+        }
+        // fall through to next
+      case 'CRM_Contribute_Form_ContributionView':
+        $payments = $form->getTemplateVars('payments');
+        foreach ($payments as &$payment) {
+          $url = \Civi\WMFHelper\Contribution::getURLForTransactionID($payment['trxn_id']);
+          if ($url) {
+            $payment['trxn_id'] = "<a href=\"$url\" target=\"_blank\">{$payment['trxn_id']}</a>";
+          }
+        }
+        $form->assign('payments', $payments);
     }
   }
 
@@ -144,5 +160,4 @@ class QuickForm {
     $statusOptions = \CRM_Activity_BAO_Activity::buildOptions( 'status_id' );
     return array_search( 'Completed', $statusOptions );
   }
-
 }

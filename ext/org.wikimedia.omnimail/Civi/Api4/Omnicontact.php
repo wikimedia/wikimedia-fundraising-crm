@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4;
 
+use Civi\Api4\Action\Omnicontact\BulkReOptIn;
 use Civi\Api4\Action\Omnicontact\Upload;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 use Civi\Api4\Action\Omnicontact\VerifySnooze;
@@ -81,6 +82,18 @@ class Omnicontact extends Generic\AbstractEntity {
    */
   public static function get(bool $checkPermissions = TRUE): Get {
     return (new Get(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Bulk re opt in contacts from a table of emails
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\OmniContact\BulkReOptIn
+   */
+  public static function bulkReOptIn(bool $checkPermissions = TRUE): BulkReOptIn {
+    return (new BulkReOptIn(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 

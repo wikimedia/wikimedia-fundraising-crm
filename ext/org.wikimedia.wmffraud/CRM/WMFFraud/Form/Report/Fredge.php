@@ -4,7 +4,7 @@ use CRM_WMFFraud_ExtensionUtil as E;
 
 class CRM_WMFFraud_Form_Report_Fredge extends CRM_WMFFraud_Form_Report_FraudReportsBase {
 
-  const FRAUD_FILTERS = [
+  public const FRAUD_FILTERS = [
     'AVS' => 'getAVSResult',
     'CVV' => 'getCVVResult',
     'ScoreCountryMap' => 'getScoreCountryMap',
@@ -19,15 +19,15 @@ class CRM_WMFFraud_Form_Report_Fredge extends CRM_WMFFraud_Form_Report_FraudRepo
     'IPBlacklist' => 'IPBlacklist',
   ];
 
-  public function setDefaultValues($freeze = TRUE) {
+  public function setDefaultValues($freeze = TRUE) : array {
     $defaults = parent::setDefaultValues(TRUE);
     $this->convertOrderArrayToString($defaults);
     return $defaults;
   }
 
-  function from() {
+  public function from() : void {
     $this->_from = "
-      FROM {$this->fredge}.payments_fraud {$this->_aliases['payments_fraud']}";
+      FROM payments_fraud {$this->_aliases['payments_fraud']}";
     if ($this->isTableSelected('civicrm_contribution_tracking')
       || $this->isTableSelected('civicrm_contribution')
       || $this->isTableSelected('civicrm_email')
@@ -54,9 +54,9 @@ class CRM_WMFFraud_Form_Report_Fredge extends CRM_WMFFraud_Form_Report_FraudRepo
 
     foreach (self::FRAUD_FILTERS as $columnName => $value) {
       $tblAlias = "payments_fraud_breakdown_" . $columnName;
-      $this->_from .= "LEFT JOIN {$this->fredge}.payments_fraud_breakdown {$this->_aliases[$tblAlias]}
-        ON {$this->fredge}.{$this->_aliases['payments_fraud']}.id = {$this->fredge}.{$this->_aliases[$tblAlias]}.payments_fraud_id
-        AND {$this->fredge}.{$this->_aliases[$tblAlias]}.filter_name = '$value' ";
+      $this->_from .= "LEFT JOIN payments_fraud_breakdown {$this->_aliases[$tblAlias]}
+        ON {$this->_aliases['payments_fraud']}.id = {$this->_aliases[$tblAlias]}.payments_fraud_id
+        AND {$this->_aliases[$tblAlias]}.filter_name = '$value' ";
     }
   }
 
@@ -68,7 +68,7 @@ class CRM_WMFFraud_Form_Report_Fredge extends CRM_WMFFraud_Form_Report_FraudRepo
    *
    * @return int
    */
-  public function tableSort($a, $b) {
+  public function tableSort($a, $b) : int {
     $weLikeA = strpos($a, 'payments_fraud_breakdown_') === 0;
     $weLikeB = strpos($b, 'payments_fraud_breakdown_') === 0;
     if ($weLikeA && !$weLikeB) {
@@ -92,7 +92,7 @@ class CRM_WMFFraud_Form_Report_Fredge extends CRM_WMFFraud_Form_Report_FraudRepo
    *
    * @param array $defaults
    */
-  protected function convertOrderArrayToString(&$defaults) {
+  protected function convertOrderArrayToString(array &$defaults) : void {
     if (isset($defaults['order_id_value']) && is_array($defaults['order_id_value'])) {
       $defaults['order_id_value'] = implode(',', $defaults['order_id_value']);
     }
