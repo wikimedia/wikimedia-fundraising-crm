@@ -60,6 +60,13 @@ class CRM_WMFFraud_Form_Report_Fredge extends CRM_WMFFraud_Form_Report_FraudRepo
     }
   }
 
+  protected function storeGroupByArray(): void {
+    parent::storeGroupByArray();
+
+    // We're currently joining payments_fraud_breakdown mutuple times so grouping by id removes duplicate rows
+    $this->_groupByArray['payments_fraud_id'] = $this->_aliases['payments_fraud'] . '.id';
+  }
+
   /**
    * Sorting function to bring the breakdown tables to the top.
    *
