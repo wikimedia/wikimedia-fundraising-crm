@@ -647,6 +647,9 @@ END";
         if ($invalidBatches) {
           $params['subject'] .= " {$invalidBatches} need attention";
         }
+        if ($this->incompleteRows) {
+          $params['subject'] .= " " . count($this->incompleteRows) . " contributions need attention";
+        }
 
         $params['html'] = $html;
 
