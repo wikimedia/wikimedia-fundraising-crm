@@ -593,9 +593,8 @@ END";
 
           $batchName = htmlspecialchars($batch['batch']['name'], ENT_QUOTES, 'UTF-8');
           // This url will probably iterate - I have some ideas - but for now...
-          $batchUrl = \CRM_Utils_System::url('civicrm/contribution/settled#', [
-            'contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference' => $batch['batch']['name'],
-          ], TRUE);
+          $filerName = 'contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference';
+          $batchUrl = (string) \Civi::url('backend://civicrm/contribution/settled#?' . $filerName . '=' . $batch['batch']['name'], 'a');
 
           $currency  = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8');
           $settled   = htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8');
