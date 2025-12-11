@@ -9,6 +9,7 @@ use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\WMFBatch\BatchFile;
 use CRM_Core_DAO;
 use League\Csv\Writer;
 
@@ -344,7 +345,7 @@ GROUP BY s.settlement_batch_reference
         'fee' => $batch['batch_data.settled_fee_amount'] + $record['totals']['fee'],
         'settled' => round($batch['batch_data.settled_net_amount'], 2) - $record['totals']['settled'],
       ];
-      $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['batch_data.settlement_currency']);
+      $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['name']);
       if (empty(array_filter($record['validation']))) {
         Batch::update(FALSE)
           ->addValue('status_id:name', 'validated')
@@ -367,7 +368,7 @@ GROUP BY s.settlement_batch_reference
    * @param $csv_rows
    * @return void
    */
-  public function addToCsv($csv_rows, $renderedSql, string $settledCurrency): void {
+  public function addToCsv($csv_rows, $renderedSql, string $batchName): void {
     if ($this->isOutputCsv) {
       $writer = $this->getWriter();
       $writer->insertAll($csv_rows);
@@ -377,7 +378,7 @@ GROUP BY s.settlement_batch_reference
           $this->incompleteRows[] = $row;
         }
       }
-      $detailWriter = $this->getDetailsWriter(array_keys($detailedData[0]), $settledCurrency);
+      $detailWriter = $this->getDetailsWriter(array_keys($detailedData[0] ?? []), $batchName);
       $detailWriter->insertAll($detailedData);
     }
   }
@@ -396,12 +397,12 @@ GROUP BY s.settlement_batch_reference
   /**
    * @return Writer
    */
-  public function getDetailsWriter(array $headers, $currency): Writer {
-    if (!isset($this->detailWriters[$currency])) {
-      $this->detailWriters[$currency] = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->batchPrefix . '_' . $currency . '_details.csv', 'w');
-      $this->detailWriters[$currency]->insertOne($headers);
+  public function getDetailsWriter(array $headers, $batchName): Writer {
+    if (!isset($this->detailWriters[$batchName])) {
+      $this->detailWriters[$batchName] = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
+      $this->detailWriters[$batchName]->insertOne($headers);
     }
-    return $this->detailWriters[$currency];
+    return $this->detailWriters[$batchName];
   }
 
   /**
@@ -565,6 +566,7 @@ END";
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Settled Total</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total in batch</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Discrepancy</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Files</th>
             </tr>
           </thead>
           <tbody>
@@ -593,11 +595,13 @@ END";
           // This url will probably iterate - I have some ideas - but for now...
           $batchUrl = \CRM_Utils_System::url('civicrm/contribution/settled#', [
             'contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference' => $batch['batch']['name'],
-          ]);
+          ], TRUE);
 
           $currency  = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8');
           $settled   = htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8');
           $totalInBatch = htmlspecialchars($batch['batch']['batch_data.settled_net_amount'], ENT_QUOTES, 'UTF-8');
+          $numberOfTransactions = $batch['batch']['total'];
+          $transactionsUrl = BatchFile::getBatchFileUrl([$batchName], 'details');
           $html .= "
           <tr>
             <td style=\"$cell\"><a href='{$batchUrl}'>{$batchName}</a></td>
@@ -605,6 +609,7 @@ END";
             <td style=\"$cellRight\">{$totalInBatch}</td>
             <td style=\"$cellRight\">{$settled}</td>
             <td style=\"$discrepancyStyle\">{$discrepancy}</td>
+            <td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" : '') . "</td>
           </tr>
         ";
         }

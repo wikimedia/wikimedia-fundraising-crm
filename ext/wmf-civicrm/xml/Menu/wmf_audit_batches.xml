@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/batch/download</path>
+    <title>Download Raw file</title>
+    <page_callback>Civi\WMFBatch\BatchFile::getBatchFile</page_callback>
+    <desc>Get batch file.</desc>
+    <access_arguments>administer CiviCRM system</access_arguments>
+    <weight>10</weight>
+    <adminGroup>Contributions</adminGroup>
+  </item>
+</menu>
