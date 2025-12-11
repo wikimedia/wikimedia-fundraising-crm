@@ -70,6 +70,8 @@ class GenerateBatch extends AbstractAction {
 
   private array $headers = [];
 
+  private array $incompleteRows = [];
+
   /**
    * This function updates the settled transaction with new fee & currency conversion data.
    *
@@ -370,6 +372,11 @@ GROUP BY s.settlement_batch_reference
       $writer = $this->getWriter();
       $writer->insertAll($csv_rows);
       $detailedData = $this->getDetailData($renderedSql);
+      foreach ($detailedData as $row) {
+        if (empty($row['ACCT_NO'])) {
+          $this->incompleteRows[] = $row;
+        }
+      }
       $detailWriter = $this->getDetailsWriter(array_keys($detailedData[0]), $settledCurrency);
       $detailWriter->insertAll($detailedData);
     }
@@ -583,12 +590,17 @@ END";
           }
 
           $batchName = htmlspecialchars($batch['batch']['name'], ENT_QUOTES, 'UTF-8');
+          // This url will probably iterate - I have some ideas - but for now...
+          $batchUrl = \CRM_Utils_System::url('civicrm/contribution/settled#', [
+            'contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference' => $batch['batch']['name'],
+          ]);
+
           $currency  = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8');
           $settled   = htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8');
           $totalInBatch = htmlspecialchars($batch['batch']['batch_data.settled_net_amount'], ENT_QUOTES, 'UTF-8');
           $html .= "
           <tr>
-            <td style=\"$cell\">{$batchName}</td>
+            <td style=\"$cell\"><a href='{$batchUrl}'>{$batchName}</a></td>
             <td style=\"$cell\">{$currency}</td>
             <td style=\"$cellRight\">{$totalInBatch}</td>
             <td style=\"$cellRight\">{$settled}</td>
@@ -596,12 +608,36 @@ END";
           </tr>
         ";
         }
-
-        $html .= '
+        $html .= "
           </tbody>
-        </table>
-        </html>
-      ';
+        </table>";
+
+        if ($this->incompleteRows) {
+          $html .= '<table style="border-collapse: collapse; width: 50%; font-family: Arial, sans-serif; font-size: 14px;">
+          <thead>
+            <tr style="background-color: #f2f2f2; font-weight: bold;">
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Contribution without Account code</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Channel</th>
+            </tr>
+          </thead>
+          <tbody>';
+          foreach ($this->incompleteRows as $row) {
+            $contributionURL = \CRM_Utils_System::url('civicrm/contact/view/contribution',[
+              'id' => $row['contribution_id'],
+              'reset' => 1,
+            ]);
+            $html .= "
+          <tr>
+            <td style=\"$cell\"><a href='{$contributionURL}'>{$row['contribution_id']}</a></td>
+            <td style=\"$cell\">{$row['channel']}</td>
+          </tr>
+        ";
+          }
+          $html .= " </tbody> </table>";
+        }
+
+
+        $html .= '</html>';
 
         if ($invalidBatches) {
           $params['subject'] .= " {$invalidBatches} need attention";
