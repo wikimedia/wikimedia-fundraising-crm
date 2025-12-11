@@ -9,6 +9,7 @@ use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\WMFBatch\BatchFile;
 use CRM_Core_DAO;
 use League\Csv\Writer;
 
@@ -69,6 +70,8 @@ class GenerateBatch extends AbstractAction {
   private array $detailWriters;
 
   private array $headers = [];
+
+  private array $incompleteRows = [];
 
   /**
    * This function updates the settled transaction with new fee & currency conversion data.
@@ -342,7 +345,7 @@ GROUP BY s.settlement_batch_reference
         'fee' => $batch['batch_data.settled_fee_amount'] + $record['totals']['fee'],
         'settled' => round($batch['batch_data.settled_net_amount'], 2) - $record['totals']['settled'],
       ];
-      $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['batch_data.settlement_currency']);
+      $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['name']);
       if (empty(array_filter($record['validation']))) {
         Batch::update(FALSE)
           ->addValue('status_id:name', 'validated')
@@ -365,12 +368,17 @@ GROUP BY s.settlement_batch_reference
    * @param $csv_rows
    * @return void
    */
-  public function addToCsv($csv_rows, $renderedSql, string $settledCurrency): void {
+  public function addToCsv($csv_rows, $renderedSql, string $batchName): void {
     if ($this->isOutputCsv) {
       $writer = $this->getWriter();
       $writer->insertAll($csv_rows);
       $detailedData = $this->getDetailData($renderedSql);
-      $detailWriter = $this->getDetailsWriter(array_keys($detailedData[0]), $settledCurrency);
+      foreach ($detailedData as $row) {
+        if (empty($row['ACCT_NO'])) {
+          $this->incompleteRows[] = $row;
+        }
+      }
+      $detailWriter = $this->getDetailsWriter(array_keys($detailedData[0] ?? []), $batchName);
       $detailWriter->insertAll($detailedData);
     }
   }
@@ -389,12 +397,12 @@ GROUP BY s.settlement_batch_reference
   /**
    * @return Writer
    */
-  public function getDetailsWriter(array $headers, $currency): Writer {
-    if (!isset($this->detailWriters[$currency])) {
-      $this->detailWriters[$currency] = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->batchPrefix . '_' . $currency . '_details.csv', 'w');
-      $this->detailWriters[$currency]->insertOne($headers);
+  public function getDetailsWriter(array $headers, $batchName): Writer {
+    if (!isset($this->detailWriters[$batchName])) {
+      $this->detailWriters[$batchName] = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
+      $this->detailWriters[$batchName]->insertOne($headers);
     }
-    return $this->detailWriters[$currency];
+    return $this->detailWriters[$batchName];
   }
 
   /**
@@ -432,7 +440,8 @@ GROUP BY s.settlement_batch_reference
   WHEN gift.channel = 'Chapter Gifts'   THEN 43440   -- Chapter Gifts
   WHEN gift.channel = 'Recurring Gift'  THEN 43480   -- Online Recurring Contributions
   WHEN gift.channel = 'Mobile Banner'   THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Desktop Banner'   THEN 43481   -- Online Banner Contributions
+  WHEN gift.channel = 'Desktop Banner'  THEN 43481   -- Online Banner Contributions
+  WHEN gift.channel = 'Other Banner'    THEN 43481   -- Online Banner Contributions
   WHEN gift.channel = 'Email'           THEN 43482   -- Online Email Contributions
   WHEN gift.channel = 'Direct Mail'     THEN 43483   -- Online Direct Mail Contributions
   WHEN gift.channel = 'SMS'             THEN 43484   -- Other Online Contributions
@@ -557,6 +566,7 @@ END";
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Settled Total</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total in batch</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Discrepancy</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Files</th>
             </tr>
           </thead>
           <tbody>
@@ -582,25 +592,57 @@ END";
           }
 
           $batchName = htmlspecialchars($batch['batch']['name'], ENT_QUOTES, 'UTF-8');
+          // This url will probably iterate - I have some ideas - but for now...
+          $batchUrl = \CRM_Utils_System::url('civicrm/contribution/settled#', [
+            'contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference' => $batch['batch']['name'],
+          ], TRUE);
+
           $currency  = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8');
           $settled   = htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8');
           $totalInBatch = htmlspecialchars($batch['batch']['batch_data.settled_net_amount'], ENT_QUOTES, 'UTF-8');
+          $numberOfTransactions = $batch['batch']['total'];
+          $transactionsUrl = BatchFile::getBatchFileUrl([$batchName], 'details');
           $html .= "
           <tr>
-            <td style=\"$cell\">{$batchName}</td>
+            <td style=\"$cell\"><a href='{$batchUrl}'>{$batchName}</a></td>
             <td style=\"$cell\">{$currency}</td>
             <td style=\"$cellRight\">{$totalInBatch}</td>
             <td style=\"$cellRight\">{$settled}</td>
             <td style=\"$discrepancyStyle\">{$discrepancy}</td>
+            <td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" : '') . "</td>
           </tr>
         ";
         }
-
-        $html .= '
+        $html .= "
           </tbody>
-        </table>
-        </html>
-      ';
+        </table>";
+
+        if ($this->incompleteRows) {
+          $html .= '<table style="border-collapse: collapse; width: 50%; font-family: Arial, sans-serif; font-size: 14px;">
+          <thead>
+            <tr style="background-color: #f2f2f2; font-weight: bold;">
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Contribution without Account code</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Channel</th>
+            </tr>
+          </thead>
+          <tbody>';
+          foreach ($this->incompleteRows as $row) {
+            $contributionURL = \CRM_Utils_System::url('civicrm/contact/view/contribution',[
+              'id' => $row['contribution_id'],
+              'reset' => 1,
+            ]);
+            $html .= "
+          <tr>
+            <td style=\"$cell\"><a href='{$contributionURL}'>{$row['contribution_id']}</a></td>
+            <td style=\"$cell\">{$row['channel']}</td>
+          </tr>
+        ";
+          }
+          $html .= " </tbody> </table>";
+        }
+
+
+        $html .= '</html>';
 
         if ($invalidBatches) {
           $params['subject'] .= " {$invalidBatches} need attention";
