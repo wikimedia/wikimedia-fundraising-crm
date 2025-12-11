@@ -75,13 +75,25 @@ class BulkReOptIn extends AbstractAction {
     while ($success + $failure < $limit || $limit === NULL) {
       $email = \CRM_Core_DAO::singleValueQuery($getsql);
       if ($email) {
-        $optIn = \Civi\Api4\Omnicontact::create(FALSE)
-          ->setEmail($email)
-          ->addValue('is_opt_out', FALSE)
-          ->setGroupIdentifier($groupIdentifier)
-          ->execute()->first();
-        \CRM_Core_DAO::executeQuery($setsql, [1 => [$optIn ? 1 : 2, 'Integer'], 2 => [$email, 'String']]);;
-        $optIn ? $success++ : $failure++;
+        try {
+          $optIn = \Civi\Api4\Omnicontact::create(FALSE)
+            ->setEmail($email)
+            ->addValue('is_opt_out', FALSE)
+            ->setGroupIdentifier($groupIdentifier)
+            ->execute()->first();
+          \CRM_Core_DAO::executeQuery($setsql, [1 => [$optIn ? 1 : 2, 'Integer'], 2 => [$email, 'String']]);;
+          $optIn ? $success++ : $failure++;
+        }
+        catch (\Exception $e) {
+          // If the Acoustic API times out, retry a few times.
+          if (str_starts_with($e->getMessage(),'cURL error') && $failure <= 10) {
+            $failure++;
+            sleep(120);
+          }
+          else {
+            throw $e;
+          }
+        }
       }
       else {
         break;
