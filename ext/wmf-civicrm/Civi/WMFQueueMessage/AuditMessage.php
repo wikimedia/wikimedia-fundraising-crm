@@ -200,6 +200,8 @@ class AuditMessage extends DonationMessage {
     if ($this->isChargebackReversal()) {
       // Maybe always but definitely here.
       $message['invoice_id'] = $this->getOrderID();
+      // These are such oddities we should keep them simple.
+      $message['recurring'] = FALSE;
     }
     $message['contribution_tracking_id'] = $this->getContributionTrackingID();
     if (!$this->getExistingContributionID()) {
