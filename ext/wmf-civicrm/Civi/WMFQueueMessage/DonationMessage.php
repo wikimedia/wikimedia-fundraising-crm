@@ -668,20 +668,6 @@ class DonationMessage extends Message {
   }
 
   /**
-   * @return int|float|false
-   * @throws WMFException
-   */
-  public function getOriginalFeeAmount(): int|float|false {
-    if (array_key_exists('original_fee_amount', $this->message) && is_numeric($this->message['original_fee_amount'])) {
-      return $this->cleanMoney($this->message['original_fee_amount']);
-    }
-    if (array_key_exists('fee', $this->message) && is_numeric($this->message['fee'])) {
-      return $this->cleanMoney($this->message['fee']);
-    }
-    return FALSE;
-  }
-
-  /**
    * Gets a unique transaction ID suitable for storing in civicrm_contribution.trxn_id
    * @return string|null
    * @throws WMFException
