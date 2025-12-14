@@ -933,7 +933,7 @@ class Message {
    * Are we dealing with a message that had a currency other than our settlement currency.
    */
   public function isExchangeRateConversionRequired(): bool {
-    return $this->message['currency'] !== $this->getReportingCurrency();
+    return $this->getOriginalCurrency() !== $this->getReportingCurrency();
   }
 
   public function getReportingCurrency() {

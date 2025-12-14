@@ -2026,6 +2026,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     $firstMessage = [
       'contact_id' => $this->ids['Contact']['danger_mouse'],
       'currency' => 'USD',
+      'original_currency' => 'USD',
       'date' => time(),
       'gateway' => 'test_gateway',
       'gateway_txn_id' => mt_rand(),
@@ -2044,6 +2045,7 @@ class DonationQueueTest extends BaseQueueTestCase {
 
     $secondMessage = [
       'currency' => 'USD',
+      'original_currency' => 'USD',
       'date' => time(),
       'gateway' => 'test_gateway',
       'gateway_txn_id' => mt_rand(),
