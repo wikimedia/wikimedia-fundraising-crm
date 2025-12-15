@@ -20,7 +20,7 @@ class BatchFile {
       throw new \CRM_Core_Exception('batch not generated');
     }
     // So far only details.
-    $allowedTypes = ['details'];
+    $allowedTypes = ['details', 'journals'];
     if (!in_array($type, $allowedTypes, true)) {
       CRM_Utils_System::statusBounce(ts('Invalid batch type.'));
     }

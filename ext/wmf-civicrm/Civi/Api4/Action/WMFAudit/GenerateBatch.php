@@ -720,6 +720,7 @@ END";
           $totalInBatch = \Civi::format()->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'], ENT_QUOTES, 'UTF-8'), $currency);
           $numberOfTransactions = $batch['batch']['total'];
           $transactionsUrl = BatchFile::getBatchFileUrl([$batchName], 'details');
+          $journalUrl = BatchFile::getBatchFileUrl([$batchName], 'journals');
           $html .= "
           <tr>
             <td style=\"$cell\"><a href='{$batchUrl}'>{$batchName}</a></td>
@@ -727,7 +728,7 @@ END";
             <td style=\"$cellRight\">{$totalInBatch}</td>
             <td style=\"$cellRight\">{$settled}</td>
             <td style=\"$discrepancyStyle\">{$discrepancy}</td>
-            <td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" : '') . "</td>
+            <td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
           </tr>
         ";
         }
