@@ -219,7 +219,7 @@ SELECT
     'CC-1014' as DEPT_ID,
     REGEXP_SUBSTR(%1, '[0-9]+(?=_[A-Z]{3})')  as DOCUMENT,
     -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Fees') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
     -- @todo obv some cleaup in here
     SUM(COALESCE(-settled_fee_amount, 0)) as DEBIT,
     0 as CREDIT,
@@ -255,7 +255,7 @@ GROUP BY s.settlement_batch_reference
     foreach ($batches as $batch) {
       $defaults = [
         'DONOTIMPORT' => '',
-        'JOURNAL' => 'crev',
+        'JOURNAL' => 'CREV',
         'DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
         'REVERSEDATE' => '',
         'REFERENCE_NO' => '',
@@ -282,6 +282,8 @@ GROUP BY s.settlement_batch_reference
         'GLENTRY_VENDORID' => '',
         'GLENTRY_ITEMID' => '',
         'GLENTRY_EMPLOYEEID' => '',
+        'DESCRIPTION' => '',
+        'MEMO' => '',
       ];
       /**
       $record['contributions'] = (array) Contribution::get(FALSE)
@@ -411,6 +413,7 @@ GROUP BY s.settlement_batch_reference
         $this->log('draft file location ' . $draftFileName);
       }
     }
+    $this->log('Account code logic ' . $this->getAccountClause());
     $this->sendSummary($result, $finalFileName ?? NULL);
   }
 
@@ -530,12 +533,10 @@ GROUP BY s.settlement_batch_reference
     -- Chapter Gifts	43440 = channel =  Chapter Gifts
     -- Major Gifts - Unrestricted	43485
     -- Major Gifts - Restricted	43428
-    -- @todo concat in Major gifts, get source data correct for these
-    -- will have to do case statement but hopefully on just 2 fields
     CASE
   -- 1) Major gifts first
   WHEN gift.is_major_gift = 1 AND gift.fund LIKE 'restricted%' THEN 43428  -- Major Gifts - Restricted
-  WHEN gift.is_major_gift = 1 THEN 43485                                          -- Major Gifts - Unrestricted
+  WHEN gift.is_major_gift = 1 THEN 43485                                   -- Major Gifts - Unrestricted
 
   -- 2) Specific channels
   WHEN gift.channel = 'Chapter Gifts'   THEN 43440   -- Chapter Gifts
@@ -555,7 +556,7 @@ GROUP BY s.settlement_batch_reference
   WHEN gift.channel = 'Social Media'    THEN 43484   -- Other Online Contributions
   -- 3) Everything else -> Online Other Contributions
   -- remaining = 'Workplace Giving','Direct Solicitation','Planned Giving', 'Events','White Mail','Other Offline'
-  ELSE '' -- default/fallback
+  ELSE '' -- default/fallback - this will cause the batch to report errors and not close.
 END";
   }
 
