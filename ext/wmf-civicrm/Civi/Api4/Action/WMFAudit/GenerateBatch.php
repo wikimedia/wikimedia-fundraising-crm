@@ -413,7 +413,7 @@ GROUP BY s.settlement_batch_reference
         $this->log('draft file location ' . $draftFileName);
       }
     }
-    $this->log('Account code logic ' . $this->getAccountClause());
+    $this->log('Account code logic ' . nl2br($this->getAccountClause()));
     $this->sendSummary($result, $finalFileName ?? NULL);
   }
 
