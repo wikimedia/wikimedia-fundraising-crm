@@ -459,7 +459,7 @@ GROUP BY s.settlement_batch_reference
    */
   public function getWriter(): Writer {
     if (!isset($this->writer)) {
-      $this->writer = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . date('Y-m-d H:i:s') . $this->batchPrefix . '-draft.csv', 'w');
+      $this->writer = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . date('c') . $this->batchPrefix . '-draft.csv', 'w');
       $this->writer->insertOne($this->headers);
     }
     return $this->writer;
