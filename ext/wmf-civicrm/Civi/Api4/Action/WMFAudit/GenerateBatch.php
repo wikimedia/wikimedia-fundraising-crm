@@ -9,6 +9,7 @@ use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\FinanceIntegration;
 use Civi\WMFBatch\BatchFile;
 use CRM_Core_DAO;
 use League\Csv\Writer;
@@ -43,6 +44,15 @@ class GenerateBatch extends AbstractAction {
   protected bool $isOutputRows = FALSE;
 
   /**
+   * Is output to Api.
+   *
+   * Should the result be pushed to the api or the sftp.
+   *
+   * @var string
+   */
+  protected string $outputMethod = '';
+
+  /**
    * Is a csv to be output.
    *
    * @var bool
@@ -69,9 +79,17 @@ class GenerateBatch extends AbstractAction {
 
   private array $detailWriters;
 
+  private array $journalWriters;
+
   private array $headers = [];
 
   private array $incompleteRows = [];
+
+  private array $log = [];
+
+  private array $batchSummary = [];
+  private string $startDate = '';
+  private string $endDate = '';
 
   /**
    * This function updates the settled transaction with new fee & currency conversion data.
@@ -88,6 +106,7 @@ class GenerateBatch extends AbstractAction {
     $deptIDClause = $this->getDeptIDClause();
     $restrictionsClause = $this->getRestrictionsClause();
     $vendorClause = $this->getVendorClause();
+    $batches = $this->getBatches();
 
     $sql = "SELECT
     %2 as DATE,
@@ -97,7 +116,7 @@ class GenerateBatch extends AbstractAction {
     '100-WMF' as LOCATION_ID,
     $deptIDClause as DEPT_ID,
     REGEXP_SUBSTR(%1, '[0-9]+(?=_[A-Z]{3})')  as DOCUMENT,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donations') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | " . date('m/d/y', strtotime($this->startDate)) . " | " . date('m/d/y', strtotime($this->endDate)) . " | ', COUNT(*), ' | ', ' Donations') as MEMO,
     0 as DEBIT,
     SUM(COALESCE(settled_donation_amount, 0)) as CREDIT,
     s.settlement_currency as CURRENCY,
@@ -213,7 +232,7 @@ SELECT
     'CC-1014' as DEPT_ID,
     REGEXP_SUBSTR(%1, '[0-9]+(?=_[A-Z]{3})')  as DOCUMENT,
     -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Fees') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
     -- @todo obv some cleaup in here
     SUM(COALESCE(-settled_fee_amount, 0)) as DEBIT,
     0 as CREDIT,
@@ -231,25 +250,12 @@ WHERE (%1 = settlement_batch_reference)
 GROUP BY s.settlement_batch_reference
 ";
 
-    if ($this->batchPrefix) {
-      $batches = Batch::get(FALSE)
-        ->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
-        ->addSelect('batch_data.*', '*', 'status_id:name')
-        ->execute()->indexBy('name');
-    }
-    else {
-      $batches = Batch::get(FALSE)
-        ->addWhere('status_id:name', '=', 'total_verified')
-        ->addSelect('batch_data.*', '*', 'status_id:name')
-        ->execute()->indexBy('name');
-    }
-
     $rowNumber = 1;
 
     foreach ($batches as $batch) {
       $defaults = [
         'DONOTIMPORT' => '',
-        'JOURNAL' => 'crev',
+        'JOURNAL' => 'CREV',
         'DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
         'REVERSEDATE' => '',
         'REFERENCE_NO' => '',
@@ -276,6 +282,8 @@ GROUP BY s.settlement_batch_reference
         'GLENTRY_VENDORID' => '',
         'GLENTRY_ITEMID' => '',
         'GLENTRY_EMPLOYEEID' => '',
+        'DESCRIPTION' => '',
+        'MEMO' => '',
       ];
       /**
       $record['contributions'] = (array) Contribution::get(FALSE)
@@ -288,6 +296,12 @@ GROUP BY s.settlement_batch_reference
         // export in debug mode?
         throw new \CRM_Core_Exception('batch verified - cannot export');
       }
+      $this->batchSummary[$batch['name']] = [
+        'currency' => $batch['batch_data.settlement_currency'],
+        'annual_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
+        'endowment_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
+      ];
+
       $renderedSql = CRM_Core_DAO::composeQuery($sql, [
         1 => [$batch['name'], 'String'],
         2 => [date('m/d/Y', strtotime($batch['batch_data.settlement_date'])), 'String']]
@@ -307,7 +321,7 @@ GROUP BY s.settlement_batch_reference
         $record['csv_rows'][$index] = [...$defaults, ...$row];
         $record['csv_rows'][$index]['LINE_NO'] = $rowNumber;
         $rowNumber+= 2;
-        $isFee = str_contains($row['MEMO'], 'Fee');
+        $isFee = $this->isFee($row);
         $rowCount = (int)(explode(' | ', $row['MEMO'])[4]);
         if (!$isFee) {
           $count += $rowCount;
@@ -338,26 +352,83 @@ GROUP BY s.settlement_batch_reference
         'settled' => (string) $credit->minus($debit)->minus($feeDebit)->plus($feeCredit)->getAmount(),
         'count' => $count
       ];
-       $record['validation'] = [
-        'count' => $batch['item_count'] - $record['totals']['count'],
-        'credit' => round($batch['batch_data.settled_donation_amount'], 2) - $record['totals']['credit'],
-        'debit' => round($batch['batch_data.settled_reversal_amount'], 2) + $record['totals']['debit'],
-        'fee' => $batch['batch_data.settled_fee_amount'] + $record['totals']['fee'],
-        'settled' => round($batch['batch_data.settled_net_amount'], 2) - $record['totals']['settled'],
+      $record['expected'] = [
+        'count' => $batch['item_count'],
+        'credit' => round($batch['batch_data.settled_donation_amount'], 2),
+        'debit' => round($batch['batch_data.settled_reversal_amount'], 2),
+        'fee' => $batch['batch_data.settled_fee_amount'],
+        'settled' => round($batch['batch_data.settled_net_amount'], 2),
+      ];
+      $record['validation'] = [
+        'count' => $record['expected']['count'] - $record['totals']['count'],
+        'credit' => $record['expected']['credit'] - $record['totals']['credit'],
+        'debit' =>  $record['expected']['debit'] + $record['totals']['debit'],
+        'fee' => $record['expected']['fee'] + $record['totals']['fee'],
+        'settled' => $record['expected']['settled'] - $record['totals']['settled'],
       ];
       $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['name']);
-      if (empty(array_filter($record['validation']))) {
-        Batch::update(FALSE)
-          ->addValue('status_id:name', 'validated')
-          ->addWhere('id', '=', $batch['id'])
-          ->execute();
+      $isValid = empty(array_filter($record['validation']));
+      $this->batchSummary[$batch['name']]['is_valid'] = $isValid;
+      $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
+      if (!$isValid) {
+        foreach (array_filter($record['validation']) as $key => $value) {
+          if ($key !== 'count') {
+            $value = \Civi::format()->money($value, $this->batchSummary[$batch['name']]['currency']);
+          }
+          $this->log($key . " has discrepancy of $value (expected {$record['expected'][$key]}, actual {$record['totals'][$key]} )");
+        }
       }
       if (!$this->isOutputRows) {
         unset($record['csv_rows']);
       }
       $result[] = $record;
     }
-    $this->sendSummary($result);
+
+    // Do not close any batches unless all verified batches are valid. We will make sure they
+    // are right before closing.
+    $draftFileName = $this->getDraftFileName();
+    if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
+      Batch::update(FALSE)
+        ->addValue('status_id:name', 'validated')
+        ->addWhere('id', 'IN', array_keys($this->batchSummary))
+        ->execute();
+      $this->log('The following batches have been validated and closed ' . implode(',', array_keys($this->batchSummary)));
+      if ($draftFileName) {
+        $finalFileName = str_replace('-draft', '-final', $draftFileName);
+        rename($draftFileName, $finalFileName);
+        $this->log('final file name ' . $finalFileName);
+        $this->log('attach file for finance using alias ' . $this->getUploadFileName());
+      }
+      else {
+        $this->log('no file generated due to input parameters');
+      }
+    }
+    else {
+      if (!empty($this->incompleteRows)) {
+        $this->log('No batches closed due to presence of rows without account codes ' . implode(',', $this->getInvalidBatches()));
+      }
+      if ($this->getInvalidBatches()) {
+        $this->log('No batches closed due to presence of invalid batches ' . implode(',', $this->getInvalidBatches()));
+      }
+      if ($draftFileName) {
+        $this->log('draft file location ' . $draftFileName);
+      }
+    }
+
+    if ($this->outputMethod === 'api' && !empty($finalFileName)) {
+      try {
+        $this->log('The journals are being pushed to the staging version of Intacct via the api. When an sftp alternative has been built this is where that will be plugged in');
+        $apiOutcome = FinanceIntegration::pushJournal(FALSE)
+          ->setJournalFile($finalFileName)
+          ->execute()->first();
+        $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome));
+      }
+      catch (\Exception $e) {
+        $this->log('failed to upload to Intacct with error ' . $e->getMessage());
+      }
+    }
+    $this->log('Account code logic ' . nl2br($this->getAccountClause()));
+    $this->sendSummary($result, $finalFileName ?? NULL);
   }
 
   public static function fields(): array {
@@ -372,10 +443,33 @@ GROUP BY s.settlement_batch_reference
     if ($this->isOutputCsv) {
       $writer = $this->getWriter();
       $writer->insertAll($csv_rows);
+      $batchJournalWriter = $this->getBatchJournalWriter($batchName);
+      $batchJournalWriter->insertAll($csv_rows);
       $detailedData = $this->getDetailData($renderedSql);
       foreach ($detailedData as $row) {
         if (empty($row['ACCT_NO'])) {
           $this->incompleteRows[] = $row;
+          $this->log("Account number not found for id {$row['contribution_id']} in channel . {$row['channel']}");
+        }
+        else {
+          if (empty($this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']])) {
+            $this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']] = [
+              'annual_fund' => Money::of(0, $this->batchSummary[$batchName]['currency']),
+              'endowment_fund' => Money::of(0, $this->batchSummary[$batchName]['currency']),
+            ];
+          }
+          $fund = $row['is_endowment'] ? 'endowment_fund' : 'annual_fund';
+          if ($this->isFee($row)) {
+            $fee = $this->batchSummary[$batchName][$fund . '_fees'];
+            $fee = $fee->plus($row['settled_fee_amount'] ?: 0);
+            $fee = $fee->plus($row['settled_reversal_fee_amount'] ?: 0);
+            $this->batchSummary[$batchName][$fund . '_fees'] = $fee;
+          }
+          else {
+            $amount = $this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']][$fund];
+            $amount = $amount->plus($row['settled_donation_amount'] ?: 0);
+            $this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']][$fund] = $amount;
+          }
         }
       }
       $detailWriter = $this->getDetailsWriter(array_keys($detailedData[0] ?? []), $batchName);
@@ -388,7 +482,7 @@ GROUP BY s.settlement_batch_reference
    */
   public function getWriter(): Writer {
     if (!isset($this->writer)) {
-      $this->writer = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->batchPrefix . '.csv', 'w');
+      $this->writer = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . date('c') . $this->batchPrefix . '-draft.csv', 'w');
       $this->writer->insertOne($this->headers);
     }
     return $this->writer;
@@ -406,6 +500,17 @@ GROUP BY s.settlement_batch_reference
   }
 
   /**
+   * @return Writer
+   */
+  private function getBatchJournalWriter(string $batchName): Writer {
+    if (!isset($this->journalWriters[$batchName])) {
+      $this->journalWriters[$batchName] = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_journals.csv', 'w');
+      $this->journalWriters[$batchName]->insertOne($this->headers);
+    }
+    return $this->journalWriters[$batchName];
+  }
+
+  /**
    * @param array $defaults)
    * @return void
    */
@@ -415,6 +520,19 @@ GROUP BY s.settlement_batch_reference
     }
   }
 
+  private function getAccountName($accountCode): string {
+    $map = [
+      43480 => 'Recurring Gift',
+      43481 => 'Banner',
+      43482 => 'Email',
+      43483 => 'Direct Mail',
+      43484 => 'Online Other',
+      43440 => 'Chapter Gifts',
+      43485 => 'Major Gifts - Unrestricted',
+      43428 => 'Major Gifts - Restricted',
+    ];
+    return $map[$accountCode] ?? '';
+  }
   /**
    * @return string
    */
@@ -429,12 +547,10 @@ GROUP BY s.settlement_batch_reference
     -- Chapter Gifts	43440 = channel =  Chapter Gifts
     -- Major Gifts - Unrestricted	43485
     -- Major Gifts - Restricted	43428
-    -- @todo concat in Major gifts, get source data correct for these
-    -- will have to do case statement but hopefully on just 2 fields
     CASE
   -- 1) Major gifts first
   WHEN gift.is_major_gift = 1 AND gift.fund LIKE 'restricted%' THEN 43428  -- Major Gifts - Restricted
-  WHEN gift.is_major_gift = 1 THEN 43485                                          -- Major Gifts - Unrestricted
+  WHEN gift.is_major_gift = 1 THEN 43485                                   -- Major Gifts - Unrestricted
 
   -- 2) Specific channels
   WHEN gift.channel = 'Chapter Gifts'   THEN 43440   -- Chapter Gifts
@@ -454,7 +570,7 @@ GROUP BY s.settlement_batch_reference
   WHEN gift.channel = 'Social Media'    THEN 43484   -- Other Online Contributions
   -- 3) Everything else -> Online Other Contributions
   -- remaining = 'Workplace Giving','Direct Solicitation','Planned Giving', 'Events','White Mail','Other Offline'
-  ELSE '' -- default/fallback
+  ELSE '' -- default/fallback - this will cause the batch to report errors and not close.
 END";
   }
 
@@ -545,7 +661,7 @@ END";
    * @param Result $result
    * @return void
    */
-  public function sendSummary(Result $result): void {
+  public function sendSummary(Result $result, ?string $fileName): void {
     if (count($result)) {
       if ($this->emailSummaryAddress) {
         $params = [
@@ -556,15 +672,28 @@ END";
 
         $invalidBatches = 0;
 
-        // Start styled table (corporate / minimal)
-        $html = '<html>
-        <table style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 14px;">
+        $tableOpenHtml = '<table style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 14px;">';
+        // Start styled table.
+        $html = '<html> <h3>The following batches have been generated</h3>';
+        if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
+          $html .= '<p>All batches have validated and the batches have been closed. The journal file is attached</p>';
+          $uploadFileName = $this->getUploadFileName();
+          $params['attachments'] = [[
+            'fullPath' => $fileName,
+            'cleanName' => $uploadFileName,
+            'mime_type' => 'text/plain',
+          ]];
+        }
+        else {
+          $html .= "<p>One of more errors have prevented the batch from being closed (hence no file is attached).</p>";
+        }
+        $html .= $tableOpenHtml . '
           <thead>
             <tr style="background-color: #f2f2f2; font-weight: bold;">
               <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Batch</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Settled Currency</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Settled Total</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total in batch</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Settled Total (In Bank)</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total in batch (From CiviCRM)</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Discrepancy</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Files</th>
             </tr>
@@ -576,10 +705,8 @@ END";
           if (!empty(array_filter($batch['validation']))) {
             $invalidBatches++;
           }
-
-          $discrepancy = $batch['validation']['credit']
-            + $batch['validation']['debit']
-            + $batch['validation']['fee'];
+          $currency  = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8', $batch['batch']['batch_data.settlement_currency']);
+          $discrepancy = $batch['validation']['settled'];
 
           // Base cell styles
           $cell = 'border: 1px solid #ccc; padding: 6px;';
@@ -590,18 +717,18 @@ END";
           if ((float) $discrepancy !== 0.0) {
             $discrepancyStyle .= ' color: #b30000; font-weight: bold;';
           }
+          $discrepancy = \Civi::format()->money($discrepancy, $currency);
 
           $batchName = htmlspecialchars($batch['batch']['name'], ENT_QUOTES, 'UTF-8');
           // This url will probably iterate - I have some ideas - but for now...
-          $batchUrl = \CRM_Utils_System::url('civicrm/contribution/settled#', [
-            'contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference' => $batch['batch']['name'],
-          ], TRUE);
+          $filerName = 'contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference';
+          $batchUrl = (string) \Civi::url('backend://civicrm/contribution/settled#?' . $filerName . '=' . $batch['batch']['name'], 'a');
 
-          $currency  = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8');
-          $settled   = htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8');
-          $totalInBatch = htmlspecialchars($batch['batch']['batch_data.settled_net_amount'], ENT_QUOTES, 'UTF-8');
+          $settled   = \Civi::format()->money(htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8'), $currency);
+          $totalInBatch = \Civi::format()->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'], ENT_QUOTES, 'UTF-8'), $currency);
           $numberOfTransactions = $batch['batch']['total'];
           $transactionsUrl = BatchFile::getBatchFileUrl([$batchName], 'details');
+          $journalUrl = BatchFile::getBatchFileUrl([$batchName], 'journals');
           $html .= "
           <tr>
             <td style=\"$cell\"><a href='{$batchUrl}'>{$batchName}</a></td>
@@ -609,7 +736,7 @@ END";
             <td style=\"$cellRight\">{$totalInBatch}</td>
             <td style=\"$cellRight\">{$settled}</td>
             <td style=\"$discrepancyStyle\">{$discrepancy}</td>
-            <td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" : '') . "</td>
+            <td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
           </tr>
         ";
         }
@@ -618,10 +745,10 @@ END";
         </table>";
 
         if ($this->incompleteRows) {
-          $html .= '<table style="border-collapse: collapse; width: 50%; font-family: Arial, sans-serif; font-size: 14px;">
+          $html .= "<h3>Found contribution/s without Account code</h3><p>The summary table below will not add up to the total due to these</p>" . $tableOpenHtml . '
           <thead>
             <tr style="background-color: #f2f2f2; font-weight: bold;">
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Contribution without Account code</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Contribution</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Channel</th>
             </tr>
           </thead>
@@ -640,12 +767,53 @@ END";
           }
           $html .= " </tbody> </table>";
         }
+        $html .= '<h3>Batch Summary</h3>' . $tableOpenHtml;
+        $html .= '<thead>
+            <tr style="background-color: #f2f2f2; font-weight: bold;">
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Batch</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Account Code</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Account</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Is Endowment</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>';
+        foreach ($this->batchSummary as $batchName => $batch) {
+          $start = "<tr><td>{$batchName}</td>";
+          if (!$batch['annual_fund_fees']->isEqualTo(0)) {
+            $amount = (string) $batch['annual_fund_fees'];
+            $html.= $start . "<td>60917</td><td>Fees</td><td>No</td><td>{$amount}</td></tr>";
+          }
 
+          if (!$batch['endowment_fund_fees']->isEqualTo(0)) {
+            $amount = (string) $batch['endowment_fund_fees'];
+            $html.= $start . "<td>60917</td><td>Fees</td><td>Yes</td><td>{$amount}</td></tr>";
+          }
+          foreach ($batch['accounts'] as $accountNumber => $account) {
+            $accountName = $this->getAccountName($accountNumber);
+            if (!$account['annual_fund']->isEqualTo(0)) {
+              $amount = (string) $account['annual_fund'];
+              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>No</td><td>{$amount}</td></tr>";
+            }
+            if (!$account['endowment_fund']->isEqualTo(0)) {
+              $amount = (string) $account['endowment_fund'];
+              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>No</td><td>{$amount}</td></tr>";
+            }
+          }
+        }
+        $html.= '</tbody></table>';
+        $html .= '<h3>Log</h3> ' . $tableOpenHtml;
+        foreach ($this->log as $log) {
+          $html .= "<tr><td>$log</td></tr>";
+        }
 
-        $html .= '</html>';
+        $html .= '</table></html>';
 
         if ($invalidBatches) {
           $params['subject'] .= " {$invalidBatches} need attention";
+        }
+        if ($this->incompleteRows) {
+          $params['subject'] .= " " . count($this->incompleteRows) . " contributions need attention";
         }
 
         $params['html'] = $html;
@@ -655,6 +823,86 @@ END";
         }
       }
     }
+  }
+
+  private function log(string $string): void {
+    $this->log[] = date('Y-m-d-m-Y-H-i-s') . ' ' . $string;
+    \Civi::log('finance_integration')->info($string);
+  }
+
+  /**
+   * Get batches that did not validated.
+   * @return array
+   */
+  private function getInvalidBatches(): array {
+    $invalidBatches = [];
+    foreach ($this->batchSummary as $batchName => $batch) {
+      if (!$batch['is_valid']) {
+        $invalidBatches[] = $batchName;
+      }
+    }
+    return $invalidBatches;
+  }
+
+  /**
+   * @param $MEMO
+   * @return bool
+   */
+  public function isFee($row): bool {
+    return str_contains($row['MEMO'], 'Fee');
+  }
+
+  /**
+   * @return string
+   */
+  private function getDraftFileName(): string {
+    if (!isset($this->writer)) {
+      return '';
+    }
+    return $this->writer->getPathname();
+  }
+
+  /**
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private function getBatches(): array {
+    if ($this->batchPrefix) {
+      $batches = (array)Batch::get(FALSE)
+        ->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
+        ->addSelect('batch_data.*', '*', 'status_id:name')
+        ->execute()->indexBy('name');
+    }
+    else {
+      $batches = (array)Batch::get(FALSE)
+        ->addWhere('status_id:name', '=', 'total_verified')
+        ->addSelect('batch_data.*', '*', 'status_id:name')
+        ->execute()->indexBy('name');
+    }
+    if (empty($batches)) {
+      return [];
+    }
+
+    foreach ($batches as $batch) {
+      if (!isset($this->endDate) || strtotime($batch['batch_data.settlement_date']) > strtotime($this->endDate)) {
+        $this->endDate = $batch['batch_data.settlement_date'];
+      }
+    }
+
+    $this->startDate = Contribution::get(FALSE)
+      ->addWhere('contribution_settlement.settlement_batch_reference', 'IN', array_keys($batches))
+      ->addSelect('MIN(contribution_settlement.settlement_date) AS start_date')
+      ->execute()->first()['start_date'] ?? $this->endDate;
+    return $batches;
+  }
+
+  /**
+   * @return string
+   */
+  private function getUploadFileName(): string {
+    $minDate = date('Y-m-d', strtotime($this->startDate));
+    $maxDate = date('Y-m-d', strtotime($this->endDate));
+    return "{$minDate} to {$maxDate} Wikimedia Foundation Online Contribution Revenue.csv";
   }
 
 }

@@ -149,6 +149,10 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
   /**
    * Pause recur record
+   * @param RecurringModifyMessage $message
+   * @param array $msg
+   *
+   * @throws \CRM_Core_Exception
    */
 
   protected function pauseRecurRecord(RecurringModifyMessage $message, array $msg): void {
@@ -176,10 +180,15 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
   }
 
   /**
-   * Pause recur record
+   * Cancels a donor's active recurring contribution
+   * Currently used on the DonorPortal for donor self service
+   *
+   * @param RecurringModifyMessage $message
+   *
+   * @throws \CRM_Core_Exception
    */
 
-  protected function cancelRecurRecord(RecurringModifyMessage $message, array $msg): void {
+  protected function cancelRecurRecord(RecurringModifyMessage $message): void {
     $date = $message->getCancelDate();
     $update_params = [
       'id' => $message->getContributionRecurID(),
