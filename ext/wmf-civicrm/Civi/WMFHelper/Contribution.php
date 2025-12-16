@@ -288,6 +288,10 @@ class Contribution {
           $prefix = (\Civi::settings()->get('environment') === 'Development') ? 'sandbox.' : '';
           return "https://{$prefix}wikimedia.gr4vy.app/merchants/default/transactions/" .
             $transaction->gateway_txn_id . '/overview';
+        case 'adyen':
+          $prefix = (\Civi::settings()->get('environment') === 'Development') ? 'test' : 'live';
+          return "https://ca-{$prefix}.adyen.com/ca/ca/accounts/showTx.shtml?pspReference=" .
+            $transaction->gateway_txn_id . "&txType=Payment";
         // TODO: add templates for other gateways
         default:
           return NULL;
