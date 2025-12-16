@@ -9,6 +9,7 @@ use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\FinanceIntegration;
 use Civi\WMFBatch\BatchFile;
 use CRM_Core_DAO;
 use League\Csv\Writer;
@@ -41,6 +42,15 @@ class GenerateBatch extends AbstractAction {
    * @var bool
    */
   protected bool $isOutputRows = FALSE;
+
+  /**
+   * Is output to Api.
+   *
+   * Should the result be pushed to the api or the sftp.
+   *
+   * @var string
+   */
+  protected string $outputMethod = '';
 
   /**
    * Is a csv to be output.
@@ -402,6 +412,19 @@ GROUP BY s.settlement_batch_reference
       }
       if ($draftFileName) {
         $this->log('draft file location ' . $draftFileName);
+      }
+    }
+
+    if ($this->outputMethod === 'api' && !empty($finalFileName)) {
+      try {
+        $this->log('The journals are being pushed to the staging version of Intacct via the api. When an sftp alternative has been built this is where that will be plugged in');
+        $apiOutcome = FinanceIntegration::pushJournal(FALSE)
+          ->setJournalFile($finalFileName)
+          ->execute()->first();
+        $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome));
+      }
+      catch (\Exception $e) {
+        $this->log('failed to upload to Intacct with error ' . $e->getMessage());
       }
     }
     $this->log('Account code logic ' . nl2br($this->getAccountClause()));
