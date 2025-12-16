@@ -78,6 +78,8 @@ class GenerateBatch extends AbstractAction {
   private array $log = [];
 
   private array $batchSummary = [];
+  private string $startDate = '';
+  private string $endDate = '';
 
   /**
    * This function updates the settled transaction with new fee & currency conversion data.
@@ -94,6 +96,7 @@ class GenerateBatch extends AbstractAction {
     $deptIDClause = $this->getDeptIDClause();
     $restrictionsClause = $this->getRestrictionsClause();
     $vendorClause = $this->getVendorClause();
+    $batches = $this->getBatches();
 
     $sql = "SELECT
     %2 as DATE,
@@ -103,7 +106,7 @@ class GenerateBatch extends AbstractAction {
     '100-WMF' as LOCATION_ID,
     $deptIDClause as DEPT_ID,
     REGEXP_SUBSTR(%1, '[0-9]+(?=_[A-Z]{3})')  as DOCUMENT,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donations') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | " . date('m/d/y', strtotime($this->startDate)) . " | " . date('m/d/y', strtotime($this->endDate)) . " | ', COUNT(*), ' | ', ' Donations') as MEMO,
     0 as DEBIT,
     SUM(COALESCE(settled_donation_amount, 0)) as CREDIT,
     s.settlement_currency as CURRENCY,
@@ -236,19 +239,6 @@ WHERE (%1 = settlement_batch_reference)
   AND is_template = 0
 GROUP BY s.settlement_batch_reference
 ";
-
-    if ($this->batchPrefix) {
-      $batches = Batch::get(FALSE)
-        ->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
-        ->addSelect('batch_data.*', '*', 'status_id:name')
-        ->execute()->indexBy('name');
-    }
-    else {
-      $batches = Batch::get(FALSE)
-        ->addWhere('status_id:name', '=', 'total_verified')
-        ->addSelect('batch_data.*', '*', 'status_id:name')
-        ->execute()->indexBy('name');
-    }
 
     $rowNumber = 1;
 
@@ -397,6 +387,7 @@ GROUP BY s.settlement_batch_reference
         $finalFileName = str_replace('-draft', '-final', $draftFileName);
         rename($draftFileName, $finalFileName);
         $this->log('final file name ' . $finalFileName);
+        $this->log('attach file for finance using alias ' . $this->getUploadFileName());
       }
       else {
         $this->log('no file generated due to input parameters');
@@ -663,16 +654,10 @@ END";
         $html = '<html> <h3>The following batches have been generated</h3>';
         if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
           $html .= '<p>All batches have validated and the batches have been closed. The journal file is attached</p>';
-          $minDate = NULL;
-          $maxDate = NULL;
-          foreach ($result as $batch) {
-            $date = $batch['batch']['batch_data.settlement_date'];
-            $minDate = $minDate && strtotime($date) > strtotime($minDate) ? $minDate : $date;
-            $maxDate = $maxDate && strtotime($date) > strtotime($maxDate) ? $maxDate : $date;
-          }
+          $uploadFileName = $this->getUploadFileName();
           $params['attachments'] = [[
             'fullPath' => $fileName,
-            'cleanName' => "{$minDate} to {$maxDate} Wikimedia Foundation Online Contribution Revenue.csv",
+            'cleanName' => $uploadFileName,
             'mime_type' => 'text/plain',
           ]];
         }
@@ -852,6 +837,49 @@ END";
       return '';
     }
     return $this->writer->getPathname();
+  }
+
+  /**
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private function getBatches(): array {
+    if ($this->batchPrefix) {
+      $batches = (array)Batch::get(FALSE)
+        ->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
+        ->addSelect('batch_data.*', '*', 'status_id:name')
+        ->execute()->indexBy('name');
+    }
+    else {
+      $batches = (array)Batch::get(FALSE)
+        ->addWhere('status_id:name', '=', 'total_verified')
+        ->addSelect('batch_data.*', '*', 'status_id:name')
+        ->execute()->indexBy('name');
+    }
+    if (empty($batches)) {
+      return [];
+    }
+
+    foreach ($batches as $batch) {
+      if (!isset($this->endDate) || strtotime($batch['batch_data.settlement_date']) > strtotime($this->endDate)) {
+        $this->endDate = $batch['batch_data.settlement_date'];
+      }
+    }
+
+    $this->startDate = Contribution::get(FALSE)
+      ->addWhere('contribution_settlement.settlement_batch_reference', 'IN', array_keys($batches))
+      ->addSelect('MIN(contribution_settlement.settlement_date) AS start_date')
+      ->execute()->first()['start_date'] ?? $this->endDate;
+    return $batches;
+  }
+
+  /**
+   * @return string
+   */
+  private function getUploadFileName(): string {
+    $minDate = date('Y-m-d', strtotime($this->startDate));
+    $maxDate = date('Y-m-d', strtotime($this->endDate));
+    return "{$minDate} to {$maxDate} Wikimedia Foundation Online Contribution Revenue.csv";
   }
 
 }
