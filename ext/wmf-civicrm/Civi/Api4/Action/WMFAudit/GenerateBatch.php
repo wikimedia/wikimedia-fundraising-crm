@@ -757,6 +757,7 @@ END";
             $contributionURL = \CRM_Utils_System::url('civicrm/contact/view/contribution',[
               'id' => $row['contribution_id'],
               'reset' => 1,
+              'action' => 'view',
             ], TRUE);
             $html .= "
           <tr>
