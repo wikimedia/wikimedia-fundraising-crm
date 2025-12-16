@@ -775,30 +775,30 @@ END";
               <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Account Code</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Account</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Is Endowment</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Total</th>
             </tr>
           </thead>
           <tbody>';
         foreach ($this->batchSummary as $batchName => $batch) {
           $start = "<tr><td>{$batchName}</td>";
           if (!$batch['annual_fund_fees']->isEqualTo(0)) {
-            $amount = (string) $batch['annual_fund_fees'];
+            $amount = $this->formatAmount($batch['annual_fund_fees']);
             $html.= $start . "<td>60917</td><td>Fees</td><td>No</td><td>{$amount}</td></tr>";
           }
 
           if (!$batch['endowment_fund_fees']->isEqualTo(0)) {
-            $amount = (string) $batch['endowment_fund_fees'];
+            $amount = $this->formatAmount($batch['endowment_fund_fees']);
             $html.= $start . "<td>60917</td><td>Fees</td><td>Yes</td><td>{$amount}</td></tr>";
           }
           foreach ($batch['accounts'] as $accountNumber => $account) {
             $accountName = $this->getAccountName($accountNumber);
             if (!$account['annual_fund']->isEqualTo(0)) {
-              $amount = (string) $account['annual_fund'];
+              $amount = $this->formatAmount($account['annual_fund']);
               $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>No</td><td>{$amount}</td></tr>";
             }
             if (!$account['endowment_fund']->isEqualTo(0)) {
-              $amount = (string) $account['endowment_fund'];
-              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>No</td><td>{$amount}</td></tr>";
+              $amount = $this->formatAmount($account['endowment_fund']);
+              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>Yes</td><td>{$amount}</td></tr>";
             }
           }
         }
@@ -904,6 +904,15 @@ END";
     $minDate = date('Y-m-d', strtotime($this->startDate));
     $maxDate = date('Y-m-d', strtotime($this->endDate));
     return "{$minDate} to {$maxDate} Wikimedia Foundation Online Contribution Revenue.csv";
+  }
+
+  /**
+   * @param Money $money
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  private function formatAmount(Money $money): string {
+    return \Civi::format()->money($money->getAmount(), $money->getCurrency());
   }
 
 }
