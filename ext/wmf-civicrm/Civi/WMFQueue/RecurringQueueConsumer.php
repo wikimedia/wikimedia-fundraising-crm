@@ -532,6 +532,16 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist');
     }
 
+    $status = ContributionRecur::get(FALSE)
+      ->addSelect('contribution_status_id:name')
+      ->addWhere('id', '=', $message->getContributionRecurID())
+      ->execute()
+      ->first()['contribution_status_id:name'];
+
+    if ($status === 'Cancelled') {
+      return;
+    }
+
     try {
       $date = $message->getCancelDate() ?? date('Ymd H:i:s');
       $update_params = [
