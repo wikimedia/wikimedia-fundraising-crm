@@ -672,7 +672,7 @@ END";
 
         $invalidBatches = 0;
 
-        $tableOpenHtml = '<table style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 14px;">';
+        $tableOpenHtml = $this->getTableOpenHtml();
         // Start styled table.
         $html = '<html> <h3>The following batches have been generated</h3>';
         if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
@@ -757,6 +757,7 @@ END";
             $contributionURL = \CRM_Utils_System::url('civicrm/contact/view/contribution',[
               'id' => $row['contribution_id'],
               'reset' => 1,
+              'action' => 'view',
             ], TRUE);
             $html .= "
           <tr>
@@ -767,41 +768,48 @@ END";
           }
           $html .= " </tbody> </table>";
         }
-        $html .= '<h3>Batch Summary</h3>' . $tableOpenHtml;
-        $html .= '<thead>
-            <tr style="background-color: #f2f2f2; font-weight: bold;">
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Batch</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Account Code</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Account</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Is Endowment</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total</th>
-            </tr>
-          </thead>
-          <tbody>';
+        $html .= '<h3>Batch Summary</h3>';
+        $html .= $this->getTableHeader( ['Batch', 'Account Code', 'Account', 'Is Endowment', 'Total']);
         foreach ($this->batchSummary as $batchName => $batch) {
           $start = "<tr><td>{$batchName}</td>";
           if (!$batch['annual_fund_fees']->isEqualTo(0)) {
-            $amount = (string) $batch['annual_fund_fees'];
-            $html.= $start . "<td>60917</td><td>Fees</td><td>No</td><td>{$amount}</td></tr>";
+            $amount = $this->formatAmount($batch['annual_fund_fees']);
+            $html .= $start . "<td>60917</td><td>Fees</td><td>No</td><td>{$amount}</td></tr>";
           }
 
           if (!$batch['endowment_fund_fees']->isEqualTo(0)) {
-            $amount = (string) $batch['endowment_fund_fees'];
-            $html.= $start . "<td>60917</td><td>Fees</td><td>Yes</td><td>{$amount}</td></tr>";
+            $amount = $this->formatAmount($batch['endowment_fund_fees']);
+            $html .= $start . "<td>60917</td><td>Fees</td><td>Yes</td><td>{$amount}</td></tr>";
           }
           foreach ($batch['accounts'] as $accountNumber => $account) {
             $accountName = $this->getAccountName($accountNumber);
             if (!$account['annual_fund']->isEqualTo(0)) {
-              $amount = (string) $account['annual_fund'];
+              $amount = $this->formatAmount($account['annual_fund']);
               $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>No</td><td>{$amount}</td></tr>";
             }
             if (!$account['endowment_fund']->isEqualTo(0)) {
-              $amount = (string) $account['endowment_fund'];
-              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>No</td><td>{$amount}</td></tr>";
+              $amount = $this->formatAmount($account['endowment_fund']);
+              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>Yes</td><td>{$amount}</td></tr>";
             }
           }
         }
         $html.= '</tbody></table>';
+
+        $incompleteBatches = Batch::get(FALSE)
+          // Status list will probably grow.
+          ->addWhere('status_id:name', 'IN', ['Open'])
+          ->addWhere('mode_id:name', '=', 'Automatic Batch')
+          ->addSelect('*', 'batch_data.*', 'status_id:label')
+          ->execute();
+        if (!empty($incompleteBatches)) {
+          $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total</p>" . $tableOpenHtml;
+          $html .= $this->getTableHeader( ['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status']);
+          foreach ($incompleteBatches as $incompleteBatch) {
+            $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td></tr>";
+          }
+          $html .= "</table>";
+
+        }
         $html .= '<h3>Log</h3> ' . $tableOpenHtml;
         foreach ($this->log as $log) {
           $html .= "<tr><td>$log</td></tr>";
@@ -903,6 +911,36 @@ END";
     $minDate = date('Y-m-d', strtotime($this->startDate));
     $maxDate = date('Y-m-d', strtotime($this->endDate));
     return "{$minDate} to {$maxDate} Wikimedia Foundation Online Contribution Revenue.csv";
+  }
+
+  /**
+   * @param Money $money
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  private function formatAmount(Money $money): string {
+    return \Civi::format()->money($money->getAmount(), $money->getCurrency());
+  }
+
+  /**
+   * @return string
+   */
+  public function getTableOpenHtml(): string {
+    $tableOpenHtml = '<table style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 14px;">';
+    return $tableOpenHtml;
+  }
+
+  /**
+   * @param array $columns
+   * @return string
+   */
+  private function getTableHeader(array $columns): string {
+    $html = $this->getTableOpenHtml() . '<thead><tr style="background-color: #f2f2f2; font-weight: bold;">';
+    foreach ($columns as $columnName) {
+      $html .= '<th style="border: 1px solid #ccc; padding: 6px; text-align: left;">' . $columnName . '</th>';
+    }
+    $html .= '</tr></thead><tbody>';
+    return $html;
   }
 
 }
