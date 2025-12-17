@@ -1863,7 +1863,7 @@ abstract class BaseAuditProcessor {
           $validBatches[$batchName] = $batch;
         }
         else {
-          \Civi::log('wmf')->error('Batch total mismatch. {currency} is out by {difference}. Expected {expected} vs Actual {actual}', [
+          \Civi::log('wmf')->alert('Batch total mismatch. {currency} is out by {difference}. Expected {expected} vs Actual {actual}', [
             'difference' => $expectedAmount->minus($settledNetAmount, RoundingMode::HALF_UP)->getAmount(),
             'expected' => $expectedAmount->getAmount(),
             'actual' => $settledNetAmount->getAmount(),
