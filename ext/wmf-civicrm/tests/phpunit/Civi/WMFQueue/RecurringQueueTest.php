@@ -510,6 +510,29 @@ class RecurringQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Test processing a recurring cancel message when the recurring is already cancelled
+   */
+  public function testRecurringCancelMessageAlreadyCancelled(): void {
+    $values = ['subscr_id' => mt_rand()];
+    $this->processRecurringSignup($values);
+    ContributionRecur::update(FALSE)
+      ->addWhere('trxn_id', '=', $values['subscr_id'])
+      ->addValue('contribution_status_id:name', 'Cancelled')
+      ->addValue('cancel_reason', 'Financial concerns')
+      ->addValue('cancel_date', '2025-12-17 01:23:45')
+      ->addValue('end_date', '2025-12-17 01:23:45')
+      ->execute();
+
+    $this->processMessage($this->getRecurringCancelMessage($values));
+
+    $recur_record = $this->getContributionRecurForMessage($values);
+    $this->assertEquals('Cancelled', $recur_record['contribution_status_id:name']);
+    $this->assertEquals('Financial concerns', $recur_record['cancel_reason']);
+    $this->assertEquals('2025-12-17 01:23:45', $recur_record['cancel_date']);
+    $this->assertEquals('2025-12-17 01:23:45', $recur_record['end_date']);
+  }
+
+  /**
    * Test function adds reason to the recur row.
    */
   public function testRecurringCancelMessageWithReason(): void {
