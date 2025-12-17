@@ -80,9 +80,9 @@ class Send extends AbstractAction {
       Activity::create()->setCheckPermissions(FALSE)->setValues([
         'target_contact_id' => $this->getContactID(),
         'source_contact_id' => \CRM_Core_Session::getLoggedInContactID() ?? $this->getContactID(),
-        'subject' => 'Recur fail message : ' . $email['msg_subject'],
+        'subject' => $email['msg_subject'],
         'details' => $email['msg_html'],
-        'activity_type_id:name' => 'Email',
+        'activity_type_id:name' => 'First Recurring Failure Email',
         'activity_date_time' => 'now',
         'source_record_id' => $this->contributionRecurID,
       ])->execute();

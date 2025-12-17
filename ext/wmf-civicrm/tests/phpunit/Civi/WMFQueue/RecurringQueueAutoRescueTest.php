@@ -185,7 +185,7 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
     // Count email activities before processing cancellation
     $preCancellationActivities = Activity::get(FALSE)
       ->addSelect('*', 'activity_type_id:name')
-      ->addWhere('activity_type_id:name', '=', 'Email')
+      ->addWhere('activity_type_id:name', '=', 'First Recurring Failure Email')
       ->addWhere('source_record_id', '=', $recur['id'])
       ->execute();
 
@@ -220,7 +220,7 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
     // Verify failure email was sent (check for new Email activity)
     $postCancellationActivities = Activity::get(FALSE)
       ->addSelect('*', 'activity_type_id:name')
-      ->addWhere('activity_type_id:name', '=', 'Email')
+      ->addWhere('activity_type_id:name', '=', 'First Recurring Failure Email')
       ->addWhere('source_record_id', '=', $recur['id'])
       ->execute();
 
@@ -228,10 +228,6 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
 
     // 1 new failure email activity should be created
     $this->assertEquals($preCancellationActivitiesCount + 1, $postActivitiesCount);
-
-    // Additionally, verify the activity subject matches recurring failure email
-    $emailFailureActivity = $postCancellationActivities->last();
-    $this->assertStringContainsString('Recur fail message :', $emailFailureActivity['subject']);
 
     // clean up email
     Email::delete(FALSE)

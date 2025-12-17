@@ -52,7 +52,7 @@ class FailureEmailTest extends SmashPigBaseTestClass {
     $email = FailureEmail::send()->setCheckPermissions(FALSE)->setContributionRecurID($contributionRecur['id'])->execute()->first();
     $activity = $this->getLatestFailureMailActivity((int) $contributionRecur['id']);
     $this->assertEquals('Hey Harry', $email['msg_subject']);
-    $this->assertEquals('Recur fail message : Hey Harry', $activity['subject']);
+    $this->assertEquals('Hey Harry', $activity['subject']);
     $this->assertEquals('Dear Harry,
       We cancelled your recur of USD $12.34
       and we are sending you this at harry@hendersons.net

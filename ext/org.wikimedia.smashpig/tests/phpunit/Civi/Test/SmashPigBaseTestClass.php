@@ -387,8 +387,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    */
   protected function getLatestFailureMailActivity(int $contributionRecurID) {
     $activity = Activity::get()->setCheckPermissions(FALSE)
-      ->addWhere('activity_type_id:name', '=', 'Email')
-      ->addWhere('subject', 'LIKE', 'Recur fail message : %')
+      ->addWhere('activity_type_id:name', '=', 'First Recurring Failure Email')
       ->addWhere('source_record_id', '=', $contributionRecurID)
       ->addOrderBy('activity_date_time', 'DESC')
       ->execute()->first();
