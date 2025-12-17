@@ -769,27 +769,27 @@ END";
           $html .= " </tbody> </table>";
         }
         $html .= '<h3>Batch Summary</h3>';
-        $html .= $this->getTableHeader( ['Batch', 'Account Code', 'Account', 'Is Endowment', 'Total']);
+        $html .= $this->getTableHeader( ['Batch', 'Account Code', 'Account', 'Endowment Amount', 'Annual Fund Amount']);
         foreach ($this->batchSummary as $batchName => $batch) {
           $start = "<tr><td>{$batchName}</td>";
           if (!$batch['annual_fund_fees']->isEqualTo(0)) {
             $amount = $this->formatAmount($batch['annual_fund_fees']);
-            $html .= $start . "<td>60917</td><td>Fees</td><td>No</td><td>{$amount}</td></tr>";
+            $html .= $start . "<td>60917</td><td>Fees</td><td></td><td>{$amount}</td></tr>";
           }
 
           if (!$batch['endowment_fund_fees']->isEqualTo(0)) {
             $amount = $this->formatAmount($batch['endowment_fund_fees']);
-            $html .= $start . "<td>60917</td><td>Fees</td><td>Yes</td><td>{$amount}</td></tr>";
+            $html .= $start . "<td>60917</td><td>Fees</td><td>{$amount}</td><td></td></tr>";
           }
           foreach ($batch['accounts'] as $accountNumber => $account) {
             $accountName = $this->getAccountName($accountNumber);
             if (!$account['annual_fund']->isEqualTo(0)) {
               $amount = $this->formatAmount($account['annual_fund']);
-              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>No</td><td>{$amount}</td></tr>";
+              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td></td><td>{$amount}</td></tr>";
             }
             if (!$account['endowment_fund']->isEqualTo(0)) {
               $amount = $this->formatAmount($account['endowment_fund']);
-              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>Yes</td><td>{$amount}</td></tr>";
+              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>{$amount}</td><td></td></tr>";
             }
           }
         }
