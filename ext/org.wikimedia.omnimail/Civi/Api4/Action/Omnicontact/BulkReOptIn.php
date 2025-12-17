@@ -81,8 +81,8 @@ class BulkReOptIn extends AbstractAction {
             ->addValue('is_opt_out', FALSE)
             ->setGroupIdentifier($groupIdentifier)
             ->execute()->first();
-          \CRM_Core_DAO::executeQuery($setsql, [1 => [$optIn ? 1 : 2, 'Integer'], 2 => [$email, 'String']]);;
-          $optIn ? $success++ : $failure++;
+          \CRM_Core_DAO::executeQuery($setsql, [1 => [1, 'Integer'], 2 => [$email, 'String']]);
+          $success++;
         }
         catch (\Exception $e) {
           // If the Acoustic API times out, retry a few times.
@@ -91,7 +91,8 @@ class BulkReOptIn extends AbstractAction {
             sleep(120);
           }
           else {
-            throw $e;
+            \CRM_Core_DAO::executeQuery($setsql, [1 => [2, 'Integer'], 2 => [$email, 'String']]);
+            $failure++;
           }
         }
       }
