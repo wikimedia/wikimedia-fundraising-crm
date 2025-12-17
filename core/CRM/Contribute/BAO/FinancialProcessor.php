@@ -93,6 +93,24 @@ class CRM_Contribute_BAO_FinancialProcessor {
         'entity_table' => 'civicrm_line_item',
         'entity_id' => $lineItemDetails['id'],
       ];
+      if ($context === 'changedCurrency') {
+        // This is the reversal, ignore above as we have the correct handling passed in in
+        // our temporary code.
+        /* This query needs to balance at the end.
+         * -- should have 3 lines - eg. 50 USD, -50 USD, 50 EUR
+SELECT item.amount, item.currency, eft.amount as eft_amount, trxn.total_amount as trxn_total, trxn.currency as trxn_currency,
+IF(eft.amount = trxn.total_amount AND item.currency = trxn.currency, 'Yes', 'no') as are_financial_items_right
+FROM civicrm_line_item line
+  LEFT JOIN civicrm_financial_item item ON line.id = item.entity_id AND item.entity_table = 'civicrm_line_item'
+  LEFT JOIN civicrm_entity_financial_trxn eft ON eft.entity_id = item.id
+    AND eft.entity_table = 'civicrm_financial_item'
+  LEFT JOIN civicrm_financial_trxn trxn ON trxn.id = eft.financial_trxn_id
+
+WHERE contribution_id = x;
+         */
+        $itemParams['currency'] = $params['trxnParams']['currency'];
+        $itemParams['amount'] = $params['trxnParams']['total_amount'];
+      }
       $financialItem = CRM_Financial_BAO_FinancialItem::create($itemParams, NULL, $trxnIds);
       $params['line_item'][$fieldId][$fieldValueId]['deferred_line_total'] = $itemParams['amount'];
       $params['line_item'][$fieldId][$fieldValueId]['financial_item_id'] = $financialItem->id;

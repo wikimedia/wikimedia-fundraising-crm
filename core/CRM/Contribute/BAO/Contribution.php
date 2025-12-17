@@ -3078,7 +3078,8 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
         // Change contribution currency
         if (isset($params['currency']) && $params['currency'] !== $params['prevContribution']->currency) {
           // Create a negative transaction for the first amount in the first currency
-          $params['trxnParams']['total_amount'] = $params['trxnParams']['net_amount'] = - $params['prevContribution']->net_amount;
+          $previousNetAmount = $params['prevContribution']->total_amount - ($params['prevContribution']->fee_amount ?? 0);
+          $params['trxnParams']['total_amount'] = $params['trxnParams']['net_amount'] = -$previousNetAmount;
           $params['trxnParams']['currency'] = $params['prevContribution']->currency;
           CRM_Contribute_BAO_FinancialProcessor::updateFinancialAccounts($params, 'changedCurrency');
 
