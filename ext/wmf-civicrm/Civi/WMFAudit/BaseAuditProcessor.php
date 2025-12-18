@@ -203,9 +203,9 @@ abstract class BaseAuditProcessor {
   protected function merge_data($log_data, $audit_file_data) {
     $merged = $audit_file_data;
     foreach ($log_data as $key => $value) {
-      if ($key === 'invoice_id' && in_array($audit_file_data['type'] ?? NULL, ['chargeback_reversed', 'refund_reversed'], TRUE)) {
-        // Don't overwrite invoice_id ... ever? Well not for now at least, as we add a
-        // '-cr' suffix to the $audit_file_data['invoice_id']
+      if (in_array($key, ['invoice_id', 'date', 'recurring'], TRUE) && in_array($audit_file_data['type'] ?? NULL, ['chargeback_reversed', 'refund_reversed'], TRUE)) {
+        // Don't overwrite invoice_id, date for reversals... ever? Well not for now at least, as we add a
+        // '-cr' suffix to the $audit_file_data['invoice_id']. Always leave recurring as false.
         continue;
       }
       $absentFromMerged = !array_key_exists($key, $merged);
