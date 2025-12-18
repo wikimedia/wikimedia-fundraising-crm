@@ -371,6 +371,23 @@ class DonationMessage extends Message {
     }
     return $this->message['order_id'] ?? NULL;
   }
+  /**
+   * Get the contribution status ID.
+   *
+   * @return int
+   */
+  public function getContributionStatusID(): int {
+    if (!empty($this->message['contribution_status_id'])) {
+      return $this->message['contribution_status_id'];
+    }
+    if ($this->isChargebackReversal()) {
+      return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'chargeback_reversal');
+    }
+    if ($this->isRefundReversal()) {
+      return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'refund_reversal');
+    }
+    return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+  }
 
   /**
    * Get the financial Type ID.

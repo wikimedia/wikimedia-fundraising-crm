@@ -595,7 +595,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals('adyen_1120_USD', $chargedBackContribution['contribution_settlement.settlement_batch_reference']);
 
     $contribution = Contribution::get(FALSE)
-      ->addWhere('contribution_status_id:name', '=', 'Completed')
+      ->addWhere('contribution_status_id:name', '=', 'chargeback_reversal')
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'adyen_1120_USD')
       ->addSelect('trxn_id', 'contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount')
       ->execute()->single();
@@ -638,7 +638,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals('adyen_1120_USD', $refundedContribution['contribution_settlement.settlement_batch_reference']);
 
     $contribution = Contribution::get(FALSE)
-      ->addWhere('contribution_status_id:name', '=', 'Completed')
+      ->addWhere('contribution_status_id:name', '=', 'refund_reversal')
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'adyen_1120_USD')
       ->addSelect('receive_date', 'trxn_id', 'contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount', 'financial_type_id:name')
       ->execute()->single();
