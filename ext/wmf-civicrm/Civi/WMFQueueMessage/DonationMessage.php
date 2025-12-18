@@ -100,6 +100,13 @@ class DonationMessage extends Message {
     return $this->message['type'] === 'chargeback_reversed';
   }
 
+  public function isRefundReversal() : bool {
+    if (empty($this->message['type'])) {
+      return FALSE;
+    }
+    return $this->message['type'] === 'refund_reversed';
+  }
+
   /**
    * @param array $message
    *
@@ -383,6 +390,9 @@ class DonationMessage extends Message {
     if ($this->isChargebackReversal()) {
       return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Chargeback Reversal');
     }
+    if ($this->isRefundReversal()) {
+      return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Refund Reversal');
+    }
     if ($this->isSubsequentRecurring()) {
       return ContributionRecur::getFinancialType($this->getContributionRecurID());
     }
@@ -437,14 +447,15 @@ class DonationMessage extends Message {
     // Now check to make sure this isn't going to be a duplicate message for this gateway.
     // Special handling for chargeback reversals, which have the same gateway_txn_id but
     // a different trxn_id.
-    if ($this->isChargebackReversal()) {
+    if ($this->isChargebackReversal() || $this->isRefundReversal()) {
       $duplicate = \CRM_Core_DAO::singleValueQuery(
         'SELECT count(*)
           FROM civicrm_contribution
           WHERE trxn_id = %1', [
         1 => [$this->getTrxnId(), 'String'],
       ]);
-    } else {
+    }
+    else {
       $duplicate = \CRM_Core_DAO::singleValueQuery(
         'SELECT count(*)
           FROM wmf_contribution_extra cx

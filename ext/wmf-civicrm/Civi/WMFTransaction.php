@@ -38,6 +38,11 @@ class WMFTransaction {
   /**
    * @var bool
    */
+  public $is_refund_reversal;
+
+  /**
+   * @var bool
+   */
   public $is_recurring;
 
   /**
@@ -76,6 +81,10 @@ class WMFTransaction {
       $parts[] = "CHARGEBACK_REVERSAL";
     }
 
+    if ($this->is_refund_reversal) {
+      $parts[] = "REFUND_REVERSAL";
+    }
+
     if ($this->is_recurring) {
       $parts[] = "RECURRING";
     }
@@ -109,6 +118,7 @@ class WMFTransaction {
     $transaction->is_recurring = !empty($msg['recurring']);
     $messageType = $msg['type'] ?? NULL;
     $transaction->is_chargeback_reversal = ($messageType === 'chargeback_reversed');
+    $transaction->is_refund_reversal = ($messageType === 'refund_reversed');
     $transaction->is_chargeback = ($messageType === 'chargeback');
     $transaction->is_refund = in_array($messageType, ['chargeback', 'refund'], TRUE);
     return $transaction;
@@ -132,8 +142,14 @@ class WMFTransaction {
     }
 
     $transaction->is_chargeback_reversal = FALSE;
-    while ($parts && $parts[0] === 'CHARGEBACK_REVERSAL' ) {
-      $transaction->is_chargeback_reversal = TRUE;
+    $transaction->is_refund_reversal = FALSE;
+    while ($parts && str_contains($parts[0], '_REVERSAL')) {
+      if (str_contains($parts[0], 'CHARGEBACK_')) {
+        $transaction->is_chargeback_reversal = TRUE;
+      }
+      if (str_contains($parts[0], 'REFUND_')) {
+        $transaction->is_refund_reversal = TRUE;
+      }
       array_shift($parts);
     }
 

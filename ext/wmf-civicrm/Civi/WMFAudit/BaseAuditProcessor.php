@@ -203,7 +203,7 @@ abstract class BaseAuditProcessor {
   protected function merge_data($log_data, $audit_file_data) {
     $merged = $audit_file_data;
     foreach ($log_data as $key => $value) {
-      if ($key === 'invoice_id' && ($audit_file_data['type'] ?? NULL) === 'chargeback_reversed') {
+      if ($key === 'invoice_id' && in_array($audit_file_data['type'] ?? NULL, ['chargeback_reversed', 'refund_reversed'], TRUE)) {
         // Don't overwrite invoice_id ... ever? Well not for now at least, as we add a
         // '-cr' suffix to the $audit_file_data['invoice_id']
         continue;
@@ -472,7 +472,7 @@ abstract class BaseAuditProcessor {
     $recon_file_stats = [];
     foreach ($this->getReconciliationFiles() as $file) {
       //parse the recon files into something relatively reasonable.
-      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0];
+      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0];
       $parsed = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
         $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
