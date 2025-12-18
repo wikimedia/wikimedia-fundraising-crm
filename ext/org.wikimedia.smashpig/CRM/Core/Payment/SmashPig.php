@@ -267,11 +267,11 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   }
 
   public function getEditableRecurringScheduleFields() {
-    return ['amount', 'cycle_day', 'next_sched_contribution_date'];
+    return ['amount', 'cycle_day', 'next_sched_contribution_date', 'frequency_unit'];
   }
 
   public function supportsEditRecurringContribution() {
-    return true;
+    return ($this->_paymentProcessor['name'] === 'paypal_ec') ? false : true;
   }
 
   /**
