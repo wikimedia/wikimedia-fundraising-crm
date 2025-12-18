@@ -604,6 +604,49 @@ class AdyenAuditTest extends BaseAuditTestCase {
   }
 
   /**
+   * Test a back including a donation which is settled, then refunded and then the refund is reversed.
+   *
+   * Similar to chargeback reversal but for refunds.
+   *
+   * The end goal is 2 donations - the original one is refunded  and a new one is created
+   * for the reversal.
+   *
+   *         Total Amount | Net Amount | Fee Amount | s*_donation_amount | s*_fee_amount | s*_reversal_amount | s*_reversal_fee_amount
+   * Donation         5   | 4.89       | .11        | 5                  | -.11          | -5                 |
+   * RefundReversal   5   | 4.89       | .11        | 5                  | -.11          |
+   *
+   * @throws \CRM_Core_Exception|\League\Csv\Exception
+   */
+  public function testRefundedReversed(): void {
+    $this->runAuditBatch('refunded_reversal', 'settlement_detail_report_batch_1120.csv');
+    // Run it three times - should do the first donation and chargeback reversal on the first run,
+    // the chargeback on the second and nothing on the third.
+    $this->runAuditBatch('refunded_reversal', 'settlement_detail_report_batch_1120.csv');
+    $this->runAuditBatch('refunded_reversal', 'settlement_detail_report_batch_1120.csv');
+
+    $refundedContribution = Contribution::get(FALSE)
+      ->addWhere('contribution_settlement.settlement_batch_reversal_reference', '=', 'adyen_1120_USD')
+      ->addSelect('contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount')
+      ->execute()->single();
+    $this->assertEquals('Refunded', $refundedContribution['contribution_status_id:name']);
+    $this->assertEquals(0, $refundedContribution['contribution_settlement.settled_fee_reversal_amount']);
+    $this->assertEquals(-.11, $refundedContribution['contribution_settlement.settled_fee_amount']);
+    $this->assertEquals(-5, $refundedContribution['contribution_settlement.settled_reversal_amount']);
+    $this->assertEquals(5, $refundedContribution['contribution_settlement.settled_donation_amount']);
+    $this->assertEquals('USD', $refundedContribution['contribution_settlement.settlement_currency']);
+    $this->assertEquals('adyen_1120_USD', $refundedContribution['contribution_settlement.settlement_batch_reversal_reference']);
+    $this->assertEquals('adyen_1120_USD', $refundedContribution['contribution_settlement.settlement_batch_reference']);
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('contribution_status_id:name', '=', 'Completed')
+      ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'adyen_1120_USD')
+      ->addSelect('trxn_id', 'contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount', 'financial_type_id:name')
+      ->execute()->single();
+    $this->assertEquals('REFUND_REVERSAL ADYEN 1234893193133131', $contribution['trxn_id']);
+    $this->assertEquals('Refund Reversal', $contribution['financial_type_id:name']);
+  }
+
+  /**
    * @return void
    * @throws \CRM_Core_Exception
    */

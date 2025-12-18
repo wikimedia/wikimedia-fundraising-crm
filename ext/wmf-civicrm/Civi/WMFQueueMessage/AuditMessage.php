@@ -128,7 +128,6 @@ class AuditMessage extends DonationMessage {
     return $this->getType() === 'chargeback_reversed';
   }
 
-
   /**
    * Is the message advising a payment has been cancelled.
    *
@@ -197,7 +196,7 @@ class AuditMessage extends DonationMessage {
     else {
       $message['order_id'] = $this->getOrderID();
     }
-    if ($this->isChargebackReversal()) {
+    if ($this->isChargebackReversal() || $this->isRefundReversal()) {
       // Maybe always but definitely here.
       $message['invoice_id'] = $this->getOrderID();
       // These are such oddities we should keep them simple.
@@ -333,13 +332,15 @@ class AuditMessage extends DonationMessage {
           ->addClause('OR', ['trxn_id', '=', $trxn_id], ['trxn_id', '=', $trxn_id_recur])
           ->execute()->first() ?? [];
       }
-      if ($this->isChargebackReversal()) {
-        // Chargeback reversals would result in a discreet contribution with a trxn_id
+      if ($this->isChargebackReversal() || $this->isRefundReversal()) {
+        // Reversals would result in a discreet contribution with a trxn_id
         // like CHARGEBACK_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
+        // or REFUND_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
         // That is the only contribution that would be a 'match' for an incoming chargeback reversal
         if (empty($this->existingContribution)) {
           $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
-          $debugInformation['chargeback_reversal_trxn_id'] = $trxn_id;
+          $key = $this->isChargebackReversal() ? 'chargeback_reversal_trxn_id' : 'refund_reversal_trxn_id';
+          $debugInformation[$key] = $trxn_id;
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
             ->addWhere('trxn_id', '=', $trxn_id)
@@ -410,7 +411,7 @@ class AuditMessage extends DonationMessage {
     if (!empty($this->message['gateway_parent_id'])) {
       return $this->message['gateway_parent_id'];
     }
-    if ($this->isChargebackReversal()) {
+    if ($this->isChargebackReversal() || $this->isRefundReversal()) {
       // We treat these as a new contribution on their own
       // and ignore the parent.
       return NULL;
@@ -478,6 +479,9 @@ class AuditMessage extends DonationMessage {
     }
     if ($this->isChargebackReversal() && !empty($value)) {
       $value .= '-cr';
+    }
+    if ($this->isRefundReversal() && !empty($value)) {
+      $value .= '-rr';
     }
     return $value;
   }
