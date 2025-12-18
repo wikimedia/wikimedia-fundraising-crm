@@ -110,6 +110,7 @@ class GetDonorSummary extends AbstractAction {
     $get = ContributionRecur::get(FALSE)
       ->addWhere('contact_id', 'IN', $contactIDList)
       ->addWhere('contribution_status_id:name', 'IN', $statusList)
+      ->addJoin('Contribution AS contribution', 'LEFT')
       ->addOrderBy('modified_date', 'DESC')
       ->addSelect(
         'amount',
@@ -120,13 +121,11 @@ class GetDonorSummary extends AbstractAction {
         'payment_instrument_id:name',
         'contribution_status_id:name',
         'payment_processor_id:name',
-        'contribution_recur_smashpig.original_country:abbr'
-      );
+        'contribution_recur_smashpig.original_country:abbr',
+        'MAX(contribution.receive_date) AS last_contribution_date'
+      )->addGroupBy('id');
     if (!$active) {
-      $get->addJoin('Contribution AS contribution', 'LEFT')
-        ->addSelect('MAX(contribution.receive_date) AS last_contribution_date')
-        ->addGroupBy('id')
-        ->setLimit(1);
+      $get->setLimit(1);
     }
     // Under API4, a LEFT JOIN is a bit different from raw SQL. When no recurring contribution exists, it
     // returns a single record with all NULL values. Filter out these empty records that have no valid ID.
