@@ -271,7 +271,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   }
 
   public function supportsEditRecurringContribution() {
-    return ($this->_paymentProcessor['name'] === 'paypal_ec') ? false : true;
+    return (in_array($this->_paymentProcessor['name'],['paypal_ec','paypal'])) ? false : true;
   }
 
   /**
