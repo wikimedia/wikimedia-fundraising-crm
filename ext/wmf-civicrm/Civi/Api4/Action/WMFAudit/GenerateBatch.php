@@ -123,7 +123,6 @@ class GenerateBatch extends AbstractAction {
     -- @todo - not for endowment - need the number for that
     '100-WMF' as LOCATION_ID,
     $deptIDClause as DEPT_ID,
-    REGEXP_SUBSTR(%1, '[0-9]+(?=_[A-Z]{3})')  as DOCUMENT,
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | " . date('m/d/y', strtotime($this->startDate)) . " | " . date('m/d/y', strtotime($this->endDate)) . " | ', COUNT(*), ' | ', ' Donations') as MEMO,
     0 as DEBIT,
     SUM(COALESCE(settled_donation_amount, 0)) as CREDIT,
@@ -147,7 +146,6 @@ UNION
     -- @todo - not for endowment - need the number for that
     '100-WMF' as LOCATION_ID,
     $deptIDClause as DEPT_ID,
-    REGEXP_SUBSTR(%1, '[0-9]+(?=_[A-Z]{3})')  as DOCUMENT,
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Refunds') as MEMO,
 
     SUM(-COALESCE(settled_reversal_amount, 0)) as DEBIT,
@@ -177,7 +175,6 @@ SELECT
     '100-WMF' as LOCATION_ID,
 -- cost centre - CC-1014 for all fees
     'CC-1014' as DEPT_ID,
-    REGEXP_SUBSTR(%1, '[0-9]+(?=_[A-Z]{3})')  as DOCUMENT,
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
     SUM(-COALESCE(settled_fee_amount, 0))as DEBIT,
@@ -208,7 +205,6 @@ SELECT
     '100-WMF' as LOCATION_ID,
 -- cost centre - CC-1014 for all fees
     'CC-1014' as DEPT_ID,
-    REGEXP_SUBSTR(%1, '[0-9]+(?=_[A-Z]{3})')  as DOCUMENT,
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
     -- @todo obv some cleaup in here
@@ -238,7 +234,6 @@ SELECT
     '100-WMF' as LOCATION_ID,
 -- cost centre - CC-1014 for all fees
     'CC-1014' as DEPT_ID,
-    REGEXP_SUBSTR(%1, '[0-9]+(?=_[A-Z]{3})')  as DOCUMENT,
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
     -- @todo obv some cleaup in here
@@ -271,7 +266,7 @@ GROUP BY s.settlement_batch_reference
         'ACCT_NO' => '',
         'LOCATION_ID' => '',
         'DEPT_ID' => '',
-        'DOCUMENT' => explode('_', $batch['name'])[1],
+        'DOCUMENT' => $batch['name'],
         'DEBIT' => 0,
         'CREDIT' => 0,
         'SOURCEENTITY' => '',
