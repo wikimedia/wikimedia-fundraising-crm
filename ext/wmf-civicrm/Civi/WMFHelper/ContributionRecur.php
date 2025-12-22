@@ -211,4 +211,27 @@ class ContributionRecur {
         ['trxn_id', '=', $fullTrxnId]
       )->execute()->first();
   }
+
+  /**
+   * Gets the list of donor-selectable cancel reasons for the dropdown on the
+   * donor relations cancel form.
+   *
+   * @return string[]
+   */
+  public static function getDonorCancelReasons(): array {
+    // Any changes to this list must also be made in the Acoustic export code.
+    return [
+      'Other and Unspecified',
+      'Financial Reasons',
+      'Duplicate recurring donation',
+      'Wikipedia content related complaint',
+      'Wikimedia Foundation related complaint',
+      'Lack of donation management tools',
+      'Matching Gift',
+      'Unintended recurring donation',
+      'Chapter',
+      'Update',
+      'Frequency',
+    ];
+  }
 }
