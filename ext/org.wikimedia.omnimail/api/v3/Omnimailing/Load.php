@@ -21,6 +21,7 @@ function civicrm_api3_omnimailing_load($params) {
     'start_date' => $params['start_date'],
     'end_date' => $params['end_date'],
     'debug' => !empty($params['debug']),
+    'timeout' => $params['timeout'],
     'return' => [
       'external_identifier',
       'subject',
@@ -160,6 +161,11 @@ function _civicrm_api3_omnimailing_load_spec(&$params) {
     'title' => ts('Date to fetch to'),
     'type' => CRM_Utils_Type::T_TIMESTAMP,
     'api.default' => 'now',
+  ];
+  $params['timeout'] = [
+    'title' => ts('Http request time out'),
+    'type' => CRM_Utils_Type::T_INT,
+    'api.default' => 20,
   ];
 
 }
