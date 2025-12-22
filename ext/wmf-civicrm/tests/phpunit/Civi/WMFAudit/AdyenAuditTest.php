@@ -572,7 +572,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
    * Donation         5   | 4.89       | .11        | 5                  | -.11          | -5                 | -10.65
    * ChargeReversal   5   | 4.89       | .11        | 5                  | -.11          |
    *
-   * @throws \CRM_Core_Exception|\League\Csv\Exception
+   * @throws \CRM_Core_Exception
    */
   public function testChargebackReversed(): void {
     $this->runAuditBatch('chargeback_reversal', 'settlement_detail_report_batch_1120.csv');
@@ -597,10 +597,10 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $contribution = Contribution::get(FALSE)
       ->addWhere('contribution_status_id:name', '=', 'chargeback_reversal')
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'adyen_1120_USD')
-      ->addSelect('trxn_id', 'contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount')
+      ->addSelect('trxn_id', 'contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount', 'contribution_extra.*')
       ->execute()->single();
     $this->assertEquals('CHARGEBACK_REVERSAL ADYEN 1234893193133131', $contribution['trxn_id']);
-
+    $this->assertEquals('chargeback_reversed', $contribution['contribution_extra.no_thank_you']);
   }
 
   /**

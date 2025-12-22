@@ -201,6 +201,7 @@ class AuditMessage extends DonationMessage {
       $message['invoice_id'] = $this->getOrderID();
       // These are such oddities we should keep them simple.
       $message['recurring'] = FALSE;
+      $message['no_thank_you'] = $this->getType();
     }
     $message['contribution_tracking_id'] = $this->getContributionTrackingID();
     if (!$this->getExistingContributionID()) {
