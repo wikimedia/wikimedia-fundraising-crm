@@ -298,10 +298,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       $contribution['contribution_extra.no_thank_you'] = 'recurring';
     }
 
-    // Add the contribution status if its known and not completed
-    if (!empty($msg['contribution_status_id'])) {
-      $contribution['contribution_status_id'] = $msg['contribution_status_id'];
-    }
+    $contribution['contribution_status_id'] = $message->getContributionStatusID();
 
     $customFields = (array) Contribution::getFields(FALSE)
       ->addWhere('custom_field_id', 'IS NOT EMPTY')

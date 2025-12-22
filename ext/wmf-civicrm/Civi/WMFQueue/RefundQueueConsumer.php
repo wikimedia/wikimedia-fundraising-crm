@@ -175,7 +175,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'contribution_status_id:name',
           'contribution_extra.original_currency',
           'contribution_extra.original_amount',
-          'gift_data.*',
+          'Gift_Data.*',
         ])->execute()->single();
     }
     catch (\CRM_Core_Exception $e) {
@@ -186,7 +186,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
 
     $giftDataFields = [];
     foreach ($contribution as $field => $value) {
-      if (str_starts_with('gift_data.', $field)) {
+      if (str_starts_with('Gift_Data.', $field)) {
         $giftDataFields[$field] = $value;
       }
     }

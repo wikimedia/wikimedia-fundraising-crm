@@ -201,6 +201,7 @@ class AuditMessage extends DonationMessage {
       $message['invoice_id'] = $this->getOrderID();
       // These are such oddities we should keep them simple.
       $message['recurring'] = FALSE;
+      $message['no_thank_you'] = $this->getType();
     }
     $message['contribution_tracking_id'] = $this->getContributionTrackingID();
     if (!$this->getExistingContributionID()) {
@@ -597,9 +598,31 @@ class AuditMessage extends DonationMessage {
           break;
         }
       }
-      if (empty($this->transactionDetails) && $this->isSubsequentRecurring()) {
-        // Let's make them up based on the first in the sequence.
-        $contribution = $this->getFirstRecurringContribution();
+      if (empty($this->transactionDetails)) {
+        $contribution = NULL;
+        if ($this->isSubsequentRecurring()) {
+          // Let's make them up based on the first in the sequence.
+          $contribution = $this->getFirstRecurringContribution();
+        }
+        else {
+          $contributionTrackingID = explode('.', $this->getOrderID())[0];
+          if (is_numeric($contributionTrackingID)) {
+            if ($this->isChargebackReversal() || $this->isRefund() || $this->isRefundReversal() || $this->isChargeback()) {
+              // If we are dealing with a chargeback or refund or reversal of one of them
+              // then we probably only really need the contact ID to go ahead. If the transaction details
+              // are missing them let's use what we have.
+              $contributionTracking = ContributionTracking::get(FALSE)
+                ->addWhere('id', '=', $contributionTrackingID)
+                ->addSelect('contribution_id', 'contribution_id.contact_id')
+                ->execute()->first();
+              if ($contributionTracking && $contributionTracking['contribution_id.contact_id']) {
+                $contribution = [
+                  'contact_id' => $contributionTracking['contribution_id.contact_id'],
+                ];
+              }
+            }
+          }
+        }
         if ($contribution) {
           $contributionTrackingID = explode('.', $this->getOrderID())[0];
           $this->transactionDetails = [
@@ -608,7 +631,7 @@ class AuditMessage extends DonationMessage {
             'message' => [
               'contact_id' => $contribution['contact_id'],
               'contribution_tracking_id' => $contributionTrackingID,
-              'contribution_recur_id' => $contribution['contribution_recur_id'],
+              'contribution_recur_id' => $contribution['contribution_recur_id'] ?? NULL,
             ],
           ];
         }
