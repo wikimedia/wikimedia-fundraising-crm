@@ -639,6 +639,10 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals('adyen_1120_USD', $refundedContribution['contribution_settlement.settlement_batch_reversal_reference']);
     $this->assertEquals('adyen_1120_USD', $refundedContribution['contribution_settlement.settlement_batch_reference']);
 
+    // Delete the transaction log - it should still be able to succeed by getting the contact_id
+    // via the created contribution.
+    TransactionLog::delete(FALSE)
+      ->addWhere('order_id', '=', '12000.1')->execute();
     $contribution = Contribution::get(FALSE)
       ->addWhere('contribution_status_id:name', '=', 'refund_reversal')
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'adyen_1120_USD')
