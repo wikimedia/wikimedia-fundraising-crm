@@ -22,8 +22,16 @@ use League\Csv\Writer;
  * @method $this setIsOutputSql(bool $isOutputSql)
  * @method $this setIsOutputRows(bool $isOutputRows)
  * @method $this setEmailSummaryAddress(string $email)
+ * @method $this setIsDryRun(bool $isDryRun)
  */
 class GenerateBatch extends AbstractAction {
+
+  /**
+   * Is this a dry run (if so do not close batches) or push to the api.
+   *
+   * @var bool
+   */
+  protected bool $isDryRun = FALSE;
 
   /**
    * Batch prefix.
@@ -388,11 +396,17 @@ GROUP BY s.settlement_batch_reference
     // are right before closing.
     $draftFileName = $this->getDraftFileName();
     if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
-      Batch::update(FALSE)
-        ->addValue('status_id:name', 'validated')
-        ->addWhere('id', 'IN', array_keys($this->batchSummary))
-        ->execute();
-      $this->log('The following batches have been validated and closed ' . implode(',', array_keys($this->batchSummary)));
+      if ($this->isDryRun) {
+        $this->log('The following batches have been closed' . implode(',', array_keys($this->batchSummary)));
+        $this->log('Batches not closed in dry run mode');
+      }
+      else {
+        Batch::update(FALSE)
+          ->addValue('status_id:name', 'validated')
+          ->addWhere('id', 'IN', array_keys($this->batchSummary))
+          ->execute();
+        $this->log('The following batches have been validated and closed ' . implode(',', array_keys($this->batchSummary)));
+      }
       if ($draftFileName) {
         $finalFileName = str_replace('-draft', '-final', $draftFileName);
         rename($draftFileName, $finalFileName);
