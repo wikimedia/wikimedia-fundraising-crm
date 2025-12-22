@@ -583,7 +583,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
     $chargedBackContribution = Contribution::get(FALSE)
       ->addWhere('contribution_settlement.settlement_batch_reversal_reference', '=', 'adyen_1120_USD')
-      ->addSelect('contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount')
+      ->addSelect('contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount', 'Gift_Data.*')
       ->execute()->single();
     $this->assertEquals('Chargeback', $chargedBackContribution['contribution_status_id:name']);
     $this->assertEquals(-10.65, $chargedBackContribution['contribution_settlement.settled_fee_reversal_amount']);
@@ -593,14 +593,16 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals('USD', $chargedBackContribution['contribution_settlement.settlement_currency']);
     $this->assertEquals('adyen_1120_USD', $chargedBackContribution['contribution_settlement.settlement_batch_reversal_reference']);
     $this->assertEquals('adyen_1120_USD', $chargedBackContribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals('Mobile Banner', $chargedBackContribution['Gift_Data.Channel']);
 
     $contribution = Contribution::get(FALSE)
       ->addWhere('contribution_status_id:name', '=', 'chargeback_reversal')
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'adyen_1120_USD')
-      ->addSelect('trxn_id', 'contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount', 'contribution_extra.*')
+      ->addSelect('trxn_id', 'contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount', 'contribution_extra.*', 'Gift_Data.*')
       ->execute()->single();
     $this->assertEquals('CHARGEBACK_REVERSAL ADYEN 1234893193133131', $contribution['trxn_id']);
     $this->assertEquals('chargeback_reversed', $contribution['contribution_extra.no_thank_you']);
+    $this->assertEquals('Mobile Banner', $contribution['Gift_Data.Channel']);
   }
 
   /**
