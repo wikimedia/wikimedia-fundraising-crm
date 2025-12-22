@@ -63,4 +63,14 @@ return [
     ],
     'settings_pages' => ['wmf-audit' => ['weight' => 230]],
   ],
+  'intacct_allowed_upload_folders' => [
+    'name' => 'intacct_allowed_upload_folders',
+    'type' => 'Array',
+    'default' => [],
+    'title' => 'Intacct Allowed Upload Folders',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'Files to be uploaded with FinanceIntegration.pushJournal must be in one of these folders',
+    'help_text' => 'You can set these using the $civicrm_settings global',
+  ],
 ];

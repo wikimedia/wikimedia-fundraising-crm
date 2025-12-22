@@ -27,7 +27,7 @@ use League\Csv\Writer;
 class GenerateBatch extends AbstractAction {
 
   /**
-   * Is this a dry run (if so do not close batches) or push to the api.
+   * Is this a dry run (if so do not close batches or push to the api).
    *
    * @var bool
    */
@@ -429,8 +429,19 @@ GROUP BY s.settlement_batch_reference
         $this->log('The journals are being pushed to the staging version of Intacct via the api. When an sftp alternative has been built this is where that will be plugged in');
         $apiOutcome = FinanceIntegration::pushJournal(FALSE)
           ->setJournalFile($finalFileName)
-          ->execute()->first();
+          ->setIsDryRun($this->isDryRun)
+          ->execute();
         $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome));
+        foreach ($apiOutcome as $apiBatch) {
+          if ($apiBatch['status'] === 'Valid Remotely') {
+            $this->log('Batch has been verified against the batch in Intacct and is now being closed (status set to Exported)');
+            Batch::update(FALSE)
+              ->addWhere('name', '=', $apiBatch['name'])
+              ->addValue('status_id:name', '=', 'Exported')
+              ->execute();
+          }
+          $this->log('Remote batch url is <href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['remote_journal_id'] . '</a>');
+        }
       }
       catch (\Exception $e) {
         $this->log('failed to upload to Intacct with error ' . $e->getMessage());
