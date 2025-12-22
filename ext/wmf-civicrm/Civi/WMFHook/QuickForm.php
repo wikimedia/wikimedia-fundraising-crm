@@ -3,7 +3,6 @@
 
 namespace Civi\WMFHook;
 
-use Civi\WMFHelper\ContributionRecur;
 use CRM_Activity_Form_Activity;
 use CRM_Core_Form;
 
@@ -33,8 +32,20 @@ class QuickForm {
       case 'CRM_Contribute_Form_CancelSubscription':
         if ($form->elementExists('cancel_reason')) {
           $form->removeElement('cancel_reason');
-          $reasons = ContributionRecur::getDonorCancelReasons();
-          $props['options'] = array_fill_keys($reasons, $reasons);
+          $props['options'] = [
+            // Any changes to this list must also be made in the Acoustic export code.
+            'Other and Unspecified' => 'Other and Unspecified',
+            'Financial Reasons' => 'Financial Reasons',
+            'Duplicate recurring donation' => 'Duplicate recurring donation',
+            'Wikipedia content related complaint' => 'Wikipedia content related complaint',
+            'Wikimedia Foundation related complaint' => 'Wikimedia Foundation related complaint',
+            'Lack of donation management tools' => 'Lack of donation management tools',
+            'Matching Gift' => 'Matching Gift',
+            'Unintended recurring donation' => 'Unintended recurring donation',
+            'Chapter' => 'Chapter',
+            'Update' => 'Update',
+            'Frequency' => 'Frequency',
+          ];
           // Adds the modified cancel_reason as required with TRUE
           $form->addSelect('cancel_reason', $props, TRUE);
         }

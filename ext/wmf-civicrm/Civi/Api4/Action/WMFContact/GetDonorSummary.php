@@ -8,7 +8,6 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\Email;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 
 class GetDonorSummary extends AbstractAction {
@@ -115,7 +114,6 @@ class GetDonorSummary extends AbstractAction {
       ->addOrderBy('modified_date', 'DESC')
       ->addSelect(
         'amount',
-        'cancel_reason',
         'currency',
         'frequency_unit',
         'id',
@@ -167,11 +165,7 @@ class GetDonorSummary extends AbstractAction {
         'status' => $recurringContribution['contribution_status_id:name'],
         'can_modify' => !RecurHelper::gatewayManagesOwnRecurringSchedule(
           $recurringContribution['payment_processor_id:name']
-        ),
-        'donor_cancelled' => in_array(
-          $recurringContribution['cancel_reason'],
-          ContributionRecurHelper::getDonorCancelReasons()
-        ),
+        )
       ];
     }
     return $mapped;
