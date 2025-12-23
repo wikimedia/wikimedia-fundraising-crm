@@ -141,8 +141,7 @@ class PushJournal extends AbstractAction {
       throw new \CRM_Core_Exception("Unable to open CSV: $csvPath");
     }
 
-    $rows = [];
-
+    $batches = [];
     foreach ($csv->getRecords() as $row) {
       // $row is already an associative array keyed by header names
 
@@ -150,24 +149,11 @@ class PushJournal extends AbstractAction {
       if (!empty($row['DONOTIMPORT'])) {
         continue;
       }
-
-      $rows[] = $row;
-    }
-
-    // Group rows into entries
-    $groups = [];
-    foreach ($rows as $r) {
-      $key = implode('|', [
-        $r['JOURNAL'] ?? '',
-        $r['DATE'] ?? '',
-        $r['DOCUMENT'] ?? '',
-        $r['CURRENCY'] ?? '',
-      ]);
-      $groups[$key][] = $r;
+      $batches[$row['DOCUMENT']][] = $row;
     }
 
     $entries = [];
-    foreach ($groups as $groupRows) {
+    foreach ($batches as $batchName => $groupRows) {
       $first = $groupRows[0];
 
       // Convert mm/dd/yyyy -> yyyy-mm-dd (adjust if your CSV differs)
@@ -176,12 +162,12 @@ class PushJournal extends AbstractAction {
       if (!$postingDate) {
         throw new \CRM_Core_Exception('Bad DATE format: ' . ($first['DATE'] ?? ''));
       }
-
       $entry = [
         'glJournal' => ['id' => $first['JOURNAL']],
         'postingDate' => $postingDate->format('Y-m-d'),
         'description' => $first['DESCRIPTION'] ?: null,
         'state'       => 'draft',
+        'referenceNumber' => $first['DOCUMENT'],
         'lines' => [],
       ];
 
