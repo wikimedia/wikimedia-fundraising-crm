@@ -46,6 +46,7 @@ class AuditMessage extends DonationMessage {
    *    original_total_amount: float,
    *    exchange_rate: float,
    *    settled_date: string,
+   *    external_identifier: string,
    *    date: string,
    *    gross: float|string|int,
    *    type: string,

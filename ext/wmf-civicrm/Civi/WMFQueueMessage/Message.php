@@ -679,6 +679,13 @@ class Message {
         'api_entity' => 'Phone',
         'used_for' => 'donation',
       ],
+      'external_identifier' => [
+        'name' => 'external_identifier',
+        'data_type' => 'String',
+        'label' => E::ts('External identifier'),
+        'description' => E::ts('Generally the identifier associated with the account with the gateway'),
+        'used_for' => 'donation',
+      ],
     ];
     $contactFields = Contact::getFields(FALSE)
       ->setLoadOptions(TRUE)
