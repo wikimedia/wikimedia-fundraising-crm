@@ -605,7 +605,7 @@ class AuditMessage extends DonationMessage {
           $contribution = $this->getFirstRecurringContribution();
         }
         else {
-          $contributionTrackingID = explode('.', $this->getOrderID())[0];
+          $contributionTrackingID = explode('.', (string) $this->getOrderID())[0];
           if (is_numeric($contributionTrackingID)) {
             if ($this->isChargebackReversal() || $this->isRefund() || $this->isRefundReversal() || $this->isChargeback()) {
               // If we are dealing with a chargeback or refund or reversal of one of them
