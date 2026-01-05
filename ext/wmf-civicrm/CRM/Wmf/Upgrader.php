@@ -3619,6 +3619,51 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Bug: T408141
+   *
+   * Backfill missing all_funds_last_donation_date and all_funds_first_donation_date (about 650k rows, missing for older endowment donors).
+   * *
+   * @return bool
+   */
+  public function upgrade_4795(): bool {
+    $sql = '
+    UPDATE wmf_donor w
+    JOIN (
+        SELECT
+            c.contact_id AS contact_id,
+            MAX(c.receive_date) AS latest_date
+        FROM civicrm_contribution c
+        WHERE c.contribution_status_id = 1
+        AND c.total_amount > 0
+        AND (c.trxn_id IS NULL OR c.trxn_id NOT LIKE "RFD %")
+        GROUP BY c.contact_id
+    ) sub ON w.entity_id = sub.contact_id
+    SET w.all_funds_last_donation_date = sub.latest_date
+    WHERE w.all_funds_last_donation_date IS NULL
+    OR w.all_funds_last_donation_date < sub.latest_date
+      ';
+    CRM_Core_DAO::executeQuery($sql);
+    $sql = '
+    UPDATE wmf_donor w
+    JOIN (
+        SELECT
+            c.contact_id AS contact_id,
+            MIN(c.receive_date) AS first_date
+        FROM civicrm_contribution c
+        WHERE c.contribution_status_id = 1
+        AND c.total_amount > 0
+        AND (c.trxn_id IS NULL OR c.trxn_id NOT LIKE "RFD %")
+        GROUP BY c.contact_id
+    ) sub ON w.entity_id = sub.contact_id
+    SET w.all_funds_first_donation_date = sub.first_date
+    WHERE w.all_funds_first_donation_date IS NULL
+    OR w.all_funds_first_donation_date > sub.first_date
+      ';
+    CRM_Core_DAO::executeQuery($sql);
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
