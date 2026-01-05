@@ -3551,6 +3551,21 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Convert active BGN recurring contributions to EUR
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4790(): bool {
+    $sql = "UPDATE civicrm_contribution_recur
+    SET currency = 'EUR',
+        amount = ROUND(0.512 * amount, 2)
+    WHERE currency = 'BGN'
+    AND contribution_status_id = 5";
+    CRM_Core_DAO::executeQuery($sql);
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
