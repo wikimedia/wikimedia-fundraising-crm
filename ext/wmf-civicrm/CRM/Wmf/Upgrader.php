@@ -64,7 +64,9 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
      */
     $tables = ['civicrm_country' => ['iso_code']];
     CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-    $this->executeSqlFile('sql/create_smashpig_pending_table.sql');
+    $sql = file_get_contents(__DIR__ . '/../../../../vendor/wikimedia/smash-pig/Schema/mysql/001_CreatePendingTable.sql');
+    $sql = preg_replace('/EXISTS pending/', 'EXISTS smashpig.pending', $sql);
+    $this->executeSql($sql);
   }
 
   /**
