@@ -56,6 +56,7 @@ class DonationMessage extends Message {
    *   settled_currency: string,
    *   settlement_batch_reference: string,
    *   recipient_id: integer,
+   *   external_identifier: string,
    *  }
    */
   protected array $message;

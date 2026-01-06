@@ -64,7 +64,9 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
      */
     $tables = ['civicrm_country' => ['iso_code']];
     CRM_Core_BAO_SchemaHandler::createIndexes($tables);
-    $this->executeSqlFile('sql/create_smashpig_pending_table.sql');
+    $sql = file_get_contents(__DIR__ . '/../../../../vendor/wikimedia/smash-pig/Schema/mysql/001_CreatePendingTable.sql');
+    $sql = preg_replace('/EXISTS pending/', 'EXISTS smashpig.pending', $sql);
+    $this->executeSql($sql);
   }
 
   /**
@@ -3545,6 +3547,74 @@ AND channel <> 'Chapter Gifts'";
       ';
     CRM_Core_DAO::executeQuery($sql);
     CRM_Core_DAO::executeQuery('DROP TABLE addr_to_fix');
+    return TRUE;
+  }
+
+
+  /**
+   * Bug: T412539
+   *
+   * Correct cancellation reasons for cancelled Paypal recurring contributions since Sept 2022.
+   * *
+   * @return bool
+   */
+  public function upgrade_4791(): bool {
+    CRM_Core_DAO::executeQuery('CREATE TEMPORARY TABLE tmp_recur_cancel_reason (recur_id INT PRIMARY KEY, cancel_reason VARCHAR(255))');
+    $sql = "
+      INSERT INTO tmp_recur_cancel_reason (recur_id, cancel_reason)
+      SELECT
+        recur_id,
+        cancel_reason
+      FROM (
+        SELECT
+          r.id AS recur_id,
+          lr1.cancel_reason,
+          ROW_NUMBER() OVER (
+            PARTITION BY r.id
+            ORDER BY lr1.log_date
+          ) AS rn
+        FROM civicrm_contribution_recur r
+        INNER JOIN log_civicrm_contribution_recur lr1
+          ON lr1.id = r.id
+        INNER JOIN log_civicrm_contribution_recur lr2
+          ON lr2.id = r.id
+          AND lr2.log_date > lr1.log_date
+          AND lr2.log_date <= lr1.log_date + INTERVAL 24 HOUR
+        WHERE r.contribution_status_id = 3
+          AND r.payment_processor_id IN (6,7)
+          AND r.cancel_reason = '(auto) User Cancelled via Gateway'
+          AND r.cancel_date > '2022-09-01'
+          AND lr1.cancel_reason IS NOT NULL
+          AND lr1.cancel_reason <> '(auto) User Cancelled via Gateway'
+          AND lr2.cancel_reason = '(auto) User Cancelled via Gateway'
+      ) t
+      WHERE rn = 1
+    ";
+    CRM_Core_DAO::executeQuery($sql);
+    $sql = '
+      UPDATE civicrm_contribution_recur r
+      JOIN tmp_recur_cancel_reason t
+        ON t.recur_id = r.id
+      SET r.cancel_reason = t.cancel_reason
+    ';
+    CRM_Core_DAO::executeQuery($sql);
+    CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE tmp_recur_cancel_reason');
+    return TRUE;
+  }
+
+
+  /**
+   * Convert active BGN recurring contributions to EUR
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4790(): bool {
+    $sql = "UPDATE civicrm_contribution_recur
+    SET currency = 'EUR',
+        amount = ROUND(0.512 * amount, 2)
+    WHERE currency = 'BGN'
+    AND contribution_status_id = 5";
+    CRM_Core_DAO::executeQuery($sql);
     return TRUE;
   }
 
