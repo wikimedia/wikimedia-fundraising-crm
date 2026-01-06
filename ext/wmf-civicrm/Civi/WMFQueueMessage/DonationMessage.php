@@ -57,6 +57,10 @@ class DonationMessage extends Message {
    *   settlement_batch_reference: string,
    *   recipient_id: integer,
    *   external_identifier: string,
+   *   first_name: string,
+   *   middle_name: string,
+   *   last_name: string,
+   *   full_name: string,
    *  }
    */
   protected array $message;
