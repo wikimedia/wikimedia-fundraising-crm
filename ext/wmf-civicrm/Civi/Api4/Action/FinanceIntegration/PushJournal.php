@@ -232,7 +232,7 @@ class PushJournal extends AbstractAction {
       $entry = [
         'glJournal' => ['id' => $first['JOURNAL']],
         'postingDate' => $postingDate->format('Y-m-d'),
-        'description' => $first['DESCRIPTION'] ?: null,
+        'description' => ((string) $this->batches[$batchName]['csvTotals']['debit']). ' ' . $first['DESCRIPTION'] ?: null,
         'state'       => 'draft',
         'referenceNumber' => $first['DOCUMENT'],
         'lines' => [],
