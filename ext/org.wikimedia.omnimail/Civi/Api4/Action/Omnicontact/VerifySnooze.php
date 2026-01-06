@@ -16,8 +16,6 @@ use GuzzleHttp\Client;
  * @method $this setDatabaseID(int $databaseID)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setToDateTime(string $dateTimeString)
- * @method $this setFromDateTime(string $dateTimeString)
  * @method $this setClient(Client $client) Generally Silverpop....
  * @method null|Client getClient()
  */
@@ -39,53 +37,17 @@ class VerifySnooze extends AbstractAction {
   protected $mailProvider = 'Silverpop';
 
   /**
-   * Audit from date time.
-   *
-   * @var string
-   */
-  protected $fromDateTime = '1 week ago';
-
-  /**
-   * Audit to date time.
-   *
-   * @var string
-   */
-  protected $toDateTime = 'now';
-
-  public function getToDateTime() {
-    return date('Y-m-d H:i:s', strtotime($this->toDateTime));
-  }
-
-  public function getFromDateTime() {
-    return date('Y-m-d H:i:s', strtotime($this->fromDateTime));
-  }
-
-  /**
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
-    $snoozedEmails = \CRM_Core_DAO::executeQuery(
-      'SELECT entity_id FROM log_civicrm_value_email
-         WHERE log_date BETWEEN "' . $this->getFromDateTime() . '" AND "' . $this->getToDateTime() . '"'
-
-    )->fetchAll();
-    foreach ($snoozedEmails as $email) {
-      // do something
-      $snoozedEmail = Email::get(FALSE)
-        ->addSelect('email', 'id', 'contact_id', 'email_settings.snooze_date')
-        ->addWhere('id', '=', $email['entity_id'])
-        ->execute()->first();
-      if (!$snoozedEmail || empty($snoozedEmail['email_settings.snooze_date'])
-        // If the snooze is less than a day into the future then leave it - it's on it's way out
-        // & who wants to calculate timezones!!
-        || strtotime($snoozedEmail['email_settings.snooze_date']) < strtotime('+ 1 day')
-      ) {
-        // If the 'real' email (as opposed to the log email) does not exist
-        // or does not have a future snooze date then skip.
-        continue;
-      }
+    $snoozedEmails = Email::get(FALSE)
+      ->addSelect('email', 'id', 'contact_id', 'email_settings.snooze_date')
+      ->addWhere('email_settings.snooze_date', '>', gmdate('Y-m-d H:i:s', strtotime('+1 day')))
+      ->execute();
+    // If the snooze is less than a day into the future then leave it - it's on its way out
+    // & who wants to calculate timezones!!
+    foreach ($snoozedEmails as $snoozedEmail) {
       try {
-        // if (date($snoozedEmails['email_settings']['snooze_date']) < ) {}
         $remoteRecord = Omnicontact::get(FALSE)
           ->setClient($this->getClient())
           ->setEmail($snoozedEmail['email'])

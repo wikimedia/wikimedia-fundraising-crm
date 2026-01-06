@@ -14,6 +14,10 @@
     "/srv/civi-sites/wmf/private",
     "/tmp/"
   ],
+  "intacct_allowed_upload_folders" : [
+    "/srv/civi-sites/wmf/private/audit/generated",
+    "/tmp/"
+  ],
   "symfony_email_dsn" : "smtp://mailcatcher:1025",
   "wmf_audit_directory_audit" : "/srv/civi-sites/wmf/private/wmf_audit",
   "wmf_audit_directory_payments_log" : "/srv/civi-sites/wmf/private/wmf_audit/logs",
