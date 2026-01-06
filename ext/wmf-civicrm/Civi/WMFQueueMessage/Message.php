@@ -570,6 +570,11 @@ class Message {
         'api_field' => 'middle_name',
         'api_entity' => 'Contact',
       ],
+      'full_name' => [
+        'name' => 'full_name',
+        'data_type' => 'String',
+        'description' => E::ts('Full name to be parsed'),
+      ],
       'organization_name' => [
         'name' => 'organization_name',
         'data_type' => 'String',
