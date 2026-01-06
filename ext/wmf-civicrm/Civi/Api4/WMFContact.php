@@ -7,6 +7,7 @@ use Civi\Api4\Action\WMFContact\GetDonorSummary;
 use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\Action\WMFContact\UpdateCommunicationsPreferences;
 use Civi\Api4\Action\WMFContact\DoubleOptIn;
+use Civi\Api4\Action\WMFContact\BulkEmailable;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
@@ -84,6 +85,17 @@ class WMFContact extends Generic\AbstractEntity {
    */
   public static function doubleOptIn(bool $checkPermissions = FALSE): DoubleOptIn {
     return (new DoubleOptIn(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Check if an email can receive bulk emails
+   *
+   * @param bool $checkPermissions
+   * @return \Civi\Api4\Action\WMFContact\BulkEmailable
+   */
+  public static function bulkEmailable(bool $checkPermissions = FALSE): BulkEmailable {
+    return (new BulkEmailable(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
