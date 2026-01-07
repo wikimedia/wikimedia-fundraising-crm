@@ -342,7 +342,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
    * @throws \Exception
    */
   public function testParseFiles($path, $expectedMessages) {
-    \Civi::settings()->set('wmf_audit_directory_audit', $path);
+    $this->setSetting('wmf_audit_directory_audit', $path);
 
     $this->runAuditor();
 
@@ -370,7 +370,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'contribution_extra.backend_processor' => 'adyen',
       'contribution_extra.backend_processor_txn_id' => 'FGH',
     ])['id'];
-    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/donation_gravy/');
+    $this->setSetting('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/donation_gravy/');
     $this->runAuditor();
     $this->processRefundQueue();
     $this->processSettleQueue();
@@ -419,7 +419,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'id' => $maxContributionTrackingID + 1,
       ])
       ->execute()->first()['id'];
-    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/donation_gravy/');
+    $this->setSetting('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/donation_gravy/');
     $this->createTestEntity('TransactionLog', [
       'date' => '2025-09-01 23:04:00',
       'gateway' => 'gravy',
@@ -543,7 +543,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'contribution_extra.backend_processor' => 'adyen',
       'contribution_extra.backend_processor_txn_id' => 'FGH',
     ])['id'];
-    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/chargeback_gravy/');
+    $this->setSetting('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/chargeback_gravy/');
     $this->runAuditor();
     $this->processRefundQueue();
     $contribution = Contribution::get(FALSE)->addWhere('id', '>', $contributionID - 1)

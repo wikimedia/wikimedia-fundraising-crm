@@ -24,14 +24,19 @@ class BaseAuditTestCase extends TestCase {
   protected string $gateway;
 
   public function setUp(): void {
+    $this->setUpWMFEnvironment();
     // This sets the working log directory to the CiviCRM upload directory.
     // It is found under sites/default/files/civicrm/upload & is web-writable,
     // outside of git, and somewhat durable.
-    \Civi::settings()->set('wmf_audit_directory_working_log', \CRM_Core_Config::singleton()->uploadDir);
-    \Civi::settings()->set('wmf_audit_directory_payments_log', __DIR__ . '/data/logs/');
-    $this->setUpWMFEnvironment();
+    $this->setSetting('wmf_audit_directory_working_log', \CRM_Core_Config::singleton()->uploadDir);
+    $this->setSetting('wmf_audit_directory_payments_log', __DIR__ . '/data/logs/');
     $this->auditFileBaseDirectory = __DIR__ . '/data/' . ucfirst($this->gateway);
     parent::setUp();
+  }
+
+  public function tearDown(): void {
+    $this->tearDownWMFEnvironment();
+    parent::tearDown();
   }
 
   protected function setAuditDirectory(string $subDir): void {

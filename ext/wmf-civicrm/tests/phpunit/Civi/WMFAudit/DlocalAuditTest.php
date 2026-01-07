@@ -152,7 +152,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles($path, $expectedMessages, $expectedLoglines) {
-    \Civi::settings()->set('wmf_audit_directory_audit', $path);
+    $this->setSetting('wmf_audit_directory_audit', $path);
 
     $this->runAuditor();
 

@@ -172,7 +172,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testParseFiles(string $path, array $expectedMessages): void {
-    \Civi::settings()->set('wmf_audit_directory_audit', $path);
+    $this->setSetting('wmf_audit_directory_audit', $path);
     $this->runAuditor();
     $this->assertMessages($expectedMessages);
 
@@ -266,7 +266,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testExistingGravyIsFound(): void {
-    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Braintree/gravy_donation/');
+    $this->setSetting('wmf_audit_directory_audit', __DIR__ . '/data/Braintree/gravy_donation/');
     $this->createTestEntity('Contribution', [
       'trxn_id' => 'BRAINTREE dHJhbnNhY3Rpb25fa2szNmZ4Y3A',
       'contribution_extra.backend_processor' => 'braintree',
@@ -284,7 +284,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testAlreadyRefundedTransactionIsSkipped(): void {
-    \Civi::settings()->set('wmf_audit_directory_audit', __DIR__ . '/data/Braintree/refundNoGatewayIDinCivi/');
+    $this->setSetting('wmf_audit_directory_audit', __DIR__ . '/data/Braintree/refundNoGatewayIDinCivi/');
     $expectedMessages = [
       'refund' => [],
     ];

@@ -133,7 +133,7 @@ class AmazonAuditTest extends BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles(string $path, array $expectedMessages): void {
-    \Civi::settings()->set('wmf_audit_directory_audit', $path);
+    $this->setSetting('wmf_audit_directory_audit', $path);
 
     $this->runAuditor();
 
