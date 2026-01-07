@@ -6,6 +6,7 @@ use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\WMFContact;
 
 /**
  * Snooze jobs are not run directly. They are queued and run as background tasks
@@ -16,16 +17,31 @@ use Civi\Api4\Generic\Result;
  * @method $this setEmail(?string $email)
  * @method $this setContactID(?string $contactID)
  * @method string|null getSnoozeDate()
- * @method $this setSnoozeDate(?string $contactID)
+ * @method $this setSnoozeDate(?string $snoozeDate)
  * @method $this setDatabaseID(int $databaseID)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
  */
 class Snooze extends AbstractAction {
 
+  /**
+   * @var string
+   */
   protected $email;
+
+  /**
+   * @var int
+   */
   protected $contactID;
+
+  /**
+   * @var int
+   */
   protected $databaseID;
+
+  /**
+   * @var string
+   */
   protected $snoozeDate;
 
   /**
@@ -48,6 +64,14 @@ class Snooze extends AbstractAction {
     $email = $this->getEmail();
     if (!$email) {
       throw new \CRM_Core_Exception('Email required.');
+    }
+    // Acoustic doesn't allow an opted out contact to be snoozed so we don't want to keep trying.
+    $emailable = WMFContact::bulkEmailable(FALSE)
+      ->setEmail($email)
+      ->setCheckSnooze(FALSE)
+      ->execute()->first();
+    if (!$emailable) {
+      return;
     }
     if ($this->contactID) {
       $contact_id = $this->contactID;
