@@ -168,6 +168,13 @@ class BaseAuditTestCase extends TestCase {
 
       foreach ($auditResult['validate'] as $row) {
         $this->assertEquals(0, array_sum($row['validation']), print_r(array_filter($row), TRUE));
+        foreach ($row['csv'] ?? [] as $path) {
+          $rows = Reader::createFromPath($path)->setHeaderOffset(0)->getRecords();
+          foreach ($rows as $line) {
+            $this->assertGreaterThanOrEqual(0, $line['DEBIT']);
+            $this->assertGreaterThanOrEqual(0, $line['CREDIT']);
+          }
+        }
       }
     }
     return (array) $auditResult;

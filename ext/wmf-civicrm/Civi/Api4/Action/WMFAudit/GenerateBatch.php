@@ -123,8 +123,8 @@ class GenerateBatch extends AbstractAction {
     '100-WMF' as LOCATION_ID,
     $deptIDClause as DEPT_ID,
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | " . date('m/d/y', strtotime($this->startDate)) . " | " . date('m/d/y', strtotime($this->endDate)) . " | ', COUNT(*), ' | ', ' Donations') as MEMO,
-    0 as DEBIT,
-    SUM(COALESCE(settled_donation_amount, 0)) as CREDIT,
+    IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
+    IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
     s.settlement_currency as CURRENCY,
     %2 as EXCH_RATE_DATE,
     $restrictionsClause as GLDIMFUNDING
@@ -146,8 +146,8 @@ UNION
     $deptIDClause as DEPT_ID,
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Refunds') as MEMO,
 
-    SUM(-COALESCE(settled_reversal_amount, 0)) as DEBIT,
-    0 as CREDIT,
+    IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
+    IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
     %2 as EXCH_RATE_DATE,
     $restrictionsClause as GLDIMFUNDING
@@ -174,8 +174,8 @@ SELECT
     'CC-1014' as DEPT_ID,
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
-    SUM(-COALESCE(settled_fee_amount, 0))as DEBIT,
-    0 as CREDIT,
+    IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_amount, 0)), 0) as DEBIT,
+    IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0))) as CREDIT,
     s.settlement_currency as CURRENCY,
     DATE_FORMAT(s.settlement_date, '%m/%d/%Y') as EXCH_RATE_DATE,
     'Unrestricted' as GLDIMFUNDING
@@ -204,8 +204,8 @@ SELECT
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
     -- @todo obv some cleaup in here
-    SUM(-COALESCE(settled_fee_reversal_amount, 0)) as DEBIT,
-    0 as CREDIT,
+    IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_reversal_amount, 0)), 0) as DEBIT,
+    IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_reversal_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
     DATE_FORMAT(s.settlement_date, '%m/%d/%Y') as EXCH_RATE_DATE,
     'Unrestricted' as GLDIMFUNDING
@@ -232,8 +232,8 @@ SELECT
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
     -- @todo obv some cleaup in here
-    SUM(COALESCE(-settled_fee_amount, 0)) as DEBIT,
-    0 as CREDIT,
+    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
+    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
     DATE_FORMAT(s.settlement_date, '%m/%d/%Y') as EXCH_RATE_DATE,
     'Unrestricted' as GLDIMFUNDING
@@ -363,7 +363,7 @@ GROUP BY s.settlement_batch_reference
         'fee' => $record['expected']['fee'] + $record['totals']['fee'],
         'settled' => $record['expected']['settled'] - $record['totals']['settled'],
       ];
-      $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['name']);
+      $record['csv'] = $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['name']);
       $isValid = empty(array_filter($record['validation']));
       $this->batchSummary[$batch['name']]['is_valid'] = $isValid;
       $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
@@ -453,7 +453,7 @@ GROUP BY s.settlement_batch_reference
    * @param $csv_rows
    * @return void
    */
-  public function addToCsv($csv_rows, $renderedSql, string $batchName): void {
+  public function addToCsv($csv_rows, $renderedSql, string $batchName): array {
     if ($this->isOutputCsv) {
       $writer = $this->getWriter();
       $writer->insertAll($csv_rows);
@@ -488,7 +488,9 @@ GROUP BY s.settlement_batch_reference
       }
       $detailWriter = $this->getDetailsWriter(array_keys($detailedData[0] ?? []), $batchName);
       $detailWriter->insertAll($detailedData);
+      return ['journal_file' => $batchJournalWriter->getPathname(), 'detail_file' => $detailWriter->getPathname()];
     }
+    return [];
   }
 
   /**

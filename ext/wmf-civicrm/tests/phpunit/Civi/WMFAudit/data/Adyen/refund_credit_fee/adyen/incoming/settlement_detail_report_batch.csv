@@ -1,0 +1,4 @@
+Company Account,Merchant Account,Psp Reference,Merchant Reference,Payment Method,Creation Date,TimeZone,Type,Modification Reference,Gross Currency,Gross Debit (GC),Gross Credit (GC),Exchange Rate,Net Currency,Net Debit (NC),Net Credit (NC),Commission (NC),Markup (NC),Scheme Fees (NC),Interchange (NC),Payment Method Variant,Modification Merchant Reference,Batch Number,Booking Date,Booking Date TimeZone,Reserved6,Reserved7,Reserved8,Reserved9
+Wikimedia,WikimediaCOM,5364893193133131,43992337.0,visa,2017-02-18 22:10:51,PST,Settled,5364893193133131,USD,,100,1,USD,0,100,,,"","",visadebit,,1120,2025-09-08,PDT,,,,
+Wikimedia,WikimediaCOM,1234893193133131,12000.1,visa,2016-02-10 10:25:36,PST,Refunded,8864893193133131,USD,55,,1,USD,50,0,-5,"",,,visaclassic,777777,1120,2025-09-08,PDT,,,,
+Wikimedia,WikimediaCOM,,,,2017-02-18 23:53:26,PST,MerchantPayout,"TX2342222277XT batch 2, WikimediaCOM batch 2, WikimediaCOM",EUR,,,1,USD,50,,,,,,,,1120,2025-09-08,PDT,,,,

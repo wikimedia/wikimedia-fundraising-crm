@@ -2,11 +2,14 @@
 
 namespace Civi\WMFAudit;
 
+use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\TransactionLog;
 use Civi\Api4\WMFAudit;
+use League\Csv\Exception;
+use League\Csv\Reader;
 use SmashPig\Core\Helpers\Base62Helper;
 
 /**
@@ -859,6 +862,25 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->execute();
     // The donation and the fee
     $this->assertCount(2, $contributions);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws Exception
+   */
+  public function testAlreadyFeeInCreditDueToRefund(): void {
+    $directory = 'refund_credit_fee';
+    $file = 'settlement_detail_report_batch.csv';
+    Contribution::create(FALSE)
+      ->setValues([
+        'total_amount' => 55,
+        'contribution_extra.gateway' => 'adyen',
+        'contribution_extra.gateway_txn_id' => '1234893193133131',
+        'contact_id' => $this->createIndividual(),
+        'financial_type_id:name' => 'Cash',
+        'trxn_id' => 'ADYEN 1234893193133131',
+      ])->execute();
+    $this->runAuditBatch($directory, $file, 'adyen_1120');
   }
 
   public function createTransactionLog(array $row): void {
