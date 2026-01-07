@@ -506,6 +506,177 @@ class GravyResolveTest extends TestCase {
   }
 
   /**
+   * Scenario: transaction is set to PendingPoke at the gateway and
+   * ValidationAction::PROCESS but donor has recent recurring donation.
+   *
+   * Expectation: the transaction is marked as resolved since recent recurring donations shouldn't count.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
+   */
+  public function testResolvePendingPokeToCompleteWithRecentRecurringContribution(): void {
+    // generate a pending message to test
+    $gateway = 'gravy';
+    $pending_message = $this->createTestPendingRecord($gateway);
+
+    $this->createContactWithContribution($pending_message, [
+      'receive_date' =>gmdate("Y-m-d", time()),
+    ], TRUE);
+
+    // getLatestPaymentStatus response set up
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+      ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
+      ->setRiskScores([
+        'cvv' => 0,
+        'avs' => 0,
+      ]);
+    // set configured response to mock getLatestPaymentStatus call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('getLatestPaymentStatus')
+      ->willReturn($hostedPaymentStatusResponse);
+
+    // cancelPayment should be called when reject status determined.
+    $this->hostedCheckoutProvider->expects($this->never())
+      ->method('cancelPayment')
+      ->with($hostedPaymentStatusResponse->getGatewayTxnId())
+      ->willReturn(
+        (new CancelPaymentResponse())->setStatus(
+          FinalStatus::CANCELLED
+        )
+      );
+
+    // approvePayment response set up
+    $approvePaymentResponse = new ApprovePaymentResponse();
+    $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
+      ->setGatewayTxnId(mt_rand())
+      ->setSuccessful(TRUE);
+
+    // set configured response to mock approvePayment call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('approvePayment')
+      ->willReturn($approvePaymentResponse);
+
+    // run the pending message through PendingTransaction::resolve()
+    $result = PendingTransaction::resolve()
+      ->setMessage($pending_message)
+      ->execute();
+
+    // confirm status is now complete
+    $this->assertEquals(
+      FinalStatus::COMPLETE,
+      $result[$pending_message['order_id']]['status']
+    );
+
+    // confirm payments-init queue message added
+    $payments_init_queue_message = QueueWrapper::getQueue('payments-init')
+      ->pop();
+    $this->assertNotNull($payments_init_queue_message);
+
+    // confirm donation queue message added
+    $donation_queue_message = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNotNull($donation_queue_message);
+    SourceFields::removeFromMessage($donation_queue_message);
+    $this->assertEquals([
+      'contribution_tracking_id',
+      'country',
+      'first_name',
+      'last_name',
+      'email',
+      'gateway',
+      'order_id',
+      'gateway_account',
+      'payment_method',
+      'payment_submethod',
+      'date',
+      'gross',
+      'currency',
+      'gateway_txn_id'
+    ], array_keys($donation_queue_message)
+    );
+
+    // confirm donation queue message data matches original pending message data
+    $this->assertEquals(
+      $pending_message['order_id'],
+      $donation_queue_message['order_id']
+    );
+    $this->assertEquals(
+      $hostedPaymentStatusResponse->getGatewayTxnId(),
+      $donation_queue_message['gateway_txn_id']
+    );
+  }
+
+  /**
+   * Scenario: transaction is set to PendingPoke at the gateway and
+   * ValidationAction::PROCESS but donor has recent donation.
+   *
+   * Expectation: the transaction is cancelled since recent donations is not recurring.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
+   */
+  public function testResolvePendingPokeToCancelledWithNoRecentRecurringContribution(): void {
+    // generate a pending message to test
+    $gateway = 'gravy';
+    $pending_message = $this->createTestPendingRecord($gateway);
+
+    $this->createContactWithContribution($pending_message, [
+      'receive_date' =>gmdate("Y-m-d", time()),
+    ]);
+
+    // getLatestPaymentStatus response set up
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+      ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
+      ->setRiskScores([
+        'cvv' => 0,
+        'avs' => 0,
+      ]);
+    // set configured response to mock getLatestPaymentStatus call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('getLatestPaymentStatus')
+      ->willReturn($hostedPaymentStatusResponse);
+
+    // cancelPayment should be called when reject status determined.
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('cancelPayment')
+      ->with($hostedPaymentStatusResponse->getGatewayTxnId())
+      ->willReturn(
+        (new CancelPaymentResponse())->setStatus(
+          FinalStatus::CANCELLED
+        )
+      );
+
+    // approvePayment response set up
+    $approvePaymentResponse = new ApprovePaymentResponse();
+    $approvePaymentResponse->setStatus(FinalStatus::COMPLETE)
+      ->setGatewayTxnId(mt_rand())
+      ->setSuccessful(TRUE);
+
+    // set configured response to mock approvePayment call
+    $this->hostedCheckoutProvider->expects($this->never())
+      ->method('approvePayment')
+      ->willReturn($approvePaymentResponse);
+
+    // run the pending message through PendingTransaction::resolve()
+    $result = PendingTransaction::resolve()
+      ->setMessage($pending_message)
+      ->execute();
+
+    // confirm status is now complete
+    $this->assertEquals(
+      FinalStatus::CANCELLED,
+      $result[$pending_message['order_id']]['status']
+    );
+  }
+
+  /**
    * Scenario: transaction is set to COMPLETE at the gateway and
    * ValidationAction::REJECT
    *
@@ -744,6 +915,7 @@ class GravyResolveTest extends TestCase {
     }
     catch (\CRM_Core_Exception $e) {
       $this->fail('failed to create Contribution Tracking record');
+      return [];
     }
   }
 
@@ -794,23 +966,33 @@ class GravyResolveTest extends TestCase {
 
   /**
    * @param array $pending_message
+   * @param array $contribution_overrides
+   * @param bool $initial_contribution_is_recurring flag to signify the contribution record created is a recurring transaction
    *
    * @return void
    */
-  public function createContactWithContribution(array $pending_message = []): void {
+  public function createContactWithContribution(array $pending_message = [], array $contribution_overrides = [], bool $initial_contribution_is_recurring = false): void {
     $contact = $this->createTestEntity('Contact', [
       'first_name' => $pending_message['first_name'] ?? 'Donald',
       'last_name' => $pending_message['last_name'] ?? 'Duck',
       'email_primary.email' => $pending_message['email'] ?? 'donald@example.com',
     ]);
-    $this->createTestEntity('Contribution', [
+    $contribution = array_merge([
       'contact_id' => $contact['id'],
       'total_amount' => '2.34',
       'currency' => 'USD',
       'receive_date' => '2018-06-20',
       'financial_type_id' => 1,
       'contribution_status_id:name' => 'Completed',
-    ]);
+    ], $contribution_overrides);
+    if ($initial_contribution_is_recurring) {
+        $contribution_recur = $this->createTestEntity('ContributionRecur', [
+          'contact_id' => $contribution['contact_id'],
+          'amount' => $contribution['total_amount'],
+        ]);
+        $contribution['contribution_recur_id'] = $contribution_recur['id'];
+    }
+    $this->createTestEntity('Contribution', $contribution);
   }
 
   /**

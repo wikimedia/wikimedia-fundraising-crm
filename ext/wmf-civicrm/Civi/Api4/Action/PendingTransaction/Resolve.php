@@ -581,6 +581,7 @@ class Resolve extends AbstractAction {
       ->addWhere('email.email', '=', $this->message['email'])
       ->addWhere('first_name', '=', $nameFields['first_name'])
       ->addWhere('last_name', '=', $nameFields['last_name'])
+      ->addWhere('completedContrib.contribution_recur_id', 'IS NULL') //ensure recurring charges do not void one time donations
       ->addWhere('is_deleted', '=', 0)
       ->setLimit(10);
     if ($includeNonCompleteDonation) {
@@ -589,7 +590,9 @@ class Resolve extends AbstractAction {
         ->addJoin(
           'Contribution AS otherContrib', 'LEFT',
           ['otherContrib.contribution_status_id', '<>', 1]
-        );
+        )
+        ->addWhere('otherContrib.contribution_recur_id', 'IS NULL'); //ensure recurring charges do not void one time donations
+
     }
     return $getApiCall->execute();
   }
