@@ -113,7 +113,6 @@ class GenerateBatch extends AbstractAction {
     $accountCodeClause = $this->getAccountClause();
     $deptIDClause = $this->getDeptIDClause();
     $restrictionsClause = $this->getRestrictionsClause();
-    $vendorClause = $this->getVendorClause();
     $batches = $this->getBatches();
 
     $sql = "SELECT
@@ -124,12 +123,11 @@ class GenerateBatch extends AbstractAction {
     '100-WMF' as LOCATION_ID,
     $deptIDClause as DEPT_ID,
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | " . date('m/d/y', strtotime($this->startDate)) . " | " . date('m/d/y', strtotime($this->endDate)) . " | ', COUNT(*), ' | ', ' Donations') as MEMO,
-    0 as DEBIT,
-    SUM(COALESCE(settled_donation_amount, 0)) as CREDIT,
+    IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
+    IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
     s.settlement_currency as CURRENCY,
     %2 as EXCH_RATE_DATE,
-    $restrictionsClause as GLDIMFUNDING,
-    $vendorClause as GLENTRY_VENDORID
+    $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
          LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
@@ -148,12 +146,11 @@ UNION
     $deptIDClause as DEPT_ID,
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Refunds') as MEMO,
 
-    SUM(-COALESCE(settled_reversal_amount, 0)) as DEBIT,
-    0 as CREDIT,
+    IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
+    IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
     %2 as EXCH_RATE_DATE,
-    $restrictionsClause as GLDIMFUNDING,
-    $vendorClause as GLENTRY_VENDORID
+    $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
          LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
@@ -177,12 +174,11 @@ SELECT
     'CC-1014' as DEPT_ID,
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
-    SUM(-COALESCE(settled_fee_amount, 0))as DEBIT,
-    0 as CREDIT,
+    IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_amount, 0)), 0) as DEBIT,
+    IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0))) as CREDIT,
     s.settlement_currency as CURRENCY,
     DATE_FORMAT(s.settlement_date, '%m/%d/%Y') as EXCH_RATE_DATE,
-    'Unrestricted' as GLDIMFUNDING,
-    $vendorClause as GLENTRY_VENDORID
+    'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
   LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
@@ -208,12 +204,11 @@ SELECT
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
     -- @todo obv some cleaup in here
-    SUM(-COALESCE(settled_fee_reversal_amount, 0)) as DEBIT,
-    0 as CREDIT,
+    IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_reversal_amount, 0)), 0) as DEBIT,
+    IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_reversal_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
     DATE_FORMAT(s.settlement_date, '%m/%d/%Y') as EXCH_RATE_DATE,
-    'Unrestricted' as GLDIMFUNDING,
-    $vendorClause as GLENTRY_VENDORID
+    'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
   LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
@@ -237,12 +232,11 @@ SELECT
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
     -- @todo obv some cleaup in here
-    SUM(COALESCE(-settled_fee_amount, 0)) as DEBIT,
-    0 as CREDIT,
+    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
+    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
     DATE_FORMAT(s.settlement_date, '%m/%d/%Y') as EXCH_RATE_DATE,
-    'Unrestricted' as GLDIMFUNDING,
-    $vendorClause as GLENTRY_VENDORID
+    'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
   LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
@@ -282,7 +276,7 @@ GROUP BY s.settlement_batch_reference
         'GLENTRY_PROJECTID' => '',
         'GLENTRY_CLASSID' => '',
         'GLENTRY_CUSTOMERID' => '',
-        'GLENTRY_VENDORID' => '',
+        'GLENTRY_VENDORID' => $this->getVendorCode($batch['name']),
         'GLENTRY_ITEMID' => '',
         'GLENTRY_EMPLOYEEID' => '',
         'DESCRIPTION' => '',
@@ -369,7 +363,7 @@ GROUP BY s.settlement_batch_reference
         'fee' => $record['expected']['fee'] + $record['totals']['fee'],
         'settled' => $record['expected']['settled'] - $record['totals']['settled'],
       ];
-      $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['name']);
+      $record['csv'] = $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['name']);
       $isValid = empty(array_filter($record['validation']));
       $this->batchSummary[$batch['name']]['is_valid'] = $isValid;
       $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
@@ -459,7 +453,7 @@ GROUP BY s.settlement_batch_reference
    * @param $csv_rows
    * @return void
    */
-  public function addToCsv($csv_rows, $renderedSql, string $batchName): void {
+  public function addToCsv($csv_rows, $renderedSql, string $batchName): array {
     if ($this->isOutputCsv) {
       $writer = $this->getWriter();
       $writer->insertAll($csv_rows);
@@ -494,7 +488,9 @@ GROUP BY s.settlement_batch_reference
       }
       $detailWriter = $this->getDetailsWriter(array_keys($detailedData[0] ?? []), $batchName);
       $detailWriter->insertAll($detailedData);
+      return ['journal_file' => $batchJournalWriter->getPathname(), 'detail_file' => $detailWriter->getPathname()];
     }
+    return [];
   }
 
   /**
@@ -615,9 +611,20 @@ END";
   /**
    * @return string
    */
-  public function getVendorClause(): string {
-    return "-- Can be a case statement when we have more vendors - this one is adyen.
-    'V01670'";
+  public function getVendorCode($batchName): string {
+    $parts = explode('_', $batchName);
+    $codes = [
+      'adyen' => 'V01670',
+      'braintree' => 'V05089',
+      'paypal' => 'V00282',
+      'dlocal' => 'V04134',
+      'engage' => 'V01948',
+      'stripe' => 'V04137',
+      'trustly' => 'V05354',
+      // V00343	Wikimedia Deutschland
+      // V01729	Wikimedia CH
+    ];
+    return $codes[$parts[0]];
   }
 
   /**
@@ -627,7 +634,7 @@ END";
    */
   public function getDetailData(string $renderedSql): array {
     $detailSQL = str_replace('GROUP BY ', 'GROUP BY c.id, ', $renderedSql);
-    $detailSQL = str_replace('GLENTRY_VENDORID', 'GLENTRY_VENDORID,
+    $detailSQL = str_replace('GLDIMFUNDING', 'GLDIMFUNDING,
         c.id as contribution_id, gift.channel, gift.fund, gift.is_major_gift,
         IF(c.financial_type_id = 26, 1, 0) as is_endowment,
         x.gateway,
