@@ -136,7 +136,7 @@ WHERE (%1 = s.settlement_batch_reference)
   AND is_template = 0
 GROUP BY Fund, gift.channel, is_major_gift
 
-UNION
+UNION ALL
   SELECT
    %2 as DATE,
    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
@@ -159,7 +159,7 @@ WHERE (%1 = s.settlement_batch_reversal_reference)
   AND is_template = 0
 GROUP BY Fund, gift.channel, is_major_gift
 
-UNION
+UNION ALL
 
 -- Fee transactions part.
 SELECT
@@ -189,7 +189,7 @@ WHERE (%1 = settlement_batch_reference)
   AND is_template = 0
 GROUP BY s.settlement_batch_reference
 
-UNION
+UNION ALL
 
 SELECT
     %2 as DATE,
@@ -218,7 +218,7 @@ WHERE (%1 = settlement_batch_reversal_reference)
   AND is_template = 0
 GROUP BY s.settlement_batch_reversal_reference
 
-UNION
+UNION ALL
 -- Fee transactions part.
 SELECT
     %2 as DATE,
