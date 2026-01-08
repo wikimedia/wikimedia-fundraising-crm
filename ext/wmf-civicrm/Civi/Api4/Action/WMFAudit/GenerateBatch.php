@@ -418,6 +418,7 @@ GROUP BY s.settlement_batch_reference
       }
     }
 
+    $isUploadSuccess = FALSE;
     if ($this->outputMethod === 'api' && !empty($finalFileName)) {
       try {
         $this->log('The journals are being pushed to the staging version of Intacct via the api. When an sftp alternative has been built this is where that will be plugged in');
@@ -425,14 +426,20 @@ GROUP BY s.settlement_batch_reference
           ->setJournalFile($finalFileName)
           ->setIsDryRun($this->isDryRun)
           ->execute();
+        $isUploadSuccess = TRUE;
         $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
         foreach ($apiOutcome as $apiBatch) {
           if ($apiBatch['status'] === 'Valid Remotely') {
             $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct and is now being closed (status set to Exported)');
             foreach ($result as $index => $row) {
               if ($row['batch']['name'] === $apiBatch['name']) {
-                $result[$index]['remote_url'] = $apiBatch['url'];
-                $result[$index]['remote_id'] = $apiBatch['remote_journal_id'];
+                $result[$index]['remote']['url'] = $apiBatch['url'];
+                $result[$index]['remote']['id'] = $apiBatch['remote_journal_id'];
+                $result[$index]['remote']['exchange_rate'] = $apiBatch['exchange_rate'] ?? 1;
+                $result[$index]['remote']['txn_number'] = $apiBatch['txn_number'];
+                $result[$index]['remote']['usd_journal_total'] = $apiBatch['usd_journal_total'];
+                $result[$index]['remote']['usd_credit'] = $apiBatch['usd_credit'];
+                $result[$index]['remote']['usd_debit'] = $apiBatch['usd_debit'];
               }
             }
             Batch::update(FALSE)
@@ -440,15 +447,18 @@ GROUP BY s.settlement_batch_reference
               ->addValue('status_id:name', 'Exported')
               ->execute();
           }
-          $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['remote_journal_id'] . '</a>');
+          $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
         }
       }
       catch (\Exception $e) {
         $this->log('failed to upload to Intacct with error ' . $e->getMessage());
+        foreach ($result as $index => $row) {
+          $result[$index]['upload_errors'] = 'journal upload failed';
+        }
       }
     }
     $this->log('Account code logic ' . nl2br($this->getAccountClause()));
-    $this->sendSummary($result, $finalFileName ?? NULL);
+    $this->sendSummary($result, $finalFileName ?? NULL, !$isUploadSuccess);
   }
 
   public static function fields(): array {
@@ -692,9 +702,13 @@ END";
 
   /**
    * @param Result $result
+   * @param string|null $fileName
+   * @param bool $hasUploadErrors
    * @return void
+   * @throws \CRM_Core_Exception
+
    */
-  public function sendSummary(Result $result, ?string $fileName): void {
+  public function sendSummary(Result $result, ?string $fileName, bool $hasUploadErrors): void {
     if (count($result)) {
       if ($this->emailSummaryAddress) {
         $params = [
@@ -709,7 +723,12 @@ END";
         // Start styled table.
         $html = '<html> <h3>The following batches have been generated</h3>';
         if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
-          $html .= '<p>All batches have validated and the batches have been closed. The journal file is attached</p>';
+          if (!$hasUploadErrors) {
+            $html .= '<p>All batches have validated and the batches have been closed. The journal file is attached</p>';
+          }
+          else {
+            $html .= '<p>All batches have validated and the batches have been closed but upload was unsuccesful. The journal file is attached</p>';
+          }
           $uploadFileName = $this->getUploadFileName();
           $params['attachments'] = [[
             'fullPath' => $fileName,
@@ -722,7 +741,7 @@ END";
         }
         $includeRemoteURL = FALSE;
         foreach ($result as $batch) {
-          if (isset($batch['remote_url'])) {
+          if (isset($batch['remote']['url'])) {
             $includeRemoteURL = TRUE;
           }
         }
@@ -733,9 +752,11 @@ END";
               <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Settled Currency</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Settled Total (In Bank)</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total in batch (From CiviCRM)</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Discrepancy</th> '
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Discrepancy</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Journal total (debits + credits)</th>'
               . ($includeRemoteURL ? '<th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Intacct Batch</th>' : '')
-              . '<th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Files</th>
+              . '<th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Exchange rate in Intacct</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Files</th>
             </tr>
           </thead>
           <tbody>
@@ -765,11 +786,14 @@ END";
           $batchUrl = (string) \Civi::url('backend://civicrm/contribution/settled#?' . $filerName . '=' . $batch['batch']['name'], 'a');
 
           $settled   = \Civi::format()->money(htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8'), $currency);
-          $totalInBatch = \Civi::format()->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'], ENT_QUOTES, 'UTF-8'), $currency);
+          $journalTotal = \Civi::format()->money(htmlspecialchars($batch['totals']['debit'] + $batch['totals']['credit'] + $batch['totals']['fee'], ENT_QUOTES, 'UTF-8'), $currency);
+          $usdJournalTotal = $currency === 'USD' ? $journalTotal : $batch['remote']['usd_journal_total'] ?? '';
+          $totalInBatch = \Civi::format()->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'] ?? 0, ENT_QUOTES, 'UTF-8'), $currency);
           $numberOfTransactions = $batch['batch']['total'];
           $transactionsUrl = BatchFile::getBatchFileUrl([$batchName], 'details');
           $journalUrl = BatchFile::getBatchFileUrl([$batchName], 'journals');
-          $remoteURL = $batch['remote_url'] ?? '';
+          $remoteURL = $batch['remote']['url'] ?? '';
+          $exchangeRate = $batch['remote']['exchange_rate'] ?? '';
           $html .= "
           <tr>
             <td style=\"$cell\"><a href='{$batchUrl}'>{$batchName}</a></td>
@@ -777,8 +801,9 @@ END";
             <td style=\"$cellRight\">{$totalInBatch}</td>
             <td style=\"$cellRight\">{$settled}</td>
             <td style=\"$discrepancyStyle\">{$discrepancy}</td>
-            " . ($includeRemoteURL ? "<td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$batch['remote_id']}</a>" : '') . "</td>" : '')
-            . "<td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
+            <td style=\"$cellRight\">{$journalTotal} ($usdJournalTotal)</td>
+            " . ($includeRemoteURL ? "<td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$batch['remote']['id']}</a>" : '') . "</td>" : '')
+            . "<td style=\"$cellRight\">{$exchangeRate}</td><td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
           </tr>
         ";
         }

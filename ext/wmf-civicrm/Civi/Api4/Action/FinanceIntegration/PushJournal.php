@@ -48,6 +48,7 @@ class PushJournal extends AbstractAction {
    */
   protected string $journalFile;
   private array $log = [];
+  private array $detailedData;
 
   public function _run(Result $result) {
     if (!$this->tokenClient) {
@@ -253,6 +254,12 @@ class PushJournal extends AbstractAction {
           'txnAmount' => (string) $transactionMoney->getAmount(),
           'glAccount' => ['id' => (string) $row['ACCT_NO']],
           'documentId'=> $row['DOCUMENT'] ?: null,
+          'currency' => [
+            'baseCurrency' => 'USD',
+            'txnCurrency' => $currency,
+            'exchangeRateDate' => $postingDate->format('Y-m-d'),
+            'exchangeRateTypeId' => 'Intacct Daily Rate',
+          ],
           'description' => $row['MEMO'] ?: ($row['DESCRIPTION'] ?: null),
           'dimensions' => array_filter([
             'location'   => !empty($row['LOCATION_ID']) ? ['id' => $row['LOCATION_ID']] : null,
@@ -369,8 +376,29 @@ class PushJournal extends AbstractAction {
     $data = json_decode((string) $resp->getBody(), TRUE);
     $count = (int) ($data['ia::meta']['totalCount'] ?? 0);
     if ($count) {
+      $id = $this->batches[$batchName]['remote_journal_id'] = $data['ia::result'][0]['id'];
       $this->batches[$batchName]['url'] = $data['ia::result'][0]['webURL'];
       $this->log('url for the journal is ' . $this->batches[$batchName]['url'], $batchName);
+      $details = $this->getRemoteJournalDetails($id);
+      $this->batches[$batchName]['exchange_rate'] = $details['lines'][0]['currency']['exchangeRate'];
+      $currency = $details['lines'][0]['currency']['txnCurrency'];
+      $this->batches[$batchName]['txn_number'] = $this->getRemoteJournalDetails($id)['txnNumber'];
+      if ($currency !== 'USD') {
+        $usdDebit = Money::zero('USD');
+        $usdCredit = Money::zero('USD');
+        foreach ($details['lines'] as $line) {
+          if ($line['txnType'] === 'credit' && $this->isContraJournal($line['glAccount']['id'])) {
+            $usdCredit = $usdCredit->plus($line['baseAmount']);
+          }
+          if ($line['txnType'] === 'debit' && $this->isContraJournal($line['glAccount']['id'])) {
+            $usdDebit = $usdDebit->plus($line['baseAmount']);
+          }
+        }
+        // credit / debit / debit / credit .... dunno tbd but we will get there. Only used for output to email/ screen.
+        $this->batches[$batchName]['usd_credit'] = (string) $usdDebit->getAmount();
+        $this->batches[$batchName]['usd_debit'] = (string) $usdCredit->getAmount();
+        $this->batches[$batchName]['usd_journal_total'] = (string) $usdCredit->plus($usdDebit);
+      }
     }
     else {
       $this->log('No existing journal found ', $batchName);
@@ -514,6 +542,20 @@ class PushJournal extends AbstractAction {
    */
   public function isContraJournal($ACCT_NO): bool {
     return $ACCT_NO === '11250';
+  }
+
+  /**
+   * @param int $id
+   * @return array
+   * @throws GuzzleException
+   * @throws \CRM_Core_Exception
+   */
+  public function getRemoteJournalDetails(int $id): array {
+    if (!isset($this->detailedData[$id])) {
+      $detailedData = json_decode((string) $this->getApiClient()->get("objects/general-ledger/journal-entry/$id")->getBody(), true);
+      $this->detailedData[$id] = $detailedData['ia::result'];
+    }
+    return $this->detailedData[$id];
   }
 
 }
