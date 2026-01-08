@@ -314,15 +314,16 @@ class PushJournal extends AbstractAction {
         );
       }
 
+      $isContraJournal = $this->isContraJournal($row['ACCT_NO']);
       if ($hasDebit) {
         $debit = $debit->plus($debitMoney);
-        if ($row['ACCT_NO'] === '11250') {
+        if ($isContraJournal) {
           $settledAmount = $settledAmount->plus($debitMoney);
         }
       }
       else {
         $credit = $credit->plus($creditMoney);
-        if ($row['ACCT_NO'] === '11250') {
+        if ($isContraJournal) {
           $settledAmount = $settledAmount->minus($creditAmount);
         }
       }
@@ -497,6 +498,22 @@ class PushJournal extends AbstractAction {
       (string) $intacctTotals['credit']->getAmount() . ' / ' .
       (string) $intacctTotals['net']->getAmount()
     );
+  }
+
+  /**
+   * Is the row a contra journal.
+   *
+   * Ie is this a row being used to balance against a debit or credit.
+   *
+   * In practice the sum of these rows adds up to the sum of the amount in the batch
+   * (taking debits & credits into account) and it is the reverse of the sum of
+   * all the other rows.
+   *
+   * @param string|int $ACCT_NO
+   * @return bool
+   */
+  public function isContraJournal($ACCT_NO): bool {
+    return $ACCT_NO === '11250';
   }
 
 }
