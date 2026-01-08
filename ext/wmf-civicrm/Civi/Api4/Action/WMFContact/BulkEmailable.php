@@ -57,7 +57,7 @@ class BulkEmailable extends AbstractAction {
         $email['contact_id.is_opt_out'] ||
         $email['contact_id.do_not_email'] ||
         $email['contact_id.Communication.do_not_solicit'] ||
-        $email['contact_id.Communication.opt_in'] === 0 ||
+        $email['contact_id.Communication.opt_in'] === FALSE ||
         ($this->checkSnooze &&
           $email['email_settings.snooze_date'] &&
           ($email['email_settings.snooze_date'] > gmdate("Y-m-d"))
