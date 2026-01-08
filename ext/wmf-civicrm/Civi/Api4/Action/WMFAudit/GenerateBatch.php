@@ -426,9 +426,9 @@ GROUP BY s.settlement_batch_reference
                 $result[$index]['remote']['id'] = $apiBatch['remote_journal_id'];
                 $result[$index]['remote']['exchange_rate'] = $apiBatch['exchange_rate'] ?? 1;
                 $result[$index]['remote']['txn_number'] = $apiBatch['txn_number'];
-                $result[$index]['remote']['usd_journal_total'] = $apiBatch['usd_journal_total'];
-                $result[$index]['remote']['usd_credit'] = $apiBatch['usd_credit'];
-                $result[$index]['remote']['usd_debit'] = $apiBatch['usd_debit'];
+                $result[$index]['remote']['usd_journal_total'] = $apiBatch['usd_journal_total'] ?? '';
+                $result[$index]['remote']['usd_credit'] = $apiBatch['usd_credit'] ?? '';
+                $result[$index]['remote']['usd_debit'] = $apiBatch['usd_debit'] ?? '';
               }
             }
             Batch::update(FALSE)
