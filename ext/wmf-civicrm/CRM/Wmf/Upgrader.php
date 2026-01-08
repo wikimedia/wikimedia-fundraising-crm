@@ -3663,6 +3663,38 @@ AND channel <> 'Chapter Gifts'";
     return TRUE;
   }
 
+
+  /**
+   * Bug: T412767
+   *
+   * Update incorrect DM package codes on contributions
+   * Get the corrected DM packaged code from the DM activity in the relevant time period
+   * and apply it to the contribution. REGEX filters only codes needing correction.
+   *
+   * @return bool
+   */
+  public function upgrade_4800(): bool {
+    $sql = '
+    UPDATE civicrm_contribution cont
+    INNER JOIN civicrm_value_1_gift_data_7 gd
+      ON cont.id = gd.entity_id
+    INNER JOIN civicrm_activity_contact ac
+      ON ac.contact_id = cont.contact_id
+    INNER JOIN civicrm_activity act
+      ON act.id = ac.activity_id
+     AND act.activity_type_id = 181
+     AND act.activity_date_time BETWEEN "2025-11-10" AND "2025-12-05"
+    INNER JOIN civicrm_value_direct_mail_data dmact
+      ON dmact.entity_id = act.id
+    SET gd.package = dmact.direct_mail_package
+    WHERE gd.package REGEXP "^MV[P0-9][123]$|^[ABCDEF][1-6]$|^ND7$"
+      AND cont.receive_date > "2025-11-10 00:00:00"
+      ';
+    CRM_Core_DAO::executeQuery($sql);
+    return TRUE;
+  }
+
+
   /**
    * Queue up an API4 update.
    *
