@@ -1258,7 +1258,8 @@ class Message {
       }
       return ['External_Identifiers.venmo_user_name' => $this->cleanString($this->message['external_identifier'], 64)];
     }
-    if ($this->isGravyPaypal()) {
+    // both paypal ec and gravy paypal return external identifier as paypal payer id
+    if ($this->isPaypal() || $this->isGravyPaypal()) {
       return ['External_Identifiers.paypal_payer_id' => $this->cleanString($this->message['external_identifier'], 64)];
     }
     if (\CRM_Core_BAO_CustomField::getCustomFieldID($this->getGateway() . '_id')) {

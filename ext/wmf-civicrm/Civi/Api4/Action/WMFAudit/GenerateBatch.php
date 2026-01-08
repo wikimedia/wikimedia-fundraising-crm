@@ -429,13 +429,18 @@ GROUP BY s.settlement_batch_reference
         foreach ($apiOutcome as $apiBatch) {
           if ($apiBatch['status'] === 'Valid Remotely') {
             $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct and is now being closed (status set to Exported)');
-            $this->batchSummary[$apiBatch['name']]['remote_url'] = $apiBatch['url'];
+            foreach ($result as $index => $row) {
+              if ($row['batch']['name'] === $apiBatch['name']) {
+                $result[$index]['remote_url'] = $apiBatch['url'];
+                $result[$index]['remote_id'] = $apiBatch['remote_journal_id'];
+              }
+            }
             Batch::update(FALSE)
               ->addWhere('name', '=', $apiBatch['name'])
               ->addValue('status_id:name', 'Exported')
               ->execute();
           }
-          $this->log('Remote batch url is <href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['remote_journal_id'] . '</a>');
+          $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['remote_journal_id'] . '</a>');
         }
       }
       catch (\Exception $e) {
@@ -772,7 +777,7 @@ END";
             <td style=\"$cellRight\">{$totalInBatch}</td>
             <td style=\"$cellRight\">{$settled}</td>
             <td style=\"$discrepancyStyle\">{$discrepancy}</td>
-            " . ($includeRemoteURL ? "<td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'> Intacct Batch</a>" : '') . "</td>" : '')
+            " . ($includeRemoteURL ? "<td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$batch['remote_id']}</a>" : '') . "</td>" : '')
             . "<td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
           </tr>
         ";
@@ -849,6 +854,7 @@ END";
         }
         $html .= '<h3>Log</h3> ' . $tableOpenHtml;
         foreach ($this->log as $log) {
+          $log = nl2br($log);
           $html .= "<tr><td>$log</td></tr>";
         }
 
