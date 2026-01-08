@@ -58,10 +58,12 @@ class VerifySnooze extends AbstractAction {
           ->setClient($this->getClient())
           ->setEmail($snoozedEmail['email'])
           ->execute()->first();
-        // It would be nice to also check is_opt_out from Acoustic here, but the API response does not seem to be correct.
-        if (!$remoteRecord || empty($remoteRecord['snooze_end_date'])
-          || !$remoteRecord['snooze_fields_match']
-          || strtotime($remoteRecord['snooze_end_date']) < strtotime($snoozedEmail['email_settings.snooze_date'])
+        if (
+          (!$remoteRecord
+            || empty($remoteRecord['snooze_end_date'])
+            || !$remoteRecord['snooze_fields_match']
+            || strtotime($remoteRecord['snooze_end_date']) < strtotime($snoozedEmail['email_settings.snooze_date'])
+          ) && !$remoteRecord['opt_out_date']
         ) {
           $result[] = $snoozedEmail + $remoteRecord;
         }
