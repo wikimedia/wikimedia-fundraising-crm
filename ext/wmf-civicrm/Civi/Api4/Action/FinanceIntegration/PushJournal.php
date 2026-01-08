@@ -232,7 +232,7 @@ class PushJournal extends AbstractAction {
       $entry = [
         'glJournal' => ['id' => $first['JOURNAL']],
         'postingDate' => $postingDate->format('Y-m-d'),
-        'description' => ((string) $this->batches[$batchName]['csvTotals']['debit']). ' ' . $first['DESCRIPTION'] ?: null,
+        'description' => ((string) $this->batches[$batchName]['csvTotals']['settled']). ' ' . $first['DESCRIPTION'] ?: null,
         'state'       => 'draft',
         'referenceNumber' => $first['DOCUMENT'],
         'lines' => [],
@@ -296,6 +296,7 @@ class PushJournal extends AbstractAction {
 
     $debit  = Money::zero($currency);
     $credit = Money::zero($currency);
+    $settledAmount = Money::zero($currency);
     foreach ($rows as $rowIndex => $row) {
       $debitAmount  = (string) ($row['DEBIT'] ?? '0');
       $creditAmount = (string) ($row['CREDIT'] ?? '0');
@@ -315,9 +316,15 @@ class PushJournal extends AbstractAction {
 
       if ($hasDebit) {
         $debit = $debit->plus($debitMoney);
+        if ($row['ACCT_NO'] === '11250') {
+          $settledAmount = $settledAmount->plus($debitMoney);
+        }
       }
       else {
         $credit = $credit->plus($creditMoney);
+        if ($row['ACCT_NO'] === '11250') {
+          $settledAmount = $settledAmount->minus($creditAmount);
+        }
       }
     }
 
@@ -334,6 +341,7 @@ class PushJournal extends AbstractAction {
       'debit'  => $debit,
       'credit' => $credit,
       'net'    => $credit->minus($debit),
+      'settled' => $settledAmount,
     ];
   }
 
@@ -358,9 +366,14 @@ class PushJournal extends AbstractAction {
       ],
     ]);
     $data = json_decode((string) $resp->getBody(), TRUE);
-    $this->batches[$batchName]['url'] = $data['ia::result'][0]['webURL'];
-    $this->log('url for the journal is ' . $this->batches[$batchName]['url'], $batchName);
     $count = (int) ($data['ia::meta']['totalCount'] ?? 0);
+    if ($count) {
+      $this->batches[$batchName]['url'] = $data['ia::result'][0]['webURL'];
+      $this->log('url for the journal is ' . $this->batches[$batchName]['url'], $batchName);
+    }
+    else {
+      $this->log('No existing journal found ', $batchName);
+    }
 
     return $count > 0 ? $data : false;
   }
