@@ -521,9 +521,10 @@ class GravyResolveTest extends TestCase {
     $gateway = 'gravy';
     $pending_message = $this->createTestPendingRecord($gateway);
 
+    $isRecurring = TRUE;
     $this->createContactWithContribution($pending_message, [
       'receive_date' =>gmdate("Y-m-d", time()),
-    ], TRUE);
+    ], $isRecurring);
 
     // getLatestPaymentStatus response set up
     $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
