@@ -3726,6 +3726,19 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4810(): bool {
+    CRM_Core_DAO::executeQuery("UPDATE wmf_external_contact_identifiers
+        SET venmo_user_name = CONCAT('@', TRIM(venmo_user_name))
+        WHERE venmo_user_name IS NOT NULL
+        AND TRIM(venmo_user_name) != ''
+        AND LEFT(TRIM(venmo_user_name), 1) != '@'
+    ");
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
