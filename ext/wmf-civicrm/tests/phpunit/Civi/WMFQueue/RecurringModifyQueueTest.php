@@ -132,6 +132,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'contribution_recur_id' => $testRecurring['id'],
       'amount' => $testRecurring['amount'] + $additionalAmount,
       'currency' => $testRecurring['currency'],
+      'is_from_save_flow' => FALSE,
       'source_type' => 'emailpreferences',
       'source' => 'direct'
     ];
@@ -141,6 +142,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'usd_original_amount' => '10.00',
       'native_amount_added' => '5.00',
       'usd_amount_added' => '5.00',
+      'is_from_save_flow' => FALSE,
     ];
 
     $this->processMessage($msg);
@@ -253,6 +255,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'contribution_recur_id' => $testRecurringContributionFor15Dollars['id'],
       'amount' => $newRecurringDonationAmount,
       'currency' => $testRecurringContributionFor15Dollars['currency'],
+      'is_from_save_flow' => TRUE,
       'source_type' => 'emailpreferences',
     ];
 
@@ -262,6 +265,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'usd_original_amount' => '15.00',
       'native_amount_removed' => '10.00',
       'usd_amount_removed' => '10.00',
+      'is_from_save_flow' => TRUE,
     ];
 
     $this->processMessage($recurringQueueMessage);

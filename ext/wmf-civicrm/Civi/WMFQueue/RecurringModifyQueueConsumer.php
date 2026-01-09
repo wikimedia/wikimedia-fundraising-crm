@@ -114,6 +114,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       'native_currency' => $message->getModifiedCurrency(),
       'native_original_amount' => $message->getOriginalExistingAmountRounded(),
       'usd_original_amount' => $message->getSettledExistingAmountRounded(),
+      'is_from_save_flow' => $message->isFromSaveFlow(),
     ];
     $originalAmountAnnually = $amountDetails['native_original_amount'] * 12;
     $usdOriginalAmountAnnually = $amountDetails['usd_original_amount'] * 12;
@@ -162,7 +163,8 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     $pauseScheduledParams = [
       'next_sched_contribution_date' => $formatDate,
       'old_date' => $date->format('Y-m-d H:i:s'),
-      'duration' => $msg['duration']
+      'duration' => $msg['duration'],
+      'is_from_save_flow' => $message->isFromSaveFlow(),
     ];
     $activityParams = [
       'subject' => "Paused recurring till {$formatDate}",
@@ -250,6 +252,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       'usd_original_amount' => $message->getSettledExistingAmountRounded(),
       'native_amount_added' => $message->getOriginalIncreaseAmountRounded(),
       'usd_amount_added' => $message->getSettledIncreaseAmountRounded(),
+      'is_from_save_flow' => $message->isFromSaveFlow(),
     ];
 
     $activityParams = $this->getActivityValues($message, $msg);
@@ -286,6 +289,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       'usd_original_amount' => $message->getSettledExistingAmountRounded(),
       'native_amount_removed' => $message->getOriginalDecreaseAmountRounded(),
       'usd_amount_removed' => $message->getSettledDecreaseAmountRounded(),
+      'is_from_save_flow' => $message->isFromSaveFlow(),
     ];
     $activityParams = $this->getActivityValues($message, $msg);
 

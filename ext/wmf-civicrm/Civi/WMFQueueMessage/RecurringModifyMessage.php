@@ -273,6 +273,14 @@ class RecurringModifyMessage extends Message {
     return $this->message['source_type'] ??= self::DONOR_PORTAL_MESSAGE_SOURCE_TYPE;
   }
 
+  /**
+   * Returns true when the action was taken after the donor initially sought to cancel their recurring donation
+   * @return bool
+   */
+  public function isFromSaveFlow(): bool {
+    return $this->message['is_from_save_flow'] ?? FALSE;
+  }
+
   public function getActivityTracking(): array {
     $values = [
       'is_from_donor_portal' => $this->isFromDonorPortal(),
