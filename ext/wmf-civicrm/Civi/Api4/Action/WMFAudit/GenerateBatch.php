@@ -116,7 +116,6 @@ class GenerateBatch extends AbstractAction {
     $batches = $this->getBatches();
 
     $sql = "SELECT
-    %2 as DATE,
     CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
     $accountCodeClause AS ACCT_NO,
     -- @todo - not for endowment - need the number for that
@@ -126,7 +125,6 @@ class GenerateBatch extends AbstractAction {
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
     s.settlement_currency as CURRENCY,
-    %2 as EXCH_RATE_DATE,
     $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -138,7 +136,6 @@ GROUP BY Fund, gift.channel, is_major_gift
 
 UNION ALL
   SELECT
-   %2 as DATE,
    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
    $accountCodeClause AS ACCT_NO,
     -- @todo - not for endowment - need the number for that
@@ -149,7 +146,6 @@ UNION ALL
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
-    %2 as EXCH_RATE_DATE,
     $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -163,7 +159,6 @@ UNION ALL
 
 -- Fee transactions part.
 SELECT
-    %2 as DATE,
 -- note GROUP BY here....
     CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
     60917 as ACCT_NO,
@@ -177,7 +172,6 @@ SELECT
     IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_amount, 0)), 0) as DEBIT,
     IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0))) as CREDIT,
     s.settlement_currency as CURRENCY,
-    DATE_FORMAT(s.settlement_date, '%m/%d/%Y') as EXCH_RATE_DATE,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -192,7 +186,6 @@ GROUP BY s.settlement_batch_reference
 UNION ALL
 
 SELECT
-    %2 as DATE,
 -- note GROUP BY here....
     CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
     60917 as ACCT_NO,
@@ -207,7 +200,6 @@ SELECT
     IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_reversal_amount, 0)), 0) as DEBIT,
     IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_reversal_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
-    DATE_FORMAT(s.settlement_date, '%m/%d/%Y') as EXCH_RATE_DATE,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -221,7 +213,6 @@ GROUP BY s.settlement_batch_reversal_reference
 UNION ALL
 -- Fee transactions part.
 SELECT
-    %2 as DATE,
 -- note GROUP BY here....
     CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
     60917 as ACCT_NO,
@@ -235,7 +226,6 @@ SELECT
     IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
     IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
-    DATE_FORMAT(s.settlement_date, '%m/%d/%Y') as EXCH_RATE_DATE,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -265,7 +255,7 @@ GROUP BY s.settlement_batch_reference
         'CREDIT' => 0,
         'SOURCEENTITY' => '',
         'CURRENCY' => $batch['batch_data.settlement_currency'],
-        'EXCH_RATE_DATE' => '',
+        'EXCH_RATE_DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
         'EXCH_RATE_TYPE_ID' => '',
         'EXCHANGE_RATE' => '',
         'STATE' => 'Draft',
@@ -300,8 +290,7 @@ GROUP BY s.settlement_batch_reference
       ];
 
       $renderedSql = CRM_Core_DAO::composeQuery($sql, [
-        1 => [$batch['name'], 'String'],
-        2 => [date('m/d/Y', strtotime($batch['batch_data.settlement_date'])), 'String']]
+        1 => [$batch['name'], 'String']]
       );
       $batchedData = CRM_Core_DAO::executeQuery($renderedSql)->fetchAll();
       $this->setHeaders($defaults);
@@ -437,9 +426,9 @@ GROUP BY s.settlement_batch_reference
                 $result[$index]['remote']['id'] = $apiBatch['remote_journal_id'];
                 $result[$index]['remote']['exchange_rate'] = $apiBatch['exchange_rate'] ?? 1;
                 $result[$index]['remote']['txn_number'] = $apiBatch['txn_number'];
-                $result[$index]['remote']['usd_journal_total'] = $apiBatch['usd_journal_total'];
-                $result[$index]['remote']['usd_credit'] = $apiBatch['usd_credit'];
-                $result[$index]['remote']['usd_debit'] = $apiBatch['usd_debit'];
+                $result[$index]['remote']['usd_journal_total'] = $apiBatch['usd_journal_total'] ?? '';
+                $result[$index]['remote']['usd_credit'] = $apiBatch['usd_credit'] ?? '';
+                $result[$index]['remote']['usd_debit'] = $apiBatch['usd_debit'] ?? '';
               }
             }
             Batch::update(FALSE)
@@ -802,7 +791,7 @@ END";
             <td style=\"$cellRight\">{$settled}</td>
             <td style=\"$discrepancyStyle\">{$discrepancy}</td>
             <td style=\"$cellRight\">{$journalTotal} ($usdJournalTotal)</td>
-            " . ($includeRemoteURL ? "<td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$batch['remote']['id']}</a>" : '') . "</td>" : '')
+            " . ($includeRemoteURL ? "<td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$batch['remote']['txn_number']}</a>" : '') . "</td>" : '')
             . "<td style=\"$cellRight\">{$exchangeRate}</td><td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
           </tr>
         ";
@@ -835,6 +824,23 @@ END";
           }
           $html .= " </tbody> </table>";
         }
+
+        $incompleteBatches = Batch::get(FALSE)
+          // Status list will probably grow.
+          ->addWhere('status_id:name', 'IN', ['Open'])
+          ->addWhere('mode_id:name', '=', 'Automatic Batch')
+          ->addSelect('*', 'batch_data.*', 'status_id:label')
+          ->execute();
+        if (!empty($incompleteBatches)) {
+          $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total</p>" . $tableOpenHtml;
+          $html .= $this->getTableHeader( ['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status']);
+          foreach ($incompleteBatches as $incompleteBatch) {
+            $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td></tr>";
+          }
+          $html .= "</table>";
+
+        }
+
         $html .= '<h3>Batch Summary</h3>';
         $html .= $this->getTableHeader( ['Batch', 'Account Code', 'Account', 'Endowment Amount', 'Annual Fund Amount']);
         foreach ($this->batchSummary as $batchName => $batch) {
@@ -861,22 +867,6 @@ END";
           }
         }
         $html.= '</tbody></table>';
-
-        $incompleteBatches = Batch::get(FALSE)
-          // Status list will probably grow.
-          ->addWhere('status_id:name', 'IN', ['Open'])
-          ->addWhere('mode_id:name', '=', 'Automatic Batch')
-          ->addSelect('*', 'batch_data.*', 'status_id:label')
-          ->execute();
-        if (!empty($incompleteBatches)) {
-          $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total</p>" . $tableOpenHtml;
-          $html .= $this->getTableHeader( ['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status']);
-          foreach ($incompleteBatches as $incompleteBatch) {
-            $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td></tr>";
-          }
-          $html .= "</table>";
-
-        }
         $html .= '<h3>Log</h3> ' . $tableOpenHtml;
         foreach ($this->log as $log) {
           $log = nl2br($log);
