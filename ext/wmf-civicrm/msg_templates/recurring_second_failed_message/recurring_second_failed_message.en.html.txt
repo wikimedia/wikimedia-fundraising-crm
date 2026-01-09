@@ -1,0 +1,26 @@
+{capture assign=txtFrequency}
+{if '{contribution_recur.frequency_unit}' && '{contribution_recur.frequency_unit}'==='month'}monthly
+{elseif '{contribution_recur.frequency_unit}' && '{contribution_recur.frequency_unit}'==='year'}annual
+{else}recurring
+{/if}
+{/capture}
+<p>Dear {contact.first_name},</p>
+<p>I’m sorry to interrupt you once more. This is a final reminder that the last payment of your {contribution_recur.amount} {$txtFrequency} gift to the Wikimedia Foundation could not be processed on {contribution_recur.next_sched_contribution_date}.</p>
+
+<p>Life moves quickly, and it's easy to forget to update payment information when a debit or credit card has changed or expired. If this is the case, <a target="_blank" href='https://donate.wikimedia.org?wmf_medium=civi-mail&wmf_source=FY2526_FailedRecur_2&wmf_campaign=FailedRecur&frequency={$txtFrequency}'> you can quickly restart your {$txtFrequency} donation with your new payment information. </a></p>
+
+<p>If supporting Wikipedia at the {$txtFrequency} level no longer fits your budget, consider a new recurring donation at a lower amount or making a one-time donation instead. What matters is your support, not the amount of your gift: All donations enable billions of people around the world to experience the daily gift of knowledge on Wikipedia. </p>
+
+<p>Sincerely,<br>
+Sandra M. Hust <br>
+Wikimedia Donor Relations</p>
+
+<p>P.S. This message is auto generated from the Wikimedia Foundation Donor Relations team, so if you have already renewed your recurring gift or opted to give a one-time donation instead, thank you. Please disregard this message.</p>
+
+<p>You are receiving this email at {contact.email} as a valued donor of the Wikimedia Foundation. If you do not wish to receive any future emails from the Wikimedia Foundation, <a href='https://www.pages04.net/wikimedia/WMFUnsubscribe/Unsubscribe'>unsubscribe now</a>. If you've already donated recently, we may have an alternate email address on file for you. Please let us know it! We'll be happy to unsubscribe any old email addresses.</p>
+<p>Wikimedia Foundation, Inc.<br>
+P.O. Box 98204<br>
+Washington, DC 20090-8204<br>
+United States of America</p>
+
+<p>Ref CiviRec{contact.preferred_language} {contribution_recur.id}</p>
