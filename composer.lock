@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "67f1b0d1c6e68c9364fbafae9b0c138e",
+    "content-hash": "f52e7dcb7465b113a0b3f737813c945d",
     "packages": [
         {
             "name": "adrienrn/php-mimetyper",
@@ -8504,16 +8504,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v1.0.5.3",
+            "version": "v1.0.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "d814061580af79fa73c1877db39bdf19a798c18a"
+                "reference": "b92819e8c2620ddbb012721a6a0a72dbdc8849c5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/d814061580af79fa73c1877db39bdf19a798c18a",
-                "reference": "d814061580af79fa73c1877db39bdf19a798c18a",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/b92819e8c2620ddbb012721a6a0a72dbdc8849c5",
+                "reference": "b92819e8c2620ddbb012721a6a0a72dbdc8849c5",
                 "shasum": ""
             },
             "require": {
@@ -8585,15 +8585,15 @@
                 }
             ],
             "description": "The open source PHP flexible payments library and frontend/backend mediator.",
-            "homepage": "http://smashpig.org",
+            "homepage": "https://www.mediawiki.org/wiki/Fundraising_Tech/SmashPig",
             "keywords": [
                 "donations",
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.0.5.3"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.0.6"
             },
-            "time": "2026-01-06T04:12:57+00:00"
+            "time": "2026-01-09T03:57:43+00:00"
         },
         {
             "name": "willdurand/geocoder",
