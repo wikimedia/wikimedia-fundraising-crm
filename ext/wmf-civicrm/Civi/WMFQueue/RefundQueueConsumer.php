@@ -222,7 +222,9 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'contribution_extra.original_amount' => $messageObject->getOriginalAmount(),
           'contribution_extra.parent_contribution_id' => $contribution_id,
           'contribution_extra.no_thank_you' => 1,
-        ] + $giftDataFields + array_filter($messageObject->getSettlementFields()))->execute();
+          // Add Other Online as a default channel for these extraneous refunds / chargebacks
+        ] + $giftDataFields + array_filter($messageObject->getSettlementFields()) + ['Gift_Data.Channel' => 'Other Online'])
+          ->execute();
         return;
       }
       throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: $contribution_id");
@@ -300,7 +302,8 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
             'debug' => 1,
             'contribution_extra.parent_contribution_id' => $contribution_id,
             'contribution_extra.no_thank_you' => 1,
-          ] + $giftDataFields)->execute();
+            // Add Other Online as a default channel for these adjustments
+          ] + $giftDataFields + ['Gift_Data.Channel' => 'Other Online'])->execute();
         }
         catch (\CRM_Core_Exception $e) {
           throw new WMFException(
