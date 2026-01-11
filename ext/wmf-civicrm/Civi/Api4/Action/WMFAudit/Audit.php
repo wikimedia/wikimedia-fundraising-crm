@@ -154,7 +154,8 @@ class Audit extends AbstractAction {
       ->addWhere('type', '=', $message->getTransactionType())
       ->execute()->first() ?? [];
 
-    $settlementRecord = array_intersect_key($record, $transaction);
+    $fields = SettlementTransaction::getFields(FALSE)->execute()->indexBy('name');
+    $settlementRecord = array_intersect_key($record, (array) $fields);
     foreach ($transaction as $key => $value) {
       if (!array_key_exists($key, $settlementRecord)) {
         continue;
