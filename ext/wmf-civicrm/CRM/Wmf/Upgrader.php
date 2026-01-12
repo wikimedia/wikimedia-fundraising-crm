@@ -3696,6 +3696,49 @@ AND channel <> 'Chapter Gifts'";
 
 
   /**
+   * Fix non-USD donations which were initially recorded correctly but later
+   * incorrectly updated to set the USD total_amount to the original_amount
+   *
+   * @see https://phabricator.wikimedia.org/T412025
+   * @return bool
+   */
+  public function upgrade_4805(): bool {
+    $sql = "SELECT c.id, l.total_amount
+        FROM civicrm_contribution c
+        INNER JOIN wmf_contribution_extra x ON x.entity_id=c.id
+        INNER JOIN log_civicrm_contribution l ON l.id = c.id AND l.log_action = 'insert'
+        WHERE x.original_currency NOT IN ('USD', 'PAB', 'BMD') -- two currencies pegged to dollar
+        AND c.total_amount = x.original_amount
+        AND c.receive_date between '2025-07-01' and '2025-12-01'";
+    $result = CRM_Core_DAO::executeQuery($sql);
+    while ($result->fetch()) {
+      $this->queueApi4('Contribution', 'update', [
+          'values' => [
+            'total_amount' => $result->total_amount,
+          ],
+          'where' => [
+            ['id', '=', $result->id],
+          ],
+        ]
+      );
+    }
+    return TRUE;
+  }
+
+  /**
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4810(): bool {
+    CRM_Core_DAO::executeQuery("UPDATE wmf_external_contact_identifiers
+        SET venmo_user_name = CONCAT('@', TRIM(venmo_user_name))
+        WHERE venmo_user_name IS NOT NULL
+        AND TRIM(venmo_user_name) != ''
+        AND LEFT(TRIM(venmo_user_name), 1) != '@'
+    ");
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
