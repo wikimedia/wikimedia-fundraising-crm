@@ -237,6 +237,8 @@ class Send extends AbstractAction {
     catch (\Exception $e) {
       if (str_contains($e->getMessage(), 'Invalid address:')) {
         $this->setNoThankYou('failed: BAD_EMAIL');
+        \Civi::log('wmf')->error('thank_you: Sending thank you message failed due to bad email ' . $this->getEmail() . ' for contribution id ' . $this->getContributionID());
+        throw new WMFException(WMFException::BAD_EMAIL, 'thank_you: Sending thank you message failed due to bad email ' . $this->getEmail() . ' for contribution id ' . $this->getContributionID());
       }
       else {
         $debug = array_merge($email ?? [], ['html' => '', 'subject' => '']);
