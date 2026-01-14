@@ -219,6 +219,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     Contribution::delete(FALSE)->addWhere('contact_id.organization_name', '=', 'Trading Name')->execute();
     Contribution::delete(FALSE)->addWhere('contact_id.last_name', '=', 'Doe')->execute();
     Contribution::delete(FALSE)->addWhere('check_number', '=', 123456)->execute();
+    Contribution::delete(FALSE)->addWhere('total_amount', '=', 321.99)->execute();
     Contribution::delete(FALSE)->addWhere('trxn_id', '=', 'benevity trxn-SNUFFLE')->execute();
     Contribution::delete(FALSE)->addWhere('trxn_id', '=', 'benevity trxn-ARF')->execute();
 
@@ -407,6 +408,36 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->runImport($data, 'Individual');
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
     $this->assertEquals('soft_credit_imported', $import[0]['_status']);
+  }
+
+
+  /**
+   * Test that an anonymous import is mapped to the standard anonymous contact and not a duplicate.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testImportToAnonymous(): void {
+    $this->ensureAnonymousUserExists();
+    $anonymousID = \Civi\WMFHelper\Contact::getAnonymousContactID();
+
+    $data = [
+      'Contribution.financial_type_id' => 'Donation',
+      'Contribution.total_amount' => 321.99,
+      'Contact.first_name' => 'Anonymous',
+      'Contact.last_name' => 'Anonymous',
+      'Contribution.receive_date' => '2024-01-31 00:00:00',
+    ];
+
+    $this->createImportTable($data);
+    $this->runImport($data, 'Individual', 'save', FALSE);
+
+    $contributions = Contribution::get()
+      ->addWhere('total_amount', '=', 321.99)
+      ->addWhere('receive_date', '=', '2024-01-31 00:00:00')
+      ->addWhere('contact_id', '=', $anonymousID)
+      ->execute();
+
+    $this->assertCount(1, $contributions);
   }
 
   /**
@@ -746,12 +777,13 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @param array $data
    * @param string $mainContactType
    * @param string $contactAction
+   * @param bool $addSoftCredit
    *
    * @throws \API_Exception
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  private function runImport(array $data, string $mainContactType = 'Organization', string $contactAction = 'select'): void {
+  private function runImport(array $data, string $mainContactType = 'Organization', string $contactAction = 'select', bool $addSoftCredit = TRUE): void {
     $softCreditTypeID = $this->getEmploymentSoftCreditType();
     $softCreditEntityParams = ['soft_credit' => ['soft_credit_type_id' => $softCreditTypeID]];
     $importMappings = [];
@@ -794,7 +826,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
           ];
       }
     }
-    $this->userJobID = UserJob::create()->setValues([
+    $params = [
       'job_type' => 'contribution_import',
       'status_id' => 1,
       'metadata' => [
@@ -819,16 +851,19 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
             'contact_type' => $mainContactType,
             'dedupe_rule' => $mainContactType . 'Unsupervised.first',
           ],
-          'SoftCreditContact' => [
-            'contact_type' => $mainContactType === 'Organization' ? 'Individual' : 'Organization',
-            'soft_credit_type_id' => $softCreditTypeID,
-            'action' => 'save',
-            'entity' => ['entity_data' => ['soft_credit_type_id' => $softCreditTypeID]],
-          ],
         ],
         'import_mappings' => $importMappings,
       ],
-    ])->execute()->first()['id'];
+    ];
+    if ($addSoftCredit) {
+      $params['metadata']['entity_configuration']['SoftCreditContact'] = [
+        'contact_type' => $mainContactType === 'Organization' ? 'Individual' : 'Organization',
+        'soft_credit_type_id' => $softCreditTypeID,
+        'action' => 'save',
+        'entity' => ['entity_data' => ['soft_credit_type_id' => $softCreditTypeID]],
+      ];
+    }
+    $this->userJobID = UserJob::create()->setValues($params)->execute()->first()['id'];
     Import::import($this->userJobID)->execute();
   }
 
