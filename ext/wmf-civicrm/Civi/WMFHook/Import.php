@@ -209,7 +209,13 @@ class Import {
           }
         }
       }
+
+      if ($this->isMainContactAnonymous()) {
+        $this->mappedRow['Contact']['id'] = Contact::getAnonymousContactID();
+      }
+
       $this->doBenevityWrangling();
+
       if (!empty($this->mappedRow['Contact']['id'])) {
         $this->mappedRow['Contribution']['contact_id'] = (int) $this->mappedRow['Contact']['id'];
         if ($this->mappedRow['Contribution']['contact_id'] === Contact::getAnonymousContactID()) {
@@ -711,9 +717,15 @@ class Import {
    */
   private function isMainContactAnonymous(): bool {
     if (!empty($this->mappedRow['Contact']['id'])) {
-      return (int) $this->mappedRow['Contact']['id'] === Contact::getAnonymousContactID();
+      return $this->mappedRow['Contact']['id'] === Contact::getAnonymousContactID();
     }
-    if (!empty($this->mappedRow['Contact']['email_primary.email'])) {
+    if (!empty($this->mappedRow['Contribution']['contact_id'])) {
+      return $this->mappedRow['Contribution']['contact_id'] === Contact::getAnonymousContactID();
+    }
+    if (!empty($this->mappedRow['Contact']['email_primary.email'])
+      || !empty($this->mappedRow['Contact']['street_address'])
+      || !empty($this->mappedRow['Contact']['postal_code'])
+      || !empty($this->mappedRow['Contact']['phone_primary.phone'])) {
       return FALSE;
     }
     if ($this->mappedRow['Contact']['contact_type'] === 'Individual') {
@@ -723,7 +735,6 @@ class Import {
       $names = ['organization_name'];
     }
     foreach ($names as $name) {
-      // If we don't have email we must have both first & last name or for organizations organization_name.
       if (!empty($this->mappedRow['Contact'][$name]) && $this->mappedRow['Contact'][$name] !== 'Anonymous') {
         return FALSE;
       }
