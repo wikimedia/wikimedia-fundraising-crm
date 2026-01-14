@@ -291,8 +291,7 @@ class MembershipParser extends ImportParser {
     if (!$fields) {
       $fields = ['' => ['title' => '- ' . ts('do not import') . ' -']];
       $membershipFields = (array) Membership::getFields()
-        // Exclude readonly fields, except for the id
-        ->addClause('OR', ['readonly', '=', FALSE], ['name', '=', 'id'])
+        ->addWhere('readonly', '=', FALSE)
         ->addWhere('usage', 'CONTAINS', 'import')
         ->setAction('save')
         ->addOrderBy('title')

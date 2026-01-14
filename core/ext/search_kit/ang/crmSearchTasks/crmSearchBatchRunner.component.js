@@ -52,7 +52,7 @@
         if (ctrl.last > ctrl.ids.length) {
           ctrl.last = ctrl.ids.length;
         }
-        const params = _.cloneDeep(ctrl.params);
+        var params = _.cloneDeep(ctrl.params);
         if (ctrl.action === 'save') {
           // For the save action, take each record from params and copy it with each supplied id
           params.records = _.transform(ctrl.ids.slice(ctrl.first, ctrl.last), function(records, id) {
@@ -97,11 +97,12 @@
               runBatch();
             }
           }, function(error) {
-            ctrl.error({error: error});
+            CRM.alert(error.error_message, ts('Error'), 'error');
+            ctrl.error();
           });
         // Move the bar every second to simulate progress between batches
         incrementer = $interval(function(i) {
-          const est = Math.floor(100 * (currentBatch + (i / EST_BATCH_TIME)) / totalBatches);
+          var est = Math.floor(100 * (currentBatch + (i / EST_BATCH_TIME)) / totalBatches);
           ctrl.progress = est > 100 ? 100 : est;
         }, 1000, EST_BATCH_TIME);
       }

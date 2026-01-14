@@ -9,12 +9,12 @@
     },
     template: '<div class="btn-group" ng-include="\'~/crmSearchTasks/crmSearchTasks-\'+$ctrl.displayMode+\'.html\'"></div>',
     controller: function($scope) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
+      var ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
         ctrl = this;
 
       this.$onInit = function() {
         // When a row is selected for bulk actions, load the actions menu
-        let unwatchIDs = $scope.$watch('$ctrl.ids.length', function (idsLength) {
+        var unwatchIDs = $scope.$watch('$ctrl.ids.length', function (idsLength) {
           if (idsLength) {
             unwatchIDs();
             ctrl.taskManager.getMetadata();

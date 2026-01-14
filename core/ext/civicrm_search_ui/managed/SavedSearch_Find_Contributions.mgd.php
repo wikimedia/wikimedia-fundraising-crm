@@ -22,7 +22,7 @@ return [
           'select' => [
             'Contribution_Contact_contact_id_01.display_name',
             'total_amount',
-            'GROUP_CONCAT(DISTINCT Contribution_LineItem_contribution_id_01.financial_type_id:label) AS GROUP_CONCAT_Contribution_LineItem_contribution_id_01_financial_type_id_label',
+            'financial_type_id:label',
             'source',
             'receive_date',
             'ISNULL(thankyou_date) AS ISNULL_thankyou_date',
@@ -33,9 +33,7 @@ return [
           ],
           'orderBy' => [],
           'where' => [],
-          'groupBy' => [
-            'id',
-          ],
+          'groupBy' => [],
           'join' => [
             [
               'Contact AS Contribution_Contact_contact_id_01',
@@ -62,15 +60,6 @@ return [
                 'Contribution_ContributionSoft_contribution_id_01.pcp_id',
                 '=',
                 'Contribution_ContributionSoft_contribution_id_01_ContributionSoft_PCP_pcp_id_01.id',
-              ],
-            ],
-            [
-              'LineItem AS Contribution_LineItem_contribution_id_01',
-              'LEFT',
-              [
-                'id',
-                '=',
-                'Contribution_LineItem_contribution_id_01.contribution_id',
               ],
             ],
           ],
@@ -131,7 +120,7 @@ return [
             ],
             [
               'type' => 'field',
-              'key' => 'GROUP_CONCAT_Contribution_LineItem_contribution_id_01_financial_type_id_label',
+              'key' => 'financial_type_id:label',
               'label' => E::ts('Type'),
               'sortable' => TRUE,
             ],

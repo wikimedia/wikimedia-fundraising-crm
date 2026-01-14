@@ -1,5 +1,7 @@
 <?php
 
+require_once 'CRM/Core/Page.php';
+
 /**
  * Display a page which displays a progress bar while executing
  * upgrade tasks.

@@ -16,4 +16,6 @@
     {help id='id-url_vars'}
   </p>
 </div>
-{include file="CRM/Admin/Form/Generic.tpl"}
+<div class="crm-block crm-form-block crm-url-form-block">
+  {include file="CRM/Admin/Form/Setting/SettingForm.tpl"}
+</div>

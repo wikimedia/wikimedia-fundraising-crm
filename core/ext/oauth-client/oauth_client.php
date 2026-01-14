@@ -1,8 +1,7 @@
 <?php
 
 require_once 'oauth_client.civix.php';
-
-use CRM_OAuth_ExtensionUtil as E;
+use CRM_OauthClient_ExtensionUtil as E;
 
 /**
  * Implements hook_civicrm_config().
@@ -102,36 +101,4 @@ function oauth_client_civicrm_oauthReturn($token, &$nextUrl) {
  */
 function oauth_client_civicrm_alterMailStore(&$mailSettings) {
   CRM_OAuth_MailSetup::alterMailStore($mailSettings);
-}
-
-/**
- * @see CRM_Utils_Hook::managed()
- */
-function oauth_client_civicrm_managed(array &$entities, ?array $modules = NULL): void {
-  if ($modules !== NULL && !in_array(E::LONG_NAME, $modules)) {
-    return;
-  }
-
-  $providers = [];
-  \CRM_OAuth_Hook::oauthProviders($providers);
-
-  foreach ($providers as $provider) {
-    if (array_intersect($provider['tags'] ?? [], ['CiviConnect', 'CiviConnectSandbox', 'CiviConnectLocal'])) {
-      $entities[] = [
-        'module' => E::LONG_NAME,
-        'name' => 'CiviConnect_' . $provider['name'],
-        'entity' => 'OAuthClient',
-        'params' => [
-          'version' => 4,
-          'values' => [
-            'provider' => $provider['name'],
-            'guid' => '{civi_connect}',
-            'secret' => '{civi_connect}',
-          ],
-        ],
-        'update' => 'always',
-        'cleanup' => 'unused',
-      ];
-    }
-  }
 }

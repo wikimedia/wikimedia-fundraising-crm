@@ -30,15 +30,10 @@ class CRM_Member_Form_MembershipType extends CRM_Member_Form_MembershipConfig {
    */
   protected function setEntityFields() {
     $this->entityFields = [
-      'title' => [
+      'name' => [
         'required' => 'TRUE',
-        'name' => 'title',
-        'description' => ts("Internal name, e.g. 'Student', 'Senior', 'Honor Society'..."),
-      ],
-      'frontend_title' => [
-        'required' => 'TRUE',
-        'name' => 'frontend_title',
-        'description' => ts('Name as shown on public pages.'),
+        'name' => 'name',
+        'description' => ts("e.g. 'Student', 'Senior', 'Honor Society'..."),
       ],
       'description' => [
         'name' => 'description',
@@ -230,8 +225,11 @@ class CRM_Member_Form_MembershipType extends CRM_Member_Form_MembershipConfig {
     // Fields in this array have been tested & in the tpl have been switched over to metadata.
     // Note this kinda 'works from the top' - ie. once we hit a field that needs some thought we need
     // to stop & make that one work.
-    $this->assign('tpl_standardised_fields', ['title', 'frontend_title', 'description', 'member_of_contact_id', 'minimum_fee']);
+    $this->assign('tpl_standardised_fields', ['name', 'description', 'member_of_contact_id', 'minimum_fee']);
 
+    $this->addRule('name', ts('A membership type with this name already exists. Please select another name.'),
+      'objectExists', ['CRM_Member_DAO_MembershipType', $this->_id]
+    );
     $this->addRule('minimum_fee', ts('Please enter a monetary value for the Minimum Fee.'), 'money');
 
     $props = ['api' => ['params' => ['contact_type' => 'Organization']]];
@@ -293,6 +291,10 @@ class CRM_Member_Form_MembershipType extends CRM_Member_Form_MembershipConfig {
    */
   public static function formRule($params) {
     $errors = [];
+
+    if (!$params['name']) {
+      $errors['name'] = ts('Please enter a membership type name.');
+    }
 
     if (($params['minimum_fee'] > 0) && !$params['financial_type_id']) {
       $errors['financial_type_id'] = ts('Please enter the financial Type.');
@@ -434,9 +436,8 @@ class CRM_Member_Form_MembershipType extends CRM_Member_Form_MembershipConfig {
         $params['id'] = $this->_id;
       }
 
-      $params['domain_id'] = CRM_Core_Config::domainID();
-      $membershipTypeResult = CRM_Member_BAO_MembershipType::writeRecord($params);
-      $membershipTypeName = $membershipTypeResult->name;
+      $membershipTypeResult = civicrm_api3('MembershipType', 'create', $params);
+      $membershipTypeName = $membershipTypeResult['values'][$membershipTypeResult['id']]['name'];
 
       CRM_Core_Session::setStatus(ts("The membership type '%1' has been saved.",
         [1 => $membershipTypeName]

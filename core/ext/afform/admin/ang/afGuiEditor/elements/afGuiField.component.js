@@ -1,7 +1,7 @@
 // https://civicrm.org/licensing
 (function(angular, $, _) {
   "use strict";
-  let id = 0;
+
   angular.module('afGuiEditor').component('afGuiField', {
     templateUrl: '~/afGuiEditor/elements/afGuiField.html',
     bindings: {
@@ -28,27 +28,27 @@
       let searchJoins = null;
 
       $scope.editingOptions = false;
-      $scope.fieldId = 'af-gui-field-' + id++;
 
       this.$onInit = function() {
         ctrl.hasDefaultValue = !!getSet('afform_default');
         setFieldDefn();
         ctrl.inputTypes = _.transform(_.cloneDeep(afGui.meta.inputTypes), function(inputTypes, type) {
-          type.enabled = inputTypeCanBe(type.name);
-          // Change labels for EntityRef fields
-          if (ctrl.getDefn().input_type === 'EntityRef') {
-            const entity = ctrl.getFkEntity();
-            if (entity && type.name === 'EntityRef') {
-              type.label = ts('Autocomplete %1', {1: entity.label});
+          if (inputTypeCanBe(type.name)) {
+            // Change labels for EntityRef fields
+            if (ctrl.getDefn().input_type === 'EntityRef') {
+              const entity = ctrl.getFkEntity();
+              if (entity && type.name === 'EntityRef') {
+                type.label = ts('Autocomplete %1', {1: entity.label});
+              }
+              if (entity && type.name === 'Number') {
+                type.label = ts('%1 ID', {1: entity.label});
+              }
+              if (entity && type.name === 'Select') {
+                type.label = ts('Select Form %1', {1: entity.label});
+              }
             }
-            if (entity && type.name === 'Number') {
-              type.label = ts('%1 ID', {1: entity.label});
-            }
-            if (entity && type.name === 'Select') {
-              type.label = ts('Select Form %1', {1: entity.label});
-            }
+            inputTypes.push(type);
           }
-          inputTypes.push(type);
         });
         // Quick-add links for autocompletes
         this.quickAddLinks = [];
@@ -93,15 +93,10 @@
         ));
       };
 
-      this.canBeMultiple = () => {
-        if (!this.isSearch() ||
-          ['Date', 'Timestamp'].includes(ctrl.getDefn().data_type) ||
-          !(['Select', 'EntityRef', 'ChainSelect'].includes($scope.getProp('input_type')))
-        ) {
-          return false;
-        }
-        const op = $scope.getSetOperator();
-        return (!op || ['_EXPOSE_', 'IN', 'NOT IN'].includes(op));
+      this.canBeMultiple = function() {
+        return this.isSearch() &&
+          !_.includes(['Date', 'Timestamp'], ctrl.getDefn().data_type) &&
+          _.includes(['Select', 'EntityRef', 'ChainSelect'], $scope.getProp('input_type'));
       };
 
       this.getRangeElements = function(type) {
@@ -150,10 +145,7 @@
 
       $scope.hasOptions = function() {
         const inputType = $scope.getProp('input_type');
-        if (inputType === 'Range' && ctrl.getDefn().data_type === 'Boolean') {
-        }
-        return _.contains(['CheckBox', 'Toggle', 'Radio', 'Select'], inputType) &&
-          !(inputType === 'CheckBox' && ctrl.getDefn().data_type === 'Boolean');
+        return _.contains(['CheckBox', 'Radio', 'Select'], inputType) && !(inputType === 'CheckBox' && ctrl.getDefn().data_type === 'Boolean');
       };
 
       this.getOptions = function() {
@@ -219,7 +211,6 @@
         }
         switch (type) {
           case 'CheckBox':
-          case 'Toggle':
           case 'Radio':
             return defn.options || defn.data_type === 'Boolean';
 
@@ -238,9 +229,6 @@
 
           case 'Number':
             return !(defn.options || defn.data_type === 'Boolean');
-
-          case 'Range':
-            return (defn.data_type === 'Integer' || defn.data_type === 'Float' || defn.data_type === 'Money');
 
           case 'DisplayOnly':
           case 'Hidden':
@@ -270,38 +258,6 @@
       $scope.propIsset = function(propName) {
         const val = $scope.getProp(propName);
         return !(typeof val === 'undefined' || val === null);
-      };
-
-      $scope.getRangeProp = (prop) => {
-        const options = this.getOptions();
-        if (!options) {
-          const val = $scope.getProp('input_attrs.' + prop);
-          // Set these all explicitly if not set
-          if (typeof val === 'undefined') {
-            ctrl.node.defn = ctrl.node.defn || {};
-            ctrl.node.defn.input_attrs = ctrl.node.defn.input_attrs || {};
-            switch (prop) {
-              case 'min':
-                return (ctrl.node.defn.input_attrs.min = 0);
-              case 'max':
-                return (ctrl.node.defn.input_attrs.max = 99);
-              case 'step':
-                return (ctrl.node.defn.input_attrs.step = 1);
-            }
-          }
-          return val;
-        }
-        // Calculate min, max and range based on options
-        switch (prop) {
-          case 'min':
-            return Math.min(...options.map(opt => Number(opt.id)));
-          case 'max':
-            return Math.max(...options.map(opt => Number(opt.id)));
-          case 'step':
-            const values = options.map(opt => Number(opt.id)).sort((a, b) => a - b);
-            // Return difference between first two values, or 1 if not enough values
-            return values.length > 1 ? values[1] - values[0] : 1;
-        }
       };
 
       $scope.toggleLabel = function() {
@@ -340,7 +296,7 @@
 
       function defaultValueShouldBeArray() {
         return ($scope.getProp('data_type') !== 'Boolean' &&
-          ($scope.getProp('input_type') === 'CheckBox' || $scope.getProp('input_type') === 'Toggle' || $scope.getProp('input_attrs.multiple')));
+          ($scope.getProp('input_type') === 'CheckBox' || $scope.getProp('input_attrs.multiple')));
       }
 
       function setFieldDefn() {
@@ -427,22 +383,13 @@
         return afGui.getSearchDisplayFields(ctrl.container.getSearchDisplay(), _.noop, [ctrl.getFieldName()]);
       };
 
-      this.showLabel = () => {
-        if (this.node.defn && this.node.defn.label === false) {
-          return false;
-        }
-        // Single checkboxes don't get a separate label
-        return !(getSet('input_type') === 'CheckBox' && this.getDefn().data_type === 'Boolean');
-      };
-
       $scope.defaultValueContains = function(val) {
         const defaultVal = getSet('afform_default');
-        return defaultVal === val || (Array.isArray(defaultVal) && defaultVal.includes(val));
-      };
+        return defaultVal === val || (Array.isArray(defaultVal) && defaultVal.includes(val));      };
 
       $scope.toggleDefaultValueItem = function(val) {
         if (defaultValueShouldBeArray()) {
-          if (!Array.isArray(getSet('afform_default'))) {
+          if (!_.isArray(getSet('afform_default'))) {
             ctrl.node.defn = ctrl.node.defn || {};
             ctrl.node.defn.afform_default = [];
           }
@@ -471,13 +418,9 @@
           // _EXPOSE_ is not a real option for search_operator, instead it sets the expose_operator boolean
           getSet('expose_operator', val === '_EXPOSE_');
           if (val === '_EXPOSE_') {
-            getSet('search_operator', Object.keys(ctrl.searchOperators)[0]);
+            getSet('search_operator', _.keys(ctrl.searchOperators)[0]);
           } else {
             getSet('search_operator', val);
-          }
-          // Ensure multiselect is only used when compatible with operator
-          if (['_EXPOSE_', 'IN', 'NOT IN'].includes(val) != getSet('input_attrs.multiple')) {
-            $scope.toggleMultiple();
           }
           return val;
         }
@@ -514,7 +457,7 @@
               clearOut(ctrl.node, ['defn', 'input_attrs']);
             }
             // Boolean checkbox has no options
-            if ((val === 'CheckBox' || val === 'Toggle') && ctrl.getDefn().data_type === 'Boolean' && ctrl.node.defn) {
+            if (val === 'CheckBox' && ctrl.getDefn().data_type === 'Boolean' && ctrl.node.defn) {
               delete ctrl.node.defn.options;
             }
           }
@@ -523,7 +466,7 @@
           // When changing the multiple property, force-reset the default value widget
           if (ctrl.hasDefaultValue && _.includes(['input_type', 'input_attrs.multiple'], propName)) {
             ctrl.hasDefaultValue = false;
-            if (!defaultValueShouldBeArray() && Array.isArray(getSet('afform_default'))) {
+            if (!defaultValueShouldBeArray() && _.isArray(getSet('afform_default'))) {
               ctrl.node.defn.afform_default = ctrl.node.defn.afform_default[0];
             } else if (defaultValueShouldBeArray() && _.isString(getSet('afform_default')) && ctrl.node.defn.afform_default.length) {
               ctrl.node.defn.afform_default = ctrl.node.defn.afform_default.split(',');
@@ -557,22 +500,6 @@
           });
         }
         return searchJoins;
-      };
-
-      // When changing min, keep it under max.
-      this.onChangeMin = () => {
-        const max = $scope.getProp('input_attrs.max');
-        if (typeof max !== 'undefined' && max <= ctrl.node.defn.input_attrs.min) {
-          ctrl.node.defn.input_attrs.min = ctrl.node.defn.input_attrs.max - 1;
-        }
-      };
-
-      // When changing max, keep it over min.
-      this.onChangeMax = () => {
-        const min = $scope.getProp('input_attrs.min');
-        if (typeof min !== 'undefined' && min >= ctrl.node.defn.input_attrs.max) {
-          ctrl.node.defn.input_attrs.max = ctrl.node.defn.input_attrs.min + 1;
-        }
       };
 
       // Returns a reference to a path n-levels deep within an object

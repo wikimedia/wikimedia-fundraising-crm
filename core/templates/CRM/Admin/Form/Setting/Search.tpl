@@ -7,8 +7,6 @@
  | and copyright information, see https://civicrm.org/licensing       |
  +--------------------------------------------------------------------+
 *}
-<div class="help">
-  {ts escape='html'}Customize and optimize CiviCRM search functionality.{/ts}
-  {docURL page='user/initial-set-up/customizing-the-user-interface/#customizing-search-preferences'}
+<div class="crm-block crm-form-block crm-search-setting-form-block">
+    {include file='CRM/Admin/Form/Setting/SettingForm.tpl'}
 </div>
-{include file="CRM/Admin/Form/Generic.tpl"}

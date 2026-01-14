@@ -18,22 +18,20 @@
       mode: '@'
     },
     controllerAs: 'editor',
-    controller: function($scope, crmApi4, crmUiHelp, afGui, $parse, $timeout, $location, $route, $rootScope, formatForSelect2) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.afform_admin');
-      $scope.hs = crmUiHelp({file: 'CRM/AfformAdmin/afformBuilder'});
+    controller: function($scope, crmApi4, afGui, $parse, $timeout, $location, $route, $rootScope) {
+      var ts = $scope.ts = CRM.ts('org.civicrm.afform_admin');
 
       this.afform = null;
       $scope.saving = false;
       $scope.selectedEntityName = null;
       $scope.searchDisplayListFilter = {};
       this.meta = afGui.meta;
-      const editor = this;
-      let undoHistory = [];
-      let undoPosition = 0;
-      let undoAction = null;
-      let lastSaved = {};
-      const sortableOptions = {};
-      this.afformTags = formatForSelect2(this.meta.afform_fields.tags.options || [], 'id', 'label', ['description', 'color']);
+      var editor = this,
+        undoHistory = [],
+        undoPosition = 0,
+        undoAction = null,
+        lastSaved = {},
+        sortableOptions = {};
 
       // ngModelOptions to debounce input
       // Used to prevent cluttering the undo history with every keystroke
@@ -147,8 +145,8 @@
 
         editor.afform.permission_operator = editor.afform.permission_operator || 'AND';
         // set redirect to url as default if not set
-        if (!editor.afform.confirmation_type && editor.meta.afform_fields.confirmation_type.options.length > 0) {
-          editor.afform.confirmation_type = editor.meta.afform_fields.confirmation_type.options[0].id;
+        if (!editor.afform.confirmation_type && editor.meta.confirmation_types.length > 0) {
+          editor.afform.confirmation_type = editor.meta.confirmation_types[0].value;
         }
 
         // Initialize undo history
@@ -234,8 +232,8 @@
       };
 
       this.addEntity = function(type, selectTab) {
-        const meta = afGui.meta.entities[type];
-        let num = 1;
+        var meta = afGui.meta.entities[type],
+          num = 1;
         // Give this new entity a unique name
         while (!!$scope.entities[type + num]) {
           num++;
@@ -258,17 +256,17 @@
             });
           }
           // Add this af-entity tag after the last existing one
-          let pos = 1 + _.findLastIndex(editor.layout['#children'], {'#tag': 'af-entity'});
+          var pos = 1 + _.findLastIndex(editor.layout['#children'], {'#tag': 'af-entity'});
           editor.layout['#children'].splice(pos, 0, $scope.entities[type + num]);
           // Create a new af-fieldset container for the entity
           if (meta.boilerplate !== false) {
-            const fieldset = _.cloneDeep(afGui.meta.elements.fieldset.element);
+            var fieldset = _.cloneDeep(afGui.meta.elements.fieldset.element);
             fieldset['af-fieldset'] = type + num;
             fieldset['af-title'] = meta.label + ' ' + num;
-            // Add boilerplate contents if any
-            if (Array.isArray(meta.boilerplate) && meta.boilerplate.length) {
-              fieldset['#children'].push(...meta.boilerplate);
-            }
+            // Add boilerplate contents
+            _.each(meta.boilerplate, function (tag) {
+              fieldset['#children'].push(tag);
+            });
             // Attempt to place the new af-fieldset after the last one on the form
             pos = 1 + _.findLastIndex(editor.layout['#children'], 'af-fieldset');
             if (pos) {
@@ -327,10 +325,9 @@
 
       // Scroll an entity's first fieldset into view of the canvas
       this.scrollToEntity = function(entityName) {
-        const $canvas = $('#afGuiEditor-canvas-body');
-        const $entity = $('.af-gui-container-type-fieldset[data-entity="' + entityName + '"]').first();
-        let scrollValue;
-        let maxScroll;
+        var $canvas = $('#afGuiEditor-canvas-body'),
+          $entity = $('.af-gui-container-type-fieldset[data-entity="' + entityName + '"]').first(),
+          scrollValue, maxScroll;
         if ($entity.length) {
           // Scrolltop value needed to place entity's fieldset at top of canvas
           scrollValue = $canvas.scrollTop() + ($entity.offset().top - $canvas.offset().top);
@@ -471,16 +468,16 @@
 
       // Gets complete field defn, merging values from the field with default values
       function fillFieldDefn(entityType, field) {
-        const spec = _.cloneDeep(afGui.getField(entityType, field.name));
+        var spec = _.cloneDeep(afGui.getField(entityType, field.name));
         return _.merge(spec, field.defn || {});
       }
 
       // Get all fields on the form for a particular entity
       this.getEntityFields = function(entityName) {
-        const fieldsets = afGui.findRecursive(editor.layout['#children'], {'af-fieldset': entityName}),
+        var fieldsets = afGui.findRecursive(editor.layout['#children'], {'af-fieldset': entityName}),
           entityType = editor.getEntity(entityName).type,
           entityFields = {fields: [], joins: []},
-          isJoin = function (item) {
+          isJoin = function(item) {
             return _.isPlainObject(item) && ('af-join' in item);
           };
         _.each(fieldsets, function(fieldset) {
@@ -490,7 +487,7 @@
             }
           });
           _.each(afGui.getFormElements(fieldset['#children'], isJoin), function(join) {
-            const joinFields = [];
+            var joinFields = [];
             _.each(afGui.getFormElements(join['#children'], {'#tag': 'af-field'}), function(field) {
               if (field.name) {
                 joinFields.push(fillFieldDefn(join['af-join'], field));
@@ -542,7 +539,7 @@
           return;
         }
         editor.navigationMenu = null;
-        const conditions = [
+        var conditions = [
           ['domain_id', '=', 'current_domain'],
           ['name', '!=', 'Home']
         ];
@@ -561,7 +558,7 @@
       function buildTree(items, parentId) {
         return _.transform(items, function(navigationMenu, item) {
           if (parentId === item.parent_id) {
-            const children = buildTree(items, item.id),
+            var children = buildTree(items, item.id),
               menuItem = {
                 id: item.name,
                 text: item.label,
@@ -577,9 +574,9 @@
 
       // Collects all search displays currently on the form
       function getSearchDisplaysOnForm() {
-        const searchFieldsets = afGui.findRecursive(editor.afform.layout, {'af-fieldset': ''});
+        var searchFieldsets = afGui.findRecursive(editor.afform.layout, {'af-fieldset': ''});
         return _.transform(searchFieldsets, function(searchDisplays, fieldset) {
-          const displayElement = afGui.findRecursive(fieldset['#children'], function (item) {
+          var displayElement = afGui.findRecursive(fieldset['#children'], function(item) {
             return item['search-name'] && item['#tag'] && item['#tag'].indexOf('crm-search-display-') === 0;
           })[0];
           if (displayElement) {
@@ -606,9 +603,9 @@
       };
 
       this.addSearchDisplay = function(display) {
-        const searchName = display.key.split('.')[0];
-        const displayName = display.key.split('.')[1] || '';
-        const fieldset = {
+        var searchName = display.key.split('.')[0];
+        var displayName = display.key.split('.')[1] || '';
+        var fieldset = {
           '#tag': 'div',
           'af-fieldset': '',
           'af-title': display.label,
@@ -620,7 +617,7 @@
             }
           ]
         };
-        const meta = {
+        var meta = {
           fieldset: fieldset,
           element: fieldset['#children'][0],
           settings: afGui.getSearchDisplay(searchName, displayName),
@@ -650,8 +647,8 @@
       this.onRemoveElement = function() {
         // Keep this.searchDisplays in-sync when deleteing stuff from the form
         if (editor.getFormType() === 'search') {
-          const current = getSearchDisplaysOnForm();
-          Object.keys(editor.searchDisplays).forEach(key => {
+          var current = getSearchDisplaysOnForm();
+          _.each(_.keys(editor.searchDisplays), function(key) {
             if (!(key in current)) {
               delete editor.searchDisplays[key];
               editor.selectEntity(null);
@@ -688,11 +685,11 @@
 
       // Validates that a drag-n-drop action is allowed
       this.onDrop = function(event, ui) {
-        const sort = ui.item.sortable;
+        var sort = ui.item.sortable;
         // Check if this is a callback for an item dropped into a different container
         // @see https://github.com/angular-ui/ui-sortable notes on canceling
         if (!sort.received && sort.source[0] !== sort.droptarget[0]) {
-          const $source = $(sort.source[0]),
+          var $source = $(sort.source[0]),
             $target = $(sort.droptarget[0]),
             $item = $(ui.item[0]);
           // Fields cannot be dropped outside their own entity
@@ -709,7 +706,7 @@
       };
 
       $scope.save = function() {
-        const afform = JSON.parse(angular.toJson(editor.afform));
+        var afform = JSON.parse(angular.toJson(editor.afform));
         // This might be set to undefined by validation
         afform.server_route = afform.server_route || '';
         // create submission is required if email confirmation is selected.
@@ -767,7 +764,7 @@
 
       // Force editor panels to a fixed height, to avoid palette scrolling offscreen
       function fixEditorHeight() {
-        const height = $(window).height() - $('#afGuiEditor').offset().top;
+        var height = $(window).height() - $('#afGuiEditor').offset().top;
         $('#afGuiEditor').height(Math.floor(height));
       }
 
@@ -775,7 +772,7 @@
       this.adjustTabWidths = function() {
         $('#afGuiEditor .panel-heading ul.nav-tabs li.active').css('max-width', '');
         $('#afGuiEditor .panel-heading ul.nav-tabs').each(function() {
-          let remainingSpace = Math.floor($(this).width()) - 1,
+          var remainingSpace = Math.floor($(this).width()) - 1,
             inactiveTabs = $(this).children('li.fluid-width-tab').not('.active');
           $(this).children('.active,:not(.fluid-width-tab)').each(function() {
             remainingSpace -= $(this).width();

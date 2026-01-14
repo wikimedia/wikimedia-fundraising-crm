@@ -2,7 +2,6 @@
 namespace Civi\Standalone;
 
 use Civi;
-use CRM_Standaloneusers_BAO_Role;
 
 /**
  * Security related functions for Standaloneusers.
@@ -73,11 +72,11 @@ class Security {
         $permissionsPerRoleApiCall->addClause(
           'OR',
           ['id', 'IN', $roleIDs],
-          ['name', '=', CRM_Standaloneusers_BAO_Role::ANONYMOUS_ROLE_NAME],
+          ['name', '=', 'everyone'],
         );
       }
       else {
-        $permissionsPerRoleApiCall->addWhere('name', '=', CRM_Standaloneusers_BAO_Role::ANONYMOUS_ROLE_NAME);
+        $permissionsPerRoleApiCall->addWhere('name', '=', 'everyone');
       }
 
       // Get and cache an array of permission names for this user.

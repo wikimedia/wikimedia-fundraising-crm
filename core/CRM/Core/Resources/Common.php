@@ -147,7 +147,7 @@ class CRM_Core_Resources_Common {
     // Add global settings
     $settings = [
       'config' => [
-        'isFrontend' => \CRM_Utils_System::isFrontEndPage(),
+        'isFrontend' => $config->userFrameworkFrontend,
         'includeWildCardInName' => $config->includeWildCardInName,
       ],
     ];

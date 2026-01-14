@@ -18,6 +18,14 @@
 /**
  * Setting form for CiviCase.
  */
-class CRM_Admin_Form_Setting_Case extends CRM_Admin_Form_Generic {
+class CRM_Admin_Form_Setting_Case extends CRM_Admin_Form_Setting {
+
+  /**
+   * Build the form object.
+   */
+  public function buildQuickForm() {
+    $this->setTitle(ts('Settings - CiviCase'));
+    parent::buildQuickForm();
+  }
 
 }

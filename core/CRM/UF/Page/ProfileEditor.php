@@ -1,5 +1,7 @@
 <?php
 
+require_once 'CRM/Core/Page.php';
+
 /**
  * This class is not a real page -- it contains helpers for rendering the profile-selector and profile-editor
  * widgets

@@ -128,6 +128,15 @@ class CRM_Contact_BAO_Contact extends CRM_Contact_DAO_Contact implements Civi\Co
       }
     }
 
+    if (isset($params['preferred_communication_method']) && is_array($params['preferred_communication_method'])) {
+      if (!empty($params['preferred_communication_method']) && empty($params['preferred_communication_method'][0])) {
+        CRM_Core_Error::deprecatedWarning(' Form layer formatting should never get to the BAO');
+        CRM_Utils_Array::formatArrayKeys($params['preferred_communication_method']);
+        $contact->preferred_communication_method = CRM_Utils_Array::implodePadded($params['preferred_communication_method']);
+        unset($params['preferred_communication_method']);
+      }
+    }
+
     $defaults = ['source' => $params['contact_source'] ?? NULL];
     if ($params['contact_type'] === 'Organization' && isset($params['organization_name'])) {
       $defaults['display_name'] = $params['organization_name'];
@@ -393,7 +402,12 @@ class CRM_Contact_BAO_Contact extends CRM_Contact_DAO_Contact implements Civi\Co
     CRM_Contact_BAO_Contact_Utils::clearContactCaches();
 
     if ($invokeHooks) {
-      CRM_Utils_Hook::post($isEdit ? 'edit' : 'create', $params['contact_type'], $contact->id, $contact, $params);
+      if ($isEdit) {
+        CRM_Utils_Hook::post('edit', $params['contact_type'], $contact->id, $contact);
+      }
+      else {
+        CRM_Utils_Hook::post('create', $params['contact_type'], $contact->id, $contact);
+      }
     }
 
     // In order to prevent a series of expensive queries in intensive batch processing
@@ -757,7 +771,7 @@ WHERE     civicrm_contact.id = " . CRM_Utils_Type::escape($id, 'Integer');
     }
     CRM_Core_BAO_Log::register($contact->id, 'civicrm_contact', $contact->id);
 
-    CRM_Utils_Hook::post('edit', $contact->contact_type, $contact->id, $contact, $updateParams);
+    CRM_Utils_Hook::post('edit', $contact->contact_type, $contact->id, $contact);
 
     return TRUE;
   }
@@ -2599,7 +2613,6 @@ LEFT JOIN civicrm_email    ON ( civicrm_contact.id = civicrm_email.contact_id )
         return CRM_Core_BAO_Log::getContactLogCount($contactId);
 
       case 'note':
-        // @deprecated, not called from Core
         return CRM_Core_BAO_Note::getContactNoteCount($contactId);
 
       case 'contribution':

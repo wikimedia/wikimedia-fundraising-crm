@@ -73,6 +73,12 @@
         var hideBlocks = new Array('optionField_2','optionField_3','optionField_4');
         var rowcounter = 0;
           {literal}
+          if (navigator.appName == "Microsoft Internet Explorer") {
+            for ( var count = 0; count < hideBlocks.length; count++ ) {
+              var r = document.getElementById(hideBlocks[count]);
+              r.style.display = 'none';
+            }
+          }
 
           // hide and display the appropriate blocks as directed by the php code
           on_load_init_blocks( showRows, hideBlocks, '' );
@@ -311,9 +317,7 @@ var surveyActivityIds = {/literal}{$surveyActivityIds}{literal};
         CRM.$('#responseErrors').show( ).html(allErrors);
       }
     }
-  }, 'json').fail(function() {
-    CRM.alert('{/literal}{ts escape="js"}Unable to complete the request. The server returned an error or could not be reached.{/ts}{literal}', '{/literal}{ts escape="js"}Request Failed{/ts}{literal}', 'error');
-  });
+  }, 'json');
 }
 
 function releaseOrReserveVoter(voterId) {
@@ -364,9 +368,7 @@ function releaseOrReserveVoter(voterId) {
         CRM.$( '#field_' + voterId + '_is_release_or_reserve' ).val( isReleaseOrReserve );
       }
     },
-  'json').fail(function() {
-    CRM.alert('{/literal}{ts escape="js"}Unable to complete the request. The server returned an error or could not be reached.{/ts}{literal}', '{/literal}{ts escape="js"}Request Failed{/ts}{literal}', 'error');
-  });
+  'json');
 }
 
 function registerInterviewforall( ) {

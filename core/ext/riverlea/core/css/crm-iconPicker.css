@@ -13,14 +13,14 @@
 #crmIconPicker .icons {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--crm-l-medium);
+  gap: var(--crm-m);
   margin-top: 2rem;
 }
 #crmIconPicker a.ui-button {
-  color: var(--crm-text-color) !important;
+  color: var(--crm-c-text) !important;
   background: transparent;
-  width: var(--crm-l-reg-2);
-  height: var(--crm-l-reg-2);
+  width: var(--crm-r2);
+  height: var(--crm-r2);
   border: 0;
   padding: 0;
   display: inline-block;

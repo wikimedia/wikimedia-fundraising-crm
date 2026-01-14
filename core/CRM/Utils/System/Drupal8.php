@@ -212,10 +212,8 @@ class CRM_Utils_System_Drupal8 extends CRM_Utils_System_DrupalBase {
 
   /**
    * @inheritDoc
-   * @deprecated
    */
   public function addHTMLHead($header) {
-    \CRM_Core_Error::deprecatedFunctionWarning('Civi::resources() or CRM_Core_Region::instance("html-header")');
     \Drupal::service('civicrm.page_state')->addHtmlHeader($header);
   }
 
@@ -778,8 +776,8 @@ class CRM_Utils_System_Drupal8 extends CRM_Utils_System_DrupalBase {
 
       // Config must be re-initialized to reset the base URL
       // otherwise links will have the wrong language prefix/domain.
-      $domain = \CRM_Core_BAO_Domain::getDomain();
-      \CRM_Core_BAO_ConfigSetting::applyLocale(\Civi::settings($domain->id), $domain->locales);
+      $config = CRM_Core_Config::singleton();
+      $config->free();
 
       return TRUE;
     }

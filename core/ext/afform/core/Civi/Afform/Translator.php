@@ -36,7 +36,8 @@ class Translator extends AutoService implements EventSubscriberInterface {
     $changeSet = ChangeSet::create('translate')
       ->alterHtml(
         ';\.aff\.html$;', function (\phpQueryObject $doc) {
-          (new StringVisitor())->visit($doc, fn($s) => _ts($s));
+          $form = [];
+          (new StringVisitor())->visit($form, $doc, fn($s) => _ts($s));
         }
       );
     $angular->add($changeSet);

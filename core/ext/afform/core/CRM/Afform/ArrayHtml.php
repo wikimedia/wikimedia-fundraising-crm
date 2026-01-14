@@ -1,7 +1,5 @@
 <?php
 
-use Civi\Api4\AfformBehavior;
-
 /**
  * Class CRM_Afform_ArrayHtml
  *
@@ -14,17 +12,14 @@ class CRM_Afform_ArrayHtml {
 
   private $indent = -1;
 
-  private array $schema;
-
   /**
-   * Static list of known Afform html elements
-   *
-   * FIXME: Need a way to make this extendable
+   * This is a minimalist/temporary placeholder for a schema definition.
+   * FIXME: It shouldn't be here or look like this.
    *
    * @var array
    *   Ex: $protoSchema['my-tag']['my-attr'] = 'text';
    */
-  private $staticSchema = [
+  private $protoSchema = [
     '*' => [
       '*' => 'text',
       'af-fieldset' => 'text',
@@ -79,21 +74,6 @@ class CRM_Afform_ArrayHtml {
   public function __construct($deepCoding = TRUE, $formatWhitespace = FALSE) {
     $this->deepCoding = $deepCoding;
     $this->formatWhitespace = $formatWhitespace;
-  }
-
-  protected function getSchema(): array {
-    if (!isset($this->schema)) {
-      $this->schema = $this->staticSchema;
-      // Add AfformBehavior properties to af-entity
-      $afformBehaviors = AfformBehavior::get(FALSE)
-        ->execute();
-      foreach ($afformBehaviors as $behavior) {
-        foreach ($behavior['attributes'] as $attribute => $type) {
-          $this->schema['af-entity'][$attribute] = $type;
-        }
-      }
-    }
-    return $this->schema;
   }
 
   /**
@@ -307,7 +287,7 @@ class CRM_Afform_ArrayHtml {
    *   FALSE if the tag should look like '<div></div>'.
    */
   protected function isSelfClosing($tag) {
-    return $this->getSchema()[$tag]['#selfClose'] ?? FALSE;
+    return $this->protoSchema[$tag]['#selfClose'] ?? FALSE;
   }
 
   /**
@@ -324,8 +304,8 @@ class CRM_Afform_ArrayHtml {
     if (!$this->deepCoding) {
       return 'text';
     }
-    $schema = $this->getSchema();
-    return $schema[$tag][$attrName] ?? $schema['*'][$attrName] ?? $schema['*']['*'];
+
+    return $this->protoSchema[$tag][$attrName] ?? $this->protoSchema['*'][$attrName] ?? $this->protoSchema['*']['*'];
   }
 
   /**

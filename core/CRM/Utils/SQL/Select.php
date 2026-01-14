@@ -398,7 +398,7 @@ class CRM_Utils_SQL_Select extends CRM_Utils_SQL_BaseParamQuery {
         $this->setOps[] = ['', $subQuery];
       }
       else {
-        $this->setOps[] = [$setOperation, $subQuery];
+        $this->setOps[] = [" $setOperation ", $subQuery];
       }
     }
     return $this;
@@ -561,24 +561,19 @@ class CRM_Utils_SQL_Select extends CRM_Utils_SQL_BaseParamQuery {
     }
 
     if ($this->selects) {
-      $sql .= 'SELECT' . (isset($this->distinct) ? ' ' . $this->distinct : '') . "\n";
-      $sql .= '  ' . implode(",\n  ", $this->selects) . "\n";
+      $sql .= 'SELECT ' . $this->distinct . implode(', ', $this->selects) . "\n";
     }
     else {
-      $sql .= "SELECT *\n";
+      $sql .= 'SELECT *' . "\n";
     }
     if ($this->from !== NULL) {
       $sql .= 'FROM ' . $this->from . "\n";
     }
     elseif (is_array($this->setOps)) {
-      $sql .= "FROM (\n";
+      $sql .= 'FROM (';
       foreach ($this->setOps as $setOp) {
-        // $setOp[0] is blank on the first iteration, and subsequently contains a keyword like "UNION ALL".
-        $sql .= '  ' . ($setOp[0] ? "{$setOp[0]} " : '') . "(\n";
-        $setSql = (is_object($setOp[1]) ? $setOp[1]->toSQL() : $setOp[1]);
-        // Add indentation
-        $setSql = trim(str_replace("\n", "\n    ", $setSql));
-        $sql .= '    ' . $setSql . "\n  )\n";
+        $sql .= $setOp[0];
+        $sql .= '(' . (is_object($setOp[1]) ? $setOp[1]->toSQL() : $setOp[1]) . ')';
       }
       $sql .= ") {$this->setAlias}\n";
     }
@@ -589,7 +584,7 @@ class CRM_Utils_SQL_Select extends CRM_Utils_SQL_BaseParamQuery {
       $sql .= 'WHERE (' . implode(")\n  AND (", $this->wheres) . ")\n";
     }
     if ($this->groupBys) {
-      $sql .= "GROUP BY\n  " . implode(",\n  ", $this->groupBys) . "\n";
+      $sql .= 'GROUP BY ' . implode(', ', $this->groupBys) . "\n";
     }
     if ($this->havings) {
       $sql .= 'HAVING (' . implode(")\n  AND (", $this->havings) . ")\n";
@@ -598,7 +593,7 @@ class CRM_Utils_SQL_Select extends CRM_Utils_SQL_BaseParamQuery {
       $orderBys = CRM_Utils_Array::crmArraySortByField($this->orderBys,
         ['weight', 'guid']);
       $orderBys = CRM_Utils_Array::collect('value', $orderBys);
-      $sql .= "ORDER BY\n  " . implode(",\n  ", $orderBys) . "\n";
+      $sql .= 'ORDER BY ' . implode(', ', $orderBys) . "\n";
     }
     if ($this->limit !== NULL) {
       $sql .= 'LIMIT ' . $this->limit . "\n";

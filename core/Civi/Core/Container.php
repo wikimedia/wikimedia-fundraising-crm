@@ -378,10 +378,6 @@ class Container {
       'CRM_Contribute_RecurTokens',
       []
     ))->addTag('kernel.event_subscriber')->setPublic(TRUE);
-    $container->setDefinition('crm_contribution_product_tokens', new Definition(
-      'CRM_Contribute_ContributionProductTokens',
-      []
-    ))->addTag('kernel.event_subscriber')->setPublic(TRUE);
     $container->setDefinition('crm_survey_tokens', new Definition(
       'CRM_Campaign_SurveyTokens',
       []

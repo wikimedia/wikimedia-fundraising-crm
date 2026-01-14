@@ -29,7 +29,10 @@ class CRM_Core_QuickForm_AdvCheckBoxWithDiv extends HTML_QuickForm_advcheckbox {
    */
   public function toHtml(): string {
     $html = parent::toHtml();
-    return '<div class="crm-option-label-pair" >' . $html . '</div>';
+    if (is_numeric($this->getAttribute('options_per_line'))) {
+      return '<div class="crm-option-label-pair" >' . $html . '</div>';
+    }
+    return $html;
   }
 
 }

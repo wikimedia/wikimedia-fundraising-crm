@@ -23,7 +23,7 @@
 }
 .crm-chart-kit-admin .select2-container {
   /* fix select2 collapsing boxes in RiverLea */
-  width: var(--crm-input-width)!important;
+  width: var(--crm-big-input)!important;
 }
 
 .crm-chart-kit-admin input[type='color'] {

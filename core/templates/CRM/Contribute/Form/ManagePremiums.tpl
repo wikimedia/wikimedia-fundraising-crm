@@ -41,16 +41,11 @@
      <tr class="crm-contribution-form-block-imageOption">
       <td class="label">{$form.imageOption.label}</td>
       <td>
-        <div id="currentImage">
-          {if $imageURL}
-            <img src="{$imageURL}" alt="{ts escape="htmlattribute"}Current Image{/ts}"/>
-          {/if}
-        </div>
-        <div class="hiddenElement" id="defaultImage">
-          <img src="{$defaultImageURL}" alt="{ts escape="htmlattribute"}Default product image with the words "No image available".{/ts}">
-        </div>
+        {if $imageURL}
+          <img src="{$imageURL}" alt="{ts escape="htmlattribute"}Current Image{/ts}"/>
+        {/if}
         <div class="description">
-          <p>{ts 1="400x400"}You can give this premium a picture that will be displayed on the contribution page. The image displayed will be resized to a maximum of %1 pixels. Images must be in GIF, JPEG, or PNG format.{/ts}</p>
+          <p>{ts}You can give this premium a picture that will be displayed on the contribution page. The image displayed will be resized to a maximum of 200x200 pixels. Images must be in GIF, JPEG, or PNG format.{/ts}</p>
         </div>
   <table class="form-layout-compressed">
     <tr class="crm-contribution-form-block-imageOption">
@@ -65,9 +60,6 @@
     </tr>
     <tr id="imageURL"{if $action neq 2} class="hiddenElement"{/if}>
       <td class="label">{$form.imageUrl.label}</td><td>{$form.imageUrl.html|crmAddClass:huge}</td>
-    </tr>
-    <tr id="thumbnailURL"{if $action neq 2} class="hiddenElement"{/if}>
-      <td class="label">{$form.thumbnailUrl.label}</td><td>{$form.thumbnailUrl.html|crmAddClass:huge}</td>
     </tr>
     <tr>
       <td colspan="2">{$form.imageOption.default_image.html}</td>
@@ -161,29 +153,17 @@
 
 <script type="text/javascript">
 {literal}
-function add_upload_file_block(option) {
-  if (option == 'thumbnail') {
-    document.getElementById("imageURL").classList.remove('hiddenElement');
-    document.getElementById("thumbnailURL").classList.remove('hiddenElement');
+function add_upload_file_block(parms) {
+  if (parms == 'thumbnail') {
+    document.getElementById("imageURL").style.display = "table-row";
+    document.getElementById("uploadFileRow").style.display = "none";
+  }
+  else if (parms == 'image') {
+    document.getElementById("uploadFileRow").style.display = "table-row";
+    document.getElementById("imageURL").style.display = "none";
   }
   else {
-    document.getElementById("imageURL").classList.add('hiddenElement');
-    document.getElementById("thumbnailURL").classList.add('hiddenElement');
-  }
-
-  if (option == 'image') {
-    document.getElementById("uploadFileRow").classList.remove('hiddenElement');
-  }
-  else {
-    document.getElementById("uploadFileRow").classList.add('hiddenElement');
-  }
-
-  if (option == 'default_image') {
-    document.getElementById("defaultImage").classList.remove('hiddenElement');
-    document.getElementById("currentImage").classList.add('hiddenElement');
-  }
-  else {
-    document.getElementById("defaultImage").classList.add('hiddenElement');
+    document.getElementById("imageURL").style.display = "none";
   }
 }
 {/literal}

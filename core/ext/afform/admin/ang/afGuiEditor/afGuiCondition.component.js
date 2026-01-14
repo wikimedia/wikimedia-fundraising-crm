@@ -11,7 +11,7 @@
     },
     templateUrl: '~/afGuiEditor/afGuiCondition.html',
     controller: function ($scope) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
+      let ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
         ctrl = this;
       let conditionValue;
       let operatorCache = {};
@@ -32,7 +32,6 @@
         'IS EMPTY': ts('Is Empty'),
         'IS NOT EMPTY': ts('Not Empty'),
         'IS NOT NULL': ts('Any Value'),
-        'IS NULL': ts('No Value'),
       };
 
       this.$onInit = function() {
@@ -81,7 +80,7 @@
         var field = ctrl.field || {},
           allowedOps = field.operators;
         if (!allowedOps && field.data_type === 'Boolean') {
-          allowedOps = ['=', '!=', 'IS EMPTY', 'IS NOT NULL', 'IS NULL'];
+          allowedOps = ['=', '!=', 'IS EMPTY', 'IS NOT NULL'];
         }
         if (!allowedOps && _.includes(['Boolean', 'Float', 'Date'], field.data_type)) {
           allowedOps = ['=', '!=', '<', '>', '<=', '>=', 'IN', 'NOT IN', 'BETWEEN', 'NOT BETWEEN', 'IS EMPTY', 'IS NOT EMPTY'];
@@ -130,9 +129,9 @@
           }
           // Change multi/single value to/from an array
           var shouldBeArray = _.includes(['IN', 'NOT IN'], getOperator());
-          if (!Array.isArray(getValue()) && shouldBeArray) {
+          if (!_.isArray(getValue()) && shouldBeArray) {
             setValue([]);
-          } else if (Array.isArray(getValue()) && !shouldBeArray) {
+          } else if (_.isArray(getValue()) && !shouldBeArray) {
             setValue('');
           }
         }

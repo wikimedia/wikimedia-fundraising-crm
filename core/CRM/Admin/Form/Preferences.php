@@ -16,7 +16,7 @@
  */
 
 /**
- * @deprecated use CRM_Admin_Form_Generic instead.
+ * Base class for settings forms.
  */
 class CRM_Admin_Form_Preferences extends CRM_Core_Form {
 

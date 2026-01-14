@@ -22,11 +22,11 @@
 //          # Set stream variables directly here:
 //
 //         'vars' => [
-//            '--crm-primary-color' => 'purple',
+//            '--crm-c-primary' => 'purple',
 //          ],
 //         'vars_dark' => [
 //            # Extra variables for dark mode
-//            '--crm-primary-color' => 'blue',
+//            '--crm-c-primary' => 'blue',
 //          ],
 //
 //          # If you want to add static css files to your stream, then uncomment

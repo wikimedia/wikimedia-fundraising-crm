@@ -16,7 +16,6 @@ use Civi\WorkflowMessage\GenericWorkflowMessage;
  * Receipt sent when confirming contribution add payment.
  *
  * @method int getEventID()
- * @method int getParticipantID()
  *
  * @support template-only
  * @see CRM_Financial_BAO_Payment::sendConfirmation()
@@ -31,12 +30,5 @@ class CRM_Contribute_WorkflowMessage_PaymentOrRefundNotification extends Generic
    * @scope tokenContext as eventId, tplParams as eventID
    */
   public $eventID;
-
-  /**
-   * @var int
-   *
-   * @scope tokenContext as participantId
-   */
-  public $participantID;
 
 }

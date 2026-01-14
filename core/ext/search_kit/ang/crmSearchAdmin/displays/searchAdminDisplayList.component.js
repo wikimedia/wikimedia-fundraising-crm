@@ -12,7 +12,7 @@
     },
     templateUrl: '~/crmSearchAdmin/displays/searchAdminDisplayList.html',
     controller: function($scope, searchMeta, crmUiHelp) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
+      var ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
         ctrl = this;
       $scope.hs = crmUiHelp({file: 'CRM/Search/Help/Display'});
 

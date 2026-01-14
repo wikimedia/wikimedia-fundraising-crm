@@ -9,10 +9,10 @@ return [
   ],
   'css' => ['css/dashboard.css'],
   'partials' => ['ang/crmDashboard'],
-  'partialsCallback' => ['CRM_Core_BAO_Dashboard', 'angularPartials'],
+  'partialsCallback' => ['CRM_Contact_Page_DashBoard', 'angularPartials'],
   'basePages' => [],
   'requires' => ['crmUi', 'crmUtil', 'ui.sortable', 'dialogService', 'api4'],
-  'settingsFactory' => ['CRM_Core_BAO_Dashboard', 'angularSettings'],
+  'settingsFactory' => ['CRM_Contact_Page_DashBoard', 'angularSettings'],
   'permissions' => ['administer CiviCRM'],
-  'bundles' => ['bootstrap3', 'visual'],
+  'bundles' => ['visual'],
 ];

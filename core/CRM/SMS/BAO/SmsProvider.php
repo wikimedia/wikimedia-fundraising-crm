@@ -93,10 +93,10 @@ class CRM_SMS_BAO_SmsProvider extends CRM_SMS_DAO_SmsProvider {
     $provider->copyValues($params);
     $result = $provider->save();
     if ($id) {
-      CRM_Utils_Hook::post('edit', 'SmsProvider', $provider->id, $provider, $params);
+      CRM_Utils_Hook::post('edit', 'SmsProvider', $provider->id, $provider);
     }
     else {
-      CRM_Utils_Hook::post('create', 'SmsProvider', NULL, $provider, $params);
+      CRM_Utils_Hook::post('create', 'SmsProvider', NULL, $provider);
     }
     return $result;
   }

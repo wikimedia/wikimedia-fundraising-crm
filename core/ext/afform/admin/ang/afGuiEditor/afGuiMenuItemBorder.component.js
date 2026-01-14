@@ -9,7 +9,7 @@
       node: '='
     },
     controller: function($scope, afGui) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
+      var ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
         ctrl = this;
 
       $scope.getSetBorderWidth = function(width) {
@@ -25,7 +25,7 @@
       };
 
       function getSetBorderProp(node, idx, val) {
-        const border = getBorder(node) || ['1px', '', '#000000'];
+        var border = getBorder(node) || ['1px', '', '#000000'];
         if (val === null) {
           return border[idx];
         }
@@ -34,7 +34,7 @@
       }
 
       function getBorder(node) {
-        const border = _.map((afGui.getStyles(node).border || '').split(' '), _.trim);
+        var border = _.map((afGui.getStyles(node).border || '').split(' '), _.trim);
         return border.length > 2 ? border : null;
       }
     }

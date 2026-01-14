@@ -99,7 +99,7 @@ class CRM_Utils_Chart {
     foreach ($params['multiValues'] as $i => $dataSet) {
       $output['values'][$i] = [];
       foreach ($dataSet as $k => $v) {
-        $output['values'][$i][] = ['label' => $k, 'value' => (float) $v];
+        $output['values'][$i][] = ['label' => $k, 'value' => (double) $v];
       }
     }
     if (!$output['values']) {

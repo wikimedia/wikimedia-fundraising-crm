@@ -82,15 +82,8 @@ class CRM_Upgrade_Page_Upgrade extends CRM_Core_Page {
     }
 
     // Throw error if db in unexpected condition
-    elseif ($errors = $upgrade->getUpgradeBlockers($currentVer, $latestVer)) {
-      $template->assign('preUpgradeMessage', implode("\n", array_map(fn($e) => "<p>$e</p>", $errors)));
-      $template->assign('currentVersion', $currentVer);
-      $template->assign('newVersion', $latestVer);
-      $template->assign('upgradeTitle', ts('Upgrade CiviCRM from v %1 To v %2',
-        [1 => $currentVer, 2 => $latestVer]
-      ));
-      $template->assign('upgraded', FALSE);
-      $template->assign('blocked', TRUE);
+    elseif ($error = $upgrade->checkUpgradeableVersion($currentVer, $latestVer)) {
+      throw new CRM_Core_Exception($error);
     }
 
     else {

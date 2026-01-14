@@ -46,7 +46,6 @@ abstract class SqlFunction extends SqlExpression {
   const CATEGORY_AGGREGATE = 'aggregate',
     CATEGORY_COMPARISON = 'comparison',
     CATEGORY_DATE = 'date',
-    CATEGORY_PARTIAL_DATE = 'partial_date',
     CATEGORY_MATH = 'math',
     CATEGORY_STRING = 'string';
 

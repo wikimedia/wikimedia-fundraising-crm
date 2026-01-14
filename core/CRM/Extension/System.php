@@ -113,13 +113,15 @@ class CRM_Extension_System {
         $containers['default'] = $this->getDefaultContainer();
       }
 
-      $civiSubDirs = ['ext', 'tools', 'tests/extensions'];
+      $civiSubDirs = defined('CIVICRM_TEST')
+        ? ['ext', 'tools', 'tests']
+        : ['ext', 'tools'];
       foreach ($civiSubDirs as $civiSubDir) {
         $containers["civicrm_$civiSubDir"] = new CRM_Extension_Container_Basic(
           CRM_Utils_File::addTrailingSlash($this->parameters['civicrm_root']) . $civiSubDir,
           CRM_Utils_File::addTrailingSlash($this->parameters['resourceBase'], '/') . $civiSubDir,
           $this->getCache(),
-          "civicrm_" . CRM_Utils_String::munge($civiSubDir),
+          "civicrm_$civiSubDir",
           $this->parameters['maxDepth']
         );
       }

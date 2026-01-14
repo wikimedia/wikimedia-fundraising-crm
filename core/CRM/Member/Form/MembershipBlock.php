@@ -97,11 +97,7 @@ class CRM_Member_Form_MembershipBlock extends CRM_Contribute_Form_ContributionPa
    * @throws \CRM_Core_Exception
    */
   public function buildQuickForm() {
-    $membershipTypes = \Civi\Api4\MembershipType::get(FALSE)
-      ->addWhere('is_active', '=', TRUE)
-      ->addOrderBy('weight', 'ASC')
-      ->execute()
-      ->column('title', 'id');
+    $membershipTypes = CRM_Member_BAO_MembershipType::getMembershipTypes();
 
     if (!empty($membershipTypes)) {
       $this->addElement('checkbox', 'member_is_active', ts('Membership Section Enabled?'));
@@ -415,15 +411,16 @@ class CRM_Member_Form_MembershipBlock extends CRM_Contribute_Form_ContributionPa
             $fieldParams['option_id'][$rowCount] = $priceFieldID;
             unset($options[$priceFieldID]);
           }
-          $membershipType = CRM_Member_BAO_MembershipType::getMembershipType($memType);
-          $fieldParams['option_label'][$rowCount] = $membershipType['frontend_title'];
-          $fieldParams['option_amount'][$rowCount] = $membershipType['minimum_fee'];
-          $fieldParams['option_weight'][$rowCount] = $membershipType['weight'];
-          $fieldParams['option_description'][$rowCount] = $membershipType['description'];
+          $membetype = CRM_Member_BAO_MembershipType::getMembershipTypeDetails($memType);
+          $fieldParams['option_label'][$rowCount] = $membetype['name'] ?? NULL;
+          $fieldParams['option_amount'][$rowCount] = $membetype['minimum_fee'] ?? 0;
+          $fieldParams['option_weight'][$rowCount] = $membetype['weight'] ?? NULL;
+          $fieldParams['option_description'][$rowCount] = $membetype['description'] ?? NULL;
           $fieldParams['default_option'] = $params['membership_type_default'] ?? NULL;
-          $fieldParams['option_financial_type_id'][$rowCount] = $membershipType['financial_type_id'];
+          $fieldParams['option_financial_type_id'][$rowCount] = $membetype['financial_type_id'] ?? NULL;
 
           $fieldParams['membership_type_id'][$rowCount] = $memType;
+          // [$rowCount] = $membetype[''];
           $rowCount++;
         }
         foreach ($options as $priceFieldID => $memType) {

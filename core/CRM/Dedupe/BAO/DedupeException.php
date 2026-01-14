@@ -50,9 +50,9 @@ class CRM_Dedupe_BAO_DedupeException extends CRM_Dedupe_DAO_DedupeException {
       }
     }
     $dao->save();
-    CRM_Utils_Hook::post($hook, 'DedupeException', $dao->id, $dao, $params);
+    CRM_Utils_Hook::post($hook, 'DedupeException', $dao->id, $dao);
     // Also call hook with deprecated entity name
-    CRM_Utils_Hook::post($hook, 'Exception', $dao->id, $dao, $params);
+    CRM_Utils_Hook::post($hook, 'Exception', $dao->id, $dao);
     return $dao;
   }
 

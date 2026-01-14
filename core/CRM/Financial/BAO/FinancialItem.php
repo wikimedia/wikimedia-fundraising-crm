@@ -9,6 +9,7 @@
  +--------------------------------------------------------------------+
  */
 
+use Civi\Api4\FinancialAccount;
 use Civi\Api4\FinancialItem;
 
 /**
@@ -141,10 +142,10 @@ class CRM_Financial_BAO_FinancialItem extends CRM_Financial_DAO_FinancialItem {
       }
     }
     if (!empty($ids['id'])) {
-      CRM_Utils_Hook::post('edit', 'FinancialItem', $financialItem->id, $financialItem, $params);
+      CRM_Utils_Hook::post('edit', 'FinancialItem', $financialItem->id, $financialItem);
     }
     else {
-      CRM_Utils_Hook::post('create', 'FinancialItem', $financialItem->id, $financialItem, $params);
+      CRM_Utils_Hook::post('create', 'FinancialItem', $financialItem->id, $financialItem);
     }
     return $financialItem;
   }
@@ -257,17 +258,23 @@ WHERE cc.id IN (' . implode(',', $contactIds) . ') AND con.is_test = 0';
    *
    * This function specifically excludes sales tax.
    *
-   * @param int $lineItemID
-   * @param bool $isTax
-   * @return array|null
-   * @throws CRM_Core_Exception
+   * @param int $entityId
+   *
+   * @return array
    */
-  public static function getPreviousFinancialItem(int $lineItemID, bool $isTax = FALSE): ?array {
+  public static function getPreviousFinancialItem($entityId) {
     $financialItemAPI = FinancialItem::get(FALSE)
-      ->addWhere('entity_id', '=', $lineItemID)
+      ->addWhere('entity_id', '=', $entityId)
       ->addWhere('entity_table', '=', 'civicrm_line_item')
-      ->addWhere('financial_account_id.is_tax', '=', $isTax)
       ->addOrderBy('id', 'DESC');
+
+    $salesTaxFinancialAccounts = FinancialAccount::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('is_tax', '=', 1)
+      ->execute();
+    if ($salesTaxFinancialAccounts->count() > 0) {
+      $financialItemAPI->addWhere('financial_account_id', 'NOT IN', $salesTaxFinancialAccounts->column('id'));
+    }
     return $financialItemAPI->execute()->first();
   }
 

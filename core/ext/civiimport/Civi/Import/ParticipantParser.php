@@ -174,8 +174,7 @@ class ParticipantParser extends ImportParser {
     if (empty($this->importableFieldsMetadata)) {
       $fields = ['' => ['title' => ts('- do not import -')]];
       $allParticipantFields = (array) Participant::getFields()
-        // Exclude readonly fields, except for the id
-        ->addClause('OR', ['readonly', '=', FALSE], ['name', '=', 'id'])
+        ->addWhere('readonly', '=', FALSE)
         ->addWhere('usage', 'CONTAINS', 'import')
         ->setAction('save')
         ->addOrderBy('title')

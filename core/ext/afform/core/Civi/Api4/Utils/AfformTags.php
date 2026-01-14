@@ -18,7 +18,6 @@ class AfformTags {
       ->addSelect('name', 'label', 'description', 'color')
       ->addWhere('used_for', 'CONTAINS', 'Afform')
       ->addWhere('is_selectable', '=', TRUE)
-      ->addOrderBy('label', 'ASC')
       ->execute();
 
     $tagOptions = [];

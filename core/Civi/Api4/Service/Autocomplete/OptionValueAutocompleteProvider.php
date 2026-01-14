@@ -14,36 +14,12 @@ namespace Civi\Api4\Service\Autocomplete;
 
 use Civi\Core\Event\GenericHookEvent;
 use Civi\Core\HookInterface;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * @service
  * @internal
  */
-class OptionValueAutocompleteProvider extends \Civi\Core\Service\AutoService implements HookInterface, EventSubscriberInterface {
-
-  /**
-   * @return array
-   */
-  public static function getSubscribedEvents() {
-    return [
-      'civi.api.prepare' => ['onApiPrepare', 200],
-    ];
-  }
-
-  public function onApiPrepare(\Civi\API\Event\PrepareEvent $event): void {
-    $apiRequest = $event->getApiRequest();
-    if (is_object($apiRequest) && is_a($apiRequest, 'Civi\Api4\Generic\AutocompleteAction')) {
-      if ($apiRequest->getEntityName() === 'OptionValue') {
-        $optionGroup = $apiRequest->getFilters()['option_group_id'] ?? NULL;
-        // Always accept this filter if the field doesn't already specify it (if the field does specify it, e.g. custom fields always do,
-        // then it will override this in AutocompleteFieldSubscriber::onApiPrepare)
-        if ($optionGroup) {
-          $apiRequest->addFilter('option_group_id', $optionGroup);
-        }
-      }
-    }
-  }
+class OptionValueAutocompleteProvider extends \Civi\Core\Service\AutoService implements HookInterface {
 
   /**
    * Provide default SearchDisplay for Country autocompletes
@@ -71,6 +47,8 @@ class OptionValueAutocompleteProvider extends \Civi\Core\Service\AutoService imp
         [
           'type' => 'field',
           'key' => 'description',
+          'rewrite' => '#[value] [description]',
+          'empty_value' => '#[value]',
         ],
       ],
     ];

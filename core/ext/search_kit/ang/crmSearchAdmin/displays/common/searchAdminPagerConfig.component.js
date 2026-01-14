@@ -8,7 +8,7 @@
     },
     templateUrl: '~/crmSearchAdmin/displays/common/searchAdminPagerConfig.html',
     controller: function($scope) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
+      var ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
         ctrl = this;
 
       function getDefaultSettings() {

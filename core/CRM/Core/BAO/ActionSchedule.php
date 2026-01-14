@@ -157,7 +157,8 @@ class CRM_Core_BAO_ActionSchedule extends CRM_Core_DAO_ActionSchedule implements
    * @return array
    */
   public static function getFilterContactLanguageOptions(): array {
-    return CRM_Core_I18n::languages(TRUE);
+    $languages = CRM_Core_I18n::languages(TRUE);
+    return $languages + [CRM_Core_I18n::NONE => ts('Contacts with no preferred language')];
   }
 
   /**

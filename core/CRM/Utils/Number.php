@@ -66,10 +66,28 @@ class CRM_Utils_Number {
   }
 
   /**
-   * @deprecated use ini_parse_quantity
+   * Convert a file size value from the formats allowed in php_ini to the number of bytes.
+   *
+   * @param string $size
+   *
+   * @return int
    */
   public static function formatUnitSize($size): int {
-    return ini_parse_quantity($size ?: 0);
+    if ($size) {
+      $last = strtolower($size[strlen($size) - 1]);
+      $size = (int) $size;
+      switch ($last) {
+        // The 'G' modifier is available since PHP 5.1.0
+
+        case 'g':
+          $size *= 1024;
+        case 'm':
+          $size *= 1024;
+        case 'k':
+          $size *= 1024;
+      }
+      return $size;
+    }
   }
 
   /**
@@ -78,10 +96,10 @@ class CRM_Utils_Number {
    * @return float
    */
   public static function getMaximumFileUploadSize(): float {
-    $uploadFileSize = ini_parse_quantity(\Civi::settings()->get('maxFileSize') . 'm');
+    $uploadFileSize = \CRM_Utils_Number::formatUnitSize(\Civi::settings()->get('maxFileSize') . 'm', TRUE);
     //Fetch uploadFileSize from php_ini when $config->maxFileSize is set to "no limit".
     if (empty($uploadFileSize)) {
-      $uploadFileSize = ini_parse_quantity(ini_get('upload_max_filesize'));
+      $uploadFileSize = \CRM_Utils_Number::formatUnitSize(ini_get('upload_max_filesize'), TRUE);
     }
     return round(($uploadFileSize / (1024 * 1024)), 2);
   }

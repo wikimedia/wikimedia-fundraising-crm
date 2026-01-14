@@ -297,12 +297,11 @@ trait DAOActionTrait {
     $customGroups = \CRM_Core_BAO_CustomGroup::getAll($fieldFilters);
 
     foreach ($customGroups as $customGroup) {
-      // look for a field whose value is unspecified and whose default is non-null
       foreach ($customGroup['fields'] as $field) {
         $fieldName = "{$customGroup['name']}.{$field['name']}";
-        if (isset($field['default_value']) && !array_key_exists($fieldName, $record)) {
+        if (isset($field['default_value']) && !isset($record[$fieldName])) {
           $record[$fieldName] = $field['default_value'];
-          // Setting the non-null value for one field in the group will ensure that all get written
+          // Setting the value for one field in the group will ensure that all get written
           break;
         }
       }

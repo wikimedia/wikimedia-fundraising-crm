@@ -185,8 +185,7 @@
       }
 
       function isDateField(field) {
-        // Partial date functions get special handling to be treated as dates
-        return field.category === 'partial_date' || field.data_type === 'Date' || field.data_type === 'Timestamp';
+        return field.data_type === 'Date' || field.data_type === 'Timestamp';
       }
 
     }

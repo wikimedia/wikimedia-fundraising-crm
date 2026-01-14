@@ -493,7 +493,7 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
           $title = $activitySubject . ' - ';
         }
 
-        $title .= $recentContactDisplay;
+        $title = $title . $recentContactDisplay;
         if (!empty($activityTypes[$activity->activity_type_id])) {
           $title .= ' (' . $activityTypes[$activity->activity_type_id] . ')';
         }
@@ -1947,9 +1947,6 @@ AND cl.modified_id  = c.id
         'case_activity_medium_id' => [
           'title' => ts('Activity Medium'),
           'type' => CRM_Utils_Type::T_INT,
-          'pseudoconstant' => [
-            'optionGroupName' => 'encounter_medium',
-          ],
         ],
         'case_activity_is_auto' => [
           'title' => ts('Activity Auto-generated?'),
@@ -2333,7 +2330,7 @@ INNER JOIN  civicrm_option_group grp ON (grp.id = option_group_id AND grp.name =
         $activity['DT_RowAttr']['data-entity'] = 'activity';
         $activity['DT_RowAttr']['data-id'] = $activityId;
 
-        $activity['activity_type'] = (!empty($activityIcons[$values['activity_type_id']]) ? '<span class="crm-i ' . $activityIcons[$values['activity_type_id']] . '" role="img" aria-hidden="true"></span> ' : '') . htmlentities($values['activity_type']);
+        $activity['activity_type'] = (!empty($activityIcons[$values['activity_type_id']]) ? '<span class="crm-i ' . $activityIcons[$values['activity_type_id']] . '" aria-hidden="true"></span> ' : '') . htmlentities($values['activity_type']);
         $activity['subject'] = $values['subject'];
 
         if ($params['contact_id'] == $values['source_contact_id']) {

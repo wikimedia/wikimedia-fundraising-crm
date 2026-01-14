@@ -197,29 +197,28 @@ class CRM_Custom_Form_Group extends CRM_Admin_Form {
     $this->add('text', 'icon', ts('Tab icon'), ['class' => 'crm-icon-picker', 'allowClear' => TRUE]);
 
     // is this set collapsed or expanded ?
-    $this->addToggle('collapse_display', ts('Collapse on initial display'));
+    $this->addElement('advcheckbox', 'collapse_display', ts('Collapse this set on initial display'));
 
     // is this set collapsed or expanded ? in advanced search
-    $this->addToggle('collapse_adv_display', ts('Collapse in Advanced Search'));
+    $this->addElement('advcheckbox', 'collapse_adv_display', ts('Collapse this set in Advanced Search'));
 
     // is this set active ?
-    $this->addToggle('is_active', ts('Enabled'));
+    $this->addElement('advcheckbox', 'is_active', ts('Is this Custom Data Set active?'));
 
     //Is this set visible on public pages?
-    $this->addToggle('is_public', ts('Public'));
+    $this->addElement('advcheckbox', 'is_public', ts('Is this Custom Data Set public?'));
 
-    $this->addToggle('is_multiple', ts('Allow multiple records'),
-      ['on' => ts('Multiple'), 'off' => ts('Single')]
-    );
+    $this->addElement('advcheckbox', 'is_multiple',
+      ts('Does this Custom Field Set allow multiple records?'), NULL);
 
-    $this->add('number', 'max_multiple', ts('Maximum number of multiple records'), ['class' => 'six', 'min' => 1, 'step' => 1]);
+    $this->add('number', 'max_multiple', ts('Maximum number of multiple records'), $attributes['max_multiple']);
     $this->addRule('max_multiple', ts('is a numeric field'), 'numeric');
 
     // Once data exists, certain options cannot be changed
     if (!$this->_isGroupEmpty) {
       $this->getElement('extends')->freeze();
       $this->getElement('extends_entity_column_id')->freeze();
-      $this->getElement('is_multiple')->setAttribute('disabled', 'disabled');
+      $this->getElement('is_multiple')->freeze();
       // Don't allow max to be lowered if data already exists
       $this->getElement('max_multiple')->setAttribute('min', $this->_values['max_multiple'] ?? '0');
     }

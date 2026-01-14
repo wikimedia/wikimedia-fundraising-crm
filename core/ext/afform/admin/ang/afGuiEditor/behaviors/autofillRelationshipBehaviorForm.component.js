@@ -11,7 +11,7 @@
       relTypes: '<'
     },
     controller: function($scope, afGui) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
+      var ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
         ctrl = this;
 
       this.getPlaceholder = function() {

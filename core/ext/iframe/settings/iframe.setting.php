@@ -22,7 +22,7 @@ return [
     ],
     'default' => ['public', 'ajax'],
     'title' => ts('Allow pages (Common)'),
-    'help_text' => ts('List of pages and use-cases which may be accessed via embedded IFRAME.'),
+    'description' => ts('List of pages and use-cases which may be accessed via embedded IFRAME.'),
     'pseudoconstant' => [
       'callback' => 'CRM_Iframe_Utils::getAllowOptions',
     ],
@@ -33,7 +33,8 @@ return [
     'html_type' => 'textarea',
     'default' => "",
     'title' => ts('Allow pages (Other)'),
-    'help_markup' => '<p>' . E::ts('List of other pages that may be embedded. One line per item. May use wildcards. Example: "<code>civicrm/ajax/*</code>"') . '</p>',
+    'description' => E::ts('List of other pages that may be embedded. One line per item. May use wildcards. Example: "<code>civicrm/ajax/*</code>"'),
+    'help_text' => NULL,
   ],
   'iframe_theme' => $basic + [
     'name' => 'iframe_theme',
@@ -48,7 +49,8 @@ return [
     ],
     'default' => 'default',
     'title' => E::ts('Theme'),
-    'help_text' => E::ts('Apply styling to elements inside the IFRAME. In "Automatic" mode, inherit styling from the CiviCRM frontend.'),
+    'description' => E::ts('Apply styling to elements inside the IFRAME. In "Automatic" mode, inherit styling from the CiviCRM frontend.'),
+    'help_text' => NULL,
   ],
   'iframe_layout' => $basic + [
     'name' => 'iframe_layout',
@@ -60,7 +62,8 @@ return [
     ],
     'default' => 'auto',
     'title' => E::ts('Layout'),
-    'help_text' => E::ts('Apply wrapping to the page layout.'),
+    'description' => E::ts('Apply wrapping to the page layout.'),
+    'help_text' => NULL,
     'pseudoconstant' => [
       'callback' => 'CRM_Iframe_Utils::getLayoutOptions',
     ],

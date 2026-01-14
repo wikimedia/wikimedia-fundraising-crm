@@ -281,12 +281,9 @@ class FieldSpec {
 
   /**
    * @param string[] $usage
-   * @return $this
    */
-  public function setUsage(array $usage) {
+  public function setUsage(array $usage): void {
     $this->usage = $usage;
-
-    return $this;
   }
 
 }

@@ -18,7 +18,7 @@
 /**
  * This class generates form components for the mailing component preferences.
  */
-class CRM_Admin_Form_Preferences_Mailing extends CRM_Admin_Form_Generic {
+class CRM_Admin_Form_Preferences_Mailing extends CRM_Admin_Form_Preferences {
 
   public function postProcess() {
     $params = $this->controller->exportValues($this->_name);

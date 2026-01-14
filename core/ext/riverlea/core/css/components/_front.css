@@ -5,15 +5,18 @@
 .crm-container.crm-public {
   --crm-font: inherit;
 }
-.crm-container.crm-public .crm-page-title-wrapper,
 .crm-container.crm-public #crm-main-content-wrapper {
   margin-inline: auto;
   width: clamp(calc(var(--crm-f-form-width) / 2),100%,var(--crm-f-form-width));
 }
-.crm-container.crm-public fieldset:not(.collapsed,.crm-inactive-dashlet-fieldset,.af-container-style-pane),
+.crm-container.crm-public fieldset:not(.collapsed,
+.crm-inactive-dashlet-fieldset,
+.af-container-style-pane),
+.crm-container.crm-public .crm-event-info-form-block,
+.crm-container.crm-public #crm-profile-block,
 .crm-container.crm-public .crm-container.crm-public .af-container:not(.af-container-style-pane),
-.crm-container.crm-public :is(.additional_participants-section,.event_fee_s_-section,.email-5-section,#crm-profile-block,.crm-event-info-form-block) {
-  background-color: var(--crm-f-fieldset-bg-color);
+.crm-container.crm-public .email-5-section {
+  background-color: var(--crm-f-fieldset-bg);
   margin: var(--crm-f-fieldset-margin);
   padding: var(--crm-f-fieldset-padding);
   border: var(--crm-f-fieldset-border);
@@ -21,12 +24,9 @@
 }
 .crm-container.crm-public fieldset legend {
   padding: var(--crm-f-legend-padding);
-  margin: var(--crm-f-legend-margin);
-  border-bottom: var(--crm-f-legend-border);
   font-size: var(--crm-f-legend-size);
   text-align: var(--crm-f-legend-align);
-  float: var(--crm-f-legend-position) !important; /* vs Bootstrap */
-  width: 100%;
+  float: var(--crm-f-legend-position);
 }
 .crm-container.crm-public fieldset legend + * {
   clear: both;
@@ -39,17 +39,15 @@ af-form > fieldset > legend {
   float: none;
 }
 .crm-container.crm-public .header-dark {
-  background: var(--crm-secondary-color);
-  color: var(--crm-secondary-text-color);
-  padding: var(--crm-l-small-1) var(--crm-l-medium-2);
+  background: var(--crm-c-secondary);
+  color: var(--crm-c-text-light);
+  padding: var(--crm-m1) var(--crm-f-fieldset-padding);
   font-weight: bold;
-  font-size: var(--crm-l-reg-1);
-  border-radius: var(--crm-l-radius);
-  margin-bottom: var(--crm-l-medium);
+  font-size: var(--crm-r1);
+  border-radius: var(--crm-roundness);
 }
 .crm-container.crm-public .crm-section:not(.alert) {
   padding: 0;
-  margin: 0; /* Drupal/Claro reset */
 }
 .crm-container.crm-public fieldset > fieldset,
 .crm-container.crm-public fieldset:has(> fieldset) {
@@ -68,73 +66,35 @@ af-form > fieldset > legend {
 }
 .crm-container.crm-public table.form-layout-compressed {
   display: table;
-  margin: 0;
-  min-width: var(--crm-input-label-width);
-}
-.crm-container.crm-public #editrow-tag table,
-.crm-container.crm-public #editrow-tag table tr {
-  border: 0;
-  box-shadow: none;
-}
-.crm-container.crm-public #editrow-tag table td {
-  padding: 0;
 }
 .crm-container.crm-public span#msgbox {
-  border-radius: var(--crm-l-radius);
+  border-radius: var(--crm-roundness);
   padding: var(--crm-padding-small);
 }
 .crm-container.crm-public #civicrm-footer::after {
   display: none;
 }
 /* Input */
+.crm-container.crm-public .crm-section:has( > .label):not(.crm-public-form-item) {
+  margin: 0 calc(-1 * var(--crm-f-form-padding));
+}
 .crm-container.crm-public .crm-section:has( > .label) {
   display: var(--crm-f-form-layout);
   grid-template-columns: var(--crm-f-label-width) 1fr 0;
-  padding-block: var(--crm-f-form-padding);
-  align-items: center;
-  gap: var(--crm-f-label-gap);
-}
-#priceset .crm-section,
-.crm-container.crm-public .crm-section:has(.crm-option-label-pair) {
-  align-items: start;
-}
-.crm-container.crm-public .crm-section .content {
-  margin-left: 0;
+  padding: var(--crm-f-form-padding);
 }
 .crm-container.crm-public .crm-section:has( > .content input:focus),
 .crm-container.crm-public .crm-section:has( > .content select:focus),
 .crm-container.crm-public .crm-section:has( > .content textarea:focus) {
-  border: 0 solid var(--crm-f-form-focus-border-color);
-  border-width: var(--crm-f-form-focus-border-width);
-  background: var(--crm-f-form-focus-bg-color);
+  background-color: var(--crm-f-form-focus-bg);
 }
 .crm-container.crm-public .crm-section:has( > .content input.error),
 .crm-container.crm-public .crm-section:has( > .content textarea.error),
 .crm-container.crm-public .crm-section:has( > .content select.error),
 .crm-container.crm-public .crm-section:has( > .content input.crm-inline-error),
 .crm-container.crm-public .crm-section:has( > .content textarea.crm-inline-error),
-.crm-container.crm-public .crm-section:has( > .content select.crm-inline-error),
-.crm-container.crm-public .crm-section:has( > .content .crm-error) {
-  border: 0 solid var(--crm-f-form-error-border-color);
-  border-width: var(--crm-f-form-error-border-width);
-  background: var(--crm-f-form-error-bg-color);
-}
-.crm-container.crm-public .crm-section :is(input,textarea,select):is(.error,.crm-inline-error,.crm-error) {
-  outline: 3px solid var(--crm-f-form-error-outline-color);
-  border-color: inherit;
-}
-.crm-container.crm-public :is(input,select,textarea):focus {
-  outline: 3px solid var(--crm-f-form-focus-outline-color);
-  border-color: inherit;
-}
-.crm-container.crm-public input.alert-danger {
-  background: transparent; /* reset to make pattern consistent */
-}
-.crm-container.crm-public label.alert-danger.crm-inline-error {
-  color: var(--crm-danger-ink-color);
-  background: transparent;
-  padding-left: var(--crm-flex-gap);
-  font-weight: normal;
+.crm-container.crm-public .crm-section:has( > .content select.crm-inline-error) {
+  background-color: var(--crm-f-form-error-bg);
 }
 .crm-container.crm-public input[type="text"],
 .crm-container.crm-public input[type="password"],
@@ -146,7 +106,7 @@ af-form > fieldset > legend {
   border-radius: var(--crm-f-input-radius);
   padding: var(--crm-f-input-padding);
   font-size: var(--crm-f-input-font-size);
-  --crm-input-width: var(--crm-f-input-width);
+  min-width: var(--crm-f-input-width);
 }
 .crm-container.crm-public select.crm-form-select {
   min-width: auto;
@@ -177,7 +137,7 @@ af-form > fieldset > legend {
 .crm-container.crm-public .select2-search input,
 .crm-container.crm-public .select2-results select,
 .crm-container.crm-public .select2-results input {
-  padding: var(--crm-l-small) var(--crm-l-reg-1) var(--crm-l-small);
+  padding: var(--crm-s) var(--crm-r1) var(--crm-s);
 }
 .crm-container.crm-public .select2-dropdown-open .select2-choice,
 .crm-container.crm-public .select2-dropdown-open .select2-choices {
@@ -190,9 +150,6 @@ af-form > fieldset > legend {
 .crm-container.crm-public af-field {
   padding-block: var(--crm-f-form-padding);
   display: block;
-}
-.crm-container.crm-public .af-field-type-hidden {
-  display: none;
 }
 .crm-container.crm-public .af-container.af-layout-inline,
 .crm-container.crm-public .af-container.af-layout-cols {
@@ -210,12 +167,12 @@ af-form > fieldset > legend {
   padding: var(--crm-f-form-padding);
 }
 .crm-container.crm-public #attachments table.form-layout-compressed {
-  margin-block: var(--crm-l-medium) 0;
+  margin-block: var(--crm-m) 0;
 }
 .crm-container.crm-public #attachments table.form-layout-compressed tr {
   display: flex;
   flex-direction: column;
-  gap: var(--crm-l-small);
+  gap: var(--crm-s);
 }
 .crm-container.crm-public #attachments table.form-layout-compressed td {
   width: 100%;
@@ -224,20 +181,15 @@ af-form > fieldset > legend {
 }
 .crm-container.crm-public .crm-profile-view-title {
   padding-inline: var(--crm-f-form-padding);
-  font-size: var(--crm-l-reg-1);
+  font-size: var(--crm-r1);
 }
-/* Social share footer */
-.crm-container .crm-socialnetwork :is(h2,p.clear) {
-  margin-top: 0;
-}
-
 /* Empowered by logo */
 
 .crm-public-footer {
   display: flex;
   align-items: center;
   justify-content: var(--crm-f-logo-align);
-  gap: var(--crm-l-small);
+  gap: var(--crm-s);
   width: var(--crm-f-form-width);
   margin: 0 auto;
 }
@@ -257,14 +209,17 @@ af-form > fieldset > legend {
   margin-right: var(--crm-f-label-gap);
   color: var(--crm-f-label-color);
 }
-.crm-container.crm-public .label > label {
-  margin: 0;
-}
 @media (min-width: 480px) {
+  .crm-container.crm-public {
+    --crm-page-padding: var(--crm-f-form-padding);
+  }
   .crm-container.crm-public .crm-section .label {
     float: var(--crm-f-label-position);
     width: var(--crm-f-label-width);
     text-align: var(--crm-f-label-align);
+  }
+  .crm-container.crm-public .crm-section .content {
+    margin-left: calc(var(--crm-f-label-width) + var(--crm-f-label-gap));
   }
 }
 @media (max-width: 479px) {

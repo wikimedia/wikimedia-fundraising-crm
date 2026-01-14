@@ -48,7 +48,7 @@ class CRM_Contribute_Form_Contribution_ThankYou extends CRM_Contribute_Form_Cont
     $this->assign('thankyou_text', $this->_values['thankyou_text'] ?? NULL);
     $this->assign('thankyou_footer', $this->_values['thankyou_footer'] ?? NULL);
     $this->assign('max_reminders', $this->_values['max_reminders'] ?? NULL);
-    $this->assign('initial_reminder_day', $this->getPledgeBlockValue('initial_reminder_day'));
+    $this->assign('initial_reminder_day', $this->_values['initial_reminder_day'] ?? NULL);
     $this->assignTotalAmounts();
     // Link (button) for users to create their own Personal Campaign page
     if ($linkText = CRM_PCP_BAO_PCP::getPcpBlockStatus($this->getContributionPageID(), 'contribute')) {
@@ -338,6 +338,7 @@ class CRM_Contribute_Form_Contribution_ThankYou extends CRM_Contribute_Form_Cont
       }
 
       if (!empty($membershipTypeIds)) {
+        $membershipTypeValues = CRM_Member_BAO_Membership::buildMembershipTypeValues($this, $membershipTypeIds);
         $endDate = NULL;
 
         // Check if we support auto-renew on this contribution page
@@ -352,7 +353,7 @@ class CRM_Contribute_Form_Contribution_ThankYou extends CRM_Contribute_Form_Cont
           }
         }
         foreach ($membershipTypeIds as $value) {
-          $memType = $this->getMembershipType($value);
+          $memType = $membershipTypeValues[$value];
           if ($selectedMembershipTypeID != NULL) {
             if ($memType['id'] == $selectedMembershipTypeID) {
               $this->assign('minimum_fee', $memType['minimum_fee'] ?? NULL);
@@ -413,8 +414,8 @@ class CRM_Contribute_Form_Contribution_ThankYou extends CRM_Contribute_Form_Cont
       $autoRenewOption = CRM_Price_BAO_PriceSet::checkAutoRenewForPriceSet($this->_priceSetId);
       //$selectedMembershipTypeID is retrieved as an array for membership priceset if multiple
       //options for different organisation is selected on the contribution page.
-      if (is_numeric($selectedMembershipTypeID) && isset($this->getMembershipType($selectedMembershipTypeID)['auto_renew'])) {
-        $this->assign('autoRenewOption', $this->getMembershipType($selectedMembershipTypeID)['auto_renew']);
+      if (is_numeric($selectedMembershipTypeID) && isset($membershipTypeValues[$selectedMembershipTypeID]['auto_renew'])) {
+        $this->assign('autoRenewOption', $membershipTypeValues[$selectedMembershipTypeID]['auto_renew']);
       }
       else {
         $this->assign('autoRenewOption', $autoRenewOption);

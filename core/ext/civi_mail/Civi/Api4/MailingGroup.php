@@ -13,13 +13,12 @@ namespace Civi\Api4;
 /**
  * Mailing groups are the groups or mailings included or excluded from mailing recipients.
  *
- * @searchable bridge
+ * @searchable none
  *
  * @see https://docs.civicrm.org/user/en/latest/email/what-is-civimail/
  * @since 5.48
  * @package Civi\Api4
  */
 class MailingGroup extends Generic\DAOEntity {
-  use Generic\Traits\EntityBridge;
 
 }

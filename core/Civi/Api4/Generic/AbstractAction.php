@@ -305,10 +305,7 @@ abstract class AbstractAction implements \ArrayAccess {
             $docs['type'] = array_diff($docs['type'], ['null']);
           }
           if (!empty($docs['optionsCallback'])) {
-            // Allow to create actions in PHPUnit tests without booted CiviCRM environment.
-            if (\Civi\Core\Container::isContainerBooted()) {
-              $docs['options'] = $this->{$docs['optionsCallback']}();
-            }
+            $docs['options'] = $this->{$docs['optionsCallback']}();
             unset($docs['optionsCallback']);
           }
           $this->_paramInfo[$name] = $docs;

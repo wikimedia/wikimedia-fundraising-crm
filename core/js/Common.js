@@ -14,24 +14,16 @@ CRM._ = _;
  */
 function ts(text, params) {
   "use strict";
-  let d;
-  if (typeof params === 'object') {
-    if (params.plural && 'count' in params && params.count !== 1) {
-      text = params.plural;
-    }
-    if (params.domain) {
-      d = 'strings::' + params.domain;
-    }
-  }
+  var d = (params && params.domain) ? ('strings::' + params.domain) : null;
   if (d && CRM[d] && CRM[d][text]) {
     text = CRM[d][text];
   }
   else if (CRM.strings[text]) {
     text = CRM.strings[text];
   }
-  if (typeof params === 'object') {
-    for (let i in params) {
-      if (i !== 'plural' && ['string', 'number'].includes(typeof params[i])) {
+  if (typeof(params) === 'object') {
+    for (var i in params) {
+      if (typeof(params[i]) === 'string' || typeof(params[i]) === 'number') {
         // sprintf emulation: escape % characters in the replacements to avoid conflicts
         text = text.replace(new RegExp('%' + i, 'g'), String(params[i]).replace(/%/g, '%-crmescaped-'));
       }
@@ -1506,41 +1498,11 @@ if (!CRM.vars) CRM.vars = {};
       return $('#crm-notification-container').notify('create', params, options);
     }
     else {
-      if (document.querySelectorAll('dialog.crm-alert').length > 3) {
-        // something is producing alerts faster than user can close them
-        console.warn('Too many calls to CRM.alert! Diverting messages to console rather than creating more popups');
-        console.warn(title.length ? `${title}: ${text}` : text);
-        return null;
-      }
-
-      // TODO: add icon/styling appropriate to type?
-      // TODO: allow specifying notices which dont need to block the user
-      const alertDialog = document.createElement('dialog');
-      alertDialog.classList.add('crm-dialog', 'crm-alert');
-
       if (title.length) {
-        const header = document.createElement('h1');
-        header.innerText = title;
-        alertDialog.append(header);
+        text = title + "\n" + text;
       }
-      if (text.length) {
-        const body = document.createElement('p');
-        body.innerText = text;
-        alertDialog.append(body);
-      }
-      const alertButtons = document.createElement('div');
-      alertButtons.classList.add('crm-buttons', 'crm-flex-justify-end');
-      alertButtons.innerHTML = `
-          <button class="crm-button" autofocus onclick="this.closest('dialog').remove()">
-            OK
-          </button>
-      `;
-      alertDialog.append(alertButtons);
-
-      // ideally append to crmContainer for styling. fallback to body if not available
-      const crmContainer = document.querySelector('.crm-container');
-      (crmContainer ? crmContainer : document.body).append(alertDialog);
-      alertDialog.showModal();
+      // strip html tags as they are not parsed in standard alerts
+      alert($("<div/>").html(text).text());
       return null;
     }
   };
@@ -1791,18 +1753,18 @@ if (!CRM.vars) CRM.vars = {};
       // Handle clear button for form elements
       .on('click', 'a.crm-clear-link', function() {
         $(this).css({visibility: 'hidden'}).siblings('.crm-form-radio:checked').prop('checked', false).trigger('change', ['crmClear']);
-        $(this).closest('.crm-multiple-checkbox-radio-options').find('.crm-form-radio:checked').prop('checked', false).trigger('change', ['crmClear']);
+        $(this).siblings('.crm-multiple-checkbox-radio-options').find('.crm-form-radio:checked').prop('checked', false).trigger('change', ['crmClear']);
         $(this).siblings('input:text').val('').trigger('change', ['crmClear']);
         return false;
       })
       .on('change keyup', 'input.crm-form-radio:checked, input[allowclear=1]', function(e, context) {
         if (context !== 'crmClear' && ($(this).is(':checked') || ($(this).is('[allowclear=1]') && $(this).val()))) {
           $(this).siblings('.crm-clear-link').css({visibility: ''});
-          $(this).closest('.crm-multiple-checkbox-radio-options').find('.crm-clear-link').css({visibility: ''});
+          $(this).closest('.crm-multiple-checkbox-radio-options').siblings('.crm-clear-link').css({visibility: ''});
         }
         if (context !== 'crmClear' && $(this).is('[allowclear=1]') && $(this).val() === '') {
           $(this).siblings('.crm-clear-link').css({visibility: 'hidden'});
-          $(this).closest('.crm-multiple-checkbox-radio-options').find('.crm-clear-link').css({visibility: 'hidden'});
+          $(this).closest('.crm-multiple-checkbox-radio-options').siblings('.crm-clear-link').css({visibility: 'hidden'});
         }
       })
 

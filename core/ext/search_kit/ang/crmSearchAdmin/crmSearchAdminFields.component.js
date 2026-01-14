@@ -9,7 +9,7 @@
     },
     templateUrl: '~/crmSearchAdmin/crmSearchAdminFields.html',
     controller: function ($scope, $element) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
+      var ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
         ctrl = this;
 
       // savedSearch.api_params.select is an array of strings.
@@ -30,9 +30,7 @@
             ctrl.select[index] = {
               key: key,
               label: ctrl.crmSearchAdmin.getFieldLabel(key),
-              isPseudoField: ctrl.crmSearchAdmin.isPseudoField(key),
-              rawKey: key.split(':')[0],
-              suffixOptions: ctrl.crmSearchAdmin.getSuffixOptions(key),
+              isPseudoField: ctrl.crmSearchAdmin.isPseudoField(key)
             };
           }
         });

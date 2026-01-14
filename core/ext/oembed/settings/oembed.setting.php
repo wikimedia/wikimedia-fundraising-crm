@@ -14,8 +14,9 @@ return [
   'oembed_standard' => $basic + [
     'name' => 'oembed_standard',
     'type' => 'Boolean',
+    'quick_form_type' => 'YesNo',
     'default' => TRUE,
-    'html_type' => 'toggle',
+    'html_type' => 'radio',
     'title' => E::ts('oEmbed Auto Discovery'),
     'description' => E::ts('All pages with IFRAME support will support auto-discovery via oEmbed.'),
     'help_text' => NULL,
@@ -23,8 +24,9 @@ return [
   'oembed_share' => $basic + [
     'name' => 'oembed_share',
     'type' => 'Boolean',
+    'quick_form_type' => 'YesNo',
     'default' => TRUE,
-    'html_type' => 'toggle',
+    'html_type' => 'radio',
     'title' => E::ts('oEmbed Explicit Sharing'),
     'description' => E::ts('When administrators ("administer oembed") view a public page, present options for advanced sharing.'),
     'help_text' => NULL,

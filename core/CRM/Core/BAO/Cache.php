@@ -201,7 +201,6 @@ class CRM_Core_BAO_Cache extends CRM_Core_DAO_Cache {
 
     if ($expired) {
       \Civi::cache('long')->garbageCollection();
-      \Civi::cache('session')->garbageCollection();
     }
   }
 

@@ -7,7 +7,6 @@
  | and copyright information, see https://civicrm.org/licensing       |
  +--------------------------------------------------------------------+
 *}
-<div class="help">
-  {docURL page="user/case-management/set-up"}
+<div class="crm-block crm-form-block crm-case-form-block">
+  {include file='CRM/Admin/Form/Setting/SettingForm.tpl'}
 </div>
-{include file='CRM/Admin/Form/Generic.tpl'}

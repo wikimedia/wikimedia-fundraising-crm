@@ -14,7 +14,7 @@
       editor: '^^afGuiEditor',
     },
     controller: function($scope, $sce, $timeout) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
+      var ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
         ctrl = this;
 
       this.$onInit = function() {

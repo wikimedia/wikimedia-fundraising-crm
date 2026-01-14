@@ -28,11 +28,6 @@ class Create extends AbstractAction {
    */
   protected $contributionValues;
 
-  /**
-   * Line items to process
-   *
-   * @var array
-   */
   protected $lineItems;
 
   /**

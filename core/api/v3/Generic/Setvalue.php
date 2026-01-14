@@ -98,7 +98,7 @@ function civicrm_api3_generic_setValue($apiRequest) {
         $value = '';
       }
       else {
-        $value = (bool) $value;
+        $value = (boolean) $value;
       }
       break;
 
@@ -129,7 +129,7 @@ function civicrm_api3_generic_setValue($apiRequest) {
   elseif (CRM_Core_DAO::setFieldValue($dao_name, $id, $field, $params[$field])) {
     $entityDAO = new $dao_name();
     $entityDAO->copyValues($params);
-    CRM_Utils_Hook::post('edit', $entity, $entityDAO->id, $entityDAO, $params);
+    CRM_Utils_Hook::post('edit', $entity, $entityDAO->id, $entityDAO);
   }
   else {
     return civicrm_api3_create_error("error assigning $field=$value for $entity (id=$id)");

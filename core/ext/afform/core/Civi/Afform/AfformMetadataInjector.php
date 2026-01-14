@@ -116,7 +116,7 @@ class AfformMetadataInjector {
     // Get field defn from afform markup
     $fieldDefn = $existingFieldDefn ? \CRM_Utils_JS::getRawProps($existingFieldDefn) : [];
     // Uses input type set on the form if specified (else falls back to the input type in the field spec)
-    $inputType = !empty($fieldDefn['input_type']) ? \CRM_Utils_JS::decode($fieldDefn['input_type']) : ($fieldInfo['input_type'] ?? 'Text');
+    $inputType = !empty($fieldDefn['input_type']) ? \CRM_Utils_JS::decode($fieldDefn['input_type']) : $fieldInfo['input_type'];
     // On a search form, search_range will present a pair of fields (or possibly 3 fields for date select + range)
     $isSearchRange = !empty($fieldDefn['search_range']) && \CRM_Utils_JS::decode($fieldDefn['search_range']);
 
@@ -180,36 +180,8 @@ class AfformMetadataInjector {
     }
 
     // Boolean checkbox has no options
-    if ($fieldInfo['data_type'] === 'Boolean' && ($inputType === 'CheckBox')) {
+    if ($fieldInfo['data_type'] === 'Boolean' && $inputType === 'CheckBox') {
       unset($fieldInfo['options'], $fieldDefn['options']);
-    }
-
-    // Set min & max & step for options with range
-    if ($inputType === 'Range' && (!empty($fieldInfo['options']) || !empty($fieldDefn['options']))) {
-      $options = !empty($fieldDefn['options']) ? \CRM_Utils_JS::decode($fieldDefn['options']) : $fieldInfo['options'];
-      $optionRange = array_column($options, 'id');
-      sort($optionRange);
-      $fieldInfo['input_attrs']['min'] = min($optionRange);
-      $fieldInfo['input_attrs']['max'] = max($optionRange);
-      $fieldInfo['input_attrs']['step'] = 1;
-
-      // Calculate step from the spacing between numbers
-      if (count($optionRange) > 1) {
-        // Get the first difference between consecutive numbers
-        $step = $optionRange[1] - $optionRange[0];
-
-        // Verify that all differences are the same
-        for ($i = 1; $i < count($optionRange) - 1; $i++) {
-          $currentDiff = $optionRange[$i + 1] - $optionRange[$i];
-          if ($currentDiff != $step) {
-            // If differences aren't consistent, default to 1
-            $step = 1;
-            break;
-          }
-        }
-
-        $fieldInfo['input_attrs']['step'] = $step;
-      }
     }
 
     foreach ($fieldInfo as $name => $prop) {

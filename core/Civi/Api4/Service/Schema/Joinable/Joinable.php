@@ -113,11 +113,6 @@ class Joinable {
       $baseTableAlias = $openJoin['bridgeAlias'];
       $baseColumn = $openJoin['bridgeKey'];
     }
-    // Custom field on bridge table itself; pass-through the $baseColumn as-is
-    elseif (!empty($openJoin['bridgeKey']) && $baseTableAlias === $openJoin['bridgeAlias']) {
-      $conditions = $openJoin['bridgeCondition'];
-      $baseTableAlias = $openJoin['bridgeAlias'];
-    }
     if ($this->baseColumn && $this->targetColumn) {
       $conditions[] = sprintf(
         '`%s`.`%s` =  `%s`.`%s`',

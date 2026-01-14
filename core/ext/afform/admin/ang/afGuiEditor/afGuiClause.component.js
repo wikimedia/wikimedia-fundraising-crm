@@ -15,9 +15,9 @@
     },
     templateUrl: '~/afGuiEditor/afGuiClause.html',
     controller: function ($scope, $element) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
-        ctrl = this;
-
+      var ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
+        ctrl = this,
+        meta = {};
       this.conjunctions = {AND: ts('And'), OR: ts('Or'), NOT: ts('Not')};
       this.sortOptions = {
         axis: 'y',

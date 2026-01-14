@@ -10,7 +10,6 @@
  */
 
 use Civi\Api4\Contribution;
-use Civi\Payment\System;
 
 /**
  *
@@ -92,7 +91,7 @@ class CRM_Core_Payment_PayPalIPN {
     // make sure the invoice ids match
     // make sure the invoice is valid and matches what we have in the contribution record
     if ($contributionRecur->invoice_id != $input['invoice']) {
-      Civi::log('paypal_standard')->debug('PayPalIPN: Invoice values dont match between database and IPN request (RecurID: ' . $contributionRecur->id . ').');
+      Civi::log()->debug('PayPalIPN: Invoice values dont match between database and IPN request (RecurID: ' . $contributionRecur->id . ').');
       throw new CRM_Core_Exception("Failure: Invoice values dont match between database and IPN request");
     }
 
@@ -149,7 +148,7 @@ class CRM_Core_Payment_PayPalIPN {
         break;
 
       case 'subscr_modify':
-        Civi::log('paypal_standard')->debug('PayPalIPN: We do not handle modifications to subscriptions right now  (RecurID: ' . $contributionRecur->id . ').');
+        Civi::log()->debug('PayPalIPN: We do not handle modifications to subscriptions right now  (RecurID: ' . $contributionRecur->id . ').');
         echo 'Failure: We do not handle modifications to subscriptions right now<p>';
         return;
 
@@ -159,7 +158,7 @@ class CRM_Core_Payment_PayPalIPN {
       return;
     }
     if ($input['paymentStatus'] !== 'Completed') {
-      Civi::log('paypal_standard')->debug('PayPalIPN: Ignore all IPN payments that are not completed');
+      Civi::log()->debug('PayPalIPN: Ignore all IPN payments that are not completed');
       echo 'Failure: Invalid parameters<p>';
       return;
     }
@@ -170,7 +169,7 @@ class CRM_Core_Payment_PayPalIPN {
       $contribution = new CRM_Contribute_BAO_Contribution();
       $contribution->trxn_id = $input['trxn_id'];
       if ($contribution->trxn_id && $contribution->find()) {
-        Civi::log('paypal_standard')->debug('PayPalIPN: Returning since contribution has already been handled (trxn_id: ' . $contribution->trxn_id . ')');
+        Civi::log()->debug('PayPalIPN: Returning since contribution has already been handled (trxn_id: ' . $contribution->trxn_id . ')');
         echo 'Success: Contribution has already been handled<p>';
         return;
       }
@@ -203,14 +202,14 @@ class CRM_Core_Payment_PayPalIPN {
     $contribution = $this->getContribution();
     // make sure the invoice is valid and matches what we have in the contribution record
     if ($contribution->invoice_id != $input['invoice']) {
-      Civi::log('paypal_standard')->debug('PayPalIPN: Invoice values dont match between database and IPN request. (ID: ' . $contribution->id . ').');
+      Civi::log()->debug('PayPalIPN: Invoice values dont match between database and IPN request. (ID: ' . $contribution->id . ').');
       echo "Failure: Invoice values dont match between database and IPN request<p>";
       return;
     }
 
     if (!$recur) {
       if ($contribution->total_amount != $input['total_amount']) {
-        Civi::log('paypal_standard')->debug('PayPalIPN: Amount values dont match between database and IPN request. (ID: ' . $contribution->id . ').');
+        Civi::log()->debug('PayPalIPN: Amount values dont match between database and IPN request. (ID: ' . $contribution->id . ').');
         echo "Failure: Amount values dont match between database and IPN request<p>";
         return;
       }
@@ -222,7 +221,7 @@ class CRM_Core_Payment_PayPalIPN {
     // check if contribution is already completed, if so we ignore this ipn
     $completedStatusId = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
     if ($contribution->contribution_status_id == $completedStatusId) {
-      Civi::log('paypal_standard')->debug('PayPalIPN: Returning since contribution has already been handled. (ID: ' . $contribution->id . ').');
+      Civi::log()->debug('PayPalIPN: Returning since contribution has already been handled. (ID: ' . $contribution->id . ').');
       echo 'Success: Contribution has already been handled<p>';
       return;
     }
@@ -246,16 +245,10 @@ class CRM_Core_Payment_PayPalIPN {
       $this->getInput($input);
 
       $paymentProcessorID = $this->getPayPalPaymentProcessorID($input, $this->getContributionRecurID());
-      $paymentProcessor = System::singleton()->getById($paymentProcessorID);
 
-      Civi::log('paypal_standard')->debug('PayPalIPN: Received (ContactID: ' . $this->getContactID() . '; trxn_id: ' . $input['trxn_id'] . ').');
+      Civi::log()->debug('PayPalIPN: Received (ContactID: ' . $this->getContactID() . '; trxn_id: ' . $input['trxn_id'] . ').');
 
       $input['payment_processor_id'] = $paymentProcessorID;
-
-      if (!$paymentProcessor->verifyIPN()) {
-        Civi::log('paypal_standard')->warning('PayPalIPN: Verification failed; input {input}', ['input' => $input]);
-        return;
-      }
 
       if ($this->getContributionRecurID()) {
         $this->recur($input);
@@ -268,11 +261,11 @@ class CRM_Core_Payment_PayPalIPN {
           'cancel_date' => 'now',
           'contribution_status_id:name' => 'Failed',
         ])->addWhere('id', '=', $contributionID)->execute();
-        Civi::log('paypal_standard')->debug("Setting contribution status to Failed");
+        Civi::log()->debug("Setting contribution status to Failed");
         return;
       }
       if ($status === 'Pending') {
-        Civi::log('paypal_standard')->debug('Returning since contribution status is Pending');
+        Civi::log()->debug('Returning since contribution status is Pending');
         return;
       }
       if ($status === 'Refunded' || $status === 'Reversed') {
@@ -280,17 +273,17 @@ class CRM_Core_Payment_PayPalIPN {
           'cancel_date' => 'now',
           'contribution_status_id:name' => 'Cancelled',
         ])->addWhere('id', '=', $contributionID)->execute();
-        Civi::log('paypal_standard')->debug("Setting contribution status to Cancelled");
+        Civi::log()->debug("Setting contribution status to Cancelled");
         return;
       }
       if ($status !== 'Completed') {
-        Civi::log('paypal_standard')->debug('Returning since contribution status is not handled');
+        Civi::log()->debug('Returning since contribution status is not handled');
         return;
       }
       $this->single($input);
     }
     catch (CRM_Core_Exception $e) {
-      Civi::log('paypal_standard')->debug($e->getMessage() . ' input {input}', ['input' => $input]);
+      Civi::log()->debug($e->getMessage() . ' input {input}', ['input' => $input]);
       echo 'Invalid or missing data';
     }
   }
@@ -370,7 +363,7 @@ class CRM_Core_Payment_PayPalIPN {
     // entirely). The only thing the IPN class should really do is extract data from the request, validate it
     // & call completetransaction or call fail? (which may not exist yet).
 
-    Civi::log('paypal_standard')->warning('Unreliable method used to get payment_processor_id for PayPal IPN - this will cause problems if you have more than one instance');
+    Civi::log()->warning('Unreliable method used to get payment_processor_id for PayPal IPN - this will cause problems if you have more than one instance');
     // Then we try and retrieve based on business email ID
     $paymentProcessorTypeID = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_PaymentProcessorType', 'PayPal_Standard', 'id', 'name');
     $processorParams = [
@@ -443,7 +436,7 @@ class CRM_Core_Payment_PayPalIPN {
         throw new CRM_Core_Exception('Failure: Could not find contribution record for ' . (int) $this->contribution->id, NULL, ['context' => "Could not find contribution record: {$this->contribution->id} in IPN request: "]);
       }
       if ((int) $this->contribution->contact_id !== $this->getContactID()) {
-        Civi::log('paypal_standard')->debug("Contact ID in IPN not found but contact_id found in contribution.");
+        CRM_Core_Error::debug_log_message("Contact ID in IPN not found but contact_id found in contribution.");
       }
     }
     return $this->contribution;

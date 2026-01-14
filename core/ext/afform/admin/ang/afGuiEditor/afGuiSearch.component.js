@@ -9,8 +9,8 @@
     },
     require: {editor: '^^afGuiEditor'},
     controller: function ($scope, $timeout, afGui) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.afform_admin');
-      const ctrl = this;
+      var ts = $scope.ts = CRM.ts('org.civicrm.afform_admin');
+      var ctrl = this;
       $scope.controls = {};
       $scope.fieldList = [];
       $scope.calcFieldList = [];
@@ -28,7 +28,7 @@
       };
 
       this.buildPaletteLists = function() {
-        const search = $scope.controls.fieldSearch ? $scope.controls.fieldSearch.toLowerCase() : null;
+        var search = $scope.controls.fieldSearch ? $scope.controls.fieldSearch.toLowerCase() : null;
         buildCalcFieldList(search);
         buildFieldList(search);
         buildBlockList(search);
@@ -40,10 +40,10 @@
         if (fieldName.indexOf('.') < 0) {
           return ctrl.display.settings['saved_search_id.api_entity'];
         }
-        let alias = fieldName.split('.')[0],
+        var alias = fieldName.split('.')[0],
           entity;
         _.each(ctrl.display.settings['saved_search_id.api_params'].join, function(join) {
-          const joinInfo = join[0].split(' AS ');
+          var joinInfo = join[0].split(' AS ');
           if (alias === joinInfo[1]) {
             entity = joinInfo[0];
             return false;
@@ -53,7 +53,7 @@
       };
 
       function fieldDefaults(field, prefix) {
-        const tag = {
+        var tag = {
           "#tag": "af-field",
           name: prefix + field.name
         };
@@ -71,7 +71,7 @@
         $scope.calcFieldList.length = 0;
         $scope.calcFieldTitles.length = 0;
         _.each(_.cloneDeep(ctrl.display.settings.calc_fields), function(field) {
-          if (!search || field.label.toLowerCase().includes(search)) {
+          if (!search || _.contains(field.label.toLowerCase(), search)) {
             $scope.calcFieldList.push(fieldDefaults(field, ''));
             $scope.calcFieldTitles.push(field.label);
           }
@@ -82,12 +82,8 @@
         $scope.blockList.length = 0;
         $scope.blockTitles.length = 0;
         _.each(afGui.meta.blocks, function(block, directive) {
-          if (!search ||
-            directive.includes(search) ||
-            block.name.toLowerCase().includes(search) ||
-            block.title.toLowerCase().includes(search)
-          ) {
-            const item = {"#tag": directive};
+          if (!search || _.contains(directive, search) || _.contains(block.name.toLowerCase(), search) || _.contains(block.title.toLowerCase(), search)) {
+            var item = {"#tag": directive};
             $scope.blockList.push(item);
             $scope.blockTitles.push(block.title);
           }
@@ -107,10 +103,7 @@
 
         function filterFields(fields, prefix) {
           return _.transform(fields, function(fieldList, field) {
-            if (!search ||
-              field.name.includes(search) ||
-              field.label.toLowerCase().includes(search)
-            ) {
+            if (!search || _.contains(field.name, search) || _.contains(field.label.toLowerCase(), search)) {
               fieldList.push(fieldDefaults(field, prefix));
             }
           }, []);
@@ -122,10 +115,10 @@
         $scope.elementTitles.length = 0;
         _.each(afGui.meta.elements, function(element, name) {
           if (
-            (!element.afform_type || element.afform_type.includes('search')) &&
-            (!search || name.includes(search) || element.title.toLowerCase().includes(search))
+            (!element.afform_type || _.contains(element.afform_type, 'search')) &&
+            (!search || _.contains(name, search) || _.contains(element.title.toLowerCase(), search))
           ) {
-            const node = _.cloneDeep(element.element);
+            var node = _.cloneDeep(element.element);
             $scope.elementList.push(node);
             $scope.elementTitles.push(element.title);
           }
@@ -143,7 +136,7 @@
 
       // Checks if a field is on the form or set as a filter
       this.fieldInUse = function(fieldName) {
-        if (ctrl.filters.some(filter => filter.name === fieldName)) {
+        if (_.findIndex(ctrl.filters, {name: fieldName}) >= 0) {
           return true;
         }
         return !!getElement(ctrl.display.fieldset['#children'], {'#tag': 'af-field', name: fieldName});
@@ -155,9 +148,9 @@
         if (block['af-join']) {
           return !!getElement(ctrl.display.fieldset['#children'], {'af-join': block['af-join']});
         }
-        const fieldsInBlock = _.pluck(afGui.findRecursive(afGui.meta.blocks[block['#tag']].layout, {'#tag': 'af-field'}), 'name');
+        var fieldsInBlock = _.pluck(afGui.findRecursive(afGui.meta.blocks[block['#tag']].layout, {'#tag': 'af-field'}), 'name');
         return !!getElement(ctrl.display.fieldset['#children'], function(item) {
-          return item['#tag'] === 'af-field' && fieldsInBlock.includes(item.name);
+          return item['#tag'] === 'af-field' && _.includes(fieldsInBlock, item.name);
         });
       };
 
@@ -167,7 +160,7 @@
         if (!found) {
           found = {};
         }
-        const match = _.find(group, criteria);
+        var match = _.find(group, criteria);
         if (match) {
           found.match = match;
           return match;
@@ -201,7 +194,7 @@
 
       // Respond to changing a filter field name
       this.onChangeFilter = function(index) {
-        const filter = ctrl.filters[index];
+        var filter = ctrl.filters[index];
         // Clear filter
         if (!filter.name) {
           ctrl.filters.splice(index, 1);

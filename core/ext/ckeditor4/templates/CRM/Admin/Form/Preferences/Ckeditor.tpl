@@ -4,9 +4,9 @@
     CRM.$(function($) {
       $('#ckeditor_config').appendTo($('#editor_id').parent());
       function showCKEditorConfig() {
-        $('#ckeditor_config').css('visibility', $(this).val() == 'CKEditor' ? 'visible' : 'hidden');
+        $('.crm-preferences-display-form-block-editor_id .crm-button').toggle($(this).val() == 'CKEditor');
       }
-      $(':input[name=editor_id]').each(showCKEditorConfig).change(showCKEditorConfig);
+      $('select[name=editor_id]').each(showCKEditorConfig).change(showCKEditorConfig);
     });
   </script>
 {/literal}

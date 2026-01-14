@@ -23,11 +23,11 @@ class SKEntityGenerator {
    *   Basic API request
    * @param array $settings
    *   The settings from the SearchDisplay record.
-   * @return string
-   *   SQL query string
+   * @return \Civi\Api4\Query\Api4SelectQuery
+   *   A prepared query
    * @throws \Civi\API\Exception\NotImplementedException
    */
-  public function createQuery(string $realEntity, array $realParams, array $settings): string {
+  public function createQuery(string $realEntity, array $realParams, array $settings): Api4SelectQuery {
     $apiParams = $realParams;
     // Add orderBy to api params
     foreach ($settings['sort'] ?? [] as $item) {
@@ -47,17 +47,7 @@ class SKEntityGenerator {
     $api = Request::create($realEntity, 'get', $apiParams);
     $query = new Api4SelectQuery($api);
     $query->forceSelectId = FALSE;
-    $sql = $query->getSql();
-
-    // Fix any column names that exceed the max length
-    foreach ($settings['columns'] as $column) {
-      if (strlen($column['key']) > Meta::MAX_COLUMN_LENGTH) {
-        $shortAlias = Meta::createSqlName($column['key'])[0];
-        $sql = str_replace("`{$column['key']}`", "`$shortAlias`", $sql);
-      }
-    }
-
-    return $sql;
+    return $query;
   }
 
 }

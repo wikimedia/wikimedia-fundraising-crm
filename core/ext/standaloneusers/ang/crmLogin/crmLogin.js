@@ -9,38 +9,12 @@
     controller: function($scope, $window, $timeout, crmApi4, crmStatus) {
       var ts = $scope.ts = CRM.ts('standaloneusers');
 
-      this.loading = true;
-      this.loggedInAs = null;
-
-      let rememberJWT = localStorage.getItem('rememberJWT');
-      this.rememberMe = !!rememberJWT;
-      this.mfa_remember = CRM.vars.standalone.mfa_remember;
+      this.loading = false;
 
       this.forgottenPasswordUrl = CRM.url('civicrm/login/password');
 
-      this.logoutUrl = CRM.url('civicrm/logout');
-      this.$onInit = () => {
-        if (CRM.config.cid) {
-          return crmApi4('Contact', 'get', {
-            select: ['display_name'],
-            where: [['id', '=', CRM.config.cid]],
-          })
-          .then((result) => this.loggedInAs = ts('Logged in as %1.', {1: result[0].display_name}))
-          .then(() => this.loading = false);
-        }
-        else {
-          this.loading = false;
-        }
-      };
-
       this.canSubmit = () => {
         return this.identifier && this.password && !this.loading;
-      };
-      this.rememberMeChanged = () => {
-        if (!this.rememberMe) {
-          // Immediately remove the JWT if user de-selects.
-          localStorage.removeItem('rememberJWT');
-        }
       };
 
       this.attemptLogin = () => {
@@ -57,22 +31,13 @@
 
         let publicError = ts('Unexpected error');
 
-        if (!this.rememberMe) {
-          // They have chosen not to remember, so clear any existing thing now.
-          localStorage.removeItem('rememberJWT');
-          rememberJWT = null;
-        }
-
         crmApi4('User', 'login', {
           identifier: this.identifier,
           password: this.password,
-          originalUrl,
-          rememberMe: this.rememberMe,
-          rememberJWT
+          originalUrl
         })
         .then((response) => {
           if (response.url) {
-            // Success.
             $window.location = response.url;
             return;
           }

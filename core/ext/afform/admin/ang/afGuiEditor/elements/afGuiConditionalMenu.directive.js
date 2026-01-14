@@ -10,7 +10,7 @@
         node: '<afGuiConditionalMenu'
       },
       controller: function($scope) {
-        const ts = CRM.ts('org.civicrm.afform_admin'),
+        var ts = CRM.ts('org.civicrm.afform_admin'),
           ctrl = this;
       }
     };

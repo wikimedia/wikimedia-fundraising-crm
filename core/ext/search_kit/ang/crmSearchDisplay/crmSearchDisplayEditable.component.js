@@ -2,6 +2,8 @@
 (function(angular, $, _) {
   "use strict";
 
+  var optionsCache = {};
+
   angular.module('crmSearchDisplay').component('crmSearchDisplayEditable', {
     bindings: {
       row: '<?',

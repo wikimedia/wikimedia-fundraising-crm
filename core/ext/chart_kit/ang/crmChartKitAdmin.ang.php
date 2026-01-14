@@ -10,7 +10,7 @@ return [
   ],
   'partials' => [
     'ang/crmChartKitAdmin',
-    'ang/crmChartKitAdmin/typeBackends',
+    'ang/crmChartKitAdmin/chartTypes',
   ],
   'requires' => [
     'crmSearchAdmin',

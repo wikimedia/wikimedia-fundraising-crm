@@ -2,8 +2,6 @@
 
 namespace Civi\Riverlea;
 
-use Civi\Core\Event\GenericHookEvent;
-use Civi\Core\Service\AutoService;
 use CRM_riverlea_ExtensionUtil as E;
 
 /**
@@ -14,13 +12,14 @@ use CRM_riverlea_ExtensionUtil as E;
  *
  * @service riverlea.style_loader
  */
-class StyleLoader extends AutoService implements \Symfony\Component\EventDispatcher\EventSubscriberInterface {
+class StyleLoader implements \Symfony\Component\EventDispatcher\EventSubscriberInterface, \Civi\Core\Service\AutoServiceInterface {
+
+  use \Civi\Core\Service\AutoServiceTrait;
 
   public const DYNAMIC_FILE = 'river.css';
 
   public const CORE_FILES = [
     '_variables.css',
-    '_fonts.css',
     '_base.css',
     '_cms.css',
     'components/_accordion.css',
@@ -100,14 +99,11 @@ class StyleLoader extends AutoService implements \Symfony\Component\EventDispatc
     }
   }
 
-  public function alterBundles(GenericHookEvent $e): void {
+  public function alterBundles($e): void {
     if (!$this->isActive()) {
       return;
     }
 
-    /**
-     * @var \CRM_Core_Resources_Bundle
-     */
     $bundle = $e->bundle;
 
     if ($bundle->name === 'bootstrap3') {
@@ -128,10 +124,6 @@ class StyleLoader extends AutoService implements \Symfony\Component\EventDispatc
       $j = count(self::CORE_FILES);
       foreach (self::CORE_FILES as $i => $file) {
         $bundle->addStyleFile('riverlea', "core/css/{$file}", ['weight' => -100 + ($i / $j)]);
-      }
-      if (\CRM_Utils_Request::retrieve('safe_css', 'Boolean')) {
-        // safe mode - dont load dynamic styles
-        return;
       }
       // get the URL for dynamic css asset (aka "the river")
       $riverUrl = \Civi::service('asset_builder')->getUrl(
@@ -165,14 +157,10 @@ class StyleLoader extends AutoService implements \Symfony\Component\EventDispatc
     $streamMeta = $this->getAvailableStreamMeta()[$stream] ?? [];
     $streamModified = $streamMeta['modified_date'] ?? NULL;
 
-    $isFrontend = \CRM_Utils_System::isFrontendPage();
-    $darkMode = $isFrontend ? \Civi::settings()->get('riverlea_dark_mode_frontend') : \Civi::settings()->get('riverlea_dark_mode_backend');
-
     return [
       'stream' => $stream,
       'modified' => $streamModified,
-      'is_frontend' => $isFrontend,
-      'dark_mode' => $darkMode,
+      'is_frontend' => \CRM_Utils_System::isFrontendPage(),
     ];
   }
 
@@ -197,41 +185,6 @@ class StyleLoader extends AutoService implements \Symfony\Component\EventDispatc
       ->first();
 
     $e->content = $render['content'] ?? '';
-  }
-
-  /**
-   * Validate the font size setting: it should be a floating
-   * point number (CSS font size in rem)
-   */
-  public static function validateFontSize($value):bool {
-    $fontSize = \CRM_Utils_Type::validate($value, 'Float', FALSE);
-    if ($fontSize < 0.5 || $fontSize > 2) {
-      return FALSE;
-    }
-    return TRUE;
-  }
-
-  /**
-   * Get font size setting and add a variable for it
-   * to the CSS properties of every stream
-   */
-  public static function onChangeFontsize($oldValue, $newValue, $metadata) {
-    if ($oldValue != $newValue) {
-      $fontSize = floatval($newValue);
-      // Get current CSS properties for every stream
-      $riverleaStreams = \Civi\Api4\RiverleaStream::get(TRUE)
-        ->addSelect('vars')
-        ->execute();
-      // Add new font size to each stream as a CSS property
-      foreach ($riverleaStreams as $riverleaStream) {
-        $riverleaStream['vars']['--crm-font-size'] = $fontSize . "rem";
-        // Write the new value to the CSS vars of each stream
-        $results = \Civi\Api4\RiverleaStream::update(TRUE)
-          ->addValue('vars', $riverleaStream['vars'])
-          ->addWhere('id', '=', $riverleaStream['id'])
-          ->execute();
-      }
-    }
   }
 
 }

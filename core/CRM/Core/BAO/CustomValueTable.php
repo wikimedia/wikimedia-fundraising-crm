@@ -9,8 +9,6 @@
  +--------------------------------------------------------------------+
  */
 
-use Civi\Api4\Utils\CoreUtil;
-
 /**
  *
  * @package CRM
@@ -137,7 +135,7 @@ class CRM_Core_BAO_CustomValueTable {
               break;
 
             case 'EntityReference':
-              $type = self::getDataTypeForField($field['custom_field_id'], $type);
+              $type = 'Integer';
               // An empty value should be stored as NULL
               if (!$value) {
                 $type = 'Timestamp';
@@ -150,24 +148,14 @@ class CRM_Core_BAO_CustomValueTable {
               break;
 
             case 'Boolean':
-              if ($field['html_type'] === 'Toggle') {
-                $value = (int) $value;
-              }
-              else {
-                // fix for CRM-3290
-                $value = CRM_Utils_String::strtoboolstr($value);
-              }
+              //fix for CRM-3290
+              $value = CRM_Utils_String::strtoboolstr($value);
               if ($value === FALSE) {
                 $type = 'Timestamp';
               }
               break;
 
             default:
-              // An empty value should be stored as NULL
-              if (!isset($value) || $value === '') {
-                $type = 'Timestamp';
-                $value = NULL;
-              }
               break;
           }
           if ($value === 'null') {
@@ -237,76 +225,15 @@ class CRM_Core_BAO_CustomValueTable {
   }
 
   /**
-   * Most entities have an Int id field, but non-database ones
-   *   eg. Afform have a String "name" field as primary key
-   *
-   * @param string $entityName
-   *
-   * @return string
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\NotImplementedException
-   */
-  public static function getDataTypeForPrimaryKey(string $entityName): string {
-    $primaryKey = CoreUtil::getIdFieldName($entityName);
-    $type = 'Integer';
-    // Todo: Maybe we shouldn't assume every field named "id" is an integer
-    if ($primaryKey && $primaryKey !== 'id') {
-      // Todo: Use Civi::entity() once Afform is converted to EFv2
-      $type = civicrm_api4($entityName, 'getFields', [
-        'where' => [
-          ['name', '=', $primaryKey],
-        ],
-        'checkPermissions' => FALSE,
-        'select' => [
-          'data_type',
-        ],
-      ], 0)['data_type'] ?? $type;
-    }
-    return $type;
-  }
-
-  /**
-   * Get the actual data type for a customField based on the entity metadata
-   *
-   * @param int $customFieldID
-   * @param string $type
-   *
-   * @return string
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\NotImplementedException
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  public static function getDataTypeForField(int $customFieldID, string $type): string {
-    if ($type !== 'EntityReference') {
-      return $type;
-    }
-    $customField = CRM_Core_BAO_CustomField::getField($customFieldID);
-    if (!isset($customField)) {
-      return 'Integer';
-    }
-    return self::getDataTypeForPrimaryKey($customField['fk_entity']);
-  }
-
-  /**
    * Given a field return the mysql data type associated with it.
    *
    * @param string $type
    * @param int|null $maxLength
-   * @param bool $isSerialized (serialized fields must always have a textual mysql field)
-   * @param string|null $fkEntity The entity that the CustomField (CustomGroup) extends. eg. Activity
    *
    * @return string
    *   the mysql data store placeholder
    */
-  public static function fieldToSQLType(string $type, $maxLength = NULL, bool $isSerialized = FALSE, ?string $fkEntity = NULL) {
-    if ($fkEntity) {
-      $type = self::getDataTypeForPrimaryKey($fkEntity);
-    }
-
-    if ($isSerialized) {
-      // Always use 'text' for serialized fields as their length cannot be known
-      return 'text';
-    }
+  public static function fieldToSQLType(string $type, $maxLength = NULL) {
     switch ($type) {
       case 'String':
         $maxLength = $maxLength ?: 255;
@@ -325,7 +252,7 @@ class CRM_Core_BAO_CustomValueTable {
         return 'int';
 
       // the below three are FK's, and have constraints added to them
-      case 'Integer':
+
       case 'ContactReference':
       case 'EntityReference':
       case 'StateProvince':
@@ -370,7 +297,6 @@ class CRM_Core_BAO_CustomValueTable {
           'entity_id' => $entityID,
           'value' => $customValue['value'],
           'type' => $customValue['type'],
-          'html_type' => $customValue['html_type'],
           'custom_field_id' => $customValue['custom_field_id'],
           'custom_group_id' => $customValue['custom_group_id'],
           'table_name' => $customValue['table_name'],
@@ -416,13 +342,12 @@ class CRM_Core_BAO_CustomValueTable {
    * Post process function.
    *
    * @param array $params
-   * @param string $entityTable
+   * @param $entityTable
    * @param int $entityID
-   * @param ?string $customFieldExtends
-   *   Can be null for multivalued fields
-   * @param ?string $parentOperation
+   * @param $customFieldExtends
+   * @param $parentOperation
    */
-  public static function postProcess(array &$params, string $entityTable, int $entityID, ?string $customFieldExtends, ?string $parentOperation = NULL) {
+  public static function postProcess(&$params, $entityTable, $entityID, $customFieldExtends, $parentOperation = NULL) {
     $customData = CRM_Core_BAO_CustomField::postProcess($params,
       $entityID,
       $customFieldExtends
@@ -590,13 +515,8 @@ class CRM_Core_BAO_CustomValueTable {
       $dataType = $fieldInfo['data_type'] == 'Date' ? 'Timestamp' : $fieldInfo['data_type'];
       foreach ($fieldVals as $fieldValue) {
         // Serialize array values
-        $isSerialized = CRM_Core_BAO_CustomField::isSerialized($fieldInfo);
-        if (is_array($fieldValue['value']) && $isSerialized) {
+        if (is_array($fieldValue['value']) && CRM_Core_BAO_CustomField::isSerialized($fieldInfo)) {
           $fieldValue['value'] = CRM_Utils_Array::implodePadded($fieldValue['value']);
-        }
-        if ($isSerialized) {
-          // Serialized numbers are stored as value-separated strings
-          $dataType = 'String';
         }
         // Format null values correctly
         if ($fieldValue['value'] === NULL || $fieldValue['value'] === '') {
@@ -636,7 +556,6 @@ class CRM_Core_BAO_CustomValueTable {
           'entity_id' => $params['entityID'],
           'value' => $fieldValue['value'],
           'type' => $dataType,
-          'html_type' => $fieldInfo['html_type'],
           'custom_field_id' => $fieldInfo['id'],
           'custom_group_id' => $fieldInfo['custom_group']['id'],
           'table_name' => $fieldInfo['custom_group']['table_name'],

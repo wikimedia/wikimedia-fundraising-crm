@@ -83,7 +83,7 @@ $items = [
 
 $roles = \Civi\Api4\Role::get(FALSE)
   ->addSelect('name', 'label')
-  ->addWhere('name', '!=', CRM_Standaloneusers_BAO_Role::SUPERADMIN_ROLE_NAME)
+  ->addWhere('name', '!=', 'admin')
   ->execute()
   ->column('label', 'name');
 

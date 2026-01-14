@@ -325,13 +325,13 @@ class FormattingUtil {
    * @throws \CRM_Core_Exception
    */
   public static function getPseudoconstantList(array $field, string $fieldAlias, $values = [], $action = 'get') {
-    $valueType = self::getSuffix($fieldAlias);
+    $valueType = FormattingUtil::getSuffix($fieldAlias);
     // For create actions, only unique identifiers can be used.
     // For get actions any valid suffix is ok.
     if (!$valueType || ($action === 'create' && !isset(self::$pseudoConstantContexts[$valueType]))) {
       throw new \CRM_Core_Exception('Illegal expression');
     }
-    $fieldPath = self::removeSuffix($fieldAlias);
+    $fieldPath = FormattingUtil::removeSuffix($fieldAlias);
 
     $entityValues = self::filterByPath($values, $fieldPath, $field['name']);
     try {

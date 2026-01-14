@@ -528,9 +528,6 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
         if (empty($extra['maxDate']) && !empty($dateAttributes['minYear'])) {
           $extra['maxDate'] = $dateAttributes['maxYear'] . '-12-31';
         }
-        if (!empty($dateAttributes['time'])) {
-          $extra['time'] = $dateAttributes['time'];
-        }
       }
       // Support minDate/maxDate properties
       if (isset($extra['minDate'])) {
@@ -1438,34 +1435,6 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
   }
 
   /**
-   * @param string $name
-   * @param string $title
-   * @param array $attributes
-   * @param bool $required
-   * @return HTML_QuickForm_Element
-   */
-  public function addToggle(string $name, string $title, array $attributes = [], bool $required = FALSE) {
-    $attributes += [
-      'on' => ts('Yes'),
-      'off' => ts('No'),
-      'class' => '',
-    ];
-    $attributes['class'] = ltrim($attributes['class'] . ' crm-form-toggle');
-    $options = array_intersect_key($attributes, ['on' => 1, 'off' => 1]);
-    unset($attributes['on'], $attributes['off']);
-    $toggleText = '';
-    foreach ($options as $key => $value) {
-      $value = htmlspecialchars($value);
-      $toggleText .= "<span class='crm-form-toggle-text crm-form-toggle-text-{$key}'>{$value}</span>";
-    }
-    $element = $this->addElement('advcheckbox', $name, $title, $toggleText, $attributes);
-    if ($required) {
-      $this->addRule($name, ts('%1 is a required field.', [1 => $title]), 'required');
-    }
-    return $element;
-  }
-
-  /**
    * @param int $id
    * @param string $title
    * @param array $values
@@ -1765,12 +1734,18 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
    *   - multiple - bool
    *   - context - @see CRM_Core_DAO::buildOptionsContext
    * @param bool $required
+   * @param bool $legacyDate
+   *   Temporary param to facilitate the conversion of fields to use the datepicker in
+   *   a controlled way. To convert the field the jcalendar code needs to be removed from the
+   *   tpl as well. That file is intended to be EOL.
    *
+   * @throws \CRM_Core_Exception
+   * @throws \Exception
    * @return mixed
    *   HTML_QuickForm_element
    *   void
    */
-  public function addField($name, $props = [], $required = FALSE) {
+  public function addField($name, $props = [], $required = FALSE, $legacyDate = TRUE) {
     // Resolve context.
     if (empty($props['context'])) {
       $props['context'] = $this->getDefaultContext();
@@ -1878,9 +1853,19 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
         return $this->add('textarea', $name, $label, $props, $required);
 
       case 'Select Date':
-        $fieldSpec = CRM_Utils_Date::addDateMetadataToField($fieldSpec, $fieldSpec);
-        $attributes = ['format' => $fieldSpec['date_format']];
-        return $this->add('datepicker', $name, $label, $attributes, $required, $fieldSpec['datepicker']['extra']);
+        // This is a white list for fields that have been tested with
+        // date picker. We should be able to remove the other
+        if ($legacyDate) {
+          //TODO: add range support
+          //TODO: Add date formats
+          //TODO: Add javascript template for dates.
+          return $this->addDate($name, $label, $required, $props);
+        }
+        else {
+          $fieldSpec = CRM_Utils_Date::addDateMetadataToField($fieldSpec, $fieldSpec);
+          $attributes = ['format' => $fieldSpec['date_format']];
+          return $this->add('datepicker', $name, $label, $attributes, $required, $fieldSpec['datepicker']['extra']);
+        }
 
       case 'Radio':
         $separator = $props['separator'] ?? NULL;
@@ -1924,9 +1909,6 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
         $text = $props['text'] ?? NULL;
         unset($props['text']);
         return $this->addElement('advcheckbox', $name, $label, $text, $props);
-
-      case 'Toggle':
-        return $this->addToggle($name, $label, $props, $required);
 
       case 'File':
         // We should not build upload file in search mode.
@@ -2174,7 +2156,7 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
       'select' => [],
     ];
     $props['api'] += [
-      'formName' => 'qf:' . get_class($this) . ':' . ($this->_id ?? $this->_contactId ?? ''),
+      'formName' => 'qf:' . get_class($this),
     ];
     // If fieldName is missing and no default entity is set for the form, this will throw an excption.
     // In that case, you should explicitly supply api.fieldName in the format `EntityName.field_name`

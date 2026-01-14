@@ -18,7 +18,7 @@
     },
     templateUrl: '~/crmSearchAdmin/crmSearchClause.html',
     controller: function ($scope, $element, searchMeta, crmUiHelp) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
+      var ts = $scope.ts = CRM.ts('org.civicrm.search_kit'),
         ctrl = this,
         functionCache = {},
         meta = {};
@@ -40,7 +40,7 @@
       // Gets the first arg of type "field"
       function getFirstArgFromExpr(expr) {
         if (!(expr in meta)) {
-          const args = searchMeta.parseExpr(expr).args;
+          var args = searchMeta.parseExpr(expr).args;
           meta[expr] = _.findWhere(args, {type: 'field'});
         }
         return meta[expr] || {};
@@ -72,7 +72,7 @@
       };
 
       this.getOptionKey = function(expr) {
-        const arg = getFirstArgFromExpr(expr);
+        var arg = getFirstArgFromExpr(expr);
         return arg.suffix ? arg.suffix.slice(1) : 'id';
       };
 
@@ -95,7 +95,7 @@
 
       // Indent clause while dragging between nested groups
       function onSortOver(event, ui) {
-        let offset = 0;
+        var offset = 0;
         if (ui.sender) {
           offset = $(ui.placeholder).offset().left - $(ui.sender).offset().left;
         }
@@ -104,6 +104,7 @@
 
       this.addClause = function(value) {
         if (value) {
+          var newIndex = ctrl.clauses.length;
           ctrl.clauses.push([value, '=', '']);
         }
       };

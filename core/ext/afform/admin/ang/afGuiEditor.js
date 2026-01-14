@@ -7,8 +7,7 @@
 
       // Parse strings of javascript that php couldn't interpret
       // TODO: Figure out which attributes actually need to be evaluated, as a whitelist would be less error-prone than a blacklist
-      const doNotEval = ['filters'];
-
+      var doNotEval = ['filters'];
       function evaluate(collection) {
         _.each(collection, function(item) {
           if (_.isPlainObject(item)) {
@@ -37,55 +36,35 @@
       }
 
       function getStyles(node) {
-        // Return empty object if node has no style
-        if (!node || !node.style) {
-          return {};
-        }
-
-        // Parse styles into an object
-        return node.style
-          .split(';')
-          .reduce((styles, style) => {
-            // Skip empty styles
-            if (!style.trim()) {
-              return styles;
-            }
-
-            // Split into key-value pairs and trim whitespace
-            const [key, value] = style.split(':').map(item => item.trim());
-
-            // Only add valid styles (must have both key and value)
-            if (value && value.length > 0) {
-              styles[key] = value;
-            }
-
-            return styles;
-          }, {});
+        return !node || !node.style ? {} : _.transform(node.style.split(';'), function(styles, style) {
+          var keyVal = _.map(style.split(':'), _.trim);
+          if (keyVal.length > 1 && keyVal[1].length) {
+            styles[keyVal[0]] = keyVal[1];
+          }
+        }, {});
       }
 
       function setStyle(node, name, val) {
-        const styles = getStyles(node);
+        var styles = getStyles(node);
         styles[name] = val;
         if (!val) {
           delete styles[name];
         }
-        if (Object.keys(styles).length === 0) {
+        if (_.isEmpty(styles)) {
           delete node.style;
         } else {
-          node.style = Object.entries(styles)
-            .map(([name, val]) => `${name}: ${val}`)
-            .join('; ');
+          node.style = _.transform(styles, function(combined, val, name) {
+            combined.push(name + ': ' + val);
+          }, []).join('; ');
         }
       }
 
       // Turns a space-separated list (e.g. css classes) into an array
       function splitClass(str) {
-        if (Array.isArray(str)) {
+        if (_.isArray(str)) {
           return str;
         }
-        return str ?
-          [...new Set(str.trim().split(/\s+/g))] :
-          [];
+        return str ? _.unique(_.trim(str).split(/\s+/g)) : [];
       }
 
       // Check if a node has class(es)
@@ -93,15 +72,13 @@
         if (!node['class']) {
           return false;
         }
-        const classes = splitClass(node['class']);
-        const classNames = className.split(' ');
-
-        // Check if all classNames exist in classes array
-        return classNames.every(className => classes.includes(className));
+        var classes = splitClass(node['class']),
+          classNames = className.split(' ');
+        return _.intersection(classes, classNames).length === classNames.length;
       }
 
       function modifyClasses(node, toRemove, toAdd) {
-        let classes = splitClass(node['class']);
+        var classes = splitClass(node['class']);
         if (toRemove) {
           classes = _.difference(classes, splitClass(toRemove));
         }
@@ -196,7 +173,7 @@
         getEntity: getEntity,
 
         getField: function(entityName, fieldName) {
-          const fields = CRM.afGuiEditor.entities[entityName].fields;
+          var fields = CRM.afGuiEditor.entities[entityName].fields;
           return fields[fieldName] || fields[fieldName.substr(fieldName.indexOf('.') + 1)];
         },
 
@@ -205,9 +182,9 @@
         },
 
         getAllSearchDisplays: function() {
-          const links = [];
-          const searchNames = [];
-          const deferred = $q.defer();
+          var links = [],
+            searchNames = [],
+            deferred = $q.defer();
           // Non-aggregated query will return the same search multiple times - once per display
           crmApi4('SavedSearch', 'get', {
             select: ['name', 'label', 'display.name', 'display.label', 'display.type:name', 'display.type:icon'],
@@ -215,9 +192,9 @@
             join: [['SearchDisplay AS display', 'LEFT', ['id', '=', 'display.saved_search_id']]],
             orderBy: {'label':'ASC'}
           }).then(function(searches) {
-            searches.forEach(search => {
+            _.each(searches, function(search) {
               // Add default display for each search (track searchNames in a var to just add once per search)
-              if (!searchNames.includes(search.name)) {
+              if (!_.includes(searchNames, search.name)) {
                 searchNames.push(search.name);
                 links.push({
                   key: search.name,
@@ -312,10 +289,10 @@
         // Recursively searches a collection and its children using _.filter
         // Returns an array of all matches, or an object if the indexBy param is used
         findRecursive: function findRecursive(collection, predicate, indexBy) {
-          const items = _.filter(collection, predicate);
+          var items = _.filter(collection, predicate);
           _.each(collection, function(item) {
             if (_.isPlainObject(item) && item['#children']) {
-              const childMatches = findRecursive(item['#children'], predicate);
+              var childMatches = findRecursive(item['#children'], predicate);
               if (childMatches.length) {
                 Array.prototype.push.apply(items, childMatches);
               }
@@ -328,10 +305,9 @@
         // Will recurse into block elements
         // Will stop recursing when it encounters an element matching 'exclude'
         getFormElements: function getFormElements(collection, predicate, exclude) {
-          let childMatches = [];
-          let items = _.filter(collection, predicate);
-          let isExcluded = exclude ? (_.isFunction(exclude) ? exclude : _.matches(exclude)) : _.constant(false);
-
+          var childMatches = [],
+            items = _.filter(collection, predicate),
+            isExcluded = exclude ? (_.isFunction(exclude) ? exclude : _.matches(exclude)) : _.constant(false);
           function isIncluded(item) {
             return !isExcluded(item);
           }
@@ -437,7 +413,7 @@
         },
 
         pickIcon: function() {
-          const deferred = $q.defer();
+          var deferred = $q.defer();
           $('#af-gui-icon-picker').off('change').siblings('.crm-icon-picker-button').click();
           $('#af-gui-icon-picker').on('change', function() {
             deferred.resolve($(this).val());

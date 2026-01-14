@@ -24,7 +24,7 @@ return [
     'group' => 'core',
     'name' => 'installed',
     'type' => 'Boolean',
-    'html_type' => 'toggle',
+    'quick_form_type' => 'YesNo',
     'default' => FALSE,
     'add' => '4.7',
     'title' => ts('System Installed'),
@@ -45,7 +45,8 @@ return [
     'title' => ts('Enable Components'),
     'is_domain' => 0,
     'is_contact' => 0,
-    'validate_callback' => 'CRM_Core_Component::validateComponents',
+    'description' => NULL,
+    'help_text' => NULL,
     'on_change' => [
       'CRM_Case_Info::onToggleComponents',
       'CRM_Core_Component::preToggleComponents',

@@ -10,8 +10,15 @@ class Utils {
         continue;
       }
 
-      // remove Hide Menu and View My Contact
-      $item['child'] = array_filter($item['child'], fn ($subitem) => !in_array($subitem['attributes']['name'], ['Hide Menu', 'View My Contact']));
+      // use /civicrm/home rather than /civicrm/dashboard
+      foreach ($item['child'] as &$subitem) {
+        if ($subitem['attributes']['name'] === 'CiviCRM Home') {
+          $subitem['attributes']['url'] = 'civicrm/home?reset=1';
+        }
+      }
+
+      // remove hide menu
+      $item['child'] = array_filter($item['child'], fn ($subitem) => ($subitem['attributes']['name'] !== 'Hide Menu'));
 
       // Add My Account.
       $item['child'][] = [

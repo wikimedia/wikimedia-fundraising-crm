@@ -28,7 +28,6 @@ class Get extends \Civi\Api4\Generic\BasicGetAction {
       }
       $result[] = [
         'key' => $behaviorClass::getKey(),
-        'attributes' => $behaviorClass::getAttributes(),
         'title' => $behaviorClass::getTitle(),
         'description' => $behaviorClass::getDescription(),
         'entities' => $entities,

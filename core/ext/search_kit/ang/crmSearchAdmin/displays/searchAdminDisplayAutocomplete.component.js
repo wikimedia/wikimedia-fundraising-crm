@@ -23,7 +23,7 @@
             sort: ctrl.parent.getDefaultSort(),
             columns: []
           };
-          const searchFields = searchMeta.getEntity(ctrl.apiEntity).search_fields || [];
+          var searchFields = searchMeta.getEntity(ctrl.apiEntity).search_fields || [];
           searchFields.push('description');
           searchFields.forEach((field) => {
             if (_.includes(ctrl.parent.savedSearch.api_params.select, field)) {

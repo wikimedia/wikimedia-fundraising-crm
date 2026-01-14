@@ -99,7 +99,7 @@ trait Api3TestTrait {
    * @param string $prefix
    *   Extra test to add to message.
    */
-  public function assertAPISuccess($apiResult, $prefix = ''): void {
+  public function assertAPISuccess($apiResult, $prefix = '') {
     if (!empty($prefix)) {
       $prefix .= ': ';
     }
@@ -122,9 +122,10 @@ trait Api3TestTrait {
    * @param array $params
    * @param string $expectedErrorMessage
    *   Error.
-   * @return array
+   * @param null $extraOutput
+   * @return array|int
    */
-  public function callAPIFailure($entity, $action, $params = [], $expectedErrorMessage = NULL): array {
+  public function callAPIFailure($entity, $action, $params = [], $expectedErrorMessage = NULL, $extraOutput = NULL) {
     if (is_array($params)) {
       $params += [
         'version' => $this->_apiversion,
@@ -260,12 +261,18 @@ trait Api3TestTrait {
    *
    * @param string $entity
    * @param array $params
-   * @param string|null $type
-   *   Only 'integer' is supported
+   * @param string $type
+   *   Per http://php.net/manual/en/function.gettype.php possible types.
+   *   - boolean
+   *   - integer
+   *   - double
+   *   - string
+   *   - array
+   *   - object
    *
-   * @return mixed
+   * @return array|int
    */
-  public function callAPISuccessGetValue(string $entity, array $params, ?string $type = NULL): mixed {
+  public function callAPISuccessGetValue($entity, $params, $type = NULL) {
     $params += [
       'version' => $this->_apiversion,
     ];
@@ -276,10 +283,10 @@ trait Api3TestTrait {
     if ($type) {
       if ($type === 'integer') {
         // api seems to return integers as strings
-        $this->assertIsNumeric($result, "expected a numeric value but got " . print_r($result, 1));
+        $this->assertTrue(is_numeric($result), "expected a numeric value but got " . print_r($result, 1));
       }
       else {
-        $this->fail("Unsupported type '$type' for callAPISuccessGetValue");
+        $this->assertType($type, $result, "returned result should have been of type $type but was ");
       }
     }
     return $result;
@@ -288,13 +295,12 @@ trait Api3TestTrait {
   /**
    * A stub for the API interface. This can be overriden by subclasses to change how the API is called.
    *
-   * @param string $entity
-   * @param string $action
+   * @param $entity
+   * @param $action
    * @param array $params
-   * @return mixed
-   * @throws \CRM_Core_Exception
+   * @return array|int
    */
-  public function civicrm_api(string $entity, string $action, array $params = []): mixed {
+  public function civicrm_api($entity, $action, $params = []) {
     if (($params['version'] ?? 0) == 4) {
       return $this->runApi4Legacy($entity, $action, $params);
     }
@@ -540,19 +546,13 @@ trait Api3TestTrait {
     // Build where clause for 'getcount', 'getsingle', 'getvalue', 'get' & 'replace'
     if ($v4Action == 'get' || $v3Action == 'replace') {
       foreach ($v3Params as $key => $val) {
-        if ($key === 'orderBy') {
-          $v4Params[$key] = $val;
-          $indexBy = NULL;
-        }
-        else {
-          $op = '=';
-          if (is_array($val) && count($val) == 1 && array_intersect_key($val, array_flip(\CRM_Core_DAO::acceptedSQLOperators()))) {
-            foreach ($val as $op => $newVal) {
-              $val = $newVal;
-            }
+        $op = '=';
+        if (is_array($val) && count($val) == 1 && array_intersect_key($val, array_flip(\CRM_Core_DAO::acceptedSQLOperators()))) {
+          foreach ($val as $op => $newVal) {
+            $val = $newVal;
           }
-          $v4Params['where'][] = [$key, $op, $val];
         }
+        $v4Params['where'][] = [$key, $op, $val];
       }
     }
 

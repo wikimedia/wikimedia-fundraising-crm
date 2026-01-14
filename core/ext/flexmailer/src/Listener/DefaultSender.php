@@ -47,11 +47,7 @@ class DefaultSender extends AutoService {
         continue;
       }
 
-      $params = $task->getMailParams();
-      if (isset($params['abortMailSend']) && $params['abortMailSend']) {
-        continue;
-      }
-      $message = \Civi\FlexMailer\MailParams::convertMailParamsToMime($params);
+      $message = \Civi\FlexMailer\MailParams::convertMailParamsToMime($task->getMailParams());
 
       if (empty($message)) {
         // lets keep the message in the queue

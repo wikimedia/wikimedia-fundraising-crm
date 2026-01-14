@@ -174,14 +174,20 @@ class BasicGetFieldsAction extends BasicGetAction {
     if (!empty($field['pseudoconstant']['optionGroupName'])) {
       $field['suffixes'] = CoreUtil::getOptionValueFields($field['pseudoconstant']['optionGroupName']);
     }
-    // no need to load options, or no way to do so
     if (!$this->loadOptions || (!$optionsExist && empty($field['pseudoconstant']))) {
       $field['options'] = (bool) $field['options'];
       return;
     }
-    // need to load options AND either options already exist or a pseudoconstant is defined)
     if (!empty($field['pseudoconstant'])) {
-      $field['options'] = $this->getPseudoconstantOptions($field);
+      if (!empty($field['pseudoconstant']['optionGroupName'])) {
+        $field['options'] = self::pseudoconstantOptions($field['pseudoconstant']['optionGroupName']);
+      }
+      elseif (!empty($field['pseudoconstant']['callback'])) {
+        $field['options'] = call_user_func(\Civi\Core\Resolver::singleton()->get($field['pseudoconstant']['callback']), $field['name'], ['values' => $this->getValues()]);
+      }
+      else {
+        throw new \CRM_Core_Exception('Unsupported pseudoconstant type for field "' . $field['name'] . '"');
+      }
     }
     $field['options'] = CoreUtil::formatOptionList($field['options'], $this->loadOptions);
   }
@@ -215,92 +221,23 @@ class BasicGetFieldsAction extends BasicGetAction {
   }
 
   /**
-   * Resolve pseudoconstant options
+   * Helper function to retrieve options from an option group (for non-DAO entities).
    *
-   * @param array $field
-   * @throws \CRM_Core_Exception
+   * @param string $optionGroupName
    */
-  protected function getPseudoconstantOptions(array $field): array {
-    if (!empty($field['pseudoconstant']['optionGroupName'])) {
-      return $this->getOptionValues($field['pseudoconstant']['optionGroupName']);
-    }
-    if (!empty($field['pseudoconstant']['callback'])) {
-      return $this->getCallbackOptions($field);
-    }
-    throw new \CRM_Core_Exception('Unsupported pseudoconstant type for field "' . $field['name'] . '"');
-  }
-
-  private function getCallbackOptions(array $field): array {
-    // first inspect the callback to see whether it varies based on row values or not
-    $cacheKey = $this->getCallbackCacheKey($field);
-    if ($cacheKey) {
-      $cacheValue = $cacheKey ? \Civi::cache('metadata')->get($cacheKey) : NULL;
-      if (is_array($cacheValue)) {
-        return $cacheValue;
+  public function pseudoconstantOptions(string $optionGroupName) {
+    if ($this->getLoadOptions()) {
+      $key = __CLASS__ . __FUNCTION__ . $optionGroupName;
+      if (empty(\Civi::$statics[$key])) {
+        $options = \CRM_Core_OptionValue::getValues( [ 'name' => $optionGroupName ] );
+        foreach ( $options as &$option ) {
+          $option['id'] = $option['value'];
+        }
+        \Civi::$statics[$key] = $options;
       }
+      return \Civi::$statics[$key];
     }
-    $args = [$field['name'], ['values' => $this->getValues()]];
-    $value = \Civi\Core\Resolver::singleton()->call($field['pseudoconstant']['callback'], $args);
-    if ($cacheKey) {
-      \Civi::cache('metadata')->set($cacheKey, $value);
-    }
-    return $value;
-  }
-
-  private function getCallbackCacheKey($field): ?string {
-    $reflector = \Civi\Core\Resolver::singleton()->getReflector($field['pseudoconstant']['callback']);
-    // we need to stringify the callback itself - depends on why
-    $callbackName = match ($reflector::class) {
-      'ReflectionMethod' => "{$reflector->class}::{$reflector->name}",
-      default => NULL,
-    };
-    // if we dont know how to stringify the callback then we cant cache
-    if (!$callbackName) {
-      return NULL;
-    }
-    switch ($reflector->getNumberOfParameters()) {
-      case 0:
-        // no args are passed, can cache using just the callback name
-        return implode('_', [\CRM_Core_Config::domainID(), \CRM_Core_I18n::getLocale(), 'pseudoconstantCallback', $callbackName]);
-
-      case 1:
-        // callback takes field name, include that in the cache key
-        return implode('_', [\CRM_Core_Config::domainID(), \CRM_Core_I18n::getLocale(), 'pseudoconstantCallback', $callbackName, $field['name']]);
-
-      default:
-        // callback takes row values - dont attempt to cache
-        return NULL;
-    };
-    if ($cacheKeyParts) {
-      return implode('_', $cacheKeyParts);
-    }
-
-  }
-
-  private function getOptionValues(string $optionGroupName): array {
-    $cacheKey = implode('_', [
-      \CRM_Core_Config::domainID(),
-      \CRM_Core_I18n::getLocale(),
-      'optionGroup',
-      $optionGroupName,
-    ]);
-    $options = \Civi::cache('metadata')->get($cacheKey);
-
-    if (!is_array($options)) {
-      $options = $this->fetchOptionValues($optionGroupName);
-      \Civi::cache('metadata')->set($cacheKey, $options);
-    }
-
-    return $options;
-  }
-
-  private function fetchOptionValues(string $optionGroupName): array {
-    $optionGroupId = \CRM_Core_DAO::getFieldValue('CRM_Core_DAO_OptionGroup', $optionGroupName, 'id', 'name');
-    $select = CoreUtil::getOptionValueFields($optionGroupName);
-    unset($select['id'], $select['value']);
-    array_unshift($select, 'value AS id');
-    $query = "SELECT " . implode(', ', $select) . " FROM civicrm_option_value WHERE option_group_id = %1 ORDER BY weight";
-    return \CRM_Core_DAO::executeQuery($query, [1 => [$optionGroupId, 'Int']])->fetchAll();
+    return TRUE;
   }
 
   public function fields() {
@@ -411,7 +348,6 @@ class BasicGetFieldsAction extends BasicGetAction {
           'Select' => ts('Select'),
           'Text' => ts('Single-Line Text'),
           'TextArea' => ts('Multi-Line Text'),
-          'Toggle' => ts('Toggle Switch'),
           'Url' => ts('URL'),
         ],
       ],

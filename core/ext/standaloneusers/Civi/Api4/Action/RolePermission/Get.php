@@ -12,7 +12,6 @@
 namespace Civi\Api4\Action\RolePermission;
 
 use Civi\Api4\Generic\BasicGetAction;
-use CRM_Standaloneusers_BAO_Role;
 
 class Get extends BasicGetAction {
 
@@ -23,7 +22,7 @@ class Get extends BasicGetAction {
       ->execute()->indexBy('name');
     $roles = \Civi\Api4\Role::get(FALSE)
       ->addSelect('name', 'permissions')
-      ->addWhere('name', '!=', CRM_Standaloneusers_BAO_Role::SUPERADMIN_ROLE_NAME)
+      ->addWhere('name', '!=', 'admin')
       ->execute()->column('permissions', 'name');
     $result = [];
     foreach ($permissions as $permissionName => $permission) {

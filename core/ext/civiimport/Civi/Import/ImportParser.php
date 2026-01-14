@@ -241,8 +241,7 @@ abstract class ImportParser extends \CRM_Import_Parser {
    */
   protected function getAllContactFields(string $prefix = 'Contact.'): array {
     $allContactFields = (array) Contact::getFields()
-      // Exclude readonly fields, except for the id
-      ->addClause('OR', ['readonly', '=', FALSE], ['name', '=', 'id'])
+      ->addWhere('readonly', '=', FALSE)
       ->addWhere('usage', 'CONTAINS', 'import')
       ->addWhere('fk_entity', 'IS EMPTY')
       ->setAction('save')
@@ -250,8 +249,7 @@ abstract class ImportParser extends \CRM_Import_Parser {
       ->execute()->indexBy('name');
 
     $contactTypeFields['Individual'] = (array) Contact::getFields()
-      // Exclude readonly fields, except for the id
-      ->addClause('OR', ['readonly', '=', FALSE], ['name', '=', 'id'])
+      ->addWhere('readonly', '=', FALSE)
       ->addWhere('usage', 'CONTAINS', 'import')
       ->addWhere('fk_entity', 'IS EMPTY')
       ->setAction('save')
@@ -261,8 +259,7 @@ abstract class ImportParser extends \CRM_Import_Parser {
       ->execute()->indexBy('name');
 
     $contactTypeFields['Organization'] = (array) Contact::getFields()
-      // Exclude readonly fields, except for the id
-      ->addClause('OR', ['readonly', '=', FALSE], ['name', '=', 'id'])
+      ->addWhere('readonly', '=', FALSE)
       ->addWhere('usage', 'CONTAINS', 'import')
       ->addWhere('fk_entity', 'IS EMPTY')
       ->setAction('save')
@@ -272,8 +269,7 @@ abstract class ImportParser extends \CRM_Import_Parser {
       ->execute()->indexBy('name');
 
     $contactTypeFields['Household'] = (array) Contact::getFields()
-      // Exclude readonly fields, except for the id
-      ->addClause('OR', ['readonly', '=', FALSE], ['name', '=', 'id'])
+      ->addWhere('readonly', '=', FALSE)
       ->addWhere('usage', 'CONTAINS', 'import')
       ->addWhere('fk_entity', 'IS EMPTY')
       ->setAction('save')
@@ -294,8 +290,7 @@ abstract class ImportParser extends \CRM_Import_Parser {
     }
 
     $addressFields = (array) Address::getFields()
-      // Exclude readonly fields, except for the id
-      ->addClause('OR', ['readonly', '=', FALSE], ['name', '=', 'id'])
+      ->addWhere('readonly', '=', FALSE)
       ->addWhere('usage', 'CONTAINS', 'import')
       ->setAction('save')
       ->addOrderBy('title')
@@ -311,8 +306,7 @@ abstract class ImportParser extends \CRM_Import_Parser {
     }
 
     $phoneFields = (array) Phone::getFields()
-      // Exclude readonly fields, except for the id
-      ->addClause('OR', ['readonly', '=', FALSE], ['name', '=', 'id'])
+      ->addWhere('readonly', '=', FALSE)
       ->addWhere('usage', 'CONTAINS', 'import')
       ->setAction('save')
       // Exclude these fields to keep it simpler for now - we just map to primary
@@ -327,8 +321,7 @@ abstract class ImportParser extends \CRM_Import_Parser {
     }
 
     $emailFields = (array) Email::getFields()
-      // Exclude readonly fields, except for the id
-      ->addClause('OR', ['readonly', '=', FALSE], ['name', '=', 'id'])
+      ->addWhere('readonly', '=', FALSE)
       ->addWhere('usage', 'CONTAINS', 'import')
       ->setAction('save')
       // Exclude these fields to keep it simpler for now - we just map to primary
@@ -575,10 +568,10 @@ abstract class ImportParser extends \CRM_Import_Parser {
         $contactID = array_key_first($possibleMatches);
       }
       elseif (count($possibleMatches) > 1) {
-        throw new \CRM_Core_Exception(ts('Record duplicates multiple contacts:') . ' ' . implode(',', $possibleMatches));
+        throw new \CRM_Core_Exception(ts('Record duplicates multiple contacts: ') . implode(',', $possibleMatches));
       }
       elseif (!in_array($action, ['create', 'ignore', 'save'], TRUE)) {
-        throw new \CRM_Core_Exception(ts('No matching %1 found', [1 => $entity]));
+        throw new \CRM_Core_Exception(ts('No matching %1 found', [$entity, 'String']));
       }
     }
     if ($contactID && !isset($contactParams['is_deleted']) && $this->getExistingContactValue($contactID, 'is_deleted')) {

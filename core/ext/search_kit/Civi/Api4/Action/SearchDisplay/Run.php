@@ -108,13 +108,7 @@ class Run extends AbstractRunAction {
         }
     }
 
-    try {
-      $apiResult = civicrm_api4($entityName, 'get', $apiParams, $index);
-    }
-    catch (\Throwable $e) {
-      \Civi::log()->error("SearchDisplay.Run error: " . get_class($e) . ": {$entityName}.get: [display_id] " . $this->display['id'] . ' [saved_search_id] ' . $this->display['saved_search_id'] . ' [label] ' . $this->display['label'] . ' [error] ' . $e->getMessage());
-      throw $e;
-    }
+    $apiResult = civicrm_api4($entityName, 'get', $apiParams, $index);
     // Copy over meta properties to this result
     $result->rowCount = $apiResult->rowCount;
     $result->debug = $apiResult->debug;

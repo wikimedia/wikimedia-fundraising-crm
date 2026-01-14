@@ -52,11 +52,10 @@ trait Api4TestTrait {
    * @param string $entityName
    * @param array|string|int $idOrFilters
    *   Either the entity id or filters like ['name' => 'foo']
-   * @param array $select
    * @return array
    * @throws \CRM_Core_Exception
    */
-  public function getTestRecord(string $entityName, array|string|int $idOrFilters, array $select = []): array {
+  public function getTestRecord(string $entityName, $idOrFilters): array {
     if (!is_array($idOrFilters)) {
       $idField = CoreUtil::getIdFieldName($entityName);
       $idOrFilters = [$idField => $idOrFilters];
@@ -65,11 +64,7 @@ trait Api4TestTrait {
     foreach ($idOrFilters as $key => $value) {
       $where[] = [$key, '=', $value];
     }
-    return civicrm_api4($entityName, 'get', [
-      'select' => $select,
-      'checkPermissions' => FALSE,
-      'where' => $where,
-    ])->single();
+    return civicrm_api4($entityName, 'get', ['where' => $where])->single();
   }
 
   /**

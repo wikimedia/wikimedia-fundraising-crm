@@ -4,7 +4,6 @@ namespace Civi\Api4;
 
 use Civi\Api4\Action\OAuthClient\Create;
 use Civi\Api4\Action\OAuthClient\Update;
-use Civi\Api4\Generic\Traits\ManagedEntity;
 
 /**
  * OAuthClient entity.
@@ -14,8 +13,6 @@ use Civi\Api4\Generic\Traits\ManagedEntity;
  * @package Civi\Api4
  */
 class OAuthClient extends Generic\DAOEntity {
-
-  use ManagedEntity;
 
   public static function create($checkPermissions = TRUE) {
     $action = new Create(static::class, __FUNCTION__);

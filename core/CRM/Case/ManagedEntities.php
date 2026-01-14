@@ -37,16 +37,13 @@ class CRM_Case_ManagedEntities {
           'name' => $caseType['name'],
           'entity' => 'CaseType',
           'params' => [
-            'version' => 4,
-            'values' => [
-              'name' => $caseType['name'],
-              'title' => (string) $xml->name,
-              'description' => (string) $xml->description,
-              'is_reserved' => TRUE,
-              'is_active' => TRUE,
-              'weight' => $xml->weight ?: 1,
-            ],
-            'match' => ['name'],
+            'version' => 3,
+            'name' => $caseType['name'],
+            'title' => (string) $xml->name,
+            'description' => (string) $xml->description,
+            'is_reserved' => 1,
+            'is_active' => 1,
+            'weight' => $xml->weight ?: 1,
           ],
         ];
       }
@@ -78,15 +75,12 @@ class CRM_Case_ManagedEntities {
         'update' => 'never',
         'cleanup' => 'unused',
         'params' => [
-          'version' => 4,
-          'values' => [
-            'option_group_id.name' => 'activity_type',
-            'label' => $actType,
-            'name' => $actType,
-            'description' => $actType,
-            'component_id.name' => 'CiviCase',
-          ],
-          'match' => ['option_group_id', 'name'],
+          'version' => 3,
+          'option_group_id' => 'activity_type',
+          'label' => $actType,
+          'name' => $actType,
+          'description' => $actType,
+          'component_id' => 'CiviCase',
         ],
       ];
 
@@ -140,19 +134,16 @@ class CRM_Case_ManagedEntities {
         'update' => 'never',
         'cleanup' => 'unused',
         'params' => [
-          'version' => 4,
-          'values' => [
-            'name_a_b' => "$relType is",
-            'name_b_a' => $relType,
-            'label_a_b' => "$relType is",
-            'label_b_a' => $relType,
-            'description' => $relType,
-            'contact_type_a' => NULL,
-            'contact_type_b' => NULL,
-            'contact_sub_type_a' => NULL,
-            'contact_sub_type_b' => NULL,
-          ],
-          'match' => ['name_a_b', 'name_b_a'],
+          'version' => 3,
+          'name_a_b' => "$relType is",
+          'name_b_a' => $relType,
+          'label_a_b' => "$relType is",
+          'label_b_a' => $relType,
+          'description' => $relType,
+          'contact_type_a' => NULL,
+          'contact_type_b' => NULL,
+          'contact_sub_type_a' => NULL,
+          'contact_sub_type_b' => NULL,
         ],
       ];
 

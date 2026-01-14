@@ -1,22 +1,22 @@
 /* Form parts */
 .crm-container div.crm-field-wrapper {
-  margin-bottom: var(--crm-l-reg);
+  margin-bottom: var(--crm-r);
 }
 .crm-section {
-  padding: var(--crm-l-small);
+  padding: var(--crm-s);
 }
 .crm-container table.form-layout td,
 .crm-container table.form-layout-compressed td,
 .crm-form-block .crm-section {
-  padding: var(--crm-l-medium) var(--crm-l-small-2);
+  padding: var(--crm-m) var(--crm-s2);
   border: none !important /* vs contactSummary.css */;
   height: auto;
   vertical-align: top;
 }
 .crm-container div.form-layout-compressed {
   display: flex;
-  gap: var(--crm-l-small);
-  padding: var(--crm-l-reg) 0;
+  gap: var(--crm-s);
+  padding: var(--crm-r) 0;
   align-items: center;
 }
 .crm-container .crm-results-block-empty {
@@ -29,9 +29,8 @@
 .crm-container .selector td.label,
 .crm-container .form-layout-compressed th.label {
   width: var(--crm-input-label-width);
-  min-width: var(--crm-input-label-width);
   text-align: var(--crm-input-label-align);
-  margin: var(--crm-l-medium) var(--crm-l-medium-2) 0 0;
+  margin: var(--crm-m) var(--crm-m2) 0 0;
   font-family: var(--crm-input-label-font);
   font-weight: var(--crm-input-label-weight);
   display: table-cell;
@@ -41,7 +40,7 @@
   text-align: left;
   font-family: var(--crm-input-label-font);
   font-weight: var(--crm-input-label-weight);
-  padding-right: var(--crm-l-medium-2);
+  padding-right: var(--crm-m2);
 }
 .crm-container .label > label { /* Fix for dble label specification */
   padding-right: 0;
@@ -69,7 +68,7 @@
   font-weight: var(--crm-input-label-weight);
   font-size: var(--crm-input-label-size);
   display: inline-block;
-  margin-bottom: var(--crm-l-small);
+  margin-bottom: var(--crm-s);
 }
 .crm-container .form-layout td.label label {
   margin-bottom: 0;
@@ -89,38 +88,38 @@
   margin-bottom: var(--crm-flex-gap);
 }
 .crm-container .crm-marker {
-  color: var(--crm-notify-danger-color);
+  color: var(--crm-notify-danger);
 }
 .crm-container .form-inline {
-  padding: var(--crm-l-small) 0;
+  padding: var(--crm-s) 0;
 }
 .crm-search-display .form-inline {
   padding: var(--crm-padding-reg) 0;
 }
 /* Fieldset */
 .crm-container fieldset {
-  border: var(--crm-border);
+  border: var(--crm-c-divider);
 }
 .crm-container fieldset:not(.collapsed,
 .crm-collapsible,
 .crm-inactive-dashlet-fieldset,
 .crm-search-admin-edit-columns) {
-  padding: var(--crm-form-fieldset-padding);
+  padding: var(--crm-fieldset-padding);
   margin: var(--crm-padding-reg) 0;
-  border: 1px solid var(--crm-form-fieldset-border-color);
-  border-width: var(--crm-form-fieldset-border);
+  border: 1px solid var(--crm-fieldset-border-color);
+  border-width: var(--crm-fieldset-border);
 }
 .crm-container fieldset legend {
   font-weight: bold;
-  padding-inline: var(--crm-l-small);
-  color: var(--crm-text-color);
+  padding-inline: var(--crm-s);
+  color: var(--crm-c-text);
 }
 
 /* Required Mark */
 .crm-container .required-mark::after {
-  color: var(--crm-danger-color);
+  color: var(--crm-c-danger);
   content: "*";
-  margin-left: var(--crm-l-small);
+  margin-left: var(--crm-s);
 }
 /* Input */
 
@@ -137,22 +136,22 @@ select.crm-form-select,
 .crm-container .ui-widget input,
 .crm-container select,
 .ui-datepicker .ui-datepicker-header select {
-  transition: var(--crm-input-active-transition);
+  transition: var(--crm-input-active-ani);
   font-size: var(--crm-input-font-size);
-  background-color: var(--crm-input-bg-color);
+  background-color: var(--crm-input-background);
   border-radius: var(--crm-input-border-radius);
   box-shadow: var(--crm-input-box-shadow);
   color: var(--crm-input-color);
   border: 1px solid var(--crm-input-border-color);
   padding: var(--crm-input-padding);
   height: var(--crm-input-height);
-  width: var(--crm-input-width);
+  width: var(--crm-big-input);
   font-family: inherit; /* for extra JQuery UI protection */
 }
 .crm-container .replace-plain,
 .crm-container textarea,
 select.crm-form-multiselect {
-  padding: var(--crm-input-large-padding);
+  padding: var(--crm-input-padding-large);
   height: auto;
   min-height: var(--crm-input-height);
   width: 100%;
@@ -163,8 +162,8 @@ select.crm-form-multiselect {
   border: 1px solid var(--crm-c-darkest);
 }
 .crm-container .replace-plain {
-  background-color: var(--crm-input-bg-color);
-  min-width: var(--crm-input-large-width);
+  background-color: var(--crm-c-background3);
+  min-width: var(--crm-huge-input);
 }
 input.crm-form-text:focus,
 input.crm-form-password:focus,
@@ -178,18 +177,18 @@ select.crm-form-select:focus,
 .crm-container select[aria-controls]:focus,
 .crm-container .select2-container-active *:focus,
 .crm-container .select2-container-active a.select2-choice {
-  border-color: var(--crm-focus-color);
+  border-color: var(--crm-c-focus);
   outline: 0;
   box-shadow: none;
 }
 .crm-container input.error,
 input.crm-error,
 select.crm-error {
-  border-color: var(--crm-danger-color);
+  border-color: var(--crm-c-danger);
 }
 .crm-container :focus,
 .crm-container .ui-dialog :focus {
-  border-color: var(--crm-focus-color);
+  border-color: var(--crm-c-focus);
   box-shadow: none;
 }
 .crm-container input.crm-placeholder-icon::placeholder {
@@ -197,7 +196,7 @@ select.crm-error {
   text-align: right;
 }
 .crm-icon-picker-button {
-  margin: 0 0 var(--crm-l-small);
+  margin: 0 0 var(--crm-s);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -207,63 +206,6 @@ select.crm-error {
 .crm-container select.crm-form-select {
   width: auto; /* resets fixed width on input field with browser default */
   min-width: auto !important /* vs front.css */;
-}
-
-/* Toggle Inputs */
-
-.crm-container .crm-form-toggle-container {
-  display: flex;
-  flex-flow: row nowrap;
-  align-items: center;
-  grid-gap: var(--crm-l-medium-2);
-
-  & input[type="checkbox"].crm-form-toggle {
-    appearance: none;
-    position: relative;
-    font-size: inherit;
-    width: var(--crm-input-toggle-width);
-    height: var(--crm-input-toggle-height);
-    box-sizing: content-box;
-    border-radius: 1rem;
-    vertical-align: text-bottom;
-    color: inherit;
-    border: 2px solid var(--crm-input-toggle-disabled-bg);
-    background-color: var(--crm-input-toggle-disabled-bg);
-    transition: 0.1s;
-  }
-
-  & input[type="checkbox"].crm-form-toggle::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translate(0, -50%);
-    box-sizing: border-box;
-    width: 1.25rem;
-    height: 1.25rem;
-    margin: 0 var(--crm-l-xsmall-2);
-    border-radius: 50%;
-    border: 1px solid var(--crm-input-toggle-button-bg);
-    background: var(--crm-input-toggle-button-bg);
-    -webkit-transition: 0.1s;
-    transition: 0.1s;
-  }
-  & input[type="checkbox"].crm-form-toggle:checked {
-    border: 2px solid var(--crm-input-toggle-enabled-bg);
-    background-color: var(--crm-input-toggle-enabled-bg);
-  }
-  & input[type="checkbox"].crm-form-toggle:checked::before {
-    left: 1.2rem;
-  }
-  & input[type="checkbox"].crm-form-toggle:disabled {
-    opacity: 0.4;
-  }
-  & input[type="checkbox"]:not(:checked) ~ .crm-form-toggle-text-on {
-    display: none;
-  }
-  & input[type="checkbox"]:checked ~ .crm-form-toggle-text-off {
-    display: none;
-  }
 }
 
 /* Inline edit */
@@ -285,15 +227,15 @@ select.crm-error {
   padding: var(--crm-padding-small);
 }
 .crm-container .crm-editable-form [type="submit"] {
-  color: var(--crm-success-color) !important;
+  color: var(--crm-c-success) !important;
 }
 .crm-container .crm-editable-form [type="cancel"] {
-  color: var(--crm-danger-color) !important;
+  color: var(--crm-c-danger) !important;
 }
 .crm-container .crm-inline-edit,
 .crm-container .crm-editable-disabled,
 .crm-container .crm-editable-enabled {
-  border: var(--crm-contact-edit-border);
+  border: var(--crm-dash-edit-border);
   border-color: transparent;
   background: none;
   position: relative;
@@ -303,8 +245,8 @@ select.crm-error {
 }
 .crm-container .crm-inline-edit:hover,
 .crm-container .crm-editable-enabled:hover {
-  border: var(--crm-contact-edit-border);
-  cursor: var(--crm-link-hover-cursor);
+  border: var(--crm-dash-edit-border);
+  cursor: var(--crm-hover-clickable);
 }
 .crm-container .crm-editable-enabled.crm-editable-editing:hover {
   border-color: transparent;
@@ -313,8 +255,8 @@ select.crm-error {
 .crm-container span.crm-editable-disabled,
 .crm-container span.crm-editable-enabled {
   display: inline-block;
-  padding-right: var(--crm-l-small);
-  min-height: var(--crm-l-reg);
+  padding-right: var(--crm-s);
+  min-height: var(--crm-r);
 }
 .crm-container .crm-editable-enabled .crm-i,
 .crm-editable-enabled:has(span.crm-search-field-value:empty) {
@@ -364,8 +306,8 @@ input.crm-form-radio + label,
 input.crm-form-checkbox + label,
 .crm-container input[type="checkbox"] + label[for],
 .crm-container input[type="radio"] + label[for] {
-  margin: 0 var(--crm-l-medium) 0 var(--crm-l-small);
-  cursor: var(--crm-link-hover-cursor);
+  margin: 0 var(--crm-m) 0 var(--crm-s);
+  cursor: var(--crm-hover-clickable);
   width: unset;
   font-weight: normal;
   font-family: var(--crm-font);
@@ -379,54 +321,45 @@ input.crm-form-checkbox + label,
   height: auto;
   box-shadow: none;
 }
-/* Checkbox/radio fields with n-per-line. */
+/* Checkbox/radio fields with n-per-line. See https://lab.civicrm.org/dev/core/-/issues/4985 */
 .crm-container .crm-multiple-checkbox-radio-options {
-  --crm-gap: 0.5em;
-  --crm-checkbox-width: 1.5em;
+  --gap: 1em;
+  --checkbox-width: 2em;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--crm-gap);
+  gap: var(--gap);
 }
-/* Reset checkbox width when its rendered as text '(x)' in confirmations */
+/* Reset checkbox width when its rendered as text '(x)' in confirmation screens /dev/core/-/issues/5550 */
 .crm-container.crm-public .crm-profile-view .crm-option-label-pair {
-  --crm-checkbox-width: auto;
-}
-/* Stacks label for checkbox/radio on contact layout custom field sets */
-.crm-container .contact_panel tr:is(.custom_field-row,.custom_field-help-pre-row) {
-  display: flex;
-  flex-direction: column;
-}
-.crm-container .contact_panel .custom_field-row td.label {
-  white-space: normal;
-  width: 100%;
-  text-align: left;
+  --checkbox-width: auto;
 }
 /* Override more general styling */
 .crm-container .crm-multiple-checkbox-radio-options :where(input.crm-form-radio,
 input.crm-form-checkbox) + label {
-  margin: 0 !important /* vs L309 */;
-  padding: 0;
-  white-space: initial;
+  margin-left: 0;
 }
 .crm-container .crm-multiple-checkbox-radio-options .crm-option-label-pair {
   display: grid;
-  grid-template-columns: var(--crm-checkbox-width) 1fr;
+  grid-template-columns: var(--checkbox-width) 1fr;
   align-items: baseline;
 }
 .crm-container .crm-multiple-checkbox-radio-options.crm-options-per-line .crm-option-label-pair {
-  flex: 0 0 calc((100% - (var(--crm-opts-per-line) - 1) * var(--crm-gap)) / var(--crm-opts-per-line));
+  flex: 0 0 calc((100% - (var(--crm-opts-per-line) - 1) * var(--gap)) / var(--crm-opts-per-line));
+}
+/* Slider */
+.crm-container .ui-slider {
+  background: var(--crm-c-background4);
+}
+.crm-container .ui-slider .ui-slider-handle {
+  border: 0;
+  background: var(--crm-c-background5);
 }
 
 /* Input types */
 
 .crm-container input[type="file"] {
   height: auto;
-  padding: var(--crm-l-small);
-}
-.crm-container input[type="range"] {
-  accent-color: var(--crm-focus-color);
-  height: auto;
-  box-shadow: none;
+  padding: var(--crm-s);
 }
 
 /* Contact dashboard form */
@@ -445,7 +378,7 @@ input.crm-form-checkbox) + label {
 }
 /* Set width using !important to override the inline fixed width given by select2.js */
 .crm-container .select2-container {
-  width: var(--crm-input-width) !important /* vs inline fixed width */;
+  width: var(--crm-big-input) !important /* vs inline fixed width */;
 }
 .crm-container .select2-container-multi {
   min-width: 96px;
@@ -453,7 +386,7 @@ input.crm-form-checkbox) + label {
 .crm-container select.form-control,
 .crm-container .select2-container-multi .select2-choices,
 .crm-container .select2-container .select2-choice {
-  background: var(--crm-input-bg-color);
+  background: var(--crm-input-background);
   border: 1px solid var(--crm-input-border-color);
   border-radius: var(--crm-input-border-radius);
   box-shadow: var(--crm-input-box-shadow);
@@ -469,7 +402,7 @@ input.crm-form-checkbox) + label {
   background: transparent;
   border-left: 0;
   border-radius: 0 var(--crm-input-border-radius) var(--crm-input-border-radius) 0;
-  width: var(--crm-l-reg-3);
+  width: var(--crm-r3);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -480,18 +413,18 @@ input.crm-form-checkbox) + label {
 .select2-container.select2-allowclear .select2-choice abbr {
   position: relative;
   margin-left: auto;
-  right: var(--crm-l-reg);
+  right: var(--crm-r);
   top: auto;
 }
 .crm-container .select2-container .select2-choice > .select2-chosen {
-  margin-right: var(--crm-l-reg-2);
+  margin-right: var(--crm-m2);
 }
 .crm-container .select2-container-multi .select2-choices::before,
 .crm-container .select2-container .select2-choice .select2-arrow::before {
   font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome";
   font-style: normal;
   text-rendering: auto;
-  color: var(--crm-text-color);
+  color: var(--crm-c-text);
   background: none;
   content: var(--crm-input-dropdown-icon);
 }
@@ -503,7 +436,7 @@ input.crm-form-checkbox) + label {
 .crm-container .select2-dropdown-open .select2-choices {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  border-color: var(--crm-focus-color);
+  border-color: var(--crm-c-focus);
   box-shadow: none;
 }
 .crm-container .select2-container-multi .select2-choices .select2-search-field input {
@@ -519,29 +452,29 @@ input.crm-form-checkbox) + label {
   color: var(--crm-input-color) !important /* vs important in select2.min.css */;
 }
 .crm-container .select2-default .select2-chosen { /* intended to target placeholder text */
-  color: var(--crm-inactive-color);
+  color: var(--crm-c-inactive);
 }
 .crm-container .select2-container-multi .select2-choices .select2-search-field input.select2-default {
   color: var(--crm-input-color);
 }
 .select2-container-disabled a {
   box-shadow: none;
-  background: var(--crm-layer1-bg-color);
+  background: var(--crm-c-page-background);
 }
 .select2-container-disabled .select2-arrow {
   background: transparent;
 }
 .crm-container .select2-container.select2-container-disabled .select2-choice {
-  background-color: var(--crm-container-bg-color);
-  border: 1px dotted var(--crm-inactive-color);
+  background-color: var(--crm-c-background);
+  border: 1px dotted var(--crm-c-inactive);
   cursor: default;
 }
 .select2-container.select2-container-disabled .select2-choice .select2-arrow {
   border-left: 0;
-  background: var(--crm-container-bg-color);
+  background: var(--crm-c-background);
 }
 .select2-results .select2-disabled {
-  background: var(--crm-layer1-bg-color);
+  background: var(--crm-c-background2);
   cursor: not-allowed;
 }
 .select2-results .select2-disabled > * {
@@ -550,8 +483,8 @@ input.crm-form-checkbox) + label {
 .crm-container .select2-container-multi .select2-choices {
   display: flex;
   flex-flow: wrap;
-  gap: var(--crm-l-small);
-  padding: 2px var(--crm-l-small);
+  gap: var(--crm-s);
+  padding: 2px var(--crm-s);
   align-items: center;
   font-size: var(--crm-input-font-size);
   min-height: var(--crm-input-height);
@@ -561,17 +494,17 @@ input.crm-form-checkbox) + label {
   max-width: calc(100% - 2rem);
 }
 .select2-container-multi .select2-choices .select2-search-choice {
-  padding: 1px var(--crm-l-medium) 1px var(--crm-l-reg-1);
+  padding: 1px var(--crm-m) 1px var(--crm-r1);
   margin: 0;
   position: relative;
   line-height: unset;
-  color: var(--crm-text-color);
+  color: var(--crm-c-text);
   cursor: default;
-  border: var(--crm-border);
+  border: var(--crm-c-divider);
   border-radius: var(--crm-input-border-radius);
   background-clip: padding-box;
   user-select: none;
-  background-color: var(--crm-input-select-bg-color);
+  background-color: var(--crm-form-select-bg);
   background-image: none;
   box-shadow: none;
 }
@@ -588,47 +521,37 @@ input.crm-form-checkbox) + label {
 .select2-container.loading .select2-choice .select2-arrow b {
   content: "\f110";
   position: absolute;
-  right: var(--crm-l-medium);
-  top: var(--crm-l-small);
+  right: var(--crm-m);
+  top: var(--crm-s);
   animation-name: fa-spin;
   animation-duration: var(--fa-animation-duration,2s);
   animation-iteration-count: var(--fa-animation-iteration-count,infinite);
   animation-timing-function: var(--fa-animation-timing,linear);
 }
 
-/* Color dot for selecting e.g. tags */
-span.crm-select-item-color {
-  display: inline-block;
-  width: 1cap;
-  height: 1cap;
-  border-radius: 50%;
-  border: 1px solid var(--crm-text-color);
-  box-sizing: content-box;
-}
-
 /* Select dropdown */
 
 .select2-drop.select2-drop-active.crm-container {
-  min-width: var(--crm-input-width);
-  background: var(--crm-input-bg-color);
+  min-width: var(--crm-big-input);
+  background: var(--crm-input-background);
   border-bottom-left-radius: var(--crm-input-border-radius);
   border-bottom-right-radius: var(--crm-input-border-radius);
-  border-color: var(--crm-focus-color);
-  border-top: 1px solid rgb(from var(--crm-focus-color) r g b / 25%);
+  border-color: var(--crm-c-focus);
+  border-top: 1px solid rgb(from var(--crm-c-focus) r g b / 25%);
 }
 .select2-drop.select2-drop-active.crm-container.select2-drop-above {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
 .select2-search {
-  padding: var(--crm-l-small);
+  padding: var(--crm-s);
 }
 .select2-search::after {
   font-family: "FontAwesome";
   font-style: normal;
   text-rendering: auto;
   font-size: .8em;
-  color: var(--crm-text-color);
+  color: var(--crm-c-text);
   content: "";
   font-size: 14px;
   position: relative;
@@ -643,46 +566,46 @@ span.crm-select-item-color {
   width: 100%;
 }
 .crm-container .select2-results {
-  font-size: var(--crm-l-medium-2);
+  font-size: var(--crm-m2);
   padding: 0;
   margin: 0;
 }
 .select2-drop.select2-drop-active.crm-container .select2-results li {
-  color: var(--crm-text-color);
-  padding: var(--crm-l-small) var(--crm-l-medium);
+  color: var(--crm-c-text);
+  padding: var(--crm-s) var(--crm-m);
   margin: 0;
 }
 .select2-drop.select2-drop-active.crm-container .select2-results li:has(.crm-select2-row-description) {
-  border-top: var(--crm-border);
+  border-top: var(--crm-c-divider);
 }
 .select2-results .select2-ajax-error,
 .select2-results .select2-no-results,
 .select2-results .select2-searching,
 .select2-results .select2-selection-limit {
-  background: var(--crm-input-bg-color);
+  background: var(--crm-input-background);
 }
 .select2-drop.select2-drop-active.crm-container .select2-results .select2-highlighted {
-  background: var(--crm-input-select-bg-color);
+  background: var(--crm-c-drag-background);
 }
 .select2-drop.select2-drop-active.crm-container .crm-entityref-filters select,
 .select2-drop.select2-drop-active.crm-container .crm-entityref-filters input {
-  background: var(--crm-container-bg-color);
+  background: var(--crm-c-background);
   border: 1px solid var(--crm-input-border-color);
   border-radius: var(--crm-input-border-radius);
   box-sizing: border-box;
-  height: var(--crm-l-large);
-  margin-top: var(--crm-l-small);
+  height: var(--crm-l);
+  margin-top: var(--crm-s);
 }
 .select2-drop .crm-entityref-links {
   border-top: 1px solid var(--crm-input-border-color);
-  margin-top: var(--crm-l-medium);
+  margin-top: var(--crm-m);
 }
 .select2-drop .crm-entityref-links a.crm-hover-button {
   white-space: nowrap;
 }
 .crm-container .select2-results .select2-result-label {
   font-size: var(--crm-input-font-size);
-  padding: var(--crm-l-small) var(--crm-l-medium);
+  padding: var(--crm-s) var(--crm-m);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -692,13 +615,13 @@ span.crm-select-item-color {
 }
 .select2-results li.select2-result-with-children > .select2-result-label {
   font-weight: bold;
-  background: var(--crm-layer2-bg-color);
-  padding: var(--crm-l-small);
+  background: var(--crm-c-background3);
+  padding: var(--crm-s);
 }
 .crm-container .crm-select2-row-description p {
   font-weight: normal;
   font-family: var(--crm-font);
-  font-size: var(--crm-l-medium-2);
+  font-size: var(--crm-m2);
   margin: 0;
   padding: 0;
 }
@@ -712,13 +635,13 @@ span.crm-select-item-color {
   display: block;
 }
 .select2-drop.collapsible-optgroups-enabled .select2-result-with-children.optgroup-expanded > .select2-result-label:before {
-  transform: var(--crm-accordion-transform);
-  transition: var(--crm-accordion-transition);
+  transform: var(--crm-expand-transform);
+  transition: var(--crm-expand-transition);
 }
 .select2-drop.collapsible-optgroups-enabled .select2-result-with-children > .select2-result-label:before {
   font-size: var(--crm-font-size);
-  content: var(--crm-accordion-icon);
-  color: var(--crm-accordion-icon-color);
+  content: var(--crm-expand-icon);
+  color: var(--crm-expand-icon-color);
   font-style: normal;
   font-family: FontAwesome;
   text-rendering: auto;
@@ -726,7 +649,7 @@ span.crm-select-item-color {
   margin-right: 0.5rem;
   display: inline-block;
   transform-origin: center center;
-  transition: var(--crm-accordion-transition);
+  transition: var(--crm-expand-transition);
 }
 .select2-drop.select2-drop-active.crm-container li.select2-result-with-children {
   padding: 0;
@@ -737,7 +660,7 @@ span.crm-select-item-color {
 .form-inline:has(.crm-form-date-wrapper) {
   display: flex;
   align-items: center;
-  gap: var(--crm-l-xsmall);
+  gap: var(--crm-xs);
 }
 .crm-form-date-wrapper {
   display: inline-flex;
@@ -760,7 +683,7 @@ span.crm-select-item-color {
   align-items: center;
 }
 .crm-container input.crm-placeholder-icon {
-  padding-right: var(--crm-l-medium);
+  padding-right: var(--crm-m);
 }
 #ui-datepicker-div,
 #ui-datepicker-div * {
@@ -769,28 +692,28 @@ span.crm-select-item-color {
   height: unset;
 }
 #ui-datepicker-div {
-  background: var(--crm-input-bg-color);
+  background: var(--crm-input-background);
   border-radius: 0;
-  box-shadow: var(--crm-shadow-popup);
+  box-shadow: var(--crm-popup-shadow);
   min-width: 30ch;
-  padding: var(--crm-l-medium-1);
+  padding: var(--crm-m1);
   width: auto;
   z-index: 100003; /* vs menubar for datepickers in modals */
 }
 #ui-datepicker-div .ui-datepicker-header {
   border: 0;
-  margin-bottom: var(--crm-l-small);
+  margin-bottom: var(--crm-s);
 }
 #ui-datepicker-div :not(b) {
   background: none;
   border: 0 solid transparent;
 }
 #ui-datepicker-div :is(.ui-datepicker-prev,.ui-datepicker-next) {
-  border-radius: var(--crm-l-radius);
+  border-radius: var(--crm-roundness);
   box-shadow: none;
-  cursor: var(--crm-link-hover-cursor);
+  cursor: var(--crm-hover-clickable);
   text-align: center;
-  top: var(--crm-l-small-3);
+  top: var(--crm-s3);
   border: 0 solid transparent;
 }
 #ui-datepicker-div :is(.ui-datepicker-prev,.ui-datepicker-next):hover {
@@ -799,13 +722,13 @@ span.crm-select-item-color {
 }
 #ui-datepicker-div .ui-datepicker-header :is(.ui-datepicker-prev,.ui-datepicker-next)::before {
   font-family: "FontAwesome";
-  color: var(--text);
-  font-size: var(--crm-font-small-size);
-  line-height: var(--crm-l-large);
+  color: var(--crm-c-text);
+  font-size: var(--crm-small-font-size);
+  line-height: var(--crm-l);
   padding: 0;
 }
 #ui-datepicker-div .ui-datepicker-header :is(.ui-datepicker-prev,.ui-datepicker-next):hover::before {
-  color: var(--crm-text-dark-color);
+  color: var(--crm-c-text-dark);
 }
 #ui-datepicker-div .ui-datepicker-prev::before {
   content: "";
@@ -815,47 +738,47 @@ span.crm-select-item-color {
 }
 #ui-datepicker-div .ui-datepicker-header select {
   font-family: var(--crm-font);
-  margin: 0 var(--crm-l-medium-1);
+  margin: 0 var(--crm-m1);
   padding-left: 5px;
-  font-size: var(--crm-l-medium-3);
+  font-size: var(--crm-m3);
   width: 9ch;
 }
 #ui-datepicker-div .ui-datepicker-calendar thead th {
-  color: var(--crm-text-color);
-  font-size: var(--crm-font-small-size);
+  color: var(--crm-c-text);
+  font-size: var(--crm-small-font-size);
 }
 #ui-datepicker-div .ui-datepicker-calendar tr {
   border-bottom: none;
 }
 #ui-datepicker-div .ui-datepicker-calendar :is(td,.ui-state-disabled) {
   border: 0;
-  font-size: var(--crm-font-small-size);
+  font-size: var(--crm-small-font-size);
   opacity: 1;
-  padding: var(--crm-l-small);
+  padding: var(--crm-s);
 }
 #ui-datepicker-div .ui-state-default,
 #ui-datepicker-div .ui-widget-content .ui-state-default {
-  color: var(--crm-text-color);
+  color: var(--crm-c-text);
   text-align: center;
 }
 #ui-datepicker-div .ui-datepicker-calendar .ui-state-disabled {
   opacity: 0.35;
 }
 #ui-datepicker-div .ui-datepicker-calendar :is(td,.ui-state-disabled) .ui-state-active {
-  background-color: var(--crm-primary-color);
-  color: var(--crm-primary-text-color);
+  background-color: var(--crm-c-primary);
+  color: var(--crm-c-primary-text);
 }
 #ui-datepicker-div .ui-datepicker-calendar :is(td,.ui-state-disabled) a {
   border: 0;
   border-radius: 20px;
-  cursor: var(--crm-link-hover-cursor);
-  padding: var(--crm-l-small);
+  cursor: var(--crm-hover-clickable);
+  padding: var(--crm-s);
   text-align: center;
-  color: var(--crm-text-color);
+  color: var(--crm-c-text);
 }
 #ui-datepicker-div .ui-datepicker-calendar td.ui-datepicker-today a {
   background: var(--crm-c-gray-100);
-  color: var(--crm-text-dark-color);
+  color: var(--crm-c-text-dark);
 }
 
 /* JQ spinner */
@@ -864,22 +787,22 @@ span.crm-select-item-color {
   width: 8ch;
 }
 .crm-container .ui-spinner a.ui-spinner-button {
-  width: var(--crm-l-reg-2);
+  width: var(--crm-r2);
   margin: 1px;
-  cursor: var(--crm-link-hover-cursor);
-  color: var(--crm-link-color);
+  cursor: var(--crm-hover-clickable);
+  color: var(--crm-c-link);
   border-radius: 0;
   border-left: 1px solid var(--crm-input-border-color);
 }
 .crm-container .ui-spinner a.ui-spinner-button:hover,
 .crm-container .ui-spinner a.ui-spinner-button:focus {
-  color: var(--crm-text-light-color);
+  color: var(--crm-c-text-light);
 }
 .crm-container .ui-spinner a.ui-spinner-button span::before {
   font-family: "FontAwesome";
   font-style: normal;
   font-weight: normal;
-  font-size: var(--crm-l-medium-3);
+  font-size: var(--crm-m3);
   text-indent: 0;
   display: block;
 }
@@ -921,10 +844,10 @@ span.crm-select-item-color {
   width: 20em !important;
 }
 .crm-container .big {
-  width: var(--crm-input-width) !important;
+  width: var(--crm-big-input) !important;
 }
 .crm-container .huge {
-  width: var(--crm-input-large-width) !important;
+  width: var(--crm-huge-input) !important;
 }
 .crm-container .crm-auto-width {
   width: auto !important;
@@ -939,13 +862,19 @@ span.crm-select-item-color {
   margin-top: 10px;
   margin-bottom: 10px;
 }
+#bootstrap-theme .radio.disabled label,
+#bootstrap-theme fieldset[disabled].radio label,
+#bootstrap-theme .checkbox.disabled label,
+#bootstrap-theme fieldset[disabled] .checkbox label {
+  cursor: not-allowed;
+}
 #bootstrap-theme .radio label,
 #bootstrap-theme .checkbox label {
   min-height: 20px;
   padding-left: 20px;
   margin-bottom: 0;
   font-weight: 400;
-  cursor: var(--crm-link-hover-cursor);
+  cursor: var(--crm-hover-clickable);
 }
 #bootstrap-theme .radio + .radio,
 #bootstrap-theme .checkbox + .checkbox {
@@ -958,25 +887,16 @@ span.crm-select-item-color {
   margin-bottom: 0;
   font-weight: 400;
   vertical-align: middle;
-  cursor: var(--crm-link-hover-cursor);
+  cursor: var(--crm-hover-clickable);
+}
+#bootstrap-theme .radio-inline.disabled,
+fieldset[disabled] #bootstrap-theme .radio-inline,
+#bootstrap-theme .checkbox-inline.disabled,
+fieldset[disabled] #bootstrap-theme .checkbox-inline {
+  cursor: not-allowed;
 }
 #bootstrap-theme .radio-inline + .radio-inline,
 #bootstrap-theme .checkbox-inline + .checkbox-inline {
   margin-top: 0;
-  margin-left: var(--crm-l-medium);
-}
-
-/* Disabled styles */
-
-.crm-container :is(input,textarea,option):disabled,
-.crm-container fieldset[disabled] input,
-#bootstrap-theme .disabled:is(.radio,.checkbox) label,
-#bootstrap-theme fieldset[disabled] :is(.radio,.checkbox) label,
-#bootstrap-theme .disabled:is(.radio-inline,.checkbox-inline),
-#bootstrap-theme fieldset[disabled] :is(.radio-inline,.checkbox-inline) {
-  cursor: not-allowed;
-  color: var(--crm-inactive-color);
-}
-.crm-container :is(input,textarea,option):disabled {
-  background-color: color-mix(in srgb, var(--crm-input-background) 90%, var(--crm-ink) 10%);
+  margin-left: var(--crm-m);
 }

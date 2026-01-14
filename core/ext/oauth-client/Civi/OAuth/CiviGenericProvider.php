@@ -1,7 +1,6 @@
 <?php
 namespace Civi\OAuth;
 
-use Civi;
 use League\OAuth2\Client\Token\AccessToken;
 
 /**
@@ -22,23 +21,10 @@ use League\OAuth2\Client\Token\AccessToken;
  */
 class CiviGenericProvider extends \League\OAuth2\Client\Provider\GenericProvider {
 
-  use ResponseModeTrait;
-
   /**
    * @var string
    */
   protected $tenant;
-
-  protected function fillProperties(array $options = []) {
-    // If this client is generated for CiviConnect bridge, then swap the credentials.
-    $needClient = ($options['clientId'] ?? NULL) === '{civi_connect}';
-    $needSecret = ($options['clientSecret'] ?? NULL) === '{civi_connect}';
-    if ($needClient && $needSecret) {
-      [$options['clientId'], $options['clientSecret']] = Civi::service('oauth_client.civi_connect')->getCreds();
-    }
-
-    parent::fillProperties($options);
-  }
 
   protected function getAuthorizationParameters(array $options) {
     $newOptions = parent::getAuthorizationParameters($options);

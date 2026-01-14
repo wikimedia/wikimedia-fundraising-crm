@@ -18,7 +18,7 @@ namespace Civi\Core\Event;
 class UnhandledExceptionEvent extends GenericHookEvent {
 
   /**
-   * @var \Throwable
+   * @var \Exception
    */
   public $exception;
 
@@ -30,7 +30,7 @@ class UnhandledExceptionEvent extends GenericHookEvent {
   public $request;
 
   /**
-   * @param \Throwable $e
+   * @param $e
    * @param $request
    */
   public function __construct($e, $request) {

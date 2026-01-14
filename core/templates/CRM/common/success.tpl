@@ -22,7 +22,6 @@
           </div>
           {$preUpgradeMessage}
         {/if}
-        {if empty($blocked)}
         <p><strong>{ts}Back up your database before continuing.{/ts}</strong>
             {ts}This process may change your database structure and values. In case of emergency you may need to revert to a backup.{/ts} {docURL page="sysadmin/upgrade"}</p>
         <p>{ts 1=$currentVersion 2=$newVersion}The database will be upgraded from %1 to %2.{/ts}</p>
@@ -33,7 +32,6 @@
             {ts}Upgrade Now{/ts}
           </button>
         </div>
-        {/if}
       </form>
     </div>
   </div>

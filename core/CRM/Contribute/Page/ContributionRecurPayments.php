@@ -181,32 +181,25 @@ class CRM_Contribute_Page_ContributionRecurPayments extends CRM_Core_Page {
     }
 
     if (in_array($contribution['contribution_status'], ['Partially paid', 'Pending refund']) || $isPayLater) {
+      $buttonName = ts('Record Payment');
+
       if ($contribution['contribution_status'] == 'Pending refund') {
-        if (CRM_Core_Permission::check('refund contributions')) {
-          $links[CRM_Core_Action::ADD] = [
-            'name' => 'Record Refund',
-            'url' => 'civicrm/payment',
-            'qs' => 'reset=1&id=%%id%%&cid=%%cid%%&action=add&component=contribution',
-            'title' => ts('Record Refund'),
-          ];
-        }
+        $buttonName = ts('Record Refund');
       }
-      else {
-        $links[CRM_Core_Action::ADD] = [
-          'name' => 'Record Payment',
-          'url' => 'civicrm/payment',
-          'qs' => 'reset=1&id=%%id%%&cid=%%cid%%&action=add&component=contribution',
-          'title' => ts('Record Payment'),
+      elseif (CRM_Core_Config::isEnabledBackOfficeCreditCardPayments()) {
+        $links[CRM_Core_Action::BASIC] = [
+          'name' => ts('Submit Credit Card payment'),
+          'url' => 'civicrm/payment/add',
+          'qs' => 'reset=1&id=%%id%%&cid=%%cid%%&action=add&component=contribution&mode=live',
+          'title' => ts('Submit Credit Card payment'),
         ];
-        if (CRM_Core_Config::isEnabledBackOfficeCreditCardPayments()) {
-          $links[CRM_Core_Action::BASIC] = [
-            'name' => ts('Submit Credit Card payment'),
-            'url' => 'civicrm/payment/add',
-            'qs' => 'reset=1&id=%%id%%&cid=%%cid%%&action=add&component=contribution&mode=live',
-            'title' => ts('Submit Credit Card payment'),
-          ];
-        }
       }
+      $links[CRM_Core_Action::ADD] = [
+        'name' => $buttonName,
+        'url' => 'civicrm/payment',
+        'qs' => 'reset=1&id=%%id%%&cid=%%cid%%&action=add&component=contribution',
+        'title' => $buttonName,
+      ];
     }
 
     return $links;

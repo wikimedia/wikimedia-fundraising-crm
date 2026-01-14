@@ -99,9 +99,15 @@ class CRM_Core_I18n {
     $this->locale = $locale;
     if ($locale != '' and $locale != 'en_US') {
       if (defined('CIVICRM_GETTEXT_NATIVE') && CIVICRM_GETTEXT_NATIVE && function_exists('gettext')) {
+        // Note: the file hierarchy for .po must be, for example: l10n/fr_FR/LC_MESSAGES/civicrm.mo
+
         $this->_nativegettext = TRUE;
+        $this->setNativeGettextLocale($locale);
+        return;
       }
-      $this->setGettextLocale($locale);
+
+      // Otherwise, use PHP-gettext
+      $this->setPhpGettextLocale($locale);
     }
   }
 
@@ -113,20 +119,6 @@ class CRM_Core_I18n {
    */
   public function isNative() {
     return $this->_nativegettext;
-  }
-
-  /**
-   * Set the gettext locale.
-   *
-   * @param string $locale
-   */
-  public function setGettextLocale(string $locale) {
-    if ($this->isNative()) {
-      $this->setNativeGettextLocale($locale);
-    }
-    else {
-      $this->setPhpGettextLocale($locale);
-    }
   }
 
   /**
@@ -188,12 +180,19 @@ class CRM_Core_I18n {
     static $enabled = NULL;
 
     if (!$all) {
+      $optionValues = [];
       // Use `getValues`, not `buildOptions` to bypass hook_civicrm_fieldOptions.  See dev/core#1132.
-      $optionValues = CRM_Core_OptionValue::getValues(['name' => 'languages']);
-      $activeOptionValues = array_filter($optionValues, fn ($row) => $row['is_active']);
+      CRM_Core_OptionValue::getValues(['name' => 'languages'], $optionValues, 'weight', TRUE);
+      $all = array_column($optionValues, 'label', 'name');
 
-      $all = array_column($activeOptionValues, 'label', 'name');
-      $labels = array_column($optionValues, 'label', 'name');
+      // FIXME: How is this not duplicative of the lines above?
+      // get labels
+      $rows = [];
+      $labels = [];
+      CRM_Core_OptionValue::getValues(['name' => 'languages'], $rows);
+      foreach ($rows as $id => $row) {
+        $labels[$row['name']] = $row['label'];
+      }
 
       // check which ones are available; add them to $all if not there already
       $codes = [];
@@ -756,6 +755,9 @@ class CRM_Core_I18n {
    */
   public static  function getContactDefaultLanguage() {
     $language = Civi::settings()->get('contact_default_language');
+    if ($language == 'undefined') {
+      return NULL;
+    }
     if (empty($language) || $language === '*default*') {
       $language = civicrm_api3('setting', 'getvalue', [
         'name' => 'lcMessages',
@@ -765,6 +767,7 @@ class CRM_Core_I18n {
     elseif ($language == 'current_site_language') {
       return CRM_Core_I18n::getLocale();
     }
+
     return $language;
   }
 

@@ -87,7 +87,7 @@ class CRM_Extension_ClassLoader {
     else {
       $this->loader = $this->buildClassLoader();
       $ser = serialize($this->loader);
-      (new Symfony\Component\Filesystem\Filesystem())->dumpFile($file,
+      file_put_contents($file,
         sprintf("<?php\nreturn unserialize(%s);", var_export($ser, 1))
       );
     }

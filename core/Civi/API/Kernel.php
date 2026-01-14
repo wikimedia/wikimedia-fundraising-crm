@@ -145,13 +145,7 @@ class Kernel {
       }
       catch (\Civi\API\Exception\UnauthorizedException $e) {
         // We catch and re-throw to log for visibility
-        if ($apiRequest instanceof \Civi\Api4\Generic\AbstractAction) {
-          $context = (method_exists($apiRequest, 'getWhere') ? ['apiRequest[where]' => $apiRequest->getWhere()] : []);
-          \Civi::log()->error('API4 Request Authorization failed: ' . $apiRequest->getEntityName() . '::' . $apiRequest->getActionName(), $context);
-        }
-        else {
-          \CRM_Core_Error::backtrace('API3 Request Authorization failed', TRUE);
-        }
+        \CRM_Core_Error::backtrace('API Request Authorization failed', TRUE);
         throw $e;
       }
 

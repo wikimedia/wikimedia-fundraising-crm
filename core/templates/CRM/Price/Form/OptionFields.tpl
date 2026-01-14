@@ -101,6 +101,12 @@
     var hideBlocks = new Array({$hideBlocks});
     var rowcounter = 0;
     {literal}
+    if (navigator.appName == "Microsoft Internet Explorer") {
+  for ( var count = 0; count < hideBlocks.length; count++ ) {
+      var r = document.getElementById(hideBlocks[count]);
+            r.style.display = 'none';
+        }
+    }
 
     cj('#optionField input').blur( function(){
       var currentId = cj(this).attr('id');

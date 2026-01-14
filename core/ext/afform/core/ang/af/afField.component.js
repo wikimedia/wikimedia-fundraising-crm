@@ -160,9 +160,6 @@
           else if (urlArgs && (ctrl.fieldName in urlArgs)) {
             setValue(urlArgs[ctrl.fieldName]);
           }
-          else if (urlArgs && urlArgs._s) {
-            setValue(ctrl.afFieldset.getSearchParamSetFieldValue(ctrl.fieldName));
-          }
           else if (firstLoad && ctrl.afFieldset.getStoredValue(ctrl.fieldName) !== undefined) {
             setValue(ctrl.afFieldset.getStoredValue(ctrl.fieldName));
           }
@@ -227,7 +224,7 @@
       this.isMultiple = function() {
         return (
           (['Select', 'EntityRef', 'ChainSelect'].includes(ctrl.defn.input_type) && ctrl.defn.input_attrs.multiple) ||
-          ((ctrl.defn.input_type === 'CheckBox' || ctrl.defn.input_type === 'Toggle') && ctrl.defn.data_type !== 'Boolean') ||
+          (ctrl.defn.input_type === 'CheckBox' && ctrl.defn.data_type !== 'Boolean') ||
           ((ctrl.defn.input_type === 'Hidden' || ctrl.defn.input_type === 'DisplayOnly') && (ctrl.defn.serialize || ctrl.defn.data_type === 'Array'))
         );
       };
@@ -237,15 +234,6 @@
         // For values passed from the url, split
         if (typeof value === 'string' && ctrl.isMultiple()) {
           value = value.split(',');
-        }
-        // When reloading values for fields with operators, the stored value is an object "operator"
-        if (typeof value === 'object' && value !== null && ctrl.search_operator) {
-          // if the operator is a user select, load from the passed value
-          // (we expect the value to be an Object with a single key)
-          if (ctrl.defn.expose_operator) {
-            ctrl.search_operator = Object.keys(value)[0];
-          }
-          value = value[ctrl.search_operator] ? value[ctrl.search_operator] : null;
         }
         // Support "Select Current User" default
         if (ctrl.defn.input_type === 'EntityRef' && ['Contact', 'Individual'].includes(ctrl.fkEntity) && value === 'user_contact_id') {

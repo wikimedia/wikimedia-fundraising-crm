@@ -300,16 +300,16 @@ class CRM_Core_Payment_FirstData extends CRM_Core_Payment {
       $params['trxn_result_code'] = $processorResponse['r_message'];
       $result['trxn_id'] = $processorResponse['r_ref'];
       $result = $this->setStatusPaymentCompleted($result);
-      Civi::log('first_data')->debug("r_authresponse " . $processorResponse['r_authresponse']);
-      Civi::log('first_data')->debug("r_code " . $processorResponse['r_code']);
-      Civi::log('first_data')->debug("r_tdate " . $processorResponse['r_tdate']);
-      Civi::log('first_data')->debug("r_avs " . $processorResponse['r_avs']);
-      Civi::log('first_data')->debug("r_ordernum " . $processorResponse['r_ordernum']);
-      Civi::log('first_data')->debug("r_error " . $processorResponse['r_error']);
-      Civi::log('first_data')->debug("csp " . $processorResponse['r_csp']);
-      Civi::log('first_data')->debug("r_message " . $processorResponse['r_message']);
-      Civi::log('first_data')->debug("r_ref " . $processorResponse['r_ref']);
-      Civi::log('first_data')->debug("r_time " . $processorResponse['r_time']);
+      CRM_Core_Error::debug_log_message("r_authresponse " . $processorResponse['r_authresponse']);
+      CRM_Core_Error::debug_log_message("r_code " . $processorResponse['r_code']);
+      CRM_Core_Error::debug_log_message("r_tdate " . $processorResponse['r_tdate']);
+      CRM_Core_Error::debug_log_message("r_avs " . $processorResponse['r_avs']);
+      CRM_Core_Error::debug_log_message("r_ordernum " . $processorResponse['r_ordernum']);
+      CRM_Core_Error::debug_log_message("r_error " . $processorResponse['r_error']);
+      CRM_Core_Error::debug_log_message("csp " . $processorResponse['r_csp']);
+      CRM_Core_Error::debug_log_message("r_message " . $processorResponse['r_message']);
+      CRM_Core_Error::debug_log_message("r_ref " . $processorResponse['r_ref']);
+      CRM_Core_Error::debug_log_message("r_time " . $processorResponse['r_time']);
       return $result;
     }
   }
@@ -332,11 +332,11 @@ class CRM_Core_Payment_FirstData extends CRM_Core_Payment {
     $errorMsg = [];
 
     if (empty($this->_paymentProcessor['user_name'])) {
-      $errorMsg[] = ts('Store Name is not set for this payment processor');
+      $errorMsg[] = ts(' Store Name is not set for this payment processor');
     }
 
     if (empty($this->_paymentProcessor['url_site'])) {
-      $errorMsg[] = ts('URL is not set for this payment processor');
+      $errorMsg[] = ts(' URL is not set for this payment processor');
     }
 
     if (!empty($errorMsg)) {

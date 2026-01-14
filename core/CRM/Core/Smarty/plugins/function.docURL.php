@@ -31,8 +31,7 @@ function smarty_function_docURL($params, &$smarty) {
   if (!isset($smarty)) {
     return NULL;
   }
-  if (isset($params['params']) && is_array($params['params'])) {
-    $params += $params['params'];
+  else {
+    return CRM_Utils_System::docURL($params);
   }
-  return CRM_Utils_System::docURL($params);
 }

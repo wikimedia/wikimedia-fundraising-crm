@@ -102,7 +102,6 @@ class CRM_Core_BAO_File extends CRM_Core_DAO_File implements \Civi\Core\HookInte
 
     $config = CRM_Core_Config::singleton();
 
-    $data = str_replace(DIRECTORY_SEPARATOR, '/', $data);
     $path = explode('/', $data);
     $filename = $path[count($path) - 1];
 
@@ -173,7 +172,7 @@ class CRM_Core_BAO_File extends CRM_Core_DAO_File implements \Civi\Core\HookInte
     }
 
     // lets call the post hook here so attachments code can do the right stuff
-    CRM_Utils_Hook::post($op, 'File', $fileDAO->id, $fileDAO, $params);
+    CRM_Utils_Hook::post($op, 'File', $fileDAO->id, $fileDAO);
   }
 
   /**

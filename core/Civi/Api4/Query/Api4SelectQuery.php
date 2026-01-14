@@ -266,8 +266,7 @@ class Api4SelectQuery extends Api4Query {
           $options = FormattingUtil::getPseudoconstantList($field, $item);
           if ($options) {
             asort($options);
-            $keys = \CRM_Core_DAO::escapeStrings(array_keys($options));
-            $column = "FIELD($column, $keys)";
+            $column = "FIELD($column,'" . implode("','", array_keys($options)) . "')";
           }
         }
       }
@@ -645,14 +644,13 @@ class Api4SelectQuery extends Api4Query {
     $this->openJoin['bridgeKey'] = $joinRef->getReferenceKey();
     $this->openJoin['bridgeCondition'] = array_intersect_key($linkConditions, [1 => 1]);
 
-    // Info needed for joining custom fields extending the bridge entity
-    $this->explicitJoins[$alias]['bridge_table_alias'] = $bridgeAlias;
-
     $outerConditions = [];
     foreach (array_filter($joinTree) as $clause) {
       $outerConditions[] = $this->treeWalkClauses($clause, 'ON');
     }
 
+    // Info needed for joining custom fields extending the bridge entity
+    $this->explicitJoins[$alias]['bridge_table_alias'] = $bridgeAlias;
     // Invert the join so all nested joins will link to the bridge entity
     $this->openJoin['table'] = $bridgeTableExpr;
     $this->openJoin['alias'] = $bridgeAlias;
@@ -932,7 +930,7 @@ class Api4SelectQuery extends Api4Query {
     foreach ($this->openJoin['subjoins'] as $subjoin) {
       $subjoinClause .= " INNER JOIN {$subjoin['table']} `{$subjoin['alias']}` ON (" . implode(' AND ', $subjoin['conditions']) . ")";
     }
-    $this->query->join($tableAlias, "$side JOIN ($tableExpr `$tableAlias`$subjoinClause)\n  ON " . implode("\n  AND ", $conditions));
+    $this->query->join($tableAlias, "$side JOIN ($tableExpr `$tableAlias`$subjoinClause) ON " . implode(' AND ', $conditions));
     $this->openJoin = NULL;
   }
 
@@ -945,7 +943,7 @@ class Api4SelectQuery extends Api4Query {
    */
   private function addJoin(string $side, string $tableExpr, string $tableAlias, string $baseTableAlias, array $conditions): void {
     // If this join is based off the current open join, incorporate it
-    if ($baseTableAlias === ($this->openJoin['alias'] ?? NULL) || $baseTableAlias === ($this->openJoin['bridgeAlias'] ?? NULL)) {
+    if ($baseTableAlias === ($this->openJoin['alias'] ?? NULL)) {
       $this->openJoin['subjoins'][] = [
         'table' => $tableExpr,
         'alias' => $tableAlias,
@@ -953,7 +951,7 @@ class Api4SelectQuery extends Api4Query {
       ];
     }
     else {
-      $this->query->join($tableAlias, "$side JOIN $tableExpr `$tableAlias`\n  ON " . implode("\n  AND ", $conditions));
+      $this->query->join($tableAlias, "$side JOIN $tableExpr `$tableAlias` ON " . implode(' AND ', $conditions));
     }
   }
 

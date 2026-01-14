@@ -9,13 +9,16 @@
       node: '='
     },
     controller: function($scope, afGui) {
-      const ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
+      var ts = $scope.ts = CRM.ts('org.civicrm.afform_admin'),
         ctrl = this;
 
-      this.styles = _.cloneDeep(afGui.meta.afform_container_style);
+      // Todo: Make this an option group so other extensions can add to it
+      this.styles = [
+        {name: 'af-container-style-pane', label: ts('Panel Pane')}
+      ];
 
       $scope.getSetStyle = function(style) {
-        const options = ctrl.styles.map(item => item.value);
+        var options = _.map(ctrl.styles, 'name');
         if (arguments.length) {
           afGui.modifyClasses(ctrl.node, options, style);
         }

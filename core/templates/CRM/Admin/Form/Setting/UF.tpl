@@ -10,13 +10,16 @@
 <div class="help">
   {ts}These settings define the CMS variables that are used with CiviCRM.{/ts}
 </div>
-{include file='CRM/Admin/Form/Generic.tpl'}
+<div class="crm-block crm-form-block crm-uf-form-block">
+  {include file='CRM/Admin/Form/Setting/SettingForm.tpl'}
 
-{if $viewsIntegration}
-  <div class="crm-block crm-form-block crm-uf-form-block">
+  {if $viewsIntegration}
+    <div class="spacer"></div>
     <div class="form-item">
-      <h3>{ts}Views integration settings{/ts}</h3>
-      <div>{$viewsIntegration}</div>
+      <fieldset>
+        <legend>{ts}Views integration settings{/ts}</legend>
+        <div>{$viewsIntegration}</div>
+      </fieldset>
     </div>
-  </div>
-{/if}
+  {/if}
+</div>

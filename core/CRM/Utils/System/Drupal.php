@@ -199,7 +199,6 @@ class CRM_Utils_System_Drupal extends CRM_Utils_System_DrupalBase {
 
   /**
    * @inheritDoc
-   * @internal
    */
   public function addHTMLHead($header) {
     static $count = 0;

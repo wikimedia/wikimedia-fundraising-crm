@@ -777,9 +777,21 @@ class CRM_Event_Form_Participant extends CRM_Contribute_Form_AbstractEditPayment
 
       $eventId = $values['event_id'] ?? NULL;
 
-      $errorMsg += CRM_Event_BAO_Participant::validateExistingRegistration($contactId, $eventId, 'admin');
+      $event = new CRM_Event_DAO_Event();
+      $event->id = $eventId;
+      $event->find(TRUE);
 
-      // TODO: No check for available spaces?
+      if (!$event->allow_same_participant_emails && !empty($contactId) && !empty($eventId)) {
+        $cancelledStatusID = CRM_Core_PseudoConstant::getKey('CRM_Event_BAO_Participant', 'status_id', 'Cancelled');
+        $dupeCheck = new CRM_Event_BAO_Participant();
+        $dupeCheck->contact_id = $contactId;
+        $dupeCheck->event_id = $eventId;
+        $dupeCheck->whereAdd("status_id != {$cancelledStatusID} ");
+        $dupeCheck->find(TRUE);
+        if (!empty($dupeCheck->id)) {
+          $errorMsg['event_id'] = ts('This contact has already been assigned to this event.');
+        }
+      }
     }
     return empty($errorMsg) ? TRUE : $errorMsg;
   }
@@ -1014,6 +1026,10 @@ class CRM_Event_Form_Participant extends CRM_Contribute_Form_AbstractEditPayment
         $contributionParams['currency'] = $this->getCurrency();
         $contributionParams['contact_id'] = $this->_contactID;
 
+        if ($this->_id) {
+          $contributionParams['contribution_mode'] = 'participant';
+          $contributionParams['participant_id'] = $this->_id;
+        }
         // Set is_pay_later flag for back-office offline Pending status contributions
         if ($contributionParams['contribution_status_id'] == CRM_Core_PseudoConstant::getKey('CRM_Contribute_DAO_Contribution', 'contribution_status_id', 'Pending')) {
           $contributionParams['is_pay_later'] = 1;
@@ -1496,8 +1512,7 @@ class CRM_Event_Form_Participant extends CRM_Contribute_Form_AbstractEditPayment
     // create contribution record
     $contribution = CRM_Contribute_BAO_Contribution::add($contribParams);
     // CRM-11124
-    $firstLine = array_values($this->getLineItems())[0];
-    CRM_Event_BAO_Participant::createDiscountTrxn($this->getEventID(), $contribParams, '', $firstLine['price_field_value_id']);
+    CRM_Event_BAO_Participant::createDiscountTrxn($this->getEventID(), $contribParams, '', CRM_Price_BAO_PriceSet::parseFirstPriceSetValueIDFromParams($this->getSubmittedValues()));
 
     $transaction->commit();
 

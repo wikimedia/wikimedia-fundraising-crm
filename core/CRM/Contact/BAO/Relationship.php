@@ -179,7 +179,7 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship implemen
     if (!empty($params['id'])) {
       $relationship->id = $params['id'];
       // Only load the relationship if we're missing required params
-      $requiredParams = ['contact_id_a', 'contact_id_b', 'relationship_type_id', 'is_active'];
+      $requiredParams = ['contact_id_a', 'contact_id_b', 'relationship_type_id'];
       foreach ($requiredParams as $requiredKey) {
         if (!isset($params[$requiredKey])) {
           $relationship->find(TRUE);
@@ -254,7 +254,7 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship implemen
       CRM_Core_BAO_CustomValueTable::store($params['custom'], 'civicrm_relationship', $relationship->id);
     }
 
-    CRM_Utils_Hook::post($hook, 'Relationship', $relationship->id, $relationship, $params);
+    CRM_Utils_Hook::post($hook, 'Relationship', $relationship->id, $relationship);
 
     return $relationship;
   }

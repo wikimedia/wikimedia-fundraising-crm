@@ -272,11 +272,9 @@ class CRM_Utils_System_WordPress extends CRM_Utils_System_Base {
 
   /**
    * @inheritDoc
-   * @internal
-   * @deprecated
    */
   public function addHTMLHead($head) {
-    \CRM_Core_Error::deprecatedFunctionWarning('Civi::resources() or CRM_Core_Region::instance("html-header")');
+    \CRM_Core_Error::deprecatedFunctionWarning("addHTMLHead is deprecated in WordPress and will be removed in a future version");
     static $registered = FALSE;
     if (!$registered) {
       // front-end view
@@ -1315,18 +1313,6 @@ class CRM_Utils_System_WordPress extends CRM_Utils_System_Base {
   }
 
   /**
-   * Output JSON response to the client
-   *
-   * @param array $response
-   * @param int $httpResponseCode
-   *
-   * @return void
-   */
-  public static function sendJSONResponse(array $response, int $httpResponseCode): void {
-    wp_send_json($response, $httpResponseCode, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-  }
-
-  /**
    * Start a new session if there's no existing session ID.
    *
    * Checks are needed to prevent sessions being started when not necessary.
@@ -1665,7 +1651,7 @@ class CRM_Utils_System_WordPress extends CRM_Utils_System_Base {
       return [
         new CRM_Utils_Check_Message(
           __FUNCTION__,
-          ts('Could not load a clean page to check: %1', [1 => $page]),
+          ts('Could not load a clean page to check'),
           ts('Guzzle client error'),
           \Psr\Log\LogLevel::ERROR,
           'fa-wordpress'

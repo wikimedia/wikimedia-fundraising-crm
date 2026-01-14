@@ -18,27 +18,15 @@
 /**
  * This class generates form components for Date Formatting.
  */
-class CRM_Admin_Form_Setting_Date extends CRM_Admin_Form_Generic {
+class CRM_Admin_Form_Setting_Date extends CRM_Admin_Form_Setting {
 
-  public function preProcess() {
-    parent::preProcess();
-    $this->sections = [
-      'display' => [
-        'title' => ts('Date Display'),
-        'icon' => 'fa-calendar-check',
-        'weight' => 10,
-      ],
-      'input' => [
-        'title' => ts('Date Input Fields'),
-        'icon' => 'fa-calendar-plus',
-        'weight' => 10,
-      ],
-      'calendar' => [
-        'title' => ts('Calendar'),
-        'icon' => 'fa-calendar',
-        'weight' => 30,
-      ],
-    ];
+  /**
+   * Build the form object.
+   */
+  public function buildQuickForm() {
+    $this->setTitle(ts('Settings - Date'));
+
+    parent::buildQuickForm();
   }
 
 }

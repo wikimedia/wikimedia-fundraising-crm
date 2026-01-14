@@ -76,6 +76,9 @@ class CustomValueAccessSubscriber extends \Civi\Core\Service\AutoService impleme
     if (!$group) {
       return;
     }
+    if ($group['min_multiple']) {
+      // TODO: prevent delete
+    }
     if ($group['max_multiple']) {
       $currentCount = civicrm_api4($apiRequest->getEntityName(), 'get', [
         'select' => ['row_count'],

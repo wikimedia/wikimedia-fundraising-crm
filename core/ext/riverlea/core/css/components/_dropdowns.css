@@ -31,11 +31,11 @@
 .crm-participant-list-inner,
 .crm-create-new-list-inner ul.ui-widget,
 .vakata-context {
-  background-color: var(--crm-dropdown2-bg-color);
-  color: var(--crm-dropdown2-color);
-  border-radius: var(--crm-l-radius);
-  box-shadow: var(--crm-shadow-popup);
-  padding: var(--crm-dropdown2-padding);
+  background-color: var(--crm-dropdown-2-bg);
+  color: var(--crm-dropdown-2-col);
+  border-radius: var(--crm-roundness);
+  box-shadow: var(--crm-popup-shadow);
+  padding: var(--crm-dropdown-2-padding);
   min-width: var(--crm-dropdown-width);
 }
 .ac_results::before,
@@ -47,7 +47,7 @@
   height: 0px;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 5px solid var(--crm-dropdown2-bg-color);
+  border-bottom: 5px solid var(--crm-dropdown-2-bg);
   top: -5px;
   left: 12px;
 }
@@ -73,19 +73,24 @@
 .crm-event-links-list-inner ul a,
 .crm-participant-list-inner ul a,
 #crm-create-new-list ul a {
-  color: var(--crm-secondary-text-color);
-  padding: var(--crm-l-xsmall-2) var(--crm-l-small);
-  border-radius: var(--crm-l-radius);
+  color: var(--crm-c-secondary-text);
+  padding: var(--crm-xs2) var(--crm-s);
+  border-radius: var(--crm-roundness);
   display: block;
 }
-#crm-contact-actions-list ul a:is(:hover,:focus),
-.crm-contribpage-links-list-inner a:is(:hover,:focus),
-.crm-event-links-list-inner ul a:is(:hover,:focus),
-.crm-participant-list-inner ul a:is(:hover,:focus),
-#crm-create-new-list ul a:is(:hover,:focus), {
+#crm-contact-actions-list ul a:hover,
+#crm-contact-actions-list ul a:focus,
+.crm-contribpage-links-list-inner ul a:hover,
+.crm-contribpage-links-list-inner ul a:focus,
+.crm-event-links-list-inner ul a:hover,
+.crm-event-links-list-inner ul a:focus,
+.crm-participant-list-inner ul a:hover,
+.crm-participant-list-inner ul a:focus,
+#crm-create-new-list ul a:hover,
+#crm-create-new-list ul a:focus {
   text-decoration: none;
-  color: var(--crm-text-color);
-  background-color: var(--crm-container-bg-color);
+  color: var(--crm-c-text);
+  background-color: var(--crm-c-background);
 }
 
 /* In-table dropdown */
@@ -104,12 +109,12 @@
   position: absolute;
   right: 0;
   padding: 0;
-  margin: var(--crm-l-medium) 0;
+  margin: var(--crm-m) 0;
   min-width: var(--crm-dropdown-width);
-  background: var(--crm-dropdown-bg-color);
-  border-radius: var(--crm-l-radius);
+  background: var(--crm-dropdown-bg);
+  border-radius: var(--crm-roundness);
   border: var(--crm-dropdown-border);
-  box-shadow: var(--crm-shadow-popup);
+  box-shadow: var(--crm-popup-shadow);
 }
 .crm-container .btn-slide ul.panel::before,
 .crm-container .btn-group .dropdown-menu::before {
@@ -120,17 +125,17 @@
   height: 0px;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 5px solid var(--crm-dropdown-bg-color);
+  border-bottom: 5px solid var(--crm-dropdown-bg);
   top: -5px;
-  right: var(--crm-l-reg);
+  right: var(--crm-r);
 }
 .crm-container .btn-group .dropdown-menu::before {
-  left: var(--crm-l-large);
+  left: var(--crm-l);
   right: auto;
 }
 .crm-container .btn-group .dropdown-menu-right::before,
 .crm-container .btn-group.pull-right .dropdown-menu::before {
-  right: var(--crm-l-reg);
+  right: var(--crm-r);
   left: auto;
 }
 .crm-container .btn-slide ul.panel li {
@@ -140,16 +145,16 @@
 }
 .crm-container .btn-slide ul.panel li a {
   text-decoration: none;
-  padding: var(--crm-l-small);
+  padding: var(--crm-s);
   display: block;
-  cursor: var(--crm-link-hover-cursor);
-  color: var(--crm-dropdown-color);
+  cursor: var(--crm-hover-clickable);
+  color: var(--crm-dropdown-col);
   text-align: left;
 }
 .crm-container .btn-slide ul.panel li a:hover,
 .crm-container .btn-slide ul.panel li a:focus {
-  color: var(--crm-dropdown-hover-text-color);
-  background-color: var(--crm-dropdown-hover-bg-color);
+  color: var(--crm-dropdown-hover);
+  background-color: var(--crm-dropdown-hover-bg);
 }
 
 /* Tooltip - contact dashboard/contact search */
@@ -177,25 +182,25 @@
   display: block;
 }
 .crm-container .crm-tooltip-wrapper .crm-tooltip {
-  box-shadow: var(--crm-shadow-popup);
-  background: var(--crm-container-bg-color);
-  border-radius: var(--crm-l-radius);
+  box-shadow: var(--crm-popup-shadow);
+  background: var(--crm-c-background);
+  border-radius: var(--crm-roundness);
 }
 .crm-container .crm-tooltip-active:not(.crm-tooltip-down) .crm-tooltip-wrapper::after {
-  border-top: 10px solid var(--crm-container-bg-color);
+  border-top: 10px solid var(--crm-c-background);
   border-left: 10px solid rgba(0,0,0,0);
   border-right: 10px solid rgba(0,0,0,0);
   content: "";
-  left: var(--crm-l-medium-2);
+  left: var(--crm-m2);
   position: relative;
   bottom: -7px;
 }
 .crm-container .crm-tooltip-active.crm-tooltip-down .crm-tooltip-wrapper::before {
-  border-bottom: 10px solid var(--crm-layer1-bg-color);
+  border-bottom: 10px solid var(--crm-c-background2);
   border-left: 10px solid rgba(0,0,0,0);
   border-right: 10px solid rgba(0,0,0,0);
   content: "";
-  left: var(--crm-l-medium-2);
+  left: var(--crm-m2);
   position: relative;
   top: -7px;
 }
@@ -206,9 +211,9 @@
 .crm-container .crm-tooltip table,
 .crm-container .crm-tooltip table tr,
 .crm-container .crm-tooltip table tr td {
-  background-color: var(--crm-container-bg-color);
+  background-color: var(--crm-c-background);
   border: none;
-  color: var(--crm-text-color);
+  color: var(--crm-c-text);
   word-wrap: break-word;
   width: 100%;
 }
@@ -217,22 +222,22 @@
   white-space: normal;
 }
 .crm-container .crm-tooltip-wrapper .crm-tooltip .crm-table-group-summary > tbody > tr > td.crm-section {
-  padding: var(--crm-l-small) 0;
+  padding: var(--crm-s) 0;
 }
 .crm-container .crm-tooltip-wrapper .crm-tooltip .crm-table-group-summary > tbody > tr:nth-child(1) > td {
-  background: var(--crm-layer1-bg-color);
-  color: var(--crm-text-color);
-  font-size: var(--crm-l-reg-1);
-  padding: var(--crm-l-medium-2) var(--crm-l-reg-1);
+  background: var(--crm-c-background2);
+  color: var(--crm-c-text);
+  font-size: var(--crm-r1);
+  padding: var(--crm-m2) var(--crm-r1);
   font-weight: bold;
 }
 .crm-container .crm-tooltip-wrapper .crm-tooltip .crm-table-group-summary > tbody > tr:nth-child(2) > td {
-  border-top: var(--crm-border) !important;
+  border-top: var(--crm-c-divider) !important;
   width: 50%;
-  padding: var(--crm-l-reg-1) var(--crm-l-medium-1) 0;
+  padding: var(--crm-r1) var(--crm-m1) 0;
 }
 .crm-container .crm-tooltip-wrapper .crm-tooltip .crm-table-group-summary > tbody > tr:nth-child(2) > td:first-child {
-  padding-left: var(--crm-l-reg-1);
+  padding-left: var(--crm-r1);
 }
 
 /* BS3 Dropdowns */
@@ -262,18 +267,18 @@
   display: none;
   min-width: var(--crm-dropdown-width);
   padding: var(--crm-dropdown-padding) !important;
-  margin-top: var(--crm-l-small);
+  margin-top: var(--crm-s);
   text-align: left;
   list-style: none;
-  background-color: var(--crm-dropdown-bg-color);
+  background-color: var(--crm-dropdown-bg);
   background-clip: padding-box;
   border: var(--crm-dropdown-border);
-  border-radius: var(--crm-l-radius);
-  box-shadow: var(--crm-shadow-popup);
+  border-radius: var(--crm-roundness);
+  box-shadow: var(--crm-popup-shadow);
 }
 .crm-container .crm-search .api4-add-where-group-menu {
   min-width: 80px;
-  background-color: var(--crm-dropdown-bg-color) !important;
+  background-color: var(--crm-dropdown-bg) !important;
 }
 .crm-container .dropdown-menu.pull-right {
   right: 0;
@@ -281,52 +286,61 @@
 }
 .crm-container .dropdown-menu .divider {
   height: 1px;
-  margin: var(--crm-l-medium) 0;
+  margin: var(--crm-m) 0;
   overflow: hidden;
-  background-color: var(--crm-layer2-bg-color);
+  background-color: var(--crm-c-background3);
 }
 #bootstrap-theme .dropdown-menu li .form-inline,
 #bootstrap-theme .dropdown-menu li .form-inline a:not(.select2-choice) {
-  color: var(--crm-dropdown-color);
+  color: var(--crm-dropdown-col);
 }
 .crm-container .dropdown-menu > li {
-  border-radius: var(--crm-l-radius);
+  border-radius: var(--crm-roundness);
 }
 .crm-container .dropdown-menu > li > a {
   display: block;
   padding: var(--crm-dropdown-padding);
   clear: both;
-  color: var(--crm-dropdown-color);
-  border-radius: var(--crm-l-radius);
+  color: var(--crm-dropdown-col);
+  border-radius: var(--crm-roundness);
   white-space: nowrap;
 }
 .crm-container .dropdown-menu > li:not(.disabled) > a i.crm-i {
-  padding-right: var(--crm-l-small);
-  color: var(--crm-dropdown-color);
+  padding-right: var(--crm-s);
+  color: var(--crm-dropdown-col);
 }
 .crm-container .dropdown-menu > li > a:hover,
 .crm-container .dropdown-menu > li > a:focus,
 .crm-container .dropdown-menu > .active > a,
 .crm-container .dropdown-menu > .active > a:hover,
 .crm-container .dropdown-menu > .active > a:focus {
-  color: var(--crm-dropdown-hover-text-color) !important; /* vs BS .btn-secondary:hover */
-  background-color: var(--crm-dropdown-hover-bg-color);
-  border-radius: var(--crm-l-radius);
+  color: var(--crm-dropdown-hover);
+  background-color: var(--crm-dropdown-hover-bg);
+  text-decoration: none;
+  border-radius: var(--crm-roundness);
 }
 .crm-container .dropdown-menu > li:not(.disabled) > a:hover i.crm-i,
 .crm-container .dropdown-menu > li:not(.disabled) > a:focus i.crm-i {
-  color: var(--crm-dropdown-hover-text-color);
+  color: var(--crm-dropdown-hover);
+}
+.crm-container .dropdown-menu > .disabled > a,
+.crm-container .dropdown-menu > .disabled > a:hover,
+.crm-container .dropdown-menu > .disabled > a:focus {
+  color: var(--crm-c-inactive);
 }
 .crm-container .dropdown-menu > .disabled > a:hover,
 .crm-container .dropdown-menu > .disabled > a:focus {
+  text-decoration: none;
   cursor: not-allowed;
   background-color: transparent;
+  background-image: none;
+  filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);
 }
 .crm-container .open > .dropdown-menu,
 .crm-container .open .btn.dropdown-toggle + .dropdown-menu {
   display: flex;
   flex-direction: column;
-  gap: var(--crm-l-small);
+  gap: var(--crm-s);
 }
 .crm-container .open > a {
   outline: 0;
@@ -343,10 +357,10 @@
   display: block;
   padding: var(--crm-dropdown-padding);
   white-space: nowrap;
-  color: var(--crm-dropdown-color);
+  color: var(--crm-dropdown-col);
   font-weight: bold;
-  padding: var(--crm-l-medium) var(--crm-l-xsmall) var(--crm-l-xsmall) !important;
-  border-bottom: 1px solid var(--crm-dropdown-color);
+  padding: var(--crm-m) var(--crm-xs) var(--crm-xs) !important;
+  border-bottom: 1px solid var(--crm-dropdown-col);
   border-radius: 0;
 }
 .crm-container .pull-right > .dropdown-menu {
@@ -385,12 +399,12 @@
   margin: 2px 0 0;
   text-align: left;
   list-style: none;
-  background-color: var(--crm-dropdown-bg-color);
+  background-color: var(--crm-dropdown-bg);
   background-clip: padding-box;
   border: 1px solid var(--crm-dropdown-border);
   border: 1px solid rgba(0, 0, 0, .15);
-  border-radius: var(--crm-l-radius);
-  box-shadow: var(--crm-shadow-popup);
+  border-radius: var(--crm-roundness);
+  box-shadow: var(--crm-popup-shadow);
 }
 .crm-container .dropdown-menu.dropdown-menu-right {
   right: 0;
@@ -415,37 +429,37 @@
 #afGuiEditor .dropdown-menu a:has(.text-danger) {
   display: flex;
   justify-content: center;
-  background: var(--crm-dropdown-danger-bg-color);
+  background: var(--crm-dropdown-danger-bg);
 }
 #afGuiEditor .dropdown-menu .text-danger,
 #afGuiEditor .dropdown-menu .text-danger i.crm-i::before {
-  color: var(--crm-danger-text-color);
+  color: var(--crm-c-danger-text);
 }
 
 /* JsTree Dropdown - all of Vakata Context, from jstree/dist has to be overwritten with !important */
 
 .vakata-context {
   min-width: var(--crm-dropdown-width);
-  background-color: var(--crm-dropdown-bg-color) !important;
+  background-color: var(--crm-dropdown-bg) !important;
   border: 1px solid var(--crm-dropdown-border) !important;
-  border-radius: var(--crm-l-radius);
-  box-shadow: var(--crm-shadow-popup) !important;
+  border-radius: var(--crm-roundness);
+  box-shadow: var(--crm-popup-shadow) !important;
   padding: var(--crm-dropdown-padding) !important;
 }
 .vakata-context li > a {
   line-height: unset !important;
-  color: var(--crm-dropdown-color) !important;
+  color: var(--crm-dropdown-col) !important;
   text-shadow: none !important;
   font-weight: normal !important;
   padding: 0 !important;
   border: 0 !important;
-  border-radius: var(--crm-l-radius) !important;
+  border-radius: var(--crm-roundness) !important;
 }
 .vakata-context li > a:hover,
 .vakata-context .vakata-context-hover > a {
-  background-color: var(--crm-dropdown-hover-bg-color) !important;
+  background-color: var(--crm-dropdown-hover-bg) !important;
   box-shadow: none !important;
-  color: var(--crm-dropdown-hover-text-color) !important;
+  color: var(--crm-dropdown-hover) !important;
 }
 .vakata-context li > a > i {
   margin: 0 !important;

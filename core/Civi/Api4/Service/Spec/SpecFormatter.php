@@ -86,8 +86,7 @@ class SpecFormatter {
       }
       $field->setSuffixes($suffixes);
     }
-    // Primary keys are also considered readonly, since they cannot be changed
-    $field->setReadonly(!empty($data['readonly']) || !empty($data['primary_key']));
+    $field->setReadonly(!empty($data['readonly']));
     if (isset($data['usage'])) {
       $field->setUsage($data['usage']);
     }
@@ -156,12 +155,6 @@ class SpecFormatter {
     }
     if ($inputType == 'Text' && !empty($data['maxlength'])) {
       $inputAttrs['maxlength'] = (int) $data['maxlength'];
-    }
-    if (isset($inputAttrs['min']) && is_string($inputAttrs['min'])) {
-      $inputAttrs['min'] = (int) $inputAttrs['min'];
-    }
-    if (isset($inputAttrs['max']) && is_string($inputAttrs['max'])) {
-      $inputAttrs['max'] = (int) $inputAttrs['max'];
     }
     // Ensure all keys use lower_case not camelCase
     $snakeKeys = array_map('CRM_Utils_String::convertStringToSnakeCase', array_keys($inputAttrs));
