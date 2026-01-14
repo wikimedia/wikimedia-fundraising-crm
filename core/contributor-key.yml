@@ -65,6 +65,8 @@
 - github      : akosgarai
   name        : Akos Garai
 
+- github      : akwizgran
+
 - github      : AlainBenbassat
   name        : Alain Benbassat
   organization: Business & Code
@@ -83,6 +85,10 @@
 
 - github      : alexymik
   name        : Alexy Mikhailichenko
+
+- github      : alietz
+  name        : Andreas Lietz
+  organization: Stiftung Pfadfinden
 
 - github      : alifrumin
   name        : Alice Frumin
@@ -362,6 +368,9 @@
   name        : Dan Cruson
   organization: CrusonWeb
 
+- github      : cs-bennwas
+  organization: civiservice.de
+
 - github      : CsarRamos
   name        : César Ramos
   organization: iXiam
@@ -371,6 +380,10 @@
   organization: Redfin Solutions
 
 - name        : Andy Clarke
+
+- github      : dbwells
+  name        : Dan Wells
+  organization: Calvin Theological Seminary
 
 - name        : Daniel Martinez
 
@@ -454,7 +467,7 @@
   organization: Giant Rabbit
 
 - github      : djnatedagreat
-  name        : Nate Harris
+  name        : Nate Frank
   organization: New York State Senate
 
 - github      : dkguru
@@ -585,6 +598,9 @@
 
 - name        : Fernando Rodríguez
   organization: Amnistía Internacional España
+
+- github      : fhs2qqp9ws-ux
+  name        : Nadaillac
 
 - github      : fkohrt
   name        : Florian Kohrt
@@ -773,6 +789,8 @@
 - github      : jackrabbithanna
   name        : Mark Hanna
   organization: Skvare
+
+- github      : JacquesVanH
 
 - github      : JadeGaunt
   name        : Jade Gaunt
@@ -983,7 +1001,7 @@
 
 - github      : larssandergreen
   name        : Lars Sander-Green
-  organization: Wildsight
+  organization: Wikimedia Foundation
 
 - github      : laryn
   name        : Laryn Kragt Bakker
@@ -1254,6 +1272,10 @@
 
 - github      : netzih
 
+- github      : nfreesto
+  name        : Nathan Freestone
+  organization: Giant Rabbit
+
 - github      : nganivet
   name        : Nicolas Ganivet
   organization: CiviDesk
@@ -1454,6 +1476,10 @@
 
 - name        : Lutz Frommberger
 
+- github      : RhiCircle
+  name        : Rhiannon Davies
+  organization: Circle Interactive
+
 - github      : rgilman
   name        : Robert Gilman
   organization: Context Institute
@@ -1494,6 +1520,9 @@
 - github      : sadashivdalvi
   name        : Sadashiv
   organization: Gokhalemethod
+
+- github      : SarahFG
+  name        : Sarah Farrell-Graham
 
 - github      : savionlee
   name        : Savion Lee
@@ -1949,3 +1978,4 @@
 
 - github      : MundMBo
   name        : Marvin Müller
+

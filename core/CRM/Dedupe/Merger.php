@@ -861,12 +861,12 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
    *   Limit on number of contacts to search for duplicates for.
    *   This means that if the limit is 1000 then only duplicates for the first 1000 contacts
    *   matching criteria will be found and batchMerged (the number of merges could be less than or greater than 100)
-   *
+   * @param bool $isForceNewSearch
    * @return array|bool
    *
-   * @throws \CRM_Core_Exception
+   * @throws CRM_Core_Exception
    */
-  public static function batchMerge($rgid, $gid = NULL, $mode = 'safe', $batchLimit = 1, $isSelected = 2, $criteria = [], $checkPermissions = TRUE, $reloadCacheIfEmpty = NULL, $searchLimit = 0, bool $isForceNewSearch = FALSE) {
+  public static function batchMerge($rgid, $gid = NULL, $mode = 'safe', $batchLimit = 1, $isSelected = 2, $criteria = [], $checkPermissions = TRUE, $reloadCacheIfEmpty = NULL, $searchLimit = 0, bool $isForceNewSearch = FALSE): array|bool {
     $redirectForPerformance = $batchLimit > 1;
     if ($mode === 'aggressive' && $checkPermissions && !CRM_Core_Permission::check('force merge duplicate contacts')) {
       throw new CRM_Core_Exception(ts('Insufficient permissions for aggressive mode batch merge'));

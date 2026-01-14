@@ -5,8 +5,16 @@ if (!\CRM_Core_I18n::isMultilingual()) {
 $items = [];
 
 $languages = \CRM_Core_I18n::languages();
+$locales = \CRM_Core_I18n::getMultilingual();
 
-foreach (\CRM_Core_I18n::getMultilingual() as $index => $langCode) {
+// if forcing translation source, we don't want to offer the translation to default locale
+$force_translation_source_locale = \Civi::settings()->get('force_translation_source_locale') ?? TRUE;
+if ($force_translation_source_locale) {
+  $defaultLocale = \Civi::settings()->get('lcMessages');
+  $locales = array_diff($locales, [$defaultLocale]);
+}
+
+foreach ($locales as $index => $langCode) {
   $items[] = [
     'name' => "SavedSearch_Translation_$langCode",
     'entity' => 'SavedSearch',
@@ -112,14 +120,24 @@ foreach (\CRM_Core_I18n::getMultilingual() as $index => $langCode) {
                     'IS EMPTY',
                   ],
                 ],
+                [
+                  'icon' => 'fa-pencil',
+                  'side' => 'left',
+                  'if' => [],
+                ],
               ],
             ],
           ],
-          'actions' => FALSE,
+          'actions' => [
+            'delete',
+            'download',
+          ],
           'classes' => [
             'table',
             'table-striped',
+            'crm-sticky-header',
           ],
+          'actions_display_mode' => 'menu',
         ],
       ],
       'match' => [

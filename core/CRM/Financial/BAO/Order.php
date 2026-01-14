@@ -757,7 +757,7 @@ class CRM_Financial_BAO_Order {
     return $this->priceSetMetadata;
   }
 
-  public function isMembershipPriceSet() {
+  public function isMembershipPriceSet(): bool {
     if (!CRM_Core_Component::isEnabled('CiviMember')) {
       return FALSE;
     }
@@ -981,16 +981,7 @@ class CRM_Financial_BAO_Order {
    */
   protected function calculateLineItems(): array {
     $lineItems = [];
-    $params = $this->getPriceSelection();
-    if ($this->getOverrideTotalAmount() !== FALSE) {
-      // We need to do this to keep getLine from doing weird stuff but the goal
-      // is to ditch getLine next round of refactoring
-      // and make the code more sane.
-      $params['total_amount'] = $this->getOverrideTotalAmount();
-    }
 
-    // Dummy value to prevent e-notice in getLine. We calculate tax in this class.
-    $params['financial_type_id'] = 0;
     if ($this->getTemplateContributionID()) {
       $lineItems = $this->getLinesFromTemplateContribution();
       // Set the price set ID from the first line item (we need to set this here
@@ -1013,13 +1004,9 @@ class CRM_Financial_BAO_Order {
       }
     }
     else {
-      foreach ($this->getPriceOptions() as $fieldID => $valueID) {
-        if ($valueID !== '') {
-          $this->setPriceSetIDFromSelectedField($fieldID);
-          $throwAwayArray = [];
-          $temporaryParams = $params;
-          // @todo - still using getLine for now but better to bring it to this class & do a better job.
-          $newLines = CRM_Price_BAO_PriceSet::getLine($temporaryParams, $throwAwayArray, $this->getPriceSetID(), $this->getPriceFieldSpec($fieldID), $fieldID)[1];
+      foreach ($this->getPriceOptions() as $priceFieldID => $priceFieldValueID) {
+        if ($priceFieldValueID !== '') {
+          $newLines = $this->getLine($priceFieldID);
           foreach ($newLines as $newLine) {
             $lineItems[$newLine['price_field_value_id']] = $newLine;
           }
@@ -1058,7 +1045,11 @@ class CRM_Financial_BAO_Order {
       if ($this->getOverrideTotalAmount() !== FALSE) {
         $this->addTotalsToLineBasedOnOverrideTotal((int) $lineItem['financial_type_id'], $lineItem);
       }
-      elseif ($this->getPriceFieldMetadata($lineItem['price_field_id'])['name'] === 'other_amount') {
+      elseif ($this->getPriceFieldMetadata($lineItem['price_field_id'])['name'] === 'other_amount'
+        // If we are loading an existing contribution then this switcheroo to treat the amount set
+        // as being the inclusive amount has already been done, so skip.
+        && !$this->getExistingContributionID() && !$this->getTemplateContributionID()
+      ) {
         // Other amount is a front end user entered form. It is reasonable to think it would be tax inclusive.
         $lineItem['line_total_inclusive'] = $lineItem['line_total'];
         $lineItem['line_total'] = $lineItem['line_total_inclusive'] ? $lineItem['line_total_inclusive'] / (1 + ($lineItem['tax_rate'] / 100)) : 0;
@@ -1572,9 +1563,6 @@ class CRM_Financial_BAO_Order {
       if (str_starts_with($fieldName, 'entity_id.')) {
         $entityValues[substr($fieldName, 10)] = $fieldValue;
       }
-      if ($fieldName === 'membership_type_id' && $entity === 'Membership') {
-        $entityValues['membership_type_id'] = $fieldValue;
-      }
     }
     if (empty($entityValues['id'])) {
       // Not an update, include any relevant values (e.g. contact_id) from the contribution
@@ -1582,18 +1570,45 @@ class CRM_Financial_BAO_Order {
       $fields = (array) civicrm_api4($entity, 'getfields')->indexBy('name');
       $carryOverFields = array_intersect_key($this->contributionValues, $fields);
       $entityValues += $carryOverFields;
-      if ($entity === 'Membership' && empty($entityValues['status_id'])) {
-        if (empty($entityValues['join_date'])) {
+
+      if ($entity === 'Membership') {
+        // We can pass in API4 pseudoconstant, eg. membership_type_id:name but that will be overridden if we
+        //   also pass in membership_type_id on the lineItem.
+        // membership_type_id is a special-case because it has it's own field on PriceFieldValue.
+        // If a membership_type_id pseudoconstant was passed in use that, otherwise fall back to membership_type_id on lineitem if set.
+        if (!empty($lineItem['membership_type_id'])) {
+          $membershipTypeKeys = array_filter($entityValues, function($key) {
+            return str_starts_with($key, 'membership_type_id');
+          }, ARRAY_FILTER_USE_KEY);
+          $membershipTypeKey = array_key_first($membershipTypeKeys);
+          if (empty($membershipTypeKey)) {
+            $entityValues['membership_type_id'] = $lineItem['membership_type_id'];
+          }
+        }
+
+        if (empty($entityValues['join_date']) && !empty($this->contributionValues['receive_date'])) {
+          // Prefer Membership.join_date, if not set use Contribution receive_date
           $entityValues['join_date'] = $this->contributionValues['receive_date'];
         }
-        $entityValues['status_id'] = CRM_Member_BAO_MembershipStatus::getMembershipStatusByDate(
-          $entityValues['start_date'] ?? NULL,
+
+        // We can pass in API4 pseudoconstant, eg. status_id:name but that will be overridden if we
+        //   calculate and set status_id. Check if we already have a pseudoconstant-style status_id first.
+        $statusIDKeys = array_filter($entityValues, function($key) {
+          return str_starts_with($key, 'status_id');
+        }, ARRAY_FILTER_USE_KEY);
+        $statusIDKey = array_key_first($statusIDKeys);
+        if (empty($statusIDKey) || empty($entityValues[$statusIDKey])) {
+          // For the Membership entity, we didn't pass in a value for "status" so we are going to calculate membership status
+          //   from membership dates and membership type.
+          $entityValues['status_id'] = CRM_Member_BAO_MembershipStatus::getMembershipStatusByDate(
+            $entityValues['start_date'] ?? NULL,
             $entityValues['end_date'] ?? NULL,
             $entityValues['join_date'] ?? NULL,
-          $this->contributionValues['receive_date'],
-          TRUE,
-          $entityValues['membership_type_id']
-        )['id'];
+            $this->contributionValues['receive_date'],
+            TRUE,
+            $entityValues['membership_type_id']
+          )['id'];
+        }
       }
     }
     if (array_keys($entityValues) === ['id']) {
@@ -1612,6 +1627,97 @@ class CRM_Financial_BAO_Order {
 
   public function setExistingContributionID(?int $existingContributionID): void {
     $this->existingContributionID = $existingContributionID;
+  }
+
+  /**
+   * Get the relevant line item.
+   *
+   * @param int $priceFieldID
+   *
+   * @return array
+   *
+   * @todo: Copied from CRM_Price_BAO_PriceSet so we can refactor/simplify/remove
+   */
+  private function getLine(int $priceFieldID): array {
+    $priceSelection = $this->getPriceSelection();
+    $priceField = $this->getPriceFieldSpec($priceFieldID);
+
+    switch ($priceField['html_type']) {
+      case 'Text':
+        $firstOption = reset($priceField['options']);
+        $params = [
+          "price_{$priceFieldID}" => [$firstOption['id'] => $priceSelection["price_{$priceFieldID}"]],
+        ];
+        CRM_Price_BAO_LineItem::format($priceFieldID, $params, $priceField, $lineItem);
+        $optionValueId = key($priceField['options']);
+        if (!empty($priceField['options'][$optionValueId]['tax_rate'])) {
+          $lineItem = self::setTaxOnLineItem($priceField, $lineItem, $optionValueId);
+        }
+        break;
+
+      case 'Select':
+      case 'Radio':
+        // special case if user select -none-
+        if ($priceSelection["price_{$priceFieldID}"] <= 0) {
+          break;
+        }
+
+        // Sometimes the amount is overridden by the amount on the form.
+        // This is notably the case with memberships and we need to put this amount
+        // on the line item rather than the calculated amount.
+        // This seems to only affect radio link items as that is the use case for the 'quick config'
+        // set up (which allows a free form field).
+        // Can only override if there is only one priceField
+        if (is_array($priceSelection["price_{$priceFieldID}"]) && count($priceSelection["price_{$priceFieldID}"]) === 1) {
+          $amountOverride = $this->getOverrideTotalAmount() ? $this->getOverrideTotalAmount() : NULL;
+        }
+
+        $params = [
+          "price_{$priceFieldID}" => [$priceSelection["price_{$priceFieldID}"] => 1],
+        ];
+        CRM_Price_BAO_LineItem::format($priceFieldID, $params, $priceField, $lineItem, $amountOverride ?? NULL);
+        $optionValueId = CRM_Utils_Array::key(1, $params["price_{$priceFieldID}"]);
+        if (!empty($priceField['options'][$optionValueId]['tax_rate'])) {
+          $lineItem = self::setTaxOnLineItem($priceField, $lineItem, $optionValueId);
+        }
+        break;
+
+      case 'CheckBox':
+        CRM_Price_BAO_LineItem::format($priceFieldID, $priceSelection, $priceField, $lineItem);
+        foreach ($priceSelection["price_{$priceFieldID}"] as $optionValueId => $option) {
+          if (!empty($priceField['options'][$optionValueId]['tax_rate'])) {
+            $lineItem = self::setTaxOnLineItem($priceField, $lineItem, $optionValueId);
+          }
+        }
+        break;
+    }
+
+    return $lineItem ?? [];
+  }
+
+  /**
+   * Function to set tax_amount and tax_rate in LineItem.
+   *
+   * @param array $priceField
+   * @param array $lineItem
+   * @param int $optionValueId
+   *
+   * @return array
+   *
+   * @todo: Copied from CRM_Price_BAO_PriceSet so we can refactor/simplify/remove
+   */
+  private static function setTaxOnLineItem(array $priceField, array $lineItem, int $optionValueId): array {
+    // Here we round - i.e. after multiplying by quantity
+    if ($priceField['html_type'] === 'Text') {
+      $taxAmount = round($priceField['options'][$optionValueId]['tax_amount'] * $lineItem[$optionValueId]['qty'], 2);
+    }
+    else {
+      $taxAmount = round($priceField['options'][$optionValueId]['tax_amount'], 2);
+    }
+    $taxRate = $priceField['options'][$optionValueId]['tax_rate'];
+    $lineItem[$optionValueId]['tax_amount'] = $taxAmount;
+    $lineItem[$optionValueId]['tax_rate'] = $taxRate;
+    return $lineItem;
   }
 
 }

@@ -185,6 +185,7 @@ class CRM_Utils_System_Backdrop extends CRM_Utils_System_DrupalBase {
 
   /**
    * @inheritDoc
+   * @internal
    */
   public function addHTMLHead($header) {
     static $count = 0;
@@ -497,8 +498,8 @@ AND    u.status = 1
 
       // Config must be re-initialized to reset the base URL
       // otherwise links will have the wrong language prefix/domain.
-      $config = CRM_Core_Config::singleton();
-      $config->free();
+      $domain = \CRM_Core_BAO_Domain::getDomain();
+      \CRM_Core_BAO_ConfigSetting::applyLocale(\Civi::settings($domain->id), $domain->locales);
 
       return TRUE;
     }

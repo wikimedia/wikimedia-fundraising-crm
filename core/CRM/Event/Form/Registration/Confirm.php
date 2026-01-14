@@ -206,13 +206,12 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
    *
    * @return int
    */
-  public function getAction() {
-    if ($this->_action & CRM_Core_Action::PREVIEW) {
+  public function getAction(): int {
+    if ($this->isTest()) {
       return CRM_Core_Action::VIEW | CRM_Core_Action::PREVIEW;
     }
-    else {
-      return CRM_Core_Action::VIEW;
-    }
+
+    return CRM_Core_Action::VIEW;
   }
 
   /**
@@ -583,7 +582,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
           //if primary participant contributing additional amount
           //append (multiple participants) to its fee level. CRM-4196.
           if (count($params) > 1) {
-            $participantRecord['amount_level'] .= ts(' (multiple participants)') . CRM_Core_DAO::VALUE_SEPARATOR;
+            $participantRecord['amount_level'] .= ' ' . ts('(multiple participants)') . CRM_Core_DAO::VALUE_SEPARATOR;
           }
 
           //passing contribution id is already registered.
@@ -696,11 +695,6 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
       CRM_Event_BAO_Participant::transitionParticipants($cancelledIds, $cancelledId);
     }
 
-    $isTest = FALSE;
-    if ($this->_action & CRM_Core_Action::PREVIEW) {
-      $isTest = TRUE;
-    }
-
     $primaryParticipant = $this->get('primaryParticipant');
 
     if (empty($primaryParticipant['participantID'])) {
@@ -719,9 +713,9 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
     ) {
 
       //build an array of custom profile and assigning it to template
-      $customProfile = CRM_Event_BAO_Event::buildCustomProfile($registerByID, $this->_values, NULL, $isTest);
+      $customProfile = CRM_Event_BAO_Event::buildCustomProfile($registerByID, $this->_values, NULL, $this->isTest());
       if (count($customProfile)) {
-        $this->assign('customProfile', $customProfile);
+        // @todo - calculate this on the thank you page, where it is used rather than here & passing through.
         $this->set('customProfile', $customProfile);
       }
 
@@ -732,7 +726,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
           $primaryContactId = $this->get('primaryContactId');
 
           //build an array of cId/pId of participants
-          $additionalIDs = CRM_Event_BAO_Event::buildCustomProfile($registerByID, NULL, $primaryContactId, $isTest, TRUE);
+          $additionalIDs = CRM_Event_BAO_Event::buildCustomProfile($registerByID, NULL, $primaryContactId, $this->isTest(), TRUE);
 
           //need to copy, since we are unsetting on the way.
           $copyParticipantCountLines = $participantCount;
@@ -797,7 +791,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
       // @todo - don't call buildCustomProfile to get additionalParticipants.
       // CRM_Event_BAO_Participant::getAdditionalParticipantIds is a better fit.
       $additionalIDs = CRM_Event_BAO_Event::buildCustomProfile($registerByID,
-        NULL, $primaryContactId, $isTest,
+        NULL, $primaryContactId, $this->isTest(),
         TRUE
       );
       //let's send mails to all with meaningful text, CRM-4320.
@@ -830,13 +824,12 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
         $participantNum = 0;
         if ($participantID == $registerByID) {
           //build an array of custom profile and assigning it to template.
-          $customProfile = CRM_Event_BAO_Event::buildCustomProfile($participantID, $this->_values, NULL, $isTest);
+          $customProfile = CRM_Event_BAO_Event::buildCustomProfile($participantID, $this->_values, NULL, $this->isTest());
 
           if (count($customProfile)) {
-            $this->assign('customProfile', $customProfile);
+            // @todo - calculate this on the thank you page, where it is used rather than here & passing through.
             $this->set('customProfile', $customProfile);
           }
-          $this->_values['params']['additionalParticipant'] = FALSE;
         }
         else {
           //take the Additional participant number.
@@ -848,7 +841,6 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
           $participantParams = ['id' => $participantID];
           CRM_Event_BAO_Participant::getValues($participantParams, $participantValues, $ids);
           $this->_values['participant'] = $participantValues[$participantID];
-          $this->assign('customProfile', NULL);
           //Additional Participant should get only it's payment information
           if (!empty($this->_amount)) {
             $amount = [];
@@ -858,23 +850,6 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
             // @todo - unused in core offline receipt template from 5.67. Remove at somepoint
             $this->assign('amounts', $amount);
           }
-          if ($this->_lineItem) {
-            $lineItems = $this->_lineItem;
-            $lineItem = [];
-            if ($lineItemValue = ($lineItems[$participantNum] ?? NULL)) {
-              $lineItem[] = $lineItemValue;
-            }
-            if (\Civi::settings()->get('invoicing')) {
-              $individual = $this->get('individual');
-              $this->assign('totalAmount', $individual[$participantNum]['totalAmtWithTax']);
-              $this->assign('totalTaxAmount', $individual[$participantNum]['totalTaxAmt']);
-              $this->assign('individual', [$individual[$participantNum]]);
-            }
-            $this->assign('lineItem', $lineItem);
-          }
-          $this->_values['params']['additionalParticipant'] = TRUE;
-          // Removed from tpl in 5.67
-          $this->assign('isAdditionalParticipant', $this->_values['params']['additionalParticipant']);
         }
 
         //pass these variables since these are run time calculated.
@@ -882,7 +857,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
         $this->_values['params']['isRequireApproval'] = $this->_requireApproval;
 
         //send mail to primary as well as additional participants.
-        CRM_Event_BAO_Event::sendMail($contactId, $this->_values, $participantID, $isTest);
+        CRM_Event_BAO_Event::sendMail($contactId, $this->_values, $participantID, $this->isTest());
       }
     }
   }
@@ -935,6 +910,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
       // For pay-later contributions it will be the pay-later processor.
       'payment_processor' => $this->_paymentProcessor ? $this->_paymentProcessor['id'] : NULL,
       'payment_instrument_id' => $this->_paymentProcessor ? $this->_paymentProcessor['payment_instrument_id'] : NULL,
+      'revenue_recognition_date' => $this->getRevenueRecognitionDate(),
     ];
 
     if (!$pending && $result) {
@@ -951,10 +927,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
       $contribParams['contribution_status_id'] = array_search('Pending', $allStatuses);
     }
 
-    $contribParams['is_test'] = 0;
-    if ($form->_action & CRM_Core_Action::PREVIEW || ($params['mode'] ?? NULL) === 'test') {
-      $contribParams['is_test'] = 1;
-    }
+    $contribParams['is_test'] = $this->isTest();
 
     if (!empty($contribParams['invoice_id'])) {
       $contribParams['id'] = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_Contribution',
@@ -964,12 +937,6 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
       );
     }
 
-    if (Civi::settings()->get('deferred_revenue_enabled')) {
-      $eventStartDate = $form->_values['event']['start_date'] ?? NULL;
-      if (strtotime($eventStartDate) > strtotime(date('Ymt'))) {
-        $contribParams['revenue_recognition_date'] = date('Ymd', strtotime($eventStartDate));
-      }
-    }
     $contribParams['address_id'] = CRM_Contribute_BAO_Contribution::createAddress($params);
 
     $contribParams['skipLineItem'] = 1;
@@ -977,11 +944,28 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
     // create contribution record
     $contribution = CRM_Contribute_BAO_Contribution::add($contribParams);
     // CRM-11124
-    CRM_Event_BAO_Participant::createDiscountTrxn($form->getEventID(), $contribParams, '', CRM_Price_BAO_PriceSet::parseFirstPriceSetValueIDFromParams($params));
+    CRM_Event_BAO_Participant::createDiscountTrxn($this->getEventID(), $contribParams, '', CRM_Price_BAO_PriceSet::parseFirstPriceSetValueIDFromParams($params));
 
     $transaction->commit();
 
     return $contribution;
+  }
+
+  /**
+   * Get the value for the revenue recognition date field.
+   *
+   * @return string
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function getRevenueRecognitionDate(): string {
+    if (Civi::settings()->get('deferred_revenue_enabled')) {
+      $eventStartDate = $this->getEventValue('start_date');
+      if (strtotime($eventStartDate) > strtotime(date('Ymt'))) {
+        return date('Ymd', strtotime($eventStartDate));
+      }
+    }
+    return '';
   }
 
   /**

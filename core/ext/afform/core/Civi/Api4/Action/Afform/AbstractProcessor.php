@@ -67,7 +67,30 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
    */
   protected $_entityIds = [];
 
+  /**
+   * Values of each entity that is submitted on the form.
+   * Eg. $entityValues['Contribution1'][0]['fields']['field1' => 1, 'field2' => 2]
+   *
+   * @var array
+   */
   protected $_entityValues = [];
+
+  /**
+   * Values for the submission tokens.
+   * Eg. $entityValues['FormProcessor_MyFormProcessor'][0]['input.first_name' => 'john', 'action.create_contact.id' => 2]
+   *
+   * @var array
+   */
+  protected $_submissionTokenValues = [];
+
+  /**
+   * Get the submitted values from all the entities on the form
+   *
+   * @return array
+   */
+  public function getSubmittedValues() {
+    return $this->_entityValues;
+  }
 
   protected array $_response = [];
 
@@ -84,7 +107,7 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
    */
   public function _run(Result $result) {
     $this->_afform = civicrm_api4('Afform', 'get', [
-      'select' => ['*', 'submit_currently_open'],
+      'select' => ['*', 'submit_currently_open', 'submit_limit_per_user', 'user_submission_count'],
       'where' => [['name', '=', $this->name]],
     ])->first();
     // Either the form doesn't exist or user lacks permission
@@ -92,6 +115,9 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
       throw new UnauthorizedException(E::ts('You do not have permission to submit this form'), ['show_detailed_error' => TRUE]);
     }
     if (empty($this->_afform['submit_currently_open'])) {
+      if (!empty($this->_afform['submit_limit_per_user']) && (($this->_afform['user_submission_count'] ?? 0) >= $this->_afform['submit_limit_per_user'])) {
+        throw new UnauthorizedException(E::ts('You have reached the maximum number of submissions for this form.'));
+      }
       throw new UnauthorizedException(E::ts('This form is not currently open for submissions.'), ['show_detailed_error' => TRUE]);
     }
 
@@ -177,6 +203,7 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
   public function unloadEntity(array $entity) {
     unset($this->_entityIds[$entity['name']]);
     unset($this->_entityValues[$entity['name']]);
+    unset($this->_submissionTokenValues[$entity['name']]);
   }
 
   /**
@@ -749,7 +776,13 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
       $records = $this->replaceReferences($entityName, $entityValues[$entityName]);
       $this->fillIdFields($records, $entityName);
       $event = new AfformSubmitEvent($this->_afform, $this->_formDataModel, $this, $records, $entityType, $entityName, $this->_entityIds);
-      \Civi::dispatcher()->dispatch('civi.afform.submit', $event);
+      try {
+        \Civi::dispatcher()->dispatch('civi.afform.submit', $event);
+      }
+      catch (\Throwable $e) {
+        \Civi::log('afform')->error('Afform: ' . $event->getAfform()['name'] . ': civi.afform.submit crashed with error: ' . $e->getMessage());
+        throw $e;
+      }
     }
   }
 
@@ -795,6 +828,27 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
   }
 
   /**
+   * Set the submission token values for a given entity and index.
+   *
+   * @param string $entityName
+   *   The entity
+   * @param int $index
+   *   The index of the entity (0 for single value entitie; otherwise the index of the multi value entity)
+   * @param array $tokenValues
+   *   An array containing the token name as the key and the token value as the value.
+   */
+  public function setSubmissionTokenValues(string $entityName, int $index, array $tokenValues) {
+    $this->_submissionTokenValues[$entityName][$index] = $tokenValues;
+  }
+
+  /**
+   * Rerturn the current set submission token values.
+   */
+  public function getSubmissionTokenValues(): array {
+    return $this->_submissionTokenValues;
+  }
+
+  /**
    * Function to get allowed action of a join entity
    *
    * @param array $mainEntity
@@ -822,13 +876,16 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
    */
   public function replaceTokens(string $text): string {
     $matches = [];
-    preg_match_all('/\[[a-zA-Z0-9]{1,}\.[0-9]{1,}\.[^.]{1,}\]/', $text, $matches);
+    preg_match_all('/[[a-zA-Z0-9_]{1,}\.[0-9]{1,}\.[^]]+]/', $text, $matches);
 
     foreach ($matches[0] as $match) {
       // strip [ ] and split on .
-      [$entityName, $index, $field] = explode('.', substr($match, 1, -1));
+      [$entityName, $index, $field] = explode('.', substr($match, 1, -1), 3);
       if ($field === 'id') {
         $value = $this->_entityIds[$entityName][$index]['id'];
+      }
+      elseif (isset($this->_submissionTokenValues[$entityName][$index][$field])) {
+        $value = $this->_submissionTokenValues[$entityName][$index][$field];
       }
       else {
         $value = $this->_entityValues[$entityName][$index]['fields'][$field];

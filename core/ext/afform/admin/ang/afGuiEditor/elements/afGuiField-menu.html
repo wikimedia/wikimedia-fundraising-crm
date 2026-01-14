@@ -2,7 +2,7 @@
   <div ng-click="$event.stopPropagation()" class="af-gui-field-select-in-dropdown">
     <label>{{:: ts('Type:') }}</label>
     <select class="form-control" ng-model="getSet('input_type')" ng-model-options="{getterSetter: true}" title="{{:: ts('Field type') }}">
-      <option ng-repeat="type in $ctrl.inputTypes" value="{{ type.name }}">{{ type.label }}</option>
+      <option ng-repeat="type in $ctrl.inputTypes" value="{{ type.name }}" ng-if="type.enabled || type.name === $ctrl.fieldDefn.input_type">{{ type.label }}</option>
     </select>
   </div>
 </li>
@@ -17,6 +17,13 @@
     <label for="{{:: $ctrl.getFieldName() }}-maxlength">{{:: ts('Max Length:') }}</label>
     <input id="{{:: $ctrl.getFieldName() }}-maxlength" type="number" min="1" step="1" class="form-control" ng-model="getSet('input_attrs.maxlength')" ng-model-options="{getterSetter: true}">
   </form>
+</li>
+<li ng-if="($ctrl.fieldDefn.input_type === 'Number' || $ctrl.fieldDefn.input_type === 'Range') && !hasOptions()">
+  <div ng-click="$event.stopPropagation()" class="form-inline">
+    <input type="number" class="form-control four" ng-model="$ctrl.node.defn.input_attrs.min" ng-change="$ctrl.onChangeMin()" title="{{:: ts('Minimum value') }}" placeholder="{{:: ts('Min') }}">
+    -
+    <input type="number" class="form-control four" ng-model="$ctrl.node.defn.input_attrs.max" ng-change="$ctrl.onChangeMax()" title="{{:: ts('Maximum value') }}" placeholder="{{:: ts('Max') }}">
+  </div>
 </li>
 <li ng-if="['Number', 'Range'].includes($ctrl.fieldDefn.input_type) && ['Float', 'Money'].includes($ctrl.fieldDefn.data_type) && !hasOptions()">
   <div ng-click="$event.stopPropagation()" class="af-gui-field-select-in-dropdown">
@@ -95,7 +102,7 @@
 </li>
 <li ng-if="$ctrl.hasDefaultValueInput()">
   <form ng-click="$event.stopPropagation()" class="af-gui-field-select-in-dropdown form-inline">
-    <input class="form-control" af-gui-field-value="$ctrl.fieldDefn" ng-model="getSet('afform_default')" ng-model-options="{getterSetter: true}" >
+    <input class="form-control" af-gui-field-value="$ctrl.fieldDefn" ng-model="getSet('afform_default')" ng-model-options="{getterSetter: true}" op="$ctrl.isSearch() ? (getSetOperator() || 'IN') : null">
   </form>
 </li>
 <li>
