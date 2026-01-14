@@ -32,29 +32,26 @@
         }
       },
       controller: function ($element, $timeout) {
-        var ts = CRM.ts('org.civicrm.afform_admin'),
-          ctrl = this,
-          dataType,
-          multi;
+        const ts = CRM.ts('org.civicrm.afform_admin'),
+          ctrl = this;
+        let dataType;
+        let multi;
 
         function makeWidget(field) {
-          var options,
+          let options,
             filters,
             $el = $($element),
             inputType = field.input_type;
 
           getDataType();
 
-          // Decide whether the input should be multivalued
+          // Decide whether the input should be multivalued:
+          // On a search form, it's based on the search operator
           if (ctrl.op) {
             multi = ['IN', 'NOT IN'].includes(ctrl.op);
-          } else if (inputType && dataType !== 'Boolean') {
-            multi = (inputType === 'CheckBox' || (field.input_attrs && field.input_attrs.multiple));
-            // Hidden fields are multi-select if the original input type is.
-            if (inputType === 'Hidden' || inputType === 'DisplayOnly') {
-              multi = _.contains(['CheckBox', 'Radio', 'Select'], field.original_input_type);
-            }
-          } else {
+          }
+          // On an input form, it's based on the field's data type
+          else {
             multi = field.serialize || dataType === 'Array';
           }
           $el.crmAutocomplete('destroy').crmDatepicker('destroy');
@@ -90,9 +87,10 @@
                 minimumInputLength: options.length ? 1 : 0
               });
             } else if (field.options) {
-              options = _.transform(field.options, function(options, val) {
-                options.push({id: val.id, text: val.label});
-              }, []);
+              const options = field.options.map(val => ({
+                id: val.id,
+                text: val.label
+              }));
               $el.select2({data: options, multiple: multi, separator: '\u0001'});
             } else if (dataType === 'Boolean') {
               $el.attr('placeholder', ts('- select -')).crmSelect2({allowClear: false, separator: '\u0001', placeholder: ts('- select -'), data: [
@@ -137,7 +135,7 @@
         // Copied from ng-list but applied conditionally if field is multi-valued
         var parseFieldInput = function(viewValue) {
           // If the viewValue is invalid (say required but empty) it will be `undefined`
-          if (_.isUndefined(viewValue)) return;
+          if (typeof viewValue === 'undefined') return;
 
           if ((viewValue === '1' || viewValue === '0') && ctrl.field.data_type === 'Boolean') {
             return viewValue === '1';
@@ -150,7 +148,7 @@
           var list = [];
 
           if (viewValue) {
-            _.each(viewValue.split("\u0001"), function(value) {
+            viewValue.split("\u0001").forEach(value => {
               list.push(convertDataType(value));
             });
           }

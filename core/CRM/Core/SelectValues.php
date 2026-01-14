@@ -207,6 +207,11 @@ class CRM_Core_SelectValues {
         'label' => ts('Drop-down (select list)'),
       ],
       [
+        'id' => 'Toggle',
+        'name' => 'Toggle',
+        'label' => ts('Toggle Switch'),
+      ],
+      [
         'id' => 'Radio',
         'name' => 'Radio buttons',
         'label' => ts('Radio buttons'),
@@ -363,7 +368,7 @@ class CRM_Core_SelectValues {
         }
 
         $date['format'] = $dao->date_format;
-        $date['time'] = (bool) $dao->time_format;
+        $date['time'] = $dao->time_format ? $dao->time_format * 12 : FALSE;
       }
 
       if (empty($date['format'])) {

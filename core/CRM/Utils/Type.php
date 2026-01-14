@@ -410,7 +410,7 @@ class CRM_Utils_Type {
       case 'Float':
       case 'Money':
         if (CRM_Utils_Rule::numeric($data)) {
-          return $data;
+          return (float) $data;
         }
         break;
 
@@ -471,9 +471,6 @@ class CRM_Utils_Type {
       // Note the string 'NULL' is just for display purposes here and to avoid
       // passing real null to htmlentities - it's not for database queries.
       $data = htmlentities($data ?? 'NULL');
-      $backTrace = debug_backtrace();
-      $message = \CRM_Core_Error::formatBacktrace($backTrace);
-      \Civi::log('batch_merge')->warning('Batch merge failed: ' . $message);
       throw new CRM_Core_Exception("$name (value: $data) is not of the type $type");
     }
 

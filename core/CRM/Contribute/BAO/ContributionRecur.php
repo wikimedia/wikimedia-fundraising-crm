@@ -96,7 +96,8 @@ class CRM_Contribute_BAO_ContributionRecur extends CRM_Contribute_DAO_Contributi
         if (count($lines) === 1) {
           $contributionAmount = $lines->first()['contribution_id.total_amount'];
           // USD here is just ensuring both are in the same format.
-          if (Money::of($contributionAmount, 'USD')->compareTo(Money::of($event->object->amount, 'USD'))) {
+          // Casting to string for all possible types loses the precision advantages of brick/money. Do not copy this pattern.
+          if (Money::of((string) $contributionAmount, 'USD')->compareTo(Money::of((string) $event->object->amount, 'USD'))) {
             // If different then we need to update
             // the contribution. Note that if this is being called
             // as a result of the contribution having been updated then there will
@@ -678,47 +679,6 @@ LEFT  JOIN civicrm_membership_payment mp  ON ( mp.contribution_id = con.id )
   }
 
   /**
-   * Add line items for recurring contribution.
-   *
-   * @param int $recurId
-   * @param \CRM_Contribute_BAO_Contribution $contribution
-   *
-   * @return array
-   * @throws \CRM_Core_Exception
-   */
-  public static function addRecurLineItems($recurId, $contribution) {
-    $foundLineItems = FALSE;
-
-    $lineSets = self::calculateRecurLineItems($recurId, $contribution->total_amount, $contribution->financial_type_id);
-    foreach ($lineSets as $lineItems) {
-      if (!empty($lineItems)) {
-        foreach ($lineItems as $key => $value) {
-          if ($value['entity_table'] == 'civicrm_membership') {
-            try {
-              // @todo this should be done by virtue of editing the line item as this link
-              // is deprecated. This may be the case but needs testing.
-              civicrm_api3('membership_payment', 'create', [
-                'membership_id' => $value['entity_id'],
-                'contribution_id' => $contribution->id,
-                'is_transactional' => FALSE,
-              ]);
-            }
-            catch (CRM_Core_Exception $e) {
-              // we are catching & ignoring errors as an extra precaution since lost IPNs may be more serious that lost membership_payment data
-              // this fn is unit-tested so risk of changes elsewhere breaking it are otherwise mitigated
-            }
-          }
-        }
-        $foundLineItems = TRUE;
-      }
-    }
-    if (!$foundLineItems) {
-      CRM_Price_BAO_LineItem::processPriceSet($contribution->id, $lineSets, $contribution);
-    }
-    return $lineSets;
-  }
-
-  /**
    * Update pledge associated with a recurring contribution.
    *
    * If the contribution has a pledge_payment record pledge, then update the pledge_payment record & pledge based on that linkage.
@@ -981,27 +941,6 @@ LEFT  JOIN civicrm_membership_payment mp  ON ( mp.contribution_id = con.id )
       return TRUE;
     }
     return FALSE;
-  }
-
-  /**
-   * Calculate line items for the relevant recurring calculation.
-   *
-   * @param int $recurId
-   * @param string $total_amount
-   * @param int $financial_type_id
-   *
-   * @return array
-   * @throws \CRM_Core_Exception
-   */
-  public static function calculateRecurLineItems($recurId, $total_amount, $financial_type_id) {
-    $originalContribution = civicrm_api3('Contribution', 'getsingle', [
-      'contribution_recur_id' => $recurId,
-      'contribution_test' => '',
-      'options' => ['limit' => 1],
-      'return' => ['id', 'financial_type_id'],
-    ]);
-    $lineItems = CRM_Price_BAO_LineItem::getLineItemsByContributionID($originalContribution['id']);
-    return self::reformatLineItemsForRepeatContribution($total_amount, $financial_type_id, $lineItems, $originalContribution);
   }
 
   /**
