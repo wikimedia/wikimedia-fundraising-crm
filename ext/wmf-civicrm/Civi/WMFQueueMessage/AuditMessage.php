@@ -56,6 +56,11 @@ class AuditMessage extends DonationMessage {
    *    full_name: string,
    *    email: string,
    *    phone: string,
+   *    country: string,
+   *    postal_code: string,
+   *    state_province: string,
+   *    street_address: string,
+   *    supplemental_address_1: string,
    *    txn_type: string,
    *    subscr_id: string,
    *    }
