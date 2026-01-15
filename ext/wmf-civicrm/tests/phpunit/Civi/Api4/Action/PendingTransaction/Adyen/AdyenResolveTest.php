@@ -30,9 +30,16 @@ class AdyenResolveTest extends TestCase {
 
   protected $hostedCheckoutProvider;
 
+  /**
+   * @var mixed|null
+   */
+  private float $originalMaxMinfraudScore;
+
   public function setUp(): void {
     parent::setUp();
-
+    $this->originalMaxMinfraudScore =
+      (float)\Civi::settings()->get('wmf_max_overridable_minfraud_score');
+    \Civi::settings()->set('wmf_max_overridable_minfraud_score', 80);
     // Initialize SmashPig with a fake context object
     $globalConfig = TestingGlobalConfiguration::create();
     TestingContext::init($globalConfig);
@@ -80,6 +87,7 @@ class AdyenResolveTest extends TestCase {
     if (!empty($this->ids['ContributionTracking'])) {
       ContributionTracking::delete(FALSE)->addWhere('id', 'IN', $this->ids['ContributionTracking'])->execute();
     }
+    \Civi::settings()->set('wmf_max_overridable_minfraud_score', $this->originalMaxMinfraudScore);
   }
 
   /**
@@ -415,6 +423,70 @@ class AdyenResolveTest extends TestCase {
       $hostedPaymentStatusResponse->getGatewayTxnId(),
       $donation_queue_message['gateway_txn_id']
     );
+  }
+
+  /**
+   * Test we do not capture a transaction with a matching contact but a minfraud score over
+   * the threshold (set to 80 in setup).
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   * @throws \SmashPig\Core\SmashPigException
+   */
+  public function testResolveAdyenMatchingContactButHighMinfraudScore(): void {
+    // generate a pending message to test
+    $gateway = 'adyen';
+    $pending_message = $this->createTestPendingRecord($gateway);
+
+    $message = [
+      'order_id' => $pending_message['order_id'],
+      'contribution_tracking_id' => $pending_message['contribution_tracking_id'],
+      'gateway' => $gateway,
+      'payment_method' => 'cc',
+      'user_ip' => '127.0.0.1',
+      'risk_score' => 87,
+      'score_breakdown' => [
+        'getCVVResult' => 6,
+        'minfraud_filter' => 81,
+      ],
+    ];
+
+    PaymentsFraudDatabase::get()->storeMessage($message);
+
+    $this->createContactWithContribution($pending_message);
+
+    // getLatestPaymentStatus response set up
+    $hostedPaymentStatusResponse = new PaymentProviderExtendedResponse();
+    $hostedPaymentStatusResponse->setGatewayTxnId($pending_message['gateway_txn_id'])
+      ->setStatus(FinalStatus::PENDING_POKE)
+      ->setSuccessful(TRUE)
+      ->setRiskScores([]);
+
+    // set configured response to mock getLatestPaymentStatus call
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('getLatestPaymentStatus')
+      ->willReturn($hostedPaymentStatusResponse);
+
+    // should not call approvePayment
+    $this->hostedCheckoutProvider->expects($this->never())
+      ->method('approvePayment');
+
+    // run the pending message through PendingTransaction::resolve()
+    $result = PendingTransaction::resolve()
+      ->setMessage($pending_message)
+      ->execute();
+
+    // confirm status is not completed
+    $this->assertEquals(
+      FinalStatus::PENDING_POKE,
+      $result[$pending_message['order_id']]['status']
+    );
+
+    // confirm donation queue message not added
+    $donation_queue_message = QueueWrapper::getQueue('donations')->pop();
+    $this->assertNull($donation_queue_message);
   }
 
   /**
