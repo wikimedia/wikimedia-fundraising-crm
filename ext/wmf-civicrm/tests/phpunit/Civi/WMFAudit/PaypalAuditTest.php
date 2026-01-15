@@ -1,10 +1,11 @@
 <?php
 
-namespace phpunit\Civi\WMFAudit\data;
+namespace phpunit\Civi\WMFAudit;
 
 use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
+use Civi\Api4\TransactionLog;
 use Civi\WMFAudit\BaseAuditTestCase;
 use League\Csv\Exception;
 use League\Csv\Reader;
@@ -24,6 +25,13 @@ class PaypalAuditTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'paypal_202601%')
       ->execute();
+    $transactions = [
+      '1V551844CE5526421'
+    ];
+    TransactionLog::delete(FALSE)
+      ->addWhere('gateway_txn_id', 'IN', $transactions)->execute();
+    Contribution::delete(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', 'IN', $transactions)->execute();
     parent::tearDown();
   }
 
@@ -39,6 +47,39 @@ class PaypalAuditTest extends BaseAuditTestCase {
       ->addWhere('contribution_extra.gateway_txn_id', '=', '1V551844CE5526421')
       ->execute()->single();
     $this->assertEquals('JPY', $contribution['contribution_extra.original_currency']);
+  }
+
+  /**
+   * Test that a paypal_express donation can be matched with an existing donation where paypal is the gateway.
+   *
+   * First - we check that when it is incoming with a TransactionLog that sets the gateway
+   * to
+   * @throws \CRM_Core_Exception
+   */
+  public function testTRRFileWithMismatchedGateway(): void {
+    $fileName = 'trr_paypal_express_donation.csv';
+    $this->prepareForAuditProcessing('trr_file', $fileName);
+    $transactionLog = TransactionLog::get(FALSE)
+      ->addWhere('gateway_txn_id', '=', '1V551844CE5526421')->execute()->single();
+    TransactionLog::update(FALSE)
+      ->addValue('gateway', 'paypal')
+      ->addValue('message', ['gateway' => 'paypal'] + $transactionLog['message'])
+      ->addWhere('gateway_txn_id', '=', '1V551844CE5526421')
+      ->execute();
+    $this->runAuditor($fileName);
+    $this->processDonationsQueue();
+
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_extra.*')
+      ->addWhere('contribution_extra.gateway', '=', 'paypal')
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '1V551844CE5526421')
+      ->execute()->single();
+    $this->assertEquals('JPY', $contribution['contribution_extra.original_currency']);
+
+    // Now run the batch again and check it does not queue anything because it should decide nothing
+    // is missing.
+    $this->runAuditor($fileName);
+    $this->assertQueueEmpty('donations');
   }
 
   public function testSTLFile(): void {
