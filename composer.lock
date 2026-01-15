@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b176e466278c1f0e36d5e8ad19754184",
+    "content-hash": "6c368198fa0506b6825699520dba4f0c",
     "packages": [
         {
             "name": "adrienrn/php-mimetyper",
@@ -8504,16 +8504,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v1.0.6.1",
+            "version": "v1.0.6.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "e984f53f155d9e8bc0ab5fbbbb3250ef1da36774"
+                "reference": "e5f67fd4ac55f5d8c2f80956eb8f78bb78eb3bac"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/e984f53f155d9e8bc0ab5fbbbb3250ef1da36774",
-                "reference": "e984f53f155d9e8bc0ab5fbbbb3250ef1da36774",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/e5f67fd4ac55f5d8c2f80956eb8f78bb78eb3bac",
+                "reference": "e5f67fd4ac55f5d8c2f80956eb8f78bb78eb3bac",
                 "shasum": ""
             },
             "require": {
@@ -8591,9 +8591,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.0.6.1"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.0.6.2"
             },
-            "time": "2026-01-13T23:44:22+00:00"
+            "time": "2026-01-15T00:28:28+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -11169,7 +11169,7 @@
         "ext-zip": "*",
         "composer-runtime-api": "~2.0"
     },
-    "platform-dev": {},
+    "platform-dev": [],
     "platform-overrides": {
         "php": "8.2.26"
     },
