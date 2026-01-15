@@ -56,6 +56,8 @@ class AuditMessage extends DonationMessage {
    *    full_name: string,
    *    email: string,
    *    phone: string,
+   *    txn_type: string,
+   *    subscr_id: string,
    *    }
    */
   protected array $message;
