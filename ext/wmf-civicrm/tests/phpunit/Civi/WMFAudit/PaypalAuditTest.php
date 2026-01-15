@@ -1,6 +1,6 @@
 <?php
 
-namespace phpunit\Civi\WMFAudit\data;
+namespace phpunit\Civi\WMFAudit;
 
 use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
