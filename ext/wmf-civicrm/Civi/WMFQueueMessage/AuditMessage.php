@@ -208,8 +208,17 @@ class AuditMessage extends DonationMessage {
       $message['no_thank_you'] = $this->getType();
     }
     $message['contribution_tracking_id'] = $this->getContributionTrackingID();
-    if (!$this->getExistingContributionID()) {
+    if ($this->getExistingContributionID()) {
+      $existingContribution = $this->getExistingContribution();
+      // Overwrite gateway as we might have found a paypal vs paypal_ex switcheroo instance.
+      $message['gateway'] = $existingContribution['contribution_extra.gateway'];
+    }
+    else {
       $message['transaction_details'] = $this->getTransactionDetails();
+      // Overwrite with the value from the transaction details
+      // since it might transpose paypal vs paypal_ec and we treat the one from
+      // transaction details as more accurate.
+      $message['gateway'] = $message['transaction_details']['gateway'] ?? $message['gateway'];
     }
     if (!$this->getExistingContributionID() && $message['contribution_tracking_id']) {
       $message['contribution_tracking'] = ContributionTracking::get(FALSE)
@@ -317,7 +326,7 @@ class AuditMessage extends DonationMessage {
     $debugInformation = [];
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
-      $selectFields = ['id', 'contribution_status_id:name', 'fee_amount', 'contribution_settlement.settlement_batch_reference', 'contribution_settlement.settlement_batch_reversal_reference'];
+      $selectFields = ['id', 'contribution_status_id:name', 'fee_amount', 'contribution_settlement.settlement_batch_reference', 'contribution_settlement.settlement_batch_reversal_reference', 'contribution_extra.gateway'];
       if ($this->isRefund() || $this->isChargeback()) {
         // Check whether a standalone refund or chargeback has been created - this occurs when
         // we get a chargeback on one we have already refunded.
@@ -372,10 +381,12 @@ class AuditMessage extends DonationMessage {
             ->execute()->first() ?? [];
         }
         if (empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
+          $gatewayOperator = $this->isPaypal() ? 'LIKE' : '=';
+          $gatewayString = $this->isPaypal() ?'paypal%' : $this->getParentTransactionGateway();
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
             ->addWhere('financial_type_id:name', '!=', 'Chargeback Reversal')
-            ->addWhere('contribution_extra.gateway', '=', $this->getParentTransactionGateway())
+            ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
             ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
             ->execute()->first() ?? [];
         }
@@ -587,9 +598,11 @@ class AuditMessage extends DonationMessage {
   public function getTransactionDetails(): ?array {
     if (!isset($this->transactionDetails)) {
       $this->transactionDetails = [];
+      $gatewayOperator = $this->isPaypal() ? 'LIKE' : '=';
+      $gatewayString = $this->isPaypal() ?'paypal%' : $this->getGateway();
       $transactionDetails = (array)TransactionLog::get(FALSE)
         ->addWhere('gateway_txn_id', '=', $this->getGatewayTxnID())
-        ->addWhere('gateway', '=', $this->getGateway())
+        ->addWhere('gateway', $gatewayOperator, $gatewayString)
         ->execute();
       foreach ($transactionDetails as $transactionDetail) {
         if ($this->getBackendProcessorTxnID() === ($transactionDetail['message']['backend_processor_txn_id'] ?? FALSE)
