@@ -854,7 +854,7 @@ END";
             $amount = $this->formatAmount($batch['endowment_fund_fees']);
             $html .= $start . "<td>60917</td><td>Fees</td><td>{$amount}</td><td></td></tr>";
           }
-          foreach ($batch['accounts'] as $accountNumber => $account) {
+          foreach ($batch['accounts'] ?? [] as $accountNumber => $account) {
             $accountName = $this->getAccountName($accountNumber);
             if (!$account['annual_fund']->isEqualTo(0)) {
               $amount = $this->formatAmount($account['annual_fund']);

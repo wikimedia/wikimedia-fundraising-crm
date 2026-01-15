@@ -518,7 +518,7 @@ abstract class BaseAuditProcessor {
     $missing_by_date = $this->getMissingByDate();
 
     $remaining = NULL;
-    if (!empty($missing_by_date)) {
+    if (!empty($missing_by_date) && $this->get_runtime_options('is_check_log_files')) {
       $remaining['main'] = $this->log_hunt_and_send($missing_by_date);
     }
 

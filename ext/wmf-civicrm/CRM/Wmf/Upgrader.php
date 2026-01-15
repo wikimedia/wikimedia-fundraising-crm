@@ -3738,6 +3738,24 @@ AND channel <> 'Chapter Gifts'";
     return TRUE;
   }
 
+/**
+ * Bug: T386031
+ *
+ * We have two appeals: White Mail and whitemail.
+ * Let's just make them all White Mail (which is most commonly used now)
+ *
+ * @return bool
+ */
+  public function upgrade_4815(): bool {
+    $sql = '
+    UPDATE civicrm_value_1_gift_data_7
+    SET appeal = "White Mail"
+    WHERE appeal = "whitemail";
+    ';
+    CRM_Core_DAO::executeQuery($sql);
+    return TRUE;
+  }
+
   /**
    * Queue up an API4 update.
    *

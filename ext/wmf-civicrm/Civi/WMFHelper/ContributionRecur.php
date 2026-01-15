@@ -232,7 +232,6 @@ class ContributionRecur {
       'Chapter',
       'Update',
       'Frequency',
-      'Cancel Support'
     ];
   }
 }

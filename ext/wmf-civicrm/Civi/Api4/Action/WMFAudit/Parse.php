@@ -17,6 +17,7 @@ use CRM_SmashPig_ContextWrapper;
  * @method $this setIsMoveCompletedFile(bool $isMoveCompletedFile)
  * @method $this setIsSaveSettlementTransaction(bool $isSaveSettlementTransaction)
  * @method $this setIsCompleted(bool $isCompleted)
+ * @method $this setIsCheckLogFiles(bool $isCheckLogFiles)
  * @method $this setFile(string $file)
  * @method $this setLogSearchPastDays(int $logSearchPastDays)
  * @method $this setLogInterval(int $logInterval)
@@ -71,6 +72,18 @@ class Parse extends AbstractAction {
    * @var bool
    */
   public bool $isStopOnFirstMissing = FALSE;
+
+  /**
+   * Should the disk based log fields be checked.
+   *
+   * Before we started retaining the Smashpig.pending table the
+   * only place to get additional transaction information was
+   * the log based files. Now it rarely if ever adds extra information
+   * when we check them so it can be disabled for performance.
+   *
+   * @var bool
+   */
+  public bool $isCheckLogFiles = TRUE;
 
   /**
    * Name of a file to parse (optional) (must be in the incoming directory, should not include full path).
@@ -141,6 +154,7 @@ class Parse extends AbstractAction {
       'progress_log_count' => $this->logInterval,
       'row_limit' => $this->rowLimit,
       'row_offset' => $this->offset,
+      'is_check_log_files' => $this->isCheckLogFiles,
     ];
   }
 
