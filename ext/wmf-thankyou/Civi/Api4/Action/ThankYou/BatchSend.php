@@ -174,7 +174,7 @@ EOT;
     $counter = Queue2civicrmTrxnCounter::instance();
     $metrics = [];
     foreach ($counter->getTrxnCounts() as $gateway => $count) {
-      $metrics["{$gateway}_thank_you_emails"] = $count;
+      $metrics["{$gateway}_thank_you_emails"] = (int)$count;
     }
     $metrics['total_thank_you_emails'] = $counter->getCountTotal();
     $prometheusPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
