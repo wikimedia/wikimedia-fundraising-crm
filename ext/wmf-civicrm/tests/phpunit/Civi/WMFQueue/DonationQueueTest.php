@@ -2270,6 +2270,50 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * When we get a contact ID due to bad template string, create a new contact with no referrer activity
+   */
+  public function testImportWithInvalidContactId(): void {
+    $email = 'booboo' . mt_rand() . '@example.org';
+    $expectedEmployer = "Subotnik's Apple Orchard";
+    $msg = [
+      'contact_id' => "%%CONTACT%%",
+      'contact_hash' => "%%HASH%%",
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'email' => $email,
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'employer' => $expectedEmployer,
+    ];
+    $this->processMessage($msg, 'Donation', 'test');
+    $contribution = $this->getContributionForMessage($msg);
+    $address = Address::get(FALSE)
+      ->addWhere('contact_id', '=', $contribution['contact_id'])
+      ->addWhere('location_type_id:name', '=', 'Home')
+      ->execute()->single();
+    $this->assertEquals($msg['street_address'], $address['street_address']);
+    $contact = Contact::get(FALSE)
+      ->addWhere('id', '=', $contribution['contact_id'])
+      ->addSelect('Communication.Employer_Name')
+      ->execute()->single();
+
+    $this->assertEquals($expectedEmployer, $contact['Communication.Employer_Name']);
+    $activity = Activity::get(FALSE)
+      ->addWhere('target_contact_id', '=', $contribution['contact_id'])
+      ->addWhere('source_record_id', '=', $contribution['id'])
+      ->addWhere('activity_type_id:name', '=', 'Contact referral')
+      ->execute()
+      ->last();
+    $this->assertNull($activity);
+  }
+
+  /**
    * If we get a contact ID and a bad hash, leave the existing contact alone
    */
   public function testImportWithContactIdAndBadHash(): void {
