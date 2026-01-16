@@ -27,6 +27,10 @@ use Civi\Test\EntityTrait;
 class OmnicontactCreateTest extends OmnimailBaseTestClass {
   use EntityTrait;
 
+  public static function booleanDataProvider() {
+    return [[TRUE], [FALSE]];
+  }
+
   /**
    * Post test cleanup.
    *
@@ -130,8 +134,9 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
    * table and that when we run that queue it does the call to Acoustic.
    *
    * @throws \CRM_Core_Exception
+   * @dataProvider booleanDataProvider
    */
-  public function testQueueSnooze(): void {
+  public function testQueueSnooze(bool $useFakeLoggedInUser): void {
     $this->getMockRequest([
       file_get_contents(__DIR__ . '/Responses/AddRecipient.txt'),
       file_get_contents(__DIR__ . '/Responses/UpdateRecipient.txt'),
@@ -139,6 +144,20 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
     $this->addTestClientToXMLSingleton();
 
     $snoozeDate = date('Y-m-d', strtotime('+ 1 week'));
+    if ($useFakeLoggedInUser) {
+      \CRM_Core_Session::singleton()->set('userID', 1);
+      \CRM_Core_Config::singleton()->userPermissionClass = new \CRM_Core_Permission_UnitTests();
+      \CRM_Core_Config::singleton()->userPermissionClass->permissions = [
+        'edit all contacts',
+        'access CiviCRM',
+        'add contacts',
+        'administer CiviCRM',
+        'edit contributions',
+        'access CiviContribute',
+        'administer queues',
+        'view all contacts',
+      ];
+    }
     $contact = $this->createSnoozyDuck($snoozeDate);
     $queue = Queue::get(FALSE)
       ->addWhere('name', '=', 'omni-snooze')
@@ -150,11 +169,20 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
     $this->runQueue();
     $activity = Activity::get(FALSE)
       ->addSelect('status_id:name')
+      ->addSelect('source_contact_id')
+      ->addSelect('target_contact_id')
       ->addWhere('source_record_id', '=', $contact['id'])
       ->addWhere('activity_type_id:name', '=', 'EmailSnoozed')
       ->execute()->last();
     $this->assertNotNull($activity);
     $this->assertEquals('Completed', $activity['status_id:name']);
+    $this->assertEquals([$contact['id']], $activity['target_contact_id']);
+    if ($useFakeLoggedInUser) {
+      $this->assertEquals(1, $activity['source_contact_id']);
+    }
+    else {
+      $this->assertEquals($contact['id'], $activity['source_contact_id']);
+    }
     $requestContent = str_replace(urlencode('RESUME_SEND_DATE>09/09/--YEAR--'), 'RESUME_SEND_DATE' . urlencode('>' . date('m/d/Y', strtotime($snoozeDate))), trim(file_get_contents(__DIR__ . '/Requests/SnoozeRecipient.txt')));
     $guzzleSentRequests = $this->getRequestBodies();
     $this->assertEquals($requestContent, $guzzleSentRequests[1]);

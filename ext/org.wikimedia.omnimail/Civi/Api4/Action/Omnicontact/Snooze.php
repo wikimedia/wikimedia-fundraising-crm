@@ -16,6 +16,7 @@ use Civi\Api4\WMFContact;
  * @method string|null getEmail()
  * @method $this setEmail(?string $email)
  * @method $this setContactID(?string $contactID)
+ * @method $this setSourceContactID(?int $sourceContactID)
  * @method string|null getSnoozeDate()
  * @method $this setSnoozeDate(?string $snoozeDate)
  * @method $this setDatabaseID(int $databaseID)
@@ -33,6 +34,11 @@ class Snooze extends AbstractAction {
    * @var int
    */
   protected $contactID;
+
+  /**
+   * @var int|null
+   */
+  protected $sourceContactID = null;
 
   /**
    * @var int
@@ -80,7 +86,8 @@ class Snooze extends AbstractAction {
         ->addValue('status_id:name', 'Scheduled')
         ->addValue('subject', "Email snooze scheduled - until " . date('Y-m-d', strtotime($this->getSnoozeDate())))
         ->addValue('details', "Snoozing email - $email")
-        ->addValue('source_contact_id', $contact_id)
+        ->addValue('target_contact_id', $contact_id)
+        ->addValue('source_contact_id', $this->sourceContactID ?? $contact_id)
         ->addValue('source_record_id', $contact_id)
         ->addValue('activity_date_time', 'now')
         ->execute()
