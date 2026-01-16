@@ -37,7 +37,7 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
   }
 
   protected function regex_for_recon() {
-    return '/_report_/';
+    return '/_report|Settlement|border_/';
   }
 
   /**
