@@ -275,15 +275,18 @@ class Resolve extends AbstractAction {
    * record. Also takes into consideration whether we have recorded a
    * donation from the donor in the past day.
    *
-   * @param array $riskScores
+   * @param array $riskScoresFromProcessor
    *
    * @return string
    * @throws \CRM_Core_Exception
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  protected function decideWhatToDoBasedOnRiskScores(array $riskScores): string {
-    $this->validationAction = $this->getValidationAction($riskScores);
+  protected function decideWhatToDoBasedOnRiskScores(array $riskScoresFromProcessor): string {
+    $paymentsFraudRowWithBreakdown = PaymentsFraudDatabase::get()->fetchMessageByGatewayOrderId(
+      $this->message['gateway'], $this->message['order_id'], TRUE
+    );
+    $this->validationAction = $this->getValidationAction($riskScoresFromProcessor, $paymentsFraudRowWithBreakdown);
     switch ($this->validationAction) {
       case ValidationAction::PROCESS:
         // If score less than review threshold and no donation in past day, approve the transaction.
@@ -295,7 +298,7 @@ class Resolve extends AbstractAction {
         }
 
       case ValidationAction::REJECT:
-        if ($this->matchesUnrefundedDonor()) {
+        if ($this->matchesUnrefundedDonor() && $this->hasReasonableMinfraudScore($paymentsFraudRowWithBreakdown)) {
           return self::CAPTURE;
         }
         else {
@@ -303,7 +306,7 @@ class Resolve extends AbstractAction {
         }
 
       case ValidationAction::REVIEW:
-        if ($this->matchesUnrefundedDonor()) {
+        if ($this->matchesUnrefundedDonor() && $this->hasReasonableMinfraudScore($paymentsFraudRowWithBreakdown)) {
           return self::CAPTURE;
         }
         else {
@@ -322,20 +325,20 @@ class Resolve extends AbstractAction {
    * status call combined with risk scores from the payments_fraud table.
    *
    * @param array $riskScoresFromStatus 'cvv' and 'avs' keys are examined
+   * @param array|null $paymentsFraudRowWithBreakdown full fraud record from fredge DB
    *
    * @return string one of the ValidationAction constants
    * @throws \SmashPig\Core\ConfigurationKeyException
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
-  protected function getValidationAction(array $riskScoresFromStatus): string {
+  protected function getValidationAction(
+    array $riskScoresFromStatus, ?array $paymentsFraudRowWithBreakdown
+  ): string {
     $totalRiskScore = 0;
     $fredgeHadCvvScore = FALSE;
     $fredgeHadAvsScore = FALSE;
     $statusHasNewFraudScores = FALSE;
 
-    $paymentsFraudRowWithBreakdown = PaymentsFraudDatabase::get()->fetchMessageByGatewayOrderId(
-      $this->message['gateway'], $this->message['order_id'], TRUE
-    );
     $scoreBreakdownFromFredge = $paymentsFraudRowWithBreakdown['score_breakdown'] ?? [];
     // $scoreBreakdownFromFredge looks like [
     //    'getCVVResult' => 80,
@@ -720,6 +723,14 @@ class Resolve extends AbstractAction {
       $donationsMessage['recurring_payment_token'] = $token;
     }
     QueueWrapper::push('donations', $donationsMessage);
+  }
+
+  protected function hasReasonableMinfraudScore(?array $paymentsFraudRowWithBreakdown): bool {
+    if (empty($paymentsFraudRowWithBreakdown['score_breakdown']['minfraud_filter'])) {
+      return TRUE;
+    }
+    $maxOverridableScore = \Civi::settings()->get('wmf_max_overridable_minfraud_score');
+    return ($paymentsFraudRowWithBreakdown['score_breakdown']['minfraud_filter'] <= $maxOverridableScore);
   }
 
 }

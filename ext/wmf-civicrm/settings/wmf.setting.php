@@ -98,6 +98,29 @@ return [
     ],
     'settings_pages' => ['wmf-civicrm' => ['weight' => 40]],
   ],
+  'wmf_max_overridable_minfraud_score' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_max_overridable_minfraud_score',
+    'default' => 80,
+    'type' => 'Float',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('Maximum MinFraud score allowed for capture by the Pending Transaction Resolver'),
+    'help_text' => E::ts(
+      'The pending transaction resolver should reject transactions with minfraud scores over this limit, even when they would otherwise be captured because they match an existing donor.'
+    ),
+    'html_type' => 'number',
+    'html_attributes' => [
+      'size' => '5',
+    ],
+    'options' => [
+      'step' => '1',
+      'min' => '0',
+      'max' => '100',
+    ],
+    'settings_pages' => ['wmf-civicrm' => ['weight' => 65]],
+  ],
   'wmf_save_process_greetings_on_create' => [
     'group_name' => 'wmf Settings',
     'group' => 'wmf',
