@@ -9,7 +9,7 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\ThankYou;
 use Civi\Api4\WMFLink;
-use Civi\WMFException\WMFException;
+use CRM_Core_Exception;
 use Civi\Omnimail\MailFactory;
 use Civi\WMFMailTracking\CiviMailQueueRecord;
 use Civi\WMFMailTracking\CiviMailStore;
@@ -170,7 +170,7 @@ class Send extends AbstractAction {
 
         if (!$html || !$subject) {
           $msg = "HTML rendering of template failed in {$params['locale']}.";
-          throw new WMFException(WMFException::UNKNOWN, $msg, ['thank_you_params' => $params]);
+          throw new CRM_Core_Exception($msg, 0, ['thank_you_params' => $params]);
         }
         break;
       }
@@ -217,7 +217,7 @@ class Send extends AbstractAction {
       );
       if (!$email_success) {
         $msg = 'Thank you mail failed for contribution id: ' . $this->getContributionID() . " to " . $this->getEmail();
-        throw new WMFException(WMFException::BAD_EMAIL, $msg);
+        throw new CRM_Core_Exception($msg, 'BAD_EMAIL');
       }
       \Civi::log('wmf')->info('thank_you: {activity_type} sent successfully to contact_id {contact_id} for contribution id: {contribution_id} to {recipient_address}', [
         'contact_id' => $this->getContactID(),
@@ -238,7 +238,7 @@ class Send extends AbstractAction {
       if (str_contains($e->getMessage(), 'Invalid address:')) {
         $this->setNoThankYou('failed: BAD_EMAIL');
         \Civi::log('wmf')->error('thank_you: Sending thank you message failed due to bad email ' . $this->getEmail() . ' for contribution id ' . $this->getContributionID());
-        throw new WMFException(WMFException::BAD_EMAIL, 'thank_you: Sending thank you message failed due to bad email ' . $this->getEmail() . ' for contribution id ' . $this->getContributionID());
+        throw new CRM_Core_Exception('thank_you: Sending thank you message failed due to bad email ' . $this->getEmail() . ' for contribution id ' . $this->getContributionID(), 'BAD_EMAIL');
       }
       else {
         $debug = array_merge($email ?? [], ['html' => '', 'subject' => '']);
@@ -252,7 +252,7 @@ class Send extends AbstractAction {
         $msg = "UNHANDLED EXCEPTION SENDING THANK YOU MESSAGE\n" . __FUNCTION__
           . "\n\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
 
-        throw new WMFException(WMFException::EMAIL_SYSTEM_FAILURE, $msg, $debug, $e);
+        throw new CRM_Core_Exception($msg, 'EMAIL_SYSTEM_FAILURE', $debug, $e);
       }
     }
 

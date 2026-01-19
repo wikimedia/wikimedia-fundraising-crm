@@ -125,14 +125,12 @@ EOT;
           $this->result['failed']++;
         }
       }
-      catch (WMFException $ex) {
-        // let's get rid of this `gerErrorName()` & move this code towards
-        // working with CRM_Core_Exception & leave the WMF_Exception for the queue processors
-        $errName = $ex->getErrorName();
+      catch (CRM_Core_Exception $e) {
+        $errName = $e->getErrorCode();
         $noThankYou = "failed: $errName";
         $this->result['failed']++;
 
-        $logMessage = $ex->getMessage()
+        $logMessage = $e->getMessage()
           . "<br/>Setting no_thank_you to '$noThankYou'";
         \Civi::log('wmf')->info('wmf_civicrm: Preventing thank-you for contribution {contribution_id} because: {reason}',
           ['contribution_id' => $contribution->id, 'reason' => $noThankYou]);
@@ -150,7 +148,7 @@ EOT;
         $consecutiveFailures++;
 
         // Always email if we're disabling the job
-        if ($ex->isNoEmail() && $consecutiveFailures <= $failureThreshold) {
+        if (($e->getErrorCode() === 'BAD_EMAIL') && $consecutiveFailures <= $failureThreshold) {
           \Civi::log('wmf')->error('thank_you: {log_message}', ['log_message' => $logMessage]);
         }
         else {
