@@ -165,7 +165,7 @@ class DonationMessage extends Message {
     $msg['financial_type_id'] = $this->getFinancialTypeID();
     $msg['contribution_recur_id'] = $this->getContributionRecurID();
     $msg['contact_id'] = $this->getContactID();
-    if (empty($msg['contact_id']) && !empty($this->message['contact_id'])) {
+    if (empty($msg['contact_id']) && is_numeric($this->message['contact_id'] ?? NULL)) {
       if (\CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_contact WHERE id = %1 AND is_deleted = 0', [
         1 => [$this->message['contact_id'], 'Integer']
       ])) {

@@ -146,8 +146,10 @@ function omnimail_civicrm_customPre($op, $groupID, $entityID, &$params) {
         $email = $fields['email'];
         $contact_id = $fields['contact_id'];
         if ($email) {
+          $loggedInUser = CRM_Core_Session::getLoggedInContactID();
           Omnicontact::snooze(FALSE)
             ->setEmail($email)
+            ->setSourceContactID($loggedInUser ?? $contact_id)
             ->setContactID($contact_id)
             ->setSnoozeDate($snoozeDate)->execute();
         }
