@@ -570,7 +570,7 @@ class AuditMessage extends DonationMessage {
 
   public function getGateway(): string {
     $gateway = $this->getParentTransactionGateway();
-    if ($gateway === 'gravy' && $this->isChargeback()) {
+    if ($gateway === 'gravy' && $this->isChargeback() && $this->message['backend_processor'] === 'adyen') {
       // For chargebacks we need to use the backend processor details.
       // This scenario only occurs with Gravy + adyen.
       return $this->message['backend_processor'];
