@@ -46,16 +46,12 @@ function civicrm_api3_omnirecipient_process_unsubscribes($params) {
         ->setContactId($unsubscribes['contact_id'])
         ->execute()
         ->first()['id'];
-      if (!$contactID) {
-        \Civi::log('wmf')->warning('Unsubscribe failed for contact {contact_id} - contact not found', [
-          'contact_id' => $unsubscribes['contact_id'],
-        ]);
-        continue;
-      }
+
     } else {
       $contactID = $unsubscribes['contact_id'];
     }
-    \Civi\Api4\Activity::create(FALSE)->setValues([
+    if ($contactID) {
+      \Civi\Api4\Activity::create(FALSE)->setValues([
         'activity_type_id:name' => 'unsubscribe',
         'campaign_id.name' => $unsubscribes['mailing_identifier.campaign_id.name'] ?? NULL,
         'target_contact_id' => $contactID,
@@ -76,13 +72,20 @@ function civicrm_api3_omnirecipient_process_unsubscribes($params) {
           ->addValue('is_bulkmail', FALSE)
           ->execute();
       }
+    }
+    else {
+      \Civi::log('wmf')->warning('Unsubscribe failed for contact {contact_id} - contact not found', [
+        'contact_id' => $unsubscribes['contact_id'],
+      ]);
+    }
 
-      CRM_Core_DAO::executeQuery('
-        UPDATE civicrm_mailing_provider_data SET is_civicrm_updated = 1 WHERE contact_identifier = %1 AND recipient_action_datetime = %2 AND event_type = %3', array(
-        1 => array($unsubscribes['contact_identifier'], 'String'),
-        2 => array($unsubscribes['recipient_action_datetime'], 'String'),
-        3 => array($unsubscribes['event_type'], 'String'),
-      ));
+    CRM_Core_DAO::executeQuery(
+      'UPDATE civicrm_mailing_provider_data SET is_civicrm_updated = 1 WHERE contact_identifier = %1 AND recipient_action_datetime = %2 AND event_type = %3', [
+        1 => [$unsubscribes['contact_identifier'], 'String'],
+        2 => [$unsubscribes['recipient_action_datetime'], 'String'],
+        3 => [$unsubscribes['event_type'], 'String'],
+      ]
+    );
   }
 
   return civicrm_api3_create_success(1);
