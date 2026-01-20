@@ -1404,6 +1404,9 @@ abstract class BaseAuditProcessor {
       }
     }
     else {
+      if (!isset($fileStatistics[$type]['found'])) {
+        $this->logError('key found not present for type ' . $type, 'DATA_WEIRD');
+      }
       $fileStatistics[$type]['found']++;
       $fileStatistics[$type]['total']++;
       $fileStatistics[$type]['by_payment'][$paymentMethod]['found']++;
