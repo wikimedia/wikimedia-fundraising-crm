@@ -323,7 +323,7 @@ return [
         'value' => 94,
         'name' => 'MajorGiftsEngagement',
         'grouping' => NULL,
-        'filter' => 1,
+        'filter' => 0,
         'weight' => 94,
         'is_default' => FALSE,
         'description' => 'Engagement by a major gifts officer',
