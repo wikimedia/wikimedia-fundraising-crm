@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "55565ce094ae11988a4f0ffe3dd155bd",
+    "content-hash": "0fecd93ec8f0d9ca9d126418093a27e6",
     "packages": [
         {
             "name": "adrienrn/php-mimetyper",
@@ -8504,16 +8504,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v1.1.0",
+            "version": "v1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "72dadd14ed1ac787772ae9b276044e1312ae2ca1"
+                "reference": "5510b6021761a3631cb5951fd8aa1232b955c3b5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/72dadd14ed1ac787772ae9b276044e1312ae2ca1",
-                "reference": "72dadd14ed1ac787772ae9b276044e1312ae2ca1",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/5510b6021761a3631cb5951fd8aa1232b955c3b5",
+                "reference": "5510b6021761a3631cb5951fd8aa1232b955c3b5",
                 "shasum": ""
             },
             "require": {
@@ -8591,9 +8591,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.1.0"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.1.1"
             },
-            "time": "2026-01-16T03:51:43+00:00"
+            "time": "2026-01-21T00:50:53+00:00"
         },
         {
             "name": "willdurand/geocoder",
