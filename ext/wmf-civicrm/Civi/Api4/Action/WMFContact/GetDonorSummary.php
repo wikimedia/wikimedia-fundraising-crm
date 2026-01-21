@@ -54,10 +54,11 @@ class GetDonorSummary extends AbstractAction {
     $email = $contact['email_primary.email'];
 
     // Since our database has a lot of duplicate contact records, we show donations for
-    // all contacts with the same email address.
+    // all contacts with the same primary email address.
     $allContactIDsWithEmail = Email::get(FALSE)
       ->addWhere('email', '=', $email)
       ->addWhere('contact_id.is_deleted', '=', FALSE)
+      ->addWhere('is_primary', '=', TRUE)
       ->addSelect('contact_id')
       ->execute()->getArrayCopy();
     $contactIDList = array_column($allContactIDsWithEmail, 'contact_id');
