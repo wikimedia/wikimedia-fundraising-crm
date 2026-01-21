@@ -3757,6 +3757,37 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Bug: T394731
+   *
+   * Merge all anonymous contacts who have no address except country = US and no email or phone into contact ID 72.
+   * Just over 2000 contacts.
+   *
+   * @return bool
+   */
+  public function upgrade_4820() : bool {
+    $contactIds = \Civi\Api4\Contact::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('first_name', '=', 'Anonymous')
+      ->addWhere('last_name', '=', 'Anonymous')
+      ->addWhere('email_primary', 'IS EMPTY')
+      ->addWhere('phone_primary', 'IS EMPTY')
+      ->addClause('OR', ['address_primary.country_id', '=', 1228], ['address_primary.country_id', 'IS EMPTY'])
+      ->addWhere('address_primary.street_address', 'IS EMPTY')
+      ->addWhere('address_primary.city', 'IS EMPTY')
+      ->addWhere('address_primary.postal_code', 'IS EMPTY')
+      ->addWhere('is_deleted', '=', FALSE)
+      ->execute()->column('id');
+    foreach ($contactIds as $contactId) {
+      \Civi\Api4\Contact::mergeDuplicates(FALSE)
+        ->setContactId(72)
+        ->setDuplicateId($contactId)
+        ->setMode('safe')
+        ->execute();
+    }
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
