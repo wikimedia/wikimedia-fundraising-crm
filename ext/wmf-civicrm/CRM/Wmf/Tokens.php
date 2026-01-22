@@ -14,24 +14,35 @@ class CRM_Wmf_Tokens {
    * WMF token parser.
    *
    * This parses wmf specific tokens.
+   * wmf_url tokens and the now token are used only in system message templates.
+   * action tokens are used in mailings.
    *
    * @param \Civi\Token\Event\TokenValueEvent $e
    */
   public static function onEvalTokens(TokenValueEvent $e): void {
     foreach ($e->getRows() as $row) {
       $tokens = $e->getTokenProcessor()->getMessageTokens();
+      if (empty($tokens['wmf_url']) && empty($tokens['action']) && empty($tokens['now'])) {
+        continue;
+      }
+      $contactID = $row->tokenProcessor->rowContexts[$row->tokenRow]['contact']['id']
+        ?? $row->tokenProcessor->rowContexts[$row->tokenRow]['contactId']
+        ?? NULL;
+      $email = $row->tokenProcessor->rowContexts[$row->tokenRow]['contact']['email_primary.email'] ?? '';
+      $locale = $row->tokenProcessor->context['locale'] ?? NULL;
       foreach (($tokens['wmf_url'] ?? []) as $token) {
-        $row->tokens('wmf_url', $token, self::getUrl($token, $row->context['contact']['email'] ?? '', $row->context['locale']));
+        $row->tokens('wmf_url', $token, self::getUrl($token, $email, $locale, $contactID));
       }
       if (array_key_exists('action', $tokens)) {
         // Now override the core action urls. We need to override both html & plain text versions.
+        // email and locale are not filled (and not used) in this case.
         if (in_array('optOutUrl', $tokens['action'])) {
-          $row->format('text/html')->tokens('action', 'optOutUrl', htmlentities(self::getUrl('optOutUrl', $row->context['contact']['email'] ?? '', $row->context['locale'], $row->context['contactId'])));
-          $row->format('text/plain')->tokens('action', 'optOutUrl', self::getUrl('optOutUrl', $row->context['contact']['email'] ?? '', $row->context['locale'], $row->context['contactId']));
+          $row->format('text/html')->tokens('action', 'optOutUrl', htmlentities(self::getUrl('optOutUrl', $email, $locale, $contactID)));
+          $row->format('text/plain')->tokens('action', 'optOutUrl', self::getUrl('optOutUrl', $email, $locale, $contactID));
         }
         if (in_array('unsubscribeUrl', $tokens['action'])) {
-          $row->format('text/html')->tokens('action', 'unsubscribeUrl', htmlentities(self::getUrl('unsubscribeUrl', $row->context['contact']['email'] ?? '', $row->context['locale'], $row->context['contactId'])));
-          $row->format('text/plain')->tokens('action', 'unsubscribeUrl', self::getUrl('unsubscribeUrl', $row->context['contact']['email'] ?? '', $row->context['locale'], $row->context['contactId']));
+          $row->format('text/html')->tokens('action', 'unsubscribeUrl', htmlentities(self::getUrl('unsubscribeUrl', $email, $locale, $contactID)));
+          $row->format('text/plain')->tokens('action', 'unsubscribeUrl', self::getUrl('unsubscribeUrl', $email, $locale, $contactID));
         }
       }
       // This token could probably be replaced by {domain.now|crmDate:MMMM} or
@@ -40,7 +51,7 @@ class CRM_Wmf_Tokens {
       if (isset($tokens['now'])) {
         // CiviCRM doesn't do full locale date handling. It relies on .pot files
         // and just translates the words. We add our own 'now.MMMM' token for the now-date.
-        $dateFormatter = new \IntlDateFormatter($row->context['locale']);
+        $dateFormatter = new \IntlDateFormatter($locale);
         foreach ($tokens['now'] as $token) {
           $dateFormatter->setPattern($token);
           $row->tokens('now', $token, $dateFormatter->format(new \DateTime()));
