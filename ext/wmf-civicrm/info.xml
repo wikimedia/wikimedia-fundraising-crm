@@ -28,6 +28,7 @@
     <psr0 prefix="CRM_" path="."/>
   </classloader>
   <requires>
+    <ext>checksum_invalidator</ext>
     <ext>deduper</ext>
     <ext>org.wikimedia.omnimail</ext>
     <ext>au.org.greens.extendedmailingstats</ext>

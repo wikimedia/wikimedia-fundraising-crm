@@ -25,6 +25,10 @@ class GetDonorSummary extends AbstractAction {
    */
   protected $checksum;
 
+  /**
+   * If this were to be used for something that isn't the donor portal in the future,
+   * we should make adjustments to no longer set last_donor_portal_login for that use.
+   */
   public function _run(Result $result) {
     if (!\CRM_Core_Permission::check('access CiviContribute') || !\CRM_Contact_BAO_Contact_Utils::validChecksum($this->contact_id,  $this->checksum)) {
       \Civi::log('wmf')->warning('Donor portal access denied {contact_id} {checksum}', ['contact_id' => $this->contact_id, 'checksum' => $this->checksum]);
@@ -54,13 +58,19 @@ class GetDonorSummary extends AbstractAction {
     $email = $contact['email_primary.email'];
 
     // Since our database has a lot of duplicate contact records, we show donations for
-    // all contacts with the same email address.
+    // all contacts with the same primary email address.
     $allContactIDsWithEmail = Email::get(FALSE)
       ->addWhere('email', '=', $email)
       ->addWhere('contact_id.is_deleted', '=', FALSE)
+      ->addWhere('is_primary', '=', TRUE)
       ->addSelect('contact_id')
       ->execute()->getArrayCopy();
     $contactIDList = array_column($allContactIDsWithEmail, 'contact_id');
+
+    \Civi\Api4\Contact::update(FALSE)
+      ->addValue('Communication.last_donor_portal_login', 'now')
+      ->addWhere('id', 'IN', $contactIDList)
+      ->execute();
 
     $allContributions = Contribution::get(FALSE)
       ->addWhere('contact_id', 'IN', $contactIDList)

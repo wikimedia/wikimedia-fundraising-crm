@@ -1780,6 +1780,18 @@ function _wmf_civicrm_get_communication_fields(): array {
       'is_active' => 1,
       'is_searchable' => 1,
     ],
+    'last_donor_portal_login' => [
+      'name' => 'last_donor_portal_login',
+      'label' => 'Last donor portal login',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'date_format' => 'M d, yy',
+      'time_format' => 2,
+      'column_name' => 'last_donor_portal_login',
+      'is_active' => 1,
+      'is_searchable' => 1,
+      'is_view' => 1,
+    ],
   ];
 }
 
