@@ -38,7 +38,7 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
     return $this->parse_json_log_line($logline);
   }
 
-  protected function regex_for_recon() {
+  protected function regexForFilesToProcess() {
     return '/SETTLEMENT_DATA|REFUND_DATA/';
   }
 

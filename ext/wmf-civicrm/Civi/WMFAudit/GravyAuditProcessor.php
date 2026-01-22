@@ -60,7 +60,7 @@ class GravyAuditProcessor extends BaseAuditProcessor {
    * in the supplied reconciliation file path.
    * @return string
    */
-  protected function regex_for_recon() {
+  protected function regexForFilesToProcess() {
     return '/gravy_all_transactions_report/';
   }
 

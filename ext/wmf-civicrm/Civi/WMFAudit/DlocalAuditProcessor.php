@@ -36,7 +36,7 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
     return $this->parse_json_log_line($logline);
   }
 
-  protected function regex_for_recon() {
+  protected function regexForFilesToProcess() {
     return '/_report|Settlement|border_/';
   }
 
