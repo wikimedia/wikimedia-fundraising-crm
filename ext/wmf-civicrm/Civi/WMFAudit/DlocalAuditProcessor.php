@@ -62,4 +62,8 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
     ];
   }
 
+  protected function regexForFilesToIgnore(): string {
+    return '/_Cleared.csv/';
+  }
+
 }
