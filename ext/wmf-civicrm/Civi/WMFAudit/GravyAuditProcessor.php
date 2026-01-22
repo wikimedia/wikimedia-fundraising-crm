@@ -64,4 +64,8 @@ class GravyAuditProcessor extends BaseAuditProcessor {
     return '/gravy_all_transactions_report/';
   }
 
+  protected function regexForFilesToIgnore(): string {
+    return '/gravy_settlement_report_/';
+  }
+
 }
